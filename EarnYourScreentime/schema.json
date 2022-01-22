@@ -1,0 +1,192 @@
+{
+  "$schema" : "http://json-schema.org/draft-04/schema#",
+  "required" : [
+    "breakActivities",
+    "startTime",
+    "showEveryBreak",
+    "morningHabits",
+    "breakAfterMinutes",
+    "shutOffTime"
+  ],
+  "properties" : {
+    "breakActivities" : {
+      "type" : "array",
+      "items" : [
+        {
+          "type" : "object",
+          "properties" : {
+            "videoUrl" : {
+              "type" : "string"
+            },
+            "durationSeconds" : {
+              "type" : "integer"
+            },
+            "includeInEveryBreak" : {
+              "type" : "boolean"
+            },
+            "name" : {
+              "type" : "string"
+            }
+          },
+          "required" : [
+            "videoUrl",
+            "durationSeconds",
+            "includeInEveryBreak",
+            "name"
+          ]
+        },
+        {
+          "type" : "object",
+          "properties" : {
+            "name" : {
+              "type" : "string"
+            },
+            "durationSeconds" : {
+              "type" : "integer"
+            }
+          },
+          "required" : [
+            "name",
+            "durationSeconds"
+          ]
+        },
+        {
+          "type" : "object",
+          "properties" : {
+            "name" : {
+              "type" : "string"
+            },
+            "durationSeconds" : {
+              "type" : "integer"
+            },
+            "includeInEveryBreak" : {
+              "type" : "boolean"
+            }
+          },
+          "required" : [
+            "name",
+            "durationSeconds",
+            "includeInEveryBreak"
+          ]
+        },
+        {
+          "type" : "object",
+          "properties" : {
+            "videoUrl" : {
+              "type" : "string"
+            },
+            "durationSeconds" : {
+              "type" : "integer"
+            },
+            "includeInEveryBreak" : {
+              "type" : "boolean"
+            },
+            "name" : {
+              "type" : "string"
+            }
+          },
+          "required" : [
+            "videoUrl",
+            "durationSeconds",
+            "includeInEveryBreak",
+            "name"
+          ]
+        },
+        {
+          "type" : "object",
+          "properties" : {
+            "videoUrl" : {
+              "type" : "string"
+            },
+            "durationSeconds" : {
+              "type" : "integer"
+            },
+            "includeInEveryBreak" : {
+              "type" : "boolean"
+            },
+            "name" : {
+              "type" : "string"
+            }
+          },
+          "required" : [
+            "videoUrl",
+            "durationSeconds",
+            "includeInEveryBreak",
+            "name"
+          ]
+        }
+      ]
+    },
+    "startTime" : {
+      "type" : "string"
+    },
+    "showEveryBreak" : {
+      "type" : "boolean"
+    },
+    "morningHabits" : {
+      "type" : "array",
+      "items" : [
+        {
+          "type" : "object",
+          "properties" : {
+            "name" : {
+              "type" : "string"
+            },
+            "durationSeconds" : {
+              "type" : "integer"
+            },
+            "videoUrl" : {
+              "type" : "string"
+            }
+          },
+          "required" : [
+            "name",
+            "durationSeconds",
+            "videoUrl"
+          ]
+        },
+        {
+          "type" : "object",
+          "properties" : {
+            "name" : {
+              "type" : "string"
+            },
+            "durationSeconds" : {
+              "type" : "integer"
+            },
+            "videoUrl" : {
+              "type" : "string"
+            }
+          },
+          "required" : [
+            "name",
+            "durationSeconds",
+            "videoUrl"
+          ]
+        },
+        {
+          "type" : "object",
+          "properties" : {
+            "name" : {
+              "type" : "string"
+            },
+            "durationSeconds" : {
+              "type" : "integer"
+            }
+          },
+          "required" : [
+            "name",
+            "durationSeconds"
+          ]
+        }
+      ]
+    },
+    "breakAfterMinutes" : {
+      "type" : "integer"
+    },
+    "shutOffTime" : {
+      "type" : "string"
+    }
+  },
+  "type" : "object"
+}

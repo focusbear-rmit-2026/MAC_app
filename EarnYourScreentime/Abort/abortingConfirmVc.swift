@@ -1,0 +1,530 @@
+//
+//  abortingConfirmVc.swift
+//  Earn Your Screentime
+//
+//  Created by Prashant Sawnani on 07/01/22.
+//  
+//
+
+import Cocoa
+
+class abortingConfirmVc: NSViewController, NSTextViewDelegate {
+
+    @IBOutlet weak var lblTitleEmailFourthBox: NSTextField!
+    @IBOutlet weak var btnDontWantRoutine_boxHabit: NSButton!
+    @IBOutlet weak var btnStartSmall_boxHabit: NSButton!
+    @IBOutlet weak var lblTitleEmailSecondBox: NSTextField!
+    @IBOutlet weak var lblSubTitle: NSTextField!
+    @IBOutlet weak var lblTitle: NSTextField!
+    @IBOutlet weak var btnDeactivate_boxSomethingElse: NSButton!
+    @IBOutlet var textViewSomethingElse: NSTextView!
+    @IBOutlet weak var textFieldEmail_SomethingELse: NSTextField!
+    @IBOutlet weak var btnDeactivateAppBroken: NSButton!
+    @IBOutlet weak var textFieldEmailAppBroken: NSTextField!
+    @IBOutlet var textViewAppBroken: NSTextView!
+    @IBOutlet weak var lblTimerEmergency: NSTextField!
+    @IBOutlet weak var lblDescriptionFourthBox: NSTextField!
+    @IBOutlet weak var lblDescriptionThirdBox: NSTextField!
+    @IBOutlet weak var lblDescriptionSecondBox: NSTextField!
+    @IBOutlet weak var lblDescriptionFirstBox: NSTextField!
+    @IBOutlet weak var boxSomethingElse: NSBox!
+    @IBOutlet weak var boxHabitsHard: NSBox!
+    @IBOutlet weak var boxAppBroken: NSBox!
+    @IBOutlet weak var boxEmergency: NSBox!
+    @IBOutlet weak var popUpBtnReasons: NSPopUpButton!
+    //    @IBOutlet weak var lblConfirmAbort: NSTextField!
+//    @IBOutlet weak var btnAbortCancel: NSButton!
+//    @IBOutlet weak var textField: NSTextField!
+    
+    var currentTimer = 0
+    var totalDuration = 10
+    var timer:Timer?
+    
+    var allReasons = [String]()
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        // Do view setup here.
+//        self.textField.delegate = self
+//        lblConfirmAbort.isHidden = true
+//        allReasons = ["Select a reason","I've got an emergency", "The app is broken", "My habits are too hard - I can't handle them", "Something else"]
+        lblTitle.stringValue = "Aborting.."
+        lblSubTitle.stringValue = "Can you share why you're aborting?"
+        
+        lblDescriptionFirstBox.stringValue = "Uh oh! Hope everything is ok. Restoring access immediately and cancelling habits for next 4 hours.. Your normal routine will resume after that."
+        
+        
+        lblDescriptionSecondBox.stringValue = "Oh no! We're really sorry. We'll deactivate all popups. Can you please let us know what happened?﹡"
+        lblTitleEmailSecondBox.stringValue = "Your Email (if you want us to reply):"
+        btnDeactivateAppBroken.title = "Deactivate habit popups"
+        
+        
+        
+        lblDescriptionThirdBox.stringValue = "Ah understandable. Would you like to reset your habits to be 30 seconds each and max 5 minutes? A short morning routine is better than nothing. You can build from there."
+        
+        btnStartSmall_boxHabit.title = "Yeah - I'll start small"
+        btnDontWantRoutine_boxHabit.title = "NO I don't want a \nmorning routine at all!"
+        
+        
+        lblDescriptionFourthBox.stringValue = "Can you tell us why you want to stop getting habit + break notifications?﹡"
+        lblTitleEmailFourthBox.stringValue = "Your Email (if you want us to reply):"
+        btnDeactivate_boxSomethingElse.title = "Deactivate routine + breaks"
+        
+        
+        var dropDown_0_Title = "Select a reason"
+        var dropDown_1_Title = "I've got an emergency"
+        var dropDown_2_Title = "The app is broken"
+        var dropDown_3_Title = "My habits are too hard - I can't handle them"
+        var dropDown_4_Title = "Something else"
+        
+        if let abortInfo = configjson.value(forKey: "abortInfo") as? NSDictionary{
+            if let abortingTitle = abortInfo.value(forKey: "abortingTitle") as? String{
+                lblTitle.stringValue = abortingTitle
+            }
+            if let abortingConfirmInfo = abortInfo.value(forKey: "abortingConfirmInfo") as? NSDictionary{
+                if let subTitle = abortingConfirmInfo.value(forKey: "subTitle") as? String{
+                    lblSubTitle.stringValue = subTitle
+                }
+                
+                if let dropDown_0 = abortingConfirmInfo.value(forKey: "dropDown_0") as? NSDictionary{
+                    if let title = dropDown_0.value(forKey: "title") as? String{
+                        dropDown_0_Title = title
+                    }
+                }
+                
+                if let dropDown_1 = abortingConfirmInfo.value(forKey: "dropDown_1") as? NSDictionary{
+                    if let title = dropDown_1.value(forKey: "title") as? String{
+                        dropDown_1_Title = title
+                    }
+                    if let description = dropDown_1.value(forKey: "description") as? String{
+                        lblDescriptionFirstBox.stringValue = description
+                    }
+                }
+                if let dropDown_2 = abortingConfirmInfo.value(forKey: "dropDown_2") as? NSDictionary{
+                    if let title = dropDown_2.value(forKey: "title") as? String{
+                        dropDown_2_Title = title
+                    }
+                    if let description = dropDown_2.value(forKey: "description") as? String{
+                        lblDescriptionSecondBox.stringValue = description
+                    }
+                    
+                    if let emailTitle = dropDown_2.value(forKey: "emailTitle") as? String{
+                        lblTitleEmailSecondBox.stringValue = emailTitle
+                    }
+                    
+                    if let buttonDeactivateText = dropDown_2.value(forKey: "buttonDeactivateText") as? String{
+                        btnDeactivateAppBroken.title = buttonDeactivateText
+                    }
+                    
+                }
+                
+                if let dropDown_3 = abortingConfirmInfo.value(forKey: "dropDown_3") as? NSDictionary{
+                    if let title = dropDown_3.value(forKey: "title") as? String{
+                        dropDown_3_Title = title
+                    }
+                    if let description = dropDown_3.value(forKey: "description") as? String{
+                        lblDescriptionThirdBox.stringValue = description
+                    }
+                    
+                    if let buttonStartSmallText = dropDown_3.value(forKey: "buttonStartSmallText") as? String{
+                        btnStartSmall_boxHabit.title = buttonStartSmallText
+                    }
+                    
+                    if let buttonDontWantText = dropDown_3.value(forKey: "buttonDontWantText") as? String{
+                        btnDontWantRoutine_boxHabit.title = buttonDontWantText
+                    }
+                    
+                }
+                if let dropDown_4 = abortingConfirmInfo.value(forKey: "dropDown_4") as? NSDictionary{
+                    if let title = dropDown_4.value(forKey: "title") as? String{
+                        dropDown_4_Title = title
+                    }
+                    if let description = dropDown_4.value(forKey: "description") as? String{
+                        lblDescriptionFourthBox.stringValue = description
+                    }
+                    
+                    if let emailTitle = dropDown_4.value(forKey: "emailTitle") as? String{
+                        lblTitleEmailFourthBox.stringValue = emailTitle
+                    }
+                    
+                    if let buttonDeactivateText = dropDown_4.value(forKey: "buttonDeactivateText") as? String{
+                        btnDeactivate_boxSomethingElse.title = buttonDeactivateText
+                    }
+                }
+                
+                
+            }
+            
+            
+            
+        }
+        allReasons = [dropDown_0_Title,dropDown_1_Title, dropDown_2_Title, dropDown_3_Title, dropDown_4_Title]
+        
+        popUpBtnReasons.removeAllItems()
+        
+        popUpBtnReasons.addItems(withTitles: allReasons)
+        textViewAppBroken.delegate = self
+        textViewSomethingElse.delegate = self
+    }
+    func resetData(){
+        boxEmergency.isHidden = true
+        boxAppBroken.isHidden = true
+        boxHabitsHard.isHidden = true
+        boxSomethingElse.isHidden = true
+        popUpBtnReasons.isEnabled = true
+        popUpBtnReasons.selectItem(at: 0)
+//        self.textField.stringValue = ""
+//        lblConfirmAbort.isHidden = true
+        btnDeactivateAppBroken.isEnabled = false
+        lblTimerEmergency.stringValue = "00:05"
+
+    }
+    
+    func textDidChange(_ notification: Notification) {
+        guard let textView = notification.object as? NSTextView else{
+            return
+        }
+        if textView == textViewAppBroken{
+            if popUpBtnReasons.indexOfSelectedItem == 2{
+                if textView.string.isEmpty{
+                    btnDeactivateAppBroken.isEnabled = false
+                }else{
+                    btnDeactivateAppBroken.isEnabled = true
+                }
+            }
+        }else if textView == textViewSomethingElse{
+            if popUpBtnReasons.indexOfSelectedItem == 4{
+                if textView.string.isEmpty{
+                    btnDeactivate_boxSomethingElse.isEnabled = false
+                }else{
+                    btnDeactivate_boxSomethingElse.isEnabled = true
+                }
+            }
+        }
+    }
+//    func controlTextDidChange(_ obj: Notification) {
+//        if let textField = obj.object as? NSTextField{
+//            if textField == self.textField{
+//                if textField.stringValue == "igiveuponmymorningroutine"{
+//                    btnAbortCancel.isHidden = true
+//                    lblConfirmAbort.isHidden = false
+//                    self.perform(#selector(abortDone), with: nil, afterDelay: 3)
+//                }
+//            }
+//        }
+//    }
+//    @objc func abortDone(){
+//        mainViewControllerObj?.showAbortDoneView()
+//    }
+//    @IBAction func btnAbortCancelClicked(_ sender: Any) {
+//    }
+    @IBAction func popUpBtnReasonsClicked(_ sender: Any) {
+        let index = popUpBtnReasons.indexOfSelectedItem
+        switch index {
+        case 0:
+            boxEmergency.isHidden = true
+            boxAppBroken.isHidden = true
+            boxHabitsHard.isHidden = true
+            boxSomethingElse.isHidden = true
+        case 1:
+            lblTimerEmergency.stringValue = "00:05"
+            boxEmergency.isHidden = false
+            boxAppBroken.isHidden = true
+            boxHabitsHard.isHidden = true
+            boxSomethingElse.isHidden = true
+            popUpBtnReasons.isEnabled = false
+            startTimer()
+        case 2:
+            boxEmergency.isHidden = true
+            boxAppBroken.isHidden = false
+            boxHabitsHard.isHidden = true
+            boxSomethingElse.isHidden = true
+            textViewAppBroken.string = ""
+            btnDeactivateAppBroken.isEnabled = false
+            textFieldEmailAppBroken.stringValue = ""
+        case 3:
+            boxEmergency.isHidden = true
+            boxAppBroken.isHidden = true
+            boxHabitsHard.isHidden = false
+            boxSomethingElse.isHidden = true
+        case 4:
+            boxEmergency.isHidden = true
+            boxAppBroken.isHidden = true
+            boxHabitsHard.isHidden = true
+            boxSomethingElse.isHidden = false
+            textViewSomethingElse.string = ""
+            btnDeactivate_boxSomethingElse.isEnabled = false
+            textFieldEmail_SomethingELse.stringValue = ""
+        default:
+            boxEmergency.isHidden = true
+            boxAppBroken.isHidden = true
+            boxHabitsHard.isHidden = true
+            boxSomethingElse.isHidden = true
+        }
+    }
+    func startTimer() {
+        currentTimer = 0
+        totalDuration = 5
+        let (_,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
+        var minute = "\(m)"
+        var second = "\(s)"
+        if minute.count == 1 {
+            minute = "0\(m)"
+        }
+        if second.count == 1 {
+            second = "0\(s)"
+        }
+        self.lblTimerEmergency.stringValue = "\(minute):\(second)"
+        DispatchQueue.global().async {
+            self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
+            RunLoop.current.add(self.timer!, forMode: RunLoop.Mode.common)
+            RunLoop.current.run()
+        }
+    }
+    @objc func performTimerCount() {
+        
+        currentTimer += 1
+        let (_,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
+        var minute = "\(m)"
+        var second = "\(s)"
+
+        if minute.count == 1 {
+            minute = "0\(m)"
+        }
+        if second.count == 1 {
+            second = "0\(s)"
+        }
+        
+        DispatchQueue.main.async {
+            self.lblTimerEmergency.stringValue = "\(minute):\(second)"
+        }
+        if self.totalDuration <= self.currentTimer {
+            self.timer?.invalidate()
+            DispatchQueue.global().async {
+                DispatchQueue.main.async {
+                    let date = Date().addingTimeInterval(4 * 60 * 60)//Calendar.current.date(bySetting: .hour, value: 4, of: Date())
+                    UserDefaults.standard.set(date, forKey: kUserdefaults4HourReActivateTime)
+                    getAbortJsonToUpload(emailAddress: "", feedback: "", abortReason: "I've got an emergency", completionHandler: {dic in
+                        DispatchQueue.main.async {
+                            mainViewControllerObj?.disableApp()
+                        }
+                    })
+//                    mainViewControllerObj?.showAbortDoneView()
+                    
+                }
+            }
+        }
+    }
+    @IBAction func btnDeactivateAppBrokenClicked(_ sender: Any) {
+        getAbortJsonToUpload(emailAddress: textFieldEmailAppBroken.stringValue, feedback: textViewAppBroken.string, abortReason: "The app is broken", completionHandler: {dic in
+            DispatchQueue.main.async {
+                mainViewControllerObj?.showAbortDoneView()
+            }
+        })
+    }
+    @IBAction func btnStartSmallClicked(_ sender: Any) {
+        var jsonResult = NSDictionary()
+        if let stringDic = UserDefaults.standard.object(forKey: kUserdefaultsSelectedJson) as? String {
+            //            jsonResult = dic
+            if let data = stringDic.data(using: String.Encoding.utf8) {
+                
+                do {
+                    jsonResult = try (JSONSerialization.jsonObject(with: data, options: []) as? NSDictionary ?? [:])
+                    
+                } catch let error as NSError {
+                    print(error)
+                }
+            }
+            
+        }else {
+            if let path = Bundle.main.path(forResource: "settings", ofType: "json") {
+                let url = URL(fileURLWithPath: path)
+                do {
+                    let data = try Data(contentsOf: url, options: .mappedIfSafe)
+                    do {
+                        if let dicResult: NSDictionary = try JSONSerialization.jsonObject(with: data, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary {
+                            jsonResult = dicResult
+                            print(jsonResult)
+                        }
+                    }catch {
+                        print(error)
+                    }
+                } catch {
+                    // handle error
+                }
+            }
+        }
+        guard let mutableDic = jsonResult.mutableCopy() as? NSMutableDictionary else{
+            return
+        }
+        //        mutableDic
+        for i in 0..<arrAllHabits.count{
+            if arrAllHabits[i].durationSeconds > 30{
+                arrAllHabits[i].durationSeconds = 30
+            }
+        }
+        for i in 0..<arrAllbreakActivities.count{
+            if arrAllbreakActivities[i].durationSeconds > 30{
+                arrAllbreakActivities[i].durationSeconds = 30
+            }
+        }
+        var totalTime = arrAllHabits.count * 30
+        var isAnyHabitRemoved = false
+        while totalTime > 300{
+            isAnyHabitRemoved = true
+            arrAllHabits.removeLast()
+            totalTime = arrAllHabits.count * 30
+        }
+        var arrHabitsDictionary = [NSMutableDictionary]()
+        for habit in arrAllHabits{
+            let dic = ["name": habit.name!, "durationSeconds": habit.durationSeconds!] as NSMutableDictionary
+            arrHabitsDictionary.append(dic)
+        }
+        mutableDic["morningHabits"] = arrHabitsDictionary
+        
+        var arrActivitiesDictionary = [NSMutableDictionary]()
+        for activity in arrAllbreakActivities{
+            let dic = ["name": activity.name!, "durationSeconds": activity.durationSeconds!] as NSMutableDictionary
+            arrActivitiesDictionary.append(dic)
+        }
+        mutableDic["breakActivities"] = arrActivitiesDictionary
+        
+        //            if 1==1{
+        
+        do {
+            let data = try (JSONSerialization.data(withJSONObject: mutableDic, options: []) as? Data)
+            let str = String(decoding: data!, as: UTF8.self)
+//            let newstr = str.replacingOccurrences(of: ",", with: ",\n")
+            UserDefaults.standard.set(str, forKey: kUserdefaultsSelectedJson)
+        } catch let error as NSError {
+            print(error)
+        }
+        //            }
+        
+        
+
+        mainViewControllerObj?.showAbortStartSmallVc(isAnyHabitRemoved:isAnyHabitRemoved)
+    }
+    @IBAction func btnDontWantRoutine_boxHabitClicked(_ sender: Any) {
+        mainViewControllerObj?.showAbortDisableMorningRoutineVc()
+    }
+    @IBAction func btnDeactivate_boxSomethingElseClicked(_ sender: Any) {
+//        mainViewControllerObj?.showAbortDoneView()
+//        let json = getAbortJsonToUpload(emailAddress: textFieldEmail_SomethingELse.stringValue, feedback: textViewSomethingElse.string, abortReason: "Something else")
+//        print(json)
+        
+        getAbortJsonToUpload(emailAddress: textFieldEmail_SomethingELse.stringValue, feedback: textViewSomethingElse.string, abortReason: "Something else", completionHandler: {dic in
+            DispatchQueue.main.async {
+                mainViewControllerObj?.showAbortDoneView()
+            }
+        })
+        
+    }
+}
+
+
+func getAbortJsonToUpload(emailAddress:String?, feedback:String, abortReason:String,completionHandler: @escaping(_ result: NSDictionary) -> ()) {
+    var settingsJson = NSDictionary()
+    if let stringDic = UserDefaults.standard.object(forKey: kUserdefaultsSelectedJson) as? String {
+        if let data = stringDic.data(using: String.Encoding.utf8) {
+            do {
+                settingsJson = try (JSONSerialization.jsonObject(with: data, options: []) as? NSDictionary ?? [:])
+            } catch let error as NSError {
+                print(error)
+            }
+        }
+        
+    }else {
+        if let path = Bundle.main.path(forResource: "settings", ofType: "json") {
+            let url = URL(fileURLWithPath: path)
+            do {
+                let data = try Data(contentsOf: url, options: .mappedIfSafe)
+                do {
+                    if let dicResult: NSDictionary = try JSONSerialization.jsonObject(with: data, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary {
+                        settingsJson = dicResult
+                    }
+                }catch {
+                    print(error)
+                }
+            } catch {
+                // handle error
+            }
+        }
+    }
+    
+    let systemVersion = ProcessInfo().operatingSystemVersion
+    let version = "\(systemVersion.majorVersion).\(systemVersion.minorVersion).\(systemVersion.patchVersion)"
+    
+    let firstRunDate = UserDefaults.standard.object(forKey: kUserdefaultsFirstRunDate) as? Date ?? Date()
+    let formatter = DateFormatter()
+    formatter.dateFormat = "yyyy-MM-dd"
+    let myDateString = formatter.string(from: firstRunDate)
+    
+    let jsonResult:NSMutableDictionary = ["abortReason":abortReason, "settingsJSON":settingsJson, "macOSVersion":version, "feedback":feedback, "usageStartDate":myDateString]
+    
+    if emailAddress != nil{
+        jsonResult["emailAddress"] = emailAddress!
+    }
+    
+    
+    
+    let responsePath = webhookUrl
+    if let myUrl = NSURL(string: responsePath){
+        
+        let request = NSMutableURLRequest(url:myUrl as URL);
+        request.httpMethod = "POST";
+        
+        var json = jsonResult//[[String: String]]()
+        
+        
+        
+        
+        
+        let jsonData = try? JSONSerialization.data(withJSONObject: json)
+        //         let boundary = generateBoundaryString()
+        //         let contentData = createBodyWithParameters(imageDataKey: folderData as? NSData ?? NSData(), boundary: boundary, jsonData: jsonData) as Data
+        
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = jsonData
+        
+        
+        let task = URLSession.shared.dataTask(with: request as URLRequest) {
+            data, response, error in
+            
+            // print(response)
+            if let httpResponse = response as? HTTPURLResponse {
+                if httpResponse.statusCode == 200{
+                    
+                    
+                    
+                    if data != nil{
+                        
+                        let status = String(data: data!, encoding: .utf8)!
+                        if status == "1"{
+                            print("success")
+                            
+                        }else{
+                            
+                        }
+                    }
+                }else{
+                    
+                }
+
+            }
+            //            isUploadingPopupResponse = false
+            if error != nil {
+                
+                return
+            }
+            completionHandler(jsonResult)
+            return;
+        }
+        task.resume()
+    }else{
+        //        isUploadingPopupResponse = false
+        completionHandler(jsonResult)
+    }
+    
+
+}
+

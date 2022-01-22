@@ -1,0 +1,16 @@
+PODS:
+  - JSONSchema (0.6.0)
+
+DEPENDENCIES:
+  - JSONSchema
+
+SPEC REPOS:
+  trunk:
+    - JSONSchema
+
+SPEC CHECKSUMS:
+  JSONSchema: c84ae39b71107fec1d5c3ef0bc0a23ab49daee0c
+
+PODFILE CHECKSUM: 8e99c4e900982bac28e409a5d0cc59bc4a652e5f
+
+COCOAPODS: 1.11.2

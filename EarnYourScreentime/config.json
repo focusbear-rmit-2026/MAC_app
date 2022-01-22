@@ -1,0 +1,107 @@
+{"welcomeInfo":
+    {"welcomeMessageHeading": "Welcome to Earn Your Screen Time",
+        "welcomeMessageIntro": "Every morning, I will stop you from satisfying your urge to check email/Facebook and force you to do your morning routine instead. You can configure your own routine later but for now, I’ll give you a suggested activity: 1 minute of mindful breathing. While you breathe deeply, think of how awesome you’ll be if you stick to your morning routine every day.",
+        "welcomeEndMessage": "Hope you feel calmer. You can now personalise your morning routine by clicking on the icon <icon> on the top bar and choosing settings.",
+        "introActivities": [
+            { "name": "Mindful Breathing", "durationSeconds": 60, "videoUrl": "https://www.youtube.com/watch?v=z-3n5iBi4u0" }
+        ]
+    },
+    "activityInfo":{
+        "startMorningHabitTitleText":"Good Morning! It’s time to earn your screentime. Here are the habits you need to accomplish before you can use your computer.",
+        "startActivityButtonText":"Start <TIME> <NAME>",
+        "activityFinishedText":"<ACTIVITY> finished!✅",
+        "lastActivityFinishedText":"<ACTIVITY> finished!✅ You’ve earned your screen time. 💪",
+        "startBreakActivityTitleText":"It’s time for a break. Do <TIME> of <ACTIVITY> to earn more screentime.",
+        "doSomeActivityText":"Do some <ACTIVITY>."
+    },
+    "common":{
+        "emailId":"team@earnyourscreentime.com",
+        "unlockMachineButtonText":"Unlock the machine",
+        "stayFocusedText":"OK - Stay focused throughout the day!",
+        "buttonCancelText":"Cancel",
+        "webhookUrl":"https://hooks.zapier.com/hooks/catch/326116/b98ovxc/"
+    },
+    "abortInfo":{
+        "abortingTitle":"Aborting..",
+        "abortingCountDownInfo":{
+            "subTitle":"Are you sure you want to give up on your habits? Please take 10 seconds to reflect on whether you are serious about aborting.",
+            "message":"While you wait, reflect on why you’re doing this. If it was because your morning routine was too ambitious, perhaps scale it back to only be a few minutes long so that it’s easier to do it than not do it. If you’re aborting because the app is broken, really sorry!!",
+            "pleaseEmailText":"Please email",
+            "buttonAbortCancelText":"I didn’t mean it. Let me do my habits!"
+        },
+        "abortingConfirmInfo":{
+            "subTitle":"Can you share why you're aborting?",
+            "dropDown_0":{
+                "title":"Select a reason"
+            },
+            "dropDown_1":{
+                "title":"I've got an emergency",
+                "description":"Uh oh! Hope everything is ok. Restoring access immediately and cancelling habits for next 4 hours.. Your normal routine will resume after that."
+            },
+            "dropDown_2":{
+                "title":"The app is broken",
+                "description":"Oh no! We're really sorry. We'll deactivate all popups. Can you please let us know what happened?﹡",
+                "emailTitle":"Your Email (if you want us to reply):",
+                "buttonDeactivateText":"Deactivate habit popups"
+            },
+            "dropDown_3":{
+                "title":"My habits are too hard - I can't handle them",
+                "description":"Ah understandable. Would you like to reset your habits to be 30 seconds each and max 5 minutes? A short morning routine is better than nothing. You can build from there.",
+                "buttonStartSmallText":"Yeah - I'll start small",
+                "buttonDontWantText":"NO I don't want a \nmorning routine at all!",
+                "emailTitle":"Your Email (if you want us to reply):",
+                "startSmallInfo":{
+                    "subTitle":"Starting small..",
+                    "activityResetText":"We’ve reset your habits and break activities for you. They’re now each only 30 seconds long which should make it more manageable.",
+                    "activityRemovedText":"We removed a few activities so that the total morning routine is 5 minutes long",
+                    "changeSettingsText":"You can alter your settings later from the top toolbar icon <icon>",
+                    "shareFeedbackText":"Can you share some feedback about why your habits were too hard?﹡",
+                    "buttonTitle":"Start shortened routine"
+                    
+                },
+                "givingUpInfo":{
+                    "subTitle":"Giving up on your morning routine",
+                    "description":"No problems. You’re in control.",
+                    "changeSettingsText":"Feel free to reactivate Earn Your Screen Time from top toolbar icon <icon>",
+                    "shareFeedbackText":"Can you share feedback about the app?﹡",
+                    "buttonTitle":"Deactivate routine + breaks"
+                    
+                }
+            },
+            "dropDown_4":{
+                "title":"Something else",
+                "description":"Can you tell us why you want to stop getting habit + break notifications?﹡",
+                "emailTitle":"Your Email (if you want us to reply):",
+                "buttonDeactivateText":"Deactivate routine + breaks"
+            },
+        },
+        "abortDoneInfo":{
+            "title":"Aborted",
+            "subTitle":"You’ve successfully aborted Earn Your Screen Time. The app won’t show habit prompts until you activate it again from the menu icon. If you aborted it because of a problem with the app, please email"
+        }
+    },
+    "shutOffTimeInfo":{
+        "title":"Time to wind down",
+        "subTitle":"You told me you wanted to stay off your computer from <SHUTOFFTIME> to <STARTTIME>. Enjoy your evening and sleep well. Look forward to helping you with your morning routine tomorrow.",
+        "buttonAbortText":"Get access now",
+        "shutOffAbortInfo":{
+            "title":"Emergency?",
+            "subTitle":"Are you sure you want to do this? Using your computer late at night could mess up your sleep. Please take 30 seconds to reflect on whether this is really an emergency or whether it can wait.",
+            "shareFeedbackText":"Feel free to write an explanation here:",
+            "buttonUnlockText":"Unlock"
+        },
+        "shutOffAbortDoneInfo":{
+            "subTitle":"Sorry to hear that something bad has happened and you absolutely need to use your computer late at night. We’re unlocking your machine now. Your morning routine will still activate at <STARTTIME>. Hope you’re able to catch up on sleep during the day.",
+            "unlockingText":"Unlocking in"
+        }
+    },
+    "settings":{
+        "title":"Enter settings JSON below:",
+        "buttonSaveText":"Save",
+        "visitText":"Visit <SETTINGURL> to generate settings",
+        "settingUrl":"earnyourscreentime.com/settings-generator"
+    }
+    
+}
+
+
