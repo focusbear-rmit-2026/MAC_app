@@ -8,6 +8,7 @@
     },
     "activityInfo":{
         "startMorningHabitTitleText":"Good Morning! It’s time to earn your screentime. Here are the habits you need to accomplish before you can use your computer.",
+        "startEveningHabitTitleText":"Good Evening! It’s time to earn your screentime. Here are the habits you need to accomplish before you can leave for the day.",
         "startActivityButtonText":"Start <TIME> <NAME>",
         "activityFinishedText":"<ACTIVITY> finished!✅",
         "lastActivityFinishedText":"<ACTIVITY> finished!✅ You’ve earned your screen time. 💪",
@@ -99,7 +100,10 @@
         "title":"Enter settings JSON below:",
         "buttonSaveText":"Save",
         "visitText":"Visit <SETTINGURL> to generate settings",
-        "settingUrl":"earnyourscreentime.com/settings-generator"
+        "settingUrl":"earnyourscreentime.com/settings-generator",
+        "schemaError":"Your settings can not be validated.",
+        "buttonOkText":"OK",
+        "settingIsNotValidText":"Sorry it seems like your settings aren’t valid. Please generate settings at earnyourscreentime.com/settings"
     }
     
 }

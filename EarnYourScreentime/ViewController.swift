@@ -26,54 +26,52 @@ class ViewController: NSViewController {
         
     }
     @IBAction func btnAbortClicked(_ sender: Any) {
-//        if currentState == .
-//        currentAction
         lastCurrentState = currentState
         lastCurrentAction = currentAction
         btnAbort.isHidden = true
-        if isHabitGoing {
-            isHabitGoing = false
-            if timerViewcontrollerObj != nil {
-                if timerViewcontrollerObj?.timer != nil {
-                    timerViewcontrollerObj?.timer?.invalidate()
-                    if currentAction == ._INPROGRESS_{
-                        if timerViewcontrollerObj?.webView.isHidden == false{
-                            timerViewcontrollerObj?.loadBlankUrl()
-                        }
-                    }
-                }
-            }
-        }
-        else if isBreakActivitiesGoing {
-            if timerViewcontrollerObj != nil {
-                if timerViewcontrollerObj?.timer != nil {
-                    timerViewcontrollerObj?.timer?.invalidate()
-                    if currentAction == ._INPROGRESS_{
-                        if timerViewcontrollerObj?.webView.isHidden == false{
-                            timerViewcontrollerObj?.loadBlankUrl()
-                        }
-                    }
-                }
-            }
-            isBreakActivitiesGoing = false
-        }else if isBreathingGoing {
-            if timerViewcontrollerObj != nil {
-                if timerViewcontrollerObj?.timer != nil {
-                    timerViewcontrollerObj?.timer?.invalidate()
-                    if currentAction == ._INPROGRESS_{
-                        if timerViewcontrollerObj?.webView.isHidden == false{
-                            timerViewcontrollerObj?.loadBlankUrl()
-                        }
+        if currentAction == ._INPROGRESS_{
+            if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._ACTIVITY_ || currentState == ._BREATHING_{
+                if timerViewcontrollerObj != nil {
+                    if timerViewcontrollerObj?.timer != nil {
+                        timerViewcontrollerObj?.timer?.invalidate()
+                            if timerViewcontrollerObj?.webView.isHidden == false{
+                                timerViewcontrollerObj?.loadBlankUrl()
+                            }
                     }
                 }
             }
             
-            isBreathingGoing = false
+//            else if currentState == ._EVENING_HABIT_ {//todo delete
+//                if timerViewcontrollerObj != nil {
+//                    if timerViewcontrollerObj?.timer != nil {
+//                        timerViewcontrollerObj?.timer?.invalidate()
+//                        if timerViewcontrollerObj?.webView.isHidden == false{
+//                            timerViewcontrollerObj?.loadBlankUrl()
+//                        }
+//                    }
+//                }
+//            }
+//            else if currentState == ._ACTIVITY_ {
+//                if timerViewcontrollerObj != nil {
+//                    if timerViewcontrollerObj?.timer != nil {
+//                        timerViewcontrollerObj?.timer?.invalidate()
+//                            if timerViewcontrollerObj?.webView.isHidden == false{
+//                                timerViewcontrollerObj?.loadBlankUrl()
+//                            }
+//                    }
+//                }
+//            }else if currentState == ._BREATHING_ {
+//                if timerViewcontrollerObj != nil {
+//                    if timerViewcontrollerObj?.timer != nil {
+//                        timerViewcontrollerObj?.timer?.invalidate()
+//                            if timerViewcontrollerObj?.webView.isHidden == false{
+//                                timerViewcontrollerObj?.loadBlankUrl()
+//                            }
+//                    }
+//                }
+//            }
         }
-        let viewsArr = containerView.subviews
-        for subview in viewsArr {
-            subview.removeFromSuperview()
-        }
+        removeSubViews()
         containerView.addSubview(abortingCountDownVcObj!.view)
         containerView.addConstraints(subView: abortingCountDownVcObj!.view)
         abortingCountDownVcObj?.startTimer()
@@ -82,12 +80,8 @@ class ViewController: NSViewController {
     
     func abortCancel(){
         btnAbort.isHidden = false
-        let viewsArr = containerView.subviews
-        for subview in viewsArr {
-            subview.removeFromSuperview()
-        }
+        removeSubViews()
         if lastCurrentState == ._ACTIVITY_{
-            isBreakActivitiesGoing = true
             switch lastCurrentAction {
             case ._START_:
                self.containerView.addSubview(thirdVcObj!.view)
@@ -98,11 +92,6 @@ class ViewController: NSViewController {
             case ._INPROGRESS_:
                 containerView.addSubview(timerViewcontrollerObj!.view)
                 containerView.addConstraints(subView: timerViewcontrollerObj!.view)
-//                timerViewcontrollerObj?.resumeTimerActivity(durationInSeconds: arrAllbreakActivities[currentActivityIndex].durationSeconds, name: arrAllbreakActivities[currentActivityIndex].name!)
-                
-                
-                
-                
                 if isAnyMandatoryActivityIncluded{
                     if isMandatoryActivityGoing{
                         timerViewcontrollerObj?.resumeTimerActivity(durationInSeconds: arrActivitiesIncludeInEveryBreak[currentActivityIndex].durationSeconds, name: arrActivitiesIncludeInEveryBreak[currentActivityIndex].name!, url: arrActivitiesIncludeInEveryBreak[currentActivityIndex].url)
@@ -112,45 +101,56 @@ class ViewController: NSViewController {
                 }else{
                     timerViewcontrollerObj?.resumeTimerActivity(durationInSeconds: arrAllbreakActivities[currentActivityIndex].durationSeconds, name: arrAllbreakActivities[currentActivityIndex].name!, url: arrAllbreakActivities[currentActivityIndex].url)
                 }
-                
-                
-                
                 currentState = ._ACTIVITY_
                 currentAction = ._INPROGRESS_
                 break
             case ._END_:
                 btnAbort.isHidden = false
-                let viewsArr = containerView.subviews
-                for subview in viewsArr {
-                    subview.removeFromSuperview()
-                }
+                removeSubViews()
                 containerView.addSubview(thirdVcObj!.view)
                 containerView.addConstraints(subView: thirdVcObj!.view)
                 currentState = ._ACTIVITY_
                 currentAction = ._END_
                 break
             }
-        }else if lastCurrentState == ._HABIT_{
-            isHabitGoing = true
+        }else if lastCurrentState == ._MORNING_HABIT_{
             switch lastCurrentAction {
             case ._START_:
-               showAllHabits()
+               showAllMorningHabits()
             case ._INPROGRESS_:
                 containerView.addSubview(timerViewcontrollerObj!.view)
                 containerView.addConstraints(subView: timerViewcontrollerObj!.view)
-                timerViewcontrollerObj?.resumeTimerHabit(durationSeconds: arrAllHabits[currentHabitIndex].durationSeconds, url: arrAllHabits[currentHabitIndex].url)
-                currentState = ._HABIT_
+                timerViewcontrollerObj?.resumeTimerHabit(durationSeconds: arrAllMorningHabits[currentHabitIndex].durationSeconds, url: arrAllMorningHabits[currentHabitIndex].url, name: arrAllMorningHabits[currentHabitIndex].name!)
+                currentState = ._MORNING_HABIT_
                 currentAction = ._INPROGRESS_
                 break
             case ._END_:
                 btnAbort.isHidden = false
-                let viewsArr = containerView.subviews
-                for subview in viewsArr {
-                    subview.removeFromSuperview()
-                }
+                removeSubViews()
                 containerView.addSubview(thirdVcObj!.view)
                 containerView.addConstraints(subView: thirdVcObj!.view)
-                currentState = ._HABIT_
+                currentState = ._MORNING_HABIT_
+                currentAction = ._END_
+                break
+            }
+            
+        }else if lastCurrentState == ._EVENING_HABIT_{
+            switch lastCurrentAction {
+            case ._START_:
+               showAllEveningHabits()
+            case ._INPROGRESS_:
+                containerView.addSubview(timerViewcontrollerObj!.view)
+                containerView.addConstraints(subView: timerViewcontrollerObj!.view)
+                timerViewcontrollerObj?.resumeTimerHabit(durationSeconds: arrAllEveningHabits[currentHabitIndex].durationSeconds, url: arrAllEveningHabits[currentHabitIndex].url, name: arrAllEveningHabits[currentHabitIndex].name!)
+                currentState = ._EVENING_HABIT_
+                currentAction = ._INPROGRESS_
+                break
+            case ._END_:
+                btnAbort.isHidden = false
+                removeSubViews()
+                containerView.addSubview(thirdVcObj!.view)
+                containerView.addConstraints(subView: thirdVcObj!.view)
+                currentState = ._EVENING_HABIT_
                 currentAction = ._END_
                 break
             }
@@ -162,10 +162,7 @@ class ViewController: NSViewController {
     
     func showAbortConfirmationView(){
         btnAbort.isHidden = true
-        let viewsArr = containerView.subviews
-        for subview in viewsArr {
-            subview.removeFromSuperview()
-        }
+        removeSubViews()
         containerView.addSubview(abortingConfirmVcObj!.view)
         containerView.addConstraints(subView: abortingConfirmVcObj!.view)
         abortingConfirmVcObj!.resetData()
@@ -173,10 +170,7 @@ class ViewController: NSViewController {
     }
     func showAbortStartSmallVc(isAnyHabitRemoved:Bool){
         btnAbort.isHidden = true
-        let viewsArr = containerView.subviews
-        for subview in viewsArr {
-            subview.removeFromSuperview()
-        }
+        removeSubViews()
         containerView.addSubview(abortingCantHandleVcObj!.view)
         containerView.addConstraints(subView: abortingCantHandleVcObj!.view)
         abortingCantHandleVcObj!.isViewStartingSmall = true
@@ -185,10 +179,7 @@ class ViewController: NSViewController {
     }
     func showAbortDisableMorningRoutineVc(){
         btnAbort.isHidden = true
-        let viewsArr = containerView.subviews
-        for subview in viewsArr {
-            subview.removeFromSuperview()
-        }
+        removeSubViews()
         containerView.addSubview(abortingCantHandleVcObj!.view)
         containerView.addConstraints(subView: abortingCantHandleVcObj!.view)
         abortingCantHandleVcObj!.isViewStartingSmall = false
@@ -197,41 +188,41 @@ class ViewController: NSViewController {
     }
     func showAbortDoneView(){
         btnAbort.isHidden = true
-        let viewsArr = containerView.subviews
-        for subview in viewsArr {
-            subview.removeFromSuperview()
-        }
+        removeSubViews()
         containerView.addSubview(abortDoneVcObj!.view)
         containerView.addConstraints(subView: abortDoneVcObj!.view)
         abortDoneVcObj?.startTimer()
         currentState = ._ABORT_
     }
     func disableApp(){
+        addLog(text: "App Deactivated by user (Aborted)")
         UserDefaults.standard.set(false, forKey: kUserdefaultsIsAppEnabled)
         appdelegate?.quitAndRestartApp()
         return;
-        let viewsArr = containerView.subviews
-        for subview in viewsArr {
-            subview.removeFromSuperview()
-        }
+       
+        removeSubViews()
         appdelegate?.abortAllProcess()
         mainWindowControllerObj?.window?.setIsVisible(false)
-        
     }
     override var representedObject: Any? {
         didSet {
             // Update the view, if already loaded.
         }
     }
-    func shutOffMac(){
-        if currentState == ._SHUTOFFMAC_{
-            return;
-        }
-        btnAbort.isHidden = true//changed no abort button in shut off view 
+    func removeSubViews(){
         let viewsArr = containerView.subviews
         for subview in viewsArr {
             subview.removeFromSuperview()
         }
+    }
+    func shutOffMac(){
+        isHabitAlreadyShowed = false
+        if currentState == ._SHUTOFFMAC_{
+            return;
+        }
+        addLog(text: "Showing Shut Off screen.")
+        btnAbort.isHidden = true//changed no abort button in shut off view 
+        removeSubViews()
         containerView.addSubview(shutOffTimeVcObj!.view)
         containerView.addConstraints(subView: shutOffTimeVcObj!.view)
         currentState = ._SHUTOFFMAC_
@@ -241,51 +232,75 @@ class ViewController: NSViewController {
         }
     }
     func showFirstTimeVc(){
+        addLog(text: "Showing first time welcome activity.")
         btnAbort.isHidden = true
-        let viewsArr = containerView.subviews
-        for subview in viewsArr {
-            subview.removeFromSuperview()
-        }
+        removeSubViews()
         firstViewControllerObj?.isFirstTime = true
         containerView.addSubview(firstViewControllerObj!.view)
         containerView.addConstraints(subView: firstViewControllerObj!.view)
         currentState = ._FIRST_TIME_
         currentAction = ._START_
     }
-    
-    func showAllHabits(){
+    func showAllEveningHabits(){
+        addLog(text: "Initiate and run Evening Habits.")
         btnAbort.isHidden = false
-        let viewsArr = containerView.subviews
-        for subview in viewsArr {
-            subview.removeFromSuperview()
-        }
+        removeSubViews()
+        currentState = ._EVENING_HABIT_
+        currentAction = ._START_
         firstViewControllerObj?.isFirstTime = false
         containerView.addSubview(firstViewControllerObj!.view)
         containerView.addConstraints(subView: firstViewControllerObj!.view)
-        currentState = ._HABIT_
-        currentAction = ._START_
-    }
-    func startFirstHabit() {
-        btnAbort.isHidden = false
-        let viewsArr = containerView.subviews
-        for subview in viewsArr {
-            subview.removeFromSuperview()
+        
+        if startTime == nil || shutOffTime == nil{
+            return;
         }
-        isHabitGoing = true
+        let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
+        let shutOffdate = Calendar.current.date(bySettingHour: shutOffTime!.hour, minute: shutOffTime!.minute, second: shutOffTime!.second, of: Date())!
+        
+        let curreentDate = Date()
+        if curreentDate > shutOffdate{// iska matlab 20-24 k bich
+            let tomorrowDate = Calendar.current.date(byAdding: .day, value: 1, to: Date())!
+            let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: tomorrowDate)
+            UserDefaults.standard.set(startDate, forKey: kUserdefaultsEveningHabitsShowedTillDate)
+        }else if curreentDate < startDate{ //  iska mtlb 1 se 10 k bich ka time
+            UserDefaults.standard.set(startDate, forKey: kUserdefaultsEveningHabitsShowedTillDate)
+        }
+        
+    }
+    func showAllMorningHabits(){
+        addLog(text: "Showing morning habits.")
+        btnAbort.isHidden = false
+        removeSubViews()
+        currentState = ._MORNING_HABIT_
+        currentAction = ._START_
+        firstViewControllerObj?.isFirstTime = false
+        containerView.addSubview(firstViewControllerObj!.view)
+        containerView.addConstraints(subView: firstViewControllerObj!.view)
+    }
+    func startFirstMorningHabit() {
+        btnAbort.isHidden = false
+        removeSubViews()
         currentHabitIndex = 0
         containerView.addSubview(timerViewcontrollerObj!.view)
         containerView.addConstraints(subView: timerViewcontrollerObj!.view)
-        timerViewcontrollerObj?.startTimerHabit(durationSeconds: arrAllHabits[currentHabitIndex].durationSeconds, url: arrAllHabits[currentHabitIndex].url)
-        currentState = ._HABIT_
+        timerViewcontrollerObj?.startTimerHabit(durationSeconds: arrAllMorningHabits[currentHabitIndex].durationSeconds, url: arrAllMorningHabits[currentHabitIndex].url, name: arrAllMorningHabits[currentHabitIndex].name!)
+        currentState = ._MORNING_HABIT_
+        currentAction = ._INPROGRESS_
+    }
+    
+    func startFirstEveningHabit() {
+        btnAbort.isHidden = false
+        removeSubViews()
+        currentHabitIndex = 0
+        containerView.addSubview(timerViewcontrollerObj!.view)
+        containerView.addConstraints(subView: timerViewcontrollerObj!.view)
+        timerViewcontrollerObj?.startTimerHabit(durationSeconds: arrAllEveningHabits[currentHabitIndex].durationSeconds, url: arrAllEveningHabits[currentHabitIndex].url, name: arrAllEveningHabits[currentHabitIndex].name!)
+        currentState = ._EVENING_HABIT_
         currentAction = ._INPROGRESS_
     }
     func startBreathing() {
         btnAbort.isHidden = true
-        let viewsArr = containerView.subviews
-        for subview in viewsArr {
-            subview.removeFromSuperview()
-        }
-        isBreathingGoing = true
+        removeSubViews()
         containerView.addSubview(timerViewcontrollerObj!.view)
         containerView.addConstraints(subView: timerViewcontrollerObj!.view)
         timerViewcontrollerObj?.startBreathing()
@@ -294,60 +309,71 @@ class ViewController: NSViewController {
     }
     func breathingOver() {
         btnAbort.isHidden = true
-        let viewsArr = containerView.subviews
-        for subview in viewsArr {
-            subview.removeFromSuperview()
-        }
+        removeSubViews()
         containerView.addSubview(thirdVcObj!.view)
         containerView.addConstraints(subView: thirdVcObj!.view)
         thirdVcObj!.breathingFinished()
         currentState = ._BREATHING_
         currentAction = ._END_
     }
-    func habitOver() {
+    func morningHabitOver() {
         btnAbort.isHidden = false
-        let viewsArr = containerView.subviews
-        for subview in viewsArr {
-            subview.removeFromSuperview()
-        }
+        removeSubViews()
         containerView.addSubview(thirdVcObj!.view)
         containerView.addConstraints(subView: thirdVcObj!.view)
-        thirdVcObj!.habitFinished(index: currentHabitIndex)
-        currentState = ._HABIT_
+        thirdVcObj!.morningHabitFinished(index: currentHabitIndex)
+        currentState = ._MORNING_HABIT_
         currentAction = ._END_
+    }
+    func eveningHabitOver() {
+        btnAbort.isHidden = false
+        removeSubViews()
+        if currentHabitIndex < arrAllEveningHabits.count-1 {
+            containerView.addSubview(thirdVcObj!.view)
+            containerView.addConstraints(subView: thirdVcObj!.view)
+            thirdVcObj!.eveningHabitFinished(index: currentHabitIndex)
+            currentState = ._EVENING_HABIT_
+            currentAction = ._END_
+        }else{
+            playAfterMorningRoutineSound()
+            shutOffMac()
+        }
+        
     }
     func activityOver() {
         btnAbort.isHidden = false
-        let viewsArr = containerView.subviews
-        for subview in viewsArr {
-            subview.removeFromSuperview()
-        }
+        removeSubViews()
         containerView.addSubview(thirdVcObj!.view)
         containerView.addConstraints(subView: thirdVcObj!.view)
         thirdVcObj!.activityFinished(index: currentActivityIndex)
         currentState = ._ACTIVITY_
         currentAction = ._END_
     }
-    func changeHabit() {
+    func changeMorningHabit() {
         btnAbort.isHidden = false
-        let viewsArr = containerView.subviews
-        for subview in viewsArr {
-            subview.removeFromSuperview()
-        }
-        isHabitGoing = true
+        removeSubViews()
         currentHabitIndex += 1
         containerView.addSubview(timerViewcontrollerObj!.view)
         containerView.addConstraints(subView: timerViewcontrollerObj!.view)
-        timerViewcontrollerObj?.startTimerHabit(durationSeconds: arrAllHabits[currentHabitIndex].durationSeconds, url: arrAllHabits[currentHabitIndex].url)
-        currentState = ._HABIT_
+        timerViewcontrollerObj?.startTimerHabit(durationSeconds: arrAllMorningHabits[currentHabitIndex].durationSeconds, url: arrAllMorningHabits[currentHabitIndex].url, name: arrAllMorningHabits[currentHabitIndex].name!)
+        currentState = ._MORNING_HABIT_
         currentAction = ._INPROGRESS_
     }
+    
+    func changeEveningHabit() {
+        btnAbort.isHidden = false
+        removeSubViews()
+        currentHabitIndex += 1
+        containerView.addSubview(timerViewcontrollerObj!.view)
+        containerView.addConstraints(subView: timerViewcontrollerObj!.view)
+        timerViewcontrollerObj?.startTimerHabit(durationSeconds: arrAllEveningHabits[currentHabitIndex].durationSeconds, url: arrAllEveningHabits[currentHabitIndex].url, name: arrAllEveningHabits[currentHabitIndex].name!)
+        currentState = ._EVENING_HABIT_
+        currentAction = ._INPROGRESS_
+    }
+    
     func startCurrentActivity() {
         btnAbort.isHidden = false
-        let viewsArr = containerView.subviews
-        for subview in viewsArr {
-            subview.removeFromSuperview()
-        }
+        removeSubViews()
         containerView.addSubview(timerViewcontrollerObj!.view)
         containerView.addConstraints(subView: timerViewcontrollerObj!.view)
         if isMandatoryActivityGoing{
@@ -361,11 +387,8 @@ class ViewController: NSViewController {
     }
     func changeActivity() {
         btnAbort.isHidden = false
-        let viewsArr = containerView.subviews
-        for subview in viewsArr {
-            subview.removeFromSuperview()
-        }
-        isBreakActivitiesGoing = true
+        removeSubViews()
+      //  isBreakActivitiesGoing = true
 //        currentActivityIndex += 1
         containerView.addSubview(timerViewcontrollerObj!.view)
         containerView.addConstraints(subView: timerViewcontrollerObj!.view)
@@ -394,12 +417,8 @@ class ViewController: NSViewController {
     
     func habitsFinishedUnlockMachine() {
         btnAbort.isHidden = true
-        let viewsArr = containerView.subviews
-        for subview in viewsArr {
-            subview.removeFromSuperview()
-        }
+        removeSubViews()
         lblMessage.isHidden = false
-        isHabitGoing = false
         currentHabitIndex = -1
         self.perform(#selector(unlockMachine), with: nil, afterDelay: 3)
         currentState = ._NOTHING_
@@ -411,6 +430,7 @@ class ViewController: NSViewController {
     }
     var breakTimer: Timer?
     func setActivityTimer(){
+        addLog(text: "Break Activity Timer reset Done.")
         if arrAllbreakActivities.count != 0 {
             DispatchQueue.global().async {
                 print("breakAfterMinutesxxxx")
@@ -426,37 +446,45 @@ class ViewController: NSViewController {
     }
     func activityFinishedUnlockMachine() {
         btnAbort.isHidden = true
-        let viewsArr = containerView.subviews
-        for subview in viewsArr {
-            subview.removeFromSuperview()
-        }
+        removeSubViews()
         //        lblMessage.isHidden = false
-        isBreakActivitiesGoing = false
+//        isBreakActivitiesGoing = false
         currentActivityIndex = -1
         unlockMachine()
         currentState = ._NOTHING_
     }
     func breathingFinishedUnlockMachine(){
         btnAbort.isHidden = true
-        let viewsArr = containerView.subviews
-        for subview in viewsArr {
-            subview.removeFromSuperview()
-        }
+        removeSubViews()
         lblMessage.isHidden = false
-        isBreathingGoing = false
+//        isBreathingGoing = false
         self.perform(#selector(unlockMachine), with: nil, afterDelay: 3)
         currentState = ._NOTHING_
     }
     
     @objc func startBreakActivities() {
         DispatchQueue.main.async {
-            if avmonitor.currentState == NSControl.StateValue.on{
+            addLog(text: "Initiating Break Activities")
+            if avmonitor.isMicOn(){
                 self.setActivityTimer()
+                addLog(text: "Mic is in use, Break Activities cancelled.")
                 return;
             }
-            if currentState == ._SHUTOFFMAC_ || currentState == ._ABORT_{
+            if avmonitor.isACameraOn(){
+                self.setActivityTimer()
+                addLog(text: "Camera is in use, Break Activities cancelled.")
                 return;
             }
+            if currentState == ._SHUTOFFMAC_{
+                addLog(text: "App is in shutoff state, Break Activities cancelled.")
+                return;
+            }
+            if currentState == ._ABORT_{
+                addLog(text: "App is disabled, Break Activities cancelled.")
+                return;
+            }
+            
+            
             let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
             let shutOffdate = Calendar.current.date(bySettingHour: shutOffTime!.hour, minute: shutOffTime!.minute, second: shutOffTime!.second, of: Date())!
             
@@ -467,7 +495,7 @@ class ViewController: NSViewController {
             self.breakTimer = nil
             if arrAllbreakActivities.count != 0 {
                 self.btnAbort.isHidden = false
-                isBreakActivitiesGoing = true
+//                isBreakActivitiesGoing = true
                 isAnyMandatoryActivityIncluded = false
                 arrActivitiesExcludeInEveryBreak.removeAll()
                 arrActivitiesIncludeInEveryBreak.removeAll()
@@ -490,10 +518,7 @@ class ViewController: NSViewController {
                         currentActivityIndex = Int(arc4random_uniform(UInt32(arrAllbreakActivities.count)))
                     }
                 }
-                let viewsArr = self.containerView.subviews
-                for subview in viewsArr {
-                    subview.removeFromSuperview()
-                }
+                self.removeSubViews()
                 self.containerView.addSubview(thirdVcObj!.view)
                 self.containerView.addConstraints(subView: thirdVcObj!.view)
                 thirdVcObj?.startBreakActivity()
@@ -506,10 +531,7 @@ class ViewController: NSViewController {
     
     func emergencyStartDone(){
         btnAbort.isHidden = true
-        let viewsArr = containerView.subviews
-        for subview in viewsArr {
-            subview.removeFromSuperview()
-        }
+        removeSubViews()
         currentState = ._NOTHING_
         mainWindowControllerObj?.window?.setIsVisible(false)
         

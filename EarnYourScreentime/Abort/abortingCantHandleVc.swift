@@ -19,11 +19,14 @@ class abortingCantHandleVc: NSViewController, NSTextViewDelegate {
     @IBOutlet weak var lblDescription: NSTextField!
     @IBOutlet weak var lblSubtitle: NSTextField!
     @IBOutlet weak var lblDescription3: NSTextField!
+    @IBOutlet weak var imgViewGif: NSImageView!
     
     var isViewStartingSmall = false
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
+        imgViewGif.image = NSImage(named: "Crying_small")
+        imgViewGif.animates = true
         textViewFeedback.delegate = self
         lblTitle.stringValue = "Aborting.."
         lblTitleEmail.stringValue = "Your Email (if you want us to reply):"

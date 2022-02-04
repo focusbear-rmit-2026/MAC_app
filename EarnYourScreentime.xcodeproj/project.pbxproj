@@ -9,7 +9,6 @@
 /* Begin PBXBuildFile section */
 		8F050A0927842B8400F3CE17 /* thirdVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F050A0827842B8400F3CE17 /* thirdVc.swift */; };
 		8F050A0E278467B100F3CE17 /* addLoginitem.m in Sources */ = {isa = PBXBuildFile; fileRef = 8F050A0D278467B100F3CE17 /* addLoginitem.m */; };
-		8F0D2B43279C37B9000F860F /* schema.json in Resources */ = {isa = PBXBuildFile; fileRef = 8F0D2B42279C37B9000F860F /* schema.json */; };
 		8F107D22278C4A1E00280B37 /* abortingCantHandleVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F107D21278C4A1E00280B37 /* abortingCantHandleVc.swift */; };
 		8F4BD8C427883FBE00ABAEF5 /* NSEventModifierFlags+HotKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F4BD8BF27883FBE00ABAEF5 /* NSEventModifierFlags+HotKey.swift */; };
 		8F4BD8C527883FBE00ABAEF5 /* KeyCombo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F4BD8C027883FBE00ABAEF5 /* KeyCombo.swift */; };
@@ -20,12 +19,14 @@
 		8F54E9302785667000CC4E7B /* selectJsonWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F54E92F2785667000CC4E7B /* selectJsonWindowController.swift */; };
 		8F7DCC002796B55800EE3282 /* config.json in Resources */ = {isa = PBXBuildFile; fileRef = 8F7DCBFF2796B55800EE3282 /* config.json */; };
 		8F7DCC032796E8D200EE3282 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8F7DCC022796E8D200EE3282 /* WebKit.framework */; };
+		8F8A53F527AA4ABB00A01E2D /* Waking up _ SMall.gif in Resources */ = {isa = PBXBuildFile; fileRef = 8F8A53F127AA4ABB00A01E2D /* Waking up _ SMall.gif */; };
+		8F8A53F627AA4ABB00A01E2D /* Crying_small.gif in Resources */ = {isa = PBXBuildFile; fileRef = 8F8A53F227AA4ABB00A01E2D /* Crying_small.gif */; };
+		8F8A53F727AA4ABB00A01E2D /* Yawn_small.gif in Resources */ = {isa = PBXBuildFile; fileRef = 8F8A53F327AA4ABB00A01E2D /* Yawn_small.gif */; };
+		8F8A53F827AA4ABB00A01E2D /* Smile _Small.gif in Resources */ = {isa = PBXBuildFile; fileRef = 8F8A53F427AA4ABB00A01E2D /* Smile _Small.gif */; };
 		8F9A5A9627885A6D009121E3 /* abortingCountDownVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F9A5A9527885A6D009121E3 /* abortingCountDownVc.swift */; };
 		8F9A5A98278863B9009121E3 /* abortingConfirmVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F9A5A97278863B9009121E3 /* abortingConfirmVc.swift */; };
 		8F9A5A9A27887889009121E3 /* abortDoneVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F9A5A9927887889009121E3 /* abortDoneVc.swift */; };
 		8F9BB8B92787307D00BB25D4 /* shutOffTimeVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F9BB8B82787307D00BB25D4 /* shutOffTimeVc.swift */; };
-		8FA18F742797DB6C00BFC4BF /* objfile.mm in Sources */ = {isa = PBXBuildFile; fileRef = 8FA18F722797DB6C00BFC4BF /* objfile.mm */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
-		8FA18F762797E0E900BFC4BF /* IsCameraOn.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FA18F752797E0E900BFC4BF /* IsCameraOn.swift */; };
 		8FAC6C8727805F6E008A4180 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FAC6C8627805F6D008A4180 /* AppDelegate.swift */; };
 		8FAC6C8927805F6E008A4180 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FAC6C8827805F6E008A4180 /* ViewController.swift */; };
 		8FAC6C8B27805F70008A4180 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8FAC6C8A27805F70008A4180 /* Assets.xcassets */; };
@@ -39,10 +40,6 @@
 		8FCD9F1627929B660060E73D /* everyActivity.wav in Resources */ = {isa = PBXBuildFile; fileRef = 8FCD9F1527929B660060E73D /* everyActivity.wav */; };
 		8FCD9F1827929BC10060E73D /* afterMorningRoutine.wav in Resources */ = {isa = PBXBuildFile; fileRef = 8FCD9F1727929BC10060E73D /* afterMorningRoutine.wav */; };
 		8FDA8591279A8E83008AD6AA /* AVMonitor.m in Sources */ = {isa = PBXBuildFile; fileRef = 8FDA8590279A8E82008AD6AA /* AVMonitor.m */; };
-		8FDA8595279A8F1D008AD6AA /* Client.m in Sources */ = {isa = PBXBuildFile; fileRef = 8FDA8593279A8F1C008AD6AA /* Client.m */; };
-		8FF16E52279A91A500E4A8E6 /* Event.m in Sources */ = {isa = PBXBuildFile; fileRef = 8FF16E51279A91A500E4A8E6 /* Event.m */; };
-		8FF16E55279A91C200E4A8E6 /* LogMonitor.m in Sources */ = {isa = PBXBuildFile; fileRef = 8FF16E53279A91C100E4A8E6 /* LogMonitor.m */; };
-		8FF16E58279A91FF00E4A8E6 /* Utilities.m in Sources */ = {isa = PBXBuildFile; fileRef = 8FF16E57279A91FF00E4A8E6 /* Utilities.m */; };
 		A71CD10652799C9D4CB6F1B4 /* Pods_Earn_Your_Screentime.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 783C7916B94294D68C24A686 /* Pods_Earn_Your_Screentime.framework */; };
 /* End PBXBuildFile section */
 
@@ -65,7 +62,6 @@
 		8F0D2AEA279C327D000F860F /* Pods-Earn Your Screentime-frameworks-Debug-output-files.xcfilelist */ = {isa = PBXFileReference; lastKnownFileType = text.xcfilelist; path = "Pods-Earn Your Screentime-frameworks-Debug-output-files.xcfilelist"; sourceTree = "<group>"; };
 		8F0D2AEB279C327D000F860F /* Pods-Earn Your Screentime-frameworks.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "Pods-Earn Your Screentime-frameworks.sh"; sourceTree = "<group>"; };
 		8F0D2AEC279C327D000F860F /* Pods-Earn Your Screentime-frameworks-Debug-input-files.xcfilelist */ = {isa = PBXFileReference; lastKnownFileType = text.xcfilelist; path = "Pods-Earn Your Screentime-frameworks-Debug-input-files.xcfilelist"; sourceTree = "<group>"; };
-		8F0D2B42279C37B9000F860F /* schema.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = schema.json; sourceTree = "<group>"; };
 		8F107D21278C4A1E00280B37 /* abortingCantHandleVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = abortingCantHandleVc.swift; sourceTree = "<group>"; };
 		8F4BD8BF27883FBE00ABAEF5 /* NSEventModifierFlags+HotKey.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "NSEventModifierFlags+HotKey.swift"; sourceTree = "<group>"; };
 		8F4BD8C027883FBE00ABAEF5 /* KeyCombo.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = KeyCombo.swift; sourceTree = "<group>"; };
@@ -78,12 +74,14 @@
 		8F69D1E32796A6CE00DB3EFD /* NetworkExtension.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = NetworkExtension.framework; path = System/Library/Frameworks/NetworkExtension.framework; sourceTree = SDKROOT; };
 		8F7DCBFF2796B55800EE3282 /* config.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = config.json; sourceTree = "<group>"; };
 		8F7DCC022796E8D200EE3282 /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
+		8F8A53F127AA4ABB00A01E2D /* Waking up _ SMall.gif */ = {isa = PBXFileReference; lastKnownFileType = image.gif; path = "Waking up _ SMall.gif"; sourceTree = "<group>"; };
+		8F8A53F227AA4ABB00A01E2D /* Crying_small.gif */ = {isa = PBXFileReference; lastKnownFileType = image.gif; path = Crying_small.gif; sourceTree = "<group>"; };
+		8F8A53F327AA4ABB00A01E2D /* Yawn_small.gif */ = {isa = PBXFileReference; lastKnownFileType = image.gif; path = Yawn_small.gif; sourceTree = "<group>"; };
+		8F8A53F427AA4ABB00A01E2D /* Smile _Small.gif */ = {isa = PBXFileReference; lastKnownFileType = image.gif; path = "Smile _Small.gif"; sourceTree = "<group>"; };
 		8F9A5A9527885A6D009121E3 /* abortingCountDownVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = abortingCountDownVc.swift; sourceTree = "<group>"; };
 		8F9A5A97278863B9009121E3 /* abortingConfirmVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = abortingConfirmVc.swift; sourceTree = "<group>"; };
 		8F9A5A9927887889009121E3 /* abortDoneVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = abortDoneVc.swift; sourceTree = "<group>"; };
 		8F9BB8B82787307D00BB25D4 /* shutOffTimeVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = shutOffTimeVc.swift; sourceTree = "<group>"; };
-		8FA18F722797DB6C00BFC4BF /* objfile.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = objfile.mm; sourceTree = "<group>"; };
-		8FA18F752797E0E900BFC4BF /* IsCameraOn.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = IsCameraOn.swift; sourceTree = "<group>"; };
 		8FAC6C8327805F6D008A4180 /* Earn Your Screentime.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Earn Your Screentime.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		8FAC6C8627805F6D008A4180 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		8FAC6C8827805F6E008A4180 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -100,15 +98,6 @@
 		8FCD9F1727929BC10060E73D /* afterMorningRoutine.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = afterMorningRoutine.wav; sourceTree = "<group>"; };
 		8FDA858F279A8E82008AD6AA /* AVMonitor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVMonitor.h; sourceTree = "<group>"; };
 		8FDA8590279A8E82008AD6AA /* AVMonitor.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVMonitor.m; sourceTree = "<group>"; };
-		8FDA8592279A8EB9008AD6AA /* Consts.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Consts.h; sourceTree = "<group>"; };
-		8FDA8593279A8F1C008AD6AA /* Client.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Client.m; sourceTree = "<group>"; };
-		8FDA8594279A8F1C008AD6AA /* Client.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Client.h; sourceTree = "<group>"; };
-		8FF16E50279A91A500E4A8E6 /* Event.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Event.h; sourceTree = "<group>"; };
-		8FF16E51279A91A500E4A8E6 /* Event.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Event.m; sourceTree = "<group>"; };
-		8FF16E53279A91C100E4A8E6 /* LogMonitor.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LogMonitor.m; sourceTree = "<group>"; };
-		8FF16E54279A91C200E4A8E6 /* LogMonitor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LogMonitor.h; sourceTree = "<group>"; };
-		8FF16E56279A91FF00E4A8E6 /* Utilities.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Utilities.h; sourceTree = "<group>"; };
-		8FF16E57279A91FF00E4A8E6 /* Utilities.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Utilities.m; sourceTree = "<group>"; };
 		E215A3C9C7A8C6908E370CDB /* Pods-Earn Your Screentime.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Earn Your Screentime.debug.xcconfig"; path = "Target Support Files/Pods-Earn Your Screentime/Pods-Earn Your Screentime.debug.xcconfig"; sourceTree = "<group>"; };
 		F50080F183E6F7170E0E7684 /* Pods-Earn Your Screentime.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Earn Your Screentime.release.xcconfig"; path = "Target Support Files/Pods-Earn Your Screentime/Pods-Earn Your Screentime.release.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -190,6 +179,17 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
+		8F8A53F027AA4ABB00A01E2D /* gifs */ = {
+			isa = PBXGroup;
+			children = (
+				8F8A53F127AA4ABB00A01E2D /* Waking up _ SMall.gif */,
+				8F8A53F227AA4ABB00A01E2D /* Crying_small.gif */,
+				8F8A53F327AA4ABB00A01E2D /* Yawn_small.gif */,
+				8F8A53F427AA4ABB00A01E2D /* Smile _Small.gif */,
+			);
+			path = gifs;
+			sourceTree = "<group>";
+		};
 		8F9A5A94278853A0009121E3 /* Abort */ = {
 			isa = PBXGroup;
 			children = (
@@ -231,19 +231,8 @@
 				8FAC6C9E2780748D008A4180 /* tblCellHabits.swift */,
 				8FAC6C982780671E008A4180 /* globalFile.swift */,
 				8F9BB8B82787307D00BB25D4 /* shutOffTimeVc.swift */,
-				8FA18F752797E0E900BFC4BF /* IsCameraOn.swift */,
-				8FA18F722797DB6C00BFC4BF /* objfile.mm */,
-				8FF16E56279A91FF00E4A8E6 /* Utilities.h */,
-				8FF16E57279A91FF00E4A8E6 /* Utilities.m */,
-				8FF16E50279A91A500E4A8E6 /* Event.h */,
-				8FF16E51279A91A500E4A8E6 /* Event.m */,
-				8FDA8594279A8F1C008AD6AA /* Client.h */,
-				8FDA8593279A8F1C008AD6AA /* Client.m */,
-				8FDA8592279A8EB9008AD6AA /* Consts.h */,
 				8FDA858F279A8E82008AD6AA /* AVMonitor.h */,
 				8FDA8590279A8E82008AD6AA /* AVMonitor.m */,
-				8FF16E54279A91C200E4A8E6 /* LogMonitor.h */,
-				8FF16E53279A91C100E4A8E6 /* LogMonitor.m */,
 				8F9A5A94278853A0009121E3 /* Abort */,
 				8F4BD8BE27883FBE00ABAEF5 /* HotKey */,
 				8F54E92C2785660B00CC4E7B /* selectJson */,
@@ -254,8 +243,8 @@
 				8FCD9F1727929BC10060E73D /* afterMorningRoutine.wav */,
 				8FAC6C9A2780681A008A4180 /* settings.json */,
 				8F7DCBFF2796B55800EE3282 /* config.json */,
-				8F0D2B42279C37B9000F860F /* schema.json */,
 				8FAC6C8F27805F70008A4180 /* Info.plist */,
+				8F8A53F027AA4ABB00A01E2D /* gifs */,
 			);
 			path = EarnYourScreentime;
 			sourceTree = "<group>";
@@ -330,11 +319,14 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				8F0D2B43279C37B9000F860F /* schema.json in Resources */,
+				8F8A53F627AA4ABB00A01E2D /* Crying_small.gif in Resources */,
 				8FAC6C9B2780681A008A4180 /* settings.json in Resources */,
+				8F8A53F827AA4ABB00A01E2D /* Smile _Small.gif in Resources */,
 				8FCD9F1827929BC10060E73D /* afterMorningRoutine.wav in Resources */,
 				8FCD9F1627929B660060E73D /* everyActivity.wav in Resources */,
+				8F8A53F727AA4ABB00A01E2D /* Yawn_small.gif in Resources */,
 				8FAC6C8B27805F70008A4180 /* Assets.xcassets in Resources */,
+				8F8A53F527AA4ABB00A01E2D /* Waking up _ SMall.gif in Resources */,
 				8FAC6C8E27805F70008A4180 /* Main.storyboard in Resources */,
 				8F7DCC002796B55800EE3282 /* config.json in Resources */,
 			);
@@ -399,23 +391,17 @@
 				8FAC6CA127808125008A4180 /* timerViewcontroller.swift in Sources */,
 				8F107D22278C4A1E00280B37 /* abortingCantHandleVc.swift in Sources */,
 				8FAC6C9D27806DCB008A4180 /* firstViewController.swift in Sources */,
-				8FF16E55279A91C200E4A8E6 /* LogMonitor.m in Sources */,
 				8F4BD8C427883FBE00ABAEF5 /* NSEventModifierFlags+HotKey.swift in Sources */,
 				8F54E92E2785662A00CC4E7B /* selectJsonVc.swift in Sources */,
 				8F4BD8C827883FBE00ABAEF5 /* HotKey.swift in Sources */,
 				8F050A0927842B8400F3CE17 /* thirdVc.swift in Sources */,
-				8FDA8595279A8F1D008AD6AA /* Client.m in Sources */,
 				8FAC6C8927805F6E008A4180 /* ViewController.swift in Sources */,
-				8FF16E52279A91A500E4A8E6 /* Event.m in Sources */,
 				8F4BD8C627883FBE00ABAEF5 /* Key.swift in Sources */,
-				8FA18F762797E0E900BFC4BF /* IsCameraOn.swift in Sources */,
 				8F9A5A9A27887889009121E3 /* abortDoneVc.swift in Sources */,
-				8FA18F742797DB6C00BFC4BF /* objfile.mm in Sources */,
 				8F050A0E278467B100F3CE17 /* addLoginitem.m in Sources */,
 				8F4BD8C727883FBE00ABAEF5 /* HotKeysController.swift in Sources */,
 				8FDA8591279A8E83008AD6AA /* AVMonitor.m in Sources */,
 				8FAC6C972780612B008A4180 /* mainWindowController.swift in Sources */,
-				8FF16E58279A91FF00E4A8E6 /* Utilities.m in Sources */,
 				8FAC6C8727805F6E008A4180 /* AppDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -556,7 +542,7 @@
 				CODE_SIGN_ENTITLEMENTS = EarnYourScreentime/EarnYourScreentime.entitlements;
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 10;
+				CURRENT_PROJECT_VERSION = 15;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = NO;
 				INFOPLIST_FILE = EarnYourScreentime/Info.plist;
@@ -583,7 +569,7 @@
 				CODE_SIGN_ENTITLEMENTS = EarnYourScreentime/EarnYourScreentime.entitlements;
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 10;
+				CURRENT_PROJECT_VERSION = 15;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = NO;
 				INFOPLIST_FILE = EarnYourScreentime/Info.plist;

@@ -7,81 +7,97 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "1DBC3B76-BD8F-42B8-8CC5-64F6C3AEBAF4"
+            uuid = "C0BC2048-EF35-4D13-9DF9-8E25E8BAC55F"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "EarnYourScreentime/selectJson/selectJsonVc.swift"
+            filePath = "EarnYourScreentime/AppDelegate.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "131"
-            endingLineNumber = "131"
-            landmarkName = "btnSaveClicked(_:)"
+            startingLineNumber = "566"
+            endingLineNumber = "566"
+            landmarkName = "shutOffMac()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "F1EF5FCC-7F1A-4DA3-8B78-30AA7EF13D3F"
+            uuid = "8D728CC9-74C3-4FC0-B3B4-049D2E507AD0"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "EarnYourScreentime/selectJson/selectJsonVc.swift"
+            filePath = "EarnYourScreentime/AppDelegate.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "184"
-            endingLineNumber = "184"
-            landmarkName = "btnSaveClicked(_:)"
+            startingLineNumber = "538"
+            endingLineNumber = "538"
+            landmarkName = "shutOffMac()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "29E2CF84-1317-4279-BC3F-9F0ED0CDEEC3"
+            uuid = "CB5639CE-0E72-42C5-BCBA-CDDDFAC831AF"
             shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "EarnYourScreentime/AVMonitor.m"
+            filePath = "EarnYourScreentime/AppDelegate.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1253"
-            endingLineNumber = "1253"
-            landmarkName = "-handleEvent:"
+            startingLineNumber = "497"
+            endingLineNumber = "497"
+            landmarkName = "backgroundThread()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "710F3B3E-4CB4-4BA3-8CBB-DD434899C9F2"
-            shouldBeEnabled = "Yes"
+            uuid = "6E2C201F-3D68-4B5B-B727-D9BE63EF3C43"
+            shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "EarnYourScreentime/selectJson/selectJsonVc.swift"
+            filePath = "EarnYourScreentime/AppDelegate.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "145"
-            endingLineNumber = "145"
-            landmarkName = "btnSaveClicked(_:)"
+            startingLineNumber = "490"
+            endingLineNumber = "490"
+            landmarkName = "backgroundThread()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "F3E889D4-71F4-463B-8263-B12AB5C3A126"
+            uuid = "5F510698-1B98-4665-A714-5B641E3C1148"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "EarnYourScreentime/AppDelegate.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "46"
+            endingLineNumber = "46"
+            landmarkName = "applicationWillFinishLaunching(_:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "D756A6A3-AD95-4A6E-B2CD-C5E5401F4442"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "EarnYourScreentime/globalFile.swift"
+            filePath = "EarnYourScreentime/AppDelegate.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "429"
-            endingLineNumber = "429"
-            landmarkName = "readConfigFile()"
-            landmarkType = "9">
+            startingLineNumber = "350"
+            endingLineNumber = "350"
+            landmarkName = "checkWindowState()"
+            landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
    </Breakpoints>

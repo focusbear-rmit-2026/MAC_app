@@ -2,11 +2,10 @@
     "morningHabits": [
         { "name": "Yoga", "durationSeconds": 300 },
         { "name": "Journalling", "durationSeconds": 300 },
-        {"name": "Meditation", "durationSeconds": 300 }
+        { "name": "Meditation", "durationSeconds": 300 }
     ],
     "breakAfterMinutes": 15,
     "startTime": "10:15",
-    "showEveryBreak": false,
     "breakActivities": [
         { "name": "Pushups", "durationSeconds": 30 },
         { "name": "Chores", "durationSeconds": 30 }

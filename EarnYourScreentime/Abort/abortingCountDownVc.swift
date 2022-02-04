@@ -10,6 +10,7 @@ import Cocoa
 
 class abortingCountDownVc: NSViewController {
     
+    @IBOutlet weak var imgViewGif: NSImageView!
     @IBOutlet weak var lblTitle: NSTextField!
     @IBOutlet weak var lblSeconds: NSTextField!
     @IBOutlet weak var lblSubtile: NSTextField!
@@ -27,6 +28,8 @@ class abortingCountDownVc: NSViewController {
         super.viewDidLoad()
         // Do view setup here.
 
+        imgViewGif.image = NSImage(named: "Crying_small")
+        imgViewGif.animates = true
         lblEmailId.stringValue = emailID
         if let abortInfo = configjson.value(forKey: "abortInfo") as? NSDictionary{
             if let abortingTitle = abortInfo.value(forKey: "abortingTitle") as? String{

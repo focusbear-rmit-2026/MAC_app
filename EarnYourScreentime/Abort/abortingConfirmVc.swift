@@ -32,6 +32,7 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
     @IBOutlet weak var boxAppBroken: NSBox!
     @IBOutlet weak var boxEmergency: NSBox!
     @IBOutlet weak var popUpBtnReasons: NSPopUpButton!
+    @IBOutlet weak var imgViewGif: NSImageView!
     //    @IBOutlet weak var lblConfirmAbort: NSTextField!
 //    @IBOutlet weak var btnAbortCancel: NSButton!
 //    @IBOutlet weak var textField: NSTextField!
@@ -43,6 +44,8 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
     var allReasons = [String]()
     override func viewDidLoad() {
         super.viewDidLoad()
+        imgViewGif.image = NSImage(named: "Crying_small")
+        imgViewGif.animates = true
         // Do view setup here.
 //        self.textField.delegate = self
 //        lblConfirmAbort.isHidden = true
@@ -303,6 +306,7 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
                 DispatchQueue.main.async {
                     let date = Date().addingTimeInterval(4 * 60 * 60)//Calendar.current.date(bySetting: .hour, value: 4, of: Date())
                     UserDefaults.standard.set(date, forKey: kUserdefaults4HourReActivateTime)
+                    addLog(text: "App Deactivated for 4 hours - I've got an emergency")
                     getAbortJsonToUpload(emailAddress: "", feedback: "", abortReason: "I've got an emergency", completionHandler: {dic in
                         DispatchQueue.main.async {
                             mainViewControllerObj?.disableApp()
@@ -357,9 +361,14 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
             return
         }
         //        mutableDic
-        for i in 0..<arrAllHabits.count{
-            if arrAllHabits[i].durationSeconds > 30{
-                arrAllHabits[i].durationSeconds = 30
+        for i in 0..<arrAllMorningHabits.count{
+            if arrAllMorningHabits[i].durationSeconds > 30{
+                arrAllMorningHabits[i].durationSeconds = 30
+            }
+        }
+        for i in 0..<arrAllEveningHabits.count{
+            if arrAllEveningHabits[i].durationSeconds > 30{
+                arrAllEveningHabits[i].durationSeconds = 30
             }
         }
         for i in 0..<arrAllbreakActivities.count{
@@ -367,23 +376,52 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
                 arrAllbreakActivities[i].durationSeconds = 30
             }
         }
-        var totalTime = arrAllHabits.count * 30
+        var totalTime = arrAllMorningHabits.count * 30
         var isAnyHabitRemoved = false
         while totalTime > 300{
             isAnyHabitRemoved = true
-            arrAllHabits.removeLast()
-            totalTime = arrAllHabits.count * 30
+            arrAllMorningHabits.removeLast()
+            totalTime = arrAllMorningHabits.count * 30
         }
         var arrHabitsDictionary = [NSMutableDictionary]()
-        for habit in arrAllHabits{
+        for habit in arrAllMorningHabits{
             let dic = ["name": habit.name!, "durationSeconds": habit.durationSeconds!] as NSMutableDictionary
+            if let url = habit.url{
+                dic["videoUrl"] = url
+            }
             arrHabitsDictionary.append(dic)
         }
         mutableDic["morningHabits"] = arrHabitsDictionary
+     
+        
+        
+        totalTime = arrAllEveningHabits.count * 30
+        while totalTime > 300{
+            isAnyHabitRemoved = true
+            arrAllEveningHabits.removeLast()
+            totalTime = arrAllEveningHabits.count * 30
+        }
+        
+        var arrEveningHabitsDictionary = [NSMutableDictionary]()
+        for habit in arrAllEveningHabits{
+            let dic = ["name": habit.name!, "durationSeconds": habit.durationSeconds!] as NSMutableDictionary
+            if let url = habit.url{
+                dic["videoUrl"] = url
+            }
+            arrEveningHabitsDictionary.append(dic)
+        }
+        mutableDic["eveningHabits"] = arrEveningHabitsDictionary
+        
         
         var arrActivitiesDictionary = [NSMutableDictionary]()
         for activity in arrAllbreakActivities{
             let dic = ["name": activity.name!, "durationSeconds": activity.durationSeconds!] as NSMutableDictionary
+            if let url = activity.url{
+                dic["videoUrl"] = url
+            }
+            if let includeInEveryBreak = activity.IncludeInEveryBreak{
+                dic["includeInEveryBreak"] = includeInEveryBreak
+            }
             arrActivitiesDictionary.append(dic)
         }
         mutableDic["breakActivities"] = arrActivitiesDictionary
@@ -422,109 +460,5 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
 }
 
 
-func getAbortJsonToUpload(emailAddress:String?, feedback:String, abortReason:String,completionHandler: @escaping(_ result: NSDictionary) -> ()) {
-    var settingsJson = NSDictionary()
-    if let stringDic = UserDefaults.standard.object(forKey: kUserdefaultsSelectedJson) as? String {
-        if let data = stringDic.data(using: String.Encoding.utf8) {
-            do {
-                settingsJson = try (JSONSerialization.jsonObject(with: data, options: []) as? NSDictionary ?? [:])
-            } catch let error as NSError {
-                print(error)
-            }
-        }
-        
-    }else {
-        if let path = Bundle.main.path(forResource: "settings", ofType: "json") {
-            let url = URL(fileURLWithPath: path)
-            do {
-                let data = try Data(contentsOf: url, options: .mappedIfSafe)
-                do {
-                    if let dicResult: NSDictionary = try JSONSerialization.jsonObject(with: data, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary {
-                        settingsJson = dicResult
-                    }
-                }catch {
-                    print(error)
-                }
-            } catch {
-                // handle error
-            }
-        }
-    }
-    
-    let systemVersion = ProcessInfo().operatingSystemVersion
-    let version = "\(systemVersion.majorVersion).\(systemVersion.minorVersion).\(systemVersion.patchVersion)"
-    
-    let firstRunDate = UserDefaults.standard.object(forKey: kUserdefaultsFirstRunDate) as? Date ?? Date()
-    let formatter = DateFormatter()
-    formatter.dateFormat = "yyyy-MM-dd"
-    let myDateString = formatter.string(from: firstRunDate)
-    
-    let jsonResult:NSMutableDictionary = ["abortReason":abortReason, "settingsJSON":settingsJson, "macOSVersion":version, "feedback":feedback, "usageStartDate":myDateString]
-    
-    if emailAddress != nil{
-        jsonResult["emailAddress"] = emailAddress!
-    }
-    
-    
-    
-    let responsePath = webhookUrl
-    if let myUrl = NSURL(string: responsePath){
-        
-        let request = NSMutableURLRequest(url:myUrl as URL);
-        request.httpMethod = "POST";
-        
-        var json = jsonResult//[[String: String]]()
-        
-        
-        
-        
-        
-        let jsonData = try? JSONSerialization.data(withJSONObject: json)
-        //         let boundary = generateBoundaryString()
-        //         let contentData = createBodyWithParameters(imageDataKey: folderData as? NSData ?? NSData(), boundary: boundary, jsonData: jsonData) as Data
-        
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = jsonData
-        
-        
-        let task = URLSession.shared.dataTask(with: request as URLRequest) {
-            data, response, error in
-            
-            // print(response)
-            if let httpResponse = response as? HTTPURLResponse {
-                if httpResponse.statusCode == 200{
-                    
-                    
-                    
-                    if data != nil{
-                        
-                        let status = String(data: data!, encoding: .utf8)!
-                        if status == "1"{
-                            print("success")
-                            
-                        }else{
-                            
-                        }
-                    }
-                }else{
-                    
-                }
 
-            }
-            //            isUploadingPopupResponse = false
-            if error != nil {
-                
-                return
-            }
-            completionHandler(jsonResult)
-            return;
-        }
-        task.resume()
-    }else{
-        //        isUploadingPopupResponse = false
-        completionHandler(jsonResult)
-    }
-    
-
-}
 

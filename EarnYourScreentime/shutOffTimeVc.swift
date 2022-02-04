@@ -10,6 +10,8 @@ import Cocoa
 
 class shutOffTimeVc: NSViewController {
     
+    @IBOutlet weak var titleCenter: NSLayoutConstraint!
+    @IBOutlet weak var imgViewGif: NSImageView!
     @IBOutlet weak var lbltimer: NSTextField!
     @IBOutlet weak var scrollView: NSScrollView!
     @IBOutlet weak var lbl2: NSTextField!
@@ -29,6 +31,9 @@ class shutOffTimeVc: NSViewController {
         resetView()
     }
     func resetView(){
+        titleCenter.constant = 80
+        imgViewGif.image = NSImage(named: "Yawn_small")
+        imgViewGif.animates = true
         lblTitle.stringValue = "Time to wind down"
         btnGetAccessNow.title = "Get access now"
         lblSubTitle.stringValue = "You told me you wanted to stay off your computer from \(shutOffTime?.hour ?? 0):\(shutOffTime?.minute ?? 0) to \(startTime?.hour ?? 0):\(startTime?.minute ?? 0). Enjoy your evening and sleep well. Look forward to helping you with your morning routine tomorrow."
@@ -57,6 +62,7 @@ class shutOffTimeVc: NSViewController {
         step = 0
     }
     @IBAction func btnGetAccessNowClicked(_ sender: Any) {
+        titleCenter.constant = 0
         btnGetAccessNow.isHidden = true
         scrollView.isHidden = false
         lbl2.isHidden = false
@@ -85,6 +91,7 @@ class shutOffTimeVc: NSViewController {
             }
 
         }
+        imgViewGif.image = nil
         step = 1
         startTimer(duration: 30)
     }
@@ -95,7 +102,7 @@ class shutOffTimeVc: NSViewController {
             mainViewControllerObj?.shutOffMac()
             timer?.invalidate()
         }else if step == 2{
-
+            titleCenter.constant = 0
             getAbortJsonToUpload(emailAddress: "", feedback: textView.string, abortReason: "Shutdown skipped", completionHandler: {dic in
                 DispatchQueue.main.async {
                     

@@ -10,6 +10,7 @@ import Cocoa
 import JSONSchema
 class selectJsonVc: NSViewController, NSTextViewDelegate {
     
+    @IBOutlet weak var loader: NSProgressIndicator!
     @IBOutlet weak var btnCancel: cursorButton!
     @IBOutlet weak var lblVisitUrl: NSTextField!
     @IBOutlet weak var lblTitle: NSTextField!
@@ -119,68 +120,94 @@ class selectJsonVc: NSViewController, NSTextViewDelegate {
         self.view.window?.close()
     }
     @IBAction func btnSaveClicked(_ sender: Any) {
-        var text = textViewJson.string.replacingOccurrences(of: "”", with: "\"")
-        text = text.replacingOccurrences(of: "“", with: "\"")
-        textViewJson.string = text
-
-
-        UserDefaults.standard.set(textViewJson.string, forKey: kUserdefaultsSelectedJson)
-        appdelegate?.quitAndRestartApp()
-        
-        return;
-        if let data = textViewJson.string.data(using: String.Encoding.utf8) {
-            
-            do {
-                let jsonResult:NSDictionary = try (JSONSerialization.jsonObject(with: data, options: []) as? NSDictionary ?? [:])
+        isGettingSchema = true
+        btnSave.isEnabled = false
+        btnCancel.isEnabled = false
+        loader.startAnimation(self)
+        getSchemsFile(completionHandler: {dic in
+            DispatchQueue.main.async {
+                isGettingSchema = false
+                self.btnSave.isEnabled = true
+                self.btnCancel.isEnabled = true
+                self.loader.stopAnimation(self)
                 
-                if let path = Bundle.main.path(forResource: "schema", ofType: "json") {
-                    let url = URL(fileURLWithPath: path)
-                    do {
-                        let data = try Data(contentsOf: url, options: .mappedIfSafe)
-
+                if dic == nil{
+                    let alert = NSAlert()
+                    alert.alertStyle = .informational
+                    
+                    var schemaError = "Your settings can not be validated."
+                    var buttonOkText = "OK"
+                    if let settings = configjson.value(forKey: "settings") as? NSDictionary{
+                        schemaError = settings.value(forKey: "schemaError") as? String ?? schemaError
+                        buttonOkText = settings.value(forKey: "buttonOkText") as? String ?? buttonOkText
+                    }
+                    alert.messageText = schemaError
+                    alert.addButton(withTitle: buttonOkText)
+                    
+                    alert.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
+                        if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
+                        }
+                        
+                        
+                    })
+                }else{
+                    var text = self.textViewJson.string.replacingOccurrences(of: "”", with: "\"")
+                    text = text.replacingOccurrences(of: "“", with: "\"")
+                    self.textViewJson.string = text
+                    if let data = self.textViewJson.string.data(using: String.Encoding.utf8) {
+                        
                         do {
-                            if let dicResult: NSDictionary = try JSONSerialization.jsonObject(with: data, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary {
-                                let state = try JSONSchema.validate(jsonResult, schema: dicResult as! [String : Any])
+                            let jsonResult:NSDictionary = try (JSONSerialization.jsonObject(with: data, options: []) as? NSDictionary ?? [:])
 
-                                print(state)
-                                if state.errors == nil{
-                                    UserDefaults.standard.set(textViewJson.string, forKey: kUserdefaultsSelectedJson)
-                                    appdelegate?.quitAndRestartApp()
-                                }else{
-                                    print(state.errors)
-                                    let alert = NSAlert()
-                                    alert.alertStyle = .informational
-                                    alert.messageText = "Sorry it seems like your settings aren’t valid. Please generate settings at earnyourscreentime.com/settings"
-                                    alert.addButton(withTitle: "OK")
-                                    
-                                    //let buttons = alertremoveitem.buttons
-                                    // alertremoveitem.beginSheetModal(for: self.window!, completionHandler: nil)
-                                    alert.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
-                                        if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
-                                            self.setData()
-                                        }
-
-                                        
-                                    })
-                                    
+                            let state = try JSONSchema.validate(jsonResult, schema: dic as! [String : Any])
+                            
+                            print(state)
+                            if state.errors == nil{
+                                UserDefaults.standard.set(self.textViewJson.string, forKey: kUserdefaultsSelectedJson)
+                                appdelegate?.quitAndRestartApp()
+                            }else{
+                                print(state.errors)
+                                let alert = NSAlert()
+                                alert.alertStyle = .informational
+                                
+                                var settingIsNotValidText = "Sorry it seems like your settings aren’t valid. Please generate settings at earnyourscreentime.com/settings"
+                                var buttonOkText = "OK"
+                                if let settings = configjson.value(forKey: "settings") as? NSDictionary{
+                                    settingIsNotValidText = settings.value(forKey: "settingIsNotValidText") as? String ?? settingIsNotValidText
+                                    buttonOkText = settings.value(forKey: "buttonOkText") as? String ?? buttonOkText
                                 }
+                                
+                                alert.messageText = settingIsNotValidText
+                                if state.errors?.count != 0{
+                                    alert.informativeText = state.errors?.first?.description ?? ""
+                                }
+                                
+                                alert.addButton(withTitle: buttonOkText)
+                                
+                                //let buttons = alertremoveitem.buttons
+                                // alertremoveitem.beginSheetModal(for: self.window!, completionHandler: nil)
+                                alert.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
+                                    if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
+                                        self.setData()
+                                    }
+                                    
+                                    
+                                })
+                                
                             }
 
-                        }catch {
+                        } catch let error as NSError {
                             print(error)
                         }
-
-                    } catch {
-                        // handle error
                     }
-
                 }
-               
-                
-            } catch let error as NSError {
-                print(error)
             }
-        }
+        })
+        
+        
+        
+        
+        
         
         //  } catch let error as NSError {
         //     print(error)

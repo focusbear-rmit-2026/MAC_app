@@ -39,6 +39,7 @@ let kUserdefaultsLastHabitShowDate = "UserdefaultsLastHabitShowDate"
 var kUserdefaultsIsAppEnabled = "kUserdefaultsIsAppEnabled"
 var kUserdefaults4HourReActivateTime = "kUserdefaults4HourReActivateTime"
 var kUserdefaultsShutdownAborted = "kUserdefaultsShutdownAborted"
+var kUserdefaultsEveningHabitsShowedTillDate = "kUserdefaultsEveningHabitsShowedTillDate"//agar evening habit ak bar show ho gai h to agle din start habit tk ki date save kr lenge taki jab bhi vps shut off ho same day hi to evening habit vapas na aay 
 
 var isAppEnable = true
 var startTime:Time?
@@ -71,14 +72,15 @@ extension NSView{
         self.addConstraint(height)
     }
 }
-var isBreathingGoing = false
-var isHabitGoing = false
-var isBreakActivitiesGoing = false
+//var isBreathingGoing = false
+//var isHabitGoing = false
+//var isBreakActivitiesGoing = false
 var currentHabitIndex = -1
 var currentActivityIndex = -1
 
-var arrAllHabits = [morningHabit]()
-struct morningHabit {
+var arrAllMorningHabits = [habit]()
+var arrAllEveningHabits = [habit]()
+struct habit {
     var name:String!
     var durationSeconds:Int!
     var url:String?
@@ -88,7 +90,7 @@ struct morningHabit {
         self.url = url
     }
 }
-var introActivity:morningHabit?
+var introActivity:habit?
 
 func secondsToHoursMinutesSeconds (seconds : Int) -> (Int, Int, Int) {
     return (seconds / 3600, (seconds % 3600) / 60, (seconds % 3600) % 60)
@@ -384,7 +386,7 @@ enum ACTION:Int{
 
 
 enum CURRENTSTATE:Int{
-    case _NOTHING_ = 111, _HABIT_, _ACTIVITY_, _SHUTOFFMAC_, _BREATHING_, _ABORT_, _FIRST_TIME_
+    case _NOTHING_ = 111, _MORNING_HABIT_, _EVENING_HABIT_, _ACTIVITY_, _SHUTOFFMAC_, _BREATHING_, _ABORT_, _FIRST_TIME_
 }
 var currentState:CURRENTSTATE = ._NOTHING_
 var currentAction:ACTION = ACTION._START_
@@ -409,6 +411,7 @@ var lastActivityFinishedText = "<ACTIVITY> finished!✅ You’ve earned your scr
 var startBreakActivityTitleText = "It’s time for a break. Do <TIME> of <ACTIVITY> to earn more screentime."
 var doSomeActivityText = "Do some <ACTIVITY>."
 var startMorningHabitTitleText = "Good Morning! It’s time to earn your screentime. Here are the habits you need to accomplish before you can use your computer."
+var startEveningHabitTitleText = "Good Evening! It’s time to earn your screentime. Here are the habits you need to accomplish before you can leave for the day."
 var emailID = "team@earnyourscreentime.com"
 var buttonCancelText = "Cancel"
 var webhookUrl = "https://hooks.zapier.com/hooks/catch/326116/b98ovxc/"
@@ -420,6 +423,7 @@ func readConfigFile(){
         startBreakActivityTitleText = activityInfo.value(forKey: "startBreakActivityTitleText") as? String ?? startBreakActivityTitleText
         doSomeActivityText = activityInfo.value(forKey: "doSomeActivityText") as? String ?? doSomeActivityText
         startMorningHabitTitleText = activityInfo.value(forKey: "startMorningHabitTitleText") as? String ?? startMorningHabitTitleText
+        startEveningHabitTitleText = activityInfo.value(forKey: "startEveningHabitTitleText") as? String ?? startEveningHabitTitleText
     }
     
     if let common = configjson.value(forKey: "common") as? NSDictionary{
@@ -474,7 +478,7 @@ func getstartActivityButtonText(seconds:Int, name:String)->String{
 }
 
 
-class Button: NSButton {
+class Button: cursorButton {
 
     @IBInspectable var horizontalPadding   : CGFloat = 30
     @IBInspectable var verticalPadding    : CGFloat = 30
@@ -486,27 +490,244 @@ class Button: NSButton {
         return size;
     }
 }
-class CustomNSButtonCell: NSButtonCell {
 
-@IBInspectable var imagePaddingLeft   : CGFloat = 30
-@IBInspectable var imagePaddingTop    : CGFloat = 0
-@IBInspectable var textPaddingLeft   : CGFloat = 30
-@IBInspectable var textPaddingTop    : CGFloat = 0
 
-override func drawImage(_ image: NSImage, withFrame frame: NSRect, in controlView: NSView) {
 
-    let newFrame = NSRect.init(
-        origin: .init(x: frame.minX + imagePaddingLeft, y: frame.minY + imagePaddingTop),
-        size: frame.size)
 
-    super.drawImage(image, withFrame: newFrame, in: controlView)
+//{ se phele space todod
+func getConfigFile(completionHandler: @escaping(_ result: NSDictionary?) -> ()) {
+    if let myUrl = NSURL(string: "https://earnyourscreentime.com/config/config.json"){
+    
+        let request = NSMutableURLRequest(url:myUrl as URL);
+    request.httpMethod = "GET";
+    
+    let task = URLSession.shared.dataTask(with: request as URLRequest) {
+        data, response, error in
+
+        if let httpResponse = response as? HTTPURLResponse {
+            if httpResponse.statusCode == 200{
+                
+                if data != nil{
+                    
+                    do {
+                        if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
+                            
+                            print(jsonResult)
+                            completionHandler(jsonResult)
+                        }
+                        
+                    }catch{
+                        print(error)
+                    }
+                    
+                }
+                
+                return
+            }else{
+                return
+            }
+        }
+        if error != nil {
+            return
+        }
+        completionHandler(nil)
+    }
+    task.resume()
+    }else{
+        completionHandler(nil)
+    }
+}
+var isGettingSchema = false
+func getSchemsFile(completionHandler: @escaping(_ result: NSDictionary?) -> ()) {
+    if let myUrl = NSURL(string: "https://earnyourscreentime.com/config/settings-schema.json"){
+        
+        let request = NSMutableURLRequest(url:myUrl as URL);
+        request.httpMethod = "GET";
+        
+        let task = URLSession.shared.dataTask(with: request as URLRequest) {
+            data, response, error in
+            
+            if let httpResponse = response as? HTTPURLResponse {
+                if httpResponse.statusCode == 200{
+                    
+                    if data != nil{
+                        
+                        do {
+                            if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
+                                
+                                print(jsonResult)
+                                completionHandler(jsonResult)
+                                
+                            }
+                            
+                        }catch{
+                            print(error)
+                        }
+                        
+                    }
+                    
+                    return
+                }else{
+                    return
+                }
+            }
+            if error != nil {
+                
+                
+                return
+            }
+            completionHandler(nil)
+        }
+        task.resume()
+    }else{
+        completionHandler(nil)
+    }
 }
 
-override func drawTitle(_ title: NSAttributedString, withFrame frame: NSRect, in controlView: NSView) -> NSRect {
-     let newFrame = NSRect.init(
-               origin: .init(x: frame.minX + textPaddingLeft, y: frame.minY + textPaddingTop),
-               size: frame.size)
-    super.drawTitle(title, withFrame: newFrame, in: controlView)
-    return newFrame
+
+func getAbortJsonToUpload(emailAddress:String?, feedback:String, abortReason:String,completionHandler: @escaping(_ result: NSDictionary) -> ()) {
+    var settingsJson = NSDictionary()
+    if let stringDic = UserDefaults.standard.object(forKey: kUserdefaultsSelectedJson) as? String {
+        if let data = stringDic.data(using: String.Encoding.utf8) {
+            do {
+                settingsJson = try (JSONSerialization.jsonObject(with: data, options: []) as? NSDictionary ?? [:])
+            } catch let error as NSError {
+                print(error)
+            }
+        }
+        
+    }else {
+        if let path = Bundle.main.path(forResource: "settings", ofType: "json") {
+            let url = URL(fileURLWithPath: path)
+            do {
+                let data = try Data(contentsOf: url, options: .mappedIfSafe)
+                do {
+                    if let dicResult: NSDictionary = try JSONSerialization.jsonObject(with: data, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary {
+                        settingsJson = dicResult
+                    }
+                }catch {
+                    print(error)
+                }
+            } catch {
+                // handle error
+            }
+        }
+    }
+    
+    let systemVersion = ProcessInfo().operatingSystemVersion
+    let version = "\(systemVersion.majorVersion).\(systemVersion.minorVersion).\(systemVersion.patchVersion)"
+    
+    let firstRunDate = UserDefaults.standard.object(forKey: kUserdefaultsFirstRunDate) as? Date ?? Date()
+    let formatter = DateFormatter()
+    formatter.dateFormat = "yyyy-MM-dd"
+    let myDateString = formatter.string(from: firstRunDate)
+    
+    let jsonResult:NSMutableDictionary = ["abortReason":abortReason, "settingsJSON":settingsJson, "macOSVersion":version, "feedback":feedback, "usageStartDate":myDateString]
+    
+    if emailAddress != nil{
+        jsonResult["emailAddress"] = emailAddress!
+    }
+    
+    
+    
+    let responsePath = webhookUrl
+    if let myUrl = NSURL(string: responsePath){
+        
+        let request = NSMutableURLRequest(url:myUrl as URL);
+        request.httpMethod = "POST";
+        
+        var json = jsonResult//[[String: String]]()
+        
+        
+        
+        
+        
+        let jsonData = try? JSONSerialization.data(withJSONObject: json)
+        //         let boundary = generateBoundaryString()
+        //         let contentData = createBodyWithParameters(imageDataKey: folderData as? NSData ?? NSData(), boundary: boundary, jsonData: jsonData) as Data
+        
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = jsonData
+        
+        
+        let task = URLSession.shared.dataTask(with: request as URLRequest) {
+            data, response, error in
+            
+            // print(response)
+            if let httpResponse = response as? HTTPURLResponse {
+                if httpResponse.statusCode == 200{
+                    
+                    
+                    
+                    if data != nil{
+                        
+                        let status = String(data: data!, encoding: .utf8)!
+                        if status == "1"{
+                            print("success")
+                            
+                        }else{
+                            
+                        }
+                    }
+                }else{
+                    
+                }
+
+            }
+            //            isUploadingPopupResponse = false
+            if error != nil {
+                
+                return
+            }
+            completionHandler(jsonResult)
+            return;
+        }
+        task.resume()
+    }else{
+        //        isUploadingPopupResponse = false
+        completionHandler(jsonResult)
+    }
+    
+
 }
+
+var DebugLogsURL:URL!
+class Log: TextOutputStream {
+    
+    func write(_ string: String) {
+//        let fm = FileManager.default
+        let log = DebugLogsURL!//fm.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("Debug_Logs.txt")
+        if let handle = try? FileHandle(forWritingTo: log) {
+            handle.seekToEndOfFile()
+            handle.write(string.data(using: .utf8)!)
+            handle.closeFile()
+        } else {
+            try? string.data(using: .utf8)?.write(to: log)
+        }
+    }
+    static var log: Log = Log()
+    private init() {} // we are sure, nobody else could create it
+}
+
+
+func addLog(text:String){
+   // if isDebugModeEnabled{
+        let df = DateFormatter()
+        df.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        let now = df.string(from: Date())
+        
+        print(now , " - ", text, to: &Log.log)
+    //}
+}
+
+
+//******************************************CreateDirectoryIfNotExist*******************************************************//
+func CreateDirectoryIfNotExist(path:String){
+    if !FileManager.default.fileExists(atPath: path){
+        do {
+            try FileManager.default.createDirectory(atPath: path, withIntermediateDirectories: true, attributes: nil)
+        }catch{
+            
+        }
+    }
 }

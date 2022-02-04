@@ -42,13 +42,9 @@ class timerViewcontroller: NSViewController {
         }
     }
 
-    func startTimerHabit(durationSeconds:Int, url:String?) {
-        
-        //            https://www.youtube.com/embed/z-3n5iBi4u0?autoplay=1
-       //"https://www.youtube.com/watch?v=z-3n5iBi4u0"{
-       loadWebViewTo(url: url)
-        
-        lblTitle.stringValue = getDoSomeActivityText(activityName: arrAllHabits[currentHabitIndex].name!)//"Do some \(arrAllHabits[currentHabitIndex].name!)."
+    func startTimerHabit(durationSeconds:Int, url:String?, name:String) {
+        loadWebViewTo(url: url)
+        lblTitle.stringValue = getDoSomeActivityText(activityName: name)//arrAllMorningHabits[currentHabitIndex].name!)
         currentTimer = 0
         totalDuration = durationSeconds//durationInMinutes*60
         let (_,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
@@ -67,9 +63,10 @@ class timerViewcontroller: NSViewController {
             RunLoop.current.run()
         }
     }
-    func resumeTimerHabit(durationSeconds:Int, url:String?){
+    
+    func resumeTimerHabit(durationSeconds:Int, url:String?, name:String){
         loadWebViewTo(url: url)
-        lblTitle.stringValue = getDoSomeActivityText(activityName: arrAllHabits[currentHabitIndex].name!)//"Do some \(arrAllHabits[currentHabitIndex].name!)."
+        lblTitle.stringValue = getDoSomeActivityText(activityName: name)//"Do some \(arrAllMorningHabits[currentHabitIndex].name!)."
         totalDuration = durationSeconds//durationInMinutes*60
         let (_,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
         var minute = "\(m)"
@@ -156,7 +153,7 @@ class timerViewcontroller: NSViewController {
     }
     @objc func performTimerCount() {
         
-        currentTimer += 1 
+        currentTimer += 1
         let (_,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
         
 //        var hour = "\(h)"
@@ -181,11 +178,13 @@ class timerViewcontroller: NSViewController {
             DispatchQueue.global().async {
                 DispatchQueue.main.async {
                     self.loadBlankUrl()
-                    if isBreathingGoing{
+                    if currentState == ._BREATHING_{
                         mainViewControllerObj?.breathingOver()
-                    }else if isHabitGoing {
-                        mainViewControllerObj?.habitOver()
-                    }else {
+                    }else if currentState == ._MORNING_HABIT_ {
+                        mainViewControllerObj?.morningHabitOver()
+                    }else if currentState == ._EVENING_HABIT_ {
+                        mainViewControllerObj?.eveningHabitOver()
+                    }else if currentState == ._ACTIVITY_{
                         mainViewControllerObj?.activityOver()
                     }
                 }

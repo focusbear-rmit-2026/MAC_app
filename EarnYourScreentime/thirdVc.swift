@@ -14,13 +14,16 @@ class thirdVc: NSViewController {
     @IBOutlet weak var boxBreathingFinished: NSBox!
     @IBOutlet weak var btnMain: NSButton!
     @IBOutlet weak var lblTitle: NSTextField!
-
+    @IBOutlet weak var imgViewGif: NSImageView!
+    
     
     var lastHabitIndex = -1
     var lastActivityIndex = -1
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
+        imgViewGif.image = NSImage(named: "Smile _Small")
+        imgViewGif.animates = true
         boxBreathingFinished.isHidden = true
         var string = "Hope you feel calmer. You can now personalise your morning routine by clicking on the icon <icon> on the top bar and choosing settings."
         if let dic = configjson.value(forKey: "welcomeInfo") as? NSDictionary{
@@ -32,6 +35,7 @@ class thirdVc: NSViewController {
     }
     
     func breathingFinished() {
+        imgViewGif.isHidden = true
         boxBreathingFinished.isHidden = false
         var name = "Breathing"
         if let dic = configjson.value(forKey: "welcomeInfo") as? NSDictionary{
@@ -44,42 +48,46 @@ class thirdVc: NSViewController {
         lblTitle.stringValue = getActivityFinishedText(isLast: true, activityName: name)//"Breathing finished!✅ You’ve earned your screen time. 💪"
         btnMain.title = unlockMachineButtonText
     }
-    func habitFinished(index:Int) {
+    func morningHabitFinished(index:Int) {
+        
         boxBreathingFinished.isHidden = true
         lastHabitIndex = index
-        let lastHabit = arrAllHabits[lastHabitIndex].name
+        let lastHabit = arrAllMorningHabits[lastHabitIndex].name
         
-        
-        if index < arrAllHabits.count-1 {
+        if index < arrAllMorningHabits.count-1 {
             lblTitle.stringValue = getActivityFinishedText(isLast: false, activityName: lastHabit!)//"\(lastHabit!) finished!✅"
-            let time = arrAllHabits[lastHabitIndex+1].durationSeconds
-            btnMain.title = getstartActivityButtonText(seconds: time!, name: arrAllHabits[lastHabitIndex+1].name!)
-//            if time! < 60{
-//                btnMain.title = getstartActivityButtonText(seconds: "\(time!) seconds", name: arrAllHabits[lastHabitIndex+1].name!)//"Start \(time!) seconds \(arrAllHabits[lastHabitIndex+1].name!)"
-//            }else{
-//                let minutes = time!/60
-//                if minutes == 1 {
-//                    btnMain.title = getstartActivityButtonText(seconds: "\(minutes) minute", name: arrAllHabits[lastHabitIndex+1].name!)//"Start \(minutes) minute \(arrAllHabits[lastHabitIndex+1].name!)"
-//                }else {
-//                    btnMain.title = getstartActivityButtonText(seconds: "\(minutes) minutes", name: arrAllHabits[lastHabitIndex+1].name!)//"Start \(minutes) minutes \(arrAllHabits[lastHabitIndex+1].name!)"
-//                }
-//            }
+            let time = arrAllMorningHabits[lastHabitIndex+1].durationSeconds
+            btnMain.title = getstartActivityButtonText(seconds: time!, name: arrAllMorningHabits[lastHabitIndex+1].name!)
             playEveryActivitySound()
+            imgViewGif.isHidden = true
         }else {
-            lblTitle.stringValue = getActivityFinishedText(isLast: true, activityName: lastHabit!)//"\(lastHabit!) finished!✅ You’ve earned your screen time. 💪"
+            imgViewGif.isHidden = false
+            lblTitle.stringValue = getActivityFinishedText(isLast: true, activityName: lastHabit!)
             btnMain.title = unlockMachineButtonText
             playAfterMorningRoutineSound()
-//            DispatchQueue.global().async {
-//                sleep(2)
-//                DispatchQueue.main.async {
-//                    appdelegate?.shutOffMac()
-//                }
-//            }
         }
-        
     }
+    func eveningHabitFinished(index:Int) {
+        imgViewGif.isHidden = true
+        boxBreathingFinished.isHidden = true
+        lastHabitIndex = index
+        let lastHabit = arrAllEveningHabits[lastHabitIndex].name
+        
+//        if index < arrAllEveningHabits.count-1 {
+            lblTitle.stringValue = getActivityFinishedText(isLast: false, activityName: lastHabit!)//"\(lastHabit!) finished!✅"
+            let time = arrAllEveningHabits[lastHabitIndex+1].durationSeconds
+            btnMain.title = getstartActivityButtonText(seconds: time!, name: arrAllEveningHabits[lastHabitIndex+1].name!)
+            playEveryActivitySound()
+//        }else {
+//            lblTitle.stringValue = getActivityFinishedText(isLast: true, activityName: lastHabit!)
+//            btnMain.title = unlockMachineButtonText
+//            playAfterMorningRoutineSound()
+//        }
+    }
+    
     func activityFinished(index:Int) {
         boxBreathingFinished.isHidden = true
+        imgViewGif.isHidden = true
         lastActivityIndex = index
         var lastActivity = ""//arrAllbreakActivities[lastActivityIndex].name
         if isAnyMandatoryActivityIncluded{
@@ -99,6 +107,7 @@ class thirdVc: NSViewController {
             }else {
                 lblTitle.stringValue = getActivityFinishedText(isLast: true, activityName: lastActivity)//"\(lastActivity) finished!✅ You’ve earned your screen time. 💪"
                 btnMain.title = unlockMachineButtonText
+                imgViewGif.isHidden = false
             }
         }else{
             if isAnyMandatoryActivityIncluded{
@@ -112,6 +121,7 @@ class thirdVc: NSViewController {
                         if arrActivitiesExcludeInEveryBreak.count == 0{
                             lblTitle.stringValue = getActivityFinishedText(isLast: true, activityName: lastActivity)//"\(lastActivity) finished!✅ You’ve earned your screen time. 💪"
                             btnMain.title = unlockMachineButtonText
+                            imgViewGif.isHidden = false
                         }else{
                             lblTitle.stringValue = getActivityFinishedText(isLast: false, activityName: lastActivity)//"\(lastActivity) finished!✅"
                           //  isMandatoryActivityGoing = false
@@ -128,11 +138,13 @@ class thirdVc: NSViewController {
                    // }else{
                         lblTitle.stringValue = getActivityFinishedText(isLast: true, activityName: lastActivity)//"\(lastActivity) finished!✅ You’ve earned your screen time. 💪"
                         btnMain.title = unlockMachineButtonText
+                    imgViewGif.isHidden = false
                     //}
                 }
             }else{
                lblTitle.stringValue = getActivityFinishedText(isLast: true, activityName: lastActivity)//"\(lastActivity) finished!✅ You’ve earned your screen time. 💪"
                btnMain.title = unlockMachineButtonText
+                imgViewGif.isHidden = false
             }
             
         }
@@ -140,6 +152,7 @@ class thirdVc: NSViewController {
     }
     
     func startBreakActivity() {
+        imgViewGif.isHidden = true
         boxBreathingFinished.isHidden = true
         lastActivityIndex = -1
         var activityName: String = ""
@@ -155,11 +168,12 @@ class thirdVc: NSViewController {
         btnMain.title = getstartActivityButtonText(seconds: seconds, name: activityName)//"Start \(seconds) seconds \(activityName)"
     }
     @IBAction func btnMainClicked(_ sender: Any) {
+        imgViewGif.isHidden = true
         boxBreathingFinished.isHidden = true
-        if isBreathingGoing{
+        if currentState == ._BREATHING_{
             boxBreathingFinished.isHidden = true
             mainViewControllerObj?.breathingFinishedUnlockMachine()
-        }else if isBreakActivitiesGoing {
+        }else if currentState == ._ACTIVITY_ {
             if lastActivityIndex == -1 {
                 mainViewControllerObj?.startCurrentActivity()
             }else{
@@ -199,9 +213,15 @@ class thirdVc: NSViewController {
                 
             }
             
-        }else {
-            if lastHabitIndex < arrAllHabits.count-1 {
-                mainViewControllerObj?.changeHabit()
+        }else if currentState == ._MORNING_HABIT_{
+            if lastHabitIndex < arrAllMorningHabits.count-1 {
+                mainViewControllerObj?.changeMorningHabit()
+            }else {
+                mainViewControllerObj?.habitsFinishedUnlockMachine()
+            }
+        }else if currentState == ._EVENING_HABIT_{
+            if lastHabitIndex < arrAllEveningHabits.count-1 {
+                mainViewControllerObj?.changeEveningHabit()
             }else {
                 mainViewControllerObj?.habitsFinishedUnlockMachine()
             }

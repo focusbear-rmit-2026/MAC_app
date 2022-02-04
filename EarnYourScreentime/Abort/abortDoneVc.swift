@@ -10,6 +10,7 @@ import Cocoa
 
 class abortDoneVc: NSViewController {
     
+    @IBOutlet weak var imgViewGif: NSImageView!
     @IBOutlet weak var lblTitle: NSTextField!
     @IBOutlet weak var lblSubTitle: NSTextField!
     var currentTimer = 0
@@ -19,6 +20,8 @@ class abortDoneVc: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
+        imgViewGif.image = NSImage(named: "Crying_small")
+        imgViewGif.animates = true
         lblTitle.stringValue = "Aborted"
         lblSubTitle.stringValue = "You’ve successfully aborted Earn Your Screen Time. The app won’t show habit prompts until you activate it again from the menu icon. If you aborted it because of a problem with the app, please email team@earnyourscreentime.com"
         if let abortInfo = configjson.value(forKey: "abortInfo") as? NSDictionary{
