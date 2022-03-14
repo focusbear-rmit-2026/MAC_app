@@ -38,15 +38,15 @@ class firstViewController: NSViewController {
                 if let arr = dic.value(forKey: "introActivities") as? [NSDictionary]{
                     let name = arr.first?.value(forKey: "name") as? String ?? ""
                     let durationSeconds = arr.first?.value(forKey: "durationSeconds") as? Int ?? 0
-                    let videoUrl = arr.first?.value(forKey: "videoUrl") as? String
+                    let videoUrl = arr.first?.value(forKey: "videoUrl") as? [String] ?? []
                     btnStartFirstHabit.title = getstartActivityButtonText(seconds: durationSeconds, name: name)
-                    introActivity = habit(name: name, durationSeconds: durationSeconds, url: videoUrl)
+                    introActivity = habit(name: name, durationSeconds: durationSeconds, urlsArray: videoUrl, logQuantity: false, logQuantityQuestion: nil)
                 }else{
                     btnStartFirstHabit.title = getstartActivityButtonText(seconds: 60, name: "mindful breathing")//"Start 1 minute of mindful breathing"
-                    introActivity = habit(name: "mindful breathing", durationSeconds: 60, url: nil)
+                    introActivity = habit(name: "mindful breathing", durationSeconds: 60, urlsArray: [], logQuantity: false, logQuantityQuestion: nil)
                 }
             }else{
-                introActivity = habit(name: "mindful breathing", durationSeconds: 60, url: nil)
+                introActivity = habit(name: "mindful breathing", durationSeconds: 60, urlsArray: [], logQuantity: false, logQuantityQuestion: nil)
                 lblTitle.stringValue = welcomeText
                 btnStartFirstHabit.title = getstartActivityButtonText(seconds: 60, name: "mindful breathing")//"Start 1 minute of mindful breathing"
             }
@@ -80,6 +80,13 @@ class firstViewController: NSViewController {
         
     }
     @IBAction func btnStartFirstHabitClicked(_ sender: Any) {
+        if UserDefaults.standard.object(forKey: kUserdefaultsAppPassword) != nil{//qki enter per ye button handle hai  or jha se handle h vha condition lganase accha yahi lagadi (enterv  password per bhi default enter key code h button per )
+            if enterPasswordVcObj != nil{
+                if mainViewControllerObj!.view.subviews.contains(enterPasswordVcObj!.view){
+                    return;
+                }
+            }
+        }
         if isFirstTime{
             mainViewControllerObj?.startBreathing()
         }else{

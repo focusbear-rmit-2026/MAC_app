@@ -7,6 +7,7 @@
 //
 
 import Cocoa
+import SystemConfiguration// for check internet availibility code
 
 let mainStoryboard = NSStoryboard(name: NSStoryboard.Name("Main"), bundle: nil)
 let mainWindowControllerObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("mainWindowController")) as? mainWindowController
@@ -17,20 +18,55 @@ let timerViewcontrollerObj = mainStoryboard.instantiateController(withIdentifier
 
 let thirdVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("thirdVc")) as? thirdVc
 
-let selectJsonWindowControllerObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("selectJsonWindowController")) as? selectJsonWindowController
-let selectJsonVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("selectJsonVc")) as? selectJsonVc
+//let selectJsonWindowControllerObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("selectJsonWindowController")) as? selectJsonWindowController
+var selectJsonVcObj:selectJsonVc?// = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("selectJsonVc")) as? selectJsonVc
 let shutOffTimeVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("shutOffTimeVc")) as? shutOffTimeVc
 
 let abortingCountDownVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("abortingCountDownVc")) as? abortingCountDownVc
 let abortingConfirmVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("abortingConfirmVc")) as? abortingConfirmVc
 let abortDoneVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("abortDoneVc")) as? abortDoneVc
 
+let activationWindowControllerObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("activationWindowController")) as? activationWindowController
+
+let sevenDaysTrialvcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("sevenDaysTrialvc")) as? sevenDaysTrialvc
+let activateNowvcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("activateNowvc")) as? activateNowvc
 
 let abortingCantHandleVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("abortingCantHandleVc")) as? abortingCantHandleVc
+let logQuantityVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("logQuantityVc")) as? logQuantityVc
+
+let preferencesWindowControllerObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("preferencesWindowController")) as? preferencesWindowController
+
+let menuViewControllerObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("menuViewController")) as? menuViewController
+
+//let focusPreferencesWcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("focusPreferencesWc")) as? focusPreferencesWc
+var focusPreferencesVcObj:focusPreferencesVc?// = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("focusPreferencesVc")) as? focusPreferencesVc
+
+let addWebUrlVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("addWebUrlVc")) as? addWebUrlVc
+let addFocusTypeVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("addFocusTypeVc")) as? addFocusTypeVc
+
+let pomodoroWindowControllerObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("pomodoroWindowController")) as? pomodoroWindowController
+let pomodoroVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("pomodoroVc")) as? pomodoroVc
+let focusCompletedVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("focusCompletedVc")) as? focusCompletedVc
+
+
+let startingFocusWindowControllerObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
+
+let startingFocusModeVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("startingFocusModeVc")) as? startingFocusModeVc
+let abortingFocusModeVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("abortingFocusModeVc")) as? abortingFocusModeVc
+
+let focusSummaryVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("focusSummaryVc")) as? focusSummaryVc
+
+
+let enterPasswordVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("enterPasswordVc")) as?enterPasswordVc
 
 let appdelegate = NSApplication.shared.delegate as? AppDelegate
 
+
+var kUserdefaultsPomodoroModeEnabled = "kUserdefaultsPomodoroModeEnabled"
+
 var configjson = NSDictionary()
+
+let kUserdefaultsShowPomodoroView = "kUserdefaultsShowPomodoroView"
 
 let kUserdefaultsSelectedJson = "kUserdefaultsSelectedJson"
 let kUserdefaultsFirstRun = "kUserdefaultsFirstRun"
@@ -39,15 +75,34 @@ let kUserdefaultsLastHabitShowDate = "UserdefaultsLastHabitShowDate"
 var kUserdefaultsIsAppEnabled = "kUserdefaultsIsAppEnabled"
 var kUserdefaults4HourReActivateTime = "kUserdefaults4HourReActivateTime"
 var kUserdefaultsShutdownAborted = "kUserdefaultsShutdownAborted"
-var kUserdefaultsEveningHabitsShowedTillDate = "kUserdefaultsEveningHabitsShowedTillDate"//agar evening habit ak bar show ho gai h to agle din start habit tk ki date save kr lenge taki jab bhi vps shut off ho same day hi to evening habit vapas na aay 
+var kUserdefaultsEveningHabitsShowedTillDate = "kUserdefaultsEveningHabitsShowedTillDate"//agar evening habit ak bar show ho gai h to agle din start habit tk ki date save kr lenge taki jab bhi vps shut off ho same day hi to evening habit vapas na aay
+var kUserdefaultsFocusSummaryShowedTillDate = "kUserdefaultsFocusSummaryShowedTillDate"//agar Focus Summary ak bar show ho gai h to agle din start habit tk ki date save kr lenge taki jab bhi vps shut off ho same day hi to Focus Summary vapas na aay
+
+let kUserdefaultsFirstHabitDay = "kUserdefaultsFirstHabitDay"
+var isAppInitialLodded = false// activation kha se show hua h menu se ya startup per iske liye iska use krenge 
+
+let kIsPurchased = "kIsPurchased"
+let kRegisteredLicenseKey = "kRegisteredLicenseKey"
+
+var kUserdefaultsSelectedFolder = "kUserdefaultsSelectedFolder"
+
+let kUserdefaultsArrFocusTypes = "kUserdefaultsArrFocusTypes"
+
+let kUserdefaultsAppPassword = "kUserdefaultsAppPassword"
+
+var kUserdefaults24HoursClearPasswordTime = "kUserdefaults24HoursClearPasswordTime"
 
 var isAppEnable = true
 var startTime:Time?
 var shutOffTime:Time?
 
+
+var isMainWindowLodded = false
+var isPomodoroWindowLodded = false
 var isHabitAlreadyShowed = true
 var isFirstRun = false
 
+var lastActivityPerformedTime:Date?
 struct Time{
     var hour = 0
     var minute = 0
@@ -83,11 +138,15 @@ var arrAllEveningHabits = [habit]()
 struct habit {
     var name:String!
     var durationSeconds:Int!
-    var url:String?
-    init(name:String, durationSeconds:Int, url:String?) {
+    var urlsArray:[String]
+    var logQuantity:Bool!
+    var logQuantityQuestion:String?
+    init(name:String, durationSeconds:Int, urlsArray:[String], logQuantity:Bool, logQuantityQuestion:String?) {
         self.name = name
         self.durationSeconds = durationSeconds
-        self.url = url
+        self.urlsArray = urlsArray
+        self.logQuantity = logQuantity
+        self.logQuantityQuestion = logQuantityQuestion
     }
 }
 var introActivity:habit?
@@ -107,12 +166,32 @@ struct breakActivity {
     var name:String!
     var durationSeconds:Int!
     var IncludeInEveryBreak:Bool!
-    var url:String?
-    init(name:String, durationSeconds:Int, IncludeInEveryBreak:Bool, url:String?) {
+    var urlsArray:[String]
+    var logQuantity:Bool!
+    var isRandomChoice:Bool!
+    var choices:[activityChoice]
+    var logQuantityQuestion:String?
+    init(name:String, durationSeconds:Int, IncludeInEveryBreak:Bool, urlsArray:[String], logQuantity:Bool,isRandomChoice:Bool,choices:[activityChoice],logQuantityQuestion:String?) {
         self.name = name
         self.durationSeconds = durationSeconds
         self.IncludeInEveryBreak = IncludeInEveryBreak
-        self.url = url
+        self.urlsArray = urlsArray
+        self.logQuantity = logQuantity
+        self.isRandomChoice = isRandomChoice
+        self.choices = choices
+        self.logQuantityQuestion = logQuantityQuestion
+    }
+}
+
+
+struct activityChoice {
+    var name:String!
+    var urlsArray:[String]
+    var logQuantityQuestion:String?
+    init(name:String, urlsArray:[String], logQuantityQuestion:String?) {
+        self.name = name
+        self.urlsArray = urlsArray
+        self.logQuantityQuestion = logQuantityQuestion
     }
 }
 
@@ -212,6 +291,41 @@ class cursorButton: NSButton {
         NSCursor.arrow.set()
     }
 }
+
+class underLineButton: cursorButton {
+
+ 
+    func setDisable(title:String){
+        isEnabled = false
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.alignment = .center
+        let attrs = [NSAttributedString.Key.foregroundColor: NSColor.secondaryLabelColor, NSAttributedString.Key.paragraphStyle: paragraph, NSAttributedString.Key.underlineStyle: NSUnderlineStyle.single.rawValue] as [NSAttributedString.Key : Any]
+        let attrString: NSAttributedString = NSAttributedString(string: title, attributes: attrs)
+        self.attributedTitle = attrString
+    }
+    
+    func setEnable(title:String){
+        isEnabled = true
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.alignment = .center
+        let attrs = [NSAttributedString.Key.foregroundColor: NSColor.labelColor, NSAttributedString.Key.paragraphStyle: paragraph, NSAttributedString.Key.underlineStyle: NSUnderlineStyle.single.rawValue] as [NSAttributedString.Key : Any]
+        let attrString: NSAttributedString = NSAttributedString(string: title, attributes: attrs)
+        self.attributedTitle = attrString
+    }
+    
+    override var title: String {
+        didSet {
+            let paragraph = NSMutableParagraphStyle()
+            paragraph.alignment = .center
+            let attrs = [NSAttributedString.Key.foregroundColor: NSColor.labelColor, NSAttributedString.Key.paragraphStyle: paragraph, NSAttributedString.Key.underlineStyle: NSUnderlineStyle.single.rawValue] as [NSAttributedString.Key : Any]
+            let attrString: NSAttributedString = NSAttributedString(string: title, attributes: attrs)
+            self.attributedTitle = attrString
+        }
+    }
+}
+
+
+
 
 
 extension Date {
@@ -386,7 +500,7 @@ enum ACTION:Int{
 
 
 enum CURRENTSTATE:Int{
-    case _NOTHING_ = 111, _MORNING_HABIT_, _EVENING_HABIT_, _ACTIVITY_, _SHUTOFFMAC_, _BREATHING_, _ABORT_, _FIRST_TIME_
+    case _NOTHING_ = 111, _MORNING_HABIT_, _EVENING_HABIT_, _ACTIVITY_, _SHUTOFFMAC_, _BREATHING_, _ABORT_, _FOCUS_SUMMARY_, _FOCUS_COMPLETED_
 }
 var currentState:CURRENTSTATE = ._NOTHING_
 var currentAction:ACTION = ACTION._START_
@@ -413,7 +527,10 @@ var doSomeActivityText = "Do some <ACTIVITY>."
 var startMorningHabitTitleText = "Good Morning! It’s time to earn your screentime. Here are the habits you need to accomplish before you can use your computer."
 var startEveningHabitTitleText = "Good Evening! It’s time to earn your screentime. Here are the habits you need to accomplish before you can leave for the day."
 var emailID = "team@earnyourscreentime.com"
+var appName = "Earn Your Screen Time"
 var buttonCancelText = "Cancel"
+var buttonOkText = "OK"
+
 var webhookUrl = "https://hooks.zapier.com/hooks/catch/326116/b98ovxc/"
 func readConfigFile(){
     if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
@@ -428,7 +545,9 @@ func readConfigFile(){
     
     if let common = configjson.value(forKey: "common") as? NSDictionary{
         emailID = common.value(forKey: "emailId") as? String ?? emailID
+        appName = common.value(forKey: "appName") as? String ?? appName
         buttonCancelText = common.value(forKey: "buttonCancelText") as? String ?? buttonCancelText
+        buttonOkText = common.value(forKey: "buttonOkText") as? String ?? buttonOkText
         unlockMachineButtonText = common.value(forKey: "unlockMachineButtonText") as? String ?? unlockMachineButtonText
         webhookUrl = common.value(forKey: "webhookUrl") as? String ?? webhookUrl
     }
@@ -496,6 +615,7 @@ class Button: cursorButton {
 
 //{ se phele space todod
 func getConfigFile(completionHandler: @escaping(_ result: NSDictionary?) -> ()) {
+    addLog(text: "downloading config file")
     if let myUrl = NSURL(string: "https://earnyourscreentime.com/config/config.json"){
     
         let request = NSMutableURLRequest(url:myUrl as URL);
@@ -509,28 +629,58 @@ func getConfigFile(completionHandler: @escaping(_ result: NSDictionary?) -> ()) 
                 
                 if data != nil{
                     
+//                    let responseStrInISOLatin = String(data: data!, encoding: String.Encoding.isoLatin1)
+//                    guard let modifiedDataInUTF8Format = responseStrInISOLatin?.data(using: String.Encoding.utf8) else {
+//                        print("could not convert data to UTF-8 format")
+//                        addLog(text: "error config file: could not convert data to UTF-8 format")
+//                        completionHandler(nil)
+//                        return
+//                    }
+//
+//
+//                    do {
+//                        let jsonResult = try JSONSerialization.jsonObject(with: modifiedDataInUTF8Format) as? NSDictionary
+//                        print(jsonResult)
+//                        completionHandler(jsonResult)
+//                        return
+//                    } catch {
+//                        print(error)
+//                        addLog(text: "error config file: \(error.localizedDescription)")
+//                        completionHandler(nil)
+//                        return
+//                    }
+                    
                     do {
                         if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
-                            
+
                             print(jsonResult)
                             completionHandler(jsonResult)
+                            return
                         }
-                        
+
                     }catch{
                         print(error)
+                        addLog(text: "error reading config file: \(error.localizedDescription)")
+                        completionHandler(nil)
+                        return
                     }
                     
                 }
                 
+                completionHandler(nil)
                 return
             }else{
+                completionHandler(nil)
                 return
             }
         }
         if error != nil {
+            addLog(text: "error config file: \(error!.localizedDescription)")
+            completionHandler(nil)
             return
         }
         completionHandler(nil)
+        return
     }
     task.resume()
     }else{
@@ -557,7 +707,7 @@ func getSchemsFile(completionHandler: @escaping(_ result: NSDictionary?) -> ()) 
                                 
                                 print(jsonResult)
                                 completionHandler(jsonResult)
-                                
+                                return
                             }
                             
                         }catch{
@@ -565,15 +715,15 @@ func getSchemsFile(completionHandler: @escaping(_ result: NSDictionary?) -> ()) 
                         }
                         
                     }
-                    
+                    completionHandler(nil)
                     return
                 }else{
+                    completionHandler(nil)
                     return
                 }
             }
             if error != nil {
-                
-                
+                completionHandler(nil)
                 return
             }
             completionHandler(nil)
@@ -676,7 +826,7 @@ func getAbortJsonToUpload(emailAddress:String?, feedback:String, abortReason:Str
             }
             //            isUploadingPopupResponse = false
             if error != nil {
-                
+                completionHandler(jsonResult)
                 return
             }
             completionHandler(jsonResult)
@@ -692,6 +842,9 @@ func getAbortJsonToUpload(emailAddress:String?, feedback:String, abortReason:Str
 }
 
 var DebugLogsURL:URL!
+var quantityCsvURL:URL!
+var blockURL:URL!
+var blockWebUrlString = ""
 class Log: TextOutputStream {
     
     func write(_ string: String) {
@@ -720,6 +873,23 @@ func addLog(text:String){
     //}
 }
 
+func getStringFromDate(date:Date, dateFormat:String)->String{
+    let df = DateFormatter()
+    df.dateFormat = dateFormat
+    let now = df.string(from: date)
+    return now
+}
+
+func getDateFromString(date:String, dateFormat:String)->Date?{
+    let string = date
+    // Create Date Formatter
+    let dateFormatter = DateFormatter()
+    // Set Date Format
+    dateFormatter.dateFormat = dateFormat
+    // Convert String to Date
+    
+    return dateFormatter.date(from: string)
+}
 
 //******************************************CreateDirectoryIfNotExist*******************************************************//
 func CreateDirectoryIfNotExist(path:String){
@@ -730,4 +900,568 @@ func CreateDirectoryIfNotExist(path:String){
             
         }
     }
+}
+
+
+
+////////////////////////////////activation text field ///////////////////////////////////
+class CustomTextFieldCell: NSTextFieldCell {
+    
+    func adjustedFrame(toVerticallyCenterText rect: NSRect) -> NSRect {
+        // super would normally draw text at the top of the cell
+        var titleRect = super.titleRect(forBounds: rect)
+        
+        let minimumHeight = self.cellSize(forBounds: rect).height
+        titleRect.origin.y += (titleRect.height - minimumHeight) / 2
+        titleRect.size.height = minimumHeight
+        
+        return titleRect
+    }
+    
+    override func edit(withFrame rect: NSRect, in controlView: NSView, editor textObj: NSText, delegate: Any?, event: NSEvent?) {
+        super.edit(withFrame: adjustedFrame(toVerticallyCenterText: rect), in: controlView, editor: textObj, delegate: delegate, event: event)
+    }
+    
+    override func select(withFrame rect: NSRect, in controlView: NSView, editor textObj: NSText, delegate: Any?, start selStart: Int, length selLength: Int) {
+        super.select(withFrame: adjustedFrame(toVerticallyCenterText: rect), in: controlView, editor: textObj, delegate: delegate, start: selStart, length: selLength)
+    }
+    
+    override func drawInterior(withFrame cellFrame: NSRect, in controlView: NSView) {
+        super.drawInterior(withFrame: adjustedFrame(toVerticallyCenterText: cellFrame), in: controlView)
+    }
+    
+    override func draw(withFrame cellFrame: NSRect, in controlView: NSView) {
+        super.draw(withFrame: cellFrame, in: controlView)
+    }
+}
+class Editing: NSTextField {
+    
+    private let commandKey = NSEvent.ModifierFlags.command.rawValue
+    private let commandShiftKey = NSEvent.ModifierFlags.command.rawValue | NSEvent.ModifierFlags.shift.rawValue
+    
+    override func performKeyEquivalent(with event: NSEvent) -> Bool {
+        if event.type == NSEvent.EventType.keyDown {
+            if (event.modifierFlags.rawValue & NSEvent.ModifierFlags.deviceIndependentFlagsMask.rawValue) == commandKey {
+                switch event.charactersIgnoringModifiers! {
+                case "x":
+                    if NSApp.sendAction(#selector(NSText.cut(_:)), to:nil, from:self) { return true }
+                case "c":
+                    if NSApp.sendAction(#selector(NSText.copy(_:)), to:nil, from:self) { return true }
+                case "v":
+                    if NSApp.sendAction(#selector(NSText.paste(_:)), to:nil, from:self) { return true }
+                case "z":
+                    if NSApp.sendAction(Selector(("undo:")), to:nil, from:self) { return true }
+                case "a":
+                    if NSApp.sendAction(#selector(NSResponder.selectAll(_:)), to:nil, from:self) { return true }
+                default:
+                    break
+                }
+            }
+            else if (event.modifierFlags.rawValue & NSEvent.ModifierFlags.deviceIndependentFlagsMask.rawValue) == commandShiftKey {
+                if event.charactersIgnoringModifiers == "Z" {
+                    if NSApp.sendAction(Selector(("redo:")), to:nil, from:self) { return true }
+                }
+            }
+        }
+        return super.performKeyEquivalent(with: event)
+    }
+}
+
+
+
+
+//
+func activateKey(license_key:String,completionHandler: @escaping(_ result: NSDictionary?) -> ()){
+//80F7CCF5-7FE54D41-B5A2DD9F-4A84B894
+//    isUploadingPopupResponse = true
+    let responsePath = "https://api.gumroad.com/v2/licenses/verify?product_permalink=xdkkds&license_key=\(license_key)"
+    if let myUrl = NSURL(string: responsePath){
+        
+        let request = NSMutableURLRequest(url:myUrl as URL);
+        request.httpMethod = "POST";
+
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+//        request.httpBody = jsonData
+        
+        
+        let task = URLSession.shared.dataTask(with: request as URLRequest) {
+            data, response, error in
+
+            if let httpResponse = response as? HTTPURLResponse {
+                if httpResponse.statusCode == 200{
+
+                    if data != nil{
+                        do {
+                            if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
+
+                                completionHandler(jsonResult)
+                                return
+                            }
+                            
+                        }catch{
+                            print(error)
+                        }
+                    }
+                }else{
+                    completionHandler(nil)
+                    return
+                }
+            }
+//            isUploadingPopupResponse = false
+            if error != nil {
+                completionHandler(nil)
+                return
+            }
+            completionHandler(nil)
+            return
+        }
+        
+        task.resume()
+    }else{
+        completionHandler(nil)
+    }
+}
+
+// #MARK:- Check Internet connectivity
+public class Reachability {
+    class func isConnectedToNetwork() -> Bool {
+        var zeroAddress = sockaddr_in(sin_len: 0, sin_family: 0, sin_port: 0, sin_addr: in_addr(s_addr: 0), sin_zero: (0, 0, 0, 0, 0, 0, 0, 0))
+        zeroAddress.sin_len = UInt8(MemoryLayout.size(ofValue: zeroAddress))
+        zeroAddress.sin_family = sa_family_t(AF_INET)
+
+        let defaultRouteReachability = withUnsafePointer(to: &zeroAddress) {
+            $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {zeroSockAddress in
+                SCNetworkReachabilityCreateWithAddress(nil, zeroSockAddress)
+            }
+        }
+
+        var flags: SCNetworkReachabilityFlags = SCNetworkReachabilityFlags(rawValue: 0)
+        if SCNetworkReachabilityGetFlags(defaultRouteReachability!, &flags) == false {
+            return false
+        }
+
+        let isReachable = flags == .reachable
+        let needsConnection = flags == .connectionRequired
+
+        return isReachable && !needsConnection
+
+    }
+}
+var isPurchased = false
+
+
+func  purchaseNow_clicked(){
+    let buynow_path = "https://earnyourscreentime.com/buynow"
+    NSWorkspace.shared.open(URL(string: buynow_path)!)
+}
+
+
+
+//    @objc func uploadText(){
+//        document.getElementById('id_name').getElementsByTagName('textarea')[0].value = "hello world";
+//        var dd = "shutOffTime: 20:30"
+//        if let path = Bundle.main.path(forResource: "settings", ofType: "json") {
+//            let url = URL(fileURLWithPath: path)
+//            do {
+//
+//                let text2 = try String(contentsOf: url, encoding: .utf8)
+//                print(text2)
+//                let json = "document.getElementsByTagName('textarea')[0].value=\(text2)"
+//
+//                webView!.evaluateJavaScript(json,completionHandler: { (html: Any?, error: Error?) in
+//                    print(html)
+//                })
+//
+//            } catch {
+//                // handle error
+//            }
+//
+//        }
+  
+        //read json from webview
+//        webView!.evaluateJavaScript("document.getElementsByTagName('textarea')[0].value.toString()",
+//                                   completionHandler: { (html: Any?, error: Error?) in
+//                                    print(html!)
+//                                    if let stringDic = html as? String{
+//                                        if let data = stringDic.data(using: String.Encoding.utf8) {
+//
+//                                            do {
+//                                                let jsonResult = try (JSONSerialization.jsonObject(with: data, options: []) as? NSDictionary ?? [:])
+//                                                print(jsonResult)
+//                                                print(jsonResult)
+//
+//                                            } catch let error as NSError {
+//                                                print(error)
+//                                            }
+//                                        }
+//                                    }
+//        })
+//    }
+
+
+//  print("didFinish navigation: WKNavigation")
+//
+//webView.evaluateJavaScript("document.documentElement.outerHTML.toString()",
+//                           completionHandler: { (html: Any?, error: Error?) in
+//    print(html)
+//})
+//self.perform(#selector(uploadText), with: nil, afterDelay: 10)
+
+
+func getMorningRoutineDate()->Date?{
+    if let path = UserDefaults.standard.object(forKey: kUserdefaultsSelectedFolder) as? String{
+        if FileManager.default.fileExists(atPath: path){
+            let url = URL(fileURLWithPath: path)
+            let fileUrl = url.appendingPathComponent("timestamp.plist")
+            if let dic = NSMutableDictionary(contentsOf: fileUrl){
+                if let stringDate = dic["lastMorningRoutine"] as? String{
+                    if let date = getDateFromString(date: stringDate, dateFormat: "yyyy-MM-dd HH:mm:ss"){
+                        return date
+                    }
+                }
+            }
+        }
+    }
+    return nil
+}
+func writeMorningRoutineDate(){
+    var plistContent = NSMutableDictionary()
+    
+    if let path = UserDefaults.standard.object(forKey: kUserdefaultsSelectedFolder) as? String{
+        let url = URL(fileURLWithPath: path)
+        let fileUrl = url.appendingPathComponent("timestamp.plist")
+        if FileManager.default.fileExists(atPath: fileUrl.path){
+            if let dic = NSMutableDictionary(contentsOf: fileUrl){
+                plistContent = dic
+            }
+        }
+        let dateObj = Date()
+        let timestamp = getStringFromDate(date: dateObj, dateFormat: "yyyy-MM-dd HH:mm:ss")
+        plistContent["lastMorningRoutine"] = timestamp
+        let success:Bool = plistContent.write(toFile: fileUrl.path, atomically: true)
+        if success {
+            print("file has been created!")
+        }else{
+            print("unable to create the file")
+        }
+    }
+    
+}
+func getEveningRoutineDate()->Date?{
+    if let path = UserDefaults.standard.object(forKey: kUserdefaultsSelectedFolder) as? String{
+        if FileManager.default.fileExists(atPath: path){
+            let url = URL(fileURLWithPath: path)
+            let fileUrl = url.appendingPathComponent("timestamp.plist")
+            if let dic = NSMutableDictionary(contentsOf: fileUrl){
+                if let stringDate = dic["lastEveningRoutine"] as? String{
+                    if let date = getDateFromString(date: stringDate, dateFormat: "yyyy-MM-dd HH:mm:ss"){
+                        return date
+                    }
+                }
+            }
+        }
+    }
+    return nil
+}
+func writeEveningRoutineDate(){
+    var plistContent = NSMutableDictionary()
+    
+    if let path = UserDefaults.standard.object(forKey: kUserdefaultsSelectedFolder) as? String{
+        let url = URL(fileURLWithPath: path)
+        let fileUrl = url.appendingPathComponent("timestamp.plist")
+        if FileManager.default.fileExists(atPath: fileUrl.path){
+            if let dic = NSMutableDictionary(contentsOf: fileUrl){
+                plistContent = dic
+            }
+        }
+        let dateObj = Date()
+        let timestamp = getStringFromDate(date: dateObj, dateFormat: "yyyy-MM-dd HH:mm:ss")
+        plistContent["lastEveningRoutine"] = timestamp
+        let success:Bool = plistContent.write(toFile: fileUrl.path, atomically: true)
+        if success {
+            print("file has been created!")
+        }else{
+            print("unable to create the file")
+        }
+    }
+    
+}
+
+
+
+var currentHoverBox:customBox?
+class customBox: NSBox {
+
+    var tagValue = 0
+    var isTableView = false
+    override func awakeFromNib() {
+        super.awakeFromNib()
+        addTrackingArea(NSTrackingArea(rect: bounds, options: [.activeAlways, .inVisibleRect, .mouseEnteredAndExited], owner: self, userInfo: nil))
+    }
+
+    override func mouseEntered(with event: NSEvent) {
+        super.mouseEntered(with: event)
+        if currentHoverBox != nil{
+            if currentHoverBox! != self{
+                currentHoverBox!.fillColor = .clear
+            }
+        }
+        self.fillColor = NSColor.quaternaryLabelColor
+        currentHoverBox = self
+    }
+    
+    override func mouseDown(with event: NSEvent) {
+       // super.mouseDown(with: event)
+        print("mouse down")
+        if isTableView{
+            
+        }else{
+           super.mouseDown(with: event)
+        }
+      
+    }
+
+    override func mouseUp(with event: NSEvent) {
+        super.mouseUp(with: event)
+        print("mouse up")
+        if isTableView{
+            if UserDefaults.standard.object(forKey: "trialExpired") != nil{
+                activationWindowControllerObj?.showSevenDayTrialVc()
+                return;
+            }
+            
+            if arrFocusType[tagValue]["isOn"] as? Bool == true{
+             //abort focus mode 
+                showAbortingFocusModeVc()
+            }else{
+                for i in 0..<arrFocusType.count{
+                    if arrFocusType[i]["isOn"] as? Bool == true{
+//                        NSAlert
+                        let alert = NSAlert()
+                        alert.messageText = "A focus mode is already running. Please abort the running focus mode to start a new one."
+                        
+                        if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
+                            if let focusAlreadyRunningText = focusInfo.value(forKey: "focusAlreadyRunningText") as? String{
+                                alert.messageText = focusAlreadyRunningText
+                            }
+                        }
+                        alert.runModal()
+                        return;
+                    }
+                }
+                
+                
+                
+                
+                // new work starting foces mode
+                
+                
+                
+                showStartingFocusMode(focusModeIndex: tagValue, focusType: arrFocusType[tagValue]["name"] as? String ?? "")
+                
+                return;
+
+            }
+
+            
+        }
+    }
+    
+    override func mouseExited(with event: NSEvent) {
+        super.mouseExited(with: event)
+        self.fillColor = NSColor.clear
+    }
+}
+var focusModeStartWindowLodded = false
+var isFocusModeStartedFromPomodoroMode = false
+func showStartingFocusMode(focusModeIndex: Int, focusType: String){
+    addLog(text: "Showing Starting Focus Mode view")
+    startingFocusWindowControllerObj?.contentViewController = startingFocusModeVcObj
+    startingFocusWindowControllerObj?.showWindow(nil)
+    startingFocusModeVcObj?.ResetData(focusModeIndex: focusModeIndex, focusType: focusType)
+    NSApplication.shared.activate(ignoringOtherApps: true)
+}
+func showAbortingFocusModeVc(){
+    addLog(text: "Showing Abort focus mode view")
+    startingFocusWindowControllerObj?.contentViewController = abortingFocusModeVcObj
+    startingFocusWindowControllerObj?.showWindow(nil)
+    abortingFocusModeVcObj?.ResetData()
+    NSApplication.shared.activate(ignoringOtherApps: true)
+}
+var arrFocusType = [[String:Any]]()
+var isAllowedAllAppsInFocus = false
+var isAllowedAllUrlsInFocus = false
+var selfAppName = Bundle.main.infoDictionary!["CFBundleName"] as! String
+//var arrFocusType = [NSMutableDictionary]()
+//var arrFocusType = [focusType]()
+//struct focusType {
+//    var name:String
+//    var color:NSColor
+//    var appsArray:[String]
+//    var urlsArray:[String]
+//    init(name:String, color:NSColor, appsArray:[String], urlsArray:[String]) {
+//        self.name = name
+//        self.color = color
+//        self.appsArray = appsArray
+//        self.urlsArray = urlsArray
+//    }
+//}
+
+
+func getColorString(color:NSColor)->String{
+    let ciColor:CIColor = CIColor(color: color)!
+    let hexString = String(format: "%02X%02X%02X", Int(ciColor.red * 0xff), Int(ciColor.green * 0xff), Int(ciColor.blue * 0xff))
+    return hexString
+}
+func HexToColor(hexString: String, alpha:CGFloat? = 1.0) -> NSColor {
+    // Convert hex string to an integer
+    let hexint = Int(intFromHexString(hexStr: hexString))
+    let red = CGFloat((hexint & 0xff0000) >> 16) / 255.0
+    let green = CGFloat((hexint & 0xff00) >> 8) / 255.0
+    let blue = CGFloat((hexint & 0xff) >> 0) / 255.0
+    let alpha = alpha!
+    // Create color object, specifying alpha as well
+    let color = NSColor(red: red, green: green, blue: blue, alpha: alpha)
+    return color
+}
+func intFromHexString(hexStr: String) -> UInt32 {
+    var hexInt: UInt32 = 0
+    // Create scanner
+    let scanner: Scanner = Scanner(string: hexStr)
+    // Tell scanner to skip the # character
+    scanner.charactersToBeSkipped = NSCharacterSet(charactersIn: "#") as CharacterSet
+    // Scan hex value
+    scanner.scanHexInt32(&hexInt)
+    return hexInt
+}
+
+var timerForFocusMode:Timer?//jab bhi focus mode disable krenge timer bhi check krenge valid ua to invalidate krenge
+var isFocusTimeType:FocusModeTimeType = ._NONE_
+var endFocusModeTime:Date?
+var startFocusModeTime:Date?
+enum FocusModeTimeType:Int{
+    case _HOUR_ = 11, _TILL_SHUTOFF_, _NONE_
+}
+
+func isFocusModeOn()->Bool{
+    for dic in arrFocusType{
+        if dic["isOn"] as? Bool == true{
+            return true
+        }
+    }
+    return false
+}
+
+
+
+//pomodoro
+func resetPomodoroVcFocusListIfNeeded(){
+    if isPomodoroWindowLodded{
+        if pomodoroWindowControllerObj != nil{
+            if (pomodoroWindowControllerObj?.window!.isVisible)!{
+                if pomodoroWindowControllerObj?.contentViewController == pomodoroVcObj{
+                    pomodoroVcObj?.reFillFocusTypeList()
+                }
+            }
+        }
+    }
+}
+
+
+//CSV new entry
+func addEntryInCsv(logType:String, activity:String, durationInSeconds:String, quantityQuestion:String, quantityLogged:String, startTime:String, workAchieved:String, distractionsEncountered:String, abortReason:String, feedback:String ){
+    do {
+        var csv = try String(contentsOf: quantityCsvURL, encoding: .utf8)
+
+        let timestamp = getStringFromDate(date: Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
+
+        let csvString = "\(logType),\(timestamp),\(activity),\(durationInSeconds),\(quantityQuestion),\(quantityLogged),\(startTime),\(workAchieved),\(distractionsEncountered),\(abortReason),\(feedback)\n"
+        csv = csv.appending(csvString)
+        do {
+            try csv.write(to: quantityCsvURL, atomically: true, encoding: .utf8)
+        } catch {
+            print("error creating file")
+        }
+    }catch{
+        print(error)
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+func showBlankWindowInSecondaryMonitor(){
+    appdelegate?.showExtraWindows()
+}
+func hideBlankWindowInSecondaryMonitor(){
+    for i in 0..<arrWindows.count{
+        let window = arrWindows[i]
+//        if let vc = window.contentViewController as? ViewController{
+//            vc.customView.cbox?.isHidden = true
+//            vc.customView.setNeedsDisplay(vc.customView.frame)
+//            vc.customView.cRect = NSRect(x: 0, y: 0, width: 0, height: 0)
+//            vc.customView.mouseDownPoint = NSPoint.zero
+//        }
+        window.orderOut(nil)
+        arrWindows[i].windowController?.window=nil
+    }
+    arrWindows.removeAll()
+}
+var arrWindows = [NSWindow]()
+
+
+func resetWin(_ win: NSWindow) -> NSWindow {
+    win.collectionBehavior = NSWindow.CollectionBehavior.canJoinAllSpaces          // we want these windows to follow Spaces around
+    //use .desktopWindow for window below icons   //hack? this makes mission control and expose ignore these windows
+    //        if toggleButtonHideDesktopIcons.isOn{
+    //            win.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.backstopMenu)))
+    //        }else{
+    win.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.maximumWindow)))
+    //        }
+    // rest is to make the windows dumb
+    win.canHide = false
+    win.isExcludedFromWindowsMenu = true
+    win.hidesOnDeactivate = false
+    win.discardCursorRects()
+    win.discardEvents(matching: NSEvent.EventTypeMask.any, before: nil)
+    //win.ignoresMouseEvents = true
+    win.orderBack(nil)
+    win.isRestorable = false
+    win.animationBehavior = .none
+    win.backgroundColor = NSColor.clear
+    return win
+}
+
+class blankController: NSViewController {
+    @IBOutlet weak var lblTitle: NSTextField!
+    override func viewDidLoad() {
+        lblTitle.stringValue = appName//"Earn Your Screentime"
+    }
+}
+//4b3eb33632184640b82aa3e3f50fe11b2cdd8b0e82ce48a8bfd1cbe26edc32f5
+
+var newGifsNamesArray = ["Glasses-Bear-250-px_V3", "cheer_250px_trans_centered", "Finger-and-Sign-Bear-250px", "Weight-bear-250-px_V2", "Whistle-bear-250-px"]
+
+
+extension String {
+
+    func fromBase64() -> String? {
+        guard let data = Data(base64Encoded: self) else {
+            return nil
+        }
+
+        return String(data: data, encoding: .utf8)
+    }
+
+    func toBase64() -> String {
+        return Data(self.utf8).base64EncodedString()
+    }
+
 }

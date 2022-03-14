@@ -141,18 +141,55 @@ class abortingCantHandleVc: NSViewController, NSTextViewDelegate {
     @IBAction func btnMainClicked(_ sender: Any) {
         if isViewStartingSmall{
             //30 seconds work
-
-            getAbortJsonToUpload(emailAddress: textFieldEmail.stringValue, feedback: textViewFeedback.string, abortReason: "Start shortened routine", completionHandler: {dic in
-                DispatchQueue.main.async {
-                    appdelegate?.quitAndRestartApp()//agar ye ni ayga to aage ka flow set kro
-                }
-            })
+            if lastCurrentState == ._MORNING_HABIT_{
+                UserDefaults.standard.set(true, forKey: kUserdefaultsShowPomodoroView)
+            }else{
+                UserDefaults.standard.removeObject(forKey: kUserdefaultsShowPomodoroView)
+            }
+            
+            var logType = ""
+            var activity = ""
+            if lastCurrentState == ._MORNING_HABIT_{
+                logType = "morning routine abort"
+                activity = "morning routine"
+            }else if lastCurrentState == ._EVENING_HABIT_{
+                logType = "evening routine abort"
+                activity = "evening routine"
+            }else if lastCurrentState == ._ACTIVITY_{
+                logType = "break abort"
+                activity = "break"
+            }
+            
+            addEntryInCsv(logType: logType, activity: activity, durationInSeconds: "", quantityQuestion: "", quantityLogged: "", startTime: "", workAchieved: "", distractionsEncountered: "", abortReason: "Start shortened routine", feedback: textViewFeedback.string)
+            
+            appdelegate?.quitAndRestartApp()//agar ye ni ayga to aage ka flow set kro
+//            getAbortJsonToUpload(emailAddress: textFieldEmail.stringValue, feedback: textViewFeedback.string, abortReason: "Start shortened routine", completionHandler: {dic in
+//                DispatchQueue.main.async {
+//                    appdelegate?.quitAndRestartApp()//agar ye ni ayga to aage ka flow set kro
+//                }
+//            })
         }else{
-            getAbortJsonToUpload(emailAddress: textFieldEmail.stringValue, feedback: textViewFeedback.string, abortReason: "Deactivate routine + breaks", completionHandler: {dic in
-                DispatchQueue.main.async {
-                    mainViewControllerObj?.showAbortDoneView()
-                }
-            })
+            var logType = ""
+            var activity = ""
+            if lastCurrentState == ._MORNING_HABIT_{
+                logType = "morning routine abort"
+                activity = "morning routine"
+            }else if lastCurrentState == ._EVENING_HABIT_{
+                logType = "evening routine abort"
+                activity = "evening routine"
+            }else if lastCurrentState == ._ACTIVITY_{
+                logType = "break abort"
+                activity = "break"
+            }
+            
+            addEntryInCsv(logType: logType, activity: activity, durationInSeconds: "", quantityQuestion: "", quantityLogged: "", startTime: "", workAchieved: "", distractionsEncountered: "", abortReason: "Deactivate routine + breaks", feedback: textViewFeedback.string)
+            
+            mainViewControllerObj?.showAbortDoneView()
+//            getAbortJsonToUpload(emailAddress: textFieldEmail.stringValue, feedback: textViewFeedback.string, abortReason: "Deactivate routine + breaks", completionHandler: {dic in
+//                DispatchQueue.main.async {
+//                    mainViewControllerObj?.showAbortDoneView()
+//                }
+//            })
         }
     }
 }

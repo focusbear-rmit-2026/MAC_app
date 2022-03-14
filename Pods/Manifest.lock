@@ -1,16 +1,31 @@
 PODS:
   - JSONSchema (0.6.0)
+  - Sentry (7.10.0):
+    - Sentry/Core (= 7.10.0)
+  - Sentry/Core (7.10.0)
 
 DEPENDENCIES:
   - JSONSchema
+  - Sentry (from `https://github.com/getsentry/sentry-cocoa.git`, tag `7.10.0`)
 
 SPEC REPOS:
   trunk:
     - JSONSchema
 
+EXTERNAL SOURCES:
+  Sentry:
+    :git: https://github.com/getsentry/sentry-cocoa.git
+    :tag: 7.10.0
+
+CHECKOUT OPTIONS:
+  Sentry:
+    :git: https://github.com/getsentry/sentry-cocoa.git
+    :tag: 7.10.0
+
 SPEC CHECKSUMS:
   JSONSchema: c84ae39b71107fec1d5c3ef0bc0a23ab49daee0c
+  Sentry: 6ff0eac197e699126c024993eba40a7462e92941
 
-PODFILE CHECKSUM: 8e99c4e900982bac28e409a5d0cc59bc4a652e5f
+PODFILE CHECKSUM: 14103350e421fc5c495e04056e8b175a0d33ce9f
 
 COCOAPODS: 1.11.2

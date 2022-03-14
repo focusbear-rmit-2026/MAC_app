@@ -23,7 +23,43 @@ class ViewController: NSViewController {
         if let common = configjson.value(forKey: "common") as? NSDictionary{
             lblMessage.stringValue = common.value(forKey: "stayFocusedText") as? String ?? lblMessage.stringValue
         }
+        isMainWindowLodded = true
+    }
+    func showFocusCompletedView(){
+        btnAbort.isHidden = true
+        removeSubViews()
+        containerView.addSubview(focusCompletedVcObj!.view)
+        containerView.addConstraints(subView: focusCompletedVcObj!.view)
+        currentState = ._FOCUS_COMPLETED_
+    }
+    
+    func showFocusSummaryView(){
+        addLog(text: "Showing Focus Summary")
+        btnAbort.isHidden = true
+        removeSubViews()
+        containerView.addSubview(focusSummaryVcObj!.view)
+        containerView.addConstraints(subView: focusSummaryVcObj!.view)
+        currentState = ._FOCUS_SUMMARY_
         
+        if startTime == nil || shutOffTime == nil{
+            return;
+        }
+        let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
+        let shutOffdate = Calendar.current.date(bySettingHour: shutOffTime!.hour, minute: shutOffTime!.minute, second: shutOffTime!.second, of: Date())!
+        
+        let curreentDate = Date()
+        if curreentDate > shutOffdate{// iska matlab 20-24 k bich
+            let tomorrowDate = Calendar.current.date(byAdding: .day, value: 1, to: Date())!
+            let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: tomorrowDate)
+            UserDefaults.standard.set(startDate, forKey: kUserdefaultsFocusSummaryShowedTillDate)
+        }else if curreentDate < startDate{ //  iska mtlb 1 se 10 k bich ka time
+            UserDefaults.standard.set(startDate, forKey: kUserdefaultsFocusSummaryShowedTillDate)
+        }
+        
+    }
+    func showLogQuantityView(){
+        self.view.addSubview(logQuantityVcObj!.view)
+        self.view.addConstraints(subView: logQuantityVcObj!.view)
     }
     @IBAction func btnAbortClicked(_ sender: Any) {
         lastCurrentState = currentState
@@ -34,50 +70,32 @@ class ViewController: NSViewController {
                 if timerViewcontrollerObj != nil {
                     if timerViewcontrollerObj?.timer != nil {
                         timerViewcontrollerObj?.timer?.invalidate()
-                            if timerViewcontrollerObj?.webView.isHidden == false{
-                                timerViewcontrollerObj?.loadBlankUrl()
-                            }
+                        if timerViewcontrollerObj?.webView.isHidden == false{
+                            timerViewcontrollerObj?.loadBlankUrl()
+                        }
                     }
                 }
             }
-            
-//            else if currentState == ._EVENING_HABIT_ {//todo delete
-//                if timerViewcontrollerObj != nil {
-//                    if timerViewcontrollerObj?.timer != nil {
-//                        timerViewcontrollerObj?.timer?.invalidate()
-//                        if timerViewcontrollerObj?.webView.isHidden == false{
-//                            timerViewcontrollerObj?.loadBlankUrl()
-//                        }
-//                    }
-//                }
-//            }
-//            else if currentState == ._ACTIVITY_ {
-//                if timerViewcontrollerObj != nil {
-//                    if timerViewcontrollerObj?.timer != nil {
-//                        timerViewcontrollerObj?.timer?.invalidate()
-//                            if timerViewcontrollerObj?.webView.isHidden == false{
-//                                timerViewcontrollerObj?.loadBlankUrl()
-//                            }
-//                    }
-//                }
-//            }else if currentState == ._BREATHING_ {
-//                if timerViewcontrollerObj != nil {
-//                    if timerViewcontrollerObj?.timer != nil {
-//                        timerViewcontrollerObj?.timer?.invalidate()
-//                            if timerViewcontrollerObj?.webView.isHidden == false{
-//                                timerViewcontrollerObj?.loadBlankUrl()
-//                            }
-//                    }
-//                }
-//            }
         }
+        if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_{
+            if UserDefaults.standard.object(forKey: kUserdefaultsAppPassword) != nil{
+                self.view.addSubview(enterPasswordVcObj!.view)
+                self.view.addConstraints(subView: enterPasswordVcObj!.view)
+                addLog(text: "Showing enter password view")
+            }else{
+                showAbortStartView()
+            }
+        }else{
+            showAbortStartView()
+        }
+    }
+    func showAbortStartView(){
         removeSubViews()
         containerView.addSubview(abortingCountDownVcObj!.view)
         containerView.addConstraints(subView: abortingCountDownVcObj!.view)
         abortingCountDownVcObj?.startTimer()
         currentState = ._ABORT_
     }
-    
     func abortCancel(){
         btnAbort.isHidden = false
         removeSubViews()
@@ -92,15 +110,16 @@ class ViewController: NSViewController {
             case ._INPROGRESS_:
                 containerView.addSubview(timerViewcontrollerObj!.view)
                 containerView.addConstraints(subView: timerViewcontrollerObj!.view)
-                if isAnyMandatoryActivityIncluded{
-                    if isMandatoryActivityGoing{
-                        timerViewcontrollerObj?.resumeTimerActivity(durationInSeconds: arrActivitiesIncludeInEveryBreak[currentActivityIndex].durationSeconds, name: arrActivitiesIncludeInEveryBreak[currentActivityIndex].name!, url: arrActivitiesIncludeInEveryBreak[currentActivityIndex].url)
-                    }else{
-                        timerViewcontrollerObj?.resumeTimerActivity(durationInSeconds: arrActivitiesExcludeInEveryBreak[currentActivityIndex].durationSeconds, name: arrActivitiesExcludeInEveryBreak[currentActivityIndex].name!, url: arrActivitiesExcludeInEveryBreak[currentActivityIndex].url)
-                    }
-                }else{
-                    timerViewcontrollerObj?.resumeTimerActivity(durationInSeconds: arrAllbreakActivities[currentActivityIndex].durationSeconds, name: arrAllbreakActivities[currentActivityIndex].name!, url: arrAllbreakActivities[currentActivityIndex].url)
-                }
+//                if isAnyMandatoryActivityIncluded{
+//                    if isMandatoryActivityGoing{
+//                        timerViewcontrollerObj?.resumeTimerActivity(durationInSeconds: timerViewcontrollerObj?.currentDurationInSeconds ?? 0, name: timerViewcontrollerObj?.currentActicityTitle ?? "", url: timerViewcontrollerObj?.currentUrl)
+//                    }else{
+//                        timerViewcontrollerObj?.resumeTimerActivity(durationInSeconds: arrActivitiesExcludeInEveryBreak[currentActivityIndex].durationSeconds, name: arrActivitiesExcludeInEveryBreak[currentActivityIndex].name!, url: arrActivitiesExcludeInEveryBreak[currentActivityIndex].urlsArray.randomElement())
+//                    }
+//                }else{
+//                    timerViewcontrollerObj?.resumeTimerActivity(durationInSeconds: arrAllbreakActivities[currentActivityIndex].durationSeconds, name: arrAllbreakActivities[currentActivityIndex].name!, url: arrAllbreakActivities[currentActivityIndex].urlsArray.randomElement())
+//                }
+                timerViewcontrollerObj?.resumeTimerActivity(durationInSeconds: timerViewcontrollerObj?.currentDurationInSeconds ?? 0, name: timerViewcontrollerObj?.currentActicityTitle ?? "", url: timerViewcontrollerObj?.currentUrl)
                 currentState = ._ACTIVITY_
                 currentAction = ._INPROGRESS_
                 break
@@ -120,7 +139,7 @@ class ViewController: NSViewController {
             case ._INPROGRESS_:
                 containerView.addSubview(timerViewcontrollerObj!.view)
                 containerView.addConstraints(subView: timerViewcontrollerObj!.view)
-                timerViewcontrollerObj?.resumeTimerHabit(durationSeconds: arrAllMorningHabits[currentHabitIndex].durationSeconds, url: arrAllMorningHabits[currentHabitIndex].url, name: arrAllMorningHabits[currentHabitIndex].name!)
+                timerViewcontrollerObj?.resumeTimerHabit(durationSeconds: arrAllMorningHabits[currentHabitIndex].durationSeconds, url: arrAllMorningHabits[currentHabitIndex].urlsArray.randomElement(), name: arrAllMorningHabits[currentHabitIndex].name!)
                 currentState = ._MORNING_HABIT_
                 currentAction = ._INPROGRESS_
                 break
@@ -141,7 +160,7 @@ class ViewController: NSViewController {
             case ._INPROGRESS_:
                 containerView.addSubview(timerViewcontrollerObj!.view)
                 containerView.addConstraints(subView: timerViewcontrollerObj!.view)
-                timerViewcontrollerObj?.resumeTimerHabit(durationSeconds: arrAllEveningHabits[currentHabitIndex].durationSeconds, url: arrAllEveningHabits[currentHabitIndex].url, name: arrAllEveningHabits[currentHabitIndex].name!)
+                timerViewcontrollerObj?.resumeTimerHabit(durationSeconds: arrAllEveningHabits[currentHabitIndex].durationSeconds, url: arrAllEveningHabits[currentHabitIndex].urlsArray.randomElement(), name: arrAllEveningHabits[currentHabitIndex].name!)
                 currentState = ._EVENING_HABIT_
                 currentAction = ._INPROGRESS_
                 break
@@ -197,12 +216,17 @@ class ViewController: NSViewController {
     func disableApp(){
         addLog(text: "App Deactivated by user (Aborted)")
         UserDefaults.standard.set(false, forKey: kUserdefaultsIsAppEnabled)
+        if lastCurrentState == ._MORNING_HABIT_{
+            UserDefaults.standard.set(true, forKey: kUserdefaultsShowPomodoroView)
+        }else{
+            UserDefaults.standard.removeObject(forKey: kUserdefaultsShowPomodoroView)
+        }
         appdelegate?.quitAndRestartApp()
         return;
        
-        removeSubViews()
-        appdelegate?.abortAllProcess()
-        mainWindowControllerObj?.window?.setIsVisible(false)
+//        removeSubViews()
+//        appdelegate?.abortAllProcess()
+//        mainWindowControllerObj?.window?.setIsVisible(false)
     }
     override var representedObject: Any? {
         didSet {
@@ -230,6 +254,7 @@ class ViewController: NSViewController {
             self.breakTimer?.invalidate()
             self.breakTimer = nil
         }
+        NSApplication.shared.activate(ignoringOtherApps: true)
     }
     func showFirstTimeVc(){
         addLog(text: "Showing first time welcome activity.")
@@ -238,8 +263,9 @@ class ViewController: NSViewController {
         firstViewControllerObj?.isFirstTime = true
         containerView.addSubview(firstViewControllerObj!.view)
         containerView.addConstraints(subView: firstViewControllerObj!.view)
-        currentState = ._FIRST_TIME_
+        currentState = ._BREATHING_
         currentAction = ._START_
+        NSApplication.shared.activate(ignoringOtherApps: true)
     }
     func showAllEveningHabits(){
         addLog(text: "Initiate and run Evening Habits.")
@@ -250,7 +276,8 @@ class ViewController: NSViewController {
         firstViewControllerObj?.isFirstTime = false
         containerView.addSubview(firstViewControllerObj!.view)
         containerView.addConstraints(subView: firstViewControllerObj!.view)
-        
+        NSApplication.shared.activate(ignoringOtherApps: true)
+        writeEveningRoutineDate()
         if startTime == nil || shutOffTime == nil{
             return;
         }
@@ -276,6 +303,7 @@ class ViewController: NSViewController {
         firstViewControllerObj?.isFirstTime = false
         containerView.addSubview(firstViewControllerObj!.view)
         containerView.addConstraints(subView: firstViewControllerObj!.view)
+        NSApplication.shared.activate(ignoringOtherApps: true)
     }
     func startFirstMorningHabit() {
         btnAbort.isHidden = false
@@ -283,7 +311,7 @@ class ViewController: NSViewController {
         currentHabitIndex = 0
         containerView.addSubview(timerViewcontrollerObj!.view)
         containerView.addConstraints(subView: timerViewcontrollerObj!.view)
-        timerViewcontrollerObj?.startTimerHabit(durationSeconds: arrAllMorningHabits[currentHabitIndex].durationSeconds, url: arrAllMorningHabits[currentHabitIndex].url, name: arrAllMorningHabits[currentHabitIndex].name!)
+        timerViewcontrollerObj?.startTimerHabit(durationSeconds: arrAllMorningHabits[currentHabitIndex].durationSeconds, url: arrAllMorningHabits[currentHabitIndex].urlsArray.randomElement(), name: arrAllMorningHabits[currentHabitIndex].name!)
         currentState = ._MORNING_HABIT_
         currentAction = ._INPROGRESS_
     }
@@ -294,7 +322,7 @@ class ViewController: NSViewController {
         currentHabitIndex = 0
         containerView.addSubview(timerViewcontrollerObj!.view)
         containerView.addConstraints(subView: timerViewcontrollerObj!.view)
-        timerViewcontrollerObj?.startTimerHabit(durationSeconds: arrAllEveningHabits[currentHabitIndex].durationSeconds, url: arrAllEveningHabits[currentHabitIndex].url, name: arrAllEveningHabits[currentHabitIndex].name!)
+        timerViewcontrollerObj?.startTimerHabit(durationSeconds: arrAllEveningHabits[currentHabitIndex].durationSeconds, url: arrAllEveningHabits[currentHabitIndex].urlsArray.randomElement(), name: arrAllEveningHabits[currentHabitIndex].name!)
         currentState = ._EVENING_HABIT_
         currentAction = ._INPROGRESS_
     }
@@ -337,6 +365,15 @@ class ViewController: NSViewController {
         }else{
             playAfterMorningRoutineSound()
             shutOffMac()
+            if arrAllEveningHabits[currentHabitIndex].logQuantity{
+                mainViewControllerObj!.showLogQuantityView()
+                let lastHabit = arrAllEveningHabits[currentHabitIndex].name
+                logQuantityVcObj?.resetData(name: lastHabit!, durationInSeconds: "\(arrAllEveningHabits[currentHabitIndex].durationSeconds!)", logQuantityQuestion: arrAllEveningHabits[currentHabitIndex].logQuantityQuestion, currentState: ._EVENING_HABIT_)
+            }else{
+                let lastHabit = arrAllEveningHabits[currentHabitIndex].name
+                let startTime = getStringFromDate(date: lastActivityPerformedTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")
+                addEntryInCsv(logType: "evening routine", activity: lastHabit!, durationInSeconds: "\(arrAllEveningHabits[currentHabitIndex].durationSeconds!)", quantityQuestion: "", quantityLogged: "", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "")
+            }
         }
         
     }
@@ -355,7 +392,7 @@ class ViewController: NSViewController {
         currentHabitIndex += 1
         containerView.addSubview(timerViewcontrollerObj!.view)
         containerView.addConstraints(subView: timerViewcontrollerObj!.view)
-        timerViewcontrollerObj?.startTimerHabit(durationSeconds: arrAllMorningHabits[currentHabitIndex].durationSeconds, url: arrAllMorningHabits[currentHabitIndex].url, name: arrAllMorningHabits[currentHabitIndex].name!)
+        timerViewcontrollerObj?.startTimerHabit(durationSeconds: arrAllMorningHabits[currentHabitIndex].durationSeconds, url: arrAllMorningHabits[currentHabitIndex].urlsArray.randomElement(), name: arrAllMorningHabits[currentHabitIndex].name!)
         currentState = ._MORNING_HABIT_
         currentAction = ._INPROGRESS_
     }
@@ -366,10 +403,11 @@ class ViewController: NSViewController {
         currentHabitIndex += 1
         containerView.addSubview(timerViewcontrollerObj!.view)
         containerView.addConstraints(subView: timerViewcontrollerObj!.view)
-        timerViewcontrollerObj?.startTimerHabit(durationSeconds: arrAllEveningHabits[currentHabitIndex].durationSeconds, url: arrAllEveningHabits[currentHabitIndex].url, name: arrAllEveningHabits[currentHabitIndex].name!)
+        timerViewcontrollerObj?.startTimerHabit(durationSeconds: arrAllEveningHabits[currentHabitIndex].durationSeconds, url: arrAllEveningHabits[currentHabitIndex].urlsArray.randomElement(), name: arrAllEveningHabits[currentHabitIndex].name!)
         currentState = ._EVENING_HABIT_
         currentAction = ._INPROGRESS_
     }
+    
     
     func startCurrentActivity() {
         btnAbort.isHidden = false
@@ -377,9 +415,31 @@ class ViewController: NSViewController {
         containerView.addSubview(timerViewcontrollerObj!.view)
         containerView.addConstraints(subView: timerViewcontrollerObj!.view)
         if isMandatoryActivityGoing{
-            timerViewcontrollerObj?.startTimerActivity(durationInSeconds: arrActivitiesIncludeInEveryBreak[currentActivityIndex].durationSeconds, name: arrActivitiesIncludeInEveryBreak[currentActivityIndex].name!, url: arrActivitiesIncludeInEveryBreak[currentActivityIndex].url)
+            let currentActivity = arrActivitiesIncludeInEveryBreak[currentActivityIndex]
+            
+            if !currentActivity.isRandomChoice{
+                timerViewcontrollerObj?.startTimerActivity(durationInSeconds: currentActivity.durationSeconds, name: currentActivity.name!, url: currentActivity.urlsArray.randomElement(), logQuantityQuestion: currentActivity.logQuantityQuestion)
+            }else{//random choice
+                if let randomChoice = thirdVcObj?.currentActivityChoice{//currentActivity.choices.randomElement(){
+                    timerViewcontrollerObj?.startTimerActivity(durationInSeconds: currentActivity.durationSeconds, name: randomChoice.name, url: randomChoice.urlsArray.randomElement(), logQuantityQuestion: randomChoice.logQuantityQuestion ?? currentActivity.logQuantityQuestion)
+                }else if let randomChoice = currentActivity.choices.randomElement(){
+                    timerViewcontrollerObj?.startTimerActivity(durationInSeconds: currentActivity.durationSeconds, name: randomChoice.name, url: randomChoice.urlsArray.randomElement(), logQuantityQuestion: randomChoice.logQuantityQuestion ?? currentActivity.logQuantityQuestion)
+                }
+            }
+            
+            
         }else{
-            timerViewcontrollerObj?.startTimerActivity(durationInSeconds: arrAllbreakActivities[currentActivityIndex].durationSeconds, name: arrAllbreakActivities[currentActivityIndex].name!, url: arrAllbreakActivities[currentActivityIndex].url)
+            let currentActivity = arrAllbreakActivities[currentActivityIndex]
+            if !currentActivity.isRandomChoice{
+                timerViewcontrollerObj?.startTimerActivity(durationInSeconds: currentActivity.durationSeconds, name: currentActivity.name!, url: currentActivity.urlsArray.randomElement(), logQuantityQuestion: currentActivity.logQuantityQuestion)
+            }else{//random choice
+                if let randomChoice = thirdVcObj?.currentActivityChoice{//currentActivity.choices.randomElement(){
+                    timerViewcontrollerObj?.startTimerActivity(durationInSeconds: currentActivity.durationSeconds, name: randomChoice.name, url: randomChoice.urlsArray.randomElement(), logQuantityQuestion: randomChoice.logQuantityQuestion ?? currentActivity.logQuantityQuestion)
+                }else if let randomChoice = currentActivity.choices.randomElement(){
+                    timerViewcontrollerObj?.startTimerActivity(durationInSeconds: currentActivity.durationSeconds, name: randomChoice.name, url: randomChoice.urlsArray.randomElement(), logQuantityQuestion: randomChoice.logQuantityQuestion ?? currentActivity.logQuantityQuestion)
+                }
+            }
+            
         }
         
         currentState = ._ACTIVITY_
@@ -399,16 +459,58 @@ class ViewController: NSViewController {
                 if currentActivityIndex > arrActivitiesIncludeInEveryBreak.count - 1{
                     currentActivityIndex = lastIndex// phle hi current index awt ki thi ..is condition k liye
                     isMandatoryActivityGoing = false//
-                    timerViewcontrollerObj?.startTimerActivity(durationInSeconds: arrActivitiesExcludeInEveryBreak[currentActivityIndex].durationSeconds, name: arrActivitiesExcludeInEveryBreak[currentActivityIndex].name!, url: arrActivitiesExcludeInEveryBreak[currentActivityIndex].url)
+                    
+                    let currentActivity = arrActivitiesExcludeInEveryBreak[currentActivityIndex]
+                    
+                    if !currentActivity.isRandomChoice{
+                        timerViewcontrollerObj?.startTimerActivity(durationInSeconds: currentActivity.durationSeconds, name: currentActivity.name!, url: currentActivity.urlsArray.randomElement(), logQuantityQuestion: currentActivity.logQuantityQuestion)
+                    }else{
+                        if let randomChoice = thirdVcObj?.currentActivityChoice{//currentActivity.choices.randomElement(){
+                            timerViewcontrollerObj?.startTimerActivity(durationInSeconds: currentActivity.durationSeconds, name: randomChoice.name, url: randomChoice.urlsArray.randomElement(), logQuantityQuestion: randomChoice.logQuantityQuestion ?? currentActivity.logQuantityQuestion)
+                        }else if let randomChoice = currentActivity.choices.randomElement(){
+                            timerViewcontrollerObj?.startTimerActivity(durationInSeconds: currentActivity.durationSeconds, name: randomChoice.name, url: randomChoice.urlsArray.randomElement(), logQuantityQuestion: randomChoice.logQuantityQuestion ?? currentActivity.logQuantityQuestion)
+                        }
+                    }
+                    
                 }else{
-                    timerViewcontrollerObj?.startTimerActivity(durationInSeconds: arrActivitiesIncludeInEveryBreak[currentActivityIndex].durationSeconds, name: arrActivitiesIncludeInEveryBreak[currentActivityIndex].name!, url: arrActivitiesIncludeInEveryBreak[currentActivityIndex].url)
+                    let currentActivity = arrActivitiesIncludeInEveryBreak[currentActivityIndex]
+                    
+                    if !currentActivity.isRandomChoice{
+                        timerViewcontrollerObj?.startTimerActivity(durationInSeconds: currentActivity.durationSeconds, name: currentActivity.name!, url: currentActivity.urlsArray.randomElement(), logQuantityQuestion: currentActivity.logQuantityQuestion)
+                    }else{
+                        if let randomChoice = thirdVcObj?.currentActivityChoice{//currentActivity.choices.randomElement(){
+                            timerViewcontrollerObj?.startTimerActivity(durationInSeconds: currentActivity.durationSeconds, name: randomChoice.name, url: randomChoice.urlsArray.randomElement(), logQuantityQuestion: randomChoice.logQuantityQuestion ?? currentActivity.logQuantityQuestion)
+                        }else if let randomChoice = currentActivity.choices.randomElement(){
+                            timerViewcontrollerObj?.startTimerActivity(durationInSeconds: currentActivity.durationSeconds, name: randomChoice.name, url: randomChoice.urlsArray.randomElement(), logQuantityQuestion: randomChoice.logQuantityQuestion ?? currentActivity.logQuantityQuestion)
+                        }
+                    }
                 }
             }else{
-                timerViewcontrollerObj?.startTimerActivity(durationInSeconds: arrActivitiesExcludeInEveryBreak[currentActivityIndex].durationSeconds, name: arrActivitiesExcludeInEveryBreak[currentActivityIndex].name!, url: arrActivitiesExcludeInEveryBreak[currentActivityIndex].url)
+                let currentActivity = arrActivitiesExcludeInEveryBreak[currentActivityIndex]
+                
+                if !currentActivity.isRandomChoice{
+                    timerViewcontrollerObj?.startTimerActivity(durationInSeconds: currentActivity.durationSeconds, name: currentActivity.name!, url: currentActivity.urlsArray.randomElement(), logQuantityQuestion: currentActivity.logQuantityQuestion)
+                }else{
+                    if let randomChoice = thirdVcObj?.currentActivityChoice{//currentActivity.choices.randomElement(){
+                        timerViewcontrollerObj?.startTimerActivity(durationInSeconds: currentActivity.durationSeconds, name: randomChoice.name, url: randomChoice.urlsArray.randomElement(), logQuantityQuestion: randomChoice.logQuantityQuestion ?? currentActivity.logQuantityQuestion)
+                    }else if let randomChoice = currentActivity.choices.randomElement(){
+                        timerViewcontrollerObj?.startTimerActivity(durationInSeconds: currentActivity.durationSeconds, name: randomChoice.name, url: randomChoice.urlsArray.randomElement(), logQuantityQuestion: randomChoice.logQuantityQuestion ?? currentActivity.logQuantityQuestion)
+                    }
+                }
             }
         }else{
             currentActivityIndex += 1
-            timerViewcontrollerObj?.startTimerActivity(durationInSeconds: arrAllbreakActivities[currentActivityIndex].durationSeconds, name:  arrAllbreakActivities[currentActivityIndex].name!, url: arrAllbreakActivities[currentActivityIndex].url)
+            let currentActivity = arrAllbreakActivities[currentActivityIndex]
+            
+            if !currentActivity.isRandomChoice{
+                timerViewcontrollerObj?.startTimerActivity(durationInSeconds: currentActivity.durationSeconds, name: currentActivity.name!, url: currentActivity.urlsArray.randomElement(), logQuantityQuestion: currentActivity.logQuantityQuestion)
+            }else{
+                if let randomChoice = thirdVcObj?.currentActivityChoice{//currentActivity.choices.randomElement(){
+                    timerViewcontrollerObj?.startTimerActivity(durationInSeconds: currentActivity.durationSeconds, name: randomChoice.name, url: randomChoice.urlsArray.randomElement(), logQuantityQuestion: randomChoice.logQuantityQuestion ?? currentActivity.logQuantityQuestion)
+                }else if let randomChoice = currentActivity.choices.randomElement(){
+                    timerViewcontrollerObj?.startTimerActivity(durationInSeconds: currentActivity.durationSeconds, name: randomChoice.name, url: randomChoice.urlsArray.randomElement(), logQuantityQuestion: randomChoice.logQuantityQuestion ?? currentActivity.logQuantityQuestion)
+                }
+            }
         }
         
         currentState = ._ACTIVITY_
@@ -421,12 +523,22 @@ class ViewController: NSViewController {
         lblMessage.isHidden = false
         currentHabitIndex = -1
         self.perform(#selector(unlockMachine), with: nil, afterDelay: 3)
+        if let state = UserDefaults.standard.object(forKey: kUserdefaultsPomodoroModeEnabled) as? Bool{
+            if state{
+                appdelegate?.showPomodoroModeView()
+            }
+        }
         currentState = ._NOTHING_
     }
     @objc func unlockMachine() {
         lblMessage.isHidden = true
         mainWindowControllerObj?.window?.setIsVisible(false)
+        hideBlankWindowInSecondaryMonitor()
         setActivityTimer()
+        if isFirstRun{//welcome routine k baad set krenge (when first time)
+            appdelegate!.setBackgroundThreadTimer()
+            isFirstRun = false
+        }
     }
     var breakTimer: Timer?
     func setActivityTimer(){
@@ -490,7 +602,7 @@ class ViewController: NSViewController {
             
             let currentDate = Date()
             if currentDate.compare(startDate) == .orderedAscending  || currentDate.compare(shutOffdate) == .orderedDescending{
-                return;//agar kisi ne shutdown abort bhi kr diya to bhi kuch ni hoga
+                return;//agar kisi ne shutdown abort bhi kr diya to bhi kuch ni hoga// iise focus summary or evening routine k time per bhi rreturn ho jayga
             }
             self.breakTimer = nil
             if arrAllbreakActivities.count != 0 {
@@ -523,6 +635,8 @@ class ViewController: NSViewController {
                 self.containerView.addConstraints(subView: thirdVcObj!.view)
                 thirdVcObj?.startBreakActivity()
                 mainWindowControllerObj?.window?.setIsVisible(true)
+                showBlankWindowInSecondaryMonitor()
+                NSApplication.shared.activate(ignoringOtherApps: true)
                 currentState = ._ACTIVITY_
                 currentAction = ._START_
             }
@@ -534,7 +648,7 @@ class ViewController: NSViewController {
         removeSubViews()
         currentState = ._NOTHING_
         mainWindowControllerObj?.window?.setIsVisible(false)
-        
+        hideBlankWindowInSecondaryMonitor()
         
         if startTime == nil || shutOffTime == nil{
             return;
@@ -553,7 +667,7 @@ class ViewController: NSViewController {
         
     }
     @IBAction func btnHiddenClicked(_ sender: Any) {
-        mainWindowControllerObj?.window?.close()
+        //mainWindowControllerObj?.window?.close()
     }
 }
 

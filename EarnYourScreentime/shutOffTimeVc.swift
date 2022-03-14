@@ -36,7 +36,29 @@ class shutOffTimeVc: NSViewController {
         imgViewGif.animates = true
         lblTitle.stringValue = "Time to wind down"
         btnGetAccessNow.title = "Get access now"
-        lblSubTitle.stringValue = "You told me you wanted to stay off your computer from \(shutOffTime?.hour ?? 0):\(shutOffTime?.minute ?? 0) to \(startTime?.hour ?? 0):\(startTime?.minute ?? 0). Enjoy your evening and sleep well. Look forward to helping you with your morning routine tomorrow."
+        
+        var shutOffHour = "\(shutOffTime?.hour ?? 0)"
+        if shutOffHour.count == 1{
+            shutOffHour = "0\(shutOffHour)"
+        }
+        
+        var shutOffMinute = "\(shutOffTime?.minute ?? 0)"
+        if shutOffMinute.count == 1{
+            shutOffMinute = "0\(shutOffMinute)"
+        }
+        
+        var startTimeHour = "\(startTime?.hour ?? 0)"
+        if startTimeHour.count == 1{
+            startTimeHour = "0\(startTimeHour)"
+        }
+        
+        var startTimeMinute = "\(startTime?.minute ?? 0)"
+        if startTimeMinute.count == 1{
+            startTimeMinute = "0\(startTimeMinute)"
+        }
+        
+        
+        lblSubTitle.stringValue = "You told me you wanted to stay off your computer from \(shutOffHour):\(shutOffMinute) to \(startTimeHour):\(startTimeMinute). Enjoy your evening and sleep well. Look forward to helping you with your morning routine tomorrow."
         
         
         
@@ -45,8 +67,8 @@ class shutOffTimeVc: NSViewController {
                 lblTitle.stringValue = title
             }
             if var subTitle = shutOffTimeInfo.value(forKey: "subTitle") as? String{
-                subTitle = subTitle.replacingOccurrences(of: "<SHUTOFFTIME>", with: "\(shutOffTime?.hour ?? 0):\(shutOffTime?.minute ?? 0)")
-                subTitle = subTitle.replacingOccurrences(of: "<STARTTIME>", with: "\(startTime?.hour ?? 0):\(startTime?.minute ?? 0)")
+                subTitle = subTitle.replacingOccurrences(of: "<SHUTOFFTIME>", with: "\(shutOffHour):\(shutOffMinute)")
+                subTitle = subTitle.replacingOccurrences(of: "<STARTTIME>", with: "\(startTimeHour):\(startTimeMinute)")
                 lblSubTitle.stringValue = subTitle
             }
             if let buttonAbortText = shutOffTimeInfo.value(forKey: "buttonAbortText") as? String{

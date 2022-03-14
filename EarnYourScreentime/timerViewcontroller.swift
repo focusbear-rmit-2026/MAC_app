@@ -16,6 +16,7 @@ class timerViewcontroller: NSViewController {
     // @IBOutlet weak var videoView: AVPlayerView!
     @IBOutlet weak var lblTimer: NSTextField!
     @IBOutlet weak var lblTitle: NSTextField!
+    @IBOutlet weak var imgViewGif: NSImageView!
     
     var timer:Timer?
     var currentTimer = 0
@@ -43,6 +44,8 @@ class timerViewcontroller: NSViewController {
     }
 
     func startTimerHabit(durationSeconds:Int, url:String?, name:String) {
+        imgViewGif.image = NSImage(named: newGifsNamesArray.randomElement() ?? "")
+        lastActivityPerformedTime = Date()
         loadWebViewTo(url: url)
         lblTitle.stringValue = getDoSomeActivityText(activityName: name)//arrAllMorningHabits[currentHabitIndex].name!)
         currentTimer = 0
@@ -57,10 +60,14 @@ class timerViewcontroller: NSViewController {
             second = "0\(s)"
         }
         self.lblTimer.stringValue = "\(minute):\(second)"
-        DispatchQueue.global().async {
+//        DispatchQueue.global().async {
+//            self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
+//            RunLoop.current.add(self.timer!, forMode: RunLoop.Mode.common)
+//            RunLoop.current.run()
+//        }
+        DispatchQueue.main.async {
             self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
-            RunLoop.current.add(self.timer!, forMode: RunLoop.Mode.common)
-            RunLoop.current.run()
+            RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
         }
     }
     
@@ -78,13 +85,27 @@ class timerViewcontroller: NSViewController {
             second = "0\(s)"
         }
         self.lblTimer.stringValue = "\(minute):\(second)"
-        DispatchQueue.global().async {
+//        DispatchQueue.global().async {
+//            self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
+//            RunLoop.current.add(self.timer!, forMode: RunLoop.Mode.common)
+//            RunLoop.current.run()
+//        }
+        DispatchQueue.main.async {
             self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
-            RunLoop.current.add(self.timer!, forMode: RunLoop.Mode.common)
-            RunLoop.current.run()
+            RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
         }
     }
-    func startTimerActivity(durationInSeconds:Int,name:String, url:String?) {
+    var currentActicityTitle = ""
+    var currentDurationInSeconds = 0
+    var currentUrl:String?
+    var logQuantityQuestion:String?
+    func startTimerActivity(durationInSeconds:Int,name:String, url:String?, logQuantityQuestion:String?) {
+        imgViewGif.image = NSImage(named: newGifsNamesArray.randomElement() ?? "")
+        self.logQuantityQuestion = logQuantityQuestion
+        currentActicityTitle = name
+        currentDurationInSeconds = durationInSeconds
+        currentUrl = url
+        lastActivityPerformedTime = Date()
         loadWebViewTo(url: url)
         lblTitle.stringValue = getDoSomeActivityText(activityName: name)//"Do some \(name)."
         currentTimer = 0
@@ -99,12 +120,17 @@ class timerViewcontroller: NSViewController {
             second = "0\(s)"
         }
         self.lblTimer.stringValue = "\(minute):\(second)"
-        DispatchQueue.global().async {
+//        DispatchQueue.global().async {
+//            self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
+//            RunLoop.current.add(self.timer!, forMode: RunLoop.Mode.common)
+//            RunLoop.current.run()
+//        }
+        DispatchQueue.main.async {
             self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
-            RunLoop.current.add(self.timer!, forMode: RunLoop.Mode.common)
-            RunLoop.current.run()
+            RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
         }
     }
+  
     func resumeTimerActivity(durationInSeconds:Int,name:String, url:String?) {
         loadWebViewTo(url: url)
         lblTitle.stringValue = getDoSomeActivityText(activityName: name)//"Do some \(name)."
@@ -119,14 +145,19 @@ class timerViewcontroller: NSViewController {
             second = "0\(s)"
         }
         self.lblTimer.stringValue = "\(minute):\(second)"
-        DispatchQueue.global().async {
+//        DispatchQueue.global().async {
+//            self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
+//            RunLoop.current.add(self.timer!, forMode: RunLoop.Mode.common)
+//            RunLoop.current.run()
+//        }
+        DispatchQueue.main.async {
             self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
-            RunLoop.current.add(self.timer!, forMode: RunLoop.Mode.common)
-            RunLoop.current.run()
+            RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
         }
     }
     func startBreathing() {
-        loadWebViewTo(url: introActivity!.url)
+        imgViewGif.image = NSImage(named: newGifsNamesArray.randomElement() ?? "")
+        loadWebViewTo(url: introActivity!.urlsArray.randomElement())
         lblTitle.stringValue = getDoSomeActivityText(activityName: introActivity!.name!)//"Do some \(introActivity!.name!)."
         currentTimer = 0
         totalDuration = introActivity!.durationSeconds!
@@ -140,10 +171,14 @@ class timerViewcontroller: NSViewController {
             second = "0\(s)"
         }
         self.lblTimer.stringValue = "\(minute):\(second)"
-        DispatchQueue.global().async {
+//        DispatchQueue.global().async {
+//            self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
+//            RunLoop.current.add(self.timer!, forMode: RunLoop.Mode.common)
+//            RunLoop.current.run()
+//        }
+        DispatchQueue.main.async {
             self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
-            RunLoop.current.add(self.timer!, forMode: RunLoop.Mode.common)
-            RunLoop.current.run()
+            RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
         }
     }
     func loadBlankUrl(){

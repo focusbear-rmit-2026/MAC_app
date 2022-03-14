@@ -307,11 +307,27 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
                     let date = Date().addingTimeInterval(4 * 60 * 60)//Calendar.current.date(bySetting: .hour, value: 4, of: Date())
                     UserDefaults.standard.set(date, forKey: kUserdefaults4HourReActivateTime)
                     addLog(text: "App Deactivated for 4 hours - I've got an emergency")
-                    getAbortJsonToUpload(emailAddress: "", feedback: "", abortReason: "I've got an emergency", completionHandler: {dic in
-                        DispatchQueue.main.async {
-                            mainViewControllerObj?.disableApp()
-                        }
-                    })
+                    
+                    var logType = ""
+                    var activity = ""
+                    if lastCurrentState == ._MORNING_HABIT_{
+                        logType = "morning routine abort"
+                        activity = "morning routine"
+                    }else if lastCurrentState == ._EVENING_HABIT_{
+                        logType = "evening routine abort"
+                        activity = "evening routine"
+                    }else if lastCurrentState == ._ACTIVITY_{
+                        logType = "break abort"
+                        activity = "break"
+                    }
+                    
+                    addEntryInCsv(logType: logType, activity: activity, durationInSeconds: "", quantityQuestion: "", quantityLogged: "", startTime: "", workAchieved: "", distractionsEncountered: "", abortReason: "I've got an emergency", feedback: "")
+                    mainViewControllerObj?.disableApp()
+//                    getAbortJsonToUpload(emailAddress: "", feedback: "", abortReason: "I've got an emergency", completionHandler: {dic in
+//                        DispatchQueue.main.async {
+//                            mainViewControllerObj?.disableApp()
+//                        }
+//                    })
 //                    mainViewControllerObj?.showAbortDoneView()
                     
                 }
@@ -361,70 +377,142 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
             return
         }
         //        mutableDic
-        for i in 0..<arrAllMorningHabits.count{
-            if arrAllMorningHabits[i].durationSeconds > 30{
-                arrAllMorningHabits[i].durationSeconds = 30
-            }
-        }
-        for i in 0..<arrAllEveningHabits.count{
-            if arrAllEveningHabits[i].durationSeconds > 30{
-                arrAllEveningHabits[i].durationSeconds = 30
-            }
-        }
-        for i in 0..<arrAllbreakActivities.count{
-            if arrAllbreakActivities[i].durationSeconds > 30{
-                arrAllbreakActivities[i].durationSeconds = 30
-            }
-        }
-        var totalTime = arrAllMorningHabits.count * 30
+//        for i in 0..<arrAllMorningHabits.count{
+//            if arrAllMorningHabits[i].durationSeconds > 30{
+//                arrAllMorningHabits[i].durationSeconds = 30
+//            }
+//        }
         var isAnyHabitRemoved = false
-        while totalTime > 300{
-            isAnyHabitRemoved = true
-            arrAllMorningHabits.removeLast()
-            totalTime = arrAllMorningHabits.count * 30
-        }
-        var arrHabitsDictionary = [NSMutableDictionary]()
-        for habit in arrAllMorningHabits{
-            let dic = ["name": habit.name!, "durationSeconds": habit.durationSeconds!] as NSMutableDictionary
-            if let url = habit.url{
-                dic["videoUrl"] = url
+        if var morningHabits = mutableDic.value(forKey: "morningHabits") as? [NSDictionary] {
+            for i in 0..<morningHabits.count {
+//                var habitDic = morningHabits[i]
+                guard let habitDic = morningHabits[i].mutableCopy() as? NSMutableDictionary else{
+                    return
+                }
+                if let durationSeconds = habitDic["durationSeconds"] as? Int{
+                    if durationSeconds > 30{
+                        habitDic["durationSeconds"] = 30
+                    }
+                }
+                let newhabitDic = NSDictionary(dictionary: habitDic)
+                morningHabits[i] = newhabitDic
             }
-            arrHabitsDictionary.append(dic)
+            var totalTime = morningHabits.count * 30
+            
+            while totalTime > 300{
+                isAnyHabitRemoved = true
+                morningHabits.removeLast()
+                totalTime = morningHabits.count * 30
+            }
+            mutableDic["morningHabits"] = morningHabits
         }
-        mutableDic["morningHabits"] = arrHabitsDictionary
+        
+//        for i in 0..<arrAllEveningHabits.count{
+//            if arrAllEveningHabits[i].durationSeconds > 30{
+//                arrAllEveningHabits[i].durationSeconds = 30
+//            }
+//        }
+        
+        if var eveningHabits = mutableDic.value(forKey: "eveningHabits") as? [NSDictionary] {
+            for i in 0..<eveningHabits.count {
+                //                var habitDic = morningHabits[i]
+                guard let habitDic = eveningHabits[i].mutableCopy() as? NSMutableDictionary else{
+                    return
+                }
+                if let durationSeconds = habitDic["durationSeconds"] as? Int{
+                    if durationSeconds > 30{
+                        habitDic["durationSeconds"] = 30
+                    }
+                }
+                let newhabitDic = NSDictionary(dictionary: habitDic)
+                eveningHabits[i] = newhabitDic
+            }
+            var totalTime = eveningHabits.count * 30
+            
+            while totalTime > 300{
+                isAnyHabitRemoved = true
+                eveningHabits.removeLast()
+                totalTime = eveningHabits.count * 30
+            }
+            mutableDic["eveningHabits"] = eveningHabits
+        }
+        
+        
+        
+//        for i in 0..<arrAllbreakActivities.count{
+//            if arrAllbreakActivities[i].durationSeconds > 30{
+//                arrAllbreakActivities[i].durationSeconds = 30
+//            }
+//        }
+        if var breakActivities = mutableDic.value(forKey: "breakActivities") as? [NSDictionary] {
+            for i in 0..<breakActivities.count {
+                //                var habitDic = morningHabits[i]
+                guard let habitDic = breakActivities[i].mutableCopy() as? NSMutableDictionary else{
+                    return
+                }
+                if let durationSeconds = habitDic["durationSeconds"] as? Int{
+                    if durationSeconds > 30{
+                        habitDic["durationSeconds"] = 30
+                    }
+                }
+                let newhabitDic = NSDictionary(dictionary: habitDic)
+                breakActivities[i] = newhabitDic
+            }
+
+            mutableDic["breakActivities"] = breakActivities
+        }
+        
+//        var totalTime = arrAllMorningHabits.count * 30
+//        var isAnyHabitRemoved = false
+//        while totalTime > 300{
+//            isAnyHabitRemoved = true
+//            arrAllMorningHabits.removeLast()
+//            totalTime = arrAllMorningHabits.count * 30
+//        }
+//        var arrHabitsDictionary = [NSMutableDictionary]()
+//        for habit in arrAllMorningHabits{
+//            let dic = ["name": habit.name!, "durationSeconds": habit.durationSeconds!] as NSMutableDictionary
+//            //if let url = habit.urlsArray{
+//                dic["videoUrl"] = habit.urlsArray
+//           // }
+//            arrHabitsDictionary.append(dic)
+//        }
+//
+//
+//        mutableDic["morningHabits"] = arrHabitsDictionary
      
         
         
-        totalTime = arrAllEveningHabits.count * 30
-        while totalTime > 300{
-            isAnyHabitRemoved = true
-            arrAllEveningHabits.removeLast()
-            totalTime = arrAllEveningHabits.count * 30
-        }
+//        var totalTime = arrAllEveningHabits.count * 30
+//        while totalTime > 300{
+//            isAnyHabitRemoved = true
+//            arrAllEveningHabits.removeLast()
+//            totalTime = arrAllEveningHabits.count * 30
+//        }
+//
+//        var arrEveningHabitsDictionary = [NSMutableDictionary]()
+//        for habit in arrAllEveningHabits{
+//            let dic = ["name": habit.name!, "durationSeconds": habit.durationSeconds!] as NSMutableDictionary
+//            //if let url = habit.url{
+//                dic["videoUrl"] = habit.urlsArray
+//           // }
+//            arrEveningHabitsDictionary.append(dic)
+//        }
+//        mutableDic["eveningHabits"] = arrEveningHabitsDictionary
         
-        var arrEveningHabitsDictionary = [NSMutableDictionary]()
-        for habit in arrAllEveningHabits{
-            let dic = ["name": habit.name!, "durationSeconds": habit.durationSeconds!] as NSMutableDictionary
-            if let url = habit.url{
-                dic["videoUrl"] = url
-            }
-            arrEveningHabitsDictionary.append(dic)
-        }
-        mutableDic["eveningHabits"] = arrEveningHabitsDictionary
         
-        
-        var arrActivitiesDictionary = [NSMutableDictionary]()
-        for activity in arrAllbreakActivities{
-            let dic = ["name": activity.name!, "durationSeconds": activity.durationSeconds!] as NSMutableDictionary
-            if let url = activity.url{
-                dic["videoUrl"] = url
-            }
-            if let includeInEveryBreak = activity.IncludeInEveryBreak{
-                dic["includeInEveryBreak"] = includeInEveryBreak
-            }
-            arrActivitiesDictionary.append(dic)
-        }
-        mutableDic["breakActivities"] = arrActivitiesDictionary
+//        var arrActivitiesDictionary = [NSMutableDictionary]()
+//        for activity in arrAllbreakActivities{// change for  new fields
+//            let dic = ["name": activity.name!, "durationSeconds": activity.durationSeconds!] as NSMutableDictionary
+//           // if let url = activity.url{
+//                dic["videoUrl"] = activity.urlsArray
+//          //  }
+//            if let includeInEveryBreak = activity.IncludeInEveryBreak{
+//                dic["includeInEveryBreak"] = includeInEveryBreak
+//            }
+//            arrActivitiesDictionary.append(dic)
+//        }
+//        mutableDic["breakActivities"] = arrActivitiesDictionary
         
         //            if 1==1{
         
@@ -439,22 +527,35 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
         //            }
         
         
-
+        appdelegate?.readSettingsJsonDictionary()
         mainViewControllerObj?.showAbortStartSmallVc(isAnyHabitRemoved:isAnyHabitRemoved)
     }
     @IBAction func btnDontWantRoutine_boxHabitClicked(_ sender: Any) {
         mainViewControllerObj?.showAbortDisableMorningRoutineVc()
     }
     @IBAction func btnDeactivate_boxSomethingElseClicked(_ sender: Any) {
-//        mainViewControllerObj?.showAbortDoneView()
-//        let json = getAbortJsonToUpload(emailAddress: textFieldEmail_SomethingELse.stringValue, feedback: textViewSomethingElse.string, abortReason: "Something else")
-//        print(json)
+       
+        var logType = ""
+        var activity = ""
+        if lastCurrentState == ._MORNING_HABIT_{
+            logType = "morning routine abort"
+            activity = "morning routine"
+        }else if lastCurrentState == ._EVENING_HABIT_{
+            logType = "evening routine abort"
+            activity = "evening routine"
+        }else if lastCurrentState == ._ACTIVITY_{
+            logType = "break abort"
+            activity = "break"
+        }
         
-        getAbortJsonToUpload(emailAddress: textFieldEmail_SomethingELse.stringValue, feedback: textViewSomethingElse.string, abortReason: "Something else", completionHandler: {dic in
-            DispatchQueue.main.async {
-                mainViewControllerObj?.showAbortDoneView()
-            }
-        })
+        addEntryInCsv(logType: logType, activity: activity, durationInSeconds: "", quantityQuestion: "", quantityLogged: "", startTime: "", workAchieved: "", distractionsEncountered: "", abortReason: "Something else", feedback: textViewSomethingElse.string)
+        
+        mainViewControllerObj?.showAbortDoneView()
+//        getAbortJsonToUpload(emailAddress: textFieldEmail_SomethingELse.stringValue, feedback: textViewSomethingElse.string, abortReason: "Something else", completionHandler: {dic in
+//            DispatchQueue.main.async {
+//                mainViewControllerObj?.showAbortDoneView()
+//            }
+//        })
         
     }
 }
