@@ -40,6 +40,7 @@ let menuViewControllerObj = mainStoryboard.instantiateController(withIdentifier:
 
 //let focusPreferencesWcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("focusPreferencesWc")) as? focusPreferencesWc
 var focusPreferencesVcObj:focusPreferencesVc?// = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("focusPreferencesVc")) as? focusPreferencesVc
+var blockedUrlsVcObj:blockedUrlsVc?
 
 let addWebUrlVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("addWebUrlVc")) as? addWebUrlVc
 let addFocusTypeVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("addFocusTypeVc")) as? addFocusTypeVc
@@ -1292,21 +1293,11 @@ var arrFocusType = [[String:Any]]()
 var isAllowedAllAppsInFocus = false
 var isAllowedAllUrlsInFocus = false
 var selfAppName = Bundle.main.infoDictionary!["CFBundleName"] as! String
-//var arrFocusType = [NSMutableDictionary]()
-//var arrFocusType = [focusType]()
-//struct focusType {
-//    var name:String
-//    var color:NSColor
-//    var appsArray:[String]
-//    var urlsArray:[String]
-//    init(name:String, color:NSColor, appsArray:[String], urlsArray:[String]) {
-//        self.name = name
-//        self.color = color
-//        self.appsArray = appsArray
-//        self.urlsArray = urlsArray
-//    }
-//}
 
+// **blocked urls**
+var arrBlockedUrls = [String]()
+let kUserdefaultsArrBlockedUrls = "kUserdefaultsArrBlockedUrls"
+//
 
 func getColorString(color:NSColor)->String{
     let ciColor:CIColor = CIColor(color: color)!
@@ -1464,4 +1455,23 @@ extension String {
         return Data(self.utf8).base64EncodedString()
     }
 
+}
+
+//
+
+func wildcard(_ string: String, pattern: String) -> Bool {
+    let pred = NSPredicate(format: "self LIKE %@", pattern)
+    return !NSArray(object: string).filtered(using: pred).isEmpty
+}
+
+func getDomainFromUrl(url:String) -> String{
+    let mainurl = NSURL(string: url)
+    var domain = mainurl?.host ?? ""
+    print(domain)
+    
+    if domain.contains("www."){
+        domain = domain.replacingOccurrences(of: "www.", with: "")
+    }
+    print("****")
+    return domain
 }

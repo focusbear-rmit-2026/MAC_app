@@ -84,6 +84,15 @@ class shutOffTimeVc: NSViewController {
         step = 0
     }
     @IBAction func btnGetAccessNowClicked(_ sender: Any) {
+        if UserDefaults.standard.object(forKey: kUserdefaultsAppPassword) != nil{
+            mainViewControllerObj!.showPasswordView()
+        }else{
+            getAccessNowClicked()
+        }
+    }
+    
+    
+    func getAccessNowClicked(){
         titleCenter.constant = 0
         btnGetAccessNow.isHidden = true
         scrollView.isHidden = false
@@ -117,6 +126,8 @@ class shutOffTimeVc: NSViewController {
         step = 1
         startTimer(duration: 30)
     }
+    
+    
     @IBAction func btnUnlockClicked(_ sender: Any) {
         if step == 1{
             //cancel aborting shutoff procewss
@@ -151,6 +162,7 @@ class shutOffTimeVc: NSViewController {
             scrollView.isHidden = true
         }
     }
+    
     var timer:Timer?
     var currentTimer = 0
     var totalDuration = 0

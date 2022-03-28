@@ -8,7 +8,7 @@
 
 import Cocoa
 
-class focusPreferencesVc: NSViewController {
+class focusPreferencesVc: NSViewController, NSMenuDelegate {
 
    
     @IBOutlet weak var horizontalLineSeprator: NSBox!
@@ -76,6 +76,86 @@ class focusPreferencesVc: NSViewController {
         
         tblViewFocusType.doubleAction = #selector(tableRowFocusTypeDoubleClicked)
         tblViewAllowedUrls.doubleAction = #selector(tableRowAllowedUrlsDoubleClicked)
+        
+        let menu = NSMenu()
+        
+        menu.delegate = self
+//        menu.addItem(NSMenuItem(title: "Delete", action: #selector(tableViewDeleteItemClicked(_:)), keyEquivalent: ""))
+        tblViewFocusType.menu = menu
+        
+    }
+    @objc private func tableViewDuplicateItemClicked(_ sender: AnyObject) {
+
+        guard tblViewFocusType.clickedRow >= 0 else { return }
+
+        var item = arrFocusType[tblViewFocusType.clickedRow]
+        if (item["isDefault"] as? Bool) != nil{
+            item.removeValue(forKey: "isDefault")
+        }
+        let oldName = item["name"] as? String ?? ""
+        var count = 1
+        var newName = oldName + " \(count)"
+        var isNameAvailable = false
+        while !isNameAvailable {
+            if !isFocusNameAvailable(newName: newName){
+                count += 1
+                newName = oldName + " \(count)"
+            }else{
+                isNameAvailable = true
+            }
+        }
+        item["name"] = newName
+        item["isOn"] = false
+        let newRow = tblViewFocusType.clickedRow + 1
+        arrFocusType.insert(item, at: newRow)
+        
+        tblViewFocusType.insertRows(at: IndexSet(arrayLiteral: newRow), withAnimation: .effectFade)
+        tblViewFocusType.selectRowIndexes(IndexSet(arrayLiteral: newRow), byExtendingSelection: false)
+        tblViewFocusType.scrollRowToVisible(newRow)
+        focusPreferencesVcObj?.checkState()
+
+        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+    }
+    func focusModeStarted(){
+        for i in 0..<arrFocusType.count{
+            if arrFocusType[i]["isOn"] as? Bool == true{
+                if tblViewFocusType.selectedRow == i{
+                    toggleButton.isOn = true
+                    break;
+                }
+            }
+        }
+    }
+    func focusModeFinished(){
+        for i in 0..<arrFocusType.count{
+            if arrFocusType[i]["isOn"] as? Bool == false{
+                if tblViewFocusType.selectedRow == i{
+                    toggleButton.isOn = false
+                    break;
+                }
+            }
+        }
+    }
+    func isFocusNameAvailable(newName:String)->Bool{
+        for focus in arrFocusType{
+            if let name = focus["name"] as? String{
+                if newName.lowercased() == name.lowercased(){
+                    return false
+                }
+            }
+        }
+        return true
+    }
+    func menuWillOpen(_ menu: NSMenu) {
+        var duplicateText = "Duplicate"
+        if let focusPreferencesInfo = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
+            duplicateText = focusPreferencesInfo.value(forKey: "duplicateText") as? String ?? duplicateText
+        }
+        menu.removeAllItems()
+        if tblViewFocusType.clickedRow != -1{
+             menu.addItem(NSMenuItem(title: duplicateText, action: #selector(tableViewDuplicateItemClicked(_:)), keyEquivalent: ""))
+        }
+        
     }
     override func viewWillAppear() {
         reloadData()        
@@ -185,6 +265,7 @@ class focusPreferencesVc: NSViewController {
         if selectedTow == -1{
             return;
         }
+        addWebUrlVcObj!.viewLoddedFromFocusType = true
         addWebUrlVcObj!.isAdding = false
         self.presentAsSheet(addWebUrlVcObj!)
     }
@@ -386,6 +467,8 @@ class focusPreferencesVc: NSViewController {
                 }
                 arrFocusType[self.tblViewFocusType.selectedRow]["appsArray"] = appsArray
                 self.tblViewAllowedApps.reloadData()
+                self.tblViewAllowedApps.selectRowIndexes(IndexSet(arrayLiteral: (appsArray.count - 1)), byExtendingSelection: false)
+                self.tblViewAllowedApps.scrollRowToVisible(appsArray.count - 1)
                 UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
                 appdelegate!.fillAllowAppArray()
                 if isContainAlready{
@@ -437,6 +520,7 @@ class focusPreferencesVc: NSViewController {
         }
     }
     @IBAction func btnAddUrlClicked(_ sender: Any) {
+        addWebUrlVcObj!.viewLoddedFromFocusType = true
         addWebUrlVcObj!.isAdding = true
         self.presentAsSheet(addWebUrlVcObj!)
     }

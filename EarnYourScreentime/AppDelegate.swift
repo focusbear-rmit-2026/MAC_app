@@ -9,13 +9,15 @@
 
 import Cocoa
 import Sentry
+import Sparkle
 
 @NSApplicationMain
-class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
-    
+class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDelegate {
+    let validation = urlValidation()
     var statusBarMenu: NSMenu!
     let statusItem = NSStatusBar.system.statusItem(withLength:NSStatusItem.variableLength)
     var statusbutton:NSStatusBarButton?
+    var updater: SUUpdater?
     
     var terminateFromSelf = false
     var hotKeyClearUserdefaults: HotKey? {
@@ -44,7 +46,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         //        UserDefaults.standard.synchronize()
         //        return;
 
-        
+        updater = SUUpdater(for: Bundle.main)
+        updater?.delegate = self
         NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(frontApplicationChanged), name: NSWorkspace.didActivateApplicationNotification, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(self.screenChanged), name: NSApplication.didChangeScreenParametersNotification, object: nil)
 //        NSWorkspace.shared.notificationCenter.removeObserver(self, name: NSWorkspace.didActivateApplicationNotification, object: nil)
@@ -57,7 +60,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             for i in 0..<arrFocusType.count{
                 arrFocusType[i]["isOn"] = false
                 if let state = arrFocusType[i]["isDefault"] as? Bool{//this key will only be awailable in default focus type
-                   isDefaultContain = state
+                    if  state{
+                        isDefaultContain = state
+                    }
                 }
             }
 
@@ -68,6 +73,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
 
+        if let arr = UserDefaults.standard.object(forKey: kUserdefaultsArrBlockedUrls) as? [String]{
+            arrBlockedUrls = arr
+        }
+        
         // ----------------SET APP INSTALL DATE---------------------------------
         if UserDefaults.standard.object(forKey: kUserdefaultsFirstRunDate) == nil{
             UserDefaults.standard.set(Date(), forKey: kUserdefaultsFirstRunDate)
@@ -171,7 +180,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         getConfigFile(completionHandler: {dic in
             print("response mila")
-            if dic != nil{
+            if dic != nil{ 
                 configjson = dic!
             }else{
                 if let path = Bundle.main.path(forResource: "config", ofType: "json") {
@@ -211,6 +220,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             }
 
             if isPurchased && !key.isEmpty{
+                UserDefaults.standard.removeObject(forKey: "trialExpired")
                 activateKey(license_key: key, completionHandler: { jsonResult in
                     if jsonResult != nil{
                         var success = false
@@ -225,6 +235,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                         }
                         if success && !refunded{
                             isPurchased = true
+                            UserDefaults.standard.removeObject(forKey: "trialExpired")
                         }else{
                             isPurchased = false
                             UserDefaults.standard.removeObject(forKey: kIsPurchased)
@@ -259,7 +270,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 //        print(id)
        // var id:Int?
        // print(id!)
-        
+        updater?.checkForUpdatesInBackground()
+    }
+    
+    func updaterWillRelaunchApplication(_ updater: SUUpdater) {
+        addLog(text: "updater Will Relaunch Application")
+        terminateFromSelf = true
     }
     //    @objc func checkState(){
     //        if avmonitor.currentState == NSControl.StateValue.on{
@@ -558,38 +574,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     func setTopMenu(){
         if self.statusItem.button != nil
         {
-            
-//            var itemReactivateTitle = "Reactivate"
-//            var itemEnterLicenseKeyTitle = "Enter License Key"
-//            var itemGetLicenseKeyTitle = "Get a License Key"//reomve this// from config
-//            var itemExportStatisticsTitle = "Export Statistics"//read from file //
-//            var itemSettingsTitle = "Settings"
-//            var itemPreferences = "Preferences"
-//            var itemQuitTitle = "Quit"
-//            
-//            if let common = configjson.value(forKey: "common") as? NSDictionary{
-//                itemReactivateTitle = common.value(forKey: "menuItemReactivateTitle") as? String ?? itemReactivateTitle
-//                itemEnterLicenseKeyTitle = common.value(forKey: "menuItemEnterLicenseKeyTitle") as? String ?? itemEnterLicenseKeyTitle
-//                itemGetLicenseKeyTitle = common.value(forKey: "menuItemGetLicenseKeyTitle") as? String ?? itemGetLicenseKeyTitle
-//                itemSettingsTitle = common.value(forKey: "menuItemSettingsTitle") as? String ?? itemSettingsTitle
-//                itemQuitTitle = common.value(forKey: "menuItemQuitTitle") as? String ?? itemQuitTitle
-//            }
-            
-//            if !isAppEnable{
-//                self.statusBarMenu.addItem(withTitle: itemReactivateTitle,action: #selector(self.menuItem_Reactivate(sender:)),keyEquivalent: "")
-//            }
-//            if isPurchased == false{
-//                self.statusBarMenu.addItem(withTitle: itemEnterLicenseKeyTitle,action: #selector(self.menuItemEnterLicenseKey(sender:)),keyEquivalent: "")
-//                self.statusBarMenu.addItem(withTitle: itemGetLicenseKeyTitle,action: #selector(self.menuItemGetALicenseKey(sender:)),keyEquivalent: "")
-//            }
-//            if UserDefaults.standard.object(forKey: "trialExpired") == nil{//
-//                self.statusBarMenu.addItem(withTitle: itemSettingsTitle,action: #selector(self.menuItem_ChangeJson(sender:)),keyEquivalent: "")
-//            }
-//            self.statusBarMenu.addItem(withTitle: itemPreferences,action: #selector(self.menuItem_Preferences(sender:)),keyEquivalent: "")
-//            self.statusBarMenu.addItem(withTitle: itemExportStatisticsTitle,action: #selector(self.menuItem_ExportStatistics(sender:)),keyEquivalent: "")
-//            self.statusBarMenu.addItem(withTitle: itemQuitTitle,action: #selector(self.menuItem_Quit(sender:)),keyEquivalent: "")
-            
-//            self.statusItem.menu = self.statusBarMenu
             statusbutton?.action = #selector(togglePopover(_:))
         }
     }
@@ -962,7 +946,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 if (preferencesWindowControllerObj?.window!.isVisible)!{
                     if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
                         if tabview.selectedTabViewItemIndex == 1{
-                            focusPreferencesVcObj?.reloadData()
+                            focusPreferencesVcObj?.focusModeFinished()
                         }
                     }
                 }
@@ -1127,6 +1111,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
     
     func checkTrialExpire(){
+        if isPurchased == true{
+            return;
+        }
         if let date = UserDefaults.standard.object(forKey: kUserdefaultsFirstHabitDay) as? Date{
             let secondsBetween = Date().timeIntervalSince(date)
             let numberOfDays_afterinstall = Int((secondsBetween) / 86400)
@@ -1230,6 +1217,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             RunLoop.current.run()
         }
     }
+    
     func focusModeAborted(){
         addLog(text: "focus mode Aborted")
         endFocusModeTime = nil
@@ -1249,14 +1237,25 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         
         isFocusTimeType = ._NONE_
-        if self.timerUrlBlock != nil{
-            self.timerUrlBlock!.invalidate()
-            //self.timerUrlBlock = nil
+        if self.timerAllowUrl != nil{
+            self.timerAllowUrl!.invalidate()
+            //self.timerAllowUrl = nil
             print("invalidtate")
         }
         timerCheckAllowedApps?.invalidate()
     }
     @objc func focusModeTimerFinished(){
+        DispatchQueue.main.async {
+            if focusPreferencesVcObj != nil{
+                if (preferencesWindowControllerObj?.window!.isVisible)!{
+                    if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
+                        if tabview.selectedTabViewItemIndex == 1{
+                            focusPreferencesVcObj?.focusModeFinished()
+                        }
+                    }
+                }
+            }
+        }
         focusModeFinished(fromShutOff: false)
     }
     @objc func focusModeFinished(fromShutOff:Bool){
@@ -1283,9 +1282,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         
         isFocusTimeType = ._NONE_
-        if self.timerUrlBlock != nil{
-            self.timerUrlBlock!.invalidate()
-            //self.timerUrlBlock = nil
+        if self.timerAllowUrl != nil{
+            self.timerAllowUrl!.invalidate()
+            //self.timerAllowUrl = nil
             print("invalidtate")
         }
         timerCheckAllowedApps?.invalidate()
@@ -1338,11 +1337,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 allowUrl = dic["urlsArray"] as? [String] ?? []
             }
         }
-        allowUrl.append("eyst-focus.html")
-        allowUrl.append("earnyourscreentime.com")
-        allowUrl.append("devtools://")
-        allowUrl.append("chrome-extension://")
+//        allowUrl.append("eyst-focus.html")
+//        allowUrl.append("earnyourscreentime.com")
+//        allowUrl.append("devtools://")
+//        allowUrl.append("chrome-extension://")
     }
+    //
     func fillAllowAppArray(){
         isAllowedAllAppsInFocus = false
         allowAppsPath.removeAll()
@@ -1356,9 +1356,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
     }
 
-    var timerUrlBlock:Timer?
+    var timerAllowUrl:Timer?
     var timerCheckAllowedApps:Timer?
+    
+    var timerBlockUrl:Timer?//block urls list
     @objc func frontApplicationChanged(){
+        timerBlockUrl?.invalidate()
         if isFocusModeOn(){
             if let runningApp = NSWorkspace.shared.frontmostApplication{
                 print(runningApp.localizedName)
@@ -1387,9 +1390,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                     if !isAppAllowed{
                         runningApp.hide()
                         //                            self.perform(#selector(self.checkAllowedApp), with: nil, afterDelay: 1)
-                        if self.timerUrlBlock != nil{
-                            self.timerUrlBlock!.invalidate()
-                            //                    self.timerUrlBlock = nil
+                        if self.timerAllowUrl != nil{
+                            self.timerAllowUrl!.invalidate()
+                            //                    self.timerAllowUrl = nil
                             print("invalidtate")
                         }
                         return
@@ -1397,16 +1400,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                     DispatchQueue.global().sync {
                         if nameLowercased == "safari" || nameLowercased == "google chrome"{
                             print("validtate")
-                            self.timerUrlBlock?.invalidate()
-                            if self.timerUrlBlock != nil{
-                                if self.timerUrlBlock!.isValid{
+                            self.timerAllowUrl?.invalidate()
+                            if self.timerAllowUrl != nil{
+                                if self.timerAllowUrl!.isValid{
                                     print("************************************* timer is not invalid")
-                                    addLog(text: "timerUrlBlock is not invalid")
-                                    self.timerUrlBlock?.invalidate()
+                                    addLog(text: "timerAllowUrl is not invalid")
+                                    self.timerAllowUrl?.invalidate()
                                 }
                             }
-                            self.timerUrlBlock = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.checkInBackground), userInfo: nil, repeats: true)
-                            RunLoop.main.add(self.timerUrlBlock!, forMode: RunLoop.Mode.common)
+                            self.timerAllowUrl = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.checkInBackground), userInfo: nil, repeats: true)
+                            RunLoop.main.add(self.timerAllowUrl!, forMode: RunLoop.Mode.common)
                             
                         }
                         }
@@ -1414,6 +1417,121 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 }
             }
             
+        }else{
+            if let runningApp = NSWorkspace.shared.frontmostApplication{
+                print(runningApp.localizedName)
+                if let appUrl = runningApp.bundleURL{//let name = runningApp.localizedName{
+                    let name = appUrl.deletingPathExtension().lastPathComponent
+                    let nameLowercased = name.lowercased()
+                    DispatchQueue.global().sync {
+                        if nameLowercased == "safari" || nameLowercased == "google chrome"{
+                            timerBlockUrl?.invalidate()
+                            self.timerBlockUrl = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.blockUrlsInBackground), userInfo: nil, repeats: true)
+                            RunLoop.main.add(self.timerBlockUrl!, forMode: RunLoop.Mode.common)
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    @objc func blockUrlsInBackground(){
+        if isFocusModeOn(){
+            timerBlockUrl?.invalidate()
+            return
+        }
+        
+        
+        if let runningApp = NSWorkspace.shared.frontmostApplication{
+            if let name = runningApp.localizedName{
+                var script: String = ""
+                if name.lowercased() == "safari"{
+                    if var url = self.getSafariActiveTabUrl(){
+                        print(url)
+                        if !url.contains("favorites:") && !url.contains(blockWebUrlString){//agar block url mai file://* bhi hai to bar bar block hi gota rhega isiliye blockWebUrlString ka check lagaya
+                            let domain = getDomainFromUrl(url: url)
+                            
+                            var bool = false
+                            for turl in arrBlockedUrls{
+                                bool = self.validation.isUrlValid(urlToCheck: url, allowUrl: turl, domain: domain)
+                                if bool{
+                                    break;
+                                }
+                            }
+                            if bool{
+                                url = url.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) ?? url
+                                script =
+                                """
+                                tell application "Safari"
+                                set the_wnd to front window
+                                set active_tab to current tab in the_wnd
+                                set URL of active_tab to "\(blockWebUrlString)?old_url=" & "\(url)" & "&block_type=always-blocked"
+                                end tell
+                                """
+                            }else{
+                                return;
+                            }
+                        }else{
+                            return;
+                        }
+
+                    }else{
+                        return;
+                    }
+                    
+                }else if name.lowercased() == "google chrome"{
+                    if var url = self.getGoogleChromeActiveTabUrl(){
+                        print(url)
+                        if !url.contains("chrome:") && !url.contains(blockWebUrlString){//agar block url mai file://* bhi hai to bar bar block hi gota rhega isiliye blockWebUrlString ka check lagaya
+                            let domain = getDomainFromUrl(url: url)
+                            
+                            var bool = false
+                            for turl in arrBlockedUrls{
+                                bool = self.validation.isUrlValid(urlToCheck: url, allowUrl: turl, domain: domain)
+                                if bool{
+                                    break;
+                                }
+                            }
+                            if bool{
+                                url = url.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) ?? url
+                                script =
+                                """
+                                tell application "Google Chrome"
+                                set the_wnd to front window
+                                set active_tab to active tab in the_wnd
+                                set URL of active_tab to "\(blockWebUrlString)?old_url=" & "\(url)" & "&block_type=always-blocked"
+                                end tell
+                                """
+                            }else{
+                                return
+                            }
+                        }else{
+                            return
+                        }
+                    }else{
+                        return
+                    }
+
+                    
+                }else{
+                    self.timerAllowUrl?.invalidate()
+                }
+                //--if URL of the_tab is equal to "https://www.apple.com/" then
+                if script.isEmpty{
+                    return
+                }
+                if let appleScript = NSAppleScript(source: script) {
+                    
+                    var errors : NSDictionary? = nil
+                    appleScript.executeAndReturnError(&errors)
+                    if errors != nil {
+                        
+                        //var test = errors?.count
+                        print(errors)
+                    }
+                    //let descriptor = error.descriptorType
+                }
+            }
         }
     }
     
@@ -1441,9 +1559,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                     if !isAppAllowed{
                         runningApp.hide()
                         //                    self.perform(#selector(checkAllowedApp), with: nil, afterDelay: 1)
-                        if self.timerUrlBlock != nil{
-                            self.timerUrlBlock!.invalidate()
-                            //                    self.timerUrlBlock = nil
+                        if self.timerAllowUrl != nil{
+                            self.timerAllowUrl!.invalidate()
+                            //                    self.timerAllowUrl = nil
                             print("invalidtate22")
                         }
                         return
@@ -1455,13 +1573,18 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
  
     var allowUrl = [""]
+    var defaultAllowedUrl = ["eyst-focus.html",
+                             "earnyourscreentime.com",
+                             "devtools://",
+                             "chrome-extension://"]
+    
     var allowAppsPath = [""]
     @objc func checkInBackground(){
         DispatchQueue.main.async {
             if !isFocusModeOn(){
-                if self.timerUrlBlock != nil{
-                    self.timerUrlBlock!.invalidate()
-                   // self.timerUrlBlock = nil
+                if self.timerAllowUrl != nil{
+                    self.timerAllowUrl!.invalidate()
+                   // self.timerAllowUrl = nil
                     print("invalidtate")
                 }
                 return;
@@ -1508,14 +1631,23 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                     if name.lowercased() == "safari"{
                         if var url = self.getSafariActiveTabUrl(){
                             print(url)
+                            for turl in self.defaultAllowedUrl{
+                                if url.contains(turl){
+                                    return
+                                }
+                            }
+                            
                             if !url.contains("favorites:"){
-                                var tag = 0
-                                for the_url in self.allowUrl{
-                                    if url.contains(the_url){
-                                        tag = 1
+                                let domain = getDomainFromUrl(url: url)
+                                
+                                var bool = false
+                                for turl in self.allowUrl{
+                                    bool = self.validation.isUrlValid(urlToCheck: url, allowUrl: turl, domain: domain)
+                                    if bool{
+                                        break;
                                     }
                                 }
-                                if tag == 0{
+                                if !bool{
                                     url = url.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) ?? url
                                     script =
                                     """
@@ -1525,43 +1657,36 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                                         set URL of active_tab to "\(blockWebUrlString)?old_url=" & "\(url)" & "\(focusModeExpiryTimeString)&focus_mode=\(focusMode)"
                                     end tell
                                     """
+                                }else{
+                                    return
                                 }
+                            }else{
+                                return;
                             }
-//                            script =
-//                            """
-//                            set allowUrl to \(self.allowUrl)
-//                            tell application "Safari"
-//                                set the_wnd to front window
-//                                set active_tab to current tab in the_wnd
-//                                if URL of active_tab contains "favorites:" then
-//
-//                                else
-//                                    set tag to 0
-//                                    repeat with the_url in allowUrl
-//                                        if URL of active_tab contains the_url then
-//                                            set tag to 1
-//                                        end if
-//                                    end repeat
-//
-//                                    if tag is equal to 0 then
-//                                        set URL of active_tab to "\(blockWebUrlString)?old_url=" & URL of active_tab & "\(focusModeExpiryTimeString)&focus_mode=\(focusMode)"
-//                                    end if
-//                                end if
-//                            end tell
-//                            """
+
+                        }else{
+                            return;
                         }
                         
                     }else if name.lowercased() == "google chrome"{
                         if var url = self.getGoogleChromeActiveTabUrl(){
                             print(url)
+                            for turl in self.defaultAllowedUrl{
+                                if url.contains(turl){
+                                    return
+                                }
+                            }
+                            
                             if !url.contains("chrome:"){
-                                var tag = 0
-                                for the_url in self.allowUrl{
-                                    if url.contains(the_url){
-                                        tag = 1
+                                let domain = getDomainFromUrl(url: url)
+                                var bool = false
+                                for turl in self.allowUrl{
+                                    bool = self.validation.isUrlValid(urlToCheck: url, allowUrl: turl, domain: domain)
+                                    if bool{
+                                        break;
                                     }
                                 }
-                                if tag == 0{
+                                if !bool{
                                     url = url.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) ?? url
                                     script =
                                     """
@@ -1571,34 +1696,19 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                                         set URL of active_tab to "\(blockWebUrlString)?old_url=" & "\(url)" & "\(focusModeExpiryTimeString)&focus_mode=\(focusMode)"
                                     end tell
                                     """
+                                }else{
+                                    return;
                                 }
+                            }else{
+                                return
                             }
+                        }else{
+                            return;
                         }
-//                        script =
-//                        """
-//                        set allowUrl to \(self.allowUrl)
-//                        tell application "Google Chrome"
-//                            set the_wnd to front window
-//                                set active_tab to active tab in the_wnd
-//                                if URL of active_tab contains "chrome:" then
-//
-//                                else
-//                                    set tag to 0
-//                                    repeat with the_url in allowUrl
-//                                        if URL of active_tab contains the_url then
-//                                            set tag to 1
-//                                        end if
-//                                    end repeat
-//
-//                                    if tag is equal to 0 then
-//                                        set URL of active_tab to "\(blockWebUrlString)?old_url=" & URL of active_tab & "\(focusModeExpiryTimeString)&focus_mode=\(focusMode)"
-//                                    end if
-//                                end if
-//                        end tell
-//                        """
+
                         
                     }else{
-                        self.timerUrlBlock?.invalidate()
+                        self.timerAllowUrl?.invalidate()
                     }
                     //--if URL of the_tab is equal to "https://www.apple.com/" then
                     if let appleScript = NSAppleScript(source: script) {
@@ -1642,6 +1752,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         return nil
     }
+    
     func getGoogleChromeActiveTabUrl()->String?{
         var script: String = ""
         
@@ -1665,6 +1776,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         return nil
     }
+    
     func showExtraWindows(){
         
         //        NSApplication.shared.activate(ignoringOtherApps: true)
@@ -1777,3 +1889,51 @@ end tell
 */
 
 
+
+
+//                        script =
+//                        """
+//                        set allowUrl to \(self.allowUrl)
+//                        tell application "Google Chrome"
+//                            set the_wnd to front window
+//                                set active_tab to active tab in the_wnd
+//                                if URL of active_tab contains "chrome:" then
+//
+//                                else
+//                                    set tag to 0
+//                                    repeat with the_url in allowUrl
+//                                        if URL of active_tab contains the_url then
+//                                            set tag to 1
+//                                        end if
+//                                    end repeat
+//
+//                                    if tag is equal to 0 then
+//                                        set URL of active_tab to "\(blockWebUrlString)?old_url=" & URL of active_tab & "\(focusModeExpiryTimeString)&focus_mode=\(focusMode)"
+//                                    end if
+//                                end if
+//                        end tell
+//                        """
+
+
+//                            script =
+//                            """
+//                            set allowUrl to \(self.allowUrl)
+//                            tell application "Safari"
+//                                set the_wnd to front window
+//                                set active_tab to current tab in the_wnd
+//                                if URL of active_tab contains "favorites:" then
+//
+//                                else
+//                                    set tag to 0
+//                                    repeat with the_url in allowUrl
+//                                        if URL of active_tab contains the_url then
+//                                            set tag to 1
+//                                        end if
+//                                    end repeat
+//
+//                                    if tag is equal to 0 then
+//                                        set URL of active_tab to "\(blockWebUrlString)?old_url=" & URL of active_tab & "\(focusModeExpiryTimeString)&focus_mode=\(focusMode)"
+//                                    end if
+//                                end if
+//                            end tell
+//                            """

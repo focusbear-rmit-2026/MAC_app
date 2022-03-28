@@ -19,17 +19,16 @@ class activateNowvc: NSViewController,NSTextFieldDelegate {
     @IBOutlet weak var btnclose: NSButton!
     @IBOutlet weak var imgicon: NSImageView!
     @IBOutlet weak var btnpastebutton: SYFlatButton!
-    
     @IBOutlet weak var btnPurchaseNow: NSButton!
     @IBOutlet weak var spinner: NSProgressIndicator!
-    
-    
-    
     @IBOutlet weak var btnactivate: NSButton!
-    
     @IBOutlet weak var txtFldLicense: NSTextField!
-    
     @IBOutlet weak var lblpastelicesekey: NSTextField!
+    
+    var trialExpiredText = "Your trial has expired!"
+    var daysRemainingText = "Trial version - <DAYS> of 7 trial days remaining"
+    
+    
     var viewopenfromSevendaysTrial = false
     func firstcall(){
         if viewopenfromSevendaysTrial == true{
@@ -54,7 +53,6 @@ class activateNowvc: NSViewController,NSTextFieldDelegate {
         var title = "Earn Your Screen Time Activation"
         var description = "Paste License key in the text box below and click Activate to unlock all features."
         var buttonPasteText = "Click here to paste the copied License Key."
-        var trialExpiredText = "Your trial has expired!"
         var buttonActivateText = "Activate"
         var buttonBuyLicenseText = "Buy License"
         var buttonBackText = "Back"
@@ -70,9 +68,7 @@ class activateNowvc: NSViewController,NSTextFieldDelegate {
             if let text = activationNagInfo.value(forKey: "buttonPasteText") as? String{
                 buttonPasteText = text
             }
-            if let text = activationNagInfo.value(forKey: "trialExpiredText") as? String{
-                trialExpiredText = text
-            }
+            
             if let text = activationNagInfo.value(forKey: "buttonActivateText") as? String{
                 buttonActivateText = text
             }
@@ -83,6 +79,14 @@ class activateNowvc: NSViewController,NSTextFieldDelegate {
                 buttonBackText = text
             }
             
+        }
+        if let common = configjson.value(forKey: "common") as? NSDictionary{
+            if let text = common.value(forKey: "trialExpiredText") as? String{
+                trialExpiredText = text
+            }
+            if let text = common.value(forKey: "daysRemainingText") as? String{
+                daysRemainingText = text
+            }
         }
         
         lbltitle.stringValue = title
@@ -127,7 +131,7 @@ class activateNowvc: NSViewController,NSTextFieldDelegate {
             DispatchQueue.main.async {
                 var noInternetTitle = "No Internet Connection"
                 var noInternetSubTitle = "Make sure your device is connected to the internet."
-                
+                addLog(text: "Button Activate Clicked :- No Internet Connection")
                 if let activationNagInfo = configjson.value(forKey: "activationNagInfo") as? NSDictionary{
                     if let text = activationNagInfo.value(forKey: "noInternetTitle") as? String{
                         noInternetTitle = text
@@ -157,7 +161,7 @@ class activateNowvc: NSViewController,NSTextFieldDelegate {
                     if let val = purchaseDic.value(forKey: "refunded") as? Bool{
                         refunded = val
                     }
-                }
+                }//80F7CCF5-7FE54D41-B5A2DD9F-4A84B894 key
                 if success && !refunded{
                     //
                     isPurchased = true
@@ -169,7 +173,7 @@ class activateNowvc: NSViewController,NSTextFieldDelegate {
                         var successfullyActivatedTitle = "Thank You!"
                         var successfullyActivatedSubTitle = "You have successfully activated Earn Your Screen Time!"
                         var buttonOkText = "OK"
-                        
+                        addLog(text: "Button Activate Clicked :- uccessfully activated Earn Your Screen Time!")
                         
                         if let activationNagInfo = configjson.value(forKey: "activationNagInfo") as? NSDictionary{
                             if let text = activationNagInfo.value(forKey: "successfullyActivatedTitle") as? String{
@@ -192,7 +196,23 @@ class activateNowvc: NSViewController,NSTextFieldDelegate {
                         alert.beginSheetModal(for: (activationWindowControllerObj?.window)!, completionHandler: { (modalResponse) in
                             if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
                             }
-                            appdelegate?.initialWork()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                            if isAppInitialLodded == false{
+                                appdelegate?.initialWork()
+                            }
                             self.view.window?.close()
                         })
                     }
@@ -202,7 +222,7 @@ class activateNowvc: NSViewController,NSTextFieldDelegate {
                     DispatchQueue.main.async {
                         var activationErrorTitle = "Enable to activate."
                         var activationErrorSubTitle = "Please enter a valid License key."
-                        
+                        addLog(text: "Button Activate Clicked :- Enable to activate., invalid Key")
                         if let activationNagInfo = configjson.value(forKey: "activationNagInfo") as? NSDictionary{
                             if let text = activationNagInfo.value(forKey: "activationErrorTitle") as? String{
                                 activationErrorTitle = text
@@ -221,6 +241,7 @@ class activateNowvc: NSViewController,NSTextFieldDelegate {
                 DispatchQueue.main.async {
                     var activationErrorTitle = "Enable to activate."
                     var activationErrorSubTitle = "Please enter a valid License key."
+                    addLog(text: "Button Activate Clicked :- Enable to activate., invalid Key")
                     if let activationNagInfo = configjson.value(forKey: "activationNagInfo") as? NSDictionary{
                         if let text = activationNagInfo.value(forKey: "activationErrorTitle") as? String{
                             activationErrorTitle = text
@@ -240,13 +261,36 @@ class activateNowvc: NSViewController,NSTextFieldDelegate {
     override func viewWillAppear() {
         
         txtFldLicense.stringValue = ""
-        
         btnactivate.isEnabled = false
-        
-        if UserDefaults.standard.object(forKey: "trialExpired") != nil{
-            lblTrialExpired.isHidden = false
+        lblTrialExpired.isHidden = false
+
+        var daysremaining = 0
+        if let date = UserDefaults.standard.object(forKey: kUserdefaultsFirstHabitDay) as? Date{
+            let secondsBetween = Date().timeIntervalSince(date)
+            let numberOfDays_afterinstall = Int((secondsBetween) / 86400)
+            daysremaining = 7-numberOfDays_afterinstall
+            if daysremaining < 0 {
+                daysremaining = 0
+            }
+            if UserDefaults.standard.object(forKey: "trialExpired") != nil{
+                daysremaining = 0
+            }
+            if daysremaining == 0{
+                if UserDefaults.standard.object(forKey: "trialExpired") == nil{
+                    UserDefaults.standard.set(true, forKey: "trialExpired")
+                }
+            }
         }else{
-            lblTrialExpired.isHidden = true
+            daysremaining = 7
+            
+        }
+        
+        if daysremaining == 0{
+            lblTrialExpired.stringValue = trialExpiredText
+            lblTrialExpired.textColor = NSColor.systemRed
+        }else{
+            lblTrialExpired.stringValue = daysRemainingText.replacingOccurrences(of: "<DAYS>", with: "\(daysremaining)")//"Trial version - \(daysremaining) of 7 trial days remaining"
+            lblTrialExpired.textColor = NSColor.labelColor
         }
     }
 

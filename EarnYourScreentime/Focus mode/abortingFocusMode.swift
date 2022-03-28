@@ -167,7 +167,7 @@ class abortingFocusModeVc: NSViewController {
             if (preferencesWindowControllerObj?.window!.isVisible)!{
                 if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
                     if tabview.selectedTabViewItemIndex == 1{
-                        focusPreferencesVcObj?.reloadData()
+                        focusPreferencesVcObj?.focusModeFinished()
                     }
                 }
             }

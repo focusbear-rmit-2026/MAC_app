@@ -23,7 +23,9 @@
         "buttonOkText":"OK",
         "webhookUrl":"https://hooks.zapier.com/hooks/catch/326116/b98ovxc/",
         "buttonExportText":"Export",
-        "appName":"Earn Your Screen Time"
+        "appName":"Earn Your Screen Time",
+        "trialExpiredText":"Your trial has expired!",
+        "daysRemainingText":"Trial version - <DAYS> of 7 trial days remaining"
     },
     "abortInfo":{
         "abortingTitle":"Aborting..",
@@ -124,7 +126,6 @@
         "title":"Earn Your Screen Time Activation",
         "description":"Paste License key in the text box below and click Activate to unlock all features.",
         "buttonPasteText":"Click here to paste the copied License Key.",
-        "trialExpiredText":"Your trial has expired!",
         "buttonActivateText":"Activate",
         "buttonBuyLicenseText":"Buy License",
         "buttonBackText":"Back",
@@ -145,6 +146,7 @@
         "menuItemFocusTitle":"Focus",
         "menuItemFocusPreferencesTitle":"Focus Preferences",
         "menuItemStartPomodoroTitle":"Start Pomodoro Mode",
+        "menuItemCheckForUpdatesTitle":"Check for updates",
         "menuItemQuitTitle":"Quit",
         "untilTimeText":"On Until <TIME>",
         "onText":"On",
@@ -169,6 +171,7 @@
         "noText":"No",
         "urlPlaceHolderString":"google.com",
         "invalidDomainText":"Please enter a valid domain.",
+        "invalidDomainTextSecond":"If you want to allow all urls please select \"Allow all urls\" instead.",
         "buttonCancelText":"Cancel",
         "buttonAddText":"Add",
         "buttonSaveText":"Save",
@@ -184,7 +187,8 @@
         "urlAlreadyExistsText":"<APPNAME> already exists in the list.",
         "focusCanNotDeleteTitle":"Can not delete.",
         "focusCanNotDeleteSubTitle":"The Default focus type cannot be deleted.",
-        "focusModeOnText":"Focus mode is on. Please abort the focus mode to delete it."
+        "focusModeOnText":"Focus mode is on. Please abort the focus mode to delete it.",
+        "duplicateText":"Duplicate"
         
     },
     "focusInfo":{
@@ -266,6 +270,10 @@
         "passwordChagedAlertTitle":"Password successfully changed.",
         "passwordNotMatchAlertTitle":"Passwords do not match.",
         "passwordNotMatchAlertSubTitle":"Confirm Password does not match with the main password. Please re enter."
+    },
+    "blockedUrlsViewInfo":{
+        "title":"Always Blocked URLs",
+        "invalidDomainText":"Adding * will block all urls. Please use another combination."
     }
     
     

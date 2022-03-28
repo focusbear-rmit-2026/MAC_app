@@ -79,15 +79,18 @@ class ViewController: NSViewController {
         }
         if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_{
             if UserDefaults.standard.object(forKey: kUserdefaultsAppPassword) != nil{
-                self.view.addSubview(enterPasswordVcObj!.view)
-                self.view.addConstraints(subView: enterPasswordVcObj!.view)
-                addLog(text: "Showing enter password view")
+                showPasswordView()
             }else{
                 showAbortStartView()
             }
         }else{
             showAbortStartView()
         }
+    }
+    func showPasswordView(){
+        self.view.addSubview(enterPasswordVcObj!.view)
+        self.view.addConstraints(subView: enterPasswordVcObj!.view)
+        addLog(text: "Showing enter password view")
     }
     func showAbortStartView(){
         removeSubViews()

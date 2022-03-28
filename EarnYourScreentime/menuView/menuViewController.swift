@@ -12,6 +12,7 @@ import Cocoa
 class menuViewController: NSViewController {
 
     
+    @IBOutlet weak var lblTrialVersionInfo: NSTextField!
     @IBOutlet weak var lblTitleReactivate: NSTextField!
     @IBOutlet weak var lblTitleEnterLicenseKey: NSTextField!
     @IBOutlet weak var lblTitleSettings: NSTextField!
@@ -21,12 +22,14 @@ class menuViewController: NSViewController {
     @IBOutlet weak var lblTitleFocusPreferences: NSTextField!
     @IBOutlet weak var lblTitleStartPomodoroMode: NSTextField!
     @IBOutlet weak var lblTitleQuit: NSTextField!
+    @IBOutlet weak var lblTitleCheckForUpdates: NSTextField!
     
     @IBOutlet weak var bottomLine: NSBox!
     @IBOutlet weak var lblOn: NSTextField!
     @IBOutlet weak var boxFocusMode: NSBox!
     @IBOutlet weak var focusModeBoxHeight: NSLayoutConstraint!
     @IBOutlet weak var boxStartPomodoroMode: customBox!
+    @IBOutlet weak var boxCheckForUpdates: customBox!
     @IBOutlet weak var boxQuit: customBox!
     @IBOutlet weak var boxFocusPreferences: customBox!
     @IBOutlet weak var boxExportStatistics: customBox!
@@ -41,8 +44,9 @@ class menuViewController: NSViewController {
     
     var onText = "On"
     var untilTimeText = "On Until <TIME>"
-
     
+    var trialExpiredText = "Your trial has expired!"
+    var daysRemainingText = "Trial version - <DAYS> of 7 trial days remaining"
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
@@ -58,6 +62,7 @@ class menuViewController: NSViewController {
         var itemFocusPreferencesTitle = "Focus Preferences"
         var itemQuitTitle = "Quit"
         var itemStartPomodoroTitle = "Start Pomodoro Mode"
+        var menuItemCheckForUpdatesTitle = "Check for updates"
         if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
             itemReactivateTitle = menuInfo.value(forKey: "menuItemReactivateTitle") as? String ?? itemReactivateTitle
             itemEnterLicenseKeyTitle = menuInfo.value(forKey: "menuItemEnterLicenseKeyTitle") as? String ?? itemEnterLicenseKeyTitle
@@ -68,10 +73,20 @@ class menuViewController: NSViewController {
             itemFocusPreferencesTitle = menuInfo.value(forKey: "menuItemFocusPreferencesTitle") as? String ?? itemFocusPreferencesTitle
             itemQuitTitle = menuInfo.value(forKey: "menuItemQuitTitle") as? String ?? itemQuitTitle
             itemStartPomodoroTitle = menuInfo.value(forKey: "menuItemStartPomodoroTitle") as? String ?? itemStartPomodoroTitle
+            menuItemCheckForUpdatesTitle = menuInfo.value(forKey: "menuItemCheckForUpdatesTitle") as? String ?? menuItemCheckForUpdatesTitle
             
             untilTimeText = menuInfo.value(forKey: "untilTimeText") as? String ?? untilTimeText
             onText = menuInfo.value(forKey: "onText") as? String ?? onText
 
+        }
+        
+        if let common = configjson.value(forKey: "common") as? NSDictionary{
+            if let text = common.value(forKey: "trialExpiredText") as? String{
+                trialExpiredText = text
+            }
+            if let text = common.value(forKey: "daysRemainingText") as? String{
+                daysRemainingText = text
+            }
         }
         
         lblTitleReactivate.stringValue = itemReactivateTitle
@@ -82,6 +97,7 @@ class menuViewController: NSViewController {
         lblTitleFocus.stringValue = itemFocusTitle
         lblTitleFocusPreferences.stringValue = itemFocusPreferencesTitle
         lblTitleStartPomodoroMode.stringValue = itemStartPomodoroTitle
+        lblTitleCheckForUpdates.stringValue = menuItemCheckForUpdatesTitle
         lblTitleQuit.stringValue = itemQuitTitle
         
         
@@ -90,13 +106,49 @@ class menuViewController: NSViewController {
         bottomLine.isHidden = true
         
     }
+    
     override func viewWillDisappear() {//will not call if view is inside nsmenu
         
     }
     override func viewWillAppear() {//will not call if view is inside nsmenu
         
     }
+    //Trial version - 7 of 7 trial days remaining
+    //Your trial version has expired
     func reloadData(){
+        if isPurchased == false{
+            var daysremaining = 0
+            if let date = UserDefaults.standard.object(forKey: kUserdefaultsFirstHabitDay) as? Date{
+                let secondsBetween = Date().timeIntervalSince(date)
+                let numberOfDays_afterinstall = Int((secondsBetween) / 86400)
+                daysremaining = 7-numberOfDays_afterinstall
+                if daysremaining < 0 {
+                    daysremaining = 0
+                }
+                if UserDefaults.standard.object(forKey: "trialExpired") != nil{
+                    daysremaining = 0
+                }
+                if daysremaining == 0{
+                    if UserDefaults.standard.object(forKey: "trialExpired") == nil{
+                        UserDefaults.standard.set(true, forKey: "trialExpired")
+                    }
+                }
+            }else{
+                daysremaining = 7
+                
+            }
+            
+            if daysremaining == 0{
+                lblTrialVersionInfo.stringValue = trialExpiredText
+                lblTrialVersionInfo.textColor = NSColor.systemRed
+            }else{
+                lblTrialVersionInfo.stringValue = daysRemainingText.replacingOccurrences(of: "<DAYS>", with: "\(daysremaining)")//"Trial version - \(daysremaining) of 7 trial days remaining"//
+                lblTrialVersionInfo.textColor = NSColor.secondaryLabelColor
+            }
+        }else{
+            UserDefaults.standard.removeObject(forKey: "trialExpired")
+        }
+    
         boxQuit.fillColor = .clear
         boxFocusPreferences.fillColor = .clear
         boxExportStatistics.fillColor = .clear
@@ -185,6 +237,9 @@ class menuViewController: NSViewController {
             tabview.selectedTabViewItemIndex = 1
         }
         NSApplication.shared.activate(ignoringOtherApps: true)
+    }
+    @IBAction func btnCheckForUpdatesClicked(_ sender: Any) {
+        appdelegate!.updater?.checkForUpdates(self)
     }
     @IBAction func btnQuitClicked(_ sender: Any) {
         appdelegate?.menuItem_Quit()

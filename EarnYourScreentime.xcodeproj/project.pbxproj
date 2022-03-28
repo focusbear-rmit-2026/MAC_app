@@ -16,6 +16,7 @@
 		8F4BD8C627883FBE00ABAEF5 /* Key.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F4BD8C127883FBE00ABAEF5 /* Key.swift */; };
 		8F4BD8C727883FBE00ABAEF5 /* HotKeysController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F4BD8C227883FBE00ABAEF5 /* HotKeysController.swift */; };
 		8F4BD8C827883FBE00ABAEF5 /* HotKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F4BD8C327883FBE00ABAEF5 /* HotKey.swift */; };
+		8F51EFB727E0741700EFF0A8 /* blockedUrlsVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F51EFB627E0741700EFF0A8 /* blockedUrlsVc.swift */; };
 		8F54E92E2785662A00CC4E7B /* selectJsonVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F54E92D2785662A00CC4E7B /* selectJsonVc.swift */; };
 		8F6C10F427BD37F00013972F /* menuViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F6C10F327BD37F00013972F /* menuViewController.swift */; };
 		8F7DCC002796B55800EE3282 /* config.json in Resources */ = {isa = PBXBuildFile; fileRef = 8F7DCBFF2796B55800EE3282 /* config.json */; };
@@ -67,10 +68,39 @@
 		8FB50F0127BE8AFC00A7175B /* CToggleButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FB50F0027BE8AFC00A7175B /* CToggleButton.swift */; };
 		8FCD9F1627929B660060E73D /* everyActivity.wav in Resources */ = {isa = PBXBuildFile; fileRef = 8FCD9F1527929B660060E73D /* everyActivity.wav */; };
 		8FCD9F1827929BC10060E73D /* afterMorningRoutine.wav in Resources */ = {isa = PBXBuildFile; fileRef = 8FCD9F1727929BC10060E73D /* afterMorningRoutine.wav */; };
+		8FD1053F27EEE44100B7728E /* Earn_Your_ScreentimeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FD1053E27EEE44100B7728E /* Earn_Your_ScreentimeTests.swift */; };
+		8FD1054727EF1A3B00B7728E /* urlValidation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FD1054627EF1A3B00B7728E /* urlValidation.swift */; };
+		8FD1054B27EF221800B7728E /* validationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FD1054A27EF221800B7728E /* validationTest.swift */; };
 		8FDA8591279A8E83008AD6AA /* AVMonitor.m in Sources */ = {isa = PBXBuildFile; fileRef = 8FDA8590279A8E82008AD6AA /* AVMonitor.m */; };
 		8FE049D027B77F5F00ABD521 /* logQuantityVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FE049CF27B77F5F00ABD521 /* logQuantityVc.swift */; };
+		8FE13DF527ED887200BD620A /* Sparkle.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8FE13DF427ED887200BD620A /* Sparkle.framework */; };
+		8FE13DF627ED887200BD620A /* Sparkle.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 8FE13DF427ED887200BD620A /* Sparkle.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		A71CD10652799C9D4CB6F1B4 /* Pods_Earn_Your_Screentime.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 783C7916B94294D68C24A686 /* Pods_Earn_Your_Screentime.framework */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		8FD1054127EEE44100B7728E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 8FAC6C7B27805F6D008A4180 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 8FAC6C8227805F6D008A4180;
+			remoteInfo = "Earn Your Screentime";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		8FE13DF727ED887200BD620A /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				8FE13DF627ED887200BD620A /* Sparkle.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		783C7916B94294D68C24A686 /* Pods_Earn_Your_Screentime.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Earn_Your_Screentime.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -98,6 +128,7 @@
 		8F4BD8C127883FBE00ABAEF5 /* Key.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Key.swift; sourceTree = "<group>"; };
 		8F4BD8C227883FBE00ABAEF5 /* HotKeysController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HotKeysController.swift; sourceTree = "<group>"; };
 		8F4BD8C327883FBE00ABAEF5 /* HotKey.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HotKey.swift; sourceTree = "<group>"; };
+		8F51EFB627E0741700EFF0A8 /* blockedUrlsVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = blockedUrlsVc.swift; sourceTree = "<group>"; };
 		8F54E92D2785662A00CC4E7B /* selectJsonVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = selectJsonVc.swift; sourceTree = "<group>"; };
 		8F69D1E12796A34B00DB3EFD /* AVKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVKit.framework; path = System/Library/Frameworks/AVKit.framework; sourceTree = SDKROOT; };
 		8F69D1E32796A6CE00DB3EFD /* NetworkExtension.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = NetworkExtension.framework; path = System/Library/Frameworks/NetworkExtension.framework; sourceTree = SDKROOT; };
@@ -154,9 +185,15 @@
 		8FB50F0027BE8AFC00A7175B /* CToggleButton.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CToggleButton.swift; sourceTree = "<group>"; };
 		8FCD9F1527929B660060E73D /* everyActivity.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = everyActivity.wav; sourceTree = "<group>"; };
 		8FCD9F1727929BC10060E73D /* afterMorningRoutine.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = afterMorningRoutine.wav; sourceTree = "<group>"; };
+		8FD1053C27EEE44100B7728E /* Earn Your ScreentimeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Earn Your ScreentimeTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8FD1053E27EEE44100B7728E /* Earn_Your_ScreentimeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Earn_Your_ScreentimeTests.swift; sourceTree = "<group>"; };
+		8FD1054027EEE44100B7728E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		8FD1054627EF1A3B00B7728E /* urlValidation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = urlValidation.swift; sourceTree = "<group>"; };
+		8FD1054A27EF221800B7728E /* validationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = validationTest.swift; sourceTree = "<group>"; };
 		8FDA858F279A8E82008AD6AA /* AVMonitor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVMonitor.h; sourceTree = "<group>"; };
 		8FDA8590279A8E82008AD6AA /* AVMonitor.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVMonitor.m; sourceTree = "<group>"; };
 		8FE049CF27B77F5F00ABD521 /* logQuantityVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = logQuantityVc.swift; sourceTree = "<group>"; };
+		8FE13DF427ED887200BD620A /* Sparkle.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Sparkle.framework; sourceTree = "<group>"; };
 		E215A3C9C7A8C6908E370CDB /* Pods-Earn Your Screentime.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Earn Your Screentime.debug.xcconfig"; path = "Target Support Files/Pods-Earn Your Screentime/Pods-Earn Your Screentime.debug.xcconfig"; sourceTree = "<group>"; };
 		F50080F183E6F7170E0E7684 /* Pods-Earn Your Screentime.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Earn Your Screentime.release.xcconfig"; path = "Target Support Files/Pods-Earn Your Screentime/Pods-Earn Your Screentime.release.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -167,7 +204,15 @@
 			buildActionMask = 2147483647;
 			files = (
 				8F7DCC032796E8D200EE3282 /* WebKit.framework in Frameworks */,
+				8FE13DF527ED887200BD620A /* Sparkle.framework in Frameworks */,
 				A71CD10652799C9D4CB6F1B4 /* Pods_Earn_Your_Screentime.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		8FD1053927EEE44100B7728E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -220,6 +265,7 @@
 		8F69D1E02796A34B00DB3EFD /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				8FE13DF427ED887200BD620A /* Sparkle.framework */,
 				8F0D2ADF279C327D000F860F /* Pods-Earn Your Screentime */,
 				8F7DCC022796E8D200EE3282 /* WebKit.framework */,
 				8F69D1E32796A6CE00DB3EFD /* NetworkExtension.framework */,
@@ -249,6 +295,7 @@
 				8F54E92D2785662A00CC4E7B /* selectJsonVc.swift */,
 				8FB50EFC27BE6AD100A7175B /* focusPreferencesVc.swift */,
 				8FABDDD427DA367100F6A58C /* passwordVc.swift */,
+				8F51EFB627E0741700EFF0A8 /* blockedUrlsVc.swift */,
 				8FB50EFE27BE811D00A7175B /* tblCellFocusPreferences.swift */,
 				8F92E88327BF65AF0085AF8C /* addWebUrlVc.swift */,
 				8F92E88527BF8B340085AF8C /* addFocusTypeVc.swift */,
@@ -313,6 +360,7 @@
 			isa = PBXGroup;
 			children = (
 				8FAC6C8527805F6D008A4180 /* EarnYourScreentime */,
+				8FD1053D27EEE44100B7728E /* Earn Your ScreentimeTests */,
 				8FAC6C8427805F6D008A4180 /* Products */,
 				8F69D1E02796A34B00DB3EFD /* Frameworks */,
 				C39F497A522955388D68AA8B /* Pods */,
@@ -323,6 +371,7 @@
 			isa = PBXGroup;
 			children = (
 				8FAC6C8327805F6D008A4180 /* Earn Your Screentime.app */,
+				8FD1053C27EEE44100B7728E /* Earn Your ScreentimeTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -350,6 +399,7 @@
 				8F8C52D527BBD53F00E11A38 /* Preferences */,
 				8FAD22D127CA03D500CDC866 /* Pomodoro mode */,
 				8FAC6C982780671E008A4180 /* globalFile.swift */,
+				8FD1054627EF1A3B00B7728E /* urlValidation.swift */,
 				8FAD22D827CA514700CDC866 /* commonWindowController.swift */,
 				8F93BE5E27CCA168004FA0BE /* Focus mode */,
 				8FABDDD227DA2ED600F6A58C /* enterPasswordVc.swift */,
@@ -394,6 +444,16 @@
 			path = menuView;
 			sourceTree = "<group>";
 		};
+		8FD1053D27EEE44100B7728E /* Earn Your ScreentimeTests */ = {
+			isa = PBXGroup;
+			children = (
+				8FD1053E27EEE44100B7728E /* Earn_Your_ScreentimeTests.swift */,
+				8FD1054A27EF221800B7728E /* validationTest.swift */,
+				8FD1054027EEE44100B7728E /* Info.plist */,
+			);
+			path = "Earn Your ScreentimeTests";
+			sourceTree = "<group>";
+		};
 		C39F497A522955388D68AA8B /* Pods */ = {
 			isa = PBXGroup;
 			children = (
@@ -415,6 +475,7 @@
 				8FAC6C8027805F6D008A4180 /* Frameworks */,
 				8FAC6C8127805F6D008A4180 /* Resources */,
 				391F0B3FDDC7CB285663B31F /* [CP] Embed Pods Frameworks */,
+				8FE13DF727ED887200BD620A /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -424,6 +485,24 @@
 			productName = EarnYourScreentime;
 			productReference = 8FAC6C8327805F6D008A4180 /* Earn Your Screentime.app */;
 			productType = "com.apple.product-type.application";
+		};
+		8FD1053B27EEE44100B7728E /* Earn Your ScreentimeTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 8FD1054327EEE44100B7728E /* Build configuration list for PBXNativeTarget "Earn Your ScreentimeTests" */;
+			buildPhases = (
+				8FD1053827EEE44100B7728E /* Sources */,
+				8FD1053927EEE44100B7728E /* Frameworks */,
+				8FD1053A27EEE44100B7728E /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				8FD1054227EEE44100B7728E /* PBXTargetDependency */,
+			);
+			name = "Earn Your ScreentimeTests";
+			productName = "Earn Your ScreentimeTests";
+			productReference = 8FD1053C27EEE44100B7728E /* Earn Your ScreentimeTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
 
@@ -438,6 +517,10 @@
 					8FAC6C8227805F6D008A4180 = {
 						CreatedOnToolsVersion = 11.3.1;
 						LastSwiftMigration = 1130;
+					};
+					8FD1053B27EEE44100B7728E = {
+						CreatedOnToolsVersion = 11.3.1;
+						TestTargetID = 8FAC6C8227805F6D008A4180;
 					};
 				};
 			};
@@ -455,6 +538,7 @@
 			projectRoot = "";
 			targets = (
 				8FAC6C8227805F6D008A4180 /* Earn Your Screentime */,
+				8FD1053B27EEE44100B7728E /* Earn Your ScreentimeTests */,
 			);
 		};
 /* End PBXProject section */
@@ -480,6 +564,13 @@
 				8FAC6C8E27805F70008A4180 /* Main.storyboard in Resources */,
 				8F7DCC002796B55800EE3282 /* config.json in Resources */,
 				8F92D68727C3AB15007A6538 /* block.html in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		8FD1053A27EEE44100B7728E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -552,6 +643,7 @@
 				8F107D22278C4A1E00280B37 /* abortingCantHandleVc.swift in Sources */,
 				8F8C52D927BBD53F00E11A38 /* generalVc.swift in Sources */,
 				8FAC6C9D27806DCB008A4180 /* firstViewController.swift in Sources */,
+				8FD1054727EF1A3B00B7728E /* urlValidation.swift in Sources */,
 				8F4BD8C427883FBE00ABAEF5 /* NSEventModifierFlags+HotKey.swift in Sources */,
 				8FAD22D727CA2F1000CDC866 /* focusCompletedVc.swift in Sources */,
 				8FE049D027B77F5F00ABD521 /* logQuantityVc.swift in Sources */,
@@ -573,6 +665,7 @@
 				8FDA8591279A8E83008AD6AA /* AVMonitor.m in Sources */,
 				8F93BE6027CCA196004FA0BE /* abortingFocusMode.swift in Sources */,
 				8FAD22D527CA047700CDC866 /* pomodoroVc.swift in Sources */,
+				8F51EFB727E0741700EFF0A8 /* blockedUrlsVc.swift in Sources */,
 				8FAC6C972780612B008A4180 /* mainWindowController.swift in Sources */,
 				8F9F365327ACFB3B00EB3516 /* SYFlatButton.m in Sources */,
 				8FB50F0127BE8AFC00A7175B /* CToggleButton.swift in Sources */,
@@ -580,7 +673,24 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		8FD1053827EEE44100B7728E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8FD1054B27EF221800B7728E /* validationTest.swift in Sources */,
+				8FD1053F27EEE44100B7728E /* Earn_Your_ScreentimeTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		8FD1054227EEE44100B7728E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 8FAC6C8227805F6D008A4180 /* Earn Your Screentime */;
+			targetProxy = 8FD1054127EEE44100B7728E /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
 		8FAC6C8C27805F70008A4180 /* Main.storyboard */ = {
@@ -716,16 +826,21 @@
 				CODE_SIGN_ENTITLEMENTS = EarnYourScreentime/EarnYourScreentime.entitlements;
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 25;
+				CURRENT_PROJECT_VERSION = 29;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = NO;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)",
+				);
 				INFOPLIST_FILE = EarnYourScreentime/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.App.EarnYourScreentime;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -744,20 +859,67 @@
 				CODE_SIGN_ENTITLEMENTS = EarnYourScreentime/EarnYourScreentime.entitlements;
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 25;
+				CURRENT_PROJECT_VERSION = 29;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = NO;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)",
+				);
 				INFOPLIST_FILE = EarnYourScreentime/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.App.EarnYourScreentime;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "EarnYourScreentime/Login item/EarnYourScreentime-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		8FD1054427EEE44100B7728E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = 7GYNKZG3J7;
+				INFOPLIST_FILE = "Earn Your ScreentimeTests/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.App.Earn-Your-ScreentimeTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Earn Your Screentime.app/Contents/MacOS/Earn Your Screentime";
+			};
+			name = Debug;
+		};
+		8FD1054527EEE44100B7728E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = 7GYNKZG3J7;
+				INFOPLIST_FILE = "Earn Your ScreentimeTests/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.App.Earn-Your-ScreentimeTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Earn Your Screentime.app/Contents/MacOS/Earn Your Screentime";
 			};
 			name = Release;
 		};
@@ -778,6 +940,15 @@
 			buildConfigurations = (
 				8FAC6C9427805F70008A4180 /* Debug */,
 				8FAC6C9527805F70008A4180 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		8FD1054327EEE44100B7728E /* Build configuration list for PBXNativeTarget "Earn Your ScreentimeTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				8FD1054427EEE44100B7728E /* Debug */,
+				8FD1054527EEE44100B7728E /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

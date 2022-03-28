@@ -58,12 +58,20 @@ class pomodoroVc: NSViewController {
         }
     }
     func reFillFocusTypeList(){
+        var index = popUpBtnFocusType.indexOfSelectedItem
+        if index == -1{
+            index = 0
+        }
         popUpBtnFocusType.removeAllItems()
         for i in 0..<arrFocusType.count{
             if let name = arrFocusType[i]["name"] as? String{
                 popUpBtnFocusType.addItem(withTitle: name)
             }
         }
+        if arrFocusType.count <= index{
+            index = 0
+        }
+        popUpBtnFocusType.selectItem(at: index)
     }
     @IBAction func popUpBtnFocusTypeClicked(_ sender: Any) {
     }
@@ -105,7 +113,7 @@ class pomodoroVc: NSViewController {
             if (preferencesWindowControllerObj?.window!.isVisible)!{
                 if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
                     if tabview.selectedTabViewItemIndex == 1{
-                        focusPreferencesVcObj?.reloadData()
+                        focusPreferencesVcObj?.focusModeStarted()
                     }
                 }
             }

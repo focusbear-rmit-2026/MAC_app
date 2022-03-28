@@ -106,7 +106,11 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
                     self.view.removeFromSuperview()
                     if isMainWindowLodded{
                         if (mainWindowControllerObj?.window!.isVisible)!{//it means isi per aaya hoga
-                            mainViewControllerObj?.showAbortStartView()
+                            if currentState == ._SHUTOFFMAC_{
+                                shutOffTimeVcObj!.getAccessNowClicked()
+                            }else{
+                                mainViewControllerObj?.showAbortStartView()
+                            }
                         }
                     }
                 }else{
@@ -136,7 +140,9 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
         if isMainWindowLodded{
             if (mainWindowControllerObj?.window!.isVisible)!{//it means isi per aaya hoga
                 self.view.removeFromSuperview()
-                mainViewControllerObj?.abortCancel()
+                if currentState != ._SHUTOFFMAC_{
+                   mainViewControllerObj?.abortCancel()
+                }
                 return;
             }
         }
@@ -211,7 +217,9 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
                         if isMainWindowLodded{
                             if mainWindowControllerObj?.window!.isVisible ?? false{//it means isi per aaya hoga
                                 self.view.removeFromSuperview()
-                                mainViewControllerObj?.abortCancel()
+                                if currentState != ._SHUTOFFMAC_{
+                                    mainViewControllerObj?.abortCancel()
+                                }
                                 return;
                             }
                         }
