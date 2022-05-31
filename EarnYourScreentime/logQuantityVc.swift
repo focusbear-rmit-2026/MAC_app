@@ -51,7 +51,10 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
         self.durationInSeconds = durationInSeconds
         textFieldCount.stringValue = ""
 //        print(timestamp)
-        let subTitle = logQuantityQuestion ?? "How many <activity> did you do?"
+        var subTitle = logQuantityQuestion ?? "How many <activity> did you do?"
+        if subTitle.isEmpty{// if logQuantityQuestion is ""
+            subTitle = "How many <activity> did you do?"
+        }
         self.logQuantityQuestion = subTitle
         lblSubTitle.stringValue = subTitle.replacingOccurrences(of: "<activity>", with: name)
         textFieldCount.selectText(self)

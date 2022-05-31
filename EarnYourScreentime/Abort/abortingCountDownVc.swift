@@ -28,8 +28,6 @@ class abortingCountDownVc: NSViewController {
         super.viewDidLoad()
         // Do view setup here.
 
-        imgViewGif.image = NSImage(named: "Crying_small")
-        imgViewGif.animates = true
         lblEmailId.stringValue = emailID
         if let abortInfo = configjson.value(forKey: "abortInfo") as? NSDictionary{
             if let abortingTitle = abortInfo.value(forKey: "abortingTitle") as? String{
@@ -62,6 +60,14 @@ class abortingCountDownVc: NSViewController {
                 }
             }
             
+        }
+    }
+    override func viewWillAppear() {
+        if kIsReducedMotion{
+            imgViewGif.image = nil
+        }else{
+            imgViewGif.image = NSImage(named: "Crying_small")
+            imgViewGif.animates = true
         }
     }
     func startTimer() {

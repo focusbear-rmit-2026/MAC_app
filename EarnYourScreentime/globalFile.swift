@@ -7,6 +7,8 @@
 //
 
 import Cocoa
+//import IOKit
+import IOKit.pwr_mgt
 import SystemConfiguration// for check internet availibility code
 
 let mainStoryboard = NSStoryboard(name: NSStoryboard.Name("Main"), bundle: nil)
@@ -15,6 +17,58 @@ let mainViewControllerObj = mainStoryboard.instantiateController(withIdentifier:
 let firstViewControllerObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("firstViewController")) as? firstViewController
 
 let timerViewcontrollerObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("timerViewcontroller")) as? timerViewcontroller
+
+var discourageDefaultFocusVcObj:discourageDefaultFocusVc?
+func getDiscourageDefaultFocusVcObject()->discourageDefaultFocusVc{
+    if discourageDefaultFocusVcObj == nil{
+        discourageDefaultFocusVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("discourageDefaultFocusVc")) as? discourageDefaultFocusVc
+    }
+    return discourageDefaultFocusVcObj!
+}
+var quittingWcObj:commonWindowController?
+func getQuittingWindowObject()->commonWindowController{
+    if quittingWcObj == nil{
+        quittingWcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
+    }
+    return quittingWcObj!
+}
+var quitCountDownVcObj:quitCountDownVc?
+func getQuittingCountDownVcObject()->quitCountDownVc{
+    if quitCountDownVcObj == nil{
+        quitCountDownVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("quitCountDownVc")) as? quitCountDownVc
+    }
+    return quitCountDownVcObj!
+}
+
+
+
+
+var smallCountDownVcObj:smallCountDownVc?
+func getsmallCountDownVcObject()->smallCountDownVc{
+    if smallCountDownVcObj == nil{
+        smallCountDownVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("smallCountDownVc")) as? smallCountDownVc
+    }
+    return smallCountDownVcObj!
+}
+
+var smallCountDownWcObj:commonWindowController?
+func getSmallCountDownWindowObject()->commonWindowController{
+    if smallCountDownWcObj == nil{
+        smallCountDownWcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
+        smallCountDownWcObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.popUpMenuWindow)))
+    }
+    return smallCountDownWcObj!
+}
+
+var quittingConfirmVcObj:quittingConfirmVc?
+
+func getQuittingConfirmVcObject()->quittingConfirmVc{
+    if quittingConfirmVcObj == nil{
+        quittingConfirmVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("quittingConfirmVc")) as? quittingConfirmVc
+    }
+    return quittingConfirmVcObj!
+}
+
 
 let thirdVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("thirdVc")) as? thirdVc
 
@@ -52,6 +106,26 @@ let focusCompletedVcObj = mainStoryboard.instantiateController(withIdentifier: N
 
 let startingFocusWindowControllerObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
 
+
+var endingFocusWindowControllerObj: commonWindowController?
+
+func getEndFocusModeWindowControllerObj()->commonWindowController{
+    if endingFocusWindowControllerObj == nil{
+        endingFocusWindowControllerObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
+        endingFocusWindowControllerObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.popUpMenuWindow)))
+    }
+    return endingFocusWindowControllerObj!
+}
+var rememberNextHabitVcObj:rememberNextHabitVc?
+
+func getRememberNextHabitVcObj()->rememberNextHabitVc{
+    if rememberNextHabitVcObj == nil{
+        rememberNextHabitVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("rememberNextHabitVc")) as? rememberNextHabitVc
+    }
+    return rememberNextHabitVcObj!
+}
+
+
 let startingFocusModeVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("startingFocusModeVc")) as? startingFocusModeVc
 let abortingFocusModeVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("abortingFocusModeVc")) as? abortingFocusModeVc
 
@@ -64,6 +138,16 @@ let appdelegate = NSApplication.shared.delegate as? AppDelegate
 
 
 var kUserdefaultsPomodoroModeEnabled = "kUserdefaultsPomodoroModeEnabled"
+var kUserdefaultsOfficeModeEnabled = "kUserdefaultsOfficeModeEnabled"
+var isOfficeModeEnabled = false
+
+var kUserdefaultsReducedMotion = "kUserdefaultsReducedMotion"
+var kIsReducedMotion = false
+
+var isPromptToRememberHabit = true
+var kUserdefaultsPromptToRememberHabit = "kUserdefaultsPromptToRememberHabit"
+
+var isPromptToRememberHabitShowedInLastHabit = false///   reason:-Make sure it doesn't happen twice in a row though. 
 
 var configjson = NSDictionary()
 
@@ -131,8 +215,13 @@ extension NSView{
 //var isBreathingGoing = false
 //var isHabitGoing = false
 //var isBreakActivitiesGoing = false
+
+
 var currentHabitIndex = -1
 var currentActivityIndex = -1
+var currentActivityPlaying:breakActivity?
+var currentHabitPlaying:habit?
+
 
 var arrAllMorningHabits = [habit]()
 var arrAllEveningHabits = [habit]()
@@ -142,12 +231,18 @@ struct habit {
     var urlsArray:[String]
     var logQuantity:Bool!
     var logQuantityQuestion:String?
-    init(name:String, durationSeconds:Int, urlsArray:[String], logQuantity:Bool, logQuantityQuestion:String?) {
+    var openSpecificApps:Bool!
+    var allowUrls:[String]!
+    var allowApps:[String]!
+    init(name:String, durationSeconds:Int, urlsArray:[String], logQuantity:Bool, logQuantityQuestion:String?, openSpecificApps:Bool,allowUrls:[String],allowApps:[String]) {
         self.name = name
         self.durationSeconds = durationSeconds
         self.urlsArray = urlsArray
         self.logQuantity = logQuantity
         self.logQuantityQuestion = logQuantityQuestion
+        self.openSpecificApps = openSpecificApps
+        self.allowUrls = allowUrls
+        self.allowApps = allowApps
     }
 }
 var introActivity:habit?
@@ -155,8 +250,29 @@ var introActivity:habit?
 func secondsToHoursMinutesSeconds (seconds : Int) -> (Int, Int, Int) {
     return (seconds / 3600, (seconds % 3600) / 60, (seconds % 3600) % 60)
 }
-
-var showEveryBreak = false
+func getStringTimeFromSeconds(seconds : Int)->String{
+    let (h,m,s) = secondsToHoursMinutesSeconds(seconds: seconds)
+    var stringTime: String = ""
+    if h != 0{
+        stringTime = "\(h)h"
+    }
+    if m != 0{
+        if stringTime.isEmpty{
+            stringTime = "\(m)m"
+        }else{
+            stringTime += " \(m)m"
+        }
+    }
+    if s != 0{
+        if stringTime.isEmpty{
+            stringTime = "\(s)s"
+        }else{
+            stringTime += " \(s)s"
+        }
+    }
+    return stringTime
+}
+//var showEveryBreak = false
 var isAnyMandatoryActivityIncluded = false
 var isMandatoryActivityGoing = false
 var breakAfterMinutes = 0
@@ -172,7 +288,11 @@ struct breakActivity {
     var isRandomChoice:Bool!
     var choices:[activityChoice]
     var logQuantityQuestion:String?
-    init(name:String, durationSeconds:Int, IncludeInEveryBreak:Bool, urlsArray:[String], logQuantity:Bool,isRandomChoice:Bool,choices:[activityChoice],logQuantityQuestion:String?) {
+    var openSpecificApps:Bool!
+    var allowUrls:[String]!
+    var allowApps:[String]!
+    var isOfficeFriendly:Bool!
+    init(name:String, durationSeconds:Int, IncludeInEveryBreak:Bool, urlsArray:[String], logQuantity:Bool,isRandomChoice:Bool,choices:[activityChoice],logQuantityQuestion:String?, openSpecificApps:Bool,allowUrls:[String],allowApps:[String],isOfficeFriendly:Bool) {
         self.name = name
         self.durationSeconds = durationSeconds
         self.IncludeInEveryBreak = IncludeInEveryBreak
@@ -181,6 +301,10 @@ struct breakActivity {
         self.isRandomChoice = isRandomChoice
         self.choices = choices
         self.logQuantityQuestion = logQuantityQuestion
+        self.openSpecificApps = openSpecificApps
+        self.allowUrls = allowUrls
+        self.allowApps = allowApps
+        self.isOfficeFriendly = isOfficeFriendly
     }
 }
 
@@ -188,11 +312,13 @@ struct breakActivity {
 struct activityChoice {
     var name:String!
     var urlsArray:[String]
-    var logQuantityQuestion:String?
-    init(name:String, urlsArray:[String], logQuantityQuestion:String?) {
+    var logQuantityQuestion:String!
+    var logQuantity:Bool!
+    init(name:String, urlsArray:[String], logQuantityQuestion:String, logQuantity:Bool) {
         self.name = name
         self.urlsArray = urlsArray
         self.logQuantityQuestion = logQuantityQuestion
+        self.logQuantity = logQuantity
     }
 }
 
@@ -422,13 +548,12 @@ class CustomTextField: NSTextField, NSTextViewDelegate {
         return false
     }
 }
+class ignoreMouseTextField: NSTextField, NSTextViewDelegate {
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        return nil
+    }
+}
 
-//class CustomTextFieldcell: NSTextFieldCell {
-//
-//    override func fieldEditor(for aControlView: NSView) -> NSTextView? {
-//        return PasteView()
-//    }
-//}
 class PasteView: NSTextView, NSTextViewDelegate {
 
     override func draw(_ dirtyRect: NSRect) {
@@ -501,7 +626,7 @@ enum ACTION:Int{
 
 
 enum CURRENTSTATE:Int{
-    case _NOTHING_ = 111, _MORNING_HABIT_, _EVENING_HABIT_, _ACTIVITY_, _SHUTOFFMAC_, _BREATHING_, _ABORT_, _FOCUS_SUMMARY_, _FOCUS_COMPLETED_
+    case _NOTHING_ = 111, _MORNING_HABIT_, _EVENING_HABIT_, _ACTIVITY_, _SHUTOFFMAC_, _BREATHING_, _ABORT_, _FOCUS_SUMMARY_
 }
 var currentState:CURRENTSTATE = ._NOTHING_
 var currentAction:ACTION = ACTION._START_
@@ -531,6 +656,10 @@ var emailID = "team@earnyourscreentime.com"
 var appName = "Earn Your Screen Time"
 var buttonCancelText = "Cancel"
 var buttonOkText = "OK"
+var buttonStatusStateFocusText = "FOCUS"
+var buttonStatusStateOffText = "OFF"
+var buttonStatusStateCallText = "CALL"
+
 
 var webhookUrl = "https://hooks.zapier.com/hooks/catch/326116/b98ovxc/"
 func readConfigFile(){
@@ -551,6 +680,9 @@ func readConfigFile(){
         buttonOkText = common.value(forKey: "buttonOkText") as? String ?? buttonOkText
         unlockMachineButtonText = common.value(forKey: "unlockMachineButtonText") as? String ?? unlockMachineButtonText
         webhookUrl = common.value(forKey: "webhookUrl") as? String ?? webhookUrl
+        buttonStatusStateFocusText = common.value(forKey: "buttonStatusStateFocusText") as? String ?? buttonStatusStateFocusText
+        buttonStatusStateOffText = common.value(forKey: "buttonStatusStateOffText") as? String ?? buttonStatusStateOffText
+        buttonStatusStateCallText = common.value(forKey: "buttonStatusStateCallText") as? String ?? buttonStatusStateCallText
     }
 }
 func getDoSomeActivityText(activityName:String)->String{
@@ -586,7 +718,7 @@ func getStringTime(seconds:Int)->String{
 }
 func getstartActivityButtonText(seconds:Int, name:String)->String{
     var title = startActivityButtonText
-    var stringTime = getStringTime(seconds: seconds)
+    let stringTime = getStringTime(seconds: seconds)
     
     if title.localizedCaseInsensitiveContains("<TIME>"){
         title = title.replacingOccurrences(of: "<TIME>", with: stringTime)
@@ -841,7 +973,111 @@ func getAbortJsonToUpload(emailAddress:String?, feedback:String, abortReason:Str
     
 
 }
+func getQuitJsonToUpload(emailAddress:String?, feedback:String, quitReason:String,completionHandler: @escaping(_ result: NSDictionary) -> ()) {
+    var settingsJson = NSDictionary()
+    if let stringDic = UserDefaults.standard.object(forKey: kUserdefaultsSelectedJson) as? String {
+        if let data = stringDic.data(using: String.Encoding.utf8) {
+            do {
+                settingsJson = try (JSONSerialization.jsonObject(with: data, options: []) as? NSDictionary ?? [:])
+            } catch let error as NSError {
+                print(error)
+            }
+        }
+        
+    }else {
+        if let path = Bundle.main.path(forResource: "settings", ofType: "json") {
+            let url = URL(fileURLWithPath: path)
+            do {
+                let data = try Data(contentsOf: url, options: .mappedIfSafe)
+                do {
+                    if let dicResult: NSDictionary = try JSONSerialization.jsonObject(with: data, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary {
+                        settingsJson = dicResult
+                    }
+                }catch {
+                    print(error)
+                }
+            } catch {
+                // handle error
+            }
+        }
+    }
+    
+    let systemVersion = ProcessInfo().operatingSystemVersion
+    let version = "\(systemVersion.majorVersion).\(systemVersion.minorVersion).\(systemVersion.patchVersion)"
+    
+    let firstRunDate = UserDefaults.standard.object(forKey: kUserdefaultsFirstRunDate) as? Date ?? Date()
+    let formatter = DateFormatter()
+    formatter.dateFormat = "yyyy-MM-dd"
+    let myDateString = formatter.string(from: firstRunDate)
+    
+    let jsonResult:NSMutableDictionary = ["quitReason":quitReason, "settingsJSON":settingsJson, "macOSVersion":version, "feedback":feedback, "usageStartDate":myDateString]
+    
+    if emailAddress != nil{
+        jsonResult["emailAddress"] = emailAddress!
+    }
+    
+    
+    
+    let responsePath = webhookUrl
+    if let myUrl = NSURL(string: responsePath){
+        
+        let request = NSMutableURLRequest(url:myUrl as URL);
+        request.httpMethod = "POST";
+        
+        var json = jsonResult//[[String: String]]()
+        
+        
+        
+        
+        
+        let jsonData = try? JSONSerialization.data(withJSONObject: json)
+        //         let boundary = generateBoundaryString()
+        //         let contentData = createBodyWithParameters(imageDataKey: folderData as? NSData ?? NSData(), boundary: boundary, jsonData: jsonData) as Data
+        
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = jsonData
+        
+        
+        let task = URLSession.shared.dataTask(with: request as URLRequest) {
+            data, response, error in
+            
+            // print(response)
+            if let httpResponse = response as? HTTPURLResponse {
+                if httpResponse.statusCode == 200{
+                    
+                    
+                    
+                    if data != nil{
+                        
+                        let status = String(data: data!, encoding: .utf8)!
+                        if status == "1"{
+                            print("success")
+                            
+                        }else{
+                            
+                        }
+                    }
+                }else{
+                    
+                }
 
+            }
+            //            isUploadingPopupResponse = false
+            if error != nil {
+                completionHandler(jsonResult)
+                return
+            }
+            completionHandler(jsonResult)
+            return;
+        }
+        task.resume()
+    }else{
+        //        isUploadingPopupResponse = false
+        completionHandler(jsonResult)
+    }
+    
+
+}
 var DebugLogsURL:URL!
 var quantityCsvURL:URL!
 var blockURL:URL!
@@ -1237,7 +1473,6 @@ class customBox: NSBox {
             }else{
                 for i in 0..<arrFocusType.count{
                     if arrFocusType[i]["isOn"] as? Bool == true{
-//                        NSAlert
                         let alert = NSAlert()
                         alert.messageText = "A focus mode is already running. Please abort the running focus mode to start a new one."
                         
@@ -1256,9 +1491,28 @@ class customBox: NSBox {
                 
                 // new work starting foces mode
                 
+//                if arrFocusType[tagValue]["isDefault"] as? Bool == true{
+//                    if focusPreferencesVcObj != nil{// Discourage Default Focus Vc se pahle preferences band kr denege taki vha se koi focus mode chalu na kar pay
+//
+//                        if preferencesWindowControllerObj?.window?.isVisible ?? false{
+//                            preferencesWindowControllerObj?.window?.close()
+//                        }
+//                    }
+//                    if focusModeStartWindowLodded{
+//                        if startingFocusWindowControllerObj?.window?.isVisible ?? false{
+//                            startingFocusWindowControllerObj!.window?.close()
+//                        }
+//                    }
+//                    menuViewControllerObj!.presentAsSheet(getDiscourageDefaultFocusVcObject())
+//                    getDiscourageDefaultFocusVcObject().resetData()
+//                }else{
+                
+                    showStartingFocusMode(focusModeIndex: tagValue, focusType: arrFocusType[tagValue]["name"] as? String ?? "")
+//                startingFocusWindowControllerObj?.window.
+                
+//                }
                 
                 
-                showStartingFocusMode(focusModeIndex: tagValue, focusType: arrFocusType[tagValue]["name"] as? String ?? "")
                 
                 return;
 
@@ -1273,6 +1527,7 @@ class customBox: NSBox {
         self.fillColor = NSColor.clear
     }
 }
+var isDiscourageDefaultFocusVcVisible = false
 var focusModeStartWindowLodded = false
 var isFocusModeStartedFromPomodoroMode = false
 func showStartingFocusMode(focusModeIndex: Int, focusType: String){
@@ -1293,6 +1548,9 @@ var arrFocusType = [[String:Any]]()
 var isAllowedAllAppsInFocus = false
 var isAllowedAllUrlsInFocus = false
 var selfAppName = Bundle.main.infoDictionary!["CFBundleName"] as! String
+
+
+var whatToAchieveInFocusBlock = ""
 
 // **blocked urls**
 var arrBlockedUrls = [String]()
@@ -1328,8 +1586,10 @@ func intFromHexString(hexStr: String) -> UInt32 {
 
 var timerForFocusMode:Timer?//jab bhi focus mode disable krenge timer bhi check krenge valid ua to invalidate krenge
 var isFocusTimeType:FocusModeTimeType = ._NONE_
-var endFocusModeTime:Date?
+var endFocusModeTime:Date?// ye to vo h jo start foccus k time per hisab lgaya ki end focus ka time kya hoga
 var startFocusModeTime:Date?
+var focusModeActualDurationPerformed:Int = 0// ye kaam aaygi log vali file jo export hoti hai . usme likhvane k liye.. jese fi focus mode finish hoga duuration is var mai likhva lenge fir log mai add krenge (fir ussse focus summary dikhaynge )
+var focusModeMinutesToPerform = 0
 enum FocusModeTimeType:Int{
     case _HOUR_ = 11, _TILL_SHUTOFF_, _NONE_
 }
@@ -1386,8 +1646,24 @@ func addEntryInCsv(logType:String, activity:String, durationInSeconds:String, qu
 
 
 
-
-
+var assertionIDDisableSleep: IOPMAssertionID = 0
+func disableSystemSleep(){
+    let reasonForActivity = "Reason for activity" as CFString
+//    var assertionID: IOPMAssertionID = 0
+    var success = IOPMAssertionCreateWithName( kIOPMAssertionTypeNoDisplaySleep as CFString,
+                                                IOPMAssertionLevel(kIOPMAssertionLevelOn),
+                                                reasonForActivity,
+                                                &assertionIDDisableSleep )
+//    if success == kIOReturnSuccess {
+//        // Add the work you need to do without the system sleeping here.
+//
+//        success = IOPMAssertionRelease(assertionIDDisableSleep);
+//        // The system will be able to sleep again.
+//    }
+}
+func enableSystemSleep(){
+    IOPMAssertionRelease(assertionIDDisableSleep);
+}
 func showBlankWindowInSecondaryMonitor(){
     appdelegate?.showExtraWindows()
 }
@@ -1474,4 +1750,143 @@ func getDomainFromUrl(url:String) -> String{
     }
     print("****")
     return domain
+}
+
+func isPreventUserIdleDisplaySleepOn()-> Bool{
+    addLog(text: "is Prevent UserIdle Display SleepOn Called")
+    let processArray = ["zoom.us", "teams"]// lowercased names aynge sirf
+    let dic = avmonitor.getSystemAssertionDic()
+    addLog(text: "is Prevent UserIdle Display SleepOn return \(dic)")
+    print(dic)
+    if dic == nil{
+        addLog(text: "is Prevent UserIdle Display SleepOn return false because dic is nil")
+        return false
+    }
+    if let keys  = dic?.keys{
+        for key in keys{
+            if let arr = dic?[key] as? NSArray{
+                addLog(text: "is Prevent UserIdle Display SleepOn success :- arr = dic?[key] as? NSArray")
+                for item in arr{
+                    //                        print(item as? NSDictionary)
+                    if let itemDic = item as? NSDictionary{
+                        print(itemDic)
+                        print(itemDic.value(forKey: "AssertionTrueType") as?  String ?? "")
+                        if itemDic.value(forKey: "AssertionTrueType") as?  String ?? ""  == "PreventUserIdleDisplaySleep"{
+                            print(itemDic.value(forKey: "Process Name") as?  String ?? "")
+                            if let name = itemDic.value(forKey: "Process Name") as?  String{
+                                let processName = name.lowercased()
+                                if processName != selfAppName.lowercased(){
+                                    if processArray.contains(processName){
+                                        addLog(text: "is Prevent UserIdle Display SleepOn return true")
+                                        return true
+                                    }
+                                }
+                                
+                            }
+                            //                                zoom.us, teams
+                        }
+                        
+                    }
+                }
+            }
+        }
+    }
+    addLog(text: "is Prevent UserIdle Display SleepOn return false")
+    return false
+}
+
+
+
+var lastShownRandomChoiceDic = [String:activityChoice]()
+
+
+
+let mainAppBundelId = Bundle.main.bundleIdentifier ?? ""
+func createLaunchAgent(){
+    
+    let path = Bundle.main.bundlePath
+    
+    let destination = "/Users/\(NSUserName())/Library/LaunchAgents/"
+    if !FileManager.default.fileExists(atPath: destination) {
+        
+        do {
+            try FileManager.default.createDirectory(at: URL(fileURLWithPath: destination), withIntermediateDirectories: true, attributes: nil)
+        } catch {}
+        
+    }
+    
+    // saves the agent plist file
+    let userLaunchAgentsPath = "\("/Users/")\(NSUserName())\("/Library/LaunchAgents/\(mainAppBundelId).plist")"
+    
+    let dicContent = ["Label": "\(mainAppBundelId).plist", "ProgramArguments":["/usr/bin/open","-F","-g",path,"--args"],"KeepAlive":true] as [String : Any]
+    
+    let plistContent = NSDictionary(dictionary: dicContent)
+    let success:Bool = plistContent.write(toFile: userLaunchAgentsPath, atomically: true)
+    if success {
+        print("file has been created!")
+    }else{
+        print("unable to create the file")
+    }
+    shell(launchPath: "/bin/launchctl", arguments: ["load","-w","\("/Users/")\(NSUserName())\("/Library/LaunchAgents/\(mainAppBundelId).plist")"])
+}
+func shell(launchPath: String, arguments: [String] = [])  {
+    
+    let task = Process()
+    task.launchPath = launchPath
+    task.arguments = arguments
+    
+    let pipe = Pipe()
+    task.standardOutput = pipe
+    task.launch()
+    
+    let data = pipe.fileHandleForReading.readDataToEndOfFile()
+    let output = NSString(data: data, encoding: String.Encoding.utf8.rawValue)
+    
+    
+}
+
+
+func isShutOffTimeGoing()->Bool{
+    let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
+    let shutOffdate = Calendar.current.date(bySettingHour: shutOffTime!.hour, minute: shutOffTime!.minute, second: shutOffTime!.second, of: Date())!
+    let currentDate = Date()
+    
+    var isShutOffTime = false
+    
+    if  startDate.compare(shutOffdate) == .orderedDescending{//(start date jyada ho shut off date se ) exshut off 5 bje start date 8 bje
+        if currentDate.compare(startDate) == .orderedAscending  && currentDate.compare(shutOffdate) == .orderedDescending{
+            isShutOffTime = true
+        }
+        
+    }else if currentDate.compare(startDate) == .orderedAscending  || currentDate.compare(shutOffdate) == .orderedDescending{
+        isShutOffTime = true
+    }
+    return isShutOffTime
+}
+
+
+func showNotificationWithMessage(msg:String){
+    let notification = NSUserNotification()
+    //notification.informativeText = ""
+    notification.title = msg
+    notification.soundName = NSUserNotificationDefaultSoundName
+    NSUserNotificationCenter.default.deliver(notification)
+}
+
+
+
+
+
+func showSmallTimerWindow(durationSeconds: Int, name: String, isFocusBreak:Bool){
+    getSmallCountDownWindowObject().contentViewController = getsmallCountDownVcObject()
+    smallCountDownVcObj?.isFocusBreak = isFocusBreak
+    getSmallCountDownWindowObject().window?.styleMask = .borderless
+    let screenFrame = NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 1920, height: 1080)
+    
+    getSmallCountDownWindowObject().window?.setFrameOrigin(NSPoint(x: screenFrame.width - (smallCountDownVcObj?.view.frame.width)!, y: screenFrame.height - (smallCountDownVcObj?.view.frame.height)! - 22)) //  22 status bar heigh
+    getSmallCountDownWindowObject().window?.isMovableByWindowBackground = true
+    
+    getSmallCountDownWindowObject().showWindow(nil)
+    
+    smallCountDownVcObj?.startTimerHabit(durationSeconds: durationSeconds, name: name)
 }

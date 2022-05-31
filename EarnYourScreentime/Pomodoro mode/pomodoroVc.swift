@@ -3,8 +3,7 @@
 //  Earn Your Screentime
 //
 //  Created by Prashant Sawnani on 26/02/22.
-//  Copyright © 2022 MugPhotography. All rights reserved.
-//
+
 
 import Cocoa
 
@@ -84,7 +83,25 @@ class pomodoroVc: NSViewController {
         NSApplication.shared.activate(ignoringOtherApps: true)
     }
     @IBAction func btnLetsDoItClicked(_ sender: Any) {
+        if isDiscourageDefaultFocusVcVisible{
+            return
+        }
+        if arrFocusType[popUpBtnFocusType.indexOfSelectedItem]["isDefault"] as? Bool == true{
+            self.presentAsSheet(getDiscourageDefaultFocusVcObject())
+            getDiscourageDefaultFocusVcObject().resetData()
+        }else{
+            pomodoroModeStarted()
+        }
+    }
+    func pomodoroModeStarted(){
         addLog(text: "pomodoro mode Started")
+        
+        if getEndFocusModeWindowControllerObj().window!.isVisible{
+            let timestamp = getStringFromDate(date: startFocusModeTime ?? Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
+            addEntryInCsv(logType: "focus block", activity: focusCompletedVcObj!.currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: "\(focusModeMinutesToPerform) of \(focusCompletedVcObj!.currentFocusModeName)", distractionsEncountered: "", abortReason: "", feedback: "")
+            getEndFocusModeWindowControllerObj().window?.close()
+        }
+        
         let calendar = Calendar.current
         endFocusModeTime = calendar.date(byAdding: .minute, value: 25, to: Date())
         startFocusModeTime = Date()
@@ -92,6 +109,9 @@ class pomodoroVc: NSViewController {
         
         
         appdelegate!.statusbutton?.backgroundcolor = HexToColor(hexString: arrFocusType[popUpBtnFocusType.indexOfSelectedItem]["color"] as? String ?? "")
+        appdelegate!.statusbutton?.title = buttonStatusStateFocusText
+        
+        appdelegate!.statusbutton?.imagePosition = .imageLeft
 
         for i in 0..<arrFocusType.count{
             if i != popUpBtnFocusType.indexOfSelectedItem{
@@ -104,11 +124,11 @@ class pomodoroVc: NSViewController {
             timerForFocusMode = nil
         }
         isFocusTimeType = ._HOUR_
-        appdelegate?.setFocusModeTimer(hour: nil, minute: 25) 
+        appdelegate?.setFocusModeTimer(hour: nil, minute: 25)
         isFocusModeStartedFromPomodoroMode = true
         appdelegate!.focusModeStartted()
-         UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
-//        self.view.window?.close()
+        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+        whatToAchieveInFocusBlock = textViewAchieve.string
         if focusPreferencesVcObj != nil{
             if (preferencesWindowControllerObj?.window!.isVisible)!{
                 if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{

@@ -40,11 +40,18 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
     @IBOutlet weak var btnAddUrl: NSButton!
     @IBOutlet weak var btnRemoveUrl: NSButton!
     
-
+    @IBOutlet weak var btnDuplicateFocusType: NSButton!
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
-      
+        
+        var toolTipAdd = "Add"
+        var toolTipRemove = "Remove"
+        var toolTipDuplicate = "Duplicate"
+        
+        
+        
         focusPreferencesVcObj = self
         var titleAllowedAllApps = "Allow all apps"
         var titleAllowedSelectedApps = "Allow selected apps"
@@ -63,6 +70,9 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
             titleAllowedSelectedUrls = focusPreferencesInfo.value(forKey: "titleAllowedSelectedUrls") as? String ?? titleAllowedSelectedUrls
             titleFocusType = focusPreferencesInfo.value(forKey: "titleFocusType") as? String ?? titleFocusType
             noFocusAddedText = focusPreferencesInfo.value(forKey: "noFocusAddedText") as? String ?? noFocusAddedText
+            toolTipAdd = focusPreferencesInfo.value(forKey: "toolTipAdd") as? String ?? toolTipAdd
+            toolTipRemove = focusPreferencesInfo.value(forKey: "toolTipRemove") as? String ?? toolTipRemove
+            toolTipDuplicate = focusPreferencesInfo.value(forKey: "toolTipDuplicate") as? String ?? toolTipDuplicate
         }
         lblTitleFocusType.stringValue = titleFocusType
         radioBtnAllowAllApps.title = titleAllowedAllApps
@@ -70,6 +80,14 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         radioBtnAllowAllUrls.title = titleAllowedAllUrls
         radioBtnAllowSelectedUrls.title = titleAllowedSelectedUrls
 
+        btnDuplicateFocusType.toolTip = toolTipDuplicate
+        btnAddFocusType.toolTip = toolTipAdd
+        btnRemoveFocusType.toolTip = toolTipRemove
+        btnAddApp.toolTip = toolTipAdd
+        btnRemoveApp.toolTip = toolTipRemove
+        btnAddUrl.toolTip = toolTipAdd
+        btnRemoveUrl.toolTip = toolTipRemove
+        
         
         lblNoFocusAdded.stringValue = noFocusAddedText
         NotificationCenter.default.addObserver(self, selector: #selector(btnToggleClicked), name: Notification.Name("toggle"), object: nil)
@@ -82,15 +100,21 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         menu.delegate = self
 //        menu.addItem(NSMenuItem(title: "Delete", action: #selector(tableViewDeleteItemClicked(_:)), keyEquivalent: ""))
         tblViewFocusType.menu = menu
-        
     }
+    
     @objc private func tableViewDuplicateItemClicked(_ sender: AnyObject) {
-
-        guard tblViewFocusType.clickedRow >= 0 else { return }
-
-        var item = arrFocusType[tblViewFocusType.clickedRow]
+        makeDuplicateFocus(row: tblViewFocusType.clickedRow)
+    }
+    func makeDuplicateFocus(row:Int){
+        guard row >= 0 else { return }
+        var isDefault = false
+        var item = arrFocusType[row]
         if (item["isDefault"] as? Bool) != nil{
+            isDefault = true
             item.removeValue(forKey: "isDefault")
+        }
+        if (item["isMeetings"] as? Bool) != nil{
+            item.removeValue(forKey: "isMeetings")
         }
         let oldName = item["name"] as? String ?? ""
         var count = 1
@@ -106,8 +130,14 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         }
         item["name"] = newName
         item["isOn"] = false
-        let newRow = tblViewFocusType.clickedRow + 1
+        var newRow = 0
+        if !isDefault{//if default than duplicate will second last //tod test
+            newRow = row + 1
+        }else{
+            newRow = row
+        }
         arrFocusType.insert(item, at: newRow)
+        
         
         tblViewFocusType.insertRows(at: IndexSet(arrayLiteral: newRow), withAnimation: .effectFade)
         tblViewFocusType.selectRowIndexes(IndexSet(arrayLiteral: newRow), byExtendingSelection: false)
@@ -115,6 +145,9 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         focusPreferencesVcObj?.checkState()
 
         UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+    }
+    @IBAction func btnDuplicateFocusTypeClicked(_ sender: Any) {
+        makeDuplicateFocus(row: tblViewFocusType.selectedRow)
     }
     func focusModeStarted(){
         for i in 0..<arrFocusType.count{
@@ -126,6 +159,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
             }
         }
     }
+    
     func focusModeFinished(){
         for i in 0..<arrFocusType.count{
             if arrFocusType[i]["isOn"] as? Bool == false{
@@ -136,6 +170,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
             }
         }
     }
+    
     func isFocusNameAvailable(newName:String)->Bool{
         for focus in arrFocusType{
             if let name = focus["name"] as? String{
@@ -255,6 +290,12 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
                 return
             }
         }
+        if let state = arrFocusType[selectedTow]["isMeetings"] as? Bool{//this key will only be awailable in Meetings focus type
+            if state{
+                return
+            }
+        }
+
         
         addFocusTypeVcObj?.isAdding = false
         self.presentAsSheet(addFocusTypeVcObj!)
@@ -275,11 +316,13 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
             print(state)
             
             if state{
-                
+                if isDiscourageDefaultFocusVcVisible{
+                    toggleButton.isOn = false
+                    return
+                }
                 //if state{
                 for i in 0..<arrFocusType.count{
                     if arrFocusType[i]["isOn"] as? Bool == true{
-                        //                        NSAlert
                         let alert = NSAlert()
                         alert.messageText = "A focus mode is already running. Please abort the running focus mode to start a new one."
                         if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
@@ -292,20 +335,103 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
                         return;
                     }
                 }
-                //  }
                 toggleButton.isOn = false
-                showStartingFocusMode(focusModeIndex: tblViewFocusType.selectedRow, focusType: arrFocusType[tblViewFocusType.selectedRow]["name"] as? String ?? "")
+                
+                
+                
+                
+//                if arrFocusType[tblViewFocusType.selectedRow]["isDefault"] as? Bool == true{
+//                    let alertConfirmation = NSAlert()
+//                    alertConfirmation.messageText = "Are you sure? It's pretty easy to get distracted without using a more restrictive focus mode"
+//                    alertConfirmation.addButton(withTitle: "Shutup I know what I'm doing")
+//                    alertConfirmation.addButton(withTitle: "Bah I guess you're right - CANCEL!")
+//
+//                    alertConfirmation.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
+//                        if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
+//                            print("Shutup I know what I'm doing")
+//
+//                            self.secondsAlert = NSAlert()
+//                            self.secondsAlert!.messageText = "Ok good luck! (You'll need it 😅)"
+//                            self.secondsAlert!.informativeText = "05:00"
+//                            self.secondsCount = 5
+//                            self.secondsAlert?.addButton(withTitle: "")
+//                            self.secondsAlert!.beginSheetModal(for: self.view.window!, completionHandler: nil)
+//                            self.secondsAlert!.buttons.first?.isHidden = true
+//
+//                            self.currentSecond = 0
+//                            self.secondsCount = 5
+//                            let (_,m,s) = secondsToHoursMinutesSeconds(seconds: self.secondsCount-self.currentSecond)
+//                            var minute = "\(m)"
+//                            var second = "\(s)"
+//                            if minute.count == 1 {
+//                                minute = "0\(m)"
+//                            }
+//                            if second.count == 1 {
+//                                second = "0\(s)"
+//                            }
+//                            self.secondsAlert!.informativeText = "\(minute):\(second)"
+//
+//                            DispatchQueue.main.async {
+//                                self.timerSeconds = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.changeAlertCount), userInfo: nil, repeats: true)
+//                            }
+//
+//
+//                        }
+//                    })
+//                    self.presentAsSheet(getDiscourageDefaultFocusVcObject())
+//                    getDiscourageDefaultFocusVcObject().resetData()
+//                    return;
+//                }else{
+                     showStartingFocusMode(focusModeIndex: tblViewFocusType.selectedRow, focusType: arrFocusType[tblViewFocusType.selectedRow]["name"] as? String ?? "")
+//                }
+                
+                
+               
+                
+                
+                
                 
                 return;
 
             }else{
+                if isDiscourageDefaultFocusVcVisible{
+                    toggleButton.isOn = true
+                    return
+                }
                 toggleButton.isOn = true
                 showAbortingFocusModeVc()
             }
 
         }
     }
-    
+//    var secondsAlert: NSAlert?
+//    var secondsCount = 5
+//    var currentSecond = 0
+//    var timerSeconds:Timer?
+//    @objc func changeAlertCount(){
+//        self.secondsAlert!.buttons.first?.isHidden = true
+//        currentSecond += 1
+//        let (_,m,s) = secondsToHoursMinutesSeconds(seconds: self.secondsCount-self.currentSecond)
+//        var minute = "\(m)"
+//        var second = "\(s)"
+//
+//        if minute.count == 1 {
+//            minute = "0\(m)"
+//        }
+//        if second.count == 1 {
+//            second = "0\(s)"
+//        }
+//
+////        DispatchQueue.main.async {
+//            self.secondsAlert?.informativeText = "\(minute):\(second)"
+////        }
+//        if self.secondsCount <= self.currentSecond {
+//            self.timerSeconds?.invalidate()
+//            self.secondsAlert?.window.close()
+//            self.secondsAlert = nil
+//            self.timerSeconds = nil
+//        }
+//    }
     @IBAction func btnAddFocusTypeClicked(_ sender: Any) {
         addFocusTypeVcObj?.isAdding = true
         self.presentAsSheet(addFocusTypeVcObj!)
@@ -362,6 +488,29 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
                 return
             }
         }
+        
+        
+        if let state = arrFocusType[selectedRow]["isMeetings"] as? Bool{//this key will only be awailable in default focus type
+            if state{
+                let alertFocusModeDefault = NSAlert()
+                alertFocusModeDefault.messageText = "Can not delete."
+                alertFocusModeDefault.informativeText = "The Default focus type cannot be deleted."
+                if let focusPreferencesInfo = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
+                    if let focusCanNotDeleteTitle = focusPreferencesInfo.value(forKey: "focusCanNotDeleteTitle") as? String{
+                        alertFocusModeDefault.messageText = focusCanNotDeleteTitle
+                    }
+                    if let focusCanNotDeleteSubTitle = focusPreferencesInfo.value(forKey: "focusCanNotDeleteSubTitle") as? String{
+                        alertFocusModeDefault.informativeText = focusCanNotDeleteSubTitle
+                    }
+                }
+
+                alertFocusModeDefault.beginSheetModal(for: self.view.window!, completionHandler:nil)
+                return
+            }
+        }
+        
+        
+        
         if arrFocusType[selectedRow]["isOn"] as? Bool == true{
             let alertFocusModeOn = NSAlert()
             alertFocusModeOn.messageText = "Focus mode is on. Please abort the focus mode to delete it."

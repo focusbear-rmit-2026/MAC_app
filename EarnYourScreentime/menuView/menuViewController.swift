@@ -8,21 +8,21 @@
 
 import Cocoa
 
-
 class menuViewController: NSViewController {
 
     
+    @IBOutlet weak var boxCheckMark: NSBox!
     @IBOutlet weak var lblTrialVersionInfo: NSTextField!
     @IBOutlet weak var lblTitleReactivate: NSTextField!
     @IBOutlet weak var lblTitleEnterLicenseKey: NSTextField!
-    @IBOutlet weak var lblTitleSettings: NSTextField!
+  
     @IBOutlet weak var lblTitlePreferences: NSTextField!
     @IBOutlet weak var lblTitleExportStatistics: NSTextField!
     @IBOutlet weak var lblTitleFocus: NSTextField!
-    @IBOutlet weak var lblTitleFocusPreferences: NSTextField!
     @IBOutlet weak var lblTitleStartPomodoroMode: NSTextField!
     @IBOutlet weak var lblTitleQuit: NSTextField!
     @IBOutlet weak var lblTitleCheckForUpdates: NSTextField!
+    @IBOutlet weak var lblTitleEnableOfficeMode: NSTextField!
     
     @IBOutlet weak var bottomLine: NSBox!
     @IBOutlet weak var lblOn: NSTextField!
@@ -31,13 +31,13 @@ class menuViewController: NSViewController {
     @IBOutlet weak var boxStartPomodoroMode: customBox!
     @IBOutlet weak var boxCheckForUpdates: customBox!
     @IBOutlet weak var boxQuit: customBox!
-    @IBOutlet weak var boxFocusPreferences: customBox!
     @IBOutlet weak var boxExportStatistics: customBox!
     @IBOutlet weak var boxPreferences: customBox!
-    @IBOutlet weak var boxSettings: customBox!
+   
     @IBOutlet weak var boxEnterLicenseKey: customBox!
     @IBOutlet weak var boxReactivate: customBox!
     @IBOutlet weak var tblViewFocusMode: NSTableView!
+    @IBOutlet weak var boxEnableOfficeMode: customBox!
     
     
 //    var selectedIndex = -1
@@ -50,31 +50,30 @@ class menuViewController: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
-
+        
         
         var itemReactivateTitle = "Reactivate"
         var itemEnterLicenseKeyTitle = "Enter License Key"
         
-        var itemSettingsTitle = "Settings"
+
         var itemPreferences = "Preferences"
         var itemExportStatisticsTitle = "Export Statistics"
         var itemFocusTitle = "Focus"
-        var itemFocusPreferencesTitle = "Focus Preferences"
         var itemQuitTitle = "Quit"
         var itemStartPomodoroTitle = "Start Pomodoro Mode"
         var menuItemCheckForUpdatesTitle = "Check for updates"
+        var menuItemEnableOfficeModeTitle = "Enable office mode"
+        
         if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
             itemReactivateTitle = menuInfo.value(forKey: "menuItemReactivateTitle") as? String ?? itemReactivateTitle
             itemEnterLicenseKeyTitle = menuInfo.value(forKey: "menuItemEnterLicenseKeyTitle") as? String ?? itemEnterLicenseKeyTitle
-            itemSettingsTitle = menuInfo.value(forKey: "menuItemSettingsTitle") as? String ?? itemSettingsTitle
             itemPreferences = menuInfo.value(forKey: "menuItemPreferencesTitle") as? String ?? itemPreferences
             itemExportStatisticsTitle = menuInfo.value(forKey: "menuItemExportStatisticsTitle") as? String ?? itemExportStatisticsTitle
             itemFocusTitle = menuInfo.value(forKey: "menuItemFocusTitle") as? String ?? itemFocusTitle
-            itemFocusPreferencesTitle = menuInfo.value(forKey: "menuItemFocusPreferencesTitle") as? String ?? itemFocusPreferencesTitle
             itemQuitTitle = menuInfo.value(forKey: "menuItemQuitTitle") as? String ?? itemQuitTitle
             itemStartPomodoroTitle = menuInfo.value(forKey: "menuItemStartPomodoroTitle") as? String ?? itemStartPomodoroTitle
             menuItemCheckForUpdatesTitle = menuInfo.value(forKey: "menuItemCheckForUpdatesTitle") as? String ?? menuItemCheckForUpdatesTitle
-            
+            menuItemEnableOfficeModeTitle = menuInfo.value(forKey: "menuItemEnableOfficeModeTitle") as? String ?? menuItemEnableOfficeModeTitle
             untilTimeText = menuInfo.value(forKey: "untilTimeText") as? String ?? untilTimeText
             onText = menuInfo.value(forKey: "onText") as? String ?? onText
 
@@ -91,18 +90,15 @@ class menuViewController: NSViewController {
         
         lblTitleReactivate.stringValue = itemReactivateTitle
         lblTitleEnterLicenseKey.stringValue = itemEnterLicenseKeyTitle
-        lblTitleSettings.stringValue = itemSettingsTitle
         lblTitlePreferences.stringValue = itemPreferences
         lblTitleExportStatistics.stringValue = itemExportStatisticsTitle
         lblTitleFocus.stringValue = itemFocusTitle
-        lblTitleFocusPreferences.stringValue = itemFocusPreferencesTitle
         lblTitleStartPomodoroMode.stringValue = itemStartPomodoroTitle
         lblTitleCheckForUpdates.stringValue = menuItemCheckForUpdatesTitle
         lblTitleQuit.stringValue = itemQuitTitle
+        lblTitleEnableOfficeMode.stringValue = menuItemEnableOfficeModeTitle
         
         
-        boxSettings.isHidden = true//todo remove text from config
-        boxFocusPreferences.isHidden = true//todo remove text from config
         bottomLine.isHidden = true
         
     }
@@ -150,12 +146,11 @@ class menuViewController: NSViewController {
         }
     
         boxQuit.fillColor = .clear
-        boxFocusPreferences.fillColor = .clear
         boxExportStatistics.fillColor = .clear
         boxPreferences.fillColor = .clear
-        boxSettings.fillColor = .clear
         boxEnterLicenseKey.fillColor = .clear
         boxReactivate.fillColor = .clear
+        boxEnableOfficeMode.fillColor = .clear
         if !isAppEnable{
             boxReactivate.isHidden = false
         }else{
@@ -177,6 +172,13 @@ class menuViewController: NSViewController {
         resetViewHeight()
 
         tblViewFocusMode.reloadData()
+        
+        
+        if isOfficeModeEnabled{
+            boxCheckMark.isHidden = false
+        }else{
+            boxCheckMark.isHidden = true
+        }
     }
     func resetViewHeight(){
 //        35 16
@@ -199,13 +201,13 @@ class menuViewController: NSViewController {
     @IBAction func btnEnterLicenseKeyClicked(_ sender: Any) {
         appdelegate?.menuItemEnterLicenseKey()
     }
-    @IBAction func btnSettingsClicked(_ sender: Any) {
-        if UserDefaults.standard.object(forKey: "trialExpired") != nil{
-            activationWindowControllerObj?.showSevenDayTrialVc()
-            return;
-        }
-        appdelegate?.menuItem_ChangeJson()
-    }
+//    @IBAction func btnSettingsClicked(_ sender: Any) {
+//        if UserDefaults.standard.object(forKey: "trialExpired") != nil{
+//            activationWindowControllerObj?.showSevenDayTrialVc()
+//            return;
+//        }
+//        appdelegate?.menuItem_ChangeJson()
+//    }
     @IBAction func btnPreferencesClicked(_ sender: Any) {
         if UserDefaults.standard.object(forKey: "trialExpired") != nil{
             activationWindowControllerObj?.showSevenDayTrialVc()
@@ -225,28 +227,161 @@ class menuViewController: NSViewController {
             activationWindowControllerObj?.showSevenDayTrialVc()
             return;
         }
-        appdelegate?.showPomodoroModeView()
+        appdelegate?.menuShowPomodoroModeView()
     }
-    @IBAction func btnFocusPreferencesClicked(_ sender: Any) {
-        if UserDefaults.standard.object(forKey: "trialExpired") != nil{
-            activationWindowControllerObj?.showSevenDayTrialVc()
-            return;
-        }
-        preferencesWindowControllerObj?.showWindow(self)
-        if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-            tabview.selectedTabViewItemIndex = 1
-        }
-        NSApplication.shared.activate(ignoringOtherApps: true)
-    }
+//    @IBAction func btnFocusPreferencesClicked(_ sender: Any) {
+//        if UserDefaults.standard.object(forKey: "trialExpired") != nil{
+//            activationWindowControllerObj?.showSevenDayTrialVc()
+//            return;
+//        }
+//        preferencesWindowControllerObj?.showWindow(self)
+//        if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
+//            tabview.selectedTabViewItemIndex = 1
+//        }
+//        NSApplication.shared.activate(ignoringOtherApps: true)
+//    }
+    
     @IBAction func btnCheckForUpdatesClicked(_ sender: Any) {
         appdelegate!.updater?.checkForUpdates(self)
     }
+    
     @IBAction func btnQuitClicked(_ sender: Any) {
-        appdelegate?.menuItem_Quit()
+        addLog(text: "menu item Quit clicked by user")
+        if UserDefaults.standard.object(forKey: "trialExpired") != nil{
+            appdelegate?.menuItem_Quit()
+            return;
+        }
+        if quittingWcObj != nil{
+            if quittingWcObj?.window?.isVisible ?? false{
+                addLog(text: "Quit window already visible")
+                return
+            }
+        }
+        addLog(text: "Showing quit window")
+        getQuittingWindowObject().contentViewController = getQuittingCountDownVcObject()
+        getQuittingWindowObject().showWindow(self)
+        getQuittingCountDownVcObject().resetData()
+        getQuittingWindowObject().window?.styleMask.remove(.closable)
+        
+        quittingWcObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.popUpMenuWindow)))
+        
+        NSApplication.shared.activate(ignoringOtherApps: true)
+//        appdelegate?.menuItem_Quit()
     }
+    @IBAction func btnEnableOfficeModeClicked(_ sender: Any) {
+        if isOfficeModeEnabled{
+            isOfficeModeEnabled = false
+            boxCheckMark.isHidden = true
+            UserDefaults.standard.set(false, forKey: kUserdefaultsOfficeModeEnabled)
+        }else{
+            
+                
+            let filterArr = arrAllbreakActivities.filter { $0.isOfficeFriendly == true}
+            if filterArr.count == 0{// no activity found with isOfficeFriendly
+                let alert = NSAlert()
+                
+                var noOfficeFriendlyActivityAlertText = "You don't have any office friendly break activities. Do you want me to add one for you to stand up and stretch for 20 seconds?"
+                var noOfficeFriendlyActivityButtonFirstText = "Yeah sounds good"
+                var noOfficeFriendlyActivityButtonSecondText = "No I'm a machine! I don't need breaks"
+                if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
+                    noOfficeFriendlyActivityAlertText = menuInfo.value(forKey: "noOfficeFriendlyActivityAlertText") as? String ?? noOfficeFriendlyActivityAlertText
+                    noOfficeFriendlyActivityButtonFirstText = menuInfo.value(forKey: "noOfficeFriendlyActivityButtonFirstText") as? String ?? noOfficeFriendlyActivityButtonFirstText
+                    noOfficeFriendlyActivityButtonSecondText = menuInfo.value(forKey: "noOfficeFriendlyActivityButtonSecondText") as? String ?? noOfficeFriendlyActivityButtonSecondText
+                }
+                alert.messageText = noOfficeFriendlyActivityAlertText//
+                alert.addButton(withTitle: noOfficeFriendlyActivityButtonFirstText)
+                alert.addButton(withTitle: noOfficeFriendlyActivityButtonSecondText)
+                let result = alert.runModal()
+                if result == .alertFirstButtonReturn{
+                   print("first button")
+                    addOfficeFriendlyActivityInSettings()
+                    enableOfficeMode()
+                }else{
+                   print("second button")
+                    //cancel
+                }
+                
+            }else{
+                enableOfficeMode()
+                
+            }
+            
+        }
+        
+    }
+    
+    func enableOfficeMode(){
+        let alert = NSAlert()
+        var officeModeEnabledSuccessfullyText = "Ok! I'll just prompt you to do activities that won't weird other people out (doing handstand pushups in the office might raise a few eyebrows)."
+        if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
+            officeModeEnabledSuccessfullyText = menuInfo.value(forKey: "officeModeEnabledSuccessfullyText") as? String ?? officeModeEnabledSuccessfullyText
+        }
+        alert.messageText = officeModeEnabledSuccessfullyText
+        alert.addButton(withTitle: buttonOkText)
+        _ = alert.runModal()
+        isOfficeModeEnabled = true
+        boxCheckMark.isHidden = false
+        UserDefaults.standard.set(true, forKey: kUserdefaultsOfficeModeEnabled)
+    }
+    func addOfficeFriendlyActivityInSettings(){
+        var jsonResult = NSDictionary()
+        if let stringDic = UserDefaults.standard.object(forKey: kUserdefaultsSelectedJson) as? String {
+            //            jsonResult = dic
+            if let data = stringDic.data(using: String.Encoding.utf8) {
+                
+                do {
+                    jsonResult = try (JSONSerialization.jsonObject(with: data, options: []) as? NSDictionary ?? [:])
+                    
+                } catch let error as NSError {
+                    print(error)
+                }
+            }
+            
+        }else {
+            if let path = Bundle.main.path(forResource: "settings", ofType: "json") {
+                let url = URL(fileURLWithPath: path)
+                do {
+                    let data = try Data(contentsOf: url, options: .mappedIfSafe)
+                    do {
+                        if let dicResult: NSDictionary = try JSONSerialization.jsonObject(with: data, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary {
+                            jsonResult = dicResult
+                            print(jsonResult)
+                        }
+                    }catch {
+                        print(error)
+                    }
+                } catch {
+                    // handle error
+                }
+            }
+        }
+        guard let mutableDic = jsonResult.mutableCopy() as? NSMutableDictionary else{
+            return
+        }
+
+        if var breakActivities = mutableDic.value(forKey: "breakActivities") as? [NSDictionary] {
+            let activityDic: NSMutableDictionary = ["name":"Stand up and stretch", "durationSeconds":20, "isOfficeFriendly":true]
+            breakActivities.append(activityDic)
+            mutableDic["breakActivities"] = breakActivities
+            
+            arrAllbreakActivities.append(breakActivity(name: "Stand up and stretch", durationSeconds: 20, IncludeInEveryBreak: false, urlsArray: [], logQuantity:false, isRandomChoice: false, choices: [], logQuantityQuestion: "", openSpecificApps: false, allowUrls: [], allowApps: [], isOfficeFriendly: true))
+        }
+        
+        
+        
+        do {
+            let data = try (JSONSerialization.data(withJSONObject: mutableDic, options: .prettyPrinted))
+            if let str = String(data: data, encoding: String.Encoding.utf8){
+                UserDefaults.standard.set(str, forKey: kUserdefaultsSelectedJson)
+            }
+        } catch let error as NSError {
+            print(error)
+        }
+    }
+    
 }
 
-
+//
 extension menuViewController: NSTableViewDelegate, NSTableViewDataSource{
     
     func numberOfRows(in tableView: NSTableView) -> Int {
@@ -258,9 +393,9 @@ extension menuViewController: NSTableViewDelegate, NSTableViewDataSource{
                     let stringTime = getStringFromDate(date: date, dateFormat: "hh:mm a")
                     lblOn.stringValue = untilTimeText.replacingOccurrences(of: "<TIME>", with: stringTime)//"On Until \(stringTime)"
                 }else{
-                    lblOn.stringValue = ""
+                    lblOn.stringValue = onText
                 }
-            }else if isFocusTimeType == ._TILL_SHUTOFF_{
+            }else if isFocusTimeType == ._TILL_SHUTOFF_{// will never execute beaacuse till shutoff type is removed
                 if let date = shutOffTime{
                     //let stringTime = getStringFromDate(date: date, dateFormat: "HH:mm a")
                     var hour = date.hour
@@ -286,11 +421,7 @@ extension menuViewController: NSTableViewDelegate, NSTableViewDataSource{
         }else{
             lblOn.isHidden = true
         }
-//        if arrFocusType.count == 0{
-//            bottomLine.isHidden = true
-//        }else{
-//            bottomLine.isHidden = false
-//        }
+
         return arrFocusType.count
     }
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
@@ -315,35 +446,9 @@ extension menuViewController: NSTableViewDelegate, NSTableViewDataSource{
                 }
             }
             
-            
-//            if let hourValue = arrFocusType[row]["hourValue"] as? Int{
-//                cell.textFieldCustomHour.integerValue = hourValue
-//                cell.stepperHourValue.integerValue = hourValue
-//            }
             cell.currentRow = row
-            
-//            if row == arrFocusType.count-1{
-//                cell.horizaontalLine.isHidden = true
-//            }else{
-//                cell.horizaontalLine.isHidden = false
-//            }
+
             cell.boxtitle.fillColor = .clear
-//            cell.boxChildFirst.fillColor = .clear
-//            cell.boxChildSecond.fillColor = .clear
-            
-//            cell.lblFor.stringValue = forText
-//            cell.lblHour.stringValue = hourText
-//            cell.lblUntil.stringValue = untilShutOffTimeText
-//            if isFocusTimeType == ._HOUR_{
-//                cell.imgViewCheckMarkFirst.isHidden = false
-//                cell.imgViewCheckMarkSecond.isHidden = true
-//            }else if isFocusTimeType == ._TILL_SHUTOFF_{
-//                cell.imgViewCheckMarkFirst.isHidden = true
-//                cell.imgViewCheckMarkSecond.isHidden = false
-//            }else{
-//                cell.imgViewCheckMarkFirst.isHidden = true
-//                cell.imgViewCheckMarkSecond.isHidden = true
-//            }
             return cell
         }
         
@@ -365,3 +470,15 @@ extension menuViewController: NSTableViewDelegate, NSTableViewDataSource{
         return false
     }
 }
+
+
+
+
+
+
+        
+
+        
+        
+
+    

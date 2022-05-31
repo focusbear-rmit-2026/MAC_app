@@ -3,8 +3,7 @@
 //  Earn Your Screentime
 //
 //  Created by Prashant Sawnani on 28/02/22.
-//  Copyright © 2022 MugPhotography. All rights reserved.
-//
+
 
 import Cocoa
 
@@ -151,6 +150,8 @@ class abortingFocusModeVc: NSViewController {
             self.view.window?.close()
             return
         }
+        let isAutoMeetingsModeStarted = appdelegate!.isAutoMeetingsModeStarted
+        let appUsedInAutoMeetingFocusMode = appdelegate!.appUsedInAutoMeetingFocusMode
         var reason = ""
         if popUpBtnAbortReasons.indexOfSelectedItem == 0{
             reason = "Focus mode is not working properly."
@@ -173,7 +174,12 @@ class abortingFocusModeVc: NSViewController {
             }
         }
         let timestamp = getStringFromDate(date: startFocusModeTime ?? Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
-        addEntryInCsv(logType: "focus mode abort", activity: "focus block - \(focusName)", durationInSeconds: "", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: "", distractionsEncountered: "", abortReason: reason, feedback: "")
+        if isAutoMeetingsModeStarted{
+            addEntryInCsv(logType: "focus mode abort", activity: "focus block - \(focusName)", durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: "Meeting using {\(appUsedInAutoMeetingFocusMode)}", distractionsEncountered: "", abortReason: reason, feedback: "")
+        }else{
+           addEntryInCsv(logType: "focus mode abort", activity: "focus block - \(focusName)", durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: "", distractionsEncountered: "", abortReason: reason, feedback: "")
+        }
+        
         self.view.window?.close()
     }
 }

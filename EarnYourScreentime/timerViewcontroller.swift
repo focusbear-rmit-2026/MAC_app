@@ -43,8 +43,25 @@ class timerViewcontroller: NSViewController {
         }
     }
 
-    func startTimerHabit(durationSeconds:Int, url:String?, name:String) {
-        imgViewGif.image = NSImage(named: newGifsNamesArray.randomElement() ?? "")
+    func startTimerHabit(durationSeconds:Int, url:String?, name:String,currentHabit: habit) {
+        
+        disableSystemSleep()
+        if currentHabit.openSpecificApps{
+            currentHabitPlaying = currentHabit
+            mainWindowControllerObj?.window?.setIsVisible(false)
+            appdelegate?.startTimerActivitiesAllowedApp()
+            hideBlankWindowInSecondaryMonitor()
+        }else{
+            currentHabitPlaying = nil
+        }
+
+        if kIsReducedMotion{
+            imgViewGif.image = nil
+        }else{
+            imgViewGif.image = NSImage(named: newGifsNamesArray.randomElement() ?? "")
+            imgViewGif.animates = true
+        }
+        
         lastActivityPerformedTime = Date()
         loadWebViewTo(url: url)
         lblTitle.stringValue = getDoSomeActivityText(activityName: name)//arrAllMorningHabits[currentHabitIndex].name!)
@@ -72,6 +89,7 @@ class timerViewcontroller: NSViewController {
     }
     
     func resumeTimerHabit(durationSeconds:Int, url:String?, name:String){
+        disableSystemSleep()
         loadWebViewTo(url: url)
         lblTitle.stringValue = getDoSomeActivityText(activityName: name)//"Do some \(arrAllMorningHabits[currentHabitIndex].name!)."
         totalDuration = durationSeconds//durationInMinutes*60
@@ -99,8 +117,27 @@ class timerViewcontroller: NSViewController {
     var currentDurationInSeconds = 0
     var currentUrl:String?
     var logQuantityQuestion:String?
-    func startTimerActivity(durationInSeconds:Int,name:String, url:String?, logQuantityQuestion:String?) {
-        imgViewGif.image = NSImage(named: newGifsNamesArray.randomElement() ?? "")
+    var logActivityQuantity = false
+    func startTimerActivity(durationInSeconds:Int,name:String, url:String?, logQuantityQuestion:String?,currentActivity: breakActivity,logQuantity:Bool) {
+        disableSystemSleep()
+        logActivityQuantity = logQuantity
+        
+        if currentActivity.openSpecificApps{
+            currentActivityPlaying = currentActivity
+            mainWindowControllerObj?.window?.setIsVisible(false)
+            appdelegate?.startTimerActivitiesAllowedApp()
+            hideBlankWindowInSecondaryMonitor()
+            showSmallTimerWindow(durationSeconds: durationInSeconds, name: name, isFocusBreak: false)
+        }else{
+            currentActivityPlaying = nil
+        }
+
+        if kIsReducedMotion{
+            imgViewGif.image = nil
+        }else{
+            imgViewGif.image = NSImage(named: newGifsNamesArray.randomElement() ?? "")
+            imgViewGif.animates = true
+        }
         self.logQuantityQuestion = logQuantityQuestion
         currentActicityTitle = name
         currentDurationInSeconds = durationInSeconds
@@ -132,6 +169,7 @@ class timerViewcontroller: NSViewController {
     }
   
     func resumeTimerActivity(durationInSeconds:Int,name:String, url:String?) {
+        disableSystemSleep()
         loadWebViewTo(url: url)
         lblTitle.stringValue = getDoSomeActivityText(activityName: name)//"Do some \(name)."
         totalDuration = durationInSeconds
@@ -156,7 +194,13 @@ class timerViewcontroller: NSViewController {
         }
     }
     func startBreathing() {
-        imgViewGif.image = NSImage(named: newGifsNamesArray.randomElement() ?? "")
+        if kIsReducedMotion{
+            imgViewGif.image = nil
+        }else{
+            imgViewGif.image = NSImage(named: newGifsNamesArray.randomElement() ?? "")
+            imgViewGif.animates = true
+        }
+        
         loadWebViewTo(url: introActivity!.urlsArray.randomElement())
         lblTitle.stringValue = getDoSomeActivityText(activityName: introActivity!.name!)//"Do some \(introActivity!.name!)."
         currentTimer = 0
@@ -210,6 +254,7 @@ class timerViewcontroller: NSViewController {
         }
         if self.totalDuration <= self.currentTimer {
             self.timer?.invalidate()
+            enableSystemSleep()
             DispatchQueue.global().async {
                 DispatchQueue.main.async {
                     self.loadBlankUrl()

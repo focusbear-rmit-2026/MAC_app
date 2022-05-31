@@ -3,8 +3,7 @@
 //  Earn Your ScreentimeTests
 //
 //  Created by Prashant Sawnani on 26/03/22.
-//  Copyright © 2022 MugPhotography. All rights reserved.//todo
-//
+
 
 import XCTest
 

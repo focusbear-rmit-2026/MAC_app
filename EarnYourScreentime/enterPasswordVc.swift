@@ -3,8 +3,7 @@
 //  Earn Your Screentime
 //
 //  Created by Prashant Sawnani on 10/03/22.
-//  Copyright © 2022 MugPhotography. All rights reserved.
-//
+
 
 import Cocoa
 
@@ -103,16 +102,25 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
             if let password = passwordBase64.fromBase64(){
                 if textFieldPassword.stringValue == password{
                     addLog(text: "Enter password view - password is correct")//
-                    self.view.removeFromSuperview()
+                    
                     if isMainWindowLodded{
                         if (mainWindowControllerObj?.window!.isVisible)!{//it means isi per aaya hoga
+                            self.view.removeFromSuperview()
                             if currentState == ._SHUTOFFMAC_{
                                 shutOffTimeVcObj!.getAccessNowClicked()
                             }else{
                                 mainViewControllerObj?.showAbortStartView()
                             }
+                            return;
                         }
                     }
+                    
+                    if self.view.window == getQuittingWindowObject().window{
+                        getQuittingCountDownVcObject().startTimer()
+                        self.view.removeFromSuperview()
+                        return;
+                    }
+                    self.view.removeFromSuperview()
                 }else{
                     addLog(text: "Enter password view - Invalid password.")//
                     var alertTitle = "Invalid password."

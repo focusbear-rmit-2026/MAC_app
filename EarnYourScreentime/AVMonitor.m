@@ -1,8 +1,13 @@
 
 @import AVFoundation;
+@import IOKit;
 
 #import "AVMonitor.h"
-
+#import "CoreFoundation/CFArray.h"
+#import "IOKit/IOKitLib.h"
+#import "IOKit/pwr_mgt/IOPMLibDefs.h"
+#import "IOKit/pwr_mgt/IOPMKeys.h"
+#import "Availability.h"
 
 @implementation AVMonitor
 
@@ -24,9 +29,60 @@
     return self;
 }
 
+
+
+-(NSDictionary*)getSystemAssertionDic
+{
+    @try {
+        CFDictionaryRef assertionStates;
+        IOReturn ret = IOPMCopyAssertionsByProcess(&assertionStates);
+        if (kIOReturnSuccess != ret ) {
+            return nil;
+        }
+        if (!assertionStates) {
+            return nil;
+        }
+        NSDictionary *andBack = (__bridge NSDictionary*)assertionStates;
+        if (assertionStates)
+            CFRelease(assertionStates);
+        return andBack;
+    }
+    @catch (NSException *exception) {
+        return nil;
+    }
+    
+}
+
 //is (any) camera on?
 -(BOOL)isACameraOn
 {
+//    CFDictionaryRef *AssertionsStatus;
+//    IOPMCopyAssertionsStatus(AssertionsStatus);
+    
+    
+    
+
+//    CFDictionaryRef assertionStates;
+//    IOReturn status = IOPMCopyAssertionsStatus(&assertionStates);
+//    if (status == kIOReturnSuccess)
+//    {
+//        CFNumberRef count = CFDictionaryGetValue(assertionStates, kIOPMAssertionTypeNoDisplaySleep);
+//        CFNumberRef count2 = CFDictionaryGetValue(assertionStates, kIOPMAssertionTypePreventUserIdleDisplaySleep);
+//        long longCount = 0, longCount2 = 0;
+//        if (count)
+//            CFNumberGetValue(count, kCFNumberLongType, &longCount);
+//        if (count2)
+//            CFNumberGetValue(count2, kCFNumberLongType, &longCount2);
+////        *(BOOL *)ptr_param = !longCount && !longCount2;
+//        CFRelease(assertionStates);
+//    }
+//    else
+//    {
+////        WARN("Could not determine screen saver state, error code %d\n", status);
+////        *(BOOL *)ptr_param = TRUE;
+//    }
+//
+    
     //flag
     BOOL cameraOn = NO;
     

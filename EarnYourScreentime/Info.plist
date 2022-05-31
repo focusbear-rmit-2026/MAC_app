@@ -39,6 +39,8 @@
 	<string>Main</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>NSUserNotificationAlertStyle</key>
+	<string>alert</string>
 	<key>SUFeedURL</key>
 	<string>https://earnyourscreentime.com/update/eyst.xml</string>
 	<key>SUPublicEDKey</key>

@@ -44,12 +44,7 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
     var allReasons = [String]()
     override func viewDidLoad() {
         super.viewDidLoad()
-        imgViewGif.image = NSImage(named: "Crying_small")
-        imgViewGif.animates = true
-        // Do view setup here.
-//        self.textField.delegate = self
-//        lblConfirmAbort.isHidden = true
-//        allReasons = ["Select a reason","I've got an emergency", "The app is broken", "My habits are too hard - I can't handle them", "Something else"]
+
         lblTitle.stringValue = "Aborting.."
         lblSubTitle.stringValue = "Can you share why you're aborting?"
         
@@ -167,6 +162,14 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
         popUpBtnReasons.addItems(withTitles: allReasons)
         textViewAppBroken.delegate = self
         textViewSomethingElse.delegate = self
+    }
+    override func viewWillAppear() {
+        if kIsReducedMotion{
+            imgViewGif.image = nil
+        }else{
+            imgViewGif.image = NSImage(named: "Crying_small")
+            imgViewGif.animates = true
+        }
     }
     func resetData(){
         boxEmergency.isHidden = true
@@ -376,16 +379,10 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
         guard let mutableDic = jsonResult.mutableCopy() as? NSMutableDictionary else{
             return
         }
-        //        mutableDic
-//        for i in 0..<arrAllMorningHabits.count{
-//            if arrAllMorningHabits[i].durationSeconds > 30{
-//                arrAllMorningHabits[i].durationSeconds = 30
-//            }
-//        }
+
         var isAnyHabitRemoved = false
         if var morningHabits = mutableDic.value(forKey: "morningHabits") as? [NSDictionary] {
             for i in 0..<morningHabits.count {
-//                var habitDic = morningHabits[i]
                 guard let habitDic = morningHabits[i].mutableCopy() as? NSMutableDictionary else{
                     return
                 }
@@ -406,13 +403,7 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
             }
             mutableDic["morningHabits"] = morningHabits
         }
-        
-//        for i in 0..<arrAllEveningHabits.count{
-//            if arrAllEveningHabits[i].durationSeconds > 30{
-//                arrAllEveningHabits[i].durationSeconds = 30
-//            }
-//        }
-        
+
         if var eveningHabits = mutableDic.value(forKey: "eveningHabits") as? [NSDictionary] {
             for i in 0..<eveningHabits.count {
                 //                var habitDic = morningHabits[i]
@@ -436,14 +427,7 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
             }
             mutableDic["eveningHabits"] = eveningHabits
         }
-        
-        
-        
-//        for i in 0..<arrAllbreakActivities.count{
-//            if arrAllbreakActivities[i].durationSeconds > 30{
-//                arrAllbreakActivities[i].durationSeconds = 30
-//            }
-//        }
+
         if var breakActivities = mutableDic.value(forKey: "breakActivities") as? [NSDictionary] {
             for i in 0..<breakActivities.count {
                 //                var habitDic = morningHabits[i]
@@ -462,70 +446,14 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
             mutableDic["breakActivities"] = breakActivities
         }
         
-//        var totalTime = arrAllMorningHabits.count * 30
-//        var isAnyHabitRemoved = false
-//        while totalTime > 300{
-//            isAnyHabitRemoved = true
-//            arrAllMorningHabits.removeLast()
-//            totalTime = arrAllMorningHabits.count * 30
-//        }
-//        var arrHabitsDictionary = [NSMutableDictionary]()
-//        for habit in arrAllMorningHabits{
-//            let dic = ["name": habit.name!, "durationSeconds": habit.durationSeconds!] as NSMutableDictionary
-//            //if let url = habit.urlsArray{
-//                dic["videoUrl"] = habit.urlsArray
-//           // }
-//            arrHabitsDictionary.append(dic)
-//        }
-//
-//
-//        mutableDic["morningHabits"] = arrHabitsDictionary
-     
-        
-        
-//        var totalTime = arrAllEveningHabits.count * 30
-//        while totalTime > 300{
-//            isAnyHabitRemoved = true
-//            arrAllEveningHabits.removeLast()
-//            totalTime = arrAllEveningHabits.count * 30
-//        }
-//
-//        var arrEveningHabitsDictionary = [NSMutableDictionary]()
-//        for habit in arrAllEveningHabits{
-//            let dic = ["name": habit.name!, "durationSeconds": habit.durationSeconds!] as NSMutableDictionary
-//            //if let url = habit.url{
-//                dic["videoUrl"] = habit.urlsArray
-//           // }
-//            arrEveningHabitsDictionary.append(dic)
-//        }
-//        mutableDic["eveningHabits"] = arrEveningHabitsDictionary
-        
-        
-//        var arrActivitiesDictionary = [NSMutableDictionary]()
-//        for activity in arrAllbreakActivities{// change for  new fields
-//            let dic = ["name": activity.name!, "durationSeconds": activity.durationSeconds!] as NSMutableDictionary
-//           // if let url = activity.url{
-//                dic["videoUrl"] = activity.urlsArray
-//          //  }
-//            if let includeInEveryBreak = activity.IncludeInEveryBreak{
-//                dic["includeInEveryBreak"] = includeInEveryBreak
-//            }
-//            arrActivitiesDictionary.append(dic)
-//        }
-//        mutableDic["breakActivities"] = arrActivitiesDictionary
-        
-        //            if 1==1{
-        
         do {
-            let data = try (JSONSerialization.data(withJSONObject: mutableDic, options: []) as? Data)
-            let str = String(decoding: data!, as: UTF8.self)
-//            let newstr = str.replacingOccurrences(of: ",", with: ",\n")
-            UserDefaults.standard.set(str, forKey: kUserdefaultsSelectedJson)
+            let data = try (JSONSerialization.data(withJSONObject: mutableDic, options: .prettyPrinted))
+            if let str = String(data: data, encoding: String.Encoding.utf8){
+                UserDefaults.standard.set(str, forKey: kUserdefaultsSelectedJson)
+            }
         } catch let error as NSError {
             print(error)
         }
-        //            }
-        
         
         appdelegate?.readSettingsJsonDictionary()
         mainViewControllerObj?.showAbortStartSmallVc(isAnyHabitRemoved:isAnyHabitRemoved)

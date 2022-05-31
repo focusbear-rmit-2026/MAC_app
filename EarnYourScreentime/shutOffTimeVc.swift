@@ -32,8 +32,14 @@ class shutOffTimeVc: NSViewController {
     }
     func resetView(){
         titleCenter.constant = 80
-        imgViewGif.image = NSImage(named: "Yawn_small")
-        imgViewGif.animates = true
+
+        if kIsReducedMotion{
+            imgViewGif.image = nil
+        }else{
+            imgViewGif.image = NSImage(named: "Yawn_small")
+            imgViewGif.animates = true
+        }
+        
         lblTitle.stringValue = "Time to wind down"
         btnGetAccessNow.title = "Get access now"
         
@@ -141,8 +147,16 @@ class shutOffTimeVc: NSViewController {
                     
                 }
             })
+            var startTimeHour = "\(startTime?.hour ?? 0)"
+            if startTimeHour.count == 1{
+                startTimeHour = "0\(startTimeHour)"
+            }
             
-            lblSubTitle.stringValue = "Sorry to hear that something bad has happened and you absolutely need to use your computer late at night. We’re unlocking your machine now. Your morning routine will still activate at \(startTime?.hour ?? 0):\(startTime?.minute ?? 0). Hope you’re able to catch up on sleep during the day.\n\n\nUnlocking in"
+            var startTimeMinute = "\(startTime?.minute ?? 0)"
+            if startTimeMinute.count == 1{
+                startTimeMinute = "0\(startTimeMinute)"
+            }
+            lblSubTitle.stringValue = "Sorry to hear that something bad has happened and you absolutely need to use your computer late at night. We’re unlocking your machine now. Your morning routine will still activate at \(startTimeHour):\(startTimeMinute). Hope you’re able to catch up on sleep during the day.\n\n\nUnlocking in" 
             
             
             if let shutOffTimeInfo = configjson.value(forKey: "shutOffTimeInfo") as? NSDictionary{

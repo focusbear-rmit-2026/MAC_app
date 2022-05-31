@@ -25,8 +25,8 @@ class abortingCantHandleVc: NSViewController, NSTextViewDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
-        imgViewGif.image = NSImage(named: "Crying_small")
-        imgViewGif.animates = true
+        
+        
         textViewFeedback.delegate = self
         lblTitle.stringValue = "Aborting.."
         lblTitleEmail.stringValue = "Your Email (if you want us to reply):"
@@ -42,6 +42,15 @@ class abortingCantHandleVc: NSViewController, NSTextViewDelegate {
                     }
                 }
             }
+        }
+    }
+    
+    override func viewWillAppear() {
+        if kIsReducedMotion{
+            imgViewGif.image = nil
+        }else{
+            imgViewGif.image = NSImage(named: "Crying_small")
+            imgViewGif.animates = true
         }
     }
     func resetView(isAnyHabitRemoved:Bool){

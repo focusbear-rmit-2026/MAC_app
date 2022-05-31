@@ -1,7 +1,7 @@
 {"welcomeInfo":
     {"welcomeMessageHeading": "Welcome to Earn Your Screen Time",
         "welcomeMessageIntro": "Every morning, I will stop you from satisfying your urge to check email/Facebook and force you to do your morning routine instead. You can configure your own routine later but for now, I’ll give you a suggested activity: 1 minute of mindful breathing. While you breathe deeply, think of how awesome you’ll be if you stick to your morning routine every day.",
-        "welcomeEndMessage": "Hope you feel calmer. You can now personalise your morning routine by clicking on the icon <icon> on the top bar and choosing settings.",
+        "welcomeEndMessage": "Hope you feel calmer. You can now personalise your morning routine by clicking on the icon <icon> on the top bar and choosing Preferences -> Settings.",
         "introActivities": [
             { "name": "Mindful Breathing", "durationSeconds": 60, "videoUrl": ["https://www.youtube.com/watch?v=z-3n5iBi4u0"] }
         ]
@@ -13,7 +13,12 @@
         "activityFinishedText":"<ACTIVITY> finished!✅",
         "lastActivityFinishedText":"<ACTIVITY> finished!✅ You’ve earned your screen time. 💪",
         "startBreakActivityTitleText":"It’s time for a break. Do <TIME> of <ACTIVITY> to earn more screentime.",
-        "doSomeActivityText":"Do some <ACTIVITY>."
+        "doSomeActivityText":"Do some <ACTIVITY>.",
+        "beforeYouStartText":"Before you start, take a few moments to reflect on why you want to do these habits. Then visualise yourself beginning the habit sequence. Mentally walk through any of the habits that are going to be harder. This process will help reduce \"limbic friction\", i.e. prime your brain to do the habits no matter what, even if you don't have the app available.",
+        "beforeYouBeginText":"Before you begin, take 30 seconds to visualise yourself performing each of the habits. This sounds kooky but research indicates that doing a mental rehearsal like this increases the likelihood of you completing the habits and makes the habits more sticky so that even if you don't have access to your computer/this app, you'll still do all the habits",
+        "habitsProgressText":"You have completed <duration> of habits - <totalduration> to go. You can do it!",
+        "habitsCompleteText":"You have completed <duration> of habits.",
+        "whatComesNextButtonText":"What comes next?"
     },
     "common":{
         "emailId":"team@earnyourscreentime.com",
@@ -25,7 +30,18 @@
         "buttonExportText":"Export",
         "appName":"Earn Your Screen Time",
         "trialExpiredText":"Your trial has expired!",
-        "daysRemainingText":"Trial version - <DAYS> of 7 trial days remaining"
+        "daysRemainingText":"Trial version - <DAYS> of 7 trial days remaining",
+        "buttonStatusStateFocusText":"FOCUS",
+        "buttonStatusStateOffText":"OFF",
+        "buttonStatusStateCallText":"CALL",
+        "uninstallConfirmText":"Are you sure you want to giveup all your habits and uninstall Earn Your Screen Time?",
+        "yesText":"Yes",
+        "noText":"No",
+        "uninstallDoneText":"All the app related processes will abort and the app will close itself and then you can drag the app and move to trash/bin.",
+        "buttonUninstallText":"Uninstall Earn Your Screen Time",
+        "shutdownNotificationTitle":"It's time to wrap up for the day. Your shutdown time is in 5 minutes.",
+        "appBlockNotificationTitle":"<APP_NAME> isn't allowed in the <FOCUS_NAME> focus mode.",
+        "focusBreakNotificationTitle":"Your break ends in"
     },
     "abortInfo":{
         "abortingTitle":"Aborting..",
@@ -86,6 +102,37 @@
             "subTitle":"You’ve successfully aborted Earn Your Screen Time. The app won’t show habit prompts until you activate it again from the menu icon. If you aborted it because of a problem with the app, please email"
         }
     },
+    "quitInfo":{
+        "quittingTitle":"Quitting..",
+        "quittingCountDownInfo":{
+            "subTitle":"Are you sure you want to Quit? Please take 10 seconds to reflect on whether you are serious about quitting.",
+            "message":"While you wait, reflect on why you’re doing this. If it was because your morning routine was too ambitious, perhaps scale it back to only be a few minutes long so that it’s easier to do it than not do it. If you’re aborting because the app is broken, really sorry!!",
+            "pleaseEmailText":"Please email",
+            "buttonQuitCancelText":"I didn’t mean it. Let me do my habits!"
+        },
+        "quittingConfirmInfo":{
+            "subTitle":"Can you share why you're quitting?",
+            "buttonQuitText":"Quit",
+            "emailTitle":"Your Email (if you want us to reply):",
+            "dropDown_0":{
+                "title":"Select a reason"
+            },
+            "dropDown_1":{
+                "title":"I've got an emergency",
+                "description":"Uh oh! Hope everything is ok. Restoring access immediately and quitting app."
+            },
+            "dropDown_2":{
+                "title":"The app is broken",
+                "description":"Oh no! We're really sorry. Can you please let us know what happened?﹡",
+                "finalDescription":"We hope you will start the habits back soon! See you soon."
+            },
+            "dropDown_3":{
+                "title":"Something else",
+                "description":"Can you tell us why you want to stop getting habit + break notifications?﹡",
+                "finalDescription":"We hope you will start the habits back soon! See you soon."
+            }
+        }
+    },
     "shutOffTimeInfo":{
         "title":"Time to wind down",
         "subTitle":"You told me you wanted to stay off your computer from <SHUTOFFTIME> to <STARTTIME>. Enjoy your evening and sleep well. Look forward to helping you with your morning routine tomorrow.",
@@ -108,7 +155,11 @@
         "settingUrl":"earnyourscreentime.com/settings-generator",
         "schemaError":"Your settings can not be validated.",
         "buttonOkText":"OK",
-        "settingIsNotValidText":"Sorry it seems like your settings aren’t valid. Please generate settings at earnyourscreentime.com/settings"
+        "settingIsNotValidText":"Sorry it seems like your settings aren’t valid. Please generate settings at earnyourscreentime.com/settings",
+        "buttonEditSettingsText":"Edit Settings",
+        "buttonAdvancedText":"Advanced",
+        "description":"Click on \"Edit Settings\" to modify your existing settings.\nIf you are an advanced user click on \"Advanced\" to view or edit settings JSON",
+        "settingIsValidText":"Your settings have been validated and will be applied now."
     },
     "trialNagInfo":{
         "title":"Earn Your Screen Time",
@@ -140,16 +191,19 @@
     "menuInfo":{
         "menuItemReactivateTitle":"Reactivate",
         "menuItemEnterLicenseKeyTitle":"Enter License Key",
-        "menuItemSettingsTitle":"Settings",
         "menuItemPreferencesTitle":"Preferences",
         "menuItemExportStatisticsTitle":"Export Statistics",
         "menuItemFocusTitle":"Focus",
-        "menuItemFocusPreferencesTitle":"Focus Preferences",
         "menuItemStartPomodoroTitle":"Start Pomodoro Mode",
         "menuItemCheckForUpdatesTitle":"Check for updates",
+        "menuItemEnableOfficeModeTitle":"Enable office mode",
         "menuItemQuitTitle":"Quit",
         "untilTimeText":"On Until <TIME>",
         "onText":"On",
+        "noOfficeFriendlyActivityAlertText":"You don't have any office friendly break activities. Do you want me to add one for you to stand up and stretch for 20 seconds?",
+        "noOfficeFriendlyActivityButtonFirstText":"Yeah sounds good",
+        "noOfficeFriendlyActivityButtonSecondText":"No I'm a machine! I don't need breaks",
+        "officeModeEnabledSuccessfullyText":"Ok! I'll just prompt you to do activities that won't weird other people out (doing handstand pushups in the office might raise a few eyebrows)."
     },
     "preferencesInfo":{
         "titleSync":"Sync data across devices:",
@@ -157,7 +211,11 @@
         "buttonSelectFolderText":"Select Folder",
         "syncDescription":"You can specify a folder (e.g. a dropbox folder) to store the usage data so that if you complete the morning routine on one computer, it automatically syncs on other devices. It is required to select such synced folder on all devices.",
         "titlePomodoro":"Pomodoro Mode:",
-        "checkBoxPomodoroText":"Enter Pomodoro mode after completing morning routine"
+        "checkBoxPomodoroText":"Enter Pomodoro mode after completing morning routine",
+        "titleReduceMotion":"Reduce motion:",
+        "checkBoxReduceMotionText":"Prefer reduced motion (don't show animated bears)",
+        "titleAskNextHabit":"Next habit remembrance:",
+        "checkBoxPromptToAskNextHabitText":"Occasionally prompt me to remember the next habit"
     },
     "focusPreferencesInfo":{
         "titleFocusType":"Focus Type:",
@@ -188,7 +246,10 @@
         "focusCanNotDeleteTitle":"Can not delete.",
         "focusCanNotDeleteSubTitle":"The Default focus type cannot be deleted.",
         "focusModeOnText":"Focus mode is on. Please abort the focus mode to delete it.",
-        "duplicateText":"Duplicate"
+        "duplicateText":"Duplicate",
+        "toolTipAdd":"Add",
+        "toolTipRemove":"Remove",
+        "toolTipDuplicate":"Duplicate"
         
     },
     "focusInfo":{
@@ -215,6 +276,7 @@
             "subTitle":"You have successfully completed the focus block - <FOCUSTYPE>",
             "questionFirstText":"What did you achieve during this time?",
             "questionSecondText":"Any distractions?",
+            "titleIntention":"Your intention was",
             "buttonFinishDayText":"Finish up for the day",
             "buttonTakeBreakText":"Take a 5 minute break"
         },
@@ -222,10 +284,32 @@
             "title":"You completed <COUNT> focus blocks today.",
             "buttonContinueText":"Continue",
             "buttonClickHereText":"Click here to see what you achieved.",
-            "tableColumnFirstText":"Focus type",
-            "tableColumnSecondText":"Start Time",
-            "tableColumnThirdText":"Work Achieved",
-            "tableColumnFourthText":"Distractions encountered"
+            "focusTableColumnFirstText":"Focus type",
+            "focusTableColumnSecondText":"Start Time",
+            "focusTableColumnThirdText":"Duration",
+            "focusTableColumnFourthText":"Work Achieved",
+            "focusTableColumnFifthText":"Distractions encountered",
+            "activityTableColumnFirstText":"Activity",
+            "activityTableColumnSecondText":"Total Quantity",
+            "activityTableColumnThirdText":"Average",
+            "activityTableColumnFourthText":"Max",
+            "activityTableColumnFifthText":"Min",
+            "activityTableColumnSixthText":"Total Duration",
+            "titleActivitySummaryText":"Activity Summary:",
+            "titleFocusSummaryText":"Focus Summary:",
+            "totalFocusTimeText":"Total focus time: <TIME>"
+        },
+        "discourageDefaultFocusInfo":{
+            "title":"Are you sure? It's pretty easy to get distracted without using a more restrictive focus mode",
+            "buttonCancelText":"Bah I guess you're right - CANCEL!",
+            "buttonShutUpText":"Shutup I know what I'm doing",
+            "titleGoodLuck":"Ok good luck! (You'll need it 😅)"
+        },
+        "suggestFocusInfo":{
+            "title":"It looks like you're in a meeting. Will you need to use other apps during the meeting? If not, I can block everything else to help you concentrate.",
+            "subTitle":"On selecting \"Block everything else\" the app will start \"Meetings\" focus mode.",
+            "buttonBlockText":"Block everything else",
+            "buttonCancelText":"It's ok for me to use other apps during this meeting"
         }
     },
     "pomodoroInfo":{
@@ -274,6 +358,18 @@
     "blockedUrlsViewInfo":{
         "title":"Always Blocked URLs",
         "invalidDomainText":"Adding * will block all urls. Please use another combination."
+    },
+    "rememberNextHabitViewInfo":{
+        "randomPhraseRightChoice1":"Right on!",
+        "randomPhraseRightChoice2":"Yeah!",
+        "randomPhraseRightChoice3":"You got it!",
+        "randomPhraseRightChoice4":"I can just retire now because you know exactly what you're doing 🙂",
+        "randomPhraseWrongChoice1":"Oops not quite - it's <CORRECT_HABIT_NAME>",
+        "randomPhraseWrongChoice2":"Almost - it's <CORRECT_HABIT_NAME>",
+        "title":"What comes next?",
+        "description":"I want to make sure you don't become too dependent on me. There will be days where you don't have access to your computer but that doesn't mean you won't do your habits. Think of me as training wheels - I'm here to help you deepen the habits until they become automatic. Let's do a quick exercise to make sure you remember how to stack your habits even when I'm not there.",
+        "questionText":"You just completed <LAST_HABIT_NAME>. What habit will you do next?",
+        "selectHabitText":"Select Habit"
     }
     
     

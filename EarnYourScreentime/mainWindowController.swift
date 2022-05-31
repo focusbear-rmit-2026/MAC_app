@@ -25,18 +25,17 @@ class mainWindowController: NSWindowController {
         
         self.contentViewController =  mainViewControllerObj
         
-        setframe()
-        self.perform(#selector(setframe), with: nil, afterDelay: 0)
+//        setframe()
+//        self.perform(#selector(setframe), with: nil, afterDelay: 0)
     }
 
-    
-    @objc func setframe() {
-        let screenList = NSScreen.screens
-        for screen in screenList {  // create the corresponding windows
-            //                     resetWin(BGWindow(contentRect: NSMakeRect(0, 0, NSWidth(screen.frame), NSHeight(screen.frame)), styleMask: .borderless, backing: .buffered, defer: true, screen: screen))
-            self.window?.setFrame(NSMakeRect(0, 0, NSWidth(screen.frame), NSHeight(screen.frame)), display: true)
-            break;
-        }
-    }
+//    @objc func setframe() {
+//        let screenList = NSScreen.screens
+//        for screen in screenList {  // create the corresponding windows
+//            //                     resetWin(BGWindow(contentRect: NSMakeRect(0, 0, NSWidth(screen.frame), NSHeight(screen.frame)), styleMask: .borderless, backing: .buffered, defer: true, screen: screen))
+//            self.window?.setFrame(NSMakeRect(0, 0, NSWidth(screen.frame), NSHeight(screen.frame)), display: true)
+//            break;
+//        }
+//    }
     
 }

@@ -196,20 +196,7 @@ class activateNowvc: NSViewController,NSTextFieldDelegate {
                         alert.beginSheetModal(for: (activationWindowControllerObj?.window)!, completionHandler: { (modalResponse) in
                             if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
                             }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+                            
                             if isAppInitialLodded == false{
                                 appdelegate?.initialWork()
                             }

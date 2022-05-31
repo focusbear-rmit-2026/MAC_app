@@ -32,8 +32,8 @@ class activationWindowController: NSWindowController, NSWindowDelegate {
             if UserDefaults.standard.object(forKey: "trialExpired") != nil{//agar exipire ho chuka h to app quit ni hogi 
                 
             }else{
-                appdelegate!.terminateFromSelf = true
-                NSApp.terminate(self)
+                self.window?.close()
+                appdelegate?.initialWork()
             }
         }
         return true

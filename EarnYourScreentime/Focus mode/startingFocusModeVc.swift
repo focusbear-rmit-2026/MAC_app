@@ -3,8 +3,7 @@
 //  Earn Your Screentime
 //
 //  Created by Prashant Sawnani on 26/02/22.
-//  Copyright © 2022 MugPhotography. All rights reserved.
-//
+
 
 import Cocoa
 
@@ -67,6 +66,11 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
     }
     
     @IBAction func btnStartFocusClicked(_ sender: Any) {
+        if getEndFocusModeWindowControllerObj().window!.isVisible{
+            let timestamp = getStringFromDate(date: startFocusModeTime ?? Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
+            addEntryInCsv(logType: "focus block", activity: focusCompletedVcObj!.currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: "\(focusModeMinutesToPerform) of \(focusCompletedVcObj!.currentFocusModeName)", distractionsEncountered: "", abortReason: "", feedback: "")
+            getEndFocusModeWindowControllerObj().window?.close()
+        }
         let calendar = Calendar.current
         let totoalMinutes = (textFieldHourValue.integerValue * 60) + textFieldMinutesValue.integerValue
         endFocusModeTime = calendar.date(byAdding: .minute, value: totoalMinutes, to: Date())
@@ -82,6 +86,8 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
             }
         }
         appdelegate!.statusbutton?.backgroundcolor = HexToColor(hexString: arrFocusType[focusIndex]["color"] as? String ?? "")
+        appdelegate!.statusbutton?.title = buttonStatusStateFocusText
+        appdelegate!.statusbutton?.imagePosition = .imageLeft
         if timerForFocusMode != nil{
             timerForFocusMode?.invalidate()
             timerForFocusMode = nil
@@ -91,6 +97,7 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
         isFocusModeStartedFromPomodoroMode = false
         appdelegate!.focusModeStartted()
         UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+        whatToAchieveInFocusBlock = textViewQuestion.string
         self.view.window?.close()
     }
     
@@ -107,7 +114,28 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
         textFieldMinutesValue.stringValue = "20"
         btnStartFocus.isEnabled = true
         lblTitle.stringValue = titleText.replacingOccurrences(of: "<FOCUSTYPE>", with: focusType)//"Starting Focus type - \(focusType)"
+        
+        if arrFocusType[focusModeIndex]["isDefault"] as? Bool == true{
+//            if focusPreferencesVcObj != nil{// Discourage Default Focus Vc se pahle preferences band kr denege taki vha se koi focus mode chalu na kar pay
+//
+//                if preferencesWindowControllerObj?.window?.isVisible ?? false{
+//                    preferencesWindowControllerObj?.window?.close()
+//                }
+//            }
+//            if focusModeStartWindowLodded{
+//                if startingFocusWindowControllerObj?.window?.isVisible ?? false{
+//                    startingFocusWindowControllerObj!.window?.close()
+//                }
+//            }
+            showDiscourageFocusView()
+        }
     }
+    
+    @objc func showDiscourageFocusView(){
+        self.presentAsSheet(getDiscourageDefaultFocusVcObject())
+        getDiscourageDefaultFocusVcObject().resetData()
+    }
+    
     func controlTextDidChange(_ obj: Notification) {
         if let textfield = obj.object as? NSTextField{
             if textfield == textFieldHourValue{

@@ -33,51 +33,8 @@ class tblCellFocus: NSTableCellView {
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
 
-      //  if isFirstTime{
-         //   isFirstTime = false
-         //   hoursPopupBtn.removeAllItems()
-        //    hoursPopupBtn.addItems(withTitles: ["1","2","3","4","5","6","7","8","9","10","11","12"])
-           
-        //}
         // Drawing code here.
     }
-    
-//    @IBAction func stepperClicked(_ sender: Any) {
-//        endFocusModeTime = nil
-//        textFieldCustomHour.integerValue = stepperHourValue.integerValue
-//        arrFocusType[currentRow]["hourValue"] = textFieldCustomHour.integerValue
-//        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
-//        if timerForFocusMode != nil{
-//            timerForFocusMode?.invalidate()
-//            timerForFocusMode = nil
-//        }
-//        let calendar = Calendar.current
-//        endFocusModeTime = calendar.date(byAdding: .hour, value: textFieldCustomHour.integerValue, to: Date())
-//        isFocusTimeType = ._HOUR_
-//        appdelegate?.setFocusModeTimer(hour: textFieldCustomHour.integerValue, minute: nil)
-//        menuViewControllerObj?.tblViewFocusMode.reloadData()
-//    }
-//    @IBAction func btnHourClicked(_ sender: Any) {
-//        endFocusModeTime = nil
-//        if timerForFocusMode != nil{
-//            timerForFocusMode?.invalidate()
-//            timerForFocusMode = nil
-//        }
-//        let calendar = Calendar.current
-//        endFocusModeTime = calendar.date(byAdding: .hour, value: textFieldCustomHour.integerValue, to: Date())
-//        isFocusTimeType = ._HOUR_
-//        appdelegate?.setFocusModeTimer(hour: textFieldCustomHour.integerValue, minute: nil)
-//        menuViewControllerObj?.tblViewFocusMode.reloadData()
-//    }
-//    @IBAction func btnUntilShutOffClicked(_ sender: Any) {
-//        endFocusModeTime = nil
-//        if timerForFocusMode != nil{
-//            timerForFocusMode?.invalidate()
-//            timerForFocusMode = nil
-//        }
-//        isFocusTimeType = ._TILL_SHUTOFF_
-//        menuViewControllerObj?.tblViewFocusMode.reloadData()
-//    }
-    
+   
 }
 

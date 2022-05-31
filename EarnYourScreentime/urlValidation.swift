@@ -3,23 +3,26 @@
 //  Earn Your Screentime
 //
 //  Created by Prashant Sawnani on 26/03/22.
-//  Copyright © 2022 MugPhotography. All rights reserved.
-//
+
 
 import Foundation
 
 struct urlValidation {
     func isUrlValid(urlToCheck:String, allowUrl:String, domain:String)->Bool{
         var bool = false
-        if allowUrl.contains("://"){
+        var newAllowUrl = allowUrl
+        if newAllowUrl.contains("http"){
+            newAllowUrl = getDomainFromUrl(url: newAllowUrl)
+        }
+        if newAllowUrl.contains("file://"){
             if urlToCheck.contains("://"){
-                bool = wildcard(urlToCheck, pattern: allowUrl)
+                bool = wildcard(urlToCheck, pattern: newAllowUrl)
             }
         }else{
-            if allowUrl.contains("*"){
-                bool = wildcard(domain, pattern: allowUrl)
+            if newAllowUrl.contains("*"){
+                bool = wildcard(domain, pattern: newAllowUrl)
             }else{
-                let starUrl = "*" + allowUrl + "*"
+                let starUrl = "*" + newAllowUrl + "*"
                 bool = wildcard(domain, pattern: starUrl)
             }
         }

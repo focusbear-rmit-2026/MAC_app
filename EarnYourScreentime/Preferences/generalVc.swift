@@ -11,6 +11,12 @@ import Cocoa
 class generalVc: NSViewController {
 
     
+    @IBOutlet weak var checkBoxPromptToAskNextHabit: NSButton!
+    @IBOutlet weak var lblCheckBoxPromptToAskNextHabit: NSTextField!
+    @IBOutlet weak var lblTitleAskNextHabit: NSTextField!
+    @IBOutlet weak var lblTitleReduceMotion: NSTextField!
+    @IBOutlet weak var lblCheckBoxStringReduceMotion: NSTextField!
+    @IBOutlet weak var checkBoxReduceMotion: NSButton!
     @IBOutlet weak var checkBoxPomodoroMode: NSButton!
     @IBOutlet weak var lblCheckBoxStringPomodoroMode: NSTextField!
     @IBOutlet weak var lblCurrentFolderUrl: NSTextField!
@@ -22,6 +28,13 @@ class generalVc: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        var titleReduceMotion = "Reduce motion:"
+        var checkBoxReduceMotionText = "Prefer reduced motion (don't show animated bears)"
+        var titleAskNextHabit = "Next habit remembrance:"
+        var checkBoxPromptToAskNextHabitText = "Occasionally prompt me to remember the next habit"
+        
+        
+        
         var titleSync = "Sync data across devices:"
         var titleCurrentFolder = "Current Folder:"
         var buttonSelectFolderText = "Select Folder"
@@ -37,6 +50,11 @@ class generalVc: NSViewController {
             syncDescription = preferencesInfo.value(forKey: "syncDescription") as? String ?? syncDescription
             titlePomodoro = preferencesInfo.value(forKey: "titlePomodoro") as? String ?? titlePomodoro
             checkBoxPomodoroText = preferencesInfo.value(forKey: "checkBoxPomodoroText") as? String ?? checkBoxPomodoroText
+            titleReduceMotion = preferencesInfo.value(forKey: "titleReduceMotion") as? String ?? titleReduceMotion
+            checkBoxReduceMotionText = preferencesInfo.value(forKey: "checkBoxReduceMotionText") as? String ?? checkBoxReduceMotionText
+            titleAskNextHabit = preferencesInfo.value(forKey: "titleAskNextHabit") as? String ?? titleAskNextHabit
+            checkBoxPromptToAskNextHabitText = preferencesInfo.value(forKey: "checkBoxPromptToAskNextHabitText") as? String ?? checkBoxPromptToAskNextHabitText
+            
         }
         
         lblTitleSync.stringValue = titleSync
@@ -46,6 +64,12 @@ class generalVc: NSViewController {
 
         lblTitlePomodoroMode.stringValue = titlePomodoro
         lblCheckBoxStringPomodoroMode.stringValue = checkBoxPomodoroText
+        
+        lblTitleReduceMotion.stringValue = titleReduceMotion
+        lblCheckBoxStringReduceMotion.stringValue = checkBoxReduceMotionText
+        lblTitleAskNextHabit.stringValue = titleAskNextHabit
+        lblCheckBoxPromptToAskNextHabit.stringValue = checkBoxPromptToAskNextHabitText
+        
     }
     
     
@@ -63,6 +87,24 @@ class generalVc: NSViewController {
             }
         }
         
+        if let state = UserDefaults.standard.object(forKey: kUserdefaultsReducedMotion) as? Bool{
+            if state{
+                checkBoxReduceMotion.state = .on
+                kIsReducedMotion = true
+            }else{
+                checkBoxReduceMotion.state = .off
+                kIsReducedMotion = false
+            }
+        }
+        if let state = UserDefaults.standard.object(forKey: kUserdefaultsPromptToRememberHabit) as? Bool{
+            if state{
+                checkBoxPromptToAskNextHabit.state = .on
+                isPromptToRememberHabit = true
+            }else{
+                checkBoxPromptToAskNextHabit.state = .off
+                isPromptToRememberHabit = false
+            }
+        }
     }
     @IBAction func btnSelectFolderClicked(_ sender: Any) {
         if let url = SelectUrlofFolder(){
@@ -92,6 +134,24 @@ class generalVc: NSViewController {
             UserDefaults.standard.set(true, forKey: kUserdefaultsPomodoroModeEnabled)
         }else{
             UserDefaults.standard.set(false, forKey: kUserdefaultsPomodoroModeEnabled)
+        }
+    }
+    @IBAction func checkBoxReduceMotionClicked(_ sender: Any) {
+        if checkBoxReduceMotion.state == .on{
+            UserDefaults.standard.set(true, forKey: kUserdefaultsReducedMotion)
+            kIsReducedMotion = true
+        }else{
+            UserDefaults.standard.set(false, forKey: kUserdefaultsReducedMotion)
+            kIsReducedMotion = false
+        }
+    }
+    @IBAction func checkBoxPromptToAskNextHabitClicked(_ sender: Any) {
+        if checkBoxPromptToAskNextHabit.state == .on{
+            UserDefaults.standard.set(true, forKey: kUserdefaultsPromptToRememberHabit)
+            isPromptToRememberHabit = true
+        }else{
+            UserDefaults.standard.set(false, forKey: kUserdefaultsPromptToRememberHabit)
+            isPromptToRememberHabit = false
         }
     }
 }

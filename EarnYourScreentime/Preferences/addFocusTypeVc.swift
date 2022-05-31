@@ -124,10 +124,11 @@ class addFocusTypeVc: NSViewController, NSTextFieldDelegate  {
         
         if isAdding{
             let dic:[String:Any] = ["name":textFieldFocusType.stringValue, "color": getColorString(color: colorWell.color), "appsArray": [], "urlsArray": [], "isOn": false, "isAllowedAllApps":true, "isAllowedAllUrls":true]
-            arrFocusType.append(dic)
-            focusPreferencesVcObj?.tblViewFocusType.insertRows(at: IndexSet(arrayLiteral: arrFocusType.count - 1), withAnimation: .effectFade)
-            focusPreferencesVcObj?.tblViewFocusType.selectRowIndexes(IndexSet(arrayLiteral: arrFocusType.count - 1), byExtendingSelection: false)
-            focusPreferencesVcObj?.tblViewFocusType.scrollRowToVisible(arrFocusType.count-1)
+            let row = arrFocusType.count-1
+            arrFocusType.insert(dic, at: row)//append(dic)
+            focusPreferencesVcObj?.tblViewFocusType.insertRows(at: IndexSet(arrayLiteral: row), withAnimation: .effectFade)
+            focusPreferencesVcObj?.tblViewFocusType.selectRowIndexes(IndexSet(arrayLiteral: row), byExtendingSelection: false)
+            focusPreferencesVcObj?.tblViewFocusType.scrollRowToVisible(row)
             focusPreferencesVcObj?.checkState()
         }else{
 //            let dic:[String:Any] = ["name":textFieldFocusType.stringValue, "color": getColorString(color: colorWell.color), "appsArray": [], "urlsArray": [], "isOn": false]

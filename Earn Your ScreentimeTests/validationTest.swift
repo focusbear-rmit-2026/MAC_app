@@ -3,8 +3,7 @@
 //  Earn Your ScreentimeTests
 //
 //  Created by Prashant Sawnani on 26/03/22.
-//  Copyright © 2022 MugPhotography. All rights reserved.
-//
+
 @testable import Earn_Your_Screentime
 import XCTest
 
@@ -60,7 +59,13 @@ class validationTest: XCTestCase {
         XCTAssertEqual(bool, expectedValue)
     }
     
-    
+    func test_perfect_url(){
+        let expectedValue = true
+        let url = "https://www.facebook.com"
+        let bool = validation.isUrlValid(urlToCheck: url, allowUrl: "https://www.facebook.com", domain: getDomainFromUrl(url: url))
+
+        XCTAssertEqual(bool, expectedValue)
+    }
     func test_url_with_subdomain_when_main_domain_added(){
         let expectedValue = true
         let url = "https://desk.zoho.com"

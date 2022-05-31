@@ -3,8 +3,7 @@
 //  Earn Your Screentime
 //
 //  Created by Prashant Sawnani on 15/03/22.
-//  Copyright © 2022 MugPhotography. All rights reserved.
-//
+
 
 import Cocoa
 

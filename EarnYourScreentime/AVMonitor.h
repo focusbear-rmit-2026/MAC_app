@@ -28,7 +28,7 @@
 
 -(BOOL)isMicOn;
 -(BOOL)isACameraOn;
-
+-(NSDictionary*)getSystemAssertionDic;
 //checkCameraState
 
 
