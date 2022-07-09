@@ -1,0 +1,100 @@
+{
+    "shutOffTime": "20:30",
+    "startTime": "05:15",
+    "morningHabits": [
+        {
+            "name": "Yoga",
+            "durationSeconds": 300,
+            "logQuantity": false,
+            "videoUrl": []
+        },
+        {
+            "name": "Journalling",
+            "videoUrl": [],
+            "durationSeconds": 300
+        },
+        {
+            "name": "Deep breathing",
+            "durationSeconds": 180,
+            "logQuantity": false,
+            "videoUrl": [
+                "https://www.youtube.com/watch?v=36mnXAQGRzc"
+            ]
+        }
+    ],
+    "breakAfterMinutes": 15,
+    "breakActivities": [
+        {
+            "name": "Micro-workout",
+            "durationSeconds": 30,
+            "includeInEveryBreak": true,
+            "videoUrl": [],
+            "type": "random-choice",
+            "choices": [
+                {
+                    "name": "Pushups",
+                    "videoUrl": [],
+                    "logQuantity": true
+                },
+                {
+                    "name": "Situps",
+                    "videoUrl": [],
+                    "logQuantity": true
+                },
+                {
+                    "name": "Squats",
+                    "videoUrl": [],
+                    "logQuantity": true
+                },
+                {
+                    "name": "Lunges",
+                    "videoUrl": [],
+                    "logQuantity": true
+                },
+                {
+                    "name": "Burpees",
+                    "videoUrl": [],
+                    "logQuantity": true
+                },
+                {
+                    "name": "Plank",
+                    "videoUrl": [],
+                    "logQuantity": false
+                },
+                {
+                    "name": "Dance like no-one's watching",
+                    "videoUrl": [],
+                    "logQuantity": true,
+                    "logQuantityQuestion": ""
+                }
+            ]
+        },
+        {
+            "name": "Deep breathing",
+            "durationSeconds": 20,
+            "includeInEveryBreak": true,
+            "videoUrl": [
+                "https://www.youtube.com/watch?v=36mnXAQGRzc"
+            ]
+        }
+    ],
+    "eveningHabits": [
+        {
+            "name": "Tidy up desk",
+            "durationSeconds": 180,
+            "videoUrl": [],
+            "logQuantity": false
+        },
+        {
+            "name": "Journal about day",
+            "durationSeconds": 300,
+            "videoUrl": [],
+            "logQuantity": false
+        },
+        {
+            "name": "Plan to-do list and schedule for tomorrow",
+            "durationSeconds": 420,
+            "videoUrl": []
+        }
+    ]
+}
