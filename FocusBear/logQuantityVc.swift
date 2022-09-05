@@ -48,6 +48,9 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
     var logQuantityType = ""
     var lCurrentState:CURRENTSTATE?
     var isReviseQuantity = false
+    var activity_id:String = ""
+    var activity_sequence_id:String = ""
+    var activityChoiceId:String?
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
@@ -77,9 +80,13 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
 //        textFieldQuantityFormatter.minimumFractionDigits = 0
     }
     var textFieldStringCount = 0
-    func resetData(name:String, durationInSeconds:String, logQuantityQuestion:String?, currentState:CURRENTSTATE, logQuantityType:String){
+    func resetData(name:String, durationInSeconds:String, logQuantityQuestion:String?, currentState:CURRENTSTATE, logQuantityType:String, activity_id:String, activity_sequence_id:String, activityChoiceId:String?){
 //        getStringFromDate"yyyy-MM-dd HH:mm:ss"
         //lastActivityPerformedTime
+        self.activityChoiceId = nil
+        self.activityChoiceId = activityChoiceId
+        self.activity_id = activity_id
+        self.activity_sequence_id = activity_sequence_id
         lblError.isHidden = true
         self.lCurrentState = currentState
         self.name = name
@@ -99,8 +106,17 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
         btnOk.isEnabled = true
     }
     @IBAction func btnCancelClicked(_ sender: Any) {
+        addLog(text:"Log quantity-btnCancelClicked")
         self.view.removeFromSuperview()
-        thirdVcObj?.loadGraph(activityName: name, logQuantity: true, logQuantityType: logQuantityType)
+        thirdVcObj?.loadGraph(activityId: self.activity_id, activityName: self.name, logQuantity: true, logQuantityType: self.logQuantityType, activityChoiceId: self.activityChoiceId,activityStartTime: lastActivityPerformedTime!, duration: durationInSeconds, quantity: "0")
+        allApiObject.activityCompletedApi(activity_id: activity_id, activity_sequence_id: activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:0.0, duration_logged:Int(durationInSeconds) ?? 0, choice_id: activityChoiceId, completionHandler: {dic  in
+            DispatchQueue.main.async {
+                
+            }
+            
+            print(dic)
+        })
+       
         if lCurrentState! == ._EVENING_HABIT_{
             if thirdVcObj!.lastHabitIndex >= arrAllEveningHabits.count-1 {
                 thirdVcObj?.startTimer(duration: 30)// evening habit k baad 30 second k baad shutof ho jay isiliye ye timer lagaya
@@ -109,6 +125,7 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
     }
     
     @IBAction func btnOkClicked(_ sender: Any) {
+        addLog(text:"Log quantity-btnOkClicked")
         if textFieldCount.stringValue.isEmpty{
             lblError.isHidden = false//
             lblError.stringValue = "Log quantity can not be empty."
@@ -141,8 +158,15 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
             }
             
             self.view.removeFromSuperview()
-            thirdVcObj?.loadGraph(activityName: name, logQuantity: true, logQuantityType: logQuantityType)
             
+            thirdVcObj?.loadGraph(activityId: self.activity_id, activityName: self.name, logQuantity: true, logQuantityType: self.logQuantityType, activityChoiceId: self.activityChoiceId, activityStartTime: lastActivityPerformedTime!, duration: durationInSeconds, quantity: "\(doubleVal)")
+            allApiObject.activityCompletedApi(activity_id: activity_id, activity_sequence_id: activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:doubleVal, duration_logged:Int(durationInSeconds) ?? 0, choice_id: activityChoiceId, completionHandler: {dic  in
+                DispatchQueue.main.async {
+                    
+                }
+                
+                print(dic)
+            })
             
             if lCurrentState! == ._EVENING_HABIT_{
                 if thirdVcObj!.lastHabitIndex >= arrAllEveningHabits.count-1 {

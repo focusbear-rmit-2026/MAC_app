@@ -116,26 +116,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         
         
         
-        for i in 0..<arrFocusType.count{
-            if let state = arrFocusType[i]["isDefault"] as? Bool{
-                if  state{
-                    if let common = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
-                        if let defaultFocusText = common.value(forKey: "defaultFocusText") as? String{
-                            arrFocusType[i]["name"] = defaultFocusText
-                        }
-                    }
-                }
-            }
-            if let state = arrFocusType[i]["isMeetings"] as? Bool{
-                if  state{
-                    if let common = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
-                        if let defaultFocusText = common.value(forKey: "meetingsFocusText") as? String{
-                            arrFocusType[i]["name"] = defaultFocusText
-                        }
-                    }
-                }
-            }
-        }
+        
         
     }
     
@@ -148,7 +129,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         cp.setTarget(self)
         cp.setAction(#selector(colorDidChange))
         cp.makeKeyAndOrderFront(self)
-        cp.isContinuous = true
+        cp.isContinuous = false// qki api call hogi isliye false kiya
         cp.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.numberOfWindowLevelKeys)))
         //  self.perform(#selector(colorDidChange), with: nil, afterDelay: 3)
     }
@@ -159,7 +140,6 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         colorWell.color = cp.color
         var dic = arrFocusType[tblViewFocusType.selectedRow]
         dic["color"] = getColorString(color: colorWell.color)
-
         arrFocusType[tblViewFocusType.selectedRow] = dic
         tblViewFocusType.reloadData(forRowIndexes: IndexSet(arrayLiteral: tblViewFocusType.selectedRow), columnIndexes: IndexSet(arrayLiteral: 0))
         
@@ -167,7 +147,12 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         tblViewFocusType.scrollRowToVisible(tblViewFocusType.selectedRow)
         checkState()
         UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
-        
+        allApiObject.editFocusMode(focusType: dic, completionHandler: {newDic in
+            DispatchQueue.main.async {
+                print("*************************api called*****************")
+                
+            }
+        })
     }
     
     @objc private func tableViewDuplicateItemClicked(_ sender: AnyObject) {
@@ -199,6 +184,9 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         }
         item["name"] = newName
         item["isOn"] = false
+        item.removeValue(forKey: "id")
+        let id = getUuid()
+        item["id"] = id
         var newRow = 0
         if !isDefault{//if default than duplicate will second last //tod test
             newRow = row + 1
@@ -214,6 +202,18 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         focusPreferencesVcObj?.checkState()
 
         UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+        
+        allApiObject.addFocusMode(focusType: item, completionHandler: { newDic in
+            if newDic != nil{
+                DispatchQueue.main.async {
+//                    item["id"] = newDic!.value(forKey: "id") as? String ?? ""//["id"] as? String ?? ""
+                    
+                }
+            }
+            
+        })
+        
+        
     }
     @IBAction func btnDuplicateFocusTypeClicked(_ sender: Any) {
         makeDuplicateFocus(row: tblViewFocusType.selectedRow)
@@ -301,10 +301,17 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         if selectedRow != -1{
             arrFocusType[selectedRow]["isAllowedAllApps"] = true
             UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+            allApiObject.editFocusMode(focusType: arrFocusType[selectedRow], completionHandler: {newDic in
+                DispatchQueue.main.async {
+
+                }
+            })
         }
         if arrFocusType[selectedRow]["isOn"] as? Bool == true{
             appdelegate!.fillAllowAppArray()
         }
+        
+        
     }
     @IBAction func radioBtnAllowSelectedAppsClicked(_ sender: Any) {
         radioBtnAllowAllApps.state = .off
@@ -315,6 +322,11 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         if selectedRow != -1{
             arrFocusType[selectedRow]["isAllowedAllApps"] = false
             UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+            allApiObject.editFocusMode(focusType: arrFocusType[selectedRow], completionHandler: {newDic in
+                DispatchQueue.main.async {
+
+                }
+            })
         }
         if arrFocusType[selectedRow]["isOn"] as? Bool == true{
             appdelegate!.fillAllowAppArray()
@@ -331,6 +343,11 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         if selectedRow != -1{
             arrFocusType[selectedRow]["isAllowedAllUrls"] = true
             UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+            allApiObject.editFocusMode(focusType: arrFocusType[selectedRow], completionHandler: {newDic in
+                DispatchQueue.main.async {
+
+                }
+            })
         }
         if arrFocusType[selectedRow]["isOn"] as? Bool == true{
             appdelegate!.fillAllowUrlArray()
@@ -345,6 +362,11 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         if selectedRow != -1{
             arrFocusType[selectedRow]["isAllowedAllUrls"] = false
             UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+            allApiObject.editFocusMode(focusType: arrFocusType[selectedRow], completionHandler: {newDic in
+                DispatchQueue.main.async {
+
+                }
+            })
         }
         if arrFocusType[selectedRow]["isOn"] as? Bool == true{
             appdelegate!.fillAllowUrlArray()
@@ -547,7 +569,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
     @IBAction func btnRemoveFocusTypeClicked(_ sender: Any) {
         if isHardCorePomodoroModeOn{
             let alert = NSAlert()
-            if let state = UserDefaults.standard.object(forKey: kUserdefaultsHideAllWindowInScreenShots) as? Bool{
+            if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
                 if state{
                     alert.window.sharingType = .none
                 }
@@ -569,7 +591,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         if let state = arrFocusType[selectedRow]["isDefault"] as? Bool{//this key will only be awailable in default focus type
             if state{
                 let alertFocusModeDefault = NSAlert()
-                if let state = UserDefaults.standard.object(forKey: kUserdefaultsHideAllWindowInScreenShots) as? Bool{
+                if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
                     if state{
                         alertFocusModeDefault.window.sharingType = .none
                     }
@@ -593,7 +615,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         if let state = arrFocusType[selectedRow]["isMeetings"] as? Bool{//this key will only be awailable in default focus type
             if state{
                 let alertFocusModeDefault = NSAlert()
-                if let state = UserDefaults.standard.object(forKey: kUserdefaultsHideAllWindowInScreenShots) as? Bool{
+                if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
                     if state{
                         alertFocusModeDefault.window.sharingType = .none
                     }
@@ -614,18 +636,18 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
             }
         }
         
-        if let state = UserDefaults.standard.object(forKey: kUserdefaultsPomodoroModeEnabled) as? Bool{
+        if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsPomodoroModeEnabled) as? Bool{
             if state{
-                if let hardCorePomodoroState = UserDefaults.standard.object(forKey: kUserdefaultsHardcorePomodoroEnabled) as? Bool{
+                if let hardCorePomodoroState = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHardcorePomodoroEnabled) as? Bool{
                     
                     if hardCorePomodoroState{
-                        if let name = UserDefaults.standard.object(forKey: kUserdefaultsHardcorePomodoroFocusedName) as? String{
+                        if let name = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHardcorePomodoroFocusedName) as? String{
                             if arrFocusType[selectedRow]["name"] as? String == name{
 //                                UserDefaults.standard.set(textFieldSelectedFocusType.stringValue, forKey: kUserdefaultsHardcorePomodoroFocusedName)
                                 
                                 //The selected focus mode is enabled in hardcore pomodoro mode. please disable hardcore pomodoro mode to delete this.
                                 let alert = NSAlert()
-                                if let state = UserDefaults.standard.object(forKey: kUserdefaultsHideAllWindowInScreenShots) as? Bool{
+                                if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
                                     if state{
                                         alert.window.sharingType = .none
                                     }
@@ -652,7 +674,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         
         if arrFocusType[selectedRow]["isOn"] as? Bool == true{
             let alertFocusModeOn = NSAlert()
-            if let state = UserDefaults.standard.object(forKey: kUserdefaultsHideAllWindowInScreenShots) as? Bool{
+            if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
                 if state{
                     alertFocusModeOn.window.sharingType = .none
                 }
@@ -668,7 +690,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         }
         
         let alert = NSAlert()
-        if let state = UserDefaults.standard.object(forKey: kUserdefaultsHideAllWindowInScreenShots) as? Bool{
+        if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
             if state{
                 alert.window.sharingType = .none
             }
@@ -694,6 +716,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
             if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
                 if arrFocusType.count > selectedRow{
 
+                    let id = arrFocusType[selectedRow]["id"] as? String ?? ""
                     arrFocusType.remove(at: selectedRow)
                     self.tblViewFocusType.reloadData()
                     self.checkState()
@@ -704,6 +727,22 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
                             startingFocusWindowControllerObj?.close()
                         }
                     }
+                    
+                    
+                    allApiObject.deleteFocusMode(id: id, completionHandler: {isDeleted in
+                       
+                        DispatchQueue.main.async {
+                            if isDeleted{
+                                
+                            }else{
+                                
+                            }
+                            
+                        }
+                        
+                    })
+                    
+                    
                 }
             }
         })
@@ -740,7 +779,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
             if self.tblViewFocusType.selectedRow != -1{
                 var appsArray = [String]()
                 var appsUrlArray = [URL]()
-                if let arr = arrFocusType[self.tblViewFocusType.selectedRow]["appsArray"] as? [String]{
+                if let arr = arrFocusType[self.tblViewFocusType.selectedRow]["allowed_apps"] as? [String]{
                     appsArray = arr
                 }
                 //
@@ -763,7 +802,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
                         isContainAlready = true
                     }
                 }
-                arrFocusType[self.tblViewFocusType.selectedRow]["appsArray"] = appsArray
+                arrFocusType[self.tblViewFocusType.selectedRow]["allowed_apps"] = appsArray
                 self.tblViewAllowedApps.reloadData()
                 self.tblViewAllowedApps.selectRowIndexes(IndexSet(arrayLiteral: (appsArray.count - 1)), byExtendingSelection: false)
                 self.tblViewAllowedApps.scrollRowToVisible(appsArray.count - 1)
@@ -772,13 +811,19 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
                 if isContainAlready{
                     self.showAlertAppAlreadyAdded()
                 }
+                
+                allApiObject.editFocusMode(focusType: arrFocusType[self.tblViewFocusType.selectedRow], completionHandler: {newDic in
+                    DispatchQueue.main.async {
+
+                    }
+                })
             }
         }
         
     }//this app is already added in the list.
     func showAlertAppAlreadyAdded(){
         let alert = NSAlert()
-        if let state = UserDefaults.standard.object(forKey: kUserdefaultsHideAllWindowInScreenShots) as? Bool{
+        if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
             if state{
                 alert.window.sharingType = .none
             }
@@ -809,15 +854,20 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         
         if arrFocusType.count > selectedFocusTypeRow{
 
-            if var arr = arrFocusType[selectedFocusTypeRow]["appsArray"] as? [String]{
+            if var arr = arrFocusType[selectedFocusTypeRow]["allowed_apps"] as? [String]{
                 if arr.count > selectedAppsRow{
                     arr.remove(at: selectedAppsRow)
                 }
-                arrFocusType[selectedFocusTypeRow]["appsArray"] = arr
+                arrFocusType[selectedFocusTypeRow]["allowed_apps"] = arr
             }
             self.tblViewAllowedApps.reloadData()
         }
         UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+        allApiObject.editFocusMode(focusType: arrFocusType[selectedFocusTypeRow], completionHandler: {newDic in
+            DispatchQueue.main.async {
+
+            }
+        })
         if arrFocusType[selectedFocusTypeRow]["isOn"] as? Bool == true{
             appdelegate!.fillAllowAppArray()
         }
@@ -840,15 +890,20 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         
         if arrFocusType.count > selectedFocusTypeRow{
 
-            if var arr = arrFocusType[selectedFocusTypeRow]["urlsArray"] as? [String]{
+            if var arr = arrFocusType[selectedFocusTypeRow]["allowed_urls"] as? [String]{
                 if arr.count > selectedUrlsRow{
                     arr.remove(at: selectedUrlsRow)
                 }
-                arrFocusType[selectedFocusTypeRow]["urlsArray"] = arr
+                arrFocusType[selectedFocusTypeRow]["allowed_urls"] = arr
             }
             self.tblViewAllowedUrls.reloadData()
         }
         UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+        allApiObject.editFocusMode(focusType: arrFocusType[selectedFocusTypeRow], completionHandler: {newDic in
+            DispatchQueue.main.async {
+
+            }
+        })
         if arrFocusType[selectedFocusTypeRow]["isOn"] as? Bool == true{
             appdelegate!.fillAllowUrlArray()
         }
@@ -860,21 +915,21 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         }
         self.presentAsSheet(focusPreferencesAdvancedVcObj!)
     }
-    @IBAction func colorWellClicked(_ sender: Any) {
-        if tblViewFocusType.selectedRow == -1{
-            return;
-        }
-        var dic = arrFocusType[tblViewFocusType.selectedRow]
-        dic["color"] = getColorString(color: colorWell.color)
-
-        arrFocusType[tblViewFocusType.selectedRow] = dic
-        tblViewFocusType.reloadData(forRowIndexes: IndexSet(arrayLiteral: tblViewFocusType.selectedRow), columnIndexes: IndexSet(arrayLiteral: 0))
-        
-        tblViewFocusType.selectRowIndexes(IndexSet(arrayLiteral: tblViewFocusType.selectedRow), byExtendingSelection: false)
-        tblViewFocusType.scrollRowToVisible(tblViewFocusType.selectedRow)
-        checkState()
-        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
-    }
+//    @IBAction func colorWellClicked(_ sender: Any) {
+//        if tblViewFocusType.selectedRow == -1{
+//            return;
+//        }
+//        var dic = arrFocusType[tblViewFocusType.selectedRow]
+//        dic["color"] = getColorString(color: colorWell.color)
+//
+//        arrFocusType[tblViewFocusType.selectedRow] = dic
+//        tblViewFocusType.reloadData(forRowIndexes: IndexSet(arrayLiteral: tblViewFocusType.selectedRow), columnIndexes: IndexSet(arrayLiteral: 0))
+//        
+//        tblViewFocusType.selectRowIndexes(IndexSet(arrayLiteral: tblViewFocusType.selectedRow), byExtendingSelection: false)
+//        tblViewFocusType.scrollRowToVisible(tblViewFocusType.selectedRow)
+//        checkState()
+//        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+//    }
 }
 extension focusPreferencesVc:NSTextFieldDelegate{
     func controlTextDidEndEditing(_ obj: Notification) {
@@ -888,7 +943,7 @@ extension focusPreferencesVc:NSTextFieldDelegate{
                         if let name = dic["name"] as? String{
                             if name.lowercased() == newName(){
                                 let alert = NSAlert()
-                                if let state = UserDefaults.standard.object(forKey: kUserdefaultsHideAllWindowInScreenShots) as? Bool{
+                                if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
                                     if state{
                                         alert.window.sharingType = .none
                                     }
@@ -916,6 +971,10 @@ extension focusPreferencesVc:NSTextFieldDelegate{
                 var dic = arrFocusType[selectedRow]
                 let oldName = dic["name"] as? String ?? ""
                 dic["name"] = textFieldSelectedFocusType.stringValue
+                
+                
+                textFieldSelectedFocusType.isEnabled = false
+                
                 arrFocusType[selectedRow] = dic
                 tblViewFocusType.reloadData(forRowIndexes: IndexSet(arrayLiteral: selectedRow), columnIndexes: IndexSet(arrayLiteral: 0))
                 
@@ -928,14 +987,14 @@ extension focusPreferencesVc:NSTextFieldDelegate{
                 
                 
                 // if auto pomodoro mode is on and if hardcore pomodoro is also enabled then if user change focus mode name which is selected in hardcore pomodoro focus then hardcore pomodoro focus name should be change here :-
-                if let state = UserDefaults.standard.object(forKey: kUserdefaultsPomodoroModeEnabled) as? Bool{
+                if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsPomodoroModeEnabled) as? Bool{
                     if state{
-                        if let hardCorePomodoroState = UserDefaults.standard.object(forKey: kUserdefaultsHardcorePomodoroEnabled) as? Bool{
+                        if let hardCorePomodoroState = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHardcorePomodoroEnabled) as? Bool{
                             
                             if hardCorePomodoroState{
-                                if let name = UserDefaults.standard.object(forKey: kUserdefaultsHardcorePomodoroFocusedName) as? String{
+                                if let name = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHardcorePomodoroFocusedName) as? String{
                                     if oldName == name{
-                                        UserDefaults.standard.set(textFieldSelectedFocusType.stringValue, forKey: kUserdefaultsHardcorePomodoroFocusedName)
+                                        UserDefaults.standard.set(textFieldSelectedFocusType.stringValue, forKey: SettingsManagerObject.kUserdefaultsHardcorePomodoroFocusedName)
                                     }
                                 }
                                 
@@ -946,6 +1005,13 @@ extension focusPreferencesVc:NSTextFieldDelegate{
                     
                 }
                 //
+                allApiObject.editFocusMode(focusType: dic, completionHandler: {newDic in
+                    DispatchQueue.main.async { [self] in
+                        print("*************************api called*****************")
+                        textFieldSelectedFocusType.isEnabled = true
+                    }
+                })
+  
             }
         }
     }
@@ -964,7 +1030,7 @@ extension focusPreferencesVc: NSTableViewDelegate, NSTableViewDataSource{
             }else {
                 let row = tblViewFocusType.selectedRow
                 if row != -1{
-                    if let arr = arrFocusType[row]["appsArray"] as? [String]{
+                    if let arr = arrFocusType[row]["allowed_apps"] as? [String]{
                         btnRemoveApp.isEnabled = false
                         return arr.count
                     }
@@ -977,7 +1043,7 @@ extension focusPreferencesVc: NSTableViewDelegate, NSTableViewDataSource{
             }else {
                 let row = tblViewFocusType.selectedRow
                 if row != -1{
-                    if let arr = arrFocusType[row]["urlsArray"] as? [String]{
+                    if let arr = arrFocusType[row]["allowed_urls"] as? [String]{
                         btnRemoveUrl.isEnabled = false
                         return arr.count
                     }
@@ -1005,7 +1071,7 @@ extension focusPreferencesVc: NSTableViewDelegate, NSTableViewDataSource{
             }else if tableView == tblViewAllowedApps{
                 
                 if tblViewFocusType.selectedRow != -1{
-                    if let arr = arrFocusType[tblViewFocusType.selectedRow]["appsArray"] as? [String]{
+                    if let arr = arrFocusType[tblViewFocusType.selectedRow]["allowed_apps"] as? [String]{
                         
                         if row < arr.count{
                             let url = URL(fileURLWithPath: arr[row])
@@ -1020,7 +1086,7 @@ extension focusPreferencesVc: NSTableViewDelegate, NSTableViewDataSource{
                 }
             }else if tableView == tblViewAllowedUrls{
                 if tblViewFocusType.selectedRow != -1{
-                    if let arr = arrFocusType[tblViewFocusType.selectedRow]["urlsArray"] as? [String]{
+                    if let arr = arrFocusType[tblViewFocusType.selectedRow]["allowed_urls"] as? [String]{
 //                        let url = URL(fileURLWithPath: arr[row])
                         if row < arr.count{
                             cell.lblTitle.stringValue = arr[row]
@@ -1136,8 +1202,17 @@ extension focusPreferencesVc: NSTableViewDelegate, NSTableViewDataSource{
         }
     }
     
+//    func tableView(_ tableView: NSTableView, shouldSelectRow row: Int) -> Bool {
+//        if textFieldSelectedFocusType.isFocused{
+//            textFieldSelectedFocusType.window?.makeFirstResponder(nil)
+//            return false
+//        }else{
+//            return true
+//        }
+//    }
 
 }
+
 
 
 

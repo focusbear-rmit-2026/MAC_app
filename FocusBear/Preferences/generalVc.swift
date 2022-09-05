@@ -11,6 +11,8 @@ import Cocoa
 class generalVc: NSViewController, NSTextFieldDelegate {
 
     
+    @IBOutlet weak var lblTitleSound: NSTextField!
+    @IBOutlet weak var lblVersion: NSTextField!
     @IBOutlet weak var lblMinutesBreak: NSTextField!
     @IBOutlet weak var lblMinutesPomodoro: NSTextField!
     @IBOutlet weak var textFieldPomodoroDuration: NSTextField!
@@ -33,6 +35,8 @@ class generalVc: NSViewController, NSTextFieldDelegate {
     @IBOutlet weak var lblCheckBoxStringSurveillance: NSTextField!
     @IBOutlet weak var checkBoxHideAppScreenshots: NSButton!
     
+    @IBOutlet weak var lblCheckBoxSound: NSTextField!
+    @IBOutlet weak var checkBoxSound: NSButton!
     @IBOutlet weak var lblTitlePomodoroModeDuration: NSTextField!
     @IBOutlet weak var lblTitlePomodoroMode: NSTextField!
     @IBOutlet weak var lblTitleBreakDuration: NSTextField!
@@ -48,12 +52,15 @@ class generalVc: NSViewController, NSTextFieldDelegate {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-
+//        Sound:Play sound effects
+        lblTitleSound.stringValue = "Sound:"
+        lblCheckBoxSound.stringValue = "Play sound effects"
+        
         lblTitleSurveillance.stringValue = "Surveillance:"
         lblCheckBoxStringSurveillance.stringValue = "I'm under employer surveillance"
         lblDescriptionSurveillance.stringValue = "Hide Focus Bear in screenshots"
         
-        
+        var versionText = "version:"
         var titleReduceMotion = "Reduce motion:"
         var checkBoxReduceMotionText = "Prefer reduced motion (don't show animated bears)"
         var titleAskNextHabit = "Next habit reminder:"
@@ -90,10 +97,12 @@ class generalVc: NSViewController, NSTextFieldDelegate {
             lblDescriptionSurveillance.stringValue = preferencesInfo.value(forKey: "descriptionSurveillanceText") as? String ?? lblDescriptionSurveillance.stringValue
             
             workDurationEmptyErrorText = preferencesInfo.value(forKey: "workDurationEmptyErrorText") as? String ?? workDurationEmptyErrorText
-             workDurationZeroErrorText = preferencesInfo.value(forKey: "workDurationZeroErrorText") as? String ?? workDurationZeroErrorText
-             breakDurationEmptyErrorText = preferencesInfo.value(forKey: "breakDurationEmptyErrorText") as? String ?? breakDurationEmptyErrorText
-             breakDurationZeroErrorText = preferencesInfo.value(forKey: "breakDurationZeroErrorText") as? String ?? breakDurationZeroErrorText
- 
+            workDurationZeroErrorText = preferencesInfo.value(forKey: "workDurationZeroErrorText") as? String ?? workDurationZeroErrorText
+            breakDurationEmptyErrorText = preferencesInfo.value(forKey: "breakDurationEmptyErrorText") as? String ?? breakDurationEmptyErrorText
+            breakDurationZeroErrorText = preferencesInfo.value(forKey: "breakDurationZeroErrorText") as? String ?? breakDurationZeroErrorText
+            versionText = preferencesInfo.value(forKey: "versionText") as? String ?? versionText
+            lblTitleSound.stringValue = preferencesInfo.value(forKey: "titleSound") as? String ?? lblTitleSound.stringValue
+            lblCheckBoxSound.stringValue = preferencesInfo.value(forKey: "checkBoxSoundText") as? String ?? lblCheckBoxSound.stringValue
         }
 
         lblTitlePomodoroModeDuration.stringValue = pomodoroModeDurationText
@@ -123,34 +132,56 @@ class generalVc: NSViewController, NSTextFieldDelegate {
         textFieldPomodoroDuration.delegate = self
         textFieldBreakDuration.delegate = self
         
+
+        if let version = Bundle.main.releaseVersionNumber,let build = Bundle.main.buildVersionNumber{
+            lblVersion.stringValue = versionText + " " + version + "." + build
+        }else{
+            lblVersion.stringValue = ""
+        }
     }
     
     
     override func viewWillAppear() {
        
+        
+        if SettingsManagerObject.isSoundEnabled{
+            checkBoxSound.state = .on
+        }else{
+            checkBoxSound.state = .off
+        }
+        
         resetPomodoroModeState()
         
-        
-        if let state = UserDefaults.standard.object(forKey: kUserdefaultsReducedMotion) as? Bool{
-            if state{
-                checkBoxReduceMotion.state = .on
-                kIsReducedMotion = true
-            }else{
-                checkBoxReduceMotion.state = .off
-                kIsReducedMotion = false
-            }
+        if SettingsManagerObject.kIsReducedMotion{
+            checkBoxReduceMotion.state = .on
+        }else{
+            checkBoxReduceMotion.state = .off
         }
-        if let state = UserDefaults.standard.object(forKey: kUserdefaultsPromptToRememberHabit) as? Bool{
-            if state{
-                checkBoxPromptToAskNextHabit.state = .on
-                isPromptToRememberHabit = true
-            }else{
-                checkBoxPromptToAskNextHabit.state = .off
-                isPromptToRememberHabit = false
-            }
+        if SettingsManagerObject.isPromptToRememberHabit{
+            checkBoxPromptToAskNextHabit.state = .on
+        }else{
+            checkBoxPromptToAskNextHabit.state = .off
         }
+//        if let state = UserDefaults.standard.object(forKey: kUserdefaultsReducedMotion) as? Bool{
+//            if state{
+//                checkBoxReduceMotion.state = .on
+//                kIsReducedMotion = true
+//            }else{
+//                checkBoxReduceMotion.state = .off
+//                kIsReducedMotion = false
+//            }
+//        }
+//        if let state = UserDefaults.standard.object(forKey: kUserdefaultsPromptToRememberHabit) as? Bool{
+//            if state{
+//                checkBoxPromptToAskNextHabit.state = .on
+//                isPromptToRememberHabit = true
+//            }else{
+//                checkBoxPromptToAskNextHabit.state = .off
+//                isPromptToRememberHabit = false
+//            }
+//        }
         
-        if let language = UserDefaults.standard.object(forKey: kUserdefaultsSelectedLanguage) as? String{
+        if let language = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsSelectedLanguage) as? String{
             for i in 0..<arrLanguageDic.count{
                 if arrLanguageDic[i]["id"]  == language{
                     popUpBtnselectLanguage.selectItem(at: i)
@@ -161,7 +192,7 @@ class generalVc: NSViewController, NSTextFieldDelegate {
 
         
         
-        if let state = UserDefaults.standard.object(forKey: kUserdefaultsHideAllWindowInScreenShots) as? Bool{
+        if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
             if state{
                 checkBoxHideAppScreenshots.state = .on
             }else{
@@ -169,29 +200,41 @@ class generalVc: NSViewController, NSTextFieldDelegate {
             }
         }
         
-        if let duration = UserDefaults.standard.object(forKey: kUserdefaultsPomodoroDurationMinutes) as? Int{
+        if let duration = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsPomodoroDurationMinutes) as? Int{
             textFieldPomodoroDuration.stringValue = "\(duration)"
         }
         
-        if let duration = UserDefaults.standard.object(forKey: kUserdefaultsBreakDurationMinutes) as? Int{
+        if let duration = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsBreakDurationMinutes) as? Int{
             textFieldBreakDuration.stringValue = "\(duration)"
         }
     }
+    override func viewWillDisappear() {
+        SettingsManagerObject.putUserLocalDeviceSettings()
+    }
     override func viewDidAppear() {
         self.textFieldPomodoroDuration.window?.makeFirstResponder(nil)
+        
+        if Reachability.isConnectedToNetwork() == false {
+            if self.view.window != nil{
+                showAlertNoInternet(window: self.view.window!)
+            }
+            return
+        }
+        
     }
+    
     @IBAction func checkBoxHideAppScreenshotsClicked(_ sender: Any) {
         let windows = NSApp.windows
-        
+        SettingsManagerObject.isSettingsChanged = true
         
         if checkBoxHideAppScreenshots.state == .on{
-            UserDefaults.standard.set(true, forKey: kUserdefaultsHideAllWindowInScreenShots)
+            UserDefaults.standard.set(true, forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots)
             for win in windows{
                 print(win)
                 win.sharingType = .none
             }
         }else{
-            UserDefaults.standard.set(false, forKey: kUserdefaultsHideAllWindowInScreenShots)
+            UserDefaults.standard.set(false, forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots)
             for win in windows{
                 print(win)
                 win.sharingType = .readOnly
@@ -200,23 +243,23 @@ class generalVc: NSViewController, NSTextFieldDelegate {
     }
     
     func resetPomodoroModeState(){
-        if let state = UserDefaults.standard.object(forKey: kUserdefaultsPomodoroModeEnabled) as? Bool{
+        if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsPomodoroModeEnabled) as? Bool{
             if state{
                 checkBoxPomodoroMode.state = .on
-                if let hardCorePomodoroState = UserDefaults.standard.object(forKey: kUserdefaultsHardcorePomodoroEnabled) as? Bool{
+                if let hardCorePomodoroState = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHardcorePomodoroEnabled) as? Bool{
 
                     if hardCorePomodoroState{
                         var hardCorePomodoroFocusName = ""
                         var hardCorePomodoroCount = 2
                         var arrDaysHardcorePomodoro = [String]()
 
-                        if let arrDays = UserDefaults.standard.object(forKey: kUserdefaultsHardcorePomodoroArrDays) as? [String]{
+                        if let arrDays = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHardcorePomodoroArrDays) as? [String]{
                             arrDaysHardcorePomodoro = arrDays
                         }
-                        if let count = UserDefaults.standard.object(forKey: kUserdefaultsHardcorePomodoroFocusedCount) as? Int{
+                        if let count = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHardcorePomodoroFocusedCount) as? Int{
                             hardCorePomodoroCount = count
                         }
-                        if let name = UserDefaults.standard.object(forKey: kUserdefaultsHardcorePomodoroFocusedName) as? String{
+                        if let name = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHardcorePomodoroFocusedName) as? String{
                             hardCorePomodoroFocusName = name
                         }
                         
@@ -232,19 +275,19 @@ class generalVc: NSViewController, NSTextFieldDelegate {
                             
                             if let common = configjson.value(forKey: "common") as? NSDictionary{
                                 switch day {
-                                case kMonday:
+                                case SettingsManagerObject.kMonday:
                                     day = common.value(forKey: "mondayText") as? String ?? day
-                                case kTuesday:
+                                case SettingsManagerObject.kTuesday:
                                     day = common.value(forKey: "tuesdayText") as? String ?? day
-                                case kWednesday:
+                                case SettingsManagerObject.kWednesday:
                                     day = common.value(forKey: "wednesdayText") as? String ?? day
-                                case kThursday:
+                                case SettingsManagerObject.kThursday:
                                     day = common.value(forKey: "thursdayText") as? String ?? day
-                                case kFriday:
+                                case SettingsManagerObject.kFriday:
                                     day = common.value(forKey: "fridayText") as? String ?? day
-                                case kSaturday:
+                                case SettingsManagerObject.kSaturday:
                                     day = common.value(forKey: "saturdayText") as? String ?? day
-                                case kSunday:
+                                case SettingsManagerObject.kSunday:
                                     day = common.value(forKey: "sundayText") as? String ?? day
                                 default:
                                     day = common.value(forKey: "mondayText") as? String ?? day
@@ -296,7 +339,7 @@ class generalVc: NSViewController, NSTextFieldDelegate {
 ////                }else{
 //                    textfield.stringValue = "\(count)"
 ////                }
-//                UserDefaults.standard.set(count, forKey: kUserdefaultsPomodoroDurationMinutes)
+//                UserDefaults.standard.set(count, forKey: SettingsManagerObject.kUserdefaultsPomodoroDurationMinutes)
 //            }
 //        }
 //    }
@@ -310,7 +353,7 @@ class generalVc: NSViewController, NSTextFieldDelegate {
                         if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
                             tabview.selectedTabViewItemIndex = 0
                         }
-                        if let duration = UserDefaults.standard.object(forKey: kUserdefaultsPomodoroDurationMinutes) as? Int{
+                        if let duration = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsPomodoroDurationMinutes) as? Int{
                             self.textFieldPomodoroDuration.stringValue = "\(duration)"
                         }
                         textfield.setFocus()
@@ -322,7 +365,7 @@ class generalVc: NSViewController, NSTextFieldDelegate {
                         if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
                             tabview.selectedTabViewItemIndex = 0
                         }
-                        if let duration = UserDefaults.standard.object(forKey: kUserdefaultsPomodoroDurationMinutes) as? Int{
+                        if let duration = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsPomodoroDurationMinutes) as? Int{
                             self.textFieldPomodoroDuration.stringValue = "\(duration)"
                         }
                         textfield.setFocus()
@@ -330,14 +373,20 @@ class generalVc: NSViewController, NSTextFieldDelegate {
                     return;
                 }
                 let count = textfield.integerValue
-                UserDefaults.standard.set(count, forKey: kUserdefaultsPomodoroDurationMinutes)
+                if let oldCount = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsPomodoroDurationMinutes) as? Int{
+                    if count == oldCount{
+                        return;
+                    }
+                }
+                SettingsManagerObject.isSettingsChanged = true
+                UserDefaults.standard.set(count, forKey: SettingsManagerObject.kUserdefaultsPomodoroDurationMinutes)
             }else if textfield == textFieldBreakDuration{
                 if textFieldBreakDuration.stringValue.isEmpty{
                     showAlert(msg: breakDurationEmptyErrorText, completionHandler: {_ in
                         if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
                             tabview.selectedTabViewItemIndex = 0
                         }
-                        if let duration = UserDefaults.standard.object(forKey: kUserdefaultsBreakDurationMinutes) as? Int{
+                        if let duration = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsBreakDurationMinutes) as? Int{
                             self.textFieldBreakDuration.stringValue = "\(duration)"
                         }
                         textfield.setFocus()
@@ -349,7 +398,7 @@ class generalVc: NSViewController, NSTextFieldDelegate {
                         if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
                             tabview.selectedTabViewItemIndex = 0
                         }
-                        if let duration = UserDefaults.standard.object(forKey: kUserdefaultsBreakDurationMinutes) as? Int{
+                        if let duration = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsBreakDurationMinutes) as? Int{
                             self.textFieldBreakDuration.stringValue = "\(duration)"
                         }
                         textfield.setFocus()
@@ -357,7 +406,13 @@ class generalVc: NSViewController, NSTextFieldDelegate {
                     return;
                 }
                 let count = textfield.integerValue
-                UserDefaults.standard.set(count, forKey: kUserdefaultsBreakDurationMinutes)
+                if let oldCount = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsBreakDurationMinutes) as? Int{
+                    if count == oldCount{
+                        return;
+                    }
+                }
+                SettingsManagerObject.isSettingsChanged = true
+                UserDefaults.standard.set(count, forKey: SettingsManagerObject.kUserdefaultsBreakDurationMinutes)
             }
         }
     }
@@ -365,7 +420,7 @@ class generalVc: NSViewController, NSTextFieldDelegate {
     
     func showAlert(msg:String, completionHandler: @escaping(_ result: Bool) -> ()) {
         let alertWarning = NSAlert()
-        if let state = UserDefaults.standard.object(forKey: kUserdefaultsHideAllWindowInScreenShots) as? Bool{
+        if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
             if state{
                 alertWarning.window.sharingType = .none
             }
@@ -385,7 +440,7 @@ class generalVc: NSViewController, NSTextFieldDelegate {
     @IBAction func popUpBtnselectLanguageClicked(_ sender: Any) {
         //        var
         var oldSelectedIndex = 0
-        if let language = UserDefaults.standard.object(forKey: kUserdefaultsSelectedLanguage) as? String{
+        if let language = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsSelectedLanguage) as? String{
             for i in 0..<arrLanguageDic.count{
                 if arrLanguageDic[i]["id"]  == language{
                     oldSelectedIndex = i
@@ -396,8 +451,9 @@ class generalVc: NSViewController, NSTextFieldDelegate {
         if popUpBtnselectLanguage.indexOfSelectedItem == oldSelectedIndex{
             return;
         }
+//        SettingsManagerObject.isSettingsChanged = true
         let alert = NSAlert()
-        if let state = UserDefaults.standard.object(forKey: kUserdefaultsHideAllWindowInScreenShots) as? Bool{
+        if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
             if state{
                 alert.window.sharingType = .none
             }
@@ -414,7 +470,8 @@ class generalVc: NSViewController, NSTextFieldDelegate {
         alert.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
             if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
                 addLog(text: "language changed by user to \(self.popUpBtnselectLanguage.title)")
-                UserDefaults.standard.set(arrLanguageDic[self.popUpBtnselectLanguage.indexOfSelectedItem]["id"], forKey: kUserdefaultsSelectedLanguage)
+                UserDefaults.standard.set(arrLanguageDic[self.popUpBtnselectLanguage.indexOfSelectedItem]["id"], forKey: SettingsManagerObject.kUserdefaultsSelectedLanguage)
+                
                 appdelegate?.quitAndRestartApp()
             }else{
                 self.popUpBtnselectLanguage.selectItem(at: oldSelectedIndex)
@@ -443,16 +500,17 @@ class generalVc: NSViewController, NSTextFieldDelegate {
 
     
     @IBAction func checkBoxPomodoroModeClicked(_ sender: Any) {
+        SettingsManagerObject.isSettingsChanged = true
         if checkBoxPomodoroMode.state == .on{
-            UserDefaults.standard.set(true, forKey: kUserdefaultsPomodoroModeEnabled)
+            UserDefaults.standard.set(true, forKey: SettingsManagerObject.kUserdefaultsPomodoroModeEnabled)
             
-            if let hardCorePomodoroState = UserDefaults.standard.object(forKey: kUserdefaultsHardcorePomodoroEnabled) as? Bool{
+            if let hardCorePomodoroState = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHardcorePomodoroEnabled) as? Bool{
                 if hardCorePomodoroState{
-                    if let name = UserDefaults.standard.object(forKey: kUserdefaultsHardcorePomodoroFocusedName) as? String{
+                    if let name = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHardcorePomodoroFocusedName) as? String{
                         let filterArr = arrFocusType.filter { $0["name"] as? String ?? "" == name}
                         if filterArr.count == 0{
                             let alert = NSAlert()
-                            if let state = UserDefaults.standard.object(forKey: kUserdefaultsHideAllWindowInScreenShots) as? Bool{
+                            if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
                                 if state{
                                     alert.window.sharingType = .none
                                 }
@@ -477,26 +535,37 @@ class generalVc: NSViewController, NSTextFieldDelegate {
                 }
             }
         }else{
-            UserDefaults.standard.set(false, forKey: kUserdefaultsPomodoroModeEnabled)
+            UserDefaults.standard.set(false, forKey: SettingsManagerObject.kUserdefaultsPomodoroModeEnabled)
         }
         resetPomodoroModeState()
     }
-    @IBAction func checkBoxReduceMotionClicked(_ sender: Any) {
-        if checkBoxReduceMotion.state == .on{
-            UserDefaults.standard.set(true, forKey: kUserdefaultsReducedMotion)
-            kIsReducedMotion = true
+    @IBAction func checkBoxSoundClicked(_ sender: Any) {
+        SettingsManagerObject.isSettingsChanged = true
+        if checkBoxSound.state == .on{
+            SettingsManagerObject.isSoundEnabled = true
         }else{
-            UserDefaults.standard.set(false, forKey: kUserdefaultsReducedMotion)
-            kIsReducedMotion = false
+            SettingsManagerObject.isSoundEnabled = false
         }
     }
-    @IBAction func checkBoxPromptToAskNextHabitClicked(_ sender: Any) {
-        if checkBoxPromptToAskNextHabit.state == .on{
-            UserDefaults.standard.set(true, forKey: kUserdefaultsPromptToRememberHabit)
-            isPromptToRememberHabit = true
+    @IBAction func checkBoxReduceMotionClicked(_ sender: Any) {
+        SettingsManagerObject.isSettingsChanged = true
+        if checkBoxReduceMotion.state == .on{
+//            UserDefaults.standard.set(true, forKey: SettingsManagerObject.kUserdefaultsReducedMotion)
+            SettingsManagerObject.kIsReducedMotion = true
         }else{
-            UserDefaults.standard.set(false, forKey: kUserdefaultsPromptToRememberHabit)
-            isPromptToRememberHabit = false
+//            UserDefaults.standard.set(false, forKey: SettingsManagerObject.kUserdefaultsReducedMotion)
+            SettingsManagerObject.kIsReducedMotion = false
+        }
+        
+    }
+    @IBAction func checkBoxPromptToAskNextHabitClicked(_ sender: Any) {
+        SettingsManagerObject.isSettingsChanged = true
+        if checkBoxPromptToAskNextHabit.state == .on{
+//            UserDefaults.standard.set(true, forKey: kUserdefaultsPromptToRememberHabit)
+            SettingsManagerObject.isPromptToRememberHabit = true
+        }else{
+//            UserDefaults.standard.set(false, forKey: kUserdefaultsPromptToRememberHabit)
+            SettingsManagerObject.isPromptToRememberHabit = false
         }
     }
     var pomodoroPreferencesAdvancedVcObj:pomodoroPreferencesAdvancedVc?

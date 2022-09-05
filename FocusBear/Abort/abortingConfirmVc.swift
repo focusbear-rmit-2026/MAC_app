@@ -164,7 +164,7 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
         textViewSomethingElse.delegate = self
     }
     override func viewWillAppear() {
-        if kIsReducedMotion{
+        if SettingsManagerObject.kIsReducedMotion{
             imgViewGif.image = nil
         }else{
             imgViewGif.image = NSImage(named: "Crying_small")
@@ -280,10 +280,9 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
             second = "0\(s)"
         }
         self.lblTimerEmergency.stringValue = "\(minute):\(second)"
-        DispatchQueue.global().async {
+        DispatchQueue.global().sync {
             self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
-            RunLoop.current.add(self.timer!, forMode: RunLoop.Mode.common)
-            RunLoop.current.run()
+            RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
         }
     }
     @objc func performTimerCount() {
@@ -338,13 +337,15 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
         }
     }
     @IBAction func btnDeactivateAppBrokenClicked(_ sender: Any) {
-        getAbortJsonToUpload(emailAddress: textFieldEmailAppBroken.stringValue, feedback: textViewAppBroken.string, abortReason: "The app is broken", completionHandler: {dic in
+        addLog(text: "btnDeactivateAppBrokenClicked")//
+        allApiObject.getAbortJsonToUpload(emailAddress: appdelegate?.user?.email ?? "", feedback: textViewAppBroken.string, abortReason: "The app is broken", completionHandler: {dic in
             DispatchQueue.main.async {
                 mainViewControllerObj?.showAbortDoneView()
             }
         })
     }
     @IBAction func btnStartSmallClicked(_ sender: Any) {
+        addLog(text: "btnStartSmallClicked")//
         var jsonResult = NSDictionary()
         if let stringDic = UserDefaults.standard.object(forKey: kUserdefaultsSelectedJson) as? String {
             //            jsonResult = dic
@@ -381,14 +382,14 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
         }
 
         var isAnyHabitRemoved = false
-        if var morningHabits = mutableDic.value(forKey: "morningHabits") as? [NSDictionary] {
+        if var morningHabits = mutableDic.value(forKey: "morning_activities") as? [NSDictionary] {
             for i in 0..<morningHabits.count {
                 guard let habitDic = morningHabits[i].mutableCopy() as? NSMutableDictionary else{
                     return
                 }
-                if let durationSeconds = habitDic["durationSeconds"] as? Int{
+                if let durationSeconds = habitDic["duration_seconds"] as? Int{
                     if durationSeconds > 30{
-                        habitDic["durationSeconds"] = 30
+                        habitDic["duration_seconds"] = 30
                     }
                 }
                 let newhabitDic = NSDictionary(dictionary: habitDic)
@@ -401,18 +402,18 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
                 morningHabits.removeLast()
                 totalTime = morningHabits.count * 30
             }
-            mutableDic["morningHabits"] = morningHabits
+            mutableDic["morning_activities"] = morningHabits
         }
 
-        if var eveningHabits = mutableDic.value(forKey: "eveningHabits") as? [NSDictionary] {
+        if var eveningHabits = mutableDic.value(forKey: "evening_activities") as? [NSDictionary] {
             for i in 0..<eveningHabits.count {
                 //                var habitDic = morningHabits[i]
                 guard let habitDic = eveningHabits[i].mutableCopy() as? NSMutableDictionary else{
                     return
                 }
-                if let durationSeconds = habitDic["durationSeconds"] as? Int{
+                if let durationSeconds = habitDic["duration_seconds"] as? Int{
                     if durationSeconds > 30{
-                        habitDic["durationSeconds"] = 30
+                        habitDic["duration_seconds"] = 30
                     }
                 }
                 let newhabitDic = NSDictionary(dictionary: habitDic)
@@ -425,44 +426,77 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
                 eveningHabits.removeLast()
                 totalTime = eveningHabits.count * 30
             }
-            mutableDic["eveningHabits"] = eveningHabits
+            mutableDic["evening_activities"] = eveningHabits
         }
 
-        if var breakActivities = mutableDic.value(forKey: "breakActivities") as? [NSDictionary] {
+        if var breakActivities = mutableDic.value(forKey: "break_activities") as? [NSDictionary] {
             for i in 0..<breakActivities.count {
                 //                var habitDic = morningHabits[i]
                 guard let habitDic = breakActivities[i].mutableCopy() as? NSMutableDictionary else{
                     return
                 }
-                if let durationSeconds = habitDic["durationSeconds"] as? Int{
+                if let durationSeconds = habitDic["duration_seconds"] as? Int{
                     if durationSeconds > 30{
-                        habitDic["durationSeconds"] = 30
+                        habitDic["duration_seconds"] = 30
                     }
                 }
                 let newhabitDic = NSDictionary(dictionary: habitDic)
                 breakActivities[i] = newhabitDic
             }
 
-            mutableDic["breakActivities"] = breakActivities
+            mutableDic["break_activities"] = breakActivities
         }
         
-        do {
-            let data = try (JSONSerialization.data(withJSONObject: mutableDic, options: .prettyPrinted))
-            if let str = String(data: data, encoding: String.Encoding.utf8){
-                UserDefaults.standard.set(str, forKey: kUserdefaultsSelectedJson)
+//        do {
+//            let data = try (JSONSerialization.data(withJSONObject: mutableDic, options: .prettyPrinted))
+//            if let str = String(data: data, encoding: String.Encoding.utf8){
+//                UserDefaults.standard.set(str, forKey: kUserdefaultsSelectedJson)
+//            }
+//        } catch let error as NSError {
+//            print(error)
+//        }
+        allApiObject.isSettingsValid(settings: mutableDic, completionHandler: {dic,statusCode  in
+            DispatchQueue.main.async {
+
+                
+                if dic == nil{
+                    
+                    
+                }else{
+                    
+                    if statusCode == 200{
+
+                        
+                        do {
+                            let jsonResultData =  try JSONSerialization.data(withJSONObject: dic!, options: JSONSerialization.WritingOptions.prettyPrinted)
+                            
+                            print(jsonResultData)
+                            
+                            if let backToString = String(data: jsonResultData, encoding: String.Encoding.utf8){
+                                UserDefaults.standard.set(backToString, forKey: kUserdefaultsSelectedJson)
+                                appdelegate?.readSettingsJsonDictionary(json: nil)
+                            }
+                            
+                            
+                        } catch let myJSONError {
+                            print(myJSONError)
+                        }
+                        
+                    }else{
+
+                    }
+                }
             }
-        } catch let error as NSError {
-            print(error)
-        }
+        })
         
-        appdelegate?.readSettingsJsonDictionary()
         mainViewControllerObj?.showAbortStartSmallVc(isAnyHabitRemoved:isAnyHabitRemoved)
     }
     @IBAction func btnDontWantRoutine_boxHabitClicked(_ sender: Any) {
+        addLog(text: "btnDontWantRoutine_boxHabitClicked")//
         mainViewControllerObj?.showAbortDisableMorningRoutineVc()
     }
     @IBAction func btnDeactivate_boxSomethingElseClicked(_ sender: Any) {
-       
+       addLog(text: "btnDeactivate_boxSomethingElseClicked")//
         var logType = ""
         var activity = ""
         if lastCurrentState == ._MORNING_HABIT_{

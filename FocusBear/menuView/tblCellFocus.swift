@@ -11,7 +11,8 @@ import Cocoa
 class tblCellFocus: NSTableCellView {
 
 
-  //  @IBOutlet weak var hoursPopupBtn: NSPopUpButton!
+    @IBOutlet weak var lblIntension: NSTextField!
+    //  @IBOutlet weak var hoursPopupBtn: NSPopUpButton!
     @IBOutlet weak var horizaontalLine: NSBox!
     @IBOutlet weak var lblUntil: NSTextField!
     @IBOutlet weak var lblHour: NSTextField!

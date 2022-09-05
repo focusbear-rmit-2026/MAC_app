@@ -10,6 +10,8 @@ import Cocoa
 
 class smallCountDownVc: NSViewController {
 
+    @IBOutlet weak var lblTimerTopSpaceConstraint: NSLayoutConstraint!
+    @IBOutlet weak var btnPostpone: underLineButton!
     @IBOutlet weak var lblTimer: NSTextField!
     @IBOutlet weak var lblTitle: NSTextField!
     
@@ -20,6 +22,30 @@ class smallCountDownVc: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
+        btnPostpone.title = "Postpone"//todo text
+    }
+    func closeTimerBox(){
+        if timer != nil{
+            timer?.invalidate()
+            timer = nil
+        }
+        self.view.window?.close()
+    }
+    override func viewWillAppear() {
+        btnPostpone.isHidden = true
+        //****** Allow  postpone from timer window in morning evening routine in allow app case******//#213  date- 5/9/22
+//        if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_{
+//            lblTimerTopSpaceConstraint.constant = 10
+//            btnPostpone.isHidden = false
+//        }else{
+//            lblTimerTopSpaceConstraint.constant = 15
+//            btnPostpone.isHidden = true
+//        }
+    }
+    @IBAction func btnPostponeClicked(_ sender: Any) {
+        mainWindowControllerObj?.window?.setIsVisible(true)
+        showBlankWindowInSecondaryMonitor()
+        mainViewControllerObj?.btnAbortClicked(self)
     }
     func startTimerHabit(durationSeconds:Int, msg:String) {
         if timer != nil{
@@ -64,7 +90,7 @@ class smallCountDownVc: NSViewController {
     
     @objc func performTimerCount() {
             
-            currentTimer += 1
+            currentTimer += 1 // todo 1 kro 
             let (h,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
             var hour = "\(h)"
             var minute = "\(m)"
@@ -91,6 +117,9 @@ class smallCountDownVc: NSViewController {
             if self.totalDuration <= self.currentTimer {
                 self.timer?.invalidate()
                 self.view.window?.close()
+                if isFocusBreak{
+                    playFocusPomodorBreakEndsSound()
+                }
             }
         }
 }

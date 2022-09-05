@@ -63,7 +63,7 @@ class abortingCountDownVc: NSViewController {
         }
     }
     override func viewWillAppear() {
-        if kIsReducedMotion{
+        if SettingsManagerObject.kIsReducedMotion{
             imgViewGif.image = nil
         }else{
             imgViewGif.image = NSImage(named: "Crying_small")
@@ -83,10 +83,9 @@ class abortingCountDownVc: NSViewController {
             second = "0\(s)"
         }
         self.lblSeconds.stringValue = "\(minute):\(second)"
-        DispatchQueue.global().async {
+        DispatchQueue.global().sync {
             self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
-            RunLoop.current.add(self.timer!, forMode: RunLoop.Mode.common)
-            RunLoop.current.run()
+            RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
         }
     }
     
@@ -109,6 +108,7 @@ class abortingCountDownVc: NSViewController {
         }
         if self.totalDuration <= self.currentTimer {
             self.timer?.invalidate()
+            forceCompleteIfAnyActivityGoing()
             DispatchQueue.global().async {
                 DispatchQueue.main.async {
                     mainViewControllerObj!.showAbortConfirmationView()
@@ -116,7 +116,30 @@ class abortingCountDownVc: NSViewController {
             }
         }
     }
-    
+    func forceCompleteIfAnyActivityGoing(){
+        addLog(text: "get Last Activity Info - forceCompleteIfAnyActivityGoing")
+        allApiObject.getLastActivityInfo(completionHandler: { json in
+            DispatchQueue.main.async {
+                if json != nil{
+                    print(json!)
+                    if let currentActivitySequence = json?.value(forKey: "current_activity_sequence") as? NSDictionary{
+                        if let sequenceId = currentActivitySequence.value(forKey: "id") as? String{
+                            
+                            addLog(text: "force Complete Current Sequence - forceCompleteIfAnyActivityGoing")
+                            allApiObject.forceCompleteCurrentSequence(activity_sequence_id: sequenceId, completionHandler: {json in
+                
+                                // and strt break activity
+                                DispatchQueue.main.async {
+                                   
+                                }
+                            })
+                        }
+                    }
+                }
+            }
+        }
+        )
+    }
     
     @IBAction func btnEmaiClicked(_ sender: Any) {
     }

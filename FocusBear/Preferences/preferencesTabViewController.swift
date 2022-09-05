@@ -20,7 +20,7 @@ class preferencesTabViewController: NSTabViewController {
         var tabPasswordText = "Password"
         var tabBlockedURLsText = "Blocked URLs"
         var tabUninstallText = "Uninstall"
-        
+        var tabAccountsText = "Accounts"
         
         if let common = configjson.value(forKey: "common") as? NSDictionary{
             tabGeneralText = common.value(forKey: "tabGeneralText") as? String ?? tabGeneralText
@@ -29,6 +29,7 @@ class preferencesTabViewController: NSTabViewController {
             tabPasswordText = common.value(forKey: "tabPasswordText") as? String ?? tabPasswordText
             tabBlockedURLsText = common.value(forKey: "tabBlockedURLsText") as? String ?? tabBlockedURLsText
             tabUninstallText = common.value(forKey: "tabUninstallText") as? String ?? tabUninstallText
+            tabAccountsText = common.value(forKey: "tabAccountsText") as? String ?? tabAccountsText
         }
         print(self.tabViewItems.count)
         
@@ -49,6 +50,8 @@ class preferencesTabViewController: NSTabViewController {
                         self.tabViewItems[i].label = tabBlockedURLsText
                     }else if id == "Uninstall"{
                         self.tabViewItems[i].label = tabUninstallText
+                    }else if id  == "Accounts"{
+                        self.tabViewItems[i].label = tabAccountsText
                     }
                 }
             }
@@ -62,13 +65,17 @@ class preferencesTabViewController: NSTabViewController {
             selectJsonVcObj?.setData()
         }
     }
+    
     override func tabView(_ tabView: NSTabView, shouldSelect tabViewItem: NSTabViewItem?) -> Bool {
-        if UserDefaults.standard.object(forKey: kUserdefaultsAppPassword) != nil{
+        if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
             if self.view.subviews.contains(enterPasswordVcObj!.view){
                 return false
             }
         }
-        
+//        let id = tabViewItem?.identifier as? String ?? ""
+        //        if id == "Focus" || id == "Settings" || id == "General"{
+
+        //        }
         return true
     }
 }

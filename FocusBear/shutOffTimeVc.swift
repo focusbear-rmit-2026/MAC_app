@@ -33,7 +33,7 @@ class shutOffTimeVc: NSViewController {
     func resetView(){
         titleCenter.constant = 80
 
-        if kIsReducedMotion{
+        if SettingsManagerObject.kIsReducedMotion{
             imgViewGif.image = nil
         }else{
             imgViewGif.image = NSImage(named: "Yawn_small")
@@ -90,7 +90,8 @@ class shutOffTimeVc: NSViewController {
         step = 0
     }
     @IBAction func btnGetAccessNowClicked(_ sender: Any) {
-        if UserDefaults.standard.object(forKey: kUserdefaultsAppPassword) != nil{
+        addLog(text:"btnGetAccessNowClicked")
+        if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
             mainViewControllerObj!.showPasswordView()
         }else{
             getAccessNowClicked()
@@ -135,6 +136,7 @@ class shutOffTimeVc: NSViewController {
     
     
     @IBAction func btnUnlockClicked(_ sender: Any) {
+        addLog(text:"btnUnlockClicked")
         if step == 1{
             //cancel aborting shutoff procewss
             currentState = ._NOTHING_//next line mai vps shutoff state setho jaygi// yha nothing isiliye set kiya qki next kine vale functon mai condition true hokar return ho rha tha ab ni hoga 
@@ -144,9 +146,10 @@ class shutOffTimeVc: NSViewController {
             titleCenter.constant = 0
 //            getAbortJsonToUpload(emailAddress: "", feedback: textView.string, abortReason: "Shutdown skipped", completionHandler: {dic in
 //                DispatchQueue.main.async {
-//
+//addLog(text:"current breathing Habit Over called")
 //                }
 //            })
+            
             var startTimeHour = "\(startTime?.hour ?? 0)"
             if startTimeHour.count == 1{
                 startTimeHour = "0\(startTimeHour)"
@@ -163,7 +166,7 @@ class shutOffTimeVc: NSViewController {
                 if let shutOffAbortDoneInfo = shutOffTimeInfo.value(forKey: "shutOffAbortDoneInfo") as? NSDictionary{
                     if var subTitle = shutOffAbortDoneInfo.value(forKey: "subTitle") as? String, let unlockingText = shutOffAbortDoneInfo.value(forKey: "unlockingText") as? String{
 
-                        subTitle = subTitle.replacingOccurrences(of: "<STARTTIME>", with: "\(startTime?.hour ?? 0):\(startTime?.minute ?? 0)")
+                        subTitle = subTitle.replacingOccurrences(of: "<STARTTIME>", with: "\(startTimeHour):\(startTimeMinute)")
                         lblSubTitle.stringValue = subTitle + "\n\n\n" + unlockingText
                     }
                 }
@@ -195,12 +198,12 @@ class shutOffTimeVc: NSViewController {
             second = "0\(s)"
         }
         self.lbltimer.stringValue = "\(minute):\(second)"
-        DispatchQueue.global().async {
+        DispatchQueue.global().sync {
             self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
-            RunLoop.current.add(self.timer!, forMode: RunLoop.Mode.common)
-            RunLoop.current.run()
+            RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
         }
     }
+    
     @objc func performTimerCount() {
         currentTimer += 1
         let (_,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)

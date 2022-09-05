@@ -27,7 +27,9 @@ class blockedUrlsVc: NSViewController {
         }
         
     }
-    
+    override func viewWillDisappear() {
+        SettingsManagerObject.putUserLocalDeviceSettings()
+    }
     @IBAction func btnAddUrlClicked(_ sender: Any) {
         addWebUrlVcObj!.currenUrlAddingtState = ._ALL_BLOCK_URL
         addWebUrlVcObj!.isAdding = true
@@ -39,11 +41,13 @@ class blockedUrlsVc: NSViewController {
         if selectedUrlsRow == -1{
             return
         }
-        if selectedUrlsRow < arrBlockedUrls.count{
-            arrBlockedUrls.remove(at: selectedUrlsRow)
+        if selectedUrlsRow < SettingsManagerObject.arrBlockedUrls.count{
+            SettingsManagerObject.arrBlockedUrls.remove(at: selectedUrlsRow)
             tblView.reloadData()
-            UserDefaults.standard.set(arrBlockedUrls, forKey: kUserdefaultsArrBlockedUrls)
+            UserDefaults.standard.set(SettingsManagerObject.arrBlockedUrls, forKey: SettingsManagerObject.kUserdefaultsArrBlockedUrls)
         }
+        SettingsManagerObject.isSettingsChanged = true
+        
     }
     @objc func tableRowAllowedUrlsDoubleClicked(){
         let selectedTow = tblView.selectedRow
@@ -60,29 +64,26 @@ extension blockedUrlsVc: NSTableViewDelegate, NSTableViewDataSource{
     
     func numberOfRows(in tableView: NSTableView) -> Int {
 
-        if arrBlockedUrls.count == 0{
+        if SettingsManagerObject.arrBlockedUrls.count == 0{
             btnRemoveUrl.isEnabled = false
         }else{
             btnRemoveUrl.isEnabled = true
         }
-        return arrBlockedUrls.count
+        return SettingsManagerObject.arrBlockedUrls.count
     }
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
         if let cell = tableView.makeView(withIdentifier: NSUserInterfaceItemIdentifier(rawValue: "tblCellFocusPreferences"), owner: nil) as? tblCellFocusPreferences {
             
             
-            //                if tblViewFocusType.selectedRow != -1{
-            //                    if let arr = arrFocusType[tblViewFocusType.selectedRow]["urlsArray"] as? [String]{
-            //                        let url = URL(fileURLWithPath: arr[row])
-            if row < arrBlockedUrls.count{
-                cell.lblTitle.stringValue = arrBlockedUrls[row]
+
+            if row < SettingsManagerObject.arrBlockedUrls.count{
+                cell.lblTitle.stringValue = SettingsManagerObject.arrBlockedUrls[row]
                 cell.imgView.image = NSImage(named: NSImage.networkName)
             }else{
                 cell.lblTitle.stringValue = ""
                 cell.imgView.image = nil
             }
-            //                    }
-            //                }
+
             
             return cell
         }

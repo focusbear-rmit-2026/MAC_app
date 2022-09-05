@@ -7,7 +7,7 @@
 //
 
 import Cocoa
-import JSONSchema
+//import JSONSchema
 import WebKit
 class selectJsonVc: NSViewController, NSTextViewDelegate {
     
@@ -124,8 +124,6 @@ class selectJsonVc: NSViewController, NSTextViewDelegate {
         customView.isHidden = true
         textscrollView.isHidden = false
         lblTitle.isHidden = false
-//        lblVisitUrl.isHidden = false
-//        btnCancel.isHidden = false
         btnSave.isHidden = false
         boxWidthConstraint.constant = 1000
         boxHeightConstraint.constant = 600
@@ -143,6 +141,14 @@ class selectJsonVc: NSViewController, NSTextViewDelegate {
         lblDescription.isHidden = true
     }
     override func viewDidAppear() {
+        
+        let mac = "mac"
+        let focusbearEnv = "focusbearEnv(\(mac));"
+        
+        webview?.evaluateJavaScript(focusbearEnv,completionHandler: { (html: Any?, error: Error?) in
+            print(html)//todo not working
+        })
+        
         
         var stringjson = ""
         if let text = UserDefaults.standard.object(forKey: kUserdefaultsSelectedJson) as? String {
@@ -174,7 +180,7 @@ class selectJsonVc: NSViewController, NSTextViewDelegate {
             }
         }
         
-        let javascript = "loadSettingsDataFromMac(\(stringjson));"
+        let javascript = "loadSettingsData(\(stringjson));"
         
         webview?.evaluateJavaScript(javascript,completionHandler: { (html: Any?, error: Error?) in
             print(html)
@@ -372,56 +378,71 @@ class selectJsonVc: NSViewController, NSTextViewDelegate {
         btnSave.isEnabled = false
 //        btnCancel.isEnabled = false
         loader.startAnimation(self)
-        getSchemsFile(completionHandler: {dic in
-            DispatchQueue.main.async {
-                isGettingSchema = false
-                self.btnSave.isEnabled = true
-//                self.btnCancel.isEnabled = true
-                self.loader.stopAnimation(self)
+        var text = self.textViewJson.string.replacingOccurrences(of: "”", with: "\"")
+        text = text.replacingOccurrences(of: "“", with: "\"")
+        self.textViewJson.string = text
+        if let data = self.textViewJson.string.data(using: String.Encoding.utf8) {
+            
+            do {
+                let jsonResult:NSDictionary = try (JSONSerialization.jsonObject(with: data, options: []) as? NSDictionary ?? [:])
                 
-                if dic == nil{
-                    let alert = NSAlert()
-                    if let state = UserDefaults.standard.object(forKey: kUserdefaultsHideAllWindowInScreenShots) as? Bool{
-                        if state{
-                            alert.window.sharingType = .none
-                        }
-                    }
-                    alert.alertStyle = .informational
-                    
-                    var schemaError = "Your settings can not be validated."
-                    var buttonOkText = "OK"
-                    if let settings = configjson.value(forKey: "settings") as? NSDictionary{
-                        schemaError = settings.value(forKey: "schemaError") as? String ?? schemaError
-                        buttonOkText = settings.value(forKey: "buttonOkText") as? String ?? buttonOkText
-                    }
-                    alert.messageText = schemaError
-                    alert.addButton(withTitle: buttonOkText)
-                    
-                    alert.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
-                        if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
-                        }
+                allApiObject.isSettingsValid(settings: jsonResult, completionHandler: {dic,statusCode  in
+                    DispatchQueue.main.async {
+                        isGettingSchema = false
+                        self.btnSave.isEnabled = true
+        //                self.btnCancel.isEnabled = true
+                        self.loader.stopAnimation(self)
                         
-                        
-                    })
-                }else{
-                    var text = self.textViewJson.string.replacingOccurrences(of: "”", with: "\"")
-                    text = text.replacingOccurrences(of: "“", with: "\"")
-                    self.textViewJson.string = text
-                    if let data = self.textViewJson.string.data(using: String.Encoding.utf8) {
-                        
-                        do {
-                            let jsonResult:NSDictionary = try (JSONSerialization.jsonObject(with: data, options: []) as? NSDictionary ?? [:])
-
-                            let state = try JSONSchema.validate(jsonResult, schema: dic as! [String : Any])
+                        if dic == nil{
+                            let alert = NSAlert()
+                            if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
+                                if state{
+                                    alert.window.sharingType = .none
+                                }
+                            }
+                            alert.alertStyle = .informational
                             
-                            print(state)
-                            if state.errors == nil{ 
-                                UserDefaults.standard.set(self.textViewJson.string, forKey: kUserdefaultsSelectedJson)
-                                appdelegate?.quitAndRestartApp()
+                            var schemaError = "Your settings can not be validated."
+                            var buttonOkText = "OK"
+                            if let settings = configjson.value(forKey: "settings") as? NSDictionary{
+                                schemaError = settings.value(forKey: "schemaError") as? String ?? schemaError
+                                buttonOkText = settings.value(forKey: "buttonOkText") as? String ?? buttonOkText
+                            }
+                            alert.messageText = schemaError
+                            alert.addButton(withTitle: buttonOkText)
+                            
+                            alert.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
+                                if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
+                                }
+                                
+                                
+                            })
+                        }else{
+                            
+                            if statusCode == 200{
+//                                UserDefaults.standard.set(self.textViewJson.string, forKey: kUserdefaultsSelectedJson)
+//                                appdelegate?.quitAndRestartApp()
+                                
+                                do {
+                                    let jsonResultData =  try JSONSerialization.data(withJSONObject: dic!, options: JSONSerialization.WritingOptions.prettyPrinted)
+                                    
+                                    print(jsonResultData)
+                                    
+                                    if let backToString = String(data: jsonResultData, encoding: String.Encoding.utf8){
+                                        UserDefaults.standard.set(backToString, forKey: kUserdefaultsSelectedJson)
+                                        appdelegate?.quitAndRestartApp()
+                                    }
+                                    
+                                    
+                                } catch let myJSONError {
+                                    print(myJSONError)
+                                }
+                                
                             }else{
-                                print(state.errors)
+                                
+                                
                                 let alert = NSAlert()
-                                if let state = UserDefaults.standard.object(forKey: kUserdefaultsHideAllWindowInScreenShots) as? Bool{
+                                if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
                                     if state{
                                         alert.window.sharingType = .none
                                     }
@@ -436,8 +457,8 @@ class selectJsonVc: NSViewController, NSTextViewDelegate {
                                 }
                                 
                                 alert.messageText = settingIsNotValidText
-                                if state.errors?.count != 0{
-                                    alert.informativeText = state.errors?.first?.description ?? ""
+                                if let message = dic?.value(forKey: "message") as? NSArray{
+                                    alert.informativeText = "\(message)"
                                 }
                                 
                                 alert.addButton(withTitle: buttonOkText)
@@ -453,19 +474,22 @@ class selectJsonVc: NSViewController, NSTextViewDelegate {
                                 })
                                 
                             }
-
-                        } catch let error as NSError {
-                            print(error)
+                            
                         }
                     }
-                }
+                })
+                
+            } catch let error as NSError {
+                print(error)
             }
-        })
+            
+        }
         
         
         
-        
-        
+//        
+//        Vishnu Sharma
+//        WTLVishnu45
         
         //  } catch let error as NSError {
         //     print(error)
@@ -476,18 +500,18 @@ class selectJsonVc: NSViewController, NSTextViewDelegate {
     }
     
     func jsonReceivedFromWebView(jsonResult: NSDictionary){
-
+        
         
         isGettingSchema = true
         
-        getSchemsFile(completionHandler: {dic in
+        allApiObject.isSettingsValid(settings: jsonResult, completionHandler: {dic,statusCode  in
             DispatchQueue.main.async {
                 isGettingSchema = false
                 
                 
                 if dic == nil{
                     let alert = NSAlert()
-                    if let state = UserDefaults.standard.object(forKey: kUserdefaultsHideAllWindowInScreenShots) as? Bool{
+                    if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
                         if state{
                             alert.window.sharingType = .none
                         }
@@ -511,102 +535,86 @@ class selectJsonVc: NSViewController, NSTextViewDelegate {
                     })
                 }else{
                     
-                    
-                    
-                    
-                    
-                    do{
-                        let state = try JSONSchema.validate(jsonResult, schema: dic as! [String : Any])
-                        print(state)
-                        if state.errors == nil{
-                            
-                            
-                            
-                            let alert = NSAlert()
-                            if let state = UserDefaults.standard.object(forKey: kUserdefaultsHideAllWindowInScreenShots) as? Bool{
-                                if state{
-                                    alert.window.sharingType = .none
-                                }
+                    if statusCode == 200{
+                        let alert = NSAlert()
+                        if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
+                            if state{
+                                alert.window.sharingType = .none
                             }
-                            alert.alertStyle = .informational
-
-                            var settingIsValidText = "Your settings have been validated and will be applied now."
-                            var buttonOkText = "OK"
-                            if let settings = configjson.value(forKey: "settings") as? NSDictionary{
-                                settingIsValidText = settings.value(forKey: "settingIsValidText") as? String ?? settingIsValidText
-                                buttonOkText = settings.value(forKey: "buttonOkText") as? String ?? buttonOkText
-                            }
-
-                            alert.messageText = settingIsValidText
-                            alert.addButton(withTitle: buttonOkText)
-                            alert.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
-                                if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
-                                   // self.setData()
+                        }
+                        alert.alertStyle = .informational
+                        
+                        var settingIsValidText = "Your settings have been validated and will be applied now."
+                        var buttonOkText = "OK"
+                        if let settings = configjson.value(forKey: "settings") as? NSDictionary{
+                            settingIsValidText = settings.value(forKey: "settingIsValidText") as? String ?? settingIsValidText
+                            buttonOkText = settings.value(forKey: "buttonOkText") as? String ?? buttonOkText
+                        }
+                        
+                        alert.messageText = settingIsValidText
+                        alert.addButton(withTitle: buttonOkText)
+                        alert.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
+                            if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
+                                // self.setData()
+                                
+                                
+                                do {
+                                    let jsonResultData =  try JSONSerialization.data(withJSONObject: dic!, options: JSONSerialization.WritingOptions.prettyPrinted)
                                     
+                                    print(jsonResultData)
                                     
-                                    do {
-                                        let jsonResultData =  try JSONSerialization.data(withJSONObject: jsonResult, options: JSONSerialization.WritingOptions.prettyPrinted)
-                                        
-                                        print(jsonResultData)
-                                        
-                                        if let backToString = String(data: jsonResultData, encoding: String.Encoding.utf8){
-                                            print()
-                                            UserDefaults.standard.set(backToString, forKey: kUserdefaultsSelectedJson)
-                                            appdelegate?.quitAndRestartApp()
-                                        }
-                                        
-                                        
-                                    } catch let myJSONError {
-                                        print(myJSONError)
+                                    if let backToString = String(data: jsonResultData, encoding: String.Encoding.utf8){
+                                        print()
+                                        UserDefaults.standard.set(backToString, forKey: kUserdefaultsSelectedJson)
+                                        appdelegate?.quitAndRestartApp()
                                     }
                                     
                                     
-                                    
+                                } catch let myJSONError {
+                                    print(myJSONError)
                                 }
-
-
-                            })
+                                
+                                
+                                
+                            }
                             
                             
-                        }else{
-                            print(state.errors)
-                            let alert = NSAlert()
-                            if let state = UserDefaults.standard.object(forKey: kUserdefaultsHideAllWindowInScreenShots) as? Bool{
-                                if state{
-                                    alert.window.sharingType = .none
-                                }
-                            }
-                            alert.alertStyle = .informational
-
-                            var settingIsNotValidText = "Sorry it seems like your settings aren’t valid. Please generate settings at focusbear.io/settings"
-                            var buttonOkText = "OK"
-                            if let settings = configjson.value(forKey: "settings") as? NSDictionary{
-                                settingIsNotValidText = settings.value(forKey: "settingIsNotValidText") as? String ?? settingIsNotValidText
-                                buttonOkText = settings.value(forKey: "buttonOkText") as? String ?? buttonOkText
-                            }
-
-                            alert.messageText = settingIsNotValidText
-                            if state.errors?.count != 0{
-                                alert.informativeText = state.errors?.first?.description ?? ""
-                            }
-
-                            alert.addButton(withTitle: buttonOkText)
-
-                            //let buttons = alertremoveitem.buttons
-                            // alertremoveitem.beginSheetModal(for: self.window!, completionHandler: nil)
-                            alert.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
-                                if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
-                                   // self.setData()
-                                }
-
-
-                            })
-
-                        }
-                    }catch{
+                        })
+                    }else{
                         
+                        
+                        let alert = NSAlert()
+                        if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
+                            if state{
+                                alert.window.sharingType = .none
+                            }
+                        }
+                        alert.alertStyle = .informational
+                        
+                        var settingIsNotValidText = "Sorry it seems like your settings aren’t valid. Please generate settings at focusbear.io/settings"
+                        var buttonOkText = "OK"
+                        if let settings = configjson.value(forKey: "settings") as? NSDictionary{
+                            settingIsNotValidText = settings.value(forKey: "settingIsNotValidText") as? String ?? settingIsNotValidText
+                            buttonOkText = settings.value(forKey: "buttonOkText") as? String ?? buttonOkText
+                        }
+                        
+                        alert.messageText = settingIsNotValidText
+                        if let message = dic?.value(forKey: "message") as? NSArray{
+                            alert.informativeText = "\(message)"
+                        }
+                        
+                        alert.addButton(withTitle: buttonOkText)
+                        
+                        //let buttons = alertremoveitem.buttons
+                        // alertremoveitem.beginSheetModal(for: self.window!, completionHandler: nil)
+                        alert.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
+                            if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
+                                
+                            }
+                        })
                     }
-
+                    
+                    
                 }
             }
         })

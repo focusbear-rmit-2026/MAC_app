@@ -4,12 +4,12 @@
         "welcomeEndMessage": "Hope you feel calmer. You can now personalise your morning routine by clicking on the icon <icon> on the top bar and choosing Preferences -> Settings.",
         "preloadFocusModesDoneText": "I've set up a focus mode for you that has some common apps and URLs you might want to use when you're working. Open the settings from the Focus Bear menu to change what apps and URLs are allowed.",
         "introActivities": [
-            { "name": "Mindful Breathing", "durationSeconds": 60, "videoUrl": ["https://www.youtube.com/watch?v=z-3n5iBi4u0"] }
+            { "name": "Mindful Breathing", "duration_seconds": 60, "video_urls": ["https://www.youtube.com/watch?v=HhMXYsk_Pvo"] }
         ]
     },
     "activityInfo":{
-        "startMorningHabitTitleText":"Good Morning! It’s time to focus. Here are the habits you need to accomplish before you can use your computer.",
-        "startEveningHabitTitleText":"Good Evening! It’s time to focus. Here are the habits you need to accomplish before you can leave for the day.",
+        "startMorningHabitTitleText":"Good Morning! Here are the habits to kick off an awesome day.",
+        "startEveningHabitTitleText":"Good Evening! Let’s go through your wind down routine.",
         "startActivityButtonText":"Start <TIME> <NAME>",
         "activityFinishedText":"<ACTIVITY> finished!✅",
         "lastActivityFinishedText":"<ACTIVITY> finished!✅ You’ve earned your screen time. 💪",
@@ -20,8 +20,11 @@
         "habitsProgressText":"You have completed <duration> of habits - <totalduration> to go. You can do it!",
         "habitsCompleteText":"You have completed <duration> of habits.",
         "whatComesNextButtonText":"What comes next?",
-        "buttonGetKookyText":"Get Kooky",
-        "buttonReviseQuantityText":"Revise Quantity"
+        "buttonGetKookyText":"Visualize 🧘‍♂️",
+        "buttonReviseQuantityText":"Revise Quantity",
+        "buttonBeginText":"Begin",
+        "visualizeDescriptionText":"Before you begin your morning routine, take 30 seconds to engage in \"extrapersonal focus\": try your best to keep your eyes fixed on the target. Research from Balcetis and colleagues in 2020 indicates that concentrating on a visual point will sharpen your focus and increase the likelihood of completing your routine.",
+        "titleGetFocused":"Get Focused"
     },
     "common":{
         "emailId":"team@focusbear.io",
@@ -60,7 +63,15 @@
         "fridayText":"Friday",
         "saturdayText":"Saturday",
         "sundayText":"Sunday",
-        "andText":"and"
+        "andText":"and",
+        "tabAccountsText":"Accounts",
+        "checkInternetText":"Unable to connect to server. Please check your internet connection.",
+        "uninstallingText":"Uninstalling..",
+        "askUninstallReasonText":"Can you share why you're uninstalling?",
+        "buttonSelectReasonText":"Select a reason",
+        "brokenAppReasonText":"The app is broken",
+        "habitsHardReasonText":"My habits are too hard - I can't handle them",
+        "emailTitle":"Your Email (if you want us to reply):"
     },
     "abortInfo":{
         "abortingTitle":"Aborting..",
@@ -249,7 +260,10 @@
         "workDurationEmptyErrorText":"Work Duration can not be empty.",
         "workDurationZeroErrorText":"Work Duration can not be 0.",
         "breakDurationEmptyErrorText":"Break Duration can not be empty.",
-        "breakDurationZeroErrorText":"Break Duration can not be 0."
+        "breakDurationZeroErrorText":"Break Duration can not be 0.",
+        "versionText":"version:",
+        "titleSound":"Sound:",
+        "checkBoxSoundText":"Play sound effects"
     },
     "focusPreferencesInfo":{
         "titleFocusType":"Focus Type:",
@@ -370,7 +384,8 @@
         "buttonHardcorePomodoroText":"Use super pomodoro mode (lock in the focus mode for multiple pomodoros)",
         "howManyPomodoroText":"How many pomodoros you want to focus for:",
         "chooseTheFocusModeText":"Choose the focus mode and duration - you won't be able to change the focus mode until the time is up (you still get to use any app/website during the 5 minutes break)",
-        "alertWarningPaswwordSetText":"To make super pomodoro mode more effective, we recommend setting a password (ask someone else to do it for you) otherwise you'll still be able to cancel the focus modes before the time is up."
+        "alertWarningPaswwordSetText":"To make super pomodoro mode more effective, we recommend setting a password (ask someone else to do it for you) otherwise you'll still be able to cancel the focus modes before the time is up.",
+        "completedPomodoroCountText":"You have completed <COMPLETED_POMODORO> of <TOTAL_POMODORO> pomodoros. <REMAINING_POMODORO> more to go."
     },
     "logQuantityInfo":{
         "title":"Log Quantity of activity",
@@ -408,7 +423,10 @@
         "passwordSetAlertTitle":"Password successfully set.",
         "passwordChagedAlertTitle":"Password successfully changed.",
         "passwordNotMatchAlertTitle":"Passwords do not match.",
-        "passwordNotMatchAlertSubTitle":"Confirm Password does not match with the main password. Please re enter."
+        "passwordNotMatchAlertSubTitle":"Confirm Password does not match with the main password. Please re enter.",
+        "buttonDisablePasswordText":"Disable Password",
+        "passwordDisableAskText":"Are you sure you want to disable your password?",
+        "passwordDisableDoneText":"Your password has been disabled."
     },
     "blockedUrlsViewInfo":{
         "title":"Always Blocked URLs",
@@ -447,9 +465,26 @@
         "selectDaysForPomodoroText":"Schedule specific days you want to run the super pomodoro mode after Morning Routine:",
         "buttonApplyText":"Apply",
         "selectAtleastOneDayText":"Please select atleast one day."
+    },
+    "accountVcInfo":{
+        "title":"Your Account Information",
+        "titleNameText":"Name:",
+        "titleEmailIdText":"Email Id:",
+        "buttonLogoutText":"Logout",
+        "registeredVersionText":"Registered version",
+        "logoutAlertText" : "Are you sure you want to logout?"
+    },
+    "activityPostponeInfo":{
+        "postponeHabitsText":"If you have something urgent, you can postpone Habits for few Minutes.",
+        "postponeBreakText":"If you have something urgent, you can postpone the Break Activity for 5 Minutes.",
+        "buttonTakeBreakText":"Argh ok I'll take a break!",
+        "selectMinutesText":"Select minutes to postpone:",
+        "buttonCompletelySkipText":"Completely Skip",
+        "buttonPostponeHabitText":"Postpone Habit",
+        "buttonPostponeBreakText":"Postpone Break",
+        "buttonAbortBreakText":"Abort Break Activity",
+        "postponedLastBreakText":"You postponed the last break - are you sure you can't make time for the break now?"
     }
-    
-    
 }
 
 

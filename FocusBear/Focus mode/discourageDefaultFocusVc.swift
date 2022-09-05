@@ -3,7 +3,7 @@
 //  Focus Bear
 //
 //  Created by Prashant Sawnani on 11/04/22.
-//  Copyright © 2022 . All rights reserved.//todo  copyrighttext 
+//  Copyright © 2022 . All rights reserved.
 //
 
 import Cocoa
@@ -40,7 +40,7 @@ class discourageDefaultFocusVc: NSViewController {
     }
     override func viewWillAppear() {
         print("viewWillAppear")
-        if let state = UserDefaults.standard.object(forKey: kUserdefaultsHideAllWindowInScreenShots) as? Bool{
+        if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
             if state{
                 self.view.window?.sharingType = .none
             }else{
@@ -74,6 +74,7 @@ class discourageDefaultFocusVc: NSViewController {
     
     
     @IBAction func btnShutupClicked(_ sender: Any) {
+        addLog(text: "discourageDefaultFocusVc - btnEditFocusModeClicked")//
         lblTimer.isHidden = false
         btnCancel.isHidden = true
         btnShutUp.isHidden = true
@@ -93,6 +94,7 @@ class discourageDefaultFocusVc: NSViewController {
     }
     
     @IBAction func btnCancelClicked(_ sender: Any) {
+        addLog(text: "discourageDefaultFocusVc - btnCancelClicked")//
         if focusModeStartWindowLodded{
             if startingFocusWindowControllerObj?.window?.isVisible ?? false{
                 if self.view.window?.sheetParent?.windowController == startingFocusWindowControllerObj{
@@ -118,10 +120,9 @@ class discourageDefaultFocusVc: NSViewController {
             second = "0\(s)"
         }
         self.lblTimer.stringValue = "\(minute):\(second)"
-        DispatchQueue.global().async {
+        DispatchQueue.global().sync {
             self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
-            RunLoop.current.add(self.timer!, forMode: RunLoop.Mode.common)
-            RunLoop.current.run()
+            RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
         }
     }
     
@@ -154,7 +155,9 @@ class discourageDefaultFocusVc: NSViewController {
                                 hardcodePmodoroFocusModeIndex = pomodoroVcObj!.popUpBtnFocusType.indexOfSelectedItem
                                 let totalPopmodoroCount = Int(pomodoroVcObj!.popupBtnSelectPomodoroCount.title) ?? 2
                                 let minutes = currentPomodoroWorkDuration
-//                                if let duration = UserDefaults.standard.object(forKey: kUserdefaultsPomodoroDurationMinutes) as? Int{
+                                totalPomodoroCountInHardCorePomodoro = totalPopmodoroCount
+                                completedPomodoroCountInHardcorePomodoro = 0
+//                                if let duration = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsPomodoroDurationMinutes) as? Int{
 //                                    minutes = duration
 //                                }
                                 let totoalMinutes = (totalPopmodoroCount * minutes)// * 60//(textFieldHourValue.integerValue * 60) + textFieldMinutesValue.integerValue

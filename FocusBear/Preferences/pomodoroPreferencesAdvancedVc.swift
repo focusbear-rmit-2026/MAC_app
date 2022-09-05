@@ -89,14 +89,14 @@ class pomodoroPreferencesAdvancedVc: NSViewController {
     }
     override func viewWillAppear() {
 
-        if let state = UserDefaults.standard.object(forKey: kUserdefaultsHideAllWindowInScreenShots) as? Bool{
+        if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
             if state{
                 self.view.window?.sharingType = .none
             }else{
                 self.view.window?.sharingType = .readOnly
             }
         }
-        if let isEnabled = UserDefaults.standard.object(forKey: kUserdefaultsHardcorePomodoroEnabled) as? Bool{
+        if let isEnabled = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHardcorePomodoroEnabled) as? Bool{
             if isEnabled{
                 checkBoxUseHardcorePomodoro.state = .on
             }else{
@@ -104,17 +104,17 @@ class pomodoroPreferencesAdvancedVc: NSViewController {
             }
         }
         var arrDaysHardcorePomodoro = [String]()
-        if let arrDays = UserDefaults.standard.object(forKey: kUserdefaultsHardcorePomodoroArrDays) as? [String]{
+        if let arrDays = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHardcorePomodoroArrDays) as? [String]{
             arrDaysHardcorePomodoro = arrDays
         }else{
-            arrDaysHardcorePomodoro = [kMonday, kTuesday, kWednesday, kThursday, kFriday, kSaturday, kSunday]
-            UserDefaults.standard.set(arrDaysHardcorePomodoro, forKey: kUserdefaultsHardcorePomodoroArrDays)
+            arrDaysHardcorePomodoro = [SettingsManagerObject.kMonday, SettingsManagerObject.kTuesday, SettingsManagerObject.kWednesday, SettingsManagerObject.kThursday, SettingsManagerObject.kFriday, SettingsManagerObject.kSaturday, SettingsManagerObject.kSunday]
+            UserDefaults.standard.set(arrDaysHardcorePomodoro, forKey: SettingsManagerObject.kUserdefaultsHardcorePomodoroArrDays)
         }
         
         
         
         // check box monday
-        if arrDaysHardcorePomodoro.contains(kMonday){
+        if arrDaysHardcorePomodoro.contains(SettingsManagerObject.kMonday){
             checkBoxMonday.state = .on
         }else{
             checkBoxMonday.state = .off
@@ -122,21 +122,21 @@ class pomodoroPreferencesAdvancedVc: NSViewController {
         
         
         // check box Tuesday
-        if arrDaysHardcorePomodoro.contains(kTuesday){
+        if arrDaysHardcorePomodoro.contains(SettingsManagerObject.kTuesday){
             checkBoxTuesday.state = .on
         }else{
             checkBoxTuesday.state = .off
         }
         
         // check box Wednesday
-        if arrDaysHardcorePomodoro.contains(kWednesday){
+        if arrDaysHardcorePomodoro.contains(SettingsManagerObject.kWednesday){
             checkBoxWednesday.state = .on
         }else{
             checkBoxWednesday.state = .off
         }
         
         // check box Thursday
-        if arrDaysHardcorePomodoro.contains(kThursday){
+        if arrDaysHardcorePomodoro.contains(SettingsManagerObject.kThursday){
             checkBoxThursday.state = .on
         }else{
             checkBoxThursday.state = .off
@@ -144,21 +144,21 @@ class pomodoroPreferencesAdvancedVc: NSViewController {
         
         
         // check box Friday
-        if arrDaysHardcorePomodoro.contains(kFriday){
+        if arrDaysHardcorePomodoro.contains(SettingsManagerObject.kFriday){
             checkBoxFriday.state = .on
         }else{
             checkBoxFriday.state = .off
         }
         
         // check box Saturday
-        if arrDaysHardcorePomodoro.contains(kSaturday){
+        if arrDaysHardcorePomodoro.contains(SettingsManagerObject.kSaturday){
             checkBoxSaturday.state = .on
         }else{
             checkBoxSaturday.state = .off
         }
         
         // check box Sunday
-        if arrDaysHardcorePomodoro.contains(kSunday){
+        if arrDaysHardcorePomodoro.contains(SettingsManagerObject.kSunday){
             checkBoxSunday.state = .on
         }else{
             checkBoxSunday.state = .off
@@ -177,24 +177,24 @@ class pomodoroPreferencesAdvancedVc: NSViewController {
         }
 
         
-        if let name = UserDefaults.standard.object(forKey: kUserdefaultsHardcorePomodoroFocusedName) as? String{
+        if let name = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHardcorePomodoroFocusedName) as? String{
             if arrAllFocusItems.contains(name){
                 popUpBtnFocusModes.selectItem(withTitle: name)
             }else{
                 popUpBtnFocusModes.selectItem(withTitle: arrAllFocusItems[0])
-                UserDefaults.standard.set(arrAllFocusItems[0], forKey: kUserdefaultsHardcorePomodoroFocusedName)
+                UserDefaults.standard.set(arrAllFocusItems[0], forKey: SettingsManagerObject.kUserdefaultsHardcorePomodoroFocusedName)
             }
         }else{
             popUpBtnFocusModes.selectItem(withTitle: arrAllFocusItems[0])
-            UserDefaults.standard.set(arrAllFocusItems[0], forKey: kUserdefaultsHardcorePomodoroFocusedName)
+            UserDefaults.standard.set(arrAllFocusItems[0], forKey: SettingsManagerObject.kUserdefaultsHardcorePomodoroFocusedName)
         }
         
         
-        if let count = UserDefaults.standard.object(forKey: kUserdefaultsHardcorePomodoroFocusedCount) as? Int{
+        if let count = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHardcorePomodoroFocusedCount) as? Int{
             popUpBtnPomodoroCount.selectItem(withTitle: "\(count)")
         }else{
             popUpBtnPomodoroCount.selectItem(withTitle: "2")
-            UserDefaults.standard.set(2, forKey: kUserdefaultsHardcorePomodoroFocusedCount)
+            UserDefaults.standard.set(2, forKey: SettingsManagerObject.kUserdefaultsHardcorePomodoroFocusedCount)
         }
         
         
@@ -237,7 +237,7 @@ class pomodoroPreferencesAdvancedVc: NSViewController {
             if checkBoxMonday.state == .off && checkBoxTuesday.state == .off && checkBoxWednesday.state == .off && checkBoxThursday.state == .off && checkBoxFriday.state == .off && checkBoxSaturday.state == .off && checkBoxSunday.state == .off{
                 
                 let alert = NSAlert()
-                if let state = UserDefaults.standard.object(forKey: kUserdefaultsHideAllWindowInScreenShots) as? Bool{
+                if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
                     if state{
                         alert.window.sharingType = .none
                     }
@@ -265,56 +265,57 @@ class pomodoroPreferencesAdvancedVc: NSViewController {
             
             // check box monday
             if checkBoxMonday.state == .on{
-                arrDaysHardcorePomodoro.append(kMonday)
+                arrDaysHardcorePomodoro.append(SettingsManagerObject.kMonday)
             }
             
             
             // check box Tuesday
             if checkBoxTuesday.state == .on{
-                arrDaysHardcorePomodoro.append(kTuesday)
+                arrDaysHardcorePomodoro.append(SettingsManagerObject.kTuesday)
             }
             
             // check box Wednesday
             if checkBoxWednesday.state == .on{
-                arrDaysHardcorePomodoro.append(kWednesday)
+                arrDaysHardcorePomodoro.append(SettingsManagerObject.kWednesday)
             }
             
             // check box Thursday
             if checkBoxThursday.state == .on{
-                arrDaysHardcorePomodoro.append(kThursday)
+                arrDaysHardcorePomodoro.append(SettingsManagerObject.kThursday)
             }
             
             
             // check box Friday
             if checkBoxFriday.state == .on{
-                arrDaysHardcorePomodoro.append(kFriday)
+                arrDaysHardcorePomodoro.append(SettingsManagerObject.kFriday)
             }
             
             // check box Saturday
             if checkBoxSaturday.state == .on{
-                arrDaysHardcorePomodoro.append(kSaturday)
+                arrDaysHardcorePomodoro.append(SettingsManagerObject.kSaturday)
             }
             
             // check box Sunday
             if checkBoxSunday.state == .on{
-                arrDaysHardcorePomodoro.append(kSunday)
+                arrDaysHardcorePomodoro.append(SettingsManagerObject.kSunday)
             }
-            UserDefaults.standard.set(arrDaysHardcorePomodoro, forKey: kUserdefaultsHardcorePomodoroArrDays)
+            UserDefaults.standard.set(arrDaysHardcorePomodoro, forKey: SettingsManagerObject.kUserdefaultsHardcorePomodoroArrDays)
             
             // popup button focus names
-            UserDefaults.standard.set(popUpBtnFocusModes.titleOfSelectedItem, forKey: kUserdefaultsHardcorePomodoroFocusedName)
+            UserDefaults.standard.set(popUpBtnFocusModes.titleOfSelectedItem, forKey: SettingsManagerObject.kUserdefaultsHardcorePomodoroFocusedName)
             
             // popup button Pomodoro Count
-            UserDefaults.standard.set(Int(popUpBtnPomodoroCount.titleOfSelectedItem ?? "2") ?? 2, forKey: kUserdefaultsHardcorePomodoroFocusedCount)
+            UserDefaults.standard.set(Int(popUpBtnPomodoroCount.titleOfSelectedItem ?? "2") ?? 2, forKey: SettingsManagerObject.kUserdefaultsHardcorePomodoroFocusedCount)
 
-            UserDefaults.standard.set(true, forKey: kUserdefaultsHardcorePomodoroEnabled)
+            UserDefaults.standard.set(true, forKey: SettingsManagerObject.kUserdefaultsHardcorePomodoroEnabled)
         }else{
-            UserDefaults.standard.set(false, forKey: kUserdefaultsHardcorePomodoroEnabled)
+            UserDefaults.standard.set(false, forKey: SettingsManagerObject.kUserdefaultsHardcorePomodoroEnabled)
         }
         
         if generalVcObj != nil{
             generalVcObj!.resetPomodoroModeState()
         }
+        SettingsManagerObject.isSettingsChanged = true
         self.dismiss(self)
     }
     @IBAction func checkBoxUseHardcorePomodoroClicked(_ sender: Any) {

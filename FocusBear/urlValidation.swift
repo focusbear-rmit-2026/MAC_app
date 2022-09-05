@@ -26,9 +26,7 @@ struct urlValidation {
         if newUrlToCheck.contains("www."){
             newUrlToCheck = newUrlToCheck.replacingOccurrences(of: "www.", with: "")
         }
-//        if newAllowUrl.contains("http://") || newAllowUrl.contains("https://"){
-//            newAllowUrl = getDomainFromUrl(url: newAllowUrl)
-//        }
+
         if newAllowUrl.contains("file://"){
             if urlToCheck.contains("://"){
                 bool = wildcard(urlToCheck, pattern: newAllowUrl)

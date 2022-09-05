@@ -11,6 +11,9 @@ import Cocoa
 class uninstallVc: NSViewController {
 
     @IBOutlet weak var btUninstall: NSButton!
+    var uninstallingConfirmVcObj: uninstallingConfirmVc?
+    
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
@@ -20,70 +23,15 @@ class uninstallVc: NSViewController {
         }
     }
  
-    func clearAllData(){
-        
-        var firstDate:Date?
-        if let date = UserDefaults.standard.object(forKey: kUserdefaultsFirstHabitDay) as? Date{
-            firstDate = date
-        }
-        let domain = Bundle.main.bundleIdentifier!
-        UserDefaults.standard.removePersistentDomain(forName: domain)
-        
-        
-        UserDefaults.standard.set(firstDate, forKey: kUserdefaultsFirstHabitDay)
-        
-        
-        UserDefaults.standard.synchronize()
-        LaunchOnStartup.setLaunchAtStartup(false)
-    }
+    
     @IBAction func btnUninstallClicked(_ sender: Any) {
-        
-        var alert: NSAlert = NSAlert()
-        if let state = UserDefaults.standard.object(forKey: kUserdefaultsHideAllWindowInScreenShots) as? Bool{
-            if state{
-                alert.window.sharingType = .none
-            }
+        addLog(text: "btn Uninstall in settings Clicked")//
+
+        if self.uninstallingConfirmVcObj == nil{
+            self.uninstallingConfirmVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("uninstallingConfirmVc")) as? uninstallingConfirmVc
         }
-        alert.messageText = "Are you sure you want to giveup all your habits and uninstall Focus Bear?"
-        var yesText = "Yes"
-        var noText = "No"
-        var uninstallDoneText = "All the app related processes will abort and the app will close itself and then you can drag the app and move to trash/bin."
-        if let common = configjson.value(forKey: "common") as? NSDictionary{
-            alert.messageText = common.value(forKey: "uninstallConfirmText") as? String ?? alert.messageText
-            yesText = common.value(forKey: "yesText") as? String ?? yesText
-            noText = common.value(forKey: "noText") as? String ?? noText
-            uninstallDoneText = common.value(forKey: "uninstallDoneText") as? String ?? uninstallDoneText
-        }
-        alert.alertStyle = NSAlert.Style.warning
-        alert.addButton(withTitle: yesText)
-        alert.addButton(withTitle: noText)
-        
-       
-        alert.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
-            if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
-                print("okclicked")
-                alert = NSAlert()
-                if let state = UserDefaults.standard.object(forKey: kUserdefaultsHideAllWindowInScreenShots) as? Bool{
-                    if state{
-                        alert.window.sharingType = .none
-                    }
-                }
-                alert.messageText = uninstallDoneText
-                alert.addButton(withTitle: buttonOkText)
-                alert.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
-                    if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
-                        print("okclicked")
-                        
-                        addLog(text: "App uninstall clicked by user")
-                        shell(launchPath: "/bin/launchctl", arguments: ["unload","-w","\("/Users/")\(NSUserName())\("/Library/LaunchAgents/\(mainAppBundelId).plist")"])
-                        self.clearAllData()
-                        appdelegate!.terminateFromSelf = true
-                        NSApp.terminate(self)
-                    }
-                })
-            }
-        })
-        
+        self.presentAsSheet(self.uninstallingConfirmVcObj!)
     }
+    
 }
 

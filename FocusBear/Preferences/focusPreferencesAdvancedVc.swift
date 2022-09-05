@@ -73,7 +73,7 @@ class focusPreferencesAdvancedVc: NSViewController {
     }
     override func viewWillAppear() {
         
-        if let state = UserDefaults.standard.object(forKey: kUserdefaultsHideAllWindowInScreenShots) as? Bool{
+        if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
             if state{
                 self.view.window?.sharingType = .none
             }else{
@@ -159,6 +159,12 @@ class focusPreferencesAdvancedVc: NSViewController {
             btnSelectAppleScriptBeforeFocus.isEnabled = false
         }
         UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+        
+        allApiObject.editFocusMode(focusType: arrFocusType[row], completionHandler: {newDic in
+            DispatchQueue.main.async {
+
+            }
+        })
     }
     
     @IBAction func checkBoxRunScriptAfterFocusClicked(_ sender: Any) {
@@ -171,6 +177,11 @@ class focusPreferencesAdvancedVc: NSViewController {
             btnSelectAppleScriptAfterFocus.isEnabled = false
         }
         UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+        allApiObject.editFocusMode(focusType: arrFocusType[row], completionHandler: {newDic in
+            DispatchQueue.main.async {
+
+            }
+        })
     }
     @IBAction func btnSelectAppleScriptBeforeClicked(_ sender: Any) {
         let row = focusPreferencesVcObj?.tblViewFocusType.selectedRow ?? 0
@@ -191,6 +202,11 @@ class focusPreferencesAdvancedVc: NSViewController {
                     arrFocusType[row]["scriptPathBeforeFocus"] = url.path
                     self.lblUrlCurrentApplescriptBefore.stringValue = url.path
                     UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+                    allApiObject.editFocusMode(focusType: arrFocusType[row], completionHandler: {newDic in
+                        DispatchQueue.main.async {
+
+                        }
+                    })
                 }
             }
         })
@@ -214,6 +230,11 @@ class focusPreferencesAdvancedVc: NSViewController {
                     arrFocusType[row]["scriptPathAfterFocus"] = url.path
                     self.lblUrlCurrentApplescriptAfter.stringValue = url.path
                     UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+                    allApiObject.editFocusMode(focusType: arrFocusType[row], completionHandler: {newDic in
+                        DispatchQueue.main.async {
+
+                        }
+                    })
                 }
             }
         })
@@ -247,9 +268,16 @@ class focusPreferencesAdvancedVc: NSViewController {
             self.tblView.reloadData()
         }
         UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+        allApiObject.editFocusMode(focusType: arrFocusType[selectedFocusTypeRow], completionHandler: {newDic in
+            DispatchQueue.main.async {
+
+            }
+        })
         if arrFocusType[selectedFocusTypeRow]["isOn"] as? Bool == true{
             appdelegate!.fillAllowUrlArray()
         }
+        
+        
     }
     @IBAction func btnOkClicked(_ sender: Any) {
         self.dismiss(self)

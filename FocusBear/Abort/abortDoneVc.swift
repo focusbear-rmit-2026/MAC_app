@@ -36,7 +36,7 @@ class abortDoneVc: NSViewController {
         }
     }
     override func viewWillAppear() {
-        if kIsReducedMotion{
+        if SettingsManagerObject.kIsReducedMotion{
             imgViewGif.image = nil
         }else{
             imgViewGif.image = NSImage(named: "Crying_small")
@@ -47,10 +47,9 @@ class abortDoneVc: NSViewController {
         currentTimer = 0
         totalDuration = 5
       //  self.lblTimerEmergency.stringValue = "\(minute):\(second)"
-        DispatchQueue.global().async {
+        DispatchQueue.global().sync {
             self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
-            RunLoop.current.add(self.timer!, forMode: RunLoop.Mode.common)
-            RunLoop.current.run()
+            RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
         }
     }
     

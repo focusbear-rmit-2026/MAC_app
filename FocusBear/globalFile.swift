@@ -32,6 +32,15 @@ func getQuittingWindowObject()->commonWindowController{
     }
     return quittingWcObj!
 }
+
+var visualizeInstructionsVcObj:visualizeInstructionsVc?
+func getvisualizeInstructionsObject()->visualizeInstructionsVc{
+    if visualizeInstructionsVcObj == nil{
+        visualizeInstructionsVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("visualizeInstructionsVc")) as? visualizeInstructionsVc
+    }
+    return visualizeInstructionsVcObj!
+}
+
 var quitCountDownVcObj:quitCountDownVc?
 func getQuittingCountDownVcObject()->quitCountDownVc{
     if quitCountDownVcObj == nil{
@@ -42,6 +51,13 @@ func getQuittingCountDownVcObject()->quitCountDownVc{
 
 
 
+var askPostponeVcObj:askPostponeVc?
+func getAskPostponeVcObject()->askPostponeVc{
+    if askPostponeVcObj == nil{
+        askPostponeVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("askPostponeVc")) as? askPostponeVc
+    }
+    return askPostponeVcObj!
+}
 
 var smallCountDownVcObj:smallCountDownVc?
 func getsmallCountDownVcObject()->smallCountDownVc{
@@ -138,76 +154,30 @@ var focusPreferencesAdvancedVcObj:focusPreferencesAdvancedVc?
 
 let appdelegate = NSApplication.shared.delegate as? AppDelegate
 
+var SettingsManagerObject = SettingsManager()
+
 var isHardCorePomodoroModeOn = false
 var hardcodePmodoroFocusModeIndex = 0
 var totalMinutesRemainingForHardcodePomodoro = 0
 var currentPomodoroWorkDuration = 25
 var currentPomodoroBreakDuration = 5
+var totalPomodoroCountInHardCorePomodoro = 0
+var completedPomodoroCountInHardcorePomodoro = 0
 
-var kUserdefaultsPomodoroModeEnabled = "kUserdefaultsPomodoroModeEnabled"
-var kUserdefaultsOfficeModeEnabled = "kUserdefaultsOfficeModeEnabled"
-var isOfficeModeEnabled = false
+var activityPostponeCount = 0
+//var isMorningRoutinePostpone = false
 
-var kUserdefaultsReducedMotion = "kUserdefaultsReducedMotion"
-var kIsReducedMotion = false
-
-var isPromptToRememberHabit = true
-var kUserdefaultsPromptToRememberHabit = "kUserdefaultsPromptToRememberHabit"
-
-var kUserdefaultsSelectedLanguage = "kUserdefaultsSelectedLanguage"
-var kUserdefaultsPomodoroDurationMinutes = "kUserdefaultsPomodoroDurationMinutes"
-var kUserdefaultsBreakDurationMinutes = "kUserdefaultsBreakDurationMinutes"
-
-var kUserdefaultsHideAllWindowInScreenShots = "kUserdefaultsHideAllWindowInScreenShots"
 
 var isPromptToRememberHabitShowedInLastHabit = false///   reason:-Make sure it doesn't happen twice in a row though. 
 
 var configjson = NSDictionary()
 
-//let kUserdefaultsShowPomodoroView = "kUserdefaultsShowPomodoroView"
-let kUserdefaultsHardcorePomodoroEnabled = "kUserdefaultsHardcorePomodoroEnabled"
-let kUserdefaultsHardcorePomodoroFocusedName = "kUserdefaultsHardcorePomodoroFocusedName"
-let kUserdefaultsHardcorePomodoroFocusedCount = "kUserdefaultsHardcorePomodoroFocusedCount"
 
-//let logQuantityType = "sum"//"average"
-
-
-let kUserdefaultsHardcorePomodoroArrDays = "kUserdefaultsHardcorePomodoroArrDays"
-let kMonday = "Monday"
-let kTuesday = "Tuesday"
-let kWednesday = "Wednesday"
-let kThursday = "Thursday"
-let kFriday = "Friday"
-let kSaturday = "Saturday"
-let kSunday = "Sunday"
-
-func getDayOfWeek(fromDate date: Date) -> String? {
-    let cal = Calendar(identifier: .gregorian)
-    let dayOfWeek = cal.component(.weekday, from: date)
-    switch dayOfWeek {
-     case 1:
-        return kSunday
-    case 2:
-        return kMonday
-    case 3:
-        return kTuesday
-    case 4:
-        return kWednesday
-    case 5:
-        return kThursday
-    case 6:
-        return kFriday
-    case 7:
-        return kSaturday
-    default:
-        return nil
-    }
-}
-
-
+var currentDeviceId = ""
+let kUserdefaultsDeviceId = "kUserdefaultsDeviceId"
 
 let kUserdefaultsSelectedJson = "kUserdefaultsSelectedJson"
-let kUserdefaultsFirstRun = "kUserdefaultsFirstRun"
+
 let kUserdefaultsFirstRunDate = "kUserdefaultsFirstRunDate"
 let kUserdefaultsLastHabitShowDate = "UserdefaultsLastHabitShowDate"
 var kUserdefaultsIsAppEnabled = "kUserdefaultsIsAppEnabled"
@@ -226,7 +196,6 @@ var kUserdefaultsSelectedFolder = "kUserdefaultsSelectedFolder"
 
 let kUserdefaultsArrFocusTypes = "kUserdefaultsArrFocusTypes"
 
-let kUserdefaultsAppPassword = "kUserdefaultsAppPassword"
 
 var kUserdefaults24HoursClearPasswordTime = "kUserdefaults24HoursClearPasswordTime"
 
@@ -279,6 +248,7 @@ var currentHabitPlaying:habit?
 var arrAllMorningHabits = [habit]()
 var arrAllEveningHabits = [habit]()
 struct habit {
+    var id:String!
     var name:String!
     var durationSeconds:Int!
     var urlsArray:[String]
@@ -288,7 +258,9 @@ struct habit {
     var allowUrls:[String]!
     var allowApps:[String]!
     var allowedFocusMode:String!
-    init(name:String, durationSeconds:Int, urlsArray:[String], logQuantity:Bool, logQuantityQuestion:String?, openSpecificApps:Bool,allowUrls:[String],allowApps:[String],allowedFocusMode:String) {
+    var activity_sequence_id:String!
+    init(id:String, name:String, durationSeconds:Int, urlsArray:[String], logQuantity:Bool, logQuantityQuestion:String?, openSpecificApps:Bool,allowUrls:[String],allowApps:[String],allowedFocusMode:String, activity_sequence_id:String) {
+        self.id = id
         self.name = name
         self.durationSeconds = durationSeconds
         self.urlsArray = urlsArray
@@ -298,6 +270,7 @@ struct habit {
         self.allowUrls = allowUrls
         self.allowApps = allowApps
         self.allowedFocusMode = allowedFocusMode
+        self.activity_sequence_id = activity_sequence_id
     }
 }
 
@@ -341,6 +314,7 @@ var arrAllbreakActivities = [breakActivity]()
 var arrActivitiesIncludeInEveryBreak = [breakActivity]()
 var arrActivitiesExcludeInEveryBreak = [breakActivity]()
 struct breakActivity {
+    var id:String!
     var name:String!
     var durationSeconds:Int!
     var IncludeInEveryBreak:Bool!
@@ -355,7 +329,9 @@ struct breakActivity {
     var isOfficeFriendly:Bool!
     var allowedFocusMode:String!
     var logQuantityType:String!
-    init(name:String, durationSeconds:Int, IncludeInEveryBreak:Bool, urlsArray:[String], logQuantity:Bool,isRandomChoice:Bool,choices:[activityChoice],logQuantityQuestion:String?, openSpecificApps:Bool,allowUrls:[String],allowApps:[String],isOfficeFriendly:Bool,allowedFocusMode:String,logQuantityType:String) {
+    var activity_sequence_id:String!
+    init(id:String, name:String, durationSeconds:Int, IncludeInEveryBreak:Bool, urlsArray:[String], logQuantity:Bool,isRandomChoice:Bool,choices:[activityChoice],logQuantityQuestion:String?, openSpecificApps:Bool,allowUrls:[String],allowApps:[String],isOfficeFriendly:Bool,allowedFocusMode:String,logQuantityType:String,activity_sequence_id:String) {
+        self.id = id
         self.name = name
         self.durationSeconds = durationSeconds
         self.IncludeInEveryBreak = IncludeInEveryBreak
@@ -370,17 +346,20 @@ struct breakActivity {
         self.isOfficeFriendly = isOfficeFriendly
         self.allowedFocusMode = allowedFocusMode
         self.logQuantityType = logQuantityType
+        self.activity_sequence_id = activity_sequence_id
     }
 }
 
 
 struct activityChoice {
+    var id:String!
     var name:String!
     var urlsArray:[String]
     var logQuantityQuestion:String!
     var logQuantity:Bool!
     var logQuantityType:String!
-    init(name:String, urlsArray:[String], logQuantityQuestion:String, logQuantity:Bool, logQuantityType:String) {
+    init(name:String, urlsArray:[String], logQuantityQuestion:String, logQuantity:Bool, logQuantityType:String, id:String) {
+        self.id = id
         self.name = name
         self.urlsArray = urlsArray
         self.logQuantityQuestion = logQuantityQuestion
@@ -393,16 +372,16 @@ let avmonitor = AVMonitor()
 
 //////////////////////////////////////////////////////////START AT LOGIN//////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-class LaunchOnStartup {
+class LaunchOnStartup {//todo
     static func itemReferencesInLoginItems() -> (existingReference: LSSharedFileListItem?, lastReference: LSSharedFileListItem?) {
         let appUrl = URL(fileURLWithPath: Bundle.main.bundlePath)
         let loginItemsRef = LSSharedFileListCreate(
             nil,
             kLSSharedFileListSessionLoginItems.takeRetainedValue(),
             nil
-        ).takeRetainedValue() as LSSharedFileList?
+        )!.takeRetainedValue() as LSSharedFileList?
         if loginItemsRef != nil {
-            let loginItems = LSSharedFileListCopySnapshot(loginItemsRef, nil).takeRetainedValue() as Array
+            let loginItems = LSSharedFileListCopySnapshot(loginItemsRef!, nil)!.takeRetainedValue() as Array
             
             if loginItems.count == 0 {
                 return (nil, kLSSharedFileListItemBeforeFirst.takeRetainedValue())
@@ -431,7 +410,7 @@ class LaunchOnStartup {
             nil,
             kLSSharedFileListSessionLoginItems.takeRetainedValue(),
             nil
-        ).takeRetainedValue() as LSSharedFileList?
+        )!.takeRetainedValue() as LSSharedFileList?
         
         if loginItemsRef != nil
         {
@@ -442,8 +421,8 @@ class LaunchOnStartup {
                     
                     let appUrl = URL(fileURLWithPath: Bundle.main.bundlePath) as CFURL
                     LSSharedFileListInsertItemURL(
-                        loginItemsRef,
-                        itemReferences.lastReference,
+                        loginItemsRef!,
+                        itemReferences.lastReference!,
                         nil,
                         nil,
                         appUrl,
@@ -687,13 +666,13 @@ func attechIconWithString(text:String)->NSMutableAttributedString{
 
 
 enum ACTION:Int{
-    case _START_ = 11, _INPROGRESS_, _END_
+    case _START_ = 11, _INPROGRESS_, _END_, _VISUALIZE_
 }
 
 
 
 enum CURRENTSTATE:Int{
-    case _NOTHING_ = 111, _MORNING_HABIT_, _EVENING_HABIT_, _ACTIVITY_, _SHUTOFFMAC_, _BREATHING_, _ABORT_, _FOCUS_SUMMARY_
+    case _NOTHING_ = 111, _MORNING_HABIT_, _EVENING_HABIT_, _ACTIVITY_, _SHUTOFFMAC_, _BREATHING_, _ABORT_, _FOCUS_SUMMARY_, _POSTPON_MORNING_HABIT_, _POSTPON_EVENING_HABIT_, _POSTPON_FOCUS_SUMMARY_, _POSTPON_BREAK_ACTIVITY_
 }
 var currentState:CURRENTSTATE = ._NOTHING_
 var currentAction:ACTION = ACTION._START_
@@ -704,12 +683,92 @@ var lastCurrentAction:ACTION = ACTION._START_
 
 
 func playEveryActivitySound(){
-    NSSound(named: "everyActivity")?.play()
+    if SettingsManagerObject.isSoundEnabled{
+        if let sound = arrCompletingHabitSound.randomElement(){
+            NSSound(named: sound)?.play()
+        }
+    }
+    //    NSSound(named: "everyActivity")?.play()
 }
 
-func playAfterMorningRoutineSound(){
-    NSSound(named: "afterMorningRoutine")?.play()
+func playAfterMorningEveningRoutineSound(isMorning:Bool){
+    if SettingsManagerObject.isSoundEnabled{
+        if isMorning{
+            if let sound = arrCompletingWholeMorningRoutineSound.randomElement(){
+                NSSound(named: sound)?.play()
+            }
+        }else{
+            if let sound = arrCompletingWholeEveningRoutineSound.randomElement(){
+                NSSound(named: sound)?.play()
+            }
+        }
+    }
+    //    NSSound(named: "afterMorningRoutine")?.play()
 }
+
+func playFocusModeStartedSound(){
+    if SettingsManagerObject.isSoundEnabled{
+        if let sound = arrStartFocusSound.randomElement(){
+            NSSound(named: sound)?.play()
+        }
+    }
+}
+func playStartMorningEveningRoutineSound(){
+    if SettingsManagerObject.isSoundEnabled{
+        if let sound = arrStartingMorningEveningRoutineSound.randomElement(){
+            NSSound(named: sound)?.play()
+        }
+    }
+}
+func playFocusPomodorBreakEndsSound(){
+    if SettingsManagerObject.isSoundEnabled{
+        if let sound = arrCompletingHabitSound.randomElement(){
+            NSSound(named: sound)?.play()
+        }
+    }
+}
+
+
+var arrStartingMorningEveningRoutineSound = ["Starting the Morning:Evening Routine_1",
+                                             "Starting the Morning:Evening Routine_2",
+                                             "Starting the Morning:Evening Routine_3.1",
+                                             "Starting the Morning:Evening Routine_3.2",
+                                             "Starting the Morning:Evening Routine_4",
+                                             "Starting the Morning:Evening Routine_5"]
+
+var arrStartFocusSound = ["Start Focus Button_1",
+                          "Start Focus Button_2",
+                          "Start Focus Button_3"]
+
+
+var arrCompletingWholeMorningRoutineSound = ["Completing the Whole Morning Routine_1",
+                                             "Completing the Whole Morning Routine_2.1",
+                                             "Completing the Whole Morning Routine_2.2",
+                                             "Completing the Whole Morning Routine_3.1",
+                                             "Completing the Whole Morning Routine_3.2",
+                                             "Completing the Whole Morning Routine_4"]
+
+
+var arrCompletingWholeEveningRoutineSound = ["Completing the Whole Evening Routine_1",
+                                             "Completing the Whole Evening Routine_2",
+                                             "Completing the Whole Evening Routine_3",
+                                             "Completing the Whole Evening Routine_4",
+                                             "Completing the Whole Evening Routine_5",
+                                             "Completing the Whole Evening Routine_6",
+                                             "Completing the Whole Evening Routine_7"]
+
+var arrCompletingHabitSound = ["Completing a Habit_1",
+                               "Completing a Habit_2.1",
+                               "Completing a Habit_2.2",
+                               "Completing a Habit_3",
+                               "Completing a Habit_4"]
+
+
+//var arrAllSounds = arrCompletingHabitSound + arrCompletingWholeEveningRoutineSound + arrCompletingWholeMorningRoutineSound + arrStartFocusSound + arrStartingMorningEveningRoutineSound
+
+
+
+
 
 var startActivityButtonText = "Start <TIME> <NAME>"
 var unlockMachineButtonText = "Unlock the machine"
@@ -731,6 +790,7 @@ var buttonNoText = "No"
 
 var webhookUrl = "https://hooks.zapier.com/hooks/catch/326116/b98ovxc/"
 func readConfigFile(){
+    addLog(text: "read Config File")
     if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
         startActivityButtonText = activityInfo.value(forKey: "startActivityButtonText") as? String ?? startActivityButtonText
         activityFinishedText = activityInfo.value(forKey: "activityFinishedText") as? String ?? activityFinishedText
@@ -860,338 +920,60 @@ class mouseDownEffectButton: NSButton {
     }
 }
 
-//{ se phele space todod
-func getConfigFile(fileUrl:String, completionHandler: @escaping(_ result: NSDictionary?) -> ()) {
-    addLog(text: "downloading config file")
-    if let myUrl = NSURL(string: fileUrl){
-    
-        let request = NSMutableURLRequest(url:myUrl as URL);
-        request.httpMethod = "GET";
-        
-        let task = URLSession.shared.dataTask(with: request as URLRequest) {
-            data, response, error in
-            
-            if let httpResponse = response as? HTTPURLResponse {
-                if httpResponse.statusCode == 200{
-                    
-                    if data != nil{
-                        
-                        //                    let responseStrInISOLatin = String(data: data!, encoding: String.Encoding.isoLatin1)
-                        //                    guard let modifiedDataInUTF8Format = responseStrInISOLatin?.data(using: String.Encoding.utf8) else {
-                        //                        print("could not convert data to UTF-8 format")
-                        //                        addLog(text: "error config file: could not convert data to UTF-8 format")
-                        //                        completionHandler(nil)
-                        //                        return
-                        //                    }
-                        //
-                        //
-                        //                    do {
-                        //                        let jsonResult = try JSONSerialization.jsonObject(with: modifiedDataInUTF8Format) as? NSDictionary
-                        //                        print(jsonResult)
-                        //                        completionHandler(jsonResult)
-                        //                        return
-                        //                    } catch {
-                        //                        print(error)
-                        //                        addLog(text: "error config file: \(error.localizedDescription)")
-                        //                        completionHandler(nil)
-                        //                        return
-                        //                    }
-                        
-                        do {
-                            if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
-                                
-                                print(jsonResult)
-                                completionHandler(jsonResult)
-                                return
-                            }
-                            
-                        }catch{
-                            print(error)
-                            addLog(text: "error reading config file: \(error.localizedDescription)")
-                            completionHandler(nil)
-                            return
-                        }
-                        
-                    }
-                    
-                    completionHandler(nil)
-                    return
-                }else{
-                    completionHandler(nil)
-                    return
-                }
-            }
-            if error != nil {
-                addLog(text: "error config file: \(error!.localizedDescription)")
-                completionHandler(nil)
-                return
-            }
-            completionHandler(nil)
-            return
-        }
-        task.resume()
-    }else{
-        completionHandler(nil)
-    }
-}
+
+
 var isGettingSchema = false
-func getSchemsFile(completionHandler: @escaping(_ result: NSDictionary?) -> ()) {
-    if let myUrl = NSURL(string: "https://focus-bear.github.io/assets/config/settings-schema.json"){
-        
-        let request = NSMutableURLRequest(url:myUrl as URL);
-        request.httpMethod = "GET";
-        
-        let task = URLSession.shared.dataTask(with: request as URLRequest) {
-            data, response, error in
-            
-            if let httpResponse = response as? HTTPURLResponse {
-                if httpResponse.statusCode == 200{
-                    
-                    if data != nil{
-                        
-                        do {
-                            if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
-                                
-                                print(jsonResult)
-                                completionHandler(jsonResult)
-                                return
-                            }
-                            
-                        }catch{
-                            print(error)
-                        }
-                        
-                    }
-                    completionHandler(nil)
-                    return
-                }else{
-                    completionHandler(nil)
-                    return
-                }
-            }
-            if error != nil {
-                completionHandler(nil)
-                return
-            }
-            completionHandler(nil)
-        }
-        task.resume()
-    }else{
-        completionHandler(nil)
-    }
-}
+//func getSchemsFile(completionHandler: @escaping(_ result: NSDictionary?) -> ()) {
+//    if let myUrl = NSURL(string: "https://focus-bear.github.io/assets/config/settings-schema.json"){
+//
+//        let request = NSMutableURLRequest(url:myUrl as URL);
+//        request.httpMethod = "GET";
+//
+//        let task = URLSession.shared.dataTask(with: request as URLRequest) {
+//            data, response, error in
+//
+//            if let httpResponse = response as? HTTPURLResponse {
+//                if httpResponse.statusCode == 200{
+//
+//                    if data != nil{
+//
+//                        do {
+//                            if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
+//
+//                                print(jsonResult)
+//                                completionHandler(jsonResult)
+//                                return
+//                            }
+//
+//                        }catch{
+//                            print(error)
+//                        }
+//
+//                    }
+//                    completionHandler(nil)
+//                    return
+//                }else{
+//                    completionHandler(nil)
+//                    return
+//                }
+//            }
+//            if error != nil {
+//                completionHandler(nil)
+//                return
+//            }
+//            completionHandler(nil)
+//        }
+//        task.resume()
+//    }else{
+//        completionHandler(nil)
+//    }
+//}
 
 
-func getAbortJsonToUpload(emailAddress:String?, feedback:String, abortReason:String,completionHandler: @escaping(_ result: NSDictionary) -> ()) {
-    var settingsJson = NSDictionary()
-    if let stringDic = UserDefaults.standard.object(forKey: kUserdefaultsSelectedJson) as? String {
-        if let data = stringDic.data(using: String.Encoding.utf8) {
-            do {
-                settingsJson = try (JSONSerialization.jsonObject(with: data, options: []) as? NSDictionary ?? [:])
-            } catch let error as NSError {
-                print(error)
-            }
-        }
-        
-    }else {
-        if let path = Bundle.main.path(forResource: "settings", ofType: "json") {
-            let url = URL(fileURLWithPath: path)
-            do {
-                let data = try Data(contentsOf: url, options: .mappedIfSafe)
-                do {
-                    if let dicResult: NSDictionary = try JSONSerialization.jsonObject(with: data, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary {
-                        settingsJson = dicResult
-                    }
-                }catch {
-                    print(error)
-                }
-            } catch {
-                // handle error
-            }
-        }
-    }
-    
-    let systemVersion = ProcessInfo().operatingSystemVersion
-    let version = "\(systemVersion.majorVersion).\(systemVersion.minorVersion).\(systemVersion.patchVersion)"
-    
-    let firstRunDate = UserDefaults.standard.object(forKey: kUserdefaultsFirstRunDate) as? Date ?? Date()
-    let formatter = DateFormatter()
-    formatter.dateFormat = "yyyy-MM-dd"
-    let myDateString = formatter.string(from: firstRunDate)
-    
-    let jsonResult:NSMutableDictionary = ["abortReason":abortReason, "settingsJSON":settingsJson, "macOSVersion":version, "feedback":feedback, "usageStartDate":myDateString]
-    
-    if emailAddress != nil{
-        jsonResult["emailAddress"] = emailAddress!
-    }
-    
-    
-    
-    let responsePath = webhookUrl
-    if let myUrl = NSURL(string: responsePath){
-        
-        let request = NSMutableURLRequest(url:myUrl as URL);
-        request.httpMethod = "POST";
-        
-        var json = jsonResult//[[String: String]]()
-        
-        
-        
-        
-        
-        let jsonData = try? JSONSerialization.data(withJSONObject: json)
-        //         let boundary = generateBoundaryString()
-        //         let contentData = createBodyWithParameters(imageDataKey: folderData as? NSData ?? NSData(), boundary: boundary, jsonData: jsonData) as Data
-        
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = jsonData
-        
-        
-        let task = URLSession.shared.dataTask(with: request as URLRequest) {
-            data, response, error in
-            
-            // print(response)
-            if let httpResponse = response as? HTTPURLResponse {
-                if httpResponse.statusCode == 200{
-                    
-                    
-                    
-                    if data != nil{
-                        
-                        let status = String(data: data!, encoding: .utf8)!
-                        if status == "1"{
-                            print("success")
-                            
-                        }else{
-                            
-                        }
-                    }
-                }else{
-                    
-                }
-                
-            }
-            //            isUploadingPopupResponse = false
-            if error != nil {
-                completionHandler(jsonResult)
-                return
-            }
-            completionHandler(jsonResult)
-            return;
-        }
-        task.resume()
-    }else{
-        //        isUploadingPopupResponse = false
-        completionHandler(jsonResult)
-    }
-    
-    
-}
-func getQuitJsonToUpload(emailAddress:String?, feedback:String, quitReason:String,completionHandler: @escaping(_ result: NSDictionary) -> ()) {
-    var settingsJson = NSDictionary()
-    if let stringDic = UserDefaults.standard.object(forKey: kUserdefaultsSelectedJson) as? String {
-        if let data = stringDic.data(using: String.Encoding.utf8) {
-            do {
-                settingsJson = try (JSONSerialization.jsonObject(with: data, options: []) as? NSDictionary ?? [:])
-            } catch let error as NSError {
-                print(error)
-            }
-        }
-        
-    }else {
-        if let path = Bundle.main.path(forResource: "settings", ofType: "json") {
-            let url = URL(fileURLWithPath: path)
-            do {
-                let data = try Data(contentsOf: url, options: .mappedIfSafe)
-                do {
-                    if let dicResult: NSDictionary = try JSONSerialization.jsonObject(with: data, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary {
-                        settingsJson = dicResult
-                    }
-                }catch {
-                    print(error)
-                }
-            } catch {
-                // handle error
-            }
-        }
-    }
-    
-    let systemVersion = ProcessInfo().operatingSystemVersion
-    let version = "\(systemVersion.majorVersion).\(systemVersion.minorVersion).\(systemVersion.patchVersion)"
-    
-    let firstRunDate = UserDefaults.standard.object(forKey: kUserdefaultsFirstRunDate) as? Date ?? Date()
-    let formatter = DateFormatter()
-    formatter.dateFormat = "yyyy-MM-dd"
-    let myDateString = formatter.string(from: firstRunDate)
-    
-    let jsonResult:NSMutableDictionary = ["quitReason":quitReason, "settingsJSON":settingsJson, "macOSVersion":version, "feedback":feedback, "usageStartDate":myDateString]
-    
-    if emailAddress != nil{
-        jsonResult["emailAddress"] = emailAddress!
-    }
-    
-    
-    
-    let responsePath = webhookUrl
-    if let myUrl = NSURL(string: responsePath){
-        
-        let request = NSMutableURLRequest(url:myUrl as URL);
-        request.httpMethod = "POST";
-        
-        var json = jsonResult//[[String: String]]()
-        
-        
-        
-        
-        
-        let jsonData = try? JSONSerialization.data(withJSONObject: json)
-        //         let boundary = generateBoundaryString()
-        //         let contentData = createBodyWithParameters(imageDataKey: folderData as? NSData ?? NSData(), boundary: boundary, jsonData: jsonData) as Data
-        
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = jsonData
-        
-        
-        let task = URLSession.shared.dataTask(with: request as URLRequest) {
-            data, response, error in
-            
-            // print(response)
-            if let httpResponse = response as? HTTPURLResponse {
-                if httpResponse.statusCode == 200{
-                    
-                    
-                    
-                    if data != nil{
-                        
-                        let status = String(data: data!, encoding: .utf8)!
-                        if status == "1"{
-                            print("success")
-                            
-                        }else{
-                            
-                        }
-                    }
-                }else{
-                    
-                }
-                
-            }
-            //            isUploadingPopupResponse = false
-            if error != nil {
-                completionHandler(jsonResult)
-                return
-            }
-            completionHandler(jsonResult)
-            return;
-        }
-        task.resume()
-    }else{
-        //        isUploadingPopupResponse = false
-        completionHandler(jsonResult)
-    }
-    
-    
-}
+let allApiObject = AllApi()
+
+
+
 var DebugLogsURL:URL!
 var quantityCsvURL:URL!
 var blockURL:URL!
@@ -1230,18 +1012,32 @@ func getStringFromDate(date:Date, dateFormat:String)->String{
     let now = df.string(from: date)
     return now
 }
-
+func getStringFromDateInUtc(date:Date, dateFormat:String)->String{
+    let df = DateFormatter()
+    df.dateFormat = dateFormat
+    df.timeZone = TimeZone(abbreviation: "UTC")
+    let now = df.string(from: date)
+    return now
+}
 func getDateFromString(date:String, dateFormat:String)->Date?{
     let string = date
     // Create Date Formatter
     let dateFormatter = DateFormatter()
-    // Set Date Format
     dateFormatter.dateFormat = dateFormat
-    // Convert String to Date
-    
+
     return dateFormatter.date(from: string)
 }
 
+func getDateFromStringInUtc(date:String, dateFormat:String)->Date?{
+    let string = date
+    // Create Date Formatter
+    let dateFormatter = DateFormatter()
+    // Set Date Format
+    dateFormatter.timeZone = TimeZone(abbreviation: "UTC")
+    dateFormatter.dateFormat = dateFormat
+    // Convert String to Date
+    return dateFormatter.date(from: string)
+}
 //******************************************CreateDirectoryIfNotExist*******************************************************//
 func CreateDirectoryIfNotExist(path:String){
     if !FileManager.default.fileExists(atPath: path){
@@ -1322,56 +1118,7 @@ class Editing: NSTextField {
 
 
 //
-func activateKey(license_key:String,completionHandler: @escaping(_ result: NSDictionary?) -> ()){
-    //80F7CCF5-7FE54D41-B5A2DD9F-4A84B894
-    //    isUploadingPopupResponse = true
-    let responsePath = "https://api.gumroad.com/v2/licenses/verify?product_permalink=xdkkds&license_key=\(license_key)"
-    if let myUrl = NSURL(string: responsePath){
-        
-        let request = NSMutableURLRequest(url:myUrl as URL);
-        request.httpMethod = "POST";
-        
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        //        request.httpBody = jsonData
-        
-        
-        let task = URLSession.shared.dataTask(with: request as URLRequest) {
-            data, response, error in
-            
-            if let httpResponse = response as? HTTPURLResponse {
-                if httpResponse.statusCode == 200{
-                    
-                    if data != nil{
-                        do {
-                            if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
-                                
-                                completionHandler(jsonResult)
-                                return
-                            }
-                            
-                        }catch{
-                            print(error)
-                        }
-                    }
-                }else{
-                    completionHandler(nil)
-                    return
-                }
-            }
-            //            isUploadingPopupResponse = false
-            if error != nil {
-                completionHandler(nil)
-                return
-            }
-            completionHandler(nil)
-            return
-        }
-        
-        task.resume()
-    }else{
-        completionHandler(nil)
-    }
-}
+
 
 // #MARK:- Check Internet connectivity
 public class Reachability {
@@ -1584,7 +1331,7 @@ class customBox: NSBox {
             if arrFocusType[tagValue]["isOn"] as? Bool == true{
                 //abort focus mode
                 if isHardCorePomodoroModeOn{
-                    if UserDefaults.standard.object(forKey: kUserdefaultsAppPassword) != nil{
+                    if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
                         //                        if pomodoroVcObj!.enterPasswordVcObj == nil{
                         //                            pomodoroVcObj!.enterPasswordVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("enterPasswordVc")) as?enterPasswordVc
                         //                        }
@@ -1614,7 +1361,7 @@ class customBox: NSBox {
                 for i in 0..<arrFocusType.count{
                     if arrFocusType[i]["isOn"] as? Bool == true{
                         let alert = NSAlert()
-                        if let state = UserDefaults.standard.object(forKey: kUserdefaultsHideAllWindowInScreenShots) as? Bool{
+                        if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
                             if state{
                                 alert.window.sharingType = .none
                             }
@@ -1677,6 +1424,7 @@ var focusModeStartWindowLodded = false
 var isFocusModeStartedFromPomodoroMode = false
 func showStartingFocusMode(focusModeIndex: Int, focusType: String){
     addLog(text: "Showing Starting Focus Mode view")
+    startingFocusWindowControllerObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.popUpMenuWindow)))
     startingFocusWindowControllerObj?.contentViewController = startingFocusModeVcObj
     startingFocusWindowControllerObj?.showWindow(nil)
     startingFocusModeVcObj?.ResetData(focusModeIndex: focusModeIndex, focusType: focusType)
@@ -1697,10 +1445,10 @@ var selfAppName = Bundle.main.infoDictionary!["CFBundleName"] as! String
 
 var whatToAchieveInFocusBlock = ""
 
-// **blocked urls**
-var arrBlockedUrls = [String]()
-let kUserdefaultsArrBlockedUrls = "kUserdefaultsArrBlockedUrls"
-//
+//// **blocked urls**
+//var arrBlockedUrls = [String]()
+//let kUserdefaultsArrBlockedUrls = "kUserdefaultsArrBlockedUrls"
+////
 
 func getColorString(color:NSColor)->String{
     let ciColor:CIColor = CIColor(color: color)!
@@ -1750,7 +1498,14 @@ func isFocusModeOn()->Bool{
     return false
 }
 
-
+func getRunningFocusModeId()->String{
+    for dic in arrFocusType{
+        if dic["isOn"] as? Bool == true{
+            return dic["id"] as? String ?? ""
+        }
+    }
+    return ""
+}
 
 //pomodoro
 func resetPomodoroVcFocusListIfNeeded(){
@@ -1825,6 +1580,7 @@ extension String {
 
 var assertionIDDisableSleep: IOPMAssertionID = 0
 func disableSystemSleep(){
+    addLog(text:"disableSystemSleep")
     let reasonForActivity = "Reason for activity" as CFString
     //    var assertionID: IOPMAssertionID = 0
     var success = IOPMAssertionCreateWithName( kIOPMAssertionTypeNoDisplaySleep as CFString,
@@ -2050,7 +1806,7 @@ func isShutOffTimeGoing()->Bool{
     
     var isShutOffTime = false
     
-    if  startDate.compare(shutOffdate) == .orderedDescending{//(start date jyada ho shut off date se ) exshut off 5 bje start date 8 bje
+    if  startDate.compare(shutOffdate) == .orderedDescending{//(start date jyada ho shut off date se ) ex shut off 5 bje start date 8 bje
         if currentDate.compare(startDate) == .orderedAscending  && currentDate.compare(shutOffdate) == .orderedDescending{
             isShutOffTime = true
         }
@@ -2075,6 +1831,7 @@ func showNotificationWithMessage(msg:String){
 
 
 func showSmallTimerWindow(durationSeconds: Int, msg: String, isFocusBreak:Bool){
+    addLog(text:"show Top Small Timer Window")
     getSmallCountDownWindowObject().contentViewController = getsmallCountDownVcObject()
     smallCountDownVcObj?.isFocusBreak = isFocusBreak
     getSmallCountDownWindowObject().window?.styleMask = .borderless
@@ -2395,5 +2152,208 @@ extension NSTextField{
     func setFocus(){
         self.selectText(self)
         self.currentEditor()?.selectedRange = NSRange(location: 0, length: self.stringValue.count)
+    }
+}
+
+
+
+
+
+
+
+//public extension NSTextField
+//{
+//    var isFocused:Bool {
+//        if
+//            window?.firstResponder is NSTextView,
+//            let fieldEditor = window?.fieldEditor(false, for: nil),
+//            let delegate = fieldEditor.delegate as? NSTextField,
+//            self == delegate
+//        {
+//            return true
+//        }
+//        return false
+//    }
+//}
+
+
+func getUuid()->String{
+    return UUID().uuidString.lowercased()
+}
+
+
+func showAlertNoInternet(window:NSWindow){
+//        if self.view.window == nil{// doing this beacuse when window is opening for the first time and if window is not completely loddded than it should wait for window (verna crash ho rha tha)
+//            self.perform(#selector(showAlertNoInternet), with: nil, afterDelay: 1)
+//            return;
+//        }
+    var noInternetTitle = "No Internet Connection"
+    var noInternetSubTitle = "Make sure your device is connected to the internet."
+    addLog(text: "settings clicked:- No Internet Connection")
+    if let activationNagInfo = configjson.value(forKey: "activationNagInfo") as? NSDictionary{
+        if let text = activationNagInfo.value(forKey: "noInternetTitle") as? String{
+            noInternetTitle = text
+        }
+        if let text = activationNagInfo.value(forKey: "noInternetSubTitle") as? String{
+            noInternetSubTitle = text
+        }
+    }
+    let alert = NSAlert()
+    if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
+        if state{
+            alert.window.sharingType = .none
+        }
+    }
+    alert.messageText = noInternetTitle
+    alert.informativeText = noInternetSubTitle
+    alert.alertStyle = .warning
+    alert.addButton(withTitle:  buttonOkText)
+    alert.beginSheetModal(for: window, completionHandler: {_ in
+        window.close()
+    })
+    
+    
+}
+
+
+extension Bundle {
+    var releaseVersionNumber: String? {
+        return infoDictionary?["CFBundleShortVersionString"] as? String
+    }
+    var buildVersionNumber: String? {
+        return infoDictionary?["CFBundleVersion"] as? String
+    }
+}
+
+
+var graphOneMonthData:NSDictionary?
+var graphOneDayData:[NSDictionary]?
+
+
+//*****************Safari Chrome Active Tab Url and Titlle*********************//
+
+func getSafariActiveTabUrl()->String?{
+    var script: String = ""
+    
+    script =
+    """
+    tell application "Safari"
+    set the_wnd to front window
+    set active_tab to current tab in the_wnd
+    set taburl to URL of active_tab
+    end tell
+    """
+    
+    if let appleScript = NSAppleScript(source: script) {
+        
+        var errors : NSDictionary? = nil
+        let desc = appleScript.executeAndReturnError(&errors)
+        if errors != nil {
+            print(errors)
+        }
+        return desc.stringValue
+    }
+    return nil
+}
+func getSafariActiveTabTitle()->String?{
+    var script: String = ""
+    
+    script =
+    """
+    tell application "Safari"
+    set the_wnd to front window
+    set active_tab to current tab in the_wnd
+    set tabtitle to name of active_tab
+    end tell
+    """
+    
+    if let appleScript = NSAppleScript(source: script) {
+        
+        var errors : NSDictionary? = nil
+        let desc = appleScript.executeAndReturnError(&errors)
+        if errors != nil {
+            print(errors)
+        }
+        return desc.stringValue
+    }
+    return nil
+}
+func getGoogleChromeActiveTabUrl()->String?{
+    var script: String = ""
+    
+    script =
+    """
+    tell application "Google Chrome"
+    set the_wnd to front window
+    set active_tab to active tab in the_wnd
+    set taburl to URL of active_tab
+    end tell
+    """
+    
+    if let appleScript = NSAppleScript(source: script) {
+        
+        var errors : NSDictionary? = nil
+        let desc = appleScript.executeAndReturnError(&errors)
+        if errors != nil {
+            print(errors)
+        }
+        return desc.stringValue
+    }
+    return nil
+}
+
+func getGoogleChromeActiveTabTitle()->String?{
+    var script: String = ""
+    
+    script =
+    """
+    tell application "Google Chrome"
+    set the_wnd to front window
+    set active_tab to active tab in the_wnd
+    set tabtitle to title of active_tab
+    end tell
+    """
+    
+    if let appleScript = NSAppleScript(source: script) {
+        
+        var errors : NSDictionary? = nil
+        let desc = appleScript.executeAndReturnError(&errors)
+        if errors != nil {
+            print(errors)
+        }
+        return desc.stringValue
+    }
+    return nil
+}
+//*******************************************************//
+
+
+
+extension NSLayoutConstraint {
+    /**
+     Change multiplier constraint
+
+     - parameter multiplier: CGFloat
+     - returns: NSLayoutConstraint
+    */
+    func setMultiplier(multiplier:CGFloat) -> NSLayoutConstraint {
+
+        NSLayoutConstraint.deactivate([self])
+
+        let newConstraint = NSLayoutConstraint(
+            item: firstItem,
+            attribute: firstAttribute,
+            relatedBy: relation,
+            toItem: secondItem,
+            attribute: secondAttribute,
+            multiplier: multiplier,
+            constant: constant)
+
+        newConstraint.priority = priority
+        newConstraint.shouldBeArchived = self.shouldBeArchived
+        newConstraint.identifier = self.identifier
+
+        NSLayoutConstraint.activate([newConstraint])
+        return newConstraint
     }
 }

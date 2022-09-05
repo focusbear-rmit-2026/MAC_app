@@ -91,30 +91,45 @@ class preloadFocusModesVc: NSViewController, NSTextFieldDelegate {
         }
         
         let selectedIndex = popUpBtnWork.indexOfSelectedItem
+        var dic: [String : Any]?
         switch selectedIndex {
         case 0:
             return // not possible because button is not enabled if option 0 is selected
         case 1://Programming
-                let dic:[String:Any] = ["name":"\(titleProgramming) \(workText)", "color": getColorString(color: NSColor(red: 208/255, green: 150/255, blue: 60/255, alpha: 1)), "appsArray": ["/Applications/Visual Studio Code.app", "/Applications/XCode.app", "/Applications/Utilities/Terminal.app"], "urlsArray": ["https://stackoverflow.com","localhost"], "isOn": false, "isAllowedAllApps":false, "isAllowedAllUrls":false]
-                arrFocusType.insert(dic, at: arrFocusType.count - 1)
-            
-            
+            dic = ["name":"\(titleProgramming) \(workText)", "color": getColorString(color: NSColor(red: 208/255, green: 150/255, blue: 60/255, alpha: 1)), "allowed_apps": ["/Applications/Visual Studio Code.app", "/Applications/XCode.app", "/Applications/Utilities/Terminal.app"], "allowed_urls": ["https://stackoverflow.com","localhost"], "isOn": false, "isAllowedAllApps":false, "isAllowedAllUrls":false]
+
         case 2://Graphic Design
-            let dic:[String:Any] = ["name":"\(titleGraphicDesign) \(workText)", "color": getColorString(color: NSColor(red: 208/255, green: 150/255, blue: 60/255, alpha: 1)), "appsArray": ["/Applications/Figma.app", "/Applications/Adobe Illustrator.app", "/Applications/Adobe Photoshop.app"], "urlsArray": ["https://www.figma.com"], "isOn": false, "isAllowedAllApps":false, "isAllowedAllUrls":false]
-            arrFocusType.insert(dic, at: arrFocusType.count - 1)
+            dic = ["name":"\(titleGraphicDesign) \(workText)", "color": getColorString(color: NSColor(red: 208/255, green: 150/255, blue: 60/255, alpha: 1)), "allowed_apps": ["/Applications/Figma.app", "/Applications/Adobe Illustrator.app", "/Applications/Adobe Photoshop.app"], "allowed_urls": ["https://www.figma.com"], "isOn": false, "isAllowedAllApps":false, "isAllowedAllUrls":false]
             
         case 3://Data Analysis
-            let dic:[String:Any] = ["name":"\(titleDataAnalysis) \(workText)", "color": getColorString(color: NSColor(red: 208/255, green: 150/255, blue: 60/255, alpha: 1)), "appsArray": ["/Applications/Microsoft Excel.app"], "urlsArray": ["https://www.office.com"], "isOn": false, "isAllowedAllApps":false, "isAllowedAllUrls":false]
-            arrFocusType.insert(dic, at: arrFocusType.count - 1)
+            dic = ["name":"\(titleDataAnalysis) \(workText)", "color": getColorString(color: NSColor(red: 208/255, green: 150/255, blue: 60/255, alpha: 1)), "allowed_apps": ["/Applications/Microsoft Excel.app"], "allowed_urls": ["https://www.office.com"], "isOn": false, "isAllowedAllApps":false, "isAllowedAllUrls":false]
+        
         case 4:
-            let dic:[String:Any] = ["name":"\(textFieldSomethingElse.stringValue) \(workText)", "color": getColorString(color: NSColor(red: 208/255, green: 150/255, blue: 60/255, alpha: 1)), "appsArray": [], "urlsArray": [], "isOn": false, "isAllowedAllApps":true, "isAllowedAllUrls":true]
-            
-            arrFocusType.insert(dic, at: arrFocusType.count - 1)
+            dic = ["name":"\(textFieldSomethingElse.stringValue) \(workText)", "color": getColorString(color: NSColor(red: 208/255, green: 150/255, blue: 60/255, alpha: 1)), "allowed_apps": [], "allowed_urls": [], "isOn": false, "isAllowedAllApps":true, "isAllowedAllUrls":true]
+
             
         default:
             break
         }
-        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+        
+        if dic != nil{
+            let id = getUuid()
+            dic!["id"] = id
+            if arrFocusType.count == 0{
+                arrFocusType.append(dic!)
+            }else{
+                arrFocusType.insert(dic!, at: arrFocusType.count - 1)
+            }
+            UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+            allApiObject.addFocusMode(focusType: dic!, completionHandler: {newDic in
+//                if newDic != nil{
+//                    dic!["id"] = newDic!.value(forKey: "id") as? String ?? ""//["id"] as? String ?? ""
+//
+//                }
+                
+            })
+        }
+        
         thirdVcObj?.btnFocesModesLodded()
     }
     

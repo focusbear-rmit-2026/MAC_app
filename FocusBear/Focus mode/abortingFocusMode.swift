@@ -102,10 +102,9 @@ class abortingFocusModeVc: NSViewController {
             second = "0\(s)"
         }
         self.lblSeconds.stringValue = "\(minute):\(second)"
-        DispatchQueue.global().async {
+        DispatchQueue.global().sync {
             self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
-            RunLoop.current.add(self.timer!, forMode: RunLoop.Mode.common)
-            RunLoop.current.run()
+            RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
         }
     }
     
@@ -146,6 +145,7 @@ class abortingFocusModeVc: NSViewController {
         self.view.window?.close()
     }
     @IBAction func btnAbortFocusClicked(_ sender: Any) {
+        addLog(text: "abortingFocusModeVc - btnAbortFocusClicked")//
         if isFocusModeOn() == false{
             self.view.window?.close()
             return

@@ -123,7 +123,7 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
         textView.delegate = self
     }
     override func viewWillAppear() {
-        if kIsReducedMotion{
+        if SettingsManagerObject.kIsReducedMotion{
             imgViewGif.image = nil
         }else{
             imgViewGif.image = NSImage(named: "Crying_small")
@@ -215,10 +215,10 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
             second = "0\(s)"
         }
         self.lblTimer.stringValue = "\(minute):\(second)"
-        DispatchQueue.global().async {
+        DispatchQueue.global().sync {
             self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
-            RunLoop.current.add(self.timer!, forMode: RunLoop.Mode.common)
-            RunLoop.current.run()
+            RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
+            
         }
     }
     @objc func performTimerCount() {
@@ -253,7 +253,7 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
                         appdelegate?.menuItem_Quit()
                     }else if self.popUpBtnReasons.indexOfSelectedItem == 2{
                         addLog(text: "App Quit - The app is broken")
-                        getQuitJsonToUpload(emailAddress: self.textFieldEmail.stringValue, feedback: self.textView.string, quitReason: "The app is broken", completionHandler: {dic in
+                        allApiObject.getQuitJsonToUpload(emailAddress: appdelegate?.user?.email ?? "", feedback: self.textView.string, quitReason: "The app is broken", completionHandler: {dic in
                             DispatchQueue.main.async {
                                 appdelegate?.menuItem_Quit()
                             }
@@ -270,15 +270,10 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
             }
         }
     }
-//    @IBAction func btnQuitAppBrokenClicked(_ sender: Any) {
-//        getQuitJsonToUpload(emailAddress: textFieldEmail.stringValue, feedback: textView.string, quitReason: "The app is broken", completionHandler: {dic in
-//            DispatchQueue.main.async {
-//
-//            }
-//        })
-//    }
+
    
     @IBAction func btnQuitClicked(_ sender: Any) {
+        addLog(text: "quittingConfirmVc - btnQuitClicked")//
         self.btnQuit.isHidden = true
         self.scrollView.isHidden = true
         self.lblTimer.isHidden = false

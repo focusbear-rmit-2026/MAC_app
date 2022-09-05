@@ -147,7 +147,7 @@ class activateNowvc: NSViewController,NSTextFieldDelegate {
         }
         let sKey = txtFldLicense.stringValue
         //"80F7CCF5-7FE54D41-B5A2DD9F-4A84B894"key"
-        activateKey(license_key: sKey, completionHandler: { jsonResult in
+        allApiObject.activateKey(license_key: sKey, completionHandler: { jsonResult in
             DispatchQueue.main.async {
                 self.responceMilgaya()
             }
@@ -189,7 +189,7 @@ class activateNowvc: NSViewController,NSTextFieldDelegate {
                         }
                         
                         let alert = NSAlert()
-                        if let state = UserDefaults.standard.object(forKey: kUserdefaultsHideAllWindowInScreenShots) as? Bool{
+                        if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
                             if state{
                                 alert.window.sharingType = .none
                             }
@@ -350,7 +350,7 @@ class activateNowvc: NSViewController,NSTextFieldDelegate {
         }
         
         let alert = NSAlert()
-        if let state = UserDefaults.standard.object(forKey: kUserdefaultsHideAllWindowInScreenShots) as? Bool{
+        if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
             if state{
                 alert.window.sharingType = .none
             }

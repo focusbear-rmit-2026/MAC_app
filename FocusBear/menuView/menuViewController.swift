@@ -11,6 +11,7 @@ import Cocoa
 class menuViewController: NSViewController {
 
     
+    
     @IBOutlet weak var boxCheckMark: NSBox!
     @IBOutlet weak var lblTrialVersionInfo: NSTextField!
     @IBOutlet weak var lblTitleReactivate: NSTextField!
@@ -110,6 +111,28 @@ class menuViewController: NSViewController {
         
         bottomLine.isHidden = true
         
+        
+        for i in 0..<arrFocusType.count{
+            if let state = arrFocusType[i]["isDefault"] as? Bool{
+                if  state{
+                    if let common = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
+                        if let defaultFocusText = common.value(forKey: "defaultFocusText") as? String{
+                            arrFocusType[i]["name"] = defaultFocusText
+                        }
+                    }
+                }
+            }
+            if let state = arrFocusType[i]["isMeetings"] as? Bool{
+                if  state{
+                    if let common = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
+                        if let defaultFocusText = common.value(forKey: "meetingsFocusText") as? String{
+                            arrFocusType[i]["name"] = defaultFocusText
+                        }
+                    }
+                }
+            }
+        }
+        
     }
     
     override func viewWillDisappear() {//will not call if view is inside nsmenu
@@ -192,7 +215,7 @@ class menuViewController: NSViewController {
         tblViewFocusMode.reloadData()
         
         
-        if isOfficeModeEnabled{
+        if SettingsManagerObject.isOfficeModeEnabled{
             boxCheckMark.isHidden = false
         }else{
             boxCheckMark.isHidden = true
@@ -224,13 +247,7 @@ class menuViewController: NSViewController {
     @IBAction func btnEnterLicenseKeyClicked(_ sender: Any) {
         appdelegate?.menuItemEnterLicenseKey()
     }
-//    @IBAction func btnSettingsClicked(_ sender: Any) {
-//        if UserDefaults.standard.object(forKey: "trialExpired") != nil{
-//            activationWindowControllerObj?.showSevenDayTrialVc()
-//            return;
-//        }
-//        appdelegate?.menuItem_ChangeJson()
-//    }
+
     @IBAction func btnPreferencesClicked(_ sender: Any) {
         if UserDefaults.standard.object(forKey: "trialExpired") != nil{
             activationWindowControllerObj?.showSevenDayTrialVc()
@@ -243,7 +260,41 @@ class menuViewController: NSViewController {
             activationWindowControllerObj?.showSevenDayTrialVc()
             return;
         }
-        appdelegate?.menuItem_ExportStatistics()
+        appdelegate!.statusItem.menu?.cancelTracking()
+        self.perform(#selector(menuItem_ExportStatistics), with: nil, afterDelay: 0)
+    }
+    @objc func menuItem_ExportStatistics() {
+        let openPanel = NSOpenPanel()
+        openPanel.canChooseFiles = false
+        openPanel.canChooseDirectories = true
+        openPanel.allowsMultipleSelection = false
+        openPanel.treatsFilePackagesAsDirectories = false
+        openPanel.prompt = "Export"
+        
+        if let common = configjson.value(forKey: "common") as? NSDictionary{
+            openPanel.prompt = common.value(forKey: "buttonExportText") as? String ?? "Export"
+        }
+        
+        let button: NSApplication.ModalResponse = openPanel.runModal()
+        if button == NSApplication.ModalResponse.OK {
+            if let url = openPanel.url {
+                let filemanager = FileManager.default
+                let destUrl = url.appendingPathComponent(quantityCsvURL.lastPathComponent)
+                if filemanager.fileExists(atPath: destUrl.path){
+                    do{
+                        try filemanager.removeItem(at: destUrl)
+                    }catch{
+                        print(error)
+                    }
+                }
+                
+                do{
+                    try FileManager.default.copyItem(at: quantityCsvURL, to: destUrl)
+                }catch{
+                    print(error)
+                }
+            }
+        }
     }
     @IBAction func btnStartPomodoroModeClicked(_ sender: Any) {
         if UserDefaults.standard.object(forKey: "trialExpired") != nil{
@@ -277,7 +328,7 @@ class menuViewController: NSViewController {
     }
     @IBAction func btnStopHardcorePomodoroModeClicked(_ sender: Any) {
         if isHardCorePomodoroModeOn{
-            if UserDefaults.standard.object(forKey: kUserdefaultsAppPassword) != nil{
+            if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
 //                if self.enterPasswordVcObj == nil{
 //                    self.enterPasswordVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("enterPasswordVc")) as?enterPasswordVc
 //                }
@@ -298,19 +349,10 @@ class menuViewController: NSViewController {
         }
         
     }
-    //    @IBAction func btnFocusPreferencesClicked(_ sender: Any) {
-//        if UserDefaults.standard.object(forKey: "trialExpired") != nil{
-//            activationWindowControllerObj?.showSevenDayTrialVc()
-//            return;
-//        }
-//        preferencesWindowControllerObj?.showWindow(self)
-//        if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-//            tabview.selectedTabViewItemIndex = 1
-//        }
-//        NSApplication.shared.activate(ignoringOtherApps: true)
-//    }
+
     
     @IBAction func btnCheckForUpdatesClicked(_ sender: Any) {
+        addLog(text: "btnCheckForUpdatesClicked")//
         appdelegate!.updater?.checkForUpdates(self)
     }
     
@@ -344,17 +386,18 @@ class menuViewController: NSViewController {
         }
         
         addLog(text: "menu item Enable Office Mode by user")
-        if isOfficeModeEnabled{
-            isOfficeModeEnabled = false
+        if SettingsManagerObject.isOfficeModeEnabled{
+            SettingsManagerObject.isOfficeModeEnabled = false
             boxCheckMark.isHidden = true
-            UserDefaults.standard.set(false, forKey: kUserdefaultsOfficeModeEnabled)
+            SettingsManagerObject.isSettingsChanged = true
+            SettingsManagerObject.putUserLocalDeviceSettings()
         }else{
             
                 
             let filterArr = arrAllbreakActivities.filter { $0.isOfficeFriendly == true}
             if filterArr.count == 0{// no activity found with isOfficeFriendly
                 let alert = NSAlert()
-                if let state = UserDefaults.standard.object(forKey: kUserdefaultsHideAllWindowInScreenShots) as? Bool{
+                if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
                     if state{
                         alert.window.sharingType = .none
                     }
@@ -391,8 +434,9 @@ class menuViewController: NSViewController {
     }
     
     func enableOfficeMode(){
+        addLog(text: "enableOfficeMode")//
         let alert = NSAlert()
-        if let state = UserDefaults.standard.object(forKey: kUserdefaultsHideAllWindowInScreenShots) as? Bool{
+        if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
             if state{
                 alert.window.sharingType = .none
             }
@@ -404,11 +448,13 @@ class menuViewController: NSViewController {
         alert.messageText = officeModeEnabledSuccessfullyText
         alert.addButton(withTitle: buttonOkText)
         _ = alert.runModal()
-        isOfficeModeEnabled = true
+        SettingsManagerObject.isOfficeModeEnabled = true
         boxCheckMark.isHidden = false
-        UserDefaults.standard.set(true, forKey: kUserdefaultsOfficeModeEnabled)
+        SettingsManagerObject.isSettingsChanged = true
+        SettingsManagerObject.putUserLocalDeviceSettings()
     }
     func addOfficeFriendlyActivityInSettings(){
+        addLog(text: "addOfficeFriendlyActivityInSettings")//
         var jsonResult = NSDictionary()
         if let stringDic = UserDefaults.standard.object(forKey: kUserdefaultsSelectedJson) as? String {
             //            jsonResult = dic
@@ -443,23 +489,64 @@ class menuViewController: NSViewController {
         guard let mutableDic = jsonResult.mutableCopy() as? NSMutableDictionary else{
             return
         }
-
-        if var breakActivities = mutableDic.value(forKey: "breakActivities") as? [NSDictionary] {
-            let activityDic: NSMutableDictionary = ["name":"Stand up and stretch", "durationSeconds":20, "isOfficeFriendly":true]
+        let id = getUuid()
+        let activity_sequence_id = arrAllbreakActivities.first?.activity_sequence_id ?? ""
+        if var breakActivities = mutableDic.value(forKey: "break_activities") as? [NSDictionary] {
+            let activityDic: NSMutableDictionary = ["id":id, "name":"Stand up and stretch", "duration_seconds":20, "is_office_friendly":true, "activity_sequence_id":activity_sequence_id]
             breakActivities.append(activityDic)
-            mutableDic["breakActivities"] = breakActivities
+            mutableDic["break_activities"] = breakActivities
             
-            arrAllbreakActivities.append(breakActivity(name: "Stand up and stretch", durationSeconds: 20, IncludeInEveryBreak: false, urlsArray: [], logQuantity:false, isRandomChoice: false, choices: [], logQuantityQuestion: "", openSpecificApps: false, allowUrls: [], allowApps: [], isOfficeFriendly: true, allowedFocusMode: "", logQuantityType: ""))
+            arrAllbreakActivities.append(breakActivity(id:id,name: "Stand up and stretch", durationSeconds: 20, IncludeInEveryBreak: false, urlsArray: [], logQuantity:false, isRandomChoice: false, choices: [], logQuantityQuestion: "", openSpecificApps: false, allowUrls: [], allowApps: [], isOfficeFriendly: true, allowedFocusMode: "", logQuantityType: "",activity_sequence_id:activity_sequence_id))
+            
+            
+            
+            
+            
+            
+            allApiObject.isSettingsValid(settings: mutableDic, completionHandler: {dic,statusCode  in
+                DispatchQueue.main.async {
+
+                    
+                    if dic == nil{
+                        
+                        
+                    }else{
+                        
+                        if statusCode == 200{
+
+                            
+                            do {
+                                let jsonResultData =  try JSONSerialization.data(withJSONObject: dic!, options: JSONSerialization.WritingOptions.prettyPrinted)
+                                
+                                print(jsonResultData)
+                                
+                                if let backToString = String(data: jsonResultData, encoding: String.Encoding.utf8){
+                                    UserDefaults.standard.set(backToString, forKey: kUserdefaultsSelectedJson)
+                                    
+                                }
+                                
+                                
+                            } catch let myJSONError {
+                                print(myJSONError)
+                            }
+                            
+                        }else{
+ 
+                        }
+                    }
+                }
+            })
+
         }
 
-        do {
-            let data = try (JSONSerialization.data(withJSONObject: mutableDic, options: .prettyPrinted))
-            if let str = String(data: data, encoding: String.Encoding.utf8){
-                UserDefaults.standard.set(str, forKey: kUserdefaultsSelectedJson)
-            }
-        } catch let error as NSError {
-            print(error)
-        }
+//        do {
+//            let data = try (JSONSerialization.data(withJSONObject: mutableDic, options: .prettyPrinted))
+//            if let str = String(data: data, encoding: String.Encoding.utf8){
+//                UserDefaults.standard.set(str, forKey: kUserdefaultsSelectedJson)
+//            }
+//        } catch let error as NSError {
+//            print(error)
+//        }
     }
     
 }
@@ -533,10 +620,18 @@ extension menuViewController: NSTableViewDelegate, NSTableViewDataSource{
             if arrFocusType[cRow]["isOn"] as? Bool == false{
                 cell.boxColor.fillColor = .tertiaryLabelColor
                 cell.imgViewAppIcon.image = NSImage(named: NSImage.Name("NSTouchBarPlayTemplate"))
+                cell.lblIntension.isHidden = true
             }else{//on NSTouchBarPlayTemplate
                 cell.imgViewAppIcon.image = NSImage(named: NSImage.Name("NSTouchBarRecordStopTemplate"))
                 if let color = arrFocusType[cRow]["color"] as? String{
                     cell.boxColor.fillColor = HexToColor(hexString: color)
+                }
+                
+                if whatToAchieveInFocusBlock.isEmpty{
+                    cell.lblIntension.isHidden = true
+                }else{
+                    cell.lblIntension.isHidden = false
+                    cell.lblIntension.stringValue = whatToAchieveInFocusBlock
                 }
             }
 

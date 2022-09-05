@@ -26,7 +26,7 @@ class mainWindowController: NSWindowController {
         self.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.numberOfWindowLevelKeys)))
         
         
-        if let state = UserDefaults.standard.object(forKey: kUserdefaultsHideAllWindowInScreenShots) as? Bool{
+        if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
             if state{
                 self.window?.sharingType = .none
             }
@@ -37,19 +37,6 @@ class mainWindowController: NSWindowController {
        
   
     }
-//    @objc func preventRecording(){
-//        avmonitor.preventWindow(fromBeingCaptured: self.window)
-//    }
-//    func preventWindowFromBeingCaptured(){
-//
-//    }
-//    @objc func setframe() {
-//        let screenList = NSScreen.screens
-//        for screen in screenList {  // create the corresponding windows
-//            //                     resetWin(BGWindow(contentRect: NSMakeRect(0, 0, NSWidth(screen.frame), NSHeight(screen.frame)), styleMask: .borderless, backing: .buffered, defer: true, screen: screen))
-//            self.window?.setFrame(NSMakeRect(0, 0, NSWidth(screen.frame), NSHeight(screen.frame)), display: true)
-//            break;
-//        }
-//    }
+
     
 }

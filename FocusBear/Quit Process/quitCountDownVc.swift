@@ -65,7 +65,7 @@ class quitCountDownVc: NSViewController {
     }
     
     override func viewWillAppear() {
-        if kIsReducedMotion{
+        if SettingsManagerObject.kIsReducedMotion{
             imgViewGif.image = nil
         }else{
             imgViewGif.image = NSImage(named: "Crying_small")
@@ -74,7 +74,7 @@ class quitCountDownVc: NSViewController {
     }
     var enterPasswordVcObj: enterPasswordVc?
     func resetData(){
-        if UserDefaults.standard.object(forKey: kUserdefaultsAppPassword) != nil{
+        if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
             if self.enterPasswordVcObj == nil{
                 self.enterPasswordVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("enterPasswordVc")) as?enterPasswordVc
             }
@@ -111,10 +111,10 @@ class quitCountDownVc: NSViewController {
             second = "0\(s)"
         }
         self.lblSeconds.stringValue = "\(minute):\(second)"
-        DispatchQueue.global().async {
+        DispatchQueue.global().sync {
             self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
-            RunLoop.current.add(self.timer!, forMode: RunLoop.Mode.common)
-            RunLoop.current.run()
+            RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
+            print("xxxxx")
         }
     }
     
@@ -150,6 +150,7 @@ class quitCountDownVc: NSViewController {
     @IBAction func btnEmaiClicked(_ sender: Any) {
     }
     @IBAction func btnCancelAbortClicked(_ sender: Any) {
+        addLog(text: "quitCountDownVc - btnCancelAbortClicked")//
         self.timer?.invalidate()
         self.timer = nil
         self.view.window?.close()

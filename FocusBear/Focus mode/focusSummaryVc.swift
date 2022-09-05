@@ -26,6 +26,7 @@ class focusSummaryVc: NSViewController {
     @IBOutlet weak var lblActivitySummary: NSTextField!
     @IBOutlet weak var lblFocusSummary: NSTextField!
    
+    var viewVisibleCount = 0
     
     var titleText = "You completed <COUNT> focus blocks today."
     var focusTableColumnFirstText = "Focus type"
@@ -46,7 +47,7 @@ class focusSummaryVc: NSViewController {
         super.viewDidLoad()
         // Do view setup here.
         btnClickHere.isHidden = true
-        btnNeedMoreTime.title = "I need one more minute"
+        
 //        btnClickHere.title = "Click here to see what you achieved."
         btnContinue.title = "Continue"
         lblActivitySummary.stringValue = "Activity Summary:"
@@ -126,6 +127,24 @@ class focusSummaryVc: NSViewController {
         lblActivitySummary.isHidden = false
         
         lblTitle.stringValue = titleText.replacingOccurrences(of: "<COUNT>", with: "\(arrFocusSummaryDic.count)")//"You completed \(arrFocusSummaryDic.count) focus blocks today."
+        
+        
+        
+        if viewVisibleCount == 0{
+            btnNeedMoreTime.title = "I need one more minute"
+            
+            if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
+                if let focusSummaryInfo = focusInfo.value(forKey: "focusSummaryInfo") as? NSDictionary{
+                    if let buttonNeedMoreTimeText = focusSummaryInfo.value(forKey: "buttonNeedMoreTimeText") as? String{
+                        btnNeedMoreTime.title = buttonNeedMoreTimeText
+                    }
+                }
+            }
+        }else{
+            
+            btnNeedMoreTime.title = "I still need to work more" // todo text
+        }
+        
     }
     override func viewDidAppear() {
         
@@ -257,7 +276,7 @@ class focusSummaryVc: NSViewController {
                         
                         
                         
-                        if logQuantityType == "average"{
+                        if logQuantityType == "AVG"{
                             if total != 0{
                                 average = total/Double(arr.count)
                             }
@@ -338,13 +357,36 @@ class focusSummaryVc: NSViewController {
     
     @IBAction func btnContinueClicked(_ sender: Any) {
         addLog(text: "button continue Clicked from focus summary")
+        let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
+        let shutOffdate = Calendar.current.date(bySettingHour: shutOffTime!.hour, minute: shutOffTime!.minute, second: shutOffTime!.second, of: Date())!
+        
+        let curreentDate = Date()
+        if curreentDate > shutOffdate{// iska matlab 20-24 k bich
+            let tomorrowDate = Calendar.current.date(byAdding: .day, value: 1, to: Date())!
+            let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: tomorrowDate)
+            UserDefaults.standard.set(startDate, forKey: kUserdefaultsFocusSummaryShowedTillDate)
+        }else if curreentDate < startDate{ //  iska mtlb 1 se 10 k bich ka time
+            UserDefaults.standard.set(startDate, forKey: kUserdefaultsFocusSummaryShowedTillDate)
+        }else{// not shut off time
+
+        }
+        
+        
         currentState = ._NOTHING_
         appdelegate?.shutOffMac()
+        viewVisibleCount = 0
     }
     @IBAction func btnNeedMoreTimeClicked(_ sender: Any) {
-        addLog(text: "button Need one More minute Clicked from focus summary")
-        btnNeedMoreTime.isHidden = true
-        mainViewControllerObj?.giveOneMoreMinuteBeforeShutOffMac()
+        if viewVisibleCount == 0{
+            addLog(text: "button Need one More minute Clicked from focus summary")
+            mainViewControllerObj?.giveOneMoreMinuteBeforeShutOffMac()
+        }else{
+            addLog(text: "button I still need to work more Clicked from focus summary")
+            mainViewControllerObj?.btnAbortClicked(self)
+        }
+        
+        viewVisibleCount += 1
+        
     }
 }
 

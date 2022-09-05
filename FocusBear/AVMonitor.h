@@ -23,7 +23,6 @@
 
 
 
-
 /* METHODS */
 
 -(BOOL)isMicOn;

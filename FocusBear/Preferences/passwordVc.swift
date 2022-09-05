@@ -9,6 +9,7 @@ import Cocoa
 
 class passwordVc: NSViewController {
 
+    @IBOutlet weak var btnDisablePassword: NSButton!
     @IBOutlet weak var lblConfirmPassword: NSTextField!
     @IBOutlet weak var lblNewPassword: NSTextField!
     @IBOutlet weak var lblPasswordState: NSTextField!
@@ -22,30 +23,37 @@ class passwordVc: NSViewController {
         super.viewDidLoad()
         // Do view setup here.
         
-
+        btnDisablePassword.title = "Disable Password"
         lblInfo.stringValue = "You will need to enter your password - When opening preferences, When aborting an evening routine, When aborting the morning routine."
         
         if let passwordPreferencesInfo = configjson.value(forKey: "passwordPreferencesInfo") as? NSDictionary{
             if let title = passwordPreferencesInfo.value(forKey: "infoText") as? String{
                 lblInfo.stringValue = title
             }
+            if let title = passwordPreferencesInfo.value(forKey: "buttonDisablePasswordText") as? String{
+                btnDisablePassword.title = title
+            }
         }
     }
     
     override func viewWillAppear() {
+        resetView()
+    }//your password has been disabled.
+    //
+    func resetView(){
         textFieldNewPassword.stringValue = ""
         textFieldConfirmPassword.stringValue = ""
         lblNewPassword.stringValue = "New Password"
         lblConfirmPassword.stringValue = "Confirm Password"
 
-        if UserDefaults.standard.object(forKey: kUserdefaultsAppPassword) == nil{
+        if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) == nil{
             lblTitle.stringValue = "Set Password"
             btnChangePassword.title = "Set Password"
             textFieldNewPassword.placeholderString = "New Password"
             textFieldConfirmPassword.placeholderString = "Confirm Password"
             lblPasswordState.stringValue = "You do not have a password set."
             
-            
+            btnDisablePassword.isHidden = true
             
             if let passwordPreferencesInfo = configjson.value(forKey: "passwordPreferencesInfo") as? NSDictionary{
                 if let titleSetPassword = passwordPreferencesInfo.value(forKey: "titleSetPassword") as? String{
@@ -74,6 +82,7 @@ class passwordVc: NSViewController {
             textFieldConfirmPassword.placeholderString = "*****"
             lblPasswordState.stringValue = "You have an active password set."
             
+            btnDisablePassword.isHidden = false
             if let passwordPreferencesInfo = configjson.value(forKey: "passwordPreferencesInfo") as? NSDictionary{
                 if let titleChangePassword = passwordPreferencesInfo.value(forKey: "titleChangePassword") as? String{
                     lblTitle.stringValue = titleChangePassword
@@ -94,6 +103,57 @@ class passwordVc: NSViewController {
                 
             }
         }
+    }
+    
+    @IBAction func btnDisablePasswordClicked(_ sender: Any) {
+        
+        var alert: NSAlert = NSAlert()
+        if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
+            if state{
+                alert.window.sharingType = .none
+            }
+        }
+        alert.messageText = "Are you sure you want to disable your password?"
+        if let passwordPreferencesInfo = configjson.value(forKey: "passwordPreferencesInfo") as? NSDictionary{
+            if let passwordDisableAskText = passwordPreferencesInfo.value(forKey: "passwordDisableAskText") as? String{
+                alert.messageText = passwordDisableAskText
+            }
+        }
+        alert.informativeText = ""
+        alert.alertStyle = NSAlert.Style.warning
+        alert.addButton(withTitle: buttonYesText)
+        alert.addButton(withTitle: buttonNoText)
+        alert.beginSheetModal(for: view.window!, completionHandler: { (modalResponse) in
+            if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
+                print("okclicked")
+                UserDefaults.standard.removeObject(forKey: SettingsManagerObject.kUserdefaultsAppPassword)
+                SettingsManagerObject.isSettingsChanged = true
+                SettingsManagerObject.putUserLocalDeviceSettings()
+                self.resetView()
+                alert = NSAlert()
+                if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
+                    if state{
+                        alert.window.sharingType = .none
+                    }
+                }
+                alert.messageText = "Your password has been disabled."
+                if let passwordPreferencesInfo = configjson.value(forKey: "passwordPreferencesInfo") as? NSDictionary{
+                    if let passwordDisableDoneText = passwordPreferencesInfo.value(forKey: "passwordDisableDoneText") as? String{
+                        alert.messageText = passwordDisableDoneText
+                    }
+                }
+                alert.informativeText = ""
+                alert.alertStyle = NSAlert.Style.warning
+                alert.addButton(withTitle: buttonOkText)
+                
+                alert.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
+                    if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
+                        print("okclicked")
+                        // self.txtFieldEmail.stringValue = ""
+                    }
+                })
+            }
+        })
     }
     
     @IBAction func btnChangePasswordClicked(_ sender: Any) {
@@ -132,7 +192,7 @@ class passwordVc: NSViewController {
         if textFieldNewPassword.stringValue == textFieldConfirmPassword.stringValue{
             let base64password = textFieldConfirmPassword.stringValue.toBase64()
             
-            if UserDefaults.standard.object(forKey: kUserdefaultsAppPassword) == nil{
+            if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) == nil{
                 var passwordSetAlertTitle = "Password successfully set."
                 if let passwordPreferencesInfo = configjson.value(forKey: "passwordPreferencesInfo") as? NSDictionary{
                     if let title = passwordPreferencesInfo.value(forKey: "passwordSetAlertTitle") as? String{
@@ -150,27 +210,11 @@ class passwordVc: NSViewController {
                 alertforvalidation(question: passwordChagedAlertTitle, text: "")
             }
             
-            UserDefaults.standard.set(base64password, forKey: kUserdefaultsAppPassword)
-
-            textFieldNewPassword.stringValue = ""
-            textFieldConfirmPassword.stringValue = ""
-            lblTitle.stringValue = "Change Password"
-            btnChangePassword.title = "Change Password"
-            textFieldNewPassword.placeholderString = "*****"
-            textFieldConfirmPassword.placeholderString = "*****"
-            lblPasswordState.stringValue = "You have an active password set."
+            UserDefaults.standard.set(base64password, forKey: SettingsManagerObject.kUserdefaultsAppPassword)
+            SettingsManagerObject.isSettingsChanged = true
+            SettingsManagerObject.putUserLocalDeviceSettings()
             
-            if let passwordPreferencesInfo = configjson.value(forKey: "passwordPreferencesInfo") as? NSDictionary{
-                if let titleChangePassword = passwordPreferencesInfo.value(forKey: "titleChangePassword") as? String{
-                    lblTitle.stringValue = titleChangePassword
-                }
-                if let buttonChangePasswordText = passwordPreferencesInfo.value(forKey: "buttonChangePasswordText") as? String{
-                    btnChangePassword.title = buttonChangePasswordText
-                }
-                if let passwordSetText = passwordPreferencesInfo.value(forKey: "passwordSetText") as? String{
-                    lblPasswordState.stringValue = passwordSetText
-                }
-            }
+            resetView()
             
         }else{
             var passwordNotMatchAlertTitle = "Passwords do not match."
@@ -189,7 +233,7 @@ class passwordVc: NSViewController {
     }
     func alertforvalidation(question: String, text: String) {
         let alert: NSAlert = NSAlert()
-        if let state = UserDefaults.standard.object(forKey: kUserdefaultsHideAllWindowInScreenShots) as? Bool{
+        if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
             if state{
                 alert.window.sharingType = .none
             }

@@ -227,8 +227,6 @@ bail:
 }
     
 
-
-
 //determine if audio device is active
 -(UInt32)getMicState:(AudioObjectID)deviceID
 {

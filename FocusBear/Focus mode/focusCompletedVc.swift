@@ -22,7 +22,8 @@ class focusCompletedVc: NSViewController {
     var currentFocusModeName = ""
     var subTitleText = "You have successfully completed the focus block - <FOCUSTYPE>"
     var buttonTakeBreakText = "Take a 5 minute break"
-    
+    var currentFocusModeId = ""
+    var finish_time:Date?
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
@@ -59,9 +60,10 @@ class focusCompletedVc: NSViewController {
         
     }
     
-    func resetData(focusModeName:String){
+    func resetData(focusModeName:String, currentFocusModeId:String, finish_time:Date){
         self.currentFocusModeName = focusModeName
-        
+        self.currentFocusModeId = currentFocusModeId
+        self.finish_time = finish_time
         textViewAchieve.string = ""
         textViewDistractions.string = ""
         btnTakeBreak.title = buttonTakeBreakText.replacingOccurrences(of: "5", with: "\(currentPomodoroBreakDuration)")
@@ -70,17 +72,24 @@ class focusCompletedVc: NSViewController {
     }
     
     @IBAction func btnTakeBreakClicked(_ sender: Any) {
-        
+        whatToAchieveInFocusBlock = ""
+        addLog(text: "focusCompletedVc - btnTakeBreakClicked")//
         let timestamp = getStringFromDate(date: startFocusModeTime ?? Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
         addEntryInCsv(logType: "focus block", activity: currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: textViewAchieve.string, distractionsEncountered: textViewDistractions.string, abortReason: "", feedback: "")
 
+        allApiObject.finishFocusMode(id: currentFocusModeId, achievements: textViewAchieve.string, distractions: textViewDistractions.string, finish_time: self.finish_time ?? Date(), completionHandler: {newDic in
+            DispatchQueue.main.async {
+                
+            }
+        })
+        
         
         let minutes = currentPomodoroWorkDuration
         let breakMinute = currentPomodoroBreakDuration
-//        if let duration = UserDefaults.standard.object(forKey: kUserdefaultsPomodoroDurationMinutes) as? Int{
+//        if let duration = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsPomodoroDurationMinutes) as? Int{
 //            minutes = duration
 //        }
-        
+        completedPomodoroCountInHardcorePomodoro += 1
         if isFocusModeStartedFromPomodoroMode{
             if isHardCorePomodoroModeOn{
                 if totalMinutesRemainingForHardcodePomodoro > minutes{

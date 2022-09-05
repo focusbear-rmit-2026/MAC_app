@@ -66,7 +66,7 @@ class addFocusTypeVc: NSViewController, NSTextFieldDelegate  {
     
     override func viewWillAppear() {
         
-        if let state = UserDefaults.standard.object(forKey: kUserdefaultsHideAllWindowInScreenShots) as? Bool{
+        if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
             if state{
                 self.view.window?.sharingType = .none
             }else{
@@ -95,7 +95,22 @@ class addFocusTypeVc: NSViewController, NSTextFieldDelegate  {
 //
 //        }
     }
-
+    
+    var cp = NSColorPanel.shared
+    @IBAction func btnShowColorPanelClicked(_ sender: Any) {
+        cp = NSColorPanel.shared
+        cp.color = colorWell.color
+        cp.mode = .RGB
+        cp.setTarget(self)
+        cp.setAction(#selector(colorDidChange))
+        cp.makeKeyAndOrderFront(self)
+        cp.isContinuous = false// qki api call hogi isliye false kiya
+        cp.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.numberOfWindowLevelKeys)))
+    }
+    
+    @objc func colorDidChange(){
+        colorWell.color = cp.color
+    }
     
     @IBAction func colorWellClicked(_ sender: Any) {
 //        if !isAdding{
@@ -108,55 +123,26 @@ class addFocusTypeVc: NSViewController, NSTextFieldDelegate  {
         self.dismiss(self)
     }
     @IBAction func btnAddClicked(_ sender: Any) {
-//        if isAdding{
-            let newName = textFieldFocusType.stringValue.lowercased
-            for dic in arrFocusType{
-                if let name = dic["name"] as? String{
-                    if name.lowercased() == newName(){
-                        lblError.isHidden = false
-                        return;
-                    }
+        //        if isAdding{
+        let newName = textFieldFocusType.stringValue.lowercased
+        for dic in arrFocusType{
+            if let name = dic["name"] as? String{
+                if name.lowercased() == newName(){
+                    lblError.isHidden = false
+                    return;
                 }
             }
-//        }
-//        else{
-//            let selectedRow = focusPreferencesVcObj!.tblViewFocusType.selectedRow
-//            let newName = textFieldFocusType.stringValue.lowercased
-//            for i in 0..<arrFocusType.count{
-//                if i != selectedRow{
-//                    let dic = arrFocusType[i]
-//                    if let name = dic["name"] as? String{
-//                        if name.lowercased() == newName(){
-//                            lblError.isHidden = false
-//                            return;
-//                        }
-//                    }
-//                }
-//            }
-//        }
+        }
+        let id = getUuid()
+        let dic:[String:Any] = ["id":id, "name":textFieldFocusType.stringValue, "color": getColorString(color: colorWell.color), "allowed_apps": [], "allowed_urls": [], "isOn": false, "isAllowedAllApps":true, "isAllowedAllUrls":true]
         
-//        if isAdding{
-            let dic:[String:Any] = ["name":textFieldFocusType.stringValue, "color": getColorString(color: colorWell.color), "appsArray": [], "urlsArray": [], "isOn": false, "isAllowedAllApps":true, "isAllowedAllUrls":true]
-            let row = arrFocusType.count-1
-            arrFocusType.insert(dic, at: row)//append(dic)
-            focusPreferencesVcObj?.tblViewFocusType.insertRows(at: IndexSet(arrayLiteral: row), withAnimation: .effectFade)
-            focusPreferencesVcObj?.tblViewFocusType.selectRowIndexes(IndexSet(arrayLiteral: row), byExtendingSelection: false)
-            focusPreferencesVcObj?.tblViewFocusType.scrollRowToVisible(row)
-            focusPreferencesVcObj?.checkState()
-//        }
+        let row = arrFocusType.count-1
+        arrFocusType.insert(dic, at: row)//append(dic)
+        focusPreferencesVcObj?.tblViewFocusType.insertRows(at: IndexSet(arrayLiteral: row), withAnimation: .effectFade)
+        focusPreferencesVcObj?.tblViewFocusType.selectRowIndexes(IndexSet(arrayLiteral: row), byExtendingSelection: false)
+        focusPreferencesVcObj?.tblViewFocusType.scrollRowToVisible(row)
+        focusPreferencesVcObj?.checkState()
         
-//        else{
-////            let dic:[String:Any] = ["name":textFieldFocusType.stringValue, "color": getColorString(color: colorWell.color), "appsArr#colorLiteral(red: 0.7960784314, green: 0.5921568627, blue: 0.2274509804, alpha: 1)a#colorLiteral(red: 0.7960784314, green: 0.5921568627, blue: 0.2274509804, alpha: 1)y": [], "urlsArray": [], "isOn": false]#colorLiteral(red: 0.7960784314, green: 0.5921568627, blue: 0.2274509804, alpha: 1)
-//            var dic = arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow]
-//            dic["name"] = textFieldFocusType.stringValue
-//            dic["color"] = getColorString(color: colorWell.color)
-//            arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow] = dic
-//            let selectedRow = focusPreferencesVcObj!.tblViewFocusType.selectedRow
-//            focusPreferencesVcObj?.tblViewFocusType.reloadData(forRowIndexes: IndexSet(arrayLiteral: selectedRow), columnIndexes: IndexSet(arrayLiteral: 0))
-//            focusPreferencesVcObj?.tblViewFocusType.selectRowIndexes(IndexSet(arrayLiteral: selectedRow), byExtendingSelection: false)
-//            focusPreferencesVcObj?.tblViewFocusType.scrollRowToVisible(arrFocusType.count-1)
-//            focusPreferencesVcObj?.checkState()
-//        }
         
         lblError.isHidden = true
         self.dismiss(self)
@@ -168,6 +154,19 @@ class addFocusTypeVc: NSViewController, NSTextFieldDelegate  {
                 startingFocusWindowControllerObj?.close()
             }
         }
+        
+        allApiObject.addFocusMode(focusType: dic, completionHandler: {newDic in
+            if newDic != nil{
+//                dic["id"] = newDic!.value(forKey: "id") as? String ?? ""//["id"] as? String ?? ""
+//                arrFocusType[row] = dic
+//                UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+                DispatchQueue.main.async {
+                    
+                }
+            }
+            
+        })
+        
     }
     func controlTextDidChange(_ obj: Notification) {
         guard let txtfield = obj.object as? NSTextField else {

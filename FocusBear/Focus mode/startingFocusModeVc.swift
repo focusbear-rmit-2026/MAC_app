@@ -66,6 +66,7 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
     }
     
     @IBAction func btnStartFocusClicked(_ sender: Any) {
+        addLog(text: "startingFocusModeVc - btnStartFocusClicked")//
         if getEndFocusModeWindowControllerObj().window!.isVisible{
             let timestamp = getStringFromDate(date: startFocusModeTime ?? Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
             addEntryInCsv(logType: "focus block", activity: focusCompletedVcObj!.currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: "\(focusModeMinutesToPerform) of \(focusCompletedVcObj!.currentFocusModeName)", distractionsEncountered: "", abortReason: "", feedback: "")
@@ -76,18 +77,16 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
         endFocusModeTime = calendar.date(byAdding: .minute, value: totoalMinutes, to: Date())
         startFocusModeTime = Date()
         arrFocusType[focusIndex]["isOn"] = true
+        
         runAppleScriptBeforeFocusBeginIfAvailable(index: focusIndex)
-//        if focusPreferencesVcObj != nil{
-//            if (preferencesWindowControllerObj?.window!.isVisible)!{
-//                if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-//                    if tabview.selectedTabViewItemIndex == 1{
-//                        focusPreferencesVcObj?.focusModeStarted()
-//                    }
-//                }
-//            }
-//        }
+
+        
         appdelegate!.statusbutton?.backgroundcolor = HexToColor(hexString: arrFocusType[focusIndex]["color"] as? String ?? "")
-        appdelegate!.statusbutton?.title = buttonStatusStateFocusText
+        if textViewQuestion.string.isEmpty{
+            appdelegate!.statusbutton?.title = buttonStatusStateFocusText
+        }else{
+            appdelegate!.statusbutton?.title = String(textViewQuestion.string.prefix(40)) + "..."
+        }
         appdelegate!.statusbutton?.imagePosition = .imageLeft
         if timerForFocusMode != nil{
             timerForFocusMode?.invalidate()
@@ -101,10 +100,9 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
                 pomodoroWindowControllerObj?.window?.close()
             }
         }
-        
+        whatToAchieveInFocusBlock = textViewQuestion.string
         appdelegate!.focusModeStartted()
         UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
-        whatToAchieveInFocusBlock = textViewQuestion.string
         self.view.window?.close()
     }
     
@@ -139,6 +137,7 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
     }
     
     @objc func showDiscourageFocusView(){
+        addLog(text: "startingFocusModeVc - showDiscourageFocusView")//
         self.presentAsSheet(getDiscourageDefaultFocusVcObject())
         getDiscourageDefaultFocusVcObject().resetData()
     }

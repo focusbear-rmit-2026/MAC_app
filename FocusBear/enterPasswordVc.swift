@@ -75,6 +75,7 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
     }
     
     @IBAction func btnOkClicked(_ sender: Any) {
+        addLog(text: "Enter password view - btnOkClicked")//
         if textFieldPassword.stringValue.isEmpty{
             var blankPasswordErrorTitle = "Password cannot be blank."
             var blankPasswordErrorSubTitle = "Please enter a valid password."
@@ -98,7 +99,7 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
             return;
         }
         
-        if let passwordBase64 = UserDefaults.standard.object(forKey: kUserdefaultsAppPassword) as? String{
+        if let passwordBase64 = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) as? String{
             if let password = passwordBase64.fromBase64(){
                 if textFieldPassword.stringValue == password{
                     addLog(text: "Enter password view - password is correct")//
@@ -112,6 +113,16 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
                             self.view.window?.close()
                             pomodoroVcObj?.passwordIsCorrect()
                             return;
+                        }else if parentVc == getAskPostponeVcObject(){
+                            self.view.window?.close()
+                            if lastCurrentState == ._MORNING_HABIT_{
+                                mainViewControllerObj?.postponeMorningHabitFor(minutes:(getAskPostponeVcObject().popUpButtonSelectMinutes.indexOfSelectedItem + 1) * 5)
+                            }else if lastCurrentState == ._EVENING_HABIT_{
+                                mainViewControllerObj?.postponeEveningHabitFor(minutes:(getAskPostponeVcObject().popUpButtonSelectMinutes.indexOfSelectedItem + 1) * 5)
+                            }else if lastCurrentState == ._FOCUS_SUMMARY_{
+                                mainViewControllerObj?.postponeFocusSummaryFor(minutes:(getAskPostponeVcObject().popUpButtonSelectMinutes.indexOfSelectedItem + 1) * 5)
+                            }
+                            
                         }
                     }
                                         
@@ -166,6 +177,10 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
             }else if parentVc == pomodoroVcObj{
                 self.view.window?.close()
                 return;
+            }else if parentVc == getAskPostponeVcObject(){
+                self.view.removeFromSuperview()
+                mainViewControllerObj?.abortCancel()
+                return;
             }
         }
         
@@ -200,7 +215,7 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
         }
         
         let alertReset: NSAlert = NSAlert()
-        if let state = UserDefaults.standard.object(forKey: kUserdefaultsHideAllWindowInScreenShots) as? Bool{
+        if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
             if state{
                 alertReset.window.sharingType = .none
             }
@@ -242,7 +257,7 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
                 
                 
                 let alert: NSAlert = NSAlert()
-                if let state = UserDefaults.standard.object(forKey: kUserdefaultsHideAllWindowInScreenShots) as? Bool{
+                if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
                     if state{
                         alert.window.sharingType = .none
                     }
@@ -286,7 +301,7 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
     var timerCheckClearPasswordTime:Timer?
     @objc func clearPassword(){
         UserDefaults.standard.removeObject(forKey: kUserdefaults24HoursClearPasswordTime)
-        UserDefaults.standard.removeObject(forKey: kUserdefaultsAppPassword)
+        UserDefaults.standard.removeObject(forKey: SettingsManagerObject.kUserdefaultsAppPassword)
         addLog(text: "password is cleard after 24 hours")
     }
     func controlTextDidChange(_ obj: Notification) {
@@ -300,7 +315,7 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
     }
     func alertforvalidation(question: String, text: String) {
         let alert: NSAlert = NSAlert()
-        if let state = UserDefaults.standard.object(forKey: kUserdefaultsHideAllWindowInScreenShots) as? Bool{
+        if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
             if state{
                 alert.window.sharingType = .none
             }
@@ -320,3 +335,4 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
         
     }
 }
+

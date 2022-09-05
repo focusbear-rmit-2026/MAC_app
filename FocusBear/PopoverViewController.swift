@@ -21,6 +21,7 @@ class PopoverViewController: NSViewController {
         tblView.dataSource = self
         
     }
+    
     @objc func ReloadData(arr:[String]){
         itemsarr.removeAll()
         for i in 0..<arr.count{

@@ -22,15 +22,15 @@ class firstViewController: NSViewController {
     @IBOutlet weak var lblTitle: NSTextField!
     @IBOutlet weak var btnStartFirstHabit: NSButton!
     @IBOutlet weak var tblViewHabits: NSTableView!
-    var isGetKookyButtonVisible = false
+//    var isGetKookyButtonVisible = false
     var isFirstTime = false
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
         btnStartFirstHabit.cell?.wraps = true
-        
+        lblBeforeYouStart.isHidden = true
     }
-    
+
     override func viewWillAppear() {
         
         lbltimer.isHidden = true
@@ -53,18 +53,18 @@ class firstViewController: NSViewController {
                 }
                 if let arr = dic.value(forKey: "introActivities") as? [NSDictionary]{
                     let name = arr.first?.value(forKey: "name") as? String ?? ""
-                    let durationSeconds = arr.first?.value(forKey: "durationSeconds") as? Int ?? 0
-                    let videoUrl = arr.first?.value(forKey: "videoUrl") as? [String] ?? []
+                    let durationSeconds = arr.first?.value(forKey: "duration_seconds") as? Int ?? 0
+                    let videoUrl = arr.first?.value(forKey: "video_urls") as? [String] ?? []
                     btnStartFirstHabit.title = getstartActivityButtonText(seconds: durationSeconds, name: name)
                     btnStartFirstHabit.toolTip = btnStartFirstHabit.title
-                    introActivity = habit(name: name, durationSeconds: durationSeconds, urlsArray: videoUrl, logQuantity: false, logQuantityQuestion: nil, openSpecificApps: false, allowUrls: [], allowApps: [], allowedFocusMode: "")
+                    introActivity = habit(id:"", name: name, durationSeconds: durationSeconds, urlsArray: videoUrl, logQuantity: false, logQuantityQuestion: nil, openSpecificApps: false, allowUrls: [], allowApps: [], allowedFocusMode: "", activity_sequence_id: "")
                 }else{
                     btnStartFirstHabit.title = getstartActivityButtonText(seconds: 60, name: "mindful breathing")//"Start 1 minute of mindful breathing"
                     btnStartFirstHabit.toolTip = btnStartFirstHabit.title
-                    introActivity = habit(name: "mindful breathing", durationSeconds: 60, urlsArray: [], logQuantity: false, logQuantityQuestion: nil, openSpecificApps: false, allowUrls: [], allowApps: [], allowedFocusMode: "")
+                    introActivity = habit(id:"", name: "mindful breathing", durationSeconds: 60, urlsArray: [], logQuantity: false, logQuantityQuestion: nil, openSpecificApps: false, allowUrls: [], allowApps: [], allowedFocusMode: "", activity_sequence_id: "")
                 }
             }else{
-                introActivity = habit(name: "mindful breathing", durationSeconds: 60, urlsArray: [], logQuantity: false, logQuantityQuestion: nil, openSpecificApps: false, allowUrls: [], allowApps: [], allowedFocusMode: "")
+                introActivity = habit(id:"", name: "mindful breathing", durationSeconds: 60, urlsArray: [], logQuantity: false, logQuantityQuestion: nil, openSpecificApps: false, allowUrls: [], allowApps: [], allowedFocusMode: "", activity_sequence_id: "")
                 lblTitle.stringValue = welcomeText
                 btnStartFirstHabit.title = getstartActivityButtonText(seconds: 60, name: "mindful breathing")//"Start 1 minute of mindful breathing"
                 btnStartFirstHabit.toolTip = btnStartFirstHabit.title
@@ -72,13 +72,13 @@ class firstViewController: NSViewController {
         }else{
             
             if currentState == ._MORNING_HABIT_{
-                var beforeYouBeginText = "Before you begin, take 30 seconds to visualise yourself performing each of the habits. This sounds kooky but research indicates that doing a mental rehearsal like this increases the likelihood of you completing the habits and makes the habits more sticky so that even if you don't have access to your computer/this app, you'll still do all the habits"
-                if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
-                    beforeYouBeginText = activityInfo.value(forKey: "beforeYouBeginText") as? String ?? beforeYouBeginText
-                }
-                lblBeforeYouStart.stringValue = beforeYouBeginText
-                lblBeforeYouStart.isHidden = false
-                if kIsReducedMotion{
+//                var beforeYouBeginText = "Before you begin, take 30 seconds to visualise yourself performing each of the habits. This sounds kooky but research indicates that doing a mental rehearsal like this increases the likelihood of you completing the habits and makes the habits more sticky so that even if you don't have access to your computer/this app, you'll still do all the habits"
+//                if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
+//                    beforeYouBeginText = activityInfo.value(forKey: "beforeYouBeginText") as? String ?? beforeYouBeginText
+//                }
+//                lblBeforeYouStart.stringValue = beforeYouBeginText
+//                lblBeforeYouStart.isHidden = false
+                if SettingsManagerObject.kIsReducedMotion{
                     imgView.image = nil
                     imgViewHeight.constant = 40
                     imgViewTopSpace.constant = 35
@@ -92,18 +92,20 @@ class firstViewController: NSViewController {
                 }
                 
                 lblTitle.stringValue = startMorningHabitTitleText
-                if isGetKookyButtonVisible{
-                    btnStartFirstHabit.title = "Get Kooky"
+//                if isGetKookyButtonVisible{
+                    btnStartFirstHabit.title = "Begin"
                     if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
-                        btnStartFirstHabit.title = activityInfo.value(forKey: "buttonGetKookyText") as? String ?? btnStartFirstHabit.title
+                        btnStartFirstHabit.title = activityInfo.value(forKey: "buttonBeginText") as? String ?? btnStartFirstHabit.title
                     }
-                }else{
-                    if arrAllMorningHabits.count != 0 {
-                        let time = arrAllMorningHabits[0].durationSeconds!
-                        btnStartFirstHabit.title = getstartActivityButtonText(seconds: time, name: arrAllMorningHabits[0].name!)
-                        btnStartFirstHabit.toolTip = btnStartFirstHabit.title
-                    }
-                }
+               
+                
+//                }else{
+//                    if arrAllMorningHabits.count != 0 {
+//                        let time = arrAllMorningHabits[0].durationSeconds!
+//                        btnStartFirstHabit.title = getstartActivityButtonText(seconds: time, name: arrAllMorningHabits[0].name!)
+//                        btnStartFirstHabit.toolTip = btnStartFirstHabit.title
+//                    }
+//                }
                 
                 tblViewHabits.isHidden = false
                 scrollViewHabits.isHidden = false
@@ -112,12 +114,12 @@ class firstViewController: NSViewController {
                 
                 
             }else if currentState == ._EVENING_HABIT_{
-                var beforeYouStartText = "Before you start, take a few moments to reflect on why you want to do these habits. Then visualise yourself beginning the habit sequence. Mentally walk through any of the habits that are going to be harder. This process will help reduce \"limbic friction\", i.e. prime your brain to do the habits no matter what, even if you don't have the app available."
-                if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
-                    beforeYouStartText = activityInfo.value(forKey: "beforeYouStartText") as? String ?? beforeYouStartText
-                }
-                lblBeforeYouStart.stringValue = beforeYouStartText
-                lblBeforeYouStart.isHidden = false
+//                var beforeYouStartText = "Before you start, take a few moments to reflect on why you want to do these habits. Then visualise yourself beginning the habit sequence. Mentally walk through any of the habits that are going to be harder. This process will help reduce \"limbic friction\", i.e. prime your brain to do the habits no matter what, even if you don't have the app available."
+//                if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
+//                    beforeYouStartText = activityInfo.value(forKey: "beforeYouStartText") as? String ?? beforeYouStartText
+//                }
+//                lblBeforeYouStart.stringValue = beforeYouStartText
+//                lblBeforeYouStart.isHidden = false
                 imgView.image = nil
                 imgViewHeight.constant = 40
                 imgViewTopSpace.constant = 35
@@ -126,18 +128,18 @@ class firstViewController: NSViewController {
                 
                 
                 
-                if isGetKookyButtonVisible{
-                    btnStartFirstHabit.title = "Get Kooky"
+//                if isGetKookyButtonVisible{
+                    btnStartFirstHabit.title = "Begin"
                     if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
-                        btnStartFirstHabit.title = activityInfo.value(forKey: "buttonGetKookyText") as? String ?? btnStartFirstHabit.title
+                        btnStartFirstHabit.title = activityInfo.value(forKey: "buttonBeginText") as? String ?? btnStartFirstHabit.title
                     }
-                }else{
-                    if arrAllEveningHabits.count != 0 {
-                        let time = arrAllEveningHabits[0].durationSeconds!
-                        btnStartFirstHabit.title = getstartActivityButtonText(seconds: time, name: arrAllEveningHabits[0].name!)
-                        btnStartFirstHabit.toolTip = btnStartFirstHabit.title
-                    }
-                }
+//                }else{
+//                    if arrAllEveningHabits.count != 0 {
+//                        let time = arrAllEveningHabits[0].durationSeconds!
+//                        btnStartFirstHabit.title = getstartActivityButtonText(seconds: time, name: arrAllEveningHabits[0].name!)
+//                        btnStartFirstHabit.toolTip = btnStartFirstHabit.title
+//                    }
+//                }
 
                 tblViewHabits.isHidden = false
                 scrollViewHabits.isHidden = false
@@ -173,10 +175,9 @@ class firstViewController: NSViewController {
             second = "0\(s)"
         }
         self.lbltimer.stringValue = "\(minute):\(second)"
-        DispatchQueue.global().async {
+        DispatchQueue.global().sync {
             self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
-            RunLoop.current.add(self.timer!, forMode: RunLoop.Mode.common)
-            RunLoop.current.run()
+            RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
         }
     }
     @objc func performTimerCount() {
@@ -223,7 +224,8 @@ class firstViewController: NSViewController {
     
     
     @IBAction func btnStartFirstHabitClicked(_ sender: Any) {
-        if UserDefaults.standard.object(forKey: kUserdefaultsAppPassword) != nil{//qki enter per ye button handle hai  or jha se handle h vha condition lganase accha yahi lagadi (enterv  password per bhi default enter key code h button per )
+        addLog(text: "btnStartFirstHabitClicked")
+        if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{//qki enter per ye button handle hai  or jha se handle h vha condition lganase accha yahi lagadi (enterv  password per bhi default enter key code h button per )
             if enterPasswordVcObj != nil{
                 if mainViewControllerObj!.view.subviews.contains(enterPasswordVcObj!.view){
                     return;
@@ -234,19 +236,24 @@ class firstViewController: NSViewController {
             mainViewControllerObj?.startBreathing()
         }else{
             if currentState == ._MORNING_HABIT_{
-                if isGetKookyButtonVisible{
-                    isGetKookyButtonVisible = false
-                    firstViewControllerObj!.startTimer(duration: 30)
-                }else{
-                    mainViewControllerObj?.startFirstMorningHabit()
-                }
+//                if isGetKookyButtonVisible{
+//                    isGetKookyButtonVisible = false
+//                    firstViewControllerObj!.startTimer(duration: 30)
+//
+//                }else{
+//                    mainViewControllerObj?.startFirstMorningHabit()
+//                }
+                mainViewControllerObj?.showVisualizeInstructionsVc()
+                visualizeInstructionsVcObj?.startTimer()
             }else{
-                if isGetKookyButtonVisible{
-                    isGetKookyButtonVisible = false
-                    firstViewControllerObj!.startTimer(duration: 30)
-                }else{
-                    mainViewControllerObj?.startFirstEveningHabit()
-                }
+//                if isGetKookyButtonVisible{
+//                    isGetKookyButtonVisible = false
+//                    firstViewControllerObj!.startTimer(duration: 30)
+//                }else{
+//                    mainViewControllerObj?.startFirstEveningHabit()
+//                }
+                mainViewControllerObj?.showVisualizeInstructionsVc()
+                visualizeInstructionsVcObj?.startTimer()
             }
         }
     }

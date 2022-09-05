@@ -1,100 +1,1226 @@
 {
-    "shutOffTime": "20:30",
-    "startTime": "05:15",
-    "morningHabits": [
+    "shutdown_time": "19:45",
+    "startup_time": "04:15",
+    "morning_activities": [
         {
-            "name": "Yoga",
-            "durationSeconds": 300,
-            "logQuantity": false,
-            "videoUrl": []
+            "id": "",
+            "activity_sequence_id": "",
+            "log_quantity": true,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 1,
+            "log_quantity_question": "Sleep duration in hours",
+            "name": "Sleep duration in hours"
         },
         {
-            "name": "Journalling",
-            "videoUrl": [],
-            "durationSeconds": 300
+            "id": "411f4123-84e5-43e9-893a-79f22dc9d630",
+            "activity_sequence_id": "",
+            "log_quantity": true,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 1,
+            "log_quantity_question": "What was your Resting HR?",
+            "name": "Track Resting HR"
         },
         {
-            "name": "Deep breathing",
-            "durationSeconds": 180,
-            "logQuantity": false,
-            "videoUrl": [
-                "https://www.youtube.com/watch?v=36mnXAQGRzc"
-            ]
+            "id": "2b2f03f9-c840-471a-affb-0131d49a8594",
+            "activity_sequence_id": "",
+            "log_quantity": true,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 1,
+            "log_quantity_question": "Rate energy levels from 0-10",
+            "name": "Rate energy levels from 0-10"
+        },
+        {
+            "id": "127370ba-e968-4b2d-b98d-540e44257b3d",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 450,
+            "allowed_apps": [
+                "Evernote"
+            ],
+            "name": "Journalling"
+        },
+        {
+            "id": "a881eb60-64a1-4eea-8d8a-5a0359f56473",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 120,
+            "name": "Prayer"
+        },
+        {
+            "id": "528a1fb6-5058-4f78-b244-7e40902017d9",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 630,
+            "video_urls": [
+                "https://www.youtube.com/watch?v=T41mYCmtWls",
+                "https://www.youtube.com/watch?v=hKsAjoj4UK4",
+                "https://www.youtube.com/watch?v=oar85e9GdLw",
+                "https://www.youtube.com/watch?v=t3joHNOOyYY",
+                "https://www.youtube.com/watch?v=IBx-MhwtYJw",
+                "https://www.youtube.com/watch?v=VaoV1PrYft4",
+                "https://www.youtube.com/watch?v=Nnd5Slo02us",
+                "https://www.youtube.com/watch?v=VrK63Pou3tU",
+                "https://www.youtube.com/watch?v=BPRE9o1cEgk",
+                "https://www.youtube.com/watch?v=VpW33Celubg",
+                "https://www.youtube.com/watch?v=A0pkEgZiRG4",
+                "https://www.youtube.com/watch?v=4pKly2JojMw"
+            ],
+            "name": "Yoga"
+        },
+        {
+            "allowed_urls": [
+                "*.zoho.com",
+                "*zoho*",
+                "*messagemedia*",
+                "*.heroku.com",
+                "*.zendesk.com",
+                "*.microsoftonline.com",
+                "*.messagemedia.com.au",
+                "*salesforce",
+                "*force.com",
+                "*atlassian*",
+                "trello.com"
+            ],
+            "id": "439333eb-b7c1-4a16-bedd-84ba1201ded2",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 900,
+            "allowed_apps": [
+                "Google Chrome",
+                "Slack",
+                "iTerm",
+                "Visual Studio Code",
+                "Microsoft Outlook"
+            ],
+            "name": "Check for fires"
+        },
+        {
+            "allowed_urls": [
+                "https://calendar.google.com",
+                "todoist.com",
+                "messagemedia.atlassian.net",
+                "*atlassian*"
+            ],
+            "id": "cfb69a89-b8af-4e04-9fbb-1f5617ffbf91",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 180,
+            "allowed_apps": [
+                "Evernote",
+                "Google Chrome",
+                "BusyCal"
+            ],
+            "name": "Review day plan"
+        },
+        {
+            "allowed_urls": [
+                "https://www.beachbodyondemand.com/programs/transform-20",
+                "beachbodyondemand.com",
+                "beachbody.com"
+            ],
+            "id": "66c34e9b-a5fc-4db8-af13-e5a224e397f3",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 2000,
+            "allowed_apps": [
+                "Google Chrome"
+            ],
+            "name": "HIIT"
+        },
+        {
+            "id": "4f94f6e2-b3fe-41fc-ad03-729f9ce48f66",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 120,
+            "name": "Brush teeth"
+        },
+        {
+            "allowed_urls": [
+                "*.zoho.com",
+                "*zoho*",
+                "*messagemedia*",
+                "*.heroku.com",
+                "*.zendesk.com",
+                "*.microsoftonline.com",
+                "*.messagemedia.com.au",
+                "*.salesforce.com",
+                "*force.com",
+                "*atlassian*",
+                "trello.com"
+            ],
+            "id": "711fba11-fac1-4920-9659-bc9e1f5e6b59",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 900,
+            "allowed_apps": [
+                "Google Chrome",
+                "Slack",
+                "iTerm",
+                "Visual Studio Code",
+                "Microsoft Outlook"
+            ],
+            "name": "Check for fires"
+        },
+        {
+            "id": "d365a893-0923-4631-ba11-4d111d7d0141",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 180,
+            "name": "Food prep (e.g. cook rice)"
+        },
+        {
+            "id": "c521ccc8-eef5-43ac-a2d6-d011051cb83a",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 540,
+            "video_urls": [
+                "https://www.youtube.com/watch?v=XGKnQN7zUmw"
+            ],
+            "name": "Deep breathing"
+        },
+        {
+            "allowed_urls": [
+                "https://read.amazon.com"
+            ],
+            "id": "bff17acc-3592-4b64-9938-a604014b1283",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 120,
+            "allowed_apps": [
+                "Google Chrome"
+            ],
+            "name": "Big Book"
+        },
+        {
+            "id": "fcbd1c27-fd47-470b-9ff6-f5b31510c81f",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 1800,
+            "name": "Go for run"
+        },
+        {
+            "id": "193efac3-fae6-4671-829f-dcf914347c7a",
+            "activity_sequence_id": "",
+            "log_quantity": true,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 1,
+            "log_quantity_question": "Distance run",
+            "name": "Distance run"
+        },
+        {
+            "id": "6d097f16-a740-476d-b554-7cff81959ced",
+            "activity_sequence_id": "",
+            "log_quantity": true,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 1,
+            "log_quantity_question": "Average speed of run",
+            "name": "Average speed of run"
+        },
+        {
+            "id": "25189039-4f46-4750-84a8-9293c1298723",
+            "activity_sequence_id": "",
+            "log_quantity": true,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 1,
+            "log_quantity_question": "Average HR of run",
+            "name": "Average HR of run"
+        },
+        {
+            "id": "9032e15b-b3e6-4951-8843-d30dc04517e2",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 60,
+            "name": "Make bed"
+        },
+        {
+            "allowed_urls": [
+                "*.zoho.com",
+                "*zoho*",
+                "*messagemedia*",
+                "*.heroku.com",
+                "*.zendesk.com",
+                "*.microsoftonline.com",
+                "*.messagemedia.com.au",
+                "*force.com",
+                "*atlassian*",
+                "trello.com"
+            ],
+            "id": "b53da827-4a80-42d0-8d08-e061a4de2571",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 600,
+            "allowed_apps": [
+                "Google Chrome",
+                "Slack",
+                "iTerm",
+                "Visual Studio Code",
+                "Microsoft Outlook"
+            ],
+            "name": "Check for fires"
+        },
+        {
+            "allowed_urls": [
+                "https://read.amazon.com"
+            ],
+            "id": "b52a4d33-680c-4ae1-9d87-4e5d409d2df6",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 60,
+            "allowed_apps": [
+                "Google Chrome"
+            ],
+            "name": "WA daily reader"
+        },
+        {
+            "id": "60cafa5b-6f1e-45d5-8982-5e0d73d77b00",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 900,
+            "video_urls": [
+                "https://www.youtube.com/watch?v=W8a3T8pI9Ns",
+                "https://www.youtube.com/watch?v=2dMuyjV4jHM",
+                "https://www.youtube.com/watch?v=z0GtmPnqAd8",
+                "https://www.youtube.com/watch?v=7g96Zq9NSqo",
+                "https://www.youtube.com/watch?v=uceFkSp6UUQ",
+                "https://www.youtube.com/watch?v=itZMM5gCboo",
+                "https://www.youtube.com/watch?v=aIIEI33EUqI",
+                "https://www.youtube.com/watch?v=W19PdslW7iw"
+            ],
+            "name": "Meditation"
+        },
+        {
+            "id": "67e6d7fa-934c-4ceb-adda-c2733f2b4155",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 180,
+            "allowed_apps": [
+                "Anki",
+                "AnkiApp"
+            ],
+            "name": "Anki"
+        },
+        {
+            "id": "0515e053-c091-48aa-9327-8e7ab27af110",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 360,
+            "allowed_apps": [
+                "AnkiApp"
+            ],
+            "name": "AnkiApp"
+        },
+        {
+            "id": "1166df81-8b78-4b70-870d-b704b544fc89",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 180,
+            "name": "Duolingo"
+        },
+        {
+            "allowed_urls": [
+                "https://read.amazon.com"
+            ],
+            "id": "409c096f-5c3a-4653-9f76-47b2af38934f",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 300,
+            "allowed_apps": [
+                "Google Chrome"
+            ],
+            "name": "Professional development"
+        },
+        {
+            "id": "dc8a045a-833b-4fed-ab8f-1f2655c2d345",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 300,
+            "name": "Outreach call"
+        },
+        {
+            "allowed_urls": [
+                "https://calendar.google.com",
+                "todoist.com",
+                "messagemedia.atlassian.net",
+                "*atlassian*"
+            ],
+            "id": "cfb69a89-b8af-4e04-9fbb-1f5617ffbf91",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 300,
+            "allowed_apps": [
+                "Evernote",
+                "Google Chrome",
+                "BusyCal"
+            ],
+            "name": "Review day plan"
+        },
+        {
+            "id": "1675fbc1-1a73-4d9f-812b-e5fc42617e8d",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 180,
+            "name": "Voice practice"
         }
     ],
-    "breakAfterMinutes": 15,
-    "breakActivities": [
+    "break_after_minutes": 20,
+    "break_activities": [
         {
-            "name": "Micro-workout",
-            "durationSeconds": 30,
-            "includeInEveryBreak": true,
-            "videoUrl": [],
-            "type": "random-choice",
+            "id": "ca1564ba-b6c3-4b65-a3b8-765a53c5073f",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
             "choices": [
                 {
-                    "name": "Pushups",
-                    "videoUrl": [],
-                    "logQuantity": true
+                    "id": "",
+                    "log_summary_type": "SUM",
+                    "log_quantity": true,
+                    "duration_seconds": 80,
+                    "name": "Pushups"
                 },
                 {
-                    "name": "Situps",
-                    "videoUrl": [],
-                    "logQuantity": true
-                },
-                {
+                    "id": "",
+                    "log_summary_type": "SUM",
+                    "log_quantity": true,
+                    "duration_seconds": 80,
                     "name": "Squats",
-                    "videoUrl": [],
-                    "logQuantity": true
+                    "video_urls": [
+                        "https://www.youtube.com/watch?v=EL1wNBsEHiY",
+                        "https://www.youtube.com/watch?v=R0Ut6nldt9g"
+                    ]
                 },
                 {
+                    "id": "",
+                    "log_summary_type": "SUM",
+                    "log_quantity": true,
+                    "duration_seconds": 80,
                     "name": "Lunges",
-                    "videoUrl": [],
-                    "logQuantity": true
+                    "video_urls": [
+                        "https://www.youtube.com/watch?v=AZWPE5D1hHQ"
+                    ]
                 },
                 {
-                    "name": "Burpees",
-                    "videoUrl": [],
-                    "logQuantity": true
+                    "id": "",
+                    "log_summary_type": "SUM",
+                    "log_quantity": true,
+                    "duration_seconds": 80,
+                    "name": "Abs",
+                    "video_urls": [
+                        "https://www.youtube.com/watch?v=ueSWOFxOZSc"
+                    ]
                 },
                 {
-                    "name": "Plank",
-                    "videoUrl": [],
-                    "logQuantity": false
+                    "id": "",
+                    "log_summary_type": "SUM",
+                    "log_quantity": true,
+                    "duration_seconds": 80,
+                    "name": "Lift something heavy"
                 },
                 {
-                    "name": "Dance like no-one's watching",
-                    "videoUrl": [],
-                    "logQuantity": true,
-                    "logQuantityQuestion": ""
+                    "id": "",
+                    "log_summary_type": "SUM",
+                    "log_quantity": false,
+                    "duration_seconds": 80,
+                    "name": "Boxing"
+                },
+                {
+                    "id": "",
+                    "log_summary_type": "SUM",
+                    "log_quantity": false,
+                    "duration_seconds": 80,
+                    "name": "Superman"
+                },
+                {
+                    "id": "",
+                    "log_summary_type": "SUM",
+                    "log_quantity": false,
+                    "duration_seconds": 80,
+                    "name": "Bridge"
+                },
+                {
+                    "id": "",
+                    "log_summary_type": "SUM",
+                    "log_quantity": false,
+                    "duration_seconds": 80,
+                    "name": "Pullups"
                 }
-            ]
+            ],
+            "duration_seconds": 80,
+            "include_in_every_break": true,
+            "choice_type": "random",
+            "name": "Calisthenics"
         },
         {
-            "name": "Deep breathing",
-            "durationSeconds": 20,
-            "includeInEveryBreak": true,
-            "videoUrl": [
+            "id": "",
+            "activity_sequence_id": "",
+            "log_quantity": true,
+            "log_summary_type": "AVG",
+            "choices": [],
+            "duration_seconds": 1,
+            "include_in_every_break": true,
+            "log_quantity_question": "Rate mood from 0-10",
+            "name": "Rate Mood 0-10"
+        },
+        {
+            "id": "",
+            "activity_sequence_id": "",
+            "log_quantity": true,
+            "log_summary_type": "AVG",
+            "choices": [],
+            "duration_seconds": 1,
+            "include_in_every_break": true,
+            "log_quantity_question": "Rate energy from 0-10",
+            "name": "Rate Energy 0-10"
+        },
+        {
+            "id": "",
+            "activity_sequence_id": "",
+            "log_quantity": true,
+            "log_summary_type": "AVG",
+            "choices": [],
+            "duration_seconds": 1,
+            "include_in_every_break": true,
+            "log_quantity_question": "Rate Allergy freeness from 0-10",
+            "name": "Rate Allergy freeness 0-10"
+        },
+        {
+            "id": "",
+            "activity_sequence_id": "",
+            "log_quantity": true,
+            "log_summary_type": "AVG",
+            "choices": [],
+            "duration_seconds": 1,
+            "include_in_every_break": true,
+            "log_quantity_question": "Rate Headachefreeness from 0-10",
+            "name": "Rate Headachefreeness 0-10"
+        },
+        {
+            "id": "",
+            "activity_sequence_id": "",
+            "log_quantity": true,
+            "log_summary_type": "AVG",
+            "choices": [],
+            "duration_seconds": 1,
+            "include_in_every_break": true,
+            "log_quantity_question": "Rate gut wellness from 0-10",
+            "name": "Rate gut wellness from 0-10"
+        },
+        {
+            "id": "",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 30,
+            "name": "Chores"
+        },
+        {
+            "id": "",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 30,
+            "name": "Mirror skiing"
+        },
+        {
+            "id": "",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 30,
+            "name": "Prayer"
+        },
+        {
+            "id": "",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 30,
+            "video_urls": [
                 "https://www.youtube.com/watch?v=36mnXAQGRzc"
-            ]
+            ],
+            "name": "Deep Breathing"
+        },
+        {
+            "id": "",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 30,
+            "name": "Say hi to sandy"
+        },
+        {
+            "id": "",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 8,
+            "include_in_every_break": true,
+            "name": "Update time log"
+        },
+        {
+            "id": "",
+            "activity_sequence_id": "",
+            "log_quantity": true,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 15,
+            "video_urls": [],
+            "include_in_every_break": true,
+            "name": "Drink water",
+            "log_quantity_question": "How many glasses of water did you drink?"
+        },
+        {
+            "id": "",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 20,
+            "is_office_friendly": true,
+            "name": "Stand up and stretch"
         }
     ],
-    "eveningHabits": [
+    "evening_activities": [
         {
-            "name": "Tidy up desk",
-            "durationSeconds": 180,
-            "videoUrl": [],
-            "logQuantity": false
+            "id": "",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 600,
+            "name": "go for walk"
         },
         {
-            "name": "Journal about day",
-            "durationSeconds": 300,
-            "videoUrl": [],
-            "logQuantity": false
+            "id": "",
+            "activity_sequence_id": "",
+            "log_quantity": true,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 1,
+            "log_quantity_question": "How many steps did you do?",
+            "name": "Track steps"
         },
         {
-            "name": "Plan to-do list and schedule for tomorrow",
-            "durationSeconds": 420,
-            "videoUrl": []
+            "id": "",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 600,
+            "name": "Zuo wanfan"
+        },
+        {
+            "allowed_urls": [
+                "*.zoho.com",
+                "*.heroku.com",
+                "*zoho*",
+                "*messagemedia*",
+                "*.zendesk.com",
+                "*.microsoftonline.com",
+                "*.messagemedia.com.au",
+                "*force.com",
+                "*atlassian*",
+                "trello.com"
+            ],
+            "id": "5c4f194f-218e-4cbb-9535-49e390e32a19",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 600,
+            "allowed_apps": [
+                "Google Chrome",
+                "Slack",
+                "iTerm",
+                "Visual Studio Code",
+                "Microsoft Outlook"
+            ],
+            "name": "Check for fires"
+        },
+        {
+            "allowed_urls": [
+                "*zoho*",
+                "*messagemedia*",
+                "*userguiding*",
+                "*udemy*",
+                "heroku.com",
+                "studio.youtube.com",
+                "gist.github.com"
+            ],
+            "id": "661843e9-2581-44aa-9dce-9fa1f197026f",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 900,
+            "allowed_apps": [
+                "Google Chrome",
+                "Screencast-O-Matic v2.0",
+                "Evernote"
+            ],
+            "name": "Record youtube videos"
+        },
+        {
+            "allowed_urls": [],
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 900,
+            "allowed_apps": [
+                "Evernote"
+            ],
+            "name": "Write blog post",
+            "id": "33e928a8-b59c-40e2-a153-8a1c4b2521b5",
+            "activity_sequence_id": "a5a707cc-5029-436d-b5ca-7a6f676a3f38"
+        },
+        {
+            "id": "2bff3a3f-351e-4f3e-b225-512498706a4f",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 120,
+            "allowed_apps": [
+                "Slack"
+            ],
+            "name": "End of day report in slack"
+        },
+        {
+            "id": "75bb1180-6f52-4606-ab18-c8f054eafcf2",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 300,
+            "name": "Outreach call"
+        },
+        {
+            "id": "acae5810-7c4f-4c9d-9ff0-bf5254b35acb",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 150,
+            "allowed_apps": [
+                "Timing"
+            ],
+            "name": "Check Timing"
+        },
+        {
+            "id": "c3b0e0fd-c5d4-460d-a838-323a6e5670c2",
+            "activity_sequence_id": "",
+            "log_quantity": true,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 1,
+            "log_quantity_question": "Log MM hours",
+            "name": "Log MM hours"
+        },
+        {
+            "allowed_urls": [
+                "https://www.reddit.com/r/ADHD_Programmers",
+                "https://www.reddit.com/r/ADHD_Programmers/*",
+                "https://www.reddit.com/r/getdisciplined/",
+                "https://www.reddit.com/r/getdisciplined/*",
+                "https://www.reddit.com/r/Habits/*"
+            ],
+            "id": "e00b7c76-de5e-4bae-8eb2-9018e3c12aa5",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 480,
+            "allowed_apps": [
+                "Google Chrome"
+            ],
+            "name": "Check reddit getdisciplined"
+        },
+        {
+            "id": "8bb8afdc-5596-4d83-b17b-0f7394e36ea5",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 90,
+            "allowed_apps": [
+                "Evernote"
+            ],
+            "name": "Kan mubiao"
+        },
+        {
+            "allowed_urls": [
+                "https://calendar.google.com",
+                "*atlassian*"
+            ],
+            "id": "2f5b4d23-6ab3-4023-b52c-9111e2b4c946",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 480,
+            "allowed_apps": [
+                "Evernote",
+                "Google Chrome",
+                "BusyCal"
+            ],
+            "name": "HPH journal + plan"
+        },
+        {
+            "id": "36f9fdce-d8ba-48e9-af45-fa2ec83a5b04",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 30,
+            "name": "Charge phone + iPad"
+        },
+        {
+            "id": "48a966a7-cd7e-4121-8b5d-d0aed9d2123d",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 60,
+            "name": "Do something nice for Sandy (e.g. footbath)"
+        },
+        {
+            "id": "1f8ffacd-6456-467c-ac18-f7bd7c6c2f66",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 60,
+            "name": "Guan men"
+        },
+        {
+            "id": "3b7a50e6-88b0-4aa3-83e2-01a58e6db3b9",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 60,
+            "name": "Fanghao qianbao he yaoshi"
+        },
+        {
+            "allowed_urls": [
+                "mail.yahoo.com"
+            ],
+            "id": "bb5a612d-d71d-4d16-ab22-e168448f373a",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 480,
+            "allowed_apps": [
+                "Google Chrome",
+                "Evernote"
+            ],
+            "name": "Marc youjian - use WA template"
+        },
+        {
+            "allowed_urls": [
+                "app.goalswon.com",
+                "*.goalswon.com"
+            ],
+            "id": "90ca8e03-30fb-48e4-90d4-dd964a0f24d9",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 180,
+            "allowed_apps": [
+                "Google Chrome"
+            ],
+            "name": "GoalsWon"
+        },
+        {
+            "id": "7858eabd-bd13-4580-910e-faef8242310f",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 30,
+            "name": "Turn off 4G on phone"
+        },
+        {
+            "id": "46898dfc-afdf-4fde-9572-d9cc7eabd36d",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 300,
+            "name": "Xizao"
+        },
+        {
+            "allowed_urls": [
+                "https://weather.bom.gov.au/location/r1r0fsn-melbourne",
+                "https://www.snowatch.com.au/",
+                "https://weather.bom.gov.au/*"
+            ],
+            "id": "cf08285a-08cf-4535-9073-0f5d1321a9f2",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 60,
+            "allowed_apps": [
+                "Google Chrome"
+            ],
+            "name": "Check weather"
+        },
+        {
+            "id": "72f7ad50-b524-432e-8024-114a68e0f233",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 60,
+            "allowed_apps": [
+                "Google Chrome"
+            ],
+            "name": "Close all chrome windows"
+        },
+        {
+            "allowed_urls": [
+                "*.zoho.com",
+                "*.heroku.com",
+                "*zoho*",
+                "*messagemedia*",
+                "*.zendesk.com",
+                "*.microsoftonline.com",
+                "*.messagemedia.com.au"
+            ],
+            "id": "8be12980-2b90-4380-9e07-7e904fe1d3a3",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 600,
+            "allowed_apps": [
+                "Google Chrome",
+                "Slack",
+                "iTerm",
+                "Visual Studio Code",
+                "Microsoft Outlook"
+            ],
+            "name": "Check for fires"
+        },
+        {
+            "id": "325ab9fa-22b0-41a0-8a00-aa8831e814be",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 120,
+            "name": "Clear desk incl teapot"
+        },
+        {
+            "id": "beb78061-8513-4531-b5a8-0c630be1b316",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 600,
+            "name": "Dasao fangzi"
+        },
+        {
+            "id": "8c7b32e1-4cac-497f-9387-40e93ea19732",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 600,
+            "allowed_apps": [
+                "Evernote"
+            ],
+            "name": "Step work"
+        },
+        {
+            "id": "c3a643ed-577e-4799-93c3-a0d8211b2527",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 900,
+            "name": "Duolingo"
+        },
+        {
+            "id": "54507a63-f69a-4b8c-af0f-d5cc7204d5de",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 300,
+            "name": "Hello Chinese"
+        },
+        {
+            "id": "441f30ae-8630-4922-a876-b9189527861f",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 300,
+            "name": "Fluent Forever"
+        },
+        {
+            "id": "1901b45d-94ab-40f7-bbd0-2ebb1491b807",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 360,
+            "allowed_apps": [
+                "AnkiApp"
+            ],
+            "name": "AnkiApp"
+        },
+        {
+            "id": "06ddc843-c66f-402e-9a81-abe34089c547",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 30,
+            "name": "Purifier"
+        },
+        {
+            "id": "de30da8c-2594-4d39-bbd3-623c0bd9cab2",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 60,
+            "name": "Check VMs"
+        },
+        {
+            "id": "3a3fde57-fac1-498e-95b9-c920d428e438",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 120,
+            "name": "Mood mint"
+        },
+        {
+            "allowed_urls": [
+                "https://getpocket.com/my-list",
+                "getpocket.com"
+            ],
+            "id": "7d90b2b1-a718-4179-bbf3-ab9ab5c45a51",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 360,
+            "allowed_apps": [
+                "Google Chrome"
+            ],
+            "name": "Read pocket article"
+        },
+        {
+            "allowed_urls": [
+                "https://www.facebook.com/jeznag",
+                "facebook.com"
+            ],
+            "id": "7031dafb-236b-4e0b-afe1-4b24a8b8279f",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 180,
+            "allowed_apps": [
+                "Google Chrome"
+            ],
+            "name": "Zhu shengri kuai le"
+        },
+        {
+            "id": "ac96e8e4-7033-411e-a458-eaea06395167",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 120,
+            "name": "Step 6/7"
+        },
+        {
+            "allowed_urls": [
+                "knots3d.com"
+            ],
+            "id": "eb680c80-ca2b-4655-a38c-a0629084b1c4",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 180,
+            "allowed_apps": [
+                "Google Chrome"
+            ],
+            "name": "Practise tying knots"
+        },
+        {
+            "id": "4a4a5f5a-7da4-49b8-93f3-5e930a8e48f2",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 180,
+            "name": "Sensa"
+        },
+        {
+            "id": "afe9bfec-5cdd-4c60-9b5b-b66199d910b3",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 180,
+            "name": "Driven"
+        },
+        {
+            "allowed_urls": [
+                "messenger.com"
+            ],
+            "id": "f19187e1-b624-45f3-90c1-188d22536224",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 300,
+            "allowed_apps": [
+                "Google Chrome"
+            ],
+            "name": "Covve"
+        },
+        {
+            "allowed_urls": [
+                "todoist.com"
+            ],
+            "id": "9ab4c8d3-0a57-481c-8edf-5c226a8c040b",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 180,
+            "allowed_apps": [
+                "Google Chrome"
+            ],
+            "name": "Todoist"
+        },
+        {
+            "id": "c427dc2a-d214-41b2-a2e8-187b4ca62d74",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 630,
+            "video_urls": [
+                "https://www.youtube.com/watch?v=BiWDsfZ3zbo",
+                "https://www.youtube.com/watch?v=ChHxbJuUR9Q",
+                "https://www.youtube.com/watch?v=TUFj6P_FdhU",
+                "https://www.youtube.com/watch?v=LB8XizzBUyM",
+                "https://www.youtube.com/watch?v=ZPwP7zjocZU",
+                "https://www.youtube.com/watch?v=5Kfv13sGbZQ",
+                "https://www.youtube.com/watch?v=9HtO72a4xYk"
+            ],
+            "name": "Yoga"
+        },
+        {
+            "id": "89eef7dc-d662-41f6-8228-ec801eb08a17",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 30,
+            "name": "Mute volume"
+        },
+        {
+            "id": "0ee91ad8-7120-4a5a-a485-8795b1c18fa0",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 180,
+            "name": "Brush teeth and floss"
+        },
+        {
+            "allowed_urls": [
+                "app.goalswon.com"
+            ],
+            "id": "bc616580-400a-4478-b8af-724c0c4cf6ba",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 60,
+            "allowed_apps": [
+                "Google Chrome"
+            ],
+            "name": "GoalsWon"
+        },
+        {
+            "id": "d01242e2-e08f-4868-8cf6-a687df566682",
+            "activity_sequence_id": "",
+            "log_quantity": false,
+            "log_summary_type": "SUM",
+            "choices": [],
+            "duration_seconds": 15,
+            "name": "Put phone in room"
         }
     ]
 }

@@ -63,7 +63,7 @@ class addWebUrlVc: NSViewController, NSTextFieldDelegate {
         
     }
     override func viewWillAppear() {
-        if let state = UserDefaults.standard.object(forKey: kUserdefaultsHideAllWindowInScreenShots) as? Bool{
+        if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
             if state{
                 self.view.window?.sharingType = .none
             }else{
@@ -87,7 +87,7 @@ class addWebUrlVc: NSViewController, NSTextFieldDelegate {
                 }
                 currentRow = selectedRow
                 var urlsArray = [String]()
-                if let arr = arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow]["urlsArray"] as? [String]{
+                if let arr = arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow]["allowed_urls"] as? [String]{
                     urlsArray = arr
                 }
                 
@@ -114,7 +114,7 @@ class addWebUrlVc: NSViewController, NSTextFieldDelegate {
                     selectedRow = 0
                 }
                 currentRow = selectedRow
-                textField.stringValue = arrBlockedUrls[selectedRow]
+                textField.stringValue = SettingsManagerObject.arrBlockedUrls[selectedRow]
                 lblTitle.stringValue = titleEditWebUrl
                 btnAdd.title = buttonSaveText
             }
@@ -168,7 +168,7 @@ class addWebUrlVc: NSViewController, NSTextFieldDelegate {
         if isAdding{
             if currenUrlAddingtState == ._FOCUS_ALLOW_URL{
                 var urlsArray = [String]()
-                if let arr = arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow]["urlsArray"] as? [String]{
+                if let arr = arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow]["allowed_urls"] as? [String]{
                     urlsArray = arr
                 }
                 if !urlsArray.contains(where: {$0.lowercased() == textField.stringValue.lowercased() }) {
@@ -184,7 +184,10 @@ class addWebUrlVc: NSViewController, NSTextFieldDelegate {
                     }
                     return;
                 }
-                arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow]["urlsArray"] = urlsArray
+                var dic = arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow]
+                dic["allowed_urls"] = urlsArray
+                
+                arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow] = dic
                 focusPreferencesVcObj?.tblViewAllowedUrls.reloadData()
                 focusPreferencesVcObj?.tblViewAllowedUrls.selectRowIndexes(IndexSet(arrayLiteral: (urlsArray.count - 1)), byExtendingSelection: false)
                 focusPreferencesVcObj?.tblViewAllowedUrls.scrollRowToVisible(urlsArray.count - 1)
@@ -192,6 +195,12 @@ class addWebUrlVc: NSViewController, NSTextFieldDelegate {
                 if arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow]["isOn"] as? Bool == true{
                     appdelegate!.fillAllowUrlArray()
                 }
+                
+                allApiObject.editFocusMode(focusType: dic, completionHandler: {newDic in
+                    DispatchQueue.main.async {
+                        
+                    }
+                })
             }else if currenUrlAddingtState == ._FOCUS_BLOCK_URL{
                 var urlsArray = [String]()
                 if let arr = arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow]["blockUrlsArray"] as? [String]{
@@ -210,7 +219,12 @@ class addWebUrlVc: NSViewController, NSTextFieldDelegate {
                     }
                     return;
                 }
-                arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow]["blockUrlsArray"] = urlsArray
+              
+                
+                
+                var dic = arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow]
+                dic["blockUrlsArray"] = urlsArray
+                arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow] = dic
                 focusPreferencesAdvancedVcObj?.tblView.reloadData()
                 focusPreferencesAdvancedVcObj?.tblView.selectRowIndexes(IndexSet(arrayLiteral: (urlsArray.count - 1)), byExtendingSelection: false)
                 focusPreferencesAdvancedVcObj?.tblView.scrollRowToVisible(urlsArray.count - 1)
@@ -218,9 +232,15 @@ class addWebUrlVc: NSViewController, NSTextFieldDelegate {
                 if arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow]["isOn"] as? Bool == true{
                     appdelegate!.fillAllowUrlArray()// fill block url array
                 }
+                allApiObject.editFocusMode(focusType: dic, completionHandler: {newDic in
+                    DispatchQueue.main.async {
+                        
+                    }
+                })
+                
             }else if currenUrlAddingtState == ._ALL_BLOCK_URL{
-                if !arrBlockedUrls.contains(where: {$0.lowercased() == textField.stringValue.lowercased() }) {
-                    arrBlockedUrls.append(textField.stringValue)
+                if !SettingsManagerObject.arrBlockedUrls.contains(where: {$0.lowercased() == textField.stringValue.lowercased() }) {
+                    SettingsManagerObject.arrBlockedUrls.append(textField.stringValue)
                 }else{
                     lblInvalidDomain.isHidden = false
                     lblInvalidDomain.stringValue = "\(textField.stringValue) already exists in the list."
@@ -233,14 +253,15 @@ class addWebUrlVc: NSViewController, NSTextFieldDelegate {
                     return;
                 }
                 blockedUrlsVcObj?.tblView.reloadData()
-                blockedUrlsVcObj?.tblView.selectRowIndexes(IndexSet(arrayLiteral: (arrBlockedUrls.count - 1)), byExtendingSelection: false)
-                blockedUrlsVcObj?.tblView.scrollRowToVisible(arrBlockedUrls.count - 1)
-                UserDefaults.standard.set(arrBlockedUrls, forKey: kUserdefaultsArrBlockedUrls)
+                blockedUrlsVcObj?.tblView.selectRowIndexes(IndexSet(arrayLiteral: (SettingsManagerObject.arrBlockedUrls.count - 1)), byExtendingSelection: false)
+                blockedUrlsVcObj?.tblView.scrollRowToVisible(SettingsManagerObject.arrBlockedUrls.count - 1)
+                UserDefaults.standard.set(SettingsManagerObject.arrBlockedUrls, forKey: SettingsManagerObject.kUserdefaultsArrBlockedUrls)
+                SettingsManagerObject.isSettingsChanged = true
             }
         }else{
             if currenUrlAddingtState == ._FOCUS_ALLOW_URL{
                 var urlsArray = [String]()
-                if let arr = arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow]["urlsArray"] as? [String]{
+                if let arr = arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow]["allowed_urls"] as? [String]{
                     urlsArray = arr
                 }
                 var isContainAlready = false
@@ -266,14 +287,23 @@ class addWebUrlVc: NSViewController, NSTextFieldDelegate {
                     return;
                 }
 
-                arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow]["urlsArray"] = urlsArray
+                
+                
+                var dic = arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow]
+                dic["allowed_urls"] = urlsArray
+                arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow] = dic
                 focusPreferencesVcObj?.tblViewAllowedUrls.reloadData()
-                focusPreferencesVcObj?.tblViewAllowedUrls.selectRowIndexes(IndexSet(arrayLiteral: (currentRow)), byExtendingSelection: false)
-//                focusPreferencesVcObj?.tblViewAllowedUrls.scrollRowToVisible(currentRow)//no need visible h isiliye to select kr paya or edit bhi
+                focusPreferencesVcObj?.tblViewAllowedUrls.selectRowIndexes(IndexSet(arrayLiteral: (self.currentRow)), byExtendingSelection: false)
                 UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
                 if arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow]["isOn"] as? Bool == true{
                     appdelegate!.fillAllowUrlArray()
                 }
+                allApiObject.editFocusMode(focusType: dic, completionHandler: {newDic in
+                    DispatchQueue.main.async {
+                        
+                    }
+                })
+                
             }else if currenUrlAddingtState == ._FOCUS_BLOCK_URL{
                 var urlsArray = [String]()
                 if let arr = arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow]["blockUrlsArray"] as? [String]{
@@ -302,26 +332,35 @@ class addWebUrlVc: NSViewController, NSTextFieldDelegate {
                     return;
                 }
                 
-                arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow]["blockUrlsArray"] = urlsArray
+                
+                var dic = arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow]
+                dic["blockUrlsArray"] = urlsArray
+                arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow] = dic
                 focusPreferencesAdvancedVcObj?.tblView.reloadData()
-                focusPreferencesAdvancedVcObj?.tblView.selectRowIndexes(IndexSet(arrayLiteral: (currentRow)), byExtendingSelection: false)
-                //                focusPreferencesVcObj?.tblViewAllowedUrls.scrollRowToVisible(currentRow)//no need visible h isiliye to select kr paya or edit bhi
+                focusPreferencesAdvancedVcObj?.tblView.selectRowIndexes(IndexSet(arrayLiteral: (self.currentRow)), byExtendingSelection: false)
+                
                 UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
                 if arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow]["isOn"] as? Bool == true{
                     appdelegate!.fillAllowUrlArray()
                 }
+                allApiObject.editFocusMode(focusType: dic, completionHandler: {newDic in
+                    DispatchQueue.main.async {
+                        
+                    }
+                })
+                
             }else{
                 var isContainAlready = false
-                for i in 0..<arrBlockedUrls.count{
+                for i in 0..<SettingsManagerObject.arrBlockedUrls.count{
                     if i != currentRow{
-                        if arrBlockedUrls[i].lowercased() == domain.lowercased(){
+                        if SettingsManagerObject.arrBlockedUrls[i].lowercased() == domain.lowercased(){
                             isContainAlready = true
                             break;
                         }
                     }
                 }
                 if !isContainAlready {
-                    arrBlockedUrls[currentRow] = textField.stringValue
+                    SettingsManagerObject.arrBlockedUrls[currentRow] = textField.stringValue
                 }else{
                     lblInvalidDomain.isHidden = false
                     lblInvalidDomain.stringValue = "\(textField.stringValue) already exists in the list."
@@ -335,7 +374,8 @@ class addWebUrlVc: NSViewController, NSTextFieldDelegate {
                 blockedUrlsVcObj?.tblView.reloadData()
                 blockedUrlsVcObj?.tblView.selectRowIndexes(IndexSet(arrayLiteral: (currentRow)), byExtendingSelection: false)
 //                blockedUrlsVcObj?.tblView.scrollRowToVisible(currentRow)//no need visible h isiliye to select kr paya or edit bhi
-                UserDefaults.standard.set(arrBlockedUrls, forKey: kUserdefaultsArrBlockedUrls)
+                UserDefaults.standard.set(SettingsManagerObject.arrBlockedUrls, forKey: SettingsManagerObject.kUserdefaultsArrBlockedUrls)
+                SettingsManagerObject.isSettingsChanged = true
             }
         }
 

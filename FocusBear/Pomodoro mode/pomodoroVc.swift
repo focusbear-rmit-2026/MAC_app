@@ -9,6 +9,7 @@ import Cocoa
 
 class pomodoroVc: NSViewController {
 
+    @IBOutlet weak var lblCompletedPomodoroCount: NSTextField!
     @IBOutlet weak var lblMinutesBreakDuration: NSTextField!
     @IBOutlet weak var lblMinutesWorkDuration: NSTextField!
     @IBOutlet weak var textFieldBreakDuration: NSTextField!
@@ -72,7 +73,7 @@ class pomodoroVc: NSViewController {
         lblHowManyPomodoro.stringValue = "How many pomodoros you want to focus for:"
         
 //        var minute = 25
-//        if let duration = UserDefaults.standard.object(forKey: kUserdefaultsPomodoroDurationMinutes) as? Int{
+//        if let duration = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsPomodoroDurationMinutes) as? Int{
 //            minute = duration
 //        }
         
@@ -118,11 +119,11 @@ class pomodoroVc: NSViewController {
         for i in 2...20{
             popupBtnSelectPomodoroCount.addItem(withTitle: "\(i)")
         }
-
+        lblCompletedPomodoroCount.isHidden = true
     }
     override func viewWillAppear() {
         
-        
+        lblCompletedPomodoroCount.isHidden = true
         whatToAchieveInFocusBlock = ""
         textViewAchieve.string = ""
         reFillFocusTypeList()
@@ -135,10 +136,10 @@ class pomodoroVc: NSViewController {
 
         if isShowingMorningHardcorePomodoro{
             
-            if let count = UserDefaults.standard.object(forKey: kUserdefaultsHardcorePomodoroFocusedCount) as? Int{
+            if let count = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHardcorePomodoroFocusedCount) as? Int{
                 popupBtnSelectPomodoroCount.selectItem(withTitle: "\(count)")
             }
-           if let name = UserDefaults.standard.object(forKey: kUserdefaultsHardcorePomodoroFocusedName) as? String{
+           if let name = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHardcorePomodoroFocusedName) as? String{
                popUpBtnFocusType.selectItem(withTitle: name)
            }
             btnLetsDoIt.isEnabled = true
@@ -152,11 +153,11 @@ class pomodoroVc: NSViewController {
             textFieldWorkDuration.isEnabled = false
             textFieldBreakDuration.isEnabled = false
             
-            if let duration = UserDefaults.standard.object(forKey: kUserdefaultsPomodoroDurationMinutes) as? Int{
+            if let duration = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsPomodoroDurationMinutes) as? Int{
                 textFieldWorkDuration.stringValue = "\(duration)"
             }
             
-            if let duration = UserDefaults.standard.object(forKey: kUserdefaultsBreakDurationMinutes) as? Int{
+            if let duration = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsBreakDurationMinutes) as? Int{
                 textFieldBreakDuration.stringValue = "\(duration)"
             }
         }else if isHardCorePomodoroModeOn{
@@ -171,6 +172,22 @@ class pomodoroVc: NSViewController {
             btnCheckBoxHardcodePomodoro.state = .on
             textFieldWorkDuration.isEnabled = false
             textFieldBreakDuration.isEnabled = false
+            lblCompletedPomodoroCount.isHidden = false
+            
+            let remainingPomodoroCount = totalPomodoroCountInHardCorePomodoro - completedPomodoroCountInHardcorePomodoro
+            var completedPomodoroCountText = "You have completed <COMPLETED_POMODORO> of <TOTAL_POMODORO> pomodoros. <REMAINING_POMODORO> more to go."
+
+            if let pomodoroInfo = configjson.value(forKey: "pomodoroInfo") as? NSDictionary{
+                if let title = pomodoroInfo.value(forKey: "completedPomodoroCountText") as? String{
+                    completedPomodoroCountText = title
+                }
+            }
+            
+            completedPomodoroCountText = completedPomodoroCountText.replacingOccurrences(of: "<COMPLETED_POMODORO>", with: "\(completedPomodoroCountInHardcorePomodoro)")
+            completedPomodoroCountText = completedPomodoroCountText.replacingOccurrences(of: "<TOTAL_POMODORO>", with: "\(totalPomodoroCountInHardCorePomodoro)")
+            completedPomodoroCountText = completedPomodoroCountText.replacingOccurrences(of: "<REMAINING_POMODORO>", with: "\(remainingPomodoroCount)")
+            lblCompletedPomodoroCount.stringValue = completedPomodoroCountText//"You have completed \(completedPomodoroCountInHardcorePomodoro) of \(totalPomodoroCountInHardCorePomodoro) pomodoros. \(remainingPomodoroCount) more to go."//
+            
         }else{
             textFieldWorkDuration.isEnabled = true
             textFieldBreakDuration.isEnabled = true
@@ -188,11 +205,11 @@ class pomodoroVc: NSViewController {
                 stackViewPomodoroModeTime.isHidden = true
                 
             }
-            if let duration = UserDefaults.standard.object(forKey: kUserdefaultsPomodoroDurationMinutes) as? Int{
+            if let duration = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsPomodoroDurationMinutes) as? Int{
                 textFieldWorkDuration.stringValue = "\(duration)"
             }
             
-            if let duration = UserDefaults.standard.object(forKey: kUserdefaultsBreakDurationMinutes) as? Int{
+            if let duration = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsBreakDurationMinutes) as? Int{
                 textFieldBreakDuration.stringValue = "\(duration)"
             }
         }
@@ -205,7 +222,8 @@ class pomodoroVc: NSViewController {
             hardcodePmodoroFocusModeIndex = popUpBtnFocusType.indexOfSelectedItem
             let totalPopmodoroCount = Int(popupBtnSelectPomodoroCount.title) ?? 2
             let minutes = currentPomodoroWorkDuration
-
+            totalPomodoroCountInHardCorePomodoro = totalPopmodoroCount
+            completedPomodoroCountInHardcorePomodoro = 0
             
             let totoalMinutes = (totalPopmodoroCount * minutes) //* 60//(textFieldHourValue.integerValue * 60) + textFieldMinutesValue.integerValue
             totalMinutesRemainingForHardcodePomodoro = totoalMinutes
@@ -240,6 +258,37 @@ class pomodoroVc: NSViewController {
     }
     
     @IBAction func btnEditFocusModeClicked(_ sender: Any) {
+        addLog(text: "btnEditFocusModeClicked")//
+        
+        if Reachability.isConnectedToNetwork() == false {
+            
+            var noInternetTitle = "No Internet Connection"
+            var noInternetSubTitle = "Make sure your device is connected to the internet."
+            addLog(text: "settings clicked:- No Internet Connection")
+            if let activationNagInfo = configjson.value(forKey: "activationNagInfo") as? NSDictionary{
+                if let text = activationNagInfo.value(forKey: "noInternetTitle") as? String{
+                    noInternetTitle = text
+                }
+                if let text = activationNagInfo.value(forKey: "noInternetSubTitle") as? String{
+                    noInternetSubTitle = text
+                }
+            }
+            let alert = NSAlert()
+            if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
+                if state{
+                    alert.window.sharingType = .none
+                }
+            }
+            alert.messageText = noInternetTitle
+            alert.informativeText = noInternetSubTitle
+            alert.alertStyle = .warning
+            alert.addButton(withTitle:  buttonOkText)
+            alert.beginSheetModal(for: self.view.window!, completionHandler: nil)
+            
+            return
+        }
+        
+        
         if preferencesWindowControllerObj?.window?.isVisible ?? false{
             if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
                 tabview.selectedTabViewItemIndex = 1
@@ -250,7 +299,7 @@ class pomodoroVc: NSViewController {
         addLog(text: "Showing preferences from edit focus mode")
         if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
             tabview.selectedTabViewItemIndex = 1
-            if UserDefaults.standard.object(forKey: kUserdefaultsAppPassword) != nil{
+            if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
                 tabview.view.addSubview(Focus_Bear.enterPasswordVcObj!.view)
                 tabview.view.addConstraints(subView: Focus_Bear.enterPasswordVcObj!.view)
                 addLog(text: "Showing enter password view")
@@ -262,7 +311,7 @@ class pomodoroVc: NSViewController {
     }
     func showAlert(msg:String){
         let alertWarning = NSAlert()
-        if let state = UserDefaults.standard.object(forKey: kUserdefaultsHideAllWindowInScreenShots) as? Bool{
+        if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
             if state{
                 alertWarning.window.sharingType = .none
             }
@@ -272,6 +321,7 @@ class pomodoroVc: NSViewController {
         alertWarning.beginSheetModal(for: self.view.window!, completionHandler:nil)
     }
     @IBAction func btnLetsDoItClicked(_ sender: Any) {
+        addLog(text: "btnLetsDoItClicked")//
         if textFieldWorkDuration.isEnabled{
             if textFieldWorkDuration.stringValue.isEmpty{
                 showAlert(msg: workDurationEmptyErrorText)
@@ -297,6 +347,11 @@ class pomodoroVc: NSViewController {
         }
         if isHardCorePomodoroModeOn{
             whatToAchieveInFocusBlock = textViewAchieve.string
+            if textViewAchieve.string.isEmpty{
+                appdelegate!.statusbutton?.title = buttonStatusStateFocusText
+            }else{
+                appdelegate!.statusbutton?.title = String(whatToAchieveInFocusBlock.prefix(40)) + "..."
+            }
             self.view.window?.close()
             return;
         }
@@ -317,7 +372,8 @@ class pomodoroVc: NSViewController {
                 hardcodePmodoroFocusModeIndex = popUpBtnFocusType.indexOfSelectedItem
                 let totalPopmodoroCount = Int(popupBtnSelectPomodoroCount.title) ?? 2
                 let minutes = textFieldWorkDuration.integerValue
-
+                totalPomodoroCountInHardCorePomodoro = totalPopmodoroCount
+                completedPomodoroCountInHardcorePomodoro = 0
                 
                 let totoalMinutes = (totalPopmodoroCount * minutes) //* 60//(textFieldHourValue.integerValue * 60) + textFieldMinutesValue.integerValue
                 totalMinutesRemainingForHardcodePomodoro = totoalMinutes
@@ -331,14 +387,16 @@ class pomodoroVc: NSViewController {
    
     func pomodoroModeStarted(){
         addLog(text: "pomodoro mode Started")
-        
+        if arrFocusType.count == 0{
+            return
+        }
         if getEndFocusModeWindowControllerObj().window!.isVisible{
             let timestamp = getStringFromDate(date: startFocusModeTime ?? Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
             addEntryInCsv(logType: "focus block", activity: focusCompletedVcObj!.currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: "\(focusModeMinutesToPerform) of \(focusCompletedVcObj!.currentFocusModeName)", distractionsEncountered: "", abortReason: "", feedback: "")
             getEndFocusModeWindowControllerObj().window?.close()
         }
         let minute = textFieldWorkDuration.integerValue
-//        if let duration = UserDefaults.standard.object(forKey: kUserdefaultsPomodoroDurationMinutes) as? Int{
+//        if let duration = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsPomodoroDurationMinutes) as? Int{
 //            minute = duration
 //        }
         let calendar = Calendar.current
@@ -348,8 +406,12 @@ class pomodoroVc: NSViewController {
         runAppleScriptBeforeFocusBeginIfAvailable(index: popUpBtnFocusType.indexOfSelectedItem)
         
         appdelegate!.statusbutton?.backgroundcolor = HexToColor(hexString: arrFocusType[popUpBtnFocusType.indexOfSelectedItem]["color"] as? String ?? "")
-        appdelegate!.statusbutton?.title = buttonStatusStateFocusText
-        
+//        appdelegate!.statusbutton?.title = buttonStatusStateFocusText
+        if textViewAchieve.string.isEmpty{
+            appdelegate!.statusbutton?.title = buttonStatusStateFocusText
+        }else{
+            appdelegate!.statusbutton?.title = String(textViewAchieve.string.prefix(40)) + "..."
+        }
         appdelegate!.statusbutton?.imagePosition = .imageLeft
 
         for i in 0..<arrFocusType.count{
@@ -366,9 +428,10 @@ class pomodoroVc: NSViewController {
         
         appdelegate?.setFocusModeTimer(hour: nil, minute: minute)
         isFocusModeStartedFromPomodoroMode = true
+        whatToAchieveInFocusBlock = textViewAchieve.string
         appdelegate!.focusModeStartted()
         UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
-        whatToAchieveInFocusBlock = textViewAchieve.string
+        
 //        if focusPreferencesVcObj != nil{
 //            if (preferencesWindowControllerObj?.window!.isVisible)!{
 //                if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
@@ -385,14 +448,14 @@ class pomodoroVc: NSViewController {
             lblQuestionSecond.stringValue = chooseTheFocusModeText
             stackViewPomodoroModeTime.isHidden = false
 
-            if UserDefaults.standard.object(forKey: kUserdefaultsAppPassword) == nil{
+            if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) == nil{
                 let alertWarning = NSAlert()
-                if let state = UserDefaults.standard.object(forKey: kUserdefaultsHideAllWindowInScreenShots) as? Bool{
+                if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
                     if state{
                         alertWarning.window.sharingType = .none
                     }
                 }
-                if let state = UserDefaults.standard.object(forKey: kUserdefaultsHideAllWindowInScreenShots) as? Bool{
+                if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
                     if state{
                         alertWarning.window.sharingType = .none
                     }

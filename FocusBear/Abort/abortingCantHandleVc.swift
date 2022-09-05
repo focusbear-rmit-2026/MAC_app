@@ -46,7 +46,7 @@ class abortingCantHandleVc: NSViewController, NSTextViewDelegate {
     }
     
     override func viewWillAppear() {
-        if kIsReducedMotion{
+        if SettingsManagerObject.kIsReducedMotion{
             imgViewGif.image = nil
         }else{
             imgViewGif.image = NSImage(named: "Crying_small")
@@ -148,6 +148,7 @@ class abortingCantHandleVc: NSViewController, NSTextViewDelegate {
         }
     }
     @IBAction func btnMainClicked(_ sender: Any) {
+        addLog(text: "abortingCantHandleVc - btnMainClicked")//
         if isViewStartingSmall{
             //30 seconds work
 //            if lastCurrentState == ._MORNING_HABIT_{

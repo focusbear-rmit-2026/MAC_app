@@ -11,6 +11,8 @@ import WebKit
 class timerViewcontroller: NSViewController {
     
     
+    @IBOutlet weak var boxTimerCenterY: NSLayoutConstraint!
+    @IBOutlet weak var titleTopSpace: NSLayoutConstraint!
     @IBOutlet weak var webView: WKWebView!
 
     // @IBOutlet weak var videoView: AVPlayerView!
@@ -28,6 +30,7 @@ class timerViewcontroller: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
+        boxTimerCenterY = boxTimerCenterY.setMultiplier(multiplier: 1.6)
     }
     override func viewWillAppear() {
         self.timerHideBearAnimation?.invalidate()
@@ -40,7 +43,18 @@ class timerViewcontroller: NSViewController {
     func loadWebViewTo(url:String?){
         if var videoUrl = url{
             self.webView.isHidden = false
-            videoUrl = videoUrl.replacingOccurrences(of: "watch?v=", with: "embed/")
+            if videoUrl.lowercased().contains("watch?v="){
+                videoUrl = videoUrl.replacingOccurrences(of: "watch?v=", with: "embed/")
+            }else{
+            
+                if videoUrl.lowercased().contains("https://youtu.be/"){
+                    //https://www.youtube.com/watch?v=lExuhKRS8vo
+                    if let lastItem =  videoUrl.components(separatedBy: "/").last{
+                       videoUrl = "https://www.youtube.com/embed/" + lastItem
+                    }
+                    
+                }
+            }
             if videoUrl.contains("?"){
                 videoUrl = videoUrl + "&autoplay=1"
             }else{
@@ -62,13 +76,13 @@ class timerViewcontroller: NSViewController {
             let filterArr = arrFocusType.filter { $0["name"] as? String == allowedFocusMode}
             if filterArr.count != 0{
                 if let dic = filterArr.first{
-                    let allowAppsPath = dic["appsArray"] as? [String] ?? []
+                    let allowAppsPath = dic["allowed_apps"] as? [String] ?? []
                     print(allowAppsPath)
                     for path in allowAppsPath{
                         let url = URL(fileURLWithPath: path)
                         activityAllowedFocusApps.append(url.deletingPathExtension().lastPathComponent)
                     }
-                    activityAllowedFocusUrls = dic["urlsArray"] as? [String] ?? []
+                    activityAllowedFocusUrls = dic["allowed_urls"] as? [String] ?? []
                 }
                 
             }
@@ -77,7 +91,14 @@ class timerViewcontroller: NSViewController {
     }
     
     func startTimerHabit(durationSeconds:Int, url:String?, name:String,currentHabit: habit) {
-        
+        graphOneMonthData = nil
+        graphOneDayData = nil
+        allApiObject.getACtivityStats(activityId: currentHabit.id, activityChoiceId: nil, completionHandler: {dic in
+            
+        })
+        if !(thirdVcObj?.isViewLoaded ?? false){
+            thirdVcObj?.loadView()
+        }
         disableSystemSleep()
         checkActivityExtraAllowedAppsAndUrls(allowedFocusMode: currentHabit.allowedFocusMode)
         if currentHabit.openSpecificApps{
@@ -97,17 +118,12 @@ class timerViewcontroller: NSViewController {
                  currentHabitPlaying = nil
             }
         }
-
-        if kIsReducedMotion{
-            imgViewGif.image = nil
-        }else{
-            imgViewGif.image = NSImage(named: newGifsNamesArray.randomElement() ?? "")
-            imgViewGif.animates = true
-            self.timerHideBearAnimation = Timer.scheduledTimer(timeInterval: 5, target: self, selector: #selector(self.hideBearAnimation), userInfo: nil, repeats: false)
-        }
+        
+        loadWebViewTo(url: url)
+        resetConstraintsForVideoAndGif(kIsReducedMotion: SettingsManagerObject.kIsReducedMotion)
         
         lastActivityPerformedTime = Date()
-        loadWebViewTo(url: url)
+        
         lblTitle.stringValue = getDoSomeActivityText(activityName: name)//arrAllMorningHabits[currentHabitIndex].name!)
         currentTimer = 0
         totalDuration = durationSeconds//durationInMinutes*60
@@ -121,11 +137,7 @@ class timerViewcontroller: NSViewController {
             second = "0\(s)"
         }
         self.lblTimer.stringValue = "\(minute):\(second)"
-//        DispatchQueue.global().async {
-//            self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
-//            RunLoop.current.add(self.timer!, forMode: RunLoop.Mode.common)
-//            RunLoop.current.run()
-//        }
+
         DispatchQueue.main.async {
             self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
             RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
@@ -133,12 +145,33 @@ class timerViewcontroller: NSViewController {
     }
     
     @objc func hideBearAnimation(){
-        imgViewGif.image = nil
-        self.timerHideBearAnimation?.invalidate()
-        self.timerHideBearAnimation = nil
+        resetConstraintsForVideoAndGif(kIsReducedMotion: true)
     }
     
     func resumeTimerHabit(durationSeconds:Int, url:String?, name:String){
+//        if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
+//            if smallCountDownWcObj?.window != nil{
+//                if getSmallCountDownWindowObject().window!.isVisible{
+//                    if currentHabit.openSpecificApps{
+//                        currentHabitPlaying = currentHabit
+//                        mainWindowControllerObj?.window?.setIsVisible(false)
+//                        appdelegate?.startTimerActivitiesAllowedApp()
+//                        hideBlankWindowInSecondaryMonitor()
+//                        showSmallTimerWindow(durationSeconds: durationSeconds, msg: getDoSomeActivityText(activityName: name), isFocusBreak: false)
+//                    }else{
+//                        if activityAllowedFocusApps.count != 0{
+//                            currentHabitPlaying = currentHabit
+//                            mainWindowControllerObj?.window?.setIsVisible(false)
+//                            appdelegate?.startTimerActivitiesAllowedApp()
+//                            hideBlankWindowInSecondaryMonitor()
+//                            showSmallTimerWindow(durationSeconds: durationSeconds, msg: getDoSomeActivityText(activityName: name), isFocusBreak: false)
+//                        }else{
+//                             currentHabitPlaying = nil
+//                        }
+//                    }
+//                }
+//            }
+//        }
         disableSystemSleep()
         loadWebViewTo(url: url)
         lblTitle.stringValue = getDoSomeActivityText(activityName: name)//"Do some \(arrAllMorningHabits[currentHabitIndex].name!)."
@@ -153,11 +186,7 @@ class timerViewcontroller: NSViewController {
             second = "0\(s)"
         }
         self.lblTimer.stringValue = "\(minute):\(second)"
-//        DispatchQueue.global().async {
-//            self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
-//            RunLoop.current.add(self.timer!, forMode: RunLoop.Mode.common)
-//            RunLoop.current.run()
-//        }
+
         DispatchQueue.main.async {
             self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
             RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
@@ -169,10 +198,22 @@ class timerViewcontroller: NSViewController {
     var logQuantityQuestion:String?
     var logQuantityType:String?
     var logActivityQuantity = false
-    func startTimerActivity(durationInSeconds:Int,name:String, url:String?, logQuantityQuestion:String?,currentActivity: breakActivity,logQuantity:Bool, logQuantityType:String) {
+    func startTimerActivity(durationInSeconds:Int,name:String, url:String?, logQuantityQuestion:String?,currentActivity: breakActivity, currentChoice:activityChoice?,logQuantity:Bool, logQuantityType:String) {
+        graphOneMonthData = nil
+        graphOneDayData = nil
+        allApiObject.getACtivityCurrentDayStats(activityId: currentActivity.id, activityChoiceId: currentChoice?.id, completionHandler: {dic in
+            
+        })
+        allApiObject.getACtivityStats(activityId: currentActivity.id, activityChoiceId: currentChoice?.id, completionHandler: {dic in
+        
+        })
+        
+        if !(thirdVcObj?.isViewLoaded ?? false){
+            thirdVcObj?.loadView()
+        }
         disableSystemSleep()
         logActivityQuantity = logQuantity
-        
+        activityPostponeCount = 0
         
         checkActivityExtraAllowedAppsAndUrls(allowedFocusMode: currentActivity.allowedFocusMode)
         
@@ -194,21 +235,16 @@ class timerViewcontroller: NSViewController {
             }
         }
 
+        loadWebViewTo(url: url)
+        resetConstraintsForVideoAndGif(kIsReducedMotion: SettingsManagerObject.kIsReducedMotion)
         
-        if kIsReducedMotion{
-            imgViewGif.image = nil
-        }else{
-            imgViewGif.image = NSImage(named: newGifsNamesArray.randomElement() ?? "")
-            imgViewGif.animates = true
-            self.timerHideBearAnimation = Timer.scheduledTimer(timeInterval: 5, target: self, selector: #selector(self.hideBearAnimation), userInfo: nil, repeats: false)
-        }
         self.logQuantityQuestion = logQuantityQuestion
         self.logQuantityType = logQuantityType
         currentActicityTitle = name
         currentDurationInSeconds = durationInSeconds
         currentUrl = url
         lastActivityPerformedTime = Date()
-        loadWebViewTo(url: url)
+        
         lblTitle.stringValue = getDoSomeActivityText(activityName: name)//"Do some \(name)."
         currentTimer = 0
         totalDuration = durationInSeconds
@@ -222,17 +258,32 @@ class timerViewcontroller: NSViewController {
             second = "0\(s)"
         }
         self.lblTimer.stringValue = "\(minute):\(second)"
-//        DispatchQueue.global().async {
-//            self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
-//            RunLoop.current.add(self.timer!, forMode: RunLoop.Mode.common)
-//            RunLoop.current.run()
-//        }
+
         DispatchQueue.main.async {
             self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
             RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
         }
     }
   
+    func resetConstraintsForVideoAndGif(kIsReducedMotion:Bool){
+        if kIsReducedMotion{
+            imgViewGif.image = nil
+            self.timerHideBearAnimation?.invalidate()//need to do this
+            self.timerHideBearAnimation = nil
+        }else{
+            imgViewGif.image = NSImage(named: newGifsNamesArray.randomElement() ?? "")
+            imgViewGif.animates = true
+            self.timerHideBearAnimation = Timer.scheduledTimer(timeInterval: 5, target: self, selector: #selector(self.hideBearAnimation), userInfo: nil, repeats: false)
+        }
+        if kIsReducedMotion && self.webView.isHidden == false{
+            titleTopSpace.constant = 80
+            boxTimerCenterY = boxTimerCenterY.setMultiplier(multiplier: 1.8)
+        }else{
+            titleTopSpace.constant = 210
+            boxTimerCenterY = boxTimerCenterY.setMultiplier(multiplier: 1.6)
+            self.timerHideBearAnimation = Timer.scheduledTimer(timeInterval: 5, target: self, selector: #selector(self.hideBearAnimation), userInfo: nil, repeats: false)
+        }
+    }
     func resumeTimerActivity(durationInSeconds:Int,name:String, url:String?) {
         disableSystemSleep()
         loadWebViewTo(url: url)
@@ -248,26 +299,17 @@ class timerViewcontroller: NSViewController {
             second = "0\(s)"
         }
         self.lblTimer.stringValue = "\(minute):\(second)"
-//        DispatchQueue.global().async {
-//            self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
-//            RunLoop.current.add(self.timer!, forMode: RunLoop.Mode.common)
-//            RunLoop.current.run()
-//        }
+
         DispatchQueue.main.async {
             self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
             RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
         }
     }
     func startBreathing() {
-        if kIsReducedMotion{
-            imgViewGif.image = nil
-        }else{
-            imgViewGif.image = NSImage(named: newGifsNamesArray.randomElement() ?? "")
-            imgViewGif.animates = true
-            self.timerHideBearAnimation = Timer.scheduledTimer(timeInterval: 5, target: self, selector: #selector(self.hideBearAnimation), userInfo: nil, repeats: false)
-        }
-        
         loadWebViewTo(url: introActivity!.urlsArray.randomElement())
+        resetConstraintsForVideoAndGif(kIsReducedMotion: SettingsManagerObject.kIsReducedMotion)
+        
+        
         lblTitle.stringValue = getDoSomeActivityText(activityName: introActivity!.name!)//"Do some \(introActivity!.name!)."
         currentTimer = 0
         totalDuration = introActivity!.durationSeconds!
@@ -281,11 +323,7 @@ class timerViewcontroller: NSViewController {
             second = "0\(s)"
         }
         self.lblTimer.stringValue = "\(minute):\(second)"
-//        DispatchQueue.global().async {
-//            self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
-//            RunLoop.current.add(self.timer!, forMode: RunLoop.Mode.common)
-//            RunLoop.current.run()
-//        }
+
         DispatchQueue.main.async {
             self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
             RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)

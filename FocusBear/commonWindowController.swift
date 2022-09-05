@@ -12,7 +12,7 @@ class commonWindowController: NSWindowController {
     override func windowDidLoad() {
         super.windowDidLoad()
         
-        if let state = UserDefaults.standard.object(forKey: kUserdefaultsHideAllWindowInScreenShots) as? Bool{
+        if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
             if state{
                 self.window?.sharingType = .none
             }

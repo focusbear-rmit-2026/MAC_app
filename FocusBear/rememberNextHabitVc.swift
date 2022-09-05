@@ -104,7 +104,7 @@ class rememberNextHabitVc: NSViewController, NSTextFieldDelegate {
         self.customViewForList.addSubview(popoverViewControllerObj.view)
         self.customViewForList.addConstraints(subView: popoverViewControllerObj.view)
         textFieldNextHabit.popoverViewControllerObj?.view.isHidden = true
-        comboBoxHabits.isHidden = true//todo
+        comboBoxHabits.isHidden = true//todo not in use
         //
         
         textFieldNextHabit.delegate = self
@@ -113,7 +113,7 @@ class rememberNextHabitVc: NSViewController, NSTextFieldDelegate {
     
     func resetData(){
         textFieldNextHabit.stringValue = ""
-//        tblViewHabits.enclosingScrollView!.isHidden = true
+
         lblSelectionResult.isHidden = true
         btnStartNextHabit.isHidden = true
         
@@ -121,7 +121,7 @@ class rememberNextHabitVc: NSViewController, NSTextFieldDelegate {
         var nextHabitName = ""
         var nextHabitTime = 0
         
-//        popupBtnHabits.removeAllItems()
+
         
         var selectHabitText = "Select Habit"
         if let rememberNextHabitViewInfo = configjson.value(forKey: "rememberNextHabitViewInfo") as? NSDictionary{
@@ -129,7 +129,7 @@ class rememberNextHabitVc: NSViewController, NSTextFieldDelegate {
                 selectHabitText = text
             }
         }
-//        popupBtnHabits.addItem(withTitle: selectHabitText)
+
         if currentState == ._MORNING_HABIT_{
             arrHabitNames.removeAll()
             for habit in arrAllMorningHabits{
@@ -137,9 +137,6 @@ class rememberNextHabitVc: NSViewController, NSTextFieldDelegate {
             }
             
             arrHabitNames.shuffle()
-//            for habit in arrHabitNames{
-//                 popupBtnHabits.addItem(withTitle: habit)
-//            }
 
             lastHabitName = arrAllMorningHabits[nextHabitIndex-1].name
             nextHabitName = arrAllMorningHabits[nextHabitIndex].name
