@@ -29,6 +29,7 @@ class firstViewController: NSViewController {
         // Do view setup here.
         btnStartFirstHabit.cell?.wraps = true
         lblBeforeYouStart.isHidden = true
+//        lblTitle.font = NSFont(name: "fenwick outline", size: lblTitle.font?.pointSize ?? 24)!
     }
 
     override func viewWillAppear() {

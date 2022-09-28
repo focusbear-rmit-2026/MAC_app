@@ -82,11 +82,7 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
 
         
         appdelegate!.statusbutton?.backgroundcolor = HexToColor(hexString: arrFocusType[focusIndex]["color"] as? String ?? "")
-        if textViewQuestion.string.isEmpty{
-            appdelegate!.statusbutton?.title = buttonStatusStateFocusText
-        }else{
-            appdelegate!.statusbutton?.title = String(textViewQuestion.string.prefix(40)) + "..."
-        }
+        appdelegate!.setStatusBarButtonTitleForFocusMode(title: textViewQuestion.string)
         appdelegate!.statusbutton?.imagePosition = .imageLeft
         if timerForFocusMode != nil{
             timerForFocusMode?.invalidate()
@@ -102,6 +98,7 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
         }
         whatToAchieveInFocusBlock = textViewQuestion.string
         appdelegate!.focusModeStartted()
+        appdelegate!.setIntensionInBrainDumpWindow()
         UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
         self.view.window?.close()
     }

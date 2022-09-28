@@ -166,8 +166,8 @@ class activateNowvc: NSViewController,NSTextFieldDelegate {
                     //
                     isPurchased = true
                     UserDefaults.standard.removeObject(forKey: "trialExpired")
-                    UserDefaults.standard.set(true, forKey: kIsPurchased)
-                    UserDefaults.standard.set(sKey, forKey: kRegisteredLicenseKey)
+//                    UserDefaults.standard.set(true, forKey: kIsPurchased)
+//                    UserDefaults.standard.set(sKey, forKey: kRegisteredLicenseKey)
                     DispatchQueue.main.async {
                         
                         var successfullyActivatedTitle = "Thank You!"

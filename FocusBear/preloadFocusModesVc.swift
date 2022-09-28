@@ -84,6 +84,8 @@ class preloadFocusModesVc: NSViewController, NSTextFieldDelegate {
             break
         }
     }
+    
+    
     @IBAction func btnContinueClicked(_ sender: Any) {
         var workText = "Work"
         if let preloadFocusModesViewInfo = configjson.value(forKey: "preloadFocusModesViewInfo") as? NSDictionary{
@@ -91,21 +93,22 @@ class preloadFocusModesVc: NSViewController, NSTextFieldDelegate {
         }
         
         let selectedIndex = popUpBtnWork.indexOfSelectedItem
+
         var dic: [String : Any]?
         switch selectedIndex {
         case 0:
             return // not possible because button is not enabled if option 0 is selected
         case 1://Programming
-            dic = ["name":"\(titleProgramming) \(workText)", "color": getColorString(color: NSColor(red: 208/255, green: 150/255, blue: 60/255, alpha: 1)), "allowed_apps": ["/Applications/Visual Studio Code.app", "/Applications/XCode.app", "/Applications/Utilities/Terminal.app"], "allowed_urls": ["https://stackoverflow.com","localhost"], "isOn": false, "isAllowedAllApps":false, "isAllowedAllUrls":false]
+            dic = ["name":"\(titleProgramming) \(workText)", "color": getColorString(color: NSColor(red: 208/255, green: 150/255, blue: 60/255, alpha: 1)), "allowed_apps": ["/Applications/Visual Studio Code.app", "/Applications/XCode.app", "/Applications/Utilities/Terminal.app"], "allowed_urls": ["https://stackoverflow.com","localhost"], "isOn": false, "isAllowedAllApps":false, "isAllowedAllUrls":false, "jobType":jobTypeProgramming]
 
         case 2://Graphic Design
-            dic = ["name":"\(titleGraphicDesign) \(workText)", "color": getColorString(color: NSColor(red: 208/255, green: 150/255, blue: 60/255, alpha: 1)), "allowed_apps": ["/Applications/Figma.app", "/Applications/Adobe Illustrator.app", "/Applications/Adobe Photoshop.app"], "allowed_urls": ["https://www.figma.com"], "isOn": false, "isAllowedAllApps":false, "isAllowedAllUrls":false]
+            dic = ["name":"\(titleGraphicDesign) \(workText)", "color": getColorString(color: NSColor(red: 208/255, green: 150/255, blue: 60/255, alpha: 1)), "allowed_apps": ["/Applications/Figma.app", "/Applications/Adobe Illustrator.app", "/Applications/Adobe Photoshop.app"], "allowed_urls": ["https://www.figma.com"], "isOn": false, "isAllowedAllApps":false, "isAllowedAllUrls":false, "jobType":jobTypeGraphicDesign]
             
         case 3://Data Analysis
-            dic = ["name":"\(titleDataAnalysis) \(workText)", "color": getColorString(color: NSColor(red: 208/255, green: 150/255, blue: 60/255, alpha: 1)), "allowed_apps": ["/Applications/Microsoft Excel.app"], "allowed_urls": ["https://www.office.com"], "isOn": false, "isAllowedAllApps":false, "isAllowedAllUrls":false]
+            dic = ["name":"\(titleDataAnalysis) \(workText)", "color": getColorString(color: NSColor(red: 208/255, green: 150/255, blue: 60/255, alpha: 1)), "allowed_apps": ["/Applications/Microsoft Excel.app"], "allowed_urls": ["https://www.office.com"], "isOn": false, "isAllowedAllApps":false, "isAllowedAllUrls":false, "jobType":jobTypeDataAnalysis]
         
         case 4:
-            dic = ["name":"\(textFieldSomethingElse.stringValue) \(workText)", "color": getColorString(color: NSColor(red: 208/255, green: 150/255, blue: 60/255, alpha: 1)), "allowed_apps": [], "allowed_urls": [], "isOn": false, "isAllowedAllApps":true, "isAllowedAllUrls":true]
+            dic = ["name":"\(textFieldSomethingElse.stringValue) \(workText)", "color": getColorString(color: NSColor(red: 208/255, green: 150/255, blue: 60/255, alpha: 1)), "allowed_apps": [], "allowed_urls": [], "isOn": false, "isAllowedAllApps":true, "isAllowedAllUrls":true, "jobType":jobTypeSomethingElse]
 
             
         default:
@@ -115,19 +118,17 @@ class preloadFocusModesVc: NSViewController, NSTextFieldDelegate {
         if dic != nil{
             let id = getUuid()
             dic!["id"] = id
-            if arrFocusType.count == 0{
-                arrFocusType.append(dic!)
-            }else{
-                arrFocusType.insert(dic!, at: arrFocusType.count - 1)
-            }
-            UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
-            allApiObject.addFocusMode(focusType: dic!, completionHandler: {newDic in
-//                if newDic != nil{
-//                    dic!["id"] = newDic!.value(forKey: "id") as? String ?? ""//["id"] as? String ?? ""
+            UserDefaults.standard.set(dic, forKey: kUserdefaultsFocusAddedFromFirstHabit)
+
+
+
+//            allApiObject.addFocusMode(focusType: dic!, completionHandler: {newDic in //  yha ad nahi krenge jga focus mode ki list get krte h vh a pahle hi userdefaults  se get krke fie vapas add or upload krenege
+////                if newDic != nil{
+////                    dic!["id"] = newDic!.value(forKey: "id") as? String ?? ""//["id"] as? String ?? ""
+////
+////                }
 //
-//                }
-                
-            })
+//            })
         }
         
         thirdVcObj?.btnFocesModesLodded()

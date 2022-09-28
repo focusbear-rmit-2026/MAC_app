@@ -25,6 +25,7 @@ class activationWindowController: NSWindowController, NSWindowDelegate {
         addLog(text: "Showing Seven day trial view")
         self.contentViewController = sevenDaysTrialvcObj
         self.showWindow(self)
+        NSApplication.shared.activate(ignoringOtherApps: true)
     }
     
     func showActivateNowVc(){
@@ -34,7 +35,7 @@ class activationWindowController: NSWindowController, NSWindowDelegate {
     
     func windowShouldClose(_ sender: NSWindow) -> Bool {
         if !isAppInitialLodded{
-            if UserDefaults.standard.object(forKey: "trialExpired") != nil{//agar exipire ho chuka h to app quit ni hogi 
+            if isPurchased == false && daysLeft <= 0{//UserDefaults.standard.object(forKey: "trialExpired") != nil{//agar exipire ho chuka h to app quit ni hogi
                 
             }else{
                 self.window?.close()

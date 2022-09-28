@@ -1,0 +1,127 @@
+//
+//  brainDumpVc.swift
+//  Focus Bear
+//
+//  Created by Prashant Sawnani on 06/09/22.
+//  Copyright © 2022 Focus Bear. All rights reserved.
+//
+
+import Cocoa
+
+class brainDumpVc: NSViewController {
+
+    
+    @IBOutlet var textViewWorkNote: NSTextView!
+    @IBOutlet weak var lblTitleWorkNote: NSTextField!
+    @IBOutlet weak var lblTimeRemaining: NSTextField!
+    @IBOutlet weak var lblTitleTimeRemaining: NSTextField!
+    @IBOutlet var textViewIntention: NSTextView!
+    @IBOutlet weak var lblTitleIntention: NSTextField!
+    
+    var timer:Timer?
+    var kUserdefaultsFocusModeNotes = "kUserdefaultsFocusModeNotes"
+    
+    var titleWorkNoteFirst = "Things I'll do in my next break:"
+    var titleWorkNoteSecond = "Things you wanted to do in your break:"
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        // Do view setup here.
+        lblTitleIntention.stringValue = "Intention:"
+        lblTitleTimeRemaining.stringValue = "Time remaining:"
+        
+        if let brainDumpVcInfo = configjson.value(forKey: "brainDumpVcInfo") as? NSDictionary{
+            lblTitleIntention.stringValue = brainDumpVcInfo.value(forKey: "titleIntentionText") as? String ?? lblTitleIntention.stringValue
+            lblTitleTimeRemaining.stringValue = brainDumpVcInfo.value(forKey: "titleTimeRemainingText") as? String ?? lblTitleTimeRemaining.stringValue
+            titleWorkNoteFirst = brainDumpVcInfo.value(forKey: "titleWorkNoteFirst") as? String ?? titleWorkNoteFirst
+            titleWorkNoteSecond = brainDumpVcInfo.value(forKey: "titleWorkNoteSecond") as? String ?? titleWorkNoteSecond
+        }
+        
+    }
+    override func viewWillAppear() {
+        
+        if isFocusModeOn(){
+            lblTitleWorkNote.stringValue = titleWorkNoteFirst
+            startRefreshRemainingTimer()
+        }else{
+            lblTimeRemaining.stringValue = "0"
+        }
+        textViewIntention.string = whatToAchieveInFocusBlock
+        
+        if let notes = UserDefaults.standard.object(forKey: kUserdefaultsFocusModeNotes) as? String {
+            textViewWorkNote.string = notes
+        }else{
+            textViewWorkNote.string = ""
+        }
+    }
+    override func viewWillDisappear() {
+        timer?.invalidate()
+        UserDefaults.standard.set(textViewWorkNote.string, forKey: kUserdefaultsFocusModeNotes)
+    }
+    
+    func focusModeStarted(){
+        lblTitleWorkNote.stringValue = titleWorkNoteFirst
+        startRefreshRemainingTimer()
+    }
+    func focusModeFinished(){
+        startRefreshRemainingTimer()
+        lblTimeRemaining.stringValue = "0"
+        timer?.invalidate()
+        timer = nil
+    }
+    func breakStarted(){
+        lblTitleWorkNote.stringValue = titleWorkNoteSecond
+    }
+    func setRemainingTime(){
+        if let date = endFocusModeTime{
+            let secondsBetween = date.timeIntervalSince(Date())
+            let (h,m,s) = secondsToHoursMinutesSeconds(seconds: Int(secondsBetween))
+            var hour = "\(h)"
+            var minute = "\(m)"
+            var second = "\(s)"
+            
+            if hour.count == 1 {
+                hour = "0\(h)"
+            }
+            
+            if minute.count == 1 {
+                minute = "0\(m)"
+            }
+            if second.count == 1 {
+                second = "0\(s)"
+            }
+            
+            DispatchQueue.main.async {
+                if h == 0{
+                    self.lblTimeRemaining.stringValue = "\(minute):\(second)"
+                }else{
+                    self.lblTimeRemaining.stringValue = "\(hour):\(minute):\(second)"
+                }
+            }
+  
+        }else{
+            lblTimeRemaining.stringValue = "0"
+        }
+    }
+    func startRefreshRemainingTimer() {
+        if timer != nil{
+            timer?.invalidate()
+            timer = nil
+            lblTimeRemaining.stringValue = "0"
+        }
+        setRemainingTime()
+        DispatchQueue.main.async {
+            self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
+            RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
+        }
+    }
+    
+    @objc func performTimerCount() {
+        if !isFocusModeOn(){
+            timer?.invalidate()
+        }
+        DispatchQueue.main.async {
+            self.setRemainingTime()
+        }
+    }
+}

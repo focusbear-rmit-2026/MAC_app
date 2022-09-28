@@ -43,8 +43,9 @@
             return nil;
         }
         NSDictionary *andBack = (__bridge NSDictionary*)assertionStates;
-        if (assertionStates)
-            CFRelease(assertionStates);
+//        if (assertionStates)
+//            CFRelease(assertionStates);
+        
         return andBack;
     }
     @catch (NSException *exception) {

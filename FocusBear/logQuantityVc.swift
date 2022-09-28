@@ -107,7 +107,15 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
     }
     @IBAction func btnCancelClicked(_ sender: Any) {
         addLog(text:"Log quantity-btnCancelClicked")
+        if lastActivityPerformedTime == nil{// nil is not possible but we are doing this
+            lastActivityPerformedTime = Date()
+        }
+        
         self.view.removeFromSuperview()
+        if isReviseQuantity{
+            addLog(text:"Log quantity-btnCancelClicked return - isReviseQuantity")
+           return
+        }
         thirdVcObj?.loadGraph(activityId: self.activity_id, activityName: self.name, logQuantity: true, logQuantityType: self.logQuantityType, activityChoiceId: self.activityChoiceId,activityStartTime: lastActivityPerformedTime!, duration: durationInSeconds, quantity: "0")
         allApiObject.activityCompletedApi(activity_id: activity_id, activity_sequence_id: activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:0.0, duration_logged:Int(durationInSeconds) ?? 0, choice_id: activityChoiceId, completionHandler: {dic  in
             DispatchQueue.main.async {
@@ -126,6 +134,10 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
     
     @IBAction func btnOkClicked(_ sender: Any) {
         addLog(text:"Log quantity-btnOkClicked")
+        
+        if lastActivityPerformedTime == nil{// nil is not possible but we are doing this
+            lastActivityPerformedTime = Date()
+        }
         if textFieldCount.stringValue.isEmpty{
             lblError.isHidden = false//
             lblError.stringValue = "Log quantity can not be empty."
@@ -160,14 +172,22 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
             self.view.removeFromSuperview()
             
             thirdVcObj?.loadGraph(activityId: self.activity_id, activityName: self.name, logQuantity: true, logQuantityType: self.logQuantityType, activityChoiceId: self.activityChoiceId, activityStartTime: lastActivityPerformedTime!, duration: durationInSeconds, quantity: "\(doubleVal)")
-            allApiObject.activityCompletedApi(activity_id: activity_id, activity_sequence_id: activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:doubleVal, duration_logged:Int(durationInSeconds) ?? 0, choice_id: activityChoiceId, completionHandler: {dic  in
-                DispatchQueue.main.async {
-                    
-                }
-                
-                print(dic)
-            })
             
+            if !isReviseQuantity{
+                allApiObject.activityCompletedApi(activity_id: activity_id, activity_sequence_id: activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:doubleVal, duration_logged:Int(durationInSeconds) ?? 0, choice_id: activityChoiceId, completionHandler: {dic  in
+                    DispatchQueue.main.async {
+                        
+                    }
+
+                })
+            }else{
+                allApiObject.activityCompletedReviseApi(activity_id: allApiObject.completedActivityLogId ?? "", quantity_logged:doubleVal, choice_id: allApiObject.completedChoiceLogId, completionHandler: {dic  in
+                    DispatchQueue.main.async {
+                        print(dic)
+                    }
+
+                })
+            }
             if lCurrentState! == ._EVENING_HABIT_{
                 if thirdVcObj!.lastHabitIndex >= arrAllEveningHabits.count-1 {
                     thirdVcObj?.startTimer(duration: 30)// evening habit k baad 30 second k baad shutof ho jay isiliye ye timer lagaya

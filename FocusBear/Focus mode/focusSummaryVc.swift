@@ -112,7 +112,71 @@ class focusSummaryVc: NSViewController {
     }
     
     override func viewWillAppear() {
-        readCsv()
+        
+    }
+    
+    func reloadData(){
+        arrActivitySummaryAverageDic.removeAll()
+        arrActivitySummaryTotalDic.removeAll()
+        arrActivitySummaryDurationDic.removeAll()
+        arrFocusSummaryDic.removeAll()
+        if allActivityTodaySummaryData != nil{
+
+            if let arr = allActivityTodaySummaryData!.value(forKey: "focusSummary") as? [[String:Any]]{
+                for item in arr{
+                    let name = item["name"] as? String ?? ""
+                    let duration = item["duration"] as? Double ?? 0
+                    var start_time = item["start_time"] as? String ?? ""
+                    let achievements = item["achievements"] as? String ?? ""
+                    let distractions = item["distractions"] as? String ?? ""
+                    if let date = getDateFromStringInUtc(date: start_time, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'") {
+                        start_time = getStringFromDate(date: date, dateFormat: "yyyy-MM-dd HH:mm:ss")
+                    }
+                   
+                    let dic = ["Activity":name, "Duration in seconds":"\(Int(duration))", "Start Time": start_time, "Work achieved": achievements, "Distractions encountered": distractions]
+                    arrFocusSummaryDic.append(dic)
+                }
+            }
+            
+            if let arr = allActivityTodaySummaryData!.value(forKey: "daySummaryAVG") as? [[String:Any]]{
+                for item in arr{
+                    let name = item["name"] as? String ?? ""
+                    let quantity = item["quantity"] as? Double ?? 0
+                    let dic = ["Activity":name, "quantity":"\(quantity)"]
+                    arrActivitySummaryAverageDic.append(dic)
+                }
+            }
+            if let arr = allActivityTodaySummaryData!.value(forKey: "daySummarySUM") as? [[String:Any]]{
+                for item in arr{
+                    let name = item["name"] as? String ?? ""
+                    let quantity = item["quantity"] as? Double ?? 0
+                    let dic = ["Activity":name, "quantity":"\(quantity)"]
+                    arrActivitySummaryTotalDic.append(dic)
+                }
+            }
+            if let arr = allActivityTodaySummaryData!.value(forKey: "daySummaryDuration") as? [[String:Any]]{
+                for item in arr{
+                    let name = item["name"] as? String ?? ""
+                    let duration = item["duration"] as? Int ?? 0//will be in integer
+                    let dic = ["Activity":name, "duration":"\(duration)"]
+                    arrActivitySummaryDurationDic.append(dic)
+                }
+            }
+            var totalSeconds = 0
+           for i in 0..<arrFocusSummaryDic.count{
+               let stirngCount = arrFocusSummaryDic[i]["Duration in seconds"] ?? ""
+               let seconds = Int(stirngCount) ?? 0
+               totalSeconds += seconds
+           }
+
+           let (h,m,s) = secondsToHoursMinutesSeconds(seconds: totalSeconds)
+           
+           let time = "\(h)h \(m)m \(s)s"
+           lblTotalFocusTime .stringValue = totalFocusTimeText.replacingOccurrences(of: "<TIME>", with: time)
+        }else{
+            readCsv()
+        }
+        
         
         scrollViewFocusSummary.isHidden = false
         tblViewFocusSummary.reloadData()
@@ -130,6 +194,7 @@ class focusSummaryVc: NSViewController {
         
         
         
+        
         if viewVisibleCount == 0{
             btnNeedMoreTime.title = "I need one more minute"
             
@@ -141,8 +206,14 @@ class focusSummaryVc: NSViewController {
                 }
             }
         }else{
-            
-            btnNeedMoreTime.title = "I still need to work more" // todo text
+            btnNeedMoreTime.title = "I still need to work more"
+            if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
+                if let focusSummaryInfo = focusInfo.value(forKey: "focusSummaryInfo") as? NSDictionary{
+                    if let buttonNeedMoreTimeText = focusSummaryInfo.value(forKey: "buttonStillNeedMoreTimeText") as? String{
+                        btnNeedMoreTime.title = buttonNeedMoreTimeText
+                    }
+                }
+            }
         }
         
     }
@@ -280,11 +351,11 @@ class focusSummaryVc: NSViewController {
                             if total != 0{
                                 average = total/Double(arr.count)
                             }
-                            summaryDic["average"] = "\(average)"
+                            summaryDic["quantity"] = "\(average)"
                             arrActivitySummaryAverageDic.append(summaryDic)
                             continue;
                         }else{//default sum
-                            summaryDic["totalQuantity"] = "\(total)"
+                            summaryDic["quantity"] = "\(total)"
                             arrActivitySummaryTotalDic.append(summaryDic)
                             continue;
                         }
@@ -297,7 +368,7 @@ class focusSummaryVc: NSViewController {
                 
                 if let arr = dic["DurationArr"] as? [Int]{
                     let total = arr.reduce(0, +)
-                    summaryDic["totalDuration"] = "\(total)"
+                    summaryDic["duration"] = "\(total)"
                     arrActivitySummaryDurationDic.append(summaryDic)
                 }
                 
@@ -466,6 +537,8 @@ extension focusSummaryVc: NSTableViewDelegate, NSTableViewDataSource {
                             if let seconds = Int(duration){
                                 let strTime = getStringTimeFromSeconds(seconds:seconds)
                                 cell.textField?.stringValue = strTime
+                            }else{
+                                cell.textField?.stringValue = arrFocusSummaryDic[row]["Duration in seconds"] ?? ""
                             }
                         }else{
                             cell.textField?.stringValue = arrFocusSummaryDic[row]["Duration in seconds"] ?? ""
@@ -481,7 +554,7 @@ extension focusSummaryVc: NSTableViewDelegate, NSTableViewDataSource {
                     if tableColumn == tblViewActivitySummaryTotal.tableColumns[0]{
                         cell.textField?.stringValue = arrActivitySummaryTotalDic[row]["Activity"] ?? ""
                     }else if tableColumn == tblViewActivitySummaryTotal.tableColumns[1]{
-                        cell.textField?.stringValue = arrActivitySummaryTotalDic[row]["totalQuantity"] ?? ""
+                        cell.textField?.stringValue = arrActivitySummaryTotalDic[row]["quantity"] ?? ""
                     }
                     
 //                    else if tableColumn == tblViewActivitySummaryTotal.tableColumns[2]{
@@ -497,7 +570,7 @@ extension focusSummaryVc: NSTableViewDelegate, NSTableViewDataSource {
                     if tableColumn == tblViewActivitySummaryAverage.tableColumns[0]{
                         cell.textField?.stringValue = arrActivitySummaryAverageDic[row]["Activity"] ?? ""
                     }else if tableColumn == tblViewActivitySummaryAverage.tableColumns[1]{
-                        cell.textField?.stringValue = arrActivitySummaryAverageDic[row]["average"] ?? ""
+                        cell.textField?.stringValue = arrActivitySummaryAverageDic[row]["quantity"] ?? ""
                         
                     }
                 }
@@ -508,13 +581,13 @@ extension focusSummaryVc: NSTableViewDelegate, NSTableViewDataSource {
                     }else if tableColumn == tblViewActivitySummaryDuration.tableColumns[1]{
                         
                         
-                        if let duration = arrActivitySummaryDurationDic[row]["totalDuration"]{
+                        if let duration = arrActivitySummaryDurationDic[row]["duration"]{
                             if let seconds = Int(duration){
                                 let strTime = getStringTimeFromSeconds(seconds:seconds)
                                 cell.textField?.stringValue = strTime
                             }
                         }else{
-                            cell.textField?.stringValue = arrActivitySummaryDurationDic[row]["totalDuration"] ?? ""
+                            cell.textField?.stringValue = arrActivitySummaryDurationDic[row]["duration"] ?? ""
                         }
                         
                     }

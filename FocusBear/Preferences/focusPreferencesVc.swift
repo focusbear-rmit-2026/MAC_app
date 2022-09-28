@@ -403,7 +403,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         addWebUrlVcObj!.isAdding = false
         self.presentAsSheet(addWebUrlVcObj!)
     }
-    //todo toggle class kaam ki hai kya ab
+    
 //    @objc func btnToggleClicked(notification: Notification) {
 //        if let state = notification.userInfo!["isOn"] as? Bool, let row = notification.userInfo!["index"] as? Int{
 //            print(row)
@@ -424,7 +424,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
 //                                alert.messageText = focusAlreadyRunningText
 //                            }
 //                        }
-//                        alert.window.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.popUpMenuWindow)))
+//                        alert.window.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
 //                        alert.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
 //                            if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
 //
@@ -759,7 +759,11 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         openPanel.directoryURL = URL(fileURLWithPath: "/Applications")
         openPanel.allowedFileTypes = ["app"]
         
-        
+        if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
+            if state{
+                openPanel.sharingType = .none
+            }
+        }
         openPanel.prompt = "Select"
         
         if let focusPreferencesInfo = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
@@ -1106,6 +1110,11 @@ extension focusPreferencesVc: NSTableViewDelegate, NSTableViewDataSource{
 //    func tableView(_ tableView: NSTableView, heightOfRow row: Int) -> CGFloat {
 
 //    }
+    func tableView(_ tableView: NSTableView, rowViewForRow row: Int) -> NSTableRowView? {
+        let customView = TableRowViewResult()
+        
+        return customView
+    }
     func tableViewSelectionDidChange(_ notification: Notification) {
         print("tableViewSelectionDidChange")
         guard let tblview = notification.object as? NSTableView else {
@@ -1210,9 +1219,19 @@ extension focusPreferencesVc: NSTableViewDelegate, NSTableViewDataSource{
 //            return true
 //        }
 //    }
-
+    
 }
 
-
+var tblSelectionColor:NSColor = NSColor(red: 233/255, green: 144/255, blue: 44/255, alpha: 1)
+class TableRowViewResult: NSTableRowView {
+    override func draw(_ dirtyRect: NSRect) {
+        super.draw(dirtyRect)
+        self.layer?.cornerRadius = 5
+        if isSelected == true {
+            tblSelectionColor.set()
+            dirtyRect.fill()
+        }
+    }
+}
 
 

@@ -14,7 +14,7 @@ class mainWindowController: NSWindowController {
         super.windowDidLoad()
 
         
-    //todo
+//    todo
         window!.collectionBehavior = NSWindow.CollectionBehavior.canJoinAllSpaces          // we want these
         window!.canHide = false
         window!.isExcludedFromWindowsMenu = true

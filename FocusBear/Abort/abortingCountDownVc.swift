@@ -108,7 +108,7 @@ class abortingCountDownVc: NSViewController {
         }
         if self.totalDuration <= self.currentTimer {
             self.timer?.invalidate()
-            forceCompleteIfAnyActivityGoing()
+            forceCompleteIfAnyHabitGoing()
             DispatchQueue.global().async {
                 DispatchQueue.main.async {
                     mainViewControllerObj!.showAbortConfirmationView()
@@ -116,29 +116,60 @@ class abortingCountDownVc: NSViewController {
             }
         }
     }
-    func forceCompleteIfAnyActivityGoing(){
+    func forceCompleteIfAnyHabitGoing(){
         addLog(text: "get Last Activity Info - forceCompleteIfAnyActivityGoing")
-        allApiObject.getLastActivityInfo(completionHandler: { json in
-            DispatchQueue.main.async {
-                if json != nil{
-                    print(json!)
-                    if let currentActivitySequence = json?.value(forKey: "current_activity_sequence") as? NSDictionary{
-                        if let sequenceId = currentActivitySequence.value(forKey: "id") as? String{
-                            
-                            addLog(text: "force Complete Current Sequence - forceCompleteIfAnyActivityGoing")
-                            allApiObject.forceCompleteCurrentSequence(activity_sequence_id: sequenceId, completionHandler: {json in
+        if lastCurrentState == ._FOCUS_SUMMARY_{
+            let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
+            let shutOffdate = Calendar.current.date(bySettingHour: shutOffTime!.hour, minute: shutOffTime!.minute, second: shutOffTime!.second, of: Date())!
+            
+            let curreentDate = Date()
+            if curreentDate > shutOffdate{// iska matlab 20-24 k bich
+                let tomorrowDate = Calendar.current.date(byAdding: .day, value: 1, to: Date())!
+                let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: tomorrowDate)
+                UserDefaults.standard.set(startDate, forKey: kUserdefaultsFocusSummaryShowedTillDate)
+            }else if curreentDate < startDate{ //  iska mtlb 1 se 10 k bich ka time
+                UserDefaults.standard.set(startDate, forKey: kUserdefaultsFocusSummaryShowedTillDate)
+            }else{// not shut off time
                 
-                                // and strt break activity
-                                DispatchQueue.main.async {
-                                   
-                                }
-                            })
-                        }
-                    }
-                }
             }
         }
-        )
+        var sequenceId = ""
+        if lastCurrentState == ._MORNING_HABIT_{
+            sequenceId = arrAllMorningHabits.first?.activity_sequence_id ?? ""
+        }else if lastCurrentState == ._FOCUS_SUMMARY_ || lastCurrentState == ._EVENING_HABIT_{
+            sequenceId = arrAllEveningHabits.first?.activity_sequence_id ?? ""
+        }
+        
+        addLog(text: "force Complete Current Sequence - forceCompleteIfAnyActivityGoing")
+        allApiObject.forceCompleteCurrentSequence(activity_sequence_id: sequenceId, completionHandler: {json in
+
+            // and strt break activity
+            DispatchQueue.main.async {
+               
+            }
+        })
+        
+//        allApiObject.getLastActivityInfo(completionHandler: { json in
+//            DispatchQueue.main.async {
+//                if json != nil{
+//                    print(json!)
+//                    if let currentActivitySequence = json?.value(forKey: "current_activity_sequence") as? NSDictionary{
+//                        if let sequenceId = currentActivitySequence.value(forKey: "id") as? String{
+//
+//                            addLog(text: "force Complete Current Sequence - forceCompleteIfAnyActivityGoing")
+//                            allApiObject.forceCompleteCurrentSequence(activity_sequence_id: sequenceId, completionHandler: {json in
+//
+//                                // and strt break activity
+//                                DispatchQueue.main.async {
+//
+//                                }
+//                            })
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//        )
     }
     
     @IBAction func btnEmaiClicked(_ sender: Any) {

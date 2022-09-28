@@ -194,7 +194,11 @@ class focusPreferencesAdvancedVc: NSViewController {
             dialog.message = focusPreferencesAdvancedInfo.value(forKey: "selectScriptFileText") as? String ?? dialog.message
             dialog.prompt = focusPreferencesAdvancedInfo.value(forKey: "buttonSelectText") as? String ?? dialog.prompt
         }
-        
+        if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
+            if state{
+                dialog.sharingType = .none
+            }
+        }
         dialog.allowedFileTypes = ["scpt"]
         dialog.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
             if modalResponse.rawValue == NSApplication.ModalResponse.OK.rawValue {
@@ -222,6 +226,11 @@ class focusPreferencesAdvancedVc: NSViewController {
         if let focusPreferencesAdvancedInfo = configjson.value(forKey: "focusPreferencesAdvancedInfo") as? NSDictionary{
             dialog.message = focusPreferencesAdvancedInfo.value(forKey: "selectScriptFileText") as? String ?? dialog.message
             dialog.prompt = focusPreferencesAdvancedInfo.value(forKey: "buttonSelectText") as? String ?? dialog.prompt
+        }
+        if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
+            if state{
+                dialog.sharingType = .none
+            }
         }
         dialog.allowedFileTypes = ["scpt"]
         dialog.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in

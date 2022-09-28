@@ -125,6 +125,7 @@ class pomodoroVc: NSViewController {
         
         lblCompletedPomodoroCount.isHidden = true
         whatToAchieveInFocusBlock = ""
+        appdelegate!.setIntensionInBrainDumpWindow()
         textViewAchieve.string = ""
         reFillFocusTypeList()
         if startingFocusWindowControllerObj?.window?.isVisible ?? false{
@@ -300,8 +301,9 @@ class pomodoroVc: NSViewController {
         if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
             tabview.selectedTabViewItemIndex = 1
             if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
-                tabview.view.addSubview(Focus_Bear.enterPasswordVcObj!.view)
-                tabview.view.addConstraints(subView: Focus_Bear.enterPasswordVcObj!.view)
+                tabview.view.addSubview(enterPasswordVcObj!.view)
+                tabview.view.addConstraints(subView: enterPasswordVcObj!.view)
+                enterPasswordVcObj?.parentVc = nil
                 addLog(text: "Showing enter password view")
                 
             }
@@ -347,11 +349,8 @@ class pomodoroVc: NSViewController {
         }
         if isHardCorePomodoroModeOn{
             whatToAchieveInFocusBlock = textViewAchieve.string
-            if textViewAchieve.string.isEmpty{
-                appdelegate!.statusbutton?.title = buttonStatusStateFocusText
-            }else{
-                appdelegate!.statusbutton?.title = String(whatToAchieveInFocusBlock.prefix(40)) + "..."
-            }
+            appdelegate!.setIntensionInBrainDumpWindow()
+            appdelegate!.setStatusBarButtonTitleForFocusMode(title: whatToAchieveInFocusBlock)
             self.view.window?.close()
             return;
         }
@@ -406,12 +405,7 @@ class pomodoroVc: NSViewController {
         runAppleScriptBeforeFocusBeginIfAvailable(index: popUpBtnFocusType.indexOfSelectedItem)
         
         appdelegate!.statusbutton?.backgroundcolor = HexToColor(hexString: arrFocusType[popUpBtnFocusType.indexOfSelectedItem]["color"] as? String ?? "")
-//        appdelegate!.statusbutton?.title = buttonStatusStateFocusText
-        if textViewAchieve.string.isEmpty{
-            appdelegate!.statusbutton?.title = buttonStatusStateFocusText
-        }else{
-            appdelegate!.statusbutton?.title = String(textViewAchieve.string.prefix(40)) + "..."
-        }
+        appdelegate!.setStatusBarButtonTitleForFocusMode(title: textViewAchieve.string)
         appdelegate!.statusbutton?.imagePosition = .imageLeft
 
         for i in 0..<arrFocusType.count{
@@ -429,6 +423,7 @@ class pomodoroVc: NSViewController {
         appdelegate?.setFocusModeTimer(hour: nil, minute: minute)
         isFocusModeStartedFromPomodoroMode = true
         whatToAchieveInFocusBlock = textViewAchieve.string
+        appdelegate!.setIntensionInBrainDumpWindow()
         appdelegate!.focusModeStartted()
         UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
         
@@ -476,26 +471,7 @@ class pomodoroVc: NSViewController {
         }
         
     }
-    var enterPasswordVcObj: enterPasswordVc?
-    func closeAndAbortHardcodePomodoroMode(){
-        if self.enterPasswordVcObj == nil{
-            self.enterPasswordVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("enterPasswordVc")) as?enterPasswordVc
-        }
-        self.presentAsModalWindow(enterPasswordVcObj!)
-        enterPasswordVcObj?.parentVc = self
-//        self.view.addSubview(self.enterPasswordVcObj!.view)
-//        self.view.addConstraints(subView: self.enterPasswordVcObj!.view)
-        DispatchQueue.global().async {
-            DispatchQueue.main.async {
-                self.enterPasswordVcObj?.view.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.numberOfWindowLevelKeys)))
-                self.enterPasswordVcObj?.view.window?.title = ""
-                self.enterPasswordVcObj?.view.window?.styleMask.remove(.closable)
-                self.enterPasswordVcObj?.view.window?.styleMask.remove(.resizable)
-            }
-        }
-        addLog(text: "Showing enter password view from hardcodre pomodoro close")
-        
-    }
+
     func passwordIsCorrect(){
         print("password Correct")
         isHardCorePomodoroModeOn = false

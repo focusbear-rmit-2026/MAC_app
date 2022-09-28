@@ -11,10 +11,10 @@ import Cocoa
 
 class ViewController: NSViewController {
     
-    @IBOutlet weak var btnAbort: NSButton!
+    @IBOutlet weak var btnAbort: Button!
     @IBOutlet weak var lblMessage: NSTextField!
     @IBOutlet weak var containerView: NSView!
-    @IBOutlet weak var boxContainer: NSBox!
+    @IBOutlet weak var boxContainer: customBoxBg!
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -27,6 +27,9 @@ class ViewController: NSViewController {
             btnAbort.title = common.value(forKey: "buttonAbortText") as? String ?? btnAbort.title
         }
         isMainWindowLodded = true
+        
+        
+        btnAbort.buttonColor = NSColor(red: 255/255, green: 244/255, blue: 233/255, alpha: 1).cgColor
     }
     
     override func viewWillAppear() {
@@ -44,17 +47,6 @@ class ViewController: NSViewController {
    
     
     @objc func showFocusSummaryView(){
-        if !(mainWindowControllerObj?.window!.isVisible)! {
-            mainWindowControllerObj?.showWindow(self)
-        }
-        showBlankWindowInSecondaryMonitor()
-        
-        addLog(text: "Showing Focus Summary")
-        btnAbort.isHidden = true
-        removeSubViews()
-        containerView.addSubview(focusSummaryVcObj!.view)
-        containerView.addConstraints(subView: focusSummaryVcObj!.view)
-        currentState = ._FOCUS_SUMMARY_
         
         if startTime == nil || shutOffTime == nil{
             return;
@@ -70,7 +62,25 @@ class ViewController: NSViewController {
         }else{// not shutoff time
             currentState = ._NOTHING_//todo uncomment
             self.view.window?.close()//todo uncomment
+            return;//todo uncomment
         }
+        allActivityTodaySummaryData = nil
+        currentState = ._FOCUS_SUMMARY_
+        allApiObject.getAllActivityDaySummary(completionHandler: {dic in
+            DispatchQueue.main.async {
+                if !(mainWindowControllerObj?.window!.isVisible)! {
+                    mainWindowControllerObj?.showWindow(self)
+                }
+                showBlankWindowInSecondaryMonitor()
+                
+                addLog(text: "Showing Focus Summary")
+                self.btnAbort.isHidden = true
+                self.removeSubViews()
+                self.containerView.addSubview(focusSummaryVcObj!.view)
+                self.containerView.addConstraints(subView: focusSummaryVcObj!.view)
+                focusSummaryVcObj!.reloadData()
+            }
+        })
         
     }
     
@@ -89,13 +99,8 @@ class ViewController: NSViewController {
     @objc func showFocusSummaryViewAgain(){
         DispatchQueue.main.async {
             addLog(text: "Showing Focus Summary again")
-            mainWindowControllerObj?.showWindow(self)
-            showBlankWindowInSecondaryMonitor()
-            self.btnAbort.isHidden = true
-            self.removeSubViews()
-            self.containerView.addSubview(focusSummaryVcObj!.view)
-            self.containerView.addConstraints(subView: focusSummaryVcObj!.view)
-            currentState = ._FOCUS_SUMMARY_
+            
+            self.showFocusSummaryView()
         }
     }
     
@@ -123,13 +128,15 @@ class ViewController: NSViewController {
                         timerViewcontrollerObj?.timer?.invalidate()
                         enableSystemSleep()
                         if timerViewcontrollerObj?.webView.isHidden == false{
-                            timerViewcontrollerObj?.loadBlankUrl()
+                            if !(timerViewcontrollerObj?.isActivityPaused ?? false){
+                                timerViewcontrollerObj?.webView.setAllMediaPlaybackSuspended(true)
+                            }
                         }
                     }
                 }
                 if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
                     if smallCountDownWcObj?.window != nil{
-                        if getSmallCountDownWindowObject().window!.isVisible{
+                        if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
                             if getsmallCountDownVcObject().timer != nil {
                                 getsmallCountDownVcObject().timer?.invalidate()
                             }
@@ -143,7 +150,7 @@ class ViewController: NSViewController {
         }else if currentState == ._EVENING_HABIT_{
             showAskPostponeView()
         }else if currentState == ._ACTIVITY_{
-            if currentAction == ._START_{//todo sirf starting mai hi postpone hoga vo bhi sirf first activity ki starting mai 
+            if currentAction == ._START_{// start state sirf first activity ki start mi hi hoti h fir  second activity ki start mai "end state hoti hai "
                 showAskPostponeView()
             }else{
                 showAbortStartView()
@@ -154,7 +161,7 @@ class ViewController: NSViewController {
     }
 
     func processAborting(){
-        if currentState == ._MORNING_HABIT_{
+        if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_{
             if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
                 showPasswordView()
             }else{
@@ -272,8 +279,13 @@ class ViewController: NSViewController {
             removeSubViews()
             shutOffMac()
         }else if lastCurrentState == ._FOCUS_SUMMARY_{
-            btnAbort.isHidden = true
-            showFocusSummaryView()//vapas data  load na ho//todo
+            mainWindowControllerObj?.showWindow(self)
+            showBlankWindowInSecondaryMonitor()
+            self.btnAbort.isHidden = true
+            self.removeSubViews()
+            self.containerView.addSubview(focusSummaryVcObj!.view)
+            self.containerView.addConstraints(subView: focusSummaryVcObj!.view)
+            currentState = ._FOCUS_SUMMARY_
         }
     }
     
@@ -747,11 +759,18 @@ class ViewController: NSViewController {
         lblMessage.isHidden = true
         mainWindowControllerObj?.window?.setIsVisible(false)
         hideBlankWindowInSecondaryMonitor()
-        setActivityTimer()
+        
         if isFirstRun{//welcome routine k baad set krenge (when first time)
-            appdelegate!.setBackgroundThreadTimer()
+//            appdelegate!.setBackgroundThreadTimer()
             isFirstRun = false
-            appdelegate?.menuItem_Preferences()
+//            appdelegate?.menuItem_Preferences()
+            if appdelegate!.user == nil{
+//                appdelegate!.statusbutton?.action = #selector(appdelegate!.topIconClickd)
+//                appdelegate!.login()
+                showAskLoginWindow()
+            }
+        }else{
+            setActivityTimer()
         }
     }
     var breakTimer: Timer?
@@ -772,7 +791,7 @@ class ViewController: NSViewController {
         }
     }
     func postponeBreakActivitiesFor(minutes:Int){
-        addLog(text: "postpone Break Activities, Timer reset Done.")
+        addLog(text: "postpone Break Activities, Timer reset Done:- \(minutes) minutes")
         btnAbort.isHidden = true
         removeSubViews()
         currentState = ._NOTHING_
@@ -785,7 +804,7 @@ class ViewController: NSViewController {
                     self.breakTimer?.invalidate()
                     self.breakTimer = nil
                 }
-                self.breakTimer = Timer.scheduledTimer(timeInterval: TimeInterval(minutes*60), target: self, selector: #selector(self.startBreakActivities), userInfo: nil, repeats: false)
+                self.breakTimer = Timer.scheduledTimer(timeInterval: TimeInterval(minutes*60), target: self, selector: #selector(self.startBreakActivities), userInfo: nil, repeats: false)//todo  minutes*60 kro
 //                RunLoop.current.add(self.breakTimer!, forMode: RunLoop.Mode.common)
 //                RunLoop.current.run()
             RunLoop.main.add((breakTimer!), forMode: RunLoop.Mode.common)
@@ -794,12 +813,22 @@ class ViewController: NSViewController {
     }
     
     func postponeMorningHabitFor(minutes:Int){
-        addLog(text: "postpone morning habits, Timer reset Done.")
+        addLog(text: "postpone morning habits, Timer reset Done:- \(minutes) minutes")
         btnAbort.isHidden = true
         removeSubViews()
         currentState = ._POSTPON_MORNING_HABIT_
         mainWindowControllerObj?.window?.setIsVisible(false)
         hideBlankWindowInSecondaryMonitor()
+        if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
+            if smallCountDownWcObj?.window != nil{
+                if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
+                    if currentHabitPlaying != nil{
+                        getSmallCountDownWindowObject().window!.close()
+                    }
+                }
+            }
+        }
+        
         if arrAllMorningHabits.count != 0 {
             DispatchQueue.global().sync{//async {
                 if self.breakTimer != nil{// we will use break timer for postpone morning habit s because if morning routine is not completed break activities will not show so we can use break timer here
@@ -812,12 +841,21 @@ class ViewController: NSViewController {
         }
     }
     func postponeEveningHabitFor(minutes:Int){
-        addLog(text: "postpone evening habits, Timer reset Done.")
+        addLog(text: "postpone evening habits, Timer reset Done:- \(minutes) minutes")
         btnAbort.isHidden = true
         removeSubViews()
         currentState = ._POSTPON_EVENING_HABIT_
         mainWindowControllerObj?.window?.setIsVisible(false)
         hideBlankWindowInSecondaryMonitor()
+        if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
+            if smallCountDownWcObj?.window != nil{
+                if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
+                    if currentHabitPlaying != nil{
+                        getSmallCountDownWindowObject().window!.close()
+                    }
+                }
+            }
+        }
         if arrAllEveningHabits.count != 0 {
             DispatchQueue.global().sync{//async {
                 if self.breakTimer != nil{// we will use break timer for postpone evening habit s because if evening routine is running break activities will not show so we can use break timer here
@@ -831,10 +869,10 @@ class ViewController: NSViewController {
     }
     
     func postponeFocusSummaryFor(minutes:Int){
-        addLog(text: "postpone Focus Summary Done.")
+        addLog(text: "postpone Focus Summary Done:- \(minutes) minutes")
         btnAbort.isHidden = true
         removeSubViews()
-        currentState = ._POSTPON_FOCUS_SUMMARY_//todo check lagao agar postpon ho to bhi break activities na aay
+        currentState = ._POSTPON_FOCUS_SUMMARY_
         mainWindowControllerObj?.window?.setIsVisible(false)
         hideBlankWindowInSecondaryMonitor()
      
@@ -861,7 +899,7 @@ class ViewController: NSViewController {
     @objc func resumeFocusSummary(){// func name "backgrounThread" will do work for showing morning routing again we just need to false this (isMorningRoutinePostpone) variable
         addLog(text: "Focus Summary postpone finished")
         currentState = ._NOTHING_
-        showFocusSummaryView()
+//        showFocusSummaryView()// nahi hai jarurat iski
     }
     func activityFinishedUnlockMachine() {
         addLog(text: "Break Activities Finished")
@@ -1005,17 +1043,17 @@ class ViewController: NSViewController {
                                     
                                     
                                 }else{
-                                    addLog(text: "performBreakActivities break activity 1")
+                                    addLog(text: "performBreakActivities break activity:- sequenceId not found")
                                     self.performBreakActivities()
                                 }
                             }else{
-                                addLog(text: "performBreakActivities break activity 2")
+                                addLog(text: "performBreakActivities break activity:- current_activity_sequence not found as dictionary")
                                 self.performBreakActivities()
                             }
                             
                             
                         }else{
-                            addLog(text: "performBreakActivities break activity 3")
+                            addLog(text: "performBreakActivities break activity:- get Last Activity Info is nil")
                             self.performBreakActivities()
                         }
                     }
@@ -1026,7 +1064,75 @@ class ViewController: NSViewController {
         }
     }
     
+    
+    func enableOfficeModeAndRestartBreakActivities(){
+        addLog(text: "enableOfficeModeAndRestartBreakActivities")
+        var officeModeEnableText = "Ok I'll give you some break activities that are appropriate to do in an office environment."
+        
+        if let activityPostponeInfo = configjson.value(forKey: "activityPostponeInfo") as? NSDictionary{
+            officeModeEnableText = activityPostponeInfo.value(forKey: "officeModeEnableText") as? String ?? officeModeEnableText
+        }
+        
+        showCustomMessageView(msg: officeModeEnableText)
+    }
+    func showCustomMessageView(msg:String){
+        addLog(text: "show Custom Message View")
+        self.view.addSubview(getCustomMessageVcObject().view)
+        self.view.addConstraints(subView: getCustomMessageVcObject().view)
+        customMessageVcObj?.lblMessage.stringValue = msg
+    }
+    func okClickedFromCustomMessage(){
+        addLog(text: "ok Clicked From CustomMessage")
+        addLog(text: "enableOfficeMode from postpone nag")//
+        SettingsManagerObject.isOfficeModeEnabled = true
+        SettingsManagerObject.isSettingsChanged = true
+        SettingsManagerObject.putUserLocalDeviceSettings()
+        appdelegate?.statusbutton?.image = NSImage(named: NSImage.Name("Bear-Office-Small"))
+        
+        
+        
+        self.btnAbort.isHidden = false
+        
+        isAnyMandatoryActivityIncluded = false
+        arrActivitiesExcludeInEveryBreak.removeAll()
+        arrActivitiesIncludeInEveryBreak.removeAll()
+        isMandatoryActivityGoing = false
+        
+        for activity in arrAllbreakActivities{
+            if SettingsManagerObject.isOfficeModeEnabled{
+                if !activity.isOfficeFriendly{
+                    continue;
+                }
+            }
+            if activity.IncludeInEveryBreak{
+                isAnyMandatoryActivityIncluded = true//than two step will be happen// first mandatory arra than normal array
+                arrActivitiesIncludeInEveryBreak.append(activity)
+            }else{
+                arrActivitiesExcludeInEveryBreak.append(activity)
+            }
+        }
+        
+        
+        
+        if isAnyMandatoryActivityIncluded{
+            isMandatoryActivityGoing = true
+            currentActivityIndex = 0
+        }else{
+            currentActivityIndex = Int(arc4random_uniform(UInt32(arrActivitiesExcludeInEveryBreak.count)))
+        }
+        // }
+        self.removeSubViews()
+        currentState = ._ACTIVITY_
+        currentAction = ._START_
+        
+        
+        addLog(text: "ok Clicked From Custom Message:- performBreakActivities break activity ")
+        self.performBreakActivities()
+        
+        
+    }
     func performBreakActivities(){
+        addLog(text: "perform Break Activities")
         self.containerView.addSubview(thirdVcObj!.view)
         self.containerView.addConstraints(subView: thirdVcObj!.view)
         thirdVcObj?.startBreakActivity()

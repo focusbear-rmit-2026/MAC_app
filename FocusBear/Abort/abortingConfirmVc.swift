@@ -338,7 +338,7 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
     }
     @IBAction func btnDeactivateAppBrokenClicked(_ sender: Any) {
         addLog(text: "btnDeactivateAppBrokenClicked")//
-        allApiObject.getAbortJsonToUpload(emailAddress: appdelegate?.user?.email ?? "", feedback: textViewAppBroken.string, abortReason: "The app is broken", completionHandler: {dic in
+        allApiObject.getAbortJsonToUpload(emailAddress: currentUserEmail, feedback: textViewAppBroken.string, abortReason: "The app is broken", completionHandler: {dic in
             DispatchQueue.main.async {
                 mainViewControllerObj?.showAbortDoneView()
             }

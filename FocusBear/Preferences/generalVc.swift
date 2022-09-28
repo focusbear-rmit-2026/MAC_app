@@ -11,6 +11,10 @@ import Cocoa
 class generalVc: NSViewController, NSTextFieldDelegate {
 
     
+    @IBOutlet weak var btnCheckForUpdates: Button!
+    @IBOutlet weak var btnExportStatistics: Button!
+    @IBOutlet weak var lblTitleStatistics: NSTextField!
+    @IBOutlet weak var lblTitleUpdates: NSTextField!
     @IBOutlet weak var lblTitleSound: NSTextField!
     @IBOutlet weak var lblVersion: NSTextField!
     @IBOutlet weak var lblMinutesBreak: NSTextField!
@@ -53,6 +57,17 @@ class generalVc: NSViewController, NSTextFieldDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
 //        Sound:Play sound effects
+        lblTitleStatistics.stringValue = "Statistics:"
+        lblTitleUpdates.stringValue = "Updates:"
+        btnExportStatistics.title = "Export Statistics"
+        btnCheckForUpdates.title = "Check for updates"
+        
+        if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
+            btnExportStatistics.title = menuInfo.value(forKey: "menuItemExportStatisticsTitle") as? String ?? btnExportStatistics.title
+            
+            btnCheckForUpdates.title = menuInfo.value(forKey: "menuItemCheckForUpdatesTitle") as? String ?? btnCheckForUpdates.title
+        }
+        
         lblTitleSound.stringValue = "Sound:"
         lblCheckBoxSound.stringValue = "Play sound effects"
         
@@ -60,7 +75,7 @@ class generalVc: NSViewController, NSTextFieldDelegate {
         lblCheckBoxStringSurveillance.stringValue = "I'm under employer surveillance"
         lblDescriptionSurveillance.stringValue = "Hide Focus Bear in screenshots"
         
-        var versionText = "version:"
+        var versionText = "Version:"
         var titleReduceMotion = "Reduce motion:"
         var checkBoxReduceMotionText = "Prefer reduced motion (don't show animated bears)"
         var titleAskNextHabit = "Next habit reminder:"
@@ -103,6 +118,11 @@ class generalVc: NSViewController, NSTextFieldDelegate {
             versionText = preferencesInfo.value(forKey: "versionText") as? String ?? versionText
             lblTitleSound.stringValue = preferencesInfo.value(forKey: "titleSound") as? String ?? lblTitleSound.stringValue
             lblCheckBoxSound.stringValue = preferencesInfo.value(forKey: "checkBoxSoundText") as? String ?? lblCheckBoxSound.stringValue
+            
+            lblTitleStatistics.stringValue = preferencesInfo.value(forKey: "statisticsText") as? String ?? lblTitleStatistics.stringValue
+            lblTitleUpdates.stringValue = preferencesInfo.value(forKey: "updatesText") as? String ?? lblTitleUpdates.stringValue
+            
+
         }
 
         lblTitlePomodoroModeDuration.stringValue = pomodoroModeDurationText
@@ -181,7 +201,7 @@ class generalVc: NSViewController, NSTextFieldDelegate {
 //            }
 //        }
         
-        if let language = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsSelectedLanguage) as? String{
+        if let language = UserDefaults.standard.object(forKey: kUserdefaultsSelectedLanguage) as? String{
             for i in 0..<arrLanguageDic.count{
                 if arrLanguageDic[i]["id"]  == language{
                     popUpBtnselectLanguage.selectItem(at: i)
@@ -440,7 +460,7 @@ class generalVc: NSViewController, NSTextFieldDelegate {
     @IBAction func popUpBtnselectLanguageClicked(_ sender: Any) {
         //        var
         var oldSelectedIndex = 0
-        if let language = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsSelectedLanguage) as? String{
+        if let language = UserDefaults.standard.object(forKey: kUserdefaultsSelectedLanguage) as? String{
             for i in 0..<arrLanguageDic.count{
                 if arrLanguageDic[i]["id"]  == language{
                     oldSelectedIndex = i
@@ -470,7 +490,7 @@ class generalVc: NSViewController, NSTextFieldDelegate {
         alert.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
             if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
                 addLog(text: "language changed by user to \(self.popUpBtnselectLanguage.title)")
-                UserDefaults.standard.set(arrLanguageDic[self.popUpBtnselectLanguage.indexOfSelectedItem]["id"], forKey: SettingsManagerObject.kUserdefaultsSelectedLanguage)
+                UserDefaults.standard.set(arrLanguageDic[self.popUpBtnselectLanguage.indexOfSelectedItem]["id"], forKey: kUserdefaultsSelectedLanguage)
                 
                 appdelegate?.quitAndRestartApp()
             }else{
@@ -578,6 +598,55 @@ class generalVc: NSViewController, NSTextFieldDelegate {
             pomodoroPreferencesAdvancedVcObj!.generalVcObj = self
         }
         self.presentAsSheet(pomodoroPreferencesAdvancedVcObj!)
+    }
+    
+    @IBAction func btnExportStatisticsClicked(_ sender: Any) {
+        let openPanel = NSOpenPanel()
+        openPanel.canChooseFiles = false
+        openPanel.canChooseDirectories = true
+        openPanel.allowsMultipleSelection = false
+        openPanel.treatsFilePackagesAsDirectories = false
+        openPanel.prompt = "Export"
+        if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
+            if state{
+                openPanel.sharingType = .none
+            }
+        }
+        if let common = configjson.value(forKey: "common") as? NSDictionary{
+            openPanel.prompt = common.value(forKey: "buttonExportText") as? String ?? "Export"
+        }
+        
+        openPanel.beginSheetModal(for: self.view.window!) { response in
+            guard response.rawValue == NSApplication.ModalResponse.OK.rawValue else {
+                //                if var arr =
+                
+                return
+            }
+            //        if button == NSApplication.ModalResponse.OK {
+            if let url = openPanel.url {
+                let filemanager = FileManager.default
+                let destUrl = url.appendingPathComponent(quantityCsvURL.lastPathComponent)
+                if filemanager.fileExists(atPath: destUrl.path){
+                    do{
+                        try filemanager.removeItem(at: destUrl)
+                    }catch{
+                        print(error)
+                    }
+                }
+                
+                do{
+                    try FileManager.default.copyItem(at: quantityCsvURL, to: destUrl)
+                }catch{
+                    print(error)
+                }
+            }
+            //        }
+        }
+    }
+    @IBAction func btnCheckForUpdatesClicked(_ sender: Any) {
+        addLog(text: "btnCheckForUpdatesClicked")//
+        appdelegate!.updater?.checkForUpdates(self)
+        preferencesWindowControllerObj?.window?.miniaturize(self)
     }
 }
 

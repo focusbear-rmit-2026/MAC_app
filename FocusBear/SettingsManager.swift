@@ -10,31 +10,23 @@ import Cocoa
 
 class SettingsManager:NSObject{
     
-    let kUserdefaultsFirstRun = "kUserdefaultsFirstRun"
+    
     
     
     var isSettingsChanged = false
-    let kUserdefaultsAppPassword = "kUserdefaultsAppPassword"
-    
+    var isSoundEnabled = true
     // **blocked urls**
     var arrBlockedUrls = [String]()
-    let kUserdefaultsArrBlockedUrls = "kUserdefaultsArrBlockedUrls"
-    //
-    
-    var kUserdefaultsOfficeModeEnabled = "kUserdefaultsOfficeModeEnabled"
     var isOfficeModeEnabled = false
-    
-    var kUserdefaultsReducedMotion = "kUserdefaultsReducedMotion"
     var kIsReducedMotion = false
-    
     var isPromptToRememberHabit = true
+    
+    var kUserdefaultsAppPassword = "kUserdefaultsAppPassword"
+    var kUserdefaultsArrBlockedUrls = "kUserdefaultsArrBlockedUrls"
+    var kUserdefaultsOfficeModeEnabled = "kUserdefaultsOfficeModeEnabled"
+    var kUserdefaultsReducedMotion = "kUserdefaultsReducedMotion"
     var kUserdefaultsPromptToRememberHabit = "kUserdefaultsPromptToRememberHabit"
-    
-    var isSoundEnabled = true
     var kUserdefaultsEnableSound = "kUserdefaultsEnableSound"
-    
-    
-    var kUserdefaultsSelectedLanguage = "kUserdefaultsSelectedLanguage"
     var kUserdefaultsPomodoroDurationMinutes = "kUserdefaultsPomodoroDurationMinutes"
     var kUserdefaultsBreakDurationMinutes = "kUserdefaultsBreakDurationMinutes"
 
@@ -42,10 +34,11 @@ class SettingsManager:NSObject{
     var kUserdefaultsPomodoroModeEnabled = "kUserdefaultsPomodoroModeEnabled"
     
     
-    let kUserdefaultsHardcorePomodoroEnabled = "kUserdefaultsHardcorePomodoroEnabled"
-    let kUserdefaultsHardcorePomodoroFocusedName = "kUserdefaultsHardcorePomodoroFocusedName"
-    let kUserdefaultsHardcorePomodoroFocusedCount = "kUserdefaultsHardcorePomodoroFocusedCount"
-    let kUserdefaultsHardcorePomodoroArrDays = "kUserdefaultsHardcorePomodoroArrDays"
+    var kUserdefaultsHardcorePomodoroEnabled = "kUserdefaultsHardcorePomodoroEnabled"
+    var kUserdefaultsHardcorePomodoroFocusedName = "kUserdefaultsHardcorePomodoroFocusedName"
+    var kUserdefaultsHardcorePomodoroFocusedCount = "kUserdefaultsHardcorePomodoroFocusedCount"
+    var kUserdefaultsHardcorePomodoroArrDays = "kUserdefaultsHardcorePomodoroArrDays"
+    
     let kMonday = "Monday"
     let kTuesday = "Tuesday"
     let kWednesday = "Wednesday"
@@ -76,8 +69,23 @@ class SettingsManager:NSObject{
             return nil
         }
     }
-    //todo jha bhi settings change ho vha se pu settings call krna hai check krke
-    
+  
+    func resetAllKeys() {
+        kUserdefaultsAppPassword = kUserdefaultsAppPassword + (appdelegate?.user?.userId ?? "")
+        kUserdefaultsArrBlockedUrls = kUserdefaultsArrBlockedUrls + (appdelegate?.user?.userId ?? "")
+        kUserdefaultsOfficeModeEnabled = kUserdefaultsOfficeModeEnabled + (appdelegate?.user?.userId ?? "")
+        kUserdefaultsReducedMotion = kUserdefaultsReducedMotion + (appdelegate?.user?.userId ?? "")
+        kUserdefaultsPromptToRememberHabit = kUserdefaultsPromptToRememberHabit + (appdelegate?.user?.userId ?? "")
+        kUserdefaultsEnableSound = kUserdefaultsEnableSound + (appdelegate?.user?.userId ?? "")
+        kUserdefaultsPomodoroDurationMinutes = kUserdefaultsPomodoroDurationMinutes + (appdelegate?.user?.userId ?? "")
+        kUserdefaultsBreakDurationMinutes = kUserdefaultsBreakDurationMinutes + (appdelegate?.user?.userId ?? "")
+        kUserdefaultsHideAllWindowInScreenShots = kUserdefaultsHideAllWindowInScreenShots + (appdelegate?.user?.userId ?? "")
+        kUserdefaultsPomodoroModeEnabled = kUserdefaultsPomodoroModeEnabled + (appdelegate?.user?.userId ?? "")
+        kUserdefaultsHardcorePomodoroEnabled = kUserdefaultsHardcorePomodoroEnabled + (appdelegate?.user?.userId ?? "")
+        kUserdefaultsHardcorePomodoroFocusedName = kUserdefaultsHardcorePomodoroFocusedName + (appdelegate?.user?.userId ?? "")
+        kUserdefaultsHardcorePomodoroFocusedCount = kUserdefaultsHardcorePomodoroFocusedCount + (appdelegate?.user?.userId ?? "")
+        kUserdefaultsHardcorePomodoroArrDays = kUserdefaultsHardcorePomodoroArrDays + (appdelegate?.user?.userId ?? "")
+    }
     //https://api.focusbear.io/api/static/index.html#/
     func getUserLocalDeviceSettings(completionHandler: @escaping() -> ()){
         
@@ -120,7 +128,7 @@ class SettingsManager:NSObject{
                     
                     let kAppPassword = "kAppPassword"
                     let kArrBlockedUrls = "kArrBlockedUrls"
-                    let kFirstRun = "kFirstRun"
+                    
                     if let val = settings.value(forKey: kIsReducedMotionEnabled) as? Bool{
                         UserDefaults.standard.set(val, forKey: self.kUserdefaultsReducedMotion)
                     }
@@ -177,9 +185,7 @@ class SettingsManager:NSObject{
                     if let val = settings.value(forKey: kAppPassword) as? String{
                         UserDefaults.standard.set(val, forKey: self.kUserdefaultsAppPassword)
                     }
-                    if let val = settings.value(forKey: kFirstRun) as? Bool{
-                        UserDefaults.standard.set(val, forKey: self.kUserdefaultsFirstRun)
-                    }
+                    
                 }
 
             }
@@ -188,6 +194,9 @@ class SettingsManager:NSObject{
                 if let isEnabled = UserDefaults.standard.object(forKey: kUserdefaultsOfficeModeEnabled) as? Bool{
                     if isEnabled{
                         isOfficeModeEnabled = true
+                        DispatchQueue.main.async {
+                            appdelegate?.statusbutton?.image = NSImage(named: NSImage.Name("Bear-Office-Small"))
+                        }
                     }else{
                         isOfficeModeEnabled = false
                     }
@@ -291,7 +300,7 @@ class SettingsManager:NSObject{
 
         let kAppPassword = "kAppPassword"
         let kArrBlockedUrls = "kArrBlockedUrls"
-        let kFirstRun = "kFirstRun"
+      
         
         var json: [String: Any] = [
             kIsReducedMotionEnabled:kIsReducedMotion,//userId.removingPercentEncoding ?? "",
@@ -312,9 +321,7 @@ class SettingsManager:NSObject{
         if UserDefaults.standard.object(forKey: kUserdefaultsAppPassword) != nil{
             json[kAppPassword] = UserDefaults.standard.object(forKey: kUserdefaultsAppPassword) as? String ?? ""
         }
-        if UserDefaults.standard.object(forKey: kUserdefaultsFirstRun) != nil{
-            json[kFirstRun] = UserDefaults.standard.object(forKey: kUserdefaultsFirstRun) as? Bool ?? false
-        }
+    
         
         let dic: [String: [String:Any]] = [
             "MacOS": json,

@@ -72,6 +72,10 @@ class quitCountDownVc: NSViewController {
             imgViewGif.animates = true
         }
     }
+    override func viewWillDisappear() {
+        self.timer?.invalidate()
+        self.timer = nil
+    }
     var enterPasswordVcObj: enterPasswordVc?
     func resetData(){
         if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{

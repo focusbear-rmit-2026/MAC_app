@@ -36,7 +36,7 @@ class sevenDaysTrialvc: NSViewController {
         var daysRemainingText = "Days Remaining"
         var getLicenseKeyDescription = "if you do not have a license key, get one!"
         var buttonBuyNowText = "Buy now"
-        var buttonlicensekeyText = "Enter license key"
+        var buttonlicensekeyText = "Sync Payment Status"
         
         if let trialNagInfo = configjson.value(forKey: "trialNagInfo") as? NSDictionary{
             if let title = trialNagInfo.value(forKey: "title") as? String{
@@ -66,11 +66,13 @@ class sevenDaysTrialvc: NSViewController {
             if let text = trialNagInfo.value(forKey: "buttonBuyNowText") as? String{
                 buttonBuyNowText = text
             }
-            if let text = trialNagInfo.value(forKey: "buttonlicensekeyText") as? String{
-                buttonlicensekeyText = text
-            }
+//            if let text = trialNagInfo.value(forKey: "buttonlicensekeyText") as? String{
+//                buttonlicensekeyText = text//text // 
+//            }
         }
-        
+        if let accountVcInfo = configjson.value(forKey: "accountVcInfo") as? NSDictionary{
+            buttonlicensekeyText = accountVcInfo.value(forKey: "buttonRestoreText") as? String ?? buttonlicensekeyText
+        }
         
         lblAppName.stringValue = titleText
         lbldescription.stringValue = description
@@ -90,17 +92,17 @@ class sevenDaysTrialvc: NSViewController {
         
         
         
-        
-        if let date = UserDefaults.standard.object(forKey: kUserdefaultsFirstHabitDay) as? Date{
-            let secondsBetween = Date().timeIntervalSince(date)
-            let numberOfDays_afterinstall = Int((secondsBetween) / 86400)
-            daysremaining = daysFreeTrial-numberOfDays_afterinstall
+        daysremaining = daysLeft
+//        if let date = UserDefaults.standard.object(forKey: kUserdefaultsFirstHabitDay) as? Date{
+//            let secondsBetween = Date().timeIntervalSince(date)
+//            let numberOfDays_afterinstall = Int((secondsBetween) / 86400)
+//            daysremaining = daysFreeTrial-numberOfDays_afterinstall
             if daysremaining < 0 {
                 daysremaining = 0
             }
-            if UserDefaults.standard.object(forKey: "trialExpired") != nil{
-                daysremaining = 0
-            }
+//            if UserDefaults.standard.object(forKey: "trialExpired") != nil{
+//                daysremaining = 0
+//            }
             if daysremaining == daysFreeTrial{
                 if firstrun == true{
                     btncontinueTrial.title = buttonStartTrialText
@@ -108,9 +110,9 @@ class sevenDaysTrialvc: NSViewController {
                     btncontinueTrial.title = buttonContinueTrialText
                 }
             }else if daysremaining == 0{
-                if UserDefaults.standard.object(forKey: "trialExpired") == nil{
-                    UserDefaults.standard.set(true, forKey: "trialExpired")
-                }
+//                if UserDefaults.standard.object(forKey: "trialExpired") == nil{
+//                    UserDefaults.standard.set(true, forKey: "trialExpired")
+//                }
                 btncontinueTrial.title = buttonRegisterNowText
             }else{
                 btncontinueTrial.title = buttonContinueTrialText
@@ -118,11 +120,12 @@ class sevenDaysTrialvc: NSViewController {
             
             lbldaysRemaining.stringValue = "\(daysremaining)"
                 
-        }else{
-            daysremaining = daysFreeTrial
-            lbldaysRemaining.stringValue = "\(daysremaining)"
-            btncontinueTrial.title = buttonStartTrialText
-        }
+//        }
+//        else{
+//            daysremaining = daysFreeTrial
+//            lbldaysRemaining.stringValue = "\(daysremaining)"
+//            btncontinueTrial.title = buttonStartTrialText
+//        }
 
         
         
@@ -134,6 +137,19 @@ class sevenDaysTrialvc: NSViewController {
         purchaseNow_clicked()
     }
     @IBAction func enterLicenseKeyClicked(_ sender: Any) {
+        appdelegate?.renewToken(window: self.view.window!, completionHandler: {
+            DispatchQueue.main.async {
+//                self.loader.stopAnimation(self)
+//                self.btnRestorePurchase.isEnabled = true
+//                self.viewWillAppear()
+                if daysLeft > 0{
+                    self.view.window?.close()
+                }
+            }
+            
+        })
+        return;
+        //
         activationWindowControllerObj?.showActivateNowVc()
         activateNowvcObj?.btnback.isHidden = false
     }

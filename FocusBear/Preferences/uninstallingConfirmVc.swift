@@ -115,7 +115,7 @@ class uninstallingConfirmVc: NSViewController {
         })
     }
     func uninstallApp(){
-        allApiObject.getUninstallJsonToUpload(emailAddress: appdelegate?.user?.email ?? "", uninstallReason: popUpButton.titleOfSelectedItem ?? "", completionHandler: {dic in
+        allApiObject.getUninstallJsonToUpload(emailAddress: currentUserEmail, uninstallReason: popUpButton.titleOfSelectedItem ?? "", completionHandler: {dic in
             DispatchQueue.main.async {
                 addLog(text: "App uninstall clicked by user")
                 shell(launchPath: "/bin/launchctl", arguments: ["unload","-w","\("/Users/")\(NSUserName())\("/Library/LaunchAgents/\(mainAppBundelId).plist")"])

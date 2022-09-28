@@ -73,6 +73,9 @@ class focusCompletedVc: NSViewController {
     
     @IBAction func btnTakeBreakClicked(_ sender: Any) {
         whatToAchieveInFocusBlock = ""
+        appdelegate!.setIntensionInBrainDumpWindow()
+        showBrainDumpWindow()
+        brainDumpVcObj?.breakStarted()
         addLog(text: "focusCompletedVc - btnTakeBreakClicked")//
         let timestamp = getStringFromDate(date: startFocusModeTime ?? Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
         addEntryInCsv(logType: "focus block", activity: currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: textViewAchieve.string, distractionsEncountered: textViewDistractions.string, abortReason: "", feedback: "")

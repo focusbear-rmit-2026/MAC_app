@@ -69,6 +69,7 @@ class AllApi:NSObject {
                         completionHandler(nil)
                         return
                     }else{
+                        addLog(text: "api call getConfigFile Api error:- statusCode is \(httpResponse.statusCode)")
                         completionHandler(nil)
                         return
                     }
@@ -88,86 +89,538 @@ class AllApi:NSObject {
     }
     
     func isSettingsValid(settings:NSDictionary, completionHandler: @escaping(_ result: NSDictionary?, _ statusCode:Int) -> ()){
-        if appdelegate!.credential != nil{
+        addLog(text: "api isSettingsValid user-settings")
+        
+        appdelegate!.credentialsManager.credentials {credentialsInfo in
+            addLog(text: "get updated credentialsInfo from credentialsManager")
             
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
             
-            // Valid credentials; you can access token properties such as `idToken`, `accessToken`.
-            //        print(credentials)
-            
-            let responsePath = "https://api.focusbear.io/user-settings"
-            if let myUrl = NSURL(string: responsePath){
-                addLog(text: "api call isSettingsValid \(myUrl)")
-                let token = appdelegate!.credential!.accessToken
+            if appdelegate!.credential != nil{
                 
-                
-                let request = NSMutableURLRequest(url:myUrl as URL);
-                request.httpMethod = "PUT";
-                request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-                
-                
-                let jsonData = try? JSONSerialization.data(withJSONObject: settings)
-                request.httpBody = jsonData
-                let task = URLSession.shared.dataTask(with: request as URLRequest) {
-                    data, response, error in
+                let responsePath = "https://api.focusbear.io/user-settings"
+                if let myUrl = NSURL(string: responsePath){
+                    addLog(text: "api call isSettingsValid \(myUrl)")
+                    let token = appdelegate!.credential!.accessToken
                     
-                    if let httpResponse = response as? HTTPURLResponse{
-                        //                    if httpResponse.statusCode == 200{ //it means it is right
+                    
+                    let request = NSMutableURLRequest(url:myUrl as URL);
+                    request.httpMethod = "PUT";
+                    request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+                    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                    
+                    
+                    let jsonData = try? JSONSerialization.data(withJSONObject: settings)
+                    request.httpBody = jsonData
+                    let task = URLSession.shared.dataTask(with: request as URLRequest) {
+                        data, response, error in
                         
-                        if data != nil{
-                            do {
-                                if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
-                                    addLog(text: "api call isSettingsValid return success")
-                                    completionHandler(jsonResult, httpResponse.statusCode)
-                                    return
+                        if let httpResponse = response as? HTTPURLResponse{
+                            if httpResponse.statusCode == 200{ //it means it is right //
+                                if data != nil{
+                                    do {
+                                        if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
+                                            addLog(text: "api call isSettingsValid return success")
+                                            completionHandler(jsonResult, httpResponse.statusCode)
+                                            return
+                                        }
+                                        
+                                    }catch{
+                                        addLog(text: "api call isSettingsValid return error:- \(error.localizedDescription)")
+                                        completionHandler(nil, httpResponse.statusCode)
+                                        print(error)
+                                        return;
+                                    }
                                 }
-                                
-                            }catch{
-                                addLog(text: "api call isSettingsValid return error:- \(error.localizedDescription)")
+                            }else{
+                                addLog(text: "api call isSettingsValid Api error:- statusCode is \(httpResponse.statusCode)")
+                                addLog(text: "accessToken is:- \(token)")
                                 completionHandler(nil, httpResponse.statusCode)
-                                print(error)
-                                return;
+                                return
                             }
                         }
-                        //                    }else{
-                        //                        completionHandler(nil)
-                        //                        return
-                        //                    }
-                    }
-                    //            isUploadingPopupResponse = false
-                    if error != nil {
-                        addLog(text: "api call isSettingsValid return error:- \(error!.localizedDescription)")
+                        
+                        if error != nil {
+                            addLog(text: "api call isSettingsValid return error:- \(error!.localizedDescription)")
+                            completionHandler(nil, 0)
+                            return
+                        }
                         completionHandler(nil, 0)
                         return
                     }
+                    
+                    task.resume()
+                }else{
                     completionHandler(nil, 0)
-                    return
                 }
                 
-                task.resume()
             }else{
                 completionHandler(nil, 0)
+                return
             }
-            
-        }else{
-            completionHandler(nil, 0)
-            return
         }
     }
     
     
     func getDeviceId(completionHandler: @escaping(_ deviceId:String?) -> ()){
-        if appdelegate!.credential != nil{
+        addLog(text: "getDeviceId:- api call")
+        
+        appdelegate!.credentialsManager.credentials {credentialsInfo in
+            addLog(text: "get updated credentialsInfo from credentialsManager")
             
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
             
-            // Valid credentials; you can access token properties such as `idToken`, `accessToken`.
-            //        print(credentials)
-            
-            let responsePath = "https://api.focusbear.io/device"
-            if let myUrl = NSURL(string: responsePath){
-                addLog(text: "api call getDeviceId \(myUrl)")
-                let token = appdelegate!.credential!.accessToken
+            if appdelegate!.credential != nil{
                 
+                let responsePath = "https://api.focusbear.io/device"
+                if let myUrl = NSURL(string: responsePath){
+                    addLog(text: "api call getDeviceId \(myUrl)")
+                    let token = appdelegate!.credential!.accessToken
+                    
+                    
+                    let request = NSMutableURLRequest(url:myUrl as URL);
+                    request.httpMethod = "POST";
+                    request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+                    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                    
+                    
+                    let json: [String: Any] = [
+                        "operating_system":"MacOS",//userId.removingPercentEncoding ?? "",
+                        "metadata": [:]
+                    ]
+                    
+                    let jsonData = try? JSONSerialization.data(withJSONObject: json)
+                    request.httpBody = jsonData
+                    let task = URLSession.shared.dataTask(with: request as URLRequest) {
+                        data, response, error in
+                        
+                        if let httpResponse = response as? HTTPURLResponse{
+                            if httpResponse.statusCode == 201{ //it means it is right
+                                
+                                if data != nil{
+                                    do {
+                                        if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
+                                            
+                                            
+                                            if let id = jsonResult.value(forKey: "id") as? String{
+                                                
+                                                addLog(text: "api call getDeviceId success")
+                                                completionHandler(id)
+                                                return
+                                                
+                                            }
+                                            addLog(text: "api call getDeviceId error")
+                                            completionHandler(nil)
+                                            return
+                                        }
+                                        
+                                    }catch{
+                                        addLog(text: "api call getDeviceId error:- \(error.localizedDescription)")
+                                        addLog(text: "accessToken is:- \(token)")
+                                        completionHandler(nil)
+                                        print(error)
+                                        return;
+                                    }
+                                }
+                            }else{
+                                addLog(text: "api call getDeviceId Api error:- statusCode is \(httpResponse.statusCode)")
+                                completionHandler(nil)
+                                return
+                            }
+                        }
+                        if error != nil {
+                            addLog(text: "api call getDeviceId error:- \(error!.localizedDescription)")
+                            completionHandler(nil)
+                            return
+                        }
+                        completionHandler(nil)
+                        return
+                    }
+                    
+                    task.resume()
+                }else{
+                    completionHandler(nil)
+                    return
+                }
+                
+            }else{
+                completionHandler(nil)
+                return
+            }
+        }
+    }
+    
+    func getSettings(completionHandler: @escaping(_ result: NSDictionary?) -> ()) {
+        addLog(text: "downloading Settings file")
+        
+        appdelegate!.credentialsManager.credentials {credentialsInfo in
+            addLog(text: "get updated credentialsInfo from credentialsManager")
+            
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+            if appdelegate!.credential != nil{
+                let responsePath = "https://api.focusbear.io/user-settings"
+                if let myUrl = NSURL(string: responsePath){
+                    addLog(text: "api call getSettings \(myUrl)")
+                    let token = appdelegate!.credential!.accessToken
+                    
+                    let request = NSMutableURLRequest(url:myUrl as URL);
+                    request.httpMethod = "GET";
+                    request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+                    let task = URLSession.shared.dataTask(with: request as URLRequest) {
+                        data, response, error in
+                        
+                        if let httpResponse = response as? HTTPURLResponse {
+                            if httpResponse.statusCode == 200{
+                                
+                                if data != nil{
+                                    do {
+                                        if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
+                                            
+                                            addLog(text: "api call getSettings success")
+                                            print(jsonResult)
+                                            completionHandler(jsonResult)
+                                            return
+                                        }
+                                        
+                                    }catch{
+                                        print(error)
+                                        addLog(text: "error get Settings file: \(error.localizedDescription)")
+                                        completionHandler(nil)
+                                        return
+                                    }
+                                    
+                                }
+                                
+                                completionHandler(nil)
+                                return
+                            }else{
+                                addLog(text: "api call get Settings Api error:- statusCode is \(httpResponse.statusCode)")
+                                addLog(text: "accessToken is:- \(token)")
+                                completionHandler(nil)
+                                return
+                            }
+                        }
+                        if error != nil {
+                            addLog(text: "error Settings file: \(error!.localizedDescription)")
+                            completionHandler(nil)
+                            return
+                        }
+                        completionHandler(nil)
+                        return
+                    }
+                    task.resume()
+                }else{
+                    completionHandler(nil)
+                }
+            }else{
+                completionHandler(nil)
+            }
+        }
+    }
+    
+    func getUserLocalDeviceSettings(completionHandler: @escaping(_ result: NSDictionary?) -> ()) {
+        addLog(text: "downloading user-local-device-settings file")
+        
+        appdelegate!.credentialsManager.credentials {credentialsInfo in
+            addLog(text: "get updated credentialsInfo from credentialsManager")
+            
+           appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+            
+            if appdelegate!.credential != nil{
+                let responsePath = "https://api.focusbear.io/user-local-device-settings"
+                if let myUrl = NSURL(string: responsePath){
+                    addLog(text: "api call getSettings \(myUrl)")
+                    let token = appdelegate!.credential!.accessToken
+                    
+                    let request = NSMutableURLRequest(url:myUrl as URL);
+                    request.httpMethod = "GET";
+                    request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+                    let task = URLSession.shared.dataTask(with: request as URLRequest) {
+                        data, response, error in
+                        
+                        if let httpResponse = response as? HTTPURLResponse {
+                            if httpResponse.statusCode == 200{
+                                
+                                if data != nil{
+                                    
+                                    
+                                    do {
+                                        if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
+                                            
+                                            addLog(text: "api call user-local-device-settings success")
+                                            print(jsonResult)
+                                            completionHandler(jsonResult)
+                                            return
+                                        }
+                                        
+                                    }catch{
+                                        print(error)
+                                        addLog(text: "error get user-local-device-settings file: \(error.localizedDescription)")
+                                        completionHandler(nil)
+                                        return
+                                    }
+                                    
+                                }
+                                
+                                completionHandler(nil)
+                                return
+                            }else{
+                                addLog(text: "api call user-local-device-settings Api error:- statusCode is \(httpResponse.statusCode)")
+                                addLog(text: "accessToken is:- \(token)")
+                                completionHandler(nil)
+                                return
+                            }
+                        }
+                        if error != nil {
+                            addLog(text: "error user-local-device-settings file: \(error!.localizedDescription)")
+                            completionHandler(nil)
+                            return
+                        }
+                        completionHandler(nil)
+                        return
+                    }
+                    task.resume()
+                }else{
+                    completionHandler(nil)
+                }
+            }else{
+                completionHandler(nil)
+            }
+        }
+    }
+    func getLastActivityInfo(completionHandler: @escaping(_ result: NSDictionary?) -> ()) {
+        addLog(text: "downloading getLastActivityInfo file")
+        
+        appdelegate!.credentialsManager.credentials {credentialsInfo in
+            addLog(text: "get updated credentialsInfo from credentialsManager")
+            
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+            if appdelegate!.credential != nil{
+                let responsePath = "https://api.focusbear.io/user/details/current-activity-props"
+                if let myUrl = NSURL(string: responsePath){
+                    addLog(text: "api call getLastActivityInfo \(myUrl)")
+                    let token = appdelegate!.credential!.accessToken
+                    
+                    let request = NSMutableURLRequest(url:myUrl as URL);
+                    request.httpMethod = "GET";
+                    request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+                    let task = URLSession.shared.dataTask(with: request as URLRequest) {
+                        data, response, error in
+                        
+                        if let httpResponse = response as? HTTPURLResponse {
+                            if httpResponse.statusCode == 200{
+                                
+                                if data != nil{
+                                    
+                                    
+                                    do {
+                                        if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
+                                            
+                                            addLog(text: "api call getLastActivityInfo success")
+                                            print(jsonResult)
+                                            completionHandler(jsonResult)
+                                            return
+                                        }
+                                        
+                                    }catch{
+                                        print(error)
+                                        addLog(text: "error get getLastActivityInfo file: \(error.localizedDescription)")
+                                        completionHandler(nil)
+                                        return
+                                    }
+                                    
+                                }
+                                
+                                completionHandler(nil)
+                                return
+                            }else{
+                                addLog(text: "api call getLastActivityInfo Api error:- statusCode is \(httpResponse.statusCode)")
+                                addLog(text: "accessToken is:- \(token)")
+                                completionHandler(nil)
+                                return
+                            }
+                        }
+                        if error != nil {
+                            addLog(text: "error getLastActivityInfo: \(error!.localizedDescription)")
+                            completionHandler(nil)
+                            return
+                        }
+                        completionHandler(nil)
+                        return
+                    }
+                    task.resume()
+                }else{
+                    completionHandler(nil)
+                }
+            }else{
+                completionHandler(nil)
+            }
+        }
+    }
+    
+    func getuserDetailsInfo(completionHandler: @escaping(_ result: NSDictionary?) -> ()) {
+        addLog(text: "downloading getuserDetailsInfo file")
+        
+        appdelegate!.credentialsManager.credentials {credentialsInfo in
+            addLog(text: "get updated credentialsInfo from credentialsManager")
+            
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+            
+            if appdelegate!.credential != nil{
+                let responsePath = "https://api.focusbear.io/user/details"
+                if let myUrl = NSURL(string: responsePath){
+                    addLog(text: "api call getuserDetailsInfo \(myUrl)")
+                    let token = appdelegate!.credential!.accessToken
+                    
+                    let request = NSMutableURLRequest(url:myUrl as URL);
+                    request.httpMethod = "GET";
+                    request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+                    let task = URLSession.shared.dataTask(with: request as URLRequest) {
+                        data, response, error in
+                        
+                        if let httpResponse = response as? HTTPURLResponse {
+                            if httpResponse.statusCode == 200{
+                                
+                                if data != nil{
+                                    
+                                    
+                                    do {
+                                        if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
+                                            
+                                            addLog(text: "api call getuserDetailsInfo success")
+                                            print(jsonResult)
+                                            completionHandler(jsonResult)
+                                            return
+                                        }
+                                        
+                                    }catch{
+                                        print(error)
+                                        addLog(text: "error get getuserDetailsInfo file: \(error.localizedDescription)")
+                                        completionHandler(nil)
+                                        return
+                                    }
+                                    
+                                }
+                                
+                                completionHandler(nil)
+                                return
+                            }else{
+                                addLog(text: "api call getuserDetailsInfo Api error:- statusCode is \(httpResponse.statusCode)")
+                                addLog(text: "accessToken is:- \(token)")
+                                completionHandler(nil)
+                                return
+                            }
+                        }
+                        if error != nil {
+                            addLog(text: "error getuserDetailsInfo: \(error!.localizedDescription)")
+                            completionHandler(nil)
+                            return
+                        }
+                        completionHandler(nil)
+                        return
+                    }
+                    task.resume()
+                }else{
+                    completionHandler(nil)
+                }
+            }else{
+                completionHandler(nil)
+            }
+        }
+    }
+    func putUserLocalDeviceSettings(settings:[String: [String:Any]], completionHandler: @escaping(_ result: NSDictionary?) -> ()){
+        addLog(text: "func putUserLocalDeviceSettings:- user-local-device-settings")
+        
+        appdelegate!.credentialsManager.credentials {credentialsInfo in
+            addLog(text: "get updated credentialsInfo from credentialsManager")
+            
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+            
+            if appdelegate!.credential != nil{
+                
+                let responsePath = "https://api.focusbear.io/user-local-device-settings"
+                if let myUrl = NSURL(string: responsePath){
+                    addLog(text: "api call putUserLocalDeviceSettings \(myUrl)")
+                    let token = appdelegate!.credential!.accessToken
+                    
+                    
+                    let request = NSMutableURLRequest(url:myUrl as URL);
+                    request.httpMethod = "PUT";
+                    request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+                    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                    
+                    
+                    let jsonData = try? JSONSerialization.data(withJSONObject: settings)
+                    request.httpBody = jsonData
+                    let task = URLSession.shared.dataTask(with: request as URLRequest) {
+                        data, response, error in
+                        
+                        if let httpResponse = response as? HTTPURLResponse{
+                            if httpResponse.statusCode == 200{ //it means it is right
+                                
+                                if data != nil{
+                                    do {
+                                        if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
+                                            addLog(text: "api call putUserLocalDeviceSettings return success")
+                                            completionHandler(jsonResult)
+                                            return
+                                        }
+                                        
+                                    }catch{
+                                        addLog(text: "api call putUserLocalDeviceSettings return error:- \(error.localizedDescription)")
+                                        completionHandler(nil)
+                                        print(error)
+                                        return;
+                                    }
+                                }
+                            }else{
+                                addLog(text: "api call putUserLocalDeviceSettings Api error:- statusCode is \(httpResponse.statusCode)")
+                                addLog(text: "accessToken is:- \(token)")
+                                completionHandler(nil)
+                                return
+                            }
+                        }
+                        if error != nil {
+                            addLog(text: "api call putUserLocalDeviceSettings return error:- \(error!.localizedDescription)")
+                            completionHandler(nil)
+                            return
+                        }
+                        completionHandler(nil)
+                        return
+                    }
+                    
+                    task.resume()
+                }else{
+                    completionHandler(nil)
+                }
+                
+            }else{
+                completionHandler(nil)
+                return
+            }
+        }
+    }
+    var completedActivityLogId:String?
+    var completedChoiceLogId:String?
+    func activityCompletedApi(activity_id:String, activity_sequence_id:String, start_time:Date, quantity_logged:Double?, duration_logged:Int, choice_id:String?, completionHandler: @escaping(_ result: NSDictionary?) -> ()){
+        addLog(text: "activityCompletedApi completed-activity")
+        
+        appdelegate!.credentialsManager.credentials {credentialsInfo in
+            addLog(text: "get updated credentialsInfo from credentialsManager")
+            
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+            
+            
+            self.completedActivityLogId = nil
+            self.completedChoiceLogId = nil
+            
+            let calendar = Calendar.current
+            let finish_time = calendar.date(byAdding: .second, value: duration_logged, to: start_time) ?? Date()
+            
+            let responsePath = "https://api.focusbear.io/completed-activity"
+            if let myUrl = NSURL(string: responsePath){
+                addLog(text: "api call activityCompletedApi \(myUrl)")
+                let token = appdelegate!.credential?.accessToken ?? ""
                 
                 let request = NSMutableURLRequest(url:myUrl as URL);
                 request.httpMethod = "POST";
@@ -175,51 +628,78 @@ class AllApi:NSObject {
                 request.setValue("application/json", forHTTPHeaderField: "Content-Type")
                 
                 
-                let json: [String: Any] = [
-                    "operating_system":"MacOS",//userId.removingPercentEncoding ?? "",
-                    "metadata": [:]
+                
+                var json: [String: Any] = [
+                    "activity_id":activity_id,//userId.removingPercentEncoding ?? "",
+                    // "choice_id":choice_id,//deviceName.removingPercentEncoding ?? "",
+                    //                "quantity_logged":quantity_logged,
+                    "duration_logged":duration_logged,
+                    "device_id":currentDeviceId,
+                    "activity_sequence_id":activity_sequence_id,
+                    "start_time": getStringFromDateInUtc(date: start_time, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"),
+                    "finish_time": getStringFromDateInUtc(date: finish_time, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")//"2022-07-29T12:53:14.030Z"
+                    
                 ]
                 
+                if choice_id != nil{
+                    json["choice_id"] = choice_id!
+                }
+                
+                if quantity_logged != nil{
+                    json["quantity_logged"] = quantity_logged!
+                }
+                print("*****************json for activity************")
+                print(json)
+                print("**********************************************")
                 let jsonData = try? JSONSerialization.data(withJSONObject: json)
+                
+                
                 request.httpBody = jsonData
+                
+                
                 let task = URLSession.shared.dataTask(with: request as URLRequest) {
                     data, response, error in
                     
-                    if let httpResponse = response as? HTTPURLResponse{
-                        if httpResponse.statusCode == 201{ //it means it is right
+                    if let httpResponse = response as? HTTPURLResponse {
+                        if httpResponse.statusCode == 201{
                             
                             if data != nil{
                                 do {
                                     if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
-                                        
-                                        
-                                        if let id = jsonResult.value(forKey: "id") as? String{
-                                            
-                                            addLog(text: "api call getDeviceId success")
-                                            completionHandler(id)
-                                            return
-                                            
+                                        addLog(text: "api call activityCompletedApi success")
+                                        print("*************** Activity completed response****************")
+                                        print(jsonResult)
+                                        print("***********************************************************")
+                                        if let completedActivityLog = jsonResult.value(forKey: "completed_activity_log") as? NSDictionary{
+                                            if let id = completedActivityLog.value(forKey: "id") as? String{
+                                                self.completedActivityLogId = id
+                                            }
                                         }
-                                        addLog(text: "api call getDeviceId error")
-                                        completionHandler(nil)
+                                        if let completedChoiceLog = jsonResult.value(forKey: "completed_choice_log") as? NSDictionary{
+                                            if let id = completedChoiceLog.value(forKey: "id") as? String{
+                                                self.completedChoiceLogId = id
+                                            }
+                                        }
+                                        completionHandler(jsonResult)
                                         return
                                     }
                                     
                                 }catch{
-                                    addLog(text: "api call getDeviceId error:- \(error.localizedDescription)")
-                                    completionHandler(nil)
+                                    addLog(text: "api call activityCompletedApi error:- \(error.localizedDescription)")
                                     print(error)
-                                    return;
+                                    completionHandler(nil)
+                                    return
                                 }
                             }
                         }else{
+                            addLog(text: "api call activityCompletedApi error:- statusCode is \(httpResponse.statusCode)")
+                            addLog(text: "accessToken is:- \(token)")
                             completionHandler(nil)
                             return
                         }
                     }
-                    //            isUploadingPopupResponse = false
                     if error != nil {
-                        addLog(text: "api call getDeviceId error:- \(error!.localizedDescription)")
+                        addLog(text: "api call activityCompletedApi error:- \(error!.localizedDescription)")
                         completionHandler(nil)
                         return
                     }
@@ -230,525 +710,81 @@ class AllApi:NSObject {
                 task.resume()
             }else{
                 completionHandler(nil)
-                return
             }
+        }
+    }
+    func activityCompletedReviseApi(activity_id:String, quantity_logged:Double , choice_id:String?, completionHandler: @escaping(_ result: NSDictionary?) -> ()){
+        addLog(text: "activityCompletedReviseApi:- completed-activity/revise/id")
+        
+        appdelegate!.credentialsManager.credentials {credentialsInfo in
+            addLog(text: "get updated credentialsInfo from credentialsManager")
             
-        }else{
-            completionHandler(nil)
-            return
-        }
-    }
-    
-    func getSettings(completionHandler: @escaping(_ result: NSDictionary?) -> ()) {
-        addLog(text: "downloading Settings file")
-        if appdelegate!.credential != nil{
-            let responsePath = "https://api.focusbear.io/user-settings"
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+            
+            let id = choice_id ?? activity_id
+            
+            let responsePath = "https://api.focusbear.io/completed-activity/revise/\(id)"
             if let myUrl = NSURL(string: responsePath){
-                addLog(text: "api call getSettings \(myUrl)")
-                let token = appdelegate!.credential!.accessToken
+                addLog(text: "api call activity Completed Revise Api \(myUrl)")
+                let token = appdelegate!.credential?.accessToken ?? ""
                 
                 let request = NSMutableURLRequest(url:myUrl as URL);
-                request.httpMethod = "GET";
-                request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-                let task = URLSession.shared.dataTask(with: request as URLRequest) {
-                    data, response, error in
-                    
-                    if let httpResponse = response as? HTTPURLResponse {
-                        if httpResponse.statusCode == 200{
-                            
-                            if data != nil{
-                                
-                                
-                                do {
-                                    if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
-                                        
-                                        addLog(text: "api call getSettings success")
-                                        print(jsonResult)
-                                        completionHandler(jsonResult)
-                                        return
-                                    }
-                               
-                                }catch{
-                                    print(error)
-                                    addLog(text: "error get Settings file: \(error.localizedDescription)")
-                                    completionHandler(nil)
-                                    return
-                                }
-                                
-                            }
-                            
-                            completionHandler(nil)
-                            return
-                        }else{
-                            completionHandler(nil)
-                            return
-                        }
-                    }
-                    if error != nil {
-                        addLog(text: "error Settings file: \(error!.localizedDescription)")
-                        completionHandler(nil)
-                        return
-                    }
-                    completionHandler(nil)
-                    return
-                }
-                task.resume()
-            }else{
-                completionHandler(nil)
-            }
-        }else{
-            completionHandler(nil)
-        }
-    }
-
-    func getUserLocalDeviceSettings(completionHandler: @escaping(_ result: NSDictionary?) -> ()) {
-        addLog(text: "downloading user-local-device-settings file")
-        if appdelegate!.credential != nil{
-            let responsePath = "https://api.focusbear.io/user-local-device-settings"
-            if let myUrl = NSURL(string: responsePath){
-                addLog(text: "api call getSettings \(myUrl)")
-                let token = appdelegate!.credential!.accessToken
-                
-                let request = NSMutableURLRequest(url:myUrl as URL);
-                request.httpMethod = "GET";
-                request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-                let task = URLSession.shared.dataTask(with: request as URLRequest) {
-                    data, response, error in
-                    
-                    if let httpResponse = response as? HTTPURLResponse {
-                        if httpResponse.statusCode == 200{
-                            
-                            if data != nil{
-                                
-                                
-                                do {
-                                    if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
-                                        
-                                        addLog(text: "api call user-local-device-settings success")
-                                        print(jsonResult)
-                                        completionHandler(jsonResult)
-                                        return
-                                    }
-                               
-                                }catch{
-                                    print(error)
-                                    addLog(text: "error get user-local-device-settings file: \(error.localizedDescription)")
-                                    completionHandler(nil)
-                                    return
-                                }
-                                
-                            }
-                            
-                            completionHandler(nil)
-                            return
-                        }else{
-                            completionHandler(nil)
-                            return
-                        }
-                    }
-                    if error != nil {
-                        addLog(text: "error user-local-device-settings file: \(error!.localizedDescription)")
-                        completionHandler(nil)
-                        return
-                    }
-                    completionHandler(nil)
-                    return
-                }
-                task.resume()
-            }else{
-                completionHandler(nil)
-            }
-        }else{
-            completionHandler(nil)
-        }
-    }
-    func getLastActivityInfo(completionHandler: @escaping(_ result: NSDictionary?) -> ()) {
-        addLog(text: "downloading getLastActivityInfo file")
-        if appdelegate!.credential != nil{
-            let responsePath = "https://api.focusbear.io/user/details/current-activity-props"
-            if let myUrl = NSURL(string: responsePath){
-                addLog(text: "api call getLastActivityInfo \(myUrl)")
-                let token = appdelegate!.credential!.accessToken
-                
-                let request = NSMutableURLRequest(url:myUrl as URL);
-                request.httpMethod = "GET";
-                request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-                let task = URLSession.shared.dataTask(with: request as URLRequest) {
-                    data, response, error in
-                    
-                    if let httpResponse = response as? HTTPURLResponse {
-                        if httpResponse.statusCode == 200{
-                            
-                            if data != nil{
-                                
-                                
-                                do {
-                                    if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
-                                        
-                                        addLog(text: "api call getLastActivityInfo success")
-                                        print(jsonResult)
-                                        completionHandler(jsonResult)
-                                        return
-                                    }
-                               
-                                }catch{
-                                    print(error)
-                                    addLog(text: "error get getLastActivityInfo file: \(error.localizedDescription)")
-                                    completionHandler(nil)
-                                    return
-                                }
-                                
-                            }
-                            
-                            completionHandler(nil)
-                            return
-                        }else{
-                            completionHandler(nil)
-                            return
-                        }
-                    }
-                    if error != nil {
-                        addLog(text: "error getLastActivityInfo: \(error!.localizedDescription)")
-                        completionHandler(nil)
-                        return
-                    }
-                    completionHandler(nil)
-                    return
-                }
-                task.resume()
-            }else{
-                completionHandler(nil)
-            }
-        }else{
-            completionHandler(nil)
-        }
-    }
-    
-    func getuserDetailsInfo(completionHandler: @escaping(_ result: NSDictionary?) -> ()) {
-        addLog(text: "downloading getuserDetailsInfo file")
-        if appdelegate!.credential != nil{
-            let responsePath = "https://api.focusbear.io/user/details"
-            if let myUrl = NSURL(string: responsePath){
-                addLog(text: "api call getuserDetailsInfo \(myUrl)")
-                let token = appdelegate!.credential!.accessToken
-                
-                let request = NSMutableURLRequest(url:myUrl as URL);
-                request.httpMethod = "GET";
-                request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-                let task = URLSession.shared.dataTask(with: request as URLRequest) {
-                    data, response, error in
-                    
-                    if let httpResponse = response as? HTTPURLResponse {
-                        if httpResponse.statusCode == 200{
-                            
-                            if data != nil{
-                                
-                                
-                                do {
-                                    if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
-                                        
-                                        addLog(text: "api call getuserDetailsInfo success")
-                                        print(jsonResult)
-                                        completionHandler(jsonResult)
-                                        return
-                                    }
-                               
-                                }catch{
-                                    print(error)
-                                    addLog(text: "error get getuserDetailsInfo file: \(error.localizedDescription)")
-                                    completionHandler(nil)
-                                    return
-                                }
-                                
-                            }
-                            
-                            completionHandler(nil)
-                            return
-                        }else{
-                            completionHandler(nil)
-                            return
-                        }
-                    }
-                    if error != nil {
-                        addLog(text: "error getuserDetailsInfo: \(error!.localizedDescription)")
-                        completionHandler(nil)
-                        return
-                    }
-                    completionHandler(nil)
-                    return
-                }
-                task.resume()
-            }else{
-                completionHandler(nil)
-            }
-        }else{
-            completionHandler(nil)
-        }
-    }
-    func putUserLocalDeviceSettings(settings:[String: [String:Any]], completionHandler: @escaping(_ result: NSDictionary?) -> ()){
-        if appdelegate!.credential != nil{
-
-            let responsePath = "https://api.focusbear.io/user-local-device-settings"
-            if let myUrl = NSURL(string: responsePath){
-                addLog(text: "api call putUserLocalDeviceSettings \(myUrl)")
-                let token = appdelegate!.credential!.accessToken
-                
-                
-                let request = NSMutableURLRequest(url:myUrl as URL);
-                request.httpMethod = "PUT";
+                request.httpMethod = "PATCH";
                 request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
                 request.setValue("application/json", forHTTPHeaderField: "Content-Type")
                 
                 
-                let jsonData = try? JSONSerialization.data(withJSONObject: settings)
+                
+                let json: [String: Any] = [
+                    "quantity_logged":quantity_logged
+                ]
+                
+                //            if choice_id != nil{
+                //                json["choice_id"] = choice_id!
+                //            }
+                
+                
+                print("*****************json for activity************")
+                print(json)
+                print("**********************************************")
+                let jsonData = try? JSONSerialization.data(withJSONObject: json)
+                
+                
                 request.httpBody = jsonData
+                
+                
                 let task = URLSession.shared.dataTask(with: request as URLRequest) {
                     data, response, error in
                     
-                    if let httpResponse = response as? HTTPURLResponse{
-                        if httpResponse.statusCode == 200{ //it means it is right
-                            
+                    if let httpResponse = response as? HTTPURLResponse {
+                        if httpResponse.statusCode == 200{
+                            addLog(text: "api call activity Completed Revise Api success")
                             if data != nil{
                                 do {
                                     if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
-                                        addLog(text: "api call putUserLocalDeviceSettings return success")
-                                        completionHandler(jsonResult)
-                                        return
-                                    }
-                                    
-                                }catch{
-                                    addLog(text: "api call putUserLocalDeviceSettings return error:- \(error.localizedDescription)")
-                                    completionHandler(nil)
-                                    print(error)
-                                    return;
-                                }
-                            }
-                        }
-                    }
-                    if error != nil {
-                        addLog(text: "api call putUserLocalDeviceSettings return error:- \(error!.localizedDescription)")
-                        completionHandler(nil)
-                        return
-                    }
-                    completionHandler(nil)
-                    return
-                }
-                
-                task.resume()
-            }else{
-                completionHandler(nil)
-            }
-            
-        }else{
-            completionHandler(nil)
-            return
-        }
-    }
-    func activityCompletedApi(activity_id:String, activity_sequence_id:String, start_time:Date, quantity_logged:Double?, duration_logged:Int, choice_id:String?, completionHandler: @escaping(_ result: NSDictionary?) -> ()){
-        //80F7CCF5-7FE54D41-B5A2DD9F-4A84B894
-        //    isUploadingPopupResponse = true
-        
-
-        let calendar = Calendar.current
-        let finish_time = calendar.date(byAdding: .second, value: duration_logged, to: start_time) ?? Date()
-        
-        let responsePath = "https://api.focusbear.io/completed-activity"
-        if let myUrl = NSURL(string: responsePath){
-            addLog(text: "api call activityCompletedApi \(myUrl)")
-            let token = appdelegate!.credential?.accessToken ?? ""
-            
-            let request = NSMutableURLRequest(url:myUrl as URL);
-            request.httpMethod = "POST";
-            request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            
-            
-            
-            var json: [String: Any] = [
-                "activity_id":activity_id,//userId.removingPercentEncoding ?? "",
-                // "choice_id":choice_id,//deviceName.removingPercentEncoding ?? "",
-//                "quantity_logged":quantity_logged,
-                "duration_logged":duration_logged,
-                "device_id":currentDeviceId,
-                "activity_sequence_id":activity_sequence_id,
-                "start_time": getStringFromDateInUtc(date: start_time, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"),
-                "finish_time": getStringFromDateInUtc(date: finish_time, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")//"2022-07-29T12:53:14.030Z"
-
-            ]
-                
-            if choice_id != nil{
-                json["choice_id"] = choice_id!
-            }
-            
-            if quantity_logged != nil{
-                json["quantity_logged"] = quantity_logged!
-            }
-            print("*****************json for activity************")
-            print(json)
-            print("**********************************************")
-            let jsonData = try? JSONSerialization.data(withJSONObject: json)
-                
-                
-            request.httpBody = jsonData
-            
-            
-            let task = URLSession.shared.dataTask(with: request as URLRequest) {
-                data, response, error in
-                
-                if let httpResponse = response as? HTTPURLResponse {
-    //                if httpResponse.statusCode == 200{
-                        
-                        if data != nil{
-                            do {
-                                if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
-                                    addLog(text: "api call activityCompletedApi success")
-                                    print("*************** Activity completed response****************")
-                                    print(jsonResult)
-                                    print("***********************************************************")
-                                    completionHandler(jsonResult)
-                                    return
-                                }
-                                
-                            }catch{
-                                addLog(text: "api call activityCompletedApi error:- \(error.localizedDescription)")
-                                print(error)
-                                completionHandler(nil)
-                                return
-                            }
-                        }
-    //                }else{
-    //                    completionHandler(nil)
-    //                    return
-    //                }
-                }
-                //            isUploadingPopupResponse = false
-                if error != nil {
-                    addLog(text: "api call activityCompletedApi error:- \(error!.localizedDescription)")
-                    completionHandler(nil)
-                    return
-                }
-                completionHandler(nil)
-                return
-            }
-            
-            task.resume()
-        }else{
-            completionHandler(nil)
-        }
-    }
-    func forceCompleteCurrentSequence(activity_sequence_id:String, completionHandler: @escaping(_ result: NSDictionary?) -> ()){
-
-        let responsePath = "https://api.focusbear.io/completed-activity-sequence/\(activity_sequence_id)/force-complete-current-sequence"
-        if let myUrl = NSURL(string: responsePath){
-            addLog(text: "api call forceCompleteCurrentSequence \(myUrl)")
-            let token = appdelegate!.credential?.accessToken ?? ""
-            
-            let request = NSMutableURLRequest(url:myUrl as URL);
-            request.httpMethod = "POST";
-            request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-
-            let json: [String: Any] = [:]
-            let jsonData = try? JSONSerialization.data(withJSONObject: json)
-                
-                
-            request.httpBody = jsonData
-            
-            let task = URLSession.shared.dataTask(with: request as URLRequest) {
-                data, response, error in
-                
-                if let httpResponse = response as? HTTPURLResponse {
-                    if httpResponse.statusCode == 201{
-                        
-                        if data != nil{
-                            do {
-                                if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
-                                    addLog(text: "api call forceCompleteCurrentSequence success")
-                                    print("*************** Activity forceCompleteCurrentSequence response****************")
-                                    print(jsonResult)
-                                    print("***********************************************************")
-                                    completionHandler(jsonResult)
-                                    return
-                                }
-                                
-                            }catch{
-                                addLog(text: "api call forceCompleteCurrentSequence error:- \(error.localizedDescription)")
-                                print(error)
-                                completionHandler(nil)
-                                return
-                            }
-                        }
-                    }else{
-                        completionHandler(nil)
-                        return
-                    }
-                }
-                //            isUploadingPopupResponse = false
-                if error != nil {
-                    addLog(text: "api call forceCompleteCurrentSequence error:- \(error!.localizedDescription)")
-                    completionHandler(nil)
-                    return
-                }
-                completionHandler(nil)
-                return
-            }
-            
-            task.resume()
-        }else{
-            completionHandler(nil)
-        }
-    }
-    func getACtivityStats(activityId:String, activityChoiceId:String?, completionHandler: @escaping(_ stats:NSDictionary?) -> ()){
-        if appdelegate!.credential != nil{
-            
-            
-            // Valid credentials; you can access token properties such as `idToken`, `accessToken`.
-            //        print(credentials)
-            let id = activityChoiceId ?? activityId
-            
-            
-            let responsePath = "https://api.focusbear.io/completed-activity/\(id)/stats?days_number=30&timezone=UTC"
-            if let myUrl = NSURL(string: responsePath){
-                addLog(text: "api call getActivityStats \(myUrl)")
-                let token = appdelegate!.credential!.accessToken
-                
-                
-                let request = NSMutableURLRequest(url:myUrl as URL);
-                request.httpMethod = "GET";
-                request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-//                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-
-                let task = URLSession.shared.dataTask(with: request as URLRequest) {
-                    data, response, error in
-                    
-                    if let httpResponse = response as? HTTPURLResponse{
-                        if httpResponse.statusCode == 200{ //it means it is right
-                            if data != nil{
-                                do {
-                                    if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
+                                        
+                                        print("*************** Activity completed response****************")
                                         print(jsonResult)
-                                        addLog(text: "api call getActivityStats success")
-                                        graphOneMonthData = jsonResult
+                                        print("***********************************************************")
                                         completionHandler(jsonResult)
                                         return
                                     }
                                     
                                 }catch{
-                                    addLog(text: "api call getActivityStats error:- \(error.localizedDescription)")
-                                    print(error)
+                                    addLog(text: "api call activity Completed Revise Api error:- \(error.localizedDescription)")
                                     completionHandler(nil)
                                     return
                                 }
                             }
-                            
                         }else{
+                            addLog(text: "api call activity Completed Revise Api error:- statusCode is \(httpResponse.statusCode)")
+                            addLog(text: "accessToken is:- \(token)")
                             completionHandler(nil)
                             return
                         }
                     }
-                    //            isUploadingPopupResponse = false
                     if error != nil {
-                        addLog(text: "api call getActivityStats error:- \(error!.localizedDescription)")
+                        addLog(text: "api call activity Completed Revise Api error:- \(error!.localizedDescription)")
                         completionHandler(nil)
                         return
                     }
@@ -759,88 +795,307 @@ class AllApi:NSObject {
                 task.resume()
             }else{
                 completionHandler(nil)
-                return
             }
+        }
+    }
+    func forceCompleteCurrentSequence(activity_sequence_id:String, completionHandler: @escaping(_ result: NSDictionary?) -> ()){
+        addLog(text: "forceCompleteCurrentSequence:- completed-activity-sequence/activity_sequence_id/force-complete-current-sequence")
+        
+        appdelegate!.credentialsManager.credentials {credentialsInfo in
+            addLog(text: "get updated credentialsInfo from credentialsManager")
             
-        }else{
-            completionHandler(nil)
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+            
+            let responsePath = "https://api.focusbear.io/completed-activity-sequence/\(activity_sequence_id)/force-complete-current-sequence"
+            if let myUrl = NSURL(string: responsePath){
+                addLog(text: "api call forceCompleteCurrentSequence \(myUrl)")
+                let token = appdelegate!.credential?.accessToken ?? ""
+                
+                let request = NSMutableURLRequest(url:myUrl as URL);
+                request.httpMethod = "POST";
+                request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                
+                let json: [String: Any] = [:]
+                let jsonData = try? JSONSerialization.data(withJSONObject: json)
+                
+                
+                request.httpBody = jsonData
+                
+                let task = URLSession.shared.dataTask(with: request as URLRequest) {
+                    data, response, error in
+                    
+                    if let httpResponse = response as? HTTPURLResponse {
+                        if httpResponse.statusCode == 201{
+                            
+                            if data != nil{
+                                do {
+                                    if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
+                                        addLog(text: "api call forceCompleteCurrentSequence success")
+                                        print("*************** Activity forceCompleteCurrentSequence response****************")
+                                        print(jsonResult)
+                                        print("***********************************************************")
+                                        completionHandler(jsonResult)
+                                        return
+                                    }
+                                    
+                                }catch{
+                                    addLog(text: "api call forceCompleteCurrentSequence error:- \(error.localizedDescription)")
+                                    print(error)
+                                    completionHandler(nil)
+                                    return
+                                }
+                            }
+                        }else{
+                            addLog(text: "api call forceCompleteCurrentSequence error:- statusCode is \(httpResponse.statusCode)")
+                            addLog(text: "accessToken is:- \(token)")
+                            completionHandler(nil)
+                            return
+                        }
+                    }
+                    
+                    if error != nil {
+                        addLog(text: "api call forceCompleteCurrentSequence error:- \(error!.localizedDescription)")
+                        completionHandler(nil)
+                        return
+                    }
+                    completionHandler(nil)
+                    return
+                }
+                
+                task.resume()
+            }else{
+                completionHandler(nil)
+            }
+        }
+    }
+    
+    func getACtivityStats(activityId:String, activityChoiceId:String?, completionHandler: @escaping(_ stats:NSDictionary?) -> ()){
+        addLog(text: "getACtivityStats:- completed-activity/id/stats")
+        
+        appdelegate!.credentialsManager.credentials {credentialsInfo in
+            addLog(text: "get updated credentialsInfo from credentialsManager")
+            
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+            
+            if appdelegate!.credential != nil{
+                let id = activityChoiceId ?? activityId
+                
+                
+                let responsePath = "https://api.focusbear.io/completed-activity/\(id)/stats?days_number=30&timezone=UTC"
+                if let myUrl = NSURL(string: responsePath){
+                    addLog(text: "api call getActivityStats \(myUrl)")
+                    let token = appdelegate!.credential!.accessToken
+                    
+                    
+                    let request = NSMutableURLRequest(url:myUrl as URL);
+                    request.httpMethod = "GET";
+                    request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+                    //                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                    
+                    let task = URLSession.shared.dataTask(with: request as URLRequest) {
+                        data, response, error in
+                        
+                        if let httpResponse = response as? HTTPURLResponse{
+                            if httpResponse.statusCode == 200{ //it means it is right
+                                if data != nil{
+                                    do {
+                                        if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
+                                            print(jsonResult)
+                                            addLog(text: "api call getActivityStats success")
+                                            graphOneMonthData = jsonResult
+                                            completionHandler(jsonResult)
+                                            return
+                                        }
+                                        
+                                    }catch{
+                                        addLog(text: "api call getActivityStats error:- \(error.localizedDescription)")
+                                        print(error)
+                                        completionHandler(nil)
+                                        return
+                                    }
+                                }
+                                
+                            }else{
+                                addLog(text: "api call getActivityStats error:- statusCode is \(httpResponse.statusCode)")
+                                addLog(text: "accessToken is:- \(token)")
+                                completionHandler(nil)
+                                return
+                            }
+                        }
+                        
+                        if error != nil {
+                            addLog(text: "api call getActivityStats error:- \(error!.localizedDescription)")
+                            completionHandler(nil)
+                            return
+                        }
+                        completionHandler(nil)
+                        return
+                    }
+                    
+                    task.resume()
+                }else{
+                    addLog(text: "api call getActivityStats error:- can't create url")
+                    completionHandler(nil)
+                    return
+                }
+                
+            }else{
+                completionHandler(nil)
+            }
         }
     }
     
     func getACtivityCurrentDayStats(activityId:String, activityChoiceId:String?, completionHandler: @escaping(_ stats:[NSDictionary]?) -> ()){
-        if appdelegate!.credential != nil{
+        addLog(text: "getActivityCurrentDayStats:- Completed-activity")
+        
+        appdelegate!.credentialsManager.credentials {credentialsInfo in
+            addLog(text: "get updated credentialsInfo from credentialsManager")
             
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
             
-            // Valid credentials; you can access token properties such as `idToken`, `accessToken`.
-            //        print(credentials)
-            
-            let id = activityChoiceId ?? activityId
-            
-            
-            let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
-            let shutOffDate = Calendar.current.date(bySettingHour: shutOffTime!.hour, minute: shutOffTime!.minute, second: shutOffTime!.second, of: Date())!
-
-            let fromTime = getStringFromDateInUtc(date: startDate, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
-            let toTime = getStringFromDateInUtc(date: shutOffDate, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
-            
-            
-            let responsePath = "https://api.focusbear.io/completed-activity/\(id)?from_time=\(fromTime)&to_time=\(toTime)"
-            if let myUrl = NSURL(string: responsePath){
-                addLog(text: "api call getActivityStats \(myUrl)")
-                let token = appdelegate!.credential!.accessToken
+            if appdelegate!.credential != nil{
+                
+                let id = activityChoiceId ?? activityId
                 
                 
-                let request = NSMutableURLRequest(url:myUrl as URL);
-                request.httpMethod = "GET";
-                request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-//                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-
-                let task = URLSession.shared.dataTask(with: request as URLRequest) {
-                    data, response, error in
+                let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
+                let shutOffDate = Calendar.current.date(bySettingHour: shutOffTime!.hour, minute: shutOffTime!.minute, second: shutOffTime!.second, of: Date())!
+                
+                let fromTime = getStringFromDateInUtc(date: startDate, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+                let toTime = getStringFromDateInUtc(date: shutOffDate, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+                
+                
+                let responsePath = "https://api.focusbear.io/completed-activity/\(id)?from_time=\(fromTime)&to_time=\(toTime)"
+                if let myUrl = NSURL(string: responsePath){
+                    addLog(text: "api call getACtivityCurrentDayStats \(myUrl)")
+                    let token = appdelegate!.credential!.accessToken
                     
-                    if let httpResponse = response as? HTTPURLResponse{
-                        if httpResponse.statusCode == 200{ //it means it is right
-                            if data != nil{
-                                do {
-                                    if let jsonResult: [NSDictionary] = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? [NSDictionary]{
-                                        print(jsonResult)
-                                        addLog(text: "api call getActivityStats success")
-                                        graphOneDayData = jsonResult//
-                                        completionHandler(jsonResult)
+                    
+                    let request = NSMutableURLRequest(url:myUrl as URL);
+                    request.httpMethod = "GET";
+                    request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+                    
+                    let task = URLSession.shared.dataTask(with: request as URLRequest) {
+                        data, response, error in
+                        
+                        if let httpResponse = response as? HTTPURLResponse{
+                            if httpResponse.statusCode == 200{ //it means it is right
+                                if data != nil{
+                                    do {
+                                        if let jsonResult: [NSDictionary] = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? [NSDictionary]{
+                                            print(jsonResult)
+                                            addLog(text: "api call getACtivityCurrentDayStats success")
+                                            graphOneDayData = jsonResult//
+                                            completionHandler(jsonResult)
+                                            return
+                                        }
+                                        
+                                    }catch{
+                                        addLog(text: "api call getACtivityCurrentDayStats error:- \(error.localizedDescription)")
+                                        print(error)
+                                        completionHandler(nil)
                                         return
                                     }
-                                    
-                                }catch{
-                                    addLog(text: "api call getActivityStats error:- \(error.localizedDescription)")
-                                    print(error)
-                                    completionHandler(nil)
-                                    return
                                 }
+                                
+                            }else{
+                                addLog(text: "api call getACtivityCurrentDayStats error:- statusCode is \(httpResponse.statusCode)")
+                                addLog(text: "accessToken is:- \(token)")
+                                completionHandler(nil)
+                                return
                             }
-                            
-                        }else{
+                        }
+                        if error != nil {
+                            addLog(text: "api call getACtivityCurrentDayStats error:- \(error!.localizedDescription)")
                             completionHandler(nil)
                             return
                         }
-                    }
-                    //            isUploadingPopupResponse = false
-                    if error != nil {
-                        addLog(text: "api call getActivityStats error:- \(error!.localizedDescription)")
                         completionHandler(nil)
                         return
                     }
+                    
+                    task.resume()
+                }else{
+                    addLog(text: "api call getACtivityCurrentDayStats error:- can't create url")
                     completionHandler(nil)
                     return
                 }
                 
-                task.resume()
             }else{
                 completionHandler(nil)
-                return
             }
+        }
+    }
+    func getAllActivityDaySummary(completionHandler: @escaping(_ stats:NSDictionary?) -> ()){
+        addLog(text: "getAllActivityDaySummary:- completed-activity/day-summary")
+        
+        appdelegate!.credentialsManager.credentials {credentialsInfo in
+            addLog(text: "get updated credentialsInfo from credentialsManager")
             
-        }else{
-            completionHandler(nil)
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+            
+            if appdelegate!.credential != nil{
+                let zone = TimeZone.current
+                let responsePath = "https://api.focusbear.io/completed-activity/day-summary?timezone=\(zone.identifier)"
+                if let myUrl = NSURL(string: responsePath){
+                    addLog(text: "api call getAllActivityDaySummary \(myUrl)")
+                    let token = appdelegate!.credential!.accessToken
+                    
+                    
+                    let request = NSMutableURLRequest(url:myUrl as URL);
+                    request.httpMethod = "GET";
+                    request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+                    
+                    let task = URLSession.shared.dataTask(with: request as URLRequest) {
+                        data, response, error in
+                        
+                        if let httpResponse = response as? HTTPURLResponse{
+                            if httpResponse.statusCode == 200{ //it means it is right
+                                if data != nil{
+                                    do {
+                                        if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
+                                            print(jsonResult)
+                                            addLog(text: "api call getAllActivityDaySummary success")
+                                            allActivityTodaySummaryData = jsonResult
+                                            completionHandler(jsonResult)
+                                            return
+                                        }
+                                        
+                                    }catch{
+                                        addLog(text: "api call getAllActivityDaySummary error:- \(error.localizedDescription)")
+                                        print(error)
+                                        completionHandler(nil)
+                                        return
+                                    }
+                                }
+                                
+                            }else{
+                                addLog(text: "api call getAllActivityDaySummary error:- statusCode is \(httpResponse.statusCode)")
+                                addLog(text: "accessToken is:- \(token)")
+                                completionHandler(nil)
+                                return
+                            }
+                        }
+                        if error != nil {
+                            addLog(text: "api call getAllActivityDaySummary error:- \(error!.localizedDescription)")
+                            completionHandler(nil)
+                            return
+                        }
+                        completionHandler(nil)
+                        return
+                    }
+                    
+                    task.resume()
+                }else{
+                    addLog(text: "api call getAllActivityDaySummary error:- can't create url")
+                    completionHandler(nil)
+                    return
+                }
+                
+            }else{
+                completionHandler(nil)
+            }
         }
     }
     func getAbortJsonToUpload(emailAddress:String?, feedback:String, abortReason:String,completionHandler: @escaping(_ result: NSDictionary) -> ()) {
@@ -896,14 +1151,9 @@ class AllApi:NSObject {
             request.httpMethod = "POST";
             
             let json = jsonResult//[[String: String]]()
-            
-            
-            
-            
-            
+
             let jsonData = try? JSONSerialization.data(withJSONObject: json)
-            //         let boundary = generateBoundaryString()
-            //         let contentData = createBodyWithParameters(imageDataKey: folderData as? NSData ?? NSData(), boundary: boundary, jsonData: jsonData) as Data
+
             
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
             request.httpBody = jsonData
@@ -929,11 +1179,11 @@ class AllApi:NSObject {
                             }
                         }
                     }else{
-                        addLog(text: "get Abort Json To Upload response - error")
+                        addLog(text: "error get Abort Json To Upload response - error:- statusCode is \(httpResponse.statusCode)")
                     }
                     
                 }
-                //            isUploadingPopupResponse = false
+                
                 if error != nil {
                     addLog(text: "get Abort Json To Upload response - error - \(error!.localizedDescription)")
                     completionHandler(jsonResult)
@@ -1005,8 +1255,7 @@ class AllApi:NSObject {
             let json = jsonResult//[[String: String]]()
 
             let jsonData = try? JSONSerialization.data(withJSONObject: json)
-            //         let boundary = generateBoundaryString()
-            //         let contentData = createBodyWithParameters(imageDataKey: folderData as? NSData ?? NSData(), boundary: boundary, jsonData: jsonData) as Data
+
             
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
             request.httpBody = jsonData
@@ -1018,9 +1267,7 @@ class AllApi:NSObject {
                 // print(response)
                 if let httpResponse = response as? HTTPURLResponse {
                     if httpResponse.statusCode == 200{
-                        
-                        
-                        
+
                         if data != nil{
                             addLog(text: "get Quit Json To Upload response - success")
                             let status = String(data: data!, encoding: .utf8)!
@@ -1032,11 +1279,11 @@ class AllApi:NSObject {
                             }
                         }
                     }else{
-                        addLog(text: "get Quit Json To Upload response - error")
+                        addLog(text: "error in get Quit Json To Upload response - data nil:- statusCode is \(httpResponse.statusCode)")
                     }
                     
                 }
-                //            isUploadingPopupResponse = false
+                
                 if error != nil {
                     addLog(text: "get Quit Json To Upload response - error - \(error!.localizedDescription)")
                     completionHandler(jsonResult)
@@ -1124,9 +1371,7 @@ class AllApi:NSObject {
                 // print(response)
                 if let httpResponse = response as? HTTPURLResponse {
                     if httpResponse.statusCode == 200{
-                        
-                        
-                        
+
                         if data != nil{
                             addLog(text: "get Uninstall Json To Upload response - success")
                             let status = String(data: data!, encoding: .utf8)!
@@ -1138,11 +1383,11 @@ class AllApi:NSObject {
                             }
                         }
                     }else{
-                        addLog(text: "get Uninstall Json To Upload response - data nil")
+                        addLog(text: "error in get Uninstall Json To Upload response - data nil:- statusCode is \(httpResponse.statusCode)")
                     }
                     
                 }
-                //            isUploadingPopupResponse = false
+                
                 if error != nil {
                     addLog(text: "get Uninstall Json To Upload response - error - \(error!.localizedDescription)")
                     completionHandler(jsonResult)
@@ -1195,7 +1440,7 @@ class AllApi:NSObject {
                         return
                     }
                 }
-                //            isUploadingPopupResponse = false
+                
                 if error != nil {
                     completionHandler(nil)
                     return
@@ -1211,288 +1456,300 @@ class AllApi:NSObject {
     }
     
     func addFocusMode(focusType:[String:Any], completionHandler: @escaping(_ newDic:NSDictionary?) -> ()){
-        if appdelegate!.credential != nil{
-            // Valid credentials; you can access token properties such as `idToken`, `accessToken`.
-            //        print(credentials)
+        addLog(text: "api-> addFocusMode:- focus-mode")
+        
+        appdelegate!.credentialsManager.credentials {credentialsInfo in
+            addLog(text: "get updated credentialsInfo from credentialsManager")
             
-            let responsePath = "https://api.focusbear.io/focus-mode"
-            if let myUrl = NSURL(string: responsePath){
-                addLog(text: "api call addFocusMode \(myUrl)")
-                let token = appdelegate!.credential!.accessToken
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+            
+            if appdelegate!.credential != nil{
                 
-                
-                let request = NSMutableURLRequest(url:myUrl as URL);
-                request.httpMethod = "POST";
-                request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-                
-                
-                var json: [String: Any] = [
-                    "id":focusType["id"] as? String ?? "",
-                    "allowed_urls":focusType["allowed_urls"] as? [String] ?? [],
-                    "allowed_apps":focusType["allowed_apps"] as? [String] ?? [],
-                    "name":focusType["name"] as? String ?? "",
-                    "metadata": [:]
-                ]
-                
-                var dic = focusType
-                dic.removeValue(forKey: "name")
-                dic.removeValue(forKey: "id")
-                json["metadata"] = dic
-                
-                
-                
-                
-
-                
-                let jsonData = try? JSONSerialization.data(withJSONObject: json)
-                request.httpBody = jsonData
-                let task = URLSession.shared.dataTask(with: request as URLRequest) {
-                    data, response, error in
+                let responsePath = "https://api.focusbear.io/focus-mode"
+                if let myUrl = NSURL(string: responsePath){
+                    addLog(text: "api call addFocusMode \(myUrl)")
+                    let token = appdelegate!.credential!.accessToken
                     
-                    if let httpResponse = response as? HTTPURLResponse{
-                        if httpResponse.statusCode == 201{ //it means it is right
-                            
-                            if data != nil{
-                                do {
-                                    if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
-                                        
-                                        
-                                       // if let id = jsonResult.value(forKey: "id") as? String{
+                    
+                    let request = NSMutableURLRequest(url:myUrl as URL);
+                    request.httpMethod = "POST";
+                    request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+                    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                    
+                    
+                    var json: [String: Any] = [
+                        "id":focusType["id"] as? String ?? "",
+                        "allowed_urls":focusType["allowed_urls"] as? [String] ?? [],
+                        "allowed_apps":focusType["allowed_apps"] as? [String] ?? [],
+                        "name":focusType["name"] as? String ?? "",
+                        "metadata": [:]
+                    ]
+                    
+                    var dic = focusType
+                    dic.removeValue(forKey: "name")
+                    dic.removeValue(forKey: "id")
+                    json["metadata"] = dic
+                    
+                    
+                    
+                    
+                    
+                    
+                    let jsonData = try? JSONSerialization.data(withJSONObject: json)
+                    request.httpBody = jsonData
+                    let task = URLSession.shared.dataTask(with: request as URLRequest) {
+                        data, response, error in
+                        
+                        if let httpResponse = response as? HTTPURLResponse{
+                            if httpResponse.statusCode == 201{ //it means it is right
+                                
+                                if data != nil{
+                                    do {
+                                        if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
                                             
-                                        addLog(text: "api call addFocusMode success")
+                                            addLog(text: "api call addFocusMode success")
                                             completionHandler(jsonResult)
                                             return
-                                            
-                                      //  }
+                                        }
                                         
+                                    }catch{
+                                        addLog(text: "api call addFocusMode error:- \(error.localizedDescription)")
+                                        completionHandler(nil)
+                                        print(error)
+                                        return;
                                     }
-                                    
-                                }catch{
-                                    addLog(text: "api call addFocusMode error:- \(error.localizedDescription)")
-                                    completionHandler(nil)
-                                    print(error)
-                                    return;
                                 }
+                            }else{
+                                addLog(text: "api call addFocusMode error:- statusCode is \(httpResponse.statusCode)")
+                                addLog(text: "accessToken is:- \(token)")
+                                completionHandler(nil)
+                                return
                             }
-                        }else{
+                        }
+                        if error != nil {
+                            addLog(text: "api call addFocusMode error:- \(error!.localizedDescription)")
                             completionHandler(nil)
                             return
                         }
-                    }
-                    //            isUploadingPopupResponse = false
-                    if error != nil {
-                        addLog(text: "api call addFocusMode error:- \(error!.localizedDescription)")
                         completionHandler(nil)
                         return
                     }
-                    completionHandler(nil)
-                    return
+                    
+                    task.resume()
+                }else{
+                    
                 }
                 
-                task.resume()
             }else{
-           
+                completionHandler(nil)
             }
-            
-        }else{
-            completionHandler(nil)
         }
     }
     func deleteFocusMode(id:String, completionHandler: @escaping(_ isDeleted:Bool) -> ()){
-        if appdelegate!.credential != nil{
-            // Valid credentials; you can access token properties such as `idToken`, `accessToken`.
-            //        print(credentials)
+        addLog(text: "api-> deleteFocusMode:- focus-mode")
+        
+        appdelegate!.credentialsManager.credentials {credentialsInfo in
+            addLog(text: "get updated credentialsInfo from credentialsManager")
             
-            let responsePath = "https://api.focusbear.io/focus-mode?id=\(id)"
-            if let myUrl = NSURL(string: responsePath){
-                addLog(text: "api call deleteFocusMode \(myUrl)")
-                let token = appdelegate!.credential!.accessToken
-                
-                
-                let request = NSMutableURLRequest(url:myUrl as URL);
-                request.httpMethod = "DELETE";
-                request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-//                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-
-                let task = URLSession.shared.dataTask(with: request as URLRequest) {
-                    data, response, error in
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+            
+            if appdelegate!.credential != nil{
+                let responsePath = "https://api.focusbear.io/focus-mode?id=\(id)"
+                if let myUrl = NSURL(string: responsePath){
+                    addLog(text: "api call deleteFocusMode \(myUrl)")
+                    let token = appdelegate!.credential!.accessToken
                     
-                    if let httpResponse = response as? HTTPURLResponse{
-                        if httpResponse.statusCode == 200{ //it means it is right
-                            addLog(text: "api call deleteFocusMode success")
-                            completionHandler(true)
-                            return
-                            
-                        }else{
+                    
+                    let request = NSMutableURLRequest(url:myUrl as URL);
+                    request.httpMethod = "DELETE";
+                    request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+                    //                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                    
+                    let task = URLSession.shared.dataTask(with: request as URLRequest) {
+                        data, response, error in
+                        
+                        if let httpResponse = response as? HTTPURLResponse{
+                            if httpResponse.statusCode == 200{ //it means it is right
+                                addLog(text: "api call deleteFocusMode success")
+                                completionHandler(true)
+                                return
+                                
+                            }else{
+                                addLog(text: "api call editFocusMode error:- statusCode is \(httpResponse.statusCode)")
+                                addLog(text: "accessToken is:- \(token)")
+                                completionHandler(false)
+                                return
+                            }
+                        }
+                        if error != nil {
+                            addLog(text: "api call deleteFocusMode error:- \(error!.localizedDescription)")
                             completionHandler(false)
                             return
                         }
-                    }
-                    //            isUploadingPopupResponse = false
-                    if error != nil {
-                        addLog(text: "api call deleteFocusMode error:- \(error!.localizedDescription)")
                         completionHandler(false)
                         return
                     }
+                    
+                    task.resume()
+                }else{
                     completionHandler(false)
                     return
                 }
-                
-                task.resume()
             }else{
                 completionHandler(false)
-                return
             }
-        }else{
-            completionHandler(false)
         }
     }
     
     func editFocusMode(focusType:[String:Any], completionHandler: @escaping(_ newDic:NSDictionary?) -> ()){
-        if appdelegate!.credential != nil{
-
-            let responsePath = "https://api.focusbear.io/focus-mode/\(focusType["id"] as? String ?? "")"
-            if let myUrl = NSURL(string: responsePath){
-                addLog(text: "api call editFocusMode \(myUrl)")
-                let token = appdelegate!.credential!.accessToken
+        addLog(text: "api-> editFocusMode:- focus-mode")
+        
+        appdelegate!.credentialsManager.credentials {credentialsInfo in
+            addLog(text: "get updated credentialsInfo from credentialsManager")
+            
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+            
+            if appdelegate!.credential != nil{
                 
-                
-                let request = NSMutableURLRequest(url:myUrl as URL);
-                request.httpMethod = "PATCH";
-                request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-                
-                
-                var json: [String: Any] = [
-                    "allowed_urls":focusType["allowed_urls"] as? [String] ?? [],
-                    "allowed_apps":focusType["allowed_apps"] as? [String] ?? [],
-                    "name":focusType["name"] as? String ?? "",
-                    "metadata": [:]
-                ]
-                
-                var dic = focusType
-
-                dic.removeValue(forKey: "name")
-                json["metadata"] = dic
-                
-                
-                
-                
-
-                
-                let jsonData = try? JSONSerialization.data(withJSONObject: json)
-                request.httpBody = jsonData
-                let task = URLSession.shared.dataTask(with: request as URLRequest) {
-                    data, response, error in
+                let responsePath = "https://api.focusbear.io/focus-mode/\(focusType["id"] as? String ?? "")"
+                if let myUrl = NSURL(string: responsePath){
+                    addLog(text: "api call editFocusMode \(myUrl)")
+                    let token = appdelegate!.credential!.accessToken
                     
-                    if let httpResponse = response as? HTTPURLResponse{
-                        if httpResponse.statusCode == 200{ //it means it is right
-                            
-                            if data != nil{
-                                do {
-                                    if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
-                                        
-                                        
-                                       // if let id = jsonResult.value(forKey: "id") as? String{
-                                            
-                                        addLog(text: "api call editFocusMode success")
+                    
+                    let request = NSMutableURLRequest(url:myUrl as URL);
+                    request.httpMethod = "PATCH";
+                    request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+                    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                    
+                    
+                    var json: [String: Any] = [
+                        "allowed_urls":focusType["allowed_urls"] as? [String] ?? [],
+                        "allowed_apps":focusType["allowed_apps"] as? [String] ?? [],
+                        "name":focusType["name"] as? String ?? "",
+                        "metadata": [:]
+                    ]
+                    
+                    var dic = focusType
+                    
+                    dic.removeValue(forKey: "name")
+                    json["metadata"] = dic
+                    
+                    let jsonData = try? JSONSerialization.data(withJSONObject: json)
+                    request.httpBody = jsonData
+                    let task = URLSession.shared.dataTask(with: request as URLRequest) {
+                        data, response, error in
+                        
+                        if let httpResponse = response as? HTTPURLResponse{
+                            if httpResponse.statusCode == 200{ //it means it is right
+                                
+                                if data != nil{
+                                    do {
+                                        if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
+                                            addLog(text: "api call editFocusMode success")
                                             completionHandler(jsonResult)
                                             return
-                                            
-                                      //  }
+                                        }
                                         
+                                    }catch{
+                                        addLog(text: "api call editFocusMode error:- \(error.localizedDescription)")
+                                        completionHandler(nil)
+                                        print(error)
+                                        return;
                                     }
-                                    
-                                }catch{
-                                    addLog(text: "api call editFocusMode error:- \(error.localizedDescription)")
-                                    completionHandler(nil)
-                                    print(error)
-                                    return;
                                 }
+                            }else{
+                                addLog(text: "api call editFocusMode error:- statusCode is \(httpResponse.statusCode)")
+                                addLog(text: "accessToken is:- \(token)")
+                                completionHandler(nil)
+                                return
                             }
-                        }else{
+                        }
+                        
+                        if error != nil {
+                            addLog(text: "api call editFocusMode error:- \(error!.localizedDescription)")
                             completionHandler(nil)
                             return
                         }
-                    }
-                    //            isUploadingPopupResponse = false
-                    if error != nil {
-                        addLog(text: "api call editFocusMode error:- \(error!.localizedDescription)")
                         completionHandler(nil)
                         return
                     }
+                    
+                    task.resume()
+                }else{
                     completionHandler(nil)
                     return
                 }
                 
-                task.resume()
             }else{
                 completionHandler(nil)
                 return
             }
-            
-        }else{
-            completionHandler(nil)
-            return
         }
     }
     
     func startFocusMode(id:String,intention:String, start_time:Date, finish_time:Date, completionHandler: @escaping(_ newDic:NSDictionary?) -> ()){
-        if appdelegate!.credential != nil{
+        addLog(text: "api-> startFocusMode:- focus-mode/id/start")
+        
+        appdelegate!.credentialsManager.credentials {credentialsInfo in
+            addLog(text: "get updated credentialsInfo from credentialsManager")
             
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
             
-            // Valid credentials; you can access token properties such as `idToken`, `accessToken`.
-            //        print(credentials)
-            
-            let responsePath = "https://api.focusbear.io/focus-mode/\(id)/start"
-            if let myUrl = NSURL(string: responsePath){
-                addLog(text: "api call startFocusMode \(myUrl)")
-                let token = appdelegate!.credential!.accessToken
+            if appdelegate!.credential != nil{
                 
-                
-                let request = NSMutableURLRequest(url:myUrl as URL);
-                request.httpMethod = "POST";
-                request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-                
-                
-                var json: [String: Any] = [
-                    "intention":intention,
-                    "finish_time":getStringFromDateInUtc(date: finish_time, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"),
-                    "start_time":getStringFromDateInUtc(date: start_time, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
-                ]
-
-                
-
-                
-                let jsonData = try? JSONSerialization.data(withJSONObject: json)
-                request.httpBody = jsonData
-                let task = URLSession.shared.dataTask(with: request as URLRequest) {
-                    data, response, error in
+                let responsePath = "https://api.focusbear.io/focus-mode/\(id)/start"
+                if let myUrl = NSURL(string: responsePath){
+                    addLog(text: "api call startFocusMode \(myUrl)")
+                    let token = appdelegate!.credential!.accessToken
                     
-                    if let httpResponse = response as? HTTPURLResponse{
-                         //it means it is right
+                    
+                    let request = NSMutableURLRequest(url:myUrl as URL);
+                    request.httpMethod = "POST";
+                    request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+                    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                    
+                    
+                    let json: [String: Any] = [
+                        "intention":intention,
+                        "finish_time":getStringFromDateInUtc(date: finish_time, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"),
+                        "start_time":getStringFromDateInUtc(date: start_time, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+                    ]
+                    
+                    
+                    
+                    
+                    let jsonData = try? JSONSerialization.data(withJSONObject: json)
+                    request.httpBody = jsonData
+                    let task = URLSession.shared.dataTask(with: request as URLRequest) {
+                        data, response, error in
+                        
+                        if let httpResponse = response as? HTTPURLResponse{
+                            //it means it is right
                             
                             if data != nil{
                                 do {
                                     if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
                                         
                                         
-                                       // if let id = jsonResult.value(forKey: "id") as? String{
-                                            
+                                        // if let id = jsonResult.value(forKey: "id") as? String{
+                                        
                                         if httpResponse.statusCode == 201{
                                             addLog(text: "api call startFocusMode success")
                                             completionHandler(jsonResult)
                                             return
                                         }else{
-                                            addLog(text: "api call startFocusMode error")
+                                            addLog(text: "api call startFocusMode Api error:- statusCode is \(httpResponse.statusCode)")
+                                            addLog(text: "accessToken is:- \(token)")
+                                            if httpResponse.statusCode == 400{//it means may be a focus mode is already running so complete it
+                                                finishOldFocusModeIfRunning(startNewFocusId: id, intention: intention, start_time: start_time, finish_time: finish_time)
+                                            }
                                             completionHandler(nil)
                                             return
                                         }
-                                            
-                                            
-                                      //  }
+                                        
+                                        
+                                        //  }
                                         
                                     }
                                     
@@ -1503,87 +1760,91 @@ class AllApi:NSObject {
                                     return;
                                 }
                             }
-//                        }else{
-//                            completionHandler(nil)
-//                            return
-//                        }
-                    }
-                    //            isUploadingPopupResponse = false
-                    if error != nil {
-                        addLog(text: "api call startFocusMode error:- \(error!.localizedDescription)")
+                            //                        }else{
+                            //                            completionHandler(nil)
+                            //                            return
+                            //                        }
+                        }
+                        if error != nil {
+                            addLog(text: "api call startFocusMode error:- \(error!.localizedDescription)")
+                            completionHandler(nil)
+                            return
+                        }
                         completionHandler(nil)
                         return
                     }
+                    
+                    task.resume()
+                }else{
                     completionHandler(nil)
                     return
                 }
                 
-                task.resume()
             }else{
                 completionHandler(nil)
                 return
             }
-            
-        }else{
-            completionHandler(nil)
-            return
         }
     }
     
     func finishFocusMode(id:String,achievements:String, distractions:String, finish_time:Date, completionHandler: @escaping(_ newDic:NSDictionary?) -> ()){
-        if appdelegate!.credential != nil{
+        addLog(text: "api-> finishFocusMode:- focus-mode/id/finish")
+        
+        appdelegate!.credentialsManager.credentials {credentialsInfo in
+            addLog(text: "get updated credentialsInfo from credentialsManager")
             
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
             
-            // Valid credentials; you can access token properties such as `idToken`, `accessToken`.
-            //        print(credentials)
-            
-            let responsePath = "https://api.focusbear.io/focus-mode/\(id)/finish"
-            if let myUrl = NSURL(string: responsePath){
-                addLog(text: "api call finishFocusMode \(myUrl)")
-                let token = appdelegate!.credential!.accessToken
+            if appdelegate!.credential != nil{
                 
-                
-                let request = NSMutableURLRequest(url:myUrl as URL);
-                request.httpMethod = "POST";
-                request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-                
-                
-                var json: [String: Any] = [
-                    "achievements":achievements,
-                    "distractions":distractions,
-                    "finish_time":getStringFromDateInUtc(date: finish_time, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
-                ]
-
-                
-
-                
-                let jsonData = try? JSONSerialization.data(withJSONObject: json)
-                request.httpBody = jsonData
-                let task = URLSession.shared.dataTask(with: request as URLRequest) {
-                    data, response, error in
+                let responsePath = "https://api.focusbear.io/focus-mode/\(id)/finish"
+                if let myUrl = NSURL(string: responsePath){
+                    addLog(text: "api call finishFocusMode \(myUrl)")
+                    let token = appdelegate!.credential!.accessToken
                     
-                    if let httpResponse = response as? HTTPURLResponse{
-                        //it means it is right
+                    
+                    let request = NSMutableURLRequest(url:myUrl as URL);
+                    request.httpMethod = "POST";
+                    request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+                    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                    
+                    
+                    var json: [String: Any] = [
+                        "achievements":achievements,
+                        "distractions":distractions,
+                        "finish_time":getStringFromDateInUtc(date: finish_time, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+                    ]
+                    
+                    
+                    
+                    
+                    let jsonData = try? JSONSerialization.data(withJSONObject: json)
+                    request.httpBody = jsonData
+                    let task = URLSession.shared.dataTask(with: request as URLRequest) {
+                        data, response, error in
+                        
+                        if let httpResponse = response as? HTTPURLResponse{
+                            //it means it is right
                             
                             if data != nil{
                                 do {
                                     if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
                                         
                                         
-                                       // if let id = jsonResult.value(forKey: "id") as? String{
+                                        // if let id = jsonResult.value(forKey: "id") as? String{
                                         if httpResponse.statusCode == 201{
                                             addLog(text: "api call finishFocusMode success")
                                             completionHandler(jsonResult)
                                             return
                                         }else{
-                                            addLog(text: "api call finishFocusMode error")
+                                            addLog(text: "api call finishFocusMode Api error:- statusCode is \(httpResponse.statusCode)")
+                                            addLog(text: "accessToken is:- \(token)")
                                             completionHandler(nil)
                                             return
                                         }
-                                            
-                                            
-                                      //  }
+                                        
+                                        
+                                        //  }
                                         
                                     }
                                     
@@ -1594,34 +1855,38 @@ class AllApi:NSObject {
                                     return;
                                 }
                             }
-//                        }else{
-//                            completionHandler(nil)
-//                            return
-//                        }
-                    }
-                    //            isUploadingPopupResponse = false
-                    if error != nil {
-                        addLog(text: "api call finishFocusMode error:- \(error!.localizedDescription)")
+                            //                        }else{
+                            //                            completionHandler(nil)
+                            //                            return
+                            //                        }
+                        }
+                        if error != nil {
+                            addLog(text: "api call finishFocusMode error:- \(error!.localizedDescription)")
+                            completionHandler(nil)
+                            return
+                        }
                         completionHandler(nil)
                         return
                     }
+                    
+                    task.resume()
+                }else{
                     completionHandler(nil)
                     return
                 }
                 
-                task.resume()
             }else{
                 completionHandler(nil)
                 return
             }
-            
-        }else{
-            completionHandler(nil)
-            return
         }
     }
     
 }
+
+
+
+
 
 
 

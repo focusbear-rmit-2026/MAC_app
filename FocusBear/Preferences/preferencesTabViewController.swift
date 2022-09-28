@@ -72,10 +72,6 @@ class preferencesTabViewController: NSTabViewController {
                 return false
             }
         }
-//        let id = tabViewItem?.identifier as? String ?? ""
-        //        if id == "Focus" || id == "Settings" || id == "General"{
-
-        //        }
         return true
     }
 }

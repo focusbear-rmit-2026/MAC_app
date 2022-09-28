@@ -22,32 +22,17 @@
 		8F3F894528BA00A0003E5EA4 /* SUAutomaticUpdateAlert.strings in Resources */ = {isa = PBXBuildFile; fileRef = 8F3F893E28BA009F003E5EA4 /* SUAutomaticUpdateAlert.strings */; };
 		8F3F894628BA00A0003E5EA4 /* SUUpdatePermissionPrompt.strings in Resources */ = {isa = PBXBuildFile; fileRef = 8F3F894028BA009F003E5EA4 /* SUUpdatePermissionPrompt.strings */; };
 		8F3F894728BA00A0003E5EA4 /* SUUpdateAlert.strings in Resources */ = {isa = PBXBuildFile; fileRef = 8F3F894228BA009F003E5EA4 /* SUUpdateAlert.strings */; };
-		8F461AFA28C0EB6C0082B0A2 /* Completing a Habit_2.2.wav in Resources */ = {isa = PBXBuildFile; fileRef = 8F461AF528C0EB6B0082B0A2 /* Completing a Habit_2.2.wav */; };
 		8F461AFB28C0EB6C0082B0A2 /* Completing a Habit_1.wav in Resources */ = {isa = PBXBuildFile; fileRef = 8F461AF628C0EB6B0082B0A2 /* Completing a Habit_1.wav */; };
-		8F461AFC28C0EB6C0082B0A2 /* Completing a Habit_2.1.wav in Resources */ = {isa = PBXBuildFile; fileRef = 8F461AF728C0EB6B0082B0A2 /* Completing a Habit_2.1.wav */; };
 		8F461AFD28C0EB6C0082B0A2 /* Completing a Habit_4.wav in Resources */ = {isa = PBXBuildFile; fileRef = 8F461AF828C0EB6B0082B0A2 /* Completing a Habit_4.wav */; };
-		8F461AFE28C0EB6C0082B0A2 /* Completing a Habit_3.wav in Resources */ = {isa = PBXBuildFile; fileRef = 8F461AF928C0EB6B0082B0A2 /* Completing a Habit_3.wav */; };
-		8F461B0828C0EBBE0082B0A2 /* Completing the Whole Evening Routine_1.wav in Resources */ = {isa = PBXBuildFile; fileRef = 8F461B0128C0EBBC0082B0A2 /* Completing the Whole Evening Routine_1.wav */; };
 		8F461B0928C0EBBE0082B0A2 /* Completing the Whole Evening Routine_5.wav in Resources */ = {isa = PBXBuildFile; fileRef = 8F461B0228C0EBBC0082B0A2 /* Completing the Whole Evening Routine_5.wav */; };
-		8F461B0A28C0EBBE0082B0A2 /* Completing the Whole Evening Routine_3.wav in Resources */ = {isa = PBXBuildFile; fileRef = 8F461B0328C0EBBD0082B0A2 /* Completing the Whole Evening Routine_3.wav */; };
 		8F461B0B28C0EBBE0082B0A2 /* Completing the Whole Evening Routine_7.wav in Resources */ = {isa = PBXBuildFile; fileRef = 8F461B0428C0EBBD0082B0A2 /* Completing the Whole Evening Routine_7.wav */; };
-		8F461B0C28C0EBBE0082B0A2 /* Completing the Whole Evening Routine_2.wav in Resources */ = {isa = PBXBuildFile; fileRef = 8F461B0528C0EBBD0082B0A2 /* Completing the Whole Evening Routine_2.wav */; };
-		8F461B0D28C0EBBE0082B0A2 /* Completing the Whole Evening Routine_6.wav in Resources */ = {isa = PBXBuildFile; fileRef = 8F461B0628C0EBBD0082B0A2 /* Completing the Whole Evening Routine_6.wav */; };
 		8F461B0E28C0EBBE0082B0A2 /* Completing the Whole Evening Routine_4.wav in Resources */ = {isa = PBXBuildFile; fileRef = 8F461B0728C0EBBE0082B0A2 /* Completing the Whole Evening Routine_4.wav */; };
-		8F461B1628C0EBE90082B0A2 /* Completing the Whole Morning Routine_3.2.wav in Resources */ = {isa = PBXBuildFile; fileRef = 8F461B1028C0EBE50082B0A2 /* Completing the Whole Morning Routine_3.2.wav */; };
-		8F461B1728C0EBE90082B0A2 /* Completing the Whole Morning Routine_2.1.wav in Resources */ = {isa = PBXBuildFile; fileRef = 8F461B1128C0EBE60082B0A2 /* Completing the Whole Morning Routine_2.1.wav */; };
 		8F461B1828C0EBE90082B0A2 /* Completing the Whole Morning Routine_3.1.wav in Resources */ = {isa = PBXBuildFile; fileRef = 8F461B1228C0EBE60082B0A2 /* Completing the Whole Morning Routine_3.1.wav */; };
-		8F461B1928C0EBE90082B0A2 /* Completing the Whole Morning Routine_4.wav in Resources */ = {isa = PBXBuildFile; fileRef = 8F461B1328C0EBE70082B0A2 /* Completing the Whole Morning Routine_4.wav */; };
 		8F461B1A28C0EBE90082B0A2 /* Completing the Whole Morning Routine_2.2.wav in Resources */ = {isa = PBXBuildFile; fileRef = 8F461B1428C0EBE80082B0A2 /* Completing the Whole Morning Routine_2.2.wav */; };
-		8F461B1B28C0EBE90082B0A2 /* Completing the Whole Morning Routine_1.wav in Resources */ = {isa = PBXBuildFile; fileRef = 8F461B1528C0EBE80082B0A2 /* Completing the Whole Morning Routine_1.wav */; };
 		8F461B2028C0EDD60082B0A2 /* Start Focus Button_1.wav in Resources */ = {isa = PBXBuildFile; fileRef = 8F461B1D28C0EDD50082B0A2 /* Start Focus Button_1.wav */; };
 		8F461B2128C0EDD60082B0A2 /* Start Focus Button_2.wav in Resources */ = {isa = PBXBuildFile; fileRef = 8F461B1E28C0EDD50082B0A2 /* Start Focus Button_2.wav */; };
-		8F461B2228C0EDD60082B0A2 /* Start Focus Button_3.wav in Resources */ = {isa = PBXBuildFile; fileRef = 8F461B1F28C0EDD60082B0A2 /* Start Focus Button_3.wav */; };
-		8F461B2A28C0EE490082B0A2 /* Starting the Morning:Evening Routine_3.1.wav in Resources */ = {isa = PBXBuildFile; fileRef = 8F461B2428C0EE480082B0A2 /* Starting the Morning:Evening Routine_3.1.wav */; };
 		8F461B2B28C0EE490082B0A2 /* Starting the Morning:Evening Routine_4.wav in Resources */ = {isa = PBXBuildFile; fileRef = 8F461B2528C0EE480082B0A2 /* Starting the Morning:Evening Routine_4.wav */; };
-		8F461B2C28C0EE490082B0A2 /* Starting the Morning:Evening Routine_3.2.wav in Resources */ = {isa = PBXBuildFile; fileRef = 8F461B2628C0EE480082B0A2 /* Starting the Morning:Evening Routine_3.2.wav */; };
 		8F461B2D28C0EE490082B0A2 /* Starting the Morning:Evening Routine_5.wav in Resources */ = {isa = PBXBuildFile; fileRef = 8F461B2728C0EE490082B0A2 /* Starting the Morning:Evening Routine_5.wav */; };
-		8F461B2E28C0EE490082B0A2 /* Starting the Morning:Evening Routine_1.wav in Resources */ = {isa = PBXBuildFile; fileRef = 8F461B2828C0EE490082B0A2 /* Starting the Morning:Evening Routine_1.wav */; };
 		8F461B2F28C0EE490082B0A2 /* Starting the Morning:Evening Routine_2.wav in Resources */ = {isa = PBXBuildFile; fileRef = 8F461B2928C0EE490082B0A2 /* Starting the Morning:Evening Routine_2.wav */; };
 		8F49A83327DC74980016845E /* Finger-and-Sign-Bear-250px.gif in Resources */ = {isa = PBXBuildFile; fileRef = 8F49A83227DC74980016845E /* Finger-and-Sign-Bear-250px.gif */; };
 		8F4BD8C427883FBE00ABAEF5 /* NSEventModifierFlags+HotKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F4BD8BF27883FBE00ABAEF5 /* NSEventModifierFlags+HotKey.swift */; };
@@ -55,15 +40,20 @@
 		8F4BD8C627883FBE00ABAEF5 /* Key.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F4BD8C127883FBE00ABAEF5 /* Key.swift */; };
 		8F4BD8C727883FBE00ABAEF5 /* HotKeysController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F4BD8C227883FBE00ABAEF5 /* HotKeysController.swift */; };
 		8F4BD8C827883FBE00ABAEF5 /* HotKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F4BD8C327883FBE00ABAEF5 /* HotKey.swift */; };
+		8F51855628D4402100900C1C /* fenwick outline.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 8F51855528D43FDF00900C1C /* fenwick outline.ttf */; };
 		8F51EFB727E0741700EFF0A8 /* blockedUrlsVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F51EFB627E0741700EFF0A8 /* blockedUrlsVc.swift */; };
 		8F54E92E2785662A00CC4E7B /* selectJsonVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F54E92D2785662A00CC4E7B /* selectJsonVc.swift */; };
 		8F5596B42805B49E0044DF28 /* quitCountDownVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F5596B32805B49E0044DF28 /* quitCountDownVc.swift */; };
 		8F6138B628B7698300A45B1A /* visualizeInstructionsVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F6138B528B7698300A45B1A /* visualizeInstructionsVc.swift */; };
 		8F6138B828B7AA5300A45B1A /* askPostponeVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F6138B728B7AA5300A45B1A /* askPostponeVc.swift */; };
+		8F639C0D28D1C9AA006C41C4 /* askLogInVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F639C0C28D1C9AA006C41C4 /* askLogInVc.swift */; };
+		8F657D7728DF0723008A4E6E /* upgradeNowVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F657D7628DF0723008A4E6E /* upgradeNowVc.swift */; };
+		8F657D7928DF094E008A4E6E /* welcomeOnboardingVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F657D7828DF094E008A4E6E /* welcomeOnboardingVc.swift */; };
+		8F657D7B28DF35D7008A4E6E /* onboardingPostponeVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F657D7A28DF35D7008A4E6E /* onboardingPostponeVc.swift */; };
 		8F6C10F427BD37F00013972F /* menuViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F6C10F327BD37F00013972F /* menuViewController.swift */; };
+		8F70D64528E1C6A600895B3F /* customMessageVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F70D64428E1C6A600895B3F /* customMessageVc.swift */; };
 		8F7DCC002796B55800EE3282 /* config.json in Resources */ = {isa = PBXBuildFile; fileRef = 8F7DCBFF2796B55800EE3282 /* config.json */; };
 		8F7DCC032796E8D200EE3282 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8F7DCC022796E8D200EE3282 /* WebKit.framework */; };
-		8F86F186280EC290006EB8C3 /* block.html in Resources */ = {isa = PBXBuildFile; fileRef = 8F86F185280EC290006EB8C3 /* block.html */; };
 		8F8A53F527AA4ABB00A01E2D /* Waking up _ SMall.gif in Resources */ = {isa = PBXBuildFile; fileRef = 8F8A53F127AA4ABB00A01E2D /* Waking up _ SMall.gif */; };
 		8F8A53F627AA4ABB00A01E2D /* Crying_small.gif in Resources */ = {isa = PBXBuildFile; fileRef = 8F8A53F227AA4ABB00A01E2D /* Crying_small.gif */; };
 		8F8A53F727AA4ABB00A01E2D /* Yawn_small.gif in Resources */ = {isa = PBXBuildFile; fileRef = 8F8A53F327AA4ABB00A01E2D /* Yawn_small.gif */; };
@@ -73,11 +63,11 @@
 		8F9044A1280454D300563F87 /* discourageDefaultFocusVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F9044A0280454D300563F87 /* discourageDefaultFocusVc.swift */; };
 		8F92E88427BF65AF0085AF8C /* addWebUrlVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F92E88327BF65AF0085AF8C /* addWebUrlVc.swift */; };
 		8F92E88627BF8B340085AF8C /* addFocusTypeVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F92E88527BF8B340085AF8C /* addFocusTypeVc.swift */; };
+		8F937D9828D88AC10053A42B /* preferencesVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F937D9728D88AC10053A42B /* preferencesVc.swift */; };
 		8F93BE5D27CC92CE004FA0BE /* focusSummaryVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F93BE5C27CC92CE004FA0BE /* focusSummaryVc.swift */; };
 		8F93BE6027CCA196004FA0BE /* abortingFocusMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F93BE5F27CCA196004FA0BE /* abortingFocusMode.swift */; };
 		8F94EF892836094400355E66 /* rememberNextHabitVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F94EF882836094400355E66 /* rememberNextHabitVc.swift */; };
 		8F98294F2806976B00B17414 /* quittingConfirmVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F98294E2806976B00B17414 /* quittingConfirmVc.swift */; };
-		8F98295628070F4A00B17414 /* logo.png in Resources */ = {isa = PBXBuildFile; fileRef = 8F98295528070F4A00B17414 /* logo.png */; };
 		8F9A5A9627885A6D009121E3 /* abortingCountDownVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F9A5A9527885A6D009121E3 /* abortingCountDownVc.swift */; };
 		8F9A5A98278863B9009121E3 /* abortingConfirmVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F9A5A97278863B9009121E3 /* abortingConfirmVc.swift */; };
 		8F9A5A9A27887889009121E3 /* abortDoneVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F9A5A9927887889009121E3 /* abortDoneVc.swift */; };
@@ -121,8 +111,8 @@
 		8FB84AEE284B82AA0075180B /* GraphTime.html in Resources */ = {isa = PBXBuildFile; fileRef = 8FB84AEC284B82AA0075180B /* GraphTime.html */; };
 		8FB84AF0284DD1840075180B /* gifOpenSettings.gif in Resources */ = {isa = PBXBuildFile; fileRef = 8FB84AEF284DD1830075180B /* gifOpenSettings.gif */; };
 		8FB84AF2284DE2550075180B /* config-es.json in Resources */ = {isa = PBXBuildFile; fileRef = 8FB84AF1284DE2550075180B /* config-es.json */; };
-		8FCD9F1627929B660060E73D /* everyActivity.wav in Resources */ = {isa = PBXBuildFile; fileRef = 8FCD9F1527929B660060E73D /* everyActivity.wav */; };
-		8FCD9F1827929BC10060E73D /* afterMorningRoutine.wav in Resources */ = {isa = PBXBuildFile; fileRef = 8FCD9F1727929BC10060E73D /* afterMorningRoutine.wav */; };
+		8FC31BFC28C72AA600E2DD4C /* NewStoryboard.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 8FC31BFB28C72AA600E2DD4C /* NewStoryboard.storyboard */; };
+		8FC31BFE28C757B400E2DD4C /* brainDumpVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FC31BFD28C757B400E2DD4C /* brainDumpVc.swift */; };
 		8FD1053F27EEE44100B7728E /* Focus_BearTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FD1053E27EEE44100B7728E /* Focus_BearTests.swift */; };
 		8FD1054727EF1A3B00B7728E /* urlValidation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FD1054627EF1A3B00B7728E /* urlValidation.swift */; };
 		8FD1054B27EF221800B7728E /* validationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FD1054A27EF221800B7728E /* validationTest.swift */; };
@@ -148,6 +138,15 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		8F77575828DD96D9007A976D /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 7;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		8FE13DF727ED887200BD620A /* Embed Frameworks */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -179,32 +178,17 @@
 		8F3F893F28BA009F003E5EA4 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = SUAutomaticUpdateAlert.strings; sourceTree = "<group>"; };
 		8F3F894128BA009F003E5EA4 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = SUUpdatePermissionPrompt.strings; sourceTree = "<group>"; };
 		8F3F894328BA009F003E5EA4 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = SUUpdateAlert.strings; sourceTree = "<group>"; };
-		8F461AF528C0EB6B0082B0A2 /* Completing a Habit_2.2.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "Completing a Habit_2.2.wav"; sourceTree = "<group>"; };
 		8F461AF628C0EB6B0082B0A2 /* Completing a Habit_1.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "Completing a Habit_1.wav"; sourceTree = "<group>"; };
-		8F461AF728C0EB6B0082B0A2 /* Completing a Habit_2.1.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "Completing a Habit_2.1.wav"; sourceTree = "<group>"; };
 		8F461AF828C0EB6B0082B0A2 /* Completing a Habit_4.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "Completing a Habit_4.wav"; sourceTree = "<group>"; };
-		8F461AF928C0EB6B0082B0A2 /* Completing a Habit_3.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "Completing a Habit_3.wav"; sourceTree = "<group>"; };
-		8F461B0128C0EBBC0082B0A2 /* Completing the Whole Evening Routine_1.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "Completing the Whole Evening Routine_1.wav"; sourceTree = "<group>"; };
 		8F461B0228C0EBBC0082B0A2 /* Completing the Whole Evening Routine_5.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "Completing the Whole Evening Routine_5.wav"; sourceTree = "<group>"; };
-		8F461B0328C0EBBD0082B0A2 /* Completing the Whole Evening Routine_3.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "Completing the Whole Evening Routine_3.wav"; sourceTree = "<group>"; };
 		8F461B0428C0EBBD0082B0A2 /* Completing the Whole Evening Routine_7.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "Completing the Whole Evening Routine_7.wav"; sourceTree = "<group>"; };
-		8F461B0528C0EBBD0082B0A2 /* Completing the Whole Evening Routine_2.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "Completing the Whole Evening Routine_2.wav"; sourceTree = "<group>"; };
-		8F461B0628C0EBBD0082B0A2 /* Completing the Whole Evening Routine_6.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "Completing the Whole Evening Routine_6.wav"; sourceTree = "<group>"; };
 		8F461B0728C0EBBE0082B0A2 /* Completing the Whole Evening Routine_4.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "Completing the Whole Evening Routine_4.wav"; sourceTree = "<group>"; };
-		8F461B1028C0EBE50082B0A2 /* Completing the Whole Morning Routine_3.2.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "Completing the Whole Morning Routine_3.2.wav"; sourceTree = "<group>"; };
-		8F461B1128C0EBE60082B0A2 /* Completing the Whole Morning Routine_2.1.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "Completing the Whole Morning Routine_2.1.wav"; sourceTree = "<group>"; };
 		8F461B1228C0EBE60082B0A2 /* Completing the Whole Morning Routine_3.1.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "Completing the Whole Morning Routine_3.1.wav"; sourceTree = "<group>"; };
-		8F461B1328C0EBE70082B0A2 /* Completing the Whole Morning Routine_4.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "Completing the Whole Morning Routine_4.wav"; sourceTree = "<group>"; };
 		8F461B1428C0EBE80082B0A2 /* Completing the Whole Morning Routine_2.2.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "Completing the Whole Morning Routine_2.2.wav"; sourceTree = "<group>"; };
-		8F461B1528C0EBE80082B0A2 /* Completing the Whole Morning Routine_1.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "Completing the Whole Morning Routine_1.wav"; sourceTree = "<group>"; };
 		8F461B1D28C0EDD50082B0A2 /* Start Focus Button_1.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "Start Focus Button_1.wav"; sourceTree = "<group>"; };
 		8F461B1E28C0EDD50082B0A2 /* Start Focus Button_2.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "Start Focus Button_2.wav"; sourceTree = "<group>"; };
-		8F461B1F28C0EDD60082B0A2 /* Start Focus Button_3.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "Start Focus Button_3.wav"; sourceTree = "<group>"; };
-		8F461B2428C0EE480082B0A2 /* Starting the Morning:Evening Routine_3.1.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "Starting the Morning:Evening Routine_3.1.wav"; sourceTree = "<group>"; };
 		8F461B2528C0EE480082B0A2 /* Starting the Morning:Evening Routine_4.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "Starting the Morning:Evening Routine_4.wav"; sourceTree = "<group>"; };
-		8F461B2628C0EE480082B0A2 /* Starting the Morning:Evening Routine_3.2.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "Starting the Morning:Evening Routine_3.2.wav"; sourceTree = "<group>"; };
 		8F461B2728C0EE490082B0A2 /* Starting the Morning:Evening Routine_5.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "Starting the Morning:Evening Routine_5.wav"; sourceTree = "<group>"; };
-		8F461B2828C0EE490082B0A2 /* Starting the Morning:Evening Routine_1.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "Starting the Morning:Evening Routine_1.wav"; sourceTree = "<group>"; };
 		8F461B2928C0EE490082B0A2 /* Starting the Morning:Evening Routine_2.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "Starting the Morning:Evening Routine_2.wav"; sourceTree = "<group>"; };
 		8F49A83227DC74980016845E /* Finger-and-Sign-Bear-250px.gif */ = {isa = PBXFileReference; lastKnownFileType = image.gif; path = "Finger-and-Sign-Bear-250px.gif"; sourceTree = "<group>"; };
 		8F4BD8BF27883FBE00ABAEF5 /* NSEventModifierFlags+HotKey.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "NSEventModifierFlags+HotKey.swift"; sourceTree = "<group>"; };
@@ -212,17 +196,22 @@
 		8F4BD8C127883FBE00ABAEF5 /* Key.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Key.swift; sourceTree = "<group>"; };
 		8F4BD8C227883FBE00ABAEF5 /* HotKeysController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HotKeysController.swift; sourceTree = "<group>"; };
 		8F4BD8C327883FBE00ABAEF5 /* HotKey.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HotKey.swift; sourceTree = "<group>"; };
+		8F51855528D43FDF00900C1C /* fenwick outline.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "fenwick outline.ttf"; sourceTree = "<group>"; };
 		8F51EFB627E0741700EFF0A8 /* blockedUrlsVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = blockedUrlsVc.swift; sourceTree = "<group>"; };
 		8F54E92D2785662A00CC4E7B /* selectJsonVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = selectJsonVc.swift; sourceTree = "<group>"; };
 		8F5596B32805B49E0044DF28 /* quitCountDownVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = quitCountDownVc.swift; sourceTree = "<group>"; };
 		8F6138B528B7698300A45B1A /* visualizeInstructionsVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = visualizeInstructionsVc.swift; sourceTree = "<group>"; };
 		8F6138B728B7AA5300A45B1A /* askPostponeVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = askPostponeVc.swift; sourceTree = "<group>"; };
+		8F639C0C28D1C9AA006C41C4 /* askLogInVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = askLogInVc.swift; sourceTree = "<group>"; };
+		8F657D7628DF0723008A4E6E /* upgradeNowVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = upgradeNowVc.swift; sourceTree = "<group>"; };
+		8F657D7828DF094E008A4E6E /* welcomeOnboardingVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = welcomeOnboardingVc.swift; sourceTree = "<group>"; };
+		8F657D7A28DF35D7008A4E6E /* onboardingPostponeVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = onboardingPostponeVc.swift; sourceTree = "<group>"; };
 		8F69D1E12796A34B00DB3EFD /* AVKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVKit.framework; path = System/Library/Frameworks/AVKit.framework; sourceTree = SDKROOT; };
 		8F69D1E32796A6CE00DB3EFD /* NetworkExtension.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = NetworkExtension.framework; path = System/Library/Frameworks/NetworkExtension.framework; sourceTree = SDKROOT; };
 		8F6C10F327BD37F00013972F /* menuViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = menuViewController.swift; sourceTree = "<group>"; };
+		8F70D64428E1C6A600895B3F /* customMessageVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = customMessageVc.swift; sourceTree = "<group>"; };
 		8F7DCBFF2796B55800EE3282 /* config.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = config.json; sourceTree = "<group>"; };
 		8F7DCC022796E8D200EE3282 /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
-		8F86F185280EC290006EB8C3 /* block.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = block.html; sourceTree = "<group>"; };
 		8F8A53F127AA4ABB00A01E2D /* Waking up _ SMall.gif */ = {isa = PBXFileReference; lastKnownFileType = image.gif; path = "Waking up _ SMall.gif"; sourceTree = "<group>"; };
 		8F8A53F227AA4ABB00A01E2D /* Crying_small.gif */ = {isa = PBXFileReference; lastKnownFileType = image.gif; path = Crying_small.gif; sourceTree = "<group>"; };
 		8F8A53F327AA4ABB00A01E2D /* Yawn_small.gif */ = {isa = PBXFileReference; lastKnownFileType = image.gif; path = Yawn_small.gif; sourceTree = "<group>"; };
@@ -232,12 +221,12 @@
 		8F9044A0280454D300563F87 /* discourageDefaultFocusVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = discourageDefaultFocusVc.swift; sourceTree = "<group>"; };
 		8F92E88327BF65AF0085AF8C /* addWebUrlVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = addWebUrlVc.swift; sourceTree = "<group>"; };
 		8F92E88527BF8B340085AF8C /* addFocusTypeVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = addFocusTypeVc.swift; sourceTree = "<group>"; };
+		8F937D9728D88AC10053A42B /* preferencesVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = preferencesVc.swift; sourceTree = "<group>"; };
 		8F93BE5C27CC92CE004FA0BE /* focusSummaryVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = focusSummaryVc.swift; sourceTree = "<group>"; };
 		8F93BE5F27CCA196004FA0BE /* abortingFocusMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = abortingFocusMode.swift; sourceTree = "<group>"; };
 		8F94BAD2287E84E600A82D82 /* Focus Bear.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "Focus Bear.entitlements"; sourceTree = "<group>"; };
 		8F94EF882836094400355E66 /* rememberNextHabitVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = rememberNextHabitVc.swift; sourceTree = "<group>"; };
 		8F98294E2806976B00B17414 /* quittingConfirmVc.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = quittingConfirmVc.swift; sourceTree = "<group>"; };
-		8F98295528070F4A00B17414 /* logo.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = logo.png; sourceTree = "<group>"; };
 		8F9A5A9527885A6D009121E3 /* abortingCountDownVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = abortingCountDownVc.swift; sourceTree = "<group>"; };
 		8F9A5A97278863B9009121E3 /* abortingConfirmVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = abortingConfirmVc.swift; sourceTree = "<group>"; };
 		8F9A5A9927887889009121E3 /* abortDoneVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = abortDoneVc.swift; sourceTree = "<group>"; };
@@ -284,8 +273,8 @@
 		8FB84AEC284B82AA0075180B /* GraphTime.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = GraphTime.html; sourceTree = "<group>"; };
 		8FB84AEF284DD1830075180B /* gifOpenSettings.gif */ = {isa = PBXFileReference; lastKnownFileType = image.gif; path = gifOpenSettings.gif; sourceTree = "<group>"; };
 		8FB84AF1284DE2550075180B /* config-es.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "config-es.json"; sourceTree = "<group>"; };
-		8FCD9F1527929B660060E73D /* everyActivity.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = everyActivity.wav; sourceTree = "<group>"; };
-		8FCD9F1727929BC10060E73D /* afterMorningRoutine.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = afterMorningRoutine.wav; sourceTree = "<group>"; };
+		8FC31BFB28C72AA600E2DD4C /* NewStoryboard.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = NewStoryboard.storyboard; sourceTree = "<group>"; };
+		8FC31BFD28C757B400E2DD4C /* brainDumpVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = brainDumpVc.swift; sourceTree = "<group>"; };
 		8FD1053C27EEE44100B7728E /* Focus BearTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Focus BearTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		8FD1053E27EEE44100B7728E /* Focus_BearTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Focus_BearTests.swift; sourceTree = "<group>"; };
 		8FD1054027EEE44100B7728E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -359,9 +348,6 @@
 			isa = PBXGroup;
 			children = (
 				8F461AF628C0EB6B0082B0A2 /* Completing a Habit_1.wav */,
-				8F461AF728C0EB6B0082B0A2 /* Completing a Habit_2.1.wav */,
-				8F461AF528C0EB6B0082B0A2 /* Completing a Habit_2.2.wav */,
-				8F461AF928C0EB6B0082B0A2 /* Completing a Habit_3.wav */,
 				8F461AF828C0EB6B0082B0A2 /* Completing a Habit_4.wav */,
 			);
 			path = CompletingHabit;
@@ -370,12 +356,8 @@
 		8F461B0028C0EB7F0082B0A2 /* CompletingWholeEveningRoutine */ = {
 			isa = PBXGroup;
 			children = (
-				8F461B0128C0EBBC0082B0A2 /* Completing the Whole Evening Routine_1.wav */,
-				8F461B0528C0EBBD0082B0A2 /* Completing the Whole Evening Routine_2.wav */,
-				8F461B0328C0EBBD0082B0A2 /* Completing the Whole Evening Routine_3.wav */,
 				8F461B0728C0EBBE0082B0A2 /* Completing the Whole Evening Routine_4.wav */,
 				8F461B0228C0EBBC0082B0A2 /* Completing the Whole Evening Routine_5.wav */,
-				8F461B0628C0EBBD0082B0A2 /* Completing the Whole Evening Routine_6.wav */,
 				8F461B0428C0EBBD0082B0A2 /* Completing the Whole Evening Routine_7.wav */,
 			);
 			path = CompletingWholeEveningRoutine;
@@ -384,12 +366,8 @@
 		8F461B0F28C0EBCF0082B0A2 /* CompletingWholeMorningRoutine */ = {
 			isa = PBXGroup;
 			children = (
-				8F461B1528C0EBE80082B0A2 /* Completing the Whole Morning Routine_1.wav */,
-				8F461B1128C0EBE60082B0A2 /* Completing the Whole Morning Routine_2.1.wav */,
 				8F461B1428C0EBE80082B0A2 /* Completing the Whole Morning Routine_2.2.wav */,
 				8F461B1228C0EBE60082B0A2 /* Completing the Whole Morning Routine_3.1.wav */,
-				8F461B1028C0EBE50082B0A2 /* Completing the Whole Morning Routine_3.2.wav */,
-				8F461B1328C0EBE70082B0A2 /* Completing the Whole Morning Routine_4.wav */,
 			);
 			path = CompletingWholeMorningRoutine;
 			sourceTree = "<group>";
@@ -399,7 +377,6 @@
 			children = (
 				8F461B1D28C0EDD50082B0A2 /* Start Focus Button_1.wav */,
 				8F461B1E28C0EDD50082B0A2 /* Start Focus Button_2.wav */,
-				8F461B1F28C0EDD60082B0A2 /* Start Focus Button_3.wav */,
 			);
 			path = StartFocus;
 			sourceTree = "<group>";
@@ -407,10 +384,7 @@
 		8F461B2328C0EE190082B0A2 /* StartingMorningEveningRoutine */ = {
 			isa = PBXGroup;
 			children = (
-				8F461B2828C0EE490082B0A2 /* Starting the Morning:Evening Routine_1.wav */,
 				8F461B2928C0EE490082B0A2 /* Starting the Morning:Evening Routine_2.wav */,
-				8F461B2428C0EE480082B0A2 /* Starting the Morning:Evening Routine_3.1.wav */,
-				8F461B2628C0EE480082B0A2 /* Starting the Morning:Evening Routine_3.2.wav */,
 				8F461B2528C0EE480082B0A2 /* Starting the Morning:Evening Routine_4.wav */,
 				8F461B2728C0EE490082B0A2 /* Starting the Morning:Evening Routine_5.wav */,
 			);
@@ -470,6 +444,8 @@
 				8F28E8312822B15A00310F4E /* uninstallVc.swift */,
 				8F08FD6F28B60DD60016C741 /* uninstallingConfirmVc.swift */,
 				274C9A90289A8C900066F883 /* accountVc.swift */,
+				8F937D9728D88AC10053A42B /* preferencesVc.swift */,
+				8F70D64428E1C6A600895B3F /* customMessageVc.swift */,
 			);
 			path = Preferences;
 			sourceTree = "<group>";
@@ -482,6 +458,7 @@
 				8FAD22DA27CA526200CDC866 /* startingFocusModeVc.swift */,
 				8FAD22D627CA2F1000CDC866 /* focusCompletedVc.swift */,
 				8F93BE5C27CC92CE004FA0BE /* focusSummaryVc.swift */,
+				8FC31BFD28C757B400E2DD4C /* brainDumpVc.swift */,
 			);
 			path = "Focus mode";
 			sourceTree = "<group>";
@@ -510,6 +487,7 @@
 			isa = PBXGroup;
 			children = (
 				8F9F365427AD09C000EB3516 /* activationWindowController.swift */,
+				8F657D7628DF0723008A4E6E /* upgradeNowVc.swift */,
 				8F9F364A27ACF89800EB3516 /* activateNowvc.swift */,
 				8F9F364E27ACF93300EB3516 /* sevenDaysTrialvc.swift */,
 			);
@@ -589,6 +567,9 @@
 				8F6138B728B7AA5300A45B1A /* askPostponeVc.swift */,
 				8FABDDD227DA2ED600F6A58C /* enterPasswordVc.swift */,
 				8FA62B1328605B150075D545 /* preloadFocusModesVc.swift */,
+				8F639C0C28D1C9AA006C41C4 /* askLogInVc.swift */,
+				8F657D7828DF094E008A4E6E /* welcomeOnboardingVc.swift */,
+				8F657D7A28DF35D7008A4E6E /* onboardingPostponeVc.swift */,
 				8FDA858F279A8E82008AD6AA /* AVMonitor.h */,
 				8FDA8590279A8E82008AD6AA /* AVMonitor.m */,
 				8FA633E42848BB860055EE88 /* graph */,
@@ -608,12 +589,12 @@
 				274E671528951DDC0030163F /* AllApi.swift */,
 				8FD1054627EF1A3B00B7728E /* urlValidation.swift */,
 				8FAC6C8C27805F70008A4180 /* Main.storyboard */,
+				8FC31BFB28C72AA600E2DD4C /* NewStoryboard.storyboard */,
 				8FAC6C8A27805F70008A4180 /* Assets.xcassets */,
+				8F51855528D43FDF00900C1C /* fenwick outline.ttf */,
 				8FAC6C9A2780681A008A4180 /* settings.json */,
-				8F86F185280EC290006EB8C3 /* block.html */,
 				8FB84AF1284DE2550075180B /* config-es.json */,
 				8F7DCBFF2796B55800EE3282 /* config.json */,
-				8F98295528070F4A00B17414 /* logo.png */,
 				8FAC6C8F27805F70008A4180 /* Info.plist */,
 				8FB84AEF284DD1830075180B /* gifOpenSettings.gif */,
 				8FA62B1128603B380075D545 /* TextFieldNumberFormatter.swift */,
@@ -643,8 +624,6 @@
 				8F461B0F28C0EBCF0082B0A2 /* CompletingWholeMorningRoutine */,
 				8F461B0028C0EB7F0082B0A2 /* CompletingWholeEveningRoutine */,
 				8F461AF428C0EB210082B0A2 /* CompletingHabit */,
-				8FCD9F1527929B660060E73D /* everyActivity.wav */,
-				8FCD9F1727929BC10060E73D /* afterMorningRoutine.wav */,
 			);
 			path = Sound;
 			sourceTree = "<group>";
@@ -691,6 +670,7 @@
 				8FAC6C8127805F6D008A4180 /* Resources */,
 				391F0B3FDDC7CB285663B31F /* [CP] Embed Pods Frameworks */,
 				8FE13DF727ED887200BD620A /* Embed Frameworks */,
+				8F77575828DD96D9007A976D /* CopyFiles */,
 			);
 			buildRules = (
 			);
@@ -728,7 +708,7 @@
 		8FAC6C7B27805F6D008A4180 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastSwiftUpdateCheck = 1130;
+				LastSwiftUpdateCheck = 1340;
 				LastUpgradeCheck = 1130;
 				ORGANIZATIONNAME = "Focus Bear";
 				TargetAttributes = {
@@ -771,7 +751,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				8F3F894728BA00A0003E5EA4 /* SUUpdateAlert.strings in Resources */,
-				8F461AFC28C0EB6C0082B0A2 /* Completing a Habit_2.1.wav in Resources */,
 				8FB84AEE284B82AA0075180B /* GraphTime.html in Resources */,
 				8FB84AED284B82AA0075180B /* GraphDays.html in Resources */,
 				8F461B2B28C0EE490082B0A2 /* Starting the Morning:Evening Routine_4.wav in Resources */,
@@ -779,53 +758,37 @@
 				8F8A53F627AA4ABB00A01E2D /* Crying_small.gif in Resources */,
 				8FFF70632858A13200164E2B /* GraphTimeDuration.html in Resources */,
 				8F3F894628BA00A0003E5EA4 /* SUUpdatePermissionPrompt.strings in Resources */,
-				8F461B1628C0EBE90082B0A2 /* Completing the Whole Morning Routine_3.2.wav in Resources */,
 				8F49A83327DC74980016845E /* Finger-and-Sign-Bear-250px.gif in Resources */,
 				8F461AFB28C0EB6C0082B0A2 /* Completing a Habit_1.wav in Resources */,
 				8FAC6C9B2780681A008A4180 /* settings.json in Resources */,
 				8F8A53F827AA4ABB00A01E2D /* Smile _Small.gif in Resources */,
 				8FFBCE8A28549EB1004B77D9 /* PopoverViewController.xib in Resources */,
-				8FCD9F1827929BC10060E73D /* afterMorningRoutine.wav in Resources */,
-				8F98295628070F4A00B17414 /* logo.png in Resources */,
+				8F51855628D4402100900C1C /* fenwick outline.ttf in Resources */,
 				8F461B2D28C0EE490082B0A2 /* Starting the Morning:Evening Routine_5.wav in Resources */,
-				8F461AFE28C0EB6C0082B0A2 /* Completing a Habit_3.wav in Resources */,
-				8F461B0A28C0EBBE0082B0A2 /* Completing the Whole Evening Routine_3.wav in Resources */,
 				274E0F4C28902E29000234A3 /* Auth0.plist in Resources */,
-				8F461B2A28C0EE490082B0A2 /* Starting the Morning:Evening Routine_3.1.wav in Resources */,
 				8FB84AF0284DD1840075180B /* gifOpenSettings.gif in Resources */,
 				8F461B0928C0EBBE0082B0A2 /* Completing the Whole Evening Routine_5.wav in Resources */,
 				8F461B2128C0EDD60082B0A2 /* Start Focus Button_2.wav in Resources */,
 				8F461B1A28C0EBE90082B0A2 /* Completing the Whole Morning Routine_2.2.wav in Resources */,
 				8FABDDCC27D9E2D900F6A58C /* Glasses-Bear-250-px_V3.gif in Resources */,
-				8FCD9F1627929B660060E73D /* everyActivity.wav in Resources */,
+				8FC31BFC28C72AA600E2DD4C /* NewStoryboard.storyboard in Resources */,
 				8F461B0B28C0EBBE0082B0A2 /* Completing the Whole Evening Routine_7.wav in Resources */,
-				8F461B0D28C0EBBE0082B0A2 /* Completing the Whole Evening Routine_6.wav in Resources */,
 				8F461B0E28C0EBBE0082B0A2 /* Completing the Whole Evening Routine_4.wav in Resources */,
 				8F8A53F727AA4ABB00A01E2D /* Yawn_small.gif in Resources */,
 				8FABDDCD27D9E2D900F6A58C /* cheer_250px_trans_centered.gif in Resources */,
-				8F461B2228C0EDD60082B0A2 /* Start Focus Button_3.wav in Resources */,
-				8F86F186280EC290006EB8C3 /* block.html in Resources */,
 				8FAC6C8B27805F70008A4180 /* Assets.xcassets in Resources */,
 				8F8A53F527AA4ABB00A01E2D /* Waking up _ SMall.gif in Resources */,
 				8F461B1828C0EBE90082B0A2 /* Completing the Whole Morning Routine_3.1.wav in Resources */,
 				8FFF70652858A59800164E2B /* GraphDaysDuration.html in Resources */,
 				8FABDDD027D9E2D900F6A58C /* Weight-bear-250-px_V2.gif in Resources */,
-				8F461B1928C0EBE90082B0A2 /* Completing the Whole Morning Routine_4.wav in Resources */,
 				8F3F894528BA00A0003E5EA4 /* SUAutomaticUpdateAlert.strings in Resources */,
 				8F461B2F28C0EE490082B0A2 /* Starting the Morning:Evening Routine_2.wav in Resources */,
-				8F461AFA28C0EB6C0082B0A2 /* Completing a Habit_2.2.wav in Resources */,
 				8FABDDD127D9E2D900F6A58C /* Whistle-bear-250-px.gif in Resources */,
-				8F461B0C28C0EBBE0082B0A2 /* Completing the Whole Evening Routine_2.wav in Resources */,
-				8F461B2C28C0EE490082B0A2 /* Starting the Morning:Evening Routine_3.2.wav in Resources */,
 				8FAC6C8E27805F70008A4180 /* Main.storyboard in Resources */,
 				8F7DCC002796B55800EE3282 /* config.json in Resources */,
-				8F461B2E28C0EE490082B0A2 /* Starting the Morning:Evening Routine_1.wav in Resources */,
 				8FB84AF2284DE2550075180B /* config-es.json in Resources */,
-				8F461B0828C0EBBE0082B0A2 /* Completing the Whole Evening Routine_1.wav in Resources */,
 				8F3F894428BA00A0003E5EA4 /* Sparkle.strings in Resources */,
-				8F461B1B28C0EBE90082B0A2 /* Completing the Whole Morning Routine_1.wav in Resources */,
 				8F461B2028C0EDD60082B0A2 /* Start Focus Button_1.wav in Resources */,
-				8F461B1728C0EBE90082B0A2 /* Completing the Whole Morning Routine_2.1.wav in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -933,20 +896,27 @@
 				8F93BE5D27CC92CE004FA0BE /* focusSummaryVc.swift in Sources */,
 				8F92E88427BF65AF0085AF8C /* addWebUrlVc.swift in Sources */,
 				8F9A5A9A27887889009121E3 /* abortDoneVc.swift in Sources */,
+				8F657D7B28DF35D7008A4E6E /* onboardingPostponeVc.swift in Sources */,
+				8F657D7928DF094E008A4E6E /* welcomeOnboardingVc.swift in Sources */,
 				8F050A0E278467B100F3CE17 /* addLoginitem.m in Sources */,
 				274E671628951DDD0030163F /* AllApi.swift in Sources */,
 				274C9A91289A8C910066F883 /* accountVc.swift in Sources */,
+				8FC31BFE28C757B400E2DD4C /* brainDumpVc.swift in Sources */,
 				8FAD22CF27CA00C000CDC866 /* preferencesTabViewController.swift in Sources */,
 				8F4BD8C727883FBE00ABAEF5 /* HotKeysController.swift in Sources */,
 				8FDA8591279A8E83008AD6AA /* AVMonitor.m in Sources */,
+				8F70D64528E1C6A600895B3F /* customMessageVc.swift in Sources */,
 				8F93BE6027CCA196004FA0BE /* abortingFocusMode.swift in Sources */,
 				8FAD22D527CA047700CDC866 /* pomodoroVc.swift in Sources */,
+				8F937D9828D88AC10053A42B /* preferencesVc.swift in Sources */,
 				8FAB75C528476BC10051CE24 /* focusPreferencesAdvancedVc.swift in Sources */,
 				8F51EFB727E0741700EFF0A8 /* blockedUrlsVc.swift in Sources */,
 				8FAC6C972780612B008A4180 /* mainWindowController.swift in Sources */,
 				8F9F365327ACFB3B00EB3516 /* SYFlatButton.m in Sources */,
 				8F08FD7028B60DD60016C741 /* uninstallingConfirmVc.swift in Sources */,
 				8F9044A1280454D300563F87 /* discourageDefaultFocusVc.swift in Sources */,
+				8F657D7728DF0723008A4E6E /* upgradeNowVc.swift in Sources */,
+				8F639C0D28D1C9AA006C41C4 /* askLogInVc.swift in Sources */,
 				8FB50F0127BE8AFC00A7175B /* CToggleButton.swift in Sources */,
 				8FAC6C8727805F6E008A4180 /* AppDelegate.swift in Sources */,
 				8F94EF892836094400355E66 /* rememberNextHabitVc.swift in Sources */,
@@ -1139,7 +1109,7 @@
 				CODE_SIGN_IDENTITY = "Developer ID Application: Jeremy Nagel (TCUD568B3U)";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 54;
+				CURRENT_PROJECT_VERSION = 65;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = TCUD568B3U;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1152,7 +1122,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.App.EarnYourScreentime;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1173,7 +1143,7 @@
 				CODE_SIGN_IDENTITY = "Developer ID Application: Jeremy Nagel (TCUD568B3U)";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 54;
+				CURRENT_PROJECT_VERSION = 65;
 				DEVELOPMENT_TEAM = TCUD568B3U;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_TESTABILITY = NO;
@@ -1186,7 +1156,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.App.EarnYourScreentime;
 				PRODUCT_NAME = "$(TARGET_NAME)";

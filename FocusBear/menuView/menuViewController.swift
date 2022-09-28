@@ -12,7 +12,10 @@ class menuViewController: NSViewController {
 
     
     
-    @IBOutlet weak var boxCheckMark: NSBox!
+    @IBOutlet weak var lblTitleAppName: NSTextField!
+    @IBOutlet weak var boxTitle: customBoxBg!
+    @IBOutlet weak var toggleButtonOfficeMode: CToggleButton!
+    //    @IBOutlet weak var boxCheckMark: NSBox!
     @IBOutlet weak var lblTrialVersionInfo: NSTextField!
     @IBOutlet weak var lblTitleReactivate: NSTextField!
     @IBOutlet weak var lblTitleEnterLicenseKey: NSTextField!
@@ -30,17 +33,17 @@ class menuViewController: NSViewController {
     @IBOutlet weak var lblOn: NSTextField!
     @IBOutlet weak var boxFocusMode: NSBox!
     @IBOutlet weak var focusModeBoxHeight: NSLayoutConstraint!
-    @IBOutlet weak var boxStartPomodoroMode: customBox!
-    @IBOutlet weak var boxCheckForUpdates: customBox!
-    @IBOutlet weak var boxQuit: customBox!
-    @IBOutlet weak var boxExportStatistics: customBox!
-    @IBOutlet weak var boxPreferences: customBox!
-    @IBOutlet weak var boxStopHardcorePomodoroMode: customBox!
+    @IBOutlet weak var boxStartPomodoroMode: NSBox!
+    @IBOutlet weak var boxCheckForUpdates: NSBox!
+    @IBOutlet weak var boxQuit: NSBox!
+    @IBOutlet weak var boxExportStatistics: NSBox!
+    @IBOutlet weak var boxPreferences: NSBox!
+    @IBOutlet weak var boxStopHardcorePomodoroMode: NSBox!
     
-    @IBOutlet weak var boxEnterLicenseKey: customBox!
-    @IBOutlet weak var boxReactivate: customBox!
+    @IBOutlet weak var boxEnterLicenseKey: NSBox!
+    @IBOutlet weak var boxReactivate: NSBox!
     @IBOutlet weak var tblViewFocusMode: NSTableView!
-    @IBOutlet weak var boxEnableOfficeMode: customBox!
+    @IBOutlet weak var boxEnableOfficeMode: NSBox!
     
     
 //    var selectedIndex = -1
@@ -53,13 +56,26 @@ class menuViewController: NSViewController {
     var itemFocusTitle = "Focus"
     var itemHardcorePomodoroTitle = "Hardcore Pomodoro Mode"
     
+    var menuItemUpgradeNowTitle = "Upgrade Now"
+    var subscriptionExpiredText = "Your subscription has expired"
+    
     
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
-        
-        
-        
+        boxCheckForUpdates.isHidden = true
+        boxExportStatistics.isHidden = true
+        boxTitle.fillColor = NSColor(red: 255/255, green: 228/255, blue: 198/255, alpha: 1)
+        boxFocusMode.wantsLayer = true
+        boxFocusMode.layer?.cornerRadius = boxPreferences.cornerRadius
+        toggleButtonOfficeMode.statetag = 111
+        toggleButtonOfficeMode.wantsLayer = true
+        toggleButtonOfficeMode.shadow = NSShadow()
+        toggleButtonOfficeMode.layer?.shadowOpacity = 0.3
+        toggleButtonOfficeMode.layer?.shadowColor = NSColor.black.cgColor
+        toggleButtonOfficeMode.layer?.shadowOffset = NSMakeSize(0, -2)
+        toggleButtonOfficeMode.layer?.shadowRadius = 3
+        NotificationCenter.default.addObserver(self, selector: #selector(btnToggleClicked), name: Notification.Name("toggle"), object: nil)
         var itemReactivateTitle = "Reactivate"
         var itemEnterLicenseKeyTitle = "Enter License Key"
         
@@ -87,6 +103,9 @@ class menuViewController: NSViewController {
             onText = menuInfo.value(forKey: "onText") as? String ?? onText
             itemHardcorePomodoroTitle = menuInfo.value(forKey: "menuItemHardcorePomodoroModeTitle") as? String ?? itemHardcorePomodoroTitle
             menuItemStopHardcorePomodoroTitle = menuInfo.value(forKey: "menuItemStopHardcorePomodoroTitle") as? String ?? menuItemStopHardcorePomodoroTitle
+            
+            menuItemUpgradeNowTitle = menuInfo.value(forKey: "menuItemUpgradeNowTitle") as? String ?? menuItemUpgradeNowTitle
+            subscriptionExpiredText = menuInfo.value(forKey: "subscriptionExpiredText") as? String ?? subscriptionExpiredText
         }
         
         if let common = configjson.value(forKey: "common") as? NSDictionary{
@@ -99,7 +118,7 @@ class menuViewController: NSViewController {
         }
         
         lblTitleReactivate.stringValue = itemReactivateTitle
-        lblTitleEnterLicenseKey.stringValue = itemEnterLicenseKeyTitle
+        lblTitleEnterLicenseKey.stringValue = menuItemUpgradeNowTitle//itemEnterLicenseKeyTitle//
         lblTitlePreferences.stringValue = itemPreferences
         lblTitleExportStatistics.stringValue = itemExportStatisticsTitle
         lblTitleFocus.stringValue = itemFocusTitle
@@ -108,6 +127,8 @@ class menuViewController: NSViewController {
         lblTitleQuit.stringValue = itemQuitTitle
         lblTitleEnableOfficeMode.stringValue = menuItemEnableOfficeModeTitle
         lblTitleStopHardcorePomodoroMode.stringValue = menuItemStopHardcorePomodoroTitle
+        
+        lblTitleAppName.stringValue = appName
         
         bottomLine.isHidden = true
         
@@ -133,67 +154,71 @@ class menuViewController: NSViewController {
             }
         }
         
+        // load preferences window// // beacuse some times webview dose not load at first time in settings so here we are loading window to load webview before opening it
+        if !(preferencesWindowControllerObj?.isWindowLoaded ?? false){
+            preferencesWindowControllerObj?.loadWindow()
+        }
     }
-    
+    @objc func btnToggleClicked(notification: Notification) {
+        if let state = notification.userInfo!["isOn"] as? Bool, let row = notification.userInfo!["index"] as? Int{
+            print(row)
+            print(state)
+            if row == toggleButtonOfficeMode.statetag{
+                btnEnableOfficeModeClicked(self)
+            }
+        }
+    }
     override func viewWillDisappear() {//will not call if view is inside nsmenu
         
     }
-    override func viewWillAppear() {//will not call if view is inside nsmenu
-        
+    override func viewWillAppear() {//will not call if view is inside nsmenu but noe using popover so view will appear will work
+        reloadData()
     }
     //Trial version - 7 of 7 trial days remaining
     //Your trial version has expired
-    func reloadData(){
+    
+    func checkPurchaseState(){
         if isPurchased == false{
-            var daysremaining = 0
-            if let date = UserDefaults.standard.object(forKey: kUserdefaultsFirstHabitDay) as? Date{
-                let secondsBetween = Date().timeIntervalSince(date)
-                let numberOfDays_afterinstall = Int((secondsBetween) / 86400)
-                daysremaining = daysFreeTrial-numberOfDays_afterinstall
-                if daysremaining < 0 {
-                    daysremaining = 0
-                }
-                if UserDefaults.standard.object(forKey: "trialExpired") != nil{
-                    daysremaining = 0
-                }
-                if daysremaining == 0{
-                    if UserDefaults.standard.object(forKey: "trialExpired") == nil{
-                        UserDefaults.standard.set(true, forKey: "trialExpired")
-                    }
-                }
-            }else{
-                daysremaining = daysFreeTrial
-                
-            }
-            
-            if daysremaining == 0{
-                lblTrialVersionInfo.stringValue = trialExpiredText
+            let daysremaining = daysLeft
+            if daysremaining <= 0{
+                lblTrialVersionInfo.stringValue = subscriptionExpiredText//trialExpiredText
                 lblTrialVersionInfo.textColor = NSColor.systemRed
             }else{
                 lblTrialVersionInfo.stringValue = daysRemainingText.replacingOccurrences(of: "<DAYS>", with: "\(daysremaining)")//"Trial version - \(daysremaining) of 7 trial days remaining"//
-                lblTrialVersionInfo.textColor = NSColor.secondaryLabelColor
+                lblTrialVersionInfo.textColor = buttonTitleColor
             }
+            boxEnterLicenseKey.isHidden = false
         }else{
-            UserDefaults.standard.removeObject(forKey: "trialExpired")
+            if upgradeNowWcObj != nil{
+                if upgradeNowWcObj!.window?.isVisible ?? false{
+                    upgradeNowWcObj!.window?.close()
+                }
+            }
+            boxEnterLicenseKey.isHidden = true
         }
-    
-        boxQuit.fillColor = .clear
-        boxExportStatistics.fillColor = .clear
-        boxPreferences.fillColor = .clear
-        boxEnterLicenseKey.fillColor = .clear
-        boxReactivate.fillColor = .clear
-        boxEnableOfficeMode.fillColor = .clear
+    }
+    func reloadData(){
+        if upgradeButtonWasClicked{
+            upgradeButtonWasClicked = false
+            appdelegate?.renewToken(window: self.view.window!, completionHandler: {
+                DispatchQueue.main.async {
+                    self.checkPurchaseState()
+                    
+                }
+                
+            })
+        }
+        
+        
+        checkPurchaseState()
+
         if !isAppEnable{
             boxReactivate.isHidden = false
         }else{
             boxReactivate.isHidden = true
         }
         
-        if isPurchased == false{
-            boxEnterLicenseKey.isHidden = false
-        }else{
-            boxEnterLicenseKey.isHidden = true
-        }
+
         
         
         if isFocusModeOn(){
@@ -216,9 +241,11 @@ class menuViewController: NSViewController {
         
         
         if SettingsManagerObject.isOfficeModeEnabled{
-            boxCheckMark.isHidden = false
+//            boxCheckMark.isHidden = false
+            toggleButtonOfficeMode.isOn = true
         }else{
-            boxCheckMark.isHidden = true
+//            boxCheckMark.isHidden = true
+            toggleButtonOfficeMode.isOn = false
         }
     }
     func resetViewHeight(){
@@ -231,74 +258,51 @@ class menuViewController: NSViewController {
         if isHardCorePomodoroModeOn{
             height += 32 // only one focus mode will be visible which is on for hardcore pomodoro mode
         }else{
-            height += (arrFocusType.count * 32)
+            if arrFocusType.count > 10{
+                height += 320
+            }else{
+                height += (arrFocusType.count * 32)
+            }
+            
         }
         
         if isFocusModeOn(){
             //height += 60
             height += 19 //on label space
         }
-        focusModeBoxHeight.constant = CGFloat(height)
+        let cgFlotHeight = CGFloat(height)
+        if focusModeBoxHeight.constant != cgFlotHeight{
+            focusModeBoxHeight.constant = cgFlotHeight
+        }
         print("tblViewFocusMode resetViewHeight")
     }
     @IBAction func btnReactivateClicked(_ sender: Any) {
         appdelegate?.menuItem_Reactivate()
     }
     @IBAction func btnEnterLicenseKeyClicked(_ sender: Any) {
-        appdelegate?.menuItemEnterLicenseKey()
+//        appdelegate?.menuItemEnterLicenseKey()
+        showUpgradeNowWindow()
     }
 
     @IBAction func btnPreferencesClicked(_ sender: Any) {
-        if UserDefaults.standard.object(forKey: "trialExpired") != nil{
-            activationWindowControllerObj?.showSevenDayTrialVc()
+        if isPurchased == false && daysLeft <= 0{// if UserDefaults.standard.object(forKey: "trialExpired") != nil{
+            showUpgradeNowWindow()
             return;
         }
         appdelegate?.menuItem_Preferences()
     }
     @IBAction func btnExportStatisticsClicked(_ sender: Any) {
-        if UserDefaults.standard.object(forKey: "trialExpired") != nil{
-            activationWindowControllerObj?.showSevenDayTrialVc()
+        if isPurchased == false && daysLeft <= 0{//if UserDefaults.standard.object(forKey: "trialExpired") != nil{
+            showUpgradeNowWindow()
             return;
         }
-        appdelegate!.statusItem.menu?.cancelTracking()
-        self.perform(#selector(menuItem_ExportStatistics), with: nil, afterDelay: 0)
+//        appdelegate!.statusItem.menu?.cancelTracking()
+//        self.perform(#selector(menuItem_ExportStatistics), with: nil, afterDelay: 0)
     }
-    @objc func menuItem_ExportStatistics() {
-        let openPanel = NSOpenPanel()
-        openPanel.canChooseFiles = false
-        openPanel.canChooseDirectories = true
-        openPanel.allowsMultipleSelection = false
-        openPanel.treatsFilePackagesAsDirectories = false
-        openPanel.prompt = "Export"
-        
-        if let common = configjson.value(forKey: "common") as? NSDictionary{
-            openPanel.prompt = common.value(forKey: "buttonExportText") as? String ?? "Export"
-        }
-        
-        let button: NSApplication.ModalResponse = openPanel.runModal()
-        if button == NSApplication.ModalResponse.OK {
-            if let url = openPanel.url {
-                let filemanager = FileManager.default
-                let destUrl = url.appendingPathComponent(quantityCsvURL.lastPathComponent)
-                if filemanager.fileExists(atPath: destUrl.path){
-                    do{
-                        try filemanager.removeItem(at: destUrl)
-                    }catch{
-                        print(error)
-                    }
-                }
-                
-                do{
-                    try FileManager.default.copyItem(at: quantityCsvURL, to: destUrl)
-                }catch{
-                    print(error)
-                }
-            }
-        }
-    }
+     
     @IBAction func btnStartPomodoroModeClicked(_ sender: Any) {
-        if UserDefaults.standard.object(forKey: "trialExpired") != nil{
-            activationWindowControllerObj?.showSevenDayTrialVc()
+        if isPurchased == false && daysLeft <= 0{//if UserDefaults.standard.object(forKey: "trialExpired") != nil{
+            showUpgradeNowWindow()
             return;
         }
         appdelegate?.menuShowPomodoroModeView()
@@ -329,16 +333,7 @@ class menuViewController: NSViewController {
     @IBAction func btnStopHardcorePomodoroModeClicked(_ sender: Any) {
         if isHardCorePomodoroModeOn{
             if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
-//                if self.enterPasswordVcObj == nil{
-//                    self.enterPasswordVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("enterPasswordVc")) as?enterPasswordVc
-//                }
-//                self.presentAsModalWindow(enterPasswordVcObj!)
-//                enterPasswordVcObj?.parentVc = self
-//                DispatchQueue.global().async {
-//                    DispatchQueue.main.async {
-//                        self.enterPasswordVcObj?.view.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.numberOfWindowLevelKeys)))
-//                    }
-//                }
+
                 showPasswordWindow()
                 addLog(text: "Showing enter password view from hardcodre pomodoro stop from menu")
             }else{
@@ -358,7 +353,7 @@ class menuViewController: NSViewController {
     
     @IBAction func btnQuitClicked(_ sender: Any) {
         addLog(text: "menu item Quit clicked by user")
-        if UserDefaults.standard.object(forKey: "trialExpired") != nil{
+        if isPurchased == false && daysLeft <= 0{//if UserDefaults.standard.object(forKey: "trialExpired") != nil{
             appdelegate?.menuItem_Quit()
             return;
         }
@@ -372,30 +367,32 @@ class menuViewController: NSViewController {
         getQuittingWindowObject().contentViewController = getQuittingCountDownVcObject()
         getQuittingWindowObject().showWindow(self)
         getQuittingCountDownVcObject().resetData()
-        getQuittingWindowObject().window?.styleMask.remove(.closable)
+//        getQuittingWindowObject().window?.styleMask.remove(.closable)
         
-        quittingWcObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.popUpMenuWindow)))
+        quittingWcObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))//modalPanelWindow
         
         NSApplication.shared.activate(ignoringOtherApps: true)
 //        appdelegate?.menuItem_Quit()
     }
     @IBAction func btnEnableOfficeModeClicked(_ sender: Any) {
-        if UserDefaults.standard.object(forKey: "trialExpired") != nil{
-            activationWindowControllerObj?.showSevenDayTrialVc()
+        if isPurchased == false && daysLeft <= 0{//UserDefaults.standard.object(forKey: "trialExpired") != nil{
+            showUpgradeNowWindow()
             return;
         }
         
         addLog(text: "menu item Enable Office Mode by user")
         if SettingsManagerObject.isOfficeModeEnabled{
             SettingsManagerObject.isOfficeModeEnabled = false
-            boxCheckMark.isHidden = true
+//            boxCheckMark.isHidden = true
+            toggleButtonOfficeMode.isOn = false
             SettingsManagerObject.isSettingsChanged = true
             SettingsManagerObject.putUserLocalDeviceSettings()
+            appdelegate?.statusbutton?.image = NSImage(named: NSImage.Name("Bear-Small"))
         }else{
             
                 
             let filterArr = arrAllbreakActivities.filter { $0.isOfficeFriendly == true}
-            if filterArr.count == 0{// no activity found with isOfficeFriendly
+            if filterArr.count == 0{// no activity found with isOfficeFriendly // 
                 let alert = NSAlert()
                 if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
                     if state{
@@ -413,7 +410,6 @@ class menuViewController: NSViewController {
                 alert.messageText = noOfficeFriendlyActivityAlertText//
                 alert.addButton(withTitle: noOfficeFriendlyActivityButtonFirstText)
                 alert.addButton(withTitle: noOfficeFriendlyActivityButtonSecondText)
-                alert.window.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.popUpMenuWindow)))
                 let result = alert.runModal()
                 if result == .alertFirstButtonReturn{
                    print("first button")
@@ -449,9 +445,11 @@ class menuViewController: NSViewController {
         alert.addButton(withTitle: buttonOkText)
         _ = alert.runModal()
         SettingsManagerObject.isOfficeModeEnabled = true
-        boxCheckMark.isHidden = false
+//        boxCheckMark.isHidden = false
+        toggleButtonOfficeMode.isOn = true
         SettingsManagerObject.isSettingsChanged = true
         SettingsManagerObject.putUserLocalDeviceSettings()
+        appdelegate?.statusbutton?.image = NSImage(named: NSImage.Name("Bear-Office-Small"))
     }
     func addOfficeFriendlyActivityInSettings(){
         addLog(text: "addOfficeFriendlyActivityInSettings")//
@@ -621,8 +619,12 @@ extension menuViewController: NSTableViewDelegate, NSTableViewDataSource{
                 cell.boxColor.fillColor = .tertiaryLabelColor
                 cell.imgViewAppIcon.image = NSImage(named: NSImage.Name("NSTouchBarPlayTemplate"))
                 cell.lblIntension.isHidden = true
+                cell.lblTitle.font = NSFont.systemFont(ofSize: cell.lblTitle.font?.pointSize ?? 12)
+                cell.lblTitle.textColor = NSColor.black
             }else{//on NSTouchBarPlayTemplate
                 cell.imgViewAppIcon.image = NSImage(named: NSImage.Name("NSTouchBarRecordStopTemplate"))
+                cell.lblTitle.font = NSFont.boldSystemFont(ofSize: cell.lblTitle.font?.pointSize ?? 12)
+                cell.lblTitle.textColor = buttonTitleColor
                 if let color = arrFocusType[cRow]["color"] as? String{
                     cell.boxColor.fillColor = HexToColor(hexString: color)
                 }

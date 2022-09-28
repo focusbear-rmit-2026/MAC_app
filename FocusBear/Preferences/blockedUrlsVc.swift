@@ -9,6 +9,7 @@ import Cocoa
 
 class blockedUrlsVc: NSViewController {
 
+    @IBOutlet weak var lblSubTitle: NSTextField!
     @IBOutlet weak var btnAddUrl: NSButton!
     @IBOutlet weak var btnRemoveUrl: NSButton!
     @IBOutlet weak var lblTitle: NSTextField!
@@ -20,10 +21,16 @@ class blockedUrlsVc: NSViewController {
         tblView.doubleAction = #selector(tableRowAllowedUrlsDoubleClicked)
         blockedUrlsVcObj = self
         
+        lblSubTitle.stringValue = "\"Block these URLs even if you're not in a focus block. You might want to put social media or news sites that you would rather not use at any time. You can always set up an evening routine activity where you explicitly allow access to Facebook so that you can still stay connected - just not during your morning routine/work day.\""
+        
         if let blockedUrlsViewInfo = configjson.value(forKey: "blockedUrlsViewInfo") as? NSDictionary{
             if let title = blockedUrlsViewInfo.value(forKey: "title") as? String{
                 lblTitle.stringValue = title
             }
+            if let subTitleText = blockedUrlsViewInfo.value(forKey: "subTitleText") as? String{
+                lblSubTitle.stringValue = subTitleText
+            }
+            
         }
         
     }

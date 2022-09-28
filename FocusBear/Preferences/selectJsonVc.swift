@@ -31,6 +31,7 @@ class selectJsonVc: NSViewController, NSTextViewDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
+        print("webview loaded *****************")
         customView.isHidden = true
         btnCancel.isHidden = true
         selectJsonVcObj = self
@@ -142,11 +143,11 @@ class selectJsonVc: NSViewController, NSTextViewDelegate {
     }
     override func viewDidAppear() {
         
-        let mac = "mac"
-        let focusbearEnv = "focusbearEnv(\(mac));"
+
+        let focusbearEnv = "focusbearEnv('mac');"
         
         webview?.evaluateJavaScript(focusbearEnv,completionHandler: { (html: Any?, error: Error?) in
-            print(html)//todo not working
+            print(html)
         })
         
         
@@ -222,12 +223,12 @@ class selectJsonVc: NSViewController, NSTextViewDelegate {
         }
         
         
-        var arrFocusNames = [String]()
+        var arrFocusNames = [[String:String]]()
         for i in 0..<arrFocusType.count{
             if let name = arrFocusType[i]["name"] as? String{
-                arrFocusNames.append(name)
+                let dic = ["id":arrFocusType[i]["id"] as? String ?? "", "name":name]
+                arrFocusNames.append(dic)
             }
-            
         }
         
         
@@ -393,7 +394,7 @@ class selectJsonVc: NSViewController, NSTextViewDelegate {
         //                self.btnCancel.isEnabled = true
                         self.loader.stopAnimation(self)
                         
-                        if dic == nil{
+                        if dic == nil && statusCode == 0{
                             let alert = NSAlert()
                             if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
                                 if state{
@@ -402,7 +403,7 @@ class selectJsonVc: NSViewController, NSTextViewDelegate {
                             }
                             alert.alertStyle = .informational
                             
-                            var schemaError = "Your settings can not be validated."
+                            var schemaError = "Your settings cannot be validated."
                             var buttonOkText = "OK"
                             if let settings = configjson.value(forKey: "settings") as? NSDictionary{
                                 schemaError = settings.value(forKey: "schemaError") as? String ?? schemaError
@@ -480,6 +481,32 @@ class selectJsonVc: NSViewController, NSTextViewDelegate {
                 })
                 
             } catch let error as NSError {
+                isGettingSchema = false
+                self.btnSave.isEnabled = true
+                self.loader.stopAnimation(self)
+                let alert = NSAlert()
+                if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
+                    if state{
+                        alert.window.sharingType = .none
+                    }
+                }
+                alert.alertStyle = .informational
+                
+                var schemaError = "Your settings cannot be validated."
+                var buttonOkText = "OK"
+                if let settings = configjson.value(forKey: "settings") as? NSDictionary{
+                    schemaError = settings.value(forKey: "schemaError") as? String ?? schemaError
+                    buttonOkText = settings.value(forKey: "buttonOkText") as? String ?? buttonOkText
+                }
+                alert.messageText = schemaError
+                alert.addButton(withTitle: buttonOkText)
+                alert.informativeText = error.localizedDescription
+                alert.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
+                    if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
+                    }
+                    
+                    self.setData()
+                })
                 print(error)
             }
             
@@ -518,7 +545,7 @@ class selectJsonVc: NSViewController, NSTextViewDelegate {
                     }
                     alert.alertStyle = .informational
                     
-                    var schemaError = "Your settings can not be validated."
+                    var schemaError = "Your settings cannot be validated."
                     var buttonOkText = "OK"
                     if let settings = configjson.value(forKey: "settings") as? NSDictionary{
                         schemaError = settings.value(forKey: "schemaError") as? String ?? schemaError

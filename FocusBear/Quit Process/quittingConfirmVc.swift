@@ -130,6 +130,10 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
             imgViewGif.animates = true
         }
     }
+    override func viewWillDisappear() {
+        self.timer?.invalidate()
+        self.timer = nil
+    }
     func resetData(){
         popUpBtnReasons.isEnabled = true
         popUpBtnReasons.selectItem(at: 0)
@@ -253,7 +257,7 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
                         appdelegate?.menuItem_Quit()
                     }else if self.popUpBtnReasons.indexOfSelectedItem == 2{
                         addLog(text: "App Quit - The app is broken")
-                        allApiObject.getQuitJsonToUpload(emailAddress: appdelegate?.user?.email ?? "", feedback: self.textView.string, quitReason: "The app is broken", completionHandler: {dic in
+                        allApiObject.getQuitJsonToUpload(emailAddress: currentUserEmail, feedback: self.textView.string, quitReason: "The app is broken", completionHandler: {dic in
                             DispatchQueue.main.async {
                                 appdelegate?.menuItem_Quit()
                             }

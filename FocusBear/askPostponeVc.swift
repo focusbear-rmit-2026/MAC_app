@@ -10,6 +10,7 @@ import Cocoa
 
 class askPostponeVc: NSViewController {
 
+    @IBOutlet weak var btnCancelPostpone: cursorButton!
     @IBOutlet weak var lblSelectMinutes: NSTextField!
     @IBOutlet weak var btnOkIWillDoBreak: Button!
     @IBOutlet weak var btnAbortBreak: Button!
@@ -29,7 +30,7 @@ class askPostponeVc: NSViewController {
         btnOkIWillDoBreak.title = "Argh ok I'll take a break!"
         lblSelectMinutes.stringValue = "Select minutes to postpone:"
         popUpButtonSelectMinutes.removeAllItems()
-        popUpButtonSelectMinutes.addItems(withTitles: ["5", "10", "15", "20", "25", "30"])
+        popUpButtonSelectMinutes.addItems(withTitles: ["5", "10", "15", "20", "25", "30", "45", "60", "90"])
         
         
         if let activityPostponeInfo = configjson.value(forKey: "activityPostponeInfo") as? NSDictionary{
@@ -42,7 +43,13 @@ class askPostponeVc: NSViewController {
     override func viewWillAppear() {
         
     }
+    @IBAction func btnCancelPostponeClicked(_ sender: Any) {
+        self.view.removeFromSuperview()
+        mainViewControllerObj?.abortCancel()
+        self.timer?.invalidate()
+    }
     func resetView(){
+        addLog(text: "Ask postpone view - resetView")
         btnPostpone.isHidden = false
         btnAbortBreak.isHidden = false
         btnOkIWillDoBreak.isHidden = true
@@ -66,49 +73,60 @@ class askPostponeVc: NSViewController {
             lblSelectMinutes.isHidden = true
             lblTitle.stringValue = "If you have something urgent, you can postpone the Break Activity for 5 Minutes."
             btnPostpone.title = "Postpone Break"
-            btnAbortBreak.title = "Abort Break Activity"
+            btnAbortBreak.title = "Switch to office mode"
             
+            if SettingsManagerObject.isOfficeModeEnabled{
+                btnAbortBreak.isHidden = true
+            }else{
+                
+                let filterArr = arrAllbreakActivities.filter { $0.isOfficeFriendly == true}
+                if filterArr.count == 0{// no activity found with isOfficeFriendly //
+                    addLog(text: "Ask postpone view - resetView :- no activity found with isOfficeFriendly")
+                    btnAbortBreak.isHidden = true
+                }else{
+                    btnAbortBreak.isHidden = false
+                }
+            }
             if let activityPostponeInfo = configjson.value(forKey: "activityPostponeInfo") as? NSDictionary{
                 lblTitle.stringValue = activityPostponeInfo.value(forKey: "postponeBreakText") as? String ?? lblTitle.stringValue
                 btnPostpone.title = activityPostponeInfo.value(forKey: "buttonPostponeBreakText") as? String ?? btnPostpone.title
-                btnAbortBreak.title = activityPostponeInfo.value(forKey: "buttonAbortBreakText") as? String ?? btnAbortBreak.title
+                btnAbortBreak.title = activityPostponeInfo.value(forKey: "buttonEnableOfficeModeText") as? String ?? btnAbortBreak.title
             }
         }
     }
-//    habits for few minutes
-//    Postpone Habit
-//    Completely Skip
+
+    
     @IBAction func btnPostponeClicked(_ sender: Any) {
         addLog(text: "Ask postpone view - button Postpone Clicked")
-        
         if currentState == ._MORNING_HABIT_{
+            self.view.removeFromSuperview()
             if activityPostponeCount == 0{
-                mainViewControllerObj?.postponeMorningHabitFor(minutes: (popUpButtonSelectMinutes.indexOfSelectedItem + 1) * 5)
+                mainViewControllerObj?.postponeMorningHabitFor(minutes: Int(popUpButtonSelectMinutes.title) ?? 15)
                 activityPostponeCount += 1
             }else{// agar password set na ho to
-                self.view.removeFromSuperview()
                 if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
                     mainViewControllerObj?.showPasswordView()
                     enterPasswordVcObj?.parentVc = self
                 }else{
-                    mainViewControllerObj?.postponeMorningHabitFor(minutes: (popUpButtonSelectMinutes.indexOfSelectedItem + 1) * 5)
+                    mainViewControllerObj?.postponeMorningHabitFor(minutes: Int(popUpButtonSelectMinutes.title) ?? 15)
                 }
             }
         }else if currentState == ._EVENING_HABIT_{
+            self.view.removeFromSuperview()
             if activityPostponeCount == 0{
-                mainViewControllerObj?.postponeEveningHabitFor(minutes: (popUpButtonSelectMinutes.indexOfSelectedItem + 1) * 5)
+                mainViewControllerObj?.postponeEveningHabitFor(minutes: Int(popUpButtonSelectMinutes.title) ?? 15)
                 activityPostponeCount += 1
             }else{// agar password set na ho to
-                self.view.removeFromSuperview()
                 if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
                     mainViewControllerObj?.showPasswordView()
                     enterPasswordVcObj?.parentVc = self
                 }else{
-                    mainViewControllerObj?.postponeEveningHabitFor(minutes: (popUpButtonSelectMinutes.indexOfSelectedItem + 1) * 5)
+                    mainViewControllerObj?.postponeEveningHabitFor(minutes: Int(popUpButtonSelectMinutes.title) ?? 15)
                 }
             }
         }else if currentState == ._ACTIVITY_{
             if activityPostponeCount == 0{
+                self.view.removeFromSuperview()
                 mainViewControllerObj?.postponeBreakActivitiesFor(minutes: 5)
                 activityPostponeCount += 1
             }else{
@@ -128,16 +146,23 @@ class askPostponeVc: NSViewController {
                 mainViewControllerObj?.showPasswordView()
                 enterPasswordVcObj?.parentVc = self
             }else{
-                mainViewControllerObj?.postponeFocusSummaryFor(minutes: (popUpButtonSelectMinutes.indexOfSelectedItem + 1) * 5)
+                mainViewControllerObj?.postponeFocusSummaryFor(minutes: Int(popUpButtonSelectMinutes.title) ?? 15)
             }
         }
 
         
     }
     @IBAction func btnAbortBreakClicked(_ sender: Any) {
-        addLog(text: "Ask postpone view - button Abort Clicked")
-        self.view.removeFromSuperview()
-        mainViewControllerObj?.processAborting()
+        if currentState == ._ACTIVITY_{
+            addLog(text: "Ask postpone view - button Enabled Office Mode")
+            self.view.removeFromSuperview()
+            mainViewControllerObj!.enableOfficeModeAndRestartBreakActivities()
+        }else{
+            addLog(text: "Ask postpone view - button Abort Clicked")
+            self.view.removeFromSuperview()
+            mainViewControllerObj?.processAborting()
+        }
+        
     }
     @IBAction func btnOkIWillDoBreakClicked(_ sender: Any) {
         addLog(text: "Ask postpone view - button Ok I Will Do Break Clicked")

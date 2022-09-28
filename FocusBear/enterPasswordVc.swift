@@ -116,11 +116,11 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
                         }else if parentVc == getAskPostponeVcObject(){
                             self.view.window?.close()
                             if lastCurrentState == ._MORNING_HABIT_{
-                                mainViewControllerObj?.postponeMorningHabitFor(minutes:(getAskPostponeVcObject().popUpButtonSelectMinutes.indexOfSelectedItem + 1) * 5)
+                                mainViewControllerObj?.postponeMorningHabitFor(minutes: Int(getAskPostponeVcObject().popUpButtonSelectMinutes.title) ?? 15)
                             }else if lastCurrentState == ._EVENING_HABIT_{
-                                mainViewControllerObj?.postponeEveningHabitFor(minutes:(getAskPostponeVcObject().popUpButtonSelectMinutes.indexOfSelectedItem + 1) * 5)
+                                mainViewControllerObj?.postponeEveningHabitFor(minutes: Int(getAskPostponeVcObject().popUpButtonSelectMinutes.title) ?? 15)
                             }else if lastCurrentState == ._FOCUS_SUMMARY_{
-                                mainViewControllerObj?.postponeFocusSummaryFor(minutes:(getAskPostponeVcObject().popUpButtonSelectMinutes.indexOfSelectedItem + 1) * 5)
+                                mainViewControllerObj?.postponeFocusSummaryFor(minutes: Int(getAskPostponeVcObject().popUpButtonSelectMinutes.title) ?? 15)
                             }
                             
                         }

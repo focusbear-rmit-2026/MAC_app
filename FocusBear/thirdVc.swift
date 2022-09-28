@@ -69,10 +69,11 @@ class thirdVc: NSViewController {
         }
         
     }
+
     // date formate to pass iso 8601 formate mm-dd-yyyy
     func loadGraph(activityId:String, activityName:String, logQuantity:Bool, logQuantityType:String, activityChoiceId:String?,  activityStartTime:Date?, duration:String, quantity:String){
         // here is logQuantity is only for avtivity
-        if logQuantity{
+        if logQuantity && lastActivityPerformedTime != nil{ // lastActivityPerformedTime qki jb direct incomplete habit start hoti h to pahle ka graph load hota h tb lastActivityPerformedTime ye var nil milta h 
             btnReviseQuantity.isHidden = false
         }else{
             btnReviseQuantity.isHidden = true
@@ -153,7 +154,7 @@ class thirdVc: NSViewController {
                             }
                             
                         }
-                    }else{//todo append hoga
+                    }else{
                         if let dateTime = activityStartTime{
                             var newDic = [String:Any]()
                             newDic["date"] = dateTime
@@ -201,16 +202,17 @@ class thirdVc: NSViewController {
                         }
 
                     }
+                    
+                    
+                    arrDic = arrDic.reversed()//
                     if let dateTime = activityStartTime{
                         var newDic = [String:Any]()
                         newDic["date"] = dateTime
                         newDic["dateString"] = getStringFromDate(date: dateTime, dateFormat: "MM-dd-yyyy")
                         newDic["Duration in seconds"] = duration
                         newDic["Quantity Logged"] = quantity
-                        arrDic.append(newDic)//todo check
+                        arrDic.append(newDic)
                     }
-                    
-                   // arrDic = arrDic.reversed()// no need 
                     DispatchQueue.main.async {
                         self.loadBreakFirstGraphFromCsv(activityName: activityName, logQuantity: logQuantity, logQuantityType: logQuantityType, arrDic: arrDic)
                     }
@@ -277,12 +279,53 @@ class thirdVc: NSViewController {
                                 
                                 let finalDuration = (Double(duration) ?? 0) + lastDuration
                                 let finalQuantity = (Double(quantity) ?? 0) + lastQuantity
-                                
                                 var newDic = [String:Any]()
-                                newDic["date"] = dateTime
-                                newDic["dateString"] = dateString
-                                newDic["Duration in seconds"] = "\(finalDuration)"
-                                newDic["Quantity Logged"] = "\(finalQuantity)"
+                                
+                                if logQuantityType == "AVG"{
+                                    
+                                    
+                                    
+                                    var arrDuration = [Double]()
+                                    var arrQuantity = [Double]()
+                                    if let items = graphOneDayData as? [[String:Any]]{
+                                        for item in items{
+                                            arrDuration.append(Double(item["duration_logged"] as? String ?? "") ?? 0)
+                                            arrQuantity.append(Double(item["quantity_logged"] as? String ?? "") ?? 0)
+                                        }
+                                        arrDuration.append(Double(duration) ?? 0)
+                                        arrQuantity.append(Double(quantity) ?? 0)
+
+                                        
+                                        let sumDuration = arrDuration.reduce(0, +)
+                                        let sumQuantity = arrQuantity.reduce(0, +)
+                                        
+                                        let avgQuantity = sumQuantity / Double(arrQuantity.count)
+                                        
+                                        newDic["date"] = dateTime
+                                        newDic["dateString"] = dateString
+                                        newDic["Duration in seconds"] = "\(sumDuration)"
+                                        newDic["Quantity Logged"] = "\(avgQuantity)"
+                                        
+                                    }else{
+                                        newDic["date"] = dateTime
+                                        newDic["dateString"] = dateString
+                                        newDic["Duration in seconds"] = "\(finalDuration)"
+                                        newDic["Quantity Logged"] = "\(finalQuantity)"
+                                    }
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                }else{
+                                    newDic["date"] = dateTime
+                                    newDic["dateString"] = dateString
+                                    newDic["Duration in seconds"] = "\(finalDuration)"
+                                    newDic["Quantity Logged"] = "\(finalQuantity)"
+                                }
+                                
+                                
                                 arrDic[arrDic.count - 1] = newDic
                                 
                                 
@@ -296,7 +339,7 @@ class thirdVc: NSViewController {
                             }
                             
                         }
-                    }else{//todo append hoga
+                    }else{
                         if let dateTime = activityStartTime{
                             var newDic = [String:Any]()
                             newDic["date"] = dateTime
@@ -1044,7 +1087,7 @@ class thirdVc: NSViewController {
                     let data = try (JSONSerialization.data(withJSONObject: json, options: .prettyPrinted))
                     if let str = String(data: data, encoding: String.Encoding.utf8){
                         print(str)
-                        
+                        print("morning habit graph str")
                         
                         let script = "getData(\(str));"
                         
@@ -1059,6 +1102,11 @@ class thirdVc: NSViewController {
                             DispatchQueue.main.async {
                                 self.webViewGraph1?.evaluateJavaScript(script,completionHandler: { (html: Any?, error: Error?) in
                                     print(html)
+                                    if error != nil{
+                                        print("morning habit str error is *************** \(error)")
+                                    }else{
+                                        print("morning habit str success ***************")
+                                    }
                                 })
                             }
                         }
@@ -1560,6 +1608,8 @@ class thirdVc: NSViewController {
                                 print(html)
                                 if error != nil{
                                     print("str1 error is *************** \(error)")
+                                }else{
+                                    print("str1 success ***************")
                                 }
                             })
                         }
@@ -1829,6 +1879,8 @@ class thirdVc: NSViewController {
                                 print(html)
                                 if error != nil{
                                     print("str error is *************** \(error)")
+                                }else{
+                                    print("str success ***************")
                                 }
                             })
                         }
@@ -2000,12 +2052,62 @@ class thirdVc: NSViewController {
 
  
     }
+    func startOnboardingVideo(){
+        addLog(text:"start onboarding video")
+        btnReviseQuantity.isHidden = true
+        lblTimer.isHidden = true
+        stackViewGraph.isHidden = true
+        btnMainCenterY.constant = 170
+        lblProgress.isHidden = true
+        imgViewGif.isHidden = true
+
+        
+        btnMain.title = "Continue"
+        if let preloadFocusModesViewInfo = configjson.value(forKey: "preloadFocusModesViewInfo") as? NSDictionary{
+            btnMain.title = preloadFocusModesViewInfo.value(forKey: "buttonContinueText") as? String ?? btnMain.title
+        }
+        
+        imgViewGifOpenPrefrences.isHidden = true
+        boxBreathingFinished.isHidden = false
+        customViewContainer.isHidden = true
+        btnMain.isHidden = false
+        lblTitle.stringValue = ""
+        webViewForVideo.isHidden = false
+        var videoUrl = "https://www.youtube.com/watch?v=TvfNJ1AaT9M" 
+        
+        if let welcomeInfo = configjson.value(forKey: "welcomeInfo") as? NSDictionary{
+            videoUrl = welcomeInfo.value(forKey: "welcomeVideoUrl") as? String ?? videoUrl
+        }
+        if videoUrl.lowercased().contains("watch?v="){
+            videoUrl = videoUrl.replacingOccurrences(of: "watch?v=", with: "embed/")
+        }else{
+            
+            if videoUrl.lowercased().contains("https://youtu.be/"){
+                //https://www.youtube.com/watch?v=lExuhKRS8vo
+                if let lastItem =  videoUrl.components(separatedBy: "/").last{
+                    videoUrl = "https://www.youtube.com/embed/" + lastItem
+                }
+                
+            }
+        }
+        if videoUrl.contains("?"){
+            videoUrl = videoUrl + "&autoplay=1"
+        }else{
+            videoUrl = videoUrl + "?autoplay=1"
+        }
+        let link = URL(string:videoUrl)!
+        let request = URLRequest(url: link)
+        self.webViewForVideo.load(request)
+    }
     
     func btnFocesModesLodded(){
         imgViewGifOpenPrefrences.isHidden = true
         boxBreathingFinished.isHidden = false
         customViewContainer.isHidden = true
         btnMain.isHidden = false
+        btnMainClicked(self)//new work 26/9/22
+        
+        return;//old work
         lblTitle.stringValue = ""
         webViewForVideo.isHidden = false
         
@@ -3070,6 +3172,14 @@ class thirdVc: NSViewController {
         self.webViewForVideo.load(request)
     }
     @IBAction func btnMainClicked(_ sender: Any) {
+        if webViewForVideo.isHidden == false{ // onboarding view is lodded
+            addLog(text:"onboarding video - btn Continue clicked")
+            loadBlankUrl()
+            self.view.window?.close()
+            return;
+        }
+        
+        
         addLog(text:"thirdvc-btnMainClicked")
         btnReviseQuantity.isHidden = true
         if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{//qki enter per ye button handle hai  or jha se handle h vha condition lganase accha yahi lagadi (enterv  password per bhi default enter key code h button per )
@@ -3088,7 +3198,7 @@ class thirdVc: NSViewController {
         webViewForVideo.isHidden = true
         boxBreathingFinished.isHidden = true
         if currentState == ._BREATHING_{
-            loadBlankUrl()
+//            loadBlankUrl()//old work 26/9/22
             boxBreathingFinished.isHidden = true
             mainViewControllerObj?.breathingFinishedUnlockMachine()
         }else if currentState == ._ACTIVITY_ {
