@@ -40,17 +40,45 @@ class welcomeOnboardingVc: NSViewController {
             
         }
         
-        
+        btnLater.buttonColor = NSColor.white.cgColor
     }
     
     @IBAction func btnLaterClicked(_ sender: Any) {
         addLog(text: "btnLaterClicked.")
         self.presentAsSheet(getOnboardingPostponeVcObject())
     }
+    
     @IBAction func btnLetsDoItClicked(_ sender: Any) {
         addLog(text: "btnLetsDoItClicked.")
-        self.view.window?.close()
-        appdelegate!.showOnbardingHabit()
+        
+        let alert = NSAlert()
+        
+        var messageText = "Just want to double check you are ok to focus 100% on onboarding for the next 2 minutes. The next step is full screen - you won't be able to use any other apps during this time."
+        var buttonConfirmLetsDoItText = "You have my full attention"
+        var buttonLaterText = "Uhh I need a few more minutes"
+
+        if let welcomeOnboardingVcInfo = configjson.value(forKey: "welcomeOnboardingVcInfo") as? NSDictionary{
+            messageText = welcomeOnboardingVcInfo.value(forKey: "confirmText") as? String ?? messageText
+            buttonConfirmLetsDoItText = welcomeOnboardingVcInfo.value(forKey: "buttonConfirmLetsDoItText") as? String ?? buttonConfirmLetsDoItText
+            buttonLaterText = welcomeOnboardingVcInfo.value(forKey: "buttonNeedMoreTimeText") as? String ?? buttonLaterText
+        }
+        
+        alert.messageText = messageText
+        alert.addButton(withTitle: buttonConfirmLetsDoItText)
+        alert.addButton(withTitle: buttonLaterText)
+        
+        
+        alert.beginSheetModal(for: self.view.window!, completionHandler: {result in
+            if result == .alertFirstButtonReturn{
+                addLog(text: "Alert:- btnLetsDoItClicked.")
+                self.view.window?.close()
+                appdelegate!.showAskAppWork()//showOnbardingHabit()
+            }else {
+                addLog(text: "Alert:- btnLaterClicked.")
+                self.presentAsSheet(getOnboardingPostponeVcObject())
+            }
+        })
+
     }
     
 }

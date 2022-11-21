@@ -29,6 +29,7 @@ class PopoverViewController: NSViewController {
         }
     }
     @objc func doubleClicked(){
+        addLog(text:"rememberNextHabitVc:- doubleClicked")
         if tblView.selectedRow != -1{
             textFieldObj?.stringValue = itemsarr[tblView.selectedRow]["title"] as? String ?? ""
             textFieldObj?.selectedItemId = itemsarr[tblView.selectedRow]["id"] as? Int ?? 0

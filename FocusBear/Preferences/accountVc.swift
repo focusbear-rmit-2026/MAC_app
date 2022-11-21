@@ -133,6 +133,7 @@ class accountVc: NSViewController {
         alert.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
             if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
                 print("okclicked")
+                allApiObject.capturePosthog(event: "logout", metadata: [:])
                 appdelegate?.logout()
             }
         })
@@ -141,6 +142,7 @@ class accountVc: NSViewController {
     @IBAction func btnRestorePurchaseClicked(_ sender: Any) {
         loader.startAnimation(self)
         btnRestorePurchase.isEnabled = false
+        allApiObject.capturePosthog(event: "sync-payment-status", metadata: ["from":"accounts_tab"])
         appdelegate?.renewToken(window: self.view.window!, completionHandler: {
             DispatchQueue.main.async {
                 self.loader.stopAnimation(self)

@@ -11,6 +11,7 @@ import Cocoa
 class tblCellFocus: NSTableCellView {
 
 
+    @IBOutlet weak var btnEditFocusMode: NSButton!
     @IBOutlet weak var lblIntension: NSTextField!
     //  @IBOutlet weak var hoursPopupBtn: NSPopUpButton!
     @IBOutlet weak var horizaontalLine: NSBox!
@@ -27,15 +28,32 @@ class tblCellFocus: NSTableCellView {
     @IBOutlet weak var boxtitle: customBox!
     @IBOutlet weak var boxChildFirst: customBox!
     @IBOutlet weak var boxChildSecond: customBox!
- //   var isFirstTime = true
-    
-//    var currentRow = 0
+    var isFirstTime = false
+    var trackingArea: NSTrackingArea?
+
+
     
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
 
         // Drawing code here.
+        if !isFirstTime {
+            isFirstTime = true
+            trackingArea = NSTrackingArea.init(rect: boxtitle.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
+            boxtitle.addTrackingArea(trackingArea!)
+        }
     }
    
+    override func mouseEntered(with event: NSEvent) {
+        if event.trackingArea == trackingArea{
+            btnEditFocusMode.isHidden = false
+//            NSCursor.pointingHand.set()
+        }
+    }
+    override func mouseExited(with event: NSEvent) {
+        btnEditFocusMode.isHidden = true
+//        NSCursor.pointingHand.set()
+    }
+    
 }
 

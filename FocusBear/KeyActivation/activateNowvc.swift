@@ -116,7 +116,7 @@ class activateNowvc: NSViewController,NSTextFieldDelegate {
     
     
     @IBAction func btnbuyLicense(_ sender: Any) {
-        purchaseNow_clicked()
+//        purchaseNow_clicked()
     }
     
     

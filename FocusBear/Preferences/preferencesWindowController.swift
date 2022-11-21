@@ -27,16 +27,16 @@ class preferencesWindowController: NSWindowController, NSWindowDelegate  {
        if isGettingSchema{
            return false
        }
-    if selectJsonVcObj != nil{
-        selectJsonVcObj!.boxWidthConstraint.constant = 500
-        selectJsonVcObj!.boxHeightConstraint.constant = 350
-        selectJsonVcObj!.customView.isHidden = true
-        selectJsonVcObj!.textscrollView.isHidden = true
-        selectJsonVcObj!.lblTitle.isHidden = true
-        selectJsonVcObj!.lblVisitUrl.isHidden = true
-        selectJsonVcObj!.btnCancel.isHidden = true
-        selectJsonVcObj!.btnSave.isHidden = true
-    }
+//    if selectJsonVcObj != nil{
+//        selectJsonVcObj!.boxWidthConstraint.constant = 500
+//        selectJsonVcObj!.boxHeightConstraint.constant = 350
+//        selectJsonVcObj!.customView.isHidden = true
+//        selectJsonVcObj!.textscrollView.isHidden = true
+//        selectJsonVcObj!.lblTitle.isHidden = true
+//        selectJsonVcObj!.lblVisitUrl.isHidden = true
+//        selectJsonVcObj!.btnCancel.isHidden = true
+//        selectJsonVcObj!.btnSave.isHidden = true
+//    }
        return true
    }
 }

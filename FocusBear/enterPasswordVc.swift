@@ -114,15 +114,30 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
                             pomodoroVcObj?.passwordIsCorrect()
                             return;
                         }else if parentVc == getAskPostponeVcObject(){
-                            self.view.window?.close()
-                            if lastCurrentState == ._MORNING_HABIT_{
-                                mainViewControllerObj?.postponeMorningHabitFor(minutes: Int(getAskPostponeVcObject().popUpButtonSelectMinutes.title) ?? 15)
+                            
+                            if lastCurrentState == ._MORNING_HABIT_{// //  jesa morning mai vesa evening mai
+//                                mainViewControllerObj?.postponeMorningHabitFor(minutes: Int(getAskPostponeVcObject().popUpButtonSelectMinutes.title) ?? 15)
+                                self.view.removeFromSuperview()
+                                mainViewControllerObj?.showAskPostponeView()
+                                return;
                             }else if lastCurrentState == ._EVENING_HABIT_{
-                                mainViewControllerObj?.postponeEveningHabitFor(minutes: Int(getAskPostponeVcObject().popUpButtonSelectMinutes.title) ?? 15)
+                                self.view.removeFromSuperview()
+                                mainViewControllerObj?.showAskPostponeView()
+//                                mainViewControllerObj?.postponeEveningHabitFor(minutes: Int(getAskPostponeVcObject().popUpButtonSelectMinutes.title) ?? 15)
+                                return;
                             }else if lastCurrentState == ._FOCUS_SUMMARY_{
+                                self.view.window?.close()
+                                self.view.removeFromSuperview()
                                 mainViewControllerObj?.postponeFocusSummaryFor(minutes: Int(getAskPostponeVcObject().popUpButtonSelectMinutes.title) ?? 15)
+                                return;
                             }
                             
+                        }else if skipHabitVcObj != nil{
+                            if parentVc == skipHabitVcObj!{
+                                self.view.removeFromSuperview()
+                                mainViewControllerObj?.showSkipHabitView()
+                                return;
+                            }
                         }
                     }
                                         
@@ -181,6 +196,11 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
                 self.view.removeFromSuperview()
                 mainViewControllerObj?.abortCancel()
                 return;
+            }else if skipHabitVcObj != nil{
+                if parentVc == skipHabitVcObj!{
+                    self.view.removeFromSuperview()
+                    return;
+                }
             }
         }
         

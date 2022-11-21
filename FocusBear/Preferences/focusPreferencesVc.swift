@@ -9,28 +9,31 @@
 import Cocoa
 
 class focusPreferencesVc: NSViewController, NSMenuDelegate {
-
-   
+    
+    
+    @IBOutlet weak var bntColorBoxInfo: NSButton!
+    @IBOutlet weak var lblUrlsQuestion: NSTextField!
+    @IBOutlet weak var popUpBtnUrlBox: NSPopUpButton!
     @IBOutlet weak var colorWell: NSColorWell!
     @IBOutlet weak var btnAdvanced: NSButton!
     @IBOutlet weak var horizontalLineSeprator: NSBox!
     @IBOutlet weak var radioBtnAllowAllApps: NSButton!
     @IBOutlet weak var radioBtnAllowSelectedApps: NSButton!
     
-    @IBOutlet weak var radioBtnAllowAllUrls: NSButton!
-    @IBOutlet weak var radioBtnAllowSelectedUrls: NSButton!
+    @IBOutlet weak var radioBtnAllowListApproch: NSButton!
+    @IBOutlet weak var radioBtnBlockListApproch: NSButton!
     
     @IBOutlet weak var lblTitleFocusType: NSTextField!
     @IBOutlet weak var boxAllowedWebUrls: NSBox!
     @IBOutlet weak var boxAllowedApps: NSBox!
     @IBOutlet weak var lblNoFocusAdded: NSTextField!
     @IBOutlet weak var boxEmptyFocusType: NSBox!
-//    @IBOutlet weak var toggleButton: CToggleButton!
-//    @IBOutlet weak var lblTitle: NSTextField!
-//    @IBOutlet weak var lblTitleAllowedUrls: NSTextField!
-//    @IBOutlet weak var lblTitleAllowedApps: NSTextField!
+    //    @IBOutlet weak var toggleButton: CToggleButton!
+    //    @IBOutlet weak var lblTitle: NSTextField!
+    //    @IBOutlet weak var lblTitleAllowedUrls: NSTextField!
+    //    @IBOutlet weak var lblTitleAllowedApps: NSTextField!
     @IBOutlet weak var textFieldSelectedFocusType: NSTextField!
-  
+    
     @IBOutlet weak var tblViewAllowedApps: NSTableView!
     @IBOutlet weak var tblViewFocusType: NSTableView!
     @IBOutlet weak var tblViewAllowedUrls: NSTableView!
@@ -44,6 +47,14 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
     
     @IBOutlet weak var btnDuplicateFocusType: NSButton!
     
+    var titleAllowedAllUrls = "Allow all urls"
+    var titleAllowedSelectedUrls = "Allow selected urls (works with Safari and Chrome only)"
+    
+    var titleBlockAllUrls = "Block all urls"
+    var titleBlockSelectedUrls = "Block selected urls (works with Safari and Chrome only)"
+    
+    var allowUrlsQuestionText = "How do you want to allow URLs?"
+    var blockUrlsQuestionText = "How do you want to block URLs?"
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -53,17 +64,19 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         var toolTipRemove = "Remove"
         var toolTipDuplicate = "Duplicate"
         
+        lblUrlsQuestion.stringValue = "How do you want to allow URLs?"
         
         btnAddFocusType.title = "Add Focus Mode"
         btnDuplicateFocusType.title = "Duplicate"
         btnRemoveFocusType.title = "Delete"
         
+        radioBtnAllowListApproch.title = "Follow Allow List Approach for Blocking URLS"
+        radioBtnBlockListApproch.title = "Follow Block List Approach for Blocking URLS"
+        
         focusPreferencesVcObj = self
         var titleAllowedAllApps = "Allow all apps"
         var titleAllowedSelectedApps = "Allow selected apps"
         
-        var titleAllowedAllUrls = "Allow all urls"
-        var titleAllowedSelectedUrls = "Allow selected urls (works with Safari and Chrome only)"
         
         var titleFocusType = "Focus Type:"
         
@@ -82,13 +95,26 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
             btnAdvanced.title = focusPreferencesInfo.value(forKey: "buttonAdvancedText") as? String ?? btnAdvanced.title
             btnAddFocusType.title = focusPreferencesInfo.value(forKey: "buttonAddFocusTypeText") as? String ?? btnAddFocusType.title
             btnRemoveFocusType.title = focusPreferencesInfo.value(forKey: "buttonDeleteFocusTypeText") as? String ?? btnRemoveFocusType.title
+            
+            
+            titleBlockAllUrls = focusPreferencesInfo.value(forKey: "titleBlockedAllUrls") as? String ?? titleBlockAllUrls
+            titleBlockSelectedUrls = focusPreferencesInfo.value(forKey: "titleBlockedSelectedUrls") as? String ?? titleBlockSelectedUrls
+            radioBtnAllowListApproch.title = focusPreferencesInfo.value(forKey: "titleAllowUrlListApproch") as? String ?? radioBtnAllowListApproch.title
+            radioBtnBlockListApproch.title = focusPreferencesInfo.value(forKey: "titleBlockUrlListApproch") as? String ?? radioBtnBlockListApproch.title
+            
+            allowUrlsQuestionText = focusPreferencesInfo.value(forKey: "allowUrlsQuestionText") as? String ?? allowUrlsQuestionText
+            blockUrlsQuestionText = focusPreferencesInfo.value(forKey: "blockUrlsQuestionText") as? String ?? blockUrlsQuestionText
         }
         lblTitleFocusType.stringValue = titleFocusType
         radioBtnAllowAllApps.title = titleAllowedAllApps
         radioBtnAllowSelectedApps.title = titleAllowedSelectedApps
-        radioBtnAllowAllUrls.title = titleAllowedAllUrls
-        radioBtnAllowSelectedUrls.title = titleAllowedSelectedUrls
-
+//        radioBtnAllowAllUrls.title = titleAllowedAllUrls
+//        radioBtnAllowSelectedUrls.title = titleAllowedSelectedUrls
+        
+        popUpBtnUrlBox.removeAllItems()
+        popUpBtnUrlBox.addItem(withTitle: titleAllowedAllUrls)
+        popUpBtnUrlBox.addItem(withTitle: titleAllowedSelectedUrls)
+        lblUrlsQuestion.stringValue = allowUrlsQuestionText
         btnDuplicateFocusType.title = toolTipDuplicate
         
         btnDuplicateFocusType.toolTip = toolTipDuplicate
@@ -101,23 +127,49 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         
         
         lblNoFocusAdded.stringValue = noFocusAddedText
-//        NotificationCenter.default.addObserver(self, selector: #selector(btnToggleClicked), name: Notification.Name("toggle"), object: nil)
+        //        NotificationCenter.default.addObserver(self, selector: #selector(btnToggleClicked), name: Notification.Name("toggle"), object: nil)
         
-      //  tblViewFocusType.doubleAction = #selector(tableRowFocusTypeDoubleClicked)
+        //  tblViewFocusType.doubleAction = #selector(tableRowFocusTypeDoubleClicked)
         tblViewAllowedUrls.doubleAction = #selector(tableRowAllowedUrlsDoubleClicked)
         
         let menu = NSMenu()
         
         menu.delegate = self
-//        menu.addItem(NSMenuItem(title: "Delete", action: #selector(tableViewDeleteItemClicked(_:)), keyEquivalent: ""))
+        //        menu.addItem(NSMenuItem(title: "Delete", action: #selector(tableViewDeleteItemClicked(_:)), keyEquivalent: ""))
         tblViewFocusType.menu = menu
-
+        
         textFieldSelectedFocusType.delegate = self
         
         
         
+        btnInfoColorBoxTrackingArea = NSTrackingArea.init(rect: bntColorBoxInfo.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
+        bntColorBoxInfo.addTrackingArea(btnInfoColorBoxTrackingArea!)
         
+        if let common = configjson.value(forKey: "common") as? NSDictionary{
+            toolTipColorBox = common.value(forKey: "toolTipColorBoxText") as? String ?? toolTipColorBox
+        }
         
+    }
+    
+    var btnInfoColorBoxTrackingArea: NSTrackingArea?
+    var toolTipColorBox = "Choose a color to be displayed in the background of the top menu bar icon to help identify the Focus Mode you are running."
+    override func mouseEntered(with event: NSEvent) {
+        if event.trackingArea == btnInfoColorBoxTrackingArea{
+            showTooltip(sender: bntColorBoxInfo, msg: toolTipColorBox, preferredEdge: NSRectEdge.maxX)
+        }
+    }
+    override func mouseExited(with event: NSEvent) {
+        if event.trackingArea == btnInfoColorBoxTrackingArea{
+            if popoverTooltip != nil{
+                if popoverTooltip!.isShown{
+                    popoverTooltip?.close()
+                }
+            }
+        }
+    }
+    @IBAction func bntColorBoxInfoClicked(_ sender: Any) {
+        addLog(text: "bntColorBoxInfoClicked")
+        showTooltip(sender: bntColorBoxInfo, msg: toolTipColorBox, preferredEdge: NSRectEdge.maxX)
     }
     
     var cp = NSColorPanel.shared
@@ -153,6 +205,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
                 
             }
         })
+        allApiObject.capturePosthog(event: "edit-focus-mode-colour", metadata: [:])
     }
     
     @objc private func tableViewDuplicateItemClicked(_ sender: AnyObject) {
@@ -169,6 +222,9 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         }
         if (item["isMeetings"] as? Bool) != nil{
             item.removeValue(forKey: "isMeetings")
+        }
+        if (item["isLockedFocus"] as? Bool) != nil{
+            item.removeValue(forKey: "isLockedFocus")
         }
         let oldName = item["name"] as? String ?? ""
         var count = 1
@@ -200,45 +256,45 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         tblViewFocusType.selectRowIndexes(IndexSet(arrayLiteral: newRow), byExtendingSelection: false)
         tblViewFocusType.scrollRowToVisible(newRow)
         focusPreferencesVcObj?.checkState()
-
+        
         UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
         
         allApiObject.addFocusMode(focusType: item, completionHandler: { newDic in
             if newDic != nil{
                 DispatchQueue.main.async {
-//                    item["id"] = newDic!.value(forKey: "id") as? String ?? ""//["id"] as? String ?? ""
+                    //                    item["id"] = newDic!.value(forKey: "id") as? String ?? ""//["id"] as? String ?? ""
                     
                 }
             }
             
         })
-        
+        allApiObject.capturePosthog(event: "duplicate-focus-mode", metadata: [:])
         
     }
     @IBAction func btnDuplicateFocusTypeClicked(_ sender: Any) {
         makeDuplicateFocus(row: tblViewFocusType.selectedRow)
     }
-//    func focusModeStarted(){
-//        for i in 0..<arrFocusType.count{
-//            if arrFocusType[i]["isOn"] as? Bool == true{
-//                if tblViewFocusType.selectedRow == i{
-//                  //  toggleButton.isOn = true
-//                    break;
-//                }
-//            }
-//        }
-//    }
-//
-//    func focusModeFinished(){
-//        for i in 0..<arrFocusType.count{
-//            if arrFocusType[i]["isOn"] as? Bool == false{
-//                if tblViewFocusType.selectedRow == i{
-////                    toggleButton.isOn = false
-//                    break;
-//                }
-//            }
-//        }
-//    }
+    //    func focusModeStarted(){
+    //        for i in 0..<arrFocusType.count{
+    //            if arrFocusType[i]["isOn"] as? Bool == true{
+    //                if tblViewFocusType.selectedRow == i{
+    //                  //  toggleButton.isOn = true
+    //                    break;
+    //                }
+    //            }
+    //        }
+    //    }
+    //
+    //    func focusModeFinished(){
+    //        for i in 0..<arrFocusType.count{
+    //            if arrFocusType[i]["isOn"] as? Bool == false{
+    //                if tblViewFocusType.selectedRow == i{
+    ////                    toggleButton.isOn = false
+    //                    break;
+    //                }
+    //            }
+    //        }
+    //    }
     
     func isFocusNameAvailable(newName:String)->Bool{
         for focus in arrFocusType{
@@ -257,11 +313,11 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         }
         menu.removeAllItems()
         if tblViewFocusType.clickedRow != -1{
-             menu.addItem(NSMenuItem(title: duplicateText, action: #selector(tableViewDuplicateItemClicked(_:)), keyEquivalent: ""))
+            menu.addItem(NSMenuItem(title: duplicateText, action: #selector(tableViewDuplicateItemClicked(_:)), keyEquivalent: ""))
         }
         
     }
-//    var cp = NSColorPanel.shared
+    //    var cp = NSColorPanel.shared
     override func viewWillAppear() {
         reloadData()
     }
@@ -280,9 +336,9 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
                 textFieldSelectedFocusType.stringValue = ""
             }
             if let isOn = arrFocusType[tblViewFocusType.selectedRow]["isOn"] as? Bool{
-              //  toggleButton.isOn = isOn
+                //  toggleButton.isOn = isOn
             }else{
-               // toggleButton.isOn = false
+                // toggleButton.isOn = false
             }
             
             tblViewAllowedApps.reloadData()
@@ -303,7 +359,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
             UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
             allApiObject.editFocusMode(focusType: arrFocusType[selectedRow], completionHandler: {newDic in
                 DispatchQueue.main.async {
-
+                    
                 }
             })
         }
@@ -324,7 +380,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
             UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
             allApiObject.editFocusMode(focusType: arrFocusType[selectedRow], completionHandler: {newDic in
                 DispatchQueue.main.async {
-
+                    
                 }
             })
         }
@@ -333,8 +389,8 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         }
     }
     @IBAction func radioBtnAllowAllUrlsClicked(_ sender: Any) {
-        radioBtnAllowAllUrls.state = .on
-        radioBtnAllowSelectedUrls.state = .off
+//        radioBtnAllowAllUrls.state = .on
+//        radioBtnAllowSelectedUrls.state = .off
         tblViewAllowedUrls.isEnabled = false
         tblViewAllowedUrls.deselectAll(self)
         btnAddUrl.isEnabled = false
@@ -345,7 +401,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
             UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
             allApiObject.editFocusMode(focusType: arrFocusType[selectedRow], completionHandler: {newDic in
                 DispatchQueue.main.async {
-
+                    
                 }
             })
         }
@@ -354,8 +410,8 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         }
     }
     @IBAction func radioBtnAllowSelectedUrlsClicked(_ sender: Any) {
-        radioBtnAllowAllUrls.state = .off
-        radioBtnAllowSelectedUrls.state = .on
+//        radioBtnAllowAllUrls.state = .off
+//        radioBtnAllowSelectedUrls.state = .on
         tblViewAllowedUrls.isEnabled = true
         btnAddUrl.isEnabled = true
         let selectedRow = tblViewFocusType.selectedRow
@@ -364,7 +420,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
             UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
             allApiObject.editFocusMode(focusType: arrFocusType[selectedRow], completionHandler: {newDic in
                 DispatchQueue.main.async {
-
+                    
                 }
             })
         }
@@ -373,176 +429,180 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         }
     }
     
-//    @objc func tableRowFocusTypeDoubleClicked(){
-//        let selectedTow = tblViewFocusType.selectedRow
-//        if selectedTow == -1{
-//            return;
-//        }
-//        if let state = arrFocusType[selectedTow]["isDefault"] as? Bool{//this key will only be awailable in default focus type
-//            if state{
-//                return
-//            }
-//        }
-//        if let state = arrFocusType[selectedTow]["isMeetings"] as? Bool{//this key will only be awailable in Meetings focus type
-//            if state{
-//                return
-//            }
-//        }
-//
-//        
-//        addFocusTypeVcObj?.isAdding = false
-//        self.presentAsSheet(addFocusTypeVcObj!)
-//        
-//    }
+    //    @objc func tableRowFocusTypeDoubleClicked(){
+    //        let selectedTow = tblViewFocusType.selectedRow
+    //        if selectedTow == -1{
+    //            return;
+    //        }
+    //        if let state = arrFocusType[selectedTow]["isDefault"] as? Bool{//this key will only be awailable in default focus type
+    //            if state{
+    //                return
+    //            }
+    //        }
+    //        if let state = arrFocusType[selectedTow]["isMeetings"] as? Bool{//this key will only be awailable in Meetings focus type
+    //            if state{
+    //                return
+    //            }
+    //        }
+    //
+    //
+    //        addFocusTypeVcObj?.isAdding = false
+    //        self.presentAsSheet(addFocusTypeVcObj!)
+    //
+    //    }
     @objc func tableRowAllowedUrlsDoubleClicked(){
         let selectedTow = tblViewAllowedUrls.selectedRow
         if selectedTow == -1{
             return;
         }
-        addWebUrlVcObj!.currenUrlAddingtState = ._FOCUS_ALLOW_URL
+        if radioBtnAllowListApproch.state == .on{
+            addWebUrlVcObj!.currenUrlAddingtState = ._FOCUS_ALLOW_URL
+        }else{
+            addWebUrlVcObj!.currenUrlAddingtState = ._FOCUS_BLOCK_URL
+        }
         addWebUrlVcObj!.isAdding = false
         self.presentAsSheet(addWebUrlVcObj!)
     }
     
-//    @objc func btnToggleClicked(notification: Notification) {
-//        if let state = notification.userInfo!["isOn"] as? Bool, let row = notification.userInfo!["index"] as? Int{
-//            print(row)
-//            print(state)
-//
-//            if state{
-//                if isDiscourageDefaultFocusVcVisible{
-//                    toggleButton.isOn = false
-//                    return
-//                }
-//                //if state{
-//                for i in 0..<arrFocusType.count{
-//                    if arrFocusType[i]["isOn"] as? Bool == true{
-//                        let alert = NSAlert()
-//                        alert.messageText = "A focus mode is already running. Please abort the running focus mode to start a new one."
-//                        if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
-//                            if let focusAlreadyRunningText = focusInfo.value(forKey: "focusAlreadyRunningText") as? String{
-//                                alert.messageText = focusAlreadyRunningText
-//                            }
-//                        }
-//                        alert.window.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
-//                        alert.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
-//                            if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
-//
-//                            }
-//                        })
-//
-//                        toggleButton.isOn = false
-//                        return;
-//                    }
-//                }
-//                toggleButton.isOn = false
-//
-//
-//
-//
-////                if arrFocusType[tblViewFocusType.selectedRow]["isDefault"] as? Bool == true{
-////                    let alertConfirmation = NSAlert()
-////                    alertConfirmation.messageText = "Are you sure? It's pretty easy to get distracted without using a more restrictive focus mode"
-////                    alertConfirmation.addButton(withTitle: "Shutup I know what I'm doing")
-////                    alertConfirmation.addButton(withTitle: "Bah I guess you're right - CANCEL!")
-////
-////                    alertConfirmation.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
-////                        if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
-////                            print("Shutup I know what I'm doing")
-////
-////                            self.secondsAlert = NSAlert()
-////                            self.secondsAlert!.messageText = "Ok good luck! (You'll need it 😅)"
-////                            self.secondsAlert!.informativeText = "05:00"
-////                            self.secondsCount = 5
-////                            self.secondsAlert?.addButton(withTitle: "")
-////                            self.secondsAlert!.beginSheetModal(for: self.view.window!, completionHandler: nil)
-////                            self.secondsAlert!.buttons.first?.isHidden = true
-////
-////                            self.currentSecond = 0
-////                            self.secondsCount = 5
-////                            let (_,m,s) = secondsToHoursMinutesSeconds(seconds: self.secondsCount-self.currentSecond)
-////                            var minute = "\(m)"
-////                            var second = "\(s)"
-////                            if minute.count == 1 {
-////                                minute = "0\(m)"
-////                            }
-////                            if second.count == 1 {
-////                                second = "0\(s)"
-////                            }
-////                            self.secondsAlert!.informativeText = "\(minute):\(second)"
-////
-////                            DispatchQueue.main.async {
-////                                self.timerSeconds = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.changeAlertCount), userInfo: nil, repeats: true)
-////                            }
-////
-////
-////                        }
-////                    })
-////                    self.presentAsSheet(getDiscourageDefaultFocusVcObject())
-////                    getDiscourageDefaultFocusVcObject().resetData()
-////                    return;
-////                }else{
-//                     showStartingFocusMode(focusModeIndex: tblViewFocusType.selectedRow, focusType: arrFocusType[tblViewFocusType.selectedRow]["name"] as? String ?? "")
-////                }
-//
-//
-//
-//
-//
-//
-//
-//                return;
-//
-//            }else{
-//                if isDiscourageDefaultFocusVcVisible{
-//                    toggleButton.isOn = true
-//                    return
-//                }
-//                toggleButton.isOn = true
-//                showAbortingFocusModeVc()
-//            }
-//
-//        }
-//    }
-//    var secondsAlert: NSAlert?
-//    var secondsCount = 5
-//    var currentSecond = 0
-//    var timerSeconds:Timer?
-//    @objc func changeAlertCount(){
-//        self.secondsAlert!.buttons.first?.isHidden = true
-//        currentSecond += 1
-//        let (_,m,s) = secondsToHoursMinutesSeconds(seconds: self.secondsCount-self.currentSecond)
-//        var minute = "\(m)"
-//        var second = "\(s)"
-//
-//        if minute.count == 1 {
-//            minute = "0\(m)"
-//        }
-//        if second.count == 1 {
-//            second = "0\(s)"
-//        }
-//
-////        DispatchQueue.main.async {
-//            self.secondsAlert?.informativeText = "\(minute):\(second)"
-////        }
-//        if self.secondsCount <= self.currentSecond {
-//            self.timerSeconds?.invalidate()
-//            self.secondsAlert?.window.close()
-//            self.secondsAlert = nil
-//            self.timerSeconds = nil
-//        }
-//    }
+    //    @objc func btnToggleClicked(notification: Notification) {
+    //        if let state = notification.userInfo!["isOn"] as? Bool, let row = notification.userInfo!["index"] as? Int{
+    //            print(row)
+    //            print(state)
+    //
+    //            if state{
+    //                if isDiscourageDefaultFocusVcVisible{
+    //                    toggleButton.isOn = false
+    //                    return
+    //                }
+    //                //if state{
+    //                for i in 0..<arrFocusType.count{
+    //                    if arrFocusType[i]["isOn"] as? Bool == true{
+    //                        let alert = NSAlert()
+    //                        alert.messageText = "A focus mode is already running. Please abort the running focus mode to start a new one."
+    //                        if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
+    //                            if let focusAlreadyRunningText = focusInfo.value(forKey: "focusAlreadyRunningText") as? String{
+    //                                alert.messageText = focusAlreadyRunningText
+    //                            }
+    //                        }
+    //                        alert.window.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
+    //                        alert.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
+    //                            if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
+    //
+    //                            }
+    //                        })
+    //
+    //                        toggleButton.isOn = false
+    //                        return;
+    //                    }
+    //                }
+    //                toggleButton.isOn = false
+    //
+    //
+    //
+    //
+    ////                if arrFocusType[tblViewFocusType.selectedRow]["isDefault"] as? Bool == true{
+    ////                    let alertConfirmation = NSAlert()
+    ////                    alertConfirmation.messageText = "Are you sure? It's pretty easy to get distracted without using a more restrictive focus mode"
+    ////                    alertConfirmation.addButton(withTitle: "Shutup I know what I'm doing")
+    ////                    alertConfirmation.addButton(withTitle: "Bah I guess you're right - CANCEL!")
+    ////
+    ////                    alertConfirmation.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
+    ////                        if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
+    ////                            print("Shutup I know what I'm doing")
+    ////
+    ////                            self.secondsAlert = NSAlert()
+    ////                            self.secondsAlert!.messageText = "Ok good luck! (You'll need it 😅)"
+    ////                            self.secondsAlert!.informativeText = "05:00"
+    ////                            self.secondsCount = 5
+    ////                            self.secondsAlert?.addButton(withTitle: "")
+    ////                            self.secondsAlert!.beginSheetModal(for: self.view.window!, completionHandler: nil)
+    ////                            self.secondsAlert!.buttons.first?.isHidden = true
+    ////
+    ////                            self.currentSecond = 0
+    ////                            self.secondsCount = 5
+    ////                            let (_,m,s) = secondsToHoursMinutesSeconds(seconds: self.secondsCount-self.currentSecond)
+    ////                            var minute = "\(m)"
+    ////                            var second = "\(s)"
+    ////                            if minute.count == 1 {
+    ////                                minute = "0\(m)"
+    ////                            }
+    ////                            if second.count == 1 {
+    ////                                second = "0\(s)"
+    ////                            }
+    ////                            self.secondsAlert!.informativeText = "\(minute):\(second)"
+    ////
+    ////                            DispatchQueue.main.async {
+    ////                                self.timerSeconds = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.changeAlertCount), userInfo: nil, repeats: true)
+    ////                            }
+    ////
+    ////
+    ////                        }
+    ////                    })
+    ////                    self.presentAsSheet(getDiscourageDefaultFocusVcObject())
+    ////                    getDiscourageDefaultFocusVcObject().resetData()
+    ////                    return;
+    ////                }else{
+    //                     showStartingFocusMode(focusModeIndex: tblViewFocusType.selectedRow, focusType: arrFocusType[tblViewFocusType.selectedRow]["name"] as? String ?? "")
+    ////                }
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //                return;
+    //
+    //            }else{
+    //                if isDiscourageDefaultFocusVcVisible{
+    //                    toggleButton.isOn = true
+    //                    return
+    //                }
+    //                toggleButton.isOn = true
+    //                showAbortingFocusModeVc()
+    //            }
+    //
+    //        }
+    //    }
+    //    var secondsAlert: NSAlert?
+    //    var secondsCount = 5
+    //    var currentSecond = 0
+    //    var timerSeconds:Timer?
+    //    @objc func changeAlertCount(){
+    //        self.secondsAlert!.buttons.first?.isHidden = true
+    //        currentSecond += 1
+    //        let (_,m,s) = secondsToHoursMinutesSeconds(seconds: self.secondsCount-self.currentSecond)
+    //        var minute = "\(m)"
+    //        var second = "\(s)"
+    //
+    //        if minute.count == 1 {
+    //            minute = "0\(m)"
+    //        }
+    //        if second.count == 1 {
+    //            second = "0\(s)"
+    //        }
+    //
+    ////        DispatchQueue.main.async {
+    //            self.secondsAlert?.informativeText = "\(minute):\(second)"
+    ////        }
+    //        if self.secondsCount <= self.currentSecond {
+    //            self.timerSeconds?.invalidate()
+    //            self.secondsAlert?.window.close()
+    //            self.secondsAlert = nil
+    //            self.timerSeconds = nil
+    //        }
+    //    }
     @IBAction func btnAddFocusTypeClicked(_ sender: Any) {
-//        addFocusTypeVcObj?.isAdding = true
+        //        addFocusTypeVcObj?.isAdding = true
         self.presentAsSheet(addFocusTypeVcObj!)
     }
-
+    
     func checkState(){
         if arrFocusType.count == 0{
-//            toggleButton.isHidden = true
+            //            toggleButton.isHidden = true
             textFieldSelectedFocusType.isHidden = true
-            radioBtnAllowSelectedUrls.isHidden = true
-            radioBtnAllowAllUrls.isHidden = true
+//            radioBtnAllowSelectedUrls.isHidden = true
+//            radioBtnAllowAllUrls.isHidden = true
             radioBtnAllowSelectedApps.isHidden = true
             radioBtnAllowAllApps.isHidden = true
             boxAllowedApps.isHidden = true
@@ -551,11 +611,11 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
             btnRemoveFocusType.isEnabled = false
             horizontalLineSeprator.isHidden = true
         }else{
-//            toggleButton.isHidden = false
+            //            toggleButton.isHidden = false
             textFieldSelectedFocusType.isHidden = false
             boxAllowedApps.isHidden = false
-            radioBtnAllowSelectedUrls.isHidden = false
-            radioBtnAllowAllUrls.isHidden = false
+//            radioBtnAllowSelectedUrls.isHidden = false
+//            radioBtnAllowAllUrls.isHidden = false
             radioBtnAllowSelectedApps.isHidden = false
             radioBtnAllowAllApps.isHidden = false
             boxAllowedWebUrls.isHidden = false
@@ -588,53 +648,53 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         if selectedRow == -1{
             return
         }
-        if let state = arrFocusType[selectedRow]["isDefault"] as? Bool{//this key will only be awailable in default focus type
-            if state{
-                let alertFocusModeDefault = NSAlert()
-                if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
-                    if state{
-                        alertFocusModeDefault.window.sharingType = .none
-                    }
+        if arrFocusType[selectedRow]["isDefault"] as? Bool == true || arrFocusType[selectedRow]["isMeetings"] as? Bool == true || arrFocusType[selectedRow]["isLockedFocus"] as? Bool == true{//this key will only be awailable in default focus type
+            
+            let alertFocusModeDefault = NSAlert()
+            if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
+                if state{
+                    alertFocusModeDefault.window.sharingType = .none
                 }
-                alertFocusModeDefault.messageText = "Can not delete."
-                alertFocusModeDefault.informativeText = "The Default focus type cannot be deleted."
-                if let focusPreferencesInfo = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
-                    if let focusCanNotDeleteTitle = focusPreferencesInfo.value(forKey: "focusCanNotDeleteTitle") as? String{
-                        alertFocusModeDefault.messageText = focusCanNotDeleteTitle
-                    }
-                    if let focusCanNotDeleteSubTitle = focusPreferencesInfo.value(forKey: "focusCanNotDeleteSubTitle") as? String{
-                        alertFocusModeDefault.informativeText = focusCanNotDeleteSubTitle
-                    }
-                }
-                alertFocusModeDefault.beginSheetModal(for: self.view.window!, completionHandler:nil)
-                return
             }
+            alertFocusModeDefault.messageText = "Can not delete."
+            alertFocusModeDefault.informativeText = "The Default focus type cannot be deleted."
+            if let focusPreferencesInfo = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
+                if let focusCanNotDeleteTitle = focusPreferencesInfo.value(forKey: "focusCanNotDeleteTitle") as? String{
+                    alertFocusModeDefault.messageText = focusCanNotDeleteTitle
+                }
+                if let focusCanNotDeleteSubTitle = focusPreferencesInfo.value(forKey: "focusCanNotDeleteSubTitle") as? String{
+                    alertFocusModeDefault.informativeText = focusCanNotDeleteSubTitle
+                }
+            }
+            alertFocusModeDefault.beginSheetModal(for: self.view.window!, completionHandler:nil)
+            return
+            
         }
         
         
-        if let state = arrFocusType[selectedRow]["isMeetings"] as? Bool{//this key will only be awailable in default focus type
-            if state{
-                let alertFocusModeDefault = NSAlert()
-                if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
-                    if state{
-                        alertFocusModeDefault.window.sharingType = .none
-                    }
-                }
-                alertFocusModeDefault.messageText = "Can not delete."
-                alertFocusModeDefault.informativeText = "The Default focus type cannot be deleted."
-                if let focusPreferencesInfo = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
-                    if let focusCanNotDeleteTitle = focusPreferencesInfo.value(forKey: "focusCanNotDeleteTitle") as? String{
-                        alertFocusModeDefault.messageText = focusCanNotDeleteTitle
-                    }
-                    if let focusCanNotDeleteSubTitle = focusPreferencesInfo.value(forKey: "focusCanNotDeleteSubTitle") as? String{
-                        alertFocusModeDefault.informativeText = focusCanNotDeleteSubTitle
-                    }
-                }
-
-                alertFocusModeDefault.beginSheetModal(for: self.view.window!, completionHandler:nil)
-                return
-            }
-        }
+        //        if arrFocusType[selectedRow]["isMeetings"] as? Bool == true{//this key will only be awailable in default focus type
+        //
+        //            let alertFocusModeDefault = NSAlert()
+        //            if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
+        //                if state{
+        //                    alertFocusModeDefault.window.sharingType = .none
+        //                }
+        //            }
+        //            alertFocusModeDefault.messageText = "Can not delete."
+        //            alertFocusModeDefault.informativeText = "The Default focus type cannot be deleted."
+        //            if let focusPreferencesInfo = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
+        //                if let focusCanNotDeleteTitle = focusPreferencesInfo.value(forKey: "focusCanNotDeleteTitle") as? String{
+        //                    alertFocusModeDefault.messageText = focusCanNotDeleteTitle
+        //                }
+        //                if let focusCanNotDeleteSubTitle = focusPreferencesInfo.value(forKey: "focusCanNotDeleteSubTitle") as? String{
+        //                    alertFocusModeDefault.informativeText = focusCanNotDeleteSubTitle
+        //                }
+        //            }
+        //
+        //            alertFocusModeDefault.beginSheetModal(for: self.view.window!, completionHandler:nil)
+        //            return
+        //
+        //        }
         
         if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsPomodoroModeEnabled) as? Bool{
             if state{
@@ -643,7 +703,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
                     if hardCorePomodoroState{
                         if let name = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHardcorePomodoroFocusedName) as? String{
                             if arrFocusType[selectedRow]["name"] as? String == name{
-//                                UserDefaults.standard.set(textFieldSelectedFocusType.stringValue, forKey: kUserdefaultsHardcorePomodoroFocusedName)
+                                //                                UserDefaults.standard.set(textFieldSelectedFocusType.stringValue, forKey: kUserdefaultsHardcorePomodoroFocusedName)
                                 
                                 //The selected focus mode is enabled in hardcore pomodoro mode. please disable hardcore pomodoro mode to delete this.
                                 let alert = NSAlert()
@@ -696,7 +756,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
             }
         }
         alert.alertStyle = .informational
-
+        
         
         var deleteFocusTypeMessageText = "Are you sure you want to delete the selected Focus type?"
         var yesText = "Yes"
@@ -715,7 +775,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         alert.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
             if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
                 if arrFocusType.count > selectedRow{
-
+                    
                     let id = arrFocusType[selectedRow]["id"] as? String ?? ""
                     arrFocusType.remove(at: selectedRow)
                     self.tblViewFocusType.reloadData()
@@ -730,7 +790,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
                     
                     
                     allApiObject.deleteFocusMode(id: id, completionHandler: {isDeleted in
-                       
+                        
                         DispatchQueue.main.async {
                             if isDeleted{
                                 
@@ -741,7 +801,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
                         }
                         
                     })
-                    
+                    allApiObject.capturePosthog(event: "delete-focus-mode", metadata: [:])
                     
                 }
             }
@@ -750,7 +810,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
     }
     
     @IBAction func btnAddAppClicked(_ sender: Any) {
-
+        
         let openPanel = NSOpenPanel()
         openPanel.canChooseFiles = true
         openPanel.canChooseDirectories = false
@@ -818,9 +878,10 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
                 
                 allApiObject.editFocusMode(focusType: arrFocusType[self.tblViewFocusType.selectedRow], completionHandler: {newDic in
                     DispatchQueue.main.async {
-
+                        
                     }
                 })
+                allApiObject.capturePosthog(event: "add-allowed-app-in-focus-mode", metadata: [:])
             }
         }
         
@@ -833,7 +894,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
             }
         }
         alert.alertStyle = .informational
-
+        
         var messageText = "Some of the apps selected are already present in the list."
         if let focusPreferencesInfo = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
             messageText = focusPreferencesInfo.value(forKey: "appAlreadyExistsText") as? String ?? messageText
@@ -844,7 +905,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
             }
         })
     }
-//    Some of the items selected are already present in the list.
+    //    Some of the items selected are already present in the list.
     @IBAction func btnRemoveAppClicked(_ sender: Any) {
         let selectedFocusTypeRow = tblViewFocusType.selectedRow
         if selectedFocusTypeRow == -1{
@@ -857,7 +918,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         }
         
         if arrFocusType.count > selectedFocusTypeRow{
-
+            
             if var arr = arrFocusType[selectedFocusTypeRow]["allowed_apps"] as? [String]{
                 if arr.count > selectedAppsRow{
                     arr.remove(at: selectedAppsRow)
@@ -869,7 +930,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
         allApiObject.editFocusMode(focusType: arrFocusType[selectedFocusTypeRow], completionHandler: {newDic in
             DispatchQueue.main.async {
-
+                
             }
         })
         if arrFocusType[selectedFocusTypeRow]["isOn"] as? Bool == true{
@@ -877,7 +938,11 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         }
     }
     @IBAction func btnAddUrlClicked(_ sender: Any) {
-        addWebUrlVcObj!.currenUrlAddingtState = ._FOCUS_ALLOW_URL
+        if radioBtnAllowListApproch.state == .on{
+            addWebUrlVcObj!.currenUrlAddingtState = ._FOCUS_ALLOW_URL
+        }else{
+            addWebUrlVcObj!.currenUrlAddingtState = ._FOCUS_BLOCK_URL
+        }
         addWebUrlVcObj!.isAdding = true
         self.presentAsSheet(addWebUrlVcObj!)
     }
@@ -893,19 +958,28 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         }
         
         if arrFocusType.count > selectedFocusTypeRow{
-
-            if var arr = arrFocusType[selectedFocusTypeRow]["allowed_urls"] as? [String]{
-                if arr.count > selectedUrlsRow{
-                    arr.remove(at: selectedUrlsRow)
+            if radioBtnAllowListApproch.state == .on{
+                if var arr = arrFocusType[selectedFocusTypeRow]["allowed_urls"] as? [String]{
+                    if arr.count > selectedUrlsRow{
+                        arr.remove(at: selectedUrlsRow)
+                    }
+                    arrFocusType[selectedFocusTypeRow]["allowed_urls"] = arr
                 }
-                arrFocusType[selectedFocusTypeRow]["allowed_urls"] = arr
+            }else{
+                if var arr = arrFocusType[selectedFocusTypeRow]["blockUrlsArray"] as? [String]{
+                    if arr.count > selectedUrlsRow{
+                        arr.remove(at: selectedUrlsRow)
+                    }
+                    arrFocusType[selectedFocusTypeRow]["blockUrlsArray"] = arr
+                }
             }
+            
             self.tblViewAllowedUrls.reloadData()
         }
         UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
         allApiObject.editFocusMode(focusType: arrFocusType[selectedFocusTypeRow], completionHandler: {newDic in
             DispatchQueue.main.async {
-
+                
             }
         })
         if arrFocusType[selectedFocusTypeRow]["isOn"] as? Bool == true{
@@ -918,24 +992,169 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
             focusPreferencesAdvancedVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("focusPreferencesAdvancedVc")) as? focusPreferencesAdvancedVc
         }
         self.presentAsSheet(focusPreferencesAdvancedVcObj!)
+        allApiObject.capturePosthog(event: "open-advanced-focus-mode-preferences", metadata: [:])
     }
-//    @IBAction func colorWellClicked(_ sender: Any) {
-//        if tblViewFocusType.selectedRow == -1{
-//            return;
-//        }
-//        var dic = arrFocusType[tblViewFocusType.selectedRow]
-//        dic["color"] = getColorString(color: colorWell.color)
-//
-//        arrFocusType[tblViewFocusType.selectedRow] = dic
-//        tblViewFocusType.reloadData(forRowIndexes: IndexSet(arrayLiteral: tblViewFocusType.selectedRow), columnIndexes: IndexSet(arrayLiteral: 0))
-//        
-//        tblViewFocusType.selectRowIndexes(IndexSet(arrayLiteral: tblViewFocusType.selectedRow), byExtendingSelection: false)
-//        tblViewFocusType.scrollRowToVisible(tblViewFocusType.selectedRow)
-//        checkState()
-//        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
-//    }
+    //    @IBAction func colorWellClicked(_ sender: Any) {
+    //        if tblViewFocusType.selectedRow == -1{
+    //            return;
+    //        }
+    //        var dic = arrFocusType[tblViewFocusType.selectedRow]
+    //        dic["color"] = getColorString(color: colorWell.color)
+    //
+    //        arrFocusType[tblViewFocusType.selectedRow] = dic
+    //        tblViewFocusType.reloadData(forRowIndexes: IndexSet(arrayLiteral: tblViewFocusType.selectedRow), columnIndexes: IndexSet(arrayLiteral: 0))
+    //
+    //        tblViewFocusType.selectRowIndexes(IndexSet(arrayLiteral: tblViewFocusType.selectedRow), byExtendingSelection: false)
+    //        tblViewFocusType.scrollRowToVisible(tblViewFocusType.selectedRow)
+    //        checkState()
+    //        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+    //    }
+
+    
+    @IBAction func radioBtnAllowListApprochClicked(_ sender: Any) {
+        radioBtnBlockListApproch.state = .off
+        popUpBtnUrlBox.removeAllItems()
+        popUpBtnUrlBox.addItem(withTitle: titleAllowedAllUrls)
+        popUpBtnUrlBox.addItem(withTitle: titleAllowedSelectedUrls)
+        lblUrlsQuestion.stringValue = allowUrlsQuestionText
+        
+        let selectedRow = tblViewFocusType.selectedRow
+        if selectedRow != -1{
+            arrFocusType[selectedRow]["isAllowedListApproach"] = true
+            UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+            allApiObject.editFocusMode(focusType: arrFocusType[selectedRow], completionHandler: {newDic in
+                DispatchQueue.main.async {
+                    
+                }
+            })
+        }
+        if arrFocusType[selectedRow]["isOn"] as? Bool == true{
+            appdelegate!.fillAllowUrlArray()
+        }
+        if let isAllowedAllUrls = arrFocusType[tblViewFocusType.selectedRow]["isAllowedAllUrls"] as? Bool{
+            if isAllowedAllUrls{
+                popUpBtnUrlBox.selectItem(at: 0)
+                tblViewAllowedUrls.isEnabled = false
+                tblViewAllowedUrls.deselectAll(self)
+                btnAddUrl.isEnabled = false
+                btnRemoveUrl.isEnabled = false
+            }else{
+                popUpBtnUrlBox.selectItem(at: 1)
+                tblViewAllowedUrls.isEnabled = true
+                btnAddUrl.isEnabled = true
+            }
+        }
+        tblViewAllowedUrls.reloadData()
+        
+    }
+    
+    @IBAction func radioBtnBlockListApprochClicked(_ sender: Any) {
+        radioBtnAllowListApproch.state = .off
+        
+        popUpBtnUrlBox.removeAllItems()
+        popUpBtnUrlBox.addItem(withTitle: titleBlockAllUrls)
+        popUpBtnUrlBox.addItem(withTitle: titleBlockSelectedUrls)
+        lblUrlsQuestion.stringValue = blockUrlsQuestionText
+        let selectedRow = tblViewFocusType.selectedRow
+        if selectedRow != -1{
+            arrFocusType[selectedRow]["isAllowedListApproach"] = false
+            UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+            allApiObject.editFocusMode(focusType: arrFocusType[selectedRow], completionHandler: {newDic in
+                DispatchQueue.main.async {
+                    
+                }
+            })
+        }
+        if arrFocusType[selectedRow]["isOn"] as? Bool == true{
+            appdelegate!.fillAllowUrlArray()
+        }
+        
+        if let isBlockedAllUrls = arrFocusType[tblViewFocusType.selectedRow]["isBlockedAllUrls"] as? Bool{
+            if isBlockedAllUrls{
+                popUpBtnUrlBox.selectItem(at: 0)
+                tblViewAllowedUrls.isEnabled = false
+                tblViewAllowedUrls.deselectAll(self)
+                btnAddUrl.isEnabled = false
+                btnRemoveUrl.isEnabled = false
+            }else{
+                popUpBtnUrlBox.selectItem(at: 1)
+                tblViewAllowedUrls.isEnabled = true
+                btnAddUrl.isEnabled = true
+            }
+        }
+        tblViewAllowedUrls.reloadData()
+    }
+    
+    @IBAction func popUpBtnUrlBoxClicked(_ sender: Any) {
+       // if radioBtnAllowListApproch.state == .on{
+            if popUpBtnUrlBox.indexOfSelectedItem == 0{
+                tblViewAllowedUrls.isEnabled = false
+                tblViewAllowedUrls.deselectAll(self)
+                btnAddUrl.isEnabled = false
+                btnRemoveUrl.isEnabled = false
+                let selectedRow = tblViewFocusType.selectedRow
+                if selectedRow != -1{
+                    if let isAllowedListApproach = arrFocusType[tblViewFocusType.selectedRow]["isAllowedListApproach"] as? Bool{
+                        if isAllowedListApproach{
+                            arrFocusType[selectedRow]["isAllowedAllUrls"] = true
+                        }else{
+                            arrFocusType[selectedRow]["isBlockedAllUrls"] = true
+                        }
+                    }
+                    UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+                    allApiObject.editFocusMode(focusType: arrFocusType[selectedRow], completionHandler: {newDic in
+                        DispatchQueue.main.async {
+                            
+                        }
+                    })
+                }
+                if arrFocusType[selectedRow]["isOn"] as? Bool == true{
+                    appdelegate!.fillAllowUrlArray()
+                }
+            }else if popUpBtnUrlBox.indexOfSelectedItem == 1{
+                tblViewAllowedUrls.isEnabled = true
+                btnAddUrl.isEnabled = true
+                let selectedRow = tblViewFocusType.selectedRow
+                if selectedRow != -1{
+                  
+                    
+                    if let isAllowedListApproach = arrFocusType[tblViewFocusType.selectedRow]["isAllowedListApproach"] as? Bool{
+                        if isAllowedListApproach{
+                            arrFocusType[selectedRow]["isAllowedAllUrls"] = false
+                        }else{
+                            arrFocusType[selectedRow]["isBlockedAllUrls"] = false
+                        }
+                    }
+                    
+                    UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+                    allApiObject.editFocusMode(focusType: arrFocusType[selectedRow], completionHandler: {newDic in
+                        DispatchQueue.main.async {
+                            
+                        }
+                    })
+                }
+                if arrFocusType[selectedRow]["isOn"] as? Bool == true{
+                    appdelegate!.fillAllowUrlArray()
+                }
+            }
+       // }
+        
+        
+    }
+    
 }
+
 extension focusPreferencesVc:NSTextFieldDelegate{
+    
+    func controlTextDidChange(_ obj: Notification) {
+        if let textfield = obj.object as? NSTextField{
+            if textfield == textFieldSelectedFocusType{
+                if textFieldSelectedFocusType.stringValue.count > 250{
+                    textFieldSelectedFocusType.currentEditor()?.deleteBackward(nil)
+                }
+            }
+        }
+    }
     func controlTextDidEndEditing(_ obj: Notification) {
         if let textfield = obj.object as? NSTextField{
             if textfield == textFieldSelectedFocusType{
@@ -987,7 +1206,7 @@ extension focusPreferencesVc:NSTextFieldDelegate{
                 checkState()
                 UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
                 
-
+                
                 
                 
                 // if auto pomodoro mode is on and if hardcore pomodoro is also enabled then if user change focus mode name which is selected in hardcore pomodoro focus then hardcore pomodoro focus name should be change here :-
@@ -1015,7 +1234,7 @@ extension focusPreferencesVc:NSTextFieldDelegate{
                         textFieldSelectedFocusType.isEnabled = true
                     }
                 })
-  
+                allApiObject.capturePosthog(event: "change-focus-mode-name", metadata: [:])
             }
         }
     }
@@ -1047,19 +1266,30 @@ extension focusPreferencesVc: NSTableViewDelegate, NSTableViewDataSource{
             }else {
                 let row = tblViewFocusType.selectedRow
                 if row != -1{
-                    if let arr = arrFocusType[row]["allowed_urls"] as? [String]{
-                        btnRemoveUrl.isEnabled = false
-                        return arr.count
+                    if let isAllowedListApproach = arrFocusType[tblViewFocusType.selectedRow]["isAllowedListApproach"] as? Bool{
+                        if isAllowedListApproach{
+                            if let arr = arrFocusType[row]["allowed_urls"] as? [String]{
+                                btnRemoveUrl.isEnabled = false
+                                return arr.count
+                            }
+                        }else{
+                            if let arr = arrFocusType[row]["blockUrlsArray"] as? [String]{
+                                btnRemoveUrl.isEnabled = false
+                                return arr.count
+                            }else{
+                                return 0
+                            }
+                        }
                     }
                 }
                 
             }
         }
-        return 2
+        return 0
     }
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
         if let cell = tableView.makeView(withIdentifier: NSUserInterfaceItemIdentifier(rawValue: "tblCellFocusPreferences"), owner: nil) as? tblCellFocusPreferences {
-
+            
             if tableView == tblViewFocusType{
                 if let name = arrFocusType[row]["name"] as? String{
                     cell.lblTitle.stringValue = name
@@ -1069,7 +1299,7 @@ extension focusPreferencesVc: NSTableViewDelegate, NSTableViewDataSource{
                 if let color = arrFocusType[row]["color"] as? String{
                     cell.boxColor.fillColor = HexToColor(hexString: color)
                 }else{
-
+                    
                 }
                 
             }else if tableView == tblViewAllowedApps{
@@ -1085,21 +1315,36 @@ extension focusPreferencesVc: NSTableViewDelegate, NSTableViewDataSource{
                             cell.lblTitle.stringValue = ""
                             cell.imgView.image = nil
                         }
-
+                        
                     }
                 }
             }else if tableView == tblViewAllowedUrls{
                 if tblViewFocusType.selectedRow != -1{
-                    if let arr = arrFocusType[tblViewFocusType.selectedRow]["allowed_urls"] as? [String]{
-//                        let url = URL(fileURLWithPath: arr[row])
-                        if row < arr.count{
-                            cell.lblTitle.stringValue = arr[row]
+                    
+                    var urlsArr = [String]()
+                    if let isAllowedListApproach = arrFocusType[tblViewFocusType.selectedRow]["isAllowedListApproach"] as? Bool{
+                        if isAllowedListApproach{
+                            if let arr = arrFocusType[tblViewFocusType.selectedRow]["allowed_urls"] as? [String]{
+                                urlsArr = arr
+                            }
+                        }else{
+                            if let arr = arrFocusType[tblViewFocusType.selectedRow]["blockUrlsArray"] as? [String]{
+                                urlsArr = arr
+                            }
+                        }
+                    }
+                    
+                    
+//                    if let arr = arrFocusType[tblViewFocusType.selectedRow]["allowed_urls"] as? [String]{
+                        //                        let url = URL(fileURLWithPath: arr[row])
+                        if row < urlsArr.count{
+                            cell.lblTitle.stringValue = urlsArr[row]
                             cell.imgView.image = NSImage(named: NSImage.networkName)
                         }else{
                             cell.lblTitle.stringValue = ""
                             cell.imgView.image = nil
                         }
-                    }
+//                    }
                 }
             }
             return cell
@@ -1107,9 +1352,9 @@ extension focusPreferencesVc: NSTableViewDelegate, NSTableViewDataSource{
         
         return NSTableCellView()
     }
-//    func tableView(_ tableView: NSTableView, heightOfRow row: Int) -> CGFloat {
-
-//    }
+    //    func tableView(_ tableView: NSTableView, heightOfRow row: Int) -> CGFloat {
+    
+    //    }
     func tableView(_ tableView: NSTableView, rowViewForRow row: Int) -> NSTableRowView? {
         let customView = TableRowViewResult()
         
@@ -1126,16 +1371,16 @@ extension focusPreferencesVc: NSTableViewDelegate, NSTableViewDataSource{
             btnRemoveApp.isEnabled = false
             btnRemoveUrl.isEnabled = false
             tblViewAllowedApps.reloadData()
-            tblViewAllowedUrls.reloadData()
-
+            
+            
             if let isAllowedAllApps = arrFocusType[tblViewFocusType.selectedRow]["isAllowedAllApps"] as? Bool{
                 if isAllowedAllApps{
-                   radioBtnAllowAllApps.state = .on
-                   radioBtnAllowSelectedApps.state = .off
-                   tblViewAllowedApps.isEnabled = false
-                   tblViewAllowedApps.deselectAll(self)
-                   btnAddApp.isEnabled = false
-                   btnRemoveApp.isEnabled = false
+                    radioBtnAllowAllApps.state = .on
+                    radioBtnAllowSelectedApps.state = .off
+                    tblViewAllowedApps.isEnabled = false
+                    tblViewAllowedApps.deselectAll(self)
+                    btnAddApp.isEnabled = false
+                    btnRemoveApp.isEnabled = false
                 }else{
                     radioBtnAllowAllApps.state = .off
                     radioBtnAllowSelectedApps.state = .on
@@ -1143,24 +1388,53 @@ extension focusPreferencesVc: NSTableViewDelegate, NSTableViewDataSource{
                     btnAddApp.isEnabled = true
                 }
             }
-            //"isAllowedAllUrls"
+
             
-            if let isAllowedAllUrls = arrFocusType[tblViewFocusType.selectedRow]["isAllowedAllUrls"] as? Bool{
-                if isAllowedAllUrls{
-                   radioBtnAllowAllUrls.state = .on
-                   radioBtnAllowSelectedUrls.state = .off
-                   tblViewAllowedUrls.isEnabled = false
-                   tblViewAllowedUrls.deselectAll(self)
-                   btnAddUrl.isEnabled = false
-                   btnRemoveUrl.isEnabled = false
+            if let isAllowedListApproach = arrFocusType[tblViewFocusType.selectedRow]["isAllowedListApproach"] as? Bool{
+                if isAllowedListApproach{
+                    radioBtnAllowListApproch.state = .on
+                    radioBtnBlockListApproch.state = .off
+                    popUpBtnUrlBox.removeAllItems()
+                    popUpBtnUrlBox.addItem(withTitle: titleAllowedAllUrls)
+                    popUpBtnUrlBox.addItem(withTitle: titleAllowedSelectedUrls)
+                    lblUrlsQuestion.stringValue = allowUrlsQuestionText
+                    if let isAllowedAllUrls = arrFocusType[tblViewFocusType.selectedRow]["isAllowedAllUrls"] as? Bool{
+                        if isAllowedAllUrls{
+                            popUpBtnUrlBox.selectItem(at: 0)
+                            tblViewAllowedUrls.isEnabled = false
+                            tblViewAllowedUrls.deselectAll(self)
+                            btnAddUrl.isEnabled = false
+                            btnRemoveUrl.isEnabled = false
+                        }else{
+                            popUpBtnUrlBox.selectItem(at: 1)
+                            tblViewAllowedUrls.isEnabled = true
+                            btnAddUrl.isEnabled = true
+                        }
+                    }
                 }else{
-                    radioBtnAllowAllUrls.state = .off
-                    radioBtnAllowSelectedUrls.state = .on
-                    tblViewAllowedUrls.isEnabled = true
-                    btnAddUrl.isEnabled = true
+                    
+                    radioBtnAllowListApproch.state = .off
+                    radioBtnBlockListApproch.state = .on
+                    popUpBtnUrlBox.removeAllItems()
+                    popUpBtnUrlBox.addItem(withTitle: titleBlockAllUrls)
+                    popUpBtnUrlBox.addItem(withTitle: titleBlockSelectedUrls)
+                    lblUrlsQuestion.stringValue = blockUrlsQuestionText
+                    if let isBlockedAllUrls = arrFocusType[tblViewFocusType.selectedRow]["isBlockedAllUrls"] as? Bool{
+                        if isBlockedAllUrls{
+                            popUpBtnUrlBox.selectItem(at: 0)
+                            tblViewAllowedUrls.isEnabled = false
+                            tblViewAllowedUrls.deselectAll(self)
+                            btnAddUrl.isEnabled = false
+                            btnRemoveUrl.isEnabled = false
+                        }else{
+                            popUpBtnUrlBox.selectItem(at: 1)
+                            tblViewAllowedUrls.isEnabled = true
+                            btnAddUrl.isEnabled = true
+                        }
+                    }
                 }
             }
-            
+            tblViewAllowedUrls.reloadData()
             if let name = arrFocusType[tblViewFocusType.selectedRow]["name"] as? String{
                 textFieldSelectedFocusType.stringValue = name
             }else{
@@ -1169,30 +1443,24 @@ extension focusPreferencesVc: NSTableViewDelegate, NSTableViewDataSource{
             if let color = arrFocusType[tblViewFocusType.selectedRow]["color"] as? String{
                 colorWell.color = HexToColor(hexString: color)
             }else{
-
+                
             }
             
-            if let isOn = arrFocusType[tblViewFocusType.selectedRow]["isOn"] as? Bool{
-               // toggleButton.isOn = isOn
-            }else{
-               // toggleButton.isOn = false
-            }
+//            if let isOn = arrFocusType[tblViewFocusType.selectedRow]["isOn"] as? Bool{
+//                // toggleButton.isOn = isOn
+//            }else{
+//                // toggleButton.isOn = false
+//            }
             
             // default focus modes and meetings focus mode are not allowed to change names but user can change color
-            if let state = arrFocusType[tblViewFocusType.selectedRow]["isDefault"] as? Bool{//this key will only be awailable in default focus type
-                if state{
-                    textFieldSelectedFocusType.isEditable = false
-                    textFieldSelectedFocusType.isSelectable = false
-                    return
-                }
+            if arrFocusType[tblViewFocusType.selectedRow]["isDefault"] as? Bool == true || arrFocusType[tblViewFocusType.selectedRow]["isMeetings"] as? Bool == true || arrFocusType[tblViewFocusType.selectedRow]["isLockedFocus"] as? Bool == true{//this key will only be awailable in default focus type
+                
+                textFieldSelectedFocusType.isEditable = false
+                textFieldSelectedFocusType.isSelectable = false
+                return
+                
             }
-            if let state = arrFocusType[tblViewFocusType.selectedRow]["isMeetings"] as? Bool{//this key will only be awailable in Meetings focus type
-                if state{
-                    textFieldSelectedFocusType.isEditable = false
-                    textFieldSelectedFocusType.isSelectable = false
-                    return
-                }
-            }
+            
             
             textFieldSelectedFocusType.isEditable = true
             
@@ -1211,14 +1479,14 @@ extension focusPreferencesVc: NSTableViewDelegate, NSTableViewDataSource{
         }
     }
     
-//    func tableView(_ tableView: NSTableView, shouldSelectRow row: Int) -> Bool {
-//        if textFieldSelectedFocusType.isFocused{
-//            textFieldSelectedFocusType.window?.makeFirstResponder(nil)
-//            return false
-//        }else{
-//            return true
-//        }
-//    }
+    //    func tableView(_ tableView: NSTableView, shouldSelectRow row: Int) -> Bool {
+    //        if textFieldSelectedFocusType.isFocused{
+    //            textFieldSelectedFocusType.window?.makeFirstResponder(nil)
+    //            return false
+    //        }else{
+    //            return true
+    //        }
+    //    }
     
 }
 

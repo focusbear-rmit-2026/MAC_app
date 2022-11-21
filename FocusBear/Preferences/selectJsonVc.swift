@@ -14,7 +14,8 @@ class selectJsonVc: NSViewController, NSTextViewDelegate {
     @IBOutlet weak var boxHeightConstraint: NSLayoutConstraint!
     @IBOutlet weak var boxWidthConstraint: NSLayoutConstraint!
     @IBOutlet weak var webview: WKWebView!
-    @IBOutlet weak var customView: NSView!
+    
+    @IBOutlet weak var customBox: NSBox!
     @IBOutlet weak var loader: NSProgressIndicator!
     @IBOutlet weak var btnCancel: cursorButton!
     @IBOutlet weak var lblVisitUrl: NSTextField!
@@ -32,7 +33,7 @@ class selectJsonVc: NSViewController, NSTextViewDelegate {
         super.viewDidLoad()
         // Do view setup here.
         print("webview loaded *****************")
-        customView.isHidden = true
+        customBox.isHidden = false
         btnCancel.isHidden = true
         selectJsonVcObj = self
         textViewJson.delegate = self
@@ -96,7 +97,8 @@ class selectJsonVc: NSViewController, NSTextViewDelegate {
 //        customView.addConstraints(subView: webview!)
         let handler = MessageHandler()
         webview.configuration.userContentController.add(handler, name: "setting_saved")
-        let url = "https://settings.focusbear.io/"//https://earn-your-screentime-settings.herokuapp.com/"//
+        let stringTime = getStringFromDateInUtc(date: Date(), dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+        let url = "https://settings.focusbear.io?bust_cache=$\(stringTime)"//https://earn-your-screentime-settings.herokuapp.com/"////
         // let url = "file:///Users/prashant/Desktop/test.html"
         //"https://earn-your-screentime-settings.herokuapp.com/"//"https://earn-your-screentime-settings.herokuapp.com/"//http://jaininfotech.com/temp/test.html"//http://localhost:3000" //https://earn-your-screen-time-settings.herokuapp.com/"//"file:///Users/prashant/Desktop/test.html"
         let  fileURL = URL(string: url)
@@ -107,22 +109,29 @@ class selectJsonVc: NSViewController, NSTextViewDelegate {
         
         
         //1200/950
-        boxWidthConstraint.constant = 500
-        boxHeightConstraint.constant = 350
-        customView.isHidden = true
+//        boxWidthConstraint.constant = 500
+//        boxHeightConstraint.constant = 350
+        
         textscrollView.isHidden = true
         lblTitle.isHidden = true
         lblVisitUrl.isHidden = true
 //        btnCancel.isHidden = true
         btnSave.isHidden = true
-        lblDescription.isHidden = false
         
+
         
+        customBox.isHidden = false
+
+
+        boxWidthConstraint.constant = 1000
+        boxHeightConstraint.constant = 600
+        lblDescription.isHidden = true
         
-        
+//        webview.isOpaque = false
+        webview.backgroundcolor = NSColor.clear
     }
     @IBAction func btnOldViewClicked(_ sender: Any) {
-        customView.isHidden = true
+        customBox.isHidden = true
         textscrollView.isHidden = false
         lblTitle.isHidden = false
         btnSave.isHidden = false
@@ -131,7 +140,7 @@ class selectJsonVc: NSViewController, NSTextViewDelegate {
         lblDescription.isHidden = true
     }
     @IBAction func btnNewTabViewCicked(_ sender: Any) {
-        customView.isHidden = false
+        customBox.isHidden = false
         textscrollView.isHidden = true
         lblTitle.isHidden = true
         lblVisitUrl.isHidden = true
@@ -314,7 +323,7 @@ class selectJsonVc: NSViewController, NSTextViewDelegate {
         
     }
     override func viewWillAppear() {
-        
+        allApiObject.capturePosthog(event: "edit-habits", metadata: [:])
         setData()
     }
     
@@ -525,7 +534,8 @@ class selectJsonVc: NSViewController, NSTextViewDelegate {
         
         
     }
-    
+    var alertSettingChanged:NSAlert?
+
     func jsonReceivedFromWebView(jsonResult: NSDictionary){
         
         
@@ -563,14 +573,14 @@ class selectJsonVc: NSViewController, NSTextViewDelegate {
                 }else{
                     
                     if statusCode == 200{
-                        let alert = NSAlert()
+                        self.alertSettingChanged = NSAlert()
                         if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
                             if state{
-                                alert.window.sharingType = .none
+                                self.alertSettingChanged!.window.sharingType = .none
                             }
                         }
-                        alert.alertStyle = .informational
-                        
+                        self.alertSettingChanged!.alertStyle = .informational
+                        allApiObject.capturePosthog(event: "save-edited-habits", metadata: [:])
                         var settingIsValidText = "Your settings have been validated and will be applied now."
                         var buttonOkText = "OK"
                         if let settings = configjson.value(forKey: "settings") as? NSDictionary{
@@ -578,31 +588,31 @@ class selectJsonVc: NSViewController, NSTextViewDelegate {
                             buttonOkText = settings.value(forKey: "buttonOkText") as? String ?? buttonOkText
                         }
                         
-                        alert.messageText = settingIsValidText
-                        alert.addButton(withTitle: buttonOkText)
-                        alert.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
+                        self.alertSettingChanged!.messageText = settingIsValidText
+//                        self.alertSettingChanged!.informativeText = "00:15"
+                        self.alertSettingChanged!.addButton(withTitle: buttonOkText)
+                        
+                        self.startTimer(durationSeconds: 15)
+                        do {
+                            let jsonResultData =  try JSONSerialization.data(withJSONObject: dic!, options: JSONSerialization.WritingOptions.prettyPrinted)
+                            
+                            print(jsonResultData)
+                            
+                            if let backToString = String(data: jsonResultData, encoding: String.Encoding.utf8){
+                                print()
+                                UserDefaults.standard.set(backToString, forKey: kUserdefaultsSelectedJson)
+                                
+                            }
+                            
+                            
+                        } catch let myJSONError {
+                            print(myJSONError)
+                        }
+                        
+                        self.alertSettingChanged!.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
                             if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
                                 // self.setData()
-                                
-                                
-                                do {
-                                    let jsonResultData =  try JSONSerialization.data(withJSONObject: dic!, options: JSONSerialization.WritingOptions.prettyPrinted)
-                                    
-                                    print(jsonResultData)
-                                    
-                                    if let backToString = String(data: jsonResultData, encoding: String.Encoding.utf8){
-                                        print()
-                                        UserDefaults.standard.set(backToString, forKey: kUserdefaultsSelectedJson)
-                                        appdelegate?.quitAndRestartApp()
-                                    }
-                                    
-                                    
-                                } catch let myJSONError {
-                                    print(myJSONError)
-                                }
-                                
-                                
-                                
+                                appdelegate?.quitAndRestartApp()
                             }
                             
                             
@@ -646,18 +656,85 @@ class selectJsonVc: NSViewController, NSTextViewDelegate {
             }
         })
         
+    }
+    var timer:Timer?
+    var currentTimer = 0
+    var totalDuration = 0
+    func startTimer(durationSeconds:Int) {
+        if timer != nil{
+            timer?.invalidate()
+            timer = nil
+        }
+
+        currentTimer = 0
+        totalDuration = durationSeconds//durationInMinutes*60
+        let (h,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
+        var hour = "\(h)"
+        var minute = "\(m)"
+        var second = "\(s)"
         
+        if hour.count == 1 {
+            hour = "0\(h)"
+        }
+        if minute.count == 1 {
+            minute = "0\(m)"
+        }
+        if second.count == 1 {
+            second = "0\(s)"
+        }
+        if h == 0{
+            self.alertSettingChanged?.informativeText = "\(minute):\(second)"
+        }else{
+            self.alertSettingChanged?.informativeText = "\(hour):\(minute):\(second)"
+        }
         
+        DispatchQueue.main.async {
+            self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
+            RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
+        }
+    }
+    func setProgres(){
+        let remainingSeconds = self.totalDuration-currentTimer
+        let (h,m,s) = secondsToHoursMinutesSeconds(seconds: remainingSeconds)
+        var hour = "\(h)"
+        var minute = "\(m)"
+        var second = "\(s)"
+
+        if hour.count == 1 {
+            hour = "0\(h)"
+        }
         
+        if minute.count == 1 {
+            minute = "0\(m)"
+        }
+        if second.count == 1 {
+            second = "0\(s)"
+        }
         
-        
-        //  } catch let error as NSError {
-        //     print(error)
-        // }
-        //   }
-        
+        DispatchQueue.main.async {
+
+            if h == 0{
+                self.alertSettingChanged?.informativeText = "\(minute):\(second)"
+            }else{
+                self.alertSettingChanged?.informativeText = "\(hour):\(minute):\(second)"
+            }
+            
+            
+            if self.totalDuration <= self.currentTimer {
+                self.timer?.invalidate()
+                self.alertSettingChanged?.window.close()
+                appdelegate?.quitAndRestartApp()
+            }
+        }
+    }
+
+    @objc func performTimerCount() {
+
+        currentTimer += 1 
+        setProgres()
         
     }
+    
     func textDidChange(_ notification: Notification) {
         guard let textView = notification.object as? NSTextView else {
             return

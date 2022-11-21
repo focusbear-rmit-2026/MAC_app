@@ -138,8 +138,15 @@ class abortingCountDownVc: NSViewController {
             sequenceId = arrAllMorningHabits.first?.activity_sequence_id ?? ""
         }else if lastCurrentState == ._FOCUS_SUMMARY_ || lastCurrentState == ._EVENING_HABIT_{
             sequenceId = arrAllEveningHabits.first?.activity_sequence_id ?? ""
+        }else{
+            addLog(text: "force Complete Current Sequence - no Sequence found to complete")
+            return
         }
         
+        if sequenceId.isEmpty{
+            addLog(text: "force Complete Current Sequence - SequenceId is blank :- return")
+            return
+        }
         addLog(text: "force Complete Current Sequence - forceCompleteIfAnyActivityGoing")
         allApiObject.forceCompleteCurrentSequence(activity_sequence_id: sequenceId, completionHandler: {json in
 
@@ -149,27 +156,7 @@ class abortingCountDownVc: NSViewController {
             }
         })
         
-//        allApiObject.getLastActivityInfo(completionHandler: { json in
-//            DispatchQueue.main.async {
-//                if json != nil{
-//                    print(json!)
-//                    if let currentActivitySequence = json?.value(forKey: "current_activity_sequence") as? NSDictionary{
-//                        if let sequenceId = currentActivitySequence.value(forKey: "id") as? String{
-//
-//                            addLog(text: "force Complete Current Sequence - forceCompleteIfAnyActivityGoing")
-//                            allApiObject.forceCompleteCurrentSequence(activity_sequence_id: sequenceId, completionHandler: {json in
-//
-//                                // and strt break activity
-//                                DispatchQueue.main.async {
-//
-//                                }
-//                            })
-//                        }
-//                    }
-//                }
-//            }
-//        }
-//        )
+
     }
     
     @IBAction func btnEmaiClicked(_ sender: Any) {

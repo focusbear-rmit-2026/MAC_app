@@ -27,12 +27,12 @@ class askPostponeVc: NSViewController {
         super.viewDidLoad()
         // Do view setup here.
 
-        btnOkIWillDoBreak.title = "Argh ok I'll take a break!"
+        
         lblSelectMinutes.stringValue = "Select minutes to postpone:"
         popUpButtonSelectMinutes.removeAllItems()
         popUpButtonSelectMinutes.addItems(withTitles: ["5", "10", "15", "20", "25", "30", "45", "60", "90"])
         
-        
+        btnOkIWillDoBreak.title = "Argh ok I'll take a break!"
         if let activityPostponeInfo = configjson.value(forKey: "activityPostponeInfo") as? NSDictionary{
             btnOkIWillDoBreak.title = activityPostponeInfo.value(forKey: "buttonTakeBreakText") as? String ?? btnOkIWillDoBreak.title
             lblSelectMinutes.stringValue = activityPostponeInfo.value(forKey: "selectMinutesText") as? String ?? lblSelectMinutes.stringValue
@@ -44,9 +44,18 @@ class askPostponeVc: NSViewController {
         
     }
     @IBAction func btnCancelPostponeClicked(_ sender: Any) {
-        self.view.removeFromSuperview()
-        mainViewControllerObj?.abortCancel()
-        self.timer?.invalidate()
+        if currentState == ._ACTIVITY_{
+            self.timer?.invalidate()
+            self.timer = nil
+            lblTimer.isHidden = true
+            self.view.removeFromSuperview()
+            mainViewControllerObj?.btnAbort.isHidden = false
+        }else{
+            self.view.removeFromSuperview()
+            mainViewControllerObj?.abortCancel()
+            self.timer?.invalidate()
+            self.timer = nil
+        }
     }
     func resetView(){
         addLog(text: "Ask postpone view - resetView")
@@ -54,7 +63,16 @@ class askPostponeVc: NSViewController {
         btnAbortBreak.isHidden = false
         btnOkIWillDoBreak.isHidden = true
         lblTimer.isHidden = true
-        if currentState == ._MORNING_HABIT_ || currentState == ._FOCUS_SUMMARY_ || currentState == ._EVENING_HABIT_{
+        if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_{
+            if activityPostponeCount == 0{
+                showHabitPostponeView()
+            }else{
+                showHabitTimerView()
+            }
+            
+        }else if currentState == ._FOCUS_SUMMARY_{
+            
+            
             popUpButtonSelectMinutes.isHidden = false
             lblSelectMinutes.isHidden = false
             popUpButtonSelectMinutes.selectItem(at: 0)
@@ -68,6 +86,11 @@ class askPostponeVc: NSViewController {
                 btnAbortBreak.title = activityPostponeInfo.value(forKey: "buttonCompletelySkipText") as? String ?? btnAbortBreak.title
             }
             
+            btnPostpone.buttonColor = buttonBgColor.cgColor
+            btnAbortBreak.buttonColor = NSColor.white.cgColor
+            
+            
+            
         }else if currentState == ._ACTIVITY_{
             popUpButtonSelectMinutes.isHidden = true
             lblSelectMinutes.isHidden = true
@@ -77,14 +100,18 @@ class askPostponeVc: NSViewController {
             
             if SettingsManagerObject.isOfficeModeEnabled{
                 btnAbortBreak.isHidden = true
+                btnPostpone.buttonColor = buttonBgColor.cgColor
             }else{
                 
                 let filterArr = arrAllbreakActivities.filter { $0.isOfficeFriendly == true}
                 if filterArr.count == 0{// no activity found with isOfficeFriendly //
                     addLog(text: "Ask postpone view - resetView :- no activity found with isOfficeFriendly")
                     btnAbortBreak.isHidden = true
+                    btnPostpone.buttonColor = buttonBgColor.cgColor
                 }else{
                     btnAbortBreak.isHidden = false
+                    btnPostpone.buttonColor = NSColor.white.cgColor
+                    btnAbortBreak.buttonColor = buttonBgColor.cgColor
                 }
             }
             if let activityPostponeInfo = configjson.value(forKey: "activityPostponeInfo") as? NSDictionary{
@@ -95,35 +122,74 @@ class askPostponeVc: NSViewController {
         }
     }
 
+    func showHabitTimerView(){
+        lblTitle.stringValue = "You've postponed your habits a few times. Are you sure you want to postpone again?"
+        popUpButtonSelectMinutes.isHidden = true
+        lblSelectMinutes.isHidden = true
+        btnAbortBreak.isHidden = true
+        btnPostpone.isHidden = true
+        btnOkIWillDoBreak.isHidden = true
+        
+        var timer = 0
+        switch activityPostponeCount {
+        case 1:
+            timer = 5
+        case 2:
+            timer = 10
+        case 3:
+            timer = 15
+        case 4:
+            timer = 30
+        case 5:
+            timer = 45
+        case 6:
+            timer = 60
+        default:
+            timer = 60
+        }
+        
+        startTimer(duration: timer)
+        btnOkIWillDoBreak.isHidden = false
+        btnOkIWillDoBreak.title = "I changed my mind - I'll do my habits"
+        
+        if let activityPostponeInfo = configjson.value(forKey: "activityPostponeInfo") as? NSDictionary{
+            lblTitle.stringValue = activityPostponeInfo.value(forKey: "postponedLastHabitText") as? String ?? lblTitle.stringValue
+            btnOkIWillDoBreak.title = activityPostponeInfo.value(forKey: "buttonDoHabitText") as? String ?? btnOkIWillDoBreak.title
+        }
+        
+    }
+    
+    func showHabitPostponeView(){
+        popUpButtonSelectMinutes.isHidden = false
+        lblSelectMinutes.isHidden = false
+        popUpButtonSelectMinutes.selectItem(at: 0)
+        lblTitle.stringValue = "If you have something urgent, you can postpone Habits for few Minutes."
+        btnPostpone.title = "Postpone Habit"
+        btnAbortBreak.title = "Completely Skip"
+        
+        if let activityPostponeInfo = configjson.value(forKey: "activityPostponeInfo") as? NSDictionary{
+            lblTitle.stringValue = activityPostponeInfo.value(forKey: "postponeHabitsText") as? String ?? lblTitle.stringValue
+            btnPostpone.title = activityPostponeInfo.value(forKey: "buttonPostponeHabitText") as? String ?? btnPostpone.title
+            btnAbortBreak.title = activityPostponeInfo.value(forKey: "buttonCompletelySkipText") as? String ?? btnAbortBreak.title
+        }
+        
+        btnPostpone.buttonColor = buttonBgColor.cgColor
+        btnAbortBreak.buttonColor = NSColor.white.cgColor
+        btnOkIWillDoBreak.isHidden = true
+        btnPostpone.isHidden = false
+        btnAbortBreak.isHidden = false
+    }
     
     @IBAction func btnPostponeClicked(_ sender: Any) {
         addLog(text: "Ask postpone view - button Postpone Clicked")
         if currentState == ._MORNING_HABIT_{
             self.view.removeFromSuperview()
-            if activityPostponeCount == 0{
-                mainViewControllerObj?.postponeMorningHabitFor(minutes: Int(popUpButtonSelectMinutes.title) ?? 15)
-                activityPostponeCount += 1
-            }else{// agar password set na ho to
-                if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
-                    mainViewControllerObj?.showPasswordView()
-                    enterPasswordVcObj?.parentVc = self
-                }else{
-                    mainViewControllerObj?.postponeMorningHabitFor(minutes: Int(popUpButtonSelectMinutes.title) ?? 15)
-                }
-            }
+            mainViewControllerObj?.postponeMorningHabitFor(minutes: Int(popUpButtonSelectMinutes.title) ?? 15)
+            activityPostponeCount += 1
         }else if currentState == ._EVENING_HABIT_{
             self.view.removeFromSuperview()
-            if activityPostponeCount == 0{
-                mainViewControllerObj?.postponeEveningHabitFor(minutes: Int(popUpButtonSelectMinutes.title) ?? 15)
-                activityPostponeCount += 1
-            }else{// agar password set na ho to
-                if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
-                    mainViewControllerObj?.showPasswordView()
-                    enterPasswordVcObj?.parentVc = self
-                }else{
-                    mainViewControllerObj?.postponeEveningHabitFor(minutes: Int(popUpButtonSelectMinutes.title) ?? 15)
-                }
-            }
+            mainViewControllerObj?.postponeEveningHabitFor(minutes: Int(popUpButtonSelectMinutes.title) ?? 15)
+            activityPostponeCount += 1
         }else if currentState == ._ACTIVITY_{
             if activityPostponeCount == 0{
                 self.view.removeFromSuperview()
@@ -137,6 +203,11 @@ class askPostponeVc: NSViewController {
                 if let activityPostponeInfo = configjson.value(forKey: "activityPostponeInfo") as? NSDictionary{
                     lblTitle.stringValue = activityPostponeInfo.value(forKey: "postponedLastBreakText") as? String ?? lblTitle.stringValue
                 }
+                btnOkIWillDoBreak.title = "Argh ok I'll take a break!"
+                if let activityPostponeInfo = configjson.value(forKey: "activityPostponeInfo") as? NSDictionary{
+                    btnOkIWillDoBreak.title = activityPostponeInfo.value(forKey: "buttonTakeBreakText") as? String ?? btnOkIWillDoBreak.title
+                }
+                
                 startTimer(duration: 15)
             }
         }else if currentState == ._FOCUS_SUMMARY_{
@@ -165,12 +236,21 @@ class askPostponeVc: NSViewController {
         
     }
     @IBAction func btnOkIWillDoBreakClicked(_ sender: Any) {
-        addLog(text: "Ask postpone view - button Ok I Will Do Break Clicked")
-        self.timer?.invalidate()
-        self.timer = nil
-        lblTimer.isHidden = true
-        self.view.removeFromSuperview()
-        mainViewControllerObj?.btnAbort.isHidden = false
+        addLog(text: "Ask postpone view - button Ok I Will Do activity Clicked")
+
+        if currentState == ._ACTIVITY_{
+            self.timer?.invalidate()
+            self.timer = nil
+            lblTimer.isHidden = true
+            self.view.removeFromSuperview()
+            mainViewControllerObj?.btnAbort.isHidden = false
+        }else{
+            self.view.removeFromSuperview()
+            mainViewControllerObj?.abortCancel()
+            self.timer?.invalidate()
+            self.timer = nil
+        }
+        
     }
     
 
@@ -216,8 +296,29 @@ class askPostponeVc: NSViewController {
             DispatchQueue.main.async {
 
                 self.lblTimer.isHidden = true
-                self.view.removeFromSuperview()
-                mainViewControllerObj?.postponeBreakActivitiesFor(minutes: 5)
+                
+                if currentState == ._ACTIVITY_{
+                    self.view.removeFromSuperview()
+                    mainViewControllerObj?.postponeBreakActivitiesFor(minutes: 5)
+                }else if currentState == ._MORNING_HABIT_{
+//                    self.view.removeFromSuperview()
+//                    if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
+//                        mainViewControllerObj?.showPasswordView()
+//                        enterPasswordVcObj?.parentVc = self
+//                    }else{
+//                        mainViewControllerObj?.postponeMorningHabitFor(minutes: Int(self.popUpButtonSelectMinutes.title) ?? 15)
+//                    }
+                    self.showHabitPostponeView()
+                }else if currentState == ._EVENING_HABIT_{
+//                    self.view.removeFromSuperview()
+//                    if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{//
+//                        mainViewControllerObj?.showPasswordView()
+//                        enterPasswordVcObj?.parentVc = self
+//                    }else{
+//                        mainViewControllerObj?.postponeEveningHabitFor(minutes: Int(self.popUpButtonSelectMinutes.title) ?? 15)
+//                    }
+                    self.showHabitPostponeView()
+                }
             }
         }
     }

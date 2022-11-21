@@ -14,18 +14,18 @@ class preferencesTabViewController: NSTabViewController {
         super.viewDidLoad()
         // Do view setup here.
         
-        var tabGeneralText = "General"
-        var tabFocusText = "Focus"
         var tabSettingsText = "Settings"
+        var tabFocusText = "Focus"
+        var tabEditHabitsText = "Edit Habits"
         var tabPasswordText = "Password"
         var tabBlockedURLsText = "Blocked URLs"
         var tabUninstallText = "Uninstall"
         var tabAccountsText = "Accounts"
         
         if let common = configjson.value(forKey: "common") as? NSDictionary{
-            tabGeneralText = common.value(forKey: "tabGeneralText") as? String ?? tabGeneralText
-            tabFocusText = common.value(forKey: "tabFocusText") as? String ?? tabFocusText
             tabSettingsText = common.value(forKey: "tabSettingsText") as? String ?? tabSettingsText
+            tabFocusText = common.value(forKey: "tabFocusText") as? String ?? tabFocusText
+            tabEditHabitsText = common.value(forKey: "tabEditHabitsText") as? String ?? tabEditHabitsText
             tabPasswordText = common.value(forKey: "tabPasswordText") as? String ?? tabPasswordText
             tabBlockedURLsText = common.value(forKey: "tabBlockedURLsText") as? String ?? tabBlockedURLsText
             tabUninstallText = common.value(forKey: "tabUninstallText") as? String ?? tabUninstallText
@@ -38,12 +38,12 @@ class preferencesTabViewController: NSTabViewController {
                 for i in 0..<self.tabViewItems.count{
                     let tab = self.tabViewItems[i]
                     let id = tab.identifier as? String ?? ""
-                    if id == "General"{
-                        self.tabViewItems[i].label = tabGeneralText
+                    if id == "Settings"{
+                        self.tabViewItems[i].label = tabSettingsText
                     }else if id == "Focus"{
                         self.tabViewItems[i].label = tabFocusText
-                    }else if id == "Settings"{
-                        self.tabViewItems[i].label = tabSettingsText
+                    }else if id == "EditHabits"{
+                        self.tabViewItems[i].label = tabEditHabitsText
                     }else if id == "Password"{
                         self.tabViewItems[i].label = tabPasswordText
                     }else if id == "Blocked URLs"{

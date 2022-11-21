@@ -184,12 +184,15 @@ class abortingCantHandleVc: NSViewController, NSTextViewDelegate {
             if lastCurrentState == ._MORNING_HABIT_{
                 logType = "morning routine abort"
                 activity = "morning routine"
+                allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"morning_routine", "deactivate-reason":"Deactivate routine + breaks", "detailed-reason":textViewFeedback.string])
             }else if lastCurrentState == ._EVENING_HABIT_{
                 logType = "evening routine abort"
                 activity = "evening routine"
+                allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"evening_routine", "deactivate-reason":"Deactivate routine + breaks", "detailed-reason":textViewFeedback.string])
             }else if lastCurrentState == ._ACTIVITY_{
                 logType = "break abort"
                 activity = "break"
+                allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"break_activity", "deactivate-reason":"Deactivate routine + breaks", "detailed-reason":textViewFeedback.string])
             }
             
             addEntryInCsv(logType: logType, activity: activity, durationInSeconds: "", quantityQuestion: "", quantityLogged: "", startTime: "", workAchieved: "", distractionsEncountered: "", abortReason: "Deactivate routine + breaks", feedback: textViewFeedback.string)

@@ -10,10 +10,12 @@ import Cocoa
 
 class visualizeInstructionsVc: NSViewController {
 
+    @IBOutlet weak var btnSkipHabit: underLineButton!
     @IBOutlet weak var btnMain: Button!
     @IBOutlet weak var lblTimer: NSTextField!
     @IBOutlet weak var lblVisualizeText: NSTextField!
     @IBOutlet weak var lblTitle: NSTextField!
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
@@ -24,6 +26,11 @@ class visualizeInstructionsVc: NSViewController {
             lblVisualizeText.stringValue = activityInfo.value(forKey: "visualizeDescriptionText") as? String ?? lblVisualizeText.stringValue
             lblTitle.stringValue = activityInfo.value(forKey: "titleGetFocused") as? String ?? lblTitle.stringValue
         }
+        btnSkipHabit.title = "Skip this habit for today"
+        if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
+            btnSkipHabit.title = activityInfo.value(forKey: "buttonSkipHabitText") as? String ?? btnSkipHabit.title
+        }
+        
     }
     override func viewWillAppear() {
         if currentState == ._MORNING_HABIT_{
@@ -40,6 +47,7 @@ class visualizeInstructionsVc: NSViewController {
     }
     func startTimer(){
         btnMain.isHidden = true
+        btnSkipHabit.isHidden = true
         lblTimer.stringValue = ""
         startTimer(duration: 30)
     }
@@ -47,14 +55,16 @@ class visualizeInstructionsVc: NSViewController {
     var currentTimer = 0
     var isTimerGoingOn = false
     var totalDuration = 0
-
+    
     func startTimer(duration:Int) {
         if isTimerGoingOn{
             btnMain.isHidden = true
             lblTimer.isHidden = false
+            btnSkipHabit.isHidden = true
             return
         }
         btnMain.isHidden = true
+        btnSkipHabit.isHidden = true
         lblTimer.isHidden = false
         isTimerGoingOn = true
         currentTimer = 0
@@ -95,7 +105,9 @@ class visualizeInstructionsVc: NSViewController {
             
             self.timer?.invalidate()
             DispatchQueue.main.async {
+                playEveryActivitySound()
                 self.btnMain.isHidden = false
+                self.btnSkipHabit.isHidden = false
                 self.lblTimer.isHidden = true
                 self.isTimerGoingOn = false
                 
@@ -121,5 +133,9 @@ class visualizeInstructionsVc: NSViewController {
         }else{
             mainViewControllerObj?.startFirstEveningHabit()
         }
+    }
+    @IBAction func btnSkipClicked(_ sender: Any) {
+        thirdVcObj?.loadView()
+        thirdVcObj?.btnSkipHabitClicked(self)
     }
 }

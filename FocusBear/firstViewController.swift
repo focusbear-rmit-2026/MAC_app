@@ -29,7 +29,7 @@ class firstViewController: NSViewController {
         // Do view setup here.
         btnStartFirstHabit.cell?.wraps = true
         lblBeforeYouStart.isHidden = true
-//        lblTitle.font = NSFont(name: "fenwick outline", size: lblTitle.font?.pointSize ?? 24)!
+//        lblTitle.font = NSFont(name: "Fenwick", size: lblTitle.font?.pointSize ?? 24)!
     }
 
     override func viewWillAppear() {
@@ -49,9 +49,17 @@ class firstViewController: NSViewController {
             
             if let dic = configjson.value(forKey: "welcomeInfo") as? NSDictionary{
                 lblTitle.stringValue = dic.value(forKey: "welcomeMessageHeading") as? String ?? welcomeText
-                if let subTitle = dic.value(forKey: "welcomeMessageIntro") as? String{
-                    lblSubTitle.stringValue = subTitle
+                if isHabitsDisabled{
+                    lblSubTitle.stringValue = "Throughout the day, I'll remind you to take regular breaks to keep your mind sharp and your body flexible. Here's an example of a break activity: 30 seconds of deep breathing."
+                    if let subTitle = dic.value(forKey: "welcomeMessageOnlyBreakIntro") as? String{
+                        lblSubTitle.stringValue = subTitle
+                    }
+                }else{
+                    if let subTitle = dic.value(forKey: "welcomeMessageIntro") as? String{
+                        lblSubTitle.stringValue = subTitle
+                    }
                 }
+                
                 if let arr = dic.value(forKey: "introActivities") as? [NSDictionary]{
                     let name = arr.first?.value(forKey: "name") as? String ?? ""
                     let durationSeconds = arr.first?.value(forKey: "duration_seconds") as? Int ?? 0
@@ -91,7 +99,7 @@ class firstViewController: NSViewController {
                     imgView.image = NSImage(named: "Waking up _ SMall")
                     imgView.animates = true
                 }
-                
+                habitTotalCompletedSeconds = 0
                 lblTitle.stringValue = startMorningHabitTitleText
 //                if isGetKookyButtonVisible{
                     btnStartFirstHabit.title = "Begin"
@@ -126,7 +134,7 @@ class firstViewController: NSViewController {
                 imgViewTopSpace.constant = 35
                 imgViewBottomSpace.constant = 5
                 lblTitle.stringValue = startEveningHabitTitleText
-                
+                habitTotalCompletedSeconds = 0
                 
                 
 //                if isGetKookyButtonVisible{
@@ -237,24 +245,15 @@ class firstViewController: NSViewController {
             mainViewControllerObj?.startBreathing()
         }else{
             if currentState == ._MORNING_HABIT_{
-//                if isGetKookyButtonVisible{
-//                    isGetKookyButtonVisible = false
-//                    firstViewControllerObj!.startTimer(duration: 30)
-//
-//                }else{
-//                    mainViewControllerObj?.startFirstMorningHabit()
-//                }
+
                 mainViewControllerObj?.showVisualizeInstructionsVc()
                 visualizeInstructionsVcObj?.startTimer()
+                allApiObject.capturePosthog(event: "visualize-morning-routine", metadata: ["routine-type":"morning_routine"])
             }else{
-//                if isGetKookyButtonVisible{
-//                    isGetKookyButtonVisible = false
-//                    firstViewControllerObj!.startTimer(duration: 30)
-//                }else{
-//                    mainViewControllerObj?.startFirstEveningHabit()
-//                }
+
                 mainViewControllerObj?.showVisualizeInstructionsVc()
                 visualizeInstructionsVcObj?.startTimer()
+                allApiObject.capturePosthog(event: "visualize-evening-routine", metadata: ["routine-type":"evening_routine"])
             }
         }
     }

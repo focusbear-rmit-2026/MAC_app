@@ -42,11 +42,30 @@
         if (!assertionStates) {
             return nil;
         }
-        NSDictionary *andBack = (__bridge NSDictionary*)assertionStates;
+//        NSDictionary *andBack = (__bridge NSDictionary*)assertionStates;
 //        if (assertionStates)
 //            CFRelease(assertionStates);
         
-        return andBack;
+        @try {
+            NSDictionary *andBack = CFBridgingRelease(assertionStates);
+//            NSDictionary *andBack = (__bridge NSDictionary*)assertionStates;
+            if (!andBack) {
+                return nil;
+            }
+            
+            if ( [andBack count] == 0 ) {
+                return nil;
+            }
+            else {
+                //code here
+                return andBack;
+            }
+        }
+        @catch (NSException *exception) {
+            return nil;
+        }
+//        NSLog(@"%@", andBack);
+//        return andBack;
     }
     @catch (NSException *exception) {
         return nil;

@@ -10,7 +10,19 @@ import Cocoa
 
 class generalVc: NSViewController, NSTextFieldDelegate {
 
+    @IBOutlet weak var btnLearnPomodoroTechnique: underLineButton!
     
+    @IBOutlet weak var lblDescriptionPomodoro: NSTextField!
+    @IBOutlet weak var lblTitleAppMode: NSTextField!
+    @IBOutlet weak var tabViewItemAdvanced: NSTabViewItem!
+    @IBOutlet weak var tabViewItemGeneral: NSTabViewItem!
+    @IBOutlet weak var tabViewItemPomodoro: NSTabViewItem!
+    @IBOutlet weak var tabView: NSTabView!
+    @IBOutlet weak var boxPopupWidth: NSLayoutConstraint!
+//    @IBOutlet weak var btnBlackLayer: NSButton!
+  //  @IBOutlet weak var BoxBlackLayerForPopup: NSBox!
+//    @IBOutlet weak var btnAdvancedMain: Button!
+    @IBOutlet weak var boxPopup: NSBox!
     @IBOutlet weak var btnCheckForUpdates: Button!
     @IBOutlet weak var btnExportStatistics: Button!
     @IBOutlet weak var lblTitleStatistics: NSTextField!
@@ -44,7 +56,16 @@ class generalVc: NSViewController, NSTextFieldDelegate {
     @IBOutlet weak var lblTitlePomodoroModeDuration: NSTextField!
     @IBOutlet weak var lblTitlePomodoroMode: NSTextField!
     @IBOutlet weak var lblTitleBreakDuration: NSTextField!
+    @IBOutlet weak var lblDescriptionCuddlyBear: NSTextField!
     
+   
+    @IBOutlet weak var checkBoxDockIcon: NSButton!
+    @IBOutlet weak var lblCheckBoxDockIcon: NSTextField!
+    @IBOutlet weak var lblTitleDockIcon: NSTextField!
+    
+    @IBOutlet weak var lblDescriptionGrizzlyBear: NSTextField!
+    @IBOutlet weak var radioBtnGrizzlyBear: NSButton!
+    @IBOutlet weak var radioBtnCuddlyBear: NSButton!
     var hardCorePomodoroEnabledText = "Hardcore Pomodoro mode enabled to focus on <FOCUSTYPE> for <COUNT> on <DAYS>."
     var hardCorePomodoroNotEnabledText = "Hardcore Pomodoro mode not enabled."
     var automaticPomodoroNotEnabledText = "Automatic Pomodoro mode is disabled."
@@ -56,7 +77,29 @@ class generalVc: NSViewController, NSTextFieldDelegate {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-//        Sound:Play sound effects
+        
+        lblDescriptionPomodoro.stringValue = "Pomodoro Mode cycles between deep work blocks where a focus mode is turned on (and distractions turned off) and break periods."
+        btnLearnPomodoroTechnique.title = "Learn more about the pomodoro technique here."
+        
+        
+        lblTitleAppMode.stringValue = "Focus bear mode:"
+        radioBtnCuddlyBear.title = "Cuddly Bear mode"
+        lblDescriptionCuddlyBear.stringValue = "Cuddly Bear mode: kind and gentle - gives you the benefit of the doubt when you open a non-allowed URL. Lets you temporarily allow blocked URLs during a focus mode."
+        
+        radioBtnGrizzlyBear.title = "Grizzly Bear mode"
+        lblDescriptionGrizzlyBear.stringValue = "Grizzly Bear mode: super strict - immediately block URLs that aren't allowed and don't let yourself allow them until the focus mode is over."
+        //
+        
+        tabViewItemPomodoro.label = "Pomodoro"
+        tabViewItemGeneral.label = "General"
+        tabViewItemAdvanced.label = "Advanced"
+        
+        if let common = configjson.value(forKey: "common") as? NSDictionary{
+            tabViewItemPomodoro.label = common.value(forKey: "tabPomodoroText") as? String ?? tabViewItemPomodoro.label
+            tabViewItemGeneral.label = common.value(forKey: "tabGeneralText") as? String ?? tabViewItemGeneral.label
+            tabViewItemAdvanced.label = common.value(forKey: "tabAdvancedText") as? String ?? tabViewItemAdvanced.label
+        }
+        
         lblTitleStatistics.stringValue = "Statistics:"
         lblTitleUpdates.stringValue = "Updates:"
         btnExportStatistics.title = "Export Statistics"
@@ -90,6 +133,9 @@ class generalVc: NSViewController, NSTextFieldDelegate {
         var checkBoxPomodoroText = "Enter Pomodoro mode after completing morning routine"
         
         var titleSelectLanguage = "Select Language:"
+        lblTitleDockIcon.stringValue = "Dock icon:"
+        lblCheckBoxDockIcon.stringValue = "Show Dock icon"
+        
         
         if let preferencesInfo = configjson.value(forKey: "preferencesInfo") as? NSDictionary{
             titlePomodoro = preferencesInfo.value(forKey: "titlePomodoro") as? String ?? titlePomodoro
@@ -122,7 +168,21 @@ class generalVc: NSViewController, NSTextFieldDelegate {
             lblTitleStatistics.stringValue = preferencesInfo.value(forKey: "statisticsText") as? String ?? lblTitleStatistics.stringValue
             lblTitleUpdates.stringValue = preferencesInfo.value(forKey: "updatesText") as? String ?? lblTitleUpdates.stringValue
             
+            
+            lblTitleAppMode.stringValue = preferencesInfo.value(forKey: "titleAppMode") as? String ?? lblTitleAppMode.stringValue
+            radioBtnCuddlyBear.title = preferencesInfo.value(forKey: "checkBoxCuddlyBearText") as? String ?? radioBtnCuddlyBear.title
+            lblDescriptionCuddlyBear.stringValue = preferencesInfo.value(forKey: "descriptionCuddlyBearText") as? String ?? lblDescriptionCuddlyBear.stringValue
+            
+            radioBtnGrizzlyBear.title = preferencesInfo.value(forKey: "checkBoxGrizzlyBearText") as? String ?? radioBtnGrizzlyBear.title
+            lblDescriptionGrizzlyBear.stringValue = preferencesInfo.value(forKey: "descriptionGrizzlyBearText") as? String ?? lblDescriptionGrizzlyBear.stringValue
+            
+            
+            lblDescriptionPomodoro.stringValue = preferencesInfo.value(forKey: "pomodoroDescriptionText") as? String ?? lblDescriptionPomodoro.stringValue
+            btnLearnPomodoroTechnique.title = preferencesInfo.value(forKey: "buttonLearnPomodoroTechniqueText") as? String ?? btnLearnPomodoroTechnique.title
 
+            
+            lblTitleDockIcon.stringValue = preferencesInfo.value(forKey: "titleDockIcon") as? String ?? lblTitleDockIcon.stringValue
+            lblCheckBoxDockIcon.stringValue = preferencesInfo.value(forKey: "checkBoxShowDockIconText") as? String ?? lblCheckBoxDockIcon.stringValue
         }
 
         lblTitlePomodoroModeDuration.stringValue = pomodoroModeDurationText
@@ -145,7 +205,7 @@ class generalVc: NSViewController, NSTextFieldDelegate {
         }
         
         btnAdvancedPmodoroMode.title = buttonAdvancedText
-
+//        btnAdvancedMain.title = buttonAdvancedText
         textFieldPomodoroDuration.formatter = IntegerFormatter()
         textFieldBreakDuration.formatter = IntegerFormatter()
         
@@ -160,15 +220,30 @@ class generalVc: NSViewController, NSTextFieldDelegate {
         }
     }
     
-    
+        
     override func viewWillAppear() {
-       
+//        if currentLanguageCode == "es"{
+//            boxPopupWidth.constant = 380
+//        }else{
+//            boxPopupWidth.constant = 280
+//        }
+//        boxPopup.isHidden = true
+//        BoxBlackLayerForPopup.isHidden = true
         
         if SettingsManagerObject.isSoundEnabled{
             checkBoxSound.state = .on
         }else{
             checkBoxSound.state = .off
         }
+        
+        if SettingsManagerObject.isCuddlyModeEnabled{
+            radioBtnCuddlyBear.state = .on
+            radioBtnGrizzlyBear.state = .off
+        }else{
+            radioBtnCuddlyBear.state = .off
+            radioBtnGrizzlyBear.state = .on
+        }
+        
         
         resetPomodoroModeState()
         
@@ -226,6 +301,14 @@ class generalVc: NSViewController, NSTextFieldDelegate {
         
         if let duration = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsBreakDurationMinutes) as? Int{
             textFieldBreakDuration.stringValue = "\(duration)"
+        }
+        
+        if let state = UserDefaults.standard.object(forKey: kUserdefaultsShowDockIcon) as? Bool{
+            if state{
+                checkBoxDockIcon.state = .on
+            }else{
+                checkBoxDockIcon.state = .off
+            }
         }
     }
     override func viewWillDisappear() {
@@ -567,6 +650,19 @@ class generalVc: NSViewController, NSTextFieldDelegate {
             SettingsManagerObject.isSoundEnabled = false
         }
     }
+
+    @IBAction func radioBtnCuddlyBearClicked(_ sender: Any) {
+        SettingsManagerObject.isSettingsChanged = true
+        radioBtnGrizzlyBear.state = .off
+        SettingsManagerObject.isCuddlyModeEnabled = true
+    }
+    
+    @IBAction func radioBtnGrizzlyBearClicked(_ sender: Any) {
+        SettingsManagerObject.isSettingsChanged = true
+        radioBtnCuddlyBear.state = .off
+        SettingsManagerObject.isCuddlyModeEnabled = false
+    }
+    
     @IBAction func checkBoxReduceMotionClicked(_ sender: Any) {
         SettingsManagerObject.isSettingsChanged = true
         if checkBoxReduceMotion.state == .on{
@@ -591,6 +687,13 @@ class generalVc: NSViewController, NSTextFieldDelegate {
     var pomodoroPreferencesAdvancedVcObj:pomodoroPreferencesAdvancedVc?
     @IBAction func btnAdvancedPmodoroModeClicked(_ sender: Any) {
         showHardCorePomodoroSetting()
+    }
+    @IBAction func btnAdvanceMainClicked(_ sender: Any) {
+        if boxPopup.isHidden == true{
+            allApiObject.capturePosthog(event: "open-advanced-general-preferences", metadata: [:])
+            boxPopup.isHidden = false
+//            BoxBlackLayerForPopup.isHidden = false
+        }
     }
     func showHardCorePomodoroSetting(){
         if pomodoroPreferencesAdvancedVcObj == nil{
@@ -639,6 +742,7 @@ class generalVc: NSViewController, NSTextFieldDelegate {
                 }catch{
                     print(error)
                 }
+                allApiObject.capturePosthog(event: "export-statistics", metadata: [:])
             }
             //        }
         }
@@ -647,6 +751,26 @@ class generalVc: NSViewController, NSTextFieldDelegate {
         addLog(text: "btnCheckForUpdatesClicked")//
         appdelegate!.updater?.checkForUpdates(self)
         preferencesWindowControllerObj?.window?.miniaturize(self)
+        allApiObject.capturePosthog(event: "check-for-updates-manually", metadata: [:])
+    }
+    @IBAction func btnBlackLayerClicked(_ sender: Any) {
+        boxPopup.isHidden = true
+//        BoxBlackLayerForPopup.isHidden = true
+    }
+    @IBAction func btnLearnPomodoroTechniqueClicked(_ sender: Any) {
+        if let url = URL(string: "https://medium.com/@focusbearteam/studying-on-tomato-oclock-a-student-s-guide-to-using-the-pomodoro-technique-efficiently-9a037cc509be"){
+            NSWorkspace.shared.open(url)
+        }
+    }
+    @IBAction func checkBoxDockIconClicked(_ sender: Any) {//will not sync it
+        if checkBoxDockIcon.state == .on{
+            UserDefaults.standard.set(true, forKey: kUserdefaultsShowDockIcon)
+            NSApp.setActivationPolicy(NSApplication.ActivationPolicy.regular)
+        }else{
+            UserDefaults.standard.set(false, forKey: kUserdefaultsShowDockIcon)
+            NSApp.setActivationPolicy(NSApplication.ActivationPolicy.accessory)
+            NSApplication.shared.activate(ignoringOtherApps: true)
+        }
     }
 }
 

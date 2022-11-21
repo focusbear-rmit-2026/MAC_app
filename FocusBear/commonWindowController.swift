@@ -23,16 +23,26 @@ class commonWindowController: NSWindowController, NSWindowDelegate {
 
     func windowShouldClose(_ sender: NSWindow) -> Bool {
         if appdelegate!.user == nil{
-            if self.contentViewController == getAskLogInVcObject(){
-                addLog(text: "Ask Login View window close:- quit app")
-//                shell(launchPath: "/bin/launchctl", arguments: // no need beacuse unloding launchagent when logout ["unload","-w","\("/Users/")\(NSUserName())\("/Library/LaunchAgents/\(mainAppBundelId).plist")"])
-                appdelegate?.terminateFromSelf = true
-                NSApp.terminate(self)
+            if askLogInWcObj != nil{
+                if self.contentViewController == getAskLogInVcObject(){
+                    addLog(text: "Ask Login View window close:- quit app")
+                    appdelegate?.terminateFromSelf = true
+                    NSApp.terminate(self)
+                }
+                
+                if self.contentViewController == getCustomLoginVcObject(){
+                    addLog(text: "custom Login View window close:- quit app")
+                    appdelegate?.terminateFromSelf = true
+                    NSApp.terminate(self)
+                }
             }
         }else if onboardingVideoVcObj != nil{
             if self.contentViewController == onboardingVideoVcObj{
-                addLog(text: "Ask Login View window close:- quit app")
+                addLog(text: "onboarding video window close")
                 onboardingVideoVcObj?.loadBlankUrl()
+                
+                let secondsBetween = Date().timeIntervalSince(onboardingVideoStartTime ?? Date())
+                allApiObject.capturePosthog(event: "onboarding-video-watched", metadata: ["watched_duration_seconds":Int(secondsBetween)])
             }
         }
         

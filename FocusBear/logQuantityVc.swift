@@ -36,7 +36,7 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
 
     @IBOutlet weak var lblError: NSTextField!
     //    @IBOutlet weak var textFieldQuantityFormatter: TextFieldNumberFormatter!
-    @IBOutlet weak var btnCancel: cursorButton!
+    @IBOutlet weak var btnCancel: Button!
     @IBOutlet weak var btnOk: cursorButton!
     @IBOutlet weak var textFieldCount: NSTextField!
     @IBOutlet weak var lblSubTitle: NSTextField!
@@ -51,6 +51,8 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
     var activity_id:String = ""
     var activity_sequence_id:String = ""
     var activityChoiceId:String?
+    
+    var logQuantityQuestionText = "How many <activity> did you do?"
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
@@ -58,7 +60,7 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
         lblTitle.stringValue = "Log Quantity of activity"
         btnOk.title = "OK"
         btnCancel.title = "Cancel"
-        
+        btnCancel.buttonColor = NSColor.white.cgColor
         if let logQuantityInfo = configjson.value(forKey: "logQuantityInfo") as? NSDictionary{
             if let buttonCancelText = logQuantityInfo.value(forKey: "buttonCancelText") as? String{
                 btnCancel.title = buttonCancelText
@@ -69,7 +71,9 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
             if let title = logQuantityInfo.value(forKey: "title") as? String{
                 lblTitle.stringValue = title
             }
-            
+            if let title = logQuantityInfo.value(forKey: "logQuantityQuestionText") as? String{
+                logQuantityQuestionText = title
+            }
         }
         let formatter = TwoDigitFormatter()
 //        formatter.maximumFractionDigits = 2
@@ -94,9 +98,9 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
         self.logQuantityType = logQuantityType
         textFieldCount.stringValue = ""
 //        print(timestamp)
-        var subTitle = logQuantityQuestion ?? "How many <activity> did you do?"
+        var subTitle = logQuantityQuestion ?? logQuantityQuestionText
         if subTitle.isEmpty{// if logQuantityQuestion is ""
-            subTitle = "How many <activity> did you do?"
+            subTitle = logQuantityQuestionText
         }
         subTitle = subTitle.replacingOccurrences(of: "<activity>", with: name)
         self.logQuantityQuestion = subTitle
@@ -117,6 +121,7 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
            return
         }
         thirdVcObj?.loadGraph(activityId: self.activity_id, activityName: self.name, logQuantity: true, logQuantityType: self.logQuantityType, activityChoiceId: self.activityChoiceId,activityStartTime: lastActivityPerformedTime!, duration: durationInSeconds, quantity: "0")
+        
         allApiObject.activityCompletedApi(activity_id: activity_id, activity_sequence_id: activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:0.0, duration_logged:Int(durationInSeconds) ?? 0, choice_id: activityChoiceId, completionHandler: {dic  in
             DispatchQueue.main.async {
                 

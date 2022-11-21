@@ -7,10 +7,16 @@
 //
 
 import Cocoa
+import TrueTime
 
 
 class focusPreferencesAdvancedVc: NSViewController {
     
+    @IBOutlet weak var checkBoxAutoDoNotDisturb: NSButton!
+    @IBOutlet weak var lineHorizontal: NSBox!
+    @IBOutlet weak var boxTableView: NSBox!
+    @IBOutlet weak var bgBox: NSBox!
+    @IBOutlet weak var lblInstruction: NSTextField!
     @IBOutlet weak var btnAddUrl: NSButton!
     @IBOutlet weak var btnRemoveUrl: NSButton!
     @IBOutlet weak var lblTitle: NSTextField!
@@ -29,8 +35,8 @@ class focusPreferencesAdvancedVc: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
-        
-        
+        checkBoxAutoDoNotDisturb.title = "Turn on Do Not Disturb automatically when starting a focus mode."
+        lblInstruction.stringValue = "The URLs here will be blocked during this focus mode. Useful if you want to allow some websites but block others. For example, you could have *.google.com as an allowed URL but block games.google.com"
         var runScriptBeforeText = "Run apple script before starting focus mode."
         var runScriptAfterText = "Run apple script after starting focus mode."
         var titleCurrentAppleScript = "Current Apple script:"
@@ -50,6 +56,9 @@ class focusPreferencesAdvancedVc: NSViewController {
 
             toolTipAdd = focusPreferencesAdvancedInfo.value(forKey: "toolTipAdd") as? String ?? toolTipAdd
             toolTipRemove = focusPreferencesAdvancedInfo.value(forKey: "toolTipRemove") as? String ?? toolTipRemove
+            lblInstruction.stringValue = focusPreferencesAdvancedInfo.value(forKey: "instructionText") as? String ?? lblInstruction.stringValue
+            
+            checkBoxAutoDoNotDisturb.title = focusPreferencesAdvancedInfo.value(forKey: "autoOnDoNotDisturbText") as? String ?? checkBoxAutoDoNotDisturb.title
         }
         
         checkBoxRunScriptBeforeFocus.title = runScriptBeforeText
@@ -132,14 +141,49 @@ class focusPreferencesAdvancedVc: NSViewController {
             }else{
                 lblUrlCurrentApplescriptAfter.stringValue = "Please select a apple script."
                 if let focusPreferencesAdvancedInfo = configjson.value(forKey: "focusPreferencesAdvancedInfo") as? NSDictionary{
-                    lblUrlCurrentApplescriptBefore.stringValue = focusPreferencesAdvancedInfo.value(forKey: "pleaseSelectScriptText") as? String ?? lblUrlCurrentApplescriptBefore.stringValue
+                    lblUrlCurrentApplescriptAfter.stringValue = focusPreferencesAdvancedInfo.value(forKey: "pleaseSelectScriptText") as? String ?? lblUrlCurrentApplescriptAfter.stringValue
                 }
+            }
+          
+            if bottomConstraint != nil{
+                NSLayoutConstraint.deactivate([bottomConstraint!])
+                bottomConstraint = nil
+            }
+            
+            
+            if let isAllowedListApproach = arrFocusType[row]["isAllowedListApproach"] as? Bool{
+                if isAllowedListApproach{
+                    bottomConstraint = NSLayoutConstraint(item: btnOk!, attribute: .top, relatedBy: .equal, toItem: boxTableView, attribute: .bottom, multiplier: 1, constant: 14)
+                    NSLayoutConstraint.activate([bottomConstraint!])
+                    lblTitle.isHidden = false
+                    lineHorizontal.isHidden = false
+                }else{
+                    bottomConstraint = NSLayoutConstraint(item: btnOk!, attribute: .top, relatedBy: .equal, toItem: checkBoxAutoDoNotDisturb, attribute: .bottom, multiplier: 1, constant: 14)
+                    NSLayoutConstraint.activate([bottomConstraint!])
+                    lblTitle.isHidden = true
+                    lineHorizontal.isHidden = true
+                }
+            }
+           
+            
+            if let val = arrFocusType[row]["isAutoDoNotDisturbEnabled"] as? Bool{
+                if val{
+                    checkBoxAutoDoNotDisturb.state = .on
+                }else{
+                    checkBoxAutoDoNotDisturb.state = .off
+                }
+            }else{
+                checkBoxAutoDoNotDisturb.state = .off
             }
             
         }
         
+//        btnOk
         
+        
+        //
     }
+    var bottomConstraint: NSLayoutConstraint?
     @objc func tableRowBlockedUrlsDoubleClicked(){
         let selectedTow = tblView.selectedRow
         if selectedTow == -1{
@@ -211,6 +255,7 @@ class focusPreferencesAdvancedVc: NSViewController {
 
                         }
                     })
+                    allApiObject.capturePosthog(event: "set-apple-script-before-starting-focus-mode", metadata: [:])
                 }
             }
         })
@@ -244,6 +289,7 @@ class focusPreferencesAdvancedVc: NSViewController {
 
                         }
                     })
+                    allApiObject.capturePosthog(event: "set-apple-script-after-completing-focus-mode", metadata: [:])
                 }
             }
         })
@@ -290,6 +336,58 @@ class focusPreferencesAdvancedVc: NSViewController {
     }
     @IBAction func btnOkClicked(_ sender: Any) {
         self.dismiss(self)
+    }
+    @IBAction func checkBoxAutoDoNotDisturbClicked(_ sender: Any) {
+        let row = focusPreferencesVcObj?.tblViewFocusType.selectedRow ?? 0
+        if checkBoxAutoDoNotDisturb.state == .on{
+            
+            if !isAccessibilityEnabled(isPrompt: false){
+                let alert = NSAlert()
+                alert.messageText = "To turn on Do Not Disturb when starting a Focus Mode, Focus Bear needs Accessibility permissions. Would you like to give the permissions now?"
+                if let focusPreferencesAdvancedInfo = configjson.value(forKey: "focusPreferencesAdvancedInfo") as? NSDictionary{
+                    alert.messageText = focusPreferencesAdvancedInfo.value(forKey: "needDndPermissionText") as? String ?? alert.messageText
+                }
+                alert.addButton(withTitle: buttonOkText)
+                alert.addButton(withTitle: buttonCancelText)
+                alert.beginSheetModal(for: self.view.window!, completionHandler: { response in
+                    if response == .alertFirstButtonReturn{
+                        _ = isAccessibilityEnabled(isPrompt: true)
+                        arrFocusType[row]["isAutoDoNotDisturbEnabled"] = true
+                        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+                        
+                        allApiObject.editFocusMode(focusType: arrFocusType[row], completionHandler: {newDic in
+                            DispatchQueue.main.async {
+
+                            }
+                        })
+                        preferencesWindowControllerObj!.window!.setFrameOrigin(NSPoint(x: 0, y: 0))
+                    }else{
+                        self.checkBoxAutoDoNotDisturb.state = .off
+                    }
+                })
+                
+            }else{
+                arrFocusType[row]["isAutoDoNotDisturbEnabled"] = true
+                UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+                
+                allApiObject.editFocusMode(focusType: arrFocusType[row], completionHandler: {newDic in
+                    DispatchQueue.main.async {
+
+                    }
+                })
+            }
+            
+        }else{
+            arrFocusType[row]["isAutoDoNotDisturbEnabled"] = false
+            UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+            
+            allApiObject.editFocusMode(focusType: arrFocusType[row], completionHandler: {newDic in
+                DispatchQueue.main.async {
+
+                }
+            })
+        }
+        
     }
     
 }

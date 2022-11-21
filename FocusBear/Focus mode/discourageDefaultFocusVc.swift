@@ -24,6 +24,7 @@ class discourageDefaultFocusVc: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
+        btnShutUp.buttonColor = NSColor.white.cgColor
         lblCancel.stringValue = "Bah I guess you're right - CANCEL!"
         lblShutUp.stringValue = "Shutup I know what I'm doing"
         

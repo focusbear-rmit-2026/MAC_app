@@ -24,10 +24,7 @@ class smallCountDownVc: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
-        btnPostpone.title = "Postpone"
-        if let common = configjson.value(forKey: "common") as? NSDictionary{
-            btnPostpone.title = common.value(forKey: "Postpone") as? String ?? btnPostpone.title
-        }
+        
     }
     
     func closeTimerBox(){
@@ -41,32 +38,43 @@ class smallCountDownVc: NSViewController {
     override func viewWillAppear() {
 //        btnPostpone.isHidden = true
         //****** Allow  postpone from timer window in morning evening routine in allow app case******//#213  date- 5/9/22
-        if (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_) && !isFocusBreak{
-            lblTimerTopSpaceConstraint.constant = 10
-            btnPostpone.isHidden = false
-        }else{
-            lblTimerTopSpaceConstraint.constant = 15
-            btnPostpone.isHidden = true
-        }
-        self.view.window?.alphaValue = 1
+        
     }
     
     @IBAction func btnPostponeClicked(_ sender: Any) {
-        mainWindowControllerObj?.window?.setIsVisible(true)
-        showBlankWindowInSecondaryMonitor()
-        mainViewControllerObj?.btnAbortClicked(self)
+        if (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_) && !isFocusBreak{
+            addLog(text:"button Postpone Clicked")
+            mainWindowControllerObj?.window?.setIsVisible(true)
+            showBlankWindowInSecondaryMonitor()
+            mainViewControllerObj?.btnAbortClicked(self)
+        }else if currentState == ._FOCUS_SUMMARY_{
+            addLog(text:"button Back To My Habits")
+            closeTimerBox()
+            mainViewControllerObj?.timerGiveOneMoreMinut?.invalidate()
+            mainViewControllerObj?.timerGiveOneMoreMinut = nil
+            mainViewControllerObj?.showFocusSummaryView()
+        }
+        
     }
     @IBAction func btnCloseClicked(_ sender: Any) {
         if isFocusBreak{
             closeTimerBox()
         }else{
-            let (_,m,_) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
-            if m < 2{
-                closeTimerBox()
-            }else{
-                self.view.window?.alphaValue = 0
-            }
+//            let (_,m,_) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
+//            if m < 2{
+//                closeTimerBox()
+//            }else{
+//                self.view.window?.alphaValue = 0
+//            }
+            self.view.window?.alphaValue = 0
             
+            
+            
+            if (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._ACTIVITY_) && !(mainWindowControllerObj?.window?.isVisible ?? false){
+                if currentHabitPlaying != nil || currentActivityPlaying != nil{
+                    NSApp.hide(self)
+                }
+            }
         }
     }
     
@@ -103,6 +111,27 @@ class smallCountDownVc: NSViewController {
     }
     
     func startTimerHabit(durationSeconds:Int, msg:String) {
+        
+        if (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_) && !isFocusBreak{
+            lblTimerTopSpaceConstraint.constant = 10
+            btnPostpone.isHidden = false
+            btnPostpone.title = "Postpone"
+            if let common = configjson.value(forKey: "common") as? NSDictionary{
+                btnPostpone.title = common.value(forKey: "buttonPostponeText") as? String ?? btnPostpone.title
+            }
+        }else if currentState == ._FOCUS_SUMMARY_{
+            lblTimerTopSpaceConstraint.constant = 10
+            btnPostpone.isHidden = false
+            btnPostpone.title = "Back to my habits"
+            if let common = configjson.value(forKey: "common") as? NSDictionary{
+                btnPostpone.title = common.value(forKey: "buttonBackToMyHabitsText") as? String ?? btnPostpone.title
+            }
+        }else{
+            lblTimerTopSpaceConstraint.constant = 15
+            btnPostpone.isHidden = true
+        }
+        self.view.window?.alphaValue = 1
+        
         if timer != nil{
             timer?.invalidate()
             timer = nil
@@ -145,7 +174,7 @@ class smallCountDownVc: NSViewController {
     
     @objc func performTimerCount() {
         
-        currentTimer += 1 // todo 1 kro
+        currentTimer += 1 
         let remainingSeconds = self.totalDuration-currentTimer
         let (h,m,s) = secondsToHoursMinutesSeconds(seconds: remainingSeconds)
         var hour = "\(h)"
@@ -155,6 +184,7 @@ class smallCountDownVc: NSViewController {
             DispatchQueue.main.async {
                 if self.view.window?.alphaValue == 0{
                     self.view.window?.alphaValue = 1
+                    NSApplication.shared.activate(ignoringOtherApps: true)
                 }
             }
         }
@@ -175,13 +205,20 @@ class smallCountDownVc: NSViewController {
             }else{
                 self.lblTimer.stringValue = "\(hour):\(minute):\(second)"
             }
-        }
-        if self.totalDuration <= self.currentTimer {
-            self.timer?.invalidate()
-            self.view.window?.close()
-            if isFocusBreak{
-                playFocusPomodorBreakEndsSound()
+            
+            
+            if self.totalDuration <= self.currentTimer {
+                if self.view.window?.alphaValue == 0{
+                    self.view.window?.alphaValue = 1
+                    NSApplication.shared.activate(ignoringOtherApps: true)
+                }
+                self.timer?.invalidate()
+                self.view.window?.close()
+                if self.isFocusBreak{
+                    playFocusPomodorBreakEndsSound()
+                }
             }
         }
+        
     }
 }

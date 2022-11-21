@@ -21,7 +21,7 @@ class ViewController: NSViewController {
         lblMessage.stringValue = "OK - Stay focused throughout the day!"
         lblMessage.isHidden = true
         btnAbort.title = "Please spare me"
-        
+        btnAbort.borderWidth = 2
         if let common = configjson.value(forKey: "common") as? NSDictionary{
             lblMessage.stringValue = common.value(forKey: "stayFocusedText") as? String ?? lblMessage.stringValue
             btnAbort.title = common.value(forKey: "buttonAbortText") as? String ?? btnAbort.title
@@ -47,7 +47,7 @@ class ViewController: NSViewController {
    
     
     @objc func showFocusSummaryView(){
-        
+        appdelegate!.checkSystemTimeAndShowWindow()
         if startTime == nil || shutOffTime == nil{
             return;
         }
@@ -61,7 +61,9 @@ class ViewController: NSViewController {
 //
         }else{// not shutoff time
             currentState = ._NOTHING_//todo uncomment
-            self.view.window?.close()//todo uncomment
+            if mainWindowControllerObj?.window?.isVisible ?? false{
+                self.view.window?.close()//todo uncomment
+            }
             return;//todo uncomment
         }
         allActivityTodaySummaryData = nil
@@ -109,6 +111,13 @@ class ViewController: NSViewController {
         self.view.addConstraints(subView: logQuantityVcObj!.view)
     }
     
+    func showSkipHabitView(){
+        addLog(text: "show SkipHabit View")
+        self.view.addSubview(getSkipHabitVcObject().view)
+        self.view.addConstraints(subView: getSkipHabitVcObject().view)
+        getSkipHabitVcObject().resetView()
+    }
+    
     func showAskPostponeView(){
         addLog(text: "show AskPostpone View")
         self.view.addSubview(getAskPostponeVcObject().view)
@@ -129,7 +138,12 @@ class ViewController: NSViewController {
                         enableSystemSleep()
                         if timerViewcontrollerObj?.webView.isHidden == false{
                             if !(timerViewcontrollerObj?.isActivityPaused ?? false){
-                                timerViewcontrollerObj?.webView.setAllMediaPlaybackSuspended(true)
+                                if #available(macOS 12.0, *) {
+                                    timerViewcontrollerObj?.webView.setAllMediaPlaybackSuspended(true)
+                                } else {
+                                    // Fallback on earlier versions
+                                    timerViewcontrollerObj?.loadBlankUrl()
+                                }
                             }
                         }
                     }
@@ -145,10 +159,31 @@ class ViewController: NSViewController {
                 }
             }
         }
-        if currentState == ._MORNING_HABIT_{
-            showAskPostponeView()
+        if currentState == ._MORNING_HABIT_{//  jesa morning mai vesa evening mai
+//
+            if activityPostponeCount == 0{
+                showAskPostponeView()
+            }else{
+                if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
+                    mainViewControllerObj?.showPasswordView()
+                    enterPasswordVcObj?.parentVc = getAskPostponeVcObject()
+                }else{
+                    showAskPostponeView()
+                }
+                
+            }
         }else if currentState == ._EVENING_HABIT_{
-            showAskPostponeView()
+            if activityPostponeCount == 0{
+                showAskPostponeView()
+            }else{
+                if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
+                    mainViewControllerObj?.showPasswordView()
+                    enterPasswordVcObj?.parentVc = getAskPostponeVcObject()
+                }else{
+                    showAskPostponeView()
+                }
+                
+            }
         }else if currentState == ._ACTIVITY_{
             if currentAction == ._START_{// start state sirf first activity ki start mi hi hoti h fir  second activity ki start mai "end state hoti hai "
                 showAskPostponeView()
@@ -163,7 +198,12 @@ class ViewController: NSViewController {
     func processAborting(){
         if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_{
             if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
-                showPasswordView()
+                if activityPostponeCount == 0{//it  means we did not ask for password when user clicked on please apare me button so need to ask now
+                    showPasswordView()
+                }else{
+                    showAbortStartView()
+                }
+                
             }else{
                 showAbortStartView()
             }
@@ -344,6 +384,15 @@ class ViewController: NSViewController {
         for subview in viewsArr {
             subview.removeFromSuperview()
         }
+        let views = self.view.subviews
+        if views.count != 1{
+            for subview in views {
+                if subview != boxContainer{
+                    subview.removeFromSuperview()
+                }
+            }
+        }
+        
     }
     func shutOffMac(){
         isHabitAlreadyShowed = false
@@ -375,6 +424,17 @@ class ViewController: NSViewController {
         currentAction = ._START_
         NSApplication.shared.activate(ignoringOtherApps: true)
     }
+    func showAskAppWorkVc(){
+        addLog(text: "Showing Ask App Work view.")
+        btnAbort.isHidden = true
+        removeSubViews()
+
+        containerView.addSubview(getAskAppWorkVcObject().view)
+        containerView.addConstraints(subView: getAskAppWorkVcObject().view)
+        currentState = ._ASK_APP_WORK_
+        currentAction = ._START_
+        NSApplication.shared.activate(ignoringOtherApps: true)
+    }
     
     func showVisualizeInstructionsVc(){
         addLog(text: "show Visualize Instructions Vc.")
@@ -387,6 +447,7 @@ class ViewController: NSViewController {
     }
     func showAllEveningHabits(){
         addLog(text: "Initiate and run Evening Habits.")
+        allApiObject.isAnyErrorFoundInActivityCompletedApi = false
         isPromptToRememberHabitShowedInLastHabit = false
         btnAbort.isHidden = false
         removeSubViews()
@@ -415,6 +476,7 @@ class ViewController: NSViewController {
     }
     func showAllMorningHabits(){
         addLog(text: "Showing morning habits.")
+        allApiObject.isAnyErrorFoundInActivityCompletedApi = false
         isPromptToRememberHabitShowedInLastHabit = false
         lastShownRandomChoiceDic = [String:activityChoice]()
         btnAbort.isHidden = false
@@ -452,6 +514,7 @@ class ViewController: NSViewController {
         timerViewcontrollerObj?.startTimerHabit(durationSeconds: arrAllMorningHabits[currentHabitIndex].durationSeconds, url: arrAllMorningHabits[currentHabitIndex].urlsArray.randomElement(), name: arrAllMorningHabits[currentHabitIndex].name!, currentHabit: arrAllMorningHabits[currentHabitIndex])
         currentState = ._MORNING_HABIT_
         currentAction = ._INPROGRESS_
+        allApiObject.capturePosthog(event: "start-morning-routine", metadata: ["routine-type":"morning_routine"])
     }
     
     func startFirstEveningHabit() {
@@ -464,6 +527,7 @@ class ViewController: NSViewController {
         timerViewcontrollerObj?.startTimerHabit(durationSeconds: arrAllEveningHabits[currentHabitIndex].durationSeconds, url: arrAllEveningHabits[currentHabitIndex].urlsArray.randomElement(), name: arrAllEveningHabits[currentHabitIndex].name!, currentHabit: arrAllEveningHabits[currentHabitIndex])
         currentState = ._EVENING_HABIT_
         currentAction = ._INPROGRESS_
+        allApiObject.capturePosthog(event: "start-evening-routine", metadata: ["routine-type":"evening_routine"])
     }
     func startBreathing() {
         addLog(text:"current startBreathing called")
@@ -474,6 +538,7 @@ class ViewController: NSViewController {
         timerViewcontrollerObj?.startBreathing()
         currentState = ._BREATHING_
         currentAction = ._INPROGRESS_
+        allApiObject.capturePosthog(event: "start-first-routine", metadata: ["routine-type":"first_routine"])
     }
     
     func breathingOver() {
@@ -485,6 +550,7 @@ class ViewController: NSViewController {
         thirdVcObj!.breathingFinished()
         currentState = ._BREATHING_
         currentAction = ._END_
+        allApiObject.capturePosthog(event: "complete-first-routine", metadata: ["routine-type":"first_routine"])
     }
     func morningHabitOver() {
         addLog(text:"current morning Habit Over called")
@@ -504,9 +570,12 @@ class ViewController: NSViewController {
         thirdVcObj!.morningHabitFinished(index: currentHabitIndex)
         currentState = ._MORNING_HABIT_
         currentAction = ._END_
+        if activityPostponeCount > 3{
+            activityPostponeCount = 3//I complete a habit after postponing, it should go back to a 15 second postpone the next time
+        }
     }
     
-    func startDirectIncompleteMorningHabitAtIndex(index:Int) {
+    func startDirectIncompleteMorningHabitAtIndex(index:Int, isLastActivitySkipped:Bool) {
         addLog(text:"start Direct Incomplete Morning Habit AtIndex")
 //        thirdVcObj!.loadView()
         currentState = ._MORNING_HABIT_// pahle isiliye kiya qki load graph mai check lagaya hua h state ka 
@@ -521,10 +590,15 @@ class ViewController: NSViewController {
         containerView.addSubview(thirdVcObj!.view)
         containerView.addConstraints(subView: thirdVcObj!.view)
         currentHabitIndex = index-1
-        thirdVcObj!.morningHabitFinishedAndStartIncompleteNew(index: currentHabitIndex)
+        thirdVcObj!.morningHabitFinishedAndStartIncompleteNew(index: currentHabitIndex, isLastActivitySkipped:isLastActivitySkipped)
         
     }
-    
+
+    func showThirdVc(){
+        removeSubViews()
+        containerView.addSubview(thirdVcObj!.view)
+        containerView.addConstraints(subView: thirdVcObj!.view)
+    }
     func eveningHabitOver() {
         addLog(text:"current evening Habit Over called")
         if mainWindowControllerObj?.window?.isVisible == false{
@@ -538,31 +612,34 @@ class ViewController: NSViewController {
         appdelegate?.timerAllowAppForActivity?.invalidate()
         btnAbort.isHidden = false
         removeSubViews()
-//        if currentHabitIndex < arrAllEveningHabits.count-1 {
-            containerView.addSubview(thirdVcObj!.view)
-            containerView.addConstraints(subView: thirdVcObj!.view)
-            thirdVcObj!.eveningHabitFinished(index: currentHabitIndex)
-            currentState = ._EVENING_HABIT_
-            currentAction = ._END_
+        //        if currentHabitIndex < arrAllEveningHabits.count-1 {
+        containerView.addSubview(thirdVcObj!.view)
+        containerView.addConstraints(subView: thirdVcObj!.view)
+        thirdVcObj!.eveningHabitFinished(index: currentHabitIndex)
+        currentState = ._EVENING_HABIT_
+        currentAction = ._END_
         
-//        }
-//        else{
-//            addLog(text: "evening habit Finished")
-//            playAfterMorningRoutineSound()
-//            shutOffMac()
-//            if arrAllEveningHabits[currentHabitIndex].logQuantity{
-//                mainViewControllerObj!.showLogQuantityView()
-//                let lastHabit = arrAllEveningHabits[currentHabitIndex].name
-//                logQuantityVcObj?.resetData(name: lastHabit!, durationInSeconds: "\(arrAllEveningHabits[currentHabitIndex].durationSeconds!)", logQuantityQuestion: arrAllEveningHabits[currentHabitIndex].logQuantityQuestion, currentState: ._EVENING_HABIT_)
-//            }else{
-//                let lastHabit = arrAllEveningHabits[currentHabitIndex].name
-//                let startTime = getStringFromDate(date: lastActivityPerformedTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")
-//                addEntryInCsv(logType: "evening routine", activity: lastHabit!, durationInSeconds: "\(arrAllEveningHabits[currentHabitIndex].durationSeconds!)", quantityQuestion: "", quantityLogged: "", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "")
-//            }
-//        }
+        //        }
+        //        else{
+        //            addLog(text: "evening habit Finished")
+        //            playAfterMorningRoutineSound()
+        //            shutOffMac()
+        //            if arrAllEveningHabits[currentHabitIndex].logQuantity{
+        //                mainViewControllerObj!.showLogQuantityView()
+        //                let lastHabit = arrAllEveningHabits[currentHabitIndex].name
+        //                logQuantityVcObj?.resetData(name: lastHabit!, durationInSeconds: "\(arrAllEveningHabits[currentHabitIndex].durationSeconds!)", logQuantityQuestion: arrAllEveningHabits[currentHabitIndex].logQuantityQuestion, currentState: ._EVENING_HABIT_)
+        //            }else{
+        //                let lastHabit = arrAllEveningHabits[currentHabitIndex].name
+        //                let startTime = getStringFromDate(date: lastActivityPerformedTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")
+        //                addEntryInCsv(logType: "evening routine", activity: lastHabit!, durationInSeconds: "\(arrAllEveningHabits[currentHabitIndex].durationSeconds!)", quantityQuestion: "", quantityLogged: "", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "")
+        //            }
+        //        }
+        if activityPostponeCount > 3{
+            activityPostponeCount = 3//I complete a habit after postponing, it should go back to a 15 second postpone the next time
+        }
         
     }
-    func startDirectIncompleteEveningHabitAtIndex(index:Int) {
+    func startDirectIncompleteEveningHabitAtIndex(index:Int, isLastActivitySkipped:Bool) {
         addLog(text:"start Direct Incomplete Evening Habit AtIndex")
 //        thirdVcObj!.loadView()
         currentState = ._EVENING_HABIT_// pahle isiliye kiya qki load graph mai check lagaya hua h state ka
@@ -577,7 +654,7 @@ class ViewController: NSViewController {
         containerView.addSubview(thirdVcObj!.view)
         containerView.addConstraints(subView: thirdVcObj!.view)
         currentHabitIndex = index-1
-        thirdVcObj!.eveningHabitFinishedAndStartIncompleteNew(index: currentHabitIndex)
+        thirdVcObj!.eveningHabitFinishedAndStartIncompleteNew(index: currentHabitIndex, isLastActivitySkipped:isLastActivitySkipped)
         
     }
     func eveningHabitFinishShowShutOff(){
@@ -631,7 +708,8 @@ class ViewController: NSViewController {
     
     
     func startCurrentActivity() {
-        addLog(text:"current start Current Activity called")
+        allApiObject.capturePosthog(event: "start-break-activity", metadata: ["routine-type":"break_activity"])
+        addLog(text:"start Current Activity called")
         btnAbort.isHidden = false
         removeSubViews()
         containerView.addSubview(timerViewcontrollerObj!.view)
@@ -680,7 +758,7 @@ class ViewController: NSViewController {
                 let lastIndex = currentActivityIndex
                 currentActivityIndex += 1
                 if currentActivityIndex > arrActivitiesIncludeInEveryBreak.count - 1{
-                    currentActivityIndex = lastIndex// phle hi current index awt ki thi ..is condition k liye
+                    currentActivityIndex = lastIndex// phle hi current index le rakhki thi ..is condition k liye
                     isMandatoryActivityGoing = false//
                     
                     let currentActivity = arrActivitiesExcludeInEveryBreak[currentActivityIndex]
@@ -745,6 +823,9 @@ class ViewController: NSViewController {
         btnAbort.isHidden = true
         removeSubViews()
         lblMessage.isHidden = false
+        if let common = configjson.value(forKey: "common") as? NSDictionary{
+            lblMessage.stringValue = common.value(forKey: "stayFocusedText") as? String ?? lblMessage.stringValue
+        }
         currentHabitIndex = -1
         self.perform(#selector(unlockMachine), with: nil, afterDelay: 3)
         if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsPomodoroModeEnabled) as? Bool{
@@ -756,10 +837,19 @@ class ViewController: NSViewController {
     }
     @objc func unlockMachine() {
         addLog(text:"current unlockMachine called")
+        if allApiObject.isAnyErrorFoundInActivityCompletedApi{
+            allApiObject.isAnyErrorFoundInActivityCompletedApi = false
+            var activitiesSyncErrorText = "Focus Bear was not able to sync the activities' statistics due to bad internet."
+            if let common = configjson.value(forKey: "common") as? NSDictionary{
+                activitiesSyncErrorText = common.value(forKey: "activitiesSyncErrorText") as? String ?? activitiesSyncErrorText
+            }
+            showCustomNotificationWindow(msg: activitiesSyncErrorText)
+        }
         lblMessage.isHidden = true
         mainWindowControllerObj?.window?.setIsVisible(false)
         hideBlankWindowInSecondaryMonitor()
-        
+        activityPostponeCount = 0
+        activitySkipCount = 0
         if isFirstRun{//welcome routine k baad set krenge (when first time)
 //            appdelegate!.setBackgroundThreadTimer()
             isFirstRun = false
@@ -783,7 +873,7 @@ class ViewController: NSViewController {
                     self.breakTimer?.invalidate()
                     self.breakTimer = nil
                 }
-                self.breakTimer = Timer.scheduledTimer(timeInterval: TimeInterval(breakAfterMinutes*60), target: self, selector: #selector(self.startBreakActivities), userInfo: nil, repeats: false)
+                self.breakTimer = Timer.scheduledTimer(timeInterval: TimeInterval(breakAfterMinutes*60), target: self, selector: #selector(self.timeToStartBreakActivities), userInfo: nil, repeats: false)
 //                RunLoop.current.add(self.breakTimer!, forMode: RunLoop.Mode.common)
 //                RunLoop.current.run()
                 RunLoop.main.add((breakTimer!), forMode: RunLoop.Mode.common)
@@ -804,7 +894,7 @@ class ViewController: NSViewController {
                     self.breakTimer?.invalidate()
                     self.breakTimer = nil
                 }
-                self.breakTimer = Timer.scheduledTimer(timeInterval: TimeInterval(minutes*60), target: self, selector: #selector(self.startBreakActivities), userInfo: nil, repeats: false)//todo  minutes*60 kro
+                self.breakTimer = Timer.scheduledTimer(timeInterval: TimeInterval(minutes*60), target: self, selector: #selector(self.timeToStartBreakActivities), userInfo: nil, repeats: false)//todo  minutes*60 kro
 //                RunLoop.current.add(self.breakTimer!, forMode: RunLoop.Mode.common)
 //                RunLoop.current.run()
             RunLoop.main.add((breakTimer!), forMode: RunLoop.Mode.common)
@@ -916,14 +1006,18 @@ class ViewController: NSViewController {
         btnAbort.isHidden = true
         removeSubViews()
         lblMessage.isHidden = false
+        if let common = configjson.value(forKey: "common") as? NSDictionary{
+            lblMessage.stringValue = common.value(forKey: "letsCreatAccountText") as? String ?? lblMessage.stringValue
+        }
         //        isBreathingGoing = false
         self.perform(#selector(unlockMachine), with: nil, afterDelay: 3)
         currentState = ._NOTHING_
     }
     
-    @objc func startBreakActivities() {
+    @objc func timeToStartBreakActivities() {
         DispatchQueue.main.async {
             addLog(text: "Initiating Break Activities")
+            checkLogFileRotation()
             if avmonitor.isMicOn(){
                 self.setActivityTimer()
                 addLog(text: "Mic is in use, Break Activities cancelled.")
@@ -954,7 +1048,7 @@ class ViewController: NSViewController {
                 return;
             }
             if currentState == ._ABORT_{
-                addLog(text: "App is disabled, Break Activities cancelled.")
+                addLog(text: "App state is abort, Break Activities cancelled.")
                 return;
             }
             
@@ -962,109 +1056,119 @@ class ViewController: NSViewController {
                 addLog(text: "not working hours, Break Activities cancelled.")
                 return;//agar kisi ne shutdown abort bhi kr diya to bhi kuch ni hoga// iise focus summary or evening routine k time per bhi rreturn ho jayga
             }
-            self.breakTimer = nil
-            if arrAllbreakActivities.count != 0 {
-                self.btnAbort.isHidden = false
-                //                isBreakActivitiesGoing = true
-                isAnyMandatoryActivityIncluded = false
-                arrActivitiesExcludeInEveryBreak.removeAll()
-                arrActivitiesIncludeInEveryBreak.removeAll()
-                isMandatoryActivityGoing = false
-                
-                for activity in arrAllbreakActivities{
-                    if SettingsManagerObject.isOfficeModeEnabled{
-                        if !activity.isOfficeFriendly{
-                            continue;
-                        }
-                    }
-                    if activity.IncludeInEveryBreak{
-                        isAnyMandatoryActivityIncluded = true//than two step will be happen// first mandatory arra than normal array
-                        arrActivitiesIncludeInEveryBreak.append(activity)
-                    }else{
-                        arrActivitiesExcludeInEveryBreak.append(activity)
-                    }
-                }
-                
-//                checking if  Office Mode is on and if there is not any activity office friendly than turn off office mode 
-                if SettingsManagerObject.isOfficeModeEnabled{
-                    if arrActivitiesExcludeInEveryBreak.count == 0 && arrActivitiesIncludeInEveryBreak.count == 0{
-                        addLog(text: "SettingsManagerObject.isOfficeModeEnabled false becuse no office friendly activity found.")
-                        SettingsManagerObject.isOfficeModeEnabled = false
-                        UserDefaults.standard.set(false, forKey: SettingsManagerObject.kUserdefaultsOfficeModeEnabled)
-                        
-                        SettingsManagerObject.isSettingsChanged = true
-                        SettingsManagerObject.putUserLocalDeviceSettings()
-                        
-                        
-                        for activity in arrAllbreakActivities{
-                            if activity.IncludeInEveryBreak{
-                                isAnyMandatoryActivityIncluded = true//than two step will be happen// first mandatory array than normal array
-                                arrActivitiesIncludeInEveryBreak.append(activity)
-                            }else{
-                                arrActivitiesExcludeInEveryBreak.append(activity)
-                            }
-                        }
-                        
-                    }
-                }
-                if arrActivitiesExcludeInEveryBreak.count == 0 && arrActivitiesIncludeInEveryBreak.count == 0{
-                    addLog(text: "filterd arrActivitiesExcludeInEveryBreak and arrActivitiesIncludeInEveryBreak is zero .")
-                    self.setActivityTimer()
-                    return;
-                }
-                if isAnyMandatoryActivityIncluded{
-                    isMandatoryActivityGoing = true
-                    currentActivityIndex = 0
-                }else{
-                    currentActivityIndex = Int(arc4random_uniform(UInt32(arrActivitiesExcludeInEveryBreak.count)))
-                }
-                // }
-                self.removeSubViews()
-                currentState = ._ACTIVITY_
-                currentAction = ._START_
-                
-                
-                addLog(text: "getLastActivityInfo break activity")
-                allApiObject.getLastActivityInfo(completionHandler: { json in
-                    DispatchQueue.main.async {
-                        if json != nil{
-                            print(json!)
-                            if let currentActivitySequence = json?.value(forKey: "current_activity_sequence") as? NSDictionary{
-                                if let sequenceId = currentActivitySequence.value(forKey: "id") as? String{
-                                    addLog(text: "forceCompleteCurrentSequence break activity")
-                                    allApiObject.forceCompleteCurrentSequence(activity_sequence_id: sequenceId, completionHandler: {json in
-                                        print("start new sequense")
-                                        // and strt break activity
-                                        DispatchQueue.main.async {
-                                            addLog(text: "performBreakActivities break activity")
-                                            self.performBreakActivities()
-                                        }
-                                    })
-                                    
-                                    
-                                }else{
-                                    addLog(text: "performBreakActivities break activity:- sequenceId not found")
-                                    self.performBreakActivities()
-                                }
-                            }else{
-                                addLog(text: "performBreakActivities break activity:- current_activity_sequence not found as dictionary")
-                                self.performBreakActivities()
-                            }
-                            
-                            
-                        }else{
-                            addLog(text: "performBreakActivities break activity:- get Last Activity Info is nil")
-                            self.performBreakActivities()
-                        }
-                    }
-                }
-                )
-                
-            }
+            showBreakWarningWindow()
         }
     }
     
-    
+    @objc func executeBreakActivities() {
+        
+        addLog(text: "startBreakActivities")
+        allApiObject.isAnyErrorFoundInActivityCompletedApi = false
+        self.breakTimer?.invalidate()
+        self.breakTimer = nil
+        if arrAllbreakActivities.count != 0 {
+            self.btnAbort.isHidden = false
+            //                isBreakActivitiesGoing = true
+            isAnyMandatoryActivityIncluded = false
+            arrActivitiesExcludeInEveryBreak.removeAll()
+            arrActivitiesIncludeInEveryBreak.removeAll()
+            isMandatoryActivityGoing = false
+            
+            for activity in arrAllbreakActivities{
+                if SettingsManagerObject.isOfficeModeEnabled{
+                    if !activity.isOfficeFriendly{
+                        continue;
+                    }
+                }
+                if activity.IncludeInEveryBreak{
+                    isAnyMandatoryActivityIncluded = true//than two step will be happen// first mandatory arra than normal array
+                    arrActivitiesIncludeInEveryBreak.append(activity)
+                }else{
+                    arrActivitiesExcludeInEveryBreak.append(activity)
+                }
+            }
+            
+            //                checking if  Office Mode is on and if there is not any activity office friendly than turn off office mode
+            if SettingsManagerObject.isOfficeModeEnabled{
+                if arrActivitiesExcludeInEveryBreak.count == 0 && arrActivitiesIncludeInEveryBreak.count == 0{
+                    addLog(text: "SettingsManagerObject.isOfficeModeEnabled false becuse no office friendly activity found.")
+                    SettingsManagerObject.isOfficeModeEnabled = false
+                    UserDefaults.standard.set(false, forKey: SettingsManagerObject.kUserdefaultsOfficeModeEnabled)
+                    
+                    SettingsManagerObject.isSettingsChanged = true
+                    SettingsManagerObject.putUserLocalDeviceSettings()
+                    
+                    
+                    for activity in arrAllbreakActivities{
+                        if activity.IncludeInEveryBreak{
+                            isAnyMandatoryActivityIncluded = true//than two step will be happen// first mandatory array than normal array
+                            arrActivitiesIncludeInEveryBreak.append(activity)
+                        }else{
+                            arrActivitiesExcludeInEveryBreak.append(activity)
+                        }
+                    }
+                    
+                }
+            }
+            if arrActivitiesExcludeInEveryBreak.count == 0 && arrActivitiesIncludeInEveryBreak.count == 0{
+                addLog(text: "filterd arrActivitiesExcludeInEveryBreak and arrActivitiesIncludeInEveryBreak is zero .")
+                self.setActivityTimer()
+                return;
+            }
+            if isAnyMandatoryActivityIncluded{
+                isMandatoryActivityGoing = true
+                currentActivityIndex = 0
+                if arrActivitiesExcludeInEveryBreak.count != 0{
+                    randomActivityIndex = Int(arc4random_uniform(UInt32(arrActivitiesExcludeInEveryBreak.count)))
+                }
+            }else{
+                currentActivityIndex = Int(arc4random_uniform(UInt32(arrActivitiesExcludeInEveryBreak.count)))// 
+            }
+            
+            self.removeSubViews()
+            currentState = ._ACTIVITY_
+            currentAction = ._START_
+            
+            
+            addLog(text: "getLastActivityInfo break activity")
+            allApiObject.getLastActivityInfo(completionHandler: { json in
+                DispatchQueue.main.async {
+                    if json != nil{
+                        print(json!)
+                        if let currentActivitySequence = json?.value(forKey: "current_activity_sequence") as? NSDictionary{
+                            if let sequenceId = currentActivitySequence.value(forKey: "id") as? String{
+                                addLog(text: "forceCompleteCurrentSequence break activity")
+                                allApiObject.forceCompleteCurrentSequence(activity_sequence_id: sequenceId, completionHandler: {json in
+                                    print("start new sequense")
+                                    // and strt break activity
+                                    DispatchQueue.main.async {
+                                        addLog(text: "performBreakActivities break activity")
+                                        self.performBreakActivities()
+                                    }
+                                })
+                                
+                                
+                            }else{
+                                addLog(text: "performBreakActivities break activity:- sequenceId not found")
+                                self.performBreakActivities()
+                            }
+                        }else{
+                            addLog(text: "performBreakActivities break activity:- current_activity_sequence not found as dictionary")
+                            self.performBreakActivities()
+                        }
+                        
+                        
+                    }else{
+                        addLog(text: "performBreakActivities break activity:- get Last Activity Info is nil")
+                        self.performBreakActivities()
+                    }
+                }
+            }
+            )
+            
+        }
+        
+    }
     func enableOfficeModeAndRestartBreakActivities(){
         addLog(text: "enableOfficeModeAndRestartBreakActivities")
         var officeModeEnableText = "Ok I'll give you some break activities that are appropriate to do in an office environment."
@@ -1085,6 +1189,7 @@ class ViewController: NSViewController {
         addLog(text: "ok Clicked From CustomMessage")
         addLog(text: "enableOfficeMode from postpone nag")//
         SettingsManagerObject.isOfficeModeEnabled = true
+        allApiObject.capturePosthog(event: "enable-office-mode", metadata: [:])
         SettingsManagerObject.isSettingsChanged = true
         SettingsManagerObject.putUserLocalDeviceSettings()
         appdelegate?.statusbutton?.image = NSImage(named: NSImage.Name("Bear-Office-Small"))
@@ -1117,6 +1222,9 @@ class ViewController: NSViewController {
         if isAnyMandatoryActivityIncluded{
             isMandatoryActivityGoing = true
             currentActivityIndex = 0
+            if arrActivitiesExcludeInEveryBreak.count != 0{
+                randomActivityIndex = Int(arc4random_uniform(UInt32(arrActivitiesExcludeInEveryBreak.count)))
+            }
         }else{
             currentActivityIndex = Int(arc4random_uniform(UInt32(arrActivitiesExcludeInEveryBreak.count)))
         }

@@ -30,10 +30,10 @@ class abortingFocusModeVc: NSViewController {
         // Do view setup here.
         lblQuestionFirst.stringValue = "Can you share why you're aborting?"
         popUpBtnAbortReasons.removeAllItems()
-//        popUpBtnAbortReasons.addItem(withTitle: "Focus mode is not working properly.")
-//        popUpBtnAbortReasons.addItem(withTitle: "I achieved what I wanted to too early.")
-//        popUpBtnAbortReasons.addItem(withTitle: "I have an emergency")
-       
+        //        popUpBtnAbortReasons.addItem(withTitle: "Focus mode is not working properly.")
+        //        popUpBtnAbortReasons.addItem(withTitle: "I achieved what I wanted to too early.")
+        //        popUpBtnAbortReasons.addItem(withTitle: "I have an emergency")
+        
         btnCancel.title = "Cancel"
         btnAbortFocus.title = "Abort Focus"
         
@@ -67,10 +67,20 @@ class abortingFocusModeVc: NSViewController {
         }
         
         
-         popUpBtnAbortReasons.addItems(withTitles: arrReasons)
+        popUpBtnAbortReasons.addItems(withTitles: arrReasons)
+        btnCancel.buttonColor = NSColor.white.cgColor
     }
     
+    var currentReasonIndex = 0
     func ResetData(){
+        if currentReasonIndex < 2{
+            popUpBtnAbortReasons.selectItem(at: currentReasonIndex)
+            currentReasonIndex += 1
+        }else{
+            popUpBtnAbortReasons.selectItem(at: 2)
+            currentReasonIndex = 0
+        }
+
         var focusType = ""
         for i in 0..<arrFocusType.count{
             let focus = arrFocusType[i]
@@ -91,7 +101,7 @@ class abortingFocusModeVc: NSViewController {
         self.btnAbortFocus.isEnabled = false
         self.lblSeconds.isHidden = false
         currentTimer = 0
-        totalDuration = 10
+        totalDuration = 5
         let (_,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
         var minute = "\(m)"
         var second = "\(s)"

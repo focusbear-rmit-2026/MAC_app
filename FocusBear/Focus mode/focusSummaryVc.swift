@@ -47,7 +47,7 @@ class focusSummaryVc: NSViewController {
         super.viewDidLoad()
         // Do view setup here.
         btnClickHere.isHidden = true
-        
+        btnNeedMoreTime.buttonColor = NSColor.white.cgColor
 //        btnClickHere.title = "Click here to see what you achieved."
         btnContinue.title = "Continue"
         lblActivitySummary.stringValue = "Activity Summary:"
@@ -196,7 +196,7 @@ class focusSummaryVc: NSViewController {
         
         
         if viewVisibleCount == 0{
-            btnNeedMoreTime.title = "I need one more minute"
+            btnNeedMoreTime.title = "I need to work for one more minute"
             
             if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
                 if let focusSummaryInfo = focusInfo.value(forKey: "focusSummaryInfo") as? NSDictionary{
@@ -598,4 +598,6 @@ extension focusSummaryVc: NSTableViewDelegate, NSTableViewDataSource {
         }
         return NSTableCellView()
     }
+    
+    
 }

@@ -9,10 +9,16 @@
 import Cocoa
 
 class abortingConfirmVc: NSViewController, NSTextViewDelegate {
-
-    @IBOutlet weak var lblTitleEmailFourthBox: NSTextField!
+    
+    
+    @IBOutlet weak var lblBtnStartSmall_boxHabit: ignoreMouseTextField!
+    @IBOutlet weak var lblBtnDontWantRoutine_boxHabit: ignoreMouseTextField!
+    
     @IBOutlet weak var btnDontWantRoutine_boxHabit: NSButton!
     @IBOutlet weak var btnStartSmall_boxHabit: NSButton!
+    
+    @IBOutlet weak var lblTitleEmailFourthBox: NSTextField!
+    
     @IBOutlet weak var lblTitleEmailSecondBox: NSTextField!
     @IBOutlet weak var lblSubTitle: NSTextField!
     @IBOutlet weak var lblTitle: NSTextField!
@@ -59,9 +65,13 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
         
         lblDescriptionThirdBox.stringValue = "Ah understandable. Would you like to reset your habits to be 30 seconds each and max 5 minutes? A short morning routine is better than nothing. You can build from there."
         
-        btnStartSmall_boxHabit.title = "Yeah - I'll start small"
-        btnDontWantRoutine_boxHabit.title = "NO I don't want a \nmorning routine at all!"
+        lblBtnStartSmall_boxHabit.stringValue = "Yeah - I'll start small"
+        btnStartSmall_boxHabit.title = ""
+        lblBtnStartSmall_boxHabit.textColor = buttonTitleColor
         
+        lblBtnDontWantRoutine_boxHabit.stringValue = "NO I don't want a \nmorning routine at all!"
+        btnDontWantRoutine_boxHabit.title = ""
+        lblBtnDontWantRoutine_boxHabit.textColor = buttonTitleColor
         
         lblDescriptionFourthBox.stringValue = "Can you tell us why you want to stop getting habit + break notifications?﹡"
         lblTitleEmailFourthBox.stringValue = "Your Email (if you want us to reply):"
@@ -124,11 +134,11 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
                     }
                     
                     if let buttonStartSmallText = dropDown_3.value(forKey: "buttonStartSmallText") as? String{
-                        btnStartSmall_boxHabit.title = buttonStartSmallText
+                        lblBtnStartSmall_boxHabit.stringValue = buttonStartSmallText
                     }
                     
                     if let buttonDontWantText = dropDown_3.value(forKey: "buttonDontWantText") as? String{
-                        btnDontWantRoutine_boxHabit.title = buttonDontWantText
+                        lblBtnDontWantRoutine_boxHabit.stringValue = buttonDontWantText
                     }
                     
                 }
@@ -284,6 +294,13 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
             self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
             RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
         }
+        if lastCurrentState == ._MORNING_HABIT_{
+            allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"morning_routine", "deactivate-reason":"I've got an emergency"])
+        }else if lastCurrentState == ._EVENING_HABIT_{
+            allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"evening_routine", "deactivate-reason":"I've got an emergency"])
+        }else if lastCurrentState == ._ACTIVITY_{
+            allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"break_activity", "deactivate-reason":"I've got an emergency"])
+        }
     }
     @objc func performTimerCount() {
         
@@ -338,6 +355,16 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
     }
     @IBAction func btnDeactivateAppBrokenClicked(_ sender: Any) {
         addLog(text: "btnDeactivateAppBrokenClicked")//
+
+        if lastCurrentState == ._MORNING_HABIT_{
+            allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"morning_routine", "deactivate-reason":"The app is broken", "detailed-reason":textViewAppBroken.string])
+        }else if lastCurrentState == ._EVENING_HABIT_{
+            allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"evening_routine", "deactivate-reason":"The app is broken", "detailed-reason":textViewAppBroken.string])
+        }else if lastCurrentState == ._ACTIVITY_{
+            allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"break_activity", "deactivate-reason":"The app is broken", "detailed-reason":textViewAppBroken.string])
+        }
+        
+        
         allApiObject.getAbortJsonToUpload(emailAddress: currentUserEmail, feedback: textViewAppBroken.string, abortReason: "The app is broken", completionHandler: {dic in
             DispatchQueue.main.async {
                 mainViewControllerObj?.showAbortDoneView()
@@ -502,15 +529,20 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
         if lastCurrentState == ._MORNING_HABIT_{
             logType = "morning routine abort"
             activity = "morning routine"
+            allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"morning_routine", "deactivate-reason":"Something else", "detailed-reason":textViewSomethingElse.string])
         }else if lastCurrentState == ._EVENING_HABIT_{
             logType = "evening routine abort"
             activity = "evening routine"
+            allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"evening_routine", "deactivate-reason":"Something else", "detailed-reason":textViewSomethingElse.string])
         }else if lastCurrentState == ._ACTIVITY_{
             logType = "break abort"
             activity = "break"
+
+            allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"break_activity", "deactivate-reason":"Something else", "detailed-reason":textViewSomethingElse.string])
         }
         
         addEntryInCsv(logType: logType, activity: activity, durationInSeconds: "", quantityQuestion: "", quantityLogged: "", startTime: "", workAchieved: "", distractionsEncountered: "", abortReason: "Something else", feedback: textViewSomethingElse.string)
+        
         
         mainViewControllerObj?.showAbortDoneView()
 //        getAbortJsonToUpload(emailAddress: textFieldEmail_SomethingELse.stringValue, feedback: textViewSomethingElse.string, abortReason: "Something else", completionHandler: {dic in

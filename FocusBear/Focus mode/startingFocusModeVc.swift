@@ -9,6 +9,8 @@ import Cocoa
 
 class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
 
+    @IBOutlet weak var lblExplanation: NSTextField!
+    @IBOutlet weak var lblLockedFocusDescription: NSTextField!
     @IBOutlet weak var lblMinute: NSTextField!
     @IBOutlet weak var lblHour: NSTextField!
     @IBOutlet weak var textFieldMinutesValue: NSTextField!
@@ -35,6 +37,9 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
         textFieldHourValue.delegate = self
         lblQuestion.stringValue = "What do you plan to achieve during this focus block?"
         
+        lblLockedFocusDescription.stringValue = "You'll only be able to use {URL} in {APP}"
+        
+        lblExplanation.stringValue = "Setting an intention for the focus block helps prime your brain to accomplish that task. To edit the intention after starting the focus mode, click Brain Dump in the menu bar."
         
         if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
             if let startingFocusModeInfo = focusInfo.value(forKey: "startingFocusModeInfo") as? NSDictionary{
@@ -56,6 +61,8 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
                 if let minutesText = startingFocusModeInfo.value(forKey: "minutesText") as? String{
                     lblMinute.stringValue = minutesText
                 }
+                lblExplanation.stringValue = startingFocusModeInfo.value(forKey: "explanationText") as? String ?? lblExplanation.stringValue
+                
             }
         }
         
@@ -67,6 +74,7 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
     
     @IBAction func btnStartFocusClicked(_ sender: Any) {
         addLog(text: "startingFocusModeVc - btnStartFocusClicked")//
+
         if getEndFocusModeWindowControllerObj().window!.isVisible{
             let timestamp = getStringFromDate(date: startFocusModeTime ?? Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
             addEntryInCsv(logType: "focus block", activity: focusCompletedVcObj!.currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: "\(focusModeMinutesToPerform) of \(focusCompletedVcObj!.currentFocusModeName)", distractionsEncountered: "", abortReason: "", feedback: "")
@@ -78,7 +86,7 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
         startFocusModeTime = Date()
         arrFocusType[focusIndex]["isOn"] = true
         
-        runAppleScriptBeforeFocusBeginIfAvailable(index: focusIndex)
+        workBeforeFocusBegin(index: focusIndex)
 
         
         appdelegate!.statusbutton?.backgroundcolor = HexToColor(hexString: arrFocusType[focusIndex]["color"] as? String ?? "")
@@ -98,11 +106,16 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
         }
         whatToAchieveInFocusBlock = textViewQuestion.string
         appdelegate!.focusModeStartted()
+        if arrFocusType[focusIndex]["isLockedFocus"] as? Bool == true{
+            allApiObject.capturePosthog(event: "start-lock-in-current-focus", metadata: [:])
+        }
+        
+        allApiObject.capturePosthog(event: "start-focus-mode-manually", metadata: [:])
         appdelegate!.setIntensionInBrainDumpWindow()
         UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
         self.view.window?.close()
     }
-    
+        
     
     func ResetData(focusModeIndex:Int, focusType:String){
         if isPomodoroWindowLodded{
@@ -117,19 +130,75 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
         btnStartFocus.isEnabled = true
         lblTitle.stringValue = titleText.replacingOccurrences(of: "<FOCUSTYPE>", with: focusType)//"Starting Focus type - \(focusType)"
         
+        
         if arrFocusType[focusModeIndex]["isDefault"] as? Bool == true{
-//            if focusPreferencesVcObj != nil{// Discourage Default Focus Vc se pahle preferences band kr denege taki vha se koi focus mode chalu na kar pay
-//
-//                if preferencesWindowControllerObj?.window?.isVisible ?? false{
-//                    preferencesWindowControllerObj?.window?.close()
-//                }
-//            }
-//            if focusModeStartWindowLodded{
-//                if startingFocusWindowControllerObj?.window?.isVisible ?? false{
-//                    startingFocusWindowControllerObj!.window?.close()
-//                }
-//            }
             showDiscourageFocusView()
+        }
+        
+        if arrFocusType[focusIndex]["isLockedFocus"] as? Bool == true{
+            lblLockedFocusDescription.isHidden = false
+            
+            
+            var appsArray = [String]()
+            var appsUrlArray = [String]()
+            if lastFrontMostApplication != nil{
+                appsArray.append(lastFrontMostApplication!.bundleURL?.path ?? "")
+                var appName = ""
+                var appUrl = ""
+                if let name = lastFrontMostApplication!.localizedName{
+                    appName = name
+                    if name.lowercased() == "safari"{
+                        
+                        if let url = getSafariActiveTabUrl(){
+                            if !url.contains("favorites:"){
+                                let domain = getDomainFromUrl(url: url)
+                                appsUrlArray = [domain]
+                                appUrl = domain
+                            }
+                        }
+                    }else if name.lowercased() == "google chrome"{
+                        if let url = getGoogleChromeActiveTabUrl(){
+                            if !url.contains("chrome:"){
+                                let domain = getDomainFromUrl(url: url)
+                                appsUrlArray = [domain]
+                                appUrl = domain
+                            }
+                        }
+                    }
+                }
+                
+                if appsUrlArray.count == 0{
+                    var onlyAllowSelectedAppText = "You'll only be able to use <APP>"
+                    if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
+                        if let startingFocusModeInfo = focusInfo.value(forKey: "startingFocusModeInfo") as? NSDictionary{
+                            onlyAllowSelectedAppText = startingFocusModeInfo.value(forKey: "onlyAllowSelectedAppText") as? String ?? onlyAllowSelectedAppText
+                        }
+                    }
+                    lblLockedFocusDescription.stringValue = onlyAllowSelectedAppText.replacingOccurrences(of: "<APP>", with: appName)//(in: "<APP>", with: appName)
+                }else{
+                    var onlyAllowSelectedAppAndUrlText = "You'll only be able to use \"<URL>\" in <APP>"
+                    if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
+                        if let startingFocusModeInfo = focusInfo.value(forKey: "startingFocusModeInfo") as? NSDictionary{
+                            onlyAllowSelectedAppAndUrlText = startingFocusModeInfo.value(forKey: "onlyAllowSelectedAppAndUrlText") as? String ?? onlyAllowSelectedAppAndUrlText
+                        }
+                    }
+                    onlyAllowSelectedAppAndUrlText = onlyAllowSelectedAppAndUrlText.replacingOccurrences(of: "<APP>", with: appName)
+                    lblLockedFocusDescription.stringValue = onlyAllowSelectedAppAndUrlText.replacingOccurrences(of: "<URL>", with: appUrl)
+                }
+            }else{
+                lblLockedFocusDescription.isHidden = true
+            }
+             
+            var dic = arrFocusType[focusIndex]
+            dic["allowed_urls"] = appsUrlArray
+            dic["allowed_apps"] = appsArray
+            dic["isAllowedAllApps"] = false
+            dic["isAllowedAllUrls"] = false
+            dic["isAllowedListApproach"] = true
+            arrFocusType[focusIndex] = dic
+
+        }else{
+            lblLockedFocusDescription.isHidden = true
         }
     }
     
@@ -162,18 +231,18 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
                     btnStartFocus.isEnabled = true
                 }
             }else if textfield == textFieldMinutesValue{
-                var count = textfield.integerValue
-                if count > 59{
-                    count = 59
-                }
+                let count = textfield.integerValue
+//                if count > 59{
+//                    count = 59
+//                }
                 if count < 10{
                     textfield.stringValue = "0\(count)"
                 }else{
                     textfield.stringValue = "\(count)"
                 }
-                if textfield.stringValue.count > 2{
-                    textfield.stringValue = "59"
-                }
+//                if textfield.stringValue.count > 2{
+//                    textfield.stringValue = "59"
+//                }
                 if textFieldMinutesValue.stringValue == "00" && textFieldHourValue.stringValue == "00"{
                     btnStartFocus.isEnabled = false
                 }else{

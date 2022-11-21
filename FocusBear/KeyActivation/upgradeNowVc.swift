@@ -73,12 +73,13 @@ class upgradeNowVc: NSViewController {
     }
     @IBAction func btnUpgradeNowClicked(_ sender: Any) {
         addLog(text: "btnUpgradeNowClicked.")
-        let buynow_path = "https://focusbear.io/buynow"
+        let buynow_path = upgradeNowUrl
         NSWorkspace.shared.open(URL(string: buynow_path)!)
         upgradeButtonWasClicked = true
     }
     @IBAction func btnRestorePurchasesClicked(_ sender: Any) {
         addLog(text: "btnRestorePurchasesClicked.")
+        allApiObject.capturePosthog(event: "sync-payment-status", metadata: ["from":"upgrade_nag"])
         self.loader.startAnimation(self)
         self.btnRestorePurchases.isEnabled = false
         appdelegate?.renewToken(window: self.view.window!, completionHandler: {

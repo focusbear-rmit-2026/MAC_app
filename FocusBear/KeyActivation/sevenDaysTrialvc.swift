@@ -134,7 +134,7 @@ class sevenDaysTrialvc: NSViewController {
     @IBAction func btnActivatenow(_ sender: Any) {
         activationWindowControllerObj?.showActivateNowVc()
         activateNowvcObj?.btnback.isHidden = false
-        purchaseNow_clicked()
+//        purchaseNow_clicked()
     }
     @IBAction func enterLicenseKeyClicked(_ sender: Any) {
         appdelegate?.renewToken(window: self.view.window!, completionHandler: {
@@ -157,7 +157,7 @@ class sevenDaysTrialvc: NSViewController {
         if daysremaining == 0{
             activationWindowControllerObj?.showActivateNowVc()
             activateNowvcObj?.btnback.isHidden = false
-            purchaseNow_clicked()
+//            purchaseNow_clicked()
         }else{
             self.view.window?.close()
             appdelegate?.initialWork()           

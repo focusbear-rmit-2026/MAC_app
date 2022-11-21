@@ -8,7 +8,7 @@
 
 import Cocoa
 
-class brainDumpVc: NSViewController {
+class brainDumpVc: NSViewController, NSTextViewDelegate {
 
     
     @IBOutlet var textViewWorkNote: NSTextView!
@@ -36,15 +36,19 @@ class brainDumpVc: NSViewController {
             titleWorkNoteFirst = brainDumpVcInfo.value(forKey: "titleWorkNoteFirst") as? String ?? titleWorkNoteFirst
             titleWorkNoteSecond = brainDumpVcInfo.value(forKey: "titleWorkNoteSecond") as? String ?? titleWorkNoteSecond
         }
-        
+        lblTitleWorkNote.stringValue = titleWorkNoteFirst
+        textViewIntention.delegate = self
     }
     override func viewWillAppear() {
         
         if isFocusModeOn(){
             lblTitleWorkNote.stringValue = titleWorkNoteFirst
             startRefreshRemainingTimer()
+            textViewIntention.isEditable = true
         }else{
             lblTimeRemaining.stringValue = "0"
+            textViewIntention.isEditable = false
+            textViewIntention.isSelectable = false
         }
         textViewIntention.string = whatToAchieveInFocusBlock
         
@@ -58,16 +62,26 @@ class brainDumpVc: NSViewController {
         timer?.invalidate()
         UserDefaults.standard.set(textViewWorkNote.string, forKey: kUserdefaultsFocusModeNotes)
     }
-    
+    func textDidChange(_ notification: Notification) {
+        guard let textView = notification.object as? NSTextView else{
+            return
+        }
+        if textView == self.textViewIntention{
+            whatToAchieveInFocusBlock = textView.string
+        }
+    }
     func focusModeStarted(){
         lblTitleWorkNote.stringValue = titleWorkNoteFirst
         startRefreshRemainingTimer()
+        textViewIntention.isEditable = true
     }
     func focusModeFinished(){
         startRefreshRemainingTimer()
         lblTimeRemaining.stringValue = "0"
         timer?.invalidate()
         timer = nil
+        textViewIntention.isEditable = false
+        textViewIntention.isSelectable = false
     }
     func breakStarted(){
         lblTitleWorkNote.stringValue = titleWorkNoteSecond

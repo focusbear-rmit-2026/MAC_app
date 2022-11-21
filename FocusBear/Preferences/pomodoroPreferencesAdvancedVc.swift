@@ -316,6 +316,7 @@ class pomodoroPreferencesAdvancedVc: NSViewController {
             generalVcObj!.resetPomodoroModeState()
         }
         SettingsManagerObject.isSettingsChanged = true
+        allApiObject.capturePosthog(event: "edit-super-pomodoro-mode-settings", metadata: [:])
         self.dismiss(self)
     }
     @IBAction func checkBoxUseHardcorePomodoroClicked(_ sender: Any) {

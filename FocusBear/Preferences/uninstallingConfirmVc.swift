@@ -8,8 +8,11 @@
 
 import Cocoa
 
-class uninstallingConfirmVc: NSViewController {
+class uninstallingConfirmVc: NSViewController, NSTextViewDelegate {
 
+    @IBOutlet weak var lblMinimumCharacter: NSTextField!
+    @IBOutlet var textView: NSTextView!
+    @IBOutlet weak var scrollView: shadowScrollViewForTextView!
     @IBOutlet weak var btnCancel: NSButton!
     @IBOutlet weak var lblEnterYourEmail: NSTextField!
     @IBOutlet weak var textFieldEmail: NSTextField!
@@ -21,8 +24,8 @@ class uninstallingConfirmVc: NSViewController {
         super.viewDidLoad()
         // Do view setup here.
         lblTitle.stringValue = "Uninstalling.."
-        lblQuestion.stringValue = "Can you share why you're uninstalling?"
-        
+        lblQuestion.stringValue = "Damn sorry, it seems like we let you down. We're in the early stages of this product and really want to get feedback to make it better. Could you tell us why you're uninstalling?"
+        lblMinimumCharacter.stringValue = "(Minimum 10 characters)"
         popUpButton.removeAllItems()
         
         var buttonSelectReasonText = "Select a reason"
@@ -38,7 +41,9 @@ class uninstallingConfirmVc: NSViewController {
         
         if let common = configjson.value(forKey: "common") as? NSDictionary{
             lblTitle.stringValue = common.value(forKey: "uninstallingText") as? String ?? lblTitle.stringValue
-            lblQuestion.stringValue = common.value(forKey: "askUninstallReasonText") as? String ?? lblQuestion.stringValue
+//            lblQuestion.stringValue = common.value(forKey: "askUninstallReasonText") as? String ?? lblQuestion.stringValue
+            lblQuestion.stringValue = common.value(forKey: "askUninstallReasonText2") as? String ?? lblQuestion.stringValue
+            lblMinimumCharacter.stringValue = common.value(forKey: "minimumCharacterText") as? String ?? lblMinimumCharacter.stringValue
             buttonSelectReasonText = common.value(forKey: "buttonSelectReasonText") as? String ?? buttonSelectReasonText
             brokenAppReasonText = common.value(forKey: "brokenAppReasonText") as? String ?? brokenAppReasonText
             habitsHardReasonText = common.value(forKey: "habitsHardReasonText") as? String ?? habitsHardReasonText
@@ -50,22 +55,43 @@ class uninstallingConfirmVc: NSViewController {
         popUpButton.addItem(withTitle: brokenAppReasonText)
         popUpButton.addItem(withTitle: habitsHardReasonText)
         
+        scrollView.shadowRadius = 1.5
+        scrollView.shadowOffset = NSMakeSize(0, 2)
+        scrollView.shadowOpacity = 0.15
+        scrollView.setShadow()
+        
+        textView.delegate = self
     }
     override func viewWillAppear() {
         textFieldEmail.stringValue = ""
         popUpButton.selectItem(at: 0)
         btnUninstall.isEnabled = false
+        textView.string = ""
     }
+    
+    func textDidChange(_ notification: Notification) {
+        guard let textView = notification.object as? NSTextView else{
+            return
+        }
+        if textView == self.textView{
+            if textView.string.count > 9 && popUpButton.indexOfSelectedItem != 0{
+                btnUninstall.isEnabled = true
+            }else{
+                btnUninstall.isEnabled = false
+            }
+        }
+    }
+    
     @IBAction func btnCancelClicked(_ sender: Any) {
         addLog(text: "btn Uninstall Cancel in  nag Clicked")//
         self.dismiss(self)
     }
     
     @IBAction func popUpButtonClicked(_ sender: Any) {
-        if popUpButton.indexOfSelectedItem == 0{
-            btnUninstall.isEnabled = false
-        }else{
+        if popUpButton.indexOfSelectedItem != 0 && textView.string.count > 9{
             btnUninstall.isEnabled = true
+        }else{
+            btnUninstall.isEnabled = false
         }
     }
     @IBAction func btnUninstallClicked(_ sender: Any) {
@@ -115,7 +141,8 @@ class uninstallingConfirmVc: NSViewController {
         })
     }
     func uninstallApp(){
-        allApiObject.getUninstallJsonToUpload(emailAddress: currentUserEmail, uninstallReason: popUpButton.titleOfSelectedItem ?? "", completionHandler: {dic in
+        allApiObject.capturePosthog(event: "uninstall", metadata: [:])
+        allApiObject.getUninstallJsonToUpload(emailAddress: currentUserEmail, uninstallReason: popUpButton.titleOfSelectedItem ?? "", uninstallDescription: textView.string, completionHandler: {dic in
             DispatchQueue.main.async {
                 addLog(text: "App uninstall clicked by user")
                 shell(launchPath: "/bin/launchctl", arguments: ["unload","-w","\("/Users/")\(NSUserName())\("/Library/LaunchAgents/\(mainAppBundelId).plist")"])
@@ -149,7 +176,7 @@ class uninstallingConfirmVc: NSViewController {
         UserDefaults.standard.set(firstDate, forKey: kUserdefaultsFirstHabitDay)
 
         UserDefaults.standard.synchronize()
-        LaunchOnStartup.setLaunchAtStartup(false)
+//        LaunchOnStartup.setLaunchAtStartup(false)
     }
 }
 

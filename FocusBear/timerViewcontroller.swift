@@ -8,9 +8,10 @@
 
 import Cocoa
 import WebKit
-class timerViewcontroller: NSViewController {
+class timerViewcontroller: NSViewController, WKNavigationDelegate{
     
     
+    @IBOutlet weak var boxPlay: NSBox!
     @IBOutlet weak var btnPause: NSButton!
     @IBOutlet weak var boxTimer: NSBox!
     @IBOutlet weak var boxTimerCenterY: NSLayoutConstraint!
@@ -27,12 +28,14 @@ class timerViewcontroller: NSViewController {
     var timer:Timer?
     var currentTimer = 0
     var totalDuration = 0
-    var btnPauseTitle = "Pause Activity"
-    var btnResumeTitle = "Resume Activity"
-    
+//    var btnPauseTitle = "Pause Activity"
+//    var btnResumeTitle = "Resume Activity"
+    let pauseIcon = NSImage(named: NSImage.touchBarPauseTemplateName)
+    let playIcon = NSImage(named: NSImage.touchBarPlayTemplateName)
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
+        self.webView.navigationDelegate = self
         boxTimerCenterY = boxTimerCenterY.setMultiplier(multiplier: 1.6)
         
         boxTimer.wantsLayer = true
@@ -42,10 +45,17 @@ class timerViewcontroller: NSViewController {
         boxTimer.layer?.shadowOffset = NSMakeSize(0, -2)
         boxTimer.layer?.shadowRadius = 5
         
-        if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
-            btnPauseTitle = activityInfo.value(forKey: "buttonPauseText") as? String ?? btnPauseTitle
-            btnResumeTitle = activityInfo.value(forKey: "buttonResumeText") as? String ?? btnResumeTitle
-        }
+//        if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
+//            btnPauseTitle = activityInfo.value(forKey: "buttonPauseText") as? String ?? btnPauseTitle
+//            btnResumeTitle = activityInfo.value(forKey: "buttonResumeText") as? String ?? btnResumeTitle
+//        }
+        
+        boxPlay.wantsLayer = true
+        boxPlay.shadow = NSShadow()
+        boxPlay.layer?.shadowOpacity = 0.3
+        boxPlay.layer?.shadowColor = NSColor.black.cgColor
+        boxPlay.layer?.shadowOffset = NSMakeSize(0, -2)
+        boxPlay.layer?.shadowRadius = 5
         
     }
     override func viewWillAppear() {
@@ -56,15 +66,32 @@ class timerViewcontroller: NSViewController {
         self.timerHideBearAnimation?.invalidate()
         self.timerHideBearAnimation = nil
     }
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        print("*************didFinish navigation**************")
+        if isVideoLoding{
+            isVideoLoding = false
+        }
+    }
+    var isVideoLoding = false{
+        didSet{
+            if isVideoLoding{
+                mainViewControllerObj?.btnAbort.isEnabled = false
+                btnPause.isEnabled = false
+            }else{
+                mainViewControllerObj?.btnAbort.isEnabled = true
+                btnPause.isEnabled = true
+                currentTimer = 0
+            }
+        }
+    }
     func loadWebViewTo(url:String?){
         if var videoUrl = url{
             self.webView.isHidden = false
             if videoUrl.lowercased().contains("watch?v="){
                 videoUrl = videoUrl.replacingOccurrences(of: "watch?v=", with: "embed/")
             }else{
-            
+                // doing this beacuse if video is embedded than it will not play
                 if videoUrl.lowercased().contains("https://youtu.be/"){
-                    //https://www.youtube.com/watch?v=lExuhKRS8vo
                     if let lastItem =  videoUrl.components(separatedBy: "/").last{
                        videoUrl = "https://www.youtube.com/embed/" + lastItem
                     }
@@ -78,9 +105,23 @@ class timerViewcontroller: NSViewController {
             }
             let link = URL(string:videoUrl)!
             let request = URLRequest(url: link)
-            self.webView.setAllMediaPlaybackSuspended(false)
+            if #available(macOS 12.0, *) {
+                self.webView.setAllMediaPlaybackSuspended(false)
+            } else {
+                // Fallback on earlier versions
+            }
             self.webView.load(request)
+            allApiObject.capturePosthog(event: "play-youtube-video-in-activity", metadata: [:])
+            
+            if Reachability.isConnectedToNetwork() == false {
+                if isVideoLoding{
+                    isVideoLoding = false
+                }
+                return
+            }
+            isVideoLoding = true
         }else{
+            isVideoLoding = false
             self.webView.isHidden = true
         }
     }
@@ -109,7 +150,7 @@ class timerViewcontroller: NSViewController {
     
     func startTimerHabit(durationSeconds:Int, url:String?, name:String,currentHabit: habit) {
         isActivityPaused = false
-        self.btnPause.title = self.btnPauseTitle
+        self.btnPause.image = pauseIcon
         
         graphOneMonthData = nil
         graphOneDayData = nil
@@ -147,16 +188,27 @@ class timerViewcontroller: NSViewController {
         lblTitle.stringValue = getDoSomeActivityText(activityName: name)//arrAllMorningHabits[currentHabitIndex].name!)
         currentTimer = 0
         totalDuration = durationSeconds//durationInMinutes*60
-        let (_,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
+        let (h,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
+        
+        var hour = "\(h)"
         var minute = "\(m)"
         var second = "\(s)"
+        
+        if hour.count == 1{
+            hour = "0\(h)"
+        }
+        
         if minute.count == 1 {
             minute = "0\(m)"
         }
         if second.count == 1 {
             second = "0\(s)"
         }
-        self.lblTimer.stringValue = "\(minute):\(second)"
+        if h == 0{
+            self.lblTimer.stringValue = "\(minute):\(second)"
+        }else{
+            self.lblTimer.stringValue = "\(hour):\(minute):\(second)"
+        }
 
         DispatchQueue.main.async {
             self.timer?.invalidate()
@@ -200,26 +252,51 @@ class timerViewcontroller: NSViewController {
 //        loadWebViewTo(url: url)
         lblTitle.stringValue = getDoSomeActivityText(activityName: name)//"Do some \(arrAllMorningHabits[currentHabitIndex].name!)."
         totalDuration = durationSeconds//durationInMinutes*60
-        let (_,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
+        let (h,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
+        
+        var hour = "\(h)"
         var minute = "\(m)"
         var second = "\(s)"
+        
+        if hour.count == 1{
+            hour = "0\(h)"
+        }
+        
         if minute.count == 1 {
             minute = "0\(m)"
         }
         if second.count == 1 {
             second = "0\(s)"
         }
-        self.lblTimer.stringValue = "\(minute):\(second)"
+        if h == 0{
+            self.lblTimer.stringValue = "\(minute):\(second)"
+        }else{
+            self.lblTimer.stringValue = "\(hour):\(minute):\(second)"
+        }
 
         if !isActivityPaused{
             if url != nil{
-                webView.setAllMediaPlaybackSuspended(false)
+                if #available(macOS 12.0, *) {
+                    webView.setAllMediaPlaybackSuspended(false)
+                } else {
+                    // Fallback on earlier versions
+                    loadWebViewTo(url: url)
+                }
             }
             
             DispatchQueue.main.async {
                 self.timer?.invalidate()
                 self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
                 RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
+            }
+        }else{
+            if url != nil{
+                if #available(macOS 12.0, *) {
+                    
+                } else {
+                    // Fallback on earlier versions
+                    loadWebViewTo(url: url)
+                }
             }
         }
         
@@ -232,7 +309,7 @@ class timerViewcontroller: NSViewController {
     var logActivityQuantity = false
     func startTimerActivity(durationInSeconds:Int,name:String, url:String?, logQuantityQuestion:String?,currentActivity: breakActivity, currentChoice:activityChoice?,logQuantity:Bool, logQuantityType:String) {
         isActivityPaused = false
-        self.btnPause.title = self.btnPauseTitle
+        self.btnPause.image = pauseIcon
         graphOneMonthData = nil
         graphOneDayData = nil
         allApiObject.getACtivityCurrentDayStats(activityId: currentActivity.id, activityChoiceId: currentChoice?.id, completionHandler: {dic in
@@ -282,16 +359,27 @@ class timerViewcontroller: NSViewController {
         lblTitle.stringValue = getDoSomeActivityText(activityName: name)//"Do some \(name)."
         currentTimer = 0
         totalDuration = durationInSeconds
-        let (_,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
+        let (h,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
+        
+        var hour = "\(h)"
         var minute = "\(m)"
         var second = "\(s)"
+        
+        if hour.count == 1{
+            hour = "0\(h)"
+        }
+        
         if minute.count == 1 {
             minute = "0\(m)"
         }
         if second.count == 1 {
             second = "0\(s)"
         }
-        self.lblTimer.stringValue = "\(minute):\(second)"
+        if h == 0{
+            self.lblTimer.stringValue = "\(minute):\(second)"
+        }else{
+            self.lblTimer.stringValue = "\(hour):\(minute):\(second)"
+        }
 
         DispatchQueue.main.async {
             self.timer?.invalidate()
@@ -324,21 +412,37 @@ class timerViewcontroller: NSViewController {
 //        loadWebViewTo(url: url)
         lblTitle.stringValue = getDoSomeActivityText(activityName: name)//"Do some \(name)."
         totalDuration = durationInSeconds
-        let (_,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
+        let (h,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
+        
+        var hour = "\(h)"
         var minute = "\(m)"
         var second = "\(s)"
+        
+        if hour.count == 1{
+            hour = "0\(h)"
+        }
+        
         if minute.count == 1 {
             minute = "0\(m)"
         }
         if second.count == 1 {
             second = "0\(s)"
         }
-        self.lblTimer.stringValue = "\(minute):\(second)"
+        if h == 0{
+            self.lblTimer.stringValue = "\(minute):\(second)"
+        }else{
+            self.lblTimer.stringValue = "\(hour):\(minute):\(second)"
+        }
 
 
         if !isActivityPaused{
             if url != nil{
-                webView.setAllMediaPlaybackSuspended(false)
+                if #available(macOS 12.0, *) {
+                    webView.setAllMediaPlaybackSuspended(false)
+                } else {
+                    // Fallback on earlier versions
+                    loadWebViewTo(url: url)
+                }
             }
             
             DispatchQueue.main.async {
@@ -346,11 +450,20 @@ class timerViewcontroller: NSViewController {
                 self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
                 RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
             }
+        }else{
+            if url != nil{
+                if #available(macOS 12.0, *) {
+                    
+                } else {
+                    // Fallback on earlier versions
+                    loadWebViewTo(url: url)
+                }
+            }
         }
     }
     func startBreathing() {
         isActivityPaused = false
-        self.btnPause.title = self.btnPauseTitle
+        self.btnPause.image = pauseIcon
         loadWebViewTo(url: introActivity!.urlsArray.randomElement())
         resetConstraintsForVideoAndGif(kIsReducedMotion: SettingsManagerObject.kIsReducedMotion)
         
@@ -358,16 +471,27 @@ class timerViewcontroller: NSViewController {
         lblTitle.stringValue = getDoSomeActivityText(activityName: introActivity!.name!)//"Do some \(introActivity!.name!)."
         currentTimer = 0
         totalDuration = introActivity!.durationSeconds!
-        let (_,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
+        let (h,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
+        
+        var hour = "\(h)"
         var minute = "\(m)"
         var second = "\(s)"
+        
+        if hour.count == 1{
+            hour = "0\(h)"
+        }
+        
         if minute.count == 1 {
             minute = "0\(m)"
         }
         if second.count == 1 {
             second = "0\(s)"
         }
-        self.lblTimer.stringValue = "\(minute):\(second)"
+        if h == 0{
+            self.lblTimer.stringValue = "\(minute):\(second)"
+        }else{
+            self.lblTimer.stringValue = "\(hour):\(minute):\(second)"
+        }
 
         DispatchQueue.main.async {
             self.timer?.invalidate()
@@ -383,15 +507,15 @@ class timerViewcontroller: NSViewController {
     @objc func performTimerCount() {
         
         currentTimer += 1//todo 1
-        let (_,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
+        let (h,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
         
-//        var hour = "\(h)"
+        var hour = "\(h)"
         var minute = "\(m)"
         var second = "\(s)"
         
-//        if hour.count == 1{
-//            hour = "0\(h)"
-//        }
+        if hour.count == 1{
+            hour = "0\(h)"
+        }
         if minute.count == 1 {
             minute = "0\(m)"
         }
@@ -400,7 +524,17 @@ class timerViewcontroller: NSViewController {
         }
         
         DispatchQueue.main.async {
-            self.lblTimer.stringValue = "\(minute):\(second)"
+            if self.isVideoLoding{
+                if self.currentTimer >= 5{
+                    self.isVideoLoding = false
+                }
+            }else{
+                if h == 0{
+                    self.lblTimer.stringValue = "\(minute):\(second)"
+                }else{
+                    self.lblTimer.stringValue = "\(hour):\(minute):\(second)"
+                }
+            }
         }
         if self.totalDuration <= self.currentTimer {
             self.timer?.invalidate()
@@ -425,18 +559,28 @@ class timerViewcontroller: NSViewController {
     @IBAction func btnPauseClicked(_ sender: Any) {
         if isActivityPaused{
             isActivityPaused = false
+            allApiObject.capturePosthog(event: "resume-activity", metadata: [:])
             DispatchQueue.main.async {
-                self.btnPause.title = self.btnPauseTitle
+                self.btnPause.image = self.pauseIcon
                 self.timer?.invalidate()
                 self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
                 RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
             }
-            webView.setAllMediaPlaybackSuspended(false)
+            if #available(macOS 12.0, *) {
+                webView.setAllMediaPlaybackSuspended(false)
+            } else {
+                // Fallback on earlier versions
+            }
         }else{
-            btnPause.title = btnResumeTitle
+            self.btnPause.image = playIcon
             isActivityPaused = true
+            allApiObject.capturePosthog(event: "pause-activity", metadata: [:])
             timer?.invalidate()
-            webView.setAllMediaPlaybackSuspended(true)
+            if #available(macOS 12.0, *) {
+                webView.setAllMediaPlaybackSuspended(true)
+            } else {
+                // Fallback on earlier versions
+            }
         }
         
     }

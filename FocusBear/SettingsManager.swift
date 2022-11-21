@@ -15,6 +15,8 @@ class SettingsManager:NSObject{
     
     var isSettingsChanged = false
     var isSoundEnabled = true
+    var isCuddlyModeEnabled = true
+    
     // **blocked urls**
     var arrBlockedUrls = [String]()
     var isOfficeModeEnabled = false
@@ -27,9 +29,13 @@ class SettingsManager:NSObject{
     var kUserdefaultsReducedMotion = "kUserdefaultsReducedMotion"
     var kUserdefaultsPromptToRememberHabit = "kUserdefaultsPromptToRememberHabit"
     var kUserdefaultsEnableSound = "kUserdefaultsEnableSound"
+    
+    
+    var kUserdefaultsCuddlyModeEnabled = "kUserdefaultsCuddlyModeEnabled"
+    
     var kUserdefaultsPomodoroDurationMinutes = "kUserdefaultsPomodoroDurationMinutes"
     var kUserdefaultsBreakDurationMinutes = "kUserdefaultsBreakDurationMinutes"
-
+    
     var kUserdefaultsHideAllWindowInScreenShots = "kUserdefaultsHideAllWindowInScreenShots"
     var kUserdefaultsPomodoroModeEnabled = "kUserdefaultsPomodoroModeEnabled"
     
@@ -46,12 +52,12 @@ class SettingsManager:NSObject{
     let kFriday = "Friday"
     let kSaturday = "Saturday"
     let kSunday = "Sunday"
-
+    
     func getDayOfWeek(fromDate date: Date) -> String? {
         let cal = Calendar(identifier: .gregorian)
         let dayOfWeek = cal.component(.weekday, from: date)
         switch dayOfWeek {
-         case 1:
+        case 1:
             return kSunday
         case 2:
             return kMonday
@@ -69,12 +75,13 @@ class SettingsManager:NSObject{
             return nil
         }
     }
-  
+    
     func resetAllKeys() {
         kUserdefaultsAppPassword = kUserdefaultsAppPassword + (appdelegate?.user?.userId ?? "")
         kUserdefaultsArrBlockedUrls = kUserdefaultsArrBlockedUrls + (appdelegate?.user?.userId ?? "")
         kUserdefaultsOfficeModeEnabled = kUserdefaultsOfficeModeEnabled + (appdelegate?.user?.userId ?? "")
         kUserdefaultsReducedMotion = kUserdefaultsReducedMotion + (appdelegate?.user?.userId ?? "")
+        kUserdefaultsCuddlyModeEnabled = kUserdefaultsCuddlyModeEnabled + (appdelegate?.user?.userId ?? "")
         kUserdefaultsPromptToRememberHabit = kUserdefaultsPromptToRememberHabit + (appdelegate?.user?.userId ?? "")
         kUserdefaultsEnableSound = kUserdefaultsEnableSound + (appdelegate?.user?.userId ?? "")
         kUserdefaultsPomodoroDurationMinutes = kUserdefaultsPomodoroDurationMinutes + (appdelegate?.user?.userId ?? "")
@@ -103,6 +110,8 @@ class SettingsManager:NSObject{
             isSoundEnabled = true
         }
         
+        
+        
         var isSettingsBlank = true // agar blank ho to upload bhi kro
         allApiObject.getUserLocalDeviceSettings(completionHandler: { [self]json in
             if json != nil{
@@ -116,7 +125,7 @@ class SettingsManager:NSObject{
                     let kIsReducedMotionEnabled = "kIsReducedMotion"
                     let kIsPromptToRememberHabit = "kIsPromptToRememberHabit"
                     let kIsOfficeModeEnabled = "kIsOfficeModeEnabled"
-//                    let kSelectedLanguage = "kSelectedLanguage"
+                    //                    let kSelectedLanguage = "kSelectedLanguage"
                     let kHideAllWindowInScreenShots = "kHideAllWindowInScreenShots"
                     let kPomodoroDurationMinutes = "kPomodoroDurationMinutes"
                     let kBreakDurationMinutes = "kBreakDurationMinutes"
@@ -128,6 +137,8 @@ class SettingsManager:NSObject{
                     
                     let kAppPassword = "kAppPassword"
                     let kArrBlockedUrls = "kArrBlockedUrls"
+                    
+                    let kCuddlyModeEnabled = "kCuddlyModeEnabled"
                     
                     if let val = settings.value(forKey: kIsReducedMotionEnabled) as? Bool{
                         UserDefaults.standard.set(val, forKey: self.kUserdefaultsReducedMotion)
@@ -142,9 +153,9 @@ class SettingsManager:NSObject{
                     }
                     
                     
-//                    if let val = settings.value(forKey: kSelectedLanguage) as? String{
-//                        UserDefaults.standard.set(val, forKey: self.kUserdefaultsSelectedLanguage)
-//                    }
+                    //                    if let val = settings.value(forKey: kSelectedLanguage) as? String{
+                    //                        UserDefaults.standard.set(val, forKey: self.kUserdefaultsSelectedLanguage)
+                    //                    }
                     
                     if let val = settings.value(forKey: kHideAllWindowInScreenShots) as? Bool{
                         UserDefaults.standard.set(val, forKey: self.kUserdefaultsHideAllWindowInScreenShots)
@@ -185,92 +196,108 @@ class SettingsManager:NSObject{
                     if let val = settings.value(forKey: kAppPassword) as? String{
                         UserDefaults.standard.set(val, forKey: self.kUserdefaultsAppPassword)
                     }
+                    if let val = settings.value(forKey: kCuddlyModeEnabled) as? String{
+                        UserDefaults.standard.set(val, forKey: self.kUserdefaultsCuddlyModeEnabled)
+                    }
                     
                 }
-
-            }
                 
-                //  ---------------------------OFFICE MODE--------------------------
-                if let isEnabled = UserDefaults.standard.object(forKey: kUserdefaultsOfficeModeEnabled) as? Bool{
-                    if isEnabled{
-                        isOfficeModeEnabled = true
-                        DispatchQueue.main.async {
-                            appdelegate?.statusbutton?.image = NSImage(named: NSImage.Name("Bear-Office-Small"))
-                        }
-                    }else{
-                        isOfficeModeEnabled = false
+            }
+            
+            //  ---------------------------OFFICE MODE--------------------------
+            if let isEnabled = UserDefaults.standard.object(forKey: kUserdefaultsOfficeModeEnabled) as? Bool{
+                if isEnabled{
+                    isOfficeModeEnabled = true
+                    DispatchQueue.main.async {
+                        appdelegate?.statusbutton?.image = NSImage(named: NSImage.Name("Bear-Office-Small"))
                     }
                 }else{
-                    UserDefaults.standard.set(false, forKey: kUserdefaultsOfficeModeEnabled)
                     isOfficeModeEnabled = false
                 }
-                
-                //  ---------------------------SETTINGS reduced motion--------------------------
-                if let isEnabled = UserDefaults.standard.object(forKey: kUserdefaultsReducedMotion) as? Bool{
-                    if isEnabled{
-                        kIsReducedMotion = true
-                    }else{
-                        kIsReducedMotion = false
-                    }
+            }else{
+                UserDefaults.standard.set(true, forKey: kUserdefaultsOfficeModeEnabled)
+                isOfficeModeEnabled = true
+            }
+            
+            //  ---------------------------SETTINGS reduced motion--------------------------
+            if let isEnabled = UserDefaults.standard.object(forKey: kUserdefaultsReducedMotion) as? Bool{
+                if isEnabled{
+                    kIsReducedMotion = true
                 }else{
-                    UserDefaults.standard.set(false, forKey: kUserdefaultsReducedMotion)
                     kIsReducedMotion = false
                 }
-                
-                //  ---------------------------SETTINGS Prompt To Remember next Habit--------------------------
-                if let isEnabled = UserDefaults.standard.object(forKey: kUserdefaultsPromptToRememberHabit) as? Bool{
-                    if isEnabled{
-                        isPromptToRememberHabit = true
-                    }else{
-                        isPromptToRememberHabit = false
-                    }
-                }else{
-                    UserDefaults.standard.set(true, forKey: kUserdefaultsPromptToRememberHabit)
+            }else{
+                UserDefaults.standard.set(false, forKey: kUserdefaultsReducedMotion)
+                kIsReducedMotion = false
+            }
+            
+            //  ---------------------------SETTINGS Prompt To Remember next Habit--------------------------
+            if let isEnabled = UserDefaults.standard.object(forKey: kUserdefaultsPromptToRememberHabit) as? Bool{
+                if isEnabled{
                     isPromptToRememberHabit = true
+                }else{
+                    isPromptToRememberHabit = false
                 }
-                
-                
-                // ---------------------------SETTINGS Hide All Window In Screenshots--------------------------
-                 if UserDefaults.standard.object(forKey: kUserdefaultsHideAllWindowInScreenShots) == nil{
-                     UserDefaults.standard.set(false, forKey: kUserdefaultsHideAllWindowInScreenShots)
-                 }
-                
-                //  ---------------------------SETTINGS Pomodoro duration--------------------------
-                if UserDefaults.standard.object(forKey: kUserdefaultsPomodoroDurationMinutes) == nil{
-                    UserDefaults.standard.set(25, forKey: kUserdefaultsPomodoroDurationMinutes)
+            }else{
+                UserDefaults.standard.set(true, forKey: kUserdefaultsPromptToRememberHabit)
+                isPromptToRememberHabit = true
+            }
+            
+            //  ---------------------------SETTINGS Focus bear mode--------------------------
+            if let isEnabled = UserDefaults.standard.object(forKey: kUserdefaultsCuddlyModeEnabled) as? Bool{
+                if isEnabled{
+                    isCuddlyModeEnabled = true
+                }else{
+                    isCuddlyModeEnabled = false
                 }
-                
-                //  ---------------------------SETTINGS Break duration--------------------------
-                if UserDefaults.standard.object(forKey: kUserdefaultsBreakDurationMinutes) == nil{
-                    UserDefaults.standard.set(5, forKey: kUserdefaultsBreakDurationMinutes)
-                }
-
-                //  ---------------------------POMODORO MODE--------------------------
-                if UserDefaults.standard.object(forKey: kUserdefaultsPomodoroModeEnabled) == nil{
-                    UserDefaults.standard.set(true, forKey: kUserdefaultsPomodoroModeEnabled)
-                }
-                
-                
-                //  ---------------------------AUTO HARDCORE POMODORO MODE settings--------------------------
-                if UserDefaults.standard.object(forKey: kUserdefaultsHardcorePomodoroEnabled) == nil{
-                    UserDefaults.standard.set(false, forKey: kUserdefaultsHardcorePomodoroEnabled)
-                }
-                
-                if let arr = UserDefaults.standard.object(forKey: kUserdefaultsArrBlockedUrls) as? [String]{
-                    arrBlockedUrls = arr
-                }
-                
+            }else{
+                UserDefaults.standard.set(true, forKey: kUserdefaultsCuddlyModeEnabled)
+                isCuddlyModeEnabled = true
+            }
+            // ---------------------------SETTINGS Hide All Window In Screenshots--------------------------
+            if UserDefaults.standard.object(forKey: kUserdefaultsHideAllWindowInScreenShots) == nil{
+                UserDefaults.standard.set(false, forKey: kUserdefaultsHideAllWindowInScreenShots)
+            }
+            
+            //  ---------------------------SETTINGS Pomodoro duration--------------------------
+            if UserDefaults.standard.object(forKey: kUserdefaultsPomodoroDurationMinutes) == nil{
+                UserDefaults.standard.set(25, forKey: kUserdefaultsPomodoroDurationMinutes)
+            }
+            
+            //  ---------------------------SETTINGS Break duration--------------------------
+            if UserDefaults.standard.object(forKey: kUserdefaultsBreakDurationMinutes) == nil{
+                UserDefaults.standard.set(5, forKey: kUserdefaultsBreakDurationMinutes)
+            }
+            
+            //  ---------------------------POMODORO MODE--------------------------
+            if UserDefaults.standard.object(forKey: kUserdefaultsPomodoroModeEnabled) == nil{
+                UserDefaults.standard.set(true, forKey: kUserdefaultsPomodoroModeEnabled)
+            }
+            
+            
+            //  ---------------------------AUTO HARDCORE POMODORO MODE settings--------------------------
+            if UserDefaults.standard.object(forKey: kUserdefaultsHardcorePomodoroEnabled) == nil{
+                UserDefaults.standard.set(false, forKey: kUserdefaultsHardcorePomodoroEnabled)
+            }
+            
+            if let arr = UserDefaults.standard.object(forKey: kUserdefaultsArrBlockedUrls) as? [String]{
+                arrBlockedUrls = arr
+            }
+            
             if isSettingsBlank{
+                arrBlockedUrls = ["facebook.com", "twitter.com", "instagram.com", "tiktok.com", "bbc.com", "*.cnn.com"]
+                UserDefaults.standard.set(arrBlockedUrls, forKey: kUserdefaultsArrBlockedUrls)
+                
                 isSettingsChanged = true
                 self.perform(#selector(putUserLocalDeviceSettings))
             }
             
-           // }
+            // }
             completionHandler()
             return
         }
         )
-
+        
     }
     @objc func putUserLocalDeviceSettings(){
         addLog(text: "put User Local Device Settings")
@@ -282,13 +309,13 @@ class SettingsManager:NSObject{
         UserDefaults.standard.set(kIsReducedMotion, forKey: kUserdefaultsReducedMotion)
         UserDefaults.standard.set(isPromptToRememberHabit, forKey: kUserdefaultsPromptToRememberHabit)
         UserDefaults.standard.set(isOfficeModeEnabled, forKey: kUserdefaultsOfficeModeEnabled)
-        
-        UserDefaults.standard.set(isSoundEnabled, forKey: kUserdefaultsEnableSound)//do not sync it 
+        UserDefaults.standard.set(isCuddlyModeEnabled, forKey: kUserdefaultsCuddlyModeEnabled)
+        UserDefaults.standard.set(isSoundEnabled, forKey: kUserdefaultsEnableSound)//do not sync it
         
         let kIsReducedMotionEnabled = "kIsReducedMotion"
         let kIsPromptToRememberHabit = "kIsPromptToRememberHabit"
         let kIsOfficeModeEnabled = "kIsOfficeModeEnabled"
-//        let kSelectedLanguage = "kSelectedLanguage"
+        //        let kSelectedLanguage = "kSelectedLanguage"
         let kHideAllWindowInScreenShots = "kHideAllWindowInScreenShots"
         let kPomodoroDurationMinutes = "kPomodoroDurationMinutes"
         let kBreakDurationMinutes = "kBreakDurationMinutes"
@@ -297,16 +324,16 @@ class SettingsManager:NSObject{
         let kHardcorePomodoroFocusedName = "kHardcorePomodoroFocusedName"
         let kHardcorePomodoroFocusedCount = "kHardcorePomodoroFocusedCount"
         let kHardcorePomodoroArrDays = "kHardcorePomodoroArrDays"
-
+        
         let kAppPassword = "kAppPassword"
         let kArrBlockedUrls = "kArrBlockedUrls"
-      
+        let kCuddlyModeEnabled = "kCuddlyModeEnabled"
         
         var json: [String: Any] = [
             kIsReducedMotionEnabled:kIsReducedMotion,//userId.removingPercentEncoding ?? "",
             kIsPromptToRememberHabit:isPromptToRememberHabit,
             kIsOfficeModeEnabled:isOfficeModeEnabled,
-//            kSelectedLanguage:UserDefaults.standard.object(forKey: kUserdefaultsSelectedLanguage) as? String ?? "",
+            //            kSelectedLanguage:UserDefaults.standard.object(forKey: kUserdefaultsSelectedLanguage) as? String ?? "",
             kHideAllWindowInScreenShots:UserDefaults.standard.object(forKey: kUserdefaultsHideAllWindowInScreenShots) as? Bool ?? false,
             kPomodoroDurationMinutes:UserDefaults.standard.object(forKey: kUserdefaultsPomodoroDurationMinutes) as? Int ?? 0,
             kBreakDurationMinutes:UserDefaults.standard.object(forKey: kUserdefaultsBreakDurationMinutes) as? Int ?? 0,
@@ -316,12 +343,13 @@ class SettingsManager:NSObject{
             kHardcorePomodoroFocusedCount:UserDefaults.standard.object(forKey: kUserdefaultsHardcorePomodoroFocusedCount) as? Int ?? 0,
             kHardcorePomodoroArrDays:UserDefaults.standard.object(forKey: kUserdefaultsHardcorePomodoroArrDays) as? [String] ?? [],
             kArrBlockedUrls:arrBlockedUrls,
+            kCuddlyModeEnabled:isCuddlyModeEnabled
         ]
         
         if UserDefaults.standard.object(forKey: kUserdefaultsAppPassword) != nil{
             json[kAppPassword] = UserDefaults.standard.object(forKey: kUserdefaultsAppPassword) as? String ?? ""
         }
-    
+        
         
         let dic: [String: [String:Any]] = [
             "MacOS": json,
@@ -331,19 +359,19 @@ class SettingsManager:NSObject{
         ]
         allApiObject.putUserLocalDeviceSettings(settings: dic, completionHandler: {dic  in
             DispatchQueue.main.async {
-
+                
                 
                 if dic == nil{
                     
                 }else{
-
+                    
                     do {
                         let jsonResultData =  try JSONSerialization.data(withJSONObject: dic!, options: JSONSerialization.WritingOptions.prettyPrinted)
-   
+                        
                     } catch let myJSONError {
                         print(myJSONError)
                     }
-
+                    
                 }
             }
         })

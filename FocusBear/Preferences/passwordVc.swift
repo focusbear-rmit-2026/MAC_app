@@ -130,6 +130,7 @@ class passwordVc: NSViewController {
                 SettingsManagerObject.isSettingsChanged = true
                 SettingsManagerObject.putUserLocalDeviceSettings()
                 self.resetView()
+                allApiObject.capturePosthog(event: "disable-password", metadata: [:])
                 alert = NSAlert()
                 if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
                     if state{
@@ -215,7 +216,7 @@ class passwordVc: NSViewController {
             SettingsManagerObject.putUserLocalDeviceSettings()
             
             resetView()
-            
+            allApiObject.capturePosthog(event: "change-password", metadata: [:])
         }else{
             var passwordNotMatchAlertTitle = "Passwords do not match."
             var passwordNotMatchAlertSubTitle = "Confirm Password does not match with the main password. Please re enter."

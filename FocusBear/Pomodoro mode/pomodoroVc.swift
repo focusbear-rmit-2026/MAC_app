@@ -28,7 +28,7 @@ class pomodoroVc: NSViewController {
     @IBOutlet weak var lblHowManyPomodoro: NSTextField!
     @IBOutlet weak var popupBtnSelectPomodoroCount: NSPopUpButton!
     
-
+    var isShowingPomodoroManually = false
     var isShowingMorningHardcorePomodoro = false
     var questionSecondText = "Which focus mode do you want to use?"
     var chooseTheFocusModeText = "Choose the focus mode and duration - you won't be able to change the focus mode until the time is up (you still get to use any app/website during the 5 minutes break)"
@@ -228,6 +228,7 @@ class pomodoroVc: NSViewController {
             
             let totoalMinutes = (totalPopmodoroCount * minutes) //* 60//(textFieldHourValue.integerValue * 60) + textFieldMinutesValue.integerValue
             totalMinutesRemainingForHardcodePomodoro = totoalMinutes
+            allApiObject.capturePosthog(event: "start-super-pomodoro-mode-automatically", metadata: [:])
             pomodoroModeStarted()
         }else{
             if isHardCorePomodoroModeOn{
@@ -296,6 +297,7 @@ class pomodoroVc: NSViewController {
             }
             return;
         }
+        allApiObject.capturePosthog(event: "open-preferences", metadata: [:])
         preferencesWindowControllerObj?.showWindow(self)
         addLog(text: "Showing preferences from edit focus mode")
         if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
@@ -402,7 +404,7 @@ class pomodoroVc: NSViewController {
         endFocusModeTime = calendar.date(byAdding: .minute, value: minute, to: Date())
         startFocusModeTime = Date()
         arrFocusType[popUpBtnFocusType.indexOfSelectedItem]["isOn"] = true
-        runAppleScriptBeforeFocusBeginIfAvailable(index: popUpBtnFocusType.indexOfSelectedItem)
+        workBeforeFocusBegin(index: popUpBtnFocusType.indexOfSelectedItem)
         
         appdelegate!.statusbutton?.backgroundcolor = HexToColor(hexString: arrFocusType[popUpBtnFocusType.indexOfSelectedItem]["color"] as? String ?? "")
         appdelegate!.setStatusBarButtonTitleForFocusMode(title: textViewAchieve.string)
@@ -427,6 +429,15 @@ class pomodoroVc: NSViewController {
         appdelegate!.focusModeStartted()
         UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
         
+        if isShowingPomodoroManually{
+            var type = ""
+            if isHardCorePomodoroModeOn{
+                type = "super-pomodoro"
+            }else{
+                type = "single-pomodoro"
+            }
+            allApiObject.capturePosthog(event: "start-pomodoro-mode-manually", metadata: ["type":type, "focusDuration":currentPomodoroWorkDuration, "breakDuration":currentPomodoroBreakDuration])
+        }
 //        if focusPreferencesVcObj != nil{
 //            if (preferencesWindowControllerObj?.window!.isVisible)!{
 //                if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{

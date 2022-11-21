@@ -10,6 +10,9 @@ import Cocoa
 
 class addWebUrlVc: NSViewController, NSTextFieldDelegate {
 
+    @IBOutlet weak var lblInstructionSThird: NSTextField!
+    @IBOutlet weak var lblInstructionSecond: NSTextField!
+    @IBOutlet weak var lblInstructionFirst: NSTextField!
     @IBOutlet weak var lblInvalidDomain: NSTextField!
     @IBOutlet weak var btnAdd: NSButton!
     @IBOutlet weak var btnCancel: NSButton!
@@ -63,6 +66,31 @@ class addWebUrlVc: NSViewController, NSTextFieldDelegate {
         
     }
     override func viewWillAppear() {
+
+        
+        if currenUrlAddingtState == ._FOCUS_ALLOW_URL{
+            lblInstructionFirst.stringValue = "To allow a certain website: domain.com"
+            lblInstructionSecond.stringValue = "To allow all subdomains of a website: *.domain.com"
+            lblInstructionSThird.stringValue = "To allow any web pages that contain text in the URL or page title: reactnative or React Native"
+            lblInstructionSThird.isHidden = false
+
+            if let focusPreferencesInfo = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
+                lblInstructionFirst.stringValue = focusPreferencesInfo.value(forKey: "allowUrlInstructionFirstText") as? String ?? lblInstructionFirst.stringValue
+                lblInstructionSecond.stringValue = focusPreferencesInfo.value(forKey: "allowUrlInstructionSecondText") as? String ?? lblInstructionSecond.stringValue
+                lblInstructionSThird.stringValue = focusPreferencesInfo.value(forKey: "allowUrlInstructionThirdText") as? String ?? lblInstructionSThird.stringValue
+            }
+            
+        }else if currenUrlAddingtState == ._FOCUS_BLOCK_URL || currenUrlAddingtState == ._ALL_BLOCK_URL{
+            lblInstructionFirst.stringValue = "To block a certain website: domain.com"
+            lblInstructionSecond.stringValue = "To block all subdomains of a website: *.domain.com"
+            lblInstructionSThird.isHidden = true
+            
+            if let focusPreferencesInfo = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
+                lblInstructionFirst.stringValue = focusPreferencesInfo.value(forKey: "blockUrlInstructionFirstText") as? String ?? lblInstructionFirst.stringValue
+                lblInstructionSecond.stringValue = focusPreferencesInfo.value(forKey: "blockUrlInstructionSecondText") as? String ?? lblInstructionSecond.stringValue
+            }
+        }
+        
         if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
             if state{
                 self.view.window?.sharingType = .none
@@ -201,6 +229,7 @@ class addWebUrlVc: NSViewController, NSTextFieldDelegate {
                         
                     }
                 })
+                allApiObject.capturePosthog(event: "add-allowed-url-in-focus-mode", metadata: [:])
             }else if currenUrlAddingtState == ._FOCUS_BLOCK_URL{
                 var urlsArray = [String]()
                 if let arr = arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow]["blockUrlsArray"] as? [String]{
@@ -225,13 +254,26 @@ class addWebUrlVc: NSViewController, NSTextFieldDelegate {
                 var dic = arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow]
                 dic["blockUrlsArray"] = urlsArray
                 arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow] = dic
-                focusPreferencesAdvancedVcObj?.tblView.reloadData()
-                focusPreferencesAdvancedVcObj?.tblView.selectRowIndexes(IndexSet(arrayLiteral: (urlsArray.count - 1)), byExtendingSelection: false)
-                focusPreferencesAdvancedVcObj?.tblView.scrollRowToVisible(urlsArray.count - 1)
+                
+                if focusPreferencesVcObj?.radioBtnBlockListApproch.state == .on{
+                    focusPreferencesVcObj?.tblViewAllowedUrls.reloadData()
+                    focusPreferencesVcObj?.tblViewAllowedUrls.selectRowIndexes(IndexSet(arrayLiteral: (urlsArray.count - 1)), byExtendingSelection: false)
+                    focusPreferencesVcObj?.tblViewAllowedUrls.scrollRowToVisible(urlsArray.count - 1)
+                }else{
+                    focusPreferencesAdvancedVcObj?.tblView.reloadData()
+                    focusPreferencesAdvancedVcObj?.tblView.selectRowIndexes(IndexSet(arrayLiteral: (urlsArray.count - 1)), byExtendingSelection: false)
+                    focusPreferencesAdvancedVcObj?.tblView.scrollRowToVisible(urlsArray.count - 1)
+                }
+                
+                
+                
+                
                 UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
                 if arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow]["isOn"] as? Bool == true{
                     appdelegate!.fillAllowUrlArray()// fill block url array
                 }
+                
+                
                 allApiObject.editFocusMode(focusType: dic, completionHandler: {newDic in
                     DispatchQueue.main.async {
                         
@@ -257,6 +299,7 @@ class addWebUrlVc: NSViewController, NSTextFieldDelegate {
                 blockedUrlsVcObj?.tblView.scrollRowToVisible(SettingsManagerObject.arrBlockedUrls.count - 1)
                 UserDefaults.standard.set(SettingsManagerObject.arrBlockedUrls, forKey: SettingsManagerObject.kUserdefaultsArrBlockedUrls)
                 SettingsManagerObject.isSettingsChanged = true
+                allApiObject.capturePosthog(event: "add-always-blocked-url", metadata: [:])
             }
         }else{
             if currenUrlAddingtState == ._FOCUS_ALLOW_URL{
@@ -338,6 +381,16 @@ class addWebUrlVc: NSViewController, NSTextFieldDelegate {
                 arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow] = dic
                 focusPreferencesAdvancedVcObj?.tblView.reloadData()
                 focusPreferencesAdvancedVcObj?.tblView.selectRowIndexes(IndexSet(arrayLiteral: (self.currentRow)), byExtendingSelection: false)
+                
+                
+                if focusPreferencesVcObj?.radioBtnBlockListApproch.state == .on{
+                    focusPreferencesVcObj?.tblViewAllowedUrls.reloadData()
+                    focusPreferencesVcObj?.tblViewAllowedUrls.selectRowIndexes(IndexSet(arrayLiteral: (self.currentRow)), byExtendingSelection: false)
+                }else{
+                    focusPreferencesAdvancedVcObj?.tblView.reloadData()
+                    focusPreferencesAdvancedVcObj?.tblView.selectRowIndexes(IndexSet(arrayLiteral: (self.currentRow)), byExtendingSelection: false)
+                }
+                
                 
                 UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
                 if arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow]["isOn"] as? Bool == true{

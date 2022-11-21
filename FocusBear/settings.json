@@ -27,8 +27,12 @@
             "duration_seconds": 180,
             "log_quantity": false,
             "video_urls": [
-                "https://www.youtube.com/watch?v=36mnXAQGRzc"
-            ]
+                "https://youtu.be/HhMXYsk_Pvo"
+            ],
+            "log_summary_type": "",
+            "log_quantity_question": "",
+            "allowed_apps": [],
+            "allowed_urls": []
         }
     ],
     "break_after_minutes": 15,
@@ -83,7 +87,15 @@
                     "id": "",
                     "name": "Stretching",
                     "video_urls": [
-                        "https://www.youtube.com/watch?v=s5V_sVvagrM"
+                        "https://www.youtube.com/watch?v=s5V_sVvagrM",
+                        "https://www.youtube.com/watch?v=_BJFBz-NlFU",
+                        "https://www.youtube.com/watch?v=RH3La6XK1u4",
+                        "https://www.youtube.com/watch?v=ZYmJTpwQrCU",
+                        "https://www.youtube.com/watch?v=vetZTx-76So",
+                        "https://www.youtube.com/watch?v=pSXVJwcH-eY",
+                        "https://www.youtube.com/watch?v=XAyuDBV5fYM",
+                        "https://www.youtube.com/watch?v=EKeCZoCUs2M",
+                        "https://www.youtube.com/watch?v=cHBZbYlR490"
                     ],
                     "log_quantity": true
                 },
@@ -115,6 +127,18 @@
                     ],
                     "log_quantity": true,
                     "log_quantity_question": ""
+                },
+                {
+                    "id": "",
+                    "name": "Legs",
+                    "video_urls": [
+                        "https://www.youtube.com/watch?v=ysRa2bc4FNA",
+                        "https://www.youtube.com/watch?v=OQZkH6bS8sk",
+                        "https://www.youtube.com/watch?v=v2xJyrOLAgo",
+                        "https://www.youtube.com/watch?v=2jurEGsCPpU"
+                    ],
+                    "log_quantity": true,
+                    "log_quantity_question": ""
                 }
             ],
             "log_quantity": false,
@@ -132,7 +156,85 @@
             "is_office_friendly": true,
             "include_in_every_break": true,
             "video_urls": [
-                "https://www.youtube.com/watch?v=36mnXAQGRzc"
+                "https://youtu.be/HhMXYsk_Pvo"
+            ],
+            "log_quantity": false,
+            "log_summary_type": "",
+            "log_quantity_question": "",
+            "allowed_apps": [],
+            "allowed_urls": [],
+            "choice_type": "random",
+            "choices": []
+        },
+        {
+            "id": "",
+            "activity_sequence_id": "",
+            "name": "Office Exercises",
+            "duration_seconds": 55,
+            "log_quantity": false,
+            "video_urls": [],
+            "log_summary_type": "",
+            "log_quantity_question": "",
+            "allowed_apps": [],
+            "allowed_urls": [],
+            "include_in_every_break": true,
+            "is_office_friendly": true,
+            "choice_type": "random",
+            "choices": [
+                {
+                    "id": "",
+                    "name": "Upper Body Twist",
+                    "video_urls": [
+                        "https://www.youtube.com/watch?v=0V6jabZ7vT0"
+                    ],
+                    "log_quantity": true,
+                    "log_quantity_question": ""
+                },
+                {
+                    "id": "",
+                    "name": "Neck Rotation",
+                    "video_urls": [
+                        "https://www.youtube.com/watch?v=swypmUBr-ak"
+                    ],
+                    "log_quantity": true,
+                    "log_quantity_question": ""
+                },
+                {
+                    "id": "",
+                    "name": "Hip Marching",
+                    "video_urls": [
+                        "https://www.youtube.com/watch?v=xq1VYNb1qmg"
+                    ],
+                    "log_quantity": true,
+                    "log_quantity_question": ""
+                },
+                {
+                    "id": "",
+                    "name": "Chest Stretch",
+                    "video_urls": [
+                        "https://www.youtube.com/watch?v=GJP2_2do2nA"
+                    ],
+                    "log_quantity": true,
+                    "log_quantity_question": ""
+                },
+                {
+                    "id": "",
+                    "name": "Arm Raises",
+                    "video_urls": [
+                        "https://www.youtube.com/watch?v=Iqel5RkbVNw"
+                    ],
+                    "log_quantity": true,
+                    "log_quantity_question": ""
+                },
+                {
+                    "id": "",
+                    "name": "Rest Eyes",
+                    "video_urls": [
+                        "https://www.youtube.com/watch?v=5hNoCxonFbc"
+                    ],
+                    "log_quantity": true,
+                    "log_quantity_question": ""
+                }
             ]
         }
     ],

@@ -15,7 +15,7 @@ class preloadFocusModesVc: NSViewController, NSTextFieldDelegate {
     @IBOutlet weak var btnContinue: Button!
     @IBOutlet weak var popUpBtnWork: NSPopUpButton!
     @IBOutlet weak var lblTitle: NSTextField!
-    
+    //71
     
     var titleProgramming = "Programming"
     var titleGraphicDesign = "Graphic Design"
@@ -25,6 +25,7 @@ class preloadFocusModesVc: NSViewController, NSTextFieldDelegate {
         super.viewDidLoad()
         // Do view setup here.
         
+        textFieldSomethingElse.placeholderString = "Rocket Surgery"
         textFieldSomethingElse.isHidden = true
         btnContinue.isEnabled = false
         
@@ -49,6 +50,9 @@ class preloadFocusModesVc: NSViewController, NSTextFieldDelegate {
             titleGraphicDesign = preloadFocusModesViewInfo.value(forKey: "titleGraphicDesign") as? String ?? titleGraphicDesign
             titleDataAnalysis = preloadFocusModesViewInfo.value(forKey: "titleDataAnalysis") as? String ?? titleDataAnalysis
             titleSomethingElse = preloadFocusModesViewInfo.value(forKey: "titleSomethingElse") as? String ?? titleSomethingElse
+            
+            textFieldSomethingElse.placeholderString = preloadFocusModesViewInfo.value(forKey: "placeholderWorkText") as? String ?? textFieldSomethingElse.placeholderString
+            
         }
         
         popUpBtnWork.addItem(withTitle: titleSelectWorkType)
@@ -99,16 +103,16 @@ class preloadFocusModesVc: NSViewController, NSTextFieldDelegate {
         case 0:
             return // not possible because button is not enabled if option 0 is selected
         case 1://Programming
-            dic = ["name":"\(titleProgramming) \(workText)", "color": getColorString(color: NSColor(red: 208/255, green: 150/255, blue: 60/255, alpha: 1)), "allowed_apps": ["/Applications/Visual Studio Code.app", "/Applications/XCode.app", "/Applications/Utilities/Terminal.app"], "allowed_urls": ["https://stackoverflow.com","localhost"], "isOn": false, "isAllowedAllApps":false, "isAllowedAllUrls":false, "jobType":jobTypeProgramming]
+            dic = ["name":"\(titleProgramming) \(workText)", "color": getColorString(color: NSColor(red: 208/255, green: 150/255, blue: 60/255, alpha: 1)), "allowed_apps": ["/Applications/Visual Studio Code.app", "/Applications/XCode.app", "/Applications/Utilities/Terminal.app"], "allowed_urls": ["https://stackoverflow.com","localhost"], "isOn": false, "isAllowedAllApps":false, "isAllowedAllUrls":false, "jobType":jobTypeProgramming, "isAllowedListApproach":true, "isBlockedAllUrls":false]
 
         case 2://Graphic Design
-            dic = ["name":"\(titleGraphicDesign) \(workText)", "color": getColorString(color: NSColor(red: 208/255, green: 150/255, blue: 60/255, alpha: 1)), "allowed_apps": ["/Applications/Figma.app", "/Applications/Adobe Illustrator.app", "/Applications/Adobe Photoshop.app"], "allowed_urls": ["https://www.figma.com"], "isOn": false, "isAllowedAllApps":false, "isAllowedAllUrls":false, "jobType":jobTypeGraphicDesign]
+            dic = ["name":"\(titleGraphicDesign) \(workText)", "color": getColorString(color: NSColor(red: 208/255, green: 150/255, blue: 60/255, alpha: 1)), "allowed_apps": ["/Applications/Figma.app", "/Applications/Adobe Illustrator.app", "/Applications/Adobe Photoshop.app"], "allowed_urls": ["https://www.figma.com"], "isOn": false, "isAllowedAllApps":false, "isAllowedAllUrls":false, "jobType":jobTypeGraphicDesign, "isAllowedListApproach":true, "isBlockedAllUrls":false]
             
         case 3://Data Analysis
-            dic = ["name":"\(titleDataAnalysis) \(workText)", "color": getColorString(color: NSColor(red: 208/255, green: 150/255, blue: 60/255, alpha: 1)), "allowed_apps": ["/Applications/Microsoft Excel.app"], "allowed_urls": ["https://www.office.com"], "isOn": false, "isAllowedAllApps":false, "isAllowedAllUrls":false, "jobType":jobTypeDataAnalysis]
+            dic = ["name":"\(titleDataAnalysis) \(workText)", "color": getColorString(color: NSColor(red: 208/255, green: 150/255, blue: 60/255, alpha: 1)), "allowed_apps": ["/Applications/Microsoft Excel.app"], "allowed_urls": ["https://www.office.com"], "isOn": false, "isAllowedAllApps":false, "isAllowedAllUrls":false, "jobType":jobTypeDataAnalysis, "isAllowedListApproach":true, "isBlockedAllUrls":false]
         
         case 4:
-            dic = ["name":"\(textFieldSomethingElse.stringValue) \(workText)", "color": getColorString(color: NSColor(red: 208/255, green: 150/255, blue: 60/255, alpha: 1)), "allowed_apps": [], "allowed_urls": [], "isOn": false, "isAllowedAllApps":true, "isAllowedAllUrls":true, "jobType":jobTypeSomethingElse]
+            dic = ["name":"\(textFieldSomethingElse.stringValue) \(workText)", "color": getColorString(color: NSColor(red: 208/255, green: 150/255, blue: 60/255, alpha: 1)), "allowed_apps": [], "allowed_urls": [], "isOn": false, "isAllowedAllApps":true, "isAllowedAllUrls":true, "jobType":jobTypeSomethingElse, "isAllowedListApproach":true, "isBlockedAllUrls":false]
 
             
         default:
@@ -133,7 +137,7 @@ class preloadFocusModesVc: NSViewController, NSTextFieldDelegate {
         
         thirdVcObj?.btnFocesModesLodded()
     }
-    
+   
 
     func controlTextDidChange(_ obj: Notification) {
         guard let textfield = obj.object as? NSTextField else{

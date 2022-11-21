@@ -10,6 +10,7 @@ import Cocoa
 
 class addFocusTypeVc: NSViewController, NSTextFieldDelegate  {
 
+    @IBOutlet weak var bntColorBoxInfo: NSButton!
     @IBOutlet weak var lblViewTitle: NSTextField!
     @IBOutlet weak var lblTitleName: NSTextField!
     @IBOutlet weak var lblTitleColor: NSTextField!
@@ -62,10 +63,40 @@ class addFocusTypeVc: NSViewController, NSTextFieldDelegate  {
 //            titleEditFocusType = focusPreferencesInfo.value(forKey: "titleEditFocusType") as? String ?? titleEditFocusType
         }
         
+        btnInfoColorBoxTrackingArea = NSTrackingArea.init(rect: bntColorBoxInfo.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
+        bntColorBoxInfo.addTrackingArea(btnInfoColorBoxTrackingArea!)
+        
+        
+        if let common = configjson.value(forKey: "common") as? NSDictionary{
+            toolTipColorBox = common.value(forKey: "toolTipColorBoxText") as? String ?? toolTipColorBox
+        }
+        
+    }
+    
+    var btnInfoColorBoxTrackingArea: NSTrackingArea?
+    var toolTipColorBox = "Choose a color to be displayed in the background of the top menu bar icon to help identify the Focus Mode you are running"
+    override func mouseEntered(with event: NSEvent) {
+        if event.trackingArea == btnInfoColorBoxTrackingArea{
+            showTooltip(sender: bntColorBoxInfo, msg: toolTipColorBox, preferredEdge: NSRectEdge.maxX)
+        }
+    }
+    override func mouseExited(with event: NSEvent) {
+        if event.trackingArea == btnInfoColorBoxTrackingArea{
+            if popoverTooltip != nil{
+                if popoverTooltip!.isShown{
+                    popoverTooltip?.close()
+                }
+            }
+        }
+    }
+    
+    @IBAction func bntColorBoxInfoClicked(_ sender: Any) {
+        addLog(text: "bntColorBoxInfoClicked")
+        showTooltip(sender: bntColorBoxInfo, msg: toolTipColorBox, preferredEdge: NSRectEdge.maxX)
     }
     
     override func viewWillAppear() {
-        
+        colorWell.color = NSColor.random
         if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
             if state{
                 self.view.window?.sharingType = .none
@@ -99,13 +130,13 @@ class addFocusTypeVc: NSViewController, NSTextFieldDelegate  {
     var cp = NSColorPanel.shared
     @IBAction func btnShowColorPanelClicked(_ sender: Any) {
         cp = NSColorPanel.shared
-        cp.color = colorWell.color
         cp.mode = .RGB
         cp.setTarget(self)
         cp.setAction(#selector(colorDidChange))
         cp.makeKeyAndOrderFront(self)
         cp.isContinuous = false// qki api call hogi isliye false kiya
         cp.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.numberOfWindowLevelKeys)))
+        cp.color = colorWell.color
     }
     
     @objc func colorDidChange(){
@@ -134,7 +165,7 @@ class addFocusTypeVc: NSViewController, NSTextFieldDelegate  {
             }
         }
         let id = getUuid()
-        let dic:[String:Any] = ["id":id, "name":textFieldFocusType.stringValue, "color": getColorString(color: colorWell.color), "allowed_apps": [], "allowed_urls": [], "isOn": false, "isAllowedAllApps":true, "isAllowedAllUrls":true]
+        let dic:[String:Any] = ["id":id, "name":textFieldFocusType.stringValue, "color": getColorString(color: colorWell.color), "allowed_apps": [], "allowed_urls": [], "isOn": false, "isAllowedAllApps":true, "isAllowedAllUrls":true, "isAllowedListApproach":true, "isBlockedAllUrls":false]
         
         let row = arrFocusType.count-1
         arrFocusType.insert(dic, at: row)//append(dic)
@@ -166,7 +197,7 @@ class addFocusTypeVc: NSViewController, NSTextFieldDelegate  {
             }
             
         })
-        
+        allApiObject.capturePosthog(event: "add-new-focus-mode", metadata: [:])
     }
     func controlTextDidChange(_ obj: Notification) {
         guard let txtfield = obj.object as? NSTextField else {
@@ -174,6 +205,10 @@ class addFocusTypeVc: NSViewController, NSTextFieldDelegate  {
         }
         if txtfield == textFieldFocusType{
             lblError.isHidden = true
+            if textFieldFocusType.stringValue.count > 250{
+                textFieldFocusType.currentEditor()?.deleteBackward(nil)
+                return;
+            }
             if textFieldFocusType.stringValue.count == 0{
                 btnAdd.isEnabled = false
             }else{
@@ -181,4 +216,5 @@ class addFocusTypeVc: NSViewController, NSTextFieldDelegate  {
             }
         }
     }
+    
 }
