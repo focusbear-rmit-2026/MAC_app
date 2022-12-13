@@ -84,9 +84,11 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
 //        textFieldQuantityFormatter.minimumFractionDigits = 0
     }
     var textFieldStringCount = 0
+    var is_skipped = false
     func resetData(name:String, durationInSeconds:String, logQuantityQuestion:String?, currentState:CURRENTSTATE, logQuantityType:String, activity_id:String, activity_sequence_id:String, activityChoiceId:String?){
 //        getStringFromDate"yyyy-MM-dd HH:mm:ss"
         //lastActivityPerformedTime
+        self.is_skipped = false
         self.activityChoiceId = nil
         self.activityChoiceId = activityChoiceId
         self.activity_id = activity_id
@@ -122,7 +124,7 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
         }
         thirdVcObj?.loadGraph(activityId: self.activity_id, activityName: self.name, logQuantity: true, logQuantityType: self.logQuantityType, activityChoiceId: self.activityChoiceId,activityStartTime: lastActivityPerformedTime!, duration: durationInSeconds, quantity: "0")
         
-        allApiObject.activityCompletedApi(activity_id: activity_id, activity_sequence_id: activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:0.0, duration_logged:Int(durationInSeconds) ?? 0, choice_id: activityChoiceId, completionHandler: {dic  in
+        allApiObject.activityCompletedApi(activity_id: activity_id, activity_sequence_id: activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:0.0, duration_logged:Int(durationInSeconds) ?? 0, choice_id: activityChoiceId, is_skipped: is_skipped, completionHandler: {dic  in
             DispatchQueue.main.async {
                 
             }
@@ -179,7 +181,7 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
             thirdVcObj?.loadGraph(activityId: self.activity_id, activityName: self.name, logQuantity: true, logQuantityType: self.logQuantityType, activityChoiceId: self.activityChoiceId, activityStartTime: lastActivityPerformedTime!, duration: durationInSeconds, quantity: "\(doubleVal)")
             
             if !isReviseQuantity{
-                allApiObject.activityCompletedApi(activity_id: activity_id, activity_sequence_id: activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:doubleVal, duration_logged:Int(durationInSeconds) ?? 0, choice_id: activityChoiceId, completionHandler: {dic  in
+                allApiObject.activityCompletedApi(activity_id: activity_id, activity_sequence_id: activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:doubleVal, duration_logged:Int(durationInSeconds) ?? 0, choice_id: activityChoiceId, is_skipped:is_skipped, completionHandler: {dic  in
                     DispatchQueue.main.async {
                         
                     }

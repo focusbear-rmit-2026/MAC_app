@@ -343,6 +343,7 @@ class focusPreferencesAdvancedVc: NSViewController {
             
             if !isAccessibilityEnabled(isPrompt: false){
                 let alert = NSAlert()
+                alert.setSharingType()
                 alert.messageText = "To turn on Do Not Disturb when starting a Focus Mode, Focus Bear needs Accessibility permissions. Would you like to give the permissions now?"
                 if let focusPreferencesAdvancedInfo = configjson.value(forKey: "focusPreferencesAdvancedInfo") as? NSDictionary{
                     alert.messageText = focusPreferencesAdvancedInfo.value(forKey: "needDndPermissionText") as? String ?? alert.messageText

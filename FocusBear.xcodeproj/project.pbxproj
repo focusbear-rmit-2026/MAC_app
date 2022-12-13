@@ -21,9 +21,15 @@
 		8F0E69DA290267DE0042FAF4 /* customNotificationVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F0E69D9290267DE0042FAF4 /* customNotificationVc.swift */; };
 		8F0E69DC290279500042FAF4 /* customTooltipVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F0E69DB290279500042FAF4 /* customTooltipVc.swift */; };
 		8F107D22278C4A1E00280B37 /* abortingCantHandleVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F107D21278C4A1E00280B37 /* abortingCantHandleVc.swift */; };
+		8F19BCA5293F360D00F70544 /* whySkipHabitVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F19BCA4293F360D00F70544 /* whySkipHabitVc.swift */; };
 		8F1E18A028EAF3FF00367413 /* macInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F1E189F28EAF3FF00367413 /* macInfo.swift */; };
+		8F270CB029435EB100E91015 /* onboardingBlockedUrlsVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F270CAF29435EB100E91015 /* onboardingBlockedUrlsVc.swift */; };
+		8F270CB229436D4400E91015 /* tblCellOnboardingBlockedUrls.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F270CB129436D4400E91015 /* tblCellOnboardingBlockedUrls.swift */; };
 		8F28E8322822B15A00310F4E /* uninstallVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F28E8312822B15A00310F4E /* uninstallVc.swift */; };
 		8F2F1625291BAC0600F8EFCD /* skipHabitVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F2F1624291BAC0600F8EFCD /* skipHabitVc.swift */; };
+		8F332BD029474EE5009E6792 /* focusTipsVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F332BCF29474EE5009E6792 /* focusTipsVc.swift */; };
+		8F38CCFE292FA464005213DE /* easyPostponeVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F38CCFD292FA464005213DE /* easyPostponeVc.swift */; };
+		8F38CD00292FB1FB005213DE /* habitSkipEasinessVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F38CCFF292FB1FB005213DE /* habitSkipEasinessVc.swift */; };
 		8F3F894428BA00A0003E5EA4 /* Sparkle.strings in Resources */ = {isa = PBXBuildFile; fileRef = 8F3F893C28BA009F003E5EA4 /* Sparkle.strings */; };
 		8F3F894528BA00A0003E5EA4 /* SUAutomaticUpdateAlert.strings in Resources */ = {isa = PBXBuildFile; fileRef = 8F3F893E28BA009F003E5EA4 /* SUAutomaticUpdateAlert.strings */; };
 		8F3F894628BA00A0003E5EA4 /* SUUpdatePermissionPrompt.strings in Resources */ = {isa = PBXBuildFile; fileRef = 8F3F894028BA009F003E5EA4 /* SUUpdatePermissionPrompt.strings */; };
@@ -126,9 +132,11 @@
 		8FB84AF2284DE2550075180B /* config-es.json in Resources */ = {isa = PBXBuildFile; fileRef = 8FB84AF1284DE2550075180B /* config-es.json */; };
 		8FC31BFC28C72AA600E2DD4C /* NewStoryboard.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 8FC31BFB28C72AA600E2DD4C /* NewStoryboard.storyboard */; };
 		8FC31BFE28C757B400E2DD4C /* brainDumpVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FC31BFD28C757B400E2DD4C /* brainDumpVc.swift */; };
+		8FCE07AB2931F2A300DF4530 /* popUpOfflineVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FCE07AA2931F2A300DF4530 /* popUpOfflineVc.swift */; };
 		8FD1053F27EEE44100B7728E /* Focus_BearTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FD1053E27EEE44100B7728E /* Focus_BearTests.swift */; };
 		8FD1054727EF1A3B00B7728E /* urlValidation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FD1054627EF1A3B00B7728E /* urlValidation.swift */; };
 		8FD1054B27EF221800B7728E /* validationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FD1054A27EF221800B7728E /* validationTest.swift */; };
+		8FD180312944791C009062E1 /* preloadFocusModeAppsVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FD180302944791C009062E1 /* preloadFocusModeAppsVc.swift */; };
 		8FDA8591279A8E83008AD6AA /* AVMonitor.m in Sources */ = {isa = PBXBuildFile; fileRef = 8FDA8590279A8E82008AD6AA /* AVMonitor.m */; };
 		8FE049D027B77F5F00ABD521 /* logQuantityVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FE049CF27B77F5F00ABD521 /* logQuantityVc.swift */; };
 		8FE13DF527ED887200BD620A /* Sparkle.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8FE13DF427ED887200BD620A /* Sparkle.framework */; };
@@ -192,9 +200,15 @@
 		8F0E69D9290267DE0042FAF4 /* customNotificationVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = customNotificationVc.swift; sourceTree = "<group>"; };
 		8F0E69DB290279500042FAF4 /* customTooltipVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = customTooltipVc.swift; sourceTree = "<group>"; };
 		8F107D21278C4A1E00280B37 /* abortingCantHandleVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = abortingCantHandleVc.swift; sourceTree = "<group>"; };
+		8F19BCA4293F360D00F70544 /* whySkipHabitVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = whySkipHabitVc.swift; sourceTree = "<group>"; };
 		8F1E189F28EAF3FF00367413 /* macInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macInfo.swift; sourceTree = "<group>"; };
+		8F270CAF29435EB100E91015 /* onboardingBlockedUrlsVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = onboardingBlockedUrlsVc.swift; sourceTree = "<group>"; };
+		8F270CB129436D4400E91015 /* tblCellOnboardingBlockedUrls.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = tblCellOnboardingBlockedUrls.swift; sourceTree = "<group>"; };
 		8F28E8312822B15A00310F4E /* uninstallVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = uninstallVc.swift; sourceTree = "<group>"; };
 		8F2F1624291BAC0600F8EFCD /* skipHabitVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = skipHabitVc.swift; sourceTree = "<group>"; };
+		8F332BCF29474EE5009E6792 /* focusTipsVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = focusTipsVc.swift; sourceTree = "<group>"; };
+		8F38CCFD292FA464005213DE /* easyPostponeVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = easyPostponeVc.swift; sourceTree = "<group>"; };
+		8F38CCFF292FB1FB005213DE /* habitSkipEasinessVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = habitSkipEasinessVc.swift; sourceTree = "<group>"; };
 		8F3F893D28BA009F003E5EA4 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = Sparkle.strings; sourceTree = "<group>"; };
 		8F3F893F28BA009F003E5EA4 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = SUAutomaticUpdateAlert.strings; sourceTree = "<group>"; };
 		8F3F894128BA009F003E5EA4 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = SUUpdatePermissionPrompt.strings; sourceTree = "<group>"; };
@@ -303,11 +317,13 @@
 		8FB84AF1284DE2550075180B /* config-es.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "config-es.json"; sourceTree = "<group>"; };
 		8FC31BFB28C72AA600E2DD4C /* NewStoryboard.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = NewStoryboard.storyboard; sourceTree = "<group>"; };
 		8FC31BFD28C757B400E2DD4C /* brainDumpVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = brainDumpVc.swift; sourceTree = "<group>"; };
+		8FCE07AA2931F2A300DF4530 /* popUpOfflineVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = popUpOfflineVc.swift; sourceTree = "<group>"; };
 		8FD1053C27EEE44100B7728E /* Focus BearTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Focus BearTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		8FD1053E27EEE44100B7728E /* Focus_BearTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Focus_BearTests.swift; sourceTree = "<group>"; };
 		8FD1054027EEE44100B7728E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		8FD1054627EF1A3B00B7728E /* urlValidation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = urlValidation.swift; sourceTree = "<group>"; };
 		8FD1054A27EF221800B7728E /* validationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = validationTest.swift; sourceTree = "<group>"; };
+		8FD180302944791C009062E1 /* preloadFocusModeAppsVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = preloadFocusModeAppsVc.swift; sourceTree = "<group>"; };
 		8FDA858F279A8E82008AD6AA /* AVMonitor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVMonitor.h; sourceTree = "<group>"; };
 		8FDA8590279A8E82008AD6AA /* AVMonitor.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVMonitor.m; sourceTree = "<group>"; };
 		8FE049CF27B77F5F00ABD521 /* logQuantityVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = logQuantityVc.swift; sourceTree = "<group>"; };
@@ -361,6 +377,15 @@
 				8F050A0B278467B000F3CE17 /* FocusBear-Bridging-Header.h */,
 			);
 			path = "Login item";
+			sourceTree = "<group>";
+		};
+		8F19BCA6293F361600F70544 /* SkipHabit */ = {
+			isa = PBXGroup;
+			children = (
+				8F2F1624291BAC0600F8EFCD /* skipHabitVc.swift */,
+				8F19BCA4293F360D00F70544 /* whySkipHabitVc.swift */,
+			);
+			path = SkipHabit;
 			sourceTree = "<group>";
 		};
 		8F3F893B28BA009F003E5EA4 /* es.lproj */ = {
@@ -614,7 +639,9 @@
 				8F4A3B1A290D0CAE00DCBE39 /* toolBoxVc.swift */,
 				8FF9351A29113EAB004511C0 /* tblCellToolBox.swift */,
 				8FF8E0FE291686EF002938B8 /* popUpBlockConfirmVc.swift */,
-				8F2F1624291BAC0600F8EFCD /* skipHabitVc.swift */,
+				8F19BCA6293F361600F70544 /* SkipHabit */,
+				8F38CCFD292FA464005213DE /* easyPostponeVc.swift */,
+				8FCE07AA2931F2A300DF4530 /* popUpOfflineVc.swift */,
 				8F4A3B1E290D256F00DCBE39 /* collectionCellToolBox.swift */,
 				8F4A3B1F290D256F00DCBE39 /* collectionCellToolBox.xib */,
 				8FF9351929110D8C004511C0 /* Onboarding */,
@@ -701,7 +728,12 @@
 			isa = PBXGroup;
 			children = (
 				8F0B63B5290FEC8700DE7EF8 /* askAppWorkVc.swift */,
+				8F38CCFF292FB1FB005213DE /* habitSkipEasinessVc.swift */,
+				8F270CAF29435EB100E91015 /* onboardingBlockedUrlsVc.swift */,
+				8F270CB129436D4400E91015 /* tblCellOnboardingBlockedUrls.swift */,
 				8FA62B1328605B150075D545 /* preloadFocusModesVc.swift */,
+				8FD180302944791C009062E1 /* preloadFocusModeAppsVc.swift */,
+				8F332BCF29474EE5009E6792 /* focusTipsVc.swift */,
 				8F657D7828DF094E008A4E6E /* welcomeOnboardingVc.swift */,
 				8F657D7A28DF35D7008A4E6E /* onboardingPostponeVc.swift */,
 				8F64AF8228FE712800E18A2D /* onboardingCardsVc.swift */,
@@ -933,6 +965,7 @@
 				8FABDDD527DA367100F6A58C /* passwordVc.swift in Sources */,
 				8F9A5A9627885A6D009121E3 /* abortingCountDownVc.swift in Sources */,
 				8F9A5A98278863B9009121E3 /* abortingConfirmVc.swift in Sources */,
+				8FD180312944791C009062E1 /* preloadFocusModeAppsVc.swift in Sources */,
 				8F4A3B20290D256F00DCBE39 /* collectionCellToolBox.swift in Sources */,
 				8F98294F2806976B00B17414 /* quittingConfirmVc.swift in Sources */,
 				8F4A3B1B290D0CAE00DCBE39 /* toolBoxVc.swift in Sources */,
@@ -952,6 +985,7 @@
 				8FA62B1428605B150075D545 /* preloadFocusModesVc.swift in Sources */,
 				8F492726291A60F600BE10CA /* askQuitVc.swift in Sources */,
 				8FD1054727EF1A3B00B7728E /* urlValidation.swift in Sources */,
+				8F332BD029474EE5009E6792 /* focusTipsVc.swift in Sources */,
 				8F4BD8C427883FBE00ABAEF5 /* NSEventModifierFlags+HotKey.swift in Sources */,
 				8FAD22D727CA2F1000CDC866 /* focusCompletedVc.swift in Sources */,
 				8FE049D027B77F5F00ABD521 /* logQuantityVc.swift in Sources */,
@@ -971,11 +1005,16 @@
 				8F9A5A9A27887889009121E3 /* abortDoneVc.swift in Sources */,
 				8F657D7B28DF35D7008A4E6E /* onboardingPostponeVc.swift in Sources */,
 				8F657D7928DF094E008A4E6E /* welcomeOnboardingVc.swift in Sources */,
+				8F270CB229436D4400E91015 /* tblCellOnboardingBlockedUrls.swift in Sources */,
 				8F050A0E278467B100F3CE17 /* addLoginitem.m in Sources */,
+				8FCE07AB2931F2A300DF4530 /* popUpOfflineVc.swift in Sources */,
 				274E671628951DDD0030163F /* AllApi.swift in Sources */,
 				274C9A91289A8C910066F883 /* accountVc.swift in Sources */,
+				8F38CD00292FB1FB005213DE /* habitSkipEasinessVc.swift in Sources */,
 				8FC31BFE28C757B400E2DD4C /* brainDumpVc.swift in Sources */,
+				8F38CCFE292FA464005213DE /* easyPostponeVc.swift in Sources */,
 				8FAD22CF27CA00C000CDC866 /* preferencesTabViewController.swift in Sources */,
+				8F270CB029435EB100E91015 /* onboardingBlockedUrlsVc.swift in Sources */,
 				8F4BD8C727883FBE00ABAEF5 /* HotKeysController.swift in Sources */,
 				8F2F1625291BAC0600F8EFCD /* skipHabitVc.swift in Sources */,
 				8F7819DC28E5CBE100FB1F63 /* loginHelpVc.swift in Sources */,
@@ -988,6 +1027,7 @@
 				8FAB75C528476BC10051CE24 /* focusPreferencesAdvancedVc.swift in Sources */,
 				8F51EFB727E0741700EFF0A8 /* blockedUrlsVc.swift in Sources */,
 				8FAC6C972780612B008A4180 /* mainWindowController.swift in Sources */,
+				8F19BCA5293F360D00F70544 /* whySkipHabitVc.swift in Sources */,
 				8F9F365327ACFB3B00EB3516 /* SYFlatButton.m in Sources */,
 				8F08FD7028B60DD60016C741 /* uninstallingConfirmVc.swift in Sources */,
 				8F9044A1280454D300563F87 /* discourageDefaultFocusVc.swift in Sources */,
@@ -1185,7 +1225,7 @@
 				CODE_SIGN_IDENTITY = "Developer ID Application: Jeremy Nagel (TCUD568B3U)";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 86;
+				CURRENT_PROJECT_VERSION = 98;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = TCUD568B3U;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1219,7 +1259,7 @@
 				CODE_SIGN_IDENTITY = "Developer ID Application: Jeremy Nagel (TCUD568B3U)";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 86;
+				CURRENT_PROJECT_VERSION = 98;
 				DEVELOPMENT_TEAM = TCUD568B3U;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_TESTABILITY = NO;

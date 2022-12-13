@@ -52,7 +52,7 @@ class welcomeOnboardingVc: NSViewController {
         addLog(text: "btnLetsDoItClicked.")
         
         let alert = NSAlert()
-        
+        alert.setSharingType()
         var messageText = "Just want to double check you are ok to focus 100% on onboarding for the next 2 minutes. The next step is full screen - you won't be able to use any other apps during this time."
         var buttonConfirmLetsDoItText = "You have my full attention"
         var buttonLaterText = "Uhh I need a few more minutes"

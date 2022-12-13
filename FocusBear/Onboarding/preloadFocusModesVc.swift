@@ -11,6 +11,7 @@ import Cocoa
 class preloadFocusModesVc: NSViewController, NSTextFieldDelegate {
 
 
+    @IBOutlet weak var lblGotIt: NSTextField!
     @IBOutlet weak var textFieldSomethingElse: NSTextField!
     @IBOutlet weak var btnContinue: Button!
     @IBOutlet weak var popUpBtnWork: NSPopUpButton!
@@ -21,6 +22,7 @@ class preloadFocusModesVc: NSViewController, NSTextFieldDelegate {
     var titleGraphicDesign = "Graphic Design"
     var titleDataAnalysis = "Data Analysis"
     
+    var gotItText = "Got it. Let's set up a Focus Mode to help you be super productive while you're doing <WORK_TYPE> work."
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
@@ -52,7 +54,7 @@ class preloadFocusModesVc: NSViewController, NSTextFieldDelegate {
             titleSomethingElse = preloadFocusModesViewInfo.value(forKey: "titleSomethingElse") as? String ?? titleSomethingElse
             
             textFieldSomethingElse.placeholderString = preloadFocusModesViewInfo.value(forKey: "placeholderWorkText") as? String ?? textFieldSomethingElse.placeholderString
-            
+            gotItText = preloadFocusModesViewInfo.value(forKey: "gotItText") as? String ?? gotItText
         }
         
         popUpBtnWork.addItem(withTitle: titleSelectWorkType)
@@ -61,6 +63,7 @@ class preloadFocusModesVc: NSViewController, NSTextFieldDelegate {
         popUpBtnWork.addItem(withTitle: titleDataAnalysis)
         popUpBtnWork.addItem(withTitle: titleSomethingElse)
         
+        lblGotIt.stringValue = ""
         
     }
     
@@ -72,18 +75,23 @@ class preloadFocusModesVc: NSViewController, NSTextFieldDelegate {
         case 0:
             btnContinue.isEnabled = false
             textFieldSomethingElse.isHidden = true
+            lblGotIt.stringValue = ""
         case 1:
             textFieldSomethingElse.isHidden = true
             btnContinue.isEnabled = true
+            lblGotIt.stringValue = gotItText.replacingOccurrences(of: "<WORK_TYPE>", with: titleProgramming)
         case 2:
             textFieldSomethingElse.isHidden = true
             btnContinue.isEnabled = true
+            lblGotIt.stringValue = gotItText.replacingOccurrences(of: "<WORK_TYPE>", with: titleGraphicDesign)
         case 3:
             textFieldSomethingElse.isHidden = true
             btnContinue.isEnabled = true
+            lblGotIt.stringValue = gotItText.replacingOccurrences(of: "<WORK_TYPE>", with: titleDataAnalysis)
         case 4:
             btnContinue.isEnabled = false
             textFieldSomethingElse.isHidden = false
+            lblGotIt.stringValue = ""
         default:
             break
         }
@@ -122,20 +130,17 @@ class preloadFocusModesVc: NSViewController, NSTextFieldDelegate {
         if dic != nil{
             let id = getUuid()
             dic!["id"] = id
-            UserDefaults.standard.set(dic, forKey: kUserdefaultsFocusAddedFromFirstHabit)
+//            UserDefaults.standard.set(dic, forKey: kUserdefaultsFocusAddedFromFirstHabit)
+
+            preloadFocusModesWindowControllerObj!.contentViewController = getPreloadFocusModeAppsVcObj()
+            preloadFocusModeAppsVcObj?.resetView(dic: dic!)
 
 
-
-//            allApiObject.addFocusMode(focusType: dic!, completionHandler: {newDic in //  yha ad nahi krenge jga focus mode ki list get krte h vh a pahle hi userdefaults  se get krke fie vapas add or upload krenege
-////                if newDic != nil{
-////                    dic!["id"] = newDic!.value(forKey: "id") as? String ?? ""//["id"] as? String ?? ""
-////
-////                }
-//
-//            })
         }
         
-        thirdVcObj?.btnFocesModesLodded()
+//        thirdVcObj?.btnFocesModesLodded()
+        
+        
     }
    
 
@@ -146,8 +151,15 @@ class preloadFocusModesVc: NSViewController, NSTextFieldDelegate {
         if textfield == textFieldSomethingElse{
             if textFieldSomethingElse.stringValue.isEmpty{
                 btnContinue.isEnabled = false
+                lblGotIt.stringValue = ""
             }else{
+                if textfield.stringValue.count > 250{
+                    textfield.currentEditor()?.deleteBackward(nil)
+                    return;
+                }
+                
                 btnContinue.isEnabled = true
+                lblGotIt.stringValue = gotItText.replacingOccurrences(of: "<WORK_TYPE>", with: textfield.stringValue)
             }
         }
     }

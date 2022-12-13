@@ -10,6 +10,7 @@ import Cocoa
 
 class pomodoroPreferencesAdvancedVc: NSViewController {
 
+    @IBOutlet weak var checkBoxSkipMicrobreaks: NSButton!
     @IBOutlet weak var btnCancel: NSButton!
     @IBOutlet weak var btnApply: NSButton!
     @IBOutlet weak var checkBoxMonday: NSButton!
@@ -35,6 +36,7 @@ class pomodoroPreferencesAdvancedVc: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
+        checkBoxSkipMicrobreaks.title = "Skip microbreaks during work blocks?"
         checkBoxUseHardcorePomodoro.title = "Use hardcore pomodoro mode"
         lblDescriptionHardcorePomodoro.stringValue = "(Lock in the focus mode for multiple pomodoros)"
         lblChooseFocus.stringValue = "Choose the focus mode"
@@ -67,7 +69,7 @@ class pomodoroPreferencesAdvancedVc: NSViewController {
             lblHowManyPomodoro.stringValue = pomodoroPreferencesAdvancedInfo.value(forKey: "HowManyPomodoroText") as? String ?? lblHowManyPomodoro.stringValue
             lblSelectDaysForPomodoro.stringValue = pomodoroPreferencesAdvancedInfo.value(forKey: "selectDaysForPomodoroText") as? String ?? lblSelectDaysForPomodoro.stringValue
             btnApply.title = pomodoroPreferencesAdvancedInfo.value(forKey: "buttonApplyText") as? String ?? btnApply.title
-
+            checkBoxSkipMicrobreaks.title = pomodoroPreferencesAdvancedInfo.value(forKey: "buttonSkipMicrobreaksText") as? String ?? checkBoxSkipMicrobreaks.title
         }
         
         
@@ -197,6 +199,18 @@ class pomodoroPreferencesAdvancedVc: NSViewController {
             UserDefaults.standard.set(2, forKey: SettingsManagerObject.kUserdefaultsHardcorePomodoroFocusedCount)
         }
         
+        if let val = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHardcorePomodoroSkipMicroBreaks) as? Bool{
+            if val{
+                checkBoxSkipMicrobreaks.state = .on
+            }else{
+                checkBoxSkipMicrobreaks.state = .off
+            }
+            
+        }else{
+            checkBoxSkipMicrobreaks.state = .off
+            UserDefaults.standard.set(false, forKey: SettingsManagerObject.kUserdefaultsHardcorePomodoroSkipMicroBreaks)
+        }
+        
         
         
         recheckStateAllElements()
@@ -213,6 +227,7 @@ class pomodoroPreferencesAdvancedVc: NSViewController {
             checkBoxSunday.isEnabled = true
             popUpBtnFocusModes.isEnabled = true
             popUpBtnPomodoroCount.isEnabled = true
+            checkBoxSkipMicrobreaks.isEnabled = true
         }else{
             checkBoxMonday.isEnabled = false
             checkBoxTuesday.isEnabled = false
@@ -223,6 +238,7 @@ class pomodoroPreferencesAdvancedVc: NSViewController {
             checkBoxSunday.isEnabled = false
             popUpBtnFocusModes.isEnabled = false
             popUpBtnPomodoroCount.isEnabled = false
+            checkBoxSkipMicrobreaks.isEnabled = false
         }
     }
     @IBAction func btnCancelClicked(_ sender: Any) {
@@ -237,11 +253,7 @@ class pomodoroPreferencesAdvancedVc: NSViewController {
             if checkBoxMonday.state == .off && checkBoxTuesday.state == .off && checkBoxWednesday.state == .off && checkBoxThursday.state == .off && checkBoxFriday.state == .off && checkBoxSaturday.state == .off && checkBoxSunday.state == .off{
                 
                 let alert = NSAlert()
-                if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
-                    if state{
-                        alert.window.sharingType = .none
-                    }
-                }
+                alert.setSharingType()
                 alert.alertStyle = .informational
                 
                 var msgText = "Please select atleast one day."
@@ -307,6 +319,14 @@ class pomodoroPreferencesAdvancedVc: NSViewController {
             // popup button Pomodoro Count
             UserDefaults.standard.set(Int(popUpBtnPomodoroCount.titleOfSelectedItem ?? "2") ?? 2, forKey: SettingsManagerObject.kUserdefaultsHardcorePomodoroFocusedCount)
 
+            
+            if checkBoxSkipMicrobreaks.state == .on{
+                UserDefaults.standard.set(true, forKey: SettingsManagerObject.kUserdefaultsHardcorePomodoroSkipMicroBreaks)
+            }else{
+                UserDefaults.standard.set(false, forKey: SettingsManagerObject.kUserdefaultsHardcorePomodoroSkipMicroBreaks)
+            }
+            
+            
             UserDefaults.standard.set(true, forKey: SettingsManagerObject.kUserdefaultsHardcorePomodoroEnabled)
         }else{
             UserDefaults.standard.set(false, forKey: SettingsManagerObject.kUserdefaultsHardcorePomodoroEnabled)
@@ -321,5 +341,7 @@ class pomodoroPreferencesAdvancedVc: NSViewController {
     }
     @IBAction func checkBoxUseHardcorePomodoroClicked(_ sender: Any) {
         recheckStateAllElements()
+    }
+    @IBAction func checkBoxSkipMicrobreaksClicked(_ sender: Any) {
     }
 }

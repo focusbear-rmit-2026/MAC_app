@@ -32,7 +32,7 @@ class preferencesTabViewController: NSTabViewController {
             tabAccountsText = common.value(forKey: "tabAccountsText") as? String ?? tabAccountsText
         }
         print(self.tabViewItems.count)
-        
+      
         DispatchQueue.global().async {//using this thread because we are getting  tabview items count is 1 but after implement lobal thread we are getting right count 
             DispatchQueue.main.async {
                 for i in 0..<self.tabViewItems.count{
@@ -40,18 +40,41 @@ class preferencesTabViewController: NSTabViewController {
                     let id = tab.identifier as? String ?? ""
                     if id == "Settings"{
                         self.tabViewItems[i].label = tabSettingsText
+                        if #available(macOS 11.0, *) {
+                            self.tabViewItems[i].image = NSImage(systemSymbolName: "gearshape", accessibilityDescription: nil)
+                        } else {
+                            self.tabViewItems[i].image = NSImage(named: "NSSmartBadgeTemplate")
+                        }
                     }else if id == "Focus"{
                         self.tabViewItems[i].label = tabFocusText
+                        self.tabViewItems[i].image = NSImage(named: "NSTouchBarQuickLookTemplate")
                     }else if id == "EditHabits"{
                         self.tabViewItems[i].label = tabEditHabitsText
+                        if #available(macOS 11.0, *) {
+                            self.tabViewItems[i].image = NSImage(systemSymbolName: "checkmark.rectangle", accessibilityDescription: nil)
+                        } else {
+                            self.tabViewItems[i].image = NSImage(named: "checkmark")
+                        }
                     }else if id == "Password"{
                         self.tabViewItems[i].label = tabPasswordText
+                        self.tabViewItems[i].image = NSImage(named: "NSLockLockedTemplate")
                     }else if id == "Blocked URLs"{
                         self.tabViewItems[i].label = tabBlockedURLsText
+                        if #available(macOS 11.0, *) {
+                            self.tabViewItems[i].image = NSImage(systemSymbolName: "globe", accessibilityDescription: nil)
+                        } else {
+                            self.tabViewItems[i].image = NSImage(named: "NSNetwork")
+                        }
                     }else if id == "Uninstall"{
                         self.tabViewItems[i].label = tabUninstallText
+                        self.tabViewItems[i].image = NSImage(named: "NSMenuMixedStateTemplate")
                     }else if id  == "Accounts"{
                         self.tabViewItems[i].label = tabAccountsText
+                        if #available(macOS 11.0, *) {
+                            self.tabViewItems[i].image = NSImage(systemSymbolName: "person", accessibilityDescription: nil)
+                        } else {
+                            self.tabViewItems[i].image = NSImage(named: "NSTouchBarUserTemplate")
+                        }
                     }
                 }
             }

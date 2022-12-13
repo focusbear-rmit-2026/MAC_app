@@ -19,6 +19,13 @@ class customNotificationVc: NSViewController {
         // Do view setup here.
         bgBox.wantsLayer = true
         bgBox.cornerRadius = bgBox.frame.height / 5
+
+        self.view.wantsLayer = true
+        self.view.shadow = NSShadow()
+        self.view.layer?.shadowOpacity = 0.3
+        self.view.layer?.shadowColor = NSColor.black.cgColor
+        self.view.layer?.shadowOffset = NSMakeSize(0, -2)
+        self.view.layer?.shadowRadius = 3
     }
     
     func resetView(msg:String){
@@ -27,10 +34,10 @@ class customNotificationVc: NSViewController {
             timer?.invalidate()
             timer = nil
         }
-        timer = Timer.scheduledTimer(timeInterval: 10, target: self, selector: #selector(closeWindow), userInfo: nil, repeats: false)
+        timer = Timer.scheduledTimer(timeInterval: 5, target: self, selector: #selector(closeWindow), userInfo: nil, repeats: false)
     }
     
     @objc func closeWindow(){
-        self.view.window?.close()
+        self.view.removeFromSuperview()
     }
 }

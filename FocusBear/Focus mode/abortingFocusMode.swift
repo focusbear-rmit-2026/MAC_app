@@ -91,7 +91,13 @@ class abortingFocusModeVc: NSViewController {
         }
         focusName = focusType
         lblTitle.stringValue = titleText.replacingOccurrences(of: "<FOCUSTYPE>", with: focusType)//"Aborting Focus type - \(focusType)"
-        startTimer()
+        
+        if SettingsManagerObject.isEasySkipEnabled{
+            self.btnAbortFocus.isEnabled = true
+            self.lblSeconds.isHidden = true
+        }else{
+            startTimer()
+        }
     }
     
     func startTimer() {
@@ -175,15 +181,6 @@ class abortingFocusModeVc: NSViewController {
             appdelegate?.focusModeAborted()
         }
         addLog(text: "Focus mode abort clicked with reason - \(reason)")
-//        if focusPreferencesVcObj != nil{
-//            if (preferencesWindowControllerObj?.window!.isVisible)!{
-//                if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-//                    if tabview.selectedTabViewItemIndex == 1{
-//                        focusPreferencesVcObj?.focusModeFinished()
-//                    }
-//                }
-//            }
-//        }
         let timestamp = getStringFromDate(date: startFocusModeTime ?? Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
         if isAutoMeetingsModeStarted{
             addEntryInCsv(logType: "focus mode abort", activity: "focus block - \(focusName)", durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: "Meeting using {\(appUsedInAutoMeetingFocusMode)}", distractionsEncountered: "", abortReason: reason, feedback: "")

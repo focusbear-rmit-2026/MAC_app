@@ -76,6 +76,14 @@ func getSkipHabitVcObject()->skipHabitVc{
     return skipHabitVcObj!
 }
 
+var whySkipHabitVcObj:whySkipHabitVc?
+func getWhySkipHabitVcObject()->whySkipHabitVc{
+    if whySkipHabitVcObj == nil{
+        whySkipHabitVcObj = newStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("whySkipHabitVc")) as? whySkipHabitVc
+    }
+    return whySkipHabitVcObj!
+}
+
 var smallCountDownVcObj:smallCountDownVc?
 func getsmallCountDownVcObject()->smallCountDownVc{
     if smallCountDownVcObj == nil{
@@ -342,6 +350,24 @@ func getAskAppWorkVcObject()->askAppWorkVc{
     return askAppWorkVcObj!
 }
 
+// habit SkipEasiness object
+var habitSkipEasinessVcObj:habitSkipEasinessVc?
+func getHabitSkipEasinessVcObject()->habitSkipEasinessVc{
+    if habitSkipEasinessVcObj == nil{
+        habitSkipEasinessVcObj = newStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("habitSkipEasinessVc")) as? habitSkipEasinessVc
+    }
+    return habitSkipEasinessVcObj!
+}
+
+// AppWork vc object
+var onboardingBlockedUrlsVcObj:onboardingBlockedUrlsVc?
+func getOnboardingBlockedUrlsVcObject()->onboardingBlockedUrlsVc{
+    if onboardingBlockedUrlsVcObj == nil{
+        onboardingBlockedUrlsVcObj = newStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("onboardingBlockedUrlsVc")) as? onboardingBlockedUrlsVc
+    }
+    return onboardingBlockedUrlsVcObj!
+}
+
 // custom notification window object
 var breakWarningWcObj:commonWindowController?
 func getBreakWarningWindowObject()->commonWindowController{
@@ -360,6 +386,46 @@ func getBreakWarningVcObject()->breakWarningVc{
     }
     return breakWarningVcObj!
 }
+
+
+// easy postpone window object
+var easyPostponeWcObj:commonWindowController?
+func getEasyPostponeWindowObject()->commonWindowController{
+    if easyPostponeWcObj == nil{
+        easyPostponeWcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
+        easyPostponeWcObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
+    }
+    return easyPostponeWcObj!
+}
+
+// easy postpone vc object
+var easyPostponeVcObj:easyPostponeVc?
+func getEasyPostponeVcObject()->easyPostponeVc{
+    if easyPostponeVcObj == nil{
+        easyPostponeVcObj = newStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("easyPostponeVc")) as? easyPostponeVc
+    }
+    return easyPostponeVcObj!
+}
+
+// popUpOffline window object
+var popUpOfflineWcObj:commonWindowController?
+func getPopUpOfflineWindowObject()->commonWindowController{
+    if easyPostponeWcObj == nil{
+        popUpOfflineWcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
+        popUpOfflineWcObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
+    }
+    return popUpOfflineWcObj!
+}
+
+// popUpOffline vc object
+var popUpOfflineVcObj:popUpOfflineVc?
+func getPopUpOfflineVcObject()->popUpOfflineVc{
+    if popUpOfflineVcObj == nil{
+        popUpOfflineVcObj = newStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("popUpOfflineVc")) as? popUpOfflineVc
+    }
+    return popUpOfflineVcObj!
+}
+
 
 
 // popUp Block Confirm window object
@@ -438,6 +504,47 @@ func getRememberNextHabitVcObj()->rememberNextHabitVc{
 }
 
 
+var preloadFocusModesWindowControllerObj: commonWindowController?
+
+func getPreloadFocusModesWindowControllerObj()->commonWindowController{
+    if preloadFocusModesWindowControllerObj == nil{
+        preloadFocusModesWindowControllerObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
+        preloadFocusModesWindowControllerObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
+    }
+    return preloadFocusModesWindowControllerObj!
+}
+
+
+var preloadFocusModesVcObj:preloadFocusModesVc?
+
+func getPreloadFocusModesVcObj()->preloadFocusModesVc{
+    if preloadFocusModesVcObj == nil{
+        preloadFocusModesVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("preloadFocusModesVc")) as? preloadFocusModesVc
+    }
+    return preloadFocusModesVcObj!
+}
+
+var preloadFocusModeAppsVcObj:preloadFocusModeAppsVc?
+
+func getPreloadFocusModeAppsVcObj()->preloadFocusModeAppsVc{
+    if preloadFocusModeAppsVcObj == nil{
+        preloadFocusModeAppsVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("preloadFocusModeAppsVc")) as? preloadFocusModeAppsVc
+    }
+    return preloadFocusModeAppsVcObj!
+}
+
+
+
+var focusTipsVcObj:focusTipsVc?
+
+func getFocusTipsVcObjObj()->focusTipsVc{
+    if focusTipsVcObj == nil{
+        focusTipsVcObj = newStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("focusTipsVc")) as? focusTipsVc
+    }
+    return focusTipsVcObj!
+}
+
+
 let startingFocusModeVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("startingFocusModeVc")) as? startingFocusModeVc
 let abortingFocusModeVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("abortingFocusModeVc")) as? abortingFocusModeVc
 
@@ -485,13 +592,16 @@ let kUserdefaultsSelectedJson = "kUserdefaultsSelectedJson"
 
 
 let kUserdefaultsFirstRunDate = "kUserdefaultsFirstRunDate"// system app first run date hai
-let kUserdefaultsFirstHabitDay = "kUserdefaultsFirstHabitDay"// iske hisab se hi trial days count ho the h // not in use 
+//let kUserdefaultsFirstHabitDay = "kUserdefaultsFirstHabitDay"//
 
 let kUserdefaultsFirstRun = "kUserdefaultsFirstRun"// first habit k liye use ful hai
 let kUserdefaultsVideoShown = "kUserdefaultsVideoShown"
 var kUserdefaultsShowDockIcon = "kUserdefaultsShowDockIcon"
 
-let kUserdefaultsLastHabitShowDate = "UserdefaultsLastHabitShowDate"// morning habit show date
+let kUserdefaultsLastHabitShowDate = "UserdefaultsLastHabitShowDate"
+
+var kUserdefaultsLastHabitsStartedDate = "kUserdefaultsLastHabitsStartedDate"
+var kUserdefaultsLastHabitID = "kUserdefaultsLastHabitID"
 
 var kUserdefaultsIsAppEnabled = "kUserdefaultsIsAppEnabled"
 
@@ -506,6 +616,9 @@ var isAppInitialLodded = false// activation kha se show hua h menu se ya startup
 
 var isHabitsDisabled = false
 var kUserdefaultsIsHabitsDisabled = "kUserdefaultsIsHabitsDisabled"
+
+var kUserdefaultsHabitSkipEasinessFromOnboarding = "kUserdefaultsHabitSkipEasinessFromOnboarding"
+var kUserdefaultsBlockedUrlsFromOnboarding = "kUserdefaultsBlockedUrlsFromOnboarding"
 
 
 //var kUserdefaultsSelectedFolder = "kUserdefaultsSelectedFolder"
@@ -552,6 +665,15 @@ extension NSView{
         //Add height constraint to the subview, as subview owns it.
         self.addConstraint(height)
     }
+    func addTopRightConstraints(subView:NSView) {
+        subView.translatesAutoresizingMaskIntoConstraints = false
+        //Trailing
+        let trailing = NSLayoutConstraint(item: subView, attribute: .trailing, relatedBy: .equal, toItem: self, attribute: .trailing, multiplier: 1.0, constant: 0.0)
+
+        let top = NSLayoutConstraint(item: subView, attribute: .top, relatedBy: .equal, toItem: self, attribute: .top, multiplier: 1.0, constant: 0.0)
+        self.addConstraint(trailing)
+        self.addConstraint(top)
+    }
 }
 //var isBreathingGoing = false
 //var isHabitGoing = false
@@ -567,6 +689,9 @@ var currentHabitPlaying:habit?
 var habitTotalCompletedSeconds = 0
 var arrAllMorningHabits = [habit]()
 var arrAllEveningHabits = [habit]()
+var isLastActivityStoppedInRunningState = false
+var lastActivityRunningId = ""
+var lastActivityStoppedTimerCount = 0
 struct habit {
     var id:String!
     var name:String!
@@ -624,6 +749,9 @@ func getStringTimeFromSeconds(seconds : Int)->String{
     }
     return stringTime
 }
+var fireFoxNotificationShownForCurrentFocusMode = false// show a notification when they open firefox during a focus mode (only show it once per focus block)// so after showing notification once turn this var to true for current focus mode 
+
+
 var activityAllowedFocusApps = [String]()
 var activityAllowedFocusUrls = [String]()
 //var showEveryBreak = false
@@ -1723,6 +1851,8 @@ class Editing: NSTextField {
 // #MARK:- Check Internet connectivity
 public class Reachability {
     class func isConnectedToNetwork() -> Bool {
+        
+
         var zeroAddress = sockaddr_in(sin_len: 0, sin_family: 0, sin_port: 0, sin_addr: in_addr(s_addr: 0), sin_zero: (0, 0, 0, 0, 0, 0, 0, 0))
         zeroAddress.sin_len = UInt8(MemoryLayout.size(ofValue: zeroAddress))
         zeroAddress.sin_family = sa_family_t(AF_INET)
@@ -1806,9 +1936,13 @@ class customBox: NSBox {
                 //abort focus mode
                 if isHardCorePomodoroModeOn{
                     if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
-
-                        menuViewControllerObj?.showPasswordWindow()
-                        addLog(text: "Showing enter password view from hardcodre pomodoro stop from focus stop menu")
+                        if SettingsManagerObject.isPasswordRequireInStopPomodoro{
+                            menuViewControllerObj?.showPasswordWindow()
+                            addLog(text: "Showing enter password view from hardcodre pomodoro stop from focus stop menu")
+                        }else{
+                            showAbortingFocusModeVc()
+                        }
+                        
                     }else{
                         showAbortingFocusModeVc()
                     }
@@ -1823,11 +1957,7 @@ class customBox: NSBox {
                 for i in 0..<arrFocusType.count{
                     if arrFocusType[i]["isOn"] as? Bool == true{
                         let alert = NSAlert()
-                        if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
-                            if state{
-                                alert.window.sharingType = .none
-                            }
-                        }
+                        alert.setSharingType()
                         alert.messageText = "A focus mode is already running. Please abort the running focus mode to start a new one."
                         
                         if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
@@ -1888,6 +2018,7 @@ class customBox: NSBox {
 var isDiscourageDefaultFocusVcVisible = false
 var focusModeStartWindowLodded = false
 var isFocusModeStartedFromPomodoroMode = false
+var isSkipBreakActivityDuringPomodoro = false
 func showStartingFocusMode(focusModeIndex: Int, focusType: String){
     addLog(text: "Showing Starting Focus Mode view")
     startingFocusWindowControllerObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
@@ -2177,50 +2308,77 @@ func getDomainFromUrl(url:String) -> String{
 }
 
 func isPreventUserIdleDisplaySleepOn()-> Bool{
-    addLog(text: "is Prevent UserIdle Display SleepOn Called")
-    let processArray = ["zoom.us", "teams"]// lowercased names aynge sirf
-    let dic = avmonitor.getSystemAssertionDic()
-    addLog(text: "is Prevent UserIdle Display SleepOn return \(dic)")
-    print(dic)
-    if dic == nil{
+    var assertions: Unmanaged<CFDictionary>?
+    if IOPMCopyAssertionsByProcess(&assertions) != kIOReturnSuccess {
+       fatalError("Error with assertions")
+    }
+    var dic = [AnyHashable : Any]()
+    
+   //print(assertions!.takeUnretainedValue())
+    //var stringDic = "\(assertions!)"
+    if assertions != nil{
+        
+        let val = assertions!.takeRetainedValue()
+        print(val)
+        
+        
+        if let dictionary = val as? [AnyHashable : Any]{
+            dic = dictionary
+        }else{
+            addLog(text: "is Prevent UserIdle Display SleepOn return false because dic is nil")
+            return false
+        }
+    }else{
         addLog(text: "is Prevent UserIdle Display SleepOn return false because dic is nil")
         return false
     }
-    if let keys  = dic?.keys{
-        for key in keys{
-            if let arr = dic?[key] as? NSArray{
-                addLog(text: "is Prevent UserIdle Display SleepOn success :- arr = dic?[key] as? NSArray")
-                for item in arr{
-                    //                        print(item as? NSDictionary)
-                    if let itemDic = item as? NSDictionary{
-                        print(itemDic)
-                        print(itemDic.value(forKey: "AssertionTrueType") as?  String ?? "")
-                        if itemDic.value(forKey: "AssertionTrueType") as?  String ?? ""  == "PreventUserIdleDisplaySleep"{
-                            print(itemDic.value(forKey: "Process Name") as?  String ?? "")
-                            if let name = itemDic.value(forKey: "Process Name") as?  String{
-                                let processName = name.lowercased()
-                                if processName != selfAppName.lowercased(){
-                                    if processArray.contains(processName){
-                                        addLog(text: "is Prevent UserIdle Display SleepOn return true")
-                                        return true
-                                    }
+    
+//    addLog(text: "is Prevent UserIdle Display SleepOn Called")
+    let processArray = ["zoom.us", "teams"]// lowercased names aynge sirf
+//    let dic = avmonitor.getSystemAssertionDic()
+   // addLog(text: "is Prevent UserIdle Display SleepOn return \(dic)")
+    //print(dic)
+//    if dic == nil{
+//        addLog(text: "is Prevent UserIdle Display SleepOn return false because dic is nil")
+//        return false
+//    }
+    let keys  = dic.keys
+    for key in keys{
+        if let arr = dic[key] as? NSArray{
+            //                addLog(text: "is Prevent UserIdle Display SleepOn success :- arr = dic?[key] as? NSArray")
+            for item in arr{
+                //                        print(item as? NSDictionary)
+                if let itemDic = item as? NSDictionary{
+                    //print(itemDic)
+                    //print(itemDic.value(forKey: "AssertionTrueType") as?  String ?? "")
+                    if itemDic.value(forKey: "AssertionTrueType") as?  String ?? ""  == "PreventUserIdleDisplaySleep"{
+                        //print(itemDic.value(forKey: "Process Name") as?  String ?? "")
+                        if let name = itemDic.value(forKey: "Process Name") as?  String{
+                            let processName = name.lowercased()
+                            if processName != selfAppName.lowercased(){
+                                if processArray.contains(processName){
+                                    //addLog(text: "is Prevent UserIdle Display SleepOn return true \(itemDic)")
+                                    return true
                                 }
-                                
                             }
-                            //                                zoom.us, teams
+                            
                         }
-                        
+                        //                                zoom.us, teams
                     }
+                    
                 }
             }
         }
     }
-    addLog(text: "is Prevent UserIdle Display SleepOn return false")
+    
+//    addLog(text: "is Prevent UserIdle Display SleepOn return false")
     return false
 }
 
 
-
+//"safari", "google chrome", "sidekick", "brave browser"]// lowercased names aynge sirf
+////        .zoom.us
+////meet.google.com
 var lastShownRandomChoiceDic = [String:activityChoice]()
 
 
@@ -2304,7 +2462,7 @@ func showNotificationWithMessage(msg:String){
 
 //***********SHOW Small Timer WINDOW***************//
 
-func showSmallTimerWindow(durationSeconds: Int, msg: String, isFocusBreak:Bool){
+func showSmallTimerWindow(durationSeconds: Int, msg: String, isFocusBreak:Bool, currentTimerValue:Int){
     addLog(text:"show Top Small Timer Window")
     getSmallCountDownWindowObject().contentViewController = getsmallCountDownVcObject()
     smallCountDownVcObj?.isFocusBreak = isFocusBreak
@@ -2316,22 +2474,35 @@ func showSmallTimerWindow(durationSeconds: Int, msg: String, isFocusBreak:Bool){
     
     getSmallCountDownWindowObject().showWindow(nil)
     
-    smallCountDownVcObj?.startTimerHabit(durationSeconds: durationSeconds, msg: msg)
+    smallCountDownVcObj?.startTimerHabit(durationSeconds: durationSeconds, msg: msg, currentTimerValue:currentTimerValue)
 }
 
 
 //***********SHOW Custom Notification WINDOW***************//
-func showCustomNotificationWindow(msg: String){
-    addLog(text:"show Custom Notification Window")
-    getCustomNotificationWindowObject().contentViewController = getCustomNotificationVcObject()
-    getCustomNotificationWindowObject().window?.styleMask = .borderless
-    let screenFrame = NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 1920, height: 1080)
-    getCustomNotificationWindowObject().window?.backgroundColor = NSColor.clear
-    getCustomNotificationWindowObject().window?.setFrameOrigin(NSPoint(x: screenFrame.width - (customNotificationVcObj?.view.frame.width)!, y: screenFrame.height - (customNotificationVcObj?.view.frame.height)! - 22)) //  22 status bar heigh
+//func showCustomNotificationWindow(msg: String){
+//    addLog(text:"show Custom Notification Window")
+//    getCustomNotificationWindowObject().contentViewController = getCustomNotificationVcObject()ye view  subview bhi ban rha h to dekh k use kro agar uncomment kro to
+//    getCustomNotificationWindowObject().window?.styleMask = .borderless
+//    let screenFrame = NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 1920, height: 1080)
+//    getCustomNotificationWindowObject().window?.backgroundColor = NSColor.clear
+//    getCustomNotificationWindowObject().window?.setFrameOrigin(NSPoint(x: screenFrame.width - (customNotificationVcObj?.view.frame.width)!, y: screenFrame.height - (customNotificationVcObj?.view.frame.height)! - 22)) //  22 status bar heigh
+//
+//    getCustomNotificationWindowObject().showWindow(nil)
+//    customNotificationVcObj?.resetView(msg: msg)
+//}
+
+//***********SHOW Custom Notification View***************//
+func showCustomNotificationView(msg: String){
+    if mainWindowControllerObj?.window?.isVisible ?? false{
+        addLog(text:"show Custom Notification View")
+        let _ = getCustomNotificationVcObject()
+        mainViewControllerObj?.view.addSubview(customNotificationVcObj!.view)
+        mainViewControllerObj?.view.addTopRightConstraints(subView: customNotificationVcObj!.view)
+        customNotificationVcObj!.resetView(msg: msg)
+    }
     
-    getCustomNotificationWindowObject().showWindow(nil)
-    customNotificationVcObj?.resetView(msg: msg)
 }
+
 
 //***********SHOW Toolbox window***************//
 func showToolboxWindow(){
@@ -2392,16 +2563,9 @@ func showPopupBlockConfirmWindow(blockedAppName:String, currentApp:NSRunningAppl
         
         let screenFrame = NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 1920, height: 1080)
         popUpBlockConfirmWcObj?.window?.setFrameOrigin(.init(x: screenFrame.width / 2, y: screenFrame.height / 2))
-//        popUpBlockConfirmWcObj?.window.co
-//        let screenFrame = NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 1920, height: 1080)
-        
-//        popUpBlockConfirmWcObj!.window?.setFrameOrigin(NSPoint(x: screenFrame.width - (brainDumpVcObj?.view.frame.width)!, y: screenFrame.height - (brainDumpVcObj?.view.frame.height)! - 22 - 140)) //  22 status bar heigh // timer window height is 100 // 20 is title bar height  and 20 is extra space to add
     }
-    
-//    popUpBlockConfirmWcObj!.b
     popUpBlockConfirmWcObj!.showWindow(nil)
     popUpBlockConfirmVcObj?.resetView(blockedAppName: blockedAppName, currentApp:currentApp, url:url, script:script, isBlockApp:isBlockApp)
-    
 }
 //-------------------------------------------------//
 
@@ -2424,6 +2588,55 @@ func showBreakWarningWindow(){
 }
 //-------------------------------------------------//
 
+
+//***********show Break Warning Window***************//
+
+func showPreloadFocusModesWindow(){
+    addLog(text:"showBreakWarningWindow")
+    getPreloadFocusModesWindowControllerObj().contentViewController = getPreloadFocusModesVcObj()
+
+    
+    preloadFocusModesWindowControllerObj!.window?.styleMask.remove(.closable)
+    preloadFocusModesWindowControllerObj?.window?.title = appName
+    preloadFocusModesWindowControllerObj!.showWindow(nil)
+//    breakWarningVcObj!.resetView()
+    NSApplication.shared.activate(ignoringOtherApps: true)
+}
+//-------------------------------------------------//
+
+
+//***********show Break Warning Window***************//
+
+func showEasyPostponeWindow(){
+    addLog(text:"showEasyPostponeWindow")
+    getEasyPostponeWindowObject().contentViewController = getEasyPostponeVcObject()
+
+    let screenFrame = NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 1920, height: 1080)
+    easyPostponeWcObj!.window?.setFrameOrigin(NSPoint(x: screenFrame.width - (easyPostponeVcObj?.view.frame.width)!, y: screenFrame.height - (easyPostponeVcObj?.view.frame.height)! - 22)) //  22 status bar heigh
+    
+    easyPostponeWcObj!.window?.styleMask.remove(.closable)
+    easyPostponeWcObj?.window?.title = appName
+    easyPostponeWcObj!.showWindow(nil)
+//    breakWarningVcObj!.resetView()
+    NSApplication.shared.activate(ignoringOtherApps: true)
+}
+//-------------------------------------------------//
+
+
+//***********show PopUp Offline Window***************//
+
+func showPopUpOfflineWindow(){
+    addLog(text:"showPopUpOfflineWindow")
+    getPopUpOfflineWindowObject().contentViewController = getPopUpOfflineVcObject()
+
+    let screenFrame = NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 1920, height: 1080)
+    popUpOfflineWcObj!.window?.setFrameOrigin(NSPoint(x: screenFrame.width - (popUpOfflineVcObj?.view.frame.width)!, y: screenFrame.height - (popUpOfflineVcObj?.view.frame.height)! - 22)) //  22 status bar heigh
+    popUpOfflineWcObj?.window?.title = appName
+    popUpOfflineWcObj!.showWindow(nil)
+//    breakWarningVcObj!.resetView()
+    NSApplication.shared.activate(ignoringOtherApps: true)
+}
+//-------------------------------------------------//
 
 //***********SHOW Ask Login Window ***************//
 
@@ -2468,12 +2681,13 @@ func showCustomLoginWindow(isLogin:Bool){
 
 //***********SHOW Onboarding Card Window ***************//
 
-func showOnboardingCardWindow(){
+func showOnboardingCardWindow(isLogin:Bool){
     addLog(text:"showOnboardingCardWindow")
     getOnboardingCardsWindowObject().contentViewController = getOnboardingCardsVcObject()
     onboardingCardsWcObj!.window?.styleMask.remove(.closable)
+    onboardingCardsVcObj?.isLogin = isLogin
     onboardingCardsWcObj!.showWindow(nil)
-
+    
 //    loginHelpWcObj!.window?.styleMask = .borderless
 //    let screenFrame = NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 1920, height: 1080)
 //
@@ -2898,11 +3112,7 @@ func showAlertNoInternet(window:NSWindow){
         }
     }
     let alert = NSAlert()
-    if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
-        if state{
-            alert.window.sharingType = .none
-        }
-    }
+    alert.setSharingType()
     alert.messageText = noInternetTitle
     alert.informativeText = noInternetSubTitle
     alert.alertStyle = .warning
@@ -2930,6 +3140,10 @@ var graphOneDayData:[NSDictionary]?
 
 
 //*****************Safari Chrome Active Tab Url and Titlle*********************//
+
+enum BROWSER:Int{
+    case _GOOGLE_CHROME_ = 152, _SAFARI_, _BRAVE_BROWSER_, _SIDEKICK_// start state sirf first activity ki start mi hi hoti h fir  second activity ki start mai "end state hoti hai "
+}
 
 func getSafariActiveTabUrl()->String?{
     var script: String = ""
@@ -2977,6 +3191,10 @@ func getSafariActiveTabTitle()->String?{
     }
     return nil
 }
+
+
+
+
 func getGoogleChromeActiveTabUrl()->String?{
     var script: String = ""
     
@@ -3024,6 +3242,143 @@ func getGoogleChromeActiveTabTitle()->String?{
     }
     return nil
 }
+
+func getBraveBrowserActiveTabUrl()->String?{
+    var script: String = ""
+    
+    script =
+    """
+    tell application "Brave Browser"
+    set the_wnd to front window
+    set active_tab to active tab in the_wnd
+    set taburl to URL of active_tab
+    end tell
+    """
+    
+    if let appleScript = NSAppleScript(source: script) {
+        
+        var errors : NSDictionary? = nil
+        let desc = appleScript.executeAndReturnError(&errors)
+        if errors != nil {
+            print(errors)
+        }
+        return desc.stringValue
+    }
+    return nil
+}
+func getBraveBrowserActiveTabTitle()->String?{
+    var script: String = ""
+    
+    script =
+    """
+    tell application "Brave Browser"
+    set the_wnd to front window
+    set active_tab to active tab in the_wnd
+    set tabtitle to title of active_tab
+    end tell
+    """
+    
+    if let appleScript = NSAppleScript(source: script) {
+        
+        var errors : NSDictionary? = nil
+        let desc = appleScript.executeAndReturnError(&errors)
+        if errors != nil {
+            print(errors)
+        }
+        return desc.stringValue
+    }
+    return nil
+}
+
+
+func getSidekickBrowserActiveTabUrl()->String?{
+    var script: String = ""
+    
+    script =
+    """
+    tell application "Sidekick"
+    set the_wnd to front window
+    set active_tab to active tab in the_wnd
+    set taburl to URL of active_tab
+    end tell
+    """
+    
+    if let appleScript = NSAppleScript(source: script) {
+        
+        var errors : NSDictionary? = nil
+        let desc = appleScript.executeAndReturnError(&errors)
+        if errors != nil {
+            print(errors)
+        }
+        return desc.stringValue
+    }
+    return nil
+}
+func getSidekickBrowserActiveTabTitle()->String?{
+    var script: String = ""
+    
+    script =
+    """
+    tell application "Sidekick"
+    set the_wnd to front window
+    set active_tab to active tab in the_wnd
+    set tabtitle to title of active_tab
+    end tell
+    """
+    
+    if let appleScript = NSAppleScript(source: script) {
+        
+        var errors : NSDictionary? = nil
+        let desc = appleScript.executeAndReturnError(&errors)
+        if errors != nil {
+            print(errors)
+        }
+        return desc.stringValue
+    }
+    return nil
+}
+
+func getActiveTabUrlOf(browser:BROWSER)->String?{
+    if browser == ._SAFARI_{
+        return getSafariActiveTabUrl()
+    }else if browser == ._GOOGLE_CHROME_{
+        return getGoogleChromeActiveTabUrl()
+    }else if browser == ._BRAVE_BROWSER_{
+        return getBraveBrowserActiveTabUrl()
+    }else if browser == ._SIDEKICK_{
+        return getSidekickBrowserActiveTabUrl()
+    }
+    return nil
+}
+
+func getActiveTabTitleOf(browser:BROWSER)->String?{
+    if browser == ._SAFARI_{
+        return getSafariActiveTabTitle()
+    }else if browser == ._GOOGLE_CHROME_{
+        return getGoogleChromeActiveTabTitle()
+    }else if browser == ._BRAVE_BROWSER_{
+        return getBraveBrowserActiveTabTitle()
+    }else if browser == ._SIDEKICK_{
+        return getSidekickBrowserActiveTabTitle()
+    }
+    return nil
+}
+
+func getCurrentBrowserFrom(browserName:String)->BROWSER?{
+    if browserName == "safari"{
+        return ._SAFARI_
+    }else if browserName == "google chrome"{
+        return ._GOOGLE_CHROME_
+    }else if browserName == "sidekick" {
+        return ._SIDEKICK_
+    }else if browserName == "brave browser"{
+        return . _BRAVE_BROWSER_
+    }else{
+        return nil
+    }
+}
+
+var arrBrowsersLowerCasedNames = ["safari", "google chrome", "sidekick", "brave browser"]
 //*******************************************************//
 
 
@@ -3311,13 +3666,13 @@ func showTooltip(sender:NSView, msg:String, preferredEdge: NSRectEdge) {
     vc.lblTitle.stringValue = msg
 }
 
-func showNotificationVideoCall(){
-    var notificationVideoCallText = "Looks like you're in a video call. I won't interrupt you with micro-breaks during the meeting to avoid embarrassing screensharing moments. Enjoy the meeting!"
-    if let common = configjson.value(forKey: "common") as? NSDictionary{
-        notificationVideoCallText = common.value(forKey: "notificationVideoCallText") as? String ?? notificationVideoCallText
-    }
-    showCustomNotificationWindow(msg: notificationVideoCallText)
-}
+//func showNotificationVideoCall(){
+//    var notificationVideoCallText = "Looks like you're in a video call. I won't interrupt you with micro-breaks during the meeting to avoid embarrassing screensharing moments. Enjoy the meeting!"
+//    if let common = configjson.value(forKey: "common") as? NSDictionary{
+//        notificationVideoCallText = common.value(forKey: "notificationVideoCallText") as? String ?? notificationVideoCallText
+//    }
+//    showCustomNotificationWindow(msg: notificationVideoCallText)
+//}
 
 
 
@@ -3585,5 +3940,116 @@ extension NSColor {
         let g:CGFloat  = .random(in: 0...1)
         let b:CGFloat  = .random(in: 0...1)
         return NSColor(red: r, green: g, blue: b, alpha: 1)
+    }
+}
+
+
+
+
+extension NSAlert{
+    func setSharingType() {
+        if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
+            if state{
+                self.window.sharingType = .none
+            }
+        }
+    }
+}
+
+
+func forceCompleteIfAnyHabitGoing(){
+    addLog(text: "get Last Activity Info - forceCompleteIfAnyActivityGoing")
+    let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
+    let shutOffdate = Calendar.current.date(bySettingHour: shutOffTime!.hour, minute: shutOffTime!.minute, second: shutOffTime!.second, of: Date())!
+    
+    if lastCurrentState == ._FOCUS_SUMMARY_{
+        let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
+        let shutOffdate = Calendar.current.date(bySettingHour: shutOffTime!.hour, minute: shutOffTime!.minute, second: shutOffTime!.second, of: Date())!
+        
+        let curreentDate = Date()
+        if curreentDate > shutOffdate{// iska matlab 20-24 k bich
+            let tomorrowDate = Calendar.current.date(byAdding: .day, value: 1, to: Date())!
+            let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: tomorrowDate)
+            UserDefaults.standard.set(startDate, forKey: kUserdefaultsFocusSummaryShowedTillDate)
+        }else if curreentDate < startDate{ //  iska mtlb 1 se 10 k bich ka time
+            UserDefaults.standard.set(startDate, forKey: kUserdefaultsFocusSummaryShowedTillDate)
+        }else{// not shut off time
+            
+        }
+    }
+    var sequenceId = ""
+    if lastCurrentState == ._MORNING_HABIT_{
+        sequenceId = arrAllMorningHabits.first?.activity_sequence_id ?? ""
+        UserDefaults.standard.set(startDate, forKey: kUserdefaultsLastHabitShowDate)
+    }else if lastCurrentState == ._FOCUS_SUMMARY_ || lastCurrentState == ._EVENING_HABIT_{
+        sequenceId = arrAllEveningHabits.first?.activity_sequence_id ?? ""
+        
+        let curreentDate = Date()
+        if curreentDate > shutOffdate{// iska matlab 20-24 k bich
+            let tomorrowDate = Calendar.current.date(byAdding: .day, value: 1, to: Date())!
+            let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: tomorrowDate)
+            UserDefaults.standard.set(startDate, forKey: kUserdefaultsEveningHabitsShowedTillDate)
+        }else if curreentDate < startDate{ //  iska mtlb 1 se 10 k bich ka time
+            UserDefaults.standard.set(startDate, forKey: kUserdefaultsEveningHabitsShowedTillDate)
+        }
+        
+    }else{
+        addLog(text: "force Complete Current Sequence - no Sequence found to complete")
+        return
+    }
+    
+    if sequenceId.isEmpty{
+        addLog(text: "force Complete Current Sequence - SequenceId is blank :- return")
+        return
+    }
+    addLog(text: "force Complete Current Sequence - forceCompleteIfAnyActivityGoing")
+    allApiObject.forceCompleteCurrentSequence(activity_sequence_id: sequenceId, isForToday: true, completionHandler: {json in
+
+        // and strt break activity
+        DispatchQueue.main.async {
+           
+        }
+    })
+    
+
+}
+
+
+
+// zip a folder 
+public extension URL {
+    
+    /// Creates a zip archive of the file/folder represented by this URL and returns a references to the zipped file
+    ///
+    /// - parameter dest: the destination URL; if nil, the destination will be this URL with ".zip" appended
+    func zip(dest: URL) throws -> URL {
+        let destURL = dest// ?? self.URLByAppendingPathExtension("zip")
+        
+        let fm = FileManager.default
+        var isDir: ObjCBool = false
+        
+        let srcDir: URL
+        let srcDirIsTemporary: Bool
+        let path = self.path //{
+        
+        srcDir = self
+        srcDirIsTemporary = false
+        
+        let coord = NSFileCoordinator()
+        var error: NSError?
+        
+        // coordinateReadingItemAtURL is invoked synchronously, but the passed in zippedURL is only valid
+        // for the duration of the block, so it needs to be copied out
+        coord.coordinate(readingItemAt: srcDir as URL, options: NSFileCoordinator.ReadingOptions.forUploading, error: nil) { (zippedURL: URL) -> Void in
+            do {
+                try fm.copyItem(at: zippedURL, to: destURL as URL)
+            } catch let err {
+                error = err as NSError
+            }
+        }
+        
+        if srcDirIsTemporary { try fm.removeItem(at: srcDir as URL) }
+        if let error = error { throw error }
+        return destURL
     }
 }

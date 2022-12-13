@@ -654,6 +654,8 @@ class AllApi:NSObject {
     func getLastActivityInfo(completionHandler: @escaping(_ result: NSDictionary?) -> ()) {
         addLog(text: "func call:- downloading getLastActivityInfo file")
         
+
+        
         appdelegate!.credentialsManager.credentials {credentialsInfo in
             addLog(text: "get updated credentialsInfo from credentialsManager")
             
@@ -933,10 +935,11 @@ class AllApi:NSObject {
     }
     var completedActivityLogId:String?
     var completedChoiceLogId:String?
-    var isAnyErrorFoundInActivityCompletedApi = false
+//    var isAnyErrorFoundInActivityCompletedApi = false
     
-    func activityCompletedApi(activity_id:String, activity_sequence_id:String, start_time:Date, quantity_logged:Double?, duration_logged:Int, choice_id:String?, completionHandler: @escaping(_ result: NSDictionary?) -> ()){
+    func activityCompletedApi(activity_id:String, activity_sequence_id:String, start_time:Date, quantity_logged:Double?, duration_logged:Int, choice_id:String?, is_skipped:Bool, completionHandler: @escaping(_ result: NSDictionary?) -> ()){
         addLog(text: "func call:- activityCompletedApi completed-activity")
+
 
         appdelegate!.credentialsManager.credentials {credentialsInfo in
             addLog(text: "get updated credentialsInfo from credentialsManager")
@@ -948,7 +951,11 @@ class AllApi:NSObject {
             self.completedChoiceLogId = nil
             
             let calendar = Calendar.current
-            let finish_time = calendar.date(byAdding: .second, value: duration_logged, to: start_time) ?? Date()
+            var finish_time = calendar.date(byAdding: .second, value: duration_logged, to: start_time) ?? Date()
+            
+            if is_skipped{
+                finish_time = calendar.date(byAdding: .second, value: 1, to: start_time) ?? Date()
+            }
             
             let responsePath = "https://api.focusbear.io/completed-activity"
             if let myUrl = NSURL(string: responsePath){
@@ -971,9 +978,14 @@ class AllApi:NSObject {
                     "device_id":currentDeviceId,
                     "activity_sequence_id":activity_sequence_id,
                     "start_time": getStringFromDateInUtc(date: start_time, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"),
-                    "finish_time": getStringFromDateInUtc(date: finish_time, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")//"2022-07-29T12:53:14.030Z"
-                    
+                    "finish_time": getStringFromDateInUtc(date: finish_time, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"),
+                    "metadata": [:]
                 ]
+                if is_skipped{
+                    let dic = ["is_skipped": true]
+                    json["metadata"] = dic
+                }
+
                 
                 if choice_id != nil{
                     json["choice_id"] = choice_id!
@@ -1040,26 +1052,48 @@ class AllApi:NSObject {
                         addLog(text: "api call activityCompletedApi error:- \(error!.localizedDescription)")
                         if (error as? NSError)?.code == self.errorCodeRequestTimeout{
                             if self.isApiActivityCompletedErrorFound{
-                                self.isApiActivityCompletedErrorFound = false//Focus Bear was not able to sync the activities' statistics due to bad internet.
-                                self.isAnyErrorFoundInActivityCompletedApi = true
+                                self.isApiActivityCompletedErrorFound = false
+//                                self.isAnyErrorFoundInActivityCompletedApi = true//Focus Bear was not able to sync the activities' statistics due to bad internet.// var
+                                
+//                                allApiObject.isAnyErrorFoundInActivityCompletedApi = false
+                                
+                                DispatchQueue.main.async {
+                                    var activitiesSyncErrorText = "Focus Bear was not able to sync the activities' statistics due to bad internet."
+                                    if let common = configjson.value(forKey: "common") as? NSDictionary{
+                                        activitiesSyncErrorText = common.value(forKey: "activitiesSyncErrorText") as? String ?? activitiesSyncErrorText
+                                    }
+                                    showCustomNotificationView(msg: activitiesSyncErrorText)
+                                }
+                                
+                                
+                                
                                 completionHandler(nil)
                                 return
                             }else{
                                 self.isApiActivityCompletedErrorFound = true
                                 addLog(text: "error activityCompletedApi:- try second time")
 
-                                self.activityCompletedApi(activity_id: activity_id, activity_sequence_id: activity_sequence_id, start_time:start_time, quantity_logged:quantity_logged, duration_logged:duration_logged, choice_id: choice_id, completionHandler: {dic  in
+                                self.activityCompletedApi(activity_id: activity_id, activity_sequence_id: activity_sequence_id, start_time:start_time, quantity_logged:quantity_logged, duration_logged:duration_logged, choice_id: choice_id, is_skipped: is_skipped, completionHandler: {dic  in
                                     
                                     completionHandler(dic)
                                     return
                                 })
                             }
                         }else if (error as? NSError)?.code == self.errorCodeNoInternet{
-                            self.isAnyErrorFoundInActivityCompletedApi = true
+//                            self.isAnyErrorFoundInActivityCompletedApi = true
+                            
+                            DispatchQueue.main.async {
+                                var activitiesSyncErrorText = "Focus Bear was not able to sync the activities' statistics due to bad internet."
+                                if let common = configjson.value(forKey: "common") as? NSDictionary{
+                                    activitiesSyncErrorText = common.value(forKey: "activitiesSyncErrorText") as? String ?? activitiesSyncErrorText
+                                }
+                                showCustomNotificationView(msg: activitiesSyncErrorText)
+                            }
+                            
                             completionHandler(nil)//The Internet connection appears to be offline.
                             return
                         }else{//1009
-                            completionHandler(nil)//The Internet connection appears to be offline.
+                            completionHandler(nil)
                             return
                         }
 
@@ -1194,9 +1228,10 @@ class AllApi:NSObject {
     func activitySkippedApi(activity_id:String, activity_sequence_id:String, completionHandler: @escaping(_ result: NSDictionary?) -> ()){
         addLog(text: "func call:- activitySkippedApi completed-activity")
 
-        
+
         appdelegate!.credentialsManager.credentials {credentialsInfo in
             addLog(text: "get updated credentialsInfo from credentialsManager")
+            
             
             appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
 
@@ -1306,7 +1341,7 @@ class AllApi:NSObject {
             }
         }
     }
-    func forceCompleteCurrentSequence(activity_sequence_id:String, completionHandler: @escaping(_ result: NSDictionary?) -> ()){
+    func forceCompleteCurrentSequence(activity_sequence_id:String, isForToday:Bool, completionHandler: @escaping(_ result: NSDictionary?) -> ()){
         addLog(text: "func call:- forceCompleteCurrentSequence:- completed-activity-sequence/activity_sequence_id/force-complete-current-sequence")
         
         appdelegate!.credentialsManager.credentials {credentialsInfo in
@@ -1314,7 +1349,10 @@ class AllApi:NSObject {
             
             appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
             
-            let responsePath = "https://api.focusbear.io/completed-activity-sequence/\(activity_sequence_id)/force-complete-current-sequence"
+            var responsePath = "https://api.focusbear.io/completed-activity-sequence/\(activity_sequence_id)/force-complete-current-sequence"
+            if isForToday == true{
+                responsePath += "?cancel_habits_for_today=true"
+            }
             if let myUrl = NSURL(string: responsePath){
                 addLog(text: "api call forceCompleteCurrentSequence \(myUrl)")
                 let token = appdelegate!.credential?.accessToken ?? ""
@@ -1338,7 +1376,7 @@ class AllApi:NSObject {
                     if let httpResponse = response as? HTTPURLResponse {
                         self.isApiForceCompleteCurrentSequenceErrorFound = false
                         if httpResponse.statusCode == 201{
-                            
+                            addLog(text: "api call forceCompleteCurrentSequence success")
                             if data != nil{
                                 do {
                                     if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
@@ -1384,7 +1422,7 @@ class AllApi:NSObject {
                                     return
                                 })
                                 
-                                self.forceCompleteCurrentSequence(activity_sequence_id: activity_sequence_id, completionHandler: {json in
+                                self.forceCompleteCurrentSequence(activity_sequence_id: activity_sequence_id, isForToday: isForToday, completionHandler: {json in
                                     
                                     completionHandler(json)
                                     return
@@ -1724,33 +1762,33 @@ class AllApi:NSObject {
     }
     func getAbortJsonToUpload(emailAddress:String?, feedback:String, abortReason:String,completionHandler: @escaping(_ result: NSDictionary) -> ()) {
         addLog(text: "func call:- get Abort Json To Upload response")
-        var settingsJson = NSDictionary()
-        if let stringDic = UserDefaults.standard.object(forKey: kUserdefaultsSelectedJson) as? String {
-            if let data = stringDic.data(using: String.Encoding.utf8) {
-                do {
-                    settingsJson = try (JSONSerialization.jsonObject(with: data, options: []) as? NSDictionary ?? [:])
-                } catch let error as NSError {
-                    print(error)
-                }
-            }
-            
-        }else {
-            if let path = Bundle.main.path(forResource: "settings", ofType: "json") {
-                let url = URL(fileURLWithPath: path)
-                do {
-                    let data = try Data(contentsOf: url, options: .mappedIfSafe)
-                    do {
-                        if let dicResult: NSDictionary = try JSONSerialization.jsonObject(with: data, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary {
-                            settingsJson = dicResult
-                        }
-                    }catch {
-                        print(error)
-                    }
-                } catch {
-                    // handle error
-                }
-            }
-        }
+//        var settingsJson = NSDictionary()
+//        if let stringDic = UserDefaults.standard.object(forKey: kUserdefaultsSelectedJson) as? String {
+//            if let data = stringDic.data(using: String.Encoding.utf8) {
+//                do {
+//                    settingsJson = try (JSONSerialization.jsonObject(with: data, options: []) as? NSDictionary ?? [:])
+//                } catch let error as NSError {
+//                    print(error)
+//                }
+//            }
+//
+//        }else {
+//            if let path = Bundle.main.path(forResource: "settings", ofType: "json") {
+//                let url = URL(fileURLWithPath: path)
+//                do {
+//                    let data = try Data(contentsOf: url, options: .mappedIfSafe)
+//                    do {
+//                        if let dicResult: NSDictionary = try JSONSerialization.jsonObject(with: data, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary {
+//                            settingsJson = dicResult
+//                        }
+//                    }catch {
+//                        print(error)
+//                    }
+//                } catch {
+//                    // handle error
+//                }
+//            }
+//        }
         
 
         
@@ -1759,7 +1797,7 @@ class AllApi:NSObject {
         formatter.dateFormat = "yyyy-MM-dd"
         let myDateString = formatter.string(from: firstRunDate)
         
-        let jsonResult:NSMutableDictionary = ["abortReason":abortReason, "settingsJSON":settingsJson, "macOSVersion":macOSVersion, "appVersion":appVersion, "feedback":feedback, "usageStartDate":myDateString]
+        let jsonResult:NSMutableDictionary = ["abortReason":abortReason, "userID":appdelegate!.user?.userId ?? "", "macOSVersion":macOSVersion, "appVersion":appVersion, "feedback":feedback, "usageStartDate":myDateString]
         
         if emailAddress != nil{
             jsonResult["emailAddress"] = emailAddress!
@@ -1788,18 +1826,16 @@ class AllApi:NSObject {
                 // print(response)
                 if let httpResponse = response as? HTTPURLResponse {
                     if httpResponse.statusCode == 200{
-                        
-                        
-                        
+
                         if data != nil{
-                            addLog(text: "get Abort Json To Upload response - data is not nil")
-                            let status = String(data: data!, encoding: .utf8)!
-                            if status == "1"{
-                                print("success")
-                                addLog(text: "get Abort Json To Upload response - success")
-                            }else{
-                                addLog(text: "get Abort Json To Upload response - status is not 1")
-                            }
+                            addLog(text: "get Abort Json To Upload response - success")
+//                            let status = String(data: data!, encoding: .utf8)!
+//                            if status == "1"{
+//                                print("success")
+//                                addLog(text: "get Abort Json To Upload response - success")
+//                            }else{
+//                                addLog(text: "get Abort Json To Upload response - status is not 1")
+//                            }
                         }
                     }else{
                         addLog(text: "error get Abort Json To Upload response - error:- statusCode is \(httpResponse.statusCode)")
@@ -1826,33 +1862,33 @@ class AllApi:NSObject {
     }
     func getQuitJsonToUpload(emailAddress:String?, feedback:String, quitReason:String,completionHandler: @escaping(_ result: NSDictionary) -> ()) {
         addLog(text: "func call:- get Quit Json To Upload")//
-        var settingsJson = NSDictionary()
-        if let stringDic = UserDefaults.standard.object(forKey: kUserdefaultsSelectedJson) as? String {
-            if let data = stringDic.data(using: String.Encoding.utf8) {
-                do {
-                    settingsJson = try (JSONSerialization.jsonObject(with: data, options: []) as? NSDictionary ?? [:])
-                } catch let error as NSError {
-                    print(error)
-                }
-            }
-            
-        }else {
-            if let path = Bundle.main.path(forResource: "settings", ofType: "json") {
-                let url = URL(fileURLWithPath: path)
-                do {
-                    let data = try Data(contentsOf: url, options: .mappedIfSafe)
-                    do {
-                        if let dicResult: NSDictionary = try JSONSerialization.jsonObject(with: data, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary {
-                            settingsJson = dicResult
-                        }
-                    }catch {
-                        print(error)
-                    }
-                } catch {
-                    // handle error
-                }
-            }
-        }
+//        var settingsJson = NSDictionary()
+//        if let stringDic = UserDefaults.standard.object(forKey: kUserdefaultsSelectedJson) as? String {
+//            if let data = stringDic.data(using: String.Encoding.utf8) {
+//                do {
+//                    settingsJson = try (JSONSerialization.jsonObject(with: data, options: []) as? NSDictionary ?? [:])
+//                } catch let error as NSError {
+//                    print(error)
+//                }
+//            }
+//
+//        }else {
+//            if let path = Bundle.main.path(forResource: "settings", ofType: "json") {
+//                let url = URL(fileURLWithPath: path)
+//                do {
+//                    let data = try Data(contentsOf: url, options: .mappedIfSafe)
+//                    do {
+//                        if let dicResult: NSDictionary = try JSONSerialization.jsonObject(with: data, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary {
+//                            settingsJson = dicResult
+//                        }
+//                    }catch {
+//                        print(error)
+//                    }
+//                } catch {
+//                    // handle error
+//                }
+//            }
+//        }
         
         
         
@@ -1861,7 +1897,7 @@ class AllApi:NSObject {
         formatter.dateFormat = "yyyy-MM-dd"
         let myDateString = formatter.string(from: firstRunDate)
         
-        let jsonResult:NSMutableDictionary = ["quitReason":quitReason, "settingsJSON":settingsJson, "macOSVersion":macOSVersion, "appVersion":appVersion, "feedback":feedback, "usageStartDate":myDateString]
+        let jsonResult:NSMutableDictionary = ["quitReason":quitReason, "userID":appdelegate!.user?.userId ?? "", "macOSVersion":macOSVersion, "appVersion":appVersion, "feedback":feedback, "usageStartDate":myDateString]
         
         if emailAddress != nil{
             jsonResult["emailAddress"] = emailAddress!
@@ -1893,13 +1929,13 @@ class AllApi:NSObject {
 
                         if data != nil{
                             addLog(text: "get Quit Json To Upload response - success")
-                            let status = String(data: data!, encoding: .utf8)!
-                            if status == "1"{
-                                print("success")
-                                
-                            }else{
-                                addLog(text: "get Quit Json To Upload response - nil data")
-                            }
+//                            let status = String(data: data!, encoding: .utf8)!
+//                            if status == "1"{
+//                                print("success")
+//
+//                            }else{
+//                                addLog(text: "get Quit Json To Upload response - nil data")
+//                            }
                         }
                     }else{
                         addLog(text: "error in get Quit Json To Upload response - data nil:- statusCode is \(httpResponse.statusCode)")
@@ -1929,33 +1965,33 @@ class AllApi:NSObject {
     func getUninstallJsonToUpload(emailAddress:String?, uninstallReason:String, uninstallDescription:String,completionHandler: @escaping(_ result: NSDictionary) -> ()) {
         
         addLog(text: "func call:- get Uninstall Json To Upload")
-        var settingsJson = NSDictionary()
-        if let stringDic = UserDefaults.standard.object(forKey: kUserdefaultsSelectedJson) as? String {
-            if let data = stringDic.data(using: String.Encoding.utf8) {
-                do {
-                    settingsJson = try (JSONSerialization.jsonObject(with: data, options: []) as? NSDictionary ?? [:])
-                } catch let error as NSError {
-                    print(error)
-                }
-            }
-            
-        }else {
-            if let path = Bundle.main.path(forResource: "settings", ofType: "json") {
-                let url = URL(fileURLWithPath: path)
-                do {
-                    let data = try Data(contentsOf: url, options: .mappedIfSafe)
-                    do {
-                        if let dicResult: NSDictionary = try JSONSerialization.jsonObject(with: data, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary {
-                            settingsJson = dicResult
-                        }
-                    }catch {
-                        print(error)
-                    }
-                } catch {
-                    // handle error
-                }
-            }
-        }
+//        var settingsJson = NSDictionary()
+//        if let stringDic = UserDefaults.standard.object(forKey: kUserdefaultsSelectedJson) as? String {
+//            if let data = stringDic.data(using: String.Encoding.utf8) {
+//                do {
+//                    settingsJson = try (JSONSerialization.jsonObject(with: data, options: []) as? NSDictionary ?? [:])
+//                } catch let error as NSError {
+//                    print(error)
+//                }
+//            }
+//
+//        }else {
+//            if let path = Bundle.main.path(forResource: "settings", ofType: "json") {
+//                let url = URL(fileURLWithPath: path)
+//                do {
+//                    let data = try Data(contentsOf: url, options: .mappedIfSafe)
+//                    do {
+//                        if let dicResult: NSDictionary = try JSONSerialization.jsonObject(with: data, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary {
+//                            settingsJson = dicResult
+//                        }
+//                    }catch {
+//                        print(error)
+//                    }
+//                } catch {
+//                    // handle error
+//                }
+//            }
+//        }
         
    
         
@@ -1964,7 +2000,7 @@ class AllApi:NSObject {
         formatter.dateFormat = "yyyy-MM-dd"
         let myDateString = formatter.string(from: firstRunDate)
         
-        let jsonResult:NSMutableDictionary = ["uninstallReason":uninstallReason, "uninstallDescription":uninstallDescription, "settingsJSON":settingsJson, "macOSVersion":macOSVersion, "appVersion":appVersion, "usageStartDate":myDateString]//, "feedback":feedback//
+        let jsonResult:NSMutableDictionary = ["uninstallReason":uninstallReason, "uninstallDescription":uninstallDescription, "userID":appdelegate!.user?.userId ?? "", "macOSVersion":macOSVersion, "appVersion":appVersion, "usageStartDate":myDateString]//, "feedback":feedback//
 
         if emailAddress != nil{
             jsonResult["emailAddress"] = emailAddress!
@@ -2114,6 +2150,8 @@ class AllApi:NSObject {
                     var dic = focusType
                     dic.removeValue(forKey: "name")
                     dic.removeValue(forKey: "id")
+                    dic.removeValue(forKey: "allowed_urls")
+                    dic.removeValue(forKey: "allowed_apps")
                     json["metadata"] = dic
                     
                     
@@ -2222,13 +2260,13 @@ class AllApi:NSObject {
                         
                         if let httpResponse = response as? HTTPURLResponse{
                             self.isApiDeleteFocusModeErrorFound = false
-                            if httpResponse.statusCode == 200{ //it means it is right
+                            if httpResponse.statusCode == 204{ //it means it is right
                                 addLog(text: "api call deleteFocusMode success")
                                 completionHandler(true)
                                 return
                                 
                             }else{
-                                addLog(text: "api call editFocusMode error:- statusCode is \(httpResponse.statusCode)")
+                                addLog(text: "api call deleteFocusMode error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
                                 addLog(text: "accessToken is:- \(token)")
                                 completionHandler(false)
@@ -2315,6 +2353,8 @@ class AllApi:NSObject {
                     var dic = focusType
                     
                     dic.removeValue(forKey: "name")
+                    dic.removeValue(forKey: "allowed_urls")
+                    dic.removeValue(forKey: "allowed_apps")
                     json["metadata"] = dic
                     
                     let jsonData = try? JSONSerialization.data(withJSONObject: json)
@@ -2538,7 +2578,7 @@ class AllApi:NSObject {
                     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
                     
                     
-                    var json: [String: Any] = [
+                    let json: [String: Any] = [
                         "achievements":achievements,
                         "distractions":distractions,
                         "finish_time":getStringFromDateInUtc(date: finish_time, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")

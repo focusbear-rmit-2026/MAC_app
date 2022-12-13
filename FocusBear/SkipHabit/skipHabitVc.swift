@@ -64,7 +64,7 @@ class skipHabitVc: NSViewController {
         }
     }
     @objc func performTimerCount() {
-        currentTimer += 1
+        currentTimer += 1//todo 1 kro
         let (_,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
         
         var minute = "\(m)"
@@ -97,6 +97,10 @@ class skipHabitVc: NSViewController {
                 if currentAction == ._VISUALIZE_{
                     mainViewControllerObj?.showThirdVc()
                 }
+                if currentAction == ._INPROGRESS_{
+                    mainViewControllerObj?.showThirdVc()
+                }
+                
                 if currentState == ._ACTIVITY_{
 
                 }else if currentState == ._MORNING_HABIT_{

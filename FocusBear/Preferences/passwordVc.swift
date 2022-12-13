@@ -9,6 +9,22 @@ import Cocoa
 
 class passwordVc: NSViewController {
 
+    @IBOutlet weak var checkBoxQuitApp: NSButton!
+    @IBOutlet weak var checkBoxStopPomodoro: NSButton!
+    @IBOutlet weak var checkBoxAbortingShutoff: NSButton!
+    @IBOutlet weak var checkBoxSkipEveningHabit: NSButton!
+    @IBOutlet weak var checkBoxSkipMorningHabit: NSButton!
+    @IBOutlet weak var checkBoxChangeSettings: NSButton!
+    
+    @IBOutlet weak var lblCheckBoxQuitApp: NSTextField!
+    @IBOutlet weak var lblCheckBoxStopPomodoro: NSTextField!
+    @IBOutlet weak var lblCheckBoxAbortingShutoff: NSTextField!
+    @IBOutlet weak var lblCheckBoxSkipEveningHabit: NSTextField!
+    @IBOutlet weak var lblCheckBoxSkipMorningHabit: NSTextField!
+    @IBOutlet weak var lblCheckBoxChangeSettings: NSTextField!
+    
+    @IBOutlet weak var lblQuestionPassword: NSTextField!
+    @IBOutlet weak var lblTitleAskPassword: NSTextField!
     @IBOutlet weak var btnDisablePassword: NSButton!
     @IBOutlet weak var lblConfirmPassword: NSTextField!
     @IBOutlet weak var lblNewPassword: NSTextField!
@@ -22,20 +38,43 @@ class passwordVc: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
+        lblTitleAskPassword.stringValue = "Ask for password:"
+        lblQuestionPassword.stringValue = "When do you want to require a password?"
+       
+        lblCheckBoxQuitApp.stringValue = "Quitting app"
+        lblCheckBoxStopPomodoro.stringValue = "Stopping Super pomodoro mode"
+        lblCheckBoxAbortingShutoff.stringValue = "Aborting shutoff"
+        lblCheckBoxSkipEveningHabit.stringValue = "Postponing/skipping evening routine"
+        lblCheckBoxSkipMorningHabit.stringValue = "Postponing/skipping morning routine"
+        lblCheckBoxChangeSettings.stringValue = "Changing settings"
+        
+        
         
         btnDisablePassword.title = "Disable Password"
-        lblInfo.stringValue = "You will need to enter your password - When opening preferences, When aborting an evening routine, When aborting the morning routine."
+//        lblInfo.stringValue = "You will need to enter your password - When opening preferences, When aborting an evening routine, When aborting the morning routine."
         
         if let passwordPreferencesInfo = configjson.value(forKey: "passwordPreferencesInfo") as? NSDictionary{
-            if let title = passwordPreferencesInfo.value(forKey: "infoText") as? String{
-                lblInfo.stringValue = title
-            }
+//            if let title = passwordPreferencesInfo.value(forKey: "infoText") as? String{
+//                lblInfo.stringValue = title
+//            }
             if let title = passwordPreferencesInfo.value(forKey: "buttonDisablePasswordText") as? String{
                 btnDisablePassword.title = title
             }
+            
+            lblTitleAskPassword.stringValue = passwordPreferencesInfo.value(forKey: "titleAskPassword") as? String ?? lblTitleAskPassword.stringValue
+            lblQuestionPassword.stringValue = passwordPreferencesInfo.value(forKey: "questionPassword") as? String ?? lblQuestionPassword.stringValue
+            lblCheckBoxQuitApp.stringValue = passwordPreferencesInfo.value(forKey: "buttonQuitAppText") as? String ?? lblCheckBoxQuitApp.stringValue
+            lblCheckBoxStopPomodoro.stringValue = passwordPreferencesInfo.value(forKey: "buttonStopPomodoroText") as? String ?? lblCheckBoxStopPomodoro.stringValue
+            lblCheckBoxAbortingShutoff.stringValue = passwordPreferencesInfo.value(forKey: "buttonAbortingShutoffText") as? String ?? lblCheckBoxAbortingShutoff.stringValue
+            lblCheckBoxSkipEveningHabit.stringValue = passwordPreferencesInfo.value(forKey: "buttonSkipEveningHabitText") as? String ?? lblCheckBoxSkipEveningHabit.stringValue
+            lblCheckBoxSkipMorningHabit.stringValue = passwordPreferencesInfo.value(forKey: "buttonSkipMorningHabitText") as? String ?? lblCheckBoxSkipMorningHabit.stringValue
+            lblCheckBoxChangeSettings.stringValue = passwordPreferencesInfo.value(forKey: "buttonChangeSettingsText") as? String ?? lblCheckBoxChangeSettings.stringValue
         }
     }
     
+    override func viewWillDisappear() {
+        SettingsManagerObject.putUserLocalDeviceSettings()
+    }
     override func viewWillAppear() {
         resetView()
     }//your password has been disabled.
@@ -103,16 +142,111 @@ class passwordVc: NSViewController {
                 
             }
         }
+        
+        
+        
+        if SettingsManagerObject.isPasswordRequireInChangeSettings{
+            checkBoxChangeSettings.state = .on
+        }else{
+            checkBoxChangeSettings.state = .off
+        }
+        
+        if SettingsManagerObject.isPasswordRequireInSkipMorning{
+            checkBoxSkipMorningHabit.state = .on
+        }else{
+            checkBoxSkipMorningHabit.state = .off
+        }
+        
+        if SettingsManagerObject.isPasswordRequireInSkipEvening{
+            checkBoxSkipEveningHabit.state = .on
+        }else{
+            checkBoxSkipEveningHabit.state = .off
+        }
+        
+        if SettingsManagerObject.isPasswordRequireInAbortShutoff{
+            checkBoxAbortingShutoff.state = .on
+        }else{
+            checkBoxAbortingShutoff.state = .off
+        }
+        
+        if SettingsManagerObject.isPasswordRequireInStopPomodoro{
+            checkBoxStopPomodoro.state = .on
+        }else{
+            checkBoxStopPomodoro.state = .off
+        }
+        
+        if SettingsManagerObject.isPasswordRequireInQuitApp{
+            checkBoxQuitApp.state = .on
+        }else{
+            checkBoxQuitApp.state = .off
+        }
+
     }
+    
+    
+    @IBAction func checkBoxQuitAppClicked(_ sender: Any) {
+        SettingsManagerObject.isSettingsChanged = true
+        if checkBoxQuitApp.state == .on{
+            SettingsManagerObject.isPasswordRequireInQuitApp = true
+        }else{
+            SettingsManagerObject.isPasswordRequireInQuitApp = false
+        }
+    }
+    
+    @IBAction func checkBoxStopPomodoroClicked(_ sender: Any) {
+        SettingsManagerObject.isSettingsChanged = true
+        if checkBoxStopPomodoro.state == .on{
+            SettingsManagerObject.isPasswordRequireInStopPomodoro = true
+        }else{
+            SettingsManagerObject.isPasswordRequireInStopPomodoro = false
+        }
+    }
+    
+    @IBAction func checkBoxAbortingShutoffClicked(_ sender: Any) {
+        SettingsManagerObject.isPasswordRequireInAbortShutoff = true
+        if checkBoxAbortingShutoff.state == .on{
+            SettingsManagerObject.isPasswordRequireInAbortShutoff = true
+        }else{
+            SettingsManagerObject.isPasswordRequireInAbortShutoff = false
+        }
+    }
+    
+    @IBAction func checkBoxSkipEveningHabitClicked(_ sender: Any) {
+        SettingsManagerObject.isSettingsChanged = true
+        if checkBoxSkipEveningHabit.state == .on{
+            SettingsManagerObject.isPasswordRequireInSkipEvening = true
+        }else{
+            SettingsManagerObject.isPasswordRequireInSkipEvening = false
+        }
+    }
+    
+    @IBAction func checkBoxSkipMorningHabitClicked(_ sender: Any) {
+        SettingsManagerObject.isSettingsChanged = true
+        if checkBoxSkipMorningHabit.state == .on{
+            SettingsManagerObject.isPasswordRequireInSkipMorning = true
+        }else{
+            SettingsManagerObject.isPasswordRequireInSkipMorning = false
+        }
+    }
+    
+    @IBAction func checkBoxChangeSettingsClicked(_ sender: Any) {
+        SettingsManagerObject.isSettingsChanged = true
+        if checkBoxChangeSettings.state == .on{
+            SettingsManagerObject.isPasswordRequireInChangeSettings = true
+        }else{
+            SettingsManagerObject.isPasswordRequireInChangeSettings = false
+        }
+    }
+    
+    
+    
+    
+    
     
     @IBAction func btnDisablePasswordClicked(_ sender: Any) {
         
         var alert: NSAlert = NSAlert()
-        if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
-            if state{
-                alert.window.sharingType = .none
-            }
-        }
+        alert.setSharingType()
         alert.messageText = "Are you sure you want to disable your password?"
         if let passwordPreferencesInfo = configjson.value(forKey: "passwordPreferencesInfo") as? NSDictionary{
             if let passwordDisableAskText = passwordPreferencesInfo.value(forKey: "passwordDisableAskText") as? String{
@@ -132,11 +266,7 @@ class passwordVc: NSViewController {
                 self.resetView()
                 allApiObject.capturePosthog(event: "disable-password", metadata: [:])
                 alert = NSAlert()
-                if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
-                    if state{
-                        alert.window.sharingType = .none
-                    }
-                }
+                alert.setSharingType()
                 alert.messageText = "Your password has been disabled."
                 if let passwordPreferencesInfo = configjson.value(forKey: "passwordPreferencesInfo") as? NSDictionary{
                     if let passwordDisableDoneText = passwordPreferencesInfo.value(forKey: "passwordDisableDoneText") as? String{
@@ -234,11 +364,7 @@ class passwordVc: NSViewController {
     }
     func alertforvalidation(question: String, text: String) {
         let alert: NSAlert = NSAlert()
-        if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
-            if state{
-                alert.window.sharingType = .none
-            }
-        }
+        alert.setSharingType()
         alert.messageText = question
         alert.informativeText = text
         alert.alertStyle = NSAlert.Style.warning

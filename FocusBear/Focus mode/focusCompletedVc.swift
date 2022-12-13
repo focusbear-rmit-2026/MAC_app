@@ -110,7 +110,7 @@ class focusCompletedVc: NSViewController {
         }
         self.view.window?.close()
         
-        showSmallTimerWindow(durationSeconds: 60*breakMinute, msg: "", isFocusBreak: true)
+        showSmallTimerWindow(durationSeconds: 60*breakMinute, msg: "", isFocusBreak: true, currentTimerValue:0)
     }
     
 }

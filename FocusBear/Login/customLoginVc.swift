@@ -279,16 +279,7 @@ class customLoginVc: NSViewController {
                 case .success(let credentials):
                     print("Obtained credentials: \(credentials)")
                     DispatchQueue.main.async {
-                        addLog(text: "Custom Login success")
-                        self.view.window?.close()
-                        appdelegate!.statusbutton?.action = nil
-                        appdelegate!.user = User(from: credentials.accessToken)
-                        allApiObject.capturePosthog(event: "login-homemade", metadata: [:])
-                        let _ = appdelegate!.credentialsManager.store(credentials: credentials)
-                        appdelegate!.loadCredentialsAndDeviceId()
-                        if UserDefaults.standard.object(forKey: kUserdefaultsVideoShown) == nil{
-                            showOnboardingCardWindow()
-                        }
+                        self.loginDone(credentials: credentials, isLogin: true)
                     }
                 case .failure(let error):
                     print("Failed with: \(error)")
@@ -300,6 +291,19 @@ class customLoginVc: NSViewController {
             }
     }
     
+    func loginDone(credentials: (Credentials), isLogin:Bool){
+        addLog(text: "Custom Login success")
+        self.view.window?.close()
+        appdelegate!.statusbutton?.action = nil
+        appdelegate!.user = User(from: credentials.accessToken)
+        allApiObject.capturePosthog(event: "login-homemade", metadata: [:])
+        let _ = appdelegate!.credentialsManager.store(credentials: credentials)
+        if UserDefaults.standard.object(forKey: kUserdefaultsVideoShown) == nil{
+            showOnboardingCardWindow(isLogin: isLogin)
+        }else{
+            appdelegate!.loadCredentialsAndDeviceId()
+        }
+    }
     @IBAction func btnShowConfirmPasswordClicked(_ sender: Any) {
         if textFieldConfirmPasword.isHidden{
             textFieldConfirmPasword.stringValue = secureTextFieldConfirmPassword.stringValue
@@ -375,21 +379,7 @@ class customLoginVc: NSViewController {
         
         
         
-//        let alert: NSAlert = NSAlert()
-//        alert.messageText = "You can reset your password from our web dashboard."
-//        alert.informativeText = ""
-//        alert.alertStyle = NSAlert.Style.warning
-//        alert.addButton(withTitle: "Open Web Dashboard")//
-//        alert.addButton(withTitle: buttonCancelText)
-//        alert.beginSheetModal(for: view.window!, completionHandler: { (modalResponse) in
-//            if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
-//               print("okclicked")
-//                NSWorkspace.shared.open(URL(string: "https://dashboard.focusbear.io/login")!)
-//            }
-//        })
-//
-//
-//        return;
+
         if textFieldEmail.stringValue.isEmpty == true
         {
             alertforvalidation(question: titleEmailIsBlank, text: emailInvalidText)
@@ -524,16 +514,7 @@ class customLoginVc: NSViewController {
                                 case .success(let credentials):
                                     print("Obtained credentials: \(credentials)")
                                     DispatchQueue.main.async {
-                                        addLog(text: "Custom Login success")
-                                        self.view.window?.close()
-                                        appdelegate!.statusbutton?.action = nil
-                                        appdelegate!.user = User(from: credentials.accessToken)
-                                        allApiObject.capturePosthog(event: "login-homemade", metadata: [:])
-                                        let _ = appdelegate!.credentialsManager.store(credentials: credentials)
-                                        appdelegate!.loadCredentialsAndDeviceId()
-                                        if UserDefaults.standard.object(forKey: kUserdefaultsVideoShown) == nil{
-                                            showOnboardingCardWindow()
-                                        }
+                                        self.loginDone(credentials: credentials, isLogin: false)
                                     }
                                 case .failure(let error):
                                     addLog(text: "login failed after signup")
@@ -674,6 +655,7 @@ class customLoginVc: NSViewController {
     
     func alertforvalidation(question: String, text: String) {
         let alert: NSAlert = NSAlert()
+        alert.setSharingType()
         alert.messageText = question
         alert.informativeText = text
         alert.alertStyle = NSAlert.Style.warning

@@ -32,18 +32,22 @@ struct urlValidation {
                 bool = wildcard(urlToCheck, pattern: newAllowUrl)
             }
         }else{
-            if newAllowUrl.contains("*"){
-                newAllowUrl = newAllowUrl + "*"
-                bool = wildcard(newUrlToCheck, pattern: newAllowUrl)
-            }else{
-                var starUrl: String = ""
-                if newAllowUrl.contains("."){
-                    starUrl = newAllowUrl + "*"
-                }else{
-                    starUrl = "*" + newAllowUrl + "*"
-                }
-                bool = wildcard(newUrlToCheck, pattern: starUrl)
-            }
+            
+            newAllowUrl = "*" + newAllowUrl + "*"
+            bool = wildcard(newUrlToCheck, pattern: newAllowUrl)
+            
+//            if newAllowUrl.contains("*"){
+//                newAllowUrl = newAllowUrl + "*"
+//                bool = wildcard(newUrlToCheck, pattern: newAllowUrl)
+//            }else{
+//                var starUrl: String = ""
+//                if newAllowUrl.contains("."){
+//                    starUrl = newAllowUrl + "*"
+//                }else{
+//                    starUrl = "*" + newAllowUrl + "*"
+//                }
+//                bool = wildcard(newUrlToCheck, pattern: starUrl)
+//            }
         }
         return bool
     }

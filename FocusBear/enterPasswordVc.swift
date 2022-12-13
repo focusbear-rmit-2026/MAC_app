@@ -235,11 +235,8 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
         }
         
         let alertReset: NSAlert = NSAlert()
-        if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
-            if state{
-                alertReset.window.sharingType = .none
-            }
-        }
+
+        alertReset.setSharingType()
         alertReset.messageText = alertTitle
         alertReset.informativeText = alertSubTitle
         alertReset.alertStyle = NSAlert.Style.warning
@@ -277,11 +274,7 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
                 
                 
                 let alert: NSAlert = NSAlert()
-                if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
-                    if state{
-                        alert.window.sharingType = .none
-                    }
-                }
+                alert.setSharingType()
                 alert.messageText = alertTitle
                 alert.informativeText = alertSubTitle
                 alert.alertStyle = NSAlert.Style.warning
@@ -335,11 +328,7 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
     }
     func alertforvalidation(question: String, text: String) {
         let alert: NSAlert = NSAlert()
-        if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
-            if state{
-                alert.window.sharingType = .none
-            }
-        }
+        alert.setSharingType()
         alert.messageText = question
         alert.informativeText = text
         alert.alertStyle = NSAlert.Style.warning

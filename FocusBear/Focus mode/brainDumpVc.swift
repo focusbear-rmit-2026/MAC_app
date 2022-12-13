@@ -11,6 +11,7 @@ import Cocoa
 class brainDumpVc: NSViewController, NSTextViewDelegate {
 
     
+    @IBOutlet weak var lineTopSpace: NSLayoutConstraint!
     @IBOutlet var textViewWorkNote: NSTextView!
     @IBOutlet weak var lblTitleWorkNote: NSTextField!
     @IBOutlet weak var lblTimeRemaining: NSTextField!
@@ -45,10 +46,22 @@ class brainDumpVc: NSViewController, NSTextViewDelegate {
             lblTitleWorkNote.stringValue = titleWorkNoteFirst
             startRefreshRemainingTimer()
             textViewIntention.isEditable = true
+            textViewIntention.enclosingScrollView?.isHidden = false
+            lblTitleIntention.stringValue = "Intention:"
+            if let brainDumpVcInfo = configjson.value(forKey: "brainDumpVcInfo") as? NSDictionary{
+                lblTitleIntention.stringValue = brainDumpVcInfo.value(forKey: "titleIntentionText") as? String ?? lblTitleIntention.stringValue
+            }
+            lineTopSpace.constant = 66
         }else{
             lblTimeRemaining.stringValue = "0"
             textViewIntention.isEditable = false
             textViewIntention.isSelectable = false
+            textViewIntention.enclosingScrollView?.isHidden = true
+            lblTitleIntention.stringValue = "You're currently not in a focus session"
+            if let brainDumpVcInfo = configjson.value(forKey: "brainDumpVcInfo") as? NSDictionary{
+                lblTitleIntention.stringValue = brainDumpVcInfo.value(forKey: "titleNotFocusSession") as? String ?? lblTitleIntention.stringValue
+            }
+            lineTopSpace.constant = 10
         }
         textViewIntention.string = whatToAchieveInFocusBlock
         
@@ -74,6 +87,12 @@ class brainDumpVc: NSViewController, NSTextViewDelegate {
         lblTitleWorkNote.stringValue = titleWorkNoteFirst
         startRefreshRemainingTimer()
         textViewIntention.isEditable = true
+        textViewIntention.enclosingScrollView?.isHidden = false
+        lblTitleIntention.stringValue = "Intention:"
+        if let brainDumpVcInfo = configjson.value(forKey: "brainDumpVcInfo") as? NSDictionary{
+            lblTitleIntention.stringValue = brainDumpVcInfo.value(forKey: "titleIntentionText") as? String ?? lblTitleIntention.stringValue
+        }
+        lineTopSpace.constant = 66
     }
     func focusModeFinished(){
         startRefreshRemainingTimer()
@@ -82,6 +101,12 @@ class brainDumpVc: NSViewController, NSTextViewDelegate {
         timer = nil
         textViewIntention.isEditable = false
         textViewIntention.isSelectable = false
+        textViewIntention.enclosingScrollView?.isHidden = true
+        lblTitleIntention.stringValue = "You're currently not in a focus session"
+        if let brainDumpVcInfo = configjson.value(forKey: "brainDumpVcInfo") as? NSDictionary{
+            lblTitleIntention.stringValue = brainDumpVcInfo.value(forKey: "titleNotFocusSession") as? String ?? lblTitleIntention.stringValue
+        }
+        lineTopSpace.constant = 10
     }
     func breakStarted(){
         lblTitleWorkNote.stringValue = titleWorkNoteSecond

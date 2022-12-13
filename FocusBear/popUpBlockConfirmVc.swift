@@ -26,6 +26,7 @@ class popUpBlockConfirmVc: NSViewController {
     var script:String = ""
     
     var titleText = "Do you need to use <URL> when you're focusing on <FOCUSTYPE>?"
+    var intentionText = "Your intention was \"<INTENTION>\""
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
@@ -38,6 +39,7 @@ class popUpBlockConfirmVc: NSViewController {
             btnAllow.title = popUpBlockConfirmVcInfo.value(forKey: "buttonAllowText") as? String ?? btnAllow.title
             btnBlock.title = popUpBlockConfirmVcInfo.value(forKey: "buttonBlockText") as? String ?? btnBlock.title
             btnEditSettings.title = popUpBlockConfirmVcInfo.value(forKey: "buttonEditSettingsText") as? String ?? btnEditSettings.title
+            intentionText = popUpBlockConfirmVcInfo.value(forKey: "intentionText") as? String ?? intentionText
         }
         lblTitle.stringValue = titleText
         
@@ -57,11 +59,21 @@ class popUpBlockConfirmVc: NSViewController {
         if isAppBlocking{
             var blockTitle = titleText.replacingOccurrences(of: "<URL>", with: blockedAppName)
             blockTitle = blockTitle.replacingOccurrences(of: "<FOCUSTYPE>", with: appdelegate!.currentRunningFocusModeName)
-            lblTitle.stringValue = blockTitle
+            if !whatToAchieveInFocusBlock.isEmpty{
+                lblTitle.stringValue = blockTitle + "\n\n" + intentionText.replacingOccurrences(of: "<INTENTION>", with: whatToAchieveInFocusBlock)//"Your intension was \"\(whatToAchieveInFocusBlock)\""//
+            }else{
+                lblTitle.stringValue = blockTitle
+            }
+                
+            
         }else{
             var blockTitle = titleText.replacingOccurrences(of: "<URL>", with: url)
             blockTitle = blockTitle.replacingOccurrences(of: "<FOCUSTYPE>", with: appdelegate!.currentRunningFocusModeName)
-            lblTitle.stringValue = blockTitle
+            if !whatToAchieveInFocusBlock.isEmpty{
+                lblTitle.stringValue = blockTitle + "\n\n" + intentionText.replacingOccurrences(of: "<INTENTION>", with: whatToAchieveInFocusBlock)//
+            }else{
+                lblTitle.stringValue = blockTitle
+            }
         }
         
         self.currentApp = currentApp

@@ -97,11 +97,7 @@ class uninstallingConfirmVc: NSViewController, NSTextViewDelegate {
     @IBAction func btnUninstallClicked(_ sender: Any) {
         addLog(text: "btn Uninstall in nag Clicked")//
         var alert: NSAlert = NSAlert()
-        if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
-            if state{
-                alert.window.sharingType = .none
-            }
-        }
+        alert.setSharingType()
         alert.messageText = "Are you sure you want to giveup all your habits and uninstall Focus Bear?"
         var yesText = "Yes"
         var noText = "No"
@@ -122,11 +118,7 @@ class uninstallingConfirmVc: NSViewController, NSTextViewDelegate {
                 print("okclicked")
                 addLog(text: "btn Uninstall alert yes Clicked")//
                 alert = NSAlert()
-                if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
-                    if state{
-                        alert.window.sharingType = .none
-                    }
-                }
+                alert.setSharingType()
                 alert.messageText = uninstallDoneText
                 alert.addButton(withTitle: buttonOkText)
                 alert.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
@@ -140,6 +132,7 @@ class uninstallingConfirmVc: NSViewController, NSTextViewDelegate {
             }
         })
     }
+    
     func uninstallApp(){
         allApiObject.capturePosthog(event: "uninstall", metadata: [:])
         allApiObject.getUninstallJsonToUpload(emailAddress: currentUserEmail, uninstallReason: popUpButton.titleOfSelectedItem ?? "", uninstallDescription: textView.string, completionHandler: {dic in
@@ -165,15 +158,29 @@ class uninstallingConfirmVc: NSViewController, NSTextViewDelegate {
             print(error)
         }
         
-        var firstDate:Date?
-        if let date = UserDefaults.standard.object(forKey: kUserdefaultsFirstHabitDay) as? Date{
-            firstDate = date
+        var firstRun:Bool?
+        if let val = UserDefaults.standard.object(forKey: kUserdefaultsFirstRun) as? Bool{
+            firstRun = val
         }
+        
+        var firstVideoShown:Bool?
+        if let val = UserDefaults.standard.object(forKey: kUserdefaultsVideoShown) as? Bool{
+            firstVideoShown = val
+        }
+        
         let domain = Bundle.main.bundleIdentifier!
         UserDefaults.standard.removePersistentDomain(forName: domain)
         
+        if firstRun != nil{
+            UserDefaults.standard.set(firstRun!, forKey: kUserdefaultsFirstRun)
+        }
         
-        UserDefaults.standard.set(firstDate, forKey: kUserdefaultsFirstHabitDay)
+        
+        if firstVideoShown != nil{
+            UserDefaults.standard.set(firstVideoShown!, forKey: kUserdefaultsVideoShown)
+        }
+        
+        
 
         UserDefaults.standard.synchronize()
 //        LaunchOnStartup.setLaunchAtStartup(false)

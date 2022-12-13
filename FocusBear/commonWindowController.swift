@@ -22,6 +22,16 @@ class commonWindowController: NSWindowController, NSWindowDelegate {
     }
 
     func windowShouldClose(_ sender: NSWindow) -> Bool {
+        
+        if popUpOfflineWcObj != nil{
+            if self == popUpOfflineWcObj{
+                addLog(text: "pop Up Offline Window close :- quit app")
+                appdelegate?.terminateFromSelf = true
+                NSApp.terminate(self)
+                return true
+            }
+        }
+        
         if appdelegate!.user == nil{
             if askLogInWcObj != nil{
                 if self.contentViewController == getAskLogInVcObject(){

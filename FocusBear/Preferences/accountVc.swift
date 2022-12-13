@@ -81,24 +81,7 @@ class accountVc: NSViewController {
         }
         if isPurchased == false{
             let daysremaining = daysLeft
-//            if let date = UserDefaults.standard.object(forKey: kUserdefaultsFirstHabitDay) as? Date{
-//                let secondsBetween = Date().timeIntervalSince(date)
-//                let numberOfDays_afterinstall = Int((secondsBetween) / 86400)
-//                daysremaining = daysFreeTrial-numberOfDays_afterinstall
-//                if daysremaining < 0 {
-//                    daysremaining = 0
-//                }
-//                if UserDefaults.standard.object(forKey: "trialExpired") != nil{
-//                    daysremaining = 0
-//                }
-//                if daysremaining == 0{
-//                    if UserDefaults.standard.object(forKey: "trialExpired") == nil{
-//                        UserDefaults.standard.set(true, forKey: "trialExpired")
-//                    }
-//                }
-//            }else{
-//                daysremaining = daysFreeTrial
-//            }
+
             
             if daysremaining <= 0{
                 lblVersionState.stringValue = trialExpiredText 
@@ -122,6 +105,7 @@ class accountVc: NSViewController {
     
     @IBAction func btnLogoutClicked(_ sender: Any) {
         let alert = NSAlert()
+        alert.setSharingType()
         alert.messageText = "Are you sure you want to logout?"
         if let accountVcInfo = configjson.value(forKey: "accountVcInfo") as? NSDictionary{
             alert.messageText = accountVcInfo.value(forKey: "logoutAlertText") as? String ?? alert.messageText

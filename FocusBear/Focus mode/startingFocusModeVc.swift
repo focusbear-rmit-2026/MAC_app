@@ -147,18 +147,19 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
                 var appUrl = ""
                 if let name = lastFrontMostApplication!.localizedName{
                     appName = name
-                    if name.lowercased() == "safari"{
-                        
-                        if let url = getSafariActiveTabUrl(){
-                            if !url.contains("favorites:"){
-                                let domain = getDomainFromUrl(url: url)
-                                appsUrlArray = [domain]
-                                appUrl = domain
-                            }
+                    let nameLowercased = name.lowercased()
+                    
+                    
+                    if let browser = getCurrentBrowserFrom(browserName: nameLowercased){
+                        var defaultPageOfBrowser = ""
+                        if browser == ._SAFARI_{
+                            defaultPageOfBrowser = "favorites:"
+                        }else{
+                            defaultPageOfBrowser = "chrome:"
                         }
-                    }else if name.lowercased() == "google chrome"{
-                        if let url = getGoogleChromeActiveTabUrl(){
-                            if !url.contains("chrome:"){
+                        
+                        if let url = getActiveTabUrlOf(browser: browser){
+                            if !url.contains(defaultPageOfBrowser){
                                 let domain = getDomainFromUrl(url: url)
                                 appsUrlArray = [domain]
                                 appUrl = domain

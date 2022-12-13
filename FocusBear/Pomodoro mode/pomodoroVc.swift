@@ -9,6 +9,7 @@ import Cocoa
 
 class pomodoroVc: NSViewController {
 
+    @IBOutlet weak var checkBoxSkipMicrobreaks: NSButton!
     @IBOutlet weak var lblCompletedPomodoroCount: NSTextField!
     @IBOutlet weak var lblMinutesBreakDuration: NSTextField!
     @IBOutlet weak var lblMinutesWorkDuration: NSTextField!
@@ -42,7 +43,7 @@ class pomodoroVc: NSViewController {
         super.viewDidLoad()
         // Do view setup here.
         isPomodoroWindowLodded = true
-        
+        checkBoxSkipMicrobreaks.title = "Skip microbreaks during work blocks?" 
         textFieldBreakDuration.formatter = IntegerFormatter()
         textFieldWorkDuration.formatter = IntegerFormatter()
         
@@ -107,6 +108,7 @@ class pomodoroVc: NSViewController {
             if let chooseTheFocusModeText = pomodoroInfo.value(forKey: "chooseTheFocusModeText") as? String{
                 self.chooseTheFocusModeText = chooseTheFocusModeText
             }
+            checkBoxSkipMicrobreaks.title = pomodoroInfo.value(forKey: "buttonSkipMicrobreaksText") as? String ?? checkBoxSkipMicrobreaks.title
         }
         
 //        questionFirstText = questionFirstText.replacingOccurrences(of: "25", with: "\(minute)")
@@ -143,6 +145,17 @@ class pomodoroVc: NSViewController {
            if let name = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHardcorePomodoroFocusedName) as? String{
                popUpBtnFocusType.selectItem(withTitle: name)
            }
+            
+            if let val = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHardcorePomodoroSkipMicroBreaks) as? Bool{
+                if val{
+                    checkBoxSkipMicrobreaks.state = .on
+                }else{
+                    checkBoxSkipMicrobreaks.state = .off
+                }
+            }else{
+                checkBoxSkipMicrobreaks.state = .off
+            }
+            
             btnLetsDoIt.isEnabled = true
             btnCheckBoxHardcodePomodoro.state = .on
             btnCheckBoxHardcodePomodoro.isEnabled = false
@@ -153,6 +166,7 @@ class pomodoroVc: NSViewController {
             stackViewPomodoroModeTime.isHidden = false
             textFieldWorkDuration.isEnabled = false
             textFieldBreakDuration.isEnabled = false
+            checkBoxSkipMicrobreaks.isEnabled = false
             
             if let duration = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsPomodoroDurationMinutes) as? Int{
                 textFieldWorkDuration.stringValue = "\(duration)"
@@ -174,6 +188,7 @@ class pomodoroVc: NSViewController {
             textFieldWorkDuration.isEnabled = false
             textFieldBreakDuration.isEnabled = false
             lblCompletedPomodoroCount.isHidden = false
+            checkBoxSkipMicrobreaks.isEnabled = false
             
             let remainingPomodoroCount = totalPomodoroCountInHardCorePomodoro - completedPomodoroCountInHardcorePomodoro
             var completedPomodoroCountText = "You have completed <COMPLETED_POMODORO> of <TOTAL_POMODORO> pomodoros. <REMAINING_POMODORO> more to go."
@@ -196,6 +211,7 @@ class pomodoroVc: NSViewController {
             btnCheckBoxHardcodePomodoro.isEnabled = true
             popUpBtnFocusType.isEnabled = true
             btnEditFocusMode.isEnabled = true
+            checkBoxSkipMicrobreaks.isEnabled = true
             btnLetsDoIt.isEnabled = true
             popupBtnSelectPomodoroCount.isEnabled = true
             if btnCheckBoxHardcodePomodoro.state == .on{
@@ -276,11 +292,7 @@ class pomodoroVc: NSViewController {
                 }
             }
             let alert = NSAlert()
-            if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
-                if state{
-                    alert.window.sharingType = .none
-                }
-            }
+            alert.setSharingType()
             alert.messageText = noInternetTitle
             alert.informativeText = noInternetSubTitle
             alert.alertStyle = .warning
@@ -303,11 +315,12 @@ class pomodoroVc: NSViewController {
         if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
             tabview.selectedTabViewItemIndex = 1
             if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
-                tabview.view.addSubview(enterPasswordVcObj!.view)
-                tabview.view.addConstraints(subView: enterPasswordVcObj!.view)
-                enterPasswordVcObj?.parentVc = nil
-                addLog(text: "Showing enter password view")
-                
+                if SettingsManagerObject.isPasswordRequireInChangeSettings{
+                    tabview.view.addSubview(enterPasswordVcObj!.view)
+                    tabview.view.addConstraints(subView: enterPasswordVcObj!.view)
+                    enterPasswordVcObj?.parentVc = nil
+                    addLog(text: "Showing enter password view")
+                }
             }
         }
         
@@ -315,11 +328,7 @@ class pomodoroVc: NSViewController {
     }
     func showAlert(msg:String){
         let alertWarning = NSAlert()
-        if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
-            if state{
-                alertWarning.window.sharingType = .none
-            }
-        }
+        alertWarning.setSharingType()
         alertWarning.messageText = msg
         alertWarning.addButton(withTitle: buttonOkText)
         alertWarning.beginSheetModal(for: self.view.window!, completionHandler:nil)
@@ -424,6 +433,11 @@ class pomodoroVc: NSViewController {
         
         appdelegate?.setFocusModeTimer(hour: nil, minute: minute)
         isFocusModeStartedFromPomodoroMode = true
+        if checkBoxSkipMicrobreaks.state == .on{
+            isSkipBreakActivityDuringPomodoro = true
+        }else{
+            isSkipBreakActivityDuringPomodoro = false
+        }
         whatToAchieveInFocusBlock = textViewAchieve.string
         appdelegate!.setIntensionInBrainDumpWindow()
         appdelegate!.focusModeStartted()
@@ -456,16 +470,8 @@ class pomodoroVc: NSViewController {
 
             if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) == nil{
                 let alertWarning = NSAlert()
-                if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
-                    if state{
-                        alertWarning.window.sharingType = .none
-                    }
-                }
-                if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
-                    if state{
-                        alertWarning.window.sharingType = .none
-                    }
-                }
+
+                alertWarning.setSharingType()
                 alertWarning.messageText = "To make hardcore pomodoro mode more effective, we recommend setting a password (ask someone else to do it for you) otherwise you'll still be able to cancel the focus modes before the time is up."
                 if let pomodoroInfo = configjson.value(forKey: "pomodoroInfo") as? NSDictionary{
                     if let alertWarningPaswwordSetText = pomodoroInfo.value(forKey: "alertWarningPaswwordSetText") as? String{

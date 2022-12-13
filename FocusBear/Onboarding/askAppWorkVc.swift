@@ -43,6 +43,7 @@ class askAppWorkVc: NSViewController {
         checkBoxFirst.state = .on
         checkBoxSecond.state = .on
     }
+    
     @IBAction func btnContinueClicked(_ sender: Any) {
         if checkBoxFirst.state == .on && checkBoxSecond.state == .on{
             allApiObject.capturePosthog(event: "activate-all-features", metadata: [:])
@@ -62,7 +63,7 @@ class askAppWorkVc: NSViewController {
         }
         
         addLog(text: "askAppWorkVc:- btnContinueClicked:isHabitsDisabled:- \(isHabitsDisabled)")
-        appdelegate!.showOnbardingHabit()
+        mainViewControllerObj!.showOnboardingBlockedUrlsVc()
     }
     @IBAction func checkBoxFirstClicked(_ sender: Any) {
         addLog(text: "askAppWorkVc:- checkBoxFirstClicked")
@@ -80,4 +81,5 @@ class askAppWorkVc: NSViewController {
             btnContinue.isEnabled = true
         }
     }
+    
 }

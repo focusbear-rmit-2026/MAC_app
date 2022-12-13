@@ -10,6 +10,7 @@ import Cocoa
 
 class generalVc: NSViewController, NSTextFieldDelegate {
 
+    @IBOutlet weak var btnExportLogs: underLineButton!
     @IBOutlet weak var btnLearnPomodoroTechnique: underLineButton!
     
     @IBOutlet weak var lblDescriptionPomodoro: NSTextField!
@@ -56,16 +57,35 @@ class generalVc: NSViewController, NSTextFieldDelegate {
     @IBOutlet weak var lblTitlePomodoroModeDuration: NSTextField!
     @IBOutlet weak var lblTitlePomodoroMode: NSTextField!
     @IBOutlet weak var lblTitleBreakDuration: NSTextField!
-    @IBOutlet weak var lblDescriptionCuddlyBear: NSTextField!
+    
     
    
     @IBOutlet weak var checkBoxDockIcon: NSButton!
     @IBOutlet weak var lblCheckBoxDockIcon: NSTextField!
     @IBOutlet weak var lblTitleDockIcon: NSTextField!
     
+    @IBOutlet weak var lblTitleSkipHabits: NSTextField!
+    @IBOutlet weak var lblQuestionSkipHabit: NSTextField!
+    @IBOutlet weak var radioButtonEasySkip: NSButton!
+    @IBOutlet weak var radioButtonHardSkip: NSButton!
+    @IBOutlet weak var lblradioButtonEasySkip: NSTextField!
+    @IBOutlet weak var lblradioButtonHardSkip: NSTextField!
+    
+    @IBOutlet weak var lblDescriptionCuddlyBear: NSTextField!
     @IBOutlet weak var lblDescriptionGrizzlyBear: NSTextField!
     @IBOutlet weak var radioBtnGrizzlyBear: NSButton!
     @IBOutlet weak var radioBtnCuddlyBear: NSButton!
+    
+    
+    
+    @IBOutlet weak var lblTitleMeetingDetection: NSTextField!
+    @IBOutlet weak var lblDescriptionMeetingDetection: NSTextField!
+    @IBOutlet weak var lblCheckBoxMeetingDetection: NSTextField!
+    
+    @IBOutlet weak var checkBoxMeetingDetection: NSButton!
+    
+    
+    
     var hardCorePomodoroEnabledText = "Hardcore Pomodoro mode enabled to focus on <FOCUSTYPE> for <COUNT> on <DAYS>."
     var hardCorePomodoroNotEnabledText = "Hardcore Pomodoro mode not enabled."
     var automaticPomodoroNotEnabledText = "Automatic Pomodoro mode is disabled."
@@ -77,6 +97,18 @@ class generalVc: NSViewController, NSTextFieldDelegate {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        lblTitleMeetingDetection.stringValue = "Meeting detection"
+        lblDescriptionMeetingDetection.stringValue = "it will show meeting detection popup"
+        lblCheckBoxMeetingDetection.stringValue = "Enable meeting detection"
+        
+        
+        btnExportLogs.title = "Click here to export logs to share with Support Team."
+        lblTitleSkipHabits.stringValue = "Skip Habits easiness:"
+        lblQuestionSkipHabit.stringValue = "How easy do you want it to be to skip your habits?"
+        lblradioButtonEasySkip.stringValue = "Really easy - I want to be able to skip habits/breaks in a hurry"
+        lblradioButtonHardSkip.stringValue = "Make it hard to skip - otherwise I'll end up skipping habits + breaks most of the time"
+        
+        
         
         lblDescriptionPomodoro.stringValue = "Pomodoro Mode cycles between deep work blocks where a focus mode is turned on (and distractions turned off) and break periods."
         btnLearnPomodoroTechnique.title = "Learn more about the pomodoro technique here."
@@ -183,6 +215,19 @@ class generalVc: NSViewController, NSTextFieldDelegate {
             
             lblTitleDockIcon.stringValue = preferencesInfo.value(forKey: "titleDockIcon") as? String ?? lblTitleDockIcon.stringValue
             lblCheckBoxDockIcon.stringValue = preferencesInfo.value(forKey: "checkBoxShowDockIconText") as? String ?? lblCheckBoxDockIcon.stringValue
+            
+            
+            lblTitleSkipHabits.stringValue = preferencesInfo.value(forKey: "titleSkipHabits") as? String ?? lblTitleSkipHabits.stringValue
+            lblQuestionSkipHabit.stringValue = preferencesInfo.value(forKey: "questionSkipHabitText") as? String ?? lblQuestionSkipHabit.stringValue
+            lblradioButtonEasySkip.stringValue = preferencesInfo.value(forKey: "radioButtonEasySkipText") as? String ?? lblradioButtonEasySkip.stringValue
+            lblradioButtonHardSkip.stringValue = preferencesInfo.value(forKey: "radioButtonHardSkipText") as? String ?? lblradioButtonHardSkip.stringValue
+            
+            btnExportLogs.title = preferencesInfo.value(forKey: "buttonExportLogsText") as? String ?? btnExportLogs.title
+            
+            lblTitleMeetingDetection.stringValue = preferencesInfo.value(forKey: "titleMeetingDetection") as? String ?? lblTitleMeetingDetection.stringValue
+            lblDescriptionMeetingDetection.stringValue = preferencesInfo.value(forKey: "descriptionMeetingDetectionText") as? String ?? lblDescriptionMeetingDetection.stringValue
+            lblCheckBoxMeetingDetection.stringValue = preferencesInfo.value(forKey: "checkBoxMeetingDetectionText") as? String ?? lblCheckBoxMeetingDetection.stringValue
+            
         }
 
         lblTitlePomodoroModeDuration.stringValue = pomodoroModeDurationText
@@ -220,7 +265,11 @@ class generalVc: NSViewController, NSTextFieldDelegate {
         }
     }
     
-        
+        // Ask for password:
+        // Quitting app
+        // Aborting shutoff
+        // Stopping Super pomodoro mode
+    
     override func viewWillAppear() {
 //        if currentLanguageCode == "es"{
 //            boxPopupWidth.constant = 380
@@ -230,6 +279,10 @@ class generalVc: NSViewController, NSTextFieldDelegate {
 //        boxPopup.isHidden = true
 //        BoxBlackLayerForPopup.isHidden = true
         
+        self.view.window?.title = "Preferences"
+        if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
+            self.view.window?.title = menuInfo.value(forKey: "menuItemPreferencesTitle") as? String ?? "Preferences"
+        }
         if SettingsManagerObject.isSoundEnabled{
             checkBoxSound.state = .on
         }else{
@@ -252,29 +305,25 @@ class generalVc: NSViewController, NSTextFieldDelegate {
         }else{
             checkBoxReduceMotion.state = .off
         }
+        
+        if SettingsManagerObject.isMeetingDetectionEnabled{
+            checkBoxMeetingDetection.state = .on
+        }else{
+            checkBoxMeetingDetection.state = .off
+        }
+        
         if SettingsManagerObject.isPromptToRememberHabit{
             checkBoxPromptToAskNextHabit.state = .on
         }else{
             checkBoxPromptToAskNextHabit.state = .off
         }
-//        if let state = UserDefaults.standard.object(forKey: kUserdefaultsReducedMotion) as? Bool{
-//            if state{
-//                checkBoxReduceMotion.state = .on
-//                kIsReducedMotion = true
-//            }else{
-//                checkBoxReduceMotion.state = .off
-//                kIsReducedMotion = false
-//            }
-//        }
-//        if let state = UserDefaults.standard.object(forKey: kUserdefaultsPromptToRememberHabit) as? Bool{
-//            if state{
-//                checkBoxPromptToAskNextHabit.state = .on
-//                isPromptToRememberHabit = true
-//            }else{
-//                checkBoxPromptToAskNextHabit.state = .off
-//                isPromptToRememberHabit = false
-//            }
-//        }
+        if SettingsManagerObject.isEasySkipEnabled{
+            radioButtonEasySkip.state = .on
+            radioButtonHardSkip.state = .off
+        }else{
+            radioButtonEasySkip.state = .off
+            radioButtonHardSkip.state = .on
+        }
         
         if let language = UserDefaults.standard.object(forKey: kUserdefaultsSelectedLanguage) as? String{
             for i in 0..<arrLanguageDic.count{
@@ -523,18 +572,11 @@ class generalVc: NSViewController, NSTextFieldDelegate {
     
     func showAlert(msg:String, completionHandler: @escaping(_ result: Bool) -> ()) {
         let alertWarning = NSAlert()
-        if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
-            if state{
-                alertWarning.window.sharingType = .none
-            }
-        }
+        alertWarning.setSharingType()
         alertWarning.messageText = msg
         alertWarning.addButton(withTitle: buttonOkText)
         alertWarning.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
-//            if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
-//                print("okclicked")
-//                // self.txtFieldEmail.stringValue = ""
-//            }
+
             completionHandler(true)
             return
         })
@@ -556,11 +598,7 @@ class generalVc: NSViewController, NSTextFieldDelegate {
         }
 //        SettingsManagerObject.isSettingsChanged = true
         let alert = NSAlert()
-        if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
-            if state{
-                alert.window.sharingType = .none
-            }
-        }
+        alert.setSharingType()
         var alertChangeLanguageMessageText = "Are you sure you want to change the language to <LANGUAGE>?"
         if let preferencesInfo = configjson.value(forKey: "preferencesInfo") as? NSDictionary{
             alertChangeLanguageMessageText = preferencesInfo.value(forKey: "alertChangeLanguageMessageText") as? String ?? alertChangeLanguageMessageText
@@ -613,11 +651,7 @@ class generalVc: NSViewController, NSTextFieldDelegate {
                         let filterArr = arrFocusType.filter { $0["name"] as? String ?? "" == name}
                         if filterArr.count == 0{
                             let alert = NSAlert()
-                            if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
-                                if state{
-                                    alert.window.sharingType = .none
-                                }
-                            }
+                            alert.setSharingType()
                             var messageText = "Please review focus mode settings for hardcore pomodoro mode."
                             if let preferencesInfo = configjson.value(forKey: "preferencesInfo") as? NSDictionary{
                                 messageText = preferencesInfo.value(forKey: "reviewFocusModeAlertText") as? String ?? messageText
@@ -666,14 +700,22 @@ class generalVc: NSViewController, NSTextFieldDelegate {
     @IBAction func checkBoxReduceMotionClicked(_ sender: Any) {
         SettingsManagerObject.isSettingsChanged = true
         if checkBoxReduceMotion.state == .on{
-//            UserDefaults.standard.set(true, forKey: SettingsManagerObject.kUserdefaultsReducedMotion)
             SettingsManagerObject.kIsReducedMotion = true
         }else{
-//            UserDefaults.standard.set(false, forKey: SettingsManagerObject.kUserdefaultsReducedMotion)
             SettingsManagerObject.kIsReducedMotion = false
         }
         
     }
+    
+    @IBAction func checkBoxMeetingDetectionClicked(_ sender: Any) {
+        SettingsManagerObject.isSettingsChanged = true
+        if checkBoxMeetingDetection.state == .on{
+            SettingsManagerObject.isMeetingDetectionEnabled = true
+        }else{
+            SettingsManagerObject.isMeetingDetectionEnabled = false
+        }
+    }
+    
     @IBAction func checkBoxPromptToAskNextHabitClicked(_ sender: Any) {
         SettingsManagerObject.isSettingsChanged = true
         if checkBoxPromptToAskNextHabit.state == .on{
@@ -702,7 +744,75 @@ class generalVc: NSViewController, NSTextFieldDelegate {
         }
         self.presentAsSheet(pomodoroPreferencesAdvancedVcObj!)
     }
+    /*
+     let url = URL(fileURLWithPath: "/Users/prashant/Library/Application Support/com.App.EarnYourScreentime/Logs")
+     let destUrl = URL(fileURLWithPath: "/Users/prashant/Library/Application Support/com.App.EarnYourScreentime/Logs.zip")
+     do{
+        try url.zip(dest: destUrl)
+     }catch{
+         
+     }
+     */
+    @IBAction func btnExportLogsClicked(_ sender: Any) {
+        let openPanel = NSOpenPanel()
+        openPanel.canChooseFiles = false
+        openPanel.canChooseDirectories = true
+        openPanel.allowsMultipleSelection = false
+        openPanel.treatsFilePackagesAsDirectories = false
+        openPanel.prompt = "Export Logs"
+        openPanel.message = "Export logs to share with Focus Bear Support Team"
+        
+        if let preferencesInfo = configjson.value(forKey: "preferencesInfo") as? NSDictionary{
+            openPanel.prompt = preferencesInfo.value(forKey: "buttonPanelExportLogsText") as? String ?? openPanel.prompt
+            openPanel.message = preferencesInfo.value(forKey: "panelExportLogsText") as? String ?? openPanel.message
+        }
+        if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
+            if state{
+                openPanel.sharingType = .none
+            }
+        }
     
+        
+        openPanel.beginSheetModal(for: self.view.window!) { response in
+            guard response.rawValue == NSApplication.ModalResponse.OK.rawValue else {
+                return
+            }
+            if let url = openPanel.url {
+                let filemanager = FileManager.default
+                let destUrl = url.appendingPathComponent("FocusBearLogs.zip")
+                if filemanager.fileExists(atPath: destUrl.path){
+                    do{
+                        try filemanager.removeItem(at: destUrl)
+                    }catch{
+                        print(error)
+                    }
+                }
+                //FocusBearLogs.zip
+
+     
+                do{
+                    _ = try DebugLogsFolderURL!.zip(dest: destUrl)
+                }catch{
+                    
+                }
+                
+                
+                var successText = "Your logs are available to share in the FocusBearLogs.zip file in the <URL> directory"
+                if let preferencesInfo = configjson.value(forKey: "preferencesInfo") as? NSDictionary{
+                    successText = preferencesInfo.value(forKey: "exportSuccessText") as? String ?? successText
+                }
+                
+                successText = successText.replacingOccurrences(of: "<URL>", with: url.path)
+                
+                self.showAlert(msg: successText, completionHandler: {_ in
+                    NSWorkspace.shared.activateFileViewerSelecting([destUrl])
+                })
+                
+                allApiObject.capturePosthog(event: "export-logs", metadata: [:])
+                
+            }
+        }
+    }
     @IBAction func btnExportStatisticsClicked(_ sender: Any) {
         let openPanel = NSOpenPanel()
         openPanel.canChooseFiles = false
@@ -772,5 +882,17 @@ class generalVc: NSViewController, NSTextFieldDelegate {
             NSApplication.shared.activate(ignoringOtherApps: true)
         }
     }
+    @IBAction func radioBtnEasySkipClick(_ sender: Any) {
+        SettingsManagerObject.isSettingsChanged = true
+        SettingsManagerObject.isEasySkipEnabled = true
+        radioButtonHardSkip.state = .off
+    }
+    
+    @IBAction func radioBtnHardSkipClick(_ sender: Any) {
+        SettingsManagerObject.isSettingsChanged = true
+        SettingsManagerObject.isEasySkipEnabled = false
+        radioButtonEasySkip.state = .off
+    }
+    
 }
 

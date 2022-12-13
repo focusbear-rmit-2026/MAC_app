@@ -92,15 +92,14 @@ class selectJsonVc: NSViewController, NSTextViewDelegate {
             
         }
         
-//        webview = makeWebView()
-//        customView.addSubview(webview!)
-//        customView.addConstraints(subView: webview!)
         let handler = MessageHandler()
         webview.configuration.userContentController.add(handler, name: "setting_saved")
+        webview.configuration.userContentController.add(handler, name: "open_marketplace")
+        
+        
         let stringTime = getStringFromDateInUtc(date: Date(), dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
-        let url = "https://settings.focusbear.io?bust_cache=$\(stringTime)"//https://earn-your-screentime-settings.herokuapp.com/"////
-        // let url = "file:///Users/prashant/Desktop/test.html"
-        //"https://earn-your-screentime-settings.herokuapp.com/"//"https://earn-your-screentime-settings.herokuapp.com/"//http://jaininfotech.com/temp/test.html"//http://localhost:3000" //https://earn-your-screen-time-settings.herokuapp.com/"//"file:///Users/prashant/Desktop/test.html"
+        let url = "https://settings.focusbear.io?bust_cache=$\(stringTime)"
+
         let  fileURL = URL(string: url)
 
 //        webview!.loadFileURL(fileURL!, allowingReadAccessTo: fileURL!)
@@ -189,10 +188,30 @@ class selectJsonVc: NSViewController, NSTextViewDelegate {
                 
             }
         }
+//        {
+//        settings: {startup_time: '05:30'...},
+//        metadata: {access_token: 'sometokenstring'}
+//        }
         
-        let javascript = "loadSettingsData(\(stringjson));"
+        var jsonResult:NSDictionary?
+        
+        
+        
+        let metadata:NSDictionary = ["access_token":appdelegate!.credential?.accessToken ?? ""]
+        
+        
+        
+        let settingsData = NSMutableDictionary()
+        settingsData["settings"] = stringjson
+        settingsData["metadata"] = metadata
+        
+        let stringJson1 = "{\"settings\": \(stringjson),\"metadata\": {\"access_token\": \"\(appdelegate!.credential?.accessToken ?? "")\"}}"
+        
+        let javascript = "loadSettingsData(\(stringJson1));"
         
         webview?.evaluateJavaScript(javascript,completionHandler: { (html: Any?, error: Error?) in
+            print(error)
+            print("****error")
             print(html)
         })
         
@@ -405,11 +424,7 @@ class selectJsonVc: NSViewController, NSTextViewDelegate {
                         
                         if dic == nil && statusCode == 0{
                             let alert = NSAlert()
-                            if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
-                                if state{
-                                    alert.window.sharingType = .none
-                                }
-                            }
+                            alert.setSharingType()
                             alert.alertStyle = .informational
                             
                             var schemaError = "Your settings cannot be validated."
@@ -452,11 +467,7 @@ class selectJsonVc: NSViewController, NSTextViewDelegate {
                                 
                                 
                                 let alert = NSAlert()
-                                if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
-                                    if state{
-                                        alert.window.sharingType = .none
-                                    }
-                                }
+                                alert.setSharingType()
                                 alert.alertStyle = .informational
                                 
                                 var settingIsNotValidText = "Sorry it seems like your settings aren’t valid. Please generate settings at focusbear.io/settings"
@@ -494,11 +505,7 @@ class selectJsonVc: NSViewController, NSTextViewDelegate {
                 self.btnSave.isEnabled = true
                 self.loader.stopAnimation(self)
                 let alert = NSAlert()
-                if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
-                    if state{
-                        alert.window.sharingType = .none
-                    }
-                }
+                alert.setSharingType()
                 alert.alertStyle = .informational
                 
                 var schemaError = "Your settings cannot be validated."
@@ -548,11 +555,7 @@ class selectJsonVc: NSViewController, NSTextViewDelegate {
                 
                 if dic == nil{
                     let alert = NSAlert()
-                    if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
-                        if state{
-                            alert.window.sharingType = .none
-                        }
-                    }
+                    alert.setSharingType()
                     alert.alertStyle = .informational
                     
                     var schemaError = "Your settings cannot be validated."
@@ -574,11 +577,7 @@ class selectJsonVc: NSViewController, NSTextViewDelegate {
                     
                     if statusCode == 200{
                         self.alertSettingChanged = NSAlert()
-                        if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
-                            if state{
-                                self.alertSettingChanged!.window.sharingType = .none
-                            }
-                        }
+                        self.alertSettingChanged!.setSharingType()
                         self.alertSettingChanged!.alertStyle = .informational
                         allApiObject.capturePosthog(event: "save-edited-habits", metadata: [:])
                         var settingIsValidText = "Your settings have been validated and will be applied now."
@@ -621,11 +620,7 @@ class selectJsonVc: NSViewController, NSTextViewDelegate {
                         
                         
                         let alert = NSAlert()
-                        if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
-                            if state{
-                                alert.window.sharingType = .none
-                            }
-                        }
+                        alert.setSharingType()
                         alert.alertStyle = .informational
                         
                         var settingIsNotValidText = "Sorry it seems like your settings aren’t valid. Please generate settings at focusbear.io/settings"
@@ -750,36 +745,30 @@ class selectJsonVc: NSViewController, NSTextViewDelegate {
 }
 class MessageHandler: NSObject, WKScriptMessageHandler {
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-        print(message.body)
+//        print(message.body)
         print("call back hua")
-        
-        
-        if let data = (message.body as? String ?? "").data(using: String.Encoding.utf8) {
-            
-            do {
-                let jsonResult:NSDictionary = try (JSONSerialization.jsonObject(with: data, options: []) as? NSDictionary ?? [:])
-                print(jsonResult)
-                
-                selectJsonVcObj?.jsonReceivedFromWebView(jsonResult: jsonResult)
-//                let alert = NSAlert()
-//                alert.alertStyle = .informational
-//                let buttonOkText = "OK"
-//                alert.messageText = "Settings received but not implemented yet."
-//                alert.addButton(withTitle: buttonOkText)
-//
-//                alert.beginSheetModal(for: selectJsonVcObj!.view.window!, completionHandler: { (modalResponse) in
-//                    if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
-//                    }
-//
-//
-//                })
-                
-                
+        if message.name == "open_marketplace"{
+            print(message.body)
+            if let url = URL(string: message.body as? String ?? ""){
+                NSWorkspace.shared.open(url)
             }
-            catch{
+        }else if message.name == "setting_saved"{
+            if let data = (message.body as? String ?? "").data(using: String.Encoding.utf8) {
                 
+                do {
+                    let jsonResult:NSDictionary = try (JSONSerialization.jsonObject(with: data, options: []) as? NSDictionary ?? [:])
+                    print(jsonResult)
+                    
+                    selectJsonVcObj?.jsonReceivedFromWebView(jsonResult: jsonResult)
+      
+                }
+                catch{
+                    
+                }
             }
         }
+        
+        
         
         
         //        if message.body as? String ?? "" == "setting_saved"{
@@ -789,15 +778,15 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
     }
 }
 
-func makeWebView() -> WKWebView {
-//    let preferences = WKPreferences()
-//    preferences.javaScriptEnabled = true
-    let handler = MessageHandler()
-    let configuration = WKWebViewConfiguration()
-    configuration.userContentController.add(handler, name: "setting_saved")
-    configuration.preferences.javaScriptEnabled = true// = preferences
-    return WKWebView(frame: .zero, configuration: configuration)
-}
+//func makeWebView() -> WKWebView {
+////    let preferences = WKPreferences()
+////    preferences.javaScriptEnabled = true
+//    let handler = MessageHandler()
+//    let configuration = WKWebViewConfiguration()
+//    configuration.userContentController.add(handler, name: "setting_saved")
+//    configuration.preferences.javaScriptEnabled = true// = preferences
+//    return WKWebView(frame: .zero, configuration: configuration)
+//}
 
 
 

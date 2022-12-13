@@ -196,8 +196,22 @@ class addWebUrlVc: NSViewController, NSTextFieldDelegate {
         if isAdding{
             if currenUrlAddingtState == ._FOCUS_ALLOW_URL{
                 var urlsArray = [String]()
-                if let arr = arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow]["allowed_urls"] as? [String]{
-                    urlsArray = arr
+                var isOnboardingProcess = false
+                if UserDefaults.standard.object(forKey: kUserdefaultsVideoShown) != nil{
+                    if let arr = arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow]["allowed_urls"] as? [String]{
+                        urlsArray = arr
+                    }
+                }else{
+                    if preloadFocusModesWindowControllerObj != nil{
+                        if preloadFocusModesWindowControllerObj!.window?.isVisible ?? false{
+                            if preloadFocusModeAppsVcObj != nil{
+                                if let arr = preloadFocusModeAppsVcObj?.arrUrls{
+                                    urlsArray = arr
+                                    isOnboardingProcess = true
+                                }
+                            }
+                        }
+                    }
                 }
                 if !urlsArray.contains(where: {$0.lowercased() == textField.stringValue.lowercased() }) {
                     urlsArray.append(textField.stringValue)
@@ -212,24 +226,34 @@ class addWebUrlVc: NSViewController, NSTextFieldDelegate {
                     }
                     return;
                 }
-                var dic = arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow]
-                dic["allowed_urls"] = urlsArray
-                
-                arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow] = dic
-                focusPreferencesVcObj?.tblViewAllowedUrls.reloadData()
-                focusPreferencesVcObj?.tblViewAllowedUrls.selectRowIndexes(IndexSet(arrayLiteral: (urlsArray.count - 1)), byExtendingSelection: false)
-                focusPreferencesVcObj?.tblViewAllowedUrls.scrollRowToVisible(urlsArray.count - 1)
-                UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
-                if arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow]["isOn"] as? Bool == true{
-                    appdelegate!.fillAllowUrlArray()
+                if isOnboardingProcess{
+                    preloadFocusModeAppsVcObj?.arrUrls = urlsArray
+                    preloadFocusModeAppsVcObj?.tblView.reloadData()
+                    preloadFocusModeAppsVcObj?.tblView.selectRowIndexes(IndexSet(arrayLiteral: (urlsArray.count - 1)), byExtendingSelection: false)
+                    preloadFocusModeAppsVcObj?.tblView.scrollRowToVisible(urlsArray.count - 1)
+                }else{
+                    var dic = arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow]
+                    dic["allowed_urls"] = urlsArray
+                    
+                    arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow] = dic
+                    focusPreferencesVcObj?.tblViewAllowedUrls.reloadData()
+                    focusPreferencesVcObj?.tblViewAllowedUrls.selectRowIndexes(IndexSet(arrayLiteral: (urlsArray.count - 1)), byExtendingSelection: false)
+                    focusPreferencesVcObj?.tblViewAllowedUrls.scrollRowToVisible(urlsArray.count - 1)
+                    UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+                    if arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow]["isOn"] as? Bool == true{
+                        appdelegate!.fillAllowUrlArray()
+                    }
+                    
+                    allApiObject.editFocusMode(focusType: dic, completionHandler: {newDic in
+                        DispatchQueue.main.async {
+                            
+                        }
+                    })
+                    allApiObject.capturePosthog(event: "add-allowed-url-in-focus-mode", metadata: [:])
                 }
                 
-                allApiObject.editFocusMode(focusType: dic, completionHandler: {newDic in
-                    DispatchQueue.main.async {
-                        
-                    }
-                })
-                allApiObject.capturePosthog(event: "add-allowed-url-in-focus-mode", metadata: [:])
+                
+                
             }else if currenUrlAddingtState == ._FOCUS_BLOCK_URL{
                 var urlsArray = [String]()
                 if let arr = arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow]["blockUrlsArray"] as? [String]{

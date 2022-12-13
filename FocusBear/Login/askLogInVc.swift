@@ -106,11 +106,7 @@ class askLogInVc: NSViewController {
             }
         }
         let alert = NSAlert()
-        if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
-            if state{
-                alert.window.sharingType = .none
-            }
-        }
+        alert.setSharingType()
         alert.messageText = noInternetTitle
         alert.informativeText = noInternetSubTitle
         alert.alertStyle = .warning

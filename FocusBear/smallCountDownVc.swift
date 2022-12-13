@@ -110,7 +110,7 @@ class smallCountDownVc: NSViewController {
         }
     }
     
-    func startTimerHabit(durationSeconds:Int, msg:String) {
+    func startTimerHabit(durationSeconds:Int, msg:String, currentTimerValue:Int) {
         
         if (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_) && !isFocusBreak{
             lblTimerTopSpaceConstraint.constant = 10
@@ -144,7 +144,7 @@ class smallCountDownVc: NSViewController {
                 lblTitle.stringValue = common.value(forKey: "focusBreakNotificationTitle") as? String ?? lblTitle.stringValue
             }
         }
-        currentTimer = 0
+        currentTimer = currentTimerValue
         totalDuration = durationSeconds//durationInMinutes*60
         let (h,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
         var hour = "\(h)"

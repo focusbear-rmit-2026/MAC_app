@@ -11,6 +11,7 @@ import WebKit
 class timerViewcontroller: NSViewController, WKNavigationDelegate{
     
     
+    @IBOutlet weak var btnSkipHabit: underLineButton!
     @IBOutlet weak var boxPlay: NSBox!
     @IBOutlet weak var btnPause: NSButton!
     @IBOutlet weak var boxTimer: NSBox!
@@ -28,6 +29,9 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
     var timer:Timer?
     var currentTimer = 0
     var totalDuration = 0
+    var startTimerValue = 0// we starts timer after video lodded completely and if user has postponed habit at 10 second then we start again habit after postpone time finished from 10 seconds directly  and to hold that value till video  load we are using this variable.
+    
+    
 //    var btnPauseTitle = "Pause Activity"
 //    var btnResumeTitle = "Resume Activity"
     let pauseIcon = NSImage(named: NSImage.touchBarPauseTemplateName)
@@ -35,6 +39,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
+        btnSkipHabit.isHidden = true
         self.webView.navigationDelegate = self
         boxTimerCenterY = boxTimerCenterY.setMultiplier(multiplier: 1.6)
         
@@ -57,10 +62,17 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         boxPlay.layer?.shadowOffset = NSMakeSize(0, -2)
         boxPlay.layer?.shadowRadius = 5
         
+        
+        btnSkipHabit.title = "Skip this habit for today"
+        if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
+            btnSkipHabit.title = activityInfo.value(forKey: "buttonSkipHabitText") as? String ?? btnSkipHabit.title
+        }
+        
     }
     override func viewWillAppear() {
         self.timerHideBearAnimation?.invalidate()
         self.timerHideBearAnimation = nil
+        btnSkipHabit.isHidden = true
     }
     override func viewWillDisappear() {
         self.timerHideBearAnimation?.invalidate()
@@ -80,7 +92,8 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             }else{
                 mainViewControllerObj?.btnAbort.isEnabled = true
                 btnPause.isEnabled = true
-                currentTimer = 0
+                currentTimer = startTimerValue
+                startTimerValue = 0
             }
         }
     }
@@ -148,10 +161,17 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         
     }
     
-    func startTimerHabit(durationSeconds:Int, url:String?, name:String,currentHabit: habit) {
+    func startTimerHabit(durationSeconds:Int, url:String?, name:String,currentHabit: habit, currentTimerValue:Int) {
+        UserDefaults.standard.set(Date(), forKey: kUserdefaultsLastHabitsStartedDate)
+        
+        isLastActivityStoppedInRunningState = false
+        lastActivityRunningId = ""
+        lastActivityStoppedTimerCount = 0
+        lastActivityRunningId = currentHabit.id
+        
         isActivityPaused = false
         self.btnPause.image = pauseIcon
-        
+        btnSkipHabit.isHidden = true
         graphOneMonthData = nil
         graphOneDayData = nil
         allApiObject.getACtivityStats(activityId: currentHabit.id, activityChoiceId: nil, completionHandler: {dic in
@@ -167,26 +187,28 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             mainWindowControllerObj?.window?.setIsVisible(false)
             appdelegate?.startTimerActivitiesAllowedApp()
             hideBlankWindowInSecondaryMonitor()
-            showSmallTimerWindow(durationSeconds: durationSeconds, msg: getDoSomeActivityText(activityName: name), isFocusBreak: false)
+            showSmallTimerWindow(durationSeconds: durationSeconds, msg: getDoSomeActivityText(activityName: name), isFocusBreak: false, currentTimerValue:currentTimerValue)
         }else{
             if activityAllowedFocusApps.count != 0{
                 currentHabitPlaying = currentHabit
                 mainWindowControllerObj?.window?.setIsVisible(false)
                 appdelegate?.startTimerActivitiesAllowedApp()
                 hideBlankWindowInSecondaryMonitor()
-                showSmallTimerWindow(durationSeconds: durationSeconds, msg: getDoSomeActivityText(activityName: name), isFocusBreak: false)
+                showSmallTimerWindow(durationSeconds: durationSeconds, msg: getDoSomeActivityText(activityName: name), isFocusBreak: false, currentTimerValue:currentTimerValue)
             }else{
                  currentHabitPlaying = nil
             }
         }
-        
-        loadWebViewTo(url: url)
+        if currentHabitPlaying == nil{// do not allow  video  if activity is allow app type
+            loadWebViewTo(url: url)
+        }
         resetConstraintsForVideoAndGif(kIsReducedMotion: SettingsManagerObject.kIsReducedMotion)
         
         lastActivityPerformedTime = Date()
         
         lblTitle.stringValue = getDoSomeActivityText(activityName: name)//arrAllMorningHabits[currentHabitIndex].name!)
-        currentTimer = 0
+        startTimerValue = currentTimerValue
+        currentTimer = currentTimerValue
         totalDuration = durationSeconds//durationInMinutes*60
         let (h,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
         
@@ -249,6 +271,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             }
         }//!getsmallCountDownVcObject().isFocusBreak{
         disableSystemSleep()
+        btnSkipHabit.isHidden = true
 //        loadWebViewTo(url: url)
         lblTitle.stringValue = getDoSomeActivityText(activityName: name)//"Do some \(arrAllMorningHabits[currentHabitIndex].name!)."
         totalDuration = durationSeconds//durationInMinutes*60
@@ -298,6 +321,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                     loadWebViewTo(url: url)
                 }
             }
+            btnSkipHabit.isHidden = false
         }
         
     }
@@ -308,6 +332,11 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
     var logQuantityType:String?
     var logActivityQuantity = false
     func startTimerActivity(durationInSeconds:Int,name:String, url:String?, logQuantityQuestion:String?,currentActivity: breakActivity, currentChoice:activityChoice?,logQuantity:Bool, logQuantityType:String) {
+        isLastActivityStoppedInRunningState = false
+        lastActivityRunningId = ""
+        lastActivityStoppedTimerCount = 0
+        
+        btnSkipHabit.isHidden = true
         isActivityPaused = false
         self.btnPause.image = pauseIcon
         graphOneMonthData = nil
@@ -333,20 +362,21 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             mainWindowControllerObj?.window?.setIsVisible(false)
             appdelegate?.startTimerActivitiesAllowedApp()
             hideBlankWindowInSecondaryMonitor()
-            showSmallTimerWindow(durationSeconds: durationInSeconds, msg: getDoSomeActivityText(activityName: name), isFocusBreak: false)
+            showSmallTimerWindow(durationSeconds: durationInSeconds, msg: getDoSomeActivityText(activityName: name), isFocusBreak: false, currentTimerValue:0)
         }else{
             if activityAllowedFocusApps.count != 0{
                 currentActivityPlaying = currentActivity
                 mainWindowControllerObj?.window?.setIsVisible(false)
                 appdelegate?.startTimerActivitiesAllowedApp()
                 hideBlankWindowInSecondaryMonitor()
-                showSmallTimerWindow(durationSeconds: durationInSeconds, msg: getDoSomeActivityText(activityName: name), isFocusBreak: false)
+                showSmallTimerWindow(durationSeconds: durationInSeconds, msg: getDoSomeActivityText(activityName: name), isFocusBreak: false, currentTimerValue:0)
             }else{
                  currentActivityPlaying = nil
             }
         }
-
-        loadWebViewTo(url: url)
+        if currentActivityPlaying == nil{// do not allow  video  if activity is allow app type
+            loadWebViewTo(url: url)
+        }
         resetConstraintsForVideoAndGif(kIsReducedMotion: SettingsManagerObject.kIsReducedMotion)
         
         self.logQuantityQuestion = logQuantityQuestion
@@ -358,6 +388,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         
         lblTitle.stringValue = getDoSomeActivityText(activityName: name)//"Do some \(name)."
         currentTimer = 0
+        startTimerValue = 0
         totalDuration = durationInSeconds
         let (h,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
         
@@ -410,6 +441,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
     func resumeTimerActivity(durationInSeconds:Int,name:String, url:String?) {
         disableSystemSleep()
 //        loadWebViewTo(url: url)
+        btnSkipHabit.isHidden = true
         lblTitle.stringValue = getDoSomeActivityText(activityName: name)//"Do some \(name)."
         totalDuration = durationInSeconds
         let (h,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
@@ -463,6 +495,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
     }
     func startBreathing() {
         isActivityPaused = false
+        btnSkipHabit.isHidden = true
         self.btnPause.image = pauseIcon
         loadWebViewTo(url: introActivity!.urlsArray.randomElement())
         resetConstraintsForVideoAndGif(kIsReducedMotion: SettingsManagerObject.kIsReducedMotion)
@@ -571,6 +604,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             } else {
                 // Fallback on earlier versions
             }
+            btnSkipHabit.isHidden = true
         }else{
             self.btnPause.image = playIcon
             isActivityPaused = true
@@ -581,8 +615,39 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             } else {
                 // Fallback on earlier versions
             }
+            if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_{
+                btnSkipHabit.isHidden = false
+            }else{
+                btnSkipHabit.isHidden = true
+            }
         }
         
+    }
+    
+    @IBAction func btnSkipHabitClicked(_ sender: Any) {
+        mainViewControllerObj?.showWhySkipHabitView()
+//        return;
+//        if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
+//            if currentState == ._MORNING_HABIT_{
+//                if SettingsManagerObject.isPasswordRequireInSkipMorning{
+//                    mainViewControllerObj?.showPasswordView()
+//                    enterPasswordVcObj?.parentVc = getSkipHabitVcObject()
+//                }else{
+//                    mainViewControllerObj?.showSkipHabitView()
+//                }
+//
+//            }else{
+//                if SettingsManagerObject.isPasswordRequireInSkipEvening{
+//                    mainViewControllerObj?.showPasswordView()
+//                    enterPasswordVcObj?.parentVc = getSkipHabitVcObject()
+//                }else{
+//                    mainViewControllerObj?.showSkipHabitView()
+//                }
+//            }
+//
+//        }else{
+//            mainViewControllerObj?.showSkipHabitView()
+//        }
     }
 }
 

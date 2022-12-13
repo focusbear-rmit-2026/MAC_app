@@ -92,7 +92,11 @@ class shutOffTimeVc: NSViewController {
     @IBAction func btnGetAccessNowClicked(_ sender: Any) {
         addLog(text:"btnGetAccessNowClicked")
         if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
-            mainViewControllerObj!.showPasswordView()
+            if SettingsManagerObject.isPasswordRequireInAbortShutoff{
+                mainViewControllerObj!.showPasswordView()
+            }else{
+                getAccessNowClicked()
+            }
         }else{
             getAccessNowClicked()
         }

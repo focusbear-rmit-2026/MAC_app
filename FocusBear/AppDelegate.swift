@@ -69,11 +69,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
     func resetAllData(){
         addLog(text: "resetAllData")
         let alert = NSAlert()
-        if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
-            if state{
-                alert.window.sharingType = .none
-            }
-        }
+        alert.setSharingType()
         alert.messageText = "Are you sure you want to reset Focus Bear? All your settings will be deleted."
         alert.addButton(withTitle: "Yes")
         alert.addButton(withTitle: "No")
@@ -233,13 +229,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
 //                }
 //            }
     }
-
+    let alertAppAutoRestart = NSAlert()
     func applicationWillFinishLaunching(_ notification: Notification) {
 
 //  ********************************* Todo Always Comment This *************************************//
         
 //        UserDefaults.standard.set(UserDefaults.standard.object(forKey:kUserdefaultsEveningHabitsShowedTillDate), forKey: kUserdefaultsFocusSummaryShowedTillDate)//
-//        UserDefaults.standard.set(Date(), forKey: kUserdefaultsFirstHabitDay)
 //        UserDefaults.standard.set(UserDefaults.standard.object(forKey:kUserdefaultsEveningHabitsShowedTillDate), forKey: kUserdefaultsLastHabitShowDate)//
 //        return
 
@@ -273,7 +268,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
 //        print(macAddress)
 //        let stringTime = getStringFromDateInUtc(date: Date(), dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
 
-       
+        
+       //
+
+        
+        
+        
         client.start()// for getting true time
         
         updater = SUUpdater(for: Bundle.main)
@@ -344,12 +344,25 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
         }
         
         //  ---------------------------SETTINGS Language--------------------------
-         
+
         var languageCode = "en"
         if let language = UserDefaults.standard.object(forKey: kUserdefaultsSelectedLanguage) as? String{
             languageCode = language
         }else{
-            UserDefaults.standard.set(languageCode, forKey: kUserdefaultsSelectedLanguage)
+            let language = Locale.preferredLanguages[0] as String
+            let range: NSRange = (language as NSString).range(of: "-")
+            if range.location != NSNotFound {
+                let newString = (language as NSString).substring(to: range.location)
+                if newString == "es"{
+                    languageCode = "es"
+                }else{
+                    languageCode = "en"
+                }
+                UserDefaults.standard.set(languageCode, forKey: kUserdefaultsSelectedLanguage)
+                print("\(newString)")
+            } else {
+                UserDefaults.standard.set(languageCode, forKey: kUserdefaultsSelectedLanguage)
+            }
         }
         var configFileName = ""
         if languageCode == "en"{
@@ -397,22 +410,24 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
             }
             readConfigFile()
             DispatchQueue.main.async {
+                
                 if UserDefaults.standard.object(forKey: kUserdefaultsFirstRun) != nil{
                     if UserDefaults.standard.object(forKey: kUserdefaultsAppQuitProperly) == nil{
                         if UserDefaults.standard.object(forKey: kUserdefaultsDontTellAgain) == nil{
                             NSApplication.shared.activate(ignoringOtherApps: true)
-                            let alert = NSAlert()
-                            alert.messageText = "Focus Bear automatically restarts if it gets force quit/crashes to make sure you always have help combatting distractions. If you want to quit the app/take a break, use the Quit option from the Focus Bear menu bar."
-                            alert.showsSuppressionButton = true
-                            alert.suppressionButton?.title = "Got it - don't tell me again"
+                            self.alertAppAutoRestart.setSharingType()
+                            self.alertAppAutoRestart.messageText = "Focus Bear automatically restarts if it gets force quit/crashes to make sure you always have help combatting distractions. If you want to quit the app/take a break, use the Quit option from the Focus Bear menu bar."
+                            self.alertAppAutoRestart.showsSuppressionButton = true
+                            self.alertAppAutoRestart.suppressionButton?.title = "Got it - don't tell me again"
                             if let common = configjson.value(forKey: "common") as? NSDictionary{
-                                alert.messageText = common.value(forKey: "alertAppRestartText") as? String ?? alert.messageText
-                                alert.suppressionButton?.title = common.value(forKey: "buttonDontTellAgainText") as? String ?? "Got it - don't tell me again"
+                                self.alertAppAutoRestart.messageText = common.value(forKey: "alertAppRestartText") as? String ?? self.alertAppAutoRestart.messageText
+                                self.alertAppAutoRestart.suppressionButton?.title = common.value(forKey: "buttonDontTellAgainText") as? String ?? "Got it - don't tell me again"
                             }
-                            alert.suppressionButton?.state = .off
-                            alert.addButton(withTitle: buttonOkText)
-                            alert.runModal()
-                            if alert.suppressionButton?.state == .on{
+                            self.alertAppAutoRestart.suppressionButton?.state = .off
+                            self.alertAppAutoRestart.addButton(withTitle: buttonOkText)
+                            self.alertAppAutoRestart.window.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.numberOfWindowLevelKeys)))//.modalPanel
+                            self.alertAppAutoRestart.runModal()
+                            if self.alertAppAutoRestart.suppressionButton?.state == .on{
                                 UserDefaults.standard.set(true, forKey: kUserdefaultsDontTellAgain)
                             }
                         }
@@ -422,7 +437,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
                 }
                 guard self.credentialsManager.canRenew() else {
                     // Present login screen
-
                     if UserDefaults.standard.object(forKey: kUserdefaultsFirstRun) == nil{
                         showWelcomeOnboardingWindow()
                     }else{
@@ -466,6 +480,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
 //                        if app is installed on the same day than user will not get morning habit on the same day until he logout and login with diffrent or same account so we write morning routine done date in userdefaulsts here but will remove when logout    and with the difrent account user will get his lastmorningroutine show date from api and write date in userdefaults
     }
     
+//    var morningCount = 0
+//    var startAppCheckCount = 0
     func setCredentialAndUserInfo(credentialsInfo: CredentialsManagerResult<Credentials>, isAppLaunching:Bool){
         addLog(text: "set Credential And User Info")
         var newCredential:Credentials?
@@ -476,23 +492,50 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
             print(error)
         }
         var needToRefreshUser = false
+
+        
         if newCredential == nil{
             addLog(text: "failed:- newCredential nil")
             DispatchQueue.main.async {
-                let alert = NSAlert()
-               
-                var someProblemInCredentialText = "There is some problem. Please Login again."//example. no internet and credentialsManager.credentials is failed
-                if let common = configjson.value(forKey: "common") as? NSDictionary{
-                    someProblemInCredentialText = common.value(forKey: "someProblemInCredentialText") as? String ?? someProblemInCredentialText
+                
+                
+                if Reachability.isConnectedToNetwork() == false{
+                    addLog(text: "failed:- newCredential nil : reason no internet")
+                    
+                    showPopUpOfflineWindow()
+                    
+                    
+                    if mainWindowControllerObj?.window?.isVisible ?? false{
+                        self.abortAllProcess()
+                        mainWindowControllerObj?.window?.close()
+                        hideBlankWindowInSecondaryMonitor()
+                    }
+                    
+                    
+                }else{
+                    addLog(text: "failed:- newCredential nil : show alert and logout")
+                    if mainWindowControllerObj?.window?.isVisible ?? false{
+                        self.abortAllProcess()
+                        mainWindowControllerObj?.window?.close()
+                        hideBlankWindowInSecondaryMonitor()
+                    }
+                    let alert = NSAlert()
+                    alert.setSharingType()
+                    var someProblemInCredentialText = "There was a problem connecting to the backend server. Please login again."//example. no internet and credentialsManager.credentials is failed
+                    if let common = configjson.value(forKey: "common") as? NSDictionary{
+                        someProblemInCredentialText = common.value(forKey: "someProblemInCredentialText") as? String ?? someProblemInCredentialText
+                    }
+                    alert.messageText = someProblemInCredentialText
+                    alert.addButton(withTitle: buttonOkText)
+                
+                    alert.runModal()
+                    self.logout()
                 }
-                alert.messageText = someProblemInCredentialText
-                alert.addButton(withTitle: buttonOkText)
-            
-                alert.runModal()
-                self.logout()
+                
             }
             return;
         }
+        
         if self.credential == nil{
             self.credential = newCredential
             addLog(text: "successfully fetch cedential from credentialsManager in app launch")
@@ -567,8 +610,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
 //            }
             setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: true)
 //            Auth0.webAuth()/
+            if self.credential == nil{ //  it means failed to get cradential and popup offline or error msg is visible
+                return;
+            }
             if self.credential != nil{
-//                print(self.credential!.accessToken)
+                print(self.credential!.accessToken)
 //                print(self.credential!.idToken)
 //                print(self.credential?.expiresIn)
 //
@@ -612,9 +658,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
                     kUserdefaultsFocusSummaryShowedTillDate = kUserdefaultsFocusSummaryShowedTillDate + (self.user?.userId ?? "")
                     kUserdefaultsArrFocusTypes = kUserdefaultsArrFocusTypes + (self.user?.userId ?? "")
                     kUserdefaults24HoursClearPasswordTime = kUserdefaults24HoursClearPasswordTime + (self.user?.userId ?? "")
+                    
+                    kUserdefaultsLastHabitsStartedDate = kUserdefaultsLastHabitsStartedDate + (self.user?.userId ?? "")
+                    
                     SettingsManagerObject.resetAllKeys()
                     
-               
+
+                    
                     
                     self.currentUserURL = self.applicationSupportURL!.appendingPathComponent(self.user?.userId ?? "")
                     if self.currentUserURL != nil{
@@ -642,6 +692,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
                                 DispatchQueue.main.async {
                                     //
                                     let alert = NSAlert()
+                                    alert.setSharingType()
                                     alert.messageText = "Unable to connect to server. Please check your internet connection."
                                     if let common = configjson.value(forKey: "common") as? NSDictionary{
                                         alert.messageText = common.value(forKey: "checkInternetText") as? String ?? alert.messageText
@@ -669,8 +720,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
             }else{
                 DispatchQueue.main.async {
                     let alert = NSAlert()
-                   
-                    var someProblemInCredentialText = "There is some problem. Please Login again."//example. no internet and credentialsManager.credentials is failed
+                    alert.setSharingType()
+                    var someProblemInCredentialText = "There was a problem connecting to the backend server. Please login again."//example. no internet and credentialsManager.credentials is failed
                     if let common = configjson.value(forKey: "common") as? NSDictionary{
                         someProblemInCredentialText = common.value(forKey: "someProblemInCredentialText") as? String ?? someProblemInCredentialText
                     }
@@ -886,7 +937,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
                     }
                     if !isMeetingsContain{
                         let id = getUuid()
-                        let dic:[String:Any] = ["id":id, "name":"Meetings", "color": getColorString(color: NSColor(red: 208/255, green: 150/255, blue: 60/255, alpha: 1)), "allowed_apps": ["/Applications/Microsoft Teams.app", "/Applications/zoom.us.app", "/Applications/Jitsi.app", "/Applications/Safari.app", "/Applications/Google Chrome.app", "/Applications/Firefox.app", "/Applications/Slack.app"], "allowed_urls": ["http://meet.google.com"], "isOn": false, "isAllowedAllApps":false, "isAllowedAllUrls":false, "isMeetings":true, "isAllowedListApproach":true, "isBlockedAllUrls":false]
+                        let dic:[String:Any] = ["id":id, "name":"Meetings", "color": getColorString(color: NSColor(red: 208/255, green: 150/255, blue: 60/255, alpha: 1)), "allowed_apps": ["/Applications/Microsoft Teams.app", "/Applications/zoom.us.app", "/Applications/Jitsi.app", "/Applications/Safari.app", "/Applications/Google Chrome.app", "/Applications/Firefox.app", "/Applications/Slack.app", "/Applications/Sidekick.app", "/Applications/Brave Browser.app"], "allowed_urls": ["http://meet.google.com"], "isOn": false, "isAllowedAllApps":false, "isAllowedAllUrls":false, "isMeetings":true, "isAllowedListApproach":true, "isBlockedAllUrls":false]
                         
                         if arrFocusType.count == 0{
                             arrFocusType.append(dic)
@@ -986,7 +1037,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
                     
                 self.updater?.delegate = self
                 self.updater?.checkForUpdatesInBackground()
+                  
+                NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(self.sleepEvent(_:)), name: NSWorkspace.screensDidWakeNotification, object: nil)
                     
+                NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(self.sleepEvent(_:)), name: NSWorkspace.screensDidSleepNotification, object: nil)
+                
                 NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(self.sleepEvent(_:)), name: NSWorkspace.didWakeNotification, object: nil)
                     
                 NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(self.sleepEvent(_:)), name: NSWorkspace.willSleepNotification, object: nil)
@@ -994,6 +1049,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
                     //        NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(screenSaverDidStart), name: NSNotification.Name(rawValue: "com.apple.screensaver.didstart"), object: nil)
                 DistributedNotificationCenter.default().addObserver(self,selector: #selector(self.sleepEvent(_:)), name: NSNotification.Name(rawValue: "com.apple.screensaver.didstart"),object: nil)
                 DistributedNotificationCenter.default().addObserver(self,selector: #selector(self.sleepEvent(_:)), name: NSNotification.Name(rawValue: "com.apple.screensaver.didstop"),object: nil)
+                
+                
+                
 //                }
                 
                 //                }
@@ -1012,7 +1070,36 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
         
         
     }
-    
+    func pauseHabitActivityIfRunning(){
+        addLog(text: "func:- pauseHabitActivityIfRunning")
+        print("pause Habit Activity If Running Called")
+        if  currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_{
+            if currentAction == ._INPROGRESS_ && timerViewcontrollerObj?.timer != nil{
+                isLastActivityStoppedInRunningState = true
+                lastActivityStoppedTimerCount = timerViewcontrollerObj?.currentTimer ?? 0
+                timerViewcontrollerObj?.timer?.invalidate()
+                timerViewcontrollerObj?.timer  = nil
+                if timerViewcontrollerObj?.webView.isHidden == false{
+                    timerViewcontrollerObj?.loadBlankUrl()
+                }
+                
+                activityAllowedFocusApps.removeAll()
+                activityAllowedFocusUrls.removeAll()
+                currentHabitPlaying = nil
+                self.timerAllowUrlForActivity?.invalidate()
+                self.timerAllowAppForActivity?.invalidate()
+                currentActivityPlaying = nil
+                
+                if smallCountDownWcObj != nil{
+                    if smallCountDownWcObj!.window?.isVisible ?? false{
+                        getsmallCountDownVcObject().closeTimerBox()
+                    }
+                }
+                enableSystemSleep()// dont change current state
+                mainWindowControllerObj?.window?.close()
+            }
+        }
+    }
     func pauseBreakActivityTimerIfRunning(){
         addLog(text: "pause Break Activity Timer Called")
         print("pause Break Activity Timer Called")
@@ -1069,11 +1156,20 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
         addLog(text: "sleepEvent")
       
         
-        if aNotification.name == NSWorkspace.willSleepNotification {
+        if aNotification.name == NSWorkspace.screensDidSleepNotification {
+            print("screensDidSleepNotification")
+            addLog(text: "screensDidSleepNotification")
+
+        }else if aNotification.name == NSWorkspace.screensDidWakeNotification {
+            print("screensDidWakeNotification")
+            addLog(text: "screensDidWakeNotification")
+
+        }else if aNotification.name == NSWorkspace.willSleepNotification {
             print("Going to sleep")
             addLog(text: "Going to sleep")
             isSystemSleep = true
             pauseBreakActivityTimerIfRunning()
+            pauseHabitActivityIfRunning()
         }else if aNotification.name == NSWorkspace.didWakeNotification {
             print("Woke up")
             addLog(text: "Woke up")
@@ -1086,7 +1182,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
             print("com.apple.screensaver.didstart")
             addLog(text: "com.apple.screensaver.didstart")
             pauseBreakActivityTimerIfRunning()
-            
+            pauseHabitActivityIfRunning()
         }else if aNotification.name == NSNotification.Name(rawValue: "com.apple.screensaver.didstop") {
             print("com.apple.screensaver.didstop")
             addLog(text: "com.apple.screensaver.didstop")
@@ -1227,7 +1323,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
         arrAllbreakActivities.removeAll()
         var jsonResult:NSDictionary?
         jsonResult = json
-        if jsonResult == nil{//todo == kro 
+        if jsonResult == nil{
             if let stringDic = UserDefaults.standard.object(forKey: kUserdefaultsSelectedJson) as? String {
                 //            jsonResult = dic
                 if let data = stringDic.data(using: String.Encoding.utf8) {
@@ -1388,12 +1484,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
         }
         
     }
+    var isSettingsLoddedInAppdelegate = false
     func initialWork(){
         addLog(text: "initialWork")
         isAppInitialLodded = true
-        if UserDefaults.standard.object(forKey: kUserdefaultsFirstHabitDay) == nil{
-            UserDefaults.standard.set(Date(), forKey: kUserdefaultsFirstHabitDay)
-        }
+//        if UserDefaults.standard.object(forKey: kUserdefaultsFirstHabitDay) == nil{
+//            UserDefaults.standard.set(Date(), forKey: kUserdefaultsFirstHabitDay)
+//        }
         self.statusbutton?.action = nil
         
         // -------------------GETTING SETTINGS JSON----------------------//
@@ -1409,6 +1506,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
         }
 
         allApiObject.getSettings(isFirstTime: isFirstTime, isHabitsDisabled:isHabitsDisabled, completionHandler: {settings in
+            
             if settings != nil{
                 print(settings!)
                 //                appdelegate.b
@@ -1425,6 +1523,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
             self.readSettingsJsonDictionary(json: settings)
           
             DispatchQueue.main.async {
+                if popUpOfflineWcObj != nil{
+                    if popUpOfflineWcObj?.window?.isVisible ?? false{
+                        addLog(text: "func:- initialWork   popUpOfflineWcObj window visible return")
+                        return;
+                    }
+                }
+                addLog(text: "func:- initialWork   isSettingsLoddedInAppdelegate done")
+                
+                self.isSettingsLoddedInAppdelegate = true
+                //
                 if UserDefaults.standard.object(forKey: kUserdefaultsIsAppEnabled) == nil{
                     UserDefaults.standard.set(true, forKey: kUserdefaultsIsAppEnabled)
                     isAppEnable = true
@@ -1456,7 +1564,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
                         UserDefaults.standard.set(true, forKey: kUserdefaultsIsAppEnabled)
                         UserDefaults.standard.removeObject(forKey: kUserdefaults4HourReActivateTime)
                         addLog(text: "App Reactivated after 4 hours")
-                        appdelegate?.quitAndRestartApp()
+                        self.quitAndRestartApp()
                         return;
                     }
                     
@@ -1521,17 +1629,17 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
                                                             }
                                                         }
                                                     }else{
-                                                        if thirdVcObj?.btnMain.isHidden == true{// check if preload focus mode work view visible then enter will bt Button Continue
-                                                            if currentState == ._BREATHING_ && thirdVcObj?.customViewContainer.isHidden == false && thirdVcObj?.preloadFocusModesVcObj != nil{
-                                                                if thirdVcObj?.customViewContainer.subviews.contains(thirdVcObj!.preloadFocusModesVcObj!.view) ?? false{
-                                                                    if thirdVcObj?.preloadFocusModesVcObj?.btnContinue.isEnabled == true{
-                                                                        thirdVcObj?.preloadFocusModesVcObj?.btnContinueClicked(self)
-                                                                    }
-                                                                }
-                                                            }
-                                                        }else{
+//                                                        if thirdVcObj?.btnMain.isHidden == true{// check if preload focus mode work view visible then enter will bt Button Continue
+//                                                            if currentState == ._BREATHING_ && thirdVcObj?.customViewContainer.isHidden == false && thirdVcObj?.preloadFocusModesVcObj != nil{
+//                                                                if thirdVcObj?.customViewContainer.subviews.contains(thirdVcObj!.preloadFocusModesVcObj!.view) ?? false{
+//                                                                    if thirdVcObj?.preloadFocusModesVcObj?.btnContinue.isEnabled == true{
+//                                                                        thirdVcObj?.preloadFocusModesVcObj?.btnContinueClicked(self)
+//                                                                    }
+//                                                                }
+//                                                            }
+//                                                        }else{
                                                             thirdVcObj?.btnMainClicked(self)
-                                                        }
+//                                                        }
                                                     }
                                                 }
                                             }
@@ -1888,99 +1996,75 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
     
     @objc func checkWindowState(){//there will be no habit display on first day
         
-        //        *****************for testing only *********************
-        
-        //        isHabitAlreadyShowed = false
-        //        startHabitsCall()
-        //
-        
-        //        fakeshowAllHabits()
-        //        DispatchQueue.global().async {
-        //            self.perform(#selector(self.fakeshowAllHabits), with: nil, afterDelay: 5)
-        //        }
-        
-        
-        //        DispatchQueue.global().async {
-        //         //   sleep(5)
-        //            DispatchQueue.main.async {
-        ////                let alert = NSAlert()
-        ////                alert.alertStyle = .warning
-        ////
-        ////                alert.messageText = "dddd"
-        ////                alert.runModal()
-        //                self.showMeetingStarAlert()
-        //            }
-        //        }
-        //                use this to show AllMorningHabits
-        //        mainWindowControllerObj?.showWindow(self)
-        //        mainViewControllerObj!.showAllMorningHabits()
-        //        showBlankWindowInSecondaryMonitor()
-        //
-        //
-        //  //////
-        
-        //first time view
-        //                                        mainWindowControllerObj?.showWindow(self)
-        //                                        mainViewControllerObj!.showFirstTimeVc()
-        //                                        isFirstRun = true
-        //                                        showBlankWindowInSecondaryMonitor()
-        
-        
-        //        showOnboardingVideoWindow()
-        //
-        //        use this to show All Activities
-        //                                                mainWindowControllerObj?.showWindow(self)
-        //                                                mainViewControllerObj?.executeBreakActivities()
-        //                                                showBlankWindowInSecondaryMonitor()
-        //  //////////
-        
-        
-        //                shutOffMac()
-        //        setShutOffTimer()
-        //        showPomodoroModeView()
-        
-        //                  Showing focus summary
-        //                                        mainWindowControllerObj?.showWindow(self)
-        //                                        mainViewControllerObj?.showFocusSummaryView()
-        //                                        showBlankWindowInSecondaryMonitor()
-        //  //////////
-        
-        //        showPomodoroModeView()
-        
-        //                shutoff window
-        //                                        mainWindowControllerObj?.showWindow(self)
-        //                                        mainViewControllerObj?.shutOffMac()
-        
-        //show evening habits
-        //                                                mainWindowControllerObj?.showWindow(self)
-        //                                                mainViewControllerObj?.showAllEveningHabits()
-        //                                                showBlankWindowInSecondaryMonitor()
-        //                        self.perform(#selector(showMorningHabitAfterTimer), with: nil, afterDelay: 80)
-        
-        // show top timer window
-        //        showSmallTimerWindow(durationSeconds: 30, name: "yogaa")
-        
-        
-        //                showMorningPomodoroModeView()
-        
-        // show brain dump window
-        //        showBrainDumpWindow()
-        //                showAskLoginWindow()// ismr button ki class
-        
-        
-        //                use this to show abort done view
-        //                        mainWindowControllerObj?.showWindow(self)
-        //                        mainViewControllerObj!.showAbortConfirmationView()
-        //                        showBlankWindowInSecondaryMonitor()
-        //        showUpgradeNowWindow()
-        //                                showWelcomeOnboardingWindow()
-        //        showOnboardingVideoWindow()
-        //                                showOnboardingCardWindow()
-        //        showBreakWarningWindow()
-        //        showPopupBlockConfirmWindow()
-        //                                                return;
-        //                todo®
-        //        *******************************************************************
+//        *****************for testing only *********************
+//
+//
+//                                use this to show AllMorningHabits
+//                                mainWindowControllerObj?.showWindow(self)
+//                                mainViewControllerObj!.showAllMorningHabits()
+//                                showBlankWindowInSecondaryMonitor()
+//
+//
+//
+//
+//                                first time view
+//                                mainWindowControllerObj?.showWindow(self)
+//                                mainViewControllerObj!.showFirstTimeVc()
+//                                isFirstRun = true
+//                                showBlankWindowInSecondaryMonitor()
+//
+//
+//
+//                                use this to show All Activities
+//                                mainWindowControllerObj?.showWindow(self)
+//                                mainViewControllerObj?.executeBreakActivities()
+//                                showBlankWindowInSecondaryMonitor()
+//                                //////////
+//
+//
+//                                Showing focus summary
+//                                mainWindowControllerObj?.showWindow(self)
+//                                mainViewControllerObj?.showFocusSummaryView()
+//                                showBlankWindowInSecondaryMonitor()
+//                                //////////
+//
+//                                shutoff window
+//                                mainWindowControllerObj?.showWindow(self)
+//                                mainViewControllerObj?.shutOffMac()
+//
+//                                show evening habits
+//                                mainWindowControllerObj?.showWindow(self)
+//                                mainViewControllerObj?.showAllEveningHabits()
+//                                showBlankWindowInSecondaryMonitor()
+//                                self.perform(#selector(showMorningHabitAfterTimer), with: nil, afterDelay: 80)
+//
+//                                show top timer window
+//                                showSmallTimerWindow(durationSeconds: 30, name: "yogaa")
+//
+//
+//                                showMorningPomodoroModeView()
+//
+//                                show brain dump window
+//                                showBrainDumpWindow()
+//                                showAskLoginWindow()//
+//
+//
+//                                use this to show abort done view
+//                                mainWindowControllerObj?.showWindow(self)
+//                                mainViewControllerObj!.showAbortConfirmationView()
+//                                showBlankWindowInSecondaryMonitor()
+//                                showUpgradeNowWindow()
+//                                showWelcomeOnboardingWindow()
+//                                showOnboardingVideoWindow()
+//                                showOnboardingCardWindow()
+//                                showBreakWarningWindow()
+//                                showPopupBlockConfirmWindow()
+//                                showEasyPostponeWindow()
+//                                showMorningPomodoroModeView()
+//                                showPreloadFocusModesWindow()
+//                                return;
+//        todo®
+//        *******************************************************************
         
         
 
@@ -2112,17 +2196,19 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
                 addLog(text: "func checkIsMeetingsGoingOn:- PreventUserIdleDisplaySleep is On")
             }
             
-            if isFocusModeOn() || isHardCorePomodoroModeOn{
-                addLog(text: "Focus mode or Super pomodoro Is On :- return")
-                return;
-            }
-
-            
             if isFocusModeOn(){
                 self.statusbutton?.title = buttonStatusStateCallText + " / " + buttonStatusStateFocusText
             }else{
                 self.statusbutton?.title = buttonStatusStateCallText
             }
+            
+            if isFocusModeOn() || isHardCorePomodoroModeOn{
+                addLog(text: "func checkIsMeetingsGoingOn:- Focus mode or Super pomodoro Is On :- return")
+                return;
+            }
+
+            
+            
             self.statusbutton?.imagePosition = .imageLeft
             self.statusbutton?.backgroundcolor = NSColor.systemBlue
             if !isUserOnCall{
@@ -2130,6 +2216,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
 //                showNotificationVideoCall()
             }
             
+            if !SettingsManagerObject.isMeetingDetectionEnabled{
+                return;
+            }
             if alertSuggestFocusMode != nil{
                 if alertSuggestFocusMode!.window.isVisible{
                     return
@@ -2166,7 +2255,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
                                 }
                             }
                         }
-                        isUserOnMeeting = false
+                        if isUserOnMeeting{
+                            isUserOnMeeting = false
+                            if alertSuggestFocusMode != nil{
+                                if alertSuggestFocusMode!.window.isVisible{
+                                    alertSuggestFocusMode?.window.close()
+                                }
+                            }
+                        }
                         break;
                     }
                 }
@@ -2180,6 +2276,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
             }
             if isUserOnMeeting{
                 isUserOnMeeting = false
+                if alertSuggestFocusMode != nil{
+                    if alertSuggestFocusMode!.window.isVisible{
+                        NSApp.endSheet(alertSuggestFocusMode!.window)
+                    }
+                }
             }
             
             
@@ -2252,11 +2353,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
         
         
         alertSuggestFocusMode = NSAlert()
-        if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
-            if state{
-                alertSuggestFocusMode!.window.sharingType = .none
-            }
-        }
+        alertSuggestFocusMode!.setSharingType()
         var notificationVideoCallText = "Looks like you're in a video call. I won't interrupt you with micro-breaks during the meeting to avoid embarrassing screensharing moments. Enjoy the meeting!"
         if let common = configjson.value(forKey: "common") as? NSDictionary{
             notificationVideoCallText = common.value(forKey: "notificationVideoCallText") as? String ?? notificationVideoCallText
@@ -2266,7 +2363,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
         var subTitle = "On selecting \"Block everything else\" the app will start \"Meetings\" focus mode."
         var buttonBlockText = "Block everything else"
         var buttonCancelText = "It's ok for me to use other apps during this meeting"
-        
+        var buttonFalseDetectionText = "False positive: I'm not in a meeting"
         if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
             if let suggestFocusInfo = focusInfo.value(forKey: "suggestFocusInfo") as? NSDictionary{
                 if let val = suggestFocusInfo.value(forKey: "title") as? String{
@@ -2281,6 +2378,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
                 if let val = suggestFocusInfo.value(forKey: "buttonCancelText") as? String{
                     buttonCancelText = val
                 }
+                if let val = suggestFocusInfo.value(forKey: "buttonFalseDetectionText") as? String{
+                    buttonFalseDetectionText = val
+                }
             }
         }
         
@@ -2288,6 +2388,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
         alertSuggestFocusMode?.informativeText = title + "\n\n" + subTitle
         alertSuggestFocusMode?.addButton(withTitle: buttonBlockText)
         alertSuggestFocusMode?.addButton(withTitle: buttonCancelText)
+        alertSuggestFocusMode?.addButton(withTitle: buttonFalseDetectionText)
+        
         NSApplication.shared.activate(ignoringOtherApps: true)
         
         if let window = NSApp.keyWindow{
@@ -2295,6 +2397,60 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
                 if result == .alertFirstButtonReturn{
                     print("first")
                     self.meetingAlertStartFocusClicked()
+                }else if result == .alertSecondButtonReturn{
+                    print("second")
+                    self.alertSuggestFocusMode = nil
+                }else {
+                    print("third")
+                    self.alertSuggestFocusMode = nil
+                    self.perform(#selector(self.showAlertFalseMicDetection), with: nil, afterDelay: 1)
+                }
+            })
+        
+        }else{
+            if let result = alertSuggestFocusMode?.runModal(){
+                if result == .alertFirstButtonReturn{
+                    print("first")
+                    meetingAlertStartFocusClicked()
+                    
+                }else if result == .alertSecondButtonReturn{
+                    print("second")
+                    alertSuggestFocusMode = nil
+                }else {
+                    print("third")
+                    alertSuggestFocusMode = nil
+                    self.perform(#selector(showAlertFalseMicDetection), with: nil, afterDelay: 1)
+                }
+            }
+        }
+        
+    }
+    
+    @objc func showAlertFalseMicDetection(){
+        alertSuggestFocusMode = NSAlert()
+        alertSuggestFocusMode!.messageText = "Sorry about that. Are you sure you're not using an app that is using your microphone? If we keep getting it wrong, click button below to disable meeting detection."// todo logs
+        var buttonDisableText = "Disable meeting detection"
+        
+        if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
+            if let suggestFocusInfo = focusInfo.value(forKey: "suggestFocusInfo") as? NSDictionary{
+                alertSuggestFocusMode!.messageText = suggestFocusInfo.value(forKey: "titleFalseDetection") as? String ?? alertSuggestFocusMode!.messageText
+                buttonDisableText = suggestFocusInfo.value(forKey: "buttonDisableText") as? String ?? buttonDisableText
+            }
+        }
+        
+        alertSuggestFocusMode!.addButton(withTitle: buttonDisableText)
+        alertSuggestFocusMode!.addButton(withTitle: buttonCancelText)
+        
+        NSApplication.shared.activate(ignoringOtherApps: true)
+        
+        if let window = NSApp.keyWindow{
+            alertSuggestFocusMode?.beginSheetModal(for: window, completionHandler: { (result) in
+                if result == .alertFirstButtonReturn{
+                    print("first")
+                    SettingsManagerObject.isSettingsChanged = true
+                    SettingsManagerObject.isMeetingDetectionEnabled = false
+                    SettingsManagerObject.putUserLocalDeviceSettings()
+                    self.alertSuggestFocusMode = nil
                 }else{
                     print("second")
                     self.alertSuggestFocusMode = nil
@@ -2305,16 +2461,18 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
             if let result = alertSuggestFocusMode?.runModal(){
                 if result == .alertFirstButtonReturn{
                     print("first")
-                    meetingAlertStartFocusClicked()
-                    
+                    SettingsManagerObject.isSettingsChanged = true
+                    SettingsManagerObject.isMeetingDetectionEnabled = false
+                    SettingsManagerObject.putUserLocalDeviceSettings()
+                    alertSuggestFocusMode = nil
                 }else{
                     print("second")
                     alertSuggestFocusMode = nil
                 }
             }
         }
-        
     }
+    
     func meetingAlertStartFocusClicked(){
         print("first")
         
@@ -2371,22 +2529,48 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
  
     
     func returnFromSystemSleepCheckAppStateAgain(){
-        if currentState == ._ACTIVITY_ || currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_ || currentState == ._POSTPON_MORNING_HABIT_{
+        addLog(text: "func:- returnFromSystemSleepCheckAppStateAgain")
+        if currentState == ._ACTIVITY_ || currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_ || currentState == ._POSTPON_MORNING_HABIT_ || !isAppEnable || currentState == ._ABORT_{
+            addLog(text: "func:- returnFromSystemSleepCheckAppStateAgai   return:- currentState is activity/postpone/abort")
             return
         }
         
-        if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_{
-            if Reachability.isConnectedToNetwork() == false {
-                return
+        if isShutOffTimeGoing(){
+            if arrAllEveningHabits.count == 0 {
+                addLog(text: "func:- returnFromSystemSleepCheckAppStateAgai   return:- arrAllEveningHabits count is 0")
+                return;
             }
-            if currentAction == ._VISUALIZE_ && (mainWindowControllerObj?.window?.isVisible ?? false){
-                return
+        }else{
+            if arrAllMorningHabits.count == 0 {
+                addLog(text: "func:- returnFromSystemSleepCheckAppStateAgai   return:- arrAllMorningHabits count is 0")
+                return;
+            }else if isHabitAlreadyShowed{
+                addLog(text: "func:- returnFromSystemSleepCheckAppStateAgai   return:- habit showed already")
+                return;
             }
         }
+        
+//        if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_{
+//            if Reachability.isConnectedToNetwork() == false {
+//                addLog(text: "func:- returnFromSystemSleepCheckAppStateAgai   return:- no internet connection")
+//                return
+//            }
+////            if currentAction == ._VISUALIZE_ && (mainWindowControllerObj?.window?.isVisible ?? false){
+////                return
+////            }
+//        }
+        
+        if popUpOfflineWcObj != nil{
+            if popUpOfflineWcObj?.window?.isVisible ?? false{
+                addLog(text: "func:- returnFromSystemSleepCheckAppStateAgai   return:- popUpOffline window visible")
+                return;
+            }
+        }
+        self.abortAllProcess()
         currentState = ._NOTHING_
-        if mainWindowControllerObj?.window?.isVisible ?? false{
-            mainWindowControllerObj?.window?.close()
-        }
+//        if mainWindowControllerObj?.window?.isVisible ?? false{
+//            mainWindowControllerObj?.window?.close()
+//        }
         backgroundThread()
     }
     var isProcessingHabitRoutine = false
@@ -2611,7 +2795,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
                                                                                 mainWindowControllerObj?.loadWindow()
                                                                                 mainViewControllerObj?.setActivityTimer()
                                                                                 
-                                                                                allApiObject.forceCompleteCurrentSequence(activity_sequence_id: sequenceId, completionHandler: {json in
+                                                                                allApiObject.forceCompleteCurrentSequence(activity_sequence_id: sequenceId, isForToday: true, completionHandler: {json in
                                                                                     
                                                                                     
                                                                                     DispatchQueue.main.async {
@@ -2624,7 +2808,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
                                                                         else{
                                                                             print("pending routin is not from current day clean all running sequence")
                                                                             addLog(text: "pending routin is not from current day clean all running sequence")
-                                                                            allApiObject.forceCompleteCurrentSequence(activity_sequence_id: sequenceId, completionHandler: {json in
+                                                                            allApiObject.forceCompleteCurrentSequence(activity_sequence_id: sequenceId, isForToday: false, completionHandler: {json in
                                                                                 
                                                                                 
                                                                                 DispatchQueue.main.async {
@@ -2643,10 +2827,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
                                                                 }
                                                             }else{
                                                                 addLog(text: "start new morning routine sequence:- current_activity not found as dictionary")
-                                                                
+                                                                let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
+                                                                var isForToday = false
+                                                                if activityAssignedDate.compare(startDate) == .orderedDescending{
+                                                                    isForToday = true
+                                                                }
                                                                 if let sequenceId = currentActivitySequence.value(forKey: "id") as? String{
                                                                     addLog(text: "pending routin is not for use clean all running sequence")
-                                                                    allApiObject.forceCompleteCurrentSequence(activity_sequence_id: sequenceId, completionHandler: {json in
+                                                                    allApiObject.forceCompleteCurrentSequence(activity_sequence_id: sequenceId, isForToday: isForToday, completionHandler: {json in
                                                                         
                                                                         
                                                                         DispatchQueue.main.async {
@@ -2678,9 +2866,57 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
                                                 }
                                                 //                                        }
                                             }else{
-                                                addLog(text: "start new morning routine sequence:- get Last Activity Info is nil")
-                                                self.startHabitsCall(activityId: nil, skippedActivities:[])
-                                                self.isProcessingHabitRoutine = false
+                                                addLog(text: "func backgrounThread:- Last Activity Info is nil, search is there any habit done info found in local userdefauts")
+                                                if let date = UserDefaults.standard.object(forKey: kUserdefaultsLastHabitsStartedDate) as? Date{
+                                                    let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
+                                                    addLog(text: "start new morning routine sequence:- LastHabitsStartedDate found")
+                                                    if date.compare(startDate) == .orderedDescending{//if
+                                                        if let lastActivityId = UserDefaults.standard.object(forKey: kUserdefaultsLastHabitID) as? String{
+                                                            for i in 0..<arrAllMorningHabits.count{
+                                                                if arrAllMorningHabits[i].id == lastActivityId{
+                                                                    if i == arrAllMorningHabits.count - 1{// this case will never happened because we will write morning habit done (kUserdefaultsLastHabitShowDate) locally if all activities done in morning habit
+                                                                        UserDefaults.standard.set(Date(), forKey: kUserdefaultsLastHabitShowDate)
+                                                                        
+                                                                        isHabitAlreadyShowed = true
+                                                                        self.isProcessingHabitRoutine = false
+                                                                        if mainWindowControllerObj?.window?.isVisible ?? false{//if shutoff or focus summary is showing then
+                                                                            self.abortAllProcess()
+                                                                            mainWindowControllerObj?.window?.close()
+                                                                            hideBlankWindowInSecondaryMonitor()
+                                                                        }
+                                                                        mainWindowControllerObj?.loadWindow()
+                                                                        mainViewControllerObj?.setActivityTimer()
+                                                                    }else{
+                                                                        addLog(text: "start new morning routine sequence:- Last Habit id is from morning habit, show morning Habit from last habit id found in userdefaults")
+                                                                        self.isProcessingHabitRoutine = false
+                                                                        self.startHabitsCall(activityId: arrAllMorningHabits[i+1].id, skippedActivities:[])
+                                                                    }
+                                                                    
+                                                                    return;
+                                                                }
+                                                            }
+                                                            
+                                                            addLog(text: "start new morning routine sequence Last Habit id is not from morning habit")
+                                                            self.startHabitsCall(activityId: nil, skippedActivities:[])
+                                                            self.isProcessingHabitRoutine = false
+                                                            
+                                                        }else{
+                                                            addLog(text: "start new morning routine sequence:- Last Habit id is nil")
+                                                            self.startHabitsCall(activityId: nil, skippedActivities:[])
+                                                            self.isProcessingHabitRoutine = false
+                                                        }
+                                                    }else{
+                                                        addLog(text: "start new morning routine sequence:- LastHabitsStartedDate is not from current day")
+                                                        self.startHabitsCall(activityId: nil, skippedActivities:[])
+                                                        self.isProcessingHabitRoutine = false
+                                                    }
+                                                }else
+                                                {
+                                                    addLog(text: "start new morning routine sequence:- LastHabitsStartedDate is nil")
+                                                    self.startHabitsCall(activityId: nil, skippedActivities:[])
+                                                    self.isProcessingHabitRoutine = false
+                                                }
+
                                             }
                                         }
                                     }
@@ -2729,15 +2965,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
         //        }
         
         if currentState == ._EVENING_HABIT_ || currentState == ._FOCUS_SUMMARY_{////_FOCUS_COMPLETED_()
-            if currentState == ._EVENING_HABIT_{
-                addLog(text: "current state is :- evening habits")
-            }
-                //            else if currentState == ._FOCUS_COMPLETED_{
-                //                addLog(text: "current state is :- focus completed view")
-                //            }
-            else if currentState == ._FOCUS_SUMMARY_{
-                addLog(text: "current state is :- focus summary")
-            }
+//            if currentState == ._EVENING_HABIT_{
+//                addLog(text: "current state is :- evening habits")
+//            }
+//                //            else if currentState == ._FOCUS_COMPLETED_{
+//                //                addLog(text: "current state is :- focus completed view")
+//                //            }
+//            else if currentState == ._FOCUS_SUMMARY_{
+//                addLog(text: "current state is :- focus summary")
+//            }
             return;
         }
         
@@ -2764,16 +3000,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
         abortAllProcess()
         if isFocusModeOn(){
             focusModeFinished(fromShutOff: true)
-//            if focusPreferencesVcObj != nil{
-//                if (preferencesWindowControllerObj?.window!.isVisible)!{
-//                    if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-//                        if tabview.selectedTabViewItemIndex == 1{
-//                            focusPreferencesVcObj?.focusModeFinished()
-//                        }
-//                    }
-//                }
-//            }
-            
+            return;
         }
         //        var iseveningHabitAlreadyShowed = true
         //        if let eveningRoutineDate = getEveningRoutineDate(){
@@ -2874,6 +3101,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
                         mainViewControllerObj!.startDirectIncompleteEveningHabitAtIndex(index: i, isLastActivitySkipped: false)
                     }else{
                         if skippedActivities.count == 0{
+                            habitTotalCompletedSeconds = 0
+                            for j in 0..<i{
+                                habitTotalCompletedSeconds += arrAllEveningHabits[j].durationSeconds!
+                            }
+                            if i-1 >= 0{
+                                UserDefaults.standard.set(arrAllEveningHabits[i-1].id, forKey: kUserdefaultsLastHabitID)
+                            }
+                            
                             mainViewControllerObj!.startDirectIncompleteEveningHabitAtIndex(index: i, isLastActivitySkipped: false)
                         }else{
                             var isLastActivitySkipped = false
@@ -2893,7 +3128,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
                                     }
                                     
                                 }
-                                
+                                if i-1 >= 0{
+                                    UserDefaults.standard.set(arrAllEveningHabits[i-1].id, forKey: kUserdefaultsLastHabitID)
+                                }
                             }
                             mainViewControllerObj!.startDirectIncompleteEveningHabitAtIndex(index: i, isLastActivitySkipped: isLastActivitySkipped)
                         }
@@ -2982,7 +3219,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
                                                     }else{
                                                       
                                                         addLog(text: "pending routine is not evening routine - \(sequenceId)")
-                                                        allApiObject.forceCompleteCurrentSequence(activity_sequence_id: sequenceId, completionHandler: {json in
+                                                        allApiObject.forceCompleteCurrentSequence(activity_sequence_id: sequenceId, isForToday: true, completionHandler: {json in
                                                             // and strt break activity
                                                             DispatchQueue.main.async {
                                                                 addLog(text: "start new evening routine sequence")
@@ -2995,7 +3232,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
                                                 }else{
                                                     print("processEveningHabit - pending  routine is not from current day clean all running sequence or pending sequence is not evening routine - \(sequenceId)")
                                                     addLog(text: "processEveningHabit - pending  routine is not from current day clean all running sequence or pending sequence is not evening routine - \(sequenceId)")
-                                                    allApiObject.forceCompleteCurrentSequence(activity_sequence_id: sequenceId, completionHandler: {json in
+                                                    
+                                                    var isForToday = false
+                                                    if activityAssignedDate.compare(shutoffDate) == .orderedDescending{
+                                                        isForToday = true
+                                                    }
+                                                    
+                                                    allApiObject.forceCompleteCurrentSequence(activity_sequence_id: sequenceId, isForToday: isForToday, completionHandler: {json in
                                                         // and strt break activity
                                                         DispatchQueue.main.async {
                                                             addLog(text: "start new evening routine sequence")
@@ -3016,7 +3259,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
                                         
                                         if let sequenceId = currentActivitySequence.value(forKey: "id") as? String{
                                             addLog(text: "pending routin is not for use clean all running sequence")
-                                            allApiObject.forceCompleteCurrentSequence(activity_sequence_id: sequenceId, completionHandler: {json in
+                                            
+                                            var isForToday = false
+                                            if activityAssignedDate.compare(shutoffDate) == .orderedDescending{
+                                                isForToday = true
+                                            }
+                                            
+                                            
+                                            allApiObject.forceCompleteCurrentSequence(activity_sequence_id: sequenceId, isForToday: isForToday, completionHandler: {json in
                                                 // and strt break activity
                                                 DispatchQueue.main.async {
                                                     addLog(text: "start new evening routine sequence")
@@ -3048,15 +3298,47 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
                         }
                         //                                        }
                     }else{
-                        addLog(text: "start new evening routine sequence:- get Last Activity Info is nil")
-                        self.showEveningHabit(activityId: nil, skippedActivities: [])
-                        self.isProcessingHabitRoutine = false
+                        addLog(text: "func processEveningHabit:- Last Activity Info is nil, search is there any habit done info found in local userdefauts")
+                        if let date = UserDefaults.standard.object(forKey: kUserdefaultsLastHabitsStartedDate) as? Date{
+                            
+                            addLog(text: "start new evening routine sequence:-LastHabitsStartedDate found")
+                            if date.compare(shutoffDate) == .orderedDescending{//if
+                                if let lastActivityId = UserDefaults.standard.object(forKey: kUserdefaultsLastHabitID) as? String{
+                                    for i in 0..<arrAllEveningHabits.count{
+                                        if arrAllEveningHabits[i].id == lastActivityId{
+                                            addLog(text: "start new evening routine sequence:- Last Habit id is from evening habit, show eveningHabit from last habit id found in userdefaults")
+                                            self.isProcessingHabitRoutine = false
+                                            self.showEveningHabit(activityId: arrAllEveningHabits[i+1].id, skippedActivities:[])
+                                            return;
+                                        }
+                                    }
+                                    
+                                    addLog(text: "start new evening routine sequence:- Last Habit id is not from evening habit")
+                                    self.showEveningHabit(activityId: nil, skippedActivities: [])
+                                    self.isProcessingHabitRoutine = false
+                                    
+                                }else{
+                                    addLog(text: "start new evening routine sequence:- Last Habit id is nil")
+                                    self.showEveningHabit(activityId: nil, skippedActivities: [])
+                                    self.isProcessingHabitRoutine = false
+                                }
+                            }else{
+                                addLog(text: "start new evening routine sequence:- LastHabitsStartedDate is not from current day")
+                                self.showEveningHabit(activityId: nil, skippedActivities: [])
+                                self.isProcessingHabitRoutine = false
+                            }
+                        }else{
+                            addLog(text: "start new evening routine sequence:- LastHabitsStartedDate is nil")
+                            self.showEveningHabit(activityId: nil, skippedActivities: [])
+                            self.isProcessingHabitRoutine = false
+                        }
+                        
                     }
                 }
             }
             )
         }
-    }
+    }// easy postpone ka dibba pda ho to use marna hai 
     
     func abortAllProcess(){
         addLog(text: "call abort all process.")
@@ -3070,17 +3352,49 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
                         if timerViewcontrollerObj?.webView.isHidden == false{
                             timerViewcontrollerObj?.loadBlankUrl()
                         }
+                        
                         activityAllowedFocusApps.removeAll()
                         activityAllowedFocusUrls.removeAll()
                         currentHabitPlaying = nil
                         timerAllowUrlForActivity?.invalidate()
                         timerAllowAppForActivity?.invalidate()
                         currentActivityPlaying = nil
+                        
+                        
+                        if smallCountDownWcObj != nil{
+                            if smallCountDownWcObj!.window?.isVisible ?? false{
+                                getsmallCountDownVcObject().closeTimerBox()
+                            }
+                        }
+                    }
+                    DispatchQueue.global().async {// did this beacuse some times action is in progress but timer is not initialized and it takes 1 second to initialize
+                        DispatchQueue.main.async {
+                            if timerViewcontrollerObj?.timer != nil {
+                                timerViewcontrollerObj?.timer?.invalidate()
+                                enableSystemSleep()
+                                if timerViewcontrollerObj?.webView.isHidden == false{
+                                    timerViewcontrollerObj?.loadBlankUrl()
+                                }
+                                
+                                activityAllowedFocusApps.removeAll()
+                                activityAllowedFocusUrls.removeAll()
+                                currentHabitPlaying = nil
+                                self.timerAllowUrlForActivity?.invalidate()
+                                self.timerAllowAppForActivity?.invalidate()
+                                currentActivityPlaying = nil
+                                
+                                
+                                if smallCountDownWcObj != nil{
+                                    if smallCountDownWcObj!.window?.isVisible ?? false{
+                                        getsmallCountDownVcObject().closeTimerBox()
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
         }
-        //        }
     }
     
     @objc func startHabitsCall(activityId:String?, skippedActivities:[String]){
@@ -3099,6 +3413,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
             self.statusbutton?.backgroundcolor = NSColor.systemBlue
             return;
         }
+        
         if avmonitor.isACameraOn(){
 //            mainWindowControllerObj?.loadWindow()19/8/22 morning routine hi aaygi pahle
 //            mainViewControllerObj?.setActivityTimer()
@@ -3136,6 +3451,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
                             mainViewControllerObj!.startDirectIncompleteMorningHabitAtIndex(index: i, isLastActivitySkipped:false)
                         }else {
                             if skippedActivities.count == 0{
+                                habitTotalCompletedSeconds = 0
+                                for j in 0..<i{
+                                    habitTotalCompletedSeconds += arrAllMorningHabits[j].durationSeconds!
+                                }
+                                if i-1 >= 0{
+                                    UserDefaults.standard.set(arrAllMorningHabits[i-1].id, forKey: kUserdefaultsLastHabitID)
+                                }
+                                
+                                
                                 mainViewControllerObj!.startDirectIncompleteMorningHabitAtIndex(index: i, isLastActivitySkipped:false)
                             }else{
                                 var isLastActivitySkipped = false
@@ -3153,6 +3477,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
                                             //completed
                                         }
                                         
+                                    }
+                                    if i-1 >= 0{
+                                        UserDefaults.standard.set(arrAllMorningHabits[i-1].id, forKey: kUserdefaultsLastHabitID)
                                     }
                                     
                                 }
@@ -3203,21 +3530,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
             return;
         }
         addLog(text: "checkTrialExpire")
-//        if let date = UserDefaults.standard.object(forKey: kUserdefaultsFirstHabitDay) as? Date{
-//            let secondsBetween = Date().timeIntervalSince(date)
-//            let numberOfDays_afterinstall = Int((secondsBetween) / 86400)
-//            var daysremaining = daysFreeTrial-numberOfDays_afterinstall
-//            if daysremaining < 0 {
-//                daysremaining = 0
-//            }
-//            if UserDefaults.standard.object(forKey: "trialExpired") != nil{
-//                daysremaining = 0
-//            }
-//            if daysremaining == 0{//if expired than menu is enabled
-//                UserDefaults.standard.set(true, forKey: "trialExpired")
-//                quitAndRestartApp()
-//            }
-//        }
+
         if isPurchased == false && daysLeft <= 0{//
             quitAndRestartApp()
         }
@@ -3239,10 +3552,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
         if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
             if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
                 tabview.selectedTabViewItemIndex = 0
-                tabview.view.addSubview(enterPasswordVcObj!.view)
-                tabview.view.addConstraints(subView: enterPasswordVcObj!.view)
-                enterPasswordVcObj?.parentVc = nil
-                addLog(text: "Showing enter password view")
+                if SettingsManagerObject.isPasswordRequireInChangeSettings{
+                    tabview.view.addSubview(enterPasswordVcObj!.view)
+                    tabview.view.addConstraints(subView: enterPasswordVcObj!.view)
+                    enterPasswordVcObj?.parentVc = nil
+                    addLog(text: "Showing enter password view")
+                }
             }
         }
         NSApplication.shared.activate(ignoringOtherApps: true)
@@ -3370,6 +3685,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
     }
     func applicationDidResignActive(_ notification: Notification) {
         print("applicationDidResignActive")
+        if self.alertAppAutoRestart.window.isVisible{
+            self.alertAppAutoRestart.window.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.numberOfWindowLevelKeys)))
+        }
     }
     
     @objc func topIconClickd(){
@@ -3684,6 +4002,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
         arrAllowedAppsInCuddlyModeCurrentFocus.removeAll()
         arrAllowedUrlsInCuddlyModeCurrentFocus.removeAll()
         arrBlockedUrlsInCuddlyModeCurrentFocus.removeAll()
+        
+        fireFoxNotificationShownForCurrentFocusMode = false
     }
     var currentRunningFocusModeName = ""
     func fillAllowUrlArray(){
@@ -3778,7 +4098,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
                                 allApiObject.capturePosthog(event: "block-distracting-app", metadata: [:])
                                 return
                             }
-                            if nameLowercased == "safari" || nameLowercased == "google chrome"{
+                            
+                            if arrBrowsersLowerCasedNames.contains(nameLowercased){
                                 timerAllowUrlForActivity?.invalidate()
                                 self.timerAllowUrlForActivity = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.checkInBackgroundForActivity), userInfo: nil, repeats: true)
                                 RunLoop.main.add(self.timerAllowUrlForActivity!, forMode: RunLoop.Mode.common)
@@ -3823,7 +4144,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
                                 allApiObject.capturePosthog(event: "block-distracting-app", metadata: [:])
                                 return
                             }
-                            if nameLowercased == "safari" || nameLowercased == "google chrome"{
+                            if arrBrowsersLowerCasedNames.contains(nameLowercased){
                                 timerAllowUrlForActivity?.invalidate()
                                 self.timerAllowUrlForActivity = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.checkInBackgroundForActivity), userInfo: nil, repeats: true)
                                 RunLoop.main.add(self.timerAllowUrlForActivity!, forMode: RunLoop.Mode.common)
@@ -3842,6 +4163,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
                     
                     if isAllowedAllAppsInFocus{
                         isAppAllowed = true
+                        if nameLowercased == selfAppName.lowercased(){
+                            isSelfApp = true
+                        }
                     }else{
                         
                         if nameLowercased == selfAppName.lowercased(){
@@ -3884,8 +4208,19 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
                             }
                         }
                     }
+                    if nameLowercased == "firefox"{
+                        if !fireFoxNotificationShownForCurrentFocusMode{
+                            var msg = "FYI we can't block distractions in Firefox yet but if you use Chrome or Safari, we'll be here to support you to stay on track"
+                            if let common = configjson.value(forKey: "common") as? NSDictionary{
+                                msg = common.value(forKey: "notificationFirefoxText") as? String ?? msg
+                            }
+                            showNotificationWithMessage(msg: msg)
+                            fireFoxNotificationShownForCurrentFocusMode = true
+                            return;
+                        }
+                    }
                     DispatchQueue.global().sync {
-                        if nameLowercased == "safari" || nameLowercased == "google chrome"{
+                        if arrBrowsersLowerCasedNames.contains(nameLowercased){
                             print("validtate")
                             self.timerAllowUrl?.invalidate()
                             if self.timerAllowUrl != nil{
@@ -3912,7 +4247,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
                     let nameLowercased = name.lowercased()
                     DispatchQueue.global().sync {
                         
-                        if nameLowercased == "safari" || nameLowercased == "google chrome"{
+                        if arrBrowsersLowerCasedNames.contains(nameLowercased){
                             timerBlockUrl?.invalidate()
                             self.timerBlockUrl = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.blockUrlsInBackground), userInfo: nil, repeats: true)
                             RunLoop.main.add(self.timerBlockUrl!, forMode: RunLoop.Mode.common)
@@ -3966,21 +4301,43 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
         if let runningApp = NSWorkspace.shared.frontmostApplication{
             if let name = runningApp.localizedName{
                 var script: String = ""
-                if name.lowercased() == "safari"{
-                    if var url = getSafariActiveTabUrl(){
-                        print(url)
-                        if !url.contains("favorites:") && !url.contains(blockWebUrlString){//agar block url mai file://* bhi hai to bar bar block hi gota rhega isiliye blockWebUrlString ka check lagaya
-                            let domain = getDomainFromUrl(url: url)
-                            
-                            var bool = false
-                            for turl in SettingsManagerObject.arrBlockedUrls{
-                                bool = self.validation.isUrlValid(urlToCheck: url, allowUrl: turl, domain: domain)
-                                if bool{
-                                    break;
-                                }
-                            }
+                
+                var currentBrowser:BROWSER!
+                let nameLowercased = name.lowercased()
+                
+                if let browser = getCurrentBrowserFrom(browserName: nameLowercased){
+                    currentBrowser = browser
+                }else{
+                    self.timerBlockUrl?.invalidate()
+                    return;
+                }
+                var defaultPageOfBrowser = ""
+                if currentBrowser == ._SAFARI_{
+                    defaultPageOfBrowser = "favorites:"
+                }else{
+                    defaultPageOfBrowser = "chrome:"
+                }
+                
+                
+                
+                if var url = getActiveTabUrlOf(browser: currentBrowser){
+                    print(url)
+                    if !url.contains(defaultPageOfBrowser) && !url.contains(blockWebUrlString){//agar block url mai file://* bhi hai to bar bar block hi gota rhega isiliye blockWebUrlString ka check lagaya
+                        let domain = getDomainFromUrl(url: url)
+                        
+                        var bool = false
+                        for turl in SettingsManagerObject.arrBlockedUrls{
+                            bool = self.validation.isUrlValid(urlToCheck: url, allowUrl: turl, domain: domain)
                             if bool{
-                                url = url.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) ?? url
+                                break;
+                            }
+                        }
+                        if bool{
+                            url = url.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) ?? url
+                            
+                            switch currentBrowser{
+                                
+                            case ._SAFARI_:
                                 script =
                                 """
                                 tell application "Safari"
@@ -3989,32 +4346,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
                                 set URL of active_tab to "\(blockWebUrlString)?old_url=" & "\(url)" & "&block_type=always-blocked"
                                 end tell
                                 """
-                            }else{
-                                return;
-                            }
-                        }else{
-                            return;
-                        }
-                        
-                    }else{
-                        return;
-                    }
-                    
-                }else if name.lowercased() == "google chrome"{
-                    if var url = getGoogleChromeActiveTabUrl(){
-                        print(url)
-                        if !url.contains("chrome:") && !url.contains(blockWebUrlString){//agar block url mai file://* bhi hai to bar bar block hi gota rhega isiliye blockWebUrlString ka check lagaya
-                            let domain = getDomainFromUrl(url: url)
-                            
-                            var bool = false
-                            for turl in SettingsManagerObject.arrBlockedUrls{
-                                bool = self.validation.isUrlValid(urlToCheck: url, allowUrl: turl, domain: domain)
-                                if bool{
-                                    break;
-                                }
-                            }
-                            if bool{
-                                url = url.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) ?? url
+                                
+                            case ._GOOGLE_CHROME_:
                                 script =
                                 """
                                 tell application "Google Chrome"
@@ -4023,20 +4356,114 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
                                 set URL of active_tab to "\(blockWebUrlString)?old_url=" & "\(url)" & "&block_type=always-blocked"
                                 end tell
                                 """
-                            }else{
+                                
+                            case ._BRAVE_BROWSER_:
+                                script =
+                                """
+                                tell application "Brave Browser"
+                                set the_wnd to front window
+                                set active_tab to active tab in the_wnd
+                                set URL of active_tab to "\(blockWebUrlString)?old_url=" & "\(url)" & "&block_type=always-blocked"
+                                end tell
+                                """
+                                
+                            case ._SIDEKICK_:
+                                script =
+                                """
+                                tell application "Sidekick"
+                                set the_wnd to front window
+                                set active_tab to active tab in the_wnd
+                                set URL of active_tab to "\(blockWebUrlString)?old_url=" & "\(url)" & "&block_type=always-blocked"
+                                end tell
+                                """
+                            case .none:
+                               
                                 return
                             }
+                            
                         }else{
-                            return
+                            return;
                         }
                     }else{
-                        return
+                        return;
                     }
                     
-                    
                 }else{
-                    self.timerAllowUrl?.invalidate()
+                    return;
                 }
+                
+//
+//                if name.lowercased() == "safari"{
+//                    if var url = getSafariActiveTabUrl(){
+//                        print(url)
+//                        if !url.contains("favorites:") && !url.contains(blockWebUrlString){//agar block url mai file://* bhi hai to bar bar block hi gota rhega isiliye blockWebUrlString ka check lagaya
+//                            let domain = getDomainFromUrl(url: url)
+//
+//                            var bool = false
+//                            for turl in SettingsManagerObject.arrBlockedUrls{
+//                                bool = self.validation.isUrlValid(urlToCheck: url, allowUrl: turl, domain: domain)
+//                                if bool{
+//                                    break;
+//                                }
+//                            }
+//                            if bool{
+//                                url = url.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) ?? url
+//                                script =
+//                                """
+//                                tell application "Safari"
+//                                set the_wnd to front window
+//                                set active_tab to current tab in the_wnd
+//                                set URL of active_tab to "\(blockWebUrlString)?old_url=" & "\(url)" & "&block_type=always-blocked"
+//                                end tell
+//                                """
+//                            }else{
+//                                return;
+//                            }
+//                        }else{
+//                            return;
+//                        }
+//
+//                    }else{
+//                        return;
+//                    }
+//
+//                }else if name.lowercased() == "google chrome"{
+//                    if var url = getGoogleChromeActiveTabUrl(){
+//                        print(url)
+//                        if !url.contains("chrome:") && !url.contains(blockWebUrlString){//agar block url mai file://* bhi hai to bar bar block hi gota rhega isiliye blockWebUrlString ka check lagaya
+//                            let domain = getDomainFromUrl(url: url)
+//
+//                            var bool = false
+//                            for turl in SettingsManagerObject.arrBlockedUrls{
+//                                bool = self.validation.isUrlValid(urlToCheck: url, allowUrl: turl, domain: domain)
+//                                if bool{
+//                                    break;
+//                                }
+//                            }
+//                            if bool{
+//                                url = url.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) ?? url
+//                                script =
+//                                """
+//                                tell application "Google Chrome"
+//                                set the_wnd to front window
+//                                set active_tab to active tab in the_wnd
+//                                set URL of active_tab to "\(blockWebUrlString)?old_url=" & "\(url)" & "&block_type=always-blocked"
+//                                end tell
+//                                """
+//                            }else{
+//                                return
+//                            }
+//                        }else{
+//                            return
+//                        }
+//                    }else{
+//                        return
+//                    }
+//
+//
+//                }else{
+//                    self.timerAllowUrl?.invalidate()
+//                }
                 //--if URL of the_tab is equal to "https://www.apple.com/" then
                 if script.isEmpty{
                     return
@@ -4469,72 +4896,96 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
                 if let name = runningApp.localizedName{
                     var script: String = ""
                     var tabUrl = ""
-                    if name.lowercased() == "safari"{
-                        if var url = getSafariActiveTabUrl(){
-                            print(url)
-                            for turl in self.defaultAllowedUrl{
-                                if url.contains(turl){
+                    
+                    var currentBrowser:BROWSER!
+                    let nameLowercased = name.lowercased()
+                            
+                    
+                    if let browser = getCurrentBrowserFrom(browserName: nameLowercased){
+                        currentBrowser = browser
+                    }else{
+                        if nameLowercased != selfAppName.lowercased(){
+                            self.closePopupBlockWindowIfRunningForUrl()
+                        }
+                        
+                        self.timerAllowUrl?.invalidate()
+                        return;
+                    }
+                    var defaultPageOfBrowser = ""
+                    if currentBrowser == ._SAFARI_{
+                        defaultPageOfBrowser = "favorites:"
+                    }else{
+                        defaultPageOfBrowser = "chrome:"
+                    }
+                    if var url = getActiveTabUrlOf(browser: currentBrowser){
+                        print(url)
+                        for turl in self.defaultAllowedUrl{
+                            if url.contains(turl){
+                                self.closePopupBlockWindowIfRunningForUrl()
+                                return
+                            }
+                        }
+                        
+                        if !url.contains(defaultPageOfBrowser){
+                            let domain = getDomainFromUrl(url: url)
+                            var isBlocked = false
+                            var isAllowed = false
+                            if SettingsManagerObject.isCuddlyModeEnabled{
+                                if self.arrAllowedUrlsInCuddlyModeCurrentFocus.contains(domain){
                                     self.closePopupBlockWindowIfRunningForUrl()
                                     return
                                 }
                             }
-                            
-                            if !url.contains("favorites:"){
-                                let domain = getDomainFromUrl(url: url)
-                                var isBlocked = false
-                                var isAllowed = false
-                                if SettingsManagerObject.isCuddlyModeEnabled{
-                                    if self.arrAllowedUrlsInCuddlyModeCurrentFocus.contains(domain){
-                                        self.closePopupBlockWindowIfRunningForUrl()
-                                        return
+                            if isAllowedListApproachInFocus{
+                                for turl in self.arrBlockedUrlsForFocus{
+                                    isBlocked = self.validation.isUrlValid(urlToCheck: url, allowUrl: turl, domain: domain)
+                                    if isBlocked{
+                                        break;
                                     }
                                 }
-                                if isAllowedListApproachInFocus{
-                                    for turl in self.arrBlockedUrlsForFocus{
-                                        isBlocked = self.validation.isUrlValid(urlToCheck: url, allowUrl: turl, domain: domain)
-                                        if isBlocked{
+                                
+                                
+                                if !isBlocked{
+                                    for turl in self.arrAllowedUrlsForFocus{
+                                        isAllowed = self.validation.isUrlValid(urlToCheck: url, allowUrl: turl, domain: domain)
+                                        if isAllowed{
                                             break;
                                         }
                                     }
-                                    
-                                    
-                                    if !isBlocked{
-                                        for turl in self.arrAllowedUrlsForFocus{
-                                            isAllowed = self.validation.isUrlValid(urlToCheck: url, allowUrl: turl, domain: domain)
-                                            if isAllowed{
-                                                break;
-                                            }
-                                        }
-                                        if !isAllowed{
-                                            if let title = getSafariActiveTabTitle()?.lowercased(){
-                                                for turl in self.arrAllowedUrlsForFocus{
-                                                    var starUrl: String = ""
-                                                    starUrl = "*" + turl.lowercased() + "*"
-                                                    isAllowed = wildcard(title, pattern: starUrl)
-                                                    if isAllowed{
-                                                        break;
-                                                    }
+                                    if !isAllowed{
+                                        if let title = getActiveTabTitleOf(browser: currentBrowser)?.lowercased(){
+                                            for turl in self.arrAllowedUrlsForFocus{
+                                                var starUrl: String = ""
+                                                starUrl = "*" + turl.lowercased() + "*"
+                                                isAllowed = wildcard(title, pattern: starUrl)
+                                                if isAllowed{
+                                                    break;
                                                 }
                                             }
                                         }
                                     }
-                                }else{
-                                    if !isBlockedAllUrlsInFocus{
-                                        isAllowed = true
-                                        for turl in self.arrBlockedUrlsForFocus{
-                                            isBlocked = self.validation.isUrlValid(urlToCheck: url, allowUrl: turl, domain: domain)
-                                            if isBlocked{
-                                                isAllowed = false
-                                                break;
-                                            }
+                                }
+                            }else{
+                                if !isBlockedAllUrlsInFocus{
+                                    isAllowed = true
+                                    for turl in self.arrBlockedUrlsForFocus{
+                                        isBlocked = self.validation.isUrlValid(urlToCheck: url, allowUrl: turl, domain: domain)
+                                        if isBlocked{
+                                            isAllowed = false
+                                            break;
                                         }
                                     }
                                 }
+                            }
+                            
+                            if !isAllowed{
+                                tabUrl = domain
+                                url = url.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) ?? url
                                 
-                                if !isAllowed{
-                                    tabUrl = domain
-                                    url = url.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) ?? url
+                                
+                                switch currentBrowser{
                                     
+                                case ._SAFARI_:
                                     script =
                                     """
                                     tell application "Safari"
@@ -4543,85 +4994,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
                                     set URL of active_tab to "\(blockWebUrlString)?old_url=" & "\(url)" & "\(focusModeExpiryTimeString)&focus_mode=\(focusMode)&focus_mode_intention=\(intention)"
                                     end tell
                                     """
-                                }else{
-                                    self.closePopupBlockWindowIfRunningForUrl()
-                                    return
-                                }
-                            }else{
-                                self.closePopupBlockWindowIfRunningForUrl()
-                                return;
-                            }
-                            
-                        }else{
-                            self.closePopupBlockWindowIfRunningForUrl()
-                            return;
-                        }
-                        
-                    }else if name.lowercased() == "google chrome"{
-                        if var url = getGoogleChromeActiveTabUrl(){
-                            print(url)
-                            for turl in self.defaultAllowedUrl{
-                                if url.contains(turl){
-                                    self.closePopupBlockWindowIfRunningForUrl()
-                                    return
-                                }
-                            }
-                            
-                            if !url.contains("chrome:"){
-                                let domain = getDomainFromUrl(url: url)
-                                var isBlocked = false
-                                var isAllowed = false
-                                if SettingsManagerObject.isCuddlyModeEnabled{
-                                    if self.arrAllowedUrlsInCuddlyModeCurrentFocus.contains(domain){
-                                        self.closePopupBlockWindowIfRunningForUrl()
-                                        return
-                                    }
-                                }
-                                if isAllowedListApproachInFocus{
-                                    for turl in self.arrBlockedUrlsForFocus{
-                                        isBlocked = self.validation.isUrlValid(urlToCheck: url, allowUrl: turl, domain: domain)
-                                        if isBlocked{
-                                            break;
-                                        }
-                                    }
                                     
-                                    if !isBlocked{
-                                        for turl in self.arrAllowedUrlsForFocus{
-                                            isAllowed = self.validation.isUrlValid(urlToCheck: url, allowUrl: turl, domain: domain)
-                                            if isAllowed{
-                                                break;
-                                            }
-                                        }
-                                        if !isAllowed{
-                                            if let title = getGoogleChromeActiveTabTitle()?.lowercased(){
-                                                for turl in self.arrAllowedUrlsForFocus{
-                                                    var starUrl: String = ""
-                                                    starUrl = "*" + turl.lowercased() + "*"
-                                                    isAllowed = wildcard(title, pattern: starUrl)
-                                                    if isAllowed{
-                                                        break;
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }else{
-                                    if !isBlockedAllUrlsInFocus{
-                                        isAllowed = true
-                                        for turl in self.arrBlockedUrlsForFocus{
-                                            isBlocked = self.validation.isUrlValid(urlToCheck: url, allowUrl: turl, domain: domain)
-                                            if isBlocked{
-                                                isAllowed = false
-                                                break;
-                                            }
-                                        }
-                                    }
-                                }
-                                
-                                if !isAllowed{
-                                    tabUrl = domain
-                                    url = url.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) ?? url
-                                    
+                                case ._GOOGLE_CHROME_:
                                     script =
                                     """
                                     tell application "Google Chrome"
@@ -4630,10 +5004,31 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
                                     set URL of active_tab to "\(blockWebUrlString)?old_url=" & "\(url)" & "\(focusModeExpiryTimeString)&focus_mode=\(focusMode)&focus_mode_intention=\(intention)"
                                     end tell
                                     """
-                                }else{
+                                    
+                                case ._BRAVE_BROWSER_:
+                                    script =
+                                    """
+                                    tell application "Brave Browser"
+                                    set the_wnd to front window
+                                    set active_tab to active tab in the_wnd
+                                    set URL of active_tab to "\(blockWebUrlString)?old_url=" & "\(url)" & "\(focusModeExpiryTimeString)&focus_mode=\(focusMode)&focus_mode_intention=\(intention)"
+                                    end tell
+                                    """
+                                    
+                                case ._SIDEKICK_:
+                                    script =
+                                    """
+                                    tell application "Sidekick"
+                                    set the_wnd to front window
+                                    set active_tab to active tab in the_wnd
+                                    set URL of active_tab to "\(blockWebUrlString)?old_url=" & "\(url)" & "\(focusModeExpiryTimeString)&focus_mode=\(focusMode)&focus_mode_intention=\(intention)"
+                                    end tell
+                                    """
+                                case .none:
                                     self.closePopupBlockWindowIfRunningForUrl()
-                                    return;
+                                    return
                                 }
+ 
                             }else{
                                 self.closePopupBlockWindowIfRunningForUrl()
                                 return
@@ -4643,16 +5038,196 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
                             return;
                         }
                         
-                        
                     }else{
-                        if name.lowercased() != selfAppName.lowercased(){
-                            self.closePopupBlockWindowIfRunningForUrl()
-                        }
-                        
-                        self.timerAllowUrl?.invalidate()
+                        self.closePopupBlockWindowIfRunningForUrl()
                         return;
                     }
                     self.focusTryToBlockUnwantedUrl(script: script, url: tabUrl)
+                    
+//                    if name.lowercased() == "safari"{
+//                        if var url = getSafariActiveTabUrl(){
+//                            print(url)
+//                            for turl in self.defaultAllowedUrl{
+//                                if url.contains(turl){
+//                                    self.closePopupBlockWindowIfRunningForUrl()
+//                                    return
+//                                }
+//                            }
+//
+//                            if !url.contains("favorites:"){
+//                                let domain = getDomainFromUrl(url: url)
+//                                var isBlocked = false
+//                                var isAllowed = false
+//                                if SettingsManagerObject.isCuddlyModeEnabled{
+//                                    if self.arrAllowedUrlsInCuddlyModeCurrentFocus.contains(domain){
+//                                        self.closePopupBlockWindowIfRunningForUrl()
+//                                        return
+//                                    }
+//                                }
+//                                if isAllowedListApproachInFocus{
+//                                    for turl in self.arrBlockedUrlsForFocus{
+//                                        isBlocked = self.validation.isUrlValid(urlToCheck: url, allowUrl: turl, domain: domain)
+//                                        if isBlocked{
+//                                            break;
+//                                        }
+//                                    }
+//
+//
+//                                    if !isBlocked{
+//                                        for turl in self.arrAllowedUrlsForFocus{
+//                                            isAllowed = self.validation.isUrlValid(urlToCheck: url, allowUrl: turl, domain: domain)
+//                                            if isAllowed{
+//                                                break;
+//                                            }
+//                                        }
+//                                        if !isAllowed{
+//                                            if let title = getSafariActiveTabTitle()?.lowercased(){
+//                                                for turl in self.arrAllowedUrlsForFocus{
+//                                                    var starUrl: String = ""
+//                                                    starUrl = "*" + turl.lowercased() + "*"
+//                                                    isAllowed = wildcard(title, pattern: starUrl)
+//                                                    if isAllowed{
+//                                                        break;
+//                                                    }
+//                                                }
+//                                            }
+//                                        }
+//                                    }
+//                                }else{
+//                                    if !isBlockedAllUrlsInFocus{
+//                                        isAllowed = true
+//                                        for turl in self.arrBlockedUrlsForFocus{
+//                                            isBlocked = self.validation.isUrlValid(urlToCheck: url, allowUrl: turl, domain: domain)
+//                                            if isBlocked{
+//                                                isAllowed = false
+//                                                break;
+//                                            }
+//                                        }
+//                                    }
+//                                }
+//
+//                                if !isAllowed{
+//                                    tabUrl = domain
+//                                    url = url.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) ?? url
+//
+//                                    script =
+//                                    """
+//                                    tell application "Safari"
+//                                    set the_wnd to front window
+//                                    set active_tab to current tab in the_wnd
+//                                    set URL of active_tab to "\(blockWebUrlString)?old_url=" & "\(url)" & "\(focusModeExpiryTimeString)&focus_mode=\(focusMode)&focus_mode_intention=\(intention)"
+//                                    end tell
+//                                    """
+//                                }else{
+//                                    self.closePopupBlockWindowIfRunningForUrl()
+//                                    return
+//                                }
+//                            }else{
+//                                self.closePopupBlockWindowIfRunningForUrl()
+//                                return;
+//                            }
+//
+//                        }else{
+//                            self.closePopupBlockWindowIfRunningForUrl()
+//                            return;
+//                        }
+//
+//                    }else if name.lowercased() == "google chrome"{
+//                        if var url = getGoogleChromeActiveTabUrl(){
+//                            print(url)
+//                            for turl in self.defaultAllowedUrl{
+//                                if url.contains(turl){
+//                                    self.closePopupBlockWindowIfRunningForUrl()
+//                                    return
+//                                }
+//                            }
+//
+//                            if !url.contains("chrome:"){
+//                                let domain = getDomainFromUrl(url: url)
+//                                var isBlocked = false
+//                                var isAllowed = false
+//                                if SettingsManagerObject.isCuddlyModeEnabled{
+//                                    if self.arrAllowedUrlsInCuddlyModeCurrentFocus.contains(domain){
+//                                        self.closePopupBlockWindowIfRunningForUrl()
+//                                        return
+//                                    }
+//                                }
+//                                if isAllowedListApproachInFocus{
+//                                    for turl in self.arrBlockedUrlsForFocus{
+//                                        isBlocked = self.validation.isUrlValid(urlToCheck: url, allowUrl: turl, domain: domain)
+//                                        if isBlocked{
+//                                            break;
+//                                        }
+//                                    }
+//
+//                                    if !isBlocked{
+//                                        for turl in self.arrAllowedUrlsForFocus{
+//                                            isAllowed = self.validation.isUrlValid(urlToCheck: url, allowUrl: turl, domain: domain)
+//                                            if isAllowed{
+//                                                break;
+//                                            }
+//                                        }
+//                                        if !isAllowed{
+//                                            if let title = getGoogleChromeActiveTabTitle()?.lowercased(){
+//                                                for turl in self.arrAllowedUrlsForFocus{
+//                                                    var starUrl: String = ""
+//                                                    starUrl = "*" + turl.lowercased() + "*"
+//                                                    isAllowed = wildcard(title, pattern: starUrl)
+//                                                    if isAllowed{
+//                                                        break;
+//                                                    }
+//                                                }
+//                                            }
+//                                        }
+//                                    }
+//                                }else{
+//                                    if !isBlockedAllUrlsInFocus{
+//                                        isAllowed = true
+//                                        for turl in self.arrBlockedUrlsForFocus{
+//                                            isBlocked = self.validation.isUrlValid(urlToCheck: url, allowUrl: turl, domain: domain)
+//                                            if isBlocked{
+//                                                isAllowed = false
+//                                                break;
+//                                            }
+//                                        }
+//                                    }
+//                                }
+//
+//                                if !isAllowed{
+//                                    tabUrl = domain
+//                                    url = url.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) ?? url
+//
+//                                    script =
+//                                    """
+//                                    tell application "Google Chrome"
+//                                    set the_wnd to front window
+//                                    set active_tab to active tab in the_wnd
+//                                    set URL of active_tab to "\(blockWebUrlString)?old_url=" & "\(url)" & "\(focusModeExpiryTimeString)&focus_mode=\(focusMode)&focus_mode_intention=\(intention)"
+//                                    end tell
+//                                    """
+//                                }else{
+//                                    self.closePopupBlockWindowIfRunningForUrl()
+//                                    return;
+//                                }
+//                            }else{
+//                                self.closePopupBlockWindowIfRunningForUrl()
+//                                return
+//                            }
+//                        }else{
+//                            self.closePopupBlockWindowIfRunningForUrl()
+//                            return;
+//                        }
+//
+//
+//                    }else{
+//                        if name.lowercased() != selfAppName.lowercased(){
+//                            self.closePopupBlockWindowIfRunningForUrl()
+//                        }
+//
+//                        self.timerAllowUrl?.invalidate()
+//                        return;
+//                    }
+                    
                 }
             }
             
@@ -4674,126 +5249,136 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
             if let runningApp = NSWorkspace.shared.frontmostApplication{
                 if let name = runningApp.localizedName{
                     var script: String = ""
-                    if name.lowercased() == "safari"{
-                        if var url = getSafariActiveTabUrl(){
-                            print(url)
-                            for turl in self.defaultAllowedUrl{
-                                if url.contains(turl){
-                                    return
+                    
+                    var currentBrowser:BROWSER!
+                    let nameLowercased = name.lowercased()
+                    
+                    if let browser = getCurrentBrowserFrom(browserName: nameLowercased){
+                        currentBrowser = browser
+                    }else{
+                        self.timerAllowUrl?.invalidate()
+                        return;
+                    }
+                    var defaultPageOfBrowser = ""
+                    if currentBrowser == ._SAFARI_{
+                        defaultPageOfBrowser = "favorites:"
+                    }else{
+                        defaultPageOfBrowser = "chrome:"
+                    }
+                    
+                    
+                    if var url = getActiveTabUrlOf(browser: currentBrowser){
+                        print(url)
+                        for turl in self.defaultAllowedUrl{
+                            if url.contains(turl){
+                                return
+                            }
+                        }
+                        
+                        if !url.contains(defaultPageOfBrowser){
+                            let domain = getDomainFromUrl(url: url)
+                            
+                            var bool = false
+                            var blockType = ""
+                            if currentState == ._ACTIVITY_{
+                                if currentActivityPlaying != nil{
+                                    for turl in currentActivityPlaying!.allowUrls{
+                                        bool = self.validation.isUrlValid(urlToCheck: url, allowUrl: turl, domain: domain)
+                                        if bool{
+                                            break;
+                                        }
+                                    }
+                                    if !bool{
+                                        for turl in activityAllowedFocusUrls{
+                                            bool = self.validation.isUrlValid(urlToCheck: url, allowUrl: turl, domain: domain)
+                                            if bool{
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    if !bool{
+                                        if let title = getActiveTabTitleOf(browser: currentBrowser)?.lowercased(){
+                                            for turl in activityAllowedFocusUrls{
+                                                var starUrl: String = ""
+                                                starUrl = "*" + turl.lowercased() + "*"
+                                                bool = wildcard(title, pattern: starUrl)
+                                                if bool{
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
+                                blockType = "break-activity"
+                            }else if currentState == ._MORNING_HABIT_{
+                                if currentHabitPlaying != nil{
+                                    for turl in currentHabitPlaying!.allowUrls{
+                                        bool = self.validation.isUrlValid(urlToCheck: url, allowUrl: turl, domain: domain)
+                                        if bool{
+                                            break;
+                                        }
+                                    }
+                                    if !bool{
+                                        for turl in activityAllowedFocusUrls{
+                                            bool = self.validation.isUrlValid(urlToCheck: url, allowUrl: turl, domain: domain)
+                                            if bool{
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    if !bool{
+                                        if let title = getActiveTabTitleOf(browser: currentBrowser)?.lowercased(){
+                                            for turl in activityAllowedFocusUrls{
+                                                var starUrl: String = ""
+                                                starUrl = "*" + turl.lowercased() + "*"
+                                                bool = wildcard(title, pattern: starUrl)
+                                                if bool{
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                blockType = "morning-habit"
+                            }else if currentState == ._EVENING_HABIT_{
+                                if currentHabitPlaying != nil{
+                                    for turl in currentHabitPlaying!.allowUrls{
+                                        bool = self.validation.isUrlValid(urlToCheck: url, allowUrl: turl, domain: domain)
+                                        if bool{
+                                            break;
+                                        }
+                                    }
+                                    if !bool{
+                                        for turl in activityAllowedFocusUrls{
+                                            bool = self.validation.isUrlValid(urlToCheck: url, allowUrl: turl, domain: domain)
+                                            if bool{
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    if !bool{
+                                        if let title = getActiveTabTitleOf(browser: currentBrowser)?.lowercased(){
+                                            for turl in activityAllowedFocusUrls{
+                                                var starUrl: String = ""
+                                                starUrl = "*" + turl.lowercased() + "*"
+                                                bool = wildcard(title, pattern: starUrl)
+                                                if bool{
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                blockType = "evening-habit"
                             }
                             
-                            if !url.contains("favorites:"){
-                                let domain = getDomainFromUrl(url: url)
+                            if !bool{
+                                url = url.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) ?? url
                                 
-                                var bool = false
-                                var blockType = ""
-                                if currentState == ._ACTIVITY_{
-                                    if currentActivityPlaying != nil{
-                                        for turl in currentActivityPlaying!.allowUrls{
-                                            bool = self.validation.isUrlValid(urlToCheck: url, allowUrl: turl, domain: domain)
-                                            if bool{
-                                                break;
-                                            }
-                                        }
-                                        if !bool{
-                                            for turl in activityAllowedFocusUrls{
-                                                bool = self.validation.isUrlValid(urlToCheck: url, allowUrl: turl, domain: domain)
-                                                if bool{
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                        if !bool{
-                                            if let title = getSafariActiveTabTitle()?.lowercased(){
-                                                for turl in activityAllowedFocusUrls{
-//                                                    if title.localizedCaseInsensitiveContains(turl){
-//                                                        bool = true
-//                                                        break;
-//                                                    }
-                                                    var starUrl: String = ""
-                                                    starUrl = "*" + turl.lowercased() + "*"
-                                                    bool = wildcard(title, pattern: starUrl)
-                                                    if bool{
-                                                        break;
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                    blockType = "break-activity"
-                                }else if currentState == ._MORNING_HABIT_{
-                                    if currentHabitPlaying != nil{
-                                        for turl in currentHabitPlaying!.allowUrls{
-                                            bool = self.validation.isUrlValid(urlToCheck: url, allowUrl: turl, domain: domain)
-                                            if bool{
-                                                break;
-                                            }
-                                        }
-                                        if !bool{
-                                            for turl in activityAllowedFocusUrls{
-                                                bool = self.validation.isUrlValid(urlToCheck: url, allowUrl: turl, domain: domain)
-                                                if bool{
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                        if !bool{
-                                            if let title = getSafariActiveTabTitle()?.lowercased(){
-                                                for turl in activityAllowedFocusUrls{
-//                                                    if title.localizedCaseInsensitiveContains(turl){
-//                                                        bool = true
-//                                                        break;
-//                                                    }
-                                                    var starUrl: String = ""
-                                                    starUrl = "*" + turl.lowercased() + "*"
-                                                    bool = wildcard(title, pattern: starUrl)
-                                                    if bool{
-                                                        break;
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                    blockType = "morning-habit"
-                                }else if currentState == ._EVENING_HABIT_{
-                                    if currentHabitPlaying != nil{
-                                        for turl in currentHabitPlaying!.allowUrls{
-                                            bool = self.validation.isUrlValid(urlToCheck: url, allowUrl: turl, domain: domain)
-                                            if bool{
-                                                break;
-                                            }
-                                        }
-                                        if !bool{
-                                            for turl in activityAllowedFocusUrls{
-                                                bool = self.validation.isUrlValid(urlToCheck: url, allowUrl: turl, domain: domain)
-                                                if bool{
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                        if !bool{
-                                            if let title = getSafariActiveTabTitle()?.lowercased(){
-                                                for turl in activityAllowedFocusUrls{
-//                                                    if title.localizedCaseInsensitiveContains(turl){
-//                                                        bool = true
-//                                                        break;
-//                                                    }
-                                                    var starUrl: String = ""
-                                                    starUrl = "*" + turl.lowercased() + "*"
-                                                    bool = wildcard(title, pattern: starUrl)
-                                                    if bool{
-                                                        break;
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                    blockType = "evening-habit"
-                                }
                                 
-                                if !bool{
-                                    url = url.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) ?? url
+                                switch currentBrowser{
+                                    
+                                case ._SAFARI_:
                                     script =
                                     """
                                     tell application "Safari"
@@ -4802,141 +5387,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
                                     set URL of active_tab to "\(blockWebUrlString)?old_url=" & "\(url)" & "&block_type=\(blockType)"
                                     end tell
                                     """
-                                }else{
-                                    return
-                                }
-                            }else{
-                                return;
-                            }
-                            
-                        }else{
-                            return;
-                        }
-                        
-                    }else if name.lowercased() == "google chrome"{
-                        if var url = getGoogleChromeActiveTabUrl(){
-                            print(url)
-                            for turl in self.defaultAllowedUrl{
-                                if url.contains(turl){
-                                    return
-                                }
-                            }
-                            
-                            if !url.contains("chrome:"){
-                                let domain = getDomainFromUrl(url: url)
-                                var bool = false
-                                var blockType = ""
-                                if currentState == ._ACTIVITY_{
-                                    if currentActivityPlaying != nil{
-                                        for turl in currentActivityPlaying!.allowUrls{
-                                            bool = self.validation.isUrlValid(urlToCheck: url, allowUrl: turl, domain: domain)
-                                            if bool{
-                                                break;
-                                            }
-                                        }
-                                        if !bool{
-                                            for turl in activityAllowedFocusUrls{
-                                                bool = self.validation.isUrlValid(urlToCheck: url, allowUrl: turl, domain: domain)
-                                                if bool{
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                        if !bool{
-                                            if let title = getGoogleChromeActiveTabTitle()?.lowercased(){
-                                                for turl in activityAllowedFocusUrls{
-//                                                    if title.localizedCaseInsensitiveContains(turl){
-//                                                        bool = true
-//                                                        break;
-//                                                    }
-                                                    var starUrl: String = ""
-                                                    starUrl = "*" + turl.lowercased() + "*"
-                                                    bool = wildcard(title, pattern: starUrl)
-                                                    if bool{
-                                                        break;
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                    blockType = "break-activity"
-                                }
-                                if currentState == ._MORNING_HABIT_{
-                                    if currentHabitPlaying != nil{
-                                        for turl in currentHabitPlaying!.allowUrls{
-                                            bool = self.validation.isUrlValid(urlToCheck: url, allowUrl: turl, domain: domain)
-                                            if bool{
-                                                break;
-                                            }
-                                        }
-                                        
-                                        if !bool{
-                                            for turl in activityAllowedFocusUrls{
-                                                bool = self.validation.isUrlValid(urlToCheck: url, allowUrl: turl, domain: domain)
-                                                if bool{
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                        if !bool{
-                                            if let title = getGoogleChromeActiveTabTitle()?.lowercased(){
-                                                for turl in activityAllowedFocusUrls{
-//                                                    if title.localizedCaseInsensitiveContains(turl){
-//                                                        bool = true
-//                                                        break;
-//                                                    }
-                                                    var starUrl: String = ""
-                                                    starUrl = "*" + turl.lowercased() + "*"
-                                                    bool = wildcard(title, pattern: starUrl)
-                                                    if bool{
-                                                        break;
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                    blockType = "morning-habit"
-                                }
-                                
-                                if currentState == ._EVENING_HABIT_{
-                                    if currentHabitPlaying != nil{
-                                        for turl in currentHabitPlaying!.allowUrls{
-                                            bool = self.validation.isUrlValid(urlToCheck: url, allowUrl: turl, domain: domain)
-                                            if bool{
-                                                break;
-                                            }
-                                        }
-                                        
-                                        if !bool{
-                                            for turl in activityAllowedFocusUrls{
-                                                bool = self.validation.isUrlValid(urlToCheck: url, allowUrl: turl, domain: domain)
-                                                if bool{
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                        if !bool{
-                                            if let title = getGoogleChromeActiveTabTitle()?.lowercased(){
-                                                for turl in activityAllowedFocusUrls{
-//                                                    if title.localizedCaseInsensitiveContains(turl){
-//                                                        bool = true
-//                                                        break;
-//                                                    }
-                                                    var starUrl: String = ""
-                                                    starUrl = "*" + turl.lowercased() + "*"
-                                                    bool = wildcard(title, pattern: starUrl)
-                                                    if bool{
-                                                        break;
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                    blockType = "evening-habit"
-                                }
-                                
-                                if !bool{
-                                    url = url.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) ?? url
+                                    
+                                case ._GOOGLE_CHROME_:
                                     script =
                                     """
                                     tell application "Google Chrome"
@@ -4945,9 +5397,31 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
                                     set URL of active_tab to "\(blockWebUrlString)?old_url=" & "\(url)" & "&block_type=\(blockType)"
                                     end tell
                                     """
-                                }else{
-                                    return;
+                                    
+                                case ._BRAVE_BROWSER_:
+                                    script =
+                                    """
+                                    tell application "Brave Browser"
+                                    set the_wnd to front window
+                                    set active_tab to active tab in the_wnd
+                                    set URL of active_tab to "\(blockWebUrlString)?old_url=" & "\(url)" & "&block_type=\(blockType)"
+                                    end tell
+                                    """
+                                    
+                                case ._SIDEKICK_:
+                                    script =
+                                    """
+                                    tell application "Sidekick"
+                                    set the_wnd to front window
+                                    set active_tab to active tab in the_wnd
+                                    set URL of active_tab to "\(blockWebUrlString)?old_url=" & "\(url)" & "&block_type=\(blockType)"
+                                    end tell
+                                    """
+                                case .none:
+                                   
+                                    return
                                 }
+                                
                             }else{
                                 return
                             }
@@ -4955,10 +5429,271 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
                             return;
                         }
                         
-                        
                     }else{
-                        self.timerAllowUrl?.invalidate()
+                        return;
                     }
+                    
+//                    if name.lowercased() == "safari"{
+//                        if var url = getSafariActiveTabUrl(){
+//                            print(url)
+//                            for turl in self.defaultAllowedUrl{
+//                                if url.contains(turl){
+//                                    return
+//                                }
+//                            }
+//
+//                            if !url.contains("favorites:"){
+//                                let domain = getDomainFromUrl(url: url)
+//
+//                                var bool = false
+//                                var blockType = ""
+//                                if currentState == ._ACTIVITY_{
+//                                    if currentActivityPlaying != nil{
+//                                        for turl in currentActivityPlaying!.allowUrls{
+//                                            bool = self.validation.isUrlValid(urlToCheck: url, allowUrl: turl, domain: domain)
+//                                            if bool{
+//                                                break;
+//                                            }
+//                                        }
+//                                        if !bool{
+//                                            for turl in activityAllowedFocusUrls{
+//                                                bool = self.validation.isUrlValid(urlToCheck: url, allowUrl: turl, domain: domain)
+//                                                if bool{
+//                                                    break;
+//                                                }
+//                                            }
+//                                        }
+//                                        if !bool{
+//                                            if let title = getSafariActiveTabTitle()?.lowercased(){
+//                                                for turl in activityAllowedFocusUrls{
+//                                                    var starUrl: String = ""
+//                                                    starUrl = "*" + turl.lowercased() + "*"
+//                                                    bool = wildcard(title, pattern: starUrl)
+//                                                    if bool{
+//                                                        break;
+//                                                    }
+//                                                }
+//                                            }
+//                                        }
+//                                    }
+//                                    blockType = "break-activity"
+//                                }else if currentState == ._MORNING_HABIT_{
+//                                    if currentHabitPlaying != nil{
+//                                        for turl in currentHabitPlaying!.allowUrls{
+//                                            bool = self.validation.isUrlValid(urlToCheck: url, allowUrl: turl, domain: domain)
+//                                            if bool{
+//                                                break;
+//                                            }
+//                                        }
+//                                        if !bool{
+//                                            for turl in activityAllowedFocusUrls{
+//                                                bool = self.validation.isUrlValid(urlToCheck: url, allowUrl: turl, domain: domain)
+//                                                if bool{
+//                                                    break;
+//                                                }
+//                                            }
+//                                        }
+//                                        if !bool{
+//                                            if let title = getSafariActiveTabTitle()?.lowercased(){
+//                                                for turl in activityAllowedFocusUrls{
+//                                                    var starUrl: String = ""
+//                                                    starUrl = "*" + turl.lowercased() + "*"
+//                                                    bool = wildcard(title, pattern: starUrl)
+//                                                    if bool{
+//                                                        break;
+//                                                    }
+//                                                }
+//                                            }
+//                                        }
+//                                    }
+//                                    blockType = "morning-habit"
+//                                }else if currentState == ._EVENING_HABIT_{
+//                                    if currentHabitPlaying != nil{
+//                                        for turl in currentHabitPlaying!.allowUrls{
+//                                            bool = self.validation.isUrlValid(urlToCheck: url, allowUrl: turl, domain: domain)
+//                                            if bool{
+//                                                break;
+//                                            }
+//                                        }
+//                                        if !bool{
+//                                            for turl in activityAllowedFocusUrls{
+//                                                bool = self.validation.isUrlValid(urlToCheck: url, allowUrl: turl, domain: domain)
+//                                                if bool{
+//                                                    break;
+//                                                }
+//                                            }
+//                                        }
+//                                        if !bool{
+//                                            if let title = getSafariActiveTabTitle()?.lowercased(){
+//                                                for turl in activityAllowedFocusUrls{
+//                                                    var starUrl: String = ""
+//                                                    starUrl = "*" + turl.lowercased() + "*"
+//                                                    bool = wildcard(title, pattern: starUrl)
+//                                                    if bool{
+//                                                        break;
+//                                                    }
+//                                                }
+//                                            }
+//                                        }
+//                                    }
+//                                    blockType = "evening-habit"
+//                                }
+//
+//                                if !bool{
+//                                    url = url.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) ?? url
+//                                    script =
+//                                    """
+//                                    tell application "Safari"
+//                                    set the_wnd to front window
+//                                    set active_tab to current tab in the_wnd
+//                                    set URL of active_tab to "\(blockWebUrlString)?old_url=" & "\(url)" & "&block_type=\(blockType)"
+//                                    end tell
+//                                    """
+//                                }else{
+//                                    return
+//                                }
+//                            }else{
+//                                return;
+//                            }
+//
+//                        }else{
+//                            return;
+//                        }
+//
+//                    }else if name.lowercased() == "google chrome"{
+//                        if var url = getGoogleChromeActiveTabUrl(){
+//                            print(url)
+//                            for turl in self.defaultAllowedUrl{
+//                                if url.contains(turl){
+//                                    return
+//                                }
+//                            }
+//
+//                            if !url.contains("chrome:"){
+//                                let domain = getDomainFromUrl(url: url)
+//                                var bool = false
+//                                var blockType = ""
+//                                if currentState == ._ACTIVITY_{
+//                                    if currentActivityPlaying != nil{
+//                                        for turl in currentActivityPlaying!.allowUrls{
+//                                            bool = self.validation.isUrlValid(urlToCheck: url, allowUrl: turl, domain: domain)
+//                                            if bool{
+//                                                break;
+//                                            }
+//                                        }
+//                                        if !bool{
+//                                            for turl in activityAllowedFocusUrls{
+//                                                bool = self.validation.isUrlValid(urlToCheck: url, allowUrl: turl, domain: domain)
+//                                                if bool{
+//                                                    break;
+//                                                }
+//                                            }
+//                                        }
+//                                        if !bool{
+//                                            if let title = getGoogleChromeActiveTabTitle()?.lowercased(){
+//                                                for turl in activityAllowedFocusUrls{
+//                                                    var starUrl: String = ""
+//                                                    starUrl = "*" + turl.lowercased() + "*"
+//                                                    bool = wildcard(title, pattern: starUrl)
+//                                                    if bool{
+//                                                        break;
+//                                                    }
+//                                                }
+//                                            }
+//                                        }
+//                                    }
+//                                    blockType = "break-activity"
+//                                }
+//                                if currentState == ._MORNING_HABIT_{
+//                                    if currentHabitPlaying != nil{
+//                                        for turl in currentHabitPlaying!.allowUrls{
+//                                            bool = self.validation.isUrlValid(urlToCheck: url, allowUrl: turl, domain: domain)
+//                                            if bool{
+//                                                break;
+//                                            }
+//                                        }
+//
+//                                        if !bool{
+//                                            for turl in activityAllowedFocusUrls{
+//                                                bool = self.validation.isUrlValid(urlToCheck: url, allowUrl: turl, domain: domain)
+//                                                if bool{
+//                                                    break;
+//                                                }
+//                                            }
+//                                        }
+//                                        if !bool{
+//                                            if let title = getGoogleChromeActiveTabTitle()?.lowercased(){
+//                                                for turl in activityAllowedFocusUrls{
+//                                                    var starUrl: String = ""
+//                                                    starUrl = "*" + turl.lowercased() + "*"
+//                                                    bool = wildcard(title, pattern: starUrl)
+//                                                    if bool{
+//                                                        break;
+//                                                    }
+//                                                }
+//                                            }
+//                                        }
+//                                    }
+//                                    blockType = "morning-habit"
+//                                }
+//
+//                                if currentState == ._EVENING_HABIT_{
+//                                    if currentHabitPlaying != nil{
+//                                        for turl in currentHabitPlaying!.allowUrls{
+//                                            bool = self.validation.isUrlValid(urlToCheck: url, allowUrl: turl, domain: domain)
+//                                            if bool{
+//                                                break;
+//                                            }
+//                                        }
+//
+//                                        if !bool{
+//                                            for turl in activityAllowedFocusUrls{
+//                                                bool = self.validation.isUrlValid(urlToCheck: url, allowUrl: turl, domain: domain)
+//                                                if bool{
+//                                                    break;
+//                                                }
+//                                            }
+//                                        }
+//                                        if !bool{
+//                                            if let title = getGoogleChromeActiveTabTitle()?.lowercased(){
+//                                                for turl in activityAllowedFocusUrls{
+//                                                    var starUrl: String = ""
+//                                                    starUrl = "*" + turl.lowercased() + "*"
+//                                                    bool = wildcard(title, pattern: starUrl)
+//                                                    if bool{
+//                                                        break;
+//                                                    }
+//                                                }
+//                                            }
+//                                        }
+//                                    }
+//                                    blockType = "evening-habit"
+//                                }
+//
+//                                if !bool{
+//                                    url = url.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) ?? url
+//                                    script =
+//                                    """
+//                                    tell application "Google Chrome"
+//                                    set the_wnd to front window
+//                                    set active_tab to active tab in the_wnd
+//                                    set URL of active_tab to "\(blockWebUrlString)?old_url=" & "\(url)" & "&block_type=\(blockType)"
+//                                    end tell
+//                                    """
+//                                }else{
+//                                    return;
+//                                }
+//                            }else{
+//                                return
+//                            }
+//                        }else{
+//                            return;
+//                        }
+//
+//
+//                    }else{
+//                        self.timerAllowUrl?.invalidate()
+//                    }
                     //--if URL of the_tab is equal to "https://www.apple.com/" then
                     if let appleScript = NSAppleScript(source: script) {
                         
@@ -5180,7 +5915,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
                             // No purchases found.
                             DispatchQueue.main.async {
                                 let alert = NSAlert()
-                               
+                                alert.setSharingType()
                                 var noPurchasesFoundText = "No purchases found."
                                 if let common = configjson.value(forKey: "common") as? NSDictionary{
                                     noPurchasesFoundText = common.value(forKey: "noPurchasesFoundText") as? String ?? noPurchasesFoundText
@@ -5324,279 +6059,37 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
 
 
 
-
-
-
-// issue till now // todo
-
-
-
-
-
-
 //todo  copyrighttext
 //{ se phele space todod
 
  
 
-// sync isappEnable kro // rahne do local per hi rahega
-//default settings //  didnt create id's at run time beacue we fount that the possibilities of getting default settings from bundel is less disscussed with sir at 12:30 pm monday 12 september
-
-
-
-
-
-
-/* 7/9/22 done
- brain dumb complete
- text complete
- last sequnce started at complete
- password bug sloved
- postpone close button
- revise quantity
- graph sorting bug
-*/
-
-
-/* 8/9/22 done
- average vala kaam done
- revise quantity done
- revise mai bhi check kr liya 
- // Detect natural breaks #204
- // force complete work before starting it
- //force complete k log likhvao
- */
-
-
-/* 9/9/22
- change onboarding flow
- status button title set bug agar preficx nikla h to  hi ... lgao varna ni
- prevent display crash but hua ni pura
- trial purchase work from cradentials
-*/
-
-/* 10/9/22
- 
- 
-*/
-
-/* 12/9/22
- 
- //timer loop infinte bug recreated and solved
- // allw tab urls fix
- // trial workf fix
- // cloudflare done  wild card
- // revise quantity crash done
-*/
-
-
-/* 13/9/22
- focus mode ki list ko get krne k baad sort kro sbse niche lao isi // 
-focus bear allow url bug
- settings bug
- api corrections
- // all activity stats at the end of th day
-*/
-
-/* 14/9/22
-  force focus mode finish done
- focus mode intention issue status button mai multiline thik kiya to space bhi gayab ho rahi ha
- add user id in account tab
- make a screen befor login
- bug default focus create
- Include focus mode intention as query parameter for blocked page// I'd like to show the focus mode intention on the blocked page. Can you add &focus_mode_intention=${intention} to the URL?
-*/
-
-
-
-// // default focus mode localize ni hua done
-// // settimngs webview did not load at first time   done
-// //  start pomodoro window timer bug    done
-// //  day stats api correction done
-
-
-//
-//disable system sleep bug check 
-
-
-
-
-
-
-// token refresh
-
-/// upar vale icon kc lick per scrren agar loginna ho to to dibba  ayga app ka first time vala 
-//
-// bug aai ak ki choices hi gayab ho gai 
-//font ka kaam dekhna hai 
-
-// tab view ko sb view add krna dekha
-
-
-/* 20/9/22
- all api checked
- make current build
- prefrences ui change
- office bear icon done
- jo focus mode chal rha ho uska color change text ka menu mai
-  isValid ko canrenew
- 
- button bda kro scrrenshot dekho and ... bhi attributed string mai  done
-*/
-/* 21/9/22
-
-// user specific wrk done
-//version: ka v bda kro
-//pkg in dark mode text bigda   done but check krna h pkg bna k
-// terms and condition in spenish pkg
-////// popover maximum height try kro kitni hoti hai
-// move check for updats and export stat from menu to settings
-//refresh token
-// userdefaults ko user specific kro    id lga kar  check every userdefaults in app ..  sbko ak sath bhi krne k try kro
-*/
-
-/* 22/9/22
- // log mai id likhavao
- // atrributed stirng check done
- // device id na milne per logout done
- // username email ni aa rha h  done from api
- //open panel mai hide window setting done
- // check for updates window level // minimize krvaya window ko done
-*/
-
-
-/* 26/9/22
-// onboarding flow
-// jha bhi api fail ho status code 200 na ho vha access token right krvao  done
-// blue button nag ka "Upgrade now" click hua h or uske baad menu kholta  h to automatic refresh token karao //done
- */
-
-
-
-//small countdown view per click krne per popover khul rha h handle kro  //solved
-//sign in window close per vapas aa rhi h solved
-// dock icon flow done
-// close in quit box     done
-// text                 done
-// sounds removed   done
-
-
-
-
-
-// dock icon k click per browser top per ni aa rha
-
-// quit ka icon lgao menu mai
-
-
-// app k defaylr  file maneu  vale menu ka kya krna hai
-// buy now url
-
-
-
-
-
-
 // bug  aai kisi k ki settings generate krne k baad alert ok per click ni kiya or kisi case mai alert hat gya or app band ni hui khuli rh gai
 
-// there is no way to skip morning habit :/   usne abort click krke completly skip kiya or emegency select kiya   :- 4 hour k liye app disable ho gai jese hi app activate ki user ne khud to morning habit vapas aa gai      mere system per to solved h pahle
-
-
-
-
-// window close button remove from preferences window
-// close buttonin small count down window
-// upgrade now url in config file
-
-
+// 4 hour app deactivate k case mai evening habit or shutoff or focus summary aata h
+//lekin agar kisi se focus summary ya evening habit ko 4 hour app deactivate kiyta h to sirf shutoff ayga, focus summary 4 hour deactivate se evening routine bhi skip hogi
 
 
 
 // note break activity postpone krke sleep mac akrte h to mac jagne k baad break activity   normal timer lgega
-
-//close window loginhelp not working in
-//general mai dibbe per click per na band ho
+// net band krke habit kar payga user lekin net aate hi net se get krenge  or current activity or net ki same hai to progress local vali  hi use krenge
 
 
-//closing on clicking the close button.  done
-//in Preferences, when we click the Edit habit button, the top border is changing to white color..  done
-// what comes next done
-// sound chqngd
-// ui bug solved general and click bug
-// api check ki
-// Color is reset when adding a new focus type done
-// enable office mode text bug solved
-
-
-
-
-
-
-// focus block abort 10 second ko 5 second kro done
-// manual start break activity
-// reset app password bug       done
-//break activity api a   and break activity button kab kb aayga uska cehck
-// ask next activity bug done
-// always use custom login   done
-// capture event done 
-
-
-//text done
-// capture event done
-// focus summary without loader done
-
-
-
-
-// add log mac version done
-// crash onboarding done
-// visualize scrren hat jati h sleep se jagne k baad // dolved 
-// version likhvaya
-
-
-
-
-//  uninstall flow correction done    ui dikhao sir ko // text bhi
-// password error k case mai alert text done    screen shot dikhao desktop per se sir ko
-// confi file update kro usme bu hai
-// force complete with blank sequence id
-// onboarding screen size done 
-///font done 
-
-
-
-// locked in current focus
-// 8 second kiya
-// call focus k bich maispace
-// if any focus modeis on  then hide locked in currentfocus mode option
-// tooltip text changed
-// warning for brak and same postponing flow
-// show hide password
-// Change to deactivate screen #317
-
-
-
-
-
-//2/11/22
-// 250 character ki limit add focus k timer per bhi laygao
-// slow down postpone
-// open focus preferences
-// possword rules check
-// login acreen text cut solved
-// url bug solved 
-// focus mode chalu hone par apple script bye vali run hui jbki script enable show hui lekin added ni thi done
-
-
-
-
-//todo match ni hoti to kya krna hai
-
-
-// about blank vala kaam
-
-
-// random color
-// about blank
-// login screen
  
+
+//sync done   timer bug done //  blank name not alllow domne //  disable ki jgh hide vala kaam // logs done //  text done
+
+
+// abort ll proces krna hai
+// todo easy postpone k dibbe aate hi visualize ka timer bhi rok lo 
+
+// todo easy postpone in evening habit
+
+
+
+
+
+// focus mdde call
+// focus summary k time focus finish ki entry ni show hui thi kisi user ko
+
+// todo check box ui sahi kro 

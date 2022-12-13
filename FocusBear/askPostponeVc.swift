@@ -214,8 +214,12 @@ class askPostponeVc: NSViewController {
             self.view.removeFromSuperview()
             
             if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
-                mainViewControllerObj?.showPasswordView()
-                enterPasswordVcObj?.parentVc = self
+                if SettingsManagerObject.isPasswordRequireInSkipEvening{
+                    mainViewControllerObj?.showPasswordView()
+                    enterPasswordVcObj?.parentVc = self
+                }else{
+                    mainViewControllerObj?.postponeFocusSummaryFor(minutes: Int(popUpButtonSelectMinutes.title) ?? 15)
+                }
             }else{
                 mainViewControllerObj?.postponeFocusSummaryFor(minutes: Int(popUpButtonSelectMinutes.title) ?? 15)
             }
@@ -301,22 +305,8 @@ class askPostponeVc: NSViewController {
                     self.view.removeFromSuperview()
                     mainViewControllerObj?.postponeBreakActivitiesFor(minutes: 5)
                 }else if currentState == ._MORNING_HABIT_{
-//                    self.view.removeFromSuperview()
-//                    if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
-//                        mainViewControllerObj?.showPasswordView()
-//                        enterPasswordVcObj?.parentVc = self
-//                    }else{
-//                        mainViewControllerObj?.postponeMorningHabitFor(minutes: Int(self.popUpButtonSelectMinutes.title) ?? 15)
-//                    }
                     self.showHabitPostponeView()
                 }else if currentState == ._EVENING_HABIT_{
-//                    self.view.removeFromSuperview()
-//                    if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{//
-//                        mainViewControllerObj?.showPasswordView()
-//                        enterPasswordVcObj?.parentVc = self
-//                    }else{
-//                        mainViewControllerObj?.postponeEveningHabitFor(minutes: Int(self.popUpButtonSelectMinutes.title) ?? 15)
-//                    }
                     self.showHabitPostponeView()
                 }
             }

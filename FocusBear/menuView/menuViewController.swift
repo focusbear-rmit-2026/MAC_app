@@ -367,8 +367,8 @@ class menuViewController: NSViewController {
         if isHardCorePomodoroModeOn{
             height += 32 // only one focus mode will be visible which is on for hardcore pomodoro mode
         }else{
-            if arrFocusType.count > 10{
-                height += 320
+            if arrFocusType.count > 6{
+                height += (6*32)
             }else{
                 height += (arrFocusType.count * 32)
             }
@@ -456,8 +456,12 @@ class menuViewController: NSViewController {
     @IBAction func btnStopHardcorePomodoroModeClicked(_ sender: Any) {
         if isHardCorePomodoroModeOn{
             if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
-                showPasswordWindow()
-                addLog(text: "Showing enter password view from hardcodre pomodoro stop from menu")
+                if SettingsManagerObject.isPasswordRequireInStopPomodoro{
+                    showPasswordWindow()
+                    addLog(text: "Showing enter password view from hardcodre pomodoro stop from menu")
+                }else{
+                    isHardCorePomodoroModeOn = false
+                }
             }else{
                 isHardCorePomodoroModeOn = false
             }
@@ -514,11 +518,7 @@ class menuViewController: NSViewController {
             let filterArr = arrAllbreakActivities.filter { $0.isOfficeFriendly == true}
             if filterArr.count == 0{// no activity found with isOfficeFriendly // 
                 let alert = NSAlert()
-                if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
-                    if state{
-                        alert.window.sharingType = .none
-                    }
-                }
+                alert.setSharingType()
                 var noOfficeFriendlyActivityAlertText = "You don't have any office friendly break activities. Do you want me to add one for you to stand up and stretch for 20 seconds?"
                 var noOfficeFriendlyActivityButtonFirstText = "Yeah sounds good"
                 var noOfficeFriendlyActivityButtonSecondText = "No I'm a machine! I don't need breaks"
@@ -552,11 +552,7 @@ class menuViewController: NSViewController {
     func enableOfficeMode(){
         addLog(text: "enableOfficeMode")//
         let alert = NSAlert()
-        if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
-            if state{
-                alert.window.sharingType = .none
-            }
-        }
+        alert.setSharingType()
         var officeModeEnabledSuccessfullyText = "Ok! I'll just prompt you to do activities that won't weird other people out (doing handstand pushups in the office might raise a few eyebrows)."
         if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
             officeModeEnabledSuccessfullyText = menuInfo.value(forKey: "officeModeEnabledSuccessfullyText") as? String ?? officeModeEnabledSuccessfullyText

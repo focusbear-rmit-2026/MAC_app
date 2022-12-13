@@ -78,25 +78,31 @@ class quitCountDownVc: NSViewController {
     }
     var enterPasswordVcObj: enterPasswordVc?
     func resetData(){
+        
         if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
-            if self.enterPasswordVcObj == nil{
-                self.enterPasswordVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("enterPasswordVc")) as?enterPasswordVc
+            if SettingsManagerObject.isPasswordRequireInQuitApp{
+                if self.enterPasswordVcObj == nil{
+                    self.enterPasswordVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("enterPasswordVc")) as?enterPasswordVc
+                }
+                self.view.addSubview(self.enterPasswordVcObj!.view)
+                self.view.addConstraints(subView: self.enterPasswordVcObj!.view)
+                addLog(text: "Showing enter password view from quit")
+                currentTimer = 0
+                totalDuration = 10
+                let (_,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
+                var minute = "\(m)"
+                var second = "\(s)"
+                if minute.count == 1 {
+                    minute = "0\(m)"
+                }
+                if second.count == 1 {
+                    second = "0\(s)"
+                }
+                self.lblSeconds.stringValue = "\(minute):\(second)"
+            }else{
+                startTimer()
             }
-            self.view.addSubview(self.enterPasswordVcObj!.view)
-            self.view.addConstraints(subView: self.enterPasswordVcObj!.view)
-            addLog(text: "Showing enter password view from quit")
-            currentTimer = 0
-            totalDuration = 10
-            let (_,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
-            var minute = "\(m)"
-            var second = "\(s)"
-            if minute.count == 1 {
-                minute = "0\(m)"
-            }
-            if second.count == 1 {
-                second = "0\(s)"
-            }
-            self.lblSeconds.stringValue = "\(minute):\(second)"
+            
         }else{
             startTimer()
         }

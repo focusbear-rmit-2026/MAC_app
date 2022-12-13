@@ -189,11 +189,7 @@ class activateNowvc: NSViewController,NSTextFieldDelegate {
                         }
                         
                         let alert = NSAlert()
-                        if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
-                            if state{
-                                alert.window.sharingType = .none
-                            }
-                        }
+                        alert.setSharingType()
                         alert.messageText = successfullyActivatedTitle
                         alert.informativeText = successfullyActivatedSubTitle
                         alert.alertStyle = .warning
@@ -257,25 +253,25 @@ class activateNowvc: NSViewController,NSTextFieldDelegate {
         lblTrialExpired.isHidden = false
 
         var daysremaining = 0
-        if let date = UserDefaults.standard.object(forKey: kUserdefaultsFirstHabitDay) as? Date{
-            let secondsBetween = Date().timeIntervalSince(date)
-            let numberOfDays_afterinstall = Int((secondsBetween) / 86400)
-            daysremaining = daysFreeTrial-numberOfDays_afterinstall
-            if daysremaining < 0 {
-                daysremaining = 0
-            }
-            if UserDefaults.standard.object(forKey: "trialExpired") != nil{
-                daysremaining = 0
-            }
-            if daysremaining == 0{
-                if UserDefaults.standard.object(forKey: "trialExpired") == nil{
-                    UserDefaults.standard.set(true, forKey: "trialExpired")
-                }
-            }
-        }else{
-            daysremaining = daysFreeTrial
-            
-        }
+//        if let date = UserDefaults.standard.object(forKey: kUserdefaultsFirstHabitDay) as? Date{
+//            let secondsBetween = Date().timeIntervalSince(date)
+//            let numberOfDays_afterinstall = Int((secondsBetween) / 86400)
+//            daysremaining = daysFreeTrial-numberOfDays_afterinstall
+//            if daysremaining < 0 {
+//                daysremaining = 0
+//            }
+//            if UserDefaults.standard.object(forKey: "trialExpired") != nil{
+//                daysremaining = 0
+//            }
+//            if daysremaining == 0{
+//                if UserDefaults.standard.object(forKey: "trialExpired") == nil{
+//                    UserDefaults.standard.set(true, forKey: "trialExpired")
+//                }
+//            }
+//        }else{
+//            daysremaining = daysFreeTrial
+//            
+//        }
         
         if daysremaining == 0{
             lblTrialExpired.stringValue = trialExpiredText
@@ -350,11 +346,7 @@ class activateNowvc: NSViewController,NSTextFieldDelegate {
         }
         
         let alert = NSAlert()
-        if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
-            if state{
-                alert.window.sharingType = .none
-            }
-        }
+        alert.setSharingType()
         alert.messageText = title
         alert.informativeText = Message
         alert.alertStyle = .warning

@@ -7,33 +7,17 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "F78F6EAB-77F5-4AB0-926F-97F4339C90A2"
+            uuid = "94BB844C-2038-426A-80BF-639BA5DEB143"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "FocusBear/AppDelegate.swift"
+            filePath = "FocusBear/globalFile.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "4679"
-            endingLineNumber = "4679"
-            landmarkName = "checkInBackgroundForActivity()"
-            landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            uuid = "556853D2-315B-4058-BD7B-FF3BDE75CD74"
-            shouldBeEnabled = "Yes"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "FocusBear/AppDelegate.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "4686"
-            endingLineNumber = "4686"
-            landmarkName = "checkInBackgroundForActivity()"
-            landmarkType = "7">
+            startingLineNumber = "2685"
+            endingLineNumber = "2685"
+            landmarkName = "showOnboardingCardWindow(isLogin:)"
+            landmarkType = "9">
          </BreakpointContent>
       </BreakpointProxy>
    </Breakpoints>
