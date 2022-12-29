@@ -113,7 +113,8 @@
         "alertAppRestartText":"Focus Bear se reinicia automáticamente si se cierra o bloquea a la fuerza para asegurarse de ayudarte a combatir las distracciones. Si quieres salir de la aplicación/tomar un descanso, use las funciones para salir en la barra de menú en Focus Bear menú.",
         "buttonDontTellAgainText":"Entendido – No mencionar de nuevo",
         "toolTipColorBoxText":"Elija un color para que se muestre en el fondo del icono de la barra de menú superior para ayudar a identificar el modo de enfoque que está ejecutando.",
-        "notificationFirefoxText":"Nota: No podemos bloquear las distracciones en Firefox aun pero si usas Chrome o Safari, estaremos aquí para ayudarte a mantenerte concentrado."
+        "notificationFirefoxText":"Nota: No podemos bloquear las distracciones en Firefox aun pero si usas Chrome o Safari, estaremos aquí para ayudarte a mantenerte concentrado.",
+        "expiredBarText":"Expired"
     },
     "abortInfo": {
         "abortingTitle": "Cancelando..",
@@ -341,7 +342,10 @@
         "exportSuccessText":"Your logs are available to share in the FocusBearLogs.zip file in the <URL> directory",
         "titleMeetingDetection":"Meeting detection",
         "descriptionMeetingDetectionText":"Enable meeting detection to automatically suggest starting \"Meetings\" focus mode when Focus Bear detects you are in a call.",
-        "checkBoxMeetingDetectionText":"Enable meeting detection"
+        "checkBoxMeetingDetectionText":"Enable meeting detection",
+        "titleHideDock":"Hide dock:",
+        "descriptionHideDockText":"Enable this to hide dock during allowed apps activities to minimize distractions. \"System Events\" permission will be required for this.",
+        "checkBoxHideDockText":"Hide dock during activities having allowed apps."
     },
     "focusPreferencesInfo": {
         "titleFocusType": "Tipo de enfoque:",
@@ -472,7 +476,8 @@
             "buttonCancelText": "Está bien que use otras aplicaciones durante esta reunión",
             "buttonFalseDetectionText":"False positive: I'm not in a meeting",
             "titleFalseDetection":"Sorry about that. Are you sure you're not using an app that is using your microphone? If we keep getting it wrong, click button below to disable meeting detection.",
-            "buttonDisableText":"Disable meeting detection"
+            "buttonDisableText":"Disable meeting detection",
+            "buttonGotItText":"Entendido"
         }
     },
     "pomodoroInfo": {
@@ -605,8 +610,12 @@
         "buttonEnableOfficeModeText": "Cambiar al modo de oficina",
         "officeModeEnableText": "Ok, te daré algunas actividades de descanso que recomendamos para hacer en un entorno de oficina",
         "postponedLastHabitText": "Has pospuesto tus hábitos varias veces. ¿Estás seguro de que quieres posponerlos otra vez?",
-        "buttonDoHabitText": "Cambié de parecer, seguiré con mis hábitos"
-
+        "buttonDoHabitText": "Cambié de parecer, seguiré con mis hábitos",
+        "titlePostponeOrSkip": "Want to postpone the break or skip it completely?",
+        "buttonSkipCompletelyText": "Skip Completely",
+        "titleAskOfficeMode": "Do you not have time for a break right now or are you in the office and it's not appropriate to do <ACTIVITY>?",
+        "buttonDontHaveTimeText": "I don't have time",
+        "buttonInTheOffIceText": "I'm in the offIce"
     },
     "brainDumpVcInfo": {
         "title": "Focus Bear - Volcado de cerebros",
@@ -631,7 +640,10 @@
         "moneyBackText": "30 días de garantía con devolución de dinero",
         "syncInfoText": "Después de pagar, haz clic en el botón Sincronizar estado de pago a continuación",
         "buttonRestoreText": "Sincronizar estado de pago",
-        "subscriptionExpiredText": "Su suscripción ha expirado"
+        "subscriptionExpiredText": "Su suscripción ha expirado",
+        "toolTipCopyId":"Copy user id",
+        "titleUserId":"Your user id:",
+        "toolTipCopied":"Copied"
     },
     "onboardingPostponeVcInfo": {
         "title": "Si tienes algo urgente, puedes posponer el proceso de inducción por unos minutos",
@@ -763,7 +775,7 @@
         "description": "You can block certain sites by default to avoid going down rabbit holes.",
         "bottomText": "If you want to block other sites by default, you can change your Always Blocked settings in Preferences.",
         "buttonContinueText": "Continue",
-        "enterUrlText": "Enter utl to block:",
+        "enterUrlText": "Enter url to block:",
         "buttonAddUrlText": "Add url"
     },
     "preloadFocusModeAppsVcInfo": {

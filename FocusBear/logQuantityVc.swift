@@ -171,9 +171,9 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
             }
             
             if !isReviseQuantity{
-                addEntryInCsv(logType: logType, activity: name, durationInSeconds: durationInSeconds, quantityQuestion: logQuantityQuestion, quantityLogged: "\(doubleVal)", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "")
+                addEntryInStatsCsv(logType: logType, activity: name, durationInSeconds: durationInSeconds, quantityQuestion: logQuantityQuestion, quantityLogged: "\(doubleVal)", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "")
             }else{
-               replaceLastEntryInCsv(logType: logType, activity: name, durationInSeconds: durationInSeconds, quantityQuestion: logQuantityQuestion, quantityLogged: "\(doubleVal)", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "")
+                replaceLastEntryInStatsCsv(logType: logType, activity: name, durationInSeconds: durationInSeconds, quantityQuestion: logQuantityQuestion, quantityLogged: "\(doubleVal)", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "")
             }
             
             self.view.removeFromSuperview()
@@ -188,12 +188,27 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
 
                 })
             }else{
-                allApiObject.activityCompletedReviseApi(activity_id: allApiObject.completedActivityLogId ?? "", quantity_logged:doubleVal, choice_id: allApiObject.completedChoiceLogId, completionHandler: {dic  in
-                    DispatchQueue.main.async {
-                        print(dic)
-                    }
+                if allApiObject.completedActivityLogId == nil{// it mean activity completed api error found or was offline when activity completed api executed so replace in offline activity data 
+                    
+                    
+                    let calendar = Calendar.current
+                    let finish_time = calendar.date(byAdding: .second, value: Int(durationInSeconds) ?? 0, to: lastActivityPerformedTime!) ?? Date()
+                    
+                    let start_time_string = getStringFromDateInUtc(date: lastActivityPerformedTime!, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+                    
+                    let finish_time_string = getStringFromDateInUtc(date: finish_time, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+                    
+                    replaceLastEntryInActivitiesCsv(activity_id: activity_id, duration_logged: durationInSeconds, device_id: currentDeviceId, activity_sequence_id: activity_sequence_id, start_time: start_time_string, finish_time: finish_time_string, skipped_did_complete: "", choice_id: activityChoiceId ?? "", quantity_logged: "\(doubleVal)", skipped_did_not_complete: "")
+                    
+                }else{
+                    allApiObject.activityCompletedReviseApi(activity_id: allApiObject.completedActivityLogId ?? "", quantity_logged:doubleVal, choice_id: allApiObject.completedChoiceLogId, completionHandler: {dic  in
+                        DispatchQueue.main.async {
+                            print(dic)
+                        }
 
-                })
+                    })
+                }
+                
             }
             if lCurrentState! == ._EVENING_HABIT_{
                 if thirdVcObj!.lastHabitIndex >= arrAllEveningHabits.count-1 {

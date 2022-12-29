@@ -164,6 +164,10 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
     func startTimerHabit(durationSeconds:Int, url:String?, name:String,currentHabit: habit, currentTimerValue:Int) {
         UserDefaults.standard.set(Date(), forKey: kUserdefaultsLastHabitsStartedDate)
         
+        if !(mainViewControllerObj?.isBreakActivityPostponeInsideAllowedHabit ?? false){
+            mainViewControllerObj?.stopActivityTimer()
+        }
+        
         isLastActivityStoppedInRunningState = false
         lastActivityRunningId = ""
         lastActivityStoppedTimerCount = 0
@@ -182,19 +186,25 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         }
         disableSystemSleep()
         checkActivityExtraAllowedAppsAndUrls(allowedFocusMode: currentHabit.allowedFocusMode)
+        var shouldLaunchAppAndUrl = true
+        if currentTimerValue == 0{
+            shouldLaunchAppAndUrl = true
+        }else{
+            shouldLaunchAppAndUrl = false
+        }
         if currentHabit.openSpecificApps{
             currentHabitPlaying = currentHabit
-            mainWindowControllerObj?.window?.setIsVisible(false)
-            appdelegate?.startTimerActivitiesAllowedApp()
-            hideBlankWindowInSecondaryMonitor()
             showSmallTimerWindow(durationSeconds: durationSeconds, msg: getDoSomeActivityText(activityName: name), isFocusBreak: false, currentTimerValue:currentTimerValue)
+            mainWindowControllerObj?.window?.setIsVisible(false)
+            appdelegate?.startTimerActivitiesAllowedApp(shouldLaunchAppAndUrl: shouldLaunchAppAndUrl)
+            hideBlankWindowInSecondaryMonitor()
         }else{
             if activityAllowedFocusApps.count != 0{
                 currentHabitPlaying = currentHabit
-                mainWindowControllerObj?.window?.setIsVisible(false)
-                appdelegate?.startTimerActivitiesAllowedApp()
-                hideBlankWindowInSecondaryMonitor()
                 showSmallTimerWindow(durationSeconds: durationSeconds, msg: getDoSomeActivityText(activityName: name), isFocusBreak: false, currentTimerValue:currentTimerValue)
+                mainWindowControllerObj?.window?.setIsVisible(false)
+                appdelegate?.startTimerActivitiesAllowedApp(shouldLaunchAppAndUrl: shouldLaunchAppAndUrl)
+                hideBlankWindowInSecondaryMonitor()
             }else{
                  currentHabitPlaying = nil
             }
@@ -251,14 +261,14 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                         if currentHabitPlaying!.openSpecificApps{
                             currentHabitPlaying = currentHabitPlaying!
                             mainWindowControllerObj?.window?.setIsVisible(false)
-                            appdelegate?.startTimerActivitiesAllowedApp()
+                            appdelegate?.startTimerActivitiesAllowedApp(shouldLaunchAppAndUrl: false)
                             hideBlankWindowInSecondaryMonitor()
                             getsmallCountDownVcObject().resumeTimerHabit(durationSeconds: durationSeconds)
                         }else{
                             if activityAllowedFocusApps.count != 0{
                                 currentHabitPlaying = currentHabitPlaying!
                                 mainWindowControllerObj?.window?.setIsVisible(false)
-                                appdelegate?.startTimerActivitiesAllowedApp()
+                                appdelegate?.startTimerActivitiesAllowedApp(shouldLaunchAppAndUrl: false)
                                 hideBlankWindowInSecondaryMonitor()
                                 getsmallCountDownVcObject().resumeTimerHabit(durationSeconds: durationSeconds)
                             }else{
@@ -332,9 +342,9 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
     var logQuantityType:String?
     var logActivityQuantity = false
     func startTimerActivity(durationInSeconds:Int,name:String, url:String?, logQuantityQuestion:String?,currentActivity: breakActivity, currentChoice:activityChoice?,logQuantity:Bool, logQuantityType:String) {
-        isLastActivityStoppedInRunningState = false
-        lastActivityRunningId = ""
-        lastActivityStoppedTimerCount = 0
+//        isLastActivityStoppedInRunningState = false
+        //lastActivityRunningId = ""
+        //lastActivityStoppedTimerCount = 0
         
         btnSkipHabit.isHidden = true
         isActivityPaused = false
@@ -353,21 +363,21 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         }
         disableSystemSleep()
         logActivityQuantity = logQuantity
-        activityPostponeCount = 0
+//        activityPostponeCount = 0
         
         checkActivityExtraAllowedAppsAndUrls(allowedFocusMode: currentActivity.allowedFocusMode)
         
         if currentActivity.openSpecificApps{
             currentActivityPlaying = currentActivity
             mainWindowControllerObj?.window?.setIsVisible(false)
-            appdelegate?.startTimerActivitiesAllowedApp()
+            appdelegate?.startTimerActivitiesAllowedApp(shouldLaunchAppAndUrl: true)
             hideBlankWindowInSecondaryMonitor()
             showSmallTimerWindow(durationSeconds: durationInSeconds, msg: getDoSomeActivityText(activityName: name), isFocusBreak: false, currentTimerValue:0)
         }else{
             if activityAllowedFocusApps.count != 0{
                 currentActivityPlaying = currentActivity
                 mainWindowControllerObj?.window?.setIsVisible(false)
-                appdelegate?.startTimerActivitiesAllowedApp()
+                appdelegate?.startTimerActivitiesAllowedApp(shouldLaunchAppAndUrl: true)
                 hideBlankWindowInSecondaryMonitor()
                 showSmallTimerWindow(durationSeconds: durationInSeconds, msg: getDoSomeActivityText(activityName: name), isFocusBreak: false, currentTimerValue:0)
             }else{

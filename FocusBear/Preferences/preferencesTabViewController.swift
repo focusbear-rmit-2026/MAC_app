@@ -81,6 +81,12 @@ class preferencesTabViewController: NSTabViewController {
         }
     }
     
+    override func viewWillAppear() {
+        self.view.window?.title = "Preferences"
+        if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
+            self.view.window?.title = menuInfo.value(forKey: "menuItemPreferencesTitle") as? String ?? "Preferences"
+        }
+    }
     override func tabView(_ tabView: NSTabView, didSelect tabViewItem: NSTabViewItem?) {
         print("tab view selection change")
         print(self.selectedTabViewItemIndex)
@@ -92,6 +98,12 @@ class preferencesTabViewController: NSTabViewController {
     override func tabView(_ tabView: NSTabView, shouldSelect tabViewItem: NSTabViewItem?) -> Bool {
         if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
             if self.view.subviews.contains(enterPasswordVcObj!.view){
+                return false
+            }
+        }
+        if isPurchased == false && daysLeft <= 0{// if UserDefaults.standard.object(forKey: "trialExpired") != nil{
+            let id = tabViewItem?.identifier as? String ?? ""
+            if id != "Uninstall" && id != "Accounts"{
                 return false
             }
         }

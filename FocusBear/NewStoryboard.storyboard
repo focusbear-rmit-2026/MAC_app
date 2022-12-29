@@ -288,7 +288,7 @@
                                                 <constraint firstAttribute="height" constant="120" id="sSB-Pu-rHm"/>
                                             </constraints>
                                             <textFieldCell key="cell" truncatesLastVisibleLine="YES" alignment="center" title="Haz que los hábitos saludables y el trabajo profundo sean el camino de menor resistencia." id="0d6-6g-o9d">
-                                                <font key="font" size="35" name="CourierNewPS-BoldMT"/>
+                                                <font key="font" size="35" name="CourierNewPSMT"/>
                                                 <color key="textColor" red="0.90980392156862744" green="0.53333333333333333" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                                 <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                             </textFieldCell>
@@ -479,13 +479,13 @@
             <objects>
                 <viewController storyboardIdentifier="upgradeNowVc" id="3Rv-2P-Qhv" customClass="upgradeNowVc" customModule="Focus_Bear" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" id="JEk-5I-i73">
-                        <rect key="frame" x="0.0" y="0.0" width="526" height="564"/>
+                        <rect key="frame" x="0.0" y="0.0" width="526" height="590"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
                             <box boxType="custom" borderWidth="0.0" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="Cb3-oC-odf">
-                                <rect key="frame" x="0.0" y="0.0" width="526" height="564"/>
+                                <rect key="frame" x="0.0" y="0.0" width="526" height="590"/>
                                 <view key="contentView" id="eAC-Jg-NlB">
-                                    <rect key="frame" x="0.0" y="0.0" width="526" height="564"/>
+                                    <rect key="frame" x="0.0" y="0.0" width="526" height="590"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
                                         <box boxType="custom" borderWidth="0.0" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="uiL-V9-yWy">
@@ -550,11 +550,11 @@
                                             <color key="fillColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
                                         </box>
                                         <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="ZDZ-t4-YlT">
-                                            <rect key="frame" x="0.0" y="117" width="526" height="447"/>
+                                            <rect key="frame" x="0.0" y="117" width="526" height="473"/>
                                             <imageCell key="cell" refusesFirstResponder="YES" alignment="left" image="background" id="jlK-go-doS"/>
                                         </imageView>
                                         <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="WsN-zG-Yqw">
-                                            <rect key="frame" x="196" y="417" width="135" height="135"/>
+                                            <rect key="frame" x="196" y="443" width="135" height="135"/>
                                             <constraints>
                                                 <constraint firstAttribute="width" constant="135" id="gCq-N0-9s1"/>
                                                 <constraint firstAttribute="height" constant="135" id="jr6-JF-mpC"/>
@@ -562,7 +562,7 @@
                                             <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyUpOrDown" image="NSApplicationIcon" id="3HI-ta-Rk3"/>
                                         </imageView>
                                         <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="UsS-pP-JQe">
-                                            <rect key="frame" x="61" y="386" width="404" height="21"/>
+                                            <rect key="frame" x="61" y="412" width="404" height="21"/>
                                             <constraints>
                                                 <constraint firstAttribute="width" constant="400" id="s5O-gz-00Y"/>
                                             </constraints>
@@ -573,7 +573,7 @@
                                             </textFieldCell>
                                         </textField>
                                         <stackView distribution="fill" orientation="vertical" alignment="leading" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="sbU-9R-2gZ">
-                                            <rect key="frame" x="152" y="236" width="222" height="112"/>
+                                            <rect key="frame" x="152" y="262" width="222" height="112"/>
                                             <subviews>
                                                 <box boxType="custom" borderWidth="0.0" cornerRadius="4" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="04y-Q4-WO3">
                                                     <rect key="frame" x="0.0" y="90" width="210" height="22"/>
@@ -810,7 +810,7 @@
                                             </customSpacing>
                                         </stackView>
                                         <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="pd0-dJ-19f" customClass="Button" customModule="Focus_Bear" customModuleProvider="target">
-                                            <rect key="frame" x="136" y="154" width="255" height="36"/>
+                                            <rect key="frame" x="136" y="180" width="255" height="36"/>
                                             <constraints>
                                                 <constraint firstAttribute="width" constant="255" id="Glq-qj-p22"/>
                                                 <constraint firstAttribute="height" constant="36" id="br1-4P-5NT"/>
@@ -824,7 +824,7 @@
                                             </connections>
                                         </button>
                                         <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="bkm-ds-BZa">
-                                            <rect key="frame" x="61" y="130" width="404" height="14"/>
+                                            <rect key="frame" x="61" y="156" width="404" height="14"/>
                                             <constraints>
                                                 <constraint firstAttribute="width" constant="400" id="prn-aF-sGg"/>
                                             </constraints>
@@ -835,7 +835,7 @@
                                             </textFieldCell>
                                         </textField>
                                         <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="wIh-fb-sy2">
-                                            <rect key="frame" x="61" y="198" width="404" height="21"/>
+                                            <rect key="frame" x="61" y="224" width="404" height="21"/>
                                             <constraints>
                                                 <constraint firstAttribute="width" constant="400" id="dG2-UT-LFp"/>
                                             </constraints>
@@ -845,9 +845,58 @@
                                                 <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                             </textFieldCell>
                                         </textField>
+                                        <stackView distribution="fill" orientation="horizontal" alignment="centerY" spacing="5" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="haU-mi-ttR">
+                                            <rect key="frame" x="73" y="125" width="381" height="20"/>
+                                            <subviews>
+                                                <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ko1-78-3J1">
+                                                    <rect key="frame" x="-2" y="2" width="88" height="15"/>
+                                                    <textFieldCell key="cell" lineBreakMode="truncatingTail" alignment="right" title="xxYour user id:" id="N2Q-Mc-nRk">
+                                                        <font key="font" metaFont="cellTitle"/>
+                                                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                                    </textFieldCell>
+                                                </textField>
+                                                <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="cfC-7f-Ggk">
+                                                    <rect key="frame" x="89" y="0.0" width="270" height="20"/>
+                                                    <constraints>
+                                                        <constraint firstAttribute="width" constant="270" id="Erd-om-Qrn"/>
+                                                    </constraints>
+                                                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" borderStyle="bezel" title="a95efbda-a870-4a88-965b-722329ccce90" drawsBackground="YES" id="eFr-ZU-x02">
+                                                        <font key="font" metaFont="cellTitle"/>
+                                                        <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                                    </textFieldCell>
+                                                </textField>
+                                                <button translatesAutoresizingMaskIntoConstraints="NO" id="61W-7q-Tek" customClass="cursorButton" customModule="Focus_Bear" customModuleProvider="target">
+                                                    <rect key="frame" x="364" y="1" width="17" height="18"/>
+                                                    <constraints>
+                                                        <constraint firstAttribute="height" constant="9" id="fMo-jQ-4nA"/>
+                                                        <constraint firstAttribute="width" constant="17" id="wYB-Fz-rcO"/>
+                                                    </constraints>
+                                                    <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="doc.on.clipboard" catalog="system" imagePosition="only" alignment="center" imageScaling="proportionallyDown" inset="2" id="8ME-AB-UPN">
+                                                        <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                                        <font key="font" metaFont="system"/>
+                                                    </buttonCell>
+                                                    <connections>
+                                                        <action selector="btnUserIdClicked:" target="3Rv-2P-Qhv" id="EtZ-t7-NgD"/>
+                                                    </connections>
+                                                </button>
+                                            </subviews>
+                                            <visibilityPriorities>
+                                                <integer value="1000"/>
+                                                <integer value="1000"/>
+                                                <integer value="1000"/>
+                                            </visibilityPriorities>
+                                            <customSpacing>
+                                                <real value="3.4028234663852886e+38"/>
+                                                <real value="3.4028234663852886e+38"/>
+                                                <real value="3.4028234663852886e+38"/>
+                                            </customSpacing>
+                                        </stackView>
                                     </subviews>
                                     <constraints>
                                         <constraint firstItem="ZDZ-t4-YlT" firstAttribute="leading" secondItem="eAC-Jg-NlB" secondAttribute="leading" id="2fr-EJ-JrF"/>
+                                        <constraint firstItem="sbU-9R-2gZ" firstAttribute="top" secondItem="UsS-pP-JQe" secondAttribute="bottom" constant="38" id="9xu-eY-ovD"/>
                                         <constraint firstItem="pd0-dJ-19f" firstAttribute="top" secondItem="sbU-9R-2gZ" secondAttribute="bottom" constant="46" id="A4K-JV-qDZ"/>
                                         <constraint firstItem="sbU-9R-2gZ" firstAttribute="centerX" secondItem="eAC-Jg-NlB" secondAttribute="centerX" id="Ddc-Uv-sEU"/>
                                         <constraint firstItem="wIh-fb-sy2" firstAttribute="centerX" secondItem="eAC-Jg-NlB" secondAttribute="centerX" id="Eth-Fg-Md4"/>
@@ -858,19 +907,22 @@
                                         <constraint firstAttribute="trailing" secondItem="uiL-V9-yWy" secondAttribute="trailing" id="OQd-EO-wZc"/>
                                         <constraint firstItem="uiL-V9-yWy" firstAttribute="leading" secondItem="eAC-Jg-NlB" secondAttribute="leading" id="UmY-iU-FWd"/>
                                         <constraint firstAttribute="trailing" secondItem="ZDZ-t4-YlT" secondAttribute="trailing" id="Usz-fn-B6V"/>
-                                        <constraint firstItem="sbU-9R-2gZ" firstAttribute="centerY" secondItem="eAC-Jg-NlB" secondAttribute="centerY" constant="-10" id="YWP-VV-h4W"/>
+                                        <constraint firstItem="haU-mi-ttR" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="eAC-Jg-NlB" secondAttribute="leading" constant="10" id="YVL-II-S0x"/>
                                         <constraint firstItem="bkm-ds-BZa" firstAttribute="centerX" secondItem="eAC-Jg-NlB" secondAttribute="centerX" id="ZnZ-UI-MWq"/>
                                         <constraint firstItem="bkm-ds-BZa" firstAttribute="top" secondItem="pd0-dJ-19f" secondAttribute="bottom" constant="10" id="c4U-Db-YiU"/>
+                                        <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="haU-mi-ttR" secondAttribute="trailing" constant="10" id="eiL-yG-57W"/>
                                         <constraint firstItem="WsN-zG-Yqw" firstAttribute="centerX" secondItem="eAC-Jg-NlB" secondAttribute="centerX" id="etg-hO-yzn"/>
                                         <constraint firstItem="uiL-V9-yWy" firstAttribute="top" secondItem="ZDZ-t4-YlT" secondAttribute="bottom" id="fuw-am-J6w"/>
                                         <constraint firstItem="UsS-pP-JQe" firstAttribute="top" secondItem="WsN-zG-Yqw" secondAttribute="bottom" constant="10" id="iya-5H-uED"/>
+                                        <constraint firstItem="uiL-V9-yWy" firstAttribute="top" secondItem="haU-mi-ttR" secondAttribute="bottom" constant="7.5" id="jW1-ZA-7fE"/>
                                         <constraint firstAttribute="bottom" secondItem="uiL-V9-yWy" secondAttribute="bottom" id="lOS-tb-cDi"/>
+                                        <constraint firstItem="haU-mi-ttR" firstAttribute="centerX" secondItem="eAC-Jg-NlB" secondAttribute="centerX" id="okG-Zu-AgP"/>
                                         <constraint firstItem="pd0-dJ-19f" firstAttribute="centerX" secondItem="eAC-Jg-NlB" secondAttribute="centerX" id="wEp-qR-Ilc"/>
                                     </constraints>
                                 </view>
                                 <constraints>
                                     <constraint firstAttribute="width" constant="526" id="U2e-C2-ziO"/>
-                                    <constraint firstAttribute="height" constant="564" id="wMm-Zj-Kwg"/>
+                                    <constraint firstAttribute="height" constant="590" id="wMm-Zj-Kwg"/>
                                 </constraints>
                             </box>
                         </subviews>
@@ -884,6 +936,7 @@
                     <connections>
                         <outlet property="btnRestorePurchases" destination="Z09-Wo-bT0" id="qaa-y3-srJ"/>
                         <outlet property="btnUpgradeNow" destination="pd0-dJ-19f" id="OHn-TV-gNd"/>
+                        <outlet property="btnUserId" destination="61W-7q-Tek" id="lQR-L2-ZPB"/>
                         <outlet property="imgView" destination="WsN-zG-Yqw" id="AKe-XY-8lo"/>
                         <outlet property="lblMoneyBack" destination="bkm-ds-BZa" id="tPq-3z-rKm"/>
                         <outlet property="lblPointFirst" destination="Gqu-uZ-GRo" id="YHE-DM-nfh"/>
@@ -893,12 +946,14 @@
                         <outlet property="lblSubscriptionExpired" destination="wIh-fb-sy2" id="l4p-o1-ZPt"/>
                         <outlet property="lblSyncInfo" destination="Qc0-mN-PNq" id="AI5-ZS-Pdf"/>
                         <outlet property="lblTitleAppName" destination="UsS-pP-JQe" id="umb-Ld-MVG"/>
+                        <outlet property="lblTitleUserId" destination="ko1-78-3J1" id="Gh6-Ue-Pqk"/>
                         <outlet property="loader" destination="Hd3-LL-QYb" id="AuY-yd-Psi"/>
+                        <outlet property="textFieldUserId" destination="cfC-7f-Ggk" id="Un4-ZV-XKD"/>
                     </connections>
                 </viewController>
                 <customObject id="gp2-ka-gKN" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="1541" y="901"/>
+            <point key="canvasLocation" x="1527" y="967"/>
         </scene>
         <!--Welcome Onboarding Vc-->
         <scene sceneID="EDI-mz-Ox7">
@@ -1706,7 +1761,7 @@
                                                 <constraint firstAttribute="width" constant="600" id="MZb-zl-zJs"/>
                                             </constraints>
                                             <textFieldCell key="cell" lineBreakMode="truncatingTail" alignment="center" title="xxSign In" id="8KZ-Bf-w4A">
-                                                <font key="font" size="37" name="CourierNewPS-BoldMT"/>
+                                                <font key="font" size="37" name="CourierNewPSMT"/>
                                                 <color key="textColor" red="0.90980392160000001" green="0.53333333329999999" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                                 <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                             </textFieldCell>
@@ -1921,7 +1976,7 @@
                                                                     <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="YEP-Rn-MXj">
                                                                         <rect key="frame" x="11" y="3" width="277" height="15"/>
                                                                         <constraints>
-                                                                            <constraint firstAttribute="height" relation="lessThanOrEqual" constant="30" id="T1X-Js-fTP"/>
+                                                                            <constraint firstAttribute="height" relation="lessThanOrEqual" constant="35" id="T1X-Js-fTP"/>
                                                                         </constraints>
                                                                         <textFieldCell key="cell" title="xAt least 8 characters in length" id="KRT-lJ-rDI">
                                                                             <font key="font" size="13" name="CourierNewPSMT"/>
@@ -1967,7 +2022,7 @@
                                                                     <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="3nY-ov-VZz">
                                                                         <rect key="frame" x="11" y="3" width="277" height="30"/>
                                                                         <constraints>
-                                                                            <constraint firstAttribute="height" relation="lessThanOrEqual" constant="30" id="bEt-Im-chT"/>
+                                                                            <constraint firstAttribute="height" relation="lessThanOrEqual" constant="35" id="bEt-Im-chT"/>
                                                                         </constraints>
                                                                         <textFieldCell key="cell" title="xxContain at least 3 of the following 4 types of characters:" id="OC3-KP-XWa">
                                                                             <font key="font" size="13" name="CourierNewPSMT"/>
@@ -2007,7 +2062,7 @@
                                                                     <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="9aq-k7-uAl">
                                                                         <rect key="frame" x="11" y="3" width="277" height="15"/>
                                                                         <constraints>
-                                                                            <constraint firstAttribute="height" relation="lessThanOrEqual" constant="30" id="byW-ux-4kf"/>
+                                                                            <constraint firstAttribute="height" relation="lessThanOrEqual" constant="35" id="byW-ux-4kf"/>
                                                                         </constraints>
                                                                         <textFieldCell key="cell" title="xxlower case letters (a-z)" id="Bf4-iX-o15">
                                                                             <font key="font" size="13" name="CourierNewPSMT"/>
@@ -2047,7 +2102,7 @@
                                                                     <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="WOm-Ir-yTg">
                                                                         <rect key="frame" x="11" y="3" width="277" height="15"/>
                                                                         <constraints>
-                                                                            <constraint firstAttribute="height" relation="lessThanOrEqual" constant="30" id="PLJ-jP-csK"/>
+                                                                            <constraint firstAttribute="height" relation="lessThanOrEqual" constant="35" id="PLJ-jP-csK"/>
                                                                         </constraints>
                                                                         <textFieldCell key="cell" title="xxupper case letters (A-Z)" id="db5-OU-vlN">
                                                                             <font key="font" size="13" name="CourierNewPSMT"/>
@@ -2090,7 +2145,7 @@
                                                                     <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="bMD-pc-Coj">
                                                                         <rect key="frame" x="11" y="3" width="277" height="15"/>
                                                                         <constraints>
-                                                                            <constraint firstAttribute="height" relation="lessThanOrEqual" constant="30" id="VbV-vk-SPa"/>
+                                                                            <constraint firstAttribute="height" relation="lessThanOrEqual" constant="35" id="VbV-vk-SPa"/>
                                                                         </constraints>
                                                                         <textFieldCell key="cell" title="xxnumbers (i.e. 0-9)" id="TXH-23-AwB">
                                                                             <font key="font" size="13" name="CourierNewPSMT"/>
@@ -2133,7 +2188,7 @@
                                                                     <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="mDL-aZ-eR9">
                                                                         <rect key="frame" x="11" y="3" width="277" height="30"/>
                                                                         <constraints>
-                                                                            <constraint firstAttribute="height" relation="lessThanOrEqual" constant="30" id="6Ed-cp-9DQ"/>
+                                                                            <constraint firstAttribute="height" relation="lessThanOrEqual" constant="35" id="6Ed-cp-9DQ"/>
                                                                         </constraints>
                                                                         <textFieldCell key="cell" title="xxspecial characters (e.g. !@#$%^&amp;*)" id="MHw-vt-g9N">
                                                                             <font key="font" size="13" name="CourierNewPSMT"/>
@@ -2241,7 +2296,7 @@
                                             </customSpacing>
                                         </stackView>
                                         <stackView distribution="fill" orientation="vertical" alignment="centerX" spacing="48" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="fyb-oy-Td4">
-                                            <rect key="frame" x="317" y="-118" width="310" height="176"/>
+                                            <rect key="frame" x="317" y="-108" width="310" height="176"/>
                                             <subviews>
                                                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="XqN-dY-DLT" customClass="Button" customModule="Focus_Bear" customModuleProvider="target">
                                                     <rect key="frame" x="0.0" y="146" width="310" height="30"/>
@@ -2312,7 +2367,7 @@
                                             </connections>
                                         </button>
                                         <progressIndicator maxValue="100" displayedWhenStopped="NO" indeterminate="YES" style="bar" translatesAutoresizingMaskIntoConstraints="NO" id="1mI-Ik-QOb">
-                                            <rect key="frame" x="647" y="39" width="128" height="20"/>
+                                            <rect key="frame" x="647" y="49" width="128" height="20"/>
                                             <constraints>
                                                 <constraint firstAttribute="width" constant="128" id="99Q-UN-GDg"/>
                                             </constraints>
@@ -2353,7 +2408,7 @@
                                         <constraint firstItem="ceq-iF-EhE" firstAttribute="top" secondItem="Asm-ZL-wi1" secondAttribute="bottom" constant="15" id="Mic-Td-aPd"/>
                                         <constraint firstItem="Q0H-QO-hMA" firstAttribute="leading" secondItem="eww-fD-P8c" secondAttribute="leading" constant="317" id="Rge-Ew-AW9"/>
                                         <constraint firstItem="JTC-om-CPk" firstAttribute="leading" secondItem="eww-fD-P8c" secondAttribute="leading" constant="13" id="Skj-Ak-din"/>
-                                        <constraint firstItem="fyb-oy-Td4" firstAttribute="top" secondItem="Q0H-QO-hMA" secondAttribute="bottom" constant="50" id="Upb-Er-XCi"/>
+                                        <constraint firstItem="fyb-oy-Td4" firstAttribute="top" secondItem="Q0H-QO-hMA" secondAttribute="bottom" constant="40" id="Upb-Er-XCi"/>
                                         <constraint firstItem="ceq-iF-EhE" firstAttribute="centerX" secondItem="eww-fD-P8c" secondAttribute="centerX" id="Y2X-vQ-4HL"/>
                                         <constraint firstItem="Asm-ZL-wi1" firstAttribute="centerX" secondItem="eww-fD-P8c" secondAttribute="centerX" id="dFw-0u-LK1"/>
                                         <constraint firstItem="zjR-YZ-DZa" firstAttribute="centerY" secondItem="qWu-zy-blR" secondAttribute="centerY" id="duM-os-oLM"/>
@@ -2821,7 +2876,7 @@
                                     <rect key="frame" x="0.0" y="0.0" width="230" height="80"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
-                                        <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ABa-hi-bCK">
+                                        <textField horizontalHuggingPriority="750" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ABa-hi-bCK">
                                             <rect key="frame" x="8" y="10" width="214" height="60"/>
                                             <textFieldCell key="cell" alignment="left" id="hFe-qh-4q3">
                                                 <font key="font" metaFont="cellTitle"/>
@@ -2984,9 +3039,9 @@
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
                                         <textField horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="250" tag="3330" translatesAutoresizingMaskIntoConstraints="NO" id="Ifj-7W-eCW">
-                                            <rect key="frame" x="68" y="650" width="1075" height="50"/>
+                                            <rect key="frame" x="68" y="655" width="1075" height="45"/>
                                             <textFieldCell key="cell" truncatesLastVisibleLine="YES" alignment="center" title="xxWelcome to Focus Bear" id="Xmp-Qq-uwN">
-                                                <font key="font" size="44" name="CourierNewPS-BoldMT"/>
+                                                <font key="font" size="40" name="CourierNewPSMT"/>
                                                 <color key="textColor" red="0.90980392160000001" green="0.53333333329999999" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                                 <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                             </textFieldCell>
@@ -3288,12 +3343,12 @@
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
                                         <textField verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="Lw3-2G-lee">
-                                            <rect key="frame" x="476" y="521" width="369" height="57"/>
+                                            <rect key="frame" x="512" y="527" width="297" height="45"/>
                                             <constraints>
                                                 <constraint firstAttribute="width" relation="lessThanOrEqual" constant="800" id="ZtE-bw-Pjb"/>
                                             </constraints>
                                             <textFieldCell key="cell" alignment="center" title="xxQuitting.." id="MuJ-os-Yv0">
-                                                <font key="font" size="50" name="CourierNewPS-BoldMT"/>
+                                                <font key="font" size="40" name="CourierNewPSMT"/>
                                                 <color key="textColor" red="0.90980392160000001" green="0.53333333329999999" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                                 <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                             </textFieldCell>
@@ -3322,7 +3377,7 @@
                                             </connections>
                                         </button>
                                         <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="mcd-yZ-0Bf">
-                                            <rect key="frame" x="298" y="469" width="160" height="160"/>
+                                            <rect key="frame" x="334" y="469" width="160" height="160"/>
                                             <constraints>
                                                 <constraint firstAttribute="width" constant="160" id="74x-PT-kX5"/>
                                                 <constraint firstAttribute="height" constant="160" id="T8d-bJ-3gP"/>
@@ -3693,9 +3748,9 @@
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
                                         <textField horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="250" tag="3330" translatesAutoresizingMaskIntoConstraints="NO" id="mYT-Eo-ppE">
-                                            <rect key="frame" x="68" y="650" width="1075" height="50"/>
+                                            <rect key="frame" x="68" y="655" width="1075" height="45"/>
                                             <textFieldCell key="cell" truncatesLastVisibleLine="YES" alignment="center" title="xxWelcome to Focus Bear" id="ERF-Ea-zjR">
-                                                <font key="font" size="44" name="CourierNewPS-BoldMT"/>
+                                                <font key="font" size="40" name="CourierNewPSMT"/>
                                                 <color key="textColor" red="0.90980392160000001" green="0.53333333329999999" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                                 <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                             </textFieldCell>
@@ -4047,9 +4102,9 @@
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
                                         <textField horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="250" tag="3330" translatesAutoresizingMaskIntoConstraints="NO" id="vOj-z6-0XD">
-                                            <rect key="frame" x="68" y="510" width="1075" height="50"/>
+                                            <rect key="frame" x="68" y="515" width="1075" height="45"/>
                                             <textFieldCell key="cell" truncatesLastVisibleLine="YES" alignment="center" title="xxWelcome to Focus Bear" id="BnC-rA-FBE">
-                                                <font key="font" size="44" name="CourierNewPS-BoldMT"/>
+                                                <font key="font" size="40" name="CourierNewPSMT"/>
                                                 <color key="textColor" red="0.90980392160000001" green="0.53333333329999999" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                                 <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                             </textFieldCell>
@@ -4453,6 +4508,7 @@
         <image name="background" width="1512" height="944"/>
         <image name="brainBreaks_card" width="700" height="446"/>
         <image name="close" width="25" height="25"/>
+        <image name="doc.on.clipboard" catalog="system" width="17" height="18"/>
         <image name="eye Icon" width="28" height="25"/>
         <image name="focusTip_4" width="780" height="776"/>
         <image name="validIcon" width="20" height="20"/>

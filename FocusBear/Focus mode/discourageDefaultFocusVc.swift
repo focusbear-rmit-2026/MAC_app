@@ -153,7 +153,7 @@ class discourageDefaultFocusVc: NSViewController {
                         if pomodoroWindowControllerObj?.window?.isVisible ?? false{//it means pomodoro start hoga
                             if pomodoroVcObj!.btnCheckBoxHardcodePomodoro.state == .on{
                                 isHardCorePomodoroModeOn = true
-                                hardcodePmodoroFocusModeIndex = pomodoroVcObj!.popUpBtnFocusType.indexOfSelectedItem
+                                hardcodePmodoroFocusModeName = pomodoroVcObj!.popUpBtnFocusType.titleOfSelectedItem ?? ""
                                 let totalPopmodoroCount = Int(pomodoroVcObj!.popupBtnSelectPomodoroCount.title) ?? 2
                                 let minutes = currentPomodoroWorkDuration
                                 totalPomodoroCountInHardCorePomodoro = totalPopmodoroCount

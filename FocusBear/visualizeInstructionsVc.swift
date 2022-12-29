@@ -85,7 +85,7 @@ class visualizeInstructionsVc: NSViewController {
         }
     }
     @objc func performTimerCount() {
-        currentTimer += 1 // todo 1 kro
+        currentTimer += 1// todo 1 kro
         let (_,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
         
         var minute = "\(m)"

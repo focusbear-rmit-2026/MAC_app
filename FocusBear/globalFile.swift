@@ -410,7 +410,7 @@ func getEasyPostponeVcObject()->easyPostponeVc{
 // popUpOffline window object
 var popUpOfflineWcObj:commonWindowController?
 func getPopUpOfflineWindowObject()->commonWindowController{
-    if easyPostponeWcObj == nil{
+    if popUpOfflineWcObj == nil{
         popUpOfflineWcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
         popUpOfflineWcObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
     }
@@ -560,7 +560,7 @@ let appdelegate = NSApplication.shared.delegate as? AppDelegate
 var SettingsManagerObject = SettingsManager()
 
 var isHardCorePomodoroModeOn = false
-var hardcodePmodoroFocusModeIndex = 0
+var hardcodePmodoroFocusModeName:String = ""
 var totalMinutesRemainingForHardcodePomodoro = 0
 var currentPomodoroWorkDuration = 25
 var currentPomodoroBreakDuration = 5
@@ -679,6 +679,8 @@ extension NSView{
 //var isHabitGoing = false
 //var isBreakActivitiesGoing = false
 
+var isBreakActivityExecuteFromMorningHabit = false
+var isBreakActivityExecuteFromEveningHabit = false
 
 var currentHabitIndex = -1
 var currentActivityIndex = -1
@@ -689,8 +691,8 @@ var currentHabitPlaying:habit?
 var habitTotalCompletedSeconds = 0
 var arrAllMorningHabits = [habit]()
 var arrAllEveningHabits = [habit]()
-var isLastActivityStoppedInRunningState = false
-var lastActivityRunningId = ""
+var isLastActivityStoppedInRunningState = false// only use ful in morning habit evening habit 
+var lastActivityRunningId = ""// only use ful in morning habit evening habit
 var lastActivityStoppedTimerCount = 0
 struct habit {
     var id:String!
@@ -704,7 +706,8 @@ struct habit {
     var allowApps:[String]!
     var allowedFocusMode:String!
     var activity_sequence_id:String!
-    init(id:String, name:String, durationSeconds:Int, urlsArray:[String], logQuantity:Bool, logQuantityQuestion:String?, openSpecificApps:Bool,allowUrls:[String],allowApps:[String],allowedFocusMode:String, activity_sequence_id:String) {
+    var run_micro_breaks:Bool!//todo jha bhi seetings manuaaly edit kr rhe hai vha check kro ise 
+    init(id:String, name:String, durationSeconds:Int, urlsArray:[String], logQuantity:Bool, logQuantityQuestion:String?, openSpecificApps:Bool,allowUrls:[String],allowApps:[String],allowedFocusMode:String, activity_sequence_id:String, run_micro_breaks:Bool) {
         self.id = id
         self.name = name
         self.durationSeconds = durationSeconds
@@ -716,6 +719,7 @@ struct habit {
         self.allowApps = allowApps
         self.allowedFocusMode = allowedFocusMode
         self.activity_sequence_id = activity_sequence_id
+        self.run_micro_breaks = run_micro_breaks
     }
 }
 
@@ -1457,21 +1461,21 @@ class Button: NSButton {
             let paragraph = NSMutableParagraphStyle()
             paragraph.alignment = .center
             paragraph.lineBreakMode = .byTruncatingTail
-            let fontManager = NSFontManager.shared
-            if !isForPrefrences{
-                let boldFont = fontManager.font(
-                    withFamily: "Courier New",
-                    traits: [.boldFontMask],
-                    weight: 0,
-                    size: self.font?.pointSize ?? 50)
-                let attrs = [NSAttributedString.Key.foregroundColor: titleColor, NSAttributedString.Key.paragraphStyle: paragraph, .font:boldFont ?? NSFont.systemFont(ofSize: 12)] as [NSAttributedString.Key : Any]
-                let attrString: NSAttributedString = NSAttributedString(string: title, attributes: attrs)
-                self.attributedTitle = attrString
-            }else{
+//            let fontManager = NSFontManager.shared
+//            if !isForPrefrences{
+//                let boldFont = fontManager.font(
+//                    withFamily: "Courier New",
+//                    traits: [.boldFontMask],
+//                    weight: 0,
+//                    size: self.font?.pointSize ?? 50)
+//                let attrs = [NSAttributedString.Key.foregroundColor: titleColor, NSAttributedString.Key.paragraphStyle: paragraph, .font:boldFont ?? NSFont.systemFont(ofSize: 12)] as [NSAttributedString.Key : Any]
+//                let attrString: NSAttributedString = NSAttributedString(string: title, attributes: attrs)
+//                self.attributedTitle = attrString
+//            }else{
                 let attrs = [NSAttributedString.Key.foregroundColor: titleColor, NSAttributedString.Key.paragraphStyle: paragraph, .font:self.font ?? NSFont.systemFont(ofSize: 12)] as [NSAttributedString.Key : Any]
                 let attrString: NSAttributedString = NSAttributedString(string: title, attributes: attrs)
                 self.attributedTitle = attrString
-            }
+           // }
         }
     }
     
@@ -1704,6 +1708,7 @@ let allApiObject = AllApi()
 var DebugLogsFolderURL:URL!
 var DebugLogsURL:URL!
 var quantityCsvURL:URL!
+var offlineActivitiesCsvURL:URL!
 //var blockURL:URL!
 var blockWebUrlString = ""
 class Log: TextOutputStream {
@@ -2042,6 +2047,8 @@ let jobTypeSomethingElse = "SomethingElse"
 
 var focusDefaultAllowApps = ["finder", "universalaccessauthwarn", "system preferences", "loginwindow", "screensaverengine"]
 var arrFocusType = [[String:Any]]()
+var arrFocusTypeForPomodoro = [[String:Any]]()
+
 var isAllowedAllAppsInFocus = false
 var isAllowedAllUrlsInFocus = false
 var isBlockedAllUrlsInFocus = false
@@ -2123,18 +2130,17 @@ func resetPomodoroVcFocusListIfNeeded(){
     }
 }
 
-
-//CSV new entry
-func addEntryInCsv(logType:String, activity:String, durationInSeconds:String, quantityQuestion:String, quantityLogged:String, startTime:String, workAchieved:String, distractionsEncountered:String, abortReason:String, feedback:String ){
+//stast CSV new entry
+func addEntryInofflineActivitiesCsv(activity_id:String, duration_logged:String, device_id:String, activity_sequence_id:String, start_time:String, finish_time:String, skipped_did_complete:String, choice_id:String, quantity_logged:String, skipped_did_not_complete:String ){
     do {
-        var csv = try String(contentsOf: quantityCsvURL, encoding: .utf8)
+        var csv = try String(contentsOf: offlineActivitiesCsvURL, encoding: .utf8)
         
-        let timestamp = getStringFromDate(date: Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
+        //let timestamp = getStringFromDate(date: Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
         
-        let csvString = "\(logType),\(timestamp),\(activity),\(durationInSeconds),\(quantityQuestion),\(quantityLogged),\(startTime),\(workAchieved),\(distractionsEncountered),\(abortReason),\(feedback)\n"
+        let csvString = "\(activity_id),\(duration_logged),\(device_id),\(activity_sequence_id),\(start_time),\(finish_time),\(skipped_did_complete),\(choice_id),\(quantity_logged),\(skipped_did_not_complete)\n"
         csv = csv.appending(csvString)
         do {
-            try csv.write(to: quantityCsvURL, atomically: true, encoding: .utf8)
+            try csv.write(to: offlineActivitiesCsvURL, atomically: true, encoding: .utf8)
         } catch {
             print("error creating file")
         }
@@ -2145,7 +2151,43 @@ func addEntryInCsv(logType:String, activity:String, durationInSeconds:String, qu
 
 
 //CSV replace Last entry
-func replaceLastEntryInCsv(logType:String, activity:String, durationInSeconds:String, quantityQuestion:String, quantityLogged:String, startTime:String, workAchieved:String, distractionsEncountered:String, abortReason:String, feedback:String ){
+func replaceLastEntryInActivitiesCsv(activity_id:String, duration_logged:String, device_id:String, activity_sequence_id:String, start_time:String, finish_time:String, skipped_did_complete:String, choice_id:String, quantity_logged:String, skipped_did_not_complete:String ){
+    do {
+        var csv = try String(contentsOf: offlineActivitiesCsvURL, encoding: .utf8)
+//        let timestamp = getStringFromDate(date: Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
+        
+        let csvString = "\(activity_id),\(duration_logged),\(device_id),\(activity_sequence_id),\(start_time),\(finish_time),\(skipped_did_complete),\(choice_id),\(quantity_logged),\(skipped_did_not_complete)\n"
+        
+        csv = csv.replaceLastLineWith(newLine: csvString)
+        
+        do {
+            try csv.write(to: offlineActivitiesCsvURL, atomically: true, encoding: .utf8)
+        } catch {
+            print("error creating file")
+        }
+    }catch{
+        print(error)
+    }
+}
+
+func removeEntryInActivitiesCsv(count:Int){
+    do {
+        var csv = try String(contentsOf: offlineActivitiesCsvURL, encoding: .utf8)
+        csv = csv.removeEntries(count: count)
+        
+        do {
+            try csv.write(to: offlineActivitiesCsvURL, atomically: true, encoding: .utf8)
+        } catch {
+            print("error creating file")
+        }
+    }catch{
+        print(error)
+    }
+}
+
+
+//CSV replace Last entry
+func replaceLastEntryInStatsCsv(logType:String, activity:String, durationInSeconds:String, quantityQuestion:String, quantityLogged:String, startTime:String, workAchieved:String, distractionsEncountered:String, abortReason:String, feedback:String ){
     do {
         var csv = try String(contentsOf: quantityCsvURL, encoding: .utf8)
         let timestamp = getStringFromDate(date: Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
@@ -2163,7 +2205,24 @@ func replaceLastEntryInCsv(logType:String, activity:String, durationInSeconds:St
         print(error)
     }
 }
-
+//stast CSV new entry
+func addEntryInStatsCsv(logType:String, activity:String, durationInSeconds:String, quantityQuestion:String, quantityLogged:String, startTime:String, workAchieved:String, distractionsEncountered:String, abortReason:String, feedback:String ){
+    do {
+        var csv = try String(contentsOf: quantityCsvURL, encoding: .utf8)
+        
+        let timestamp = getStringFromDate(date: Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
+        
+        let csvString = "\(logType),\(timestamp),\(activity),\(durationInSeconds),\(quantityQuestion),\(quantityLogged),\(startTime),\(workAchieved),\(distractionsEncountered),\(abortReason),\(feedback)\n"
+        csv = csv.appending(csvString)
+        do {
+            try csv.write(to: quantityCsvURL, atomically: true, encoding: .utf8)
+        } catch {
+            print("error creating file")
+        }
+    }catch{
+        print(error)
+    }
+}
 
 extension String {
     func replaceLastLineWith(newLine:String)->String {
@@ -2175,6 +2234,17 @@ extension String {
             outputString.append(String(sub)+"\n")
         }
         outputString = outputString.appending(newLine)
+        return outputString
+    }
+    func removeEntries(count:Int)->String {
+        var comps = self.split(separator: "\n")
+        for i in 1...count{
+            comps.remove(at: 1)
+        }
+        var outputString = ""
+        for sub in comps {
+            outputString.append(String(sub)+"\n")
+        }
         return outputString
     }
 }
@@ -2336,7 +2406,7 @@ func isPreventUserIdleDisplaySleepOn()-> Bool{
 //    addLog(text: "is Prevent UserIdle Display SleepOn Called")
     let processArray = ["zoom.us", "teams"]// lowercased names aynge sirf
 //    let dic = avmonitor.getSystemAssertionDic()
-   // addLog(text: "is Prevent UserIdle Display SleepOn return \(dic)")
+    addLog(text: "is Prevent UserIdle Display SleepOn return \(dic)")
     //print(dic)
 //    if dic == nil{
 //        addLog(text: "is Prevent UserIdle Display SleepOn return false because dic is nil")
@@ -2346,6 +2416,13 @@ func isPreventUserIdleDisplaySleepOn()-> Bool{
     for key in keys{
         if let arr = dic[key] as? NSArray{
             //                addLog(text: "is Prevent UserIdle Display SleepOn success :- arr = dic?[key] as? NSArray")
+            
+            var isArrayContainAudioIn = false
+            var isArrayContainAudioIOut = false
+            var isArrayContainColonOutput = false
+            var isArrayContainColonInput = false
+            var isArrayContainAppleHDAEngineOutput = false
+            
             for item in arr{
                 //                        print(item as? NSDictionary)
                 if let itemDic = item as? NSDictionary{
@@ -2357,16 +2434,71 @@ func isPreventUserIdleDisplaySleepOn()-> Bool{
                             let processName = name.lowercased()
                             if processName != selfAppName.lowercased(){
                                 if processArray.contains(processName){
-                                    //addLog(text: "is Prevent UserIdle Display SleepOn return true \(itemDic)")
+                                    addLog(text: "is Prevent UserIdle Display SleepOn return true \(itemDic)")
                                     return true
                                 }
                             }
                             
                         }
-                        //                                zoom.us, teams
+                    }else if itemDic.value(forKey: "AssertionTrueType") as?  String ?? ""  == "PreventUserIdleSystemSleep"{
+                        if var resourcesUsedArr = itemDic.value(forKey: "ResourcesUsed") as?  [String]{
+                            resourcesUsedArr = resourcesUsedArr.map {$0.lowercased()}
+                            var isContainAudioIn = false
+                            var isContainAudioIOut = false
+                            if resourcesUsedArr.contains("audio-in"){
+                                isContainAudioIn = true
+                                isArrayContainAudioIn = true
+                            }
+                            if resourcesUsedArr.contains("audio-out"){
+                                isContainAudioIOut = true
+                                isArrayContainAudioIOut = true
+                            }
+                            
+                            if isContainAudioIn && isContainAudioIOut{
+                                addLog(text: "is Prevent UserIdle System SleepOn return true:- audioIn and audioOut found in resources:- \(itemDic)")
+                                return true
+                            }else if isContainAudioIOut{
+                                for resource in resourcesUsedArr{
+                                    if resource.contains(":input"){
+                                        addLog(text: "is Prevent UserIdle System SleepOn return true:- audioIn and colonOut found in resources:-  \(itemDic)")
+                                        return true
+                                    }
+                                }
+                            }
+                            if !isContainAudioIOut{
+                                for resource in resourcesUsedArr{
+                                    if resource.contains(":output"){
+                                        isArrayContainColonOutput = true
+                                    }else if resource.contains("applehdaengineoutput:"){
+                                        isArrayContainAppleHDAEngineOutput = true
+                                    }
+                                }
+                            }
+                            if !isContainAudioIn{
+                                for resource in resourcesUsedArr{
+                                    if resource.contains(":input"){
+                                        isArrayContainColonInput = true
+                                    }
+                                }
+                            }
+                        }
                     }
                     
                 }
+            }
+            
+            if isArrayContainAudioIn && isArrayContainAudioIOut{
+                addLog(text: "is Prevent UserIdle System SleepOn return true:- audioIn and audioOut found in array:- \(arr)")
+                return true
+            }else if isArrayContainAudioIn && isArrayContainColonOutput{
+                addLog(text: "is Prevent UserIdle System SleepOn return true:- audioIn and colonOut found in array:- \(arr)")
+                return true
+            }else if isArrayContainAudioIOut && isArrayContainColonInput{
+                addLog(text: "is Prevent UserIdle System SleepOn return true:- audioOut and colonIn found in array:- \(arr)")
+                return true
+            }else if isArrayContainAudioIn && isArrayContainAppleHDAEngineOutput{
+                addLog(text: "is Prevent UserIdle System SleepOn return true:- audioIn and AppleHDAEngineOutput found in array:- \(arr)")
+                return true
             }
         }
     }
@@ -2592,7 +2724,7 @@ func showBreakWarningWindow(){
 //***********show Break Warning Window***************//
 
 func showPreloadFocusModesWindow(){
-    addLog(text:"showBreakWarningWindow")
+    addLog(text:"showPreloadFocusModesWindow")
     getPreloadFocusModesWindowControllerObj().contentViewController = getPreloadFocusModesVcObj()
 
     
@@ -2755,13 +2887,7 @@ func runAppleScriptFile(path:String){
 }
 
 func workBeforeFocusBegin(index:Int){
-    if let val = arrFocusType[index]["isScriptBeforeFocusEnabled"] as? Bool{
-        if val{
-            if let path = arrFocusType[index]["scriptPathBeforeFocus"] as? String{
-                runAppleScriptFile(path: path)
-            }
-        }
-    }
+    
     if let val = arrFocusType[index]["isAutoDoNotDisturbEnabled"] as? Bool{
         if val{
             if isAccessibilityEnabled(isPrompt: true){
@@ -2769,15 +2895,18 @@ func workBeforeFocusBegin(index:Int){
             }
         }
     }
-}
-func workAfterFocusBegin(index:Int){
-    if let val = arrFocusType[index]["isScriptAfterFocusEnabled"] as? Bool{
+    
+    if let val = arrFocusType[index]["isScriptBeforeFocusEnabled"] as? Bool{
         if val{
-            if let path = arrFocusType[index]["scriptPathAfterFocus"] as? String{
+            if let path = arrFocusType[index]["scriptPathBeforeFocus"] as? String{
                 runAppleScriptFile(path: path)
             }
         }
     }
+    
+}
+func workAfterFocusBegin(index:Int){
+    
     if let val = arrFocusType[index]["isAutoDoNotDisturbEnabled"] as? Bool{
         if val{
             if isAccessibilityEnabled(isPrompt: false){
@@ -2785,6 +2914,15 @@ func workAfterFocusBegin(index:Int){
             }
         }
     }
+    
+    if let val = arrFocusType[index]["isScriptAfterFocusEnabled"] as? Bool{
+        if val{
+            if let path = arrFocusType[index]["scriptPathAfterFocus"] as? String{
+                runAppleScriptFile(path: path)
+            }
+        }
+    }
+    
 }
 
 //*****************************Read data from csv******************************//
@@ -3338,6 +3476,7 @@ func getSidekickBrowserActiveTabTitle()->String?{
     return nil
 }
 
+
 func getActiveTabUrlOf(browser:BROWSER)->String?{
     if browser == ._SAFARI_{
         return getSafariActiveTabUrl()
@@ -3380,6 +3519,63 @@ func getCurrentBrowserFrom(browserName:String)->BROWSER?{
 
 var arrBrowsersLowerCasedNames = ["safari", "google chrome", "sidekick", "brave browser"]
 //*******************************************************//
+
+
+func setDocBarTo(isHide:Bool){
+    DispatchQueue.global().async {
+        if !SettingsManagerObject.isHideDockInActivity{
+            return 
+        }
+        var script: String = ""
+        var hideVal = "true"
+        if isHide{
+            addLog(text:"set Doc Bar To hide")
+            hideVal = "true"
+        }else{
+            addLog(text:"set Doc Bar To unhide")
+            hideVal = "false"
+        }
+        
+        script =
+        """
+        tell application "System Events"
+        set autohide of dock preferences to \(hideVal)
+        end tell
+        """
+        
+        if let appleScript = NSAppleScript(source: script) {
+            
+            var errors : NSDictionary? = nil
+            let desc = appleScript.executeAndReturnError(&errors)
+            if errors != nil {
+                print(errors)
+            }
+    //        return desc.stringValue
+        }
+    }
+}
+
+func checkDocBarState()->String?{
+    var script: String = ""
+    
+    script =
+    """
+    tell application "System Events"
+    set val to autohide of dock preferences
+    end tell
+    """
+    
+    if let appleScript = NSAppleScript(source: script) {
+        
+        var errors : NSDictionary? = nil
+        let desc = appleScript.executeAndReturnError(&errors)
+        if errors != nil {
+            print(errors)
+        }
+        return desc.stringValue
+    }
+    return nil
+}
 
 
 
@@ -3578,23 +3774,48 @@ var appVersion = ""
 var macOSVersion = ""
 
 
-//extension NSTextField {
-//    open override func awakeFromNib() {
-//        super.awakeFromNib()
-////        backgroundColor = .clear
-////        font = UIFont(name: "Helvetica", size: font.pointSize)
-//        font = NSFont(name: "Fenwick Light", size: self.font?.pointSize ?? 24)!
-//    }
-//}
-//
-//extension NSButton {
-//    open override func awakeFromNib() {
-//        super.awakeFromNib()
-////        backgroundColor = .clear
-////        font = UIFont(name: "Helvetica", size: font.pointSize)
-//        font = NSFont(name: "Fenwick Light", size: self.font?.pointSize ?? 24)!
-//    }
-//}
+extension NSTextField {//CourierNewPSMT // CourierNewPS-BoldMT
+    open override func awakeFromNib() {//System Font Bold
+        super.awakeFromNib()
+//        backgroundColor = .clear
+//        font = UIFont(name: "Helvetica", size: font.pointSize)
+        if self.font?.fontName == "CourierNewPS-BoldMT"{
+            font = NSFont(name: "System Font Bold", size: self.font?.pointSize ?? 24)!
+        }else if self.font?.fontName == "CourierNewPSMT"{
+            font = NSFont(name: "System Font Regular", size: self.font?.pointSize ?? 24)!
+        }else if self.font?.fontName == ".AppleSystemUIFontBold"{
+            font = NSFont(name: "System Font Bold", size: self.font?.pointSize ?? 24)!
+        }else if self.font?.fontName == ".AppleSystemUIFont"{
+            font = NSFont(name: "System Font Regular", size: self.font?.pointSize ?? 24)!
+        }else if self.font?.fontName == ".SF NS Regular"{
+            font = NSFont(name: "System Font Regular", size: self.font?.pointSize ?? 24)!
+        }else{
+            font = NSFont(name: "System Font", size: self.font?.pointSize ?? 24)!
+        }
+        
+    }
+}
+
+extension NSButton {
+    open override func awakeFromNib() {//System Font Regular
+        super.awakeFromNib()
+//        backgroundColor = .clear
+//        font = UIFont(name: "Helvetica", size: font.pointSize)
+        if self.font?.fontName == "CourierNewPS-BoldMT"{
+            font = NSFont(name: "System Font Bold", size: self.font?.pointSize ?? 24)!
+        }else if self.font?.fontName == "CourierNewPSMT"{
+            font = NSFont(name: "System Font Regular", size: self.font?.pointSize ?? 24)!
+        }else if self.font?.fontName == ".AppleSystemUIFontBold"{
+            font = NSFont(name: "System Font Bold", size: self.font?.pointSize ?? 24)!
+        }else if self.font?.fontName == ".AppleSystemUIFont"{
+            font = NSFont(name: "System Font Regular", size: self.font?.pointSize ?? 24)!
+        }else if self.font?.fontName == ".SF NS Regular"{
+            font = NSFont(name: "System Font Regular", size: self.font?.pointSize ?? 24)!
+        }else{
+            font = NSFont(name: "System Font", size: self.font?.pointSize ?? 24)!
+        }
+    }
+}
 
 
 extension NSFont {
@@ -3962,21 +4183,6 @@ func forceCompleteIfAnyHabitGoing(){
     let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
     let shutOffdate = Calendar.current.date(bySettingHour: shutOffTime!.hour, minute: shutOffTime!.minute, second: shutOffTime!.second, of: Date())!
     
-    if lastCurrentState == ._FOCUS_SUMMARY_{
-        let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
-        let shutOffdate = Calendar.current.date(bySettingHour: shutOffTime!.hour, minute: shutOffTime!.minute, second: shutOffTime!.second, of: Date())!
-        
-        let curreentDate = Date()
-        if curreentDate > shutOffdate{// iska matlab 20-24 k bich
-            let tomorrowDate = Calendar.current.date(byAdding: .day, value: 1, to: Date())!
-            let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: tomorrowDate)
-            UserDefaults.standard.set(startDate, forKey: kUserdefaultsFocusSummaryShowedTillDate)
-        }else if curreentDate < startDate{ //  iska mtlb 1 se 10 k bich ka time
-            UserDefaults.standard.set(startDate, forKey: kUserdefaultsFocusSummaryShowedTillDate)
-        }else{// not shut off time
-            
-        }
-    }
     var sequenceId = ""
     if lastCurrentState == ._MORNING_HABIT_{
         sequenceId = arrAllMorningHabits.first?.activity_sequence_id ?? ""
@@ -4053,3 +4259,27 @@ public extension URL {
         return destURL
     }
 }
+//[
+//  {
+//    "completed_activity_log": {
+//      "user_id": "string",
+//      "activity_id": "string",
+//      "activity_sequence_id": "string",
+//      "start_time": "2022-12-15T12:47:23.044Z",
+//      "finish_time": "2022-12-15T12:47:23.045Z",
+//      "quantity_logged": 0,
+//      "duration_logged": 0,
+//      "completed_sequence_id": "string",
+//      "activity_note": "string",
+//      "metadata": {},
+//
+//
+//
+//
+//      "id": "string",
+//      "created_at": "string",
+//      "updated_at": "string"
+//    }
+//
+//  }
+//]

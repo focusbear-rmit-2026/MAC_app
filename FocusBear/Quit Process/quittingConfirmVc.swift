@@ -253,7 +253,7 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
                         let logType = "Quit"
                         let activity = ""//
                         
-                        addEntryInCsv(logType: logType, activity: activity, durationInSeconds: "", quantityQuestion: "", quantityLogged: "", startTime: "", workAchieved: "", distractionsEncountered: "", abortReason: "I've got an emergency", feedback: "")
+                        addEntryInStatsCsv(logType: logType, activity: activity, durationInSeconds: "", quantityQuestion: "", quantityLogged: "", startTime: "", workAchieved: "", distractionsEncountered: "", abortReason: "I've got an emergency", feedback: "")
                         appdelegate?.menuItem_Quit()
                     }else if self.popUpBtnReasons.indexOfSelectedItem == 2{
                         addLog(text: "App Quit - The app is broken")
@@ -267,7 +267,7 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
                         let logType = "Quit"//
                         let activity = ""
                         
-                        addEntryInCsv(logType: logType, activity: activity, durationInSeconds: "", quantityQuestion: "", quantityLogged: "", startTime: "", workAchieved: "", distractionsEncountered: "", abortReason: "Something else", feedback: self.textView.string)
+                        addEntryInStatsCsv(logType: logType, activity: activity, durationInSeconds: "", quantityQuestion: "", quantityLogged: "", startTime: "", workAchieved: "", distractionsEncountered: "", abortReason: "Something else", feedback: self.textView.string)
                         appdelegate?.menuItem_Quit()
                     }
                 }

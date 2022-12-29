@@ -25,12 +25,13 @@ class onboardingBlockedUrlsVc: NSViewController {
                                          ["url":"instagram.com", "isSelected":true],
                                          ["url":"tiktok.com", "isSelected":true],
                                          ["url":"bbc.com", "isSelected":true],
-                                         ["url":"cnn.com", "isSelected":true]]
+                                         ["url":"cnn.com", "isSelected":true],
+                                         ["url":"reddit.com", "isSelected":true]]
 
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
-        lblEnterUrl.stringValue = "Enter utl to block:"
+        lblEnterUrl.stringValue = "Enter url to block:"
         btnAddUrl.title = "Add url"
         
         lblTitle.stringValue = "Welcome to Focus Bear"
@@ -62,13 +63,12 @@ class onboardingBlockedUrlsVc: NSViewController {
         textFieldUrl.stringValue = ""
     }
     @IBAction func btnContinueClicked(_ sender: Any) {
-//todo logs // 
-
+        addLog(text: "onboardingBlockedUrlsVc:- Button Continue clicked")
         UserDefaults.standard.set(arrBlockedUrls, forKey: kUserdefaultsBlockedUrlsFromOnboarding)
-        addLog(text: "habitSkip Onboarding view:- btnContinueClicked:")
         appdelegate!.showOnbardingHabit()
     }
     @IBAction func btnAddUrlClicked(_ sender: Any) {
+        addLog(text: "onboardingBlockedUrlsVc:- Button Add Url clicked")
         let domain = textFieldUrl.stringValue
         for dic in arrBlockedUrls{
             if let url = dic["url"] as? String {

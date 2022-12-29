@@ -172,9 +172,11 @@ class pomodoroPreferencesAdvancedVc: NSViewController {
         popUpBtnFocusModes.removeAllItems()
         var arrAllFocusItems = [String]()
         for i in 0..<arrFocusType.count{
-            if let name = arrFocusType[i]["name"] as? String{
-                popUpBtnFocusModes.addItem(withTitle: name)
-                arrAllFocusItems.append(name)
+            if !(arrFocusType[i]["isMeetings"] as? Bool ?? false == true) && !(arrFocusType[i]["isLockedFocus"] as? Bool ?? false == true){
+                if let name = arrFocusType[i]["name"] as? String{
+                    popUpBtnFocusModes.addItem(withTitle: name)
+                    arrAllFocusItems.append(name)
+                }
             }
         }
 
@@ -185,6 +187,7 @@ class pomodoroPreferencesAdvancedVc: NSViewController {
             }else{
                 popUpBtnFocusModes.selectItem(withTitle: arrAllFocusItems[0])
                 UserDefaults.standard.set(arrAllFocusItems[0], forKey: SettingsManagerObject.kUserdefaultsHardcorePomodoroFocusedName)
+                SettingsManagerObject.isSettingsChanged = true
             }
         }else{
             popUpBtnFocusModes.selectItem(withTitle: arrAllFocusItems[0])

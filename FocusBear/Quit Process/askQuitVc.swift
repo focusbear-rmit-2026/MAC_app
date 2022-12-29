@@ -52,7 +52,7 @@ class askQuitVc: NSViewController {
         UserDefaults.standard.set(date, forKey: kUserdefaults4HourReActivateTime)
         addLog(text: "App Deactivated for 4 hours - I've got an emergency")
 
-        addEntryInCsv(logType: "quit abort", activity: "quit", durationInSeconds: "", quantityQuestion: "", quantityLogged: "", startTime: "", workAchieved: "", distractionsEncountered: "", abortReason: "I've got an emergency", feedback: "")
+        addEntryInStatsCsv(logType: "quit abort", activity: "quit", durationInSeconds: "", quantityQuestion: "", quantityLogged: "", startTime: "", workAchieved: "", distractionsEncountered: "", abortReason: "I've got an emergency", feedback: "")
         mainViewControllerObj?.disableApp()
         
     }

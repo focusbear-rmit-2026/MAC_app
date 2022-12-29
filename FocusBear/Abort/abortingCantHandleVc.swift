@@ -170,7 +170,7 @@ class abortingCantHandleVc: NSViewController, NSTextViewDelegate {
                 activity = "break"
             }
             
-            addEntryInCsv(logType: logType, activity: activity, durationInSeconds: "", quantityQuestion: "", quantityLogged: "", startTime: "", workAchieved: "", distractionsEncountered: "", abortReason: "Start shortened routine", feedback: textViewFeedback.string)
+            addEntryInStatsCsv(logType: logType, activity: activity, durationInSeconds: "", quantityQuestion: "", quantityLogged: "", startTime: "", workAchieved: "", distractionsEncountered: "", abortReason: "Start shortened routine", feedback: textViewFeedback.string)
             
             appdelegate?.quitAndRestartApp()//agar ye ni ayga to aage ka flow set kro
 //            getAbortJsonToUpload(emailAddress: textFieldEmail.stringValue, feedback: textViewFeedback.string, abortReason: "Start shortened routine", completionHandler: {dic in
@@ -195,7 +195,7 @@ class abortingCantHandleVc: NSViewController, NSTextViewDelegate {
                 allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"break_activity", "deactivate-reason":"Deactivate routine + breaks", "detailed-reason":textViewFeedback.string])
             }
             
-            addEntryInCsv(logType: logType, activity: activity, durationInSeconds: "", quantityQuestion: "", quantityLogged: "", startTime: "", workAchieved: "", distractionsEncountered: "", abortReason: "Deactivate routine + breaks", feedback: textViewFeedback.string)
+            addEntryInStatsCsv(logType: logType, activity: activity, durationInSeconds: "", quantityQuestion: "", quantityLogged: "", startTime: "", workAchieved: "", distractionsEncountered: "", abortReason: "Deactivate routine + breaks", feedback: textViewFeedback.string)
             
             mainViewControllerObj?.showAbortDoneView()
 //            getAbortJsonToUpload(emailAddress: textFieldEmail.stringValue, feedback: textViewFeedback.string, abortReason: "Deactivate routine + breaks", completionHandler: {dic in

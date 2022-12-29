@@ -40,7 +40,13 @@ class easyPostponeVc: NSViewController {
     
     @IBAction func btnPostponeClicked(_ sender: Any) {
         addLog(text: "easyPostponeVc:- button postpone clicked")
-        mainViewControllerObj?.postponeMorningHabitFor(minutes: Int(popupButtonMinutes.title) ?? 5)
+        if lastCurrentState == ._MORNING_HABIT_{
+            mainViewControllerObj?.postponeMorningHabitFor(minutes: Int(popupButtonMinutes.title) ?? 5)
+        }else if lastCurrentState == ._EVENING_HABIT_{
+            mainViewControllerObj?.postponeEveningHabitFor(minutes: Int(popupButtonMinutes.title) ?? 5)
+        }else if lastCurrentState == ._ACTIVITY_{
+            mainViewControllerObj?.postponeBreakActivitiesFor(minutes: Int(popupButtonMinutes.title) ?? 5)
+        }
         self.view.window?.close()
     }
     @IBAction func btnDeactivateAppClicked(_ sender: Any) {
@@ -52,20 +58,7 @@ class easyPostponeVc: NSViewController {
         let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
         let shutOffdate = Calendar.current.date(bySettingHour: shutOffTime!.hour, minute: shutOffTime!.minute, second: shutOffTime!.second, of: Date())!
         addLog(text: "get Last Activity Info - forceCompleteIfAnyActivityGoing")
-        if lastCurrentState == ._FOCUS_SUMMARY_{
-            
-            
-            let curreentDate = Date()
-            if curreentDate > shutOffdate{// iska matlab 20-24 k bich
-                let tomorrowDate = Calendar.current.date(byAdding: .day, value: 1, to: Date())!
-                let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: tomorrowDate)
-                UserDefaults.standard.set(startDate, forKey: kUserdefaultsFocusSummaryShowedTillDate)
-            }else if curreentDate < startDate{ //  iska mtlb 1 se 10 k bich ka time
-                UserDefaults.standard.set(startDate, forKey: kUserdefaultsFocusSummaryShowedTillDate)
-            }else{// not shut off time
-                
-            }
-        }
+
         var sequenceId = ""
         if lastCurrentState == ._MORNING_HABIT_{
             sequenceId = arrAllMorningHabits.first?.activity_sequence_id ?? ""

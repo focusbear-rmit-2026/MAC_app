@@ -10,6 +10,9 @@ import Cocoa
 
 class upgradeNowVc: NSViewController {
 
+    @IBOutlet weak var btnUserId: NSButton!
+    @IBOutlet weak var lblTitleUserId: NSTextField!
+    @IBOutlet weak var textFieldUserId: NSTextField!
     @IBOutlet weak var lblSubscriptionExpired: NSTextField!
     @IBOutlet weak var loader: NSProgressIndicator!
     @IBOutlet weak var btnRestorePurchases: Button!
@@ -36,6 +39,12 @@ class upgradeNowVc: NSViewController {
         btnUpgradeNow.titleColor = NSColor.white
         btnUpgradeNow.buttonDownColor = buttonDarkBlueColor.cgColor
         
+        textFieldUserId.isEditable = false
+        textFieldUserId.isSelectable = true
+        
+        btnUserId.toolTip = "Copy user id"
+        lblTitleUserId.stringValue = "Your user id:"
+        
         
         lblTitleAppName.stringValue = appName
         lblPointFirst.stringValue = "Personalized habit routines"
@@ -59,6 +68,10 @@ class upgradeNowVc: NSViewController {
             lblSyncInfo.stringValue = upgradeNowVcInfo.value(forKey: "syncInfoText") as? String ?? lblSyncInfo.stringValue
             btnRestorePurchases.title = upgradeNowVcInfo.value(forKey: "buttonRestoreText") as? String ?? btnRestorePurchases.title
             lblSubscriptionExpired.stringValue = upgradeNowVcInfo.value(forKey: "subscriptionExpiredText") as? String ?? lblSubscriptionExpired.stringValue
+            
+            btnUserId.toolTip = upgradeNowVcInfo.value(forKey: "toolTipCopyId") as? String ?? btnUserId.toolTip
+            lblTitleUserId.stringValue = upgradeNowVcInfo.value(forKey: "titleUserId") as? String ?? lblTitleUserId.stringValue
+            
         }
 
        
@@ -69,6 +82,23 @@ class upgradeNowVc: NSViewController {
             lblSubscriptionExpired.isHidden = false
         }else{
             lblSubscriptionExpired.isHidden = true
+        }
+        textFieldUserId.stringValue = appdelegate!.user?.userId ?? ""
+    }
+    @IBAction func btnUserIdClicked(_ sender: Any) {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(appdelegate!.user?.userId ?? "", forType: .string)
+        
+        var msg = "Copied"
+        if let upgradeNowVcInfo = configjson.value(forKey: "upgradeNowVcInfo") as? NSDictionary{
+            msg = upgradeNowVcInfo.value(forKey: "toolTipCopied") as? String ?? msg
+        }
+        showTooltip(sender: btnUserId, msg: msg, preferredEdge: NSRectEdge.minY)
+        DispatchQueue.global().async {
+            sleep(2)
+            DispatchQueue.main.async {
+                popoverTooltip?.close()
+            }
         }
     }
     @IBAction func btnUpgradeNowClicked(_ sender: Any) {

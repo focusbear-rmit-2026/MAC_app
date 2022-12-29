@@ -8,7 +8,7 @@
 
 import Cocoa
 
-class focusTipsVc: NSViewController {//, todo logs
+class focusTipsVc: NSViewController {
 
     @IBOutlet weak var imgViewAppIcon: NSImageView!
     @IBOutlet weak var boxSmall_slide0: NSBox!
@@ -133,17 +133,18 @@ class focusTipsVc: NSViewController {//, todo logs
         
     }
     @IBAction func btnBackClicked(_ sender: Any) {
+        addLog(text: "focusTipsVc:-  Button Back clicked")
         currentSlideIndex -= 1
         recheckSlideState()
     }
     
-    @IBAction func btnGotItClicked(_ sender: Any) {//todo logs
+    @IBAction func btnGotItClicked(_ sender: Any) {
         if currentSlideIndex == arrCurrentDic.count - 1{
-            addLog(text:"btnGotItClicked")
+            addLog(text:"focusTipsVc:- btn GotIt Clicked")
             self.view.window?.close()
             showOnboardingVideoWindow()
         }else{
-            addLog(text:"btnNextClicked")
+            addLog(text:"focusTipsVc:- btn Next Clicked")
             currentSlideIndex += 1
             
             recheckSlideState()

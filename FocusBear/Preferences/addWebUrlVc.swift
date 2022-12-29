@@ -303,6 +303,7 @@ class addWebUrlVc: NSViewController, NSTextFieldDelegate {
                         
                     }
                 })
+                allApiObject.capturePosthog(event: "add-blocked-url-in-focus-mode", metadata: [:])
                 
             }else if currenUrlAddingtState == ._ALL_BLOCK_URL{
                 if !SettingsManagerObject.arrBlockedUrls.contains(where: {$0.lowercased() == textField.stringValue.lowercased() }) {

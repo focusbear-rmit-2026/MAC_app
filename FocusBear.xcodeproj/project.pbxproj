@@ -510,7 +510,6 @@
 				8F08FD6F28B60DD60016C741 /* uninstallingConfirmVc.swift */,
 				274C9A90289A8C900066F883 /* accountVc.swift */,
 				8F937D9728D88AC10053A42B /* preferencesVc.swift */,
-				8F70D64428E1C6A600895B3F /* customMessageVc.swift */,
 			);
 			path = Preferences;
 			sourceTree = "<group>";
@@ -639,11 +638,12 @@
 				8F4A3B1A290D0CAE00DCBE39 /* toolBoxVc.swift */,
 				8FF9351A29113EAB004511C0 /* tblCellToolBox.swift */,
 				8FF8E0FE291686EF002938B8 /* popUpBlockConfirmVc.swift */,
-				8F19BCA6293F361600F70544 /* SkipHabit */,
+				8F70D64428E1C6A600895B3F /* customMessageVc.swift */,
 				8F38CCFD292FA464005213DE /* easyPostponeVc.swift */,
 				8FCE07AA2931F2A300DF4530 /* popUpOfflineVc.swift */,
 				8F4A3B1E290D256F00DCBE39 /* collectionCellToolBox.swift */,
 				8F4A3B1F290D256F00DCBE39 /* collectionCellToolBox.xib */,
+				8F19BCA6293F361600F70544 /* SkipHabit */,
 				8FF9351929110D8C004511C0 /* Onboarding */,
 				8FDA858F279A8E82008AD6AA /* AVMonitor.h */,
 				8FDA8590279A8E82008AD6AA /* AVMonitor.m */,
@@ -1225,7 +1225,7 @@
 				CODE_SIGN_IDENTITY = "Developer ID Application: Jeremy Nagel (TCUD568B3U)";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 98;
+				CURRENT_PROJECT_VERSION = 109;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = TCUD568B3U;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1259,7 +1259,7 @@
 				CODE_SIGN_IDENTITY = "Developer ID Application: Jeremy Nagel (TCUD568B3U)";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 98;
+				CURRENT_PROJECT_VERSION = 109;
 				DEVELOPMENT_TEAM = TCUD568B3U;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_TESTABILITY = NO;

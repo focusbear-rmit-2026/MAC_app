@@ -78,7 +78,11 @@ class focusCompletedVc: NSViewController {
         brainDumpVcObj?.breakStarted()
         addLog(text: "focusCompletedVc - btnTakeBreakClicked")//
         let timestamp = getStringFromDate(date: startFocusModeTime ?? Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
-        addEntryInCsv(logType: "focus block", activity: currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: textViewAchieve.string, distractionsEncountered: textViewDistractions.string, abortReason: "", feedback: "")
+        
+        let achievements = textViewAchieve.string.components(separatedBy: .newlines).joined()
+        let distractionsEncountered = textViewDistractions.string.components(separatedBy: .newlines).joined()
+        
+        addEntryInStatsCsv(logType: "focus block", activity: currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: achievements, distractionsEncountered: distractionsEncountered, abortReason: "", feedback: "")
 
         allApiObject.finishFocusMode(id: currentFocusModeId, achievements: textViewAchieve.string, distractions: textViewDistractions.string, finish_time: self.finish_time ?? Date(), completionHandler: {newDic in
             DispatchQueue.main.async {

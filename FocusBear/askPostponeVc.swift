@@ -49,7 +49,13 @@ class askPostponeVc: NSViewController {
             self.timer = nil
             lblTimer.isHidden = true
             self.view.removeFromSuperview()
-            mainViewControllerObj?.btnAbort.isHidden = false
+            if currentAction == ._INPROGRESS_{
+                mainViewControllerObj?.abortCancel()
+            }else if currentAction == ._START_{
+                mainViewControllerObj?.btnAbort.isHidden = false
+            }else if currentAction == ._END_{
+                mainViewControllerObj?.btnAbort.isHidden = false
+            }
         }else{
             self.view.removeFromSuperview()
             mainViewControllerObj?.abortCancel()
@@ -59,6 +65,7 @@ class askPostponeVc: NSViewController {
     }
     func resetView(){
         addLog(text: "Ask postpone view - resetView")
+        isShowingAskOfficeModeView = false
         btnPostpone.isHidden = false
         btnAbortBreak.isHidden = false
         btnOkIWillDoBreak.isHidden = true
@@ -92,6 +99,8 @@ class askPostponeVc: NSViewController {
             
             
         }else if currentState == ._ACTIVITY_{
+       
+            /*
             popUpButtonSelectMinutes.isHidden = true
             lblSelectMinutes.isHidden = true
             lblTitle.stringValue = "If you have something urgent, you can postpone the Break Activity for 5 Minutes."
@@ -119,9 +128,94 @@ class askPostponeVc: NSViewController {
                 btnPostpone.title = activityPostponeInfo.value(forKey: "buttonPostponeBreakText") as? String ?? btnPostpone.title
                 btnAbortBreak.title = activityPostponeInfo.value(forKey: "buttonEnableOfficeModeText") as? String ?? btnAbortBreak.title
             }
+            */
+        
+            if activityPostponeCount == 0{
+                if SettingsManagerObject.isOfficeModeEnabled{
+                    self.showActivityostponeView()
+                }else{
+                    self.showAskOfficeModeView()
+                }
+            }else{
+                showActivityTimerView()
+            }
         }
     }
 
+    func showActivityostponeView(){
+        isShowingAskOfficeModeView = false
+        popUpButtonSelectMinutes.isHidden = false
+        lblSelectMinutes.isHidden = false
+        lblTitle.stringValue = "Want to postpone the break or skip it completely?"
+        btnPostpone.title = "Skip Completely"
+        btnAbortBreak.title = "Postpone Break"
+        btnOkIWillDoBreak.isHidden = true
+        btnAbortBreak.isHidden = false
+        btnPostpone.isHidden = false
+       
+        btnPostpone.buttonColor = NSColor.white.cgColor
+        btnAbortBreak.buttonColor = buttonBgColor.cgColor
+        
+        if let activityPostponeInfo = configjson.value(forKey: "activityPostponeInfo") as? NSDictionary{
+            lblTitle.stringValue = activityPostponeInfo.value(forKey: "titlePostponeOrSkip") as? String ?? lblTitle.stringValue
+            btnAbortBreak.title = activityPostponeInfo.value(forKey: "buttonPostponeBreakText") as? String ?? btnAbortBreak.title
+            btnPostpone.title = activityPostponeInfo.value(forKey: "buttonSkipCompletelyText") as? String ?? btnPostpone.title
+        }
+    }
+    func showActivityTimerView(){
+        addLog(text: "Ask postpone view - 15 Seconds timer")
+        btnAbortBreak.isHidden = true
+        btnPostpone.isHidden = true
+        popUpButtonSelectMinutes.isHidden = true
+        lblSelectMinutes.isHidden = true
+        btnOkIWillDoBreak.isHidden = false
+        lblTitle.stringValue = "You postponed the last break - are you sure you can't make time for the break now?"
+        if let activityPostponeInfo = configjson.value(forKey: "activityPostponeInfo") as? NSDictionary{
+            lblTitle.stringValue = activityPostponeInfo.value(forKey: "postponedLastBreakText") as? String ?? lblTitle.stringValue
+        }
+        btnOkIWillDoBreak.title = "Argh ok I'll take a break!"
+        if let activityPostponeInfo = configjson.value(forKey: "activityPostponeInfo") as? NSDictionary{
+            btnOkIWillDoBreak.title = activityPostponeInfo.value(forKey: "buttonTakeBreakText") as? String ?? btnOkIWillDoBreak.title
+        }
+        
+        startTimer(duration: 15)
+    }
+    var isShowingAskOfficeModeView = false
+    func showAskOfficeModeView(){
+        popUpButtonSelectMinutes.isHidden = true
+        lblSelectMinutes.isHidden = true
+        var currentActicityTitle = ""
+        if currentAction == ._INPROGRESS_{
+            currentActicityTitle = timerViewcontrollerObj?.currentActicityTitle ?? ""
+        }else if currentAction == ._END_{
+            currentActicityTitle = thirdVcObj?.activityName ?? ""
+        }else if currentAction == ._START_{
+            currentActicityTitle = thirdVcObj?.activityName ?? ""
+        }
+        btnPostpone.title = "I don't have time"
+        btnAbortBreak.title = "I'm in the offIce"
+        
+        var title = "Do you not have time for a break right now or are you in the office and it's not appropriate to do <ACTIVITY>?"
+        if let activityPostponeInfo = configjson.value(forKey: "activityPostponeInfo") as? NSDictionary{
+            title = activityPostponeInfo.value(forKey: "titleAskOfficeMode") as? String ?? title
+            btnPostpone.title = activityPostponeInfo.value(forKey: "buttonDontHaveTimeText") as? String ?? btnPostpone.title
+            btnAbortBreak.title = activityPostponeInfo.value(forKey: "buttonInTheOffIceText") as? String ?? btnAbortBreak.title
+        }
+        
+        
+        lblTitle.stringValue = title.replacingOccurrences(of: "<ACTIVITY>", with: currentActicityTitle)
+       
+        isShowingAskOfficeModeView = true
+        btnPostpone.isHidden = false
+        btnOkIWillDoBreak.isHidden = true
+        
+        btnAbortBreak.isHidden = false
+        btnPostpone.buttonColor = NSColor.white.cgColor
+        btnAbortBreak.buttonColor = buttonBgColor.cgColor
+
+//        }
+        
+    }
     func showHabitTimerView(){
         lblTitle.stringValue = "You've postponed your habits a few times. Are you sure you want to postpone again?"
         popUpButtonSelectMinutes.isHidden = true
@@ -191,24 +285,13 @@ class askPostponeVc: NSViewController {
             mainViewControllerObj?.postponeEveningHabitFor(minutes: Int(popUpButtonSelectMinutes.title) ?? 15)
             activityPostponeCount += 1
         }else if currentState == ._ACTIVITY_{
-            if activityPostponeCount == 0{
+            if isShowingAskOfficeModeView{
+                addLog(text: "Ask postpone view - Show Activityostpone View")
+                showActivityostponeView()
+            }else{//skip break activities
+                addLog(text: "Ask postpone view - Postpone Break Activitie Clicked")
                 self.view.removeFromSuperview()
-                mainViewControllerObj?.postponeBreakActivitiesFor(minutes: 5)
-                activityPostponeCount += 1
-            }else{
-                btnAbortBreak.isHidden = true
-                btnPostpone.isHidden = true
-                btnOkIWillDoBreak.isHidden = false
-                lblTitle.stringValue = "You postponed the last break - are you sure you can't make time for the break now?"
-                if let activityPostponeInfo = configjson.value(forKey: "activityPostponeInfo") as? NSDictionary{
-                    lblTitle.stringValue = activityPostponeInfo.value(forKey: "postponedLastBreakText") as? String ?? lblTitle.stringValue
-                }
-                btnOkIWillDoBreak.title = "Argh ok I'll take a break!"
-                if let activityPostponeInfo = configjson.value(forKey: "activityPostponeInfo") as? NSDictionary{
-                    btnOkIWillDoBreak.title = activityPostponeInfo.value(forKey: "buttonTakeBreakText") as? String ?? btnOkIWillDoBreak.title
-                }
-                
-                startTimer(duration: 15)
+                mainViewControllerObj?.postponeBreakActivitiesFor(minutes: breakAfterMinutes)// we will use "postponeBreakActivitiesFor" function to skip break activity beacuse in "setActivitytimer" func there is no code to start morning habit again if break activity started from morning or evening routine(allowed app habit)
             }
         }else if currentState == ._FOCUS_SUMMARY_{
             self.view.removeFromSuperview()
@@ -229,9 +312,26 @@ class askPostponeVc: NSViewController {
     }
     @IBAction func btnAbortBreakClicked(_ sender: Any) {
         if currentState == ._ACTIVITY_{
-            addLog(text: "Ask postpone view - button Enabled Office Mode")
-            self.view.removeFromSuperview()
-            mainViewControllerObj!.enableOfficeModeAndRestartBreakActivities()
+            if isShowingAskOfficeModeView{//enableOffcieMode
+                let filterArr = arrAllbreakActivities.filter { $0.isOfficeFriendly == true}
+                if filterArr.count == 0{ //no activity found with isOfficeFriendly
+                    //crete office friendy activity and start brek activity
+                    addLog(text: "Ask postpone view - Create Office Activity And Enable Office Mode")
+                    addOfficeFriendlyActivityInSettings()
+                    self.view.removeFromSuperview()
+                    mainViewControllerObj!.enableOfficeModeAndRestartBreakActivities()
+                    
+                }else{
+                    addLog(text: "Ask postpone view - Enabled Office Mode")
+                    self.view.removeFromSuperview()
+                    mainViewControllerObj!.enableOfficeModeAndRestartBreakActivities()
+                }
+            }else{
+                addLog(text: "Ask postpone view - Postpone Break Activitie Clicked")
+                activityPostponeCount += 1
+                self.view.removeFromSuperview()
+                mainViewControllerObj?.postponeBreakActivitiesFor(minutes: Int(popUpButtonSelectMinutes.title) ?? 15)
+            }
         }else{
             addLog(text: "Ask postpone view - button Abort Clicked")
             self.view.removeFromSuperview()
@@ -239,6 +339,94 @@ class askPostponeVc: NSViewController {
         }
         
     }
+    func addOfficeFriendlyActivityInSettings(){
+        addLog(text: "addOfficeFriendlyActivityInSettings")//
+        var jsonResult = NSDictionary()
+        if let stringDic = UserDefaults.standard.object(forKey: kUserdefaultsSelectedJson) as? String {
+            //            jsonResult = dic
+            if let data = stringDic.data(using: String.Encoding.utf8) {
+                
+                do {
+                    jsonResult = try (JSONSerialization.jsonObject(with: data, options: []) as? NSDictionary ?? [:])
+                    
+                } catch let error as NSError {
+                    print(error)
+                }
+            }
+            
+        }else {
+            if let path = Bundle.main.path(forResource: "settings", ofType: "json") {
+                let url = URL(fileURLWithPath: path)
+                do {
+                    let data = try Data(contentsOf: url, options: .mappedIfSafe)
+                    do {
+                        if let dicResult: NSDictionary = try JSONSerialization.jsonObject(with: data, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary {
+                            jsonResult = dicResult
+                            print(jsonResult)
+                        }
+                    }catch {
+                        print(error)
+                    }
+                } catch {
+                    // handle error
+                }
+            }
+        }
+        guard let mutableDic = jsonResult.mutableCopy() as? NSMutableDictionary else{
+            return
+        }
+        let id = getUuid()
+        let activity_sequence_id = arrAllbreakActivities.first?.activity_sequence_id ?? ""
+        if var breakActivities = mutableDic.value(forKey: "break_activities") as? [NSDictionary] {
+            let activityDic: NSMutableDictionary = ["id":id, "name":"Stand up and stretch", "duration_seconds":20, "is_office_friendly":true, "activity_sequence_id":activity_sequence_id]
+            breakActivities.append(activityDic)
+            mutableDic["break_activities"] = breakActivities
+            
+            arrAllbreakActivities.append(breakActivity(id:id,name: "Stand up and stretch", durationSeconds: 20, IncludeInEveryBreak: false, urlsArray: [], logQuantity:false, isRandomChoice: false, choices: [], logQuantityQuestion: "", openSpecificApps: false, allowUrls: [], allowApps: [], isOfficeFriendly: true, allowedFocusMode: "", logQuantityType: "",activity_sequence_id:activity_sequence_id))
+            
+            
+            
+            
+            
+            
+            allApiObject.isSettingsValid(settings: mutableDic, completionHandler: {dic,statusCode  in
+                DispatchQueue.main.async {
+
+                    
+                    if dic == nil{
+                        
+                        
+                    }else{
+                        
+                        if statusCode == 200{
+
+                            
+                            do {
+                                let jsonResultData =  try JSONSerialization.data(withJSONObject: dic!, options: JSONSerialization.WritingOptions.prettyPrinted)
+                                
+                                print(jsonResultData)
+                                
+                                if let backToString = String(data: jsonResultData, encoding: String.Encoding.utf8){
+                                    UserDefaults.standard.set(backToString, forKey: kUserdefaultsSelectedJson)
+                                    
+                                }
+                                
+                                
+                            } catch let myJSONError {
+                                print(myJSONError)
+                            }
+                            
+                        }else{
+ 
+                        }
+                    }
+                }
+            })
+
+        }
+
+    }
+    
     @IBAction func btnOkIWillDoBreakClicked(_ sender: Any) {
         addLog(text: "Ask postpone view - button Ok I Will Do activity Clicked")
 
@@ -302,8 +490,11 @@ class askPostponeVc: NSViewController {
                 self.lblTimer.isHidden = true
                 
                 if currentState == ._ACTIVITY_{
-                    self.view.removeFromSuperview()
-                    mainViewControllerObj?.postponeBreakActivitiesFor(minutes: 5)
+                    if SettingsManagerObject.isOfficeModeEnabled{
+                        self.showActivityostponeView()
+                    }else{
+                        self.showAskOfficeModeView()
+                    }
                 }else if currentState == ._MORNING_HABIT_{
                     self.showHabitPostponeView()
                 }else if currentState == ._EVENING_HABIT_{

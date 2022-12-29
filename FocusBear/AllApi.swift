@@ -957,6 +957,10 @@ class AllApi:NSObject {
                 finish_time = calendar.date(byAdding: .second, value: 1, to: start_time) ?? Date()
             }
             
+            let start_time_string = getStringFromDateInUtc(date: start_time, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+            
+            let finish_time_string = getStringFromDateInUtc(date: finish_time, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+            
             let responsePath = "https://api.focusbear.io/completed-activity"
             if let myUrl = NSURL(string: responsePath){
                 addLog(text: "api call activityCompletedApi \(myUrl)")
@@ -977,12 +981,12 @@ class AllApi:NSObject {
                     "duration_logged":duration_logged,
                     "device_id":currentDeviceId,
                     "activity_sequence_id":activity_sequence_id,
-                    "start_time": getStringFromDateInUtc(date: start_time, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"),
-                    "finish_time": getStringFromDateInUtc(date: finish_time, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"),
+                    "start_time": start_time_string,
+                    "finish_time": finish_time_string,
                     "metadata": [:]
                 ]
                 if is_skipped{
-                    let dic = ["is_skipped": true]
+                    let dic = ["skipped_did_complete": true]
                     json["metadata"] = dic
                 }
 
@@ -1049,13 +1053,20 @@ class AllApi:NSObject {
        
                     
                     if error != nil {
+                        
+                        var quantity_logged_string = ""
+                        if quantity_logged != nil{
+                            quantity_logged_string = "\(quantity_logged!)"
+                        }
+                        var skipped_did_complete = ""
+                        if is_skipped{
+                            skipped_did_complete = "true"
+                        }
+                        
                         addLog(text: "api call activityCompletedApi error:- \(error!.localizedDescription)")
                         if (error as? NSError)?.code == self.errorCodeRequestTimeout{
                             if self.isApiActivityCompletedErrorFound{
                                 self.isApiActivityCompletedErrorFound = false
-//                                self.isAnyErrorFoundInActivityCompletedApi = true//Focus Bear was not able to sync the activities' statistics due to bad internet.// var
-                                
-//                                allApiObject.isAnyErrorFoundInActivityCompletedApi = false
                                 
                                 DispatchQueue.main.async {
                                     var activitiesSyncErrorText = "Focus Bear was not able to sync the activities' statistics due to bad internet."
@@ -1066,7 +1077,7 @@ class AllApi:NSObject {
                                 }
                                 
                                 
-                                
+                                addEntryInofflineActivitiesCsv(activity_id: activity_id, duration_logged: "\(duration_logged)", device_id: currentDeviceId, activity_sequence_id: activity_sequence_id, start_time: start_time_string, finish_time: finish_time_string, skipped_did_complete: skipped_did_complete, choice_id: choice_id ?? "", quantity_logged: quantity_logged_string, skipped_did_not_complete: "")
                                 completionHandler(nil)
                                 return
                             }else{
@@ -1089,10 +1100,12 @@ class AllApi:NSObject {
                                 }
                                 showCustomNotificationView(msg: activitiesSyncErrorText)
                             }
-                            
+                            addEntryInofflineActivitiesCsv(activity_id: activity_id, duration_logged: "\(duration_logged)", device_id: currentDeviceId, activity_sequence_id: activity_sequence_id, start_time: start_time_string, finish_time: finish_time_string, skipped_did_complete: skipped_did_complete, choice_id: choice_id ?? "", quantity_logged: quantity_logged_string, skipped_did_not_complete: "")
                             completionHandler(nil)//The Internet connection appears to be offline.
                             return
                         }else{//1009
+                            
+                            addEntryInofflineActivitiesCsv(activity_id: activity_id, duration_logged: "\(duration_logged)", device_id: currentDeviceId, activity_sequence_id: activity_sequence_id, start_time: start_time_string, finish_time: finish_time_string, skipped_did_complete: skipped_did_complete, choice_id: choice_id ?? "", quantity_logged: quantity_logged_string, skipped_did_not_complete: "")
                             completionHandler(nil)
                             return
                         }
@@ -1311,6 +1324,17 @@ class AllApi:NSObject {
                         if (error as? NSError)?.code == self.errorCodeRequestTimeout{
                             if self.isApiActivitySkippedErrorFound{
                                 self.isApiActivitySkippedErrorFound = false
+                                
+                                let calendar = Calendar.current
+                                let start_time = Date()
+                                let finish_time = calendar.date(byAdding: .second, value: 1, to: start_time) ?? Date()
+
+                                let start_time_string = getStringFromDateInUtc(date: start_time, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+                                
+                                let finish_time_string = getStringFromDateInUtc(date: finish_time, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+                                
+                                addEntryInofflineActivitiesCsv(activity_id: activity_id, duration_logged: "", device_id: currentDeviceId, activity_sequence_id: activity_sequence_id, start_time: start_time_string, finish_time: finish_time_string, skipped_did_complete: "", choice_id: "", quantity_logged: "", skipped_did_not_complete: "true")
+                                
                                 completionHandler(nil)
                                 return
                             }else{
@@ -1324,6 +1348,15 @@ class AllApi:NSObject {
                                 })
                             }
                         }else{
+                            let calendar = Calendar.current
+                            let start_time = Date()
+                            let finish_time = calendar.date(byAdding: .second, value: 1, to: start_time) ?? Date()
+
+                            let start_time_string = getStringFromDateInUtc(date: start_time, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+                            
+                            let finish_time_string = getStringFromDateInUtc(date: finish_time, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+                            
+                            addEntryInofflineActivitiesCsv(activity_id: activity_id, duration_logged: "", device_id: currentDeviceId, activity_sequence_id: activity_sequence_id, start_time: start_time_string, finish_time: finish_time_string, skipped_did_complete: "", choice_id: "", quantity_logged: "", skipped_did_not_complete: "true")
                             completionHandler(nil)
                             return
                         }
@@ -1341,8 +1374,108 @@ class AllApi:NSObject {
             }
         }
     }
+    
+    func syncOfflineDataApi(offineData: [[String : Any]], completionHandler: @escaping(_ result: [NSDictionary]?) -> ()){
+        addLog(text: "func call:- activity sync Api completed-activity")
+
+
+        appdelegate!.credentialsManager.credentials {credentialsInfo in
+            addLog(text: "get updated credentialsInfo from credentialsManager")
+            
+            
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+
+            
+            let responsePath = "https://api.focusbear.io/completed-activity/sync"
+            if let myUrl = NSURL(string: responsePath){
+                addLog(text: "api call activitysyncApi \(myUrl)")
+                let token = appdelegate!.credential?.accessToken ?? ""
+                
+                let request = NSMutableURLRequest(url:myUrl as URL);
+                request.httpMethod = "POST";
+                request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+                request.addValue("mac-os", forHTTPHeaderField: "platform")
+                request.addValue(getAppVersionInString(), forHTTPHeaderField: "app-version")
+                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                
+                
+//                var arrCompletedActivites = []
+                let json: [String: Any] = [
+                    "completed_activites":offineData//userId.removingPercentEncoding ?? "",
+                ]
+
+                let jsonData = try? JSONSerialization.data(withJSONObject: json)
+                
+                
+                request.httpBody = jsonData
+                
+                
+                let task = URLSession.shared.dataTask(with: request as URLRequest) {
+                    data, response, error in
+                    
+                    if let httpResponse = response as? HTTPURLResponse {
+                        if httpResponse.statusCode == 201{
+                            addLog(text: "api call activitysyncApi success")
+                            
+
+                            if data != nil{
+                                do {
+                                    if let jsonResult: [NSDictionary] = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? [NSDictionary]{
+                                        addLog(text: "api call activitysyncApi success")
+                                        completionHandler(jsonResult)
+                                        return
+                                    }
+                                    
+                                }catch{
+                                    addLog(text: "api call activitysyncApi error:- \(error.localizedDescription)")
+                                    print(error)
+                                    completionHandler(nil)
+                                    return
+                                }
+                            }else{
+                                addLog(text: "api call activitysyncApi error:- data is nil")
+                                completionHandler(nil)
+                                return
+                            }
+                            
+                            
+                        }else{
+                            addLog(text: "api call activitysyncApi error:- statusCode is \(httpResponse.statusCode)")
+                            self.writeJsonInLog(data: data)
+                            addLog(text: "accessToken is:- \(token)")
+                            completionHandler(nil)
+                            return
+                        }
+                    }
+       
+                    
+                    if error != nil {
+                        addLog(text: "api call activitySyncApi error:- \(error!.localizedDescription)")
+                        if (error as? NSError)?.code == self.errorCodeRequestTimeout{
+                            completionHandler(nil)
+                            return
+                        }else{
+
+                            completionHandler(nil)
+                            return
+                        }
+
+                    }else{
+                        completionHandler(nil)
+                        return
+                    }
+
+                }
+                
+                task.resume()
+            }else{
+                completionHandler(nil)
+            }
+        }
+    }
+    
     func forceCompleteCurrentSequence(activity_sequence_id:String, isForToday:Bool, completionHandler: @escaping(_ result: NSDictionary?) -> ()){
-        addLog(text: "func call:- forceCompleteCurrentSequence:- completed-activity-sequence/activity_sequence_id/force-complete-current-sequence")
+        addLog(text: "func call:- forceCompleteCurrentSequence:- completed-activity-sequence/activity_sequence_id/force-complete-current-sequence")        
         
         appdelegate!.credentialsManager.credentials {credentialsInfo in
             addLog(text: "get updated credentialsInfo from credentialsManager")
@@ -1568,7 +1701,12 @@ class AllApi:NSObject {
                 
                 
                 let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
-                let shutOffDate = Calendar.current.date(bySettingHour: shutOffTime!.hour, minute: shutOffTime!.minute, second: shutOffTime!.second, of: Date())!
+                var shutOffDate = Calendar.current.date(bySettingHour: shutOffTime!.hour, minute: shutOffTime!.minute, second: shutOffTime!.second, of: Date())!
+                let currentDate = Date()
+                if currentDate.compare(shutOffDate) == .orderedDescending{//>
+                    shutOffDate = Calendar.current.date(byAdding: .second, value: 30, to: currentDate) ?? currentDate
+                }
+                
                 
                 let fromTime = getStringFromDateInUtc(date: startDate, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
                 let toTime = getStringFromDateInUtc(date: shutOffDate, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")

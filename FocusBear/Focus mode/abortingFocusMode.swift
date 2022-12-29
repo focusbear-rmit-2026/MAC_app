@@ -183,9 +183,9 @@ class abortingFocusModeVc: NSViewController {
         addLog(text: "Focus mode abort clicked with reason - \(reason)")
         let timestamp = getStringFromDate(date: startFocusModeTime ?? Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
         if isAutoMeetingsModeStarted{
-            addEntryInCsv(logType: "focus mode abort", activity: "focus block - \(focusName)", durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: "Meeting using {\(appUsedInAutoMeetingFocusMode)}", distractionsEncountered: "", abortReason: reason, feedback: "")
+            addEntryInStatsCsv(logType: "focus mode abort", activity: "focus block - \(focusName)", durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: "Meeting using {\(appUsedInAutoMeetingFocusMode)}", distractionsEncountered: "", abortReason: reason, feedback: "")
         }else{
-           addEntryInCsv(logType: "focus mode abort", activity: "focus block - \(focusName)", durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: "", distractionsEncountered: "", abortReason: reason, feedback: "")
+           addEntryInStatsCsv(logType: "focus mode abort", activity: "focus block - \(focusName)", durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: "", distractionsEncountered: "", abortReason: reason, feedback: "")
         }
         
         self.view.window?.close()

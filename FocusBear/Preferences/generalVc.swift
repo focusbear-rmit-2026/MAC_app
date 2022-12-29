@@ -85,6 +85,12 @@ class generalVc: NSViewController, NSTextFieldDelegate {
     @IBOutlet weak var checkBoxMeetingDetection: NSButton!
     
     
+    @IBOutlet weak var lblTitleHideDock: NSTextField!
+    @IBOutlet weak var lblDescriptionHideDock: NSTextField!
+    @IBOutlet weak var lblCheckBoxHideDock: NSTextField!
+    
+    @IBOutlet weak var checkBoxHideDock: NSButton!
+    
     
     var hardCorePomodoroEnabledText = "Hardcore Pomodoro mode enabled to focus on <FOCUSTYPE> for <COUNT> on <DAYS>."
     var hardCorePomodoroNotEnabledText = "Hardcore Pomodoro mode not enabled."
@@ -97,8 +103,15 @@ class generalVc: NSViewController, NSTextFieldDelegate {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        lblTitleHideDock.stringValue = "Hide dock:"
+        lblDescriptionHideDock.stringValue = "Enable this to hide dock during allowed apps activities to minimize distractions. \"System Events\" permission will be required for this."
+        lblCheckBoxHideDock.stringValue = "Hide dock during activities having allowed apps."
+        
+        
+        
         lblTitleMeetingDetection.stringValue = "Meeting detection"
-        lblDescriptionMeetingDetection.stringValue = "it will show meeting detection popup"
+        lblDescriptionMeetingDetection.stringValue = "Enable meeting detection to automatically suggest starting \"Meetings\" focus mode when Focus Bear detects you are in a call."
         lblCheckBoxMeetingDetection.stringValue = "Enable meeting detection"
         
         
@@ -228,6 +241,11 @@ class generalVc: NSViewController, NSTextFieldDelegate {
             lblDescriptionMeetingDetection.stringValue = preferencesInfo.value(forKey: "descriptionMeetingDetectionText") as? String ?? lblDescriptionMeetingDetection.stringValue
             lblCheckBoxMeetingDetection.stringValue = preferencesInfo.value(forKey: "checkBoxMeetingDetectionText") as? String ?? lblCheckBoxMeetingDetection.stringValue
             
+            
+            lblTitleHideDock.stringValue = preferencesInfo.value(forKey: "titleHideDock") as? String ?? lblTitleHideDock.stringValue
+            lblDescriptionHideDock.stringValue = preferencesInfo.value(forKey: "descriptionHideDockText") as? String ?? lblDescriptionHideDock.stringValue
+            lblCheckBoxHideDock.stringValue = preferencesInfo.value(forKey: "checkBoxHideDockText") as? String ?? lblCheckBoxHideDock.stringValue
+            
         }
 
         lblTitlePomodoroModeDuration.stringValue = pomodoroModeDurationText
@@ -279,10 +297,7 @@ class generalVc: NSViewController, NSTextFieldDelegate {
 //        boxPopup.isHidden = true
 //        BoxBlackLayerForPopup.isHidden = true
         
-        self.view.window?.title = "Preferences"
-        if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
-            self.view.window?.title = menuInfo.value(forKey: "menuItemPreferencesTitle") as? String ?? "Preferences"
-        }
+        
         if SettingsManagerObject.isSoundEnabled{
             checkBoxSound.state = .on
         }else{
@@ -311,6 +326,13 @@ class generalVc: NSViewController, NSTextFieldDelegate {
         }else{
             checkBoxMeetingDetection.state = .off
         }
+        
+        if SettingsManagerObject.isHideDockInActivity{
+            checkBoxHideDock.state = .on
+        }else{
+            checkBoxHideDock.state = .off
+        }
+        
         
         if SettingsManagerObject.isPromptToRememberHabit{
             checkBoxPromptToAskNextHabit.state = .on
@@ -716,6 +738,16 @@ class generalVc: NSViewController, NSTextFieldDelegate {
         }
     }
     
+    @IBAction func checkBoxHideDockClicked(_ sender: Any) {
+        SettingsManagerObject.isSettingsChanged = true
+        if checkBoxHideDock.state == .on{
+            SettingsManagerObject.isHideDockInActivity = true
+            let _ = checkDocBarState()
+        }else{
+            SettingsManagerObject.isHideDockInActivity = false
+        }
+        
+    }
     @IBAction func checkBoxPromptToAskNextHabitClicked(_ sender: Any) {
         SettingsManagerObject.isSettingsChanged = true
         if checkBoxPromptToAskNextHabit.state == .on{

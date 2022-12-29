@@ -76,6 +76,7 @@ class preloadFocusModeAppsVc: NSViewController {
     }
     
     @IBAction func btnRemoveItemClicked(_ sender: Any) {
+        addLog(text: "preload Focus mode apps&urls:-  button Remove Item clicked")
         let selectedRow = tblView.selectedRow
         if selectedRow == -1{
             return
@@ -88,6 +89,7 @@ class preloadFocusModeAppsVc: NSViewController {
         tblView.reloadData()
     }
     @IBAction func btnAddItemClicked(_ sender: Any) {
+        addLog(text: "preload Focus mode apps&urls:-  button Add Item clicked")
         if isAddingApp{
             
             let openPanel = NSOpenPanel()
@@ -181,7 +183,7 @@ class preloadFocusModeAppsVc: NSViewController {
         if isAddingApp{
             isAddingApp = false
             tblView.reloadData()
-            
+            addLog(text: "preload Focus mode apps&urls:-  button Done clicked:- load urls view")
             var titleForUrls = "How about websites?"
             var descriptionUrls = "Don't worry you can still use other websites if you need to but these are the sites that are most likely to be productive for you while you're working on <WORK_TYPE>. You can change these settings later on."
             lblSubtitle.stringValue = "Add the websites you plan to use:"
@@ -199,9 +201,11 @@ class preloadFocusModeAppsVc: NSViewController {
             // done adding focus mode
             workDic["allowed_apps"] = arrApps
             workDic["allowed_urls"] = arrUrls
+            
             UserDefaults.standard.set(workDic, forKey: kUserdefaultsFocusAddedFromFirstHabit)
             appdelegate!.loadCredentialsAndDeviceId()
             preloadFocusModesWindowControllerObj!.contentViewController = getFocusTipsVcObjObj()
+            addLog(text: "preload Focus mode apps&urls:-  button Done clicked:- show Focus Tips Vc")
         }
     }
 }

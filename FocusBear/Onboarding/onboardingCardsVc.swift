@@ -207,17 +207,18 @@ class onboardingCardsVc: NSViewController {
     }
     
     @IBAction func btnBackClicked(_ sender: Any) {
+        addLog(text:"onboardingCardsVc:- btnBackClicked")
         currentSlideIndex -= 1
         recheckSlideState()
     }
     
-    @IBAction func btnGotItClicked(_ sender: Any) {//todo logs
+    @IBAction func btnGotItClicked(_ sender: Any) {
         if currentSlideIndex == arrFinalCurrentDic.count - 1{
-            addLog(text:"btnGotItClicked")
+            addLog(text:"onboardingCardsVc:- btnGotItClicked")
             self.view.window?.close()
             showPreloadFocusModesWindow()
         }else{
-            addLog(text:"btnNextClicked")
+            addLog(text:"onboardingCardsVc:- btnNextClicked")
             allApiObject.capturePosthog(event: "reviewed-onboarding-tip", metadata: [:])
             currentSlideIndex += 1
             

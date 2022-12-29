@@ -106,7 +106,8 @@
         "alertAppRestartText":"Focus Bear automatically restarts if it gets force quit/crashes to make sure you always have help combatting distractions. If you want to quit the app/take a break, use the Quit option from the Focus Bear menu bar.",
         "buttonDontTellAgainText":"Got it - don't tell me again",
         "toolTipColorBoxText":"Choose a color to be displayed in the background of the top menu bar icon to help identify the Focus Mode you are running.",
-        "notificationFirefoxText":"FYI we can't block distractions in Firefox yet but if you use Chrome or Safari, we'll be here to support you to stay on track"
+        "notificationFirefoxText":"FYI we can't block distractions in Firefox yet but if you use Chrome or Safari, we'll be here to support you to stay on track",
+        "expiredBarText":"Expired"
     },
     "abortInfo":{
         "abortingTitle":"Cancelling..",
@@ -334,7 +335,10 @@
         "exportSuccessText":"Your logs are available to share in the FocusBearLogs.zip file in the <URL> directory",
         "titleMeetingDetection":"Meeting detection",
         "descriptionMeetingDetectionText":"Enable meeting detection to automatically suggest starting \"Meetings\" focus mode when Focus Bear detects you are in a call.",
-        "checkBoxMeetingDetectionText":"Enable meeting detection"
+        "checkBoxMeetingDetectionText":"Enable meeting detection",
+        "titleHideDock":"Hide dock:",
+        "descriptionHideDockText":"Enable this to hide dock during allowed apps activities to minimize distractions. \"System Events\" permission will be required for this.",
+        "checkBoxHideDockText":"Hide dock during activities having allowed apps."
     },
     "focusPreferencesInfo":{
         "titleFocusType":"Focus Type:",
@@ -464,7 +468,8 @@
             "buttonCancelText":"It's ok for me to use other apps during this meeting",
             "buttonFalseDetectionText":"False positive: I'm not in a meeting",
             "titleFalseDetection":"Sorry about that. Are you sure you're not using an app that is using your microphone? If we keep getting it wrong, click button below to disable meeting detection.",
-            "buttonDisableText":"Disable meeting detection"
+            "buttonDisableText":"Disable meeting detection",
+            "buttonGotItText":"Got it"
         }
     },
     "pomodoroInfo":{
@@ -596,7 +601,12 @@
         "buttonEnableOfficeModeText": "Switch to office mode",
         "officeModeEnableText": "Ok I'll give you some break activities that are appropriate to do in an office environment.",
         "postponedLastHabitText": "You've postponed your habits a few times. Are you sure you want to postpone again?",
-        "buttonDoHabitText": "I changed my mind - I'll do my habits"
+        "buttonDoHabitText": "I changed my mind - I'll do my habits",
+        "titlePostponeOrSkip": "Want to postpone the break or skip it completely?",
+        "buttonSkipCompletelyText": "Skip Completely",
+        "titleAskOfficeMode": "Do you not have time for a break right now or are you in the office and it's not appropriate to do <ACTIVITY>?",
+        "buttonDontHaveTimeText": "I don't have time",
+        "buttonInTheOffIceText": "I'm in the offIce"
     },
     "brainDumpVcInfo": {
         "title": "Focus Bear - Brain dump",
@@ -621,7 +631,10 @@
         "moneyBackText": "30 days money back guarantee",
         "syncInfoText": "After you pay, click the Sync Payment Status button below",
         "buttonRestoreText": "Sync Payment Status",
-        "subscriptionExpiredText":"Your subscription has expired"
+        "subscriptionExpiredText":"Your subscription has expired",
+        "toolTipCopyId":"Copy user id",
+        "titleUserId":"Your user id:",
+        "toolTipCopied":"Copied"
     },
     "onboardingPostponeVcInfo": {
         "title": "If you have something urgent, you can postpone the Onboarding process for a few minutes.",
@@ -753,7 +766,7 @@
         "description": "You can block certain sites by default to avoid going down rabbit holes.",
         "bottomText": "If you want to block other sites by default, you can change your Always Blocked settings in Preferences.",
         "buttonContinueText": "Continue",
-        "enterUrlText": "Enter utl to block:",
+        "enterUrlText": "Enter url to block:",
         "buttonAddUrlText": "Add url"
     },
     "preloadFocusModeAppsVcInfo": {

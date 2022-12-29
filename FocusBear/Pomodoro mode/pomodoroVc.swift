@@ -141,10 +141,16 @@ class pomodoroVc: NSViewController {
             
             if let count = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHardcorePomodoroFocusedCount) as? Int{
                 popupBtnSelectPomodoroCount.selectItem(withTitle: "\(count)")
+            }else{
+                popupBtnSelectPomodoroCount.selectItem(withTitle: "2")
             }
            if let name = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHardcorePomodoroFocusedName) as? String{
                popUpBtnFocusType.selectItem(withTitle: name)
            }
+            
+            if popUpBtnFocusType.indexOfSelectedItem == -1{
+                popUpBtnFocusType.selectItem(at: 0)
+            }
             
             if let val = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHardcorePomodoroSkipMicroBreaks) as? Bool{
                 if val{
@@ -178,7 +184,7 @@ class pomodoroVc: NSViewController {
         }else if isHardCorePomodoroModeOn{
             btnLetsDoIt.isEnabled = true
             btnCheckBoxHardcodePomodoro.isEnabled = false
-            popUpBtnFocusType.selectItem(at: hardcodePmodoroFocusModeIndex)
+            popUpBtnFocusType.selectItem(withTitle: hardcodePmodoroFocusModeName)
             popUpBtnFocusType.isEnabled = false
             btnEditFocusMode.isEnabled = false
             popupBtnSelectPomodoroCount.isEnabled = false
@@ -236,7 +242,7 @@ class pomodoroVc: NSViewController {
             self.view.window?.styleMask.remove(.closable)
             currentPomodoroWorkDuration = textFieldWorkDuration.integerValue
             currentPomodoroBreakDuration = textFieldBreakDuration.integerValue
-            hardcodePmodoroFocusModeIndex = popUpBtnFocusType.indexOfSelectedItem
+            hardcodePmodoroFocusModeName = popUpBtnFocusType.titleOfSelectedItem ?? ""
             let totalPopmodoroCount = Int(popupBtnSelectPomodoroCount.title) ?? 2
             let minutes = currentPomodoroWorkDuration
             totalPomodoroCountInHardCorePomodoro = totalPopmodoroCount
@@ -257,17 +263,25 @@ class pomodoroVc: NSViewController {
         
     }
     func reFillFocusTypeList(){
+        
+        arrFocusTypeForPomodoro.removeAll()
+        for i in 0..<arrFocusType.count{
+            if !(arrFocusType[i]["isMeetings"] as? Bool ?? false == true) && !(arrFocusType[i]["isLockedFocus"] as? Bool ?? false == true){
+                arrFocusTypeForPomodoro.append(arrFocusType[i])
+            }
+        }
+        
         var index = popUpBtnFocusType.indexOfSelectedItem
         if index == -1{
             index = 0
         }
         popUpBtnFocusType.removeAllItems()
-        for i in 0..<arrFocusType.count{
-            if let name = arrFocusType[i]["name"] as? String{
+        for i in 0..<arrFocusTypeForPomodoro.count{
+            if let name = arrFocusTypeForPomodoro[i]["name"] as? String{
                 popUpBtnFocusType.addItem(withTitle: name)
             }
         }
-        if arrFocusType.count <= index{
+        if arrFocusTypeForPomodoro.count <= index{
             index = 0
         }
         popUpBtnFocusType.selectItem(at: index)
@@ -371,7 +385,7 @@ class pomodoroVc: NSViewController {
         if textFieldBreakDuration.isEnabled{
             currentPomodoroBreakDuration = textFieldBreakDuration.integerValue
         }
-        if arrFocusType[popUpBtnFocusType.indexOfSelectedItem]["isDefault"] as? Bool == true{
+        if arrFocusTypeForPomodoro[popUpBtnFocusType.indexOfSelectedItem]["isDefault"] as? Bool == true{
             self.presentAsSheet(getDiscourageDefaultFocusVcObject())
             getDiscourageDefaultFocusVcObject().resetData()
         }else{
@@ -379,7 +393,7 @@ class pomodoroVc: NSViewController {
                 
             }else if btnCheckBoxHardcodePomodoro.state == .on{
                 isHardCorePomodoroModeOn = true
-                hardcodePmodoroFocusModeIndex = popUpBtnFocusType.indexOfSelectedItem
+                hardcodePmodoroFocusModeName = popUpBtnFocusType.titleOfSelectedItem ?? ""
                 let totalPopmodoroCount = Int(popupBtnSelectPomodoroCount.title) ?? 2
                 let minutes = textFieldWorkDuration.integerValue
                 totalPomodoroCountInHardCorePomodoro = totalPopmodoroCount
@@ -397,12 +411,12 @@ class pomodoroVc: NSViewController {
    
     func pomodoroModeStarted(){
         addLog(text: "pomodoro mode Started")
-        if arrFocusType.count == 0{
+        if arrFocusTypeForPomodoro.count == 0{
             return
         }
         if getEndFocusModeWindowControllerObj().window!.isVisible{
             let timestamp = getStringFromDate(date: startFocusModeTime ?? Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
-            addEntryInCsv(logType: "focus block", activity: focusCompletedVcObj!.currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: "\(focusModeMinutesToPerform) of \(focusCompletedVcObj!.currentFocusModeName)", distractionsEncountered: "", abortReason: "", feedback: "")
+            addEntryInStatsCsv(logType: "focus block", activity: focusCompletedVcObj!.currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: "\(focusModeMinutesToPerform) of \(focusCompletedVcObj!.currentFocusModeName)", distractionsEncountered: "", abortReason: "", feedback: "")
             getEndFocusModeWindowControllerObj().window?.close()
         }
         let minute = textFieldWorkDuration.integerValue
@@ -412,18 +426,28 @@ class pomodoroVc: NSViewController {
         let calendar = Calendar.current
         endFocusModeTime = calendar.date(byAdding: .minute, value: minute, to: Date())
         startFocusModeTime = Date()
-        arrFocusType[popUpBtnFocusType.indexOfSelectedItem]["isOn"] = true
-        workBeforeFocusBegin(index: popUpBtnFocusType.indexOfSelectedItem)
         
-        appdelegate!.statusbutton?.backgroundcolor = HexToColor(hexString: arrFocusType[popUpBtnFocusType.indexOfSelectedItem]["color"] as? String ?? "")
+        for i in 0..<arrFocusType.count{
+            arrFocusType[i]["isOn"] = false
+        }
+        
+        if let focusModeId = arrFocusTypeForPomodoro[popUpBtnFocusType.indexOfSelectedItem]["id"] as? String{
+            for i in 0..<arrFocusType.count{
+                if arrFocusType[i]["id"] as? String ?? "" == focusModeId{
+                    arrFocusType[i]["isOn"] = true
+                    workBeforeFocusBegin(index: i)
+                    break;
+                }
+            }
+        }
+        
+        
+        
+        appdelegate!.statusbutton?.backgroundcolor = HexToColor(hexString: arrFocusTypeForPomodoro[popUpBtnFocusType.indexOfSelectedItem]["color"] as? String ?? "")
         appdelegate!.setStatusBarButtonTitleForFocusMode(title: textViewAchieve.string)
         appdelegate!.statusbutton?.imagePosition = .imageLeft
 
-        for i in 0..<arrFocusType.count{
-            if i != popUpBtnFocusType.indexOfSelectedItem{
-                arrFocusType[i]["isOn"] = false
-            }
-        }
+        
         
         if timerForFocusMode != nil{
             timerForFocusMode?.invalidate()
@@ -441,7 +465,7 @@ class pomodoroVc: NSViewController {
         whatToAchieveInFocusBlock = textViewAchieve.string
         appdelegate!.setIntensionInBrainDumpWindow()
         appdelegate!.focusModeStartted()
-        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+
         
         if isShowingPomodoroManually{
             var type = ""

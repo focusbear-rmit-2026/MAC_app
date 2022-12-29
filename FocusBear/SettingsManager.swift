@@ -30,6 +30,7 @@ class SettingsManager:NSObject{
     var isOfficeModeEnabled = false
     var kIsReducedMotion = false
     var isMeetingDetectionEnabled = true
+    var isHideDockInActivity = false
     var isPromptToRememberHabit = true
     var isEasySkipEnabled = true
     
@@ -49,7 +50,9 @@ class SettingsManager:NSObject{
     var kUserdefaultsArrBlockedUrls = "kUserdefaultsArrBlockedUrls"
     var kUserdefaultsOfficeModeEnabled = "kUserdefaultsOfficeModeEnabled"
     var kUserdefaultsReducedMotion = "kUserdefaultsReducedMotion"
+    
     var kUserdefaultsMeetingDetectionEnabled = "kUserdefaultsMeetingDetectionEnabled"
+    var kUserdefaultsHideDockInActivity = "kUserdefaultsHideDockInActivity"
     var kUserdefaultsPromptToRememberHabit = "kUserdefaultsPromptToRememberHabit"
     var kUserdefaultsEasySkipEnabled = "kUserdefaultsEasySkipEnabled"
     var kUserdefaultsEnableSound = "kUserdefaultsEnableSound"
@@ -115,10 +118,15 @@ class SettingsManager:NSObject{
         kUserdefaultsArrBlockedUrls = kUserdefaultsArrBlockedUrls + (appdelegate?.user?.userId ?? "")
         kUserdefaultsOfficeModeEnabled = kUserdefaultsOfficeModeEnabled + (appdelegate?.user?.userId ?? "")
         kUserdefaultsReducedMotion = kUserdefaultsReducedMotion + (appdelegate?.user?.userId ?? "")
-        kUserdefaultsCuddlyModeEnabled = kUserdefaultsCuddlyModeEnabled + (appdelegate?.user?.userId ?? "")
+        kUserdefaultsMeetingDetectionEnabled = kUserdefaultsMeetingDetectionEnabled + (appdelegate?.user?.userId ?? "")
+//        kUserdefaultsHideDockInActivity = kUserdefaultsHideDockInActivity + (appdelegate?.user?.userId ?? "")//no ned to do this
         kUserdefaultsPromptToRememberHabit = kUserdefaultsPromptToRememberHabit + (appdelegate?.user?.userId ?? "")
         kUserdefaultsEasySkipEnabled = kUserdefaultsEasySkipEnabled + (appdelegate?.user?.userId ?? "")
-        kUserdefaultsEnableSound = kUserdefaultsEnableSound + (appdelegate?.user?.userId ?? "")
+//        kUserdefaultsEnableSound = kUserdefaultsEnableSound + (appdelegate?.user?.userId ?? "")//no ned to do this
+        
+        kUserdefaultsCuddlyModeEnabled = kUserdefaultsCuddlyModeEnabled + (appdelegate?.user?.userId ?? "")
+        
+        
         kUserdefaultsPomodoroDurationMinutes = kUserdefaultsPomodoroDurationMinutes + (appdelegate?.user?.userId ?? "")
         kUserdefaultsBreakDurationMinutes = kUserdefaultsBreakDurationMinutes + (appdelegate?.user?.userId ?? "")
         kUserdefaultsHideAllWindowInScreenShots = kUserdefaultsHideAllWindowInScreenShots + (appdelegate?.user?.userId ?? "")
@@ -146,7 +154,17 @@ class SettingsManager:NSObject{
             isSoundEnabled = true
         }
         
-        
+        //  ---------------------------SETTINGS hide dock in activity--------------------------//Do not sync it
+        if let isEnabled = UserDefaults.standard.object(forKey: kUserdefaultsHideDockInActivity) as? Bool{
+            if isEnabled{
+                isHideDockInActivity = true
+            }else{
+                isHideDockInActivity = false
+            }
+        }else{
+            UserDefaults.standard.set(false, forKey: kUserdefaultsHideDockInActivity)
+            isHideDockInActivity = false
+        }
         
         var isSettingsBlank = true // agar blank ho to upload bhi kro
         allApiObject.getUserLocalDeviceSettings(completionHandler: { [self]json in
@@ -197,7 +215,7 @@ class SettingsManager:NSObject{
                     if let val = settings.value(forKey: kIsMeetingDetectionEnabled) as? Bool{
                         UserDefaults.standard.set(val, forKey: self.kUserdefaultsMeetingDetectionEnabled)
                     }
-                    
+
                     
                     if let val = settings.value(forKey: kIsPasswordRequireInChangeSettings) as? Bool{
                         UserDefaults.standard.set(val, forKey: self.kUserdefaultsPasswordRequireInChangeSettings)
@@ -326,6 +344,9 @@ class SettingsManager:NSObject{
                 UserDefaults.standard.set(true, forKey: kUserdefaultsMeetingDetectionEnabled)
                 isMeetingDetectionEnabled = true
             }
+            
+            
+            
             
             
             //  ---------------------------SETTINGS Password Require--------------------------
@@ -510,6 +531,7 @@ class SettingsManager:NSObject{
         }
         UserDefaults.standard.set(kIsReducedMotion, forKey: kUserdefaultsReducedMotion)
         UserDefaults.standard.set(isMeetingDetectionEnabled, forKey: kUserdefaultsMeetingDetectionEnabled)
+        UserDefaults.standard.set(isHideDockInActivity, forKey: kUserdefaultsHideDockInActivity)
         UserDefaults.standard.set(isPromptToRememberHabit, forKey: kUserdefaultsPromptToRememberHabit)
         UserDefaults.standard.set(isEasySkipEnabled, forKey: kUserdefaultsEasySkipEnabled)
         UserDefaults.standard.set(isOfficeModeEnabled, forKey: kUserdefaultsOfficeModeEnabled)

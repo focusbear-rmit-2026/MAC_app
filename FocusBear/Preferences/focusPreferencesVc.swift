@@ -1075,7 +1075,11 @@ extension focusPreferencesVc:NSTextFieldDelegate{
                 let oldName = dic["name"] as? String ?? ""
                 dic["name"] = textFieldSelectedFocusType.stringValue
                 
-                
+                if isHardCorePomodoroModeOn{
+                    if dic["isOn"] as? Bool == true{
+                        hardcodePmodoroFocusModeName = textFieldSelectedFocusType.stringValue
+                    }
+                }
                 textFieldSelectedFocusType.isEnabled = false
                 
                 arrFocusType[selectedRow] = dic

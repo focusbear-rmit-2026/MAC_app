@@ -1524,8 +1524,13 @@ class thirdVc: NSViewController {
             print(arrDic)// 1 month data
             
             let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
-            let shutoffTime = Calendar.current.date(bySettingHour: shutOffTime!.hour, minute: shutOffTime!.minute, second: startTime!.second, of: Date())!
+            var shutoffTime = Calendar.current.date(bySettingHour: shutOffTime!.hour, minute: shutOffTime!.minute, second: startTime!.second, of: Date())!
             
+            let currentDate = Date()
+            if currentDate.compare(shutoffTime) == .orderedDescending{//>
+                shutoffTime = Calendar.current.date(byAdding: .second, value: 30, to: currentDate) ?? currentDate
+            }
+                
   
       
 
@@ -2198,7 +2203,7 @@ class thirdVc: NSViewController {
         }else{
         
             let startTime = getStringFromDate(date: lastActivityPerformedTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")
-            addEntryInCsv(logType: "morning routine", activity: lastHabit!, durationInSeconds: "\(arrAllMorningHabits[lastHabitIndex].durationSeconds!)", quantityQuestion: "", quantityLogged: "", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "")
+            addEntryInStatsCsv(logType: "morning routine", activity: lastHabit!, durationInSeconds: "\(arrAllMorningHabits[lastHabitIndex].durationSeconds!)", quantityQuestion: "", quantityLogged: "", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "")
             
             self.loadGraph(activityId: arrAllMorningHabits[self.lastHabitIndex].id, activityName: lastHabit ?? "", logQuantity: false, logQuantityType: "", activityChoiceId: nil,activityStartTime: lastActivityPerformedTime!, duration: "\(arrAllMorningHabits[lastHabitIndex].durationSeconds!)", quantity: "")
             allApiObject.activityCompletedApi(activity_id: arrAllMorningHabits[lastHabitIndex].id, activity_sequence_id: arrAllMorningHabits[lastHabitIndex].activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:nil, duration_logged:arrAllMorningHabits[lastHabitIndex].durationSeconds!, choice_id: nil, is_skipped: false, completionHandler: {dic  in
@@ -2307,7 +2312,7 @@ class thirdVc: NSViewController {
             logQuantityVcObj?.is_skipped = true
         }else{
             let startTime = getStringFromDate(date: lastActivityPerformedTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")
-            addEntryInCsv(logType: "morning routine", activity: lastHabit!, durationInSeconds: "\(arrAllMorningHabits[lastHabitIndex].durationSeconds!)", quantityQuestion: "", quantityLogged: "", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "")
+            addEntryInStatsCsv(logType: "morning routine", activity: lastHabit!, durationInSeconds: "\(arrAllMorningHabits[lastHabitIndex].durationSeconds!)", quantityQuestion: "", quantityLogged: "", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "")
             
             self.loadGraph(activityId: arrAllMorningHabits[self.lastHabitIndex].id, activityName: lastHabit ?? "", logQuantity: false, logQuantityType: "", activityChoiceId: nil,activityStartTime: lastActivityPerformedTime!, duration: "\(arrAllMorningHabits[lastHabitIndex].durationSeconds!)", quantity: "")
             allApiObject.activityCompletedApi(activity_id: arrAllMorningHabits[lastHabitIndex].id, activity_sequence_id: arrAllMorningHabits[lastHabitIndex].activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:nil, duration_logged:arrAllMorningHabits[lastHabitIndex].durationSeconds!, choice_id: nil, is_skipped: true, completionHandler: {dic  in
@@ -2636,7 +2641,7 @@ class thirdVc: NSViewController {
             logQuantityVcObj?.resetData(name: lastHabit!, durationInSeconds: "\(arrAllEveningHabits[lastHabitIndex].durationSeconds!)", logQuantityQuestion: arrAllEveningHabits[lastHabitIndex].logQuantityQuestion, currentState: ._EVENING_HABIT_, logQuantityType: "", activity_id: arrAllEveningHabits[lastHabitIndex].id, activity_sequence_id: arrAllEveningHabits[lastHabitIndex].activity_sequence_id, activityChoiceId: nil)
         }else{
             let startTime = getStringFromDate(date: lastActivityPerformedTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")
-            addEntryInCsv(logType: "evening routine", activity: lastHabit!, durationInSeconds: "\(arrAllEveningHabits[lastHabitIndex].durationSeconds!)", quantityQuestion: "", quantityLogged: "", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "")
+            addEntryInStatsCsv(logType: "evening routine", activity: lastHabit!, durationInSeconds: "\(arrAllEveningHabits[lastHabitIndex].durationSeconds!)", quantityQuestion: "", quantityLogged: "", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "")
             
             self.loadGraph(activityId: arrAllEveningHabits[self.lastHabitIndex].id, activityName: lastHabit ?? "", logQuantity: false, logQuantityType: "", activityChoiceId: nil,activityStartTime: lastActivityPerformedTime!, duration: "\(arrAllEveningHabits[lastHabitIndex].durationSeconds!)", quantity: "")
             allApiObject.activityCompletedApi(activity_id: arrAllEveningHabits[lastHabitIndex].id, activity_sequence_id: arrAllEveningHabits[lastHabitIndex].activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:nil, duration_logged:arrAllEveningHabits[lastHabitIndex].durationSeconds!, choice_id: nil, is_skipped: false, completionHandler: {dic  in
@@ -2765,7 +2770,7 @@ class thirdVc: NSViewController {
             logQuantityVcObj?.is_skipped = true
         }else{
             let startTime = getStringFromDate(date: lastActivityPerformedTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")
-            addEntryInCsv(logType: "evening routine", activity: lastHabit!, durationInSeconds: "\(arrAllEveningHabits[lastHabitIndex].durationSeconds!)", quantityQuestion: "", quantityLogged: "", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "")
+            addEntryInStatsCsv(logType: "evening routine", activity: lastHabit!, durationInSeconds: "\(arrAllEveningHabits[lastHabitIndex].durationSeconds!)", quantityQuestion: "", quantityLogged: "", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "")
             
             self.loadGraph(activityId: arrAllEveningHabits[self.lastHabitIndex].id, activityName: lastHabit ?? "", logQuantity: false, logQuantityType: "", activityChoiceId: nil,activityStartTime: lastActivityPerformedTime!, duration: "\(arrAllEveningHabits[lastHabitIndex].durationSeconds!)", quantity: "")
             allApiObject.activityCompletedApi(activity_id: arrAllEveningHabits[lastHabitIndex].id, activity_sequence_id: arrAllEveningHabits[lastHabitIndex].activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:nil, duration_logged:arrAllEveningHabits[lastHabitIndex].durationSeconds!, choice_id: nil, is_skipped: true, completionHandler: {dic  in
@@ -3142,7 +3147,7 @@ class thirdVc: NSViewController {
             logQuantityVcObj?.resetData(name: lastActivity, durationInSeconds: "\(durationInSeconds)", logQuantityQuestion: logQuantityQuestion, currentState: ._ACTIVITY_, logQuantityType: logQuantityType ?? "", activity_id: activity_id, activity_sequence_id: activity_sequence_id,activityChoiceId:activityChoiceId)
         }else{
             let startTime = getStringFromDate(date: lastActivityPerformedTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")
-            addEntryInCsv(logType: "break", activity: lastActivity, durationInSeconds: "\(durationInSeconds)", quantityQuestion: "", quantityLogged: "", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "")
+            addEntryInStatsCsv(logType: "break", activity: lastActivity, durationInSeconds: "\(durationInSeconds)", quantityQuestion: "", quantityLogged: "", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "")
             
             self.loadGraph(activityId: activity_id, activityName: lastActivity, logQuantity: logQuantity, logQuantityType: "", activityChoiceId: activityChoiceId,activityStartTime: lastActivityPerformedTime!, duration: "\(durationInSeconds)", quantity: "")
             allApiObject.activityCompletedApi(activity_id: activity_id, activity_sequence_id: activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:nil, duration_logged:durationInSeconds, choice_id: activityChoiceId, is_skipped: false, completionHandler: {dic  in
@@ -3221,6 +3226,7 @@ class thirdVc: NSViewController {
             
             
             let time = currentActivity!.durationSeconds
+            activityName = nextActivityName
             btnMain.title = getstartActivityButtonText(seconds: time!, name: nextActivityName)
             btnMain.toolTip = btnMain.title
         }
@@ -3228,7 +3234,10 @@ class thirdVc: NSViewController {
     }
     
     var currentActivityChoice:activityChoice?
+    var activityName: String = ""
+    
     func startBreakActivity() {
+        activityName = ""
         btnSkipHabit.isHidden = false
         btnSkipHabit.title = "Postpone break for five minutes"
         if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
@@ -3269,7 +3278,7 @@ class thirdVc: NSViewController {
         imgViewGif.isHidden = true
         boxBreathingFinished.isHidden = true
         lastActivityIndex = -1
-        var activityName: String = ""
+        
         var seconds: Int = 0
         var currentActivity:breakActivity?
         if isMandatoryActivityGoing{

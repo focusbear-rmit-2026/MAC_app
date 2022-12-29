@@ -106,18 +106,16 @@ class breakWarningVc: NSViewController {
                 if self.isPostponing{
                     mainViewControllerObj?.postponeBreakActivitiesFor(minutes: 5)
                 }else{
-                    if !isShutOffTimeGoing(){
-                        mainViewControllerObj?.executeBreakActivities()
-                    }
+                    //if !isShutOffTimeGoing(){// agar shutoff k timer per bhi kaam krna h to ye bhi hatega
+                    mainViewControllerObj?.executeBreakActivities()
+                    //}
                 }
             }
         }
     }
     @objc func performTimerCount() {
-
-        currentTimer += 1//todo 1 kro 
+        currentTimer += 1//todo 1 kro
         setProgres()
-        
     }
     
     @IBAction func btnPostponeClicked(_ sender: Any) {
@@ -126,9 +124,9 @@ class breakWarningVc: NSViewController {
             addLog(text: "breakWarningVc:- btn take break clicked")
             self.timer?.invalidate()
             self.view.window?.close()
-            if !isShutOffTimeGoing(){
-                mainViewControllerObj?.executeBreakActivities()
-            }
+            //if !isShutOffTimeGoing(){
+            mainViewControllerObj?.executeBreakActivities()
+            //}
             
         }else{
             addLog(text: "breakWarningVc:- btn Postpone clicked")

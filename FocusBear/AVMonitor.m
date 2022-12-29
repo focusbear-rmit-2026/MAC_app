@@ -160,6 +160,8 @@ bail:
         
         //check if apple
         // also check input source
+        NSLog(@"manufacturer: %@", currentMic.manufacturer);
+        
         if( (YES == [currentMic.manufacturer isEqualToString:@"Apple Inc."]) &&
             (YES == [[[currentMic activeInputSource] inputSourceID] isEqualToString:@"imic"]) )
         {

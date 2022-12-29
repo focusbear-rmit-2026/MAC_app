@@ -111,16 +111,16 @@ class preloadFocusModesVc: NSViewController, NSTextFieldDelegate {
         case 0:
             return // not possible because button is not enabled if option 0 is selected
         case 1://Programming
-            dic = ["name":"\(titleProgramming) \(workText)", "color": getColorString(color: NSColor(red: 208/255, green: 150/255, blue: 60/255, alpha: 1)), "allowed_apps": ["/Applications/Visual Studio Code.app", "/Applications/XCode.app", "/Applications/Utilities/Terminal.app"], "allowed_urls": ["https://stackoverflow.com","localhost"], "isOn": false, "isAllowedAllApps":false, "isAllowedAllUrls":false, "jobType":jobTypeProgramming, "isAllowedListApproach":true, "isBlockedAllUrls":false]
+            dic = ["name":"\(titleProgramming) \(workText)", "color": getColorString(color: NSColor(red: 208/255, green: 150/255, blue: 60/255, alpha: 1)), "allowed_apps": ["/Applications/Visual Studio Code.app", "/Applications/Xcode.app", "/Applications/Utilities/Terminal.app", "/Applications/Google Chrome.app", "/Applications/iTerm2.app", "/Applications/Docker.app", "/Applications/Firefox.app", "/Applications/Insomnia.app", "/Applications/VirtualBox.app", "/Applications/DBeaver.app"], "allowed_urls": ["https://stackoverflow.com","localhost"], "isOn": false, "isAllowedAllApps":false, "isAllowedAllUrls":false, "jobType":jobTypeProgramming, "isAllowedListApproach":true, "isBlockedAllUrls":false]
 
         case 2://Graphic Design
-            dic = ["name":"\(titleGraphicDesign) \(workText)", "color": getColorString(color: NSColor(red: 208/255, green: 150/255, blue: 60/255, alpha: 1)), "allowed_apps": ["/Applications/Figma.app", "/Applications/Adobe Illustrator.app", "/Applications/Adobe Photoshop.app"], "allowed_urls": ["https://www.figma.com"], "isOn": false, "isAllowedAllApps":false, "isAllowedAllUrls":false, "jobType":jobTypeGraphicDesign, "isAllowedListApproach":true, "isBlockedAllUrls":false]
+            dic = ["name":"\(titleGraphicDesign) \(workText)", "color": getColorString(color: NSColor(red: 208/255, green: 150/255, blue: 60/255, alpha: 1)), "allowed_apps": ["/Applications/Figma.app", "/Applications/Adobe Illustrator.app", "/Applications/Adobe Photoshop.app", "/Applications/Google Chrome.app"], "allowed_urls": ["https://www.figma.com"], "isOn": false, "isAllowedAllApps":false, "isAllowedAllUrls":false, "jobType":jobTypeGraphicDesign, "isAllowedListApproach":true, "isBlockedAllUrls":false]
             
         case 3://Data Analysis
-            dic = ["name":"\(titleDataAnalysis) \(workText)", "color": getColorString(color: NSColor(red: 208/255, green: 150/255, blue: 60/255, alpha: 1)), "allowed_apps": ["/Applications/Microsoft Excel.app"], "allowed_urls": ["https://www.office.com"], "isOn": false, "isAllowedAllApps":false, "isAllowedAllUrls":false, "jobType":jobTypeDataAnalysis, "isAllowedListApproach":true, "isBlockedAllUrls":false]
+            dic = ["name":"\(titleDataAnalysis) \(workText)", "color": getColorString(color: NSColor(red: 208/255, green: 150/255, blue: 60/255, alpha: 1)), "allowed_apps": ["/Applications/Microsoft Excel.app", "/Applications/Google Chrome.app"], "allowed_urls": ["https://www.office.com"], "isOn": false, "isAllowedAllApps":false, "isAllowedAllUrls":false, "jobType":jobTypeDataAnalysis, "isAllowedListApproach":true, "isBlockedAllUrls":false]
         
         case 4:
-            dic = ["name":"\(textFieldSomethingElse.stringValue) \(workText)", "color": getColorString(color: NSColor(red: 208/255, green: 150/255, blue: 60/255, alpha: 1)), "allowed_apps": [], "allowed_urls": [], "isOn": false, "isAllowedAllApps":true, "isAllowedAllUrls":true, "jobType":jobTypeSomethingElse, "isAllowedListApproach":true, "isBlockedAllUrls":false]
+            dic = ["name":"\(textFieldSomethingElse.stringValue) \(workText)", "color": getColorString(color: NSColor(red: 208/255, green: 150/255, blue: 60/255, alpha: 1)), "allowed_apps": ["/Applications/Microsoft Excel.app", "/Applications/Microsoft Word.app", "/Applications/Google Chrome.app", "/System/Applications/Calendar.app"], "allowed_urls": ["https://www.google.com"], "isOn": false, "isAllowedAllApps":false, "isAllowedAllUrls":false, "jobType":jobTypeSomethingElse, "isAllowedListApproach":true, "isBlockedAllUrls":false]
 
             
         default:
@@ -131,7 +131,7 @@ class preloadFocusModesVc: NSViewController, NSTextFieldDelegate {
             let id = getUuid()
             dic!["id"] = id
 //            UserDefaults.standard.set(dic, forKey: kUserdefaultsFocusAddedFromFirstHabit)
-
+            addLog(text: "preload Focus modeVC:-  button Continue clicked")
             preloadFocusModesWindowControllerObj!.contentViewController = getPreloadFocusModeAppsVcObj()
             preloadFocusModeAppsVcObj?.resetView(dic: dic!)
 

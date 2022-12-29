@@ -30,7 +30,7 @@
 		<true/>
 	</dict>
 	<key>NSAppleEventsUsageDescription</key>
-	<string>We're going to request permissions to control Chrome/Safari. This is needed to block distracting websites when you start a focus mode.</string>
+	<string>We're going to request permissions to control Chrome/Safari/System Events. This is needed to block distracting websites when you start a focus mode or to hide/unhide the dock.</string>
 	<key>NSHumanReadableCopyright</key>
 	<string></string>
 	<key>NSMainStoryboardFile</key>

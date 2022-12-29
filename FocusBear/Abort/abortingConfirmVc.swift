@@ -340,7 +340,7 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
                         activity = "break"
                     }
                     
-                    addEntryInCsv(logType: logType, activity: activity, durationInSeconds: "", quantityQuestion: "", quantityLogged: "", startTime: "", workAchieved: "", distractionsEncountered: "", abortReason: "I've got an emergency", feedback: "")
+                    addEntryInStatsCsv(logType: logType, activity: activity, durationInSeconds: "", quantityQuestion: "", quantityLogged: "", startTime: "", workAchieved: "", distractionsEncountered: "", abortReason: "I've got an emergency", feedback: "")
                     mainViewControllerObj?.disableApp()
 //                    getAbortJsonToUpload(emailAddress: "", feedback: "", abortReason: "I've got an emergency", completionHandler: {dic in
 //                        DispatchQueue.main.async {
@@ -541,7 +541,7 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
             allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"break_activity", "deactivate-reason":"Something else", "detailed-reason":textViewSomethingElse.string])
         }
         
-        addEntryInCsv(logType: logType, activity: activity, durationInSeconds: "", quantityQuestion: "", quantityLogged: "", startTime: "", workAchieved: "", distractionsEncountered: "", abortReason: "Something else", feedback: textViewSomethingElse.string)
+        addEntryInStatsCsv(logType: logType, activity: activity, durationInSeconds: "", quantityQuestion: "", quantityLogged: "", startTime: "", workAchieved: "", distractionsEncountered: "", abortReason: "Something else", feedback: textViewSomethingElse.string)
         
         
         mainViewControllerObj?.showAbortDoneView()

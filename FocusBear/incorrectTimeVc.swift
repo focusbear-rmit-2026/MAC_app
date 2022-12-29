@@ -33,8 +33,34 @@ class incorrectTimeVc: NSViewController {
         self.view.window?.close()
         NSApplication.shared.stopModal()
     }
+    var timerCheckTime:Timer?
     override func viewWillAppear() {
         btnIAmReady.keyEquivalent = "\r"
+       // DispatchQueue.global().sync {//async {
+            self.timerCheckTime = Timer.scheduledTimer(timeInterval: 5, target: self, selector: #selector(self.checkTime), userInfo: nil, repeats: true)
+            RunLoop.main.add((self.timerCheckTime!), forMode: RunLoop.Mode.common)
+        //}
+    }
+    override func viewWillDisappear() {
+        self.timerCheckTime?.invalidate()
+        self.timerCheckTime = nil
+    }
+    @objc func checkTime(){
+        if let now = appdelegate!.client.referenceTime?.now(){
+            print(now)
+            let currentDate = Date()
+            let diffHours = Calendar.current.dateComponents([.hour], from: now, to: currentDate).hour ?? 0
+            if diffHours > 24 || diffHours < -24{
+
+            }else{
+              //  DispatchQueue.main.async {
+                    self.view.window?.close()
+                    NSApplication.shared.stopModal()
+                    self.timerCheckTime?.invalidate()
+                    self.timerCheckTime = nil
+                //}
+            }
+        }
     }
     @IBAction func btnInstructionsClicked(_ sender: Any) {
         addLog(text: "incorrectTimeVc:- btnInstructionsClicked")

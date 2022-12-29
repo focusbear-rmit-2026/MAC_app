@@ -282,26 +282,22 @@ class menuViewController: NSViewController {
         if isAppEnable{
             if isShutOffTimeGoing(){
                 menuItemStartBreak.isHidden = true
-//                boxStartBreak.isHidden = true
             }else{
                 if isHabitAlreadyShowed{
                     if currentState == ._MORNING_HABIT_ || currentState == ._ACTIVITY_{
-//                        boxStartBreak.isHidden = true
                         menuItemStartBreak.isHidden = true
                     }else{
-//                        boxStartBreak.isHidden = false
                         menuItemStartBreak.isHidden = false
                     }
                 }else{
-//                    boxStartBreak.isHidden = true
                     menuItemStartBreak.isHidden = true
                 }
             }
         }else{
-//            boxStartBreak.isHidden = true
             menuItemStartBreak.isHidden = true
         }
 
+        
         if upgradeButtonWasClicked{
             upgradeButtonWasClicked = false
             appdelegate?.renewToken(window: self.view.window!, completionHandler: {
@@ -394,10 +390,10 @@ class menuViewController: NSViewController {
     }
 
     @IBAction func btnPreferencesClicked(_ sender: Any) {
-        if isPurchased == false && daysLeft <= 0{// if UserDefaults.standard.object(forKey: "trialExpired") != nil{
-            showUpgradeNowWindow()
-            return;
-        }
+//        if isPurchased == false && daysLeft <= 0{// if UserDefaults.standard.object(forKey: "trialExpired") != nil{
+//            showUpgradeNowWindow()
+//            return;
+//        }
         appdelegate?.menuItem_Preferences()
     }
     @IBAction func btnStartBreakClicked(_ sender: Any) {
@@ -684,6 +680,12 @@ class menuViewController: NSViewController {
     }
     @IBAction func btnToolsClicked(_ sender: Any) {
         addLog(text: "menu item tools clicked")
+        
+        if isPurchased == false && daysLeft <= 0{// if UserDefaults.standard.object(forKey: "trialExpired") != nil{
+            showUpgradeNowWindow()
+            return;
+        }
+        
         if isFocusModeOn(){
             var shouldShowToolBoxWindow = false
             
@@ -763,7 +765,12 @@ extension menuViewController: NSTableViewDelegate, NSTableViewDataSource{
             
             var cRow = row
             if isHardCorePomodoroModeOn{
-                cRow = hardcodePmodoroFocusModeIndex
+                for i in 0..<arrFocusType.count{
+                    if arrFocusType[i]["name"] as? String == hardcodePmodoroFocusModeName{
+                        cRow = i
+                        break;
+                    }
+                }
             }
             
             cell.boxtitle.tagValue = cRow
@@ -799,7 +806,7 @@ extension menuViewController: NSTableViewDelegate, NSTableViewDataSource{
 
             cell.btnEditFocusMode.isHidden = true
             cell.btnEditFocusMode.target = self
-            cell.btnEditFocusMode.tag = row
+            cell.btnEditFocusMode.tag = cRow
             cell.btnEditFocusMode.action = #selector(btnEditFocusModeClicked(sender:))
             
             cell.boxtitle.fillColor = .clear
@@ -810,6 +817,12 @@ extension menuViewController: NSTableViewDelegate, NSTableViewDataSource{
     } 
     @objc func btnEditFocusModeClicked(sender:NSButton){
         addLog(text: "btn Edit FocusMode Clicked from menu")
+        
+        if isPurchased == false && daysLeft <= 0{// if UserDefaults.standard.object(forKey: "trialExpired") != nil{
+            showUpgradeNowWindow()
+            return;
+        }
+        
         var shouldShowPassword = true
         if preferencesWindowControllerObj?.window?.isVisible ?? false{
             if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
