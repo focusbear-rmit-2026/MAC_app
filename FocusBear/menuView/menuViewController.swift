@@ -12,6 +12,14 @@ class menuViewController: NSViewController {
 
     
     
+    @IBOutlet weak var boxResumeHabits: NSBox!
+    @IBOutlet weak var lblTitleResumeHabits: NSTextField!
+    
+    
+    @IBOutlet weak var btnFalseDetection: underLineButton!
+    @IBOutlet weak var lblMeetingDetection: NSTextField!
+    @IBOutlet weak var btnMeetingDetection: NSButton!
+    @IBOutlet weak var boxMeetingDetection: NSBox!
     @IBOutlet weak var boxTools: NSBox!
     @IBOutlet weak var lblTitleTools: NSTextField!
     
@@ -59,6 +67,8 @@ class menuViewController: NSViewController {
     
     var btnInfoOfficeModeTrackingArea: NSTrackingArea?
     
+    var btnInfoMeetingDetectionTrackingArea: NSTrackingArea?
+    
     var toolsMenu:NSMenu!
     
 //    var selectedIndex = -1
@@ -86,6 +96,8 @@ class menuViewController: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
+        
+        
         boxStartBreak.isHidden = true
         boxBrainDump.isHidden = true
         boxLockCurrentFocus.isHidden = true
@@ -120,6 +132,18 @@ class menuViewController: NSViewController {
         lblTitleBrainDump.stringValue = "Brain Dump"
         var menuItemStopHardcorePomodoroTitle = "Stop Hardcore Pomodoro Mode"
         
+        lblMeetingDetection.stringValue = "Meeting active - breaks off"
+        btnFalseDetection.title = "False positive: I'm not in a meeting"
+        
+        lblTitleResumeHabits.stringValue = "Resume Habits"
+        
+        if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
+            if let suggestFocusInfo = focusInfo.value(forKey: "suggestFocusInfo") as? NSDictionary{
+                if let val = suggestFocusInfo.value(forKey: "buttonFalseDetectionText") as? String{
+                    btnFalseDetection.title = val
+                }
+            }
+        }
         if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
             itemReactivateTitle = menuInfo.value(forKey: "menuItemReactivateTitle") as? String ?? itemReactivateTitle
             itemEnterLicenseKeyTitle = menuInfo.value(forKey: "menuItemEnterLicenseKeyTitle") as? String ?? itemEnterLicenseKeyTitle
@@ -144,7 +168,8 @@ class menuViewController: NSViewController {
             toolTipWfhMode = menuInfo.value(forKey: "toolTipWfhMode") as? String ?? toolTipWfhMode
             lblTitleTools.stringValue = menuInfo.value(forKey: "menuItemToolsTitle") as? String ?? lblTitleTools.stringValue
             menuItemOpenToolboxTitle = menuInfo.value(forKey: "menuItemOpenToolboxTitle") as? String ?? menuItemOpenToolboxTitle
-            
+            lblMeetingDetection.stringValue = menuInfo.value(forKey: "menuItemMeetingDetectionTitle") as? String ?? lblMeetingDetection.stringValue
+            lblTitleResumeHabits.stringValue = menuInfo.value(forKey: "menuItemResumeHabitsTitle") as? String ?? lblTitleResumeHabits.stringValue
 //            lblTitleLockCurrentFocus.stringValue = menuInfo.value(forKey: "menuItemLockFocusTitle") as? String ?? lblTitleLockCurrentFocus.stringValue
         }
         
@@ -220,7 +245,25 @@ class menuViewController: NSViewController {
         btnInfoOfficeModeTrackingArea = NSTrackingArea.init(rect: btnInfoOfficeMode.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
         btnInfoOfficeMode.addTrackingArea(btnInfoOfficeModeTrackingArea!)
         
+        
+        btnInfoMeetingDetectionTrackingArea = NSTrackingArea.init(rect: btnMeetingDetection.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
+        btnMeetingDetection.addTrackingArea(btnInfoMeetingDetectionTrackingArea!)
     }
+    @IBAction func btnMeetingDetectionClicked(_ sender: Any) {
+//        appdelegate!.showAlertFalseMicDetection()
+    }
+    @IBAction func btnFalseDetectionClicked(_ sender: Any) {
+        appdelegate!.popover.animates = false
+        appdelegate!.popover.close()
+        DispatchQueue.global().async {
+            usleep(50000)
+            DispatchQueue.main.async {
+                appdelegate!.popover.animates = true
+                appdelegate!.showAlertFalseMicDetection()
+            }
+        }
+    }
+    
     override func mouseEntered(with event: NSEvent) {
         if event.trackingArea == btnInfoOfficeModeTrackingArea{
             if SettingsManagerObject.isOfficeModeEnabled{
@@ -228,10 +271,23 @@ class menuViewController: NSViewController {
             }else{
                 showTooltip(sender: btnInfoOfficeMode, msg: toolTipWfhMode, preferredEdge: NSRectEdge.maxX)
             }
+        }else if event.trackingArea == btnInfoMeetingDetectionTrackingArea{
+            var videoCallText = "Looks like you're in a video call. I won't interrupt you with micro-breaks during the meeting to avoid embarrassing screensharing moments. Enjoy the meeting!"
+            if let common = configjson.value(forKey: "common") as? NSDictionary{
+                videoCallText = common.value(forKey: "notificationVideoCallText") as? String ?? videoCallText
+            }
+            
+            showTooltip(sender: btnMeetingDetection, msg: videoCallText, preferredEdge: NSRectEdge.maxX)
         }
     }
     override func mouseExited(with event: NSEvent) {
         if event.trackingArea == btnInfoOfficeModeTrackingArea{
+            if popoverTooltip != nil{
+                if popoverTooltip!.isShown{
+                    popoverTooltip?.close()
+                }
+            }
+        }else if event.trackingArea == btnInfoMeetingDetectionTrackingArea{
             if popoverTooltip != nil{
                 if popoverTooltip!.isShown{
                     popoverTooltip?.close()
@@ -279,6 +335,19 @@ class menuViewController: NSViewController {
         }
     }
     func reloadData(){
+        
+        if currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_MORNING_HABIT_{
+            boxResumeHabits.isHidden = false
+        }else{
+            boxResumeHabits.isHidden = true
+        }
+        
+        if appdelegate!.isUserOnMeeting{
+            boxMeetingDetection.isHidden = false
+        }else{
+            boxMeetingDetection.isHidden = true
+        }
+        
         if isAppEnable{
             if isShutOffTimeGoing(){
                 menuItemStartBreak.isHidden = true
@@ -324,15 +393,16 @@ class menuViewController: NSViewController {
         if isFocusModeOn(){
             boxStartPomodoroMode.isHidden = true
             boxStopHardcorePomodoroMode.isHidden = true
-//            boxLockCurrentFocus.isHidden = true
         }else{
             if isHardCorePomodoroModeOn{
-//                boxLockCurrentFocus.isHidden = true
                 boxStopHardcorePomodoroMode.isHidden = false
                 boxStartPomodoroMode.isHidden = true
             }else{
-//                boxLockCurrentFocus.isHidden = false
-                boxStartPomodoroMode.isHidden = false
+                if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._ACTIVITY_{
+                    boxStartPomodoroMode.isHidden = true
+                }else{
+                    boxStartPomodoroMode.isHidden = false
+                }
                 boxStopHardcorePomodoroMode.isHidden = true
             }
         }
@@ -396,7 +466,7 @@ class menuViewController: NSViewController {
 //        }
         appdelegate?.menuItem_Preferences()
     }
-    @IBAction func btnStartBreakClicked(_ sender: Any) {
+    @IBAction func btnStartBreakClicked(_ sender: Any) {// todo ak check lgao ki agar break activities ka count hi 0 ho to menu item hi na show ho start break ka
         addLog(text: "button Start Break Clicked")
         mainViewControllerObj?.executeBreakActivities()
     }
@@ -689,11 +759,18 @@ class menuViewController: NSViewController {
         if isFocusModeOn(){
             var shouldShowToolBoxWindow = false
             
-            if !isAllowedAllAppsInFocus && appdelegate!.allowAppsPath.count != 0{
+            let isAllowedAllAppsInFocus = currentRunningFocusType["isAllowedAllApps"] as? Bool ?? false
+            let allowAppsPath = currentRunningFocusType["allowed_apps"] as? [String] ?? []
+            
+            if !isAllowedAllAppsInFocus && allowAppsPath.count != 0{
                 shouldShowToolBoxWindow = true
             }
             
-            if !isAllowedAllUrlsInFocus && appdelegate!.arrAllowedUrlsForFocus.count != 0 && isAllowedListApproachInFocus{
+            //let isAllowedAllUrlsInFocus = false//currentRunningFocusType["isAllowedAllUrls"] as? Bool ?? false#453
+            let isAllowedListApproachInFocus = currentRunningFocusType["isAllowedListApproach"] as? Bool ?? false
+            let arrAllowedUrlsForFocus = currentRunningFocusType["allowed_urls"] as? [String] ?? []
+            
+            if arrAllowedUrlsForFocus.count != 0 && isAllowedListApproachInFocus{
                 shouldShowToolBoxWindow = true
             }
             if shouldShowToolBoxWindow{
@@ -709,6 +786,16 @@ class menuViewController: NSViewController {
         toolsMenu.popUp(positioning: nil, at: p, in: (sender as AnyObject).superview)
     }
     
+    @IBAction func btnResumeHabitsClicked(_ sender: Any) {
+        currentState = ._NOTHING_
+        if mainViewControllerObj != nil{
+            if mainViewControllerObj?.postponeTimer != nil{
+                mainViewControllerObj?.postponeTimer?.invalidate()
+                mainViewControllerObj?.postponeTimer = nil
+            }
+        }
+        appdelegate?.backgroundThread()
+    }
 }
 
 //

@@ -328,10 +328,10 @@ class focusPreferencesAdvancedVc: NSViewController {
 
             }
         })
-        if arrFocusType[selectedFocusTypeRow]["isOn"] as? Bool == true{
-            appdelegate!.fillAllowUrlArray()
-        }
-        
+//        if arrFocusType[selectedFocusTypeRow]["isOn"] as? Bool == true{
+//            currentRunningFocusType = arrFocusType[selectedFocusTypeRow]
+//        }
+        reSetCurrentFocusMode(focusType:arrFocusType[selectedFocusTypeRow])
         
     }
     @IBAction func btnOkClicked(_ sender: Any) {

@@ -128,6 +128,7 @@ class visualizeInstructionsVc: NSViewController {
         }
     }
     @IBAction func btnMainClicked(_ sender: Any) {
+        addLog(text:"visualizeInstructionsVc - btnMainClicked :- \(btnMain.title)")
         if currentState == ._MORNING_HABIT_{
             mainViewControllerObj?.startFirstMorningHabit()
         }else{
@@ -135,6 +136,7 @@ class visualizeInstructionsVc: NSViewController {
         }
     }
     @IBAction func btnSkipClicked(_ sender: Any) {
+        addLog(text:"visualizeInstructionsVc - btnSkipClicked :- \(btnSkipHabit.title)")
         thirdVcObj?.loadView()
         thirdVcObj?.btnSkipHabitClicked(self)
     }

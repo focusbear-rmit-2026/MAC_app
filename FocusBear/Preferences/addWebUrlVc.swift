@@ -8,8 +8,10 @@
 
 import Cocoa
 
-class addWebUrlVc: NSViewController, NSTextFieldDelegate {
+class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
 
+    @IBOutlet weak var lblEnterUrl: NSTextField!
+    @IBOutlet var textView: NSTextView!
     @IBOutlet weak var lblInstructionSThird: NSTextField!
     @IBOutlet weak var lblInstructionSecond: NSTextField!
     @IBOutlet weak var lblInstructionFirst: NSTextField!
@@ -28,6 +30,8 @@ class addWebUrlVc: NSViewController, NSTextFieldDelegate {
     var titleAddWebUrl = "Add Web Url"
     var titleEditWebUrl = "Edit Web Url"
     
+    var urlAlreadyExistsText = "<APPNAME> already exists in the list."
+    
     enum URLADDINGSTATE:Int{
         case _FOCUS_ALLOW_URL = 1111, _FOCUS_BLOCK_URL, _ALL_BLOCK_URL
     }
@@ -38,20 +42,22 @@ class addWebUrlVc: NSViewController, NSTextFieldDelegate {
         super.viewDidLoad()
         // Do view setup here.
         
+        textView.delegate = self
         textField.delegate = self
-
+        
         btnCancel.title = "Cancel"
-        textField.placeholderString = "google.com"
+//        textField.placeholderString = "google.com"
         lblInvalidDomain.stringValue = "Please enter a valid domain."
         
+        lblEnterUrl.stringValue = "Enter single or multiple urls(one in each line)"
         
         if let focusPreferencesInfo = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
             if let buttonCancelText = focusPreferencesInfo.value(forKey: "buttonCancelText") as? String{
                 btnCancel.title = buttonCancelText
             }
-            if let urlPlaceHolderString = focusPreferencesInfo.value(forKey: "urlPlaceHolderString") as? String{
-                textField.placeholderString = urlPlaceHolderString
-            }
+//            if let urlPlaceHolderString = focusPreferencesInfo.value(forKey: "urlPlaceHolderString") as? String{
+//                textField.placeholderString = urlPlaceHolderString
+//            }
 
             if let invalidDomainText = focusPreferencesInfo.value(forKey: "invalidDomainText") as? String{
                 lblInvalidDomain.stringValue = invalidDomainText
@@ -61,6 +67,10 @@ class addWebUrlVc: NSViewController, NSTextFieldDelegate {
             buttonSaveText = focusPreferencesInfo.value(forKey: "buttonSaveText") as? String ?? buttonSaveText
             titleAddWebUrl = focusPreferencesInfo.value(forKey: "titleAddWebUrl") as? String ?? titleAddWebUrl
             titleEditWebUrl = focusPreferencesInfo.value(forKey: "titleEditWebUrl") as? String ?? titleEditWebUrl
+            
+            
+            urlAlreadyExistsText = focusPreferencesInfo.value(forKey: "urlAlreadyExistsText") as? String ?? urlAlreadyExistsText
+            lblEnterUrl.stringValue = focusPreferencesInfo.value(forKey: "enterMultiUrlText") as? String ?? lblEnterUrl.stringValue
             
         }
         
@@ -102,12 +112,19 @@ class addWebUrlVc: NSViewController, NSTextFieldDelegate {
         lblInvalidDomain.isHidden = true
         btnAdd.keyEquivalent = "\r"
         btnAdd.isEnabled = false
-        textField.stringValue = ""
         
+        textField.stringValue = ""
+        textView.string = ""
         if isAdding{
             btnAdd.title = buttonAddText
             lblTitle.stringValue = titleAddWebUrl
+            textField.isHidden = true
+            textView.enclosingScrollView?.isHidden = false
+            lblEnterUrl.isHidden = false
         }else{
+            lblEnterUrl.isHidden = true
+            textField.isHidden = false
+            textView.enclosingScrollView?.isHidden = true
             if currenUrlAddingtState == ._FOCUS_ALLOW_URL{
                 var selectedRow = focusPreferencesVcObj!.tblViewAllowedUrls.selectedRow
                 if selectedRow == -1{
@@ -149,50 +166,101 @@ class addWebUrlVc: NSViewController, NSTextFieldDelegate {
         }
     }
     @IBAction func btnAddClicked(_ sender: Any) {
-        let domain = textField.stringValue
-        if domain.contains("*"){
-
-            let string = domain.replacingOccurrences(of: "*", with: "")
-            if string.count == 0{
-                lblInvalidDomain.isHidden = false
-                if currenUrlAddingtState == ._FOCUS_ALLOW_URL{
-                    lblInvalidDomain.stringValue = "If you want to allow all urls please select \"Allow all urls\" instead."
-                    if let focusPreferencesInfo = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
-                        if let invalidDomainText = focusPreferencesInfo.value(forKey: "invalidDomainTextSecond") as? String{
-                            lblInvalidDomain.stringValue = invalidDomainText
-                        }
-                    }
-                }else if currenUrlAddingtState == ._FOCUS_BLOCK_URL{
-                    lblInvalidDomain.stringValue = "Adding * will block all urls. Please use another combination."
-                    if let blockedUrlsViewInfo = configjson.value(forKey: "blockedUrlsViewInfo") as? NSDictionary{
-                        if let invalidDomainText = blockedUrlsViewInfo.value(forKey: "invalidDomainText") as? String{
-                            lblInvalidDomain.stringValue = invalidDomainText
-                        }
-                    }
-                }else if currenUrlAddingtState == ._ALL_BLOCK_URL{
-                    lblInvalidDomain.stringValue = "Adding * will block all urls. Please use another combination."
-                    if let blockedUrlsViewInfo = configjson.value(forKey: "blockedUrlsViewInfo") as? NSDictionary{
-                        if let invalidDomainText = blockedUrlsViewInfo.value(forKey: "invalidDomainText") as? String{
-                            lblInvalidDomain.stringValue = invalidDomainText
-                        }
-                    }
-                }
-                return;
-            }
-        }else if !domain.contains("://"){
-//            if !isValidDomain(domain: domain){
-//                lblInvalidDomain.isHidden = false
+        //let domain = textView.string//textField.stringValue
+        var arrDomain = [String]()
+        var domain = ""
+        if isAdding{
+            domain = textView.string.trimmingCharacters(in: .whitespacesAndNewlines)
+//            domain = domain.trimmingCharacters(in: .whitespaces)
+            arrDomain = domain.components(separatedBy: "\n")
+//            if let lastItem = arrDomain.last{
+//                if lastItem.isEmpty{
+//                    //arrDomain.removeLast()
+//                }
+//            }
+            arrDomain = arrDomain.filter{ !$0.isEmpty }
+            print(arrDomain)
+        }else{
+            domain = textField.stringValue
+        }
+//        var isStartFound = false
+//        if !isAdding{
+//            if domain.contains("*"){
+//                let string = domain.replacingOccurrences(of: "*", with: "")
+//                if string.count == 0{
+//                    isStartFound = true
+//                }
+//            }
+//        }else{
+//            var i = 0
+//            var arrCount = arrDomain.count
+//            while i < arrCount{
+//                if arrDomain[i].contains("*"){
+//                    let string = arrDomain[i].replacingOccurrences(of: "*", with: "")
+//                    if string.count == 0{
+//                        arrDomain.remove(at: i)
+//                        arrCount -= 1
+//                    }else{
+//                        i += 1
+//                    }
+//                }else{
+//                    i += 1
+//                }
+//            }
+//            if arrDomain.count == 0{
+//                isStartFound = true
+//            }
+//        }
 //
-//                lblInvalidDomain.stringValue = "Please enter a valid domain."
-//
+//        if isStartFound{
+//            lblInvalidDomain.isHidden = false
+//            if currenUrlAddingtState == ._FOCUS_ALLOW_URL{
+//                lblInvalidDomain.stringValue = "Adding * will allow all urls. Please use another combination."//"If you want to allow all urls please select \"Allow all urls\" instead." text
 //                if let focusPreferencesInfo = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
-//                    if let invalidDomainText = focusPreferencesInfo.value(forKey: "invalidDomainText") as? String{
+//                    if let invalidDomainText = focusPreferencesInfo.value(forKey: "invalidDomainTextSecond") as? String{
+//                        //lblInvalidDomain.stringValue = invalidDomainText
+//                    }
+//                }
+//            }else if currenUrlAddingtState == ._FOCUS_BLOCK_URL{
+//                lblInvalidDomain.stringValue = "Adding * will block all urls. Please use another combination."
+//                if let blockedUrlsViewInfo = configjson.value(forKey: "blockedUrlsViewInfo") as? NSDictionary{
+//                    if let invalidDomainText = blockedUrlsViewInfo.value(forKey: "invalidDomainText") as? String{
 //                        lblInvalidDomain.stringValue = invalidDomainText
 //                    }
 //                }
-//                return;
+//            }else if currenUrlAddingtState == ._ALL_BLOCK_URL{
+//                lblInvalidDomain.stringValue = "Adding * will block all urls. Please use another combination."
+//                if let blockedUrlsViewInfo = configjson.value(forKey: "blockedUrlsViewInfo") as? NSDictionary{
+//                    if let invalidDomainText = blockedUrlsViewInfo.value(forKey: "invalidDomainText") as? String{
+//                        lblInvalidDomain.stringValue = invalidDomainText
+//                    }
+//                }
 //            }
+//
+//
+//            return;
+//        }
+        
+        func cehckIsItemAlreadyAdded(urlsArray: [String])->Bool{
+            
+            var i = 0
+            var arrCount = arrDomain.count
+            while i < arrCount{
+                if urlsArray.contains(where: {$0.lowercased() == arrDomain[i].lowercased() }) {
+                    arrDomain.remove(at: i)
+                    arrCount -= 1
+                }else{
+                    i += 1
+                }
+            }
+            
+            if arrDomain.count == 0{
+                return true
+            }
+            
+            return false
         }
+        
         if isAdding{
             if currenUrlAddingtState == ._FOCUS_ALLOW_URL{
                 var urlsArray = [String]()
@@ -213,20 +281,28 @@ class addWebUrlVc: NSViewController, NSTextFieldDelegate {
                         }
                     }
                 }
-                if !urlsArray.contains(where: {$0.lowercased() == textField.stringValue.lowercased() }) {
-                    urlsArray.append(textField.stringValue)
-                }else{
+                
+                if cehckIsItemAlreadyAdded(urlsArray: urlsArray){
                     lblInvalidDomain.isHidden = false
-                    lblInvalidDomain.stringValue = "\(textField.stringValue) already exists in the list."
-                    
-                    if let focusPreferencesInfo = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
-                        if let urlAlreadyExistsText = focusPreferencesInfo.value(forKey: "urlAlreadyExistsText") as? String{
-                            lblInvalidDomain.stringValue = urlAlreadyExistsText.replacingOccurrences(of: "<APPNAME>", with: textField.stringValue)
-                        }
-                    }
+                    lblInvalidDomain.stringValue = urlAlreadyExistsText.replacingOccurrences(of: "<APPNAME>", with: domain)
                     return;
+                }else{
+                    for item in arrDomain{
+                        urlsArray.append(item)
+                    }
                 }
-                if isOnboardingProcess{
+                
+              
+//                if !urlsArray.contains(where: {$0.lowercased() == textView.string.lowercased() }) {
+//                    urlsArray.append(textView.string)
+//                }else{
+//                    lblInvalidDomain.isHidden = false
+//                    lblInvalidDomain.stringValue = urlAlreadyExistsText.replacingOccurrences(of: "<APPNAME>", with: textView.string)
+//                    return;
+//                }
+                
+                
+                if isOnboardingProcess{//todo test
                     preloadFocusModeAppsVcObj?.arrUrls = urlsArray
                     preloadFocusModeAppsVcObj?.tblView.reloadData()
                     preloadFocusModeAppsVcObj?.tblView.selectRowIndexes(IndexSet(arrayLiteral: (urlsArray.count - 1)), byExtendingSelection: false)
@@ -240,9 +316,8 @@ class addWebUrlVc: NSViewController, NSTextFieldDelegate {
                     focusPreferencesVcObj?.tblViewAllowedUrls.selectRowIndexes(IndexSet(arrayLiteral: (urlsArray.count - 1)), byExtendingSelection: false)
                     focusPreferencesVcObj?.tblViewAllowedUrls.scrollRowToVisible(urlsArray.count - 1)
                     UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
-                    if arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow]["isOn"] as? Bool == true{
-                        appdelegate!.fillAllowUrlArray()
-                    }
+
+                    reSetCurrentFocusMode(focusType:arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow])
                     
                     allApiObject.editFocusMode(focusType: dic, completionHandler: {newDic in
                         DispatchQueue.main.async {
@@ -259,21 +334,23 @@ class addWebUrlVc: NSViewController, NSTextFieldDelegate {
                 if let arr = arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow]["blockUrlsArray"] as? [String]{
                     urlsArray = arr
                 }
-                if !urlsArray.contains(where: {$0.lowercased() == textField.stringValue.lowercased() }) {
-                    urlsArray.append(textField.stringValue)
-                }else{
-                    lblInvalidDomain.isHidden = false
-                    lblInvalidDomain.stringValue = "\(textField.stringValue) already exists in the list."
-                    
-                    if let focusPreferencesInfo = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
-                        if let urlAlreadyExistsText = focusPreferencesInfo.value(forKey: "urlAlreadyExistsText") as? String{
-                            lblInvalidDomain.stringValue = urlAlreadyExistsText.replacingOccurrences(of: "<APPNAME>", with: textField.stringValue)
-                        }
-                    }
-                    return;
-                }
+//                if !urlsArray.contains(where: {$0.lowercased() == textView.string.lowercased() }) {
+//                    urlsArray.append(textView.string)
+//                }else{
+//                    lblInvalidDomain.isHidden = false
+//                    lblInvalidDomain.stringValue = urlAlreadyExistsText.replacingOccurrences(of: "<APPNAME>", with: textView.string)
+//                    return;
+//                }
               
-                
+                if cehckIsItemAlreadyAdded(urlsArray: urlsArray){
+                    lblInvalidDomain.isHidden = false
+                    lblInvalidDomain.stringValue = urlAlreadyExistsText.replacingOccurrences(of: "<APPNAME>", with: domain)
+                    return;
+                }else{
+                    for item in arrDomain{
+                        urlsArray.append(item)
+                    }
+                }
                 
                 var dic = arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow]
                 dic["blockUrlsArray"] = urlsArray
@@ -293,10 +370,8 @@ class addWebUrlVc: NSViewController, NSTextFieldDelegate {
                 
                 
                 UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
-                if arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow]["isOn"] as? Bool == true{
-                    appdelegate!.fillAllowUrlArray()// fill block url array
-                }
-                
+
+                reSetCurrentFocusMode(focusType:arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow])
                 
                 allApiObject.editFocusMode(focusType: dic, completionHandler: {newDic in
                     DispatchQueue.main.async {
@@ -306,18 +381,21 @@ class addWebUrlVc: NSViewController, NSTextFieldDelegate {
                 allApiObject.capturePosthog(event: "add-blocked-url-in-focus-mode", metadata: [:])
                 
             }else if currenUrlAddingtState == ._ALL_BLOCK_URL{
-                if !SettingsManagerObject.arrBlockedUrls.contains(where: {$0.lowercased() == textField.stringValue.lowercased() }) {
-                    SettingsManagerObject.arrBlockedUrls.append(textField.stringValue)
-                }else{
+//                if !SettingsManagerObject.arrBlockedUrls.contains(where: {$0.lowercased() == textView.string.lowercased() }) {
+//                    SettingsManagerObject.arrBlockedUrls.append(textView.string)
+//                }else{
+//                    lblInvalidDomain.isHidden = false
+//                    lblInvalidDomain.stringValue = urlAlreadyExistsText.replacingOccurrences(of: "<APPNAME>", with: textView.string)
+//                    return;
+//                }
+                if cehckIsItemAlreadyAdded(urlsArray: SettingsManagerObject.arrBlockedUrls){
                     lblInvalidDomain.isHidden = false
-                    lblInvalidDomain.stringValue = "\(textField.stringValue) already exists in the list."
-                    
-                    if let focusPreferencesInfo = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
-                        if let urlAlreadyExistsText = focusPreferencesInfo.value(forKey: "urlAlreadyExistsText") as? String{
-                            lblInvalidDomain.stringValue = urlAlreadyExistsText.replacingOccurrences(of: "<APPNAME>", with: textField.stringValue)
-                        }
-                    }
+                    lblInvalidDomain.stringValue = urlAlreadyExistsText.replacingOccurrences(of: "<APPNAME>", with: domain)
                     return;
+                }else{
+                    for item in arrDomain{
+                        SettingsManagerObject.arrBlockedUrls.append(item)
+                    }
                 }
                 blockedUrlsVcObj?.tblView.reloadData()
                 blockedUrlsVcObj?.tblView.selectRowIndexes(IndexSet(arrayLiteral: (SettingsManagerObject.arrBlockedUrls.count - 1)), byExtendingSelection: false)
@@ -343,15 +421,10 @@ class addWebUrlVc: NSViewController, NSTextFieldDelegate {
                 }
                 
                 if !isContainAlready {
-                    urlsArray[currentRow] = textField.stringValue
+                    urlsArray[currentRow] = domain
                 }else{
                     lblInvalidDomain.isHidden = false
-                    lblInvalidDomain.stringValue = "\(textField.stringValue) already exists in the list."
-                    if let focusPreferencesInfo = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
-                        if let urlAlreadyExistsText = focusPreferencesInfo.value(forKey: "urlAlreadyExistsText") as? String{
-                            lblInvalidDomain.stringValue = urlAlreadyExistsText.replacingOccurrences(of: "<APPNAME>", with: textField.stringValue)
-                        }
-                    }
+                    lblInvalidDomain.stringValue = urlAlreadyExistsText.replacingOccurrences(of: "<APPNAME>", with: textView.string)
                     return;
                 }
 
@@ -363,9 +436,8 @@ class addWebUrlVc: NSViewController, NSTextFieldDelegate {
                 focusPreferencesVcObj?.tblViewAllowedUrls.reloadData()
                 focusPreferencesVcObj?.tblViewAllowedUrls.selectRowIndexes(IndexSet(arrayLiteral: (self.currentRow)), byExtendingSelection: false)
                 UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
-                if arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow]["isOn"] as? Bool == true{
-                    appdelegate!.fillAllowUrlArray()
-                }
+                
+                reSetCurrentFocusMode(focusType:arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow])
                 allApiObject.editFocusMode(focusType: dic, completionHandler: {newDic in
                     DispatchQueue.main.async {
                         
@@ -388,15 +460,10 @@ class addWebUrlVc: NSViewController, NSTextFieldDelegate {
                 }
                 
                 if !isContainAlready {
-                    urlsArray[currentRow] = textField.stringValue
+                    urlsArray[currentRow] = domain
                 }else{
                     lblInvalidDomain.isHidden = false
-                    lblInvalidDomain.stringValue = "\(textField.stringValue) already exists in the list."
-                    if let focusPreferencesInfo = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
-                        if let urlAlreadyExistsText = focusPreferencesInfo.value(forKey: "urlAlreadyExistsText") as? String{
-                            lblInvalidDomain.stringValue = urlAlreadyExistsText.replacingOccurrences(of: "<APPNAME>", with: textField.stringValue)
-                        }
-                    }
+                    lblInvalidDomain.stringValue = urlAlreadyExistsText.replacingOccurrences(of: "<APPNAME>", with: textView.string)
                     return;
                 }
                 
@@ -418,9 +485,7 @@ class addWebUrlVc: NSViewController, NSTextFieldDelegate {
                 
                 
                 UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
-                if arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow]["isOn"] as? Bool == true{
-                    appdelegate!.fillAllowUrlArray()
-                }
+                reSetCurrentFocusMode(focusType:arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow])
                 allApiObject.editFocusMode(focusType: dic, completionHandler: {newDic in
                     DispatchQueue.main.async {
                         
@@ -438,15 +503,10 @@ class addWebUrlVc: NSViewController, NSTextFieldDelegate {
                     }
                 }
                 if !isContainAlready {
-                    SettingsManagerObject.arrBlockedUrls[currentRow] = textField.stringValue
+                    SettingsManagerObject.arrBlockedUrls[currentRow] = domain
                 }else{
                     lblInvalidDomain.isHidden = false
-                    lblInvalidDomain.stringValue = "\(textField.stringValue) already exists in the list."
-                    if let focusPreferencesInfo = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
-                        if let urlAlreadyExistsText = focusPreferencesInfo.value(forKey: "urlAlreadyExistsText") as? String{
-                            lblInvalidDomain.stringValue = urlAlreadyExistsText.replacingOccurrences(of: "<APPNAME>", with: textField.stringValue)
-                        }
-                    }
+                    lblInvalidDomain.stringValue = urlAlreadyExistsText.replacingOccurrences(of: "<APPNAME>", with: textView.string)
                     return;
                 }
                 blockedUrlsVcObj?.tblView.reloadData()
@@ -485,6 +545,19 @@ class addWebUrlVc: NSViewController, NSTextFieldDelegate {
         lblInvalidDomain.isHidden = true
         if txtfield == textField{
             if textField.stringValue.count == 0{
+                btnAdd.isEnabled = false
+            }else{
+                btnAdd.isEnabled = true
+            }
+        }
+    }
+    func textDidChange(_ notification: Notification) {
+        guard let textView = notification.object as? NSTextView else{
+            return
+        }
+        if textView == self.textView{
+            lblInvalidDomain.isHidden = true
+            if textView.string.count == 0{
                 btnAdd.isEnabled = false
             }else{
                 btnAdd.isEnabled = true

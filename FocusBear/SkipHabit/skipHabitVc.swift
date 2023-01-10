@@ -32,7 +32,7 @@ class skipHabitVc: NSViewController {
     }
     func resetView(){
         addLog(text: "skipHabitVc - resetView")
-        startTimer(duration: 15)//todo 15 seconds ka  
+        startTimer(duration: 15) 
     }
     @IBAction func btnCloseClicked(_ sender: Any) {
         timer?.invalidate()
@@ -64,7 +64,7 @@ class skipHabitVc: NSViewController {
         }
     }
     @objc func performTimerCount() {
-        currentTimer += 1//todo 1 kro
+        currentTimer += 1
         let (_,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
         
         var minute = "\(m)"

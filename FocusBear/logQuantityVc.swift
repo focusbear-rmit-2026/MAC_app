@@ -122,7 +122,27 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
             addLog(text:"Log quantity-btnCancelClicked return - isReviseQuantity")
            return
         }
+        
         thirdVcObj?.loadGraph(activityId: self.activity_id, activityName: self.name, logQuantity: true, logQuantityType: self.logQuantityType, activityChoiceId: self.activityChoiceId,activityStartTime: lastActivityPerformedTime!, duration: durationInSeconds, quantity: "0")
+        
+        let startTime = getStringFromDate(date: lastActivityPerformedTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")
+        
+        var logType = ""
+        if lCurrentState == nil{
+            logType = "break"
+        }else if lCurrentState! == ._MORNING_HABIT_{
+            logType = "morning routine"
+        }else if lCurrentState! == ._EVENING_HABIT_{
+            logType = "evening routine"
+        }else if lCurrentState! == ._ACTIVITY_{
+            logType = "break"
+        }
+        
+        
+        
+        
+        
+        addEntryInStatsCsv(logType: logType, activity: name, durationInSeconds: durationInSeconds, quantityQuestion: logQuantityQuestion, quantityLogged: "0.0", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "")
         
         allApiObject.activityCompletedApi(activity_id: activity_id, activity_sequence_id: activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:0.0, duration_logged:Int(durationInSeconds) ?? 0, choice_id: activityChoiceId, is_skipped: is_skipped, completionHandler: {dic  in
             DispatchQueue.main.async {

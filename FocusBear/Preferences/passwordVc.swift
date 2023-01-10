@@ -113,6 +113,12 @@ class passwordVc: NSViewController {
                     lblPasswordState.stringValue = passwordNotSetText
                 }
             }
+            checkBoxQuitApp.isEnabled = false
+            checkBoxStopPomodoro.isEnabled = false
+            checkBoxAbortingShutoff.isEnabled = false
+            checkBoxSkipEveningHabit.isEnabled = false
+            checkBoxSkipMorningHabit.isEnabled = false
+            checkBoxChangeSettings.isEnabled = false
             
         }else{
             lblTitle.stringValue = "Change Password"
@@ -141,6 +147,12 @@ class passwordVc: NSViewController {
                 }
                 
             }
+            checkBoxQuitApp.isEnabled = true
+            checkBoxStopPomodoro.isEnabled = true
+            checkBoxAbortingShutoff.isEnabled = true
+            checkBoxSkipEveningHabit.isEnabled = true
+            checkBoxSkipMorningHabit.isEnabled = true
+            checkBoxChangeSettings.isEnabled = true
         }
         
         
@@ -288,8 +300,6 @@ class passwordVc: NSViewController {
     }
     
     @IBAction func btnChangePasswordClicked(_ sender: Any) {
-
-        
 
         if textFieldNewPassword.stringValue.isEmpty{
             var passwordBlankAlertTitle = "Password cannot be blank."

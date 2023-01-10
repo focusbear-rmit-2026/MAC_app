@@ -298,6 +298,7 @@ class customLoginVc: NSViewController {
         appdelegate!.user = User(from: credentials.accessToken)
         allApiObject.capturePosthog(event: "login-homemade", metadata: [:])
         let _ = appdelegate!.credentialsManager.store(credentials: credentials)
+        UserDefaults.standard.set(true, forKey: kUserdefaultsIsUserLoggedIn)
         if UserDefaults.standard.object(forKey: kUserdefaultsVideoShown) == nil{
             showOnboardingCardWindow(isLogin: isLogin)
         }else{

@@ -940,7 +940,6 @@ class AllApi:NSObject {
     func activityCompletedApi(activity_id:String, activity_sequence_id:String, start_time:Date, quantity_logged:Double?, duration_logged:Int, choice_id:String?, is_skipped:Bool, completionHandler: @escaping(_ result: NSDictionary?) -> ()){
         addLog(text: "func call:- activityCompletedApi completed-activity")
 
-
         appdelegate!.credentialsManager.credentials {credentialsInfo in
             addLog(text: "get updated credentialsInfo from credentialsManager")
             
@@ -1241,7 +1240,7 @@ class AllApi:NSObject {
     func activitySkippedApi(activity_id:String, activity_sequence_id:String, completionHandler: @escaping(_ result: NSDictionary?) -> ()){
         addLog(text: "func call:- activitySkippedApi completed-activity")
 
-
+        
         appdelegate!.credentialsManager.credentials {credentialsInfo in
             addLog(text: "get updated credentialsInfo from credentialsManager")
             

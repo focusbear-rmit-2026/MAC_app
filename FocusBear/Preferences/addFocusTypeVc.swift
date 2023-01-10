@@ -165,7 +165,7 @@ class addFocusTypeVc: NSViewController, NSTextFieldDelegate  {
             }
         }
         let id = getUuid()
-        let dic:[String:Any] = ["id":id, "name":textFieldFocusType.stringValue, "color": getColorString(color: colorWell.color), "allowed_apps": [], "allowed_urls": [], "isOn": false, "isAllowedAllApps":true, "isAllowedAllUrls":true, "isAllowedListApproach":true, "isBlockedAllUrls":false]
+        let dic:[String:Any] = ["id":id, "name":textFieldFocusType.stringValue, "color": getColorString(color: colorWell.color), "allowed_apps": [], "allowed_urls": [], "isOn": false, "isAllowedAllApps":true, "isAllowedListApproach":false, "blockUrlsArray": []]//, "isAllowedAllUrls":true , "isBlockedAllUrls":false#453
         
         let row = arrFocusType.count-1
         arrFocusType.insert(dic, at: row)//append(dic)

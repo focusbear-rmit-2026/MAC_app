@@ -30,6 +30,7 @@ class SettingsManager:NSObject{
     var isOfficeModeEnabled = false
     var kIsReducedMotion = false
     var isMeetingDetectionEnabled = true
+    var showMeetingDetectionAlert = true
     var isHideDockInActivity = false
     var isPromptToRememberHabit = true
     var isEasySkipEnabled = true
@@ -52,6 +53,8 @@ class SettingsManager:NSObject{
     var kUserdefaultsReducedMotion = "kUserdefaultsReducedMotion"
     
     var kUserdefaultsMeetingDetectionEnabled = "kUserdefaultsMeetingDetectionEnabled"
+    var kUserdefaultsShowMeetingDetectionAlert = "kUserdefaultsShowMeetingDetectionAlert"
+    
     var kUserdefaultsHideDockInActivity = "kUserdefaultsHideDockInActivity"
     var kUserdefaultsPromptToRememberHabit = "kUserdefaultsPromptToRememberHabit"
     var kUserdefaultsEasySkipEnabled = "kUserdefaultsEasySkipEnabled"
@@ -119,6 +122,7 @@ class SettingsManager:NSObject{
         kUserdefaultsOfficeModeEnabled = kUserdefaultsOfficeModeEnabled + (appdelegate?.user?.userId ?? "")
         kUserdefaultsReducedMotion = kUserdefaultsReducedMotion + (appdelegate?.user?.userId ?? "")
         kUserdefaultsMeetingDetectionEnabled = kUserdefaultsMeetingDetectionEnabled + (appdelegate?.user?.userId ?? "")
+        kUserdefaultsShowMeetingDetectionAlert = kUserdefaultsShowMeetingDetectionAlert + (appdelegate?.user?.userId ?? "")
 //        kUserdefaultsHideDockInActivity = kUserdefaultsHideDockInActivity + (appdelegate?.user?.userId ?? "")//no ned to do this
         kUserdefaultsPromptToRememberHabit = kUserdefaultsPromptToRememberHabit + (appdelegate?.user?.userId ?? "")
         kUserdefaultsEasySkipEnabled = kUserdefaultsEasySkipEnabled + (appdelegate?.user?.userId ?? "")
@@ -178,6 +182,7 @@ class SettingsManager:NSObject{
                     }
                     let kIsReducedMotionEnabled = "kIsReducedMotion"
                     let kIsMeetingDetectionEnabled = "kIsMeetingDetectionEnabled"
+                    let kShowMeetingDetectionAlert = "kShowMeetingDetectionAlert"
                     let kIsPasswordRequireInChangeSettings = "kIsPasswordRequireInChangeSettings"
                     let kIsPasswordRequireInSkipMorning = "kIsPasswordRequireInSkipMorning"
                     let kIsPasswordRequireInSkipEvening = "kIsPasswordRequireInSkipEvening"
@@ -215,7 +220,10 @@ class SettingsManager:NSObject{
                     if let val = settings.value(forKey: kIsMeetingDetectionEnabled) as? Bool{
                         UserDefaults.standard.set(val, forKey: self.kUserdefaultsMeetingDetectionEnabled)
                     }
-
+                    
+                    if let val = settings.value(forKey: kShowMeetingDetectionAlert) as? Bool{
+                        UserDefaults.standard.set(val, forKey: self.kUserdefaultsShowMeetingDetectionAlert)
+                    }
                     
                     if let val = settings.value(forKey: kIsPasswordRequireInChangeSettings) as? Bool{
                         UserDefaults.standard.set(val, forKey: self.kUserdefaultsPasswordRequireInChangeSettings)
@@ -347,7 +355,17 @@ class SettingsManager:NSObject{
             
             
             
-            
+            //  ---------------------------SETTINGS Show Meeting Detection Alert--------------------------
+            if let isEnabled = UserDefaults.standard.object(forKey: kUserdefaultsShowMeetingDetectionAlert) as? Bool{
+                if isEnabled{
+                    showMeetingDetectionAlert = true
+                }else{
+                    showMeetingDetectionAlert = false
+                }
+            }else{
+                UserDefaults.standard.set(true, forKey: kUserdefaultsShowMeetingDetectionAlert)
+                showMeetingDetectionAlert = true
+            }
             
             //  ---------------------------SETTINGS Password Require--------------------------
             if let isEnabled = UserDefaults.standard.object(forKey: kUserdefaultsPasswordRequireInChangeSettings) as? Bool{
@@ -531,6 +549,7 @@ class SettingsManager:NSObject{
         }
         UserDefaults.standard.set(kIsReducedMotion, forKey: kUserdefaultsReducedMotion)
         UserDefaults.standard.set(isMeetingDetectionEnabled, forKey: kUserdefaultsMeetingDetectionEnabled)
+        UserDefaults.standard.set(showMeetingDetectionAlert, forKey: kUserdefaultsShowMeetingDetectionAlert)
         UserDefaults.standard.set(isHideDockInActivity, forKey: kUserdefaultsHideDockInActivity)
         UserDefaults.standard.set(isPromptToRememberHabit, forKey: kUserdefaultsPromptToRememberHabit)
         UserDefaults.standard.set(isEasySkipEnabled, forKey: kUserdefaultsEasySkipEnabled)
@@ -548,6 +567,7 @@ class SettingsManager:NSObject{
         
         let kIsReducedMotionEnabled = "kIsReducedMotion"
         let kIsMeetingDetectionEnabled = "kIsMeetingDetectionEnabled"
+        let kShowMeetingDetectionAlert = "kShowMeetingDetectionAlert"
         let kIsPromptToRememberHabit = "kIsPromptToRememberHabit"
         let kIsEasySkipEnabled = "kIsEasySkipEnabled"
         let kIsOfficeModeEnabled = "kIsOfficeModeEnabled"
@@ -577,6 +597,7 @@ class SettingsManager:NSObject{
         var json: [String: Any] = [
             kIsReducedMotionEnabled:kIsReducedMotion,//userId.removingPercentEncoding ?? "",
             kIsMeetingDetectionEnabled:isMeetingDetectionEnabled,
+            kShowMeetingDetectionAlert:showMeetingDetectionAlert,
             kIsPromptToRememberHabit:isPromptToRememberHabit,
             kIsEasySkipEnabled:isEasySkipEnabled,
             kIsOfficeModeEnabled:isOfficeModeEnabled,

@@ -9,6 +9,7 @@ import Cocoa
 
 class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
 
+    @IBOutlet weak var lblTimerUnfocused: NSTextField!
     @IBOutlet weak var lblExplanation: NSTextField!
     @IBOutlet weak var lblLockedFocusDescription: NSTextField!
     @IBOutlet weak var lblMinute: NSTextField!
@@ -24,6 +25,7 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
     var focusIndex = 0
     var focusType = ""
     var titleText = "Starting Focus type - <FOCUSTYPE>"
+    var timerText = "Time spend unfocused: <TIME>"
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -65,13 +67,81 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
                 
             }
         }
-        
+        if let pomodoroInfo = configjson.value(forKey: "pomodoroInfo") as? NSDictionary{
+            timerText = pomodoroInfo.value(forKey: "timerText") as? String ?? timerText
+        }
     }
 
     override func viewWillAppear() {
         textViewQuestion.string = ""
+        startTimer()
     }
-    
+    override func viewWillDisappear() {
+        timer?.invalidate()
+        timer = nil
+    }
+    var timer:Timer?
+    var currentTimer = 0
+    func startTimer() {
+        if timer != nil{
+            timer?.invalidate()
+            timer = nil
+        }
+
+        currentTimer = unfocusedTime
+        let (h,m,s) = secondsToHoursMinutesSeconds(seconds: currentTimer)
+        var hour = "\(h)"
+        var minute = "\(m)"
+        var second = "\(s)"
+        
+        if hour.count == 1 {
+            hour = "0\(h)"
+        }
+        if minute.count == 1 {
+            minute = "0\(m)"
+        }
+        if second.count == 1 {
+            second = "0\(s)"
+        }
+//        if h == 0{
+//            self.lblTimer.stringValue = "\(minute):\(second)"Time spend unfocused 00:00:00
+//        }else{
+        self.lblTimerUnfocused.stringValue = timerText.replacingOccurrences(of: "<TIME>", with: "\(hour):\(minute):\(second)")//"Time spend unfocused: \(hour):\(minute):\(second)"//
+//        }
+        
+        DispatchQueue.main.async {
+            self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
+            RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
+        }
+    }
+    func setProgres(){
+        let remainingSeconds = currentTimer
+        let (h,m,s) = secondsToHoursMinutesSeconds(seconds: remainingSeconds)
+        var hour = "\(h)"
+        var minute = "\(m)"
+        var second = "\(s)"
+
+        if hour.count == 1 {
+            hour = "0\(h)"
+        }
+        
+        if minute.count == 1 {
+            minute = "0\(m)"
+        }
+        if second.count == 1 {
+            second = "0\(s)"
+        }
+        
+        DispatchQueue.main.async {
+            self.lblTimerUnfocused.stringValue = self.timerText.replacingOccurrences(of: "<TIME>", with: "\(hour):\(minute):\(second)")//"Time spend unfocused: \(hour):\(minute):\(second)"//
+        }
+    }
+    @objc func performTimerCount() {
+        if !appdelegate!.isSystemSleep && !appdelegate!.isScreenSaverStart && currentState != ._ACTIVITY_{
+            currentTimer += 1
+        }
+        setProgres()
+    }
     @IBAction func btnStartFocusClicked(_ sender: Any) {
         addLog(text: "startingFocusModeVc - btnStartFocusClicked")//
 
@@ -194,7 +264,7 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
             dic["allowed_urls"] = appsUrlArray
             dic["allowed_apps"] = appsArray
             dic["isAllowedAllApps"] = false
-            dic["isAllowedAllUrls"] = false
+//            dic["isAllowedAllUrls"] = false#453
             dic["isAllowedListApproach"] = true
             arrFocusType[focusIndex] = dic
 

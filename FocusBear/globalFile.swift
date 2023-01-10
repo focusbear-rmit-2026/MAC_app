@@ -543,6 +543,14 @@ func getFocusTipsVcObjObj()->focusTipsVc{
     }
     return focusTipsVcObj!
 }
+var howHeardVcObj:howHeardVc?
+
+func getHowHeardVcObj()->howHeardVc{
+    if howHeardVcObj == nil{
+        howHeardVcObj = newStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("howHeardVc")) as? howHeardVc
+    }
+    return howHeardVcObj!
+}
 
 
 let startingFocusModeVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("startingFocusModeVc")) as? startingFocusModeVc
@@ -582,6 +590,9 @@ var currentUserName = ""
 var currentUserEmail = ""
 
 
+var kUserdefaultsIsUserLoggedIn = "kUserdefaultsIsUserLoggedIn"
+
+
 var kUserdefaultsDontTellAgain = "kUserdefaultsDontTellAgain"
 var kUserdefaultsAppQuitProperly = "kUserdefaultsAppQuitProperly"
 
@@ -602,6 +613,9 @@ let kUserdefaultsLastHabitShowDate = "UserdefaultsLastHabitShowDate"
 
 var kUserdefaultsLastHabitsStartedDate = "kUserdefaultsLastHabitsStartedDate"
 var kUserdefaultsLastHabitID = "kUserdefaultsLastHabitID"
+
+var kUserdefaultsLastHabitRunningInfo = "kUserdefaultsLastHabitRunningInfo"
+var kUserdefaultsLastSequencePostponeInfo = "kUserdefaultsLastSequencePostponeInfo"
 
 var kUserdefaultsIsAppEnabled = "kUserdefaultsIsAppEnabled"
 
@@ -706,7 +720,7 @@ struct habit {
     var allowApps:[String]!
     var allowedFocusMode:String!
     var activity_sequence_id:String!
-    var run_micro_breaks:Bool!//todo jha bhi seetings manuaaly edit kr rhe hai vha check kro ise 
+    var run_micro_breaks:Bool!
     init(id:String, name:String, durationSeconds:Int, urlsArray:[String], logQuantity:Bool, logQuantityQuestion:String?, openSpecificApps:Bool,allowUrls:[String],allowApps:[String],allowedFocusMode:String, activity_sequence_id:String, run_micro_breaks:Bool) {
         self.id = id
         self.name = name
@@ -758,6 +772,31 @@ var fireFoxNotificationShownForCurrentFocusMode = false// show a notification wh
 
 var activityAllowedFocusApps = [String]()
 var activityAllowedFocusUrls = [String]()
+
+
+
+//struct activityFocusMode {
+//    var isAllowedAllAppsInFocus = false
+//    var isAllowedAllUrlsInFocus = false
+//    var isBlockedAllUrlsInFocus = false
+//    var isAllowedListApproachInFocus = true
+//    var arrAllowedUrlsForFocus = [String]()
+//    var arrBlockedUrlsForFocus = [String]()
+//    var allowAppsPath = [String]()
+//    
+//    init(isAllowedAllAppsInFocus:Bool, isAllowedAllUrlsInFocus:Bool, isBlockedAllUrlsInFocus:Bool, isAllowedListApproachInFocus:Bool, arrAllowedUrlsForFocus:[String], arrBlockedUrlsForFocus:[String], allowAppsPath:[String]) {
+//        self.isAllowedAllAppsInFocus = isAllowedAllAppsInFocus
+//        self.isAllowedAllUrlsInFocus = isAllowedAllUrlsInFocus
+//        self.isBlockedAllUrlsInFocus = isBlockedAllUrlsInFocus
+//        self.isAllowedListApproachInFocus = isAllowedListApproachInFocus
+//        self.arrAllowedUrlsForFocus = arrAllowedUrlsForFocus
+//        self.arrBlockedUrlsForFocus = arrBlockedUrlsForFocus
+//        self.allowAppsPath = allowAppsPath
+//    }
+//}
+
+
+
 //var showEveryBreak = false
 var isAnyMandatoryActivityIncluded = false
 var isMandatoryActivityGoing = false
@@ -1857,7 +1896,6 @@ class Editing: NSTextField {
 public class Reachability {
     class func isConnectedToNetwork() -> Bool {
         
-
         var zeroAddress = sockaddr_in(sin_len: 0, sin_family: 0, sin_port: 0, sin_addr: in_addr(s_addr: 0), sin_zero: (0, 0, 0, 0, 0, 0, 0, 0))
         zeroAddress.sin_len = UInt8(MemoryLayout.size(ofValue: zeroAddress))
         zeroAddress.sin_family = sa_family_t(AF_INET)
@@ -1964,19 +2002,55 @@ class customBox: NSBox {
                         let alert = NSAlert()
                         alert.setSharingType()
                         alert.messageText = "A focus mode is already running. Please abort the running focus mode to start a new one."
+                        var buttonStopFocusText = "Stop current focus mode and start this one"
                         
                         if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
                             if let focusAlreadyRunningText = focusInfo.value(forKey: "focusAlreadyRunningText") as? String{
                                 alert.messageText = focusAlreadyRunningText
                             }
                         }
-                        alert.runModal()
+                        
+                        if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
+                            if let startingFocusModeInfo = focusInfo.value(forKey: "startingFocusModeInfo") as? NSDictionary{
+                                buttonStopFocusText = startingFocusModeInfo.value(forKey: "buttonStopFocusText") as? String ?? buttonStopFocusText
+                            }
+                        }
+                        
+                        alert.addButton(withTitle: buttonOkText)
+                        alert.addButton(withTitle: buttonStopFocusText)
+                        
+                        let result = alert.runModal()
+                        if result == .alertSecondButtonReturn{
+                            addLog(text: "Stop current focus from alert and show start focus view")
+                            appdelegate?.focusModeFinished(isSilent: true)
+                            showStartingFocusMode(focusModeIndex: tagValue, focusType: arrFocusType[tagValue]["name"] as? String ?? "")
+                        }
                         return;
                     }
                 }
                 
+                // //prvent user from start a focus mode while runnning a activity
+                
+                if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._ACTIVITY_{
+                    addLog(text: "Activity is running: Can not start a focus mode")
+                    let alert = NSAlert()
+                    alert.setSharingType()
+                    alert.messageText = "You can not start a focus mode while an activity is running."
+                    
+                    if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
+                        if let startingFocusModeInfo = focusInfo.value(forKey: "startingFocusModeInfo") as? NSDictionary{
+                            alert.messageText = startingFocusModeInfo.value(forKey: "activityRunningCantStartFocusText") as? String ?? alert.messageText
+                        }
+                    }
+                    alert.runModal()
+                    return;
+                }
+                //todo logs
+                    
                 
                 
+                
+                //  //  //  //  //  //  //
                 
                 // new work starting foces mode
                 
@@ -2047,13 +2121,25 @@ let jobTypeSomethingElse = "SomethingElse"
 
 var focusDefaultAllowApps = ["finder", "universalaccessauthwarn", "system preferences", "loginwindow", "screensaverengine"]
 var arrFocusType = [[String:Any]]()
+
+var arrBlockedAppsInCuddlyModeCurrentFocus = [NSRunningApplication]()
+var arrAllowedAppsInCuddlyModeCurrentFocus = [NSRunningApplication]()
+
+var arrBlockedUrlsInCuddlyModeCurrentFocus = [String]()
+var arrAllowedUrlsInCuddlyModeCurrentFocus = [String]()
+
+
+var currentRunningFocusType = [String:Any]()
+
+
 var arrFocusTypeForPomodoro = [[String:Any]]()
 
-var isAllowedAllAppsInFocus = false
-var isAllowedAllUrlsInFocus = false
-var isBlockedAllUrlsInFocus = false
-var isAllowedListApproachInFocus = true
+//var isAllowedAllAppsInFocus = false
+//var isAllowedAllUrlsInFocus = false
+//var isBlockedAllUrlsInFocus = false
+//var isAllowedListApproachInFocus = true
 var selfAppName = Bundle.main.infoDictionary!["CFBundleName"] as! String
+
 
 
 var whatToAchieveInFocusBlock = ""
@@ -2094,7 +2180,8 @@ var startFocusModeTime:Date?
 var startFocusModeTimeForPauseAndResume:Date?
 var focusModeActualDurationPerformed:Int = 0// ye kaam aaygi log vali file jo export hoti hai . usme likhvane k liye.. jese fi focus mode finish hoga duuration is var mai likhva lenge fir log mai add krenge (fir ussse focus summary dikhaynge )
 var focusModeMinutesToPerform = 0
-var focusModeSecondsToPerform = 0 //pause// resume k liye 
+var focusModeSecondsToPerform = 0 //pause// resume k liye
+var unfocusedTime = 0
 enum FocusModeTimeType:Int{
     case _HOUR_ = 11, _TILL_SHUTOFF_, _NONE_
 }
@@ -2406,7 +2493,7 @@ func isPreventUserIdleDisplaySleepOn()-> Bool{
 //    addLog(text: "is Prevent UserIdle Display SleepOn Called")
     let processArray = ["zoom.us", "teams"]// lowercased names aynge sirf
 //    let dic = avmonitor.getSystemAssertionDic()
-    addLog(text: "is Prevent UserIdle Display SleepOn return \(dic)")
+    //addLog(text: "is Prevent UserIdle Display SleepOn return \(dic)")
     //print(dic)
 //    if dic == nil{
 //        addLog(text: "is Prevent UserIdle Display SleepOn return false because dic is nil")
@@ -2434,7 +2521,7 @@ func isPreventUserIdleDisplaySleepOn()-> Bool{
                             let processName = name.lowercased()
                             if processName != selfAppName.lowercased(){
                                 if processArray.contains(processName){
-                                    addLog(text: "is Prevent UserIdle Display SleepOn return true \(itemDic)")
+                                    addLog(text: "is Prevent UserIdle Display SleepOn return true")
                                     return true
                                 }
                             }
@@ -2455,12 +2542,12 @@ func isPreventUserIdleDisplaySleepOn()-> Bool{
                             }
                             
                             if isContainAudioIn && isContainAudioIOut{
-                                addLog(text: "is Prevent UserIdle System SleepOn return true:- audioIn and audioOut found in resources:- \(itemDic)")
+                                addLog(text: "is Prevent UserIdle System SleepOn return true:- audioIn and audioOut found in resources")
                                 return true
                             }else if isContainAudioIOut{
                                 for resource in resourcesUsedArr{
                                     if resource.contains(":input"){
-                                        addLog(text: "is Prevent UserIdle System SleepOn return true:- audioIn and colonOut found in resources:-  \(itemDic)")
+                                        addLog(text: "is Prevent UserIdle System SleepOn return true:- audioIn and colonOut found in resources")
                                         return true
                                     }
                                 }
@@ -2488,16 +2575,16 @@ func isPreventUserIdleDisplaySleepOn()-> Bool{
             }
             
             if isArrayContainAudioIn && isArrayContainAudioIOut{
-                addLog(text: "is Prevent UserIdle System SleepOn return true:- audioIn and audioOut found in array:- \(arr)")
+                addLog(text: "is Prevent UserIdle System SleepOn return true:- audioIn and audioOut found in array")
                 return true
             }else if isArrayContainAudioIn && isArrayContainColonOutput{
-                addLog(text: "is Prevent UserIdle System SleepOn return true:- audioIn and colonOut found in array:- \(arr)")
+                addLog(text: "is Prevent UserIdle System SleepOn return true:- audioIn and colonOut found in array")
                 return true
             }else if isArrayContainAudioIOut && isArrayContainColonInput{
-                addLog(text: "is Prevent UserIdle System SleepOn return true:- audioOut and colonIn found in array:- \(arr)")
+                addLog(text: "is Prevent UserIdle System SleepOn return true:- audioOut and colonIn found in array")
                 return true
             }else if isArrayContainAudioIn && isArrayContainAppleHDAEngineOutput{
-                addLog(text: "is Prevent UserIdle System SleepOn return true:- audioIn and AppleHDAEngineOutput found in array:- \(arr)")
+                addLog(text: "is Prevent UserIdle System SleepOn return true:- audioIn and AppleHDAEngineOutput found in array")
                 return true
             }
         }
@@ -2726,7 +2813,8 @@ func showBreakWarningWindow(){
 func showPreloadFocusModesWindow(){
     addLog(text:"showPreloadFocusModesWindow")
     getPreloadFocusModesWindowControllerObj().contentViewController = getPreloadFocusModesVcObj()
-
+    
+    preloadFocusModesWindowControllerObj!.window?.center()
     
     preloadFocusModesWindowControllerObj!.window?.styleMask.remove(.closable)
     preloadFocusModesWindowControllerObj?.window?.title = appName
@@ -2775,6 +2863,7 @@ func showPopUpOfflineWindow(){
 func showAskLoginWindow(){
     addLog(text:"showAskLoginWindow")
     getAskLogInWindowObject().contentViewController = getAskLogInVcObject()
+    getAskLogInWindowObject().window?.center()
     askLogInWcObj?.window?.title = appName
     appdelegate!.statusbutton?.action = nil
     askLogInWcObj!.showWindow(nil)
@@ -2816,6 +2905,7 @@ func showCustomLoginWindow(isLogin:Bool){
 func showOnboardingCardWindow(isLogin:Bool){
     addLog(text:"showOnboardingCardWindow")
     getOnboardingCardsWindowObject().contentViewController = getOnboardingCardsVcObject()
+    getOnboardingCardsWindowObject().window?.center()
     onboardingCardsWcObj!.window?.styleMask.remove(.closable)
     onboardingCardsVcObj?.isLogin = isLogin
     onboardingCardsWcObj!.showWindow(nil)
@@ -2870,6 +2960,7 @@ func showOnboardingVideoWindow(){
         onboardingVideoWcObj?.window?.styleMask.insert(.resizable)
         onboardingVideoWcObj?.window?.contentMinSize = NSSize(width: 1050, height: 837)
         onboardingVideoWcObj?.window?.setContentSize(NSSize(width: 1050, height: 837))
+        onboardingVideoWcObj?.window?.center()
     }
     getOnboardingVideoVcObject().startOnboardingVideo()
     UserDefaults.standard.set(true, forKey: kUserdefaultsVideoShown)
@@ -3202,7 +3293,7 @@ func roundOffValue(number : Double) -> Double {
 extension NSTextField{
     func setFocus(){
         self.selectText(self)
-        self.currentEditor()?.selectedRange = NSRange(location: 0, length: self.stringValue.count)
+        self.currentEditor()?.selectedRange = NSRange(location: self.stringValue.count, length: 0)
     }
 }
 
@@ -3330,8 +3421,60 @@ func getSafariActiveTabTitle()->String?{
     return nil
 }
 
+func getBrowserAllTabUrl(browser:BROWSER)->[String]?{
+    var browserName = ""
+    
+    if browser == ._SAFARI_{
+        browserName = "Safari"
+    }else if browser == ._GOOGLE_CHROME_{
+        browserName = "Google Chrome"
+    }else if browser == ._BRAVE_BROWSER_{
+        browserName = "Brave Browser"
+    }else if browser == ._SIDEKICK_{
+        browserName = "Sidekick"
+    }
+    
+    var script: String = ""
+    
+    script =
+    """
+    tell application "\(browserName)"
+    set the_wnd to front window
+    set allTabs to tabs in the_wnd
+    set arrayTabs to {}
+    repeat with theTab in allTabs
+    set taburl to URL of theTab
+    set end of arrayTabs to taburl
+    end repeat
+    return the arrayTabs
+    end tell
+    """
+    
+    if let appleScript = NSAppleScript(source: script) {
+        
+        var errors : NSDictionary? = nil
+        let desc = appleScript.executeAndReturnError(&errors)
+        if errors != nil {
+            print(errors)
+        }
+//        print(desc.toStringArray())
+        return desc.toStringArray()
+    }
+    return nil
+}
 
+extension NSAppleEventDescriptor {
 
+  func toStringArray() -> [String] {
+    guard let listDescriptor = self.coerce(toDescriptorType: typeAEList) else {
+      return []
+    }
+
+    return (0..<listDescriptor.numberOfItems)
+      .compactMap { listDescriptor.atIndex($0 + 1)?.stringValue }
+  }
+
+}
 
 func getGoogleChromeActiveTabUrl()->String?{
     var script: String = ""
@@ -4283,3 +4426,134 @@ public extension URL {
 //
 //  }
 //]
+
+var isAnyAllowedFocusModeActivityRunning = false// whenever allowed focus activity started set true this variable
+//func checkIsAnyAllowedFocusModeActivityRunning()->Bool{//delete this function if not in use
+//    if (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_) && currentHabitPlaying != nil && !(mainWindowControllerObj?.window?.isVisible ?? false){
+//        if currentAction == ._INPROGRESS_{
+//            if isAnyAllowedFocusModeActivityRunning{
+//                return true
+//            }
+//        }
+//    }else if currentState == ._ACTIVITY_ && currentActivityPlaying != nil && !(mainWindowControllerObj?.window?.isVisible ?? false){
+//        if currentAction == ._INPROGRESS_{
+//            if isAnyAllowedFocusModeActivityRunning{
+//                return true
+//            }
+//        }
+//    }
+//    return false
+//}
+
+
+func reSetCurrentFocusMode(focusType:[String:Any]){
+    if isFocusModeOn() || isAnyAllowedFocusModeActivityRunning{
+        if focusType["id"] as? String ?? ""  == currentRunningFocusType["id"] as? String ?? ""{
+            currentRunningFocusType = focusType
+        }
+    }
+}
+
+func closePupUpBlockIfVisible(){
+    if popUpBlockConfirmWcObj != nil{
+        if popUpBlockConfirmWcObj!.window?.isVisible ?? false{
+            popUpBlockConfirmVcObj?.closeWindow()
+        }else if popUpBlockConfirmVcObj != nil{
+            popUpBlockConfirmVcObj?.currentApp = nil
+        }
+    }
+}
+
+
+
+
+
+
+//            let audio = AVPlayer.init(url: URL(fileURLWithPath: "/Users/prashant/Desktop/untitled folder/audio.mp3"))
+//                // after initialization play audio its just like click on play button
+//            audio.play()
+            //
+//            do {
+//                let player = try AVAudioPlayer(contentsOf: URL(fileURLWithPath: "/Users/prashant/Desktop/untitled folder/audio.mp3"))
+//                player.prepareToPlay()
+//                player.play()
+//            } catch let error {
+//                print(error.localizedDescription)
+//            }
+            
+//            var myAudio: AVAudioPlayer!
+//
+//            do {
+//                let sound = try AVAudioPlayer(contentsOf: URL(fileURLWithPath: "/Users/prashant/Desktop/untitled folder/audio.mp3"))
+//                myAudio = sound
+//                let play = sound.play()
+//                print(play)
+//            } catch {
+//                //
+//                print(error)
+//            }
+
+
+//func downloadFileAsync(url: URL?,destinationUrl: URL, completion: @escaping (String?, Error?) -> Void)
+//{
+//
+//
+//    //let documentsUrl =  FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+//
+//
+//    if FileManager().fileExists(atPath: destinationUrl.path) || url == nil
+//    {
+//        completion(destinationUrl.path, nil)
+//    }
+//    else
+//    {
+//        let session = URLSession(configuration: URLSessionConfiguration.default, delegate: nil, delegateQueue: nil)
+//        var request = URLRequest(url: url!)
+//        request.httpMethod = "GET"
+//        let task = session.dataTask(with: request, completionHandler:
+//        {
+//            data, response, error in
+//            if error == nil
+//            {
+//                if let response = response as? HTTPURLResponse
+//                {
+//                    if response.statusCode == 200
+//                    {
+//                        if let data = data
+//                        {
+//                            if let _ = try? data.write(to: destinationUrl, options: Data.WritingOptions.atomic)
+//                            {
+//                                completion(destinationUrl.path, error)
+//                            }
+//                            else
+//                            {
+//                                completion(destinationUrl.path, error)
+//                            }
+//                        }
+//                        else
+//                        {
+//                            completion(destinationUrl.path, error)
+//                        }
+//                    }
+//                }
+//            }
+//            else
+//            {
+//                completion(destinationUrl.path, error)
+//            }
+//        })
+//        task.resume()
+//    }
+//}
+//        NSSound(contentsOfFile: "/Users/prashant/Desktop/untitled folder/audio.mp3", byReference: true)
+//        downloadFileAsync(url: URL(string: "https://focus-music.f3db181aa5e95c474bda11234481eea9.r2.cloudflarestorage.com/demo-audio.mp3?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=75432c5154f51b8777736b6545f2bbfe%2F20230110%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20230110T110934Z&X-Amz-Expires=36000&X-Amz-Signature=57eb6bd0903dc06e7471231b55a77f64435ec531d404bf6dcf2709da40b822b0&X-Amz-SignedHeaders=host"), destinationUrl: URL(fileURLWithPath: "/Users/prashant/Desktop/untitled folder/audio.mp3")) { (success, error) in
+//            if error == nil {
+//                NSSound(named: sound)?.play()
+//
+//                print("downloded")
+//            }else{
+//
+//
+//            }
+//
+//        }

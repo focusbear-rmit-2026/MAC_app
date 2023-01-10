@@ -28,10 +28,7 @@ class whySkipHabitVc: NSViewController {
         }
     }
     
-    @IBAction func btnAlreadyDidItClicked(_ sender: Any) {
-        addLog(text: "whySkipHabitVc:- button AlreadyDidItClicked")
-        self.view.removeFromSuperview()
-        
+    func skipActivityAlreadyDid(){
         if rememberNextHabitVcObj != nil{
             if thirdVcObj!.view.subviews.contains(rememberNextHabitVcObj!.view){
                 rememberNextHabitVcObj!.view.removeFromSuperview()
@@ -53,7 +50,34 @@ class whySkipHabitVc: NSViewController {
             //thirdVcObj?.eveningHabitSkipped()
             thirdVcObj?.eveningHabitSkippedAndDoneAlready()
         }
+    }
+    
+    @IBAction func btnAlreadyDidItClicked(_ sender: Any) {
+        addLog(text: "whySkipHabitVc:- button AlreadyDidItClicked")
+        self.view.removeFromSuperview()
         
+        
+        if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
+            if currentState == ._MORNING_HABIT_{
+                if SettingsManagerObject.isPasswordRequireInSkipMorning{
+                    mainViewControllerObj?.showPasswordView()
+                    enterPasswordVcObj?.parentVc = self
+                }else{
+                    skipActivityAlreadyDid()
+                }
+                
+            }else{
+                if SettingsManagerObject.isPasswordRequireInSkipEvening{
+                    mainViewControllerObj?.showPasswordView()
+                    enterPasswordVcObj?.parentVc = self
+                }else{
+                    skipActivityAlreadyDid()
+                }
+            }
+            
+        }else{
+            skipActivityAlreadyDid()
+        }
         
     }
     @IBAction func btnCanNotDoItClicked(_ sender: Any) {

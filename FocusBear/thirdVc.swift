@@ -2172,6 +2172,7 @@ class thirdVc: NSViewController {
     }
     
     func morningHabitFinished(index:Int) {
+        UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitRunningInfo)
         if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
             btnSkipHabit.title = activityInfo.value(forKey: "buttonSkipHabitText") as? String ?? btnSkipHabit.title
         }
@@ -2219,11 +2220,12 @@ class thirdVc: NSViewController {
         
         setProgress()
         
-
+        addLog(text:"\(lastHabit!) finished")
         if index < arrAllMorningHabits.count-1 {
             
             imgViewGif.isHidden = true
             playEveryActivitySound()
+           
             lblTitle.stringValue = getActivityFinishedText(isLast: false, activityName: lastHabit!)//"\(lastHabit!) finished!✅"
             allApiObject.capturePosthog(event: "complete-morning-routine-activity", metadata: ["routine-type":"morning_routine"])
             if SettingsManagerObject.isPromptToRememberHabit{
@@ -2273,6 +2275,7 @@ class thirdVc: NSViewController {
     }
     
     func morningHabitSkippedAndDoneAlready() {
+        UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitRunningInfo)
         lastActivityPerformedTime = Date()
         if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
             btnSkipHabit.title = activityInfo.value(forKey: "buttonSkipHabitText") as? String ?? btnSkipHabit.title
@@ -2294,9 +2297,9 @@ class thirdVc: NSViewController {
         
         if currentAction != ._INPROGRESS_{// if inprogess it means already updated cutrrenthabitindex
             currentHabitIndex += 1
-        }else{
-            currentAction = ._END_
         }
+        
+        currentAction = ._END_
         
         lastHabitIndex = currentHabitIndex
         stackViewGraph.isHidden = true
@@ -2328,7 +2331,7 @@ class thirdVc: NSViewController {
         
         setProgress()
         
-
+        addLog(text:"\(lastHabit!) skipped")
         if lastHabitIndex < arrAllMorningHabits.count-1 {
             
             imgViewGif.isHidden = true
@@ -2476,6 +2479,7 @@ class thirdVc: NSViewController {
                 finalSring = activityInfo.value(forKey: "habitsCompleteText") as? String ?? finalSring
             }
             finalSring = finalSring.replacingOccurrences(of: "<duration>", with: habitMinutesString)
+            addLog(text:"func setProgress:- \(finalSring)")
             lblProgress.stringValue = finalSring
         }else{
             var finalSring = "You have completed <duration> of habits - <totalduration> to go. You can do it!"
@@ -2484,10 +2488,13 @@ class thirdVc: NSViewController {
             }
             finalSring = finalSring.replacingOccurrences(of: "<duration>", with: habitMinutesString)
             finalSring = finalSring.replacingOccurrences(of: "<totalduration>", with: totalMinutesString)
+            addLog(text:"func setProgress:- \(finalSring)")
             lblProgress.stringValue = finalSring
         }
+        
     }
     func morningHabitFinishedAndStartIncompleteNew(index:Int, isLastActivitySkipped:Bool) {
+        UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitRunningInfo)
         randomIntToRememberNextHabit = 0
         if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
             btnSkipHabit.title = activityInfo.value(forKey: "buttonSkipHabitText") as? String ?? btnSkipHabit.title
@@ -2518,12 +2525,14 @@ class thirdVc: NSViewController {
         })
         
         setProgress()
-
+        
         if index < arrAllMorningHabits.count-1 {
             imgViewGif.isHidden = true
             if !isLastActivitySkipped{
+                addLog(text:"\(lastHabit!) Finished")
                 lblTitle.stringValue = getActivityFinishedText(isLast: false, activityName: lastHabit!)//"\(lastHabit!) finished!✅"//
             }else{
+                addLog(text:"\(lastHabit!) Skipped")
                 lblTitle.stringValue = getActivitySkippedText(isLast: false, activityName: lastHabit!)
             }
             isPromptToRememberHabitShowedInLastHabit = false
@@ -2534,8 +2543,10 @@ class thirdVc: NSViewController {
         }else {
             imgViewGif.isHidden = false
             if !isLastActivitySkipped{
+                addLog(text:"\(lastHabit!) Finished")
                 lblTitle.stringValue = getActivityFinishedText(isLast: true, activityName: lastHabit!)
             }else{
+                addLog(text:"\(lastHabit!) Skipped")
                 lblTitle.stringValue = getActivitySkippedText(isLast: true, activityName: lastHabit!)
             }
             btnMain.title = unlockMachineButtonText
@@ -2548,14 +2559,15 @@ class thirdVc: NSViewController {
       
     }
     func morningHabitSkipped() {
+        UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitRunningInfo)
         if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
             btnSkipHabit.title = activityInfo.value(forKey: "buttonSkipHabitText") as? String ?? btnSkipHabit.title
         }
         if currentAction != ._INPROGRESS_{// if inprogess it means already updated cutrrenthabitindex
             currentHabitIndex += 1
-        }else{
-            currentAction = ._END_
         }
+        
+        currentAction = ._END_
         allApiObject.activitySkippedApi(activity_id: arrAllMorningHabits[currentHabitIndex].id, activity_sequence_id: arrAllMorningHabits[currentHabitIndex].activity_sequence_id, completionHandler: {dic in
             
         })
@@ -2590,7 +2602,7 @@ class thirdVc: NSViewController {
         setProgress()
         
         
-        
+        addLog(text:"\(lastHabit!) Skipped")
         if index < arrAllMorningHabits.count-1 {
             imgViewGif.isHidden = true
             lblTitle.stringValue = getActivitySkippedText(isLast: false, activityName: lastHabit!)
@@ -2611,6 +2623,7 @@ class thirdVc: NSViewController {
         }
     }
     func eveningHabitFinished(index:Int) {
+        UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitRunningInfo)
         randomIntToRememberNextHabit = 0
         if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
             btnSkipHabit.title = activityInfo.value(forKey: "buttonSkipHabitText") as? String ?? btnSkipHabit.title
@@ -2654,7 +2667,7 @@ class thirdVc: NSViewController {
         }
         
         setProgress()
-        
+        addLog(text:"\(lastHabit!) Finished")
         if index < arrAllEveningHabits.count-1 {
             
             allApiObject.capturePosthog(event: "complete-evening-routine-activity", metadata: ["routine-type":"evening_routine"])
@@ -2730,6 +2743,7 @@ class thirdVc: NSViewController {
         
     }
     func eveningHabitSkippedAndDoneAlready() {
+        UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitRunningInfo)
         lastActivityPerformedTime = Date()
         randomIntToRememberNextHabit = 0
         if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
@@ -2751,9 +2765,8 @@ class thirdVc: NSViewController {
         
         if currentAction != ._INPROGRESS_{// if inprogess it means already updated cutrrenthabitindex
             currentHabitIndex += 1
-        }else{
-            currentAction = ._END_
         }
+        currentAction = ._END_
         
         lastHabitIndex = currentHabitIndex
         let lastHabit = arrAllEveningHabits[lastHabitIndex].name
@@ -2783,7 +2796,7 @@ class thirdVc: NSViewController {
         }
         
         setProgress()
-        
+        addLog(text:"\(lastHabit!) skipped")
         if lastHabitIndex < arrAllEveningHabits.count-1 {
             
             allApiObject.capturePosthog(event: "complete-evening-routine-activity", metadata: ["routine-type":"evening_routine"])
@@ -2859,6 +2872,7 @@ class thirdVc: NSViewController {
         
     }
     func eveningHabitFinishedAndStartIncompleteNew(index:Int, isLastActivitySkipped:Bool) {
+        UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitRunningInfo)
         randomIntToRememberNextHabit = 0
         if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
             btnSkipHabit.title = activityInfo.value(forKey: "buttonSkipHabitText") as? String ?? btnSkipHabit.title
@@ -2893,8 +2907,10 @@ class thirdVc: NSViewController {
         
         if index < arrAllEveningHabits.count-1 {
             if !isLastActivitySkipped{
+                addLog(text:"\(lastHabit!) Finished")
                 lblTitle.stringValue = getActivityFinishedText(isLast: false, activityName: lastHabit!)//"\(lastHabit!) finished!✅"
             }else{
+                addLog(text:"\(lastHabit!) Skipped")
                 lblTitle.stringValue = getActivitySkippedText(isLast: false, activityName: lastHabit!)
             }
             imgViewGif.isHidden = true
@@ -2911,8 +2927,10 @@ class thirdVc: NSViewController {
             }
             imgViewGif.isHidden = false
             if !isLastActivitySkipped{
+                addLog(text:"\(lastHabit!) Finished")
                 lblTitle.stringValue = getActivityFinishedText(isLast: true, activityName: lastHabit!)
             }else{
+                addLog(text:"\(lastHabit!) Skipped")
                 lblTitle.stringValue = getActivitySkippedText(isLast: true, activityName: lastHabit!)
             }
             btnMain.title = "Let's wrap up for the day"
@@ -2941,14 +2959,15 @@ class thirdVc: NSViewController {
         
     }
     func eveningHabitSkipped() {
+        UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitRunningInfo)
         if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
             btnSkipHabit.title = activityInfo.value(forKey: "buttonSkipHabitText") as? String ?? btnSkipHabit.title
         }
         if currentAction != ._INPROGRESS_{// if inprogess it means already updated cutrrenthabitindex
             currentHabitIndex += 1
-        }else{
-            currentAction = ._END_
         }
+        currentAction = ._END_
+        
         allApiObject.activitySkippedApi(activity_id: arrAllEveningHabits[currentHabitIndex].id, activity_sequence_id: arrAllEveningHabits[currentHabitIndex].activity_sequence_id, completionHandler: {dic in
             
         })
@@ -2983,7 +3002,7 @@ class thirdVc: NSViewController {
         
         setProgress()
         
-        
+        addLog(text:"\(lastHabit!) Skipped")
         if index < arrAllEveningHabits.count-1 {
             lblTitle.stringValue = getActivitySkippedText(isLast: false, activityName: lastHabit!)
             imgViewGif.isHidden = true
@@ -3428,17 +3447,29 @@ class thirdVc: NSViewController {
     }
     
     @IBAction func btnSkipHabitClicked(_ sender: Any) {
+        
+        if currentState == ._ACTIVITY_{
+            mainViewControllerObj?.showAskPostponeView()
+            return
+        }
+        
+        
+        
         var currentHabit:habit?
         if currentState == ._MORNING_HABIT_{
+//            if (UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil) && SettingsManagerObject.isPasswordRequireInSkipMorning{
+//                mainViewControllerObj?.showPasswordView()
+//                enterPasswordVcObj?.parentVc = getWhySkipHabitVcObject()
+//                return;
+//            }
+            
             currentHabit = arrAllMorningHabits[currentHabitIndex + 1]
         }else if currentState == ._EVENING_HABIT_{
             currentHabit = arrAllEveningHabits[currentHabitIndex + 1]
-        }else if currentState == ._ACTIVITY_{
-            mainViewControllerObj?.showAskPostponeView()
-            return
         }else{
             return
         }
+
         allApiObject.getACtivityStats(activityId: currentHabit!.id, activityChoiceId: nil, completionHandler: {dic in
             
         })

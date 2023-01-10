@@ -106,15 +106,15 @@ class breakWarningVc: NSViewController {
                 if self.isPostponing{
                     mainViewControllerObj?.postponeBreakActivitiesFor(minutes: 5)
                 }else{
-                    //if !isShutOffTimeGoing(){// agar shutoff k timer per bhi kaam krna h to ye bhi hatega
-                    mainViewControllerObj?.executeBreakActivities()
-                    //}
+                    if currentState == ._ACTIVITY_{// whenever show waring then make current state _ACTIVITY_ beacuse if any thing will happen during waring curent state will change (ex. app can bhi in shutoff state when warning is about to over in this case we will not execute break activity)
+                        mainViewControllerObj?.executeBreakActivities()
+                    }
                 }
             }
         }
     }
     @objc func performTimerCount() {
-        currentTimer += 1//todo 1 kro
+        currentTimer += 1
         setProgres()
     }
     
@@ -124,9 +124,9 @@ class breakWarningVc: NSViewController {
             addLog(text: "breakWarningVc:- btn take break clicked")
             self.timer?.invalidate()
             self.view.window?.close()
-            //if !isShutOffTimeGoing(){
-            mainViewControllerObj?.executeBreakActivities()
-            //}
+            if currentState == ._ACTIVITY_{// whenever show waring then make current state _ACTIVITY_ beacuse if any thing will happen during waring curent state will change (ex. app can bhi in shutoff state when warning is about to over in this case we will not execute break activity)
+                mainViewControllerObj?.executeBreakActivities()
+            }
             
         }else{
             addLog(text: "breakWarningVc:- btn Postpone clicked")
@@ -145,8 +145,8 @@ class breakWarningVc: NSViewController {
             }else{
                 self.timer?.invalidate()
                 self.view.window?.close()
-                mainViewControllerObj?.postponeBreakActivitiesFor(minutes: 5)
                 activityPostponeCount += 1
+                mainViewControllerObj?.postponeBreakActivitiesFor(minutes: 5)
             }
         }
     }

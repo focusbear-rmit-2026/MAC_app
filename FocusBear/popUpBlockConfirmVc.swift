@@ -56,9 +56,24 @@ class popUpBlockConfirmVc: NSViewController {
         isAppBlocking = isBlockApp
         self.script = script
         self.url = url
+        var currentRunningFocusModeName = ""
+        
+        
+        
+        
+        if isAnyAllowedFocusModeActivityRunning{
+            if currentHabitPlaying != nil{
+                currentRunningFocusModeName = currentHabitPlaying?.name ?? ""
+            }else if currentActivityPlaying != nil{
+                currentRunningFocusModeName = currentActivityPlaying?.name ?? ""
+            }
+        }else{
+            currentRunningFocusModeName = currentRunningFocusType["name"] as? String ?? ""
+        }
+        
         if isAppBlocking{
             var blockTitle = titleText.replacingOccurrences(of: "<URL>", with: blockedAppName)
-            blockTitle = blockTitle.replacingOccurrences(of: "<FOCUSTYPE>", with: appdelegate!.currentRunningFocusModeName)
+            blockTitle = blockTitle.replacingOccurrences(of: "<FOCUSTYPE>", with: currentRunningFocusModeName)
             if !whatToAchieveInFocusBlock.isEmpty{
                 lblTitle.stringValue = blockTitle + "\n\n" + intentionText.replacingOccurrences(of: "<INTENTION>", with: whatToAchieveInFocusBlock)//"Your intension was \"\(whatToAchieveInFocusBlock)\""//
             }else{
@@ -68,7 +83,7 @@ class popUpBlockConfirmVc: NSViewController {
             
         }else{
             var blockTitle = titleText.replacingOccurrences(of: "<URL>", with: url)
-            blockTitle = blockTitle.replacingOccurrences(of: "<FOCUSTYPE>", with: appdelegate!.currentRunningFocusModeName)
+            blockTitle = blockTitle.replacingOccurrences(of: "<FOCUSTYPE>", with: currentRunningFocusModeName)
             if !whatToAchieveInFocusBlock.isEmpty{
                 lblTitle.stringValue = blockTitle + "\n\n" + intentionText.replacingOccurrences(of: "<INTENTION>", with: whatToAchieveInFocusBlock)//
             }else{
@@ -160,41 +175,53 @@ class popUpBlockConfirmVc: NSViewController {
         allApiObject.capturePosthog(event: "block-popup-edit-settings-clicked", metadata: [:])
         addLog(text: "btn Edit FocusMode Clicked from menu")
         closeWindow()
-        for i in 0..<arrFocusType.count{
-            let dic = arrFocusType[i]
-            if dic["isOn"] as? Bool == true{
-                var shouldShowPassword = true
-                if preferencesWindowControllerObj?.window?.isVisible ?? false{
-                    if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-                        tabview.selectedTabViewItemIndex = 1
-                        addLog(text: "")
-                    }
-                    shouldShowPassword = false
-                }else{
-                    preferencesWindowControllerObj?.showWindow(self)
+        var focusModeIndex = 0
+        if isAnyAllowedFocusModeActivityRunning{
+            for i in 0..<arrFocusType.count{
+                let dic = arrFocusType[i]
+                if dic["id"] as? String ?? ""  == currentRunningFocusType["id"] as? String ?? ""{
+                    focusModeIndex = i
+                    break;
                 }
-                addLog(text: "Showing preferences")
-                if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-                    tabview.selectedTabViewItemIndex = 1
-                    if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil && shouldShowPassword{
-                        tabview.view.addSubview(Focus_Bear.enterPasswordVcObj!.view)
-                        tabview.view.addConstraints(subView: Focus_Bear.enterPasswordVcObj!.view)
-                        Focus_Bear.enterPasswordVcObj?.parentVc = nil
-                        addLog(text: "Showing enter password view")
-                    }
+            }
+        }else{
+            for i in 0..<arrFocusType.count{
+                let dic = arrFocusType[i]
+                if dic["isOn"] as? Bool == true{
+                    focusModeIndex = i
+                    break;
                 }
-                
-                DispatchQueue.global().async {
-                    DispatchQueue.main.async {
-                        focusPreferencesVcObj?.tblViewFocusType.selectRowIndexes(IndexSet(integer: i), byExtendingSelection: false)
-                        focusPreferencesVcObj?.tblViewFocusType.scrollRowToVisible(i)
-                    }
-                }
-                
-                break;
             }
         }
         
+        
+        var shouldShowPassword = true
+        if preferencesWindowControllerObj?.window?.isVisible ?? false{
+            if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
+                tabview.selectedTabViewItemIndex = 1
+                addLog(text: "")
+            }
+            shouldShowPassword = false
+        }else{
+            preferencesWindowControllerObj?.showWindow(self)
+        }
+        addLog(text: "Showing preferences")
+        if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
+            tabview.selectedTabViewItemIndex = 1
+            if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil && shouldShowPassword{
+                tabview.view.addSubview(Focus_Bear.enterPasswordVcObj!.view)
+                tabview.view.addConstraints(subView: Focus_Bear.enterPasswordVcObj!.view)
+                Focus_Bear.enterPasswordVcObj?.parentVc = nil
+                addLog(text: "Showing enter password view")
+            }
+        }
+        
+        DispatchQueue.global().async {
+            DispatchQueue.main.async {
+                focusPreferencesVcObj?.tblViewFocusType.selectRowIndexes(IndexSet(integer: focusModeIndex), byExtendingSelection: false)
+                focusPreferencesVcObj?.tblViewFocusType.scrollRowToVisible(focusModeIndex)
+            }
+        }
     }
     @IBAction func btnBlockAppClicked(_ sender: Any) {
         allApiObject.capturePosthog(event: "block-popup-no-i-was-getting-distracted-clicked", metadata: [:])
@@ -210,9 +237,9 @@ class popUpBlockConfirmVc: NSViewController {
     @IBAction func btnAllowAppClicked(_ sender: Any) {
         allApiObject.capturePosthog(event: "block-popup-yes-just-this-time-clicked", metadata: [:])
         if self.currentApp != nil && isAppBlocking{
-            appdelegate!.arrAllowedAppsInCuddlyModeCurrentFocus.append(currentApp!)
+            arrAllowedAppsInCuddlyModeCurrentFocus.append(currentApp!)
         }else{
-            appdelegate!.arrAllowedUrlsInCuddlyModeCurrentFocus.append(url)
+            arrAllowedUrlsInCuddlyModeCurrentFocus.append(url)
         }
         self.timer?.invalidate()
         self.view.window?.close()

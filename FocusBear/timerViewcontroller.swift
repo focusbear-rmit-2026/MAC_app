@@ -139,35 +139,83 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         }
     }
     func  checkActivityExtraAllowedAppsAndUrls(allowedFocusMode:String){
-        activityAllowedFocusApps.removeAll()
-        activityAllowedFocusUrls.removeAll()
+        //        activityAllowedFocusApps.removeAll()
+        //        activityAllowedFocusUrls.removeAll()
+        //                activityAllowedFocusMode = nil
+        isAnyAllowedFocusModeActivityRunning = false
         
+        arrBlockedAppsInCuddlyModeCurrentFocus.removeAll()
+        arrAllowedAppsInCuddlyModeCurrentFocus.removeAll()
+        arrAllowedUrlsInCuddlyModeCurrentFocus.removeAll()
+        arrBlockedUrlsInCuddlyModeCurrentFocus.removeAll()
         
         if !allowedFocusMode.isEmpty{
             let filterArr = arrFocusType.filter { $0["id"] as? String == allowedFocusMode}
-            if filterArr.count != 0{
+            if filterArr.count != 0{ //if activity has focus mode and and any focus mode is running then silently terminate focus mode
+                isAnyAllowedFocusModeActivityRunning = true
+                whatToAchieveInFocusBlock = ""
                 if let dic = filterArr.first{
-                    let allowAppsPath = dic["allowed_apps"] as? [String] ?? []
-                    print(allowAppsPath)
-                    for path in allowAppsPath{
-                        let url = URL(fileURLWithPath: path)
-                        activityAllowedFocusApps.append(url.deletingPathExtension().lastPathComponent)
-                    }
-                    activityAllowedFocusUrls = dic["allowed_urls"] as? [String] ?? []
+                    currentRunningFocusType = dic
+//                    let allowAppsPath = dic["allowed_apps"] as? [String] ?? []
+//                    print(allowAppsPath)
+//                    for path in allowAppsPath{
+//                        let url = URL(fileURLWithPath: path)
+//                        activityAllowedFocusApps.append(url.deletingPathExtension().lastPathComponent)
+//                    }
+//                    activityAllowedFocusUrls = dic["allowed_urls"] as? [String] ?? []
+                    
+                    
+//                    var isAllowedAllAppsInFocus:Bool = false
+//                    var isAllowedAllUrlsInFocus:Bool = false
+//                    var isBlockedAllUrlsInFocus:Bool = false
+//                    var isAllowedListApproachInFocus:Bool = false
+//                    var arrAllowedUrlsForFocus:[String] = []
+//                    var arrBlockedUrlsForFocus:[String] = []
+//                    var allowAppsPath:[String] = []
+//
+//                    if dic["isAllowedAllUrls"] as? Bool == true{
+//                        isAllowedAllUrlsInFocus = true
+//                    }
+//                    if dic["isBlockedAllUrls"] as? Bool == true{
+//                        isBlockedAllUrlsInFocus = true
+//                    }
+//                    if dic["isAllowedListApproach"] as? Bool == true{
+//                        isAllowedListApproachInFocus = true
+//                    }else{
+//                        isAllowedListApproachInFocus = false
+//                    }
+//
+//                    if dic["isAllowedAllApps"] as? Bool == true{
+//                        isAllowedAllAppsInFocus = true
+//                    }
+//                    allowAppsPath = dic["allowed_apps"] as? [String] ?? []
+//
+//
+//                    arrAllowedUrlsForFocus = dic["allowed_urls"] as? [String] ?? []
+//                    arrBlockedUrlsForFocus = dic["blockUrlsArray"] as? [String] ?? []
+                    
+
+                    
+                    
+//                    activityAllowedFocusMode = activityFocusMode(isAllowedAllAppsInFocus: isAllowedAllAppsInFocus, isAllowedAllUrlsInFocus: isAllowedAllUrlsInFocus, isBlockedAllUrlsInFocus: isBlockedAllUrlsInFocus, isAllowedListApproachInFocus: isAllowedListApproachInFocus, arrAllowedUrlsForFocus: arrAllowedUrlsForFocus, arrBlockedUrlsForFocus: arrBlockedUrlsForFocus, allowAppsPath:allowAppsPath)
                 }
                 
             }
         }
-        
+       
     }
+    
     
     func startTimerHabit(durationSeconds:Int, url:String?, name:String,currentHabit: habit, currentTimerValue:Int) {
         UserDefaults.standard.set(Date(), forKey: kUserdefaultsLastHabitsStartedDate)
-        
+        isAnyAllowedFocusModeActivityRunning = false
         if !(mainViewControllerObj?.isBreakActivityPostponeInsideAllowedHabit ?? false){
             mainViewControllerObj?.stopActivityTimer()
         }
-        
+        if isFocusModeOn(){
+            addLog(text: "Activity start:- Focus Mode Finished")
+            appdelegate?.focusModeFinished(isSilent: true)
+        }
         isLastActivityStoppedInRunningState = false
         lastActivityRunningId = ""
         lastActivityStoppedTimerCount = 0
@@ -199,7 +247,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             appdelegate?.startTimerActivitiesAllowedApp(shouldLaunchAppAndUrl: shouldLaunchAppAndUrl)
             hideBlankWindowInSecondaryMonitor()
         }else{
-            if activityAllowedFocusApps.count != 0{
+            if isAnyAllowedFocusModeActivityRunning{//if activityAllowedFocusApps.count != 0{
                 currentHabitPlaying = currentHabit
                 showSmallTimerWindow(durationSeconds: durationSeconds, msg: getDoSomeActivityText(activityName: name), isFocusBreak: false, currentTimerValue:currentTimerValue)
                 mainWindowControllerObj?.window?.setIsVisible(false)
@@ -265,7 +313,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                             hideBlankWindowInSecondaryMonitor()
                             getsmallCountDownVcObject().resumeTimerHabit(durationSeconds: durationSeconds)
                         }else{
-                            if activityAllowedFocusApps.count != 0{
+                            if isAnyAllowedFocusModeActivityRunning{//activityAllowedFocusApps.count != 0{
                                 currentHabitPlaying = currentHabitPlaying!
                                 mainWindowControllerObj?.window?.setIsVisible(false)
                                 appdelegate?.startTimerActivitiesAllowedApp(shouldLaunchAppAndUrl: false)
@@ -346,6 +394,12 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         //lastActivityRunningId = ""
         //lastActivityStoppedTimerCount = 0
         
+        if isFocusModeOn(){
+            addLog(text: "Activity start:- Focus Mode Finished")
+            appdelegate?.focusModeFinished(isSilent: true)
+        }
+        
+        isAnyAllowedFocusModeActivityRunning = false
         btnSkipHabit.isHidden = true
         isActivityPaused = false
         self.btnPause.image = pauseIcon
@@ -374,7 +428,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             hideBlankWindowInSecondaryMonitor()
             showSmallTimerWindow(durationSeconds: durationInSeconds, msg: getDoSomeActivityText(activityName: name), isFocusBreak: false, currentTimerValue:0)
         }else{
-            if activityAllowedFocusApps.count != 0{
+            if isAnyAllowedFocusModeActivityRunning{//if activityAllowedFocusApps.count != 0{
                 currentActivityPlaying = currentActivity
                 mainWindowControllerObj?.window?.setIsVisible(false)
                 appdelegate?.startTimerActivitiesAllowedApp(shouldLaunchAppAndUrl: true)

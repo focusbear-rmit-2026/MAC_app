@@ -175,7 +175,7 @@ class abortingFocusModeVc: NSViewController {
             appdelegate?.focusModeAborted()
         }else if popUpBtnAbortReasons.indexOfSelectedItem == 0{
             reason = "I achieved what I wanted to too early."
-            appdelegate?.focusModeFinished(fromShutOff: false)
+            appdelegate?.focusModeFinished(isSilent: false)
         }else if popUpBtnAbortReasons.indexOfSelectedItem == 1{
             reason = "I have an emergency"
             appdelegate?.focusModeAborted()

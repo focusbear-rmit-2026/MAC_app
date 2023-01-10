@@ -90,8 +90,18 @@ class preferencesTabViewController: NSTabViewController {
     override func tabView(_ tabView: NSTabView, didSelect tabViewItem: NSTabViewItem?) {
         print("tab view selection change")
         print(self.selectedTabViewItemIndex)
-        if self.selectedTabViewItemIndex == 2{
+        let id = tabViewItem?.identifier as? String ?? ""
+        if id == "EditHabits"{
             selectJsonVcObj?.setData()
+        }else if id == "Password"{// ask password for password tab when PasswordRequireInChangeSettings is false
+            if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
+                if !SettingsManagerObject.isPasswordRequireInChangeSettings{
+                    self.view.addSubview(enterPasswordVcObj!.view)
+                    self.view.addConstraints(subView: enterPasswordVcObj!.view)
+                    enterPasswordVcObj?.parentVc = nil
+                    addLog(text: "Showing enter password view inside preferences")
+                }
+            }
         }
     }
     

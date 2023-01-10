@@ -9,6 +9,7 @@ import Cocoa
 
 class pomodoroVc: NSViewController {
 
+    @IBOutlet weak var lblTimerUnfocused: NSTextField!
     @IBOutlet weak var checkBoxSkipMicrobreaks: NSButton!
     @IBOutlet weak var lblCompletedPomodoroCount: NSTextField!
     @IBOutlet weak var lblMinutesBreakDuration: NSTextField!
@@ -38,6 +39,8 @@ class pomodoroVc: NSViewController {
     var workDurationZeroErrorText = "Work Duration can not be 0."
     var breakDurationEmptyErrorText = "Break Duration can not be empty."
     var breakDurationZeroErrorText = "Break Duration can not be 0."
+    
+    var timerText = "Time spend unfocused: <TIME>"
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -109,6 +112,7 @@ class pomodoroVc: NSViewController {
                 self.chooseTheFocusModeText = chooseTheFocusModeText
             }
             checkBoxSkipMicrobreaks.title = pomodoroInfo.value(forKey: "buttonSkipMicrobreaksText") as? String ?? checkBoxSkipMicrobreaks.title
+            timerText = pomodoroInfo.value(forKey: "timerText") as? String ?? timerText
         }
         
 //        questionFirstText = questionFirstText.replacingOccurrences(of: "25", with: "\(minute)")
@@ -139,6 +143,7 @@ class pomodoroVc: NSViewController {
 
         if isShowingMorningHardcorePomodoro{
             
+            lblTimerUnfocused.isHidden = true
             if let count = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHardcorePomodoroFocusedCount) as? Int{
                 popupBtnSelectPomodoroCount.selectItem(withTitle: "\(count)")
             }else{
@@ -182,6 +187,7 @@ class pomodoroVc: NSViewController {
                 textFieldBreakDuration.stringValue = "\(duration)"
             }
         }else if isHardCorePomodoroModeOn{
+            lblTimerUnfocused.isHidden = true
             btnLetsDoIt.isEnabled = true
             btnCheckBoxHardcodePomodoro.isEnabled = false
             popUpBtnFocusType.selectItem(withTitle: hardcodePmodoroFocusModeName)
@@ -211,6 +217,8 @@ class pomodoroVc: NSViewController {
             lblCompletedPomodoroCount.stringValue = completedPomodoroCountText//"You have completed \(completedPomodoroCountInHardcorePomodoro) of \(totalPomodoroCountInHardCorePomodoro) pomodoros. \(remainingPomodoroCount) more to go."//
             
         }else{
+            lblTimerUnfocused.isHidden = false
+            startTimer()
             textFieldWorkDuration.isEnabled = true
             textFieldBreakDuration.isEnabled = true
             btnCheckBoxHardcodePomodoro.state = .off
@@ -517,6 +525,72 @@ class pomodoroVc: NSViewController {
         print("password Correct")
         isHardCorePomodoroModeOn = false
         self.view.window?.close()
+    }
+    override func viewWillDisappear() {
+        timer?.invalidate()
+        timer = nil
+    }
+    var timer:Timer?
+    var currentTimer = 0
+    func startTimer() {
+        if timer != nil{
+            timer?.invalidate()
+            timer = nil
+        }
+
+        currentTimer = unfocusedTime
+        let (h,m,s) = secondsToHoursMinutesSeconds(seconds: currentTimer)
+        var hour = "\(h)"
+        var minute = "\(m)"
+        var second = "\(s)"
+        
+        if hour.count == 1 {
+            hour = "0\(h)"
+        }
+        if minute.count == 1 {
+            minute = "0\(m)"
+        }
+        if second.count == 1 {
+            second = "0\(s)"
+        }
+//        if h == 0{
+//            self.lblTimer.stringValue = "\(minute):\(second)"Time spend unfocused 00:00:00
+//        }else{
+        self.lblTimerUnfocused.stringValue = timerText.replacingOccurrences(of: "<TIME>", with: "\(hour):\(minute):\(second)")//"Time spend unfocused: \(hour):\(minute):\(second)"//
+//        }
+        
+        DispatchQueue.main.async {
+            self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
+            RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
+        }
+    }
+    func setProgres(){
+        let remainingSeconds = currentTimer
+        let (h,m,s) = secondsToHoursMinutesSeconds(seconds: remainingSeconds)
+        var hour = "\(h)"
+        var minute = "\(m)"
+        var second = "\(s)"
+
+        if hour.count == 1 {
+            hour = "0\(h)"
+        }
+        
+        if minute.count == 1 {
+            minute = "0\(m)"
+        }
+        if second.count == 1 {
+            second = "0\(s)"
+        }
+        
+        DispatchQueue.main.async {
+            self.lblTimerUnfocused.stringValue = self.timerText.replacingOccurrences(of: "<TIME>", with: "\(hour):\(minute):\(second)")//"Time spend unfocused: \(hour):\(minute):\(second)"//
+        }
+    }
+    @objc func performTimerCount() {
+        if !appdelegate!.isSystemSleep && !appdelegate!.isScreenSaverStart && currentState != ._ACTIVITY_{
+            currentTimer += 1
+        }
+        setProgres()
     }
     
 }

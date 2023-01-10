@@ -141,8 +141,7 @@ class focusTipsVc: NSViewController {
     @IBAction func btnGotItClicked(_ sender: Any) {
         if currentSlideIndex == arrCurrentDic.count - 1{
             addLog(text:"focusTipsVc:- btn GotIt Clicked")
-            self.view.window?.close()
-            showOnboardingVideoWindow()
+            preloadFocusModesWindowControllerObj!.contentViewController = getHowHeardVcObj()
         }else{
             addLog(text:"focusTipsVc:- btn Next Clicked")
             currentSlideIndex += 1

@@ -6,7 +6,7 @@
         "introActivities": [
             { "name": "Mindful Breathing", "duration_seconds": 30, "video_urls": ["https://www.youtube.com/watch?v=CUre1WgjIyU"] }
         ],
-        "welcomeVideoUrl": "https://www.youtube.com/watch?v=TvfNJ1AaT9M",
+        "welcomeVideoUrl": "https://www.youtube.com/watch?v=BSdz7Tdesbs",
         "welcomeMessageOnlyBreakIntro": "Throughout the day, I'll remind you to take regular breaks to keep your mind sharp and your body flexible. Here's an example of a break activity: 30 seconds of deep breathing."
     },
     "activityInfo":{
@@ -18,7 +18,7 @@
         "startBreakActivityTitleText":"It’s time for a break. Do <TIME> of <ACTIVITY> to earn more screentime.",
         "doSomeActivityText":"<ACTIVITY>",
         "beforeYouStartText":"Before you start, take a few moments to reflect on why you want to do these habits. Then visualise yourself beginning the habit sequence. Mentally walk through any of the habits that are going to be harder. This process will help reduce \"limbic friction\", i.e. prime your brain to do the habits no matter what, even if you don't have the app available.",
-        "beforeYouBeginText":"Before you begin, take 30 seconds to visualise yourself performing each of the habits. This sounds kooky but research indicates that doing a mental rehearsal like this increases the likelihood of you completing the habits and makes the habits more sticky so that even if you don't have access to your computer/this app, you'll still do all the habits",
+        "beforeYouBeginText":"Before you begin, take 30 seconds to visualise yourself performing each of the habits. This sounds kooky but research indicates that doing a mental rehearsal like this increases the likelihood of you completing the habits and makes the habits more sticky so that even if you don't have access to your computer/this app, you'll still do all the habits.",
         "habitsProgressText":"You have completed <duration> of habits - <totalduration> to go. You can do it!",
         "habitsCompleteText":"You have completed <duration> of habits.",
         "whatComesNextButtonText":"What comes next?",
@@ -113,7 +113,7 @@
         "abortingTitle":"Cancelling..",
         "abortingCountDownInfo":{
             "subTitle":"Are you sure you want to give up on your habits? Please take 10 seconds to reflect on whether you are serious about cancelling.",
-            "message":"While you wait, reflect on why you’re doing this. If it was because your morning routine was too ambitious, perhaps scale it back to only be a few minutes long so that it’s easier to do it than not do it. If you’re cancelling because the app is broken, really sorry!!",
+            "message":"While you wait, reflect on why you’re doing this. If it was because your morning routine was too ambitious, perhaps scale it back to only be a few minutes long so that it’s easier to do it than not do it. If you’re cancelling because the app is broken, we're really sorry and would appreciate your feedback.",
             "pleaseEmailText":"Please email",
             "buttonAbortCancelText":"I didn’t mean it. Let me do my habits!"
         },
@@ -141,7 +141,7 @@
                 "startSmallInfo":{
                     "subTitle":"Starting small..",
                     "activityResetText":"We’ve reset your habits and break activities for you. They’re now each only 30 seconds long which should make it more manageable.",
-                    "activityRemovedText":"We removed a few activities so that the total morning routine is 5 minutes long",
+                    "activityRemovedText":"We removed a few activities so that the total morning routine is 5 minutes long.",
                     "changeSettingsText":"You can alter your settings later from the top toolbar icon <icon>",
                     "shareFeedbackText":"Can you share some feedback about why your habits were too hard?﹡",
                     "buttonTitle":"Start shortened routine"
@@ -161,11 +161,11 @@
                 "description":"Can you tell us why you want to stop getting habit + break notifications?﹡",
                 "emailTitle":"Your Email (if you want us to reply):",
                 "buttonDeactivateText":"Deactivate routine + breaks"
-            },
+            }
         },
         "abortDoneInfo":{
             "title":"Deactivated",
-            "subTitle":"You’ve successfully deactivated Focus Bear. The app won’t show habit prompts until you activate it again from the menu icon. If you deactivated it because of a problem with the app, please email"
+            "subTitle":"You’ve successfully deactivated Focus Bear. The app won’t show habit prompts until you activate it again from the menu icon. If you deactivated it because of a problem with the app, please email us your feedback."
         }
     },
     "quitInfo":{
@@ -285,7 +285,9 @@
         "toolTipOfficeMode":"When you're working from the office, I will only give you appropriate break activities (e.g. chair stretches rather than pushups).",
         "toolTipWfhMode":"No-one's around! You can do break activities that are a bit more fun (e.g. Dance like no-one's watching).",
         "menuItemToolsTitle":"Tools >",
-        "menuItemOpenToolboxTitle":"Open Toolbox"
+        "menuItemOpenToolboxTitle":"Open Toolbox",
+        "menuItemMeetingDetectionTitle":"Meeting active - breaks off",
+        "menuItemResumeHabitsTitle":"Resume Habits"
     },
     "preferencesInfo":{
         "titlePomodoro":"Pomodoro Mode:",
@@ -389,8 +391,9 @@
         "titleBlockedSelectedUrls":"Block selected urls (works with Safari and Chrome only)",
         "titleAllowUrlListApproch":"Block everything except safe sites that I choose",
         "titleBlockUrlListApproch":"Allow everything except certain distracting sites",
-        "allowUrlsQuestionText":"How do you want to allow URLs?",
-        "blockUrlsQuestionText":"How do you want to block URLs?"
+        "allowUrlsQuestionText":"Which URLs do you want to allow?",
+        "blockUrlsQuestionText":"Which URLs do you want to block?",
+        "enterMultiUrlText":"Enter single or multiple urls(one in each line)"
     },
     "focusPreferencesAdvancedInfo":{
         "runScriptBeforeText":"Run apple script before starting focus mode.",
@@ -418,7 +421,9 @@
             "questionText":"What do you plan to achieve during this focus block?",
             "onlyAllowSelectedAppText":"You'll only be able to use <APP>",
             "onlyAllowSelectedAppAndUrlText":"You'll only be able to use \"<URL>\" in <APP>",
-            "explanationText":"Setting an intention for the focus block helps prime your brain to accomplish that task. To edit the intention after starting the focus mode, click Brain Dump in the menu bar."
+            "explanationText":"Setting an intention for the focus block helps prime your brain to accomplish that task. To edit the intention after starting the focus mode, click Brain Dump in the menu bar.",
+            "buttonStopFocusText":"Stop current focus mode and start this one",
+            "activityRunningCantStartFocusText":"You can not start a focus mode while an activity is running."
         },
         "abortingFocusModeInfo":{
             "title":"Deactivating Focus Block - <FOCUSTYPE>",
@@ -469,7 +474,8 @@
             "buttonFalseDetectionText":"False positive: I'm not in a meeting",
             "titleFalseDetection":"Sorry about that. Are you sure you're not using an app that is using your microphone? If we keep getting it wrong, click button below to disable meeting detection.",
             "buttonDisableText":"Disable meeting detection",
-            "buttonGotItText":"Got it"
+            "buttonGotItText":"Got it",
+            "buttonCheckBoxText":"Don't show this again when I join meetings"
         }
     },
     "pomodoroInfo":{
@@ -477,13 +483,14 @@
         "questionFirstText":"What do you want to achieve in this pomodoro session?",
         "questionSecondText":"Which focus mode do you want to use?",
         "buttonEditFocusModeText":"Edit focus modes",
-        "buttonLetsDoItText":"Let's do it",
+        "buttonLetsDoItText":"Start Session",
         "buttonHardcorePomodoroText":"Use super pomodoro mode (lock in the focus mode for multiple pomodoros)",
         "howManyPomodoroText":"How many pomodoros you want to focus for:",
         "chooseTheFocusModeText":"Choose the focus mode and duration - you won't be able to change the focus mode until the time is up (you still get to use any app/website during the 5 minute break)",
         "alertWarningPaswwordSetText":"To make super pomodoro mode more effective, we recommend setting a password in Preferences (ask someone else to do it for you) otherwise you'll still be able to cancel the focus modes before the time is up.",
         "completedPomodoroCountText": "You have completed <COMPLETED_POMODORO> of <TOTAL_POMODORO> pomodoros. <REMAINING_POMODORO> more to go.",
-        "buttonSkipMicrobreaksText": "Skip microbreaks during work blocks?"
+        "buttonSkipMicrobreaksText": "Skip microbreaks during work blocks?",
+        "timerText":"Time spend unfocused: <TIME>"
     },
     "logQuantityInfo":{
         "title":"Log Quantity of activity",
@@ -563,7 +570,7 @@
         "buttonContinueText":"Continue",
         "workText":"Work",
         "placeholderWorkText":"Rocket Surgery",
-        "gotItText":"Got it. Let's set up a Focus Mode to help you be super productive while you're doing <WORK_TYPE> work."
+        "gotItText":"Got it. Let's set up a Focus Mode to help you be super productive while you're doing <WORK_TYPE>."
     },
     "pomodoroPreferencesAdvancedInfo":{
         "checkBoxUseHardcorePomodoroText":"Use super pomodoro mode",
@@ -647,7 +654,7 @@
         "descriptionSecondText": "You won't be able to use other apps during the onboarding. Do you have time now or shall we do it a bit later?",
         "buttonLaterText":"A bit later please",
         "buttonLetsDoItText": "Let's do it",
-        "allRightsReservedText": "© 2022 Focus Bear All Rights Reserved.",
+        "allRightsReservedText": "© 2022-2023 Focus Bear All Rights Reserved.",
         "confirmText": "Just want to double check you are ok to focus 100% on onboarding for the next 2 minutes. The next step is full screen - you won't be able to use any other apps during this time.",
         "buttonConfirmLetsDoItText": "You have my full attention",
         "buttonNeedMoreTimeText": "Uhh I need a few more minutes"
@@ -707,7 +714,7 @@
     "breakWarningVcInfo": {
         "title": "Your Break starts in",
         "buttonPostponeText": "Postpone for 5 minutes",
-        "postponeConfirmText": "You postponed the last break - are you sure you can't make time for The break now?",
+        "postponeConfirmText": "You postponed the last break - are you sure you can't make time for the break now?",
         "buttonTakeBreakText": "Argh ok I'll take a break!"
     },
     "askAppWorkVcInfo": {
@@ -772,11 +779,11 @@
     "preloadFocusModeAppsVcInfo": {
         "buttonDoneText": "Done",
         "titleForApps": "What apps do you normally use while you're doing <WORK_TYPE>?",
-        "descriptionApps": "Don't worry you can still use other apps if you need to but these are the apps that are most likely to be productive for you while you're working on <WORK_TYPE>. You can change these settings later on.",
+        "descriptionApps": "Don't worry you can still use other apps if you need to but these are the apps that are most likely to be productive for you while you're doing <WORK_TYPE>. You can change these settings later on.",
         "subTitleForApps": "Add the apps you plan to use:",
         "titleForUrls": "How about websites?",
-        "descriptionUrls": "Don't worry you can still use other websites if you need to but these are the sites that are most likely to be productive for you while you're working on <WORK_TYPE>. You can change these settings later on.",
-        "subTitleForUrls": "Add the websites you plan to use:",
+        "descriptionUrls": "Don't worry you can still use other websites if you need to but these are the sites that are most likely to be productive for you while you're doing <WORK_TYPE>. You can change these settings later on.",
+        "subTitleForUrls": "Add the websites you plan to use:"
     },
     "focusTipsVcInfo": {
         "title": "All set up!",
@@ -791,6 +798,14 @@
         "buttonBackText":"Back",
         "buttonNextText":"Next",
         "buttonGotItText":"Onwards"
+    },
+    "howHeardVcInfo": {
+        "title": "How did you hear about Focus Bear?",
+        "buttonContinueText":"Continue",
+        "optionFirstText":"Friend recommended it",
+        "optionSecondText":"Google",
+        "optionThirdText":"Ad on Reddit or Twitter",
+        "optionFourthText":"Somewhere else"
     }
     
 }

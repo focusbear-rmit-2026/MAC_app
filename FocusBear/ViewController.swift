@@ -59,13 +59,13 @@ class ViewController: NSViewController {
 
         }else if curreentDate < startDate{ //  iska mtlb 1 se 10 k bich ka time
 //
-        }else{// not shutoff time
-            currentState = ._NOTHING_//todo uncomment
+        }else{// not shutoff time//
+            currentState = ._NOTHING_
             if mainWindowControllerObj?.window?.isVisible ?? false{
-                self.view.window?.close()//todo uncomment
+                self.view.window?.close()
                 hideBlankWindowInSecondaryMonitor()
             }
-            return;//todo uncomment
+            return;
         }
         allActivityTodaySummaryData = nil
         currentState = ._FOCUS_SUMMARY_
@@ -166,6 +166,9 @@ class ViewController: NSViewController {
             }
         }
         if currentState == ._MORNING_HABIT_{
+            
+            refreshLastPostponeCount()
+            
             if SettingsManagerObject.isEasySkipEnabled{
                 mainWindowControllerObj?.window?.setIsVisible(false)
                 hideBlankWindowInSecondaryMonitor()
@@ -179,8 +182,16 @@ class ViewController: NSViewController {
                         }
                     }
                 }
-                if currentHabitPlaying != nil{
-                    currentHabitPlaying = nil// beacuse there is ono easy postpone cancel
+                if currentHabitPlaying != nil{//todo baki sab bhi nil karna h kya  or timer rokna h kya
+                    isAnyAllowedFocusModeActivityRunning = false
+                    currentHabitPlaying = nil// beacuse there is no easy postpone cancel
+                    closePupUpBlockIfVisible()
+                    
+                    arrBlockedAppsInCuddlyModeCurrentFocus.removeAll()
+                    arrAllowedAppsInCuddlyModeCurrentFocus.removeAll()
+                    arrAllowedUrlsInCuddlyModeCurrentFocus.removeAll()
+                    arrBlockedUrlsInCuddlyModeCurrentFocus.removeAll()
+                    
                     if smallCountDownWcObj != nil{// close timer window is easy postpone because there is no come back from easy postpone view
                         if smallCountDownWcObj?.window != nil{
                             if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
@@ -211,6 +222,8 @@ class ViewController: NSViewController {
             }
             
         }else if currentState == ._EVENING_HABIT_{
+            refreshLastPostponeCount()
+            
             if SettingsManagerObject.isEasySkipEnabled{
                 mainWindowControllerObj?.window?.setIsVisible(false)
                 hideBlankWindowInSecondaryMonitor()
@@ -225,7 +238,15 @@ class ViewController: NSViewController {
                     }
                 }
                 if currentHabitPlaying != nil{
+                    isAnyAllowedFocusModeActivityRunning = false
                     currentHabitPlaying = nil// beacuse there is ono easy postpone cancel
+                    closePupUpBlockIfVisible()
+                    
+                    arrBlockedAppsInCuddlyModeCurrentFocus.removeAll()
+                    arrAllowedAppsInCuddlyModeCurrentFocus.removeAll()
+                    arrAllowedUrlsInCuddlyModeCurrentFocus.removeAll()
+                    arrBlockedUrlsInCuddlyModeCurrentFocus.removeAll()
+                    
                     if smallCountDownWcObj != nil{// close timer window is easy postpone because there is no come back from easy postpone view
                         if smallCountDownWcObj?.window != nil{
                             if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
@@ -261,7 +282,15 @@ class ViewController: NSViewController {
                     hideBlankWindowInSecondaryMonitor()
                     showEasyPostponeWindow()
                     if currentActivityPlaying != nil{
+                        isAnyAllowedFocusModeActivityRunning = false
                         currentActivityPlaying = nil// beacuse there is ono easy postpone cancel
+                        closePupUpBlockIfVisible()
+                        
+                        arrBlockedAppsInCuddlyModeCurrentFocus.removeAll()
+                        arrAllowedAppsInCuddlyModeCurrentFocus.removeAll()
+                        arrAllowedUrlsInCuddlyModeCurrentFocus.removeAll()
+                        arrBlockedUrlsInCuddlyModeCurrentFocus.removeAll()
+                        
                         if smallCountDownWcObj != nil{// close timer window is easy postpone because there is no come back from easy postpone view
                             if smallCountDownWcObj?.window != nil{
                                 if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
@@ -271,9 +300,7 @@ class ViewController: NSViewController {
                         }
                     }
                 }else{
-                    mainWindowControllerObj?.window?.setIsVisible(false)
-                    hideBlankWindowInSecondaryMonitor()
-                    setActivityTimer()
+                    postponeBreakActivitiesFor(minutes: breakAfterMinutes)
                 }
             }else{
                 if currentAction == ._START_{// start state sirf first activity ki start mi hi hoti h fir  second activity ki start mai "end state hoti hai "
@@ -591,9 +618,31 @@ class ViewController: NSViewController {
         }
         UserDefaults.standard.set(Date(), forKey: kUserdefaultsLastHabitsStartedDate)
         UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitID)
+        
+        var lastSavedActivityTime = Date()
+        var lastSavedActivityProgress = 0
+        var lastSavedActivityId = ""
+        
+        if let infoDic = UserDefaults.standard.object(forKey: kUserdefaultsLastHabitRunningInfo) as? [String:Any]{
+            
+            if let id =  infoDic["id"] as? String{
+                lastSavedActivityId = id
+            }
+            if let duration =  infoDic["duration"] as? Int{
+                lastSavedActivityProgress = duration
+            }
+            if let date =  infoDic["date"] as? Date{
+                lastSavedActivityTime = date
+            }else{
+                lastSavedActivityId = ""
+                lastSavedActivityProgress = 0
+            }
+        }
+        let shutOffdate = Calendar.current.date(bySettingHour: shutOffTime!.hour, minute: shutOffTime!.minute, second: shutOffTime!.second, of: Date())!
+        
         if isLastActivityStoppedInRunningState && lastActivityRunningId == arrAllEveningHabits[0].id{
             isLastActivityStoppedInRunningState = false
-            addLog(text:"func showAllEveningHabits:- Activity Postpone In Running State:- start direct in running state")
+            addLog(text:"func showAllEveningHabits:- Activity Postpone In Running State:- start direct \(arrAllEveningHabits[0].name ?? "") in running state")
             removeSubViews()
             btnAbort.isHidden = false
             
@@ -604,6 +653,22 @@ class ViewController: NSViewController {
             currentState = ._EVENING_HABIT_
             currentAction = ._INPROGRESS_
             timerViewcontrollerObj?.startTimerHabit(durationSeconds: arrAllEveningHabits[currentHabitIndex].durationSeconds, url: arrAllEveningHabits[currentHabitIndex].urlsArray.randomElement(), name: arrAllEveningHabits[currentHabitIndex].name!, currentHabit: arrAllEveningHabits[currentHabitIndex], currentTimerValue:lastActivityStoppedTimerCount)
+        }else if lastSavedActivityTime.compare(shutOffdate) == .orderedDescending && lastSavedActivityId == arrAllEveningHabits[0].id{
+            isLastActivityStoppedInRunningState = false
+            addLog(text:"func showAllEveningHabits:- app terminate In Running State:- start direct \(arrAllEveningHabits[0].name ?? "") in running state")
+            removeSubViews()
+            btnAbort.isHidden = false
+
+            currentHabitIndex = 0
+            if lastSavedActivityProgress > arrAllEveningHabits[currentHabitIndex].durationSeconds{
+                lastSavedActivityProgress = 0
+            }
+            containerView.addSubview(timerViewcontrollerObj!.view)
+            containerView.addConstraints(subView: timerViewcontrollerObj!.view)
+            currentState = ._EVENING_HABIT_
+            currentAction = ._INPROGRESS_
+            timerViewcontrollerObj?.startTimerHabit(durationSeconds: arrAllEveningHabits[currentHabitIndex].durationSeconds, url: arrAllEveningHabits[currentHabitIndex].urlsArray.randomElement(), name: arrAllEveningHabits[currentHabitIndex].name!, currentHabit: arrAllEveningHabits[currentHabitIndex], currentTimerValue:lastSavedActivityProgress)
+            
         }else{
             addLog(text:"func showAllEveningHabits:- show All Evening Habits")
             isLastActivityStoppedInRunningState = false
@@ -653,9 +718,31 @@ class ViewController: NSViewController {
         
         UserDefaults.standard.set(Date(), forKey: kUserdefaultsLastHabitsStartedDate)
         UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitID)
+        
+        var lastSavedActivityTime = Date()
+        var lastSavedActivityProgress = 0
+        var lastSavedActivityId = ""
+        
+        if let infoDic = UserDefaults.standard.object(forKey: kUserdefaultsLastHabitRunningInfo) as? [String:Any]{
+            
+            if let id =  infoDic["id"] as? String{
+                lastSavedActivityId = id
+            }
+            if let duration =  infoDic["duration"] as? Int{
+                lastSavedActivityProgress = duration
+            }
+            if let date =  infoDic["date"] as? Date{
+                lastSavedActivityTime = date
+            }else{
+                lastSavedActivityId = ""
+                lastSavedActivityProgress = 0
+            }
+        }
+        let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
+        
         if isLastActivityStoppedInRunningState && lastActivityRunningId == arrAllMorningHabits[0].id{
             isLastActivityStoppedInRunningState = false
-            addLog(text:"func showAllMorningHabits:- Activity Postpone In Running State:- start direct in running state")
+            addLog(text:"func showAllMorningHabits:- Activity Postpone In Running State:- start direct \(arrAllMorningHabits[0].name ?? "") in running state")
             removeSubViews()
             btnAbort.isHidden = false
             
@@ -666,6 +753,22 @@ class ViewController: NSViewController {
             currentState = ._MORNING_HABIT_
             currentAction = ._INPROGRESS_
             timerViewcontrollerObj?.startTimerHabit(durationSeconds: arrAllMorningHabits[currentHabitIndex].durationSeconds, url: arrAllMorningHabits[currentHabitIndex].urlsArray.randomElement(), name: arrAllMorningHabits[currentHabitIndex].name!, currentHabit: arrAllMorningHabits[currentHabitIndex], currentTimerValue:lastActivityStoppedTimerCount)
+            
+        }else if lastSavedActivityTime.compare(startDate) == .orderedDescending && lastSavedActivityId == arrAllMorningHabits[0].id{
+            isLastActivityStoppedInRunningState = false
+            addLog(text:"func showAllMorningHabits:- app terminate In Running State:- start direct \(arrAllMorningHabits[0].name ?? "") in running state")
+            removeSubViews()
+            btnAbort.isHidden = false
+
+            currentHabitIndex = 0
+            if lastSavedActivityProgress > arrAllMorningHabits[currentHabitIndex].durationSeconds{
+                lastSavedActivityProgress = 0
+            }
+            containerView.addSubview(timerViewcontrollerObj!.view)
+            containerView.addConstraints(subView: timerViewcontrollerObj!.view)
+            currentState = ._MORNING_HABIT_
+            currentAction = ._INPROGRESS_
+            timerViewcontrollerObj?.startTimerHabit(durationSeconds: arrAllMorningHabits[currentHabitIndex].durationSeconds, url: arrAllMorningHabits[currentHabitIndex].urlsArray.randomElement(), name: arrAllMorningHabits[currentHabitIndex].name!, currentHabit: arrAllMorningHabits[currentHabitIndex], currentTimerValue:lastSavedActivityProgress)
             
         }else{
             addLog(text:"func showAllMorningHabits:- show All Morning Habits")
@@ -754,9 +857,18 @@ class ViewController: NSViewController {
             showBlankWindowInSecondaryMonitor()
             setDocBarTo(isHide: false)
         }
-        activityAllowedFocusApps.removeAll()
-        activityAllowedFocusUrls.removeAll()
+        //        activityAllowedFocusApps.removeAll()
+        //        activityAllowedFocusUrls.removeAll()
+        //                activityAllowedFocusMode = nil
+        isAnyAllowedFocusModeActivityRunning = false
         currentHabitPlaying = nil
+        arrBlockedAppsInCuddlyModeCurrentFocus.removeAll()
+        arrAllowedAppsInCuddlyModeCurrentFocus.removeAll()
+        arrAllowedUrlsInCuddlyModeCurrentFocus.removeAll()
+        arrBlockedUrlsInCuddlyModeCurrentFocus.removeAll()
+        closePupUpBlockIfVisible()
+
+        
         appdelegate?.timerAllowUrlForActivity?.invalidate()
         appdelegate?.timerAllowAppForActivity?.invalidate()
         btnAbort.isHidden = false
@@ -768,6 +880,7 @@ class ViewController: NSViewController {
         currentAction = ._END_
         if activityPostponeCount > 3{
             activityPostponeCount = 3//I complete a habit after postponing, it should go back to a 15 second postpone the next time
+            savePostpneCount(state: ._MORNING_HABIT_)
         }
     }
     
@@ -775,9 +888,17 @@ class ViewController: NSViewController {
         addLog(text:"func:- startDirectIncompleteMorningHabitAtIndex")
         currentState = ._MORNING_HABIT_// pahle isiliye kiya qki load graph mai check lagaya hua h state ka 
         currentAction = ._END_
-        activityAllowedFocusApps.removeAll()
-        activityAllowedFocusUrls.removeAll()
+        //        activityAllowedFocusApps.removeAll()
+        //        activityAllowedFocusUrls.removeAll()
+        //                activityAllowedFocusMode = nil
+        isAnyAllowedFocusModeActivityRunning = false
         currentHabitPlaying = nil
+        arrBlockedAppsInCuddlyModeCurrentFocus.removeAll()
+        arrAllowedAppsInCuddlyModeCurrentFocus.removeAll()
+        arrAllowedUrlsInCuddlyModeCurrentFocus.removeAll()
+        arrBlockedUrlsInCuddlyModeCurrentFocus.removeAll()
+        closePupUpBlockIfVisible()
+        
         appdelegate?.timerAllowUrlForActivity?.invalidate()
         appdelegate?.timerAllowAppForActivity?.invalidate()
         btnAbort.isHidden = false
@@ -790,9 +911,31 @@ class ViewController: NSViewController {
         }
         
         UserDefaults.standard.set(Date(), forKey: kUserdefaultsLastHabitsStartedDate)
+        
+        var lastSavedActivityTime = Date()
+        var lastSavedActivityProgress = 0
+        var lastSavedActivityId = ""
+        
+        if let infoDic = UserDefaults.standard.object(forKey: kUserdefaultsLastHabitRunningInfo) as? [String:Any]{
+            
+            if let id =  infoDic["id"] as? String{
+                lastSavedActivityId = id
+            }
+            if let duration =  infoDic["duration"] as? Int{
+                lastSavedActivityProgress = duration
+            }
+            if let date =  infoDic["date"] as? Date{
+                lastSavedActivityTime = date
+            }else{
+                lastSavedActivityId = ""
+                lastSavedActivityProgress = 0
+            }
+        }
+        let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
+        
         if isLastActivityStoppedInRunningState && lastActivityRunningId == arrAllMorningHabits[index].id{
             isLastActivityStoppedInRunningState = false
-            addLog(text:"func startDirectIncompleteMorningHabitAtIndex:- Activity Postpone In Running State:- start direct in running state")
+            addLog(text:"func startDirectIncompleteMorningHabitAtIndex:- Activity Postpone In Running State:- start direct \(arrAllMorningHabits[index].name ?? "") in running state")
             
             currentHabitIndex = index
             containerView.addSubview(timerViewcontrollerObj!.view)
@@ -801,7 +944,22 @@ class ViewController: NSViewController {
             currentAction = ._INPROGRESS_
             timerViewcontrollerObj?.startTimerHabit(durationSeconds: arrAllMorningHabits[currentHabitIndex].durationSeconds, url: arrAllMorningHabits[currentHabitIndex].urlsArray.randomElement(), name: arrAllMorningHabits[currentHabitIndex].name!, currentHabit: arrAllMorningHabits[currentHabitIndex], currentTimerValue:lastActivityStoppedTimerCount)
             
-            // ak pc mai bich mai postpone kri ot vo hiu activity dusre mac per kar kli or first mac per aay to next activity half timer per chalu hogi ?
+            
+        }else if lastSavedActivityTime.compare(startDate) == .orderedDescending && lastSavedActivityId == arrAllMorningHabits[index].id{
+            isLastActivityStoppedInRunningState = false
+            addLog(text:"func startDirectIncompleteMorningHabitAtIndex:- app terminate In Running State:- start direct \(arrAllMorningHabits[index].name ?? "") in running state")
+            
+            currentHabitIndex = index
+            if lastSavedActivityProgress > arrAllMorningHabits[currentHabitIndex].durationSeconds{
+                lastSavedActivityProgress = 0
+            }
+            containerView.addSubview(timerViewcontrollerObj!.view)
+            containerView.addConstraints(subView: timerViewcontrollerObj!.view)
+            currentState = ._MORNING_HABIT_
+            currentAction = ._INPROGRESS_
+            timerViewcontrollerObj?.startTimerHabit(durationSeconds: arrAllMorningHabits[currentHabitIndex].durationSeconds, url: arrAllMorningHabits[currentHabitIndex].urlsArray.randomElement(), name: arrAllMorningHabits[currentHabitIndex].name!, currentHabit: arrAllMorningHabits[currentHabitIndex], currentTimerValue:lastSavedActivityProgress)
+            
+            
         }else{
             addLog(text:"func startDirectIncompleteMorningHabitAtIndex:- morningHabitFinishedAndStartIncompleteNew")
             isLastActivityStoppedInRunningState = false
@@ -826,9 +984,18 @@ class ViewController: NSViewController {
             showBlankWindowInSecondaryMonitor()
             setDocBarTo(isHide: false)
         }
-        activityAllowedFocusApps.removeAll()
-        activityAllowedFocusUrls.removeAll()
+        //        activityAllowedFocusApps.removeAll()
+        //        activityAllowedFocusUrls.removeAll()
+        //                activityAllowedFocusMode = nil
+        isAnyAllowedFocusModeActivityRunning = false
         currentHabitPlaying = nil
+        arrBlockedAppsInCuddlyModeCurrentFocus.removeAll()
+        arrAllowedAppsInCuddlyModeCurrentFocus.removeAll()
+        arrAllowedUrlsInCuddlyModeCurrentFocus.removeAll()
+        arrBlockedUrlsInCuddlyModeCurrentFocus.removeAll()
+        
+        closePupUpBlockIfVisible()
+        
         appdelegate?.timerAllowUrlForActivity?.invalidate()
         appdelegate?.timerAllowAppForActivity?.invalidate()
         btnAbort.isHidden = false
@@ -839,34 +1006,28 @@ class ViewController: NSViewController {
         thirdVcObj!.eveningHabitFinished(index: currentHabitIndex)
         currentState = ._EVENING_HABIT_
         currentAction = ._END_
-        
-        //        }
-        //        else{
-        //            addLog(text: "evening habit Finished")
-        //            playAfterMorningRoutineSound()
-        //            shutOffMac()
-        //            if arrAllEveningHabits[currentHabitIndex].logQuantity{
-        //                mainViewControllerObj!.showLogQuantityView()
-        //                let lastHabit = arrAllEveningHabits[currentHabitIndex].name
-        //                logQuantityVcObj?.resetData(name: lastHabit!, durationInSeconds: "\(arrAllEveningHabits[currentHabitIndex].durationSeconds!)", logQuantityQuestion: arrAllEveningHabits[currentHabitIndex].logQuantityQuestion, currentState: ._EVENING_HABIT_)
-        //            }else{
-        //                let lastHabit = arrAllEveningHabits[currentHabitIndex].name
-        //                let startTime = getStringFromDate(date: lastActivityPerformedTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")
-        //                addEntryInStatsCsv(logType: "evening routine", activity: lastHabit!, durationInSeconds: "\(arrAllEveningHabits[currentHabitIndex].durationSeconds!)", quantityQuestion: "", quantityLogged: "", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "")
-        //            }
-        //        }
+
         if activityPostponeCount > 3{
             activityPostponeCount = 3//I complete a habit after postponing, it should go back to a 15 second postpone the next time
+            savePostpneCount(state: ._EVENING_HABIT_)
         }
-        
     }
     func startDirectIncompleteEveningHabitAtIndex(index:Int, isLastActivitySkipped:Bool) {
         addLog(text:"func startDirectIncompleteEveningHabitAtIndex")
         currentState = ._EVENING_HABIT_// pahle isiliye kiya qki load graph mai check lagaya hua h state ka
         currentAction = ._END_
-        activityAllowedFocusApps.removeAll()
-        activityAllowedFocusUrls.removeAll()
+        //        activityAllowedFocusApps.removeAll()
+        //        activityAllowedFocusUrls.removeAll()
+        //                activityAllowedFocusMode = nil
+        isAnyAllowedFocusModeActivityRunning = false
         currentHabitPlaying = nil
+        arrBlockedAppsInCuddlyModeCurrentFocus.removeAll()
+        arrAllowedAppsInCuddlyModeCurrentFocus.removeAll()
+        arrAllowedUrlsInCuddlyModeCurrentFocus.removeAll()
+        arrBlockedUrlsInCuddlyModeCurrentFocus.removeAll()
+        
+        closePupUpBlockIfVisible()
+        
         appdelegate?.timerAllowUrlForActivity?.invalidate()
         appdelegate?.timerAllowAppForActivity?.invalidate()
         btnAbort.isHidden = false
@@ -879,9 +1040,31 @@ class ViewController: NSViewController {
         }
         
         UserDefaults.standard.set(Date(), forKey: kUserdefaultsLastHabitsStartedDate)
+        
+        var lastSavedActivityTime = Date()
+        var lastSavedActivityProgress = 0
+        var lastSavedActivityId = ""
+        
+        if let infoDic = UserDefaults.standard.object(forKey: kUserdefaultsLastHabitRunningInfo) as? [String:Any]{
+            
+            if let id =  infoDic["id"] as? String{
+                lastSavedActivityId = id
+            }
+            if let duration =  infoDic["duration"] as? Int{
+                lastSavedActivityProgress = duration
+            }
+            if let date =  infoDic["date"] as? Date{
+                lastSavedActivityTime = date
+            }else{
+                lastSavedActivityId = ""
+                lastSavedActivityProgress = 0
+            }
+        }
+        let shutOffdate = Calendar.current.date(bySettingHour: shutOffTime!.hour, minute: shutOffTime!.minute, second: shutOffTime!.second, of: Date())!
+        
         if isLastActivityStoppedInRunningState && lastActivityRunningId == arrAllEveningHabits[index].id{
             isLastActivityStoppedInRunningState = false
-            addLog(text:"func startDirectIncompleteEveningHabitAtIndex:- Activity Postpone In Running State:- start direct in running state")
+            addLog(text:"func startDirectIncompleteEveningHabitAtIndex:- Activity Postpone In Running State:- start direct\(arrAllEveningHabits[index].name ?? "")in running state")
             
             currentHabitIndex = index
             containerView.addSubview(timerViewcontrollerObj!.view)
@@ -889,6 +1072,21 @@ class ViewController: NSViewController {
             currentState = ._EVENING_HABIT_
             currentAction = ._INPROGRESS_
             timerViewcontrollerObj?.startTimerHabit(durationSeconds: arrAllEveningHabits[currentHabitIndex].durationSeconds, url: arrAllEveningHabits[currentHabitIndex].urlsArray.randomElement(), name: arrAllEveningHabits[currentHabitIndex].name!, currentHabit: arrAllEveningHabits[currentHabitIndex], currentTimerValue:lastActivityStoppedTimerCount)
+        }else if lastSavedActivityTime.compare(shutOffdate) == .orderedDescending && lastSavedActivityId == arrAllEveningHabits[index].id{
+            isLastActivityStoppedInRunningState = false
+            addLog(text:"func startDirectIncompleteEveningHabitAtIndex:- app terminate In Running State:- start direct \(arrAllEveningHabits[index].name ?? "") in running state")
+            
+            currentHabitIndex = index
+            if lastSavedActivityProgress > arrAllEveningHabits[currentHabitIndex].durationSeconds{
+                lastSavedActivityProgress = 0
+            }
+            containerView.addSubview(timerViewcontrollerObj!.view)
+            containerView.addConstraints(subView: timerViewcontrollerObj!.view)
+            currentState = ._EVENING_HABIT_
+            currentAction = ._INPROGRESS_
+            timerViewcontrollerObj?.startTimerHabit(durationSeconds: arrAllEveningHabits[currentHabitIndex].durationSeconds, url: arrAllEveningHabits[currentHabitIndex].urlsArray.randomElement(), name: arrAllEveningHabits[currentHabitIndex].name!, currentHabit: arrAllEveningHabits[currentHabitIndex], currentTimerValue:lastSavedActivityProgress)
+            
+            
         }else{
             addLog(text:"func startDirectIncompleteEveningHabitAtIndex:- eveningHabitFinishedAndStartIncompleteNew")
             isLastActivityStoppedInRunningState = false
@@ -910,9 +1108,17 @@ class ViewController: NSViewController {
             showBlankWindowInSecondaryMonitor()
             setDocBarTo(isHide: false)
         }
-        activityAllowedFocusApps.removeAll()
-        activityAllowedFocusUrls.removeAll()
+        //        activityAllowedFocusApps.removeAll()
+        //        activityAllowedFocusUrls.removeAll()
+        //                activityAllowedFocusMode = nil
+        isAnyAllowedFocusModeActivityRunning = false
         currentActivityPlaying = nil
+        arrBlockedAppsInCuddlyModeCurrentFocus.removeAll()
+        arrAllowedAppsInCuddlyModeCurrentFocus.removeAll()
+        arrAllowedUrlsInCuddlyModeCurrentFocus.removeAll()
+        arrBlockedUrlsInCuddlyModeCurrentFocus.removeAll()
+        closePupUpBlockIfVisible()
+        
         appdelegate?.timerAllowUrlForActivity?.invalidate()
         appdelegate?.timerAllowAppForActivity?.invalidate()
         btnAbort.isHidden = false
@@ -987,6 +1193,8 @@ class ViewController: NSViewController {
         currentState = ._ACTIVITY_
         currentAction = ._INPROGRESS_
     }
+    
+    
     func changeActivity() {
         addLog(text:"current change Activity called")
         btnAbort.isHidden = false
@@ -1070,6 +1278,7 @@ class ViewController: NSViewController {
         }
         currentHabitIndex = -1
         self.perform(#selector(unlockMachine), with: nil, afterDelay: 3)
+        unfocusedTime = 0
         if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsPomodoroModeEnabled) as? Bool{
             if state{
                 appdelegate?.showMorningPomodoroModeView()
@@ -1077,6 +1286,7 @@ class ViewController: NSViewController {
         }
         currentState = ._NOTHING_
     }
+    
     @objc func unlockMachine() {
         addLog(text:"current unlockMachine called")
 //        if allApiObject.isAnyErrorFoundInActivityCompletedApi{//comment kiya hai 
@@ -1114,6 +1324,8 @@ class ViewController: NSViewController {
         }
     }
     var breakTimer: Timer?
+    var postponeTimer: Timer?
+    
     func setActivityTimer(){
         addLog(text: "Break Activity Timer reset Done.")
         if arrAllbreakActivities.count != 0 {
@@ -1129,7 +1341,7 @@ class ViewController: NSViewController {
             }
         }
     }
-    var isBreakActivityPostponeInsideAllowedHabit = false
+    var isBreakActivityPostponeInsideAllowedHabit = false// using this beacuse we dont want reset activity timer again (in resuming habit) if user has postponed activity inside allow app habit 
     func postponeBreakActivitiesFor(minutes:Int){
         addLog(text: "postpone Break Activities, Timer reset Done:- \(minutes) minutes")
         btnAbort.isHidden = true
@@ -1164,9 +1376,71 @@ class ViewController: NSViewController {
         
     }
     
-    
+    func savePostpneCount(state:CURRENTSTATE){
+        if state == ._MORNING_HABIT_{
+            if arrAllMorningHabits.count != 0 {
+                let infoDic:[String:Any] = ["sequenceId":arrAllMorningHabits[0].activity_sequence_id ?? "", "postponeCount":activityPostponeCount, "date":Date()]
+                UserDefaults.standard.set(infoDic, forKey: kUserdefaultsLastSequencePostponeInfo)
+                print(infoDic)
+            }
+        }else if state == ._EVENING_HABIT_{
+            if arrAllEveningHabits.count != 0 {
+                
+                var startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
+                let shutOffdate = Calendar.current.date(bySettingHour: shutOffTime!.hour, minute: shutOffTime!.minute, second: shutOffTime!.second, of: Date())!
+                
+                let curreentDate = Date()
+                if curreentDate > shutOffdate{// iska matlab 20-24 k bich
+                    let tomorrowDate = Calendar.current.date(byAdding: .day, value: 1, to: Date())!
+                    startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: tomorrowDate) ?? startDate
+
+                }else if curreentDate < startDate{ //  iska mtlb 1 se 10 k bich ka time
+
+                }
+                
+                let infoDic:[String:Any] = ["sequenceId":arrAllEveningHabits[0].activity_sequence_id ?? "", "postponeCount":activityPostponeCount, "date":startDate]
+                UserDefaults.standard.set(infoDic, forKey: kUserdefaultsLastSequencePostponeInfo)
+                print(infoDic)
+            }
+        }
+    }
+    func refreshLastPostponeCount(){
+        var lastSavedPostponeTime = Date()
+        var lastSavedPostponeCount = activityPostponeCount
+        var lastSavedSequenceId = ""
+        let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
+        
+        if let infoDic = UserDefaults.standard.object(forKey: kUserdefaultsLastSequencePostponeInfo) as? [String:Any]{
+            
+            if let id =  infoDic["sequenceId"] as? String{
+                lastSavedSequenceId = id
+            }
+            if let postponeCount =  infoDic["postponeCount"] as? Int{
+                lastSavedPostponeCount = postponeCount
+            }
+            if let date =  infoDic["date"] as? Date{
+                lastSavedPostponeTime = date
+            }
+        }
+        if currentState == ._MORNING_HABIT_{
+            if arrAllMorningHabits.count != 0 {
+                if lastSavedSequenceId == arrAllMorningHabits[0].activity_sequence_id && lastSavedPostponeTime.compare(startDate) == .orderedDescending{
+                    activityPostponeCount = lastSavedPostponeCount
+                }
+            }
+        }else if currentState == ._EVENING_HABIT_{
+            if arrAllEveningHabits.count != 0 {
+                if lastSavedSequenceId == arrAllEveningHabits[0].activity_sequence_id && lastSavedPostponeTime.compare(startDate) == .orderedDescending{
+                    activityPostponeCount = lastSavedPostponeCount
+                }
+            }
+        }
+    }
     func postponeMorningHabitFor(minutes:Int){
         addLog(text: "postpone morning habits, Timer reset Done:- \(minutes) minutes")
+        
+        
+        savePostpneCount(state: ._MORNING_HABIT_)
         
         if currentAction == ._INPROGRESS_{
             isLastActivityStoppedInRunningState = true
@@ -1193,17 +1467,20 @@ class ViewController: NSViewController {
         
         if arrAllMorningHabits.count != 0 {
             DispatchQueue.global().sync{//async {
-                if self.breakTimer != nil{// we will use break timer for postpone morning habit s because if morning routine is not completed break activities will not show so we can use break timer here
-                    self.breakTimer?.invalidate()
-                    self.breakTimer = nil
+                if self.postponeTimer != nil{
+                    self.postponeTimer?.invalidate()
+                    self.postponeTimer = nil
                 }
-                self.breakTimer = Timer.scheduledTimer(timeInterval: TimeInterval(minutes*60), target: self, selector: #selector(self.resumeMorningHabit), userInfo: nil, repeats: false)//todo  minutes*60 kro TimeInterval(minutes*60)
-                RunLoop.main.add((breakTimer!), forMode: RunLoop.Mode.common)
+                self.postponeTimer = Timer.scheduledTimer(timeInterval: TimeInterval(minutes*60), target: self, selector: #selector(self.resumeMorningHabit), userInfo: nil, repeats: false)//todo  minutes*60 kro TimeInterval(minutes*60)
+                RunLoop.main.add((postponeTimer!), forMode: RunLoop.Mode.common)
             }
         }
     }
     func postponeEveningHabitFor(minutes:Int){
         addLog(text: "postpone evening habits, Timer reset Done:- \(minutes) minutes")
+        
+        savePostpneCount(state: ._EVENING_HABIT_)
+        
         if currentAction == ._INPROGRESS_{
             isLastActivityStoppedInRunningState = true
             lastActivityStoppedTimerCount = timerViewcontrollerObj?.currentTimer ?? 0
@@ -1228,12 +1505,12 @@ class ViewController: NSViewController {
         }
         if arrAllEveningHabits.count != 0 {
             DispatchQueue.global().sync{//async {
-                if self.breakTimer != nil{// we will use break timer for postpone evening habit s because if evening routine is running break activities will not show so we can use break timer here
-                    self.breakTimer?.invalidate()
-                    self.breakTimer = nil
+                if self.postponeTimer != nil{
+                    self.postponeTimer?.invalidate()
+                    self.postponeTimer = nil
                 }
-                self.breakTimer = Timer.scheduledTimer(timeInterval: TimeInterval(minutes*60), target: self, selector: #selector(self.resumeEveningHabit), userInfo: nil, repeats: false)//todo  minutes*60 kroTimeInterval(minutes*60)
-                RunLoop.main.add((breakTimer!), forMode: RunLoop.Mode.common)
+                self.postponeTimer = Timer.scheduledTimer(timeInterval: TimeInterval(minutes*60), target: self, selector: #selector(self.resumeEveningHabit), userInfo: nil, repeats: false)//todo  minutes*60 kroTimeInterval(minutes*60)
+                RunLoop.main.add((postponeTimer!), forMode: RunLoop.Mode.common)
             }
         }
     }
@@ -1247,23 +1524,27 @@ class ViewController: NSViewController {
         hideBlankWindowInSecondaryMonitor()
      
             DispatchQueue.global().sync{//async {
-                if self.breakTimer != nil{// we will use break timer for postpone morning habit s because if morning routine is not completed break activities will not show so we can use break timer here
-                    self.breakTimer?.invalidate()
-                    self.breakTimer = nil
+                if self.postponeTimer != nil{
+                    self.postponeTimer?.invalidate()
+                    self.postponeTimer = nil
                 }
-                self.breakTimer = Timer.scheduledTimer(timeInterval: TimeInterval(minutes*60), target: self, selector: #selector(self.resumeFocusSummary), userInfo: nil, repeats: false)//todo  minutes*60 kroTimeInterval(minutes*60)
-                RunLoop.main.add((breakTimer!), forMode: RunLoop.Mode.common)
+                self.postponeTimer = Timer.scheduledTimer(timeInterval: TimeInterval(minutes*60), target: self, selector: #selector(self.resumeFocusSummary), userInfo: nil, repeats: false)//todo  minutes*60 kroTimeInterval(minutes*60)
+                RunLoop.main.add((postponeTimer!), forMode: RunLoop.Mode.common)
             }
     }
     
     @objc func resumeMorningHabit(){// func name "backgrounThread" will do work for showing morning routing again we just need to false this (currentState) variable
         addLog(text: "Morning habits postpone finished")
-        currentState = ._NOTHING_
+        if currentState == ._POSTPON_MORNING_HABIT_{
+            currentState = ._NOTHING_
+        }
     }
     
     @objc func resumeEveningHabit(){// func name "backgrounThread" will do work for showing evening routing again we just need to false this (currentState) variable
         addLog(text: "Evening habits postpone finished")
-        currentState = ._NOTHING_
+        if currentState == ._POSTPON_EVENING_HABIT_{
+            currentState = ._NOTHING_
+        }
     }
     
     @objc func resumeFocusSummary(){// func name "backgrounThread" will do work for showing morning routing again we just need to false this (isMorningRoutinePostpone) variable
@@ -1284,6 +1565,7 @@ class ViewController: NSViewController {
         if isBreakActivityExecuteFromMorningHabit || isBreakActivityExecuteFromEveningHabit{
             isBreakActivityExecuteFromMorningHabit = false
             isBreakActivityExecuteFromEveningHabit = false
+            addLog(text: "Break Activity Finished:- Try resume Habit Routine")
             appdelegate!.backgroundThread()
         }
     }
@@ -1305,6 +1587,14 @@ class ViewController: NSViewController {
     @objc func timeToStartBreakActivities() {
         DispatchQueue.main.async {
             addLog(text: "Initiating Break Activities")
+            self.breakTimer?.invalidate()
+            self.breakTimer = nil
+            
+            if arrAllbreakActivities.count == 0 {
+                self.setActivityTimer()
+                addLog(text: "Break Activities count is 0 :- Break Activities cancelled.")
+                return
+            }
             isBreakActivityExecuteFromMorningHabit = false
             isBreakActivityExecuteFromEveningHabit = false
             checkLogFileRotation()
@@ -1319,34 +1609,35 @@ class ViewController: NSViewController {
                 return
             }
             
-            if avmonitor.isMicOn(){
+//            if avmonitor.isMicOn(){
+//                self.setActivityTimer()
+//                addLog(text: "Mic is in use, Break Activities cancelled.")
+//                return;
+//            }
+//            if avmonitor.isACameraOn(){
+//                self.setActivityTimer()
+//                addLog(text: "Camera is in use, Break Activities cancelled.")
+//                return;
+//            }
+//            if isPreventUserIdleDisplaySleepOn(){
+//                self.setActivityTimer()
+//                addLog(text: "PreventUserIdleDisplaySleep is On: Break Activities cancelled.")
+//                return;
+//            }
+            
+            if appdelegate!.isUserOnMeeting{
+                addLog(text: "isUserOnMeeting True: Break Activities cancelled.")
                 self.setActivityTimer()
-                addLog(text: "Mic is in use, Break Activities cancelled.")
-                appdelegate!.statusbutton?.title = buttonStatusStateCallText
-                appdelegate!.statusbutton?.imagePosition = .imageLeft
-                appdelegate!.statusbutton?.backgroundcolor = NSColor.systemBlue
                 return;
             }
-            if avmonitor.isACameraOn(){
-                self.setActivityTimer()
-                addLog(text: "Camera is in use, Break Activities cancelled.")
-                appdelegate!.statusbutton?.title = buttonStatusStateCallText
-                appdelegate!.statusbutton?.imagePosition = .imageLeft
-                appdelegate!.statusbutton?.backgroundcolor = NSColor.systemBlue
-                return;
-            }
-            if isPreventUserIdleDisplaySleepOn(){
-                self.setActivityTimer()
-                addLog(text: "PreventUserIdleDisplaySleep is On: Break Activities cancelled.")
-                return
-            }
-            if currentState == ._MORNING_HABIT_{
+            
+            if currentState == ._MORNING_HABIT_{// ⚠️ do not change current state inside this block
                 // new work // 23/12/22
                 if currentHabitPlaying != nil && !(mainWindowControllerObj?.window?.isVisible ?? false) && currentAction == ._INPROGRESS_{//it means background morning habit and now break activity is allowed in allowed app morning habit // 23/12/22
                     addLog(text: "Morning habit showing, Break Activities allowed in allowed app morning habit.")
                     
                     // pause  morning activity and start break activity
-                    // will not change current state here 
+                    // will not change current state here beacuse we do not want to execute background thread during warning but need to handle when pc goint to sleep during warning
                     mainWindowControllerObj?.window?.setIsVisible(false)
                     hideBlankWindowInSecondaryMonitor()
                     isLastActivityStoppedInRunningState = true
@@ -1366,7 +1657,15 @@ class ViewController: NSViewController {
                     }
                     
                     if currentHabitPlaying != nil{
-                        currentHabitPlaying = nil
+                        isAnyAllowedFocusModeActivityRunning = false
+                        currentHabitPlaying = nil//todo baki sab bhi nil krna hai kya or time bhi rokna hai kya
+                        arrBlockedAppsInCuddlyModeCurrentFocus.removeAll()
+                        arrAllowedAppsInCuddlyModeCurrentFocus.removeAll()
+                        arrAllowedUrlsInCuddlyModeCurrentFocus.removeAll()
+                        arrBlockedUrlsInCuddlyModeCurrentFocus.removeAll()
+                        
+                        closePupUpBlockIfVisible()
+                        
                         if smallCountDownWcObj != nil{// close timer window is easy postpone because there is no come back from easy postpone view
                             if smallCountDownWcObj?.window != nil{
                                 if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
@@ -1375,6 +1674,8 @@ class ViewController: NSViewController {
                             }
                         }
                     }
+                    // self.timerAllowAppForActivity?.invalidate() ye invalid nahi hua //
+                    
                     
                     
                    // //////////////
@@ -1386,14 +1687,14 @@ class ViewController: NSViewController {
             }
             
             
-            if currentState == ._EVENING_HABIT_{
+            if currentState == ._EVENING_HABIT_{// ⚠️ do not change current state inside this block
                
                 // new work // 23/12/22
                 if currentHabitPlaying != nil && !(mainWindowControllerObj?.window?.isVisible ?? false) && currentAction == ._INPROGRESS_{//it means background evening habit and now break activity is allowed in allowed app morning habit // 23/12/22
-                    addLog(text: "Evening habit showing, Break Activities allowed in allowed app morning habit.")
+                    addLog(text: "Evening habit showing, Break Activities allowed in allowed app Evening habit.")
                     
                     // pause  evening activity and start break activity
-                    // will not change current state here
+                    // will not change current state here beacuse we do not want to execute background thread during warning but need to handle when pc goint to sleep during warning
                     mainWindowControllerObj?.window?.setIsVisible(false)
                     hideBlankWindowInSecondaryMonitor()
                     isLastActivityStoppedInRunningState = true
@@ -1413,7 +1714,14 @@ class ViewController: NSViewController {
                     }
                     
                     if currentHabitPlaying != nil{
+                        isAnyAllowedFocusModeActivityRunning = false
                         currentHabitPlaying = nil
+                        arrBlockedAppsInCuddlyModeCurrentFocus.removeAll()
+                        arrAllowedAppsInCuddlyModeCurrentFocus.removeAll()
+                        arrAllowedUrlsInCuddlyModeCurrentFocus.removeAll()
+                        arrBlockedUrlsInCuddlyModeCurrentFocus.removeAll()
+                        closePupUpBlockIfVisible()
+                        
                         if smallCountDownWcObj != nil{// close timer window is easy postpone because there is no come back from easy postpone view
                             if smallCountDownWcObj?.window != nil{
                                 if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
@@ -1449,9 +1757,10 @@ class ViewController: NSViewController {
                 return;//agar kisi ne shutdown abort bhi kr diya to bhi kuch ni hoga// iise focus summary or evening routine k time per bhi rreturn ho jayga
             }
             showBreakWarningWindow()
+            currentState = ._ACTIVITY_
         }
     }
-    
+        
     @objc func executeBreakActivities() {
         
         addLog(text: "startBreakActivities")
@@ -1504,7 +1813,7 @@ class ViewController: NSViewController {
             }
             if arrActivitiesExcludeInEveryBreak.count == 0 && arrActivitiesIncludeInEveryBreak.count == 0{
                 addLog(text: "filterd arrActivitiesExcludeInEveryBreak and arrActivitiesIncludeInEveryBreak is zero .")
-                self.setActivityTimer()
+                self.setActivityTimer()//possible nahi hai
                 return;
             }
             if isAnyMandatoryActivityIncluded{

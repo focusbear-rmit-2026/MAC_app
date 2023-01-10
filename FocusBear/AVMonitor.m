@@ -238,7 +238,7 @@ bail:
 //
 //    return isMicOn;
     
-    //todo return yha se
+    // return yha se
     
     //mic's ID
     AudioObjectID builtInMic = 0;

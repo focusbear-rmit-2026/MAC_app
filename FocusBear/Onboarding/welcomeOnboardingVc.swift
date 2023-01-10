@@ -28,7 +28,7 @@ class welcomeOnboardingVc: NSViewController {
         lblDescriptionSecond.stringValue = "You won't be able to use other apps during the onboarding. Do you have time now or shall we do it a bit later?"
         btnLater.title = "A bit later please"
         btnLetsDoIt.title = "Let's do it"
-        lblAllRights.stringValue = "© 2022 Focus Bear All Rights Reserved."
+        lblAllRights.stringValue = "© 2022-2023 Focus Bear All Rights Reserved."
         
         if let welcomeOnboardingVcInfo = configjson.value(forKey: "welcomeOnboardingVcInfo") as? NSDictionary{
             lblSubTitle.stringValue = welcomeOnboardingVcInfo.value(forKey: "subTitle") as? String ?? lblSubTitle.stringValue

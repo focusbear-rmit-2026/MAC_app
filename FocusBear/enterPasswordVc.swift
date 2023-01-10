@@ -115,27 +115,74 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
                             return;
                         }else if parentVc == getAskPostponeVcObject(){
                             
-                            if lastCurrentState == ._MORNING_HABIT_{// //  jesa morning mai vesa evening mai
-//                                mainViewControllerObj?.postponeMorningHabitFor(minutes: Int(getAskPostponeVcObject().popUpButtonSelectMinutes.title) ?? 15)
-                                self.view.removeFromSuperview()
-                                mainViewControllerObj?.showAskPostponeView()
-                                return;
+                            if lastCurrentState == ._MORNING_HABIT_{// //
+                                var postponeTime = 0
+                                if askPostponeVcObj != nil{
+                                    if askPostponeVcObj!.popUpButtonSelectMinutes != nil{
+                                        postponeTime = Int(askPostponeVcObj!.popUpButtonSelectMinutes.title) ?? 15
+                                    }
+                                }
+                                if activityPostponeCount == 0 && postponeTime > 15{
+                                    activityPostponeCount += 1
+                                    self.view.removeFromSuperview()
+                                    mainViewControllerObj?.postponeMorningHabitFor(minutes: postponeTime)
+                                    return;
+                                }else{
+                                    self.view.removeFromSuperview()
+                                    mainViewControllerObj?.showAskPostponeView()
+                                    return;
+                                }
+                                
+                                
                             }else if lastCurrentState == ._EVENING_HABIT_{
-                                self.view.removeFromSuperview()
-                                mainViewControllerObj?.showAskPostponeView()
-//                                mainViewControllerObj?.postponeEveningHabitFor(minutes: Int(getAskPostponeVcObject().popUpButtonSelectMinutes.title) ?? 15)
-                                return;
+                                var postponeTime = 0
+                                if askPostponeVcObj != nil{
+                                    if askPostponeVcObj!.popUpButtonSelectMinutes != nil{
+                                        postponeTime = Int(askPostponeVcObj!.popUpButtonSelectMinutes.title) ?? 15
+                                    }
+                                }
+                                if activityPostponeCount == 0 && postponeTime > 15{
+                                    activityPostponeCount += 1
+                                    self.view.removeFromSuperview()
+                                    mainViewControllerObj?.postponeEveningHabitFor(minutes: postponeTime)
+                                    return;
+                                }else{
+                                    self.view.removeFromSuperview()
+                                    mainViewControllerObj?.showAskPostponeView()
+                                    return;
+                                }
+                                
+                                
                             }else if lastCurrentState == ._FOCUS_SUMMARY_{
                                 self.view.window?.close()
                                 self.view.removeFromSuperview()
-                                mainViewControllerObj?.postponeFocusSummaryFor(minutes: Int(getAskPostponeVcObject().popUpButtonSelectMinutes.title) ?? 15)
+
+                                if askPostponeVcObj != nil{//todo test
+                                    if askPostponeVcObj!.popUpButtonSelectMinutes != nil{
+                                        mainViewControllerObj?.postponeFocusSummaryFor(minutes: Int(askPostponeVcObj!.popUpButtonSelectMinutes.title) ?? 15)
+                                    }else{
+                                        mainViewControllerObj?.postponeFocusSummaryFor(minutes: 15)
+                                    }
+                                }else{
+                                    mainViewControllerObj?.postponeFocusSummaryFor(minutes: 15)
+                                }
                                 return;
                             }
                             
-                        }else if skipHabitVcObj != nil{
+                        }
+                        
+                        if skipHabitVcObj != nil{
                             if parentVc == skipHabitVcObj!{
                                 self.view.removeFromSuperview()
                                 mainViewControllerObj?.showSkipHabitView()
+                                return;
+                            }
+                        }
+                        
+                        if whySkipHabitVcObj != nil{
+                            if parentVc == whySkipHabitVcObj!{
+                                self.view.removeFromSuperview()
+                                whySkipHabitVcObj?.skipActivityAlreadyDid()
                                 return;
                             }
                         }
@@ -152,6 +199,8 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
                             return;
                         }
                     }
+                    
+
                     
                     if self.view.window == getQuittingWindowObject().window{
                         getQuittingCountDownVcObject().startTimer()
@@ -196,12 +245,21 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
                 self.view.removeFromSuperview()
                 mainViewControllerObj?.abortCancel()
                 return;
-            }else if skipHabitVcObj != nil{
+            }
+            
+            if skipHabitVcObj != nil{
                 if parentVc == skipHabitVcObj!{
                     self.view.removeFromSuperview()
                     return;
                 }
             }
+            if whySkipHabitVcObj != nil{
+                if parentVc == whySkipHabitVcObj!{
+                    self.view.removeFromSuperview()
+                    return;
+                }
+            }
+            
         }
         
         if isMainWindowLodded{
@@ -211,6 +269,17 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
                    mainViewControllerObj?.abortCancel()
                 }
                 return;
+            }
+        }
+        if preferencesWindowControllerObj != nil{ // ask password for password tab when PasswordRequireInChangeSettings is false
+            if self.view.window == preferencesWindowControllerObj?.window{
+                if !SettingsManagerObject.isPasswordRequireInChangeSettings{
+                    self.view.removeFromSuperview()
+                    if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
+                        tabview.selectedTabViewItemIndex = 0
+                    }
+                    return;
+                }
             }
         }
         
