@@ -34,14 +34,14 @@ class visualizeInstructionsVc: NSViewController {
     }
     override func viewWillAppear() {
         if currentState == ._MORNING_HABIT_{
-            if arrAllMorningHabits.count != 0 {
-                let time = arrAllMorningHabits[0].durationSeconds!
-                btnMain.title = getstartActivityButtonText(seconds: time, name: arrAllMorningHabits[0].name!)
+            if arrFilteredMorningHabits.count != 0 {
+                let time = arrFilteredMorningHabits[0].durationSeconds!
+                btnMain.title = getstartActivityButtonText(seconds: time, name: arrFilteredMorningHabits[0].name!)
             }
         }else if currentState == ._EVENING_HABIT_{
-            if arrAllEveningHabits.count != 0 {
-                let time = arrAllEveningHabits[0].durationSeconds!
-                btnMain.title = getstartActivityButtonText(seconds: time, name: arrAllEveningHabits[0].name!)
+            if arrFilteredEveningHabits.count != 0 {
+                let time = arrFilteredEveningHabits[0].durationSeconds!
+                btnMain.title = getstartActivityButtonText(seconds: time, name: arrFilteredEveningHabits[0].name!)
             }
         }
     }
@@ -112,15 +112,26 @@ class visualizeInstructionsVc: NSViewController {
                 self.isTimerGoingOn = false
                 
                 if currentState == ._MORNING_HABIT_{
-                    if arrAllMorningHabits.count != 0 {
-                        let time = arrAllMorningHabits[0].durationSeconds!
-                        self.btnMain.title = getstartActivityButtonText(seconds: time, name: arrAllMorningHabits[0].name!)
+                    if arrFilteredMorningHabits.count != 0 {
+                        let time = arrFilteredMorningHabits[0].durationSeconds!
+                        self.btnMain.title = getstartActivityButtonText(seconds: time, name: arrFilteredMorningHabits[0].name!)
 
                     }
                 }else if currentState == ._EVENING_HABIT_{
-                    if arrAllEveningHabits.count != 0 {
-                        let time = arrAllEveningHabits[0].durationSeconds!
-                        self.btnMain.title = getstartActivityButtonText(seconds: time, name: arrAllEveningHabits[0].name!)
+                    if arrFilteredEveningHabits.count != 0 {
+                        if isHighPrioritySequenceGoing{
+                            for i in 0..<arrFilteredEveningHabits.count{
+                                if arrFilteredEveningHabits[i].isPriorityHigh{
+                                    let time = arrFilteredEveningHabits[i].durationSeconds!
+                                    self.btnMain.title = getstartActivityButtonText(seconds: time, name: arrFilteredEveningHabits[i].name!)
+                                    break;
+                                }
+                            } 
+                        }else{
+                            let time = arrFilteredEveningHabits[0].durationSeconds!
+                            self.btnMain.title = getstartActivityButtonText(seconds: time, name: arrFilteredEveningHabits[0].name!)
+                        }
+                        
 
                     }
                 }

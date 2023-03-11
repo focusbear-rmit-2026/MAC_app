@@ -1068,14 +1068,37 @@ class thirdVc: NSViewController {
                 
                 //                var arrData = []
                 var maxInHabitsGraph = arrForMaxValue.max() ?? 0
-                if maxInHabitsGraph < 99{
+                var minInSecondGraph = arrForMaxValue.min() ?? 0
+                
+                if maxInHabitsGraph < 50{
+                    maxInHabitsGraph = maxInHabitsGraph + 5
+                }else if maxInHabitsGraph < 99{
                     maxInHabitsGraph = maxInHabitsGraph + 10
+                }else if maxInHabitsGraph < 999{
+                    maxInHabitsGraph = maxInHabitsGraph + 20
                 }else if maxInHabitsGraph < 9999{
-                    maxInHabitsGraph = maxInHabitsGraph + 100
+                    maxInHabitsGraph = maxInHabitsGraph + 50
                 }else {
-                    maxInHabitsGraph = maxInHabitsGraph + 1000
+                    maxInHabitsGraph = maxInHabitsGraph + 200
                 }
-                maxInHabitsGraph = roundOffValue(number:maxInHabitsGraph)
+                
+                if minInSecondGraph < 50{
+                    minInSecondGraph = minInSecondGraph - 5
+                }else if minInSecondGraph < 99{
+                    minInSecondGraph = minInSecondGraph - 10
+                }else if minInSecondGraph < 999{
+                    minInSecondGraph = minInSecondGraph - 20
+                }else if minInSecondGraph < 9999{
+                    minInSecondGraph = minInSecondGraph - 50
+                }else {
+                    minInSecondGraph = minInSecondGraph - 200
+                }
+                
+                if minInSecondGraph < 0{
+                    minInSecondGraph = 0
+                }
+                
+//                maxInHabitsGraph = roundOffValue(number:maxInHabitsGraph)//
                 var labelYVal = ""
                 if logQuantity{
                     labelYVal = graphQuantityText
@@ -1088,7 +1111,8 @@ class thirdVc: NSViewController {
                 }else{
                     type = "monthly"
                 }
-                let json = [ "label":"\(activityName)" , "labelX":graphDateText, "labelY":labelYVal, "data": arrDuration, "type":type, "max":maxInHabitsGraph] as [String : Any]
+                let json = [ "label":"\(activityName)" , "labelX":graphDateText, "labelY":labelYVal, "data": arrDuration, "type":type, "max":maxInHabitsGraph, "min":minInSecondGraph] as [String : Any]
+                addGraphsLog(text: "\(json)")
                 do {
                     let data = try (JSONSerialization.data(withJSONObject: json, options: .prettyPrinted))
                     if let str = String(data: data, encoding: String.Encoding.utf8){
@@ -1598,16 +1622,21 @@ class thirdVc: NSViewController {
                 labelYVal = graphMinutesText
             }
             
-            if max < 99{
-                max = max + 10
+            if max < 50{
+                max = max + 2
+            }else if max < 99{
+                max = max + 5
+            }else if max < 999{
+                max = max + 20
             }else if max < 9999{
-                max = max + 100
+                max = max + 50
             }else {
-                max = max + 1000
+                max = max + 200
             }
-            let jsonForDay = ["label":activityName , "labelX":graphTimeText, "labelY":labelYVal, "TimeValues":arrGraph2DateString, "data": arrGraph2Duration, "max":max] as [String : Any]
+            let min:Double = 0
+            let jsonForDay = ["label":activityName , "labelX":graphTimeText, "labelY":labelYVal, "TimeValues":arrGraph2DateString, "data": arrGraph2Duration, "max":max, "min":min] as [String : Any]
             
-            
+            addGraphsLog(text: "\(jsonForDay)")
             
             do {
                 let data = try (JSONSerialization.data(withJSONObject: jsonForDay, options: .prettyPrinted))
@@ -1859,7 +1888,7 @@ class thirdVc: NSViewController {
             print(arrGraphDictionary)
             
             var maxInSecondGraph = arrForMaxValueInSecondGraph.max() ?? 0
-            
+            var minInSecondGraph = arrForMaxValueInSecondGraph.min() ?? 0
             
             
             
@@ -1871,22 +1900,44 @@ class thirdVc: NSViewController {
                 labelYVal = graphMinutesText
             }
             
-            if maxInSecondGraph < 99{
+            
+            if maxInSecondGraph < 50{
+                maxInSecondGraph = maxInSecondGraph + 5
+            }else if maxInSecondGraph < 99{
                 maxInSecondGraph = maxInSecondGraph + 10
+            }else if maxInSecondGraph < 999{
+                maxInSecondGraph = maxInSecondGraph + 20
             }else if maxInSecondGraph < 9999{
-                maxInSecondGraph = maxInSecondGraph + 100
+                maxInSecondGraph = maxInSecondGraph + 50
             }else {
-                maxInSecondGraph = maxInSecondGraph + 1000
+                maxInSecondGraph = maxInSecondGraph + 200
             }
             
-            maxInSecondGraph = roundOffValue(number:maxInSecondGraph)
+            
+            if minInSecondGraph < 50{
+                minInSecondGraph = minInSecondGraph - 5
+            }else if minInSecondGraph < 99{
+                minInSecondGraph = minInSecondGraph - 10
+            }else if minInSecondGraph < 999{
+                minInSecondGraph = minInSecondGraph - 20
+            }else if minInSecondGraph < 9999{
+                minInSecondGraph = minInSecondGraph - 50
+            }else {
+                minInSecondGraph = minInSecondGraph - 200
+            }
+            
+            if minInSecondGraph < 0{
+                minInSecondGraph = 0
+            }
+//            maxInSecondGraph = roundOffValue(number:maxInSecondGraph)//
             var type = ""
             if isDataWeekly{
                 type = "weekly"
             }else{
                 type = "monthly"
             }
-            let json = [ "label":"\(activityName)" , "labelX":graphDateText, "labelY":labelYVal, "data": arrGraph1DurationOrQuantity, "type":type, "max":maxInSecondGraph] as [String : Any]
+            let json = [ "label":"\(activityName)" , "labelX":graphDateText, "labelY":labelYVal, "data": arrGraph1DurationOrQuantity, "type":type, "max":maxInSecondGraph, "min":minInSecondGraph] as [String : Any]
+            addGraphsLog(text: "\(json)")
             do {
                 let data = try (JSONSerialization.data(withJSONObject: json, options: .prettyPrinted))
                 if let str = String(data: data, encoding: String.Encoding.utf8){
@@ -2060,6 +2111,7 @@ class thirdVc: NSViewController {
         imgViewGif.isHidden = true
         btnMain.title = unlockMachineButtonText
         mainViewControllerObj?.btnAbort.isHidden = true
+        mainViewControllerObj?.stackViewTopButtons.isHidden = true
         imgViewGifOpenPrefrences.isHidden = true
         webViewForVideo.isHidden = true
         boxBreathingFinished.isHidden = true
@@ -2192,28 +2244,52 @@ class thirdVc: NSViewController {
         boxBreathingFinished.isHidden = true
         lastHabitIndex = index
         stackViewGraph.isHidden = true
-        let lastHabit = arrAllMorningHabits[lastHabitIndex].name
-        UserDefaults.standard.set(arrAllMorningHabits[lastHabitIndex].id, forKey: kUserdefaultsLastHabitID)
-        habitTotalCompletedSeconds += arrAllMorningHabits[lastHabitIndex].durationSeconds!
-        if arrAllMorningHabits[lastHabitIndex].logQuantity{
+        let lastHabit = arrFilteredMorningHabits[lastHabitIndex].name
+        UserDefaults.standard.set(arrFilteredMorningHabits[lastHabitIndex].id, forKey: kUserdefaultsLastHabitID)
+        habitTotalCompletedSeconds += arrFilteredMorningHabits[lastHabitIndex].durationSeconds!
+        if arrFilteredMorningHabits[lastHabitIndex].logQuantity{
             webViewGraph1.isHidden = true
             webViewGraph2.isHidden = true
             mainViewControllerObj!.showLogQuantityView()
             logQuantityVcObj?.isReviseQuantity = false
-            logQuantityVcObj?.resetData(name: lastHabit!, durationInSeconds: "\(arrAllMorningHabits[lastHabitIndex].durationSeconds!)", logQuantityQuestion: arrAllMorningHabits[lastHabitIndex].logQuantityQuestion, currentState: ._MORNING_HABIT_, logQuantityType: "", activity_id: arrAllMorningHabits[lastHabitIndex].id, activity_sequence_id: arrAllMorningHabits[lastHabitIndex].activity_sequence_id, activityChoiceId: nil)
+            
+            var notes = ""
+            
+            if arrFilteredMorningHabits[lastHabitIndex].take_notes == DURING_ACTIVITY{
+                notes = UserDefaults.standard.object(forKey: kUserdefaultsLastHabitSavedNotes) as? String ?? ""
+            }
+            
+            logQuantityVcObj?.resetData(name: lastHabit!, durationInSeconds: "\(arrFilteredMorningHabits[lastHabitIndex].durationSeconds!)", logQuantityQuestion: arrFilteredMorningHabits[lastHabitIndex].logQuantityQuestion, currentState: ._MORNING_HABIT_, logQuantityType: "", activity_id: arrFilteredMorningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredMorningHabits[lastHabitIndex].activity_sequence_id, activityChoiceId: nil, take_notes: arrFilteredMorningHabits[lastHabitIndex].take_notes, notes: notes)
         }else{
         
             let startTime = getStringFromDate(date: lastActivityPerformedTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")
-            addEntryInStatsCsv(logType: "morning routine", activity: lastHabit!, durationInSeconds: "\(arrAllMorningHabits[lastHabitIndex].durationSeconds!)", quantityQuestion: "", quantityLogged: "", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "")
+            addEntryInStatsCsv(logType: "morning routine", activity: lastHabit!, durationInSeconds: "\(arrFilteredMorningHabits[lastHabitIndex].durationSeconds!)", quantityQuestion: "", quantityLogged: "", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "")
             
-            self.loadGraph(activityId: arrAllMorningHabits[self.lastHabitIndex].id, activityName: lastHabit ?? "", logQuantity: false, logQuantityType: "", activityChoiceId: nil,activityStartTime: lastActivityPerformedTime!, duration: "\(arrAllMorningHabits[lastHabitIndex].durationSeconds!)", quantity: "")
-            allApiObject.activityCompletedApi(activity_id: arrAllMorningHabits[lastHabitIndex].id, activity_sequence_id: arrAllMorningHabits[lastHabitIndex].activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:nil, duration_logged:arrAllMorningHabits[lastHabitIndex].durationSeconds!, choice_id: nil, is_skipped: false, completionHandler: {dic  in
+            self.loadGraph(activityId: arrFilteredMorningHabits[self.lastHabitIndex].id, activityName: lastHabit ?? "", logQuantity: false, logQuantityType: "", activityChoiceId: nil,activityStartTime: lastActivityPerformedTime!, duration: "\(arrFilteredMorningHabits[lastHabitIndex].durationSeconds!)", quantity: "")
+            
+            if arrFilteredMorningHabits[lastHabitIndex].take_notes == END_OF_ACTIVITY{
                 
-                DispatchQueue.main.async {
-                    
+                mainViewControllerObj!.showTakeNotesView()
+                takeActivityNotesVcObj?.resetData(durationInSeconds: arrFilteredMorningHabits[lastHabitIndex].durationSeconds!, quantity_logged:nil, activity_id: arrFilteredMorningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredMorningHabits[lastHabitIndex].activity_sequence_id, activityChoiceId: nil)
+                
+            }else{
+                var notes = ""
+                
+                if arrFilteredMorningHabits[lastHabitIndex].take_notes == DURING_ACTIVITY{
+                    notes = UserDefaults.standard.object(forKey: kUserdefaultsLastHabitSavedNotes) as? String ?? ""
                 }
-                print(dic)
-            })
+                
+                allApiObject.activityCompletedApi(activity_id: arrFilteredMorningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredMorningHabits[lastHabitIndex].activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:nil, duration_logged:arrFilteredMorningHabits[lastHabitIndex].durationSeconds!, choice_id: nil, is_skipped: false, notes: notes, completionHandler: {dic  in
+                    
+                    DispatchQueue.main.async {
+                        
+                    }
+                    print(dic)
+                })
+            }
+            
+            
+            
         }
         
         
@@ -2221,8 +2297,8 @@ class thirdVc: NSViewController {
         setProgress()
         
         addLog(text:"\(lastHabit!) finished")
-        if index < arrAllMorningHabits.count-1 {
-            
+        if index < arrFilteredMorningHabits.count-1 {
+            isSequenceFinished = false
             imgViewGif.isHidden = true
             playEveryActivitySound()
            
@@ -2243,29 +2319,31 @@ class thirdVc: NSViewController {
                     }else{
                         btnSkipHabit.isHidden = false
                         isPromptToRememberHabitShowedInLastHabit = false
-                        let time = arrAllMorningHabits[lastHabitIndex+1].durationSeconds
-                        btnMain.title = getstartActivityButtonText(seconds: time!, name: arrAllMorningHabits[lastHabitIndex+1].name!)
+                        let time = arrFilteredMorningHabits[lastHabitIndex+1].durationSeconds
+                        btnMain.title = getstartActivityButtonText(seconds: time!, name: arrFilteredMorningHabits[lastHabitIndex+1].name!)
                         btnMain.toolTip = btnMain.title
                     }
                 }else{
                     btnSkipHabit.isHidden = false
                     isPromptToRememberHabitShowedInLastHabit = false
-                    let time = arrAllMorningHabits[lastHabitIndex+1].durationSeconds
-                    btnMain.title = getstartActivityButtonText(seconds: time!, name: arrAllMorningHabits[lastHabitIndex+1].name!)
+                    let time = arrFilteredMorningHabits[lastHabitIndex+1].durationSeconds
+                    btnMain.title = getstartActivityButtonText(seconds: time!, name: arrFilteredMorningHabits[lastHabitIndex+1].name!)
                     btnMain.toolTip = btnMain.title
                 }
             }else{
                 btnSkipHabit.isHidden = false
-                let time = arrAllMorningHabits[lastHabitIndex+1].durationSeconds
-                btnMain.title = getstartActivityButtonText(seconds: time!, name: arrAllMorningHabits[lastHabitIndex+1].name!)
+                let time = arrFilteredMorningHabits[lastHabitIndex+1].durationSeconds
+                btnMain.title = getstartActivityButtonText(seconds: time!, name: arrFilteredMorningHabits[lastHabitIndex+1].name!)
                 btnMain.toolTip = btnMain.title
             }
         }else {
+            isSequenceFinished = true
             allApiObject.capturePosthog(event: "complete-morning-routine", metadata: ["routine-type":"morning_routine"])
             imgViewGif.isHidden = false
             lblTitle.stringValue = getActivityFinishedText(isLast: true, activityName: lastHabit!)
             btnMain.title = unlockMachineButtonText
             mainViewControllerObj?.btnAbort.isHidden = true
+            mainViewControllerObj?.stackViewTopButtons.isHidden = true
             btnMain.toolTip = btnMain.title
             playAfterMorningEveningRoutineSound(isMorning:true)
             isHabitAlreadyShowed = true
@@ -2275,6 +2353,7 @@ class thirdVc: NSViewController {
     }
     
     func morningHabitSkippedAndDoneAlready() {
+        UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
         UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitRunningInfo)
         lastActivityPerformedTime = Date()
         if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
@@ -2303,28 +2382,38 @@ class thirdVc: NSViewController {
         
         lastHabitIndex = currentHabitIndex
         stackViewGraph.isHidden = true
-        let lastHabit = arrAllMorningHabits[lastHabitIndex].name
-        UserDefaults.standard.set(arrAllMorningHabits[lastHabitIndex].id, forKey: kUserdefaultsLastHabitID)
-        habitTotalCompletedSeconds += arrAllMorningHabits[lastHabitIndex].durationSeconds!
-        if arrAllMorningHabits[lastHabitIndex].logQuantity{
+        let lastHabit = arrFilteredMorningHabits[lastHabitIndex].name
+        UserDefaults.standard.set(arrFilteredMorningHabits[lastHabitIndex].id, forKey: kUserdefaultsLastHabitID)
+        habitTotalCompletedSeconds += arrFilteredMorningHabits[lastHabitIndex].durationSeconds!
+        if arrFilteredMorningHabits[lastHabitIndex].logQuantity{
             webViewGraph1.isHidden = true
             webViewGraph2.isHidden = true
             mainViewControllerObj!.showLogQuantityView()
             logQuantityVcObj?.isReviseQuantity = false
-            logQuantityVcObj?.resetData(name: lastHabit!, durationInSeconds: "\(arrAllMorningHabits[lastHabitIndex].durationSeconds!)", logQuantityQuestion: arrAllMorningHabits[lastHabitIndex].logQuantityQuestion, currentState: ._MORNING_HABIT_, logQuantityType: "", activity_id: arrAllMorningHabits[lastHabitIndex].id, activity_sequence_id: arrAllMorningHabits[lastHabitIndex].activity_sequence_id, activityChoiceId: nil)
+            
+            logQuantityVcObj?.resetData(name: lastHabit!, durationInSeconds: "\(arrFilteredMorningHabits[lastHabitIndex].durationSeconds!)", logQuantityQuestion: arrFilteredMorningHabits[lastHabitIndex].logQuantityQuestion, currentState: ._MORNING_HABIT_, logQuantityType: "", activity_id: arrFilteredMorningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredMorningHabits[lastHabitIndex].activity_sequence_id, activityChoiceId: nil, take_notes: arrFilteredMorningHabits[lastHabitIndex].take_notes, notes: "")
             logQuantityVcObj?.is_skipped = true
         }else{
             let startTime = getStringFromDate(date: lastActivityPerformedTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")
-            addEntryInStatsCsv(logType: "morning routine", activity: lastHabit!, durationInSeconds: "\(arrAllMorningHabits[lastHabitIndex].durationSeconds!)", quantityQuestion: "", quantityLogged: "", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "")
+            addEntryInStatsCsv(logType: "morning routine", activity: lastHabit!, durationInSeconds: "\(arrFilteredMorningHabits[lastHabitIndex].durationSeconds!)", quantityQuestion: "", quantityLogged: "", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "")
             
-            self.loadGraph(activityId: arrAllMorningHabits[self.lastHabitIndex].id, activityName: lastHabit ?? "", logQuantity: false, logQuantityType: "", activityChoiceId: nil,activityStartTime: lastActivityPerformedTime!, duration: "\(arrAllMorningHabits[lastHabitIndex].durationSeconds!)", quantity: "")
-            allApiObject.activityCompletedApi(activity_id: arrAllMorningHabits[lastHabitIndex].id, activity_sequence_id: arrAllMorningHabits[lastHabitIndex].activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:nil, duration_logged:arrAllMorningHabits[lastHabitIndex].durationSeconds!, choice_id: nil, is_skipped: true, completionHandler: {dic  in
+            self.loadGraph(activityId: arrFilteredMorningHabits[self.lastHabitIndex].id, activityName: lastHabit ?? "", logQuantity: false, logQuantityType: "", activityChoiceId: nil,activityStartTime: lastActivityPerformedTime!, duration: "\(arrFilteredMorningHabits[lastHabitIndex].durationSeconds!)", quantity: "")
+            
+            if arrFilteredMorningHabits[lastHabitIndex].take_notes == END_OF_ACTIVITY{
                 
-                DispatchQueue.main.async {
+                mainViewControllerObj!.showTakeNotesView()
+                takeActivityNotesVcObj?.resetData(durationInSeconds: arrFilteredMorningHabits[lastHabitIndex].durationSeconds!, quantity_logged:nil, activity_id: arrFilteredMorningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredMorningHabits[lastHabitIndex].activity_sequence_id, activityChoiceId: nil)
+                
+            }else{
+                allApiObject.activityCompletedApi(activity_id: arrFilteredMorningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredMorningHabits[lastHabitIndex].activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:nil, duration_logged:arrFilteredMorningHabits[lastHabitIndex].durationSeconds!, choice_id: nil, is_skipped: true, notes: "", completionHandler: {dic  in
                     
-                }
-                print(dic)
-            })
+                    DispatchQueue.main.async {
+                        
+                    }
+                    print(dic)
+                })
+            }
+
         }
         
         
@@ -2332,8 +2421,8 @@ class thirdVc: NSViewController {
         setProgress()
         
         addLog(text:"\(lastHabit!) skipped")
-        if lastHabitIndex < arrAllMorningHabits.count-1 {
-            
+        if lastHabitIndex < arrFilteredMorningHabits.count-1 {
+            isSequenceFinished = false
             imgViewGif.isHidden = true
             playEveryActivitySound()
             lblTitle.stringValue = getActivityFinishedText(isLast: false, activityName: lastHabit!)//"\(lastHabit!) finished!✅"
@@ -2353,29 +2442,31 @@ class thirdVc: NSViewController {
                     }else{
                         btnSkipHabit.isHidden = false
                         isPromptToRememberHabitShowedInLastHabit = false
-                        let time = arrAllMorningHabits[lastHabitIndex+1].durationSeconds
-                        btnMain.title = getstartActivityButtonText(seconds: time!, name: arrAllMorningHabits[lastHabitIndex+1].name!)
+                        let time = arrFilteredMorningHabits[lastHabitIndex+1].durationSeconds
+                        btnMain.title = getstartActivityButtonText(seconds: time!, name: arrFilteredMorningHabits[lastHabitIndex+1].name!)
                         btnMain.toolTip = btnMain.title
                     }
                 }else{
                     btnSkipHabit.isHidden = false
                     isPromptToRememberHabitShowedInLastHabit = false
-                    let time = arrAllMorningHabits[lastHabitIndex+1].durationSeconds
-                    btnMain.title = getstartActivityButtonText(seconds: time!, name: arrAllMorningHabits[lastHabitIndex+1].name!)
+                    let time = arrFilteredMorningHabits[lastHabitIndex+1].durationSeconds
+                    btnMain.title = getstartActivityButtonText(seconds: time!, name: arrFilteredMorningHabits[lastHabitIndex+1].name!)
                     btnMain.toolTip = btnMain.title
                 }
             }else{
                 btnSkipHabit.isHidden = false
-                let time = arrAllMorningHabits[lastHabitIndex+1].durationSeconds
-                btnMain.title = getstartActivityButtonText(seconds: time!, name: arrAllMorningHabits[lastHabitIndex+1].name!)
+                let time = arrFilteredMorningHabits[lastHabitIndex+1].durationSeconds
+                btnMain.title = getstartActivityButtonText(seconds: time!, name: arrFilteredMorningHabits[lastHabitIndex+1].name!)
                 btnMain.toolTip = btnMain.title
             }
         }else {
+            isSequenceFinished = true
             allApiObject.capturePosthog(event: "complete-morning-routine", metadata: ["routine-type":"morning_routine"])
             imgViewGif.isHidden = false
             lblTitle.stringValue = getActivityFinishedText(isLast: true, activityName: lastHabit!)
             btnMain.title = unlockMachineButtonText
             mainViewControllerObj?.btnAbort.isHidden = true
+            mainViewControllerObj?.stackViewTopButtons.isHidden = true
             btnMain.toolTip = btnMain.title
             playAfterMorningEveningRoutineSound(isMorning:true)
             isHabitAlreadyShowed = true
@@ -2388,12 +2479,19 @@ class thirdVc: NSViewController {
         let habitCompletedSeconds = habitTotalCompletedSeconds
         
         if currentState == ._MORNING_HABIT_{
-            for i in lastHabitIndex+1..<arrAllMorningHabits.count{
-                totalSecondsAllHabits += arrAllMorningHabits[i].durationSeconds
+            for i in lastHabitIndex+1..<arrFilteredMorningHabits.count{
+                totalSecondsAllHabits += arrFilteredMorningHabits[i].durationSeconds
             }
         }else if currentState == ._EVENING_HABIT_{
-            for i in lastHabitIndex+1..<arrAllEveningHabits.count{
-                totalSecondsAllHabits += arrAllEveningHabits[i].durationSeconds
+            for i in lastHabitIndex+1..<arrFilteredEveningHabits.count{
+                
+                if isHighPrioritySequenceGoing{
+                    if arrFilteredEveningHabits[i].isPriorityHigh{
+                        totalSecondsAllHabits += arrFilteredEveningHabits[i].durationSeconds
+                    }
+                }else{
+                    totalSecondsAllHabits += arrFilteredEveningHabits[i].durationSeconds
+                }
             }
         }
         let (h,m,s) = secondsToHoursMinutesSeconds(seconds: habitCompletedSeconds)
@@ -2494,6 +2592,7 @@ class thirdVc: NSViewController {
         
     }
     func morningHabitFinishedAndStartIncompleteNew(index:Int, isLastActivitySkipped:Bool) {
+        UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
         UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitRunningInfo)
         randomIntToRememberNextHabit = 0
         if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
@@ -2513,20 +2612,21 @@ class thirdVc: NSViewController {
         lblProgress.isHidden = false
         boxBreathingFinished.isHidden = true
         lastHabitIndex = index
-        let lastHabit = arrAllMorningHabits[lastHabitIndex].name
+        let lastHabit = arrFilteredMorningHabits[lastHabitIndex].name
         stackViewGraph.isHidden = false
         self.webViewGraph1.isHidden = true
         self.webViewGraph2.isHidden = true
 
-        allApiObject.getACtivityStats(activityId: arrAllMorningHabits[lastHabitIndex].id, activityChoiceId: nil, completionHandler: {dic in
+        allApiObject.getACtivityStats(activityId: arrFilteredMorningHabits[lastHabitIndex].id, activityChoiceId: nil, completionHandler: {dic in
             DispatchQueue.main.async {
-                self.loadGraph(activityId: arrAllMorningHabits[self.lastHabitIndex].id, activityName: lastHabit ?? "", logQuantity: arrAllMorningHabits[self.lastHabitIndex].logQuantity, logQuantityType: "", activityChoiceId: nil,activityStartTime: nil, duration: "", quantity: "")
+                self.loadGraph(activityId: arrFilteredMorningHabits[self.lastHabitIndex].id, activityName: lastHabit ?? "", logQuantity: arrFilteredMorningHabits[self.lastHabitIndex].logQuantity, logQuantityType: "", activityChoiceId: nil,activityStartTime: nil, duration: "", quantity: "")
             }
         })
         
         setProgress()
         
-        if index < arrAllMorningHabits.count-1 {
+        if index < arrFilteredMorningHabits.count-1 {
+            isSequenceFinished = false
             imgViewGif.isHidden = true
             if !isLastActivitySkipped{
                 addLog(text:"\(lastHabit!) Finished")
@@ -2536,12 +2636,13 @@ class thirdVc: NSViewController {
                 lblTitle.stringValue = getActivitySkippedText(isLast: false, activityName: lastHabit!)
             }
             isPromptToRememberHabitShowedInLastHabit = false
-            let time = arrAllMorningHabits[lastHabitIndex+1].durationSeconds
-            btnMain.title = getstartActivityButtonText(seconds: time!, name: arrAllMorningHabits[lastHabitIndex+1].name!)
+            let time = arrFilteredMorningHabits[lastHabitIndex+1].durationSeconds
+            btnMain.title = getstartActivityButtonText(seconds: time!, name: arrFilteredMorningHabits[lastHabitIndex+1].name!)
             btnMain.toolTip = btnMain.title
             btnSkipHabit.isHidden = false
         }else {
             imgViewGif.isHidden = false
+            isSequenceFinished = true
             if !isLastActivitySkipped{
                 addLog(text:"\(lastHabit!) Finished")
                 lblTitle.stringValue = getActivityFinishedText(isLast: true, activityName: lastHabit!)
@@ -2551,6 +2652,7 @@ class thirdVc: NSViewController {
             }
             btnMain.title = unlockMachineButtonText
             mainViewControllerObj?.btnAbort.isHidden = true
+            mainViewControllerObj?.stackViewTopButtons.isHidden = true
             btnMain.toolTip = btnMain.title
             isHabitAlreadyShowed = true
             btnSkipHabit.isHidden = true
@@ -2559,6 +2661,7 @@ class thirdVc: NSViewController {
       
     }
     func morningHabitSkipped() {
+        UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
         UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitRunningInfo)
         if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
             btnSkipHabit.title = activityInfo.value(forKey: "buttonSkipHabitText") as? String ?? btnSkipHabit.title
@@ -2568,7 +2671,7 @@ class thirdVc: NSViewController {
         }
         
         currentAction = ._END_
-        allApiObject.activitySkippedApi(activity_id: arrAllMorningHabits[currentHabitIndex].id, activity_sequence_id: arrAllMorningHabits[currentHabitIndex].activity_sequence_id, completionHandler: {dic in
+        allApiObject.activitySkippedApi(activity_id: arrFilteredMorningHabits[currentHabitIndex].id, activity_sequence_id: arrFilteredMorningHabits[currentHabitIndex].activity_sequence_id, completionHandler: {dic in
             
         })
         let index = currentHabitIndex
@@ -2587,15 +2690,15 @@ class thirdVc: NSViewController {
         lblProgress.isHidden = false
         boxBreathingFinished.isHidden = true
         lastHabitIndex = index
-        let lastHabit = arrAllMorningHabits[lastHabitIndex].name
-        UserDefaults.standard.set(arrAllMorningHabits[lastHabitIndex].id, forKey: kUserdefaultsLastHabitID)
+        let lastHabit = arrFilteredMorningHabits[lastHabitIndex].name
+        UserDefaults.standard.set(arrFilteredMorningHabits[lastHabitIndex].id, forKey: kUserdefaultsLastHabitID)
         stackViewGraph.isHidden = false
         self.webViewGraph1.isHidden = true
         self.webViewGraph2.isHidden = true
 
-      //  allApiObject.getACtivityStats(activityId: arrAllMorningHabits[lastHabitIndex].id, activityChoiceId: nil, completionHandler: {dic in
+      //  allApiObject.getACtivityStats(activityId: arrFilteredMorningHabits[lastHabitIndex].id, activityChoiceId: nil, completionHandler: {dic in
             DispatchQueue.main.async {
-                self.loadGraph(activityId: arrAllMorningHabits[self.lastHabitIndex].id, activityName: lastHabit ?? "", logQuantity: arrAllMorningHabits[self.lastHabitIndex].logQuantity, logQuantityType: "", activityChoiceId: nil,activityStartTime: nil, duration: "", quantity: "")
+                self.loadGraph(activityId: arrFilteredMorningHabits[self.lastHabitIndex].id, activityName: lastHabit ?? "", logQuantity: arrFilteredMorningHabits[self.lastHabitIndex].logQuantity, logQuantityType: "", activityChoiceId: nil,activityStartTime: nil, duration: "", quantity: "")
             }
        // })
         
@@ -2603,25 +2706,30 @@ class thirdVc: NSViewController {
         
         
         addLog(text:"\(lastHabit!) Skipped")
-        if index < arrAllMorningHabits.count-1 {
+        if index < arrFilteredMorningHabits.count-1 {
+            isSequenceFinished = false
             imgViewGif.isHidden = true
             lblTitle.stringValue = getActivitySkippedText(isLast: false, activityName: lastHabit!)
             isPromptToRememberHabitShowedInLastHabit = false
-            let time = arrAllMorningHabits[lastHabitIndex+1].durationSeconds
-            btnMain.title = getstartActivityButtonText(seconds: time!, name: arrAllMorningHabits[lastHabitIndex+1].name!)
+            let time = arrFilteredMorningHabits[lastHabitIndex+1].durationSeconds
+            btnMain.title = getstartActivityButtonText(seconds: time!, name: arrFilteredMorningHabits[lastHabitIndex+1].name!)
             btnMain.toolTip = btnMain.title
             btnSkipHabit.isHidden = false
         }else {
             imgViewGif.isHidden = false
+            isSequenceFinished = true
             lblTitle.stringValue = getActivitySkippedText(isLast: true, activityName: lastHabit!)
             btnMain.title = unlockMachineButtonText
             mainViewControllerObj?.btnAbort.isHidden = true
+            mainViewControllerObj?.stackViewTopButtons.isHidden = true
             btnMain.toolTip = btnMain.title
             isHabitAlreadyShowed = true
             btnSkipHabit.isHidden = true
             UserDefaults.standard.set(Date(), forKey: kUserdefaultsLastHabitShowDate)
         }
     }
+    var isSequenceFinished = false
+    
     func eveningHabitFinished(index:Int) {
         UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitRunningInfo)
         randomIntToRememberNextHabit = 0
@@ -2642,40 +2750,84 @@ class thirdVc: NSViewController {
         lblProgress.isHidden = false
         boxBreathingFinished.isHidden = true
         lastHabitIndex = index
-        let lastHabit = arrAllEveningHabits[lastHabitIndex].name
-        UserDefaults.standard.set(arrAllEveningHabits[lastHabitIndex].id, forKey: kUserdefaultsLastHabitID)
+        let lastHabit = arrFilteredEveningHabits[lastHabitIndex].name
+        UserDefaults.standard.set(arrFilteredEveningHabits[lastHabitIndex].id, forKey: kUserdefaultsLastHabitID)
         stackViewGraph.isHidden = true
-        habitTotalCompletedSeconds += arrAllEveningHabits[lastHabitIndex].durationSeconds!
-        if arrAllEveningHabits[lastHabitIndex].logQuantity{
+        habitTotalCompletedSeconds += arrFilteredEveningHabits[lastHabitIndex].durationSeconds!
+        if arrFilteredEveningHabits[lastHabitIndex].logQuantity{
             webViewGraph1.isHidden = true
             webViewGraph2.isHidden = true
             mainViewControllerObj!.showLogQuantityView()
             logQuantityVcObj?.isReviseQuantity = false
-            logQuantityVcObj?.resetData(name: lastHabit!, durationInSeconds: "\(arrAllEveningHabits[lastHabitIndex].durationSeconds!)", logQuantityQuestion: arrAllEveningHabits[lastHabitIndex].logQuantityQuestion, currentState: ._EVENING_HABIT_, logQuantityType: "", activity_id: arrAllEveningHabits[lastHabitIndex].id, activity_sequence_id: arrAllEveningHabits[lastHabitIndex].activity_sequence_id, activityChoiceId: nil)
+            
+            var notes = ""
+            
+            if arrFilteredEveningHabits[lastHabitIndex].take_notes == DURING_ACTIVITY{
+                notes = UserDefaults.standard.object(forKey: kUserdefaultsLastHabitSavedNotes) as? String ?? ""
+            }
+            
+            logQuantityVcObj?.resetData(name: lastHabit!, durationInSeconds: "\(arrFilteredEveningHabits[lastHabitIndex].durationSeconds!)", logQuantityQuestion: arrFilteredEveningHabits[lastHabitIndex].logQuantityQuestion, currentState: ._EVENING_HABIT_, logQuantityType: "", activity_id: arrFilteredEveningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredEveningHabits[lastHabitIndex].activity_sequence_id, activityChoiceId: nil, take_notes: arrFilteredEveningHabits[lastHabitIndex].take_notes, notes: notes)
         }else{
             let startTime = getStringFromDate(date: lastActivityPerformedTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")
-            addEntryInStatsCsv(logType: "evening routine", activity: lastHabit!, durationInSeconds: "\(arrAllEveningHabits[lastHabitIndex].durationSeconds!)", quantityQuestion: "", quantityLogged: "", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "")
+            addEntryInStatsCsv(logType: "evening routine", activity: lastHabit!, durationInSeconds: "\(arrFilteredEveningHabits[lastHabitIndex].durationSeconds!)", quantityQuestion: "", quantityLogged: "", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "")
             
-            self.loadGraph(activityId: arrAllEveningHabits[self.lastHabitIndex].id, activityName: lastHabit ?? "", logQuantity: false, logQuantityType: "", activityChoiceId: nil,activityStartTime: lastActivityPerformedTime!, duration: "\(arrAllEveningHabits[lastHabitIndex].durationSeconds!)", quantity: "")
-            allApiObject.activityCompletedApi(activity_id: arrAllEveningHabits[lastHabitIndex].id, activity_sequence_id: arrAllEveningHabits[lastHabitIndex].activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:nil, duration_logged:arrAllEveningHabits[lastHabitIndex].durationSeconds!, choice_id: nil, is_skipped: false, completionHandler: {dic  in
+            self.loadGraph(activityId: arrFilteredEveningHabits[self.lastHabitIndex].id, activityName: lastHabit ?? "", logQuantity: false, logQuantityType: "", activityChoiceId: nil,activityStartTime: lastActivityPerformedTime!, duration: "\(arrFilteredEveningHabits[lastHabitIndex].durationSeconds!)", quantity: "")
+            
+            if arrFilteredEveningHabits[lastHabitIndex].take_notes == END_OF_ACTIVITY{
+                mainViewControllerObj!.showTakeNotesView()
+                takeActivityNotesVcObj?.resetData(durationInSeconds: arrFilteredEveningHabits[lastHabitIndex].durationSeconds!, quantity_logged:nil, activity_id: arrFilteredEveningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredEveningHabits[lastHabitIndex].activity_sequence_id, activityChoiceId: nil)
+            }else{
                 
-                DispatchQueue.main.async {
-                    
+                var notes = ""
+                
+                if arrFilteredEveningHabits[lastHabitIndex].take_notes == DURING_ACTIVITY{
+                    notes = UserDefaults.standard.object(forKey: kUserdefaultsLastHabitSavedNotes) as? String ?? ""
                 }
-                print(dic)
-            })
+                
+                allApiObject.activityCompletedApi(activity_id: arrFilteredEveningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredEveningHabits[lastHabitIndex].activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:nil, duration_logged:arrFilteredEveningHabits[lastHabitIndex].durationSeconds!, choice_id: nil, is_skipped: false, notes: notes, completionHandler: {dic  in
+                    
+                    DispatchQueue.main.async {
+                        
+                    }
+                    print(dic)
+                })
+            }
+            
+            
         }
         
-        setProgress()
+        
         addLog(text:"\(lastHabit!) Finished")
-        if index < arrAllEveningHabits.count-1 {
+        
+        
+        isSequenceFinished = false
+        var newHabitIndex = lastHabitIndex+1
+        if index < arrFilteredEveningHabits.count-1 {
+            if isHighPrioritySequenceGoing{
+                while !arrFilteredEveningHabits[newHabitIndex].isPriorityHigh{
+                    newHabitIndex = newHabitIndex + 1
+                    if newHabitIndex > arrFilteredEveningHabits.count - 1{
+                        isSequenceFinished = true
+                        break;
+                    }
+                }
+                
+                
+            }
+        }else{
+            isSequenceFinished = true
+        }
+        currentHabitIndex = newHabitIndex - 1
+        setProgress()
+        
+        if !isSequenceFinished {
             
             allApiObject.capturePosthog(event: "complete-evening-routine-activity", metadata: ["routine-type":"evening_routine"])
             lblTitle.stringValue = getActivityFinishedText(isLast: false, activityName: lastHabit!)//"\(lastHabit!) finished!✅"
             playEveryActivitySound()
             imgViewGif.isHidden = true
             
-            if SettingsManagerObject.isPromptToRememberHabit{
+            if SettingsManagerObject.isPromptToRememberHabit && !isHighPrioritySequenceGoing{
                 if !isPromptToRememberHabitShowedInLastHabit{
                     randomIntToRememberNextHabit = Int.random(in: 0..<6)
                     if randomIntToRememberNextHabit == 5{
@@ -2690,26 +2842,26 @@ class thirdVc: NSViewController {
                     }else{
                         btnSkipHabit.isHidden = false
                         isPromptToRememberHabitShowedInLastHabit = false
-                        let time = arrAllEveningHabits[lastHabitIndex+1].durationSeconds
-                        btnMain.title = getstartActivityButtonText(seconds: time!, name: arrAllEveningHabits[lastHabitIndex+1].name!)
+                        let time = arrFilteredEveningHabits[newHabitIndex].durationSeconds
+                        btnMain.title = getstartActivityButtonText(seconds: time!, name: arrFilteredEveningHabits[newHabitIndex].name!)
                         btnMain.toolTip = btnMain.title
                     }
                 }else{
                     btnSkipHabit.isHidden = false
                     isPromptToRememberHabitShowedInLastHabit = false
-                    let time = arrAllEveningHabits[lastHabitIndex+1].durationSeconds
-                    btnMain.title = getstartActivityButtonText(seconds: time!, name: arrAllEveningHabits[lastHabitIndex+1].name!)
+                    let time = arrFilteredEveningHabits[newHabitIndex].durationSeconds
+                    btnMain.title = getstartActivityButtonText(seconds: time!, name: arrFilteredEveningHabits[newHabitIndex].name!)
                     btnMain.toolTip = btnMain.title
                 }
             }else{
                 btnSkipHabit.isHidden = false
-                let time = arrAllEveningHabits[lastHabitIndex+1].durationSeconds
-                btnMain.title = getstartActivityButtonText(seconds: time!, name: arrAllEveningHabits[lastHabitIndex+1].name!)
+                let time = arrFilteredEveningHabits[newHabitIndex].durationSeconds
+                btnMain.title = getstartActivityButtonText(seconds: time!, name: arrFilteredEveningHabits[newHabitIndex].name!)
                 btnMain.toolTip = btnMain.title
             }
         }else{
             allApiObject.capturePosthog(event: "complete-evening-routine", metadata: ["routine-type":"evening_routine"])
-            if arrAllEveningHabits[lastHabitIndex].logQuantity{
+            if arrFilteredEveningHabits[lastHabitIndex].logQuantity || arrFilteredEveningHabits[lastHabitIndex].take_notes == END_OF_ACTIVITY{
                 
             }else{
                 startTimer(duration: 30)
@@ -2722,11 +2874,14 @@ class thirdVc: NSViewController {
             }
             
             mainViewControllerObj?.btnAbort.isHidden = true
+            mainViewControllerObj?.stackViewTopButtons.isHidden = true
             btnMain.toolTip = btnMain.title
             playAfterMorningEveningRoutineSound(isMorning:false)
             if startTime == nil || shutOffTime == nil{
                 return;
             }
+   
+
             let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
             let shutOffdate = Calendar.current.date(bySettingHour: shutOffTime!.hour, minute: shutOffTime!.minute, second: shutOffTime!.second, of: Date())!
             
@@ -2741,8 +2896,11 @@ class thirdVc: NSViewController {
             btnSkipHabit.isHidden = true
         }
         
+        
+        
     }
     func eveningHabitSkippedAndDoneAlready() {
+        UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
         UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitRunningInfo)
         lastActivityPerformedTime = Date()
         randomIntToRememberNextHabit = 0
@@ -2769,42 +2927,71 @@ class thirdVc: NSViewController {
         currentAction = ._END_
         
         lastHabitIndex = currentHabitIndex
-        let lastHabit = arrAllEveningHabits[lastHabitIndex].name
-        UserDefaults.standard.set(arrAllEveningHabits[lastHabitIndex].id, forKey: kUserdefaultsLastHabitID)
+        let lastHabit = arrFilteredEveningHabits[lastHabitIndex].name
+        UserDefaults.standard.set(arrFilteredEveningHabits[lastHabitIndex].id, forKey: kUserdefaultsLastHabitID)
         stackViewGraph.isHidden = true
-        habitTotalCompletedSeconds += arrAllEveningHabits[lastHabitIndex].durationSeconds!
+        habitTotalCompletedSeconds += arrFilteredEveningHabits[lastHabitIndex].durationSeconds!
         
-        if arrAllEveningHabits[lastHabitIndex].logQuantity{
+        if arrFilteredEveningHabits[lastHabitIndex].logQuantity{
             webViewGraph1.isHidden = true
             webViewGraph2.isHidden = true
             mainViewControllerObj!.showLogQuantityView()
             logQuantityVcObj?.isReviseQuantity = false
-            logQuantityVcObj?.resetData(name: lastHabit!, durationInSeconds: "\(arrAllEveningHabits[lastHabitIndex].durationSeconds!)", logQuantityQuestion: arrAllEveningHabits[lastHabitIndex].logQuantityQuestion, currentState: ._EVENING_HABIT_, logQuantityType: "", activity_id: arrAllEveningHabits[lastHabitIndex].id, activity_sequence_id: arrAllEveningHabits[lastHabitIndex].activity_sequence_id, activityChoiceId: nil)
+            logQuantityVcObj?.resetData(name: lastHabit!, durationInSeconds: "\(arrFilteredEveningHabits[lastHabitIndex].durationSeconds!)", logQuantityQuestion: arrFilteredEveningHabits[lastHabitIndex].logQuantityQuestion, currentState: ._EVENING_HABIT_, logQuantityType: "", activity_id: arrFilteredEveningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredEveningHabits[lastHabitIndex].activity_sequence_id, activityChoiceId: nil, take_notes: arrFilteredEveningHabits[lastHabitIndex].take_notes, notes: "")
             logQuantityVcObj?.is_skipped = true
         }else{
             let startTime = getStringFromDate(date: lastActivityPerformedTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")
-            addEntryInStatsCsv(logType: "evening routine", activity: lastHabit!, durationInSeconds: "\(arrAllEveningHabits[lastHabitIndex].durationSeconds!)", quantityQuestion: "", quantityLogged: "", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "")
+            addEntryInStatsCsv(logType: "evening routine", activity: lastHabit!, durationInSeconds: "\(arrFilteredEveningHabits[lastHabitIndex].durationSeconds!)", quantityQuestion: "", quantityLogged: "", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "")
             
-            self.loadGraph(activityId: arrAllEveningHabits[self.lastHabitIndex].id, activityName: lastHabit ?? "", logQuantity: false, logQuantityType: "", activityChoiceId: nil,activityStartTime: lastActivityPerformedTime!, duration: "\(arrAllEveningHabits[lastHabitIndex].durationSeconds!)", quantity: "")
-            allApiObject.activityCompletedApi(activity_id: arrAllEveningHabits[lastHabitIndex].id, activity_sequence_id: arrAllEveningHabits[lastHabitIndex].activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:nil, duration_logged:arrAllEveningHabits[lastHabitIndex].durationSeconds!, choice_id: nil, is_skipped: true, completionHandler: {dic  in
+            self.loadGraph(activityId: arrFilteredEveningHabits[self.lastHabitIndex].id, activityName: lastHabit ?? "", logQuantity: false, logQuantityType: "", activityChoiceId: nil,activityStartTime: lastActivityPerformedTime!, duration: "\(arrFilteredEveningHabits[lastHabitIndex].durationSeconds!)", quantity: "")
+        
+            
+            if arrFilteredEveningHabits[lastHabitIndex].take_notes == END_OF_ACTIVITY{
+                mainViewControllerObj!.showTakeNotesView()
+                takeActivityNotesVcObj?.resetData(durationInSeconds: arrFilteredEveningHabits[lastHabitIndex].durationSeconds!, quantity_logged:nil, activity_id: arrFilteredEveningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredEveningHabits[lastHabitIndex].activity_sequence_id, activityChoiceId: nil)
+            }else{
                 
-                DispatchQueue.main.async {
+                allApiObject.activityCompletedApi(activity_id: arrFilteredEveningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredEveningHabits[lastHabitIndex].activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:nil, duration_logged:arrFilteredEveningHabits[lastHabitIndex].durationSeconds!, choice_id: nil, is_skipped: true, notes: "", completionHandler: {dic  in
                     
-                }
-                print(dic)
-            })
+                    DispatchQueue.main.async {
+                        
+                    }
+                    print(dic)
+                })
+            }
+            
+            
         }
         
-        setProgress()
+        
         addLog(text:"\(lastHabit!) skipped")
-        if lastHabitIndex < arrAllEveningHabits.count-1 {
-            
+      
+        isSequenceFinished = false
+        var newHabitIndex = lastHabitIndex+1
+        if lastHabitIndex < arrFilteredEveningHabits.count-1 {
+            if isHighPrioritySequenceGoing{
+                while !arrFilteredEveningHabits[newHabitIndex].isPriorityHigh{
+                    newHabitIndex = newHabitIndex + 1
+                    if newHabitIndex > arrFilteredEveningHabits.count - 1{
+                        isSequenceFinished = true
+                        break;
+                    }
+                }
+                
+                
+            }
+        }else{
+            isSequenceFinished = true
+        }
+        currentHabitIndex = newHabitIndex - 1
+        setProgress()
+        if !isSequenceFinished {
             allApiObject.capturePosthog(event: "complete-evening-routine-activity", metadata: ["routine-type":"evening_routine"])
             lblTitle.stringValue = getActivityFinishedText(isLast: false, activityName: lastHabit!)//"\(lastHabit!) finished!✅"
             playEveryActivitySound()
             imgViewGif.isHidden = true
             
-            if SettingsManagerObject.isPromptToRememberHabit{
+            if SettingsManagerObject.isPromptToRememberHabit && !isHighPrioritySequenceGoing{
                 if !isPromptToRememberHabitShowedInLastHabit{
                     randomIntToRememberNextHabit = Int.random(in: 0..<6)
                     if randomIntToRememberNextHabit == 5{
@@ -2819,26 +3006,26 @@ class thirdVc: NSViewController {
                     }else{
                         btnSkipHabit.isHidden = false
                         isPromptToRememberHabitShowedInLastHabit = false
-                        let time = arrAllEveningHabits[lastHabitIndex+1].durationSeconds
-                        btnMain.title = getstartActivityButtonText(seconds: time!, name: arrAllEveningHabits[lastHabitIndex+1].name!)
+                        let time = arrFilteredEveningHabits[newHabitIndex].durationSeconds
+                        btnMain.title = getstartActivityButtonText(seconds: time!, name: arrFilteredEveningHabits[newHabitIndex].name!)
                         btnMain.toolTip = btnMain.title
                     }
                 }else{
                     btnSkipHabit.isHidden = false
                     isPromptToRememberHabitShowedInLastHabit = false
-                    let time = arrAllEveningHabits[lastHabitIndex+1].durationSeconds
-                    btnMain.title = getstartActivityButtonText(seconds: time!, name: arrAllEveningHabits[lastHabitIndex+1].name!)
+                    let time = arrFilteredEveningHabits[newHabitIndex].durationSeconds
+                    btnMain.title = getstartActivityButtonText(seconds: time!, name: arrFilteredEveningHabits[newHabitIndex].name!)
                     btnMain.toolTip = btnMain.title
                 }
             }else{
                 btnSkipHabit.isHidden = false
-                let time = arrAllEveningHabits[lastHabitIndex+1].durationSeconds
-                btnMain.title = getstartActivityButtonText(seconds: time!, name: arrAllEveningHabits[lastHabitIndex+1].name!)
+                let time = arrFilteredEveningHabits[newHabitIndex].durationSeconds
+                btnMain.title = getstartActivityButtonText(seconds: time!, name: arrFilteredEveningHabits[newHabitIndex].name!)
                 btnMain.toolTip = btnMain.title
             }
         }else{
             allApiObject.capturePosthog(event: "complete-evening-routine", metadata: ["routine-type":"evening_routine"])
-            if arrAllEveningHabits[lastHabitIndex].logQuantity{
+            if arrFilteredEveningHabits[lastHabitIndex].logQuantity || arrFilteredEveningHabits[lastHabitIndex].take_notes == END_OF_ACTIVITY{
                 
             }else{
                 startTimer(duration: 30)
@@ -2851,6 +3038,7 @@ class thirdVc: NSViewController {
             }
             
             mainViewControllerObj?.btnAbort.isHidden = true
+            mainViewControllerObj?.stackViewTopButtons.isHidden = true
             btnMain.toolTip = btnMain.title
             playAfterMorningEveningRoutineSound(isMorning:false)
             if startTime == nil || shutOffTime == nil{
@@ -2872,6 +3060,7 @@ class thirdVc: NSViewController {
         
     }
     func eveningHabitFinishedAndStartIncompleteNew(index:Int, isLastActivitySkipped:Bool) {
+        UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
         UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitRunningInfo)
         randomIntToRememberNextHabit = 0
         if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
@@ -2891,21 +3080,43 @@ class thirdVc: NSViewController {
         lblProgress.isHidden = false
         boxBreathingFinished.isHidden = true
         lastHabitIndex = index
-        let lastHabit = arrAllEveningHabits[lastHabitIndex].name
+        let lastHabit = arrFilteredEveningHabits[lastHabitIndex].name
         stackViewGraph.isHidden = false
         self.webViewGraph1.isHidden = true
         self.webViewGraph2.isHidden = true
 
         
-        allApiObject.getACtivityStats(activityId: arrAllEveningHabits[self.lastHabitIndex].id, activityChoiceId: nil, completionHandler: {dic in
+        allApiObject.getACtivityStats(activityId: arrFilteredEveningHabits[self.lastHabitIndex].id, activityChoiceId: nil, completionHandler: {dic in
             DispatchQueue.main.async {
-                self.loadGraph(activityId: arrAllEveningHabits[self.lastHabitIndex].id, activityName: lastHabit ?? "", logQuantity: false, logQuantityType: "", activityChoiceId: nil,activityStartTime: nil, duration: "", quantity: "")
+                self.loadGraph(activityId: arrFilteredEveningHabits[self.lastHabitIndex].id, activityName: lastHabit ?? "", logQuantity: false, logQuantityType: "", activityChoiceId: nil,activityStartTime: nil, duration: "", quantity: "")
             }
         })
         
-        setProgress()
         
-        if index < arrAllEveningHabits.count-1 {
+        
+        
+      
+        isSequenceFinished = false
+        var newHabitIndex = lastHabitIndex+1
+        if lastHabitIndex < arrFilteredEveningHabits.count-1 {
+            if isHighPrioritySequenceGoing{
+                while !arrFilteredEveningHabits[newHabitIndex].isPriorityHigh{
+                    newHabitIndex = newHabitIndex + 1
+                    if newHabitIndex > arrFilteredEveningHabits.count - 1{
+                        isSequenceFinished = true
+                        break;
+                    }
+                }
+                
+                
+            }
+        }else{
+            isSequenceFinished = true
+        }
+        setProgress()
+        currentHabitIndex = newHabitIndex - 1
+        if !isSequenceFinished {
+
             if !isLastActivitySkipped{
                 addLog(text:"\(lastHabit!) Finished")
                 lblTitle.stringValue = getActivityFinishedText(isLast: false, activityName: lastHabit!)//"\(lastHabit!) finished!✅"
@@ -2915,16 +3126,17 @@ class thirdVc: NSViewController {
             }
             imgViewGif.isHidden = true
             isPromptToRememberHabitShowedInLastHabit = false
-            let time = arrAllEveningHabits[lastHabitIndex+1].durationSeconds
-            btnMain.title = getstartActivityButtonText(seconds: time!, name: arrAllEveningHabits[lastHabitIndex+1].name!)
+            let time = arrFilteredEveningHabits[newHabitIndex].durationSeconds
+            btnMain.title = getstartActivityButtonText(seconds: time!, name: arrFilteredEveningHabits[newHabitIndex].name!)
             btnMain.toolTip = btnMain.title
             btnSkipHabit.isHidden = false
         }else{
-            if arrAllEveningHabits[lastHabitIndex].logQuantity{
+            if arrFilteredEveningHabits[lastHabitIndex].logQuantity{
                 
             }else{
                 startTimer(duration: 30)
             }
+
             imgViewGif.isHidden = false
             if !isLastActivitySkipped{
                 addLog(text:"\(lastHabit!) Finished")
@@ -2939,6 +3151,7 @@ class thirdVc: NSViewController {
             }
             
             mainViewControllerObj?.btnAbort.isHidden = true
+            mainViewControllerObj?.stackViewTopButtons.isHidden = true
             btnMain.toolTip = btnMain.title
             if startTime == nil || shutOffTime == nil{
                 return;
@@ -2959,6 +3172,7 @@ class thirdVc: NSViewController {
         
     }
     func eveningHabitSkipped() {
+        UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
         UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitRunningInfo)
         if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
             btnSkipHabit.title = activityInfo.value(forKey: "buttonSkipHabitText") as? String ?? btnSkipHabit.title
@@ -2968,7 +3182,7 @@ class thirdVc: NSViewController {
         }
         currentAction = ._END_
         
-        allApiObject.activitySkippedApi(activity_id: arrAllEveningHabits[currentHabitIndex].id, activity_sequence_id: arrAllEveningHabits[currentHabitIndex].activity_sequence_id, completionHandler: {dic in
+        allApiObject.activitySkippedApi(activity_id: arrFilteredEveningHabits[currentHabitIndex].id, activity_sequence_id: arrFilteredEveningHabits[currentHabitIndex].activity_sequence_id, completionHandler: {dic in
             
         })
         let index = currentHabitIndex
@@ -2987,36 +3201,56 @@ class thirdVc: NSViewController {
         lblProgress.isHidden = false
         boxBreathingFinished.isHidden = true
         lastHabitIndex = index
-        let lastHabit = arrAllEveningHabits[lastHabitIndex].name
-        UserDefaults.standard.set(arrAllEveningHabits[lastHabitIndex].id, forKey: kUserdefaultsLastHabitID)
+        let lastHabit = arrFilteredEveningHabits[lastHabitIndex].name
+        UserDefaults.standard.set(arrFilteredEveningHabits[lastHabitIndex].id, forKey: kUserdefaultsLastHabitID)
         stackViewGraph.isHidden = false
         self.webViewGraph1.isHidden = true
         self.webViewGraph2.isHidden = true
 
         
-     //   allApiObject.getACtivityStats(activityId: arrAllEveningHabits[self.lastHabitIndex].id, activityChoiceId: nil, completionHandler: {dic in
-            DispatchQueue.main.async {
-                self.loadGraph(activityId: arrAllEveningHabits[self.lastHabitIndex].id, activityName: lastHabit ?? "", logQuantity: false, logQuantityType: "", activityChoiceId: nil,activityStartTime: nil, duration: "", quantity: "")
+        //   allApiObject.getACtivityStats(activityId: arrFilteredEveningHabits[self.lastHabitIndex].id, activityChoiceId: nil, completionHandler: {dic in
+        DispatchQueue.main.async {
+            self.loadGraph(activityId: arrFilteredEveningHabits[self.lastHabitIndex].id, activityName: lastHabit ?? "", logQuantity: false, logQuantityType: "", activityChoiceId: nil,activityStartTime: nil, duration: "", quantity: "")
+        }
+        // })
+        
+        
+        
+        isSequenceFinished = false
+        var newHabitIndex = lastHabitIndex+1
+        if index < arrFilteredEveningHabits.count-1 {
+            if isHighPrioritySequenceGoing{
+                while !arrFilteredEveningHabits[newHabitIndex].isPriorityHigh{
+                    newHabitIndex = newHabitIndex + 1
+                    if newHabitIndex > arrFilteredEveningHabits.count - 1{
+                        isSequenceFinished = true
+                        break;
+                    }
+                }
+                
+                
             }
-       // })
-        
+        }else{
+            isSequenceFinished = true
+        }
         setProgress()
-        
+        currentHabitIndex = newHabitIndex - 1
         addLog(text:"\(lastHabit!) Skipped")
-        if index < arrAllEveningHabits.count-1 {
+        if !isSequenceFinished {
             lblTitle.stringValue = getActivitySkippedText(isLast: false, activityName: lastHabit!)
             imgViewGif.isHidden = true
             isPromptToRememberHabitShowedInLastHabit = false
-            let time = arrAllEveningHabits[lastHabitIndex+1].durationSeconds
-            btnMain.title = getstartActivityButtonText(seconds: time!, name: arrAllEveningHabits[lastHabitIndex+1].name!)
+            let time = arrFilteredEveningHabits[newHabitIndex].durationSeconds
+            btnMain.title = getstartActivityButtonText(seconds: time!, name: arrFilteredEveningHabits[newHabitIndex].name!)
             btnMain.toolTip = btnMain.title
             btnSkipHabit.isHidden = false
         }else{
-            if arrAllEveningHabits[lastHabitIndex].logQuantity{
+            if arrFilteredEveningHabits[lastHabitIndex].logQuantity{
                 
             }else{
                 startTimer(duration: 30)
             }
+
             imgViewGif.isHidden = false
             lblTitle.stringValue = getActivitySkippedText(isLast: true, activityName: lastHabit!)
             btnMain.title = "Let's wrap up for the day"
@@ -3025,6 +3259,7 @@ class thirdVc: NSViewController {
             }
             
             mainViewControllerObj?.btnAbort.isHidden = true
+            mainViewControllerObj?.stackViewTopButtons.isHidden = true
             btnMain.toolTip = btnMain.title
             if startTime == nil || shutOffTime == nil{
                 return;
@@ -3129,6 +3364,7 @@ class thirdVc: NSViewController {
         var activity_id:String = ""
         var activity_sequence_id = ""
         let activityChoiceId:String? = lastActivityChoice?.id
+        var take_notes = ""
         if isAnyMandatoryActivityIncluded{
             if isMandatoryActivityGoing{
                 lastActivity = timerViewcontrollerObj?.currentActicityTitle ?? arrActivitiesIncludeInEveryBreak[lastActivityIndex].name//because name mai activitychoice ka name bhi ho skta h
@@ -3138,7 +3374,7 @@ class thirdVc: NSViewController {
                 activity_sequence_id = arrActivitiesIncludeInEveryBreak[lastActivityIndex].activity_sequence_id
                 logQuantityQuestion = timerViewcontrollerObj?.logQuantityQuestion ?? arrActivitiesIncludeInEveryBreak[lastActivityIndex].logQuantityQuestion
                 logQuantityType = timerViewcontrollerObj?.logQuantityType ?? arrActivitiesIncludeInEveryBreak[lastActivityIndex].logQuantityType
-//                activity_id =
+                take_notes = arrActivitiesIncludeInEveryBreak[lastActivityIndex].take_notes
             }else{
                 lastActivity = timerViewcontrollerObj?.currentActicityTitle ?? arrActivitiesExcludeInEveryBreak[lastActivityIndex].name
                 logQuantity = timerViewcontrollerObj?.logActivityQuantity ?? false
@@ -3147,6 +3383,7 @@ class thirdVc: NSViewController {
                 activity_sequence_id = arrActivitiesExcludeInEveryBreak[lastActivityIndex].activity_sequence_id
                 logQuantityQuestion = timerViewcontrollerObj?.logQuantityQuestion ?? arrActivitiesExcludeInEveryBreak[lastActivityIndex].logQuantityQuestion
                 logQuantityType = timerViewcontrollerObj?.logQuantityType ?? arrActivitiesExcludeInEveryBreak[lastActivityIndex].logQuantityType
+                take_notes = arrActivitiesExcludeInEveryBreak[lastActivityIndex].take_notes
             }
         }else{
             lastActivity = timerViewcontrollerObj?.currentActicityTitle ?? arrAllbreakActivities[lastActivityIndex].name
@@ -3156,6 +3393,7 @@ class thirdVc: NSViewController {
             activity_sequence_id = arrActivitiesExcludeInEveryBreak[lastActivityIndex].activity_sequence_id
             logQuantityQuestion = timerViewcontrollerObj?.logQuantityQuestion ?? arrAllbreakActivities[lastActivityIndex].logQuantityQuestion
             logQuantityType = timerViewcontrollerObj?.logQuantityType ?? arrAllbreakActivities[lastActivityIndex].logQuantityType
+            take_notes = arrActivitiesExcludeInEveryBreak[lastActivityIndex].take_notes
         }
         
         if logQuantity{
@@ -3163,19 +3401,40 @@ class thirdVc: NSViewController {
             webViewGraph2.isHidden = true
             mainViewControllerObj!.showLogQuantityView()
             logQuantityVcObj?.isReviseQuantity = false
-            logQuantityVcObj?.resetData(name: lastActivity, durationInSeconds: "\(durationInSeconds)", logQuantityQuestion: logQuantityQuestion, currentState: ._ACTIVITY_, logQuantityType: logQuantityType ?? "", activity_id: activity_id, activity_sequence_id: activity_sequence_id,activityChoiceId:activityChoiceId)
+            
+            var notes = ""
+            
+            if take_notes == DURING_ACTIVITY{
+                notes = UserDefaults.standard.object(forKey: kUserdefaultsLastActivitySavedNotes) as? String ?? ""
+            }
+            
+            logQuantityVcObj?.resetData(name: lastActivity, durationInSeconds: "\(durationInSeconds)", logQuantityQuestion: logQuantityQuestion, currentState: ._ACTIVITY_, logQuantityType: logQuantityType ?? "", activity_id: activity_id, activity_sequence_id: activity_sequence_id,activityChoiceId:activityChoiceId, take_notes:take_notes, notes:notes)
         }else{
             let startTime = getStringFromDate(date: lastActivityPerformedTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")
             addEntryInStatsCsv(logType: "break", activity: lastActivity, durationInSeconds: "\(durationInSeconds)", quantityQuestion: "", quantityLogged: "", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "")
             
             self.loadGraph(activityId: activity_id, activityName: lastActivity, logQuantity: logQuantity, logQuantityType: "", activityChoiceId: activityChoiceId,activityStartTime: lastActivityPerformedTime!, duration: "\(durationInSeconds)", quantity: "")
-            allApiObject.activityCompletedApi(activity_id: activity_id, activity_sequence_id: activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:nil, duration_logged:durationInSeconds, choice_id: activityChoiceId, is_skipped: false, completionHandler: {dic  in
+            
+            if take_notes == END_OF_ACTIVITY{
+                mainViewControllerObj!.showTakeNotesView()
+                takeActivityNotesVcObj?.resetData(durationInSeconds: durationInSeconds, quantity_logged:nil, activity_id: activity_id, activity_sequence_id: activity_sequence_id, activityChoiceId: activityChoiceId)
+            }else{
                 
-                DispatchQueue.main.async {
-                    
+                var notes = ""
+                
+                if take_notes == DURING_ACTIVITY{
+                    notes = UserDefaults.standard.object(forKey: kUserdefaultsLastActivitySavedNotes) as? String ?? ""
                 }
-                print(dic)
-            })
+                
+                allApiObject.activityCompletedApi(activity_id: activity_id, activity_sequence_id: activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:nil, duration_logged:durationInSeconds, choice_id: activityChoiceId, is_skipped: false, notes: notes, completionHandler: {dic  in
+                    
+                    DispatchQueue.main.async {
+                        
+                    }
+                    print(dic)
+                })
+            }
+            
             
         }
         
@@ -3184,18 +3443,22 @@ class thirdVc: NSViewController {
             if isMandatoryActivityGoing{
                 
                 if index < arrActivitiesIncludeInEveryBreak.count-1 {
+                    isSequenceFinished = false
                     lblTitle.stringValue = getActivityFinishedText(isLast: false, activityName: lastActivity)//"\(lastActivity) finished!✅"
                     currentActivity = arrActivitiesIncludeInEveryBreak[lastActivityIndex+1]
                     allApiObject.capturePosthog(event: "complete-break-activity", metadata: ["routine-type":"break_activity"])
                 }else {
                     if arrActivitiesExcludeInEveryBreak.count == 0{
                         lblTitle.stringValue = getActivityFinishedText(isLast: true, activityName: lastActivity)//"\(lastActivity) finished!✅ You’ve earned your screen time. 💪"
+                        isSequenceFinished = true
                         btnMain.title = unlockMachineButtonText
                         mainViewControllerObj?.btnAbort.isHidden = true
+                        mainViewControllerObj?.stackViewTopButtons.isHidden = true
                         btnMain.toolTip = btnMain.title
                         imgViewGif.isHidden = false
                         allApiObject.capturePosthog(event: "complete-all-break-activity", metadata: ["routine-type":"break_activity"])
                     }else{
+                        isSequenceFinished = false
                         lblTitle.stringValue = getActivityFinishedText(isLast: false, activityName: lastActivity)//"\(lastActivity) finished!✅"
                         currentActivityIndex = randomActivityIndex
                         currentActivity = arrActivitiesExcludeInEveryBreak[currentActivityIndex]
@@ -3203,19 +3466,23 @@ class thirdVc: NSViewController {
                     }
                 }
             }else{
+                isSequenceFinished = true
                 lblTitle.stringValue = getActivityFinishedText(isLast: true, activityName: lastActivity)//"\(lastActivity) finished!✅ You’ve earned your screen time. 💪"
                 btnMain.title = unlockMachineButtonText
                 mainViewControllerObj?.btnAbort.isHidden = true
+                mainViewControllerObj?.stackViewTopButtons.isHidden = true
                 btnMain.toolTip = btnMain.title
                 imgViewGif.isHidden = false
                 allApiObject.capturePosthog(event: "complete-all-break-activity", metadata: ["routine-type":"break_activity"])
             }
         }else{
+            isSequenceFinished = true
             lblTitle.stringValue = getActivityFinishedText(isLast: true, activityName: lastActivity)//"\(lastActivity) finished!✅ You’ve earned your screen time. 💪"
             btnMain.title = unlockMachineButtonText
             btnMain.toolTip = btnMain.title
             imgViewGif.isHidden = false
             mainViewControllerObj?.btnAbort.isHidden = true
+            mainViewControllerObj?.stackViewTopButtons.isHidden = true
             allApiObject.capturePosthog(event: "complete-all-break-activity", metadata: ["routine-type":"break_activity"])
         }
         
@@ -3228,19 +3495,29 @@ class thirdVc: NSViewController {
             if !currentActivity!.isRandomChoice{
                 nextActivityName = currentActivity!.name
             }else{//random choice
-                currentActivityChoice = currentActivity?.choices.randomElement()
-                
-                if currentActivity?.choices.count != 1{
-                    if let lastChoice = lastShownRandomChoiceDic[currentActivity!.name]{
-                        while lastChoice.name == currentActivityChoice!.name && lastChoice.logQuantityQuestion == currentActivityChoice!.logQuantityQuestion{
-                            currentActivityChoice = currentActivity?.choices.randomElement()
+                currentActivityChoice = nil
+                for filterActivity in arrFinalBreakActivities{
+                    if filterActivity.activity.id == currentActivity?.id{
+                        if let choice = filterActivity.randomChoice{
+                            currentActivityChoice = choice
+                            nextActivityName = currentActivityChoice?.name ?? ""
                         }
                     }
                 }
                 
+                if currentActivityChoice == nil{
+                    currentActivityChoice = currentActivity?.choices.randomElement()
+                    if currentActivity?.choices.count != 1{
+                        if let lastChoice = lastShownRandomChoiceDic[currentActivity!.id]{
+                            while lastChoice.id == currentActivityChoice!.id{
+                                currentActivityChoice = currentActivity?.choices.randomElement()
+                            }
+                        }
+                    }
+                    lastShownRandomChoiceDic[currentActivity!.id ?? ""] = currentActivityChoice
+                    nextActivityName = currentActivityChoice?.name ?? ""
+                }
                 
-                lastShownRandomChoiceDic[currentActivity!.name ?? ""] = currentActivityChoice
-                nextActivityName = currentActivityChoice?.name ?? ""
             }
             
             
@@ -3310,20 +3587,28 @@ class thirdVc: NSViewController {
         if !currentActivity!.isRandomChoice{
             activityName = currentActivity!.name
         }else{//random choice
-            currentActivityChoice = currentActivity?.choices.randomElement()
-            
-            if currentActivity?.choices.count != 1{
-                if let lastChoice = lastShownRandomChoiceDic[currentActivity!.name]{
-                    while lastChoice.name == currentActivityChoice!.name && lastChoice.logQuantityQuestion == currentActivityChoice!.logQuantityQuestion{
-                        currentActivityChoice = currentActivity?.choices.randomElement()
+            currentActivityChoice = nil
+            for filterActivity in arrFinalBreakActivities{
+                if filterActivity.activity.id == currentActivity?.id{
+                    if let choice = filterActivity.randomChoice{
+                        currentActivityChoice = choice
+                        activityName = currentActivityChoice?.name ?? ""
                     }
                 }
             }
-            
-            
-            lastShownRandomChoiceDic[currentActivity!.name ?? ""] = currentActivityChoice
-            
-            activityName = currentActivityChoice?.name ?? ""
+            if currentActivityChoice == nil{
+                currentActivityChoice = currentActivity?.choices.randomElement()
+                if currentActivity?.choices.count != 1{
+                    if let lastChoice = lastShownRandomChoiceDic[currentActivity!.id]{
+                        while lastChoice.id == currentActivityChoice!.id{
+                            currentActivityChoice = currentActivity?.choices.randomElement()
+                        }
+                    }
+                }
+                
+                lastShownRandomChoiceDic[currentActivity!.id ?? ""] = currentActivityChoice
+                activityName = currentActivityChoice?.name ?? ""
+            }
         }
         
         seconds = currentActivity!.durationSeconds
@@ -3342,7 +3627,13 @@ class thirdVc: NSViewController {
         logQuantityVcObj?.textFieldCount.stringValue = ""
         logQuantityVcObj?.textFieldCount.selectText(self)
         logQuantityVcObj?.textFieldCount.currentEditor()?.selectedRange = NSRange(location: 0, length: 0)
+        if self.timer != nil{
+            isTimerGoingOn = false
+            lblTimer.isHidden = true
+            self.timer?.invalidate()
+        }
     }
+    
     func loadBlankUrl(){
         let link = URL(string:"about:blank")!
         let request = URLRequest(url: link)
@@ -3353,7 +3644,7 @@ class thirdVc: NSViewController {
             addLog(text:"onboarding video - btn Continue clicked")
             loadBlankUrl()
             self.view.window?.close()
-            
+            appdelegate!.loadCredentialsAndDeviceId()
             let secondsBetween = Date().timeIntervalSince(onboardingVideoStartTime ?? Date())
             allApiObject.capturePosthog(event: "onboarding-video-watched", metadata: ["watched_duration_seconds":Int(secondsBetween)])
             return;
@@ -3407,10 +3698,11 @@ class thirdVc: NSViewController {
                 }else{
                     mainViewControllerObj?.activityFinishedUnlockMachine()
                 }
+                
             }//2022-10-31 17:04:01
             
         }else if currentState == ._MORNING_HABIT_{
-            if lastHabitIndex < arrAllMorningHabits.count-1 {
+            if !isSequenceFinished{
                 if randomIntToRememberNextHabit == 5{
                     addLog(text:"Remember Next Habit view showing")
                     boxBg.isHidden = true
@@ -3426,7 +3718,7 @@ class thirdVc: NSViewController {
                 mainViewControllerObj?.habitsFinishedUnlockMachine()
             }
         }else if currentState == ._EVENING_HABIT_{
-            if lastHabitIndex < arrAllEveningHabits.count-1 {
+            if !isSequenceFinished{
                 if randomIntToRememberNextHabit == 5{
                     addLog(text:"Remember Next Habit view showing")
                     boxBg.isHidden = true
@@ -3449,7 +3741,7 @@ class thirdVc: NSViewController {
     @IBAction func btnSkipHabitClicked(_ sender: Any) {
         
         if currentState == ._ACTIVITY_{
-            mainViewControllerObj?.showAskPostponeView()
+            mainViewControllerObj?.btnAbortClicked(self)
             return
         }
         
@@ -3463,9 +3755,9 @@ class thirdVc: NSViewController {
 //                return;
 //            }
             
-            currentHabit = arrAllMorningHabits[currentHabitIndex + 1]
+            currentHabit = arrFilteredMorningHabits[currentHabitIndex + 1]
         }else if currentState == ._EVENING_HABIT_{
-            currentHabit = arrAllEveningHabits[currentHabitIndex + 1]
+            currentHabit = arrFilteredEveningHabits[currentHabitIndex + 1]
         }else{
             return
         }
@@ -3477,26 +3769,6 @@ class thirdVc: NSViewController {
         mainViewControllerObj?.showWhySkipHabitView()
         return;
         
-//        if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
-//            if currentState == ._MORNING_HABIT_{
-//                if SettingsManagerObject.isPasswordRequireInSkipMorning{
-//                    mainViewControllerObj?.showPasswordView()
-//                    enterPasswordVcObj?.parentVc = getSkipHabitVcObject()
-//                }else{
-//                    mainViewControllerObj?.showSkipHabitView()
-//                }
-//
-//            }else{
-//                if SettingsManagerObject.isPasswordRequireInSkipEvening{
-//                    mainViewControllerObj?.showPasswordView()
-//                    enterPasswordVcObj?.parentVc = getSkipHabitVcObject()
-//                }else{
-//                    mainViewControllerObj?.showSkipHabitView()
-//                }
-//            }
-//        }else{
-//            mainViewControllerObj?.showSkipHabitView()
-//        }
         
     }
 }

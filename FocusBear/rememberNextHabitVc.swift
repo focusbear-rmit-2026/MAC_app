@@ -142,18 +142,18 @@ class rememberNextHabitVc: NSViewController, NSTextFieldDelegate {
         
         if currentState == ._MORNING_HABIT_{
             arrHabitNames.removeAll()
-            for habit in arrAllMorningHabits{
+            for habit in arrFilteredMorningHabits{
                 arrHabitNames.append(habit.name)
             }
             
             arrHabitNames.shuffle()
             
-            lastHabitName = arrAllMorningHabits[nextHabitIndex-1].name
-            nextHabitName = arrAllMorningHabits[nextHabitIndex].name
-            nextHabitTime = arrAllMorningHabits[nextHabitIndex].durationSeconds
+            lastHabitName = arrFilteredMorningHabits[nextHabitIndex-1].name
+            nextHabitName = arrFilteredMorningHabits[nextHabitIndex].name
+            nextHabitTime = arrFilteredMorningHabits[nextHabitIndex].durationSeconds
         }else if currentState == ._EVENING_HABIT_{
             arrHabitNames.removeAll()
-            for habit in arrAllEveningHabits{
+            for habit in arrFilteredEveningHabits{
                 arrHabitNames.append(habit.name)
             }
             
@@ -161,9 +161,9 @@ class rememberNextHabitVc: NSViewController, NSTextFieldDelegate {
             //            for habit in arrHabitNames{
             //                 popupBtnHabits.addItem(withTitle: habit)
             //            }
-            lastHabitName = arrAllEveningHabits[nextHabitIndex-1].name
-            nextHabitName = arrAllEveningHabits[nextHabitIndex].name
-            nextHabitTime = arrAllEveningHabits[nextHabitIndex].durationSeconds
+            lastHabitName = arrFilteredEveningHabits[nextHabitIndex-1].name
+            nextHabitName = arrFilteredEveningHabits[nextHabitIndex].name
+            nextHabitTime = arrFilteredEveningHabits[nextHabitIndex].durationSeconds
         }
         
         lblQuestion.stringValue = questionText.replacingOccurrences(of: "<LAST_HABIT_NAME>", with: lastHabitName)//"You just completed \(lastHabitName). What habit will you do next?"
@@ -210,9 +210,9 @@ class rememberNextHabitVc: NSViewController, NSTextFieldDelegate {
         //        var nextHabit:habit?
         ////        var selectedHabit:habit?
         //        if currentState == ._MORNING_HABIT_{
-        //            nextHabit = arrAllMorningHabits[nextHabitIndex]
+        //            nextHabit = arrFilteredMorningHabits[nextHabitIndex]
         //        }else if currentState == ._EVENING_HABIT_{
-        //            nextHabit = arrAllEveningHabits[nextHabitIndex]
+        //            nextHabit = arrFilteredEveningHabits[nextHabitIndex]
         //        }
         //        if arrHabitNames[index] == nextHabit?.name{
         //            lblSelectionResult.stringValue = arrRandomPhraseRightChoice.randomElement() ?? ""
@@ -235,9 +235,9 @@ class rememberNextHabitVc: NSViewController, NSTextFieldDelegate {
         var nextHabit:habit?
         //        var selectedHabit:habit?
         if currentState == ._MORNING_HABIT_{
-            nextHabit = arrAllMorningHabits[nextHabitIndex]
+            nextHabit = arrFilteredMorningHabits[nextHabitIndex]
         }else if currentState == ._EVENING_HABIT_{
-            nextHabit = arrAllEveningHabits[nextHabitIndex]
+            nextHabit = arrFilteredEveningHabits[nextHabitIndex]
         }
         if textFieldNextHabit.stringValue == nextHabit?.name{
             lblSelectionResult.stringValue = arrRandomPhraseRightChoice.randomElement() ?? ""

@@ -19,6 +19,7 @@ class SettingsManager:NSObject{
     var isPasswordRequireInChangeSettings = true
     var isPasswordRequireInSkipMorning = true
     var isPasswordRequireInSkipEvening = true
+    var isPasswordRequireInSkipEveningAfterCutOff = true
     var isPasswordRequireInAbortShutoff = true
     var isPasswordRequireInStopPomodoro = true
     var isPasswordRequireInQuitApp = true
@@ -30,7 +31,7 @@ class SettingsManager:NSObject{
     var isOfficeModeEnabled = false
     var kIsReducedMotion = false
     var isMeetingDetectionEnabled = true
-    var showMeetingDetectionAlert = true
+    var showMeetingDetectionAlert = false
     var isHideDockInActivity = false
     var isPromptToRememberHabit = true
     var isEasySkipEnabled = true
@@ -41,6 +42,7 @@ class SettingsManager:NSObject{
     var kUserdefaultsPasswordRequireInChangeSettings = "kUserdefaultsPasswordRequireInChangeSettings"
     var kUserdefaultsPasswordRequireInSkipMorning = "kUserdefaultsPasswordRequireInSkipMorning"
     var kUserdefaultsPasswordRequireInSkipEvening = "kUserdefaultsPasswordRequireInSkipEvening"
+    var kUserdefaultsPasswordRequireInSkipEveningAfterCutOff = "kUserdefaultsPasswordRequireInSkipEveningAfterCutOff"
     var kUserdefaultsPasswordRequireInAbortShutoff = "kUserdefaultsPasswordRequireInAbortShutoff"
     var kUserdefaultsPasswordRequireInStopPomodoro = "kUserdefaultsPasswordRequireInStopPomodoro"
     var kUserdefaultsPasswordRequireInQuitApp = "kUserdefaultsPasswordRequireInQuitApp"
@@ -114,6 +116,7 @@ class SettingsManager:NSObject{
         kUserdefaultsPasswordRequireInChangeSettings = kUserdefaultsPasswordRequireInChangeSettings + (appdelegate?.user?.userId ?? "")
         kUserdefaultsPasswordRequireInSkipMorning = kUserdefaultsPasswordRequireInSkipMorning + (appdelegate?.user?.userId ?? "")
         kUserdefaultsPasswordRequireInSkipEvening = kUserdefaultsPasswordRequireInSkipEvening + (appdelegate?.user?.userId ?? "")
+        kUserdefaultsPasswordRequireInSkipEveningAfterCutOff = kUserdefaultsPasswordRequireInSkipEveningAfterCutOff + (appdelegate?.user?.userId ?? "")
         kUserdefaultsPasswordRequireInAbortShutoff = kUserdefaultsPasswordRequireInAbortShutoff + (appdelegate?.user?.userId ?? "")
         kUserdefaultsPasswordRequireInStopPomodoro = kUserdefaultsPasswordRequireInStopPomodoro + (appdelegate?.user?.userId ?? "")
         kUserdefaultsPasswordRequireInQuitApp = kUserdefaultsPasswordRequireInQuitApp + (appdelegate?.user?.userId ?? "")
@@ -186,6 +189,7 @@ class SettingsManager:NSObject{
                     let kIsPasswordRequireInChangeSettings = "kIsPasswordRequireInChangeSettings"
                     let kIsPasswordRequireInSkipMorning = "kIsPasswordRequireInSkipMorning"
                     let kIsPasswordRequireInSkipEvening = "kIsPasswordRequireInSkipEvening"
+                    let kIsPasswordRequireInSkipEveningAfterCutOff = "kIsPasswordRequireInSkipEveningAfterCutOff"
                     let kIsPasswordRequireInAbortShutoff = "kIsPasswordRequireInAbortShutoff"
                     let kIsPasswordRequireInStopPomodoro = "kIsPasswordRequireInStopPomodoro"
                     let kIsPasswordRequireInQuitApp = "kIsPasswordRequireInQuitApp"
@@ -235,6 +239,11 @@ class SettingsManager:NSObject{
                     if let val = settings.value(forKey: kIsPasswordRequireInSkipEvening) as? Bool{
                         UserDefaults.standard.set(val, forKey: self.kUserdefaultsPasswordRequireInSkipEvening)
                     }
+                    
+                    if let val = settings.value(forKey: kIsPasswordRequireInSkipEveningAfterCutOff) as? Bool{
+                        UserDefaults.standard.set(val, forKey: self.kUserdefaultsPasswordRequireInSkipEveningAfterCutOff)
+                    }
+                    
                     if let val = settings.value(forKey: kIsPasswordRequireInAbortShutoff) as? Bool{
                         UserDefaults.standard.set(val, forKey: self.kUserdefaultsPasswordRequireInAbortShutoff)
                     }
@@ -363,8 +372,8 @@ class SettingsManager:NSObject{
                     showMeetingDetectionAlert = false
                 }
             }else{
-                UserDefaults.standard.set(true, forKey: kUserdefaultsShowMeetingDetectionAlert)
-                showMeetingDetectionAlert = true
+                UserDefaults.standard.set(false, forKey: kUserdefaultsShowMeetingDetectionAlert)
+                showMeetingDetectionAlert = false
             }
             
             //  ---------------------------SETTINGS Password Require--------------------------
@@ -401,6 +410,18 @@ class SettingsManager:NSObject{
                 UserDefaults.standard.set(true, forKey: kUserdefaultsPasswordRequireInSkipEvening)
                 isPasswordRequireInSkipEvening = true
             }
+            
+            if let isEnabled = UserDefaults.standard.object(forKey: kUserdefaultsPasswordRequireInSkipEveningAfterCutOff) as? Bool{
+                if isEnabled{
+                    isPasswordRequireInSkipEveningAfterCutOff = true
+                }else{
+                    isPasswordRequireInSkipEveningAfterCutOff = false
+                }
+            }else{
+                UserDefaults.standard.set(true, forKey: kUserdefaultsPasswordRequireInSkipEveningAfterCutOff)
+                isPasswordRequireInSkipEveningAfterCutOff = true
+            }
+            
             
             if let isEnabled = UserDefaults.standard.object(forKey: kUserdefaultsPasswordRequireInAbortShutoff) as? Bool{
                 if isEnabled{
@@ -511,7 +532,6 @@ class SettingsManager:NSObject{
             if let arr = UserDefaults.standard.object(forKey: kUserdefaultsArrBlockedUrls) as? [String]{
                 arrBlockedUrls = arr
             }
-            
             if isSettingsBlank{
                 if let blockedUrls = UserDefaults.standard.object(forKey: kUserdefaultsBlockedUrlsFromOnboarding) as? [[String:Any]]{
                     arrBlockedUrls.removeAll()
@@ -561,6 +581,7 @@ class SettingsManager:NSObject{
         UserDefaults.standard.set(isPasswordRequireInChangeSettings, forKey: kUserdefaultsPasswordRequireInChangeSettings)
         UserDefaults.standard.set(isPasswordRequireInSkipMorning, forKey: kUserdefaultsPasswordRequireInSkipMorning)
         UserDefaults.standard.set(isPasswordRequireInSkipEvening, forKey: kUserdefaultsPasswordRequireInSkipEvening)
+        UserDefaults.standard.set(isPasswordRequireInSkipEveningAfterCutOff, forKey: kUserdefaultsPasswordRequireInSkipEveningAfterCutOff)
         UserDefaults.standard.set(isPasswordRequireInAbortShutoff, forKey: kUserdefaultsPasswordRequireInAbortShutoff)
         UserDefaults.standard.set(isPasswordRequireInStopPomodoro, forKey: kUserdefaultsPasswordRequireInStopPomodoro)
         UserDefaults.standard.set(isPasswordRequireInQuitApp, forKey: kUserdefaultsPasswordRequireInQuitApp)
@@ -586,6 +607,7 @@ class SettingsManager:NSObject{
         let kIsPasswordRequireInChangeSettings = "kIsPasswordRequireInChangeSettings"
         let kIsPasswordRequireInSkipMorning = "kIsPasswordRequireInSkipMorning"
         let kIsPasswordRequireInSkipEvening = "kIsPasswordRequireInSkipEvening"
+        let kIsPasswordRequireInSkipEveningAfterCutOff = "kIsPasswordRequireInSkipEveningAfterCutOff"
         let kIsPasswordRequireInAbortShutoff = "kIsPasswordRequireInAbortShutoff"
         let kIsPasswordRequireInStopPomodoro = "kIsPasswordRequireInStopPomodoro"
         let kIsPasswordRequireInQuitApp = "kIsPasswordRequireInQuitApp"
@@ -615,6 +637,7 @@ class SettingsManager:NSObject{
             kIsPasswordRequireInChangeSettings:isPasswordRequireInChangeSettings,
             kIsPasswordRequireInSkipMorning:isPasswordRequireInSkipMorning,
             kIsPasswordRequireInSkipEvening:isPasswordRequireInSkipEvening,
+            kIsPasswordRequireInSkipEveningAfterCutOff:isPasswordRequireInSkipEveningAfterCutOff,
             kIsPasswordRequireInAbortShutoff:isPasswordRequireInAbortShutoff,
             kIsPasswordRequireInStopPomodoro:isPasswordRequireInStopPomodoro,
             kIsPasswordRequireInQuitApp:isPasswordRequireInQuitApp
@@ -626,10 +649,7 @@ class SettingsManager:NSObject{
         
         
         let dic: [String: [String:Any]] = [
-            "MacOS": json,
-            "Windows": [:],
-            "Android": [:],
-            "iOS": [:]
+            "MacOS": json
         ]
         allApiObject.putUserLocalDeviceSettings(settings: dic, completionHandler: {dic  in
             DispatchQueue.main.async {

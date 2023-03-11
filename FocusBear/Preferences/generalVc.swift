@@ -10,6 +10,12 @@ import Cocoa
 
 class generalVc: NSViewController, NSTextFieldDelegate {
 
+    //@IBOutlet weak var tabViewItemSetup: NSTabViewItem!
+    @IBOutlet weak var tabViewItemUninstall: NSTabViewItem!
+    @IBOutlet weak var tabViewItemAccount: NSTabViewItem!
+    @IBOutlet weak var tabViewItemPassword: NSTabViewItem!
+    @IBOutlet weak var tabViewItemBlockedUrls: NSTabViewItem!
+    @IBOutlet weak var tabViewBlockedUrls: NSView!
     @IBOutlet weak var btnExportLogs: underLineButton!
     @IBOutlet weak var btnLearnPomodoroTechnique: underLineButton!
     
@@ -20,9 +26,7 @@ class generalVc: NSViewController, NSTextFieldDelegate {
     @IBOutlet weak var tabViewItemPomodoro: NSTabViewItem!
     @IBOutlet weak var tabView: NSTabView!
     @IBOutlet weak var boxPopupWidth: NSLayoutConstraint!
-//    @IBOutlet weak var btnBlackLayer: NSButton!
-  //  @IBOutlet weak var BoxBlackLayerForPopup: NSBox!
-//    @IBOutlet weak var btnAdvancedMain: Button!
+
     @IBOutlet weak var boxPopup: NSBox!
     @IBOutlet weak var btnCheckForUpdates: Button!
     @IBOutlet weak var btnExportStatistics: Button!
@@ -84,6 +88,10 @@ class generalVc: NSViewController, NSTextFieldDelegate {
     
     @IBOutlet weak var checkBoxMeetingDetection: NSButton!
     
+    @IBOutlet weak var lblCheckBoxShowMeetingDetectionPopup: NSTextField!
+    
+    @IBOutlet weak var checkBoxShowMeetingDetectionPopup: NSButton!
+    
     
     @IBOutlet weak var lblTitleHideDock: NSTextField!
     @IBOutlet weak var lblDescriptionHideDock: NSTextField!
@@ -103,7 +111,30 @@ class generalVc: NSViewController, NSTextFieldDelegate {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        self.tabView.delegate = self
         
+        
+//        tabViewItemSetup.label = "Setup"//
+//        if let setUpVcInfo = configjson.value(forKey: "setUpVcInfo") as? NSDictionary{
+//            tabViewItemSetup.label = setUpVcInfo.value(forKey: "title") as? String ?? tabViewItemSetup.label
+//        }
+        
+        var tabUninstallText = "Uninstall"
+        var tabAccountsText = "Accounts"
+        
+        if let common = configjson.value(forKey: "common") as? NSDictionary{
+            tabUninstallText = common.value(forKey: "tabUninstallText") as? String ?? tabUninstallText
+            tabAccountsText = common.value(forKey: "tabAccountsText") as? String ?? tabAccountsText
+        }
+        tabViewItemAccount.label = tabAccountsText
+        tabViewItemUninstall.label = tabUninstallText
+        
+        generalVcObj = self
+        
+        tabView.delegate = self
+        tabViewItemPassword.label = "Password"
+        tabViewItemBlockedUrls.label = "Blocked URLs"
+        lblCheckBoxShowMeetingDetectionPopup.stringValue = "Automatically suggest starting \"Meetings\" focus mode"
         lblTitleHideDock.stringValue = "Hide dock:"
         lblDescriptionHideDock.stringValue = "Enable this to hide dock during allowed apps activities to minimize distractions. \"System Events\" permission will be required for this."
         lblCheckBoxHideDock.stringValue = "Hide dock during activities having allowed apps."
@@ -143,8 +174,10 @@ class generalVc: NSViewController, NSTextFieldDelegate {
             tabViewItemPomodoro.label = common.value(forKey: "tabPomodoroText") as? String ?? tabViewItemPomodoro.label
             tabViewItemGeneral.label = common.value(forKey: "tabGeneralText") as? String ?? tabViewItemGeneral.label
             tabViewItemAdvanced.label = common.value(forKey: "tabAdvancedText") as? String ?? tabViewItemAdvanced.label
+            tabViewItemBlockedUrls.label = common.value(forKey: "tabBlockedURLsText") as? String ?? tabViewItemBlockedUrls.label
+            tabViewItemPassword.label = common.value(forKey: "tabPasswordText") as? String ?? tabViewItemPassword.label
         }
-        
+
         lblTitleStatistics.stringValue = "Statistics:"
         lblTitleUpdates.stringValue = "Updates:"
         btnExportStatistics.title = "Export Statistics"
@@ -246,6 +279,8 @@ class generalVc: NSViewController, NSTextFieldDelegate {
             lblDescriptionHideDock.stringValue = preferencesInfo.value(forKey: "descriptionHideDockText") as? String ?? lblDescriptionHideDock.stringValue
             lblCheckBoxHideDock.stringValue = preferencesInfo.value(forKey: "checkBoxHideDockText") as? String ?? lblCheckBoxHideDock.stringValue
             
+            lblCheckBoxShowMeetingDetectionPopup.stringValue = preferencesInfo.value(forKey: "checkBoxShowMeetingDetectionPopupText") as? String ?? lblCheckBoxShowMeetingDetectionPopup.stringValue
+            
         }
 
         lblTitlePomodoroModeDuration.stringValue = pomodoroModeDurationText
@@ -281,6 +316,25 @@ class generalVc: NSViewController, NSTextFieldDelegate {
         }else{
             lblVersion.stringValue = ""
         }
+        
+        self.tabViewBlockedUrls.addSubview(getBlockedUrlsVcObject().view)
+        self.tabViewBlockedUrls.addConstraints(subView: getBlockedUrlsVcObject().view)
+        
+        self.tabViewItemPassword.view?.addSubview(getPasswordVcObject().view)
+        self.tabViewItemPassword.view?.addConstraints(subView: getPasswordVcObject().view)
+        
+        
+//        self.tabViewItemSetup.view?.addSubview(getSetUpVcObject().view)
+//        self.tabViewItemSetup.view?.addConstraints(subView: getSetUpVcObject().view)
+        
+        
+        self.tabViewItemAccount.view?.addSubview(getAccountVcObject().view)
+        self.tabViewItemAccount.view?.addConstraints(subView: getAccountVcObject().view)
+        
+        self.tabViewItemUninstall.view?.addSubview(getUninstallVcObject().view)
+        self.tabViewItemUninstall.view?.addConstraints(subView: getUninstallVcObject().view)
+        
+        
     }
     
         // Ask for password:
@@ -297,6 +351,9 @@ class generalVc: NSViewController, NSTextFieldDelegate {
 //        boxPopup.isHidden = true
 //        BoxBlackLayerForPopup.isHidden = true
         
+        if isPurchased == false && daysLeft <= 0{
+            self.tabView.selectTabViewItem(tabViewItemAccount)
+        }
         
         if SettingsManagerObject.isSoundEnabled{
             checkBoxSound.state = .on
@@ -323,8 +380,16 @@ class generalVc: NSViewController, NSTextFieldDelegate {
         
         if SettingsManagerObject.isMeetingDetectionEnabled{
             checkBoxMeetingDetection.state = .on
+            checkBoxShowMeetingDetectionPopup.isEnabled = true
         }else{
             checkBoxMeetingDetection.state = .off
+            checkBoxShowMeetingDetectionPopup.isEnabled = false
+        }
+        
+        if SettingsManagerObject.showMeetingDetectionAlert{
+            checkBoxShowMeetingDetectionPopup.state = .on
+        }else{
+            checkBoxShowMeetingDetectionPopup.state = .off
         }
         
         if SettingsManagerObject.isHideDockInActivity{
@@ -389,10 +454,30 @@ class generalVc: NSViewController, NSTextFieldDelegate {
         self.textFieldPomodoroDuration.window?.makeFirstResponder(nil)
         
         if Reachability.isConnectedToNetwork() == false {
-            if self.view.window != nil{
-                showAlertNoInternet(window: self.view.window!)
+            
+            allApiObject.isInternetOn(completionHandler: {isInternetOn in
+                DispatchQueue.main.async {
+                    if !isInternetOn{
+                        if self.view.window != nil{
+                            showAlertNoInternet(window: self.view.window!)
+                        }
+                    }
+                }
+            })
+            
+        }
+        
+        if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
+            if self.tabView.selectedTabViewItem == tabViewItemPassword{
+                if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
+                    if !SettingsManagerObject.isPasswordRequireInChangeSettings{
+                        tabview.view.addSubview(enterPasswordVcObj!.view)
+                        tabview.view.addConstraints(subView: enterPasswordVcObj!.view)
+                        enterPasswordVcObj?.parentVc = nil
+                        addLog(text: "Showing enter password view inside preferences")
+                    }
+                }
             }
-            return
         }
         
     }
@@ -407,12 +492,14 @@ class generalVc: NSViewController, NSTextFieldDelegate {
                 print(win)
                 win.sharingType = .none
             }
+            allApiObject.capturePosthog(event: "settings-changed-disable-app-screenshots", metadata: [:])//#490/
         }else{
             UserDefaults.standard.set(false, forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots)
             for win in windows{
                 print(win)
                 win.sharingType = .readOnly
             }
+            allApiObject.capturePosthog(event: "settings-changed-enable-app-screenshots", metadata: [:])//#490
         }
     }
     
@@ -525,8 +612,9 @@ class generalVc: NSViewController, NSTextFieldDelegate {
                 if textFieldPomodoroDuration.stringValue.isEmpty{
                     showAlert(msg: workDurationEmptyErrorText, completionHandler: {_ in
                         if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-                            tabview.selectedTabViewItemIndex = 0
+                            tabview.selectedTabViewItemIndex = 3
                         }
+                        self.tabView.selectTabViewItem(self.tabViewItemPomodoro)
                         if let duration = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsPomodoroDurationMinutes) as? Int{
                             self.textFieldPomodoroDuration.stringValue = "\(duration)"
                         }
@@ -537,8 +625,9 @@ class generalVc: NSViewController, NSTextFieldDelegate {
                 if textFieldPomodoroDuration.integerValue < 1{
                     showAlert(msg: workDurationZeroErrorText, completionHandler: {_ in
                         if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-                            tabview.selectedTabViewItemIndex = 0
+                            tabview.selectedTabViewItemIndex = 3
                         }
+                        self.tabView.selectTabViewItem(self.tabViewItemPomodoro)
                         if let duration = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsPomodoroDurationMinutes) as? Int{
                             self.textFieldPomodoroDuration.stringValue = "\(duration)"
                         }
@@ -554,12 +643,14 @@ class generalVc: NSViewController, NSTextFieldDelegate {
                 }
                 SettingsManagerObject.isSettingsChanged = true
                 UserDefaults.standard.set(count, forKey: SettingsManagerObject.kUserdefaultsPomodoroDurationMinutes)
+                allApiObject.capturePosthog(event: "settings-changed-pomodoro-duration", metadata: [:])//#490
             }else if textfield == textFieldBreakDuration{
                 if textFieldBreakDuration.stringValue.isEmpty{
                     showAlert(msg: breakDurationEmptyErrorText, completionHandler: {_ in
                         if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-                            tabview.selectedTabViewItemIndex = 0
+                            tabview.selectedTabViewItemIndex = 3
                         }
+                        self.tabView.selectTabViewItem(self.tabViewItemPomodoro)
                         if let duration = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsBreakDurationMinutes) as? Int{
                             self.textFieldBreakDuration.stringValue = "\(duration)"
                         }
@@ -570,8 +661,9 @@ class generalVc: NSViewController, NSTextFieldDelegate {
                 if textFieldBreakDuration.integerValue < 1{
                     showAlert(msg: breakDurationZeroErrorText, completionHandler: {_ in
                         if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-                            tabview.selectedTabViewItemIndex = 0
+                            tabview.selectedTabViewItemIndex = 3
                         }
+                        self.tabView.selectTabViewItem(self.tabViewItemPomodoro)
                         if let duration = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsBreakDurationMinutes) as? Int{
                             self.textFieldBreakDuration.stringValue = "\(duration)"
                         }
@@ -587,6 +679,7 @@ class generalVc: NSViewController, NSTextFieldDelegate {
                 }
                 SettingsManagerObject.isSettingsChanged = true
                 UserDefaults.standard.set(count, forKey: SettingsManagerObject.kUserdefaultsBreakDurationMinutes)
+                allApiObject.capturePosthog(event: "settings-changed-pomodoro-break-duration", metadata: [:])//#490
             }
         }
     }
@@ -622,20 +715,42 @@ class generalVc: NSViewController, NSTextFieldDelegate {
         let alert = NSAlert()
         alert.setSharingType()
         var alertChangeLanguageMessageText = "Are you sure you want to change the language to <LANGUAGE>?"
+        var alertChangeLanguageInfoText = "Focus Bear will restart for the changes to take effect."
+        
         if let preferencesInfo = configjson.value(forKey: "preferencesInfo") as? NSDictionary{
             alertChangeLanguageMessageText = preferencesInfo.value(forKey: "alertChangeLanguageMessageText") as? String ?? alertChangeLanguageMessageText
+            alertChangeLanguageInfoText = preferencesInfo.value(forKey: "alertChangeLanguageInfoText") as? String ?? alertChangeLanguageInfoText
         }
         alertChangeLanguageMessageText = alertChangeLanguageMessageText.replacingOccurrences(of: "<LANGUAGE>", with: popUpBtnselectLanguage.title)
         alert.messageText = alertChangeLanguageMessageText
+        alert.informativeText = alertChangeLanguageInfoText
         alert.addButton(withTitle: buttonYesText)
         alert.addButton(withTitle: buttonNoText)
         
         alert.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
             if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
+                
+
                 addLog(text: "language changed by user to \(self.popUpBtnselectLanguage.title)")
                 UserDefaults.standard.set(arrLanguageDic[self.popUpBtnselectLanguage.indexOfSelectedItem]["id"], forKey: kUserdefaultsSelectedLanguage)
                 
-                appdelegate?.quitAndRestartApp()
+                
+                var languageName = arrLanguageDic[self.popUpBtnselectLanguage.indexOfSelectedItem]["languageName"] ?? ""
+                languageName = languageName.lowercased()
+                
+                self.view.window?.close()
+                
+                
+                allApiObject.capturePosthog(event: "settings-changed-language", metadata: ["language":languageName])//#490//
+                DispatchQueue.global().async {
+                    sleep(1)
+                    DispatchQueue.main.async {
+                        appdelegate?.quitAndRestartApp()
+                    }
+                }
+                
+                
+                
             }else{
                 self.popUpBtnselectLanguage.selectItem(at: oldSelectedIndex)
             }
@@ -666,6 +781,7 @@ class generalVc: NSViewController, NSTextFieldDelegate {
         SettingsManagerObject.isSettingsChanged = true
         if checkBoxPomodoroMode.state == .on{
             UserDefaults.standard.set(true, forKey: SettingsManagerObject.kUserdefaultsPomodoroModeEnabled)
+            allApiObject.capturePosthog(event: "settings-changed-enable-pomodoro-after-morning-routine", metadata: [:])//#490//
             
             if let hardCorePomodoroState = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHardcorePomodoroEnabled) as? Bool{
                 if hardCorePomodoroState{
@@ -694,6 +810,7 @@ class generalVc: NSViewController, NSTextFieldDelegate {
                 }
             }
         }else{
+            allApiObject.capturePosthog(event: "settings-changed-disable-pomodoro-after-morning-routine", metadata: [:])//#490//
             UserDefaults.standard.set(false, forKey: SettingsManagerObject.kUserdefaultsPomodoroModeEnabled)
         }
         resetPomodoroModeState()
@@ -702,8 +819,10 @@ class generalVc: NSViewController, NSTextFieldDelegate {
         SettingsManagerObject.isSettingsChanged = true
         if checkBoxSound.state == .on{
             SettingsManagerObject.isSoundEnabled = true
+            allApiObject.capturePosthog(event: "settings-changed-sound-enabled", metadata: [:])//#490
         }else{
             SettingsManagerObject.isSoundEnabled = false
+            allApiObject.capturePosthog(event: "settings-changed-sound-disabled", metadata: [:])//#490
         }
     }
 
@@ -711,20 +830,24 @@ class generalVc: NSViewController, NSTextFieldDelegate {
         SettingsManagerObject.isSettingsChanged = true
         radioBtnGrizzlyBear.state = .off
         SettingsManagerObject.isCuddlyModeEnabled = true
+        allApiObject.capturePosthog(event: "settings-changed-focus-bear-mode-cuddly", metadata: [:])//#490
     }
     
     @IBAction func radioBtnGrizzlyBearClicked(_ sender: Any) {
         SettingsManagerObject.isSettingsChanged = true
         radioBtnCuddlyBear.state = .off
         SettingsManagerObject.isCuddlyModeEnabled = false
+        allApiObject.capturePosthog(event: "settings-changed-focus-bear-mode-grizzly", metadata: [:])//#490
     }
     
     @IBAction func checkBoxReduceMotionClicked(_ sender: Any) {
         SettingsManagerObject.isSettingsChanged = true
         if checkBoxReduceMotion.state == .on{
             SettingsManagerObject.kIsReducedMotion = true
+            allApiObject.capturePosthog(event: "settings-changed-enable-reduce-motion", metadata: [:])//#490
         }else{
             SettingsManagerObject.kIsReducedMotion = false
+            allApiObject.capturePosthog(event: "settings-changed-disable-reduce-motion", metadata: [:])//#490
         }
         
     }
@@ -732,10 +855,26 @@ class generalVc: NSViewController, NSTextFieldDelegate {
     @IBAction func checkBoxMeetingDetectionClicked(_ sender: Any) {
         SettingsManagerObject.isSettingsChanged = true
         if checkBoxMeetingDetection.state == .on{
+            checkBoxShowMeetingDetectionPopup.isEnabled = true
             SettingsManagerObject.isMeetingDetectionEnabled = true
+            allApiObject.capturePosthog(event: "settings-changed-enable-meeting-detection", metadata: [:])//#490
         }else{
+            checkBoxShowMeetingDetectionPopup.isEnabled = false
             SettingsManagerObject.isMeetingDetectionEnabled = false
+            allApiObject.capturePosthog(event: "settings-changed-disable-meeting-detection", metadata: [:])//#490
         }
+    }
+    @IBAction func checkBoxShowMeetingDetectionPopupClicked(_ sender: Any) {
+        SettingsManagerObject.isSettingsChanged = true
+        if checkBoxShowMeetingDetectionPopup.state == .on{
+            SettingsManagerObject.showMeetingDetectionAlert = true
+            allApiObject.capturePosthog(event: "settings-changed-enable-meeting-popup", metadata: [:])//#490
+        }else{
+            SettingsManagerObject.showMeetingDetectionAlert = false
+            allApiObject.capturePosthog(event: "settings-changed-disable-meeting-popup", metadata: [:])//#490
+        }
+        
+        
     }
     
     @IBAction func checkBoxHideDockClicked(_ sender: Any) {
@@ -743,8 +882,10 @@ class generalVc: NSViewController, NSTextFieldDelegate {
         if checkBoxHideDock.state == .on{
             SettingsManagerObject.isHideDockInActivity = true
             let _ = checkDocBarState()
+            allApiObject.capturePosthog(event: "settings-changed-hide-dock-enabled", metadata: [:])//#490
         }else{
             SettingsManagerObject.isHideDockInActivity = false
+            allApiObject.capturePosthog(event: "settings-changed-hide-dock-disabled", metadata: [:])//#490
         }
         
     }
@@ -753,15 +894,18 @@ class generalVc: NSViewController, NSTextFieldDelegate {
         if checkBoxPromptToAskNextHabit.state == .on{
 //            UserDefaults.standard.set(true, forKey: kUserdefaultsPromptToRememberHabit)
             SettingsManagerObject.isPromptToRememberHabit = true
+            allApiObject.capturePosthog(event: "settings-changed-enable-next-habit-reminder", metadata: [:])//#490
         }else{
 //            UserDefaults.standard.set(false, forKey: kUserdefaultsPromptToRememberHabit)
             SettingsManagerObject.isPromptToRememberHabit = false
+            allApiObject.capturePosthog(event: "settings-changed-disable-next-habit-reminder", metadata: [:])//#490
         }
     }
     var pomodoroPreferencesAdvancedVcObj:pomodoroPreferencesAdvancedVc?
     @IBAction func btnAdvancedPmodoroModeClicked(_ sender: Any) {
         showHardCorePomodoroSetting()
     }
+    
     @IBAction func btnAdvanceMainClicked(_ sender: Any) {
         if boxPopup.isHidden == true{
             allApiObject.capturePosthog(event: "open-advanced-general-preferences", metadata: [:])
@@ -769,13 +913,14 @@ class generalVc: NSViewController, NSTextFieldDelegate {
 //            BoxBlackLayerForPopup.isHidden = false
         }
     }
+    
     func showHardCorePomodoroSetting(){
         if pomodoroPreferencesAdvancedVcObj == nil{
-            pomodoroPreferencesAdvancedVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("pomodoroPreferencesAdvancedVc")) as? pomodoroPreferencesAdvancedVc
-            pomodoroPreferencesAdvancedVcObj!.generalVcObj = self
+            pomodoroPreferencesAdvancedVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("pomodoroPreferencesAdvancedVc")) as? pomodoroPreferencesAdvancedVc
         }
         self.presentAsSheet(pomodoroPreferencesAdvancedVcObj!)
     }
+    
     /*
      let url = URL(fileURLWithPath: "/Users/prashant/Library/Application Support/com.App.EarnYourScreentime/Logs")
      let destUrl = URL(fileURLWithPath: "/Users/prashant/Library/Application Support/com.App.EarnYourScreentime/Logs.zip")
@@ -908,23 +1053,55 @@ class generalVc: NSViewController, NSTextFieldDelegate {
         if checkBoxDockIcon.state == .on{
             UserDefaults.standard.set(true, forKey: kUserdefaultsShowDockIcon)
             NSApp.setActivationPolicy(NSApplication.ActivationPolicy.regular)
+            allApiObject.capturePosthog(event: "settings-changed-show-dock-icon", metadata: [:])//#490
         }else{
             UserDefaults.standard.set(false, forKey: kUserdefaultsShowDockIcon)
             NSApp.setActivationPolicy(NSApplication.ActivationPolicy.accessory)
             NSApplication.shared.activate(ignoringOtherApps: true)
+            allApiObject.capturePosthog(event: "settings-changed-hide-dock-icon", metadata: [:])//#490
         }
     }
     @IBAction func radioBtnEasySkipClick(_ sender: Any) {
         SettingsManagerObject.isSettingsChanged = true
         SettingsManagerObject.isEasySkipEnabled = true
         radioButtonHardSkip.state = .off
+        allApiObject.capturePosthog(event: "settings-changed-friction-for-skipping-easy", metadata: [:])//#490
     }
     
     @IBAction func radioBtnHardSkipClick(_ sender: Any) {
         SettingsManagerObject.isSettingsChanged = true
         SettingsManagerObject.isEasySkipEnabled = false
         radioButtonEasySkip.state = .off
+        allApiObject.capturePosthog(event: "settings-changed-friction-for-skipping-hard", metadata: [:])//#490
     }
     
+}
+
+
+extension generalVc:NSTabViewDelegate{
+    func tabView(_ tabView: NSTabView, didSelect tabViewItem: NSTabViewItem?) {
+        print("tab view selection change")
+        if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
+            if tabViewItem == tabViewItemPassword{
+                if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
+                    if !SettingsManagerObject.isPasswordRequireInChangeSettings{
+                        tabview.view.addSubview(enterPasswordVcObj!.view)
+                        tabview.view.addConstraints(subView: enterPasswordVcObj!.view)
+                        enterPasswordVcObj?.parentVc = nil
+                        addLog(text: "Showing enter password view inside preferences")
+                    }
+                }
+            }
+        }
+    }
+
+    func tabView(_ tabView: NSTabView, shouldSelect tabViewItem: NSTabViewItem?) -> Bool {
+        if isPurchased == false && daysLeft <= 0{
+            if tabViewItem != tabViewItemAccount && tabViewItem != tabViewItemUninstall{
+                return false
+            }
+        }
+        return true
+    }
 }
 

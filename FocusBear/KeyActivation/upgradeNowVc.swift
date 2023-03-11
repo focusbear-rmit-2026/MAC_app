@@ -93,7 +93,7 @@ class upgradeNowVc: NSViewController {
         if let upgradeNowVcInfo = configjson.value(forKey: "upgradeNowVcInfo") as? NSDictionary{
             msg = upgradeNowVcInfo.value(forKey: "toolTipCopied") as? String ?? msg
         }
-        showTooltip(sender: btnUserId, msg: msg, preferredEdge: NSRectEdge.minY)
+        showTooltip(sender: btnUserId, msg: msg, preferredEdge: NSRectEdge.minY, maxWidthVal:230)
         DispatchQueue.global().async {
             sleep(2)
             DispatchQueue.main.async {

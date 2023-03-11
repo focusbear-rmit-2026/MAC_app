@@ -79,6 +79,10 @@ class focusPreferencesAdvancedVc: NSViewController {
         btnRemoveUrl.toolTip = toolTipRemove
         
         
+        if #available(macOS 11.0, *) {
+            btnAddUrl.image = NSImage(systemSymbolName: "plus.square.fill", accessibilityDescription: nil)
+            btnRemoveUrl.image = NSImage(systemSymbolName: "minus.square.fill", accessibilityDescription: nil)
+        }
     }
     override func viewWillAppear() {
         
@@ -152,16 +156,23 @@ class focusPreferencesAdvancedVc: NSViewController {
             
             
             if let isAllowedListApproach = arrFocusType[row]["isAllowedListApproach"] as? Bool{
-                if isAllowedListApproach{
-                    bottomConstraint = NSLayoutConstraint(item: btnOk!, attribute: .top, relatedBy: .equal, toItem: boxTableView, attribute: .bottom, multiplier: 1, constant: 14)
-                    NSLayoutConstraint.activate([bottomConstraint!])
-                    lblTitle.isHidden = false
-                    lineHorizontal.isHidden = false
-                }else{
+                if arrFocusType[row]["isDefault"] as? Bool == true{
                     bottomConstraint = NSLayoutConstraint(item: btnOk!, attribute: .top, relatedBy: .equal, toItem: checkBoxAutoDoNotDisturb, attribute: .bottom, multiplier: 1, constant: 14)
                     NSLayoutConstraint.activate([bottomConstraint!])
                     lblTitle.isHidden = true
                     lineHorizontal.isHidden = true
+                }else{
+                    if isAllowedListApproach{
+                        bottomConstraint = NSLayoutConstraint(item: btnOk!, attribute: .top, relatedBy: .equal, toItem: boxTableView, attribute: .bottom, multiplier: 1, constant: 14)
+                        NSLayoutConstraint.activate([bottomConstraint!])
+                        lblTitle.isHidden = false
+                        lineHorizontal.isHidden = false
+                    }else{
+                        bottomConstraint = NSLayoutConstraint(item: btnOk!, attribute: .top, relatedBy: .equal, toItem: checkBoxAutoDoNotDisturb, attribute: .bottom, multiplier: 1, constant: 14)
+                        NSLayoutConstraint.activate([bottomConstraint!])
+                        lblTitle.isHidden = true
+                        lineHorizontal.isHidden = true
+                    }
                 }
             }
            
@@ -198,9 +209,11 @@ class focusPreferencesAdvancedVc: NSViewController {
         if checkBoxRunScriptBeforeFocus.state == .on{
             arrFocusType[row]["isScriptBeforeFocusEnabled"] = true
             btnSelectAppleScriptBeforeFocus.isEnabled = true
+            allApiObject.capturePosthog(event: "settings-changed-enable-script-before-focus", metadata: [:])//#490
         }else{
             arrFocusType[row]["isScriptBeforeFocusEnabled"] = false
             btnSelectAppleScriptBeforeFocus.isEnabled = false
+            allApiObject.capturePosthog(event: "settings-changed-disable-script-before-focus", metadata: [:])//#490
         }
         UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
         
@@ -209,6 +222,7 @@ class focusPreferencesAdvancedVc: NSViewController {
 
             }
         })
+        
     }
     
     @IBAction func checkBoxRunScriptAfterFocusClicked(_ sender: Any) {
@@ -216,9 +230,11 @@ class focusPreferencesAdvancedVc: NSViewController {
         if checkBoxRunScriptAfterFocus.state == .on{
             arrFocusType[row]["isScriptAfterFocusEnabled"] = true
             btnSelectAppleScriptAfterFocus.isEnabled = true
+            allApiObject.capturePosthog(event: "settings-changed-enable-script-after-focus", metadata: [:])//#490
         }else{
             arrFocusType[row]["isScriptAfterFocusEnabled"] = false
             btnSelectAppleScriptAfterFocus.isEnabled = false
+            allApiObject.capturePosthog(event: "settings-changed-disable-script-after-focus", metadata: [:])//#490
         }
         UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
         allApiObject.editFocusMode(focusType: arrFocusType[row], completionHandler: {newDic in
@@ -328,6 +344,7 @@ class focusPreferencesAdvancedVc: NSViewController {
 
             }
         })
+        allApiObject.capturePosthog(event: "remove-blocked-url-in-focus-mode", metadata: [:])//#490
 //        if arrFocusType[selectedFocusTypeRow]["isOn"] as? Bool == true{
 //            currentRunningFocusType = arrFocusType[selectedFocusTypeRow]
 //        }
@@ -355,7 +372,7 @@ class focusPreferencesAdvancedVc: NSViewController {
                         _ = isAccessibilityEnabled(isPrompt: true)
                         arrFocusType[row]["isAutoDoNotDisturbEnabled"] = true
                         UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
-                        
+                        allApiObject.capturePosthog(event: "settings-changed-enable-dnd", metadata: [:])//#490
                         allApiObject.editFocusMode(focusType: arrFocusType[row], completionHandler: {newDic in
                             DispatchQueue.main.async {
 
@@ -371,6 +388,8 @@ class focusPreferencesAdvancedVc: NSViewController {
                 arrFocusType[row]["isAutoDoNotDisturbEnabled"] = true
                 UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
                 
+                allApiObject.capturePosthog(event: "settings-changed-enable-dnd", metadata: [:])//#490
+                
                 allApiObject.editFocusMode(focusType: arrFocusType[row], completionHandler: {newDic in
                     DispatchQueue.main.async {
 
@@ -381,7 +400,7 @@ class focusPreferencesAdvancedVc: NSViewController {
         }else{
             arrFocusType[row]["isAutoDoNotDisturbEnabled"] = false
             UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
-            
+            allApiObject.capturePosthog(event: "settings-changed-disable-dnd", metadata: [:])//#490
             allApiObject.editFocusMode(focusType: arrFocusType[row], completionHandler: {newDic in
                 DispatchQueue.main.async {
 

@@ -32,7 +32,7 @@ class pomodoroPreferencesAdvancedVc: NSViewController {
     @IBOutlet weak var lblDescriptionHardcorePomodoro: NSTextField!
     @IBOutlet weak var checkBoxUseHardcorePomodoro: NSButton!
     
-    var generalVcObj:generalVc?
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.

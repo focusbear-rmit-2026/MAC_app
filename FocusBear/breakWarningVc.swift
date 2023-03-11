@@ -114,7 +114,7 @@ class breakWarningVc: NSViewController {
         }
     }
     @objc func performTimerCount() {
-        currentTimer += 1
+        currentTimer += 1 //todo 1 kro 
         setProgres()
     }
     

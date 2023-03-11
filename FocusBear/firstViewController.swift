@@ -10,6 +10,11 @@ import Cocoa
 
 class firstViewController: NSViewController {
     
+   
+    @IBOutlet weak var lblProgress: NSTextField!
+    @IBOutlet weak var btnPostponeBreak: underLineButton!
+    @IBOutlet weak var btnTopSpace: NSLayoutConstraint!
+    @IBOutlet weak var btnBottomSpace: NSLayoutConstraint!
     @IBOutlet weak var imgViewBottomSpace: NSLayoutConstraint!
     @IBOutlet weak var imgViewTopSpace: NSLayoutConstraint!
     @IBOutlet weak var imgViewHeight: NSLayoutConstraint!
@@ -36,7 +41,8 @@ class firstViewController: NSViewController {
         
         lbltimer.isHidden = true
         if isFirstTime{
-            lblBeforeYouStart.isHidden = true
+            btnPostponeBreak.isHidden = true
+            lblProgress.isHidden = true
             imgView.image = NSImage(named: "icon 130")//
             imgViewHeight.constant = 160
             imgViewTopSpace.constant = 35
@@ -44,7 +50,8 @@ class firstViewController: NSViewController {
             lblSubTitle.isHidden = false
             tblViewHabits.isHidden = true
             scrollViewHabits.isHidden = true
-            
+            btnBottomSpace.constant = 63
+            btnTopSpace.constant = 171
             let welcomeText = "Welcome to Focus Bear"
             
             if let dic = configjson.value(forKey: "welcomeInfo") as? NSDictionary{
@@ -66,14 +73,14 @@ class firstViewController: NSViewController {
                     let videoUrl = arr.first?.value(forKey: "video_urls") as? [String] ?? []
                     btnStartFirstHabit.title = getstartActivityButtonText(seconds: durationSeconds, name: name)
                     btnStartFirstHabit.toolTip = btnStartFirstHabit.title
-                    introActivity = habit(id:"", name: name, durationSeconds: durationSeconds, urlsArray: videoUrl, logQuantity: false, logQuantityQuestion: nil, openSpecificApps: false, allowUrls: [], allowApps: [], allowedFocusMode: "", activity_sequence_id: "", run_micro_breaks: false)
+                    introActivity = habit(id:"", name: name, durationSeconds: durationSeconds, urlsArray: videoUrl, logQuantity: false, logQuantityQuestion: nil, openSpecificApps: false, allowUrls: [], allowApps: [], allowedFocusMode: "", activity_sequence_id: "", run_micro_breaks: false, take_notes: "", isPriorityHigh: false, days_of_week: [])
                 }else{
                     btnStartFirstHabit.title = getstartActivityButtonText(seconds: 60, name: "mindful breathing")//"Start 1 minute of mindful breathing"
                     btnStartFirstHabit.toolTip = btnStartFirstHabit.title
-                    introActivity = habit(id:"", name: "mindful breathing", durationSeconds: 60, urlsArray: [], logQuantity: false, logQuantityQuestion: nil, openSpecificApps: false, allowUrls: [], allowApps: [], allowedFocusMode: "", activity_sequence_id: "", run_micro_breaks: false)
+                    introActivity = habit(id:"", name: "mindful breathing", durationSeconds: 60, urlsArray: [], logQuantity: false, logQuantityQuestion: nil, openSpecificApps: false, allowUrls: [], allowApps: [], allowedFocusMode: "", activity_sequence_id: "", run_micro_breaks: false, take_notes: "", isPriorityHigh: false, days_of_week: [])
                 }
             }else{
-                introActivity = habit(id:"", name: "mindful breathing", durationSeconds: 60, urlsArray: [], logQuantity: false, logQuantityQuestion: nil, openSpecificApps: false, allowUrls: [], allowApps: [], allowedFocusMode: "", activity_sequence_id: "", run_micro_breaks: false)
+                introActivity = habit(id:"", name: "mindful breathing", durationSeconds: 60, urlsArray: [], logQuantity: false, logQuantityQuestion: nil, openSpecificApps: false, allowUrls: [], allowApps: [], allowedFocusMode: "", activity_sequence_id: "", run_micro_breaks: false, take_notes: "", isPriorityHigh: false, days_of_week: [])
                 lblTitle.stringValue = welcomeText
                 btnStartFirstHabit.title = getstartActivityButtonText(seconds: 60, name: "mindful breathing")//"Start 1 minute of mindful breathing"
                 btnStartFirstHabit.toolTip = btnStartFirstHabit.title
@@ -81,12 +88,11 @@ class firstViewController: NSViewController {
         }else{
             
             if currentState == ._MORNING_HABIT_{
-//                var beforeYouBeginText = "Before you begin, take 30 seconds to visualise yourself performing each of the habits. This sounds kooky but research indicates that doing a mental rehearsal like this increases the likelihood of you completing the habits and makes the habits more sticky so that even if you don't have access to your computer/this app, you'll still do all the habits"
-//                if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
-//                    beforeYouBeginText = activityInfo.value(forKey: "beforeYouBeginText") as? String ?? beforeYouBeginText
-//                }
-//                lblBeforeYouStart.stringValue = beforeYouBeginText
-//                lblBeforeYouStart.isHidden = false
+
+                btnPostponeBreak.isHidden = true
+                lblProgress.isHidden = true
+                btnBottomSpace.constant = 63
+                btnTopSpace.constant = 171
                 if SettingsManagerObject.kIsReducedMotion{
                     imgView.image = nil
                     imgViewHeight.constant = 40
@@ -106,15 +112,6 @@ class firstViewController: NSViewController {
                     if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
                         btnStartFirstHabit.title = activityInfo.value(forKey: "buttonBeginText") as? String ?? btnStartFirstHabit.title
                     }
-               
-                
-//                }else{
-//                    if arrAllMorningHabits.count != 0 {
-//                        let time = arrAllMorningHabits[0].durationSeconds!
-//                        btnStartFirstHabit.title = getstartActivityButtonText(seconds: time, name: arrAllMorningHabits[0].name!)
-//                        btnStartFirstHabit.toolTip = btnStartFirstHabit.title
-//                    }
-//                }
                 
                 tblViewHabits.isHidden = false
                 scrollViewHabits.isHidden = false
@@ -123,12 +120,11 @@ class firstViewController: NSViewController {
                 
                 
             }else if currentState == ._EVENING_HABIT_{
-//                var beforeYouStartText = "Before you start, take a few moments to reflect on why you want to do these habits. Then visualise yourself beginning the habit sequence. Mentally walk through any of the habits that are going to be harder. This process will help reduce \"limbic friction\", i.e. prime your brain to do the habits no matter what, even if you don't have the app available."
-//                if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
-//                    beforeYouStartText = activityInfo.value(forKey: "beforeYouStartText") as? String ?? beforeYouStartText
-//                }
-//                lblBeforeYouStart.stringValue = beforeYouStartText
-//                lblBeforeYouStart.isHidden = false
+
+                btnPostponeBreak.isHidden = true
+                lblProgress.isHidden = true
+                btnTopSpace.constant = 171
+                btnBottomSpace.constant = 63
                 imgView.image = nil
                 imgViewHeight.constant = 40
                 imgViewTopSpace.constant = 35
@@ -143,9 +139,9 @@ class firstViewController: NSViewController {
                         btnStartFirstHabit.title = activityInfo.value(forKey: "buttonBeginText") as? String ?? btnStartFirstHabit.title
                     }
 //                }else{
-//                    if arrAllEveningHabits.count != 0 {
-//                        let time = arrAllEveningHabits[0].durationSeconds!
-//                        btnStartFirstHabit.title = getstartActivityButtonText(seconds: time, name: arrAllEveningHabits[0].name!)
+//                    if arrFilteredEveningHabits.count != 0 {
+//                        let time = arrFilteredEveningHabits[0].durationSeconds!
+//                        btnStartFirstHabit.title = getstartActivityButtonText(seconds: time, name: arrFilteredEveningHabits[0].name!)
 //                        btnStartFirstHabit.toolTip = btnStartFirstHabit.title
 //                    }
 //                }
@@ -153,6 +149,35 @@ class firstViewController: NSViewController {
                 tblViewHabits.isHidden = false
                 scrollViewHabits.isHidden = false
                 tblViewHabits.reloadData()
+                lblSubTitle.isHidden = true
+            }else if currentState == ._ACTIVITY_{
+                btnPostponeBreak.isHidden = false
+                lblProgress.isHidden = false
+                
+                
+                btnPostponeBreak.title = "Postpone break for five minutes"
+                if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
+                    btnPostponeBreak.title = activityInfo.value(forKey: "buttonPostponeBreakText") as? String ?? btnPostponeBreak.title
+                }
+
+                
+                lblTitle.stringValue = thirdVcObj?.lblTitle.stringValue ?? ""
+                btnStartFirstHabit.title = thirdVcObj?.btnMain.title ?? ""
+
+                lblProgress.stringValue = thirdVcObj?.lblProgress.stringValue ?? ""
+                
+                
+                btnTopSpace.constant = 134
+                btnBottomSpace.constant = 100
+                imgView.image = nil
+                imgViewHeight.constant = 40
+                imgViewTopSpace.constant = 35
+                imgViewBottomSpace.constant = 5
+                habitTotalCompletedSeconds = 0
+
+                
+                tblViewHabits.isHidden = false
+                scrollViewHabits.isHidden = false
                 lblSubTitle.isHidden = true
             }
         }
@@ -163,6 +188,9 @@ class firstViewController: NSViewController {
     var isTimerGoingOn = false
     var totalDuration = 0
 
+    @IBAction func btnPostponeClicked(_ sender: Any) {
+        thirdVcObj?.btnSkipHabitClicked(self)
+    }
     func startTimer(duration:Int) {
         if isTimerGoingOn{
             btnStartFirstHabit.isHidden = true
@@ -215,15 +243,15 @@ class firstViewController: NSViewController {
                 self.isTimerGoingOn = false
                 
                 if currentState == ._MORNING_HABIT_{
-                    if arrAllMorningHabits.count != 0 {
-                        let time = arrAllMorningHabits[0].durationSeconds!
-                        self.btnStartFirstHabit.title = getstartActivityButtonText(seconds: time, name: arrAllMorningHabits[0].name!)
+                    if arrFilteredMorningHabits.count != 0 {
+                        let time = arrFilteredMorningHabits[0].durationSeconds!
+                        self.btnStartFirstHabit.title = getstartActivityButtonText(seconds: time, name: arrFilteredMorningHabits[0].name!)
                         self.btnStartFirstHabit.toolTip = self.btnStartFirstHabit.title
                     }
                 }else if currentState == ._EVENING_HABIT_{
-                    if arrAllEveningHabits.count != 0 {
-                        let time = arrAllEveningHabits[0].durationSeconds!
-                        self.btnStartFirstHabit.title = getstartActivityButtonText(seconds: time, name: arrAllEveningHabits[0].name!)
+                    if arrFilteredEveningHabits.count != 0 {
+                        let time = arrFilteredEveningHabits[0].durationSeconds!
+                        self.btnStartFirstHabit.title = getstartActivityButtonText(seconds: time, name: arrFilteredEveningHabits[0].name!)
                         self.btnStartFirstHabit.toolTip = self.btnStartFirstHabit.title
                     }
                 }
@@ -245,15 +273,15 @@ class firstViewController: NSViewController {
             mainViewControllerObj?.startBreathing()
         }else{
             if currentState == ._MORNING_HABIT_{
-
                 mainViewControllerObj?.showVisualizeInstructionsVc()
                 visualizeInstructionsVcObj?.startTimer()
                 allApiObject.capturePosthog(event: "visualize-morning-routine", metadata: ["routine-type":"morning_routine"])
-            }else{
-
+            }else if currentState == ._EVENING_HABIT_{
                 mainViewControllerObj?.showVisualizeInstructionsVc()
                 visualizeInstructionsVcObj?.startTimer()
                 allApiObject.capturePosthog(event: "visualize-evening-routine", metadata: ["routine-type":"evening_routine"])
+            }else if currentState == ._ACTIVITY_{
+                thirdVcObj?.btnMainClicked(self)
             }
         }
     }
@@ -262,9 +290,13 @@ extension firstViewController:NSTableViewDelegate, NSTableViewDataSource {
     func numberOfRows(in tableView: NSTableView) -> Int {
         
         if currentState == ._MORNING_HABIT_{
-            return  arrAllMorningHabits.count
+            return  arrFilteredMorningHabits.count
+        }else if currentState == ._EVENING_HABIT_{
+            return  arrFilteredEveningHabits.count
+        }else if currentState == ._ACTIVITY_{
+            return  arrFinalBreakActivities.count
         }else{
-            return  arrAllEveningHabits.count
+            return 0
         }
     }
     
@@ -273,9 +305,21 @@ extension firstViewController:NSTableViewDelegate, NSTableViewDataSource {
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
         if let cell = tableView.makeView(withIdentifier: NSUserInterfaceItemIdentifier(rawValue: "tblCellHabits"), owner: nil) as? tblCellHabits {
             if currentState == ._MORNING_HABIT_{
-                cell.lblTitle.stringValue  = "\(row + 1).   \(arrAllMorningHabits[row].name ?? "")"
-            }else{
-                cell.lblTitle.stringValue  = "\(row + 1).   \(arrAllEveningHabits[row].name ?? "")"
+                cell.lblTitle.stringValue  = "\(row + 1).   \(arrFilteredMorningHabits[row].name ?? "")"
+            }else if currentState == ._EVENING_HABIT_{
+                cell.lblTitle.stringValue  = "\(row + 1).   \(arrFilteredEveningHabits[row].name ?? "")"
+            }else if currentState == ._ACTIVITY_{
+                
+                 
+                var activityName = ""
+                let duration = arrFinalBreakActivities[row].activity.durationSeconds ?? 0
+                if let choice = arrFinalBreakActivities[row].randomChoice{
+                    activityName = choice.name
+                }else{
+                    activityName = arrFinalBreakActivities[row].activity.name ?? ""
+                }
+                cell.lblTitle.stringValue  = "\(row + 1).   \(activityName) - \(getStringTime(seconds: duration))"
+                
             }
             
             return cell

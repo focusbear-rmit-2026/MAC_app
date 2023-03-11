@@ -50,7 +50,7 @@ class accountVc: NSViewController {
     }
    
     override func viewWillAppear(){
-        
+        addLog(text: "accountVc:- viewWillAppear")
         if let userId = appdelegate!.user?.userId{
             lblUserId.stringValue = userId
         }else{
@@ -104,6 +104,7 @@ class accountVc: NSViewController {
     }
     
     @IBAction func btnLogoutClicked(_ sender: Any) {
+        addLog(text: "accountVc:- btnLogoutClicked")
         let alert = NSAlert()
         alert.setSharingType()
         alert.messageText = "Are you sure you want to logout?"
@@ -124,6 +125,7 @@ class accountVc: NSViewController {
        
     }
     @IBAction func btnRestorePurchaseClicked(_ sender: Any) {
+        addLog(text: "accountVc:- btnRestorePurchaseClicked")
         loader.startAnimation(self)
         btnRestorePurchase.isEnabled = false
         allApiObject.capturePosthog(event: "sync-payment-status", metadata: ["from":"accounts_tab"])

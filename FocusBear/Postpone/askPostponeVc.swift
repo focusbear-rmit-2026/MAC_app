@@ -53,8 +53,13 @@ class askPostponeVc: NSViewController {
                 mainViewControllerObj?.abortCancel()
             }else if currentAction == ._START_{
                 mainViewControllerObj?.btnAbort.isHidden = false
+                mainViewControllerObj?.stackViewTopButtons.isHidden = false
             }else if currentAction == ._END_{
                 mainViewControllerObj?.btnAbort.isHidden = false
+                mainViewControllerObj?.stackViewTopButtons.isHidden = false
+            }else if currentAction == ._BRAIN_DUMP_{
+                mainViewControllerObj?.btnAbort.isHidden = false
+                mainViewControllerObj?.stackViewTopButtons.isHidden = false
             }
         }else{
             self.view.removeFromSuperview()
@@ -301,11 +306,30 @@ class askPostponeVc: NSViewController {
         }else if currentState == ._EVENING_HABIT_{
             if activityPostponeCount == 0 && postponeTime > 15{//when user clicks Please spare me for the first time, if the user selects to postpones for longer than 15 then the password will be asked.//#441
                 
-                if (UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil) && SettingsManagerObject.isPasswordRequireInSkipEvening{
-                    self.view.removeFromSuperview()
-                    mainViewControllerObj?.showPasswordView()
-                    enterPasswordVcObj?.parentVc = self
+                if (UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil){
                     
+                    if isHighPrioritySequenceGoing{
+                        if SettingsManagerObject.isPasswordRequireInSkipEveningAfterCutOff{
+                            self.view.removeFromSuperview()
+                            mainViewControllerObj?.showPasswordView()
+                            enterPasswordVcObj?.parentVc = self
+                        }else{
+                            activityPostponeCount += 1
+                            self.view.removeFromSuperview()
+                            mainViewControllerObj?.postponeEveningHabitFor(minutes: postponeTime)
+                        }
+                        
+                    }else{
+                        if SettingsManagerObject.isPasswordRequireInSkipEvening{
+                            self.view.removeFromSuperview()
+                            mainViewControllerObj?.showPasswordView()
+                            enterPasswordVcObj?.parentVc = self
+                        }else{
+                            activityPostponeCount += 1
+                            self.view.removeFromSuperview()
+                            mainViewControllerObj?.postponeEveningHabitFor(minutes: postponeTime)
+                        }
+                    }
                 }else{
                     activityPostponeCount += 1
                     self.view.removeFromSuperview()
@@ -411,13 +435,18 @@ class askPostponeVc: NSViewController {
             return
         }
         let id = getUuid()
+        var officeFriendlyActivityName = "Stand up and stretch"
+        if let common = configjson.value(forKey: "common") as? NSDictionary{
+            officeFriendlyActivityName = common.value(forKey: "officeFriendlyActivityName") as? String ?? officeFriendlyActivityName
+        }
+        
         let activity_sequence_id = arrAllbreakActivities.first?.activity_sequence_id ?? ""
         if var breakActivities = mutableDic.value(forKey: "break_activities") as? [NSDictionary] {
-            let activityDic: NSMutableDictionary = ["id":id, "name":"Stand up and stretch", "duration_seconds":20, "is_office_friendly":true, "activity_sequence_id":activity_sequence_id]
+            let activityDic: NSMutableDictionary = ["id":id, "name":officeFriendlyActivityName, "duration_seconds":20, "is_office_friendly":true, "activity_sequence_id":activity_sequence_id]
             breakActivities.append(activityDic)
             mutableDic["break_activities"] = breakActivities
             
-            arrAllbreakActivities.append(breakActivity(id:id,name: "Stand up and stretch", durationSeconds: 20, IncludeInEveryBreak: false, urlsArray: [], logQuantity:false, isRandomChoice: false, choices: [], logQuantityQuestion: "", openSpecificApps: false, allowUrls: [], allowApps: [], isOfficeFriendly: true, allowedFocusMode: "", logQuantityType: "",activity_sequence_id:activity_sequence_id))
+            arrAllbreakActivities.append(breakActivity(id:id,name: officeFriendlyActivityName, durationSeconds: 20, IncludeInEveryBreak: false, urlsArray: [], logQuantity:false, isRandomChoice: false, choices: [], logQuantityQuestion: "", openSpecificApps: false, allowUrls: [], allowApps: [], isOfficeFriendly: true, allowedFocusMode: "", logQuantityType: "",activity_sequence_id:activity_sequence_id, take_notes: ""))
             
             
             
@@ -471,6 +500,7 @@ class askPostponeVc: NSViewController {
             lblTimer.isHidden = true
             self.view.removeFromSuperview()
             mainViewControllerObj?.btnAbort.isHidden = false
+            mainViewControllerObj?.stackViewTopButtons.isHidden = false
         }else{
             self.view.removeFromSuperview()
             mainViewControllerObj?.abortCancel()

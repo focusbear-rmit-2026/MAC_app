@@ -20,7 +20,7 @@ class quitCountDownVc: NSViewController {
     @IBOutlet weak var lblEmailId: NSTextField!
     @IBOutlet weak var lblPleaseEmail: NSTextField!
     var currentTimer = 0
-    var totalDuration = 10
+    var totalDuration = 5
     var timer:Timer?
     
     
@@ -40,7 +40,7 @@ class quitCountDownVc: NSViewController {
                 if let subTitle = quittingCountDownInfo.value(forKey: "subTitle") as? String{
                     lblSubtile.stringValue = subTitle
                 }else{
-                    lblSubtile.stringValue = "Are you sure you want to give up on your habits? Please take 10 seconds to reflect on whether you are serious about quitting."
+                    lblSubtile.stringValue = "Are you sure you want to give up on your habits? Please take 5 seconds to reflect on whether you are serious about quitting."
                 }
                 
                 if let message = quittingCountDownInfo.value(forKey: "message") as? String{
@@ -88,7 +88,7 @@ class quitCountDownVc: NSViewController {
                 self.view.addConstraints(subView: self.enterPasswordVcObj!.view)
                 addLog(text: "Showing enter password view from quit")
                 currentTimer = 0
-                totalDuration = 10
+                totalDuration = 5
                 let (_,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
                 var minute = "\(m)"
                 var second = "\(s)"
@@ -110,7 +110,7 @@ class quitCountDownVc: NSViewController {
     
     func startTimer() {
         currentTimer = 0
-        totalDuration = 10
+        totalDuration = 5
         let (_,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
         var minute = "\(m)"
         var second = "\(s)"

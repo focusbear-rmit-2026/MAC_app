@@ -31,7 +31,7 @@ class uninstallingConfirmVc: NSViewController, NSTextViewDelegate {
         var buttonSelectReasonText = "Select a reason"
         var brokenAppReasonText = "The app is broken"
         var habitsHardReasonText = "My habits are too hard - I can't handle them"
-        
+        var otherReasonText = "Other"
         
         lblEnterYourEmail.stringValue = "Your Email (if you want us to reply):"
         btnCancel.title = buttonCancelText
@@ -47,6 +47,7 @@ class uninstallingConfirmVc: NSViewController, NSTextViewDelegate {
             buttonSelectReasonText = common.value(forKey: "buttonSelectReasonText") as? String ?? buttonSelectReasonText
             brokenAppReasonText = common.value(forKey: "brokenAppReasonText") as? String ?? brokenAppReasonText
             habitsHardReasonText = common.value(forKey: "habitsHardReasonText") as? String ?? habitsHardReasonText
+            otherReasonText = common.value(forKey: "otherReasonText") as? String ?? otherReasonText
             lblEnterYourEmail.stringValue = common.value(forKey: "emailTitle") as? String ?? lblEnterYourEmail.stringValue
             btnUninstall.title = common.value(forKey: "tabUninstallText") as? String ?? btnUninstall.title
         }
@@ -54,6 +55,8 @@ class uninstallingConfirmVc: NSViewController, NSTextViewDelegate {
         popUpButton.addItem(withTitle: buttonSelectReasonText)
         popUpButton.addItem(withTitle: brokenAppReasonText)
         popUpButton.addItem(withTitle: habitsHardReasonText)
+        popUpButton.addItem(withTitle: otherReasonText)
+        
         
         scrollView.shadowRadius = 1.5
         scrollView.shadowOffset = NSMakeSize(0, 2)

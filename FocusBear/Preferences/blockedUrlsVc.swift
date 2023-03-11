@@ -19,7 +19,7 @@ class blockedUrlsVc: NSViewController {
         // Do view setup here.
         lblTitle.stringValue = "Always Blocked URLs"
         tblView.doubleAction = #selector(tableRowAllowedUrlsDoubleClicked)
-        blockedUrlsVcObj = self
+//        blockedUrlsVcObj = self
         
         lblSubTitle.stringValue = "\"Block these URLs even if you're not in a focus block. You might want to put social media or news sites that you would rather not use at any time. You can always set up an evening routine activity where you explicitly allow access to Facebook so that you can still stay connected - just not during your morning routine/work day.\""
         
@@ -33,6 +33,14 @@ class blockedUrlsVc: NSViewController {
             
         }
         
+        if #available(macOS 11.0, *) {
+            btnAddUrl.image = NSImage(systemSymbolName: "plus.square.fill", accessibilityDescription: nil)
+            btnRemoveUrl.image = NSImage(systemSymbolName: "minus.square.fill", accessibilityDescription: nil)
+        }
+        
+    }
+    override func viewWillAppear() {
+        tblView.reloadData()
     }
     override func viewWillDisappear() {
         SettingsManagerObject.putUserLocalDeviceSettings()
@@ -54,7 +62,8 @@ class blockedUrlsVc: NSViewController {
             UserDefaults.standard.set(SettingsManagerObject.arrBlockedUrls, forKey: SettingsManagerObject.kUserdefaultsArrBlockedUrls)
         }
         SettingsManagerObject.isSettingsChanged = true
-        
+        UserDefaults.standard.set(true, forKey: kUserdefaultsEditBlockedUrlsOnce)
+        allApiObject.capturePosthog(event: "remove-always-blocked-url", metadata: [:])//#490
     }
     @objc func tableRowAllowedUrlsDoubleClicked(){
         let selectedTow = tblView.selectedRow

@@ -56,12 +56,12 @@ class askLogInVc: NSViewController {
     @IBAction func btnSignUpClicked(_ sender: Any) {
         addLog(text:"btnSignUpClicked")
         
-        if Reachability.isConnectedToNetwork() == false {
-            if self.view.window != nil{
-                showAlertNoInternet(window: self.view.window!)
-            }
-            return
-        }
+//        if Reachability.isConnectedToNetwork() == false {
+//            if self.view.window != nil{
+//                showAlertNoInternet(window: self.view.window!)
+//            }
+//            return
+//        }
         
         self.view.window?.close()
         
@@ -76,12 +76,12 @@ class askLogInVc: NSViewController {
     @IBAction func btnSignInClicked(_ sender: Any) {
         addLog(text:"btnSignInClicked")
         
-        if Reachability.isConnectedToNetwork() == false {
-            if self.view.window != nil{
-                showAlertNoInternet(window: self.view.window!)
-            }
-            return
-        }
+//        if Reachability.isConnectedToNetwork() == false {
+//            if self.view.window != nil{
+//                showAlertNoInternet(window: self.view.window!)
+//            }
+//            return
+//        }
         
         self.view.window?.close()
         

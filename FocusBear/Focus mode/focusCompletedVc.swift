@@ -27,6 +27,11 @@ class focusCompletedVc: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
+        
+        textViewIntention.isFieldEditor = true
+        textViewAchieve.isFieldEditor = true
+        textViewDistractions.isFieldEditor = true
+        
         lblTitle.stringValue = "You did it!"
         lblQuestionFirst.stringValue = "What did you achieve during this time?"
         lblQuestionSecond.stringValue = "Any distractions?"
@@ -115,6 +120,10 @@ class focusCompletedVc: NSViewController {
         self.view.window?.close()
         
         showSmallTimerWindow(durationSeconds: 60*breakMinute, msg: "", isFocusBreak: true, currentTimerValue:0)
+        
+        if lastFocusModeTempInfo != nil{
+            showaddFocusTempUrlsOrAppsWindow()
+        }
     }
     
 }

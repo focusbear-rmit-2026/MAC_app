@@ -65,7 +65,9 @@ class onboardingBlockedUrlsVc: NSViewController {
     @IBAction func btnContinueClicked(_ sender: Any) {
         addLog(text: "onboardingBlockedUrlsVc:- Button Continue clicked")
         UserDefaults.standard.set(arrBlockedUrls, forKey: kUserdefaultsBlockedUrlsFromOnboarding)
-        appdelegate!.showOnbardingHabit()
+//        appdelegate!.showOnbardingHabit()
+        self.view.window?.close()
+        showPreloadFocusModesWindow()
     }
     @IBAction func btnAddUrlClicked(_ sender: Any) {
         addLog(text: "onboardingBlockedUrlsVc:- Button Add Url clicked")
@@ -86,6 +88,7 @@ class onboardingBlockedUrlsVc: NSViewController {
         tblView.scrollRowToVisible(arrBlockedUrls.count - 1)
         btnAddUrl.isEnabled = false
         textFieldUrl.stringValue = ""
+        UserDefaults.standard.set(true, forKey: kUserdefaultsEditBlockedUrlsOnce)
     }
     
 }
@@ -136,6 +139,7 @@ extension onboardingBlockedUrlsVc:NSTableViewDelegate, NSTableViewDataSource {
         }
         arrBlockedUrls[sender.tag] = dic
         tblView.reloadData()
+        UserDefaults.standard.set(true, forKey: kUserdefaultsEditBlockedUrlsOnce)
     }
 }
 extension onboardingBlockedUrlsVc:NSTextFieldDelegate{

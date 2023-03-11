@@ -10,6 +10,7 @@ import Cocoa
 
 class easyPostponeVc: NSViewController {
 
+    @IBOutlet weak var btnCancel: Button!
     @IBOutlet weak var lblInfo: NSTextField!
     @IBOutlet weak var btnDeactivateApp: underLineButton!
     @IBOutlet weak var btnPostpone: Button!
@@ -29,6 +30,7 @@ class easyPostponeVc: NSViewController {
         btnPostpone.title = "Postpone"
         btnDeactivateApp.title = "Deactivate Focus Bear for 4 hours"
         
+        btnCancel.title = buttonCancelText
         if let easyPostponeVcInfo = configjson.value(forKey: "easyPostponeVcInfo") as? NSDictionary{
             lblTitle.stringValue = easyPostponeVcInfo.value(forKey: "title") as? String ?? lblTitle.stringValue
             lblTitleSelectMinutes.stringValue = easyPostponeVcInfo.value(forKey: "titleSelectMinutes") as? String ?? lblTitleSelectMinutes.stringValue
@@ -38,6 +40,18 @@ class easyPostponeVc: NSViewController {
         }
     }
     
+    @IBAction func btnCancelClicked(_ sender: Any) {
+        
+        if currentHabitPlaying == nil && currentActivityPlaying == nil{
+            mainWindowControllerObj?.showWindow(self)
+            showBlankWindowInSecondaryMonitor()
+        }else{
+            getSmallCountDownWindowObject().showWindow(self)
+        }
+        
+        mainViewControllerObj?.abortCancel()
+        self.view.window?.close()
+    }
     @IBAction func btnPostponeClicked(_ sender: Any) {
         addLog(text: "easyPostponeVc:- button postpone clicked")
         if lastCurrentState == ._MORNING_HABIT_{
@@ -61,7 +75,7 @@ class easyPostponeVc: NSViewController {
 
         var sequenceId = ""
         if lastCurrentState == ._MORNING_HABIT_{
-            sequenceId = arrAllMorningHabits.first?.activity_sequence_id ?? ""
+            sequenceId = arrFilteredMorningHabits.first?.activity_sequence_id ?? ""
             UserDefaults.standard.set(startDate, forKey: kUserdefaultsLastHabitShowDate)
             
         }else if lastCurrentState == ._FOCUS_SUMMARY_ || lastCurrentState == ._EVENING_HABIT_{
@@ -74,7 +88,7 @@ class easyPostponeVc: NSViewController {
                 UserDefaults.standard.set(startDate, forKey: kUserdefaultsEveningHabitsShowedTillDate)
             }
             
-            sequenceId = arrAllEveningHabits.first?.activity_sequence_id ?? ""
+            sequenceId = arrFilteredEveningHabits.first?.activity_sequence_id ?? ""
         }else{
             addLog(text: "force Complete Current Sequence - no Sequence found to complete")
             return

@@ -19,8 +19,7 @@ class collectionCellToolBox: NSCollectionViewItem {
         super.viewDidLoad()
         // Do view setup here.
         
-        
-        
+
     }
  
     override func viewWillAppear() {
@@ -36,7 +35,7 @@ class collectionCellToolBox: NSCollectionViewItem {
         print("mouseEntered")
         if event.trackingArea == trackingArea{
             if !urlString.isEmpty{
-                showTooltip(sender: btnIcon, msg: urlString, preferredEdge: NSRectEdge.maxY)
+                showTooltip(sender: btnIcon, msg: urlString, preferredEdge: NSRectEdge.maxY, maxWidthVal:230)
             }
         }
     }

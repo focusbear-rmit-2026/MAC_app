@@ -12,7 +12,7 @@ class mainWindowController: NSWindowController {
 
     override func windowDidLoad() {
         super.windowDidLoad()
-
+  
         
 //    todo
         window!.collectionBehavior = NSWindow.CollectionBehavior.canJoinAllSpaces          // we want these

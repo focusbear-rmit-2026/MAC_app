@@ -21,6 +21,7 @@ class preferencesTabViewController: NSTabViewController {
         var tabBlockedURLsText = "Blocked URLs"
         var tabUninstallText = "Uninstall"
         var tabAccountsText = "Accounts"
+        var tabStatsText = "Stats"
         
         if let common = configjson.value(forKey: "common") as? NSDictionary{
             tabSettingsText = common.value(forKey: "tabSettingsText") as? String ?? tabSettingsText
@@ -30,6 +31,7 @@ class preferencesTabViewController: NSTabViewController {
             tabBlockedURLsText = common.value(forKey: "tabBlockedURLsText") as? String ?? tabBlockedURLsText
             tabUninstallText = common.value(forKey: "tabUninstallText") as? String ?? tabUninstallText
             tabAccountsText = common.value(forKey: "tabAccountsText") as? String ?? tabAccountsText
+            tabStatsText = common.value(forKey: "tabStatsText") as? String ?? tabStatsText
         }
         print(self.tabViewItems.count)
       
@@ -75,6 +77,13 @@ class preferencesTabViewController: NSTabViewController {
                         } else {
                             self.tabViewItems[i].image = NSImage(named: "NSTouchBarUserTemplate")
                         }
+                    }else if id  == "Stats"{
+                        self.tabViewItems[i].label = tabStatsText
+                        if #available(macOS 11.0, *) {
+                            self.tabViewItems[i].image = NSImage(systemSymbolName: "person", accessibilityDescription: nil)
+                        } else {
+                            self.tabViewItems[i].image = NSImage(named: "NSTouchBarUserTemplate")
+                        }
                     }
                 }
             }
@@ -106,6 +115,34 @@ class preferencesTabViewController: NSTabViewController {
     }
     
     override func tabView(_ tabView: NSTabView, shouldSelect tabViewItem: NSTabViewItem?) -> Bool {
+        
+        //self.tabViewItems
+//        let lastSelectedTabId = self.tabViewItems[self.selectedTabViewItemIndex].identifier as? String ?? ""
+//        if isSettingsChanged && lastSelectedTabId == "EditHabits"{
+//
+//            let alertReset: NSAlert = NSAlert()
+//
+//            alertReset.setSharingType()
+//            alertReset.messageText = "You've made changes to your habits/breaks but haven't saved them yet. Do you want to save the changes now (the app will restart)?"//todo text
+//            alertReset.alertStyle = NSAlert.Style.warning
+//            alertReset.addButton(withTitle: "Save and Restart")
+//            alertReset.addButton(withTitle: "Don't save - I want to make other changes first")
+//
+//
+//            alertReset.beginSheetModal(for: view.window!, completionHandler: { (modalResponse) in
+//                if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
+//                    print("okclicked")
+//                    isSettingsChanged = false
+//                }else if modalResponse == .alertSecondButtonReturn{
+//                    self.tabView.selectTabViewItem(at: tabView.indexOfTabViewItem(tabViewItem!))//todo isme ye fuction vapas call hoga kya nahi hua to niche vali conditions manage kro
+//                }
+//            })
+//
+//
+//            return false
+//        }
+        
+        
         if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
             if self.view.subviews.contains(enterPasswordVcObj!.view){
                 return false
@@ -113,11 +150,15 @@ class preferencesTabViewController: NSTabViewController {
         }
         if isPurchased == false && daysLeft <= 0{// if UserDefaults.standard.object(forKey: "trialExpired") != nil{
             let id = tabViewItem?.identifier as? String ?? ""
-            if id != "Uninstall" && id != "Accounts"{
+//            if id != "Uninstall" && id != "Accounts"{
+//                return false
+//            }
+            if id != "Settings"{
                 return false
             }
+            
         }
         return true
     }
 }
-
+ 

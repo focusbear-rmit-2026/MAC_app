@@ -95,7 +95,7 @@ class selectJsonVc: NSViewController, NSTextViewDelegate {
         let handler = MessageHandler()
         webview.configuration.userContentController.add(handler, name: "setting_saved")
         webview.configuration.userContentController.add(handler, name: "open_marketplace")
-        
+        webview.configuration.userContentController.add(handler, name: "user_edited_settings")
         
         let stringTime = getStringFromDateInUtc(date: Date(), dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
         let url = "https://settings.focusbear.io?bust_cache=$\(stringTime)"
@@ -279,66 +279,7 @@ class selectJsonVc: NSViewController, NSTextViewDelegate {
         } catch let error as NSError {
             print(error)
         }
-        
-        
-        
-        
-        //var jsonResult = NSDictionary()
-        //        if let stringDic = UserDefaults.standard.object(forKey: kUserdefaultsSelectedJson) as? String {
-        //            //            jsonResult = dic
-        //            if let data = stringDic.data(using: String.Encoding.utf8) {
-        //
-        //                do {
-        //                    jsonResult = try (JSONSerialization.jsonObject(with: data, options: []) as? NSDictionary ?? [:])
-        //
-        //                } catch let error as NSError {
-        //                    print(error)
-        //                }
-        //            }
-        //
-        //        }
-        //        if let path = Bundle.main.path(forResource: "settings", ofType: "json") {
-        //            let url = URL(fileURLWithPath: path)
-        //            do {
-        //                let data = try Data(contentsOf: url, options: .mappedIfSafe)
-        //
-        //                do {
-        //                    if let dicResult: NSDictionary = try JSONSerialization.jsonObject(with: data, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary {
-        //                        jsonResult = dicResult
-        //                    }
-        //
-        //                }catch {
-        //                    print(error)
-        //                }
-        //            } catch {
-        //                // handle error
-        //            }
-        //        }
-        
-        //        print(jsonResult.descriptionInStringsFileFormat)
-        //        var ss = "\(jsonResult)"//.descriptionInStringsFileFormat;
-        
-        //let js = "window.postMessage(\(jsonResult.descriptionInStringsFileFormat), \"https://earn-your-screentime-settings.herokuapp.com\")"
-        //        let js = "sendMessage(\"\(jsonResult.descriptionInStringsFileFormat)\")"//window.postMessage(\'\(ss)\', \"https://earn-your-screentime-settings.herokuapp.com\")"
-        
-        //        webview?.evaluateJavaScript(js,completionHandler: { (html: Any?, error: Error?) in
-        //            print(html)
-        //        })
-        
-        //        do {
-        ////            let jsonData = try JSONSerialization.data(withJSONObject: jsonResult, options: [])  // serialize the data dictionary
-        ////          let jsonEncodedData = jsonData.base64EncodedData()//([])   // base64 eencode the data dictionary
-        //
-        //
-        //            print(stringjson)
-        //             //ss = ss.replacingOccurrences(of: "\"", with: "\\\"")
-        //            //ss = ss.addingPercentEncoding(withAllowedCharacters: CharacterSet.urlQueryAllowed) ?? ss
-        //
-        //            //let javascript = "loadSettingsDataFromMac(\"{ram=shyam;}{sita=geeta}\");" //wor
-        //            //let javascript = "loadSettingsDataFromMac(\"{ram = shyam;}\n{sita = geeta}\");"//not working
-        //
-        //        } catch let error as NSError {          print(error)
-        //        }
+       
         
     }
     override func viewWillAppear() {
@@ -445,8 +386,7 @@ class selectJsonVc: NSViewController, NSTextViewDelegate {
                         }else{
                             
                             if statusCode == 200{
-//                                UserDefaults.standard.set(self.textViewJson.string, forKey: kUserdefaultsSelectedJson)
-//                                appdelegate?.quitAndRestartApp()
+
                                 
                                 do {
                                     let jsonResultData =  try JSONSerialization.data(withJSONObject: dic!, options: JSONSerialization.WritingOptions.prettyPrinted)
@@ -607,7 +547,7 @@ class selectJsonVc: NSViewController, NSTextViewDelegate {
                         } catch let myJSONError {
                             print(myJSONError)
                         }
-                        
+                        UserDefaults.standard.set(true, forKey: kUserdefaultsEditHabitsOnce)
                         self.alertSettingChanged!.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
                             if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
                                 // self.setData()
@@ -742,7 +682,7 @@ class selectJsonVc: NSViewController, NSTextViewDelegate {
             }
         }
     }
-}
+}//user-edited-settings
 class MessageHandler: NSObject, WKScriptMessageHandler {
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
 //        print(message.body)
@@ -753,19 +693,42 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
                 NSWorkspace.shared.open(url)
             }
         }else if message.name == "setting_saved"{
-            if let data = (message.body as? String ?? "").data(using: String.Encoding.utf8) {
-                
-                do {
-                    let jsonResult:NSDictionary = try (JSONSerialization.jsonObject(with: data, options: []) as? NSDictionary ?? [:])
-                    print(jsonResult)
+            if message.body as? String == "\"user-edited-settings\"" || message.body as? String == "user-edited-settings"{//todo
+               // isSettingsChanged = true
+            }else{
+                if let data = (message.body as? String ?? "").data(using: String.Encoding.utf8) {
                     
-                    selectJsonVcObj?.jsonReceivedFromWebView(jsonResult: jsonResult)
-      
-                }
-                catch{
-                    
+                    do {
+                        let jsonResult:NSDictionary = try (JSONSerialization.jsonObject(with: data, options: []) as? NSDictionary ?? [:])
+                        print(jsonResult)
+                        
+                        selectJsonVcObj?.jsonReceivedFromWebView(jsonResult: jsonResult)
+//                        isSettingsChanged = false
+                    }
+                    catch{
+                        
+                    }
                 }
             }
+            
+        }else if message.name == "user_edited_settings"{
+            
+//            if let data = (message.body as? String ?? "").data(using: String.Encoding.utf8) {
+//
+//                do {
+//                    let jsonResult:NSDictionary = try (JSONSerialization.jsonObject(with: data, options: []) as? NSDictionary ?? [:])
+//                    print(jsonResult)
+//
+////                    selectJsonVcObj?.jsonReceivedFromWebView(jsonResult: jsonResult)
+//
+//                    isSettingsChanged = true
+//                }
+//                catch{
+//
+//                }
+//            }
+            
+            
         }
         
         

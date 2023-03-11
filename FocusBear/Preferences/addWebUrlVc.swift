@@ -154,13 +154,26 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
                 lblTitle.stringValue = titleEditWebUrl
                 btnAdd.title = buttonSaveText
             }else if currenUrlAddingtState == ._ALL_BLOCK_URL{
-                var selectedRow = blockedUrlsVcObj!.tblView.selectedRow
-                if selectedRow == -1{
-                    selectedRow = 0
+                if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
+                    if tabview.selectedTabViewItemIndex == 1{
+                        var selectedRow = focusPreferencesVcObj?.tblViewAllowedUrls.selectedRow ?? 0
+                        if selectedRow == -1{
+                            selectedRow = 0
+                        }
+                        currentRow = selectedRow
+                        textField.stringValue = SettingsManagerObject.arrBlockedUrls[selectedRow]
+                        lblTitle.stringValue = titleEditWebUrl
+                    }else{
+                        var selectedRow = blockedUrlsVcObj!.tblView.selectedRow
+                        if selectedRow == -1{
+                            selectedRow = 0
+                        }
+                        currentRow = selectedRow
+                        textField.stringValue = SettingsManagerObject.arrBlockedUrls[selectedRow]
+                        lblTitle.stringValue = titleEditWebUrl
+                    }
                 }
-                currentRow = selectedRow
-                textField.stringValue = SettingsManagerObject.arrBlockedUrls[selectedRow]
-                lblTitle.stringValue = titleEditWebUrl
+
                 btnAdd.title = buttonSaveText
             }
         }
@@ -266,8 +279,10 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
                 var urlsArray = [String]()
                 var isOnboardingProcess = false
                 if UserDefaults.standard.object(forKey: kUserdefaultsVideoShown) != nil{
-                    if let arr = arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow]["allowed_urls"] as? [String]{
-                        urlsArray = arr
+                    if focusPreferencesVcObj != nil{
+                        if let arr = arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow]["allowed_urls"] as? [String]{
+                            urlsArray = arr
+                        }
                     }
                 }else{
                     if preloadFocusModesWindowControllerObj != nil{
@@ -302,7 +317,7 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
 //                }
                 
                 
-                if isOnboardingProcess{//todo test
+                if isOnboardingProcess{
                     preloadFocusModeAppsVcObj?.arrUrls = urlsArray
                     preloadFocusModeAppsVcObj?.tblView.reloadData()
                     preloadFocusModeAppsVcObj?.tblView.selectRowIndexes(IndexSet(arrayLiteral: (urlsArray.count - 1)), byExtendingSelection: false)
@@ -381,13 +396,7 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
                 allApiObject.capturePosthog(event: "add-blocked-url-in-focus-mode", metadata: [:])
                 
             }else if currenUrlAddingtState == ._ALL_BLOCK_URL{
-//                if !SettingsManagerObject.arrBlockedUrls.contains(where: {$0.lowercased() == textView.string.lowercased() }) {
-//                    SettingsManagerObject.arrBlockedUrls.append(textView.string)
-//                }else{
-//                    lblInvalidDomain.isHidden = false
-//                    lblInvalidDomain.stringValue = urlAlreadyExistsText.replacingOccurrences(of: "<APPNAME>", with: textView.string)
-//                    return;
-//                }
+
                 if cehckIsItemAlreadyAdded(urlsArray: SettingsManagerObject.arrBlockedUrls){
                     lblInvalidDomain.isHidden = false
                     lblInvalidDomain.stringValue = urlAlreadyExistsText.replacingOccurrences(of: "<APPNAME>", with: domain)
@@ -397,9 +406,26 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
                         SettingsManagerObject.arrBlockedUrls.append(item)
                     }
                 }
-                blockedUrlsVcObj?.tblView.reloadData()
-                blockedUrlsVcObj?.tblView.selectRowIndexes(IndexSet(arrayLiteral: (SettingsManagerObject.arrBlockedUrls.count - 1)), byExtendingSelection: false)
-                blockedUrlsVcObj?.tblView.scrollRowToVisible(SettingsManagerObject.arrBlockedUrls.count - 1)
+                UserDefaults.standard.set(true, forKey: kUserdefaultsEditBlockedUrlsOnce)
+                
+                
+                
+                
+                
+                if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
+                    if tabview.selectedTabViewItemIndex == 1{
+                        focusPreferencesVcObj?.tblViewAllowedUrls.reloadData()
+                        focusPreferencesVcObj?.tblViewAllowedUrls.selectRowIndexes(IndexSet(arrayLiteral: (SettingsManagerObject.arrBlockedUrls.count - 1)), byExtendingSelection: false)
+                        focusPreferencesVcObj?.tblViewAllowedUrls.scrollRowToVisible(SettingsManagerObject.arrBlockedUrls.count - 1)
+                    }else{
+                        blockedUrlsVcObj?.tblView.reloadData()
+                        blockedUrlsVcObj?.tblView.selectRowIndexes(IndexSet(arrayLiteral: (SettingsManagerObject.arrBlockedUrls.count - 1)), byExtendingSelection: false)
+                        blockedUrlsVcObj?.tblView.scrollRowToVisible(SettingsManagerObject.arrBlockedUrls.count - 1)
+                    }
+                }
+                
+                
+                
                 UserDefaults.standard.set(SettingsManagerObject.arrBlockedUrls, forKey: SettingsManagerObject.kUserdefaultsArrBlockedUrls)
                 SettingsManagerObject.isSettingsChanged = true
                 allApiObject.capturePosthog(event: "add-always-blocked-url", metadata: [:])
@@ -443,7 +469,7 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
                         
                     }
                 })
-                
+                allApiObject.capturePosthog(event: "edit-allowed-url-in-focus-mode", metadata: [:])//#490
             }else if currenUrlAddingtState == ._FOCUS_BLOCK_URL{
                 var urlsArray = [String]()
                 if let arr = arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow]["blockUrlsArray"] as? [String]{
@@ -491,7 +517,7 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
                         
                     }
                 })
-                
+                allApiObject.capturePosthog(event: "edit-blocked-url-in-focus-mode", metadata: [:])//#490
             }else{
                 var isContainAlready = false
                 for i in 0..<SettingsManagerObject.arrBlockedUrls.count{
@@ -509,11 +535,24 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
                     lblInvalidDomain.stringValue = urlAlreadyExistsText.replacingOccurrences(of: "<APPNAME>", with: textView.string)
                     return;
                 }
-                blockedUrlsVcObj?.tblView.reloadData()
-                blockedUrlsVcObj?.tblView.selectRowIndexes(IndexSet(arrayLiteral: (currentRow)), byExtendingSelection: false)
+                UserDefaults.standard.set(true, forKey: kUserdefaultsEditBlockedUrlsOnce)
+                
+                
+                
+                if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
+                    if tabview.selectedTabViewItemIndex == 1{
+                        focusPreferencesVcObj?.tblViewAllowedUrls.reloadData()
+                        focusPreferencesVcObj?.tblViewAllowedUrls.selectRowIndexes(IndexSet(arrayLiteral: (currentRow)), byExtendingSelection: false)
+                    }else{
+                        blockedUrlsVcObj?.tblView.reloadData()
+                        blockedUrlsVcObj?.tblView.selectRowIndexes(IndexSet(arrayLiteral: (currentRow)), byExtendingSelection: false)
+                    }
+                }
+                
 //                blockedUrlsVcObj?.tblView.scrollRowToVisible(currentRow)//no need visible h isiliye to select kr paya or edit bhi
                 UserDefaults.standard.set(SettingsManagerObject.arrBlockedUrls, forKey: SettingsManagerObject.kUserdefaultsArrBlockedUrls)
                 SettingsManagerObject.isSettingsChanged = true
+                allApiObject.capturePosthog(event: "edit-always-blocked-url", metadata: [:])//#490//
             }
         }
 

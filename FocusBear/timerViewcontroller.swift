@@ -11,6 +11,13 @@ import WebKit
 class timerViewcontroller: NSViewController, WKNavigationDelegate{
     
     
+  
+    @IBOutlet weak var btnTabNotes: NSButton!
+    @IBOutlet weak var btnTabVideo: NSButton!
+    @IBOutlet weak var boxTakeNotes: NSBox!
+    @IBOutlet weak var boxButtonTabViews: NSBox!
+    @IBOutlet weak var lblTitleTakeNotes: NSTextField!
+    @IBOutlet var textViewNotes: NSTextView!
     @IBOutlet weak var btnSkipHabit: underLineButton!
     @IBOutlet weak var boxPlay: NSBox!
     @IBOutlet weak var btnPause: NSButton!
@@ -24,13 +31,19 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
     @IBOutlet weak var lblTitle: NSTextField!
     @IBOutlet weak var imgViewGif: NSImageView!
     
+    var currentActicityTitle = ""
+    var currentDurationInSeconds = 0
+    var currentUrl:String?
+    var logQuantityQuestion:String?
+    var logQuantityType:String?
+    var logActivityQuantity = false
     
     var timerHideBearAnimation:Timer?
     var timer:Timer?
     var currentTimer = 0
     var totalDuration = 0
     var startTimerValue = 0// we starts timer after video lodded completely and if user has postponed habit at 10 second then we start again habit after postpone time finished from 10 seconds directly  and to hold that value till video  load we are using this variable.
-    
+
     
 //    var btnPauseTitle = "Pause Activity"
 //    var btnResumeTitle = "Resume Activity"
@@ -39,6 +52,11 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
+        btnTabVideo.title = "Video"
+        btnTabNotes.title = "Notes"
+        
+        lblTitleTakeNotes.stringValue = "Take Notes"
+        textViewNotes.delegate = self
         btnSkipHabit.isHidden = true
         self.webView.navigationDelegate = self
         boxTimerCenterY = boxTimerCenterY.setMultiplier(multiplier: 1.6)
@@ -65,6 +83,9 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         
         btnSkipHabit.title = "Skip this habit for today"
         if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
+            btnTabVideo.title = activityInfo.value(forKey: "buttonVideoText") as? String ?? btnTabVideo.title
+            btnTabNotes.title = activityInfo.value(forKey: "buttonNotesText") as? String ?? btnTabNotes.title
+            lblTitleTakeNotes.stringValue = activityInfo.value(forKey: "titleTakeNotes") as? String ?? lblTitleTakeNotes.stringValue
             btnSkipHabit.title = activityInfo.value(forKey: "buttonSkipHabitText") as? String ?? btnSkipHabit.title
         }
         
@@ -77,6 +98,18 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
     override func viewWillDisappear() {
         self.timerHideBearAnimation?.invalidate()
         self.timerHideBearAnimation = nil
+    }
+    @IBAction func btnTabNotesClicked(_ sender: Any) {
+        webView.isHidden = true
+        boxTakeNotes.isHidden = false
+        btnTabVideo.state = .off
+        btnTabNotes.state = .on
+    }
+    @IBAction func btnTabVideoClicked(_ sender: Any) {
+        webView.isHidden = false
+        boxTakeNotes.isHidden = true
+        btnTabVideo.state = .on
+        btnTabNotes.state = .off
     }
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         print("*************didFinish navigation**************")
@@ -97,9 +130,12 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             }
         }
     }
+    var isVideoLodded = false
     func loadWebViewTo(url:String?){
+        isVideoLodded = false
         if var videoUrl = url{
             self.webView.isHidden = false
+            isVideoLodded = true
             if videoUrl.lowercased().contains("watch?v="){
                 videoUrl = videoUrl.replacingOccurrences(of: "watch?v=", with: "embed/")
             }else{
@@ -127,10 +163,16 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             allApiObject.capturePosthog(event: "play-youtube-video-in-activity", metadata: [:])
             
             if Reachability.isConnectedToNetwork() == false {
-                if isVideoLoding{
-                    isVideoLoding = false
-                }
-                return
+                allApiObject.isInternetOn(completionHandler: {isInternetOn in
+                    DispatchQueue.main.async {
+                        if !isInternetOn{
+                            if self.isVideoLoding{
+                                self.isVideoLoding = false
+                            }
+                        }
+                    }
+                    
+                })
             }
             isVideoLoding = true
         }else{
@@ -156,48 +198,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                 whatToAchieveInFocusBlock = ""
                 if let dic = filterArr.first{
                     currentRunningFocusType = dic
-//                    let allowAppsPath = dic["allowed_apps"] as? [String] ?? []
-//                    print(allowAppsPath)
-//                    for path in allowAppsPath{
-//                        let url = URL(fileURLWithPath: path)
-//                        activityAllowedFocusApps.append(url.deletingPathExtension().lastPathComponent)
-//                    }
-//                    activityAllowedFocusUrls = dic["allowed_urls"] as? [String] ?? []
-                    
-                    
-//                    var isAllowedAllAppsInFocus:Bool = false
-//                    var isAllowedAllUrlsInFocus:Bool = false
-//                    var isBlockedAllUrlsInFocus:Bool = false
-//                    var isAllowedListApproachInFocus:Bool = false
-//                    var arrAllowedUrlsForFocus:[String] = []
-//                    var arrBlockedUrlsForFocus:[String] = []
-//                    var allowAppsPath:[String] = []
-//
-//                    if dic["isAllowedAllUrls"] as? Bool == true{
-//                        isAllowedAllUrlsInFocus = true
-//                    }
-//                    if dic["isBlockedAllUrls"] as? Bool == true{
-//                        isBlockedAllUrlsInFocus = true
-//                    }
-//                    if dic["isAllowedListApproach"] as? Bool == true{
-//                        isAllowedListApproachInFocus = true
-//                    }else{
-//                        isAllowedListApproachInFocus = false
-//                    }
-//
-//                    if dic["isAllowedAllApps"] as? Bool == true{
-//                        isAllowedAllAppsInFocus = true
-//                    }
-//                    allowAppsPath = dic["allowed_apps"] as? [String] ?? []
-//
-//
-//                    arrAllowedUrlsForFocus = dic["allowed_urls"] as? [String] ?? []
-//                    arrBlockedUrlsForFocus = dic["blockUrlsArray"] as? [String] ?? []
-                    
 
-                    
-                    
-//                    activityAllowedFocusMode = activityFocusMode(isAllowedAllAppsInFocus: isAllowedAllAppsInFocus, isAllowedAllUrlsInFocus: isAllowedAllUrlsInFocus, isBlockedAllUrlsInFocus: isBlockedAllUrlsInFocus, isAllowedListApproachInFocus: isAllowedListApproachInFocus, arrAllowedUrlsForFocus: arrAllowedUrlsForFocus, arrBlockedUrlsForFocus: arrBlockedUrlsForFocus, allowAppsPath:allowAppsPath)
                 }
                 
             }
@@ -205,8 +206,45 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
        
     }
     
-    
-    func startTimerHabit(durationSeconds:Int, url:String?, name:String,currentHabit: habit, currentTimerValue:Int) {
+    func getRandomVideoUrl(activityId:String, urlsArray: [String])->String?{
+        
+        if urlsArray.count == 0{
+            return nil
+        }else{
+            var lastVideoIndex = -1
+            var  lastSavedVideosDic = [String : Int]()
+            if let savedVideosDic = UserDefaults.standard.object(forKey: "lastSavedVideosDic") as? [String:Int]{
+                lastSavedVideosDic = savedVideosDic
+                if let val = lastSavedVideosDic[activityId]{
+                    lastVideoIndex = val
+                }
+            }
+
+            if lastVideoIndex == -1 || urlsArray.count == 1{
+                lastVideoIndex = 0
+                lastSavedVideosDic[activityId] = lastVideoIndex
+                UserDefaults.standard.set(lastSavedVideosDic, forKey: "lastSavedVideosDic")
+                return urlsArray[lastVideoIndex]
+            }
+            
+            lastVideoIndex += 1
+            
+            if urlsArray.count <= lastVideoIndex{
+                lastVideoIndex = 0
+            }
+            
+            let newVideoUrl = urlsArray[lastVideoIndex]
+            
+            lastSavedVideosDic[activityId] = lastVideoIndex
+            UserDefaults.standard.set(lastSavedVideosDic, forKey: "lastSavedVideosDic")
+            
+            return newVideoUrl;
+        }
+    }
+    func startTimerHabit(durationSeconds:Int, name:String,currentHabit: habit, currentTimerValue:Int) {
+        
+        let url = getRandomVideoUrl(activityId:currentHabit.id, urlsArray: currentHabit.urlsArray)
+        
         UserDefaults.standard.set(Date(), forKey: kUserdefaultsLastHabitsStartedDate)
         isAnyAllowedFocusModeActivityRunning = false
         if !(mainViewControllerObj?.isBreakActivityPostponeInsideAllowedHabit ?? false){
@@ -234,12 +272,18 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         }
         disableSystemSleep()
         checkActivityExtraAllowedAppsAndUrls(allowedFocusMode: currentHabit.allowedFocusMode)
+        
+        
+        
         var shouldLaunchAppAndUrl = true
         if currentTimerValue == 0{
             shouldLaunchAppAndUrl = true
         }else{
             shouldLaunchAppAndUrl = false
         }
+        
+        
+        
         if currentHabit.openSpecificApps{
             currentHabitPlaying = currentHabit
             showSmallTimerWindow(durationSeconds: durationSeconds, msg: getDoSomeActivityText(activityName: name), isFocusBreak: false, currentTimerValue:currentTimerValue)
@@ -260,11 +304,39 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         if currentHabitPlaying == nil{// do not allow  video  if activity is allow app type
             loadWebViewTo(url: url)
         }
+        if currentHabit.take_notes == DURING_ACTIVITY{//  har jgh ye block load video k niche rakho
+            textViewNotes.enclosingScrollView?.isHidden = false
+            if shouldLaunchAppAndUrl{
+                textViewNotes.string = ""
+                UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
+            }else{
+                textViewNotes.string = UserDefaults.standard.object(forKey: kUserdefaultsLastHabitSavedNotes) as? String ?? ""
+            }
+            
+            if isVideoLodded{
+                boxTakeNotes.isHidden = true
+                boxButtonTabViews.isHidden = false
+                btnTabVideo.state = .on
+                btnTabNotes.state = .off
+            }else{
+                boxTakeNotes.isHidden = false
+                boxButtonTabViews.isHidden = true
+            }
+            
+        }else{
+            boxButtonTabViews.isHidden = true
+            UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
+            textViewNotes.string = ""
+            textViewNotes.enclosingScrollView?.isHidden = true
+            boxTakeNotes.isHidden = true
+        }
+        
+        
         resetConstraintsForVideoAndGif(kIsReducedMotion: SettingsManagerObject.kIsReducedMotion)
         
         lastActivityPerformedTime = Date()
         
-        lblTitle.stringValue = getDoSomeActivityText(activityName: name)//arrAllMorningHabits[currentHabitIndex].name!)
+        lblTitle.stringValue = getDoSomeActivityText(activityName: name)//arrFilteredMorningHabits[currentHabitIndex].name!)
         startTimerValue = currentTimerValue
         currentTimer = currentTimerValue
         totalDuration = durationSeconds//durationInMinutes*60
@@ -330,8 +402,8 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         }//!getsmallCountDownVcObject().isFocusBreak{
         disableSystemSleep()
         btnSkipHabit.isHidden = true
-//        loadWebViewTo(url: url)
-        lblTitle.stringValue = getDoSomeActivityText(activityName: name)//"Do some \(arrAllMorningHabits[currentHabitIndex].name!)."
+
+        lblTitle.stringValue = getDoSomeActivityText(activityName: name)//"Do some \(arrFilteredMorningHabits[currentHabitIndex].name!)."
         totalDuration = durationSeconds//durationInMinutes*60
         let (h,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
         
@@ -383,16 +455,23 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         }
         
     }
-    var currentActicityTitle = ""
-    var currentDurationInSeconds = 0
-    var currentUrl:String?
-    var logQuantityQuestion:String?
-    var logQuantityType:String?
-    var logActivityQuantity = false
-    func startTimerActivity(durationInSeconds:Int,name:String, url:String?, logQuantityQuestion:String?,currentActivity: breakActivity, currentChoice:activityChoice?,logQuantity:Bool, logQuantityType:String) {
+    
+    
+    
+    func startTimerActivity(durationInSeconds:Int,name:String, urlsArray:[String], logQuantityQuestion:String?,currentActivity: breakActivity, currentChoice:activityChoice?,logQuantity:Bool, logQuantityType:String) {
 //        isLastActivityStoppedInRunningState = false
         //lastActivityRunningId = ""
         //lastActivityStoppedTimerCount = 0
+        
+        var url: String?
+        
+        if currentChoice == nil{
+            url = getRandomVideoUrl(activityId:currentActivity.id, urlsArray: urlsArray)
+        }else{
+            url = getRandomVideoUrl(activityId:currentChoice!.id, urlsArray: urlsArray)
+        }
+        
+        
         
         if isFocusModeOn(){
             addLog(text: "Activity start:- Focus Mode Finished")
@@ -415,6 +494,9 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         if !(thirdVcObj?.isViewLoaded ?? false){
             thirdVcObj?.loadView()
         }
+        
+
+        
         disableSystemSleep()
         logActivityQuantity = logQuantity
 //        activityPostponeCount = 0
@@ -441,6 +523,30 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         if currentActivityPlaying == nil{// do not allow  video  if activity is allow app type
             loadWebViewTo(url: url)
         }
+        if currentActivity.take_notes == DURING_ACTIVITY{//  har jgh ye block load video k niche rakho
+            textViewNotes.enclosingScrollView?.isHidden = false
+            textViewNotes.string = ""
+            UserDefaults.standard.removeObject(forKey: kUserdefaultsLastActivitySavedNotes)
+            
+            if isVideoLodded{
+                boxTakeNotes.isHidden = true
+                boxButtonTabViews.isHidden = false
+                btnTabVideo.state = .on
+                btnTabNotes.state = .off
+            }else{
+                boxTakeNotes.isHidden = false
+                boxButtonTabViews.isHidden = true
+            }
+            
+        }else{
+            boxButtonTabViews.isHidden = true
+            UserDefaults.standard.removeObject(forKey: kUserdefaultsLastActivitySavedNotes)
+            textViewNotes.string = ""
+            textViewNotes.enclosingScrollView?.isHidden = true
+            boxTakeNotes.isHidden = true
+        }
+        
+        
         resetConstraintsForVideoAndGif(kIsReducedMotion: SettingsManagerObject.kIsReducedMotion)
         
         self.logQuantityQuestion = logQuantityQuestion
@@ -494,7 +600,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             self.timerHideBearAnimation?.invalidate()
             self.timerHideBearAnimation = Timer.scheduledTimer(timeInterval: 5, target: self, selector: #selector(self.hideBearAnimation), userInfo: nil, repeats: false)
         }
-        if kIsReducedMotion && self.webView.isHidden == false{
+        if kIsReducedMotion && isVideoLodded{
             titleTopSpace.constant = 80
             boxTimerCenterY = boxTimerCenterY.setMultiplier(multiplier: 1.8)
         }else{
@@ -504,7 +610,6 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
     }
     func resumeTimerActivity(durationInSeconds:Int,name:String, url:String?) {
         disableSystemSleep()
-//        loadWebViewTo(url: url)
         btnSkipHabit.isHidden = true
         lblTitle.stringValue = getDoSomeActivityText(activityName: name)//"Do some \(name)."
         totalDuration = durationInSeconds
@@ -530,7 +635,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             self.lblTimer.stringValue = "\(hour):\(minute):\(second)"
         }
 
-
+        
         if !isActivityPaused{
             if url != nil{
                 if #available(macOS 12.0, *) {
@@ -564,6 +669,10 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         loadWebViewTo(url: introActivity!.urlsArray.randomElement())
         resetConstraintsForVideoAndGif(kIsReducedMotion: SettingsManagerObject.kIsReducedMotion)
         
+        boxButtonTabViews.isHidden = true
+        textViewNotes.string = ""
+        textViewNotes.enclosingScrollView?.isHidden = true
+        boxTakeNotes.isHidden = true
         
         lblTitle.stringValue = getDoSomeActivityText(activityName: introActivity!.name!)//"Do some \(introActivity!.name!)."
         currentTimer = 0
@@ -597,12 +706,14 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         }
     }
     func loadBlankUrl(){
+        if boxButtonTabViews.isHidden == false{
+            btnTabVideoClicked(self)
+        }
         let link = URL(string:"about:blank")!
         let request = URLRequest(url: link)
         self.webView.load(request)
     }
     @objc func performTimerCount() {
-        
         currentTimer += 1//todo 1
         let (h,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
         
@@ -654,6 +765,10 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
     }
     var isActivityPaused = false
     @IBAction func btnPauseClicked(_ sender: Any) {
+        if timerViewcontrollerObj?.boxButtonTabViews.isHidden == false{
+            timerViewcontrollerObj?.btnTabVideoClicked(self)
+        }
+        
         if isActivityPaused{
             isActivityPaused = false
             allApiObject.capturePosthog(event: "resume-activity", metadata: [:])
@@ -690,28 +805,20 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
     
     @IBAction func btnSkipHabitClicked(_ sender: Any) {
         mainViewControllerObj?.showWhySkipHabitView()
-//        return;
-//        if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
-//            if currentState == ._MORNING_HABIT_{
-//                if SettingsManagerObject.isPasswordRequireInSkipMorning{
-//                    mainViewControllerObj?.showPasswordView()
-//                    enterPasswordVcObj?.parentVc = getSkipHabitVcObject()
-//                }else{
-//                    mainViewControllerObj?.showSkipHabitView()
-//                }
-//
-//            }else{
-//                if SettingsManagerObject.isPasswordRequireInSkipEvening{
-//                    mainViewControllerObj?.showPasswordView()
-//                    enterPasswordVcObj?.parentVc = getSkipHabitVcObject()
-//                }else{
-//                    mainViewControllerObj?.showSkipHabitView()
-//                }
-//            }
-//
-//        }else{
-//            mainViewControllerObj?.showSkipHabitView()
-//        }
     }
 }
 
+extension timerViewcontroller:NSTextViewDelegate{
+    func textDidChange(_ notification: Notification) {
+        guard let textView = notification.object as? NSTextView else{
+            return
+        }
+        if textView == self.textViewNotes{
+            if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_{
+                UserDefaults.standard.set(textViewNotes.string, forKey: kUserdefaultsLastHabitSavedNotes)
+            }else if currentState == ._ACTIVITY_{
+                UserDefaults.standard.set(textViewNotes.string, forKey: kUserdefaultsLastActivitySavedNotes)
+            }
+        }
+    }
+}

@@ -11,6 +11,9 @@ import Cocoa
 class menuViewController: NSViewController {
 
     
+    @IBOutlet weak var imgViewCurrentTrackState: NSImageView!
+    @IBOutlet weak var boxCurrentTrack: NSBox!
+    @IBOutlet weak var lblCurrentTrack: NSTextField!
     
     @IBOutlet weak var boxResumeHabits: NSBox!
     @IBOutlet weak var lblTitleResumeHabits: NSTextField!
@@ -74,7 +77,7 @@ class menuViewController: NSViewController {
 //    var selectedIndex = -1
     
     var onText = "On"
-    var untilTimeText = "On Until <TIME>"
+    var untilTimeText = "ends at <TIME>"
     
     var trialExpiredText = "Your trial has expired!"
     var daysRemainingText = "Trial version - <DAYS> of 21 trial days remaining"
@@ -92,6 +95,7 @@ class menuViewController: NSViewController {
     
     
     var menuItemStartBreak: NSMenuItem!
+    var menuItemFocusMusic: NSMenuItem!
     var menuItemOpenToolbox: NSMenuItem!
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -127,6 +131,8 @@ class menuViewController: NSViewController {
         
         lblTitleTools.stringValue = "Tools >"
         var menuItemOpenToolboxTitle = "Open Toolbox"
+        var menuItemFocusMusicTitle = "Focus Music"
+        
         
         lblTitleStartBreak.stringValue = "Start Break"
         lblTitleBrainDump.stringValue = "Brain Dump"
@@ -168,6 +174,7 @@ class menuViewController: NSViewController {
             toolTipWfhMode = menuInfo.value(forKey: "toolTipWfhMode") as? String ?? toolTipWfhMode
             lblTitleTools.stringValue = menuInfo.value(forKey: "menuItemToolsTitle") as? String ?? lblTitleTools.stringValue
             menuItemOpenToolboxTitle = menuInfo.value(forKey: "menuItemOpenToolboxTitle") as? String ?? menuItemOpenToolboxTitle
+            menuItemFocusMusicTitle = menuInfo.value(forKey: "menuItemFocusMusicTitle") as? String ?? menuItemFocusMusicTitle
             lblMeetingDetection.stringValue = menuInfo.value(forKey: "menuItemMeetingDetectionTitle") as? String ?? lblMeetingDetection.stringValue
             lblTitleResumeHabits.stringValue = menuInfo.value(forKey: "menuItemResumeHabitsTitle") as? String ?? lblTitleResumeHabits.stringValue
 //            lblTitleLockCurrentFocus.stringValue = menuInfo.value(forKey: "menuItemLockFocusTitle") as? String ?? lblTitleLockCurrentFocus.stringValue
@@ -211,6 +218,9 @@ class menuViewController: NSViewController {
         menuItemOpenToolbox.target = self
         toolsMenu.addItem(menuItemOpenToolbox)
         
+        menuItemFocusMusic = NSMenuItem(title: menuItemFocusMusicTitle, action: #selector(openAllTracksClicked), keyEquivalent: "")
+        menuItemFocusMusic.target = self
+        toolsMenu.addItem(menuItemFocusMusic)
         
         if let common = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
             for i in 0..<arrFocusType.count{
@@ -267,9 +277,9 @@ class menuViewController: NSViewController {
     override func mouseEntered(with event: NSEvent) {
         if event.trackingArea == btnInfoOfficeModeTrackingArea{
             if SettingsManagerObject.isOfficeModeEnabled{
-                showTooltip(sender: btnInfoOfficeMode, msg: toolTipOfficeMode, preferredEdge: NSRectEdge.maxX)
+                showTooltip(sender: btnInfoOfficeMode, msg: toolTipOfficeMode, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
             }else{
-                showTooltip(sender: btnInfoOfficeMode, msg: toolTipWfhMode, preferredEdge: NSRectEdge.maxX)
+                showTooltip(sender: btnInfoOfficeMode, msg: toolTipWfhMode, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
             }
         }else if event.trackingArea == btnInfoMeetingDetectionTrackingArea{
             var videoCallText = "Looks like you're in a video call. I won't interrupt you with micro-breaks during the meeting to avoid embarrassing screensharing moments. Enjoy the meeting!"
@@ -277,7 +287,7 @@ class menuViewController: NSViewController {
                 videoCallText = common.value(forKey: "notificationVideoCallText") as? String ?? videoCallText
             }
             
-            showTooltip(sender: btnMeetingDetection, msg: videoCallText, preferredEdge: NSRectEdge.maxX)
+            showTooltip(sender: btnMeetingDetection, msg: videoCallText, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
         }
     }
     override func mouseExited(with event: NSEvent) {
@@ -334,7 +344,40 @@ class menuViewController: NSViewController {
             boxEnterLicenseKey.isHidden = true
         }
     }
+    
+
     func reloadData(){
+        boxCurrentTrack.isHidden = true
+        if allTracksVcObj != nil{
+         //   if allTracksVcObj?.currentSound != nil{
+                //                if allTracksVcObj?.currentSound?.isPlaying ?? false{
+                //                    allTracksVcObj?.currentSound?.pause()
+                //                }else{// if not playing it means it is paused beacuse if any one stop music we make it nil
+                //
+                //                }
+                
+                for i in 0..<arrAllTracks.count{
+                    if arrAllTracks[i]["isPlaying"] as? Bool == true{
+                        lblCurrentTrack.stringValue = arrAllTracks[i]["name"] as? String ?? ""
+                        imgViewCurrentTrackState.image = NSImage(named: NSImage.touchBarPauseTemplateName)
+                        boxCurrentTrack.isHidden = false
+                        break;
+                    }else if arrAllTracks[i]["isPaused"] as? Bool == true{
+                        lblCurrentTrack.stringValue = arrAllTracks[i]["name"] as? String ?? ""
+                        imgViewCurrentTrackState.image = NSImage(named: NSImage.touchBarPlayTemplateName)
+                        boxCurrentTrack.isHidden = false
+                        break;
+                    }
+                }
+                
+          //  }
+        }
+        
+        if arrAllTracks.count == 0{
+            menuItemFocusMusic.isHidden = true
+        }else{
+            menuItemFocusMusic.isHidden = false
+        }
         
         if currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_MORNING_HABIT_{
             boxResumeHabits.isHidden = false
@@ -353,7 +396,7 @@ class menuViewController: NSViewController {
                 menuItemStartBreak.isHidden = true
             }else{
                 if isHabitAlreadyShowed{
-                    if currentState == ._MORNING_HABIT_ || currentState == ._ACTIVITY_{
+                    if currentState == ._MORNING_HABIT_ || currentState == ._ACTIVITY_ || arrAllbreakActivities.count == 0 {
                         menuItemStartBreak.isHidden = true
                     }else{
                         menuItemStartBreak.isHidden = false
@@ -380,14 +423,14 @@ class menuViewController: NSViewController {
         
         
         checkPurchaseState()
-
+        
         if !isAppEnable{
             boxReactivate.isHidden = false
         }else{
             boxReactivate.isHidden = true
         }
         
-
+        
         
         
         if isFocusModeOn(){
@@ -409,19 +452,20 @@ class menuViewController: NSViewController {
         
         
         resetViewHeight()
-
+        
         tblViewFocusMode.reloadData()
         
         
         if SettingsManagerObject.isOfficeModeEnabled{
-//            boxCheckMark.isHidden = false
+            //            boxCheckMark.isHidden = false
             toggleButtonOfficeMode.isOn = true
             lblTitleEnableOfficeMode.stringValue = menuItemEnableOfficeModeTitle
         }else{
-//            boxCheckMark.isHidden = true
+            //            boxCheckMark.isHidden = true
             toggleButtonOfficeMode.isOn = false
             lblTitleEnableOfficeMode.stringValue = menuItemDisableOfficeModeTitle
         }
+        
     }
     func resetViewHeight(){
 //        35 16
@@ -466,8 +510,11 @@ class menuViewController: NSViewController {
 //        }
         appdelegate?.menuItem_Preferences()
     }
-    @IBAction func btnStartBreakClicked(_ sender: Any) {// todo ak check lgao ki agar break activities ka count hi 0 ho to menu item hi na show ho start break ka
+    @IBAction func btnStartBreakClicked(_ sender: Any) {
         addLog(text: "button Start Break Clicked")
+        if !isMainWindowLodded{
+            mainWindowControllerObj?.loadWindow()
+        }
         mainViewControllerObj?.executeBreakActivities()
     }
     @IBAction func btnBrainDumpClicked(_ sender: Any) {
@@ -480,8 +527,17 @@ class menuViewController: NSViewController {
         showToolboxWindow()
     }
     
+    @objc func openAllTracksClicked(){
+        addLog(text: "openAllTracksClicked")
+        showAllTracksWindow()
+    }
     @IBAction func btnExportStatisticsClicked(_ sender: Any) {
         if isPurchased == false && daysLeft <= 0{//if UserDefaults.standard.object(forKey: "trialExpired") != nil{
+            if trialExpiredNagWcObj != nil{
+                if trialExpiredNagWcObj?.window?.isVisible ?? false{
+                    return;
+                }
+            }
             showUpgradeNowWindow()
             return;
         }
@@ -491,6 +547,11 @@ class menuViewController: NSViewController {
      
     @IBAction func btnStartPomodoroModeClicked(_ sender: Any) {
         if isPurchased == false && daysLeft <= 0{//if UserDefaults.standard.object(forKey: "trialExpired") != nil{
+            if trialExpiredNagWcObj != nil{
+                if trialExpiredNagWcObj?.window?.isVisible ?? false{
+                    return;
+                }
+            }
             showUpgradeNowWindow()
             return;
         }
@@ -564,6 +625,11 @@ class menuViewController: NSViewController {
     
     @IBAction func btnEnableOfficeModeClicked(_ sender: Any) {
         if isPurchased == false && daysLeft <= 0{//UserDefaults.standard.object(forKey: "trialExpired") != nil{
+            if trialExpiredNagWcObj != nil{
+                if trialExpiredNagWcObj?.window?.isVisible ?? false{
+                    return;
+                }
+            }
             showUpgradeNowWindow()
             return;
         }
@@ -596,6 +662,7 @@ class menuViewController: NSViewController {
                 alert.messageText = noOfficeFriendlyActivityAlertText//
                 alert.addButton(withTitle: noOfficeFriendlyActivityButtonFirstText)
                 alert.addButton(withTitle: noOfficeFriendlyActivityButtonSecondText)
+                NSApplication.shared.activate(ignoringOtherApps: true)
                 let result = alert.runModal()
                 if result == .alertFirstButtonReturn{
                    print("first button")
@@ -625,6 +692,7 @@ class menuViewController: NSViewController {
         }
         alert.messageText = officeModeEnabledSuccessfullyText
         alert.addButton(withTitle: buttonOkText)
+        NSApplication.shared.activate(ignoringOtherApps: true)
         _ = alert.runModal()
         SettingsManagerObject.isOfficeModeEnabled = true
 //        boxCheckMark.isHidden = false
@@ -672,13 +740,25 @@ class menuViewController: NSViewController {
             return
         }
         let id = getUuid()
-        let activity_sequence_id = arrAllbreakActivities.first?.activity_sequence_id ?? ""
+        var activity_sequence_id = getUuid()
+        
+        if let firstActivity = arrAllbreakActivities.first{
+            activity_sequence_id = firstActivity.activity_sequence_id
+        }
+            
+        var officeFriendlyActivityName = "Stand up and stretch"
+        
+        if let common = configjson.value(forKey: "common") as? NSDictionary{
+            officeFriendlyActivityName = common.value(forKey: "officeFriendlyActivityName") as? String ?? officeFriendlyActivityName
+        }
+        
+        
         if var breakActivities = mutableDic.value(forKey: "break_activities") as? [NSDictionary] {
-            let activityDic: NSMutableDictionary = ["id":id, "name":"Stand up and stretch", "duration_seconds":20, "is_office_friendly":true, "activity_sequence_id":activity_sequence_id]
+            let activityDic: NSMutableDictionary = ["id":id, "name":officeFriendlyActivityName, "duration_seconds":20, "is_office_friendly":true, "activity_sequence_id":activity_sequence_id]
             breakActivities.append(activityDic)
             mutableDic["break_activities"] = breakActivities
             
-            arrAllbreakActivities.append(breakActivity(id:id,name: "Stand up and stretch", durationSeconds: 20, IncludeInEveryBreak: false, urlsArray: [], logQuantity:false, isRandomChoice: false, choices: [], logQuantityQuestion: "", openSpecificApps: false, allowUrls: [], allowApps: [], isOfficeFriendly: true, allowedFocusMode: "", logQuantityType: "",activity_sequence_id:activity_sequence_id))
+            arrAllbreakActivities.append(breakActivity(id:id,name: officeFriendlyActivityName, durationSeconds: 20, IncludeInEveryBreak: false, urlsArray: [], logQuantity:false, isRandomChoice: false, choices: [], logQuantityQuestion: "", openSpecificApps: false, allowUrls: [], allowApps: [], isOfficeFriendly: true, allowedFocusMode: "", logQuantityType: "",activity_sequence_id:activity_sequence_id, take_notes: ""))
             
             
             
@@ -721,14 +801,7 @@ class menuViewController: NSViewController {
 
         }
 
-//        do {
-//            let data = try (JSONSerialization.data(withJSONObject: mutableDic, options: .prettyPrinted))
-//            if let str = String(data: data, encoding: String.Encoding.utf8){
-//                UserDefaults.standard.set(str, forKey: kUserdefaultsSelectedJson)
-//            }
-//        } catch let error as NSError {
-//            print(error)
-//        }
+
     }
     
     @IBAction func btnLockCurrentFocusClicked(_ sender: Any) {
@@ -742,9 +815,9 @@ class menuViewController: NSViewController {
     @IBAction func officeModeInfoIconClicked(_ sender: Any) {
         addLog(text: "office Mode Info Icon Clicked")
         if SettingsManagerObject.isOfficeModeEnabled{
-            showTooltip(sender: sender as! NSView, msg: toolTipOfficeMode, preferredEdge: NSRectEdge.maxX)
+            showTooltip(sender: sender as! NSView, msg: toolTipOfficeMode, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
         }else{
-            showTooltip(sender: sender as! NSView, msg: toolTipWfhMode, preferredEdge: NSRectEdge.maxX)
+            showTooltip(sender: sender as! NSView, msg: toolTipWfhMode, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
         }
         
     }
@@ -752,6 +825,11 @@ class menuViewController: NSViewController {
         addLog(text: "menu item tools clicked")
         
         if isPurchased == false && daysLeft <= 0{// if UserDefaults.standard.object(forKey: "trialExpired") != nil{
+            if trialExpiredNagWcObj != nil{
+                if trialExpiredNagWcObj?.window?.isVisible ?? false{
+                    return;
+                }
+            }
             showUpgradeNowWindow()
             return;
         }
@@ -792,9 +870,55 @@ class menuViewController: NSViewController {
             if mainViewControllerObj?.postponeTimer != nil{
                 mainViewControllerObj?.postponeTimer?.invalidate()
                 mainViewControllerObj?.postponeTimer = nil
+                if smallCountDownWcObj != nil{
+                    if getSmallCountDownWindowObject().window!.isVisible && getsmallCountDownVcObject().isFocusBreak{
+                        smallCountDownVcObj?.closeTimerBox()
+                    }
+                }
+            }
+            if mainViewControllerObj?.postponeNotificationTimer != nil{
+                mainViewControllerObj?.postponeNotificationTimer?.invalidate()
+                mainViewControllerObj?.postponeNotificationTimer = nil
             }
         }
         appdelegate?.backgroundThread()
+    }
+    @IBAction func btnCurrentTrackClicked(_ sender: Any) {
+        isFocusMusicPausedAutomatically = false
+        for i in 0..<arrAllTracks.count{
+            if arrAllTracks[i]["isPlaying"] as? Bool == true{
+                arrAllTracks[i]["isPlaying"] = false
+                arrAllTracks[i]["isPaused"] = true
+                if allTracksVcObj?.currentSound?.isPlaying ?? false{
+                    allTracksVcObj?.currentSound?.pause()
+                }
+                
+                imgViewCurrentTrackState.image = NSImage(named: NSImage.touchBarPlayTemplateName)
+                
+                if allTracksWindowControllerObj != nil{
+                    if allTracksWindowControllerObj?.window?.isVisible ?? false{
+                        allTracksVcObj?.tblView.reloadData()
+                    }
+                }
+                return;
+            }else if arrAllTracks[i]["isPaused"] as? Bool == true{
+                
+                arrAllTracks[i]["isPlaying"] = true
+                arrAllTracks[i]["isPaused"] = false
+                allTracksVcObj?.currentSound?.resume()
+
+                imgViewCurrentTrackState.image = NSImage(named: NSImage.touchBarPauseTemplateName)
+                
+                if allTracksWindowControllerObj != nil{
+                    if allTracksWindowControllerObj?.window?.isVisible ?? false{
+                        allTracksVcObj?.tblView.reloadData()
+                    }
+                }
+                return;
+                
+            }
+        }
+ 
     }
 }
 
@@ -807,8 +931,18 @@ extension menuViewController: NSTableViewDelegate, NSTableViewDataSource{
             lblOn.isHidden = false
             if isFocusTimeType == ._HOUR_{
                 if let date = endFocusModeTime{
+                    let secondsBetween = date.timeIntervalSince(Date())
                     let stringTime = getStringFromDate(date: date, dateFormat: "hh:mm a")
-                    lblOn.stringValue = untilTimeText.replacingOccurrences(of: "<TIME>", with: stringTime)//"On Until \(stringTime)"
+    
+                    var titleTimeRemainingText = "Time remaining:"
+                    
+                    if let brainDumpVcInfo = configjson.value(forKey: "brainDumpVcInfo") as? NSDictionary{
+                        titleTimeRemainingText = brainDumpVcInfo.value(forKey: "titleTimeRemainingText") as? String ?? titleTimeRemainingText
+                    }
+                    
+                    titleTimeRemainingText = titleTimeRemainingText + " " + getStringTimeFromSeconds(seconds: Int(secondsBetween))
+                    lblOn.stringValue = titleTimeRemainingText + " " + "(\(untilTimeText.replacingOccurrences(of: "<TIME>", with: stringTime)))"//"On Until \(stringTime)"
+                    
                 }else{
                     lblOn.stringValue = onText
                 }
@@ -896,6 +1030,13 @@ extension menuViewController: NSTableViewDelegate, NSTableViewDataSource{
             cell.btnEditFocusMode.tag = cRow
             cell.btnEditFocusMode.action = #selector(btnEditFocusModeClicked(sender:))
             
+            
+            if arrFocusType[cRow]["isLockedFocus"] as? Bool == true{
+                cell.isEditButttonEnable = false
+            }else{
+                cell.isEditButttonEnable = true
+            }
+                
             cell.boxtitle.fillColor = .clear
             return cell
         }
@@ -906,6 +1047,11 @@ extension menuViewController: NSTableViewDelegate, NSTableViewDataSource{
         addLog(text: "btn Edit FocusMode Clicked from menu")
         
         if isPurchased == false && daysLeft <= 0{// if UserDefaults.standard.object(forKey: "trialExpired") != nil{
+            if trialExpiredNagWcObj != nil{
+                if trialExpiredNagWcObj?.window?.isVisible ?? false{
+                    return;
+                }
+            }
             showUpgradeNowWindow()
             return;
         }

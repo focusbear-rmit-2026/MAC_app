@@ -10,6 +10,7 @@ import Cocoa
 
 class tblCellOnboardingBlockedUrls: NSTableCellView {
 
+    @IBOutlet weak var textFieldTitle: NSTextField!
     @IBOutlet weak var btnCheckBox: NSButton!
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)

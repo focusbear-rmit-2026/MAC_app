@@ -10,6 +10,10 @@ import Cocoa
 
 class tblCellFocusPreferences: NSTableCellView {
 
+    @IBOutlet weak var btnDuplicate: NSButton!
+    @IBOutlet weak var btnRemove: NSButton!
+    @IBOutlet weak var stackViewButtons: NSStackView!
+    @IBOutlet weak var btnInfo: NSButton!
     @IBOutlet weak var imgView: NSImageView!
     @IBOutlet weak var boxColor: NSBox!
     @IBOutlet weak var lblTitle: NSTextField!

@@ -19,7 +19,7 @@ class smallCountDownVc: NSViewController {
     var timer:Timer?
     var currentTimer = 0
     var totalDuration = 0
-    var isFocusBreak = false
+    var isFocusBreak = false/// it measn postpone notification, focus break and focus is about to end notification
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -136,13 +136,13 @@ class smallCountDownVc: NSViewController {
             timer?.invalidate()
             timer = nil
         }
-        if !isFocusBreak{
-            lblTitle.stringValue = msg//getDoSomeActivityText(activityName: name)
-        }else{
+        if isFocusBreak && msg.isEmpty{
             lblTitle.stringValue = "Your break ends in"
             if let common = configjson.value(forKey: "common") as? NSDictionary{
                 lblTitle.stringValue = common.value(forKey: "focusBreakNotificationTitle") as? String ?? lblTitle.stringValue
             }
+        }else{
+            lblTitle.stringValue = msg//getDoSomeActivityText(activityName: name)
         }
         currentTimer = currentTimerValue
         totalDuration = durationSeconds//durationInMinutes*60

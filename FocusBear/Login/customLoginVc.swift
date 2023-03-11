@@ -222,14 +222,7 @@ class customLoginVc: NSViewController {
         }else{
             password = textFieldPassword.stringValue
         }
-        
-        if Reachability.isConnectedToNetwork() == false {
-            if self.view.window != nil{
-                askLogInVcObj?.showAlertNoInternet(window: self.view.window!)
-            }
-            return
-        }
-        
+
         if textFieldEmail.stringValue.isEmpty == true
         {
             alertforvalidation(question: titleEmailIsBlank, text: emailInvalidText)
@@ -245,6 +238,59 @@ class customLoginVc: NSViewController {
         {
             alertforvalidation(question: titleInvalidEmail, text: emailInvalidText)
             return
+        }
+        
+        if Reachability.isConnectedToNetwork() == false {
+            startLoader()
+            allApiObject.isInternetOn(completionHandler: {isInternetOn in
+                DispatchQueue.main.async {
+                    self.stopLoader()
+                    if !isInternetOn{
+                        
+                        if self.view.window != nil{
+                            askLogInVcObj?.showAlertNoInternet(window: self.view.window!)
+                        }
+                    }else{
+                        self.performSignIn()
+                    }
+                }
+            })
+
+            return;
+        }
+        performSignIn()
+    }
+    func startLoader(){
+        loader.startAnimation(self)
+        btnSignIn.isEnabled = false
+        btnCreateAccount.isEnabled = false
+        textFieldEmail.isEnabled = false
+        secureTextFieldPassword.isEnabled = false
+        textFieldPassword.isEnabled = false
+        self.btnBack.isEnabled = false
+        self.btnForgotPassword.isEnabled = false
+        self.secureTextFieldConfirmPassword.isEnabled = false
+        self.textFieldConfirmPasword.isEnabled = false
+    }
+    func stopLoader(){
+        self.loader.stopAnimation(self)
+        self.btnSignIn.isEnabled = true
+        self.btnCreateAccount.isEnabled = true
+        self.textFieldEmail.isEnabled = true
+        self.secureTextFieldPassword.isEnabled = true
+        self.textFieldPassword.isEnabled = true
+        self.btnBack.isEnabled = true
+        self.btnForgotPassword.isEnabled = true
+        self.secureTextFieldConfirmPassword.isEnabled = true
+        self.textFieldConfirmPasword.isEnabled = true
+    }
+    func performSignIn(){
+        var password = secureTextFieldPassword.stringValue
+        
+        if secureTextFieldPassword.isHidden == false{
+            password = secureTextFieldPassword.stringValue
+        }else{
+            password = textFieldPassword.stringValue
         }
         let email = textFieldEmail.stringValue
         
@@ -290,7 +336,6 @@ class customLoginVc: NSViewController {
                 }
             }
     }
-    
     func loginDone(credentials: (Credentials), isLogin:Bool){
         addLog(text: "Custom Login success")
         self.view.window?.close()
@@ -299,7 +344,38 @@ class customLoginVc: NSViewController {
         allApiObject.capturePosthog(event: "login-homemade", metadata: [:])
         let _ = appdelegate!.credentialsManager.store(credentials: credentials)
         UserDefaults.standard.set(true, forKey: kUserdefaultsIsUserLoggedIn)
+
+
+        
         if UserDefaults.standard.object(forKey: kUserdefaultsVideoShown) == nil{
+
+//            Use Focus Mode templates for onboarding#489
+            
+            allApiObject.getFocusTemplateInfo(completionHandler: { json in
+                if json != nil{
+ 
+                }
+            }
+            )
+            // after login check is there  any need to show ask always block urls view (check form settings api is settings are blank the shw view )
+            shouldShowOnboardingBlockedUrlsView = true
+            allApiObject.getUserLocalDeviceSettings(completionHandler: { json in
+                if json != nil{
+                    if let settings = json?.value(forKey: "MacOS") as? NSDictionary {
+                        print(settings)
+                        if settings.allKeys.count == 0{
+                            shouldShowOnboardingBlockedUrlsView = true
+                        }else{
+                            shouldShowOnboardingBlockedUrlsView = false
+                        }
+                        
+                        
+                    }
+                    
+                }
+            }
+            )
+            
             showOnboardingCardWindow(isLogin: isLogin)
         }else{
             appdelegate!.loadCredentialsAndDeviceId()
@@ -431,12 +507,7 @@ class customLoginVc: NSViewController {
         }else{
             confirmPassword = textFieldConfirmPasword.stringValue
         }
-        if Reachability.isConnectedToNetwork() == false {
-            if self.view.window != nil{
-                askLogInVcObj?.showAlertNoInternet(window: self.view.window!)
-            }
-            return
-        }
+        
         
         if isLogin{
             isLogin = false
@@ -466,98 +537,130 @@ class customLoginVc: NSViewController {
                 alertforvalidation(question: titlePasswordNotMatch, text: confirmPasswordNotMatchText)
                 return
             }
-                
-            loader.startAnimation(self)
-            btnCreateAccount.isEnabled = false
-            self.textFieldEmail.isEnabled = false
-            self.secureTextFieldPassword.isEnabled = false
-            self.textFieldPassword.isEnabled = false
-            self.secureTextFieldConfirmPassword.isEnabled = false
-            self.textFieldConfirmPasword.isEnabled = false
-            self.btnBack.isEnabled = false
-            let email = textFieldEmail.stringValue
             
-            Auth0
-                .authentication()
-                .signup(email:email,
-                        password: password,
-                        connection: "Username-Password-Authentication",
-                        userMetadata: [:])
-                .start { result in
-                    
-                    
-                    
-                    switch result {
-                    case .success(let user):
-                        print("User signed up: \(user)")
-                        allApiObject.capturePosthog(event: "register-homemade", metadata: [:])
-                        DispatchQueue.main.async {
-                        Auth0
-                            .authentication()
-                            .login(usernameOrEmail: email,
-                                   password: password,
-                                   realmOrConnection: "Username-Password-Authentication",
-                                   audience:"https://auth.focusbear.io/api/v2/",
-                                   scope: "openid profile email offline_access")
-                            .start { result in
-                                
-                                DispatchQueue.main.async {
-                                    self.loader.stopAnimation(self)
-                                    self.btnCreateAccount.isEnabled = true
-                                    self.textFieldEmail.isEnabled = true
-                                    self.secureTextFieldPassword.isEnabled = true
-                                    self.textFieldPassword.isEnabled = true
-                                    self.secureTextFieldConfirmPassword.isEnabled = true
-                                    self.textFieldConfirmPasword.isEnabled = true
-                                    self.btnBack.isEnabled = true
-                                }
-                                switch result {
-                                case .success(let credentials):
-                                    print("Obtained credentials: \(credentials)")
-                                    DispatchQueue.main.async {
-                                        self.loginDone(credentials: credentials, isLogin: false)
-                                    }
-                                case .failure(let error):
-                                    addLog(text: "login failed after signup")
-                                    print("Failed with: \(error)")
-                                    DispatchQueue.main.async {
-                                        
-                                        self.alertforvalidation(question: self.titleSignupFailed, text: error.localizedDescription)
-                                    }
-                                }
+            if Reachability.isConnectedToNetwork() == false {
+                startLoader()
+                allApiObject.isInternetOn(completionHandler: {isInternetOn in
+                    DispatchQueue.main.async {
+                        self.stopLoader()
+                        if !isInternetOn{
+                            
+                            if self.view.window != nil{
+                                askLogInVcObj?.showAlertNoInternet(window: self.view.window!)
                             }
-                        
+                        }else{
+                            self.perfromCreateAccount()
                         }
-                        
-                        
-                    case .failure(let error):
-                        addLog(text: "signup failed")
-                        print("Failed with: \(error)")
-                        DispatchQueue.main.async {
-                            self.loader.stopAnimation(self)
-                            self.btnCreateAccount.isEnabled = true
-                            self.textFieldEmail.isEnabled = true
-                            self.secureTextFieldPassword.isEnabled = true
-                            self.textFieldPassword.isEnabled = true
-                            self.secureTextFieldConfirmPassword.isEnabled = true
-                            self.textFieldConfirmPasword.isEnabled = true
-                            self.btnBack.isEnabled = true
+                    }
+                })
+
+                return;
+            }
+            
+            perfromCreateAccount()
+            
+            
+        }
+    }
+    func perfromCreateAccount(){
+        var password = secureTextFieldPassword.stringValue
+        
+        if secureTextFieldPassword.isHidden == false{
+            password = secureTextFieldPassword.stringValue
+        }else{
+            password = textFieldPassword.stringValue
+        }
+        
+        
+        loader.startAnimation(self)
+        btnCreateAccount.isEnabled = false
+        self.textFieldEmail.isEnabled = false
+        self.secureTextFieldPassword.isEnabled = false
+        self.textFieldPassword.isEnabled = false
+        self.secureTextFieldConfirmPassword.isEnabled = false
+        self.textFieldConfirmPasword.isEnabled = false
+        self.btnBack.isEnabled = false
+        let email = textFieldEmail.stringValue
+        
+        Auth0
+            .authentication()
+            .signup(email:email,
+                    password: password,
+                    connection: "Username-Password-Authentication",
+                    userMetadata: [:])
+            .start { result in
+                
+                
+                
+                switch result {
+                case .success(let user):
+                    print("User signed up: \(user)")
+                    allApiObject.capturePosthog(event: "register-homemade", metadata: [:])
+                    DispatchQueue.main.async {
+                    Auth0
+                        .authentication()
+                        .login(usernameOrEmail: email,
+                               password: password,
+                               realmOrConnection: "Username-Password-Authentication",
+                               audience:"https://auth.focusbear.io/api/v2/",
+                               scope: "openid profile email offline_access")
+                        .start { result in
                             
-                            
-                            if error.code == "invalid_password"{
-                                var message = self.titleSignupFailed
-                                var info = error.localizedDescription
-                                message = error.info["message"] as? String ?? ""
-                                info = error.info["policy"] as? String ?? ""
-                                self.alertforvalidation(question: message, text: info)
-                            }else{
-                                self.alertforvalidation(question: self.titleSignupFailed, text: error.localizedDescription)
+                            DispatchQueue.main.async {
+                                self.loader.stopAnimation(self)
+                                self.btnCreateAccount.isEnabled = true
+                                self.textFieldEmail.isEnabled = true
+                                self.secureTextFieldPassword.isEnabled = true
+                                self.textFieldPassword.isEnabled = true
+                                self.secureTextFieldConfirmPassword.isEnabled = true
+                                self.textFieldConfirmPasword.isEnabled = true
+                                self.btnBack.isEnabled = true
                             }
+                            switch result {
+                            case .success(let credentials):
+                                print("Obtained credentials: \(credentials)")
+                                DispatchQueue.main.async {
+                                    self.loginDone(credentials: credentials, isLogin: false)
+                                }
+                            case .failure(let error):
+                                addLog(text: "login failed after signup")
+                                print("Failed with: \(error)")
+                                DispatchQueue.main.async {
+                                    
+                                    self.alertforvalidation(question: self.titleSignupFailed, text: error.localizedDescription)
+                                }
+                            }
+                        }
+                    
+                    }
+                    
+                    
+                case .failure(let error):
+                    addLog(text: "signup failed")
+                    print("Failed with: \(error)")
+                    DispatchQueue.main.async {
+                        self.loader.stopAnimation(self)
+                        self.btnCreateAccount.isEnabled = true
+                        self.textFieldEmail.isEnabled = true
+                        self.secureTextFieldPassword.isEnabled = true
+                        self.textFieldPassword.isEnabled = true
+                        self.secureTextFieldConfirmPassword.isEnabled = true
+                        self.textFieldConfirmPasword.isEnabled = true
+                        self.btnBack.isEnabled = true
+                        
+                        
+                        if error.code == "invalid_password"{
+                            var message = self.titleSignupFailed
+                            var info = error.localizedDescription
+                            message = error.info["message"] as? String ?? ""
+                            info = error.info["policy"] as? String ?? ""
+                            self.alertforvalidation(question: message, text: info)
+                        }else{
+                            self.alertforvalidation(question: self.titleSignupFailed, text: error.localizedDescription)
                         }
                     }
                 }
-            
-        }
+            }
     }
     
     func isValidEmail(email:String?) -> Bool {

@@ -66,13 +66,23 @@ class whySkipHabitVc: NSViewController {
                     skipActivityAlreadyDid()
                 }
                 
-            }else{
-                if SettingsManagerObject.isPasswordRequireInSkipEvening{
-                    mainViewControllerObj?.showPasswordView()
-                    enterPasswordVcObj?.parentVc = self
+            }else if currentState == ._EVENING_HABIT_{
+                if isHighPrioritySequenceGoing{
+                    if SettingsManagerObject.isPasswordRequireInSkipEveningAfterCutOff{
+                        mainViewControllerObj?.showPasswordView()
+                        enterPasswordVcObj?.parentVc = self
+                    }else{
+                        skipActivityAlreadyDid()
+                    }
                 }else{
-                    skipActivityAlreadyDid()
+                    if SettingsManagerObject.isPasswordRequireInSkipEvening{
+                        mainViewControllerObj?.showPasswordView()
+                        enterPasswordVcObj?.parentVc = self
+                    }else{
+                        skipActivityAlreadyDid()
+                    }
                 }
+                
             }
             
         }else{
@@ -92,15 +102,23 @@ class whySkipHabitVc: NSViewController {
                     mainViewControllerObj?.showSkipHabitView()
                 }
                 
-            }else{
-                if SettingsManagerObject.isPasswordRequireInSkipEvening{
-                    mainViewControllerObj?.showPasswordView()
-                    enterPasswordVcObj?.parentVc = getSkipHabitVcObject()
+            }else if currentState == ._EVENING_HABIT_{
+                if isHighPrioritySequenceGoing{
+                    if SettingsManagerObject.isPasswordRequireInSkipEveningAfterCutOff{
+                        mainViewControllerObj?.showPasswordView()
+                        enterPasswordVcObj?.parentVc = getSkipHabitVcObject()
+                    }else{
+                        mainViewControllerObj?.showSkipHabitView()
+                    }
                 }else{
-                    mainViewControllerObj?.showSkipHabitView()
+                    if SettingsManagerObject.isPasswordRequireInSkipEvening{
+                        mainViewControllerObj?.showPasswordView()
+                        enterPasswordVcObj?.parentVc = getSkipHabitVcObject()
+                    }else{
+                        mainViewControllerObj?.showSkipHabitView()
+                    }
                 }
             }
-            
         }else{
             mainViewControllerObj?.showSkipHabitView()
         }

@@ -77,7 +77,7 @@ class addFocusTypeVc: NSViewController, NSTextFieldDelegate  {
     var toolTipColorBox = "Choose a color to be displayed in the background of the top menu bar icon to help identify the Focus Mode you are running"
     override func mouseEntered(with event: NSEvent) {
         if event.trackingArea == btnInfoColorBoxTrackingArea{
-            showTooltip(sender: bntColorBoxInfo, msg: toolTipColorBox, preferredEdge: NSRectEdge.maxX)
+            showTooltip(sender: bntColorBoxInfo, msg: toolTipColorBox, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
         }
     }
     override func mouseExited(with event: NSEvent) {
@@ -92,7 +92,7 @@ class addFocusTypeVc: NSViewController, NSTextFieldDelegate  {
     
     @IBAction func bntColorBoxInfoClicked(_ sender: Any) {
         addLog(text: "bntColorBoxInfoClicked")
-        showTooltip(sender: bntColorBoxInfo, msg: toolTipColorBox, preferredEdge: NSRectEdge.maxX)
+        showTooltip(sender: bntColorBoxInfo, msg: toolTipColorBox, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
     }
     
     override func viewWillAppear() {
@@ -153,6 +153,7 @@ class addFocusTypeVc: NSViewController, NSTextFieldDelegate  {
     @IBAction func btnCancelClicked(_ sender: Any) {
         self.dismiss(self)
     }
+    
     @IBAction func btnAddClicked(_ sender: Any) {
         //        if isAdding{
         let newName = textFieldFocusType.stringValue.lowercased
@@ -167,8 +168,8 @@ class addFocusTypeVc: NSViewController, NSTextFieldDelegate  {
         let id = getUuid()
         let dic:[String:Any] = ["id":id, "name":textFieldFocusType.stringValue, "color": getColorString(color: colorWell.color), "allowed_apps": [], "allowed_urls": [], "isOn": false, "isAllowedAllApps":true, "isAllowedListApproach":false, "blockUrlsArray": []]//, "isAllowedAllUrls":true , "isBlockedAllUrls":false#453
         
-        let row = arrFocusType.count-1
-        arrFocusType.insert(dic, at: row)//append(dic)
+        let row = focusPreferencesVcObj?.tblViewFocusType.numberOfRows ?? 0// becos
+        arrFocusType.insert(dic, at: row)
         focusPreferencesVcObj?.tblViewFocusType.insertRows(at: IndexSet(arrayLiteral: row), withAnimation: .effectFade)
         focusPreferencesVcObj?.tblViewFocusType.selectRowIndexes(IndexSet(arrayLiteral: row), byExtendingSelection: false)
         focusPreferencesVcObj?.tblViewFocusType.scrollRowToVisible(row)

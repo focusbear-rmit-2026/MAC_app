@@ -10,12 +10,12 @@
         "welcomeMessageOnlyBreakIntro": "Throughout the day, I'll remind you to take regular breaks to keep your mind sharp and your body flexible. Here's an example of a break activity: 30 seconds of deep breathing."
     },
     "activityInfo":{
-         "startMorningHabitTitleText":"Good Morning! Here are the habits to kick off an awesome day.",
+        "startMorningHabitTitleText":"Good Morning! Here are the habits to kick off an awesome day.",
         "startEveningHabitTitleText":"Good Evening! Let’s go through your wind down routine.",
         "startActivityButtonText":"Start <TIME> <NAME>",
         "activityFinishedText":"<ACTIVITY> finished!✅",
         "lastActivityFinishedText":"<ACTIVITY> finished!✅ You’ve earned your screen time. 💪",
-        "startBreakActivityTitleText":"It’s time for a break. Do <TIME> of <ACTIVITY> to earn more screentime.",
+        "startBreakActivityTitleText":"It’s time for a micro break. Let’s do <TIME> of <ACTIVITY> to keep your mind and body sharp.",
         "doSomeActivityText":"<ACTIVITY>",
         "beforeYouStartText":"Before you start, take a few moments to reflect on why you want to do these habits. Then visualise yourself beginning the habit sequence. Mentally walk through any of the habits that are going to be harder. This process will help reduce \"limbic friction\", i.e. prime your brain to do the habits no matter what, even if you don't have the app available.",
         "beforeYouBeginText":"Before you begin, take 30 seconds to visualise yourself performing each of the habits. This sounds kooky but research indicates that doing a mental rehearsal like this increases the likelihood of you completing the habits and makes the habits more sticky so that even if you don't have access to your computer/this app, you'll still do all the habits.",
@@ -31,7 +31,10 @@
         "lastActivitySkippedText":"<ACTIVITY> skipped! You’ve earned your screen time. 💪",
         "buttonSkipHabitText":"Skip this habit for today",
         "buttonPostponeBreakText":"Postpone break for five minutes",
-        "breakDurationText":"Total Duration of Break: <DURATION>"
+        "breakDurationText":"Total Duration of Break: <DURATION>",
+        "buttonVideoText":"Video",
+        "buttonNotesText":"Notes",
+        "titleTakeNotes":"Take Notes"
     },
     "common":{
         "emailId":"team@focusbear.io",
@@ -39,7 +42,7 @@
         "wrapupButtonText":"Let's wrap up for the day",
         "stayFocusedText":"OK - Stay focused throughout the day!",
         "letsCreatAccountText":"Now let's set up an account for you",
-        "buttonAbortText":"Please spare me",
+        "buttonAbortText":"Exit Fullscreen",
         "buttonCancelText":"Cancel",
         "buttonOkText":"OK",
         "webhookUrl":"https://hooks.zapier.com/hooks/catch/326116/b98ovxc/",
@@ -107,13 +110,27 @@
         "buttonDontTellAgainText":"Got it - don't tell me again",
         "toolTipColorBoxText":"Choose a color to be displayed in the background of the top menu bar icon to help identify the Focus Mode you are running.",
         "notificationFirefoxText":"FYI we can't block distractions in Firefox yet but if you use Chrome or Safari, we'll be here to support you to stay on track",
-        "expiredBarText":"Expired"
+        "expiredBarText":"Expired",
+        "officeFriendlyActivityName":"Stand up and stretch",
+        "hoursHText":"h",
+        "minutesMText":"m",
+        "secondsSText":"s",
+        "otherReasonText":"Other",
+        "loadingText":"Loading...",
+        "cutOffTimePassedText":"Running low on time - let's just focus on the high priority habits for the rest of the evening.",
+        "noHighPriorityActivityText":"No activities with high Priority found.",
+        "focusEndsText":"Focus mode ends in",
+        "postponeEndsText":"Habit resumes in",
+        "tabStatsText":"Stats",
+        "askExtendFocusText":"Still in the flow? Extend the session",
+        "extendFocusMinutesText":"Select minutes to extend:",
+        "buttonExtendText":"Extend"
     },
     "abortInfo":{
         "abortingTitle":"Cancelling..",
         "abortingCountDownInfo":{
             "subTitle":"Are you sure you want to give up on your habits? Please take 10 seconds to reflect on whether you are serious about cancelling.",
-            "message":"While you wait, reflect on why you’re doing this. If it was because your morning routine was too ambitious, perhaps scale it back to only be a few minutes long so that it’s easier to do it than not do it. If you’re cancelling because the app is broken, we're really sorry and would appreciate your feedback.",
+            "message":"While you wait, reflect on why you’re doing this. If it was because your routine was too ambitious, perhaps scale it back to only be a few minutes long so that it’s easier to do it than not do it. If you’re cancelling because the app is broken, we're really sorry and would appreciate your feedback.",
             "pleaseEmailText":"Please email",
             "buttonAbortCancelText":"I didn’t mean it. Let me do my habits!"
         },
@@ -134,21 +151,21 @@
             },
             "dropDown_3":{
                 "title":"My habits are too hard - I can't handle them",
-                "description":"Ah understandable. Would you like to reset your habits to be 30 seconds each and max 5 minutes? A short morning routine is better than nothing. You can build from there.",
+                "description":"Ah understandable. Would you like to reset your habits to be 30 seconds each and max 5 minutes? A short routine is better than nothing. You can build from there.",
                 "buttonStartSmallText":"Yeah - I'll start small",
-                "buttonDontWantText":"NO I don't want a \nmorning routine at all!",
+                "buttonDontWantText":"NO I don't want a \nroutine at all!",
                 "emailTitle":"Your Email (if you want us to reply):",
                 "startSmallInfo":{
                     "subTitle":"Starting small..",
                     "activityResetText":"We’ve reset your habits and break activities for you. They’re now each only 30 seconds long which should make it more manageable.",
-                    "activityRemovedText":"We removed a few activities so that the total morning routine is 5 minutes long.",
+                    "activityRemovedText":"We removed a few activities so that the total routine is 5 minutes long.",
                     "changeSettingsText":"You can alter your settings later from the top toolbar icon <icon>",
                     "shareFeedbackText":"Can you share some feedback about why your habits were too hard?﹡",
                     "buttonTitle":"Start shortened routine"
                     
                 },
                 "givingUpInfo":{
-                    "subTitle":"Giving up on your morning routine",
+                    "subTitle":"Giving up on your routine",
                     "description":"No problems. You’re in control.",
                     "changeSettingsText":"Feel free to reactivate Focus Bear from top toolbar icon <icon>",
                     "shareFeedbackText":"Can you share feedback about the app?﹡",
@@ -161,7 +178,12 @@
                 "description":"Can you tell us why you want to stop getting habit + break notifications?﹡",
                 "emailTitle":"Your Email (if you want us to reply):",
                 "buttonDeactivateText":"Deactivate routine + breaks"
-            }
+            },
+            "dropDownMeeting":"I have a meeting",
+            "dropDownSomeOneElse":"Someone else is using my computer",
+            "dropDownAnnoying":"I'm finding Focus Bear annoying",
+            "dropDownRelax":"I want to relax for a while without restrictions",
+            "descriptionNewOptions":"Restoring access immediately and cancelling habits for next 4 hours.. Your normal routine will resume after that."
         },
         "abortDoneInfo":{
             "title":"Deactivated",
@@ -171,8 +193,8 @@
     "quitInfo":{
         "quittingTitle":"Quitting..",
         "quittingCountDownInfo":{
-            "subTitle":"Are you sure you want to Quit? Please take 10 seconds to reflect on whether you are serious about quitting.",
-            "message":"While you wait, reflect on why you’re doing this. If it was because your morning routine was too ambitious, perhaps scale it back to only be a few minutes long so that it’s easier to do it than not do it. If you’re deactivating because the app is broken, really sorry!!",
+            "subTitle":"Are you sure you want to Quit? Please take 5 seconds to reflect on whether you are serious about quitting.",
+            "message":"While you wait, reflect on why you’re doing this. If it was because your routine was too ambitious, perhaps scale it back to only be a few minutes long so that it’s easier to do it than not do it. If you’re deactivating because the app is broken, really sorry!!",
             "pleaseEmailText":"Please email",
             "buttonQuitCancelText":"I didn’t mean it. Let me do my habits!"
         },
@@ -196,12 +218,32 @@
                 "title":"Something else",
                 "description":"Can you tell us why you want to stop getting habit + break notifications?﹡",
                 "finalDescription":"Thanks for letting us know. All the best."
+            },
+            "dropDownMeeting":{
+                "title":"I have a meeting",
+                "description":"We hope you will start the habits back soon! See you soon."
+            },
+            "dropDownSomeOneElse":{
+                "title":"Someone else is using my computer",
+                "description":"We hope you will start the habits back soon! See you soon."
+            },
+            "dropDownAnnoying":{
+                "title":"I'm finding Focus Bear annoying",
+                "description":"Oh no! We're really sorry. Can you please let us know what happened?﹡",
+                "finalDescription":"We hope you will start the habits back soon! See you soon."
+            },
+            "dropDownRelax":{
+                "title":"I want to relax for a while without restrictions",
+                "description":"We hope you will start the habits back soon! See you soon."
             }
         },
         "askQuitVcInfo":{
             "subTitle":"Do you want to quit the app completely or just take a break for a few hours?",
             "buttonDiableAppText":"Give me a break for 4hrs",
-            "buttonQuitText":"Turn it off completely - I'll turn it back on when I'm ready"
+            "buttonQuitText":"Turn it off completely - I'll turn it back on when I'm ready",
+            "selectHoursText":"Select hours to turn it off",
+            "buttonBreakOneHourText":"Turn it off for 1 hour",
+            "buttonBreakFewHourText":"Turn it off for <HOUR> hours"
         }
     },
     "shutOffTimeInfo":{
@@ -272,7 +314,7 @@
         "menuItemEnableOfficeModeTitle":"Office Mode Enabled",
         "menuItemDisableOfficeModeTitle": "WFH Mode Enabled",
         "menuItemQuitTitle":"Quit",
-        "untilTimeText":"On Until <TIME>",
+        "untilTimeText":"ends at <TIME>",
         "onText":"On",
         "noOfficeFriendlyActivityAlertText":"You don't have any office friendly break activities. Do you want me to add one for you to stand up and stretch for 20 seconds?",
         "noOfficeFriendlyActivityButtonFirstText":"Yeah sounds good",
@@ -287,7 +329,8 @@
         "menuItemToolsTitle":"Tools >",
         "menuItemOpenToolboxTitle":"Open Toolbox",
         "menuItemMeetingDetectionTitle":"Meeting active - breaks off",
-        "menuItemResumeHabitsTitle":"Resume Habits"
+        "menuItemResumeHabitsTitle":"Resume Habits",
+        "menuItemFocusMusicTitle":"Focus Music"
     },
     "preferencesInfo":{
         "titlePomodoro":"Pomodoro Mode:",
@@ -340,10 +383,12 @@
         "checkBoxMeetingDetectionText":"Enable meeting detection",
         "titleHideDock":"Hide dock:",
         "descriptionHideDockText":"Enable this to hide dock during allowed apps activities to minimize distractions. \"System Events\" permission will be required for this.",
-        "checkBoxHideDockText":"Hide dock during activities having allowed apps."
+        "checkBoxHideDockText":"Hide dock during activities having allowed apps.",
+        "checkBoxShowMeetingDetectionPopupText":"Automatically suggest starting \"Meetings\" focus mode",
+        "alertChangeLanguageInfoText":"Focus Bear will restart for the changes to take effect."
     },
     "focusPreferencesInfo":{
-        "titleFocusType":"Focus Type:",
+        "titleFocusType":"Use Focus Modes to stay focused on a certain type of work. Start a focus mode from the Focus Bear menu.",
         "titleAllowedAllApps":"Allow all apps",
         "titleAllowedSelectedApps":"Allow selected apps",
         "titleAllowedAllUrls":"Allow all urls",
@@ -376,7 +421,7 @@
         "toolTipDuplicate":"Duplicate",
         "hardCorePomodoroIsOnMessageText":"Super Pomodoro mode is on. Please deactivate super Pomodoro mode to delete it.",
         "buttonAdvancedText":"Advanced",
-        "defaultFocusText":"Complete anarchy! Block nothing 😬",
+        "defaultFocusText":"Block super distracting sites/apps",
         "meetingsFocusText":"Meetings",
         "disablePomodoroModeAlertText":"The selected focus mode is enabled in super pomodoro mode. Please disable super pomodoro mode to delete this.",
         "buttonAddFocusTypeText":"Add Focus Mode",
@@ -393,7 +438,11 @@
         "titleBlockUrlListApproch":"Allow everything except certain distracting sites",
         "allowUrlsQuestionText":"Which URLs do you want to allow?",
         "blockUrlsQuestionText":"Which URLs do you want to block?",
-        "enterMultiUrlText":"Enter single or multiple urls(one in each line)"
+        "enterMultiUrlText":"Enter single or multiple urls(one in each line)",
+        "meetingsFocusInfoText":"The meetings focus mode is used to detect when you are in a meeting so you don't get asked to take a break when you're in an important meeting. Add the apps and websites you use for video conferencing.",
+        "descriptionAlwaysBlockedUrls":"When you use this focus mode, all websites will be allowed except for your Always Blocked URLs",
+        "titleBlockedApps":"Which apps do you want to block?",
+        "titleBlockedUrls":"Below is the list of Always Blocked URLs:"
     },
     "focusPreferencesAdvancedInfo":{
         "runScriptBeforeText":"Run apple script before starting focus mode.",
@@ -423,7 +472,8 @@
             "onlyAllowSelectedAppAndUrlText":"You'll only be able to use \"<URL>\" in <APP>",
             "explanationText":"Setting an intention for the focus block helps prime your brain to accomplish that task. To edit the intention after starting the focus mode, click Brain Dump in the menu bar.",
             "buttonStopFocusText":"Stop current focus mode and start this one",
-            "activityRunningCantStartFocusText":"You can not start a focus mode while an activity is running."
+            "activityRunningCantStartFocusText":"You can not start a focus mode while an activity is running.",
+            "tipMaximumMinutesText":"Tip: research indicates that 90 minutes is the maximum limit for focused work (ultradian rhythms). After that, your attention will naturally decline and you'll need to take a break."
         },
         "abortingFocusModeInfo":{
             "title":"Deactivating Focus Block - <FOCUSTYPE>",
@@ -458,7 +508,8 @@
             "titleFocusSummaryText":"Focus Summary:",
             "totalFocusTimeText":"Total focus time: <TIME>",
             "buttonNeedMoreTimeText":"I need to work for one more minute",
-            "buttonStillNeedMoreTimeText":"I still need to work more"
+            "buttonStillNeedMoreTimeText":"I still need to work more",
+            "oneMinuteTimerText":"One minute timer ends in"
         },
         "discourageDefaultFocusInfo":{
             "title":"Are you sure? It's pretty easy to get distracted without using a more restrictive focus mode",
@@ -510,7 +561,7 @@
         "alertConfirmResetPasswordTitle":"Reset Password",
         "alertConfirmResetPasswordSubTitle":"Your current password will be removed after 24 hours. You can then set a new password. Proceed?",
         "alertPasswordResetDoneTitle":"Password reset in progress",
-        "alertPasswordResetDoneSubTitle":"Please set a new password after 24 hours.",
+        "alertPasswordResetDoneSubTitle":"Please set a new password after 24 hours."
     },
     "passwordPreferencesInfo":{
         "titleSetPassword":"Set Password",
@@ -540,7 +591,8 @@
         "buttonAbortingShutoffText":"Using your computer late at night",
         "buttonSkipEveningHabitText":"Postponing/skipping evening routine",
         "buttonSkipMorningHabitText":"Postponing/skipping morning routine",
-        "buttonChangeSettingsText":"Changing settings"
+        "buttonChangeSettingsText":"Changing settings",
+        "buttonSkipEveningHabitAfterCutOffText":"Postponing/skipping evening routine after cutoff time"
     },
     "blockedUrlsViewInfo":{
         "title":"Always Blocked URLs",
@@ -621,7 +673,8 @@
         "titleTimeRemainingText": "Time remaining:",
         "titleWorkNoteFirst": "Things I'll do in my next break:",
         "titleWorkNoteSecond": "Things you wanted to do in your break:",
-        "titleNotFocusSession": "You're currently not in a focus session"
+        "titleNotFocusSession": "You're currently not in a focus session",
+        "writeThingsHereText":"Dump down ideas you have so you don't forget - anything you write here will remain forever unless you delete it"
     },
     "askLogInVcInfo": {
         "title": "Make healthy habits and deep work the path of least resistance.",
@@ -702,19 +755,22 @@
         "titleSignUpSuccessful":"Sign up successful",
         "signupSuccessText":"Great you're all signed up. I'll just give you a few tips before you start using it.",
         "buildingHabitsText":"Building Better Habits",
-        "buildingHabitsDescription":"Focus Bear will help you develop stronger habits in the morning and evening by blocking distractions. But don't worry - if you need to access your computer in a hurry, just click the \"Please spare me\" button in the top right.",
+        "buildingHabitsDescription":"Focus Bear will help you develop stronger habits in the morning and evening by blocking distractions. But don't worry - if you need to access your computer in a hurry, just click the \"Exit Fullscreen\" button in the top right.",
         "brainBreaksText":"Brain Breaks",
         "brainBreaksDescription":"To avoid screen headaches and neck strain, Focus Bear will encourage you to take breaks at regular intervals. We give you a 30 second warning so you can postpone the break if it's a bad time. We also detect if you're in a meeting and don't show breaks as that might lead to awkward screensharing moments otherwise!",
         "buttonBackText":"Back",
         "buttonNextText":"Next",
         "exploreTipsText":"Click next to explore the tips to use Focus Bear.",
         "titleSignInSuccessful":"Sign in successful",
-        "signinSuccessText":"Great you're all signed in. I'll just give you a few tips before you start using it."
+        "signinSuccessText":"Great you're all signed in. I'll just give you a few tips before you start using it.",
+        "privacyText": "Privacy and Security",
+        "privacyDescription":"We take your privacy and security very seriously. We do not log which websites or apps you use. We do sync your habit data to our server but this is only to support cross device distraction blocking. Your data is encrypted and we don't let anyone else see it. for more details or feel free to email team@focusbear.io. Refer to our privacy policy:",
+        "buttonPrivacyText":"Click here to view Privacy Policy"
     },
     "breakWarningVcInfo": {
-        "title": "Your Break starts in",
+        "title": "Your micro break starts in",
         "buttonPostponeText": "Postpone for 5 minutes",
-        "postponeConfirmText": "You postponed the last break - are you sure you can't make time for the break now?",
+        "postponeConfirmText": "You postponed the last micro break - are you sure you can't make time for the break now?",
         "buttonTakeBreakText": "Argh ok I'll take a break!"
     },
     "askAppWorkVcInfo": {
@@ -740,7 +796,8 @@
         "buttonAllowText": "Yes - just this time",
         "buttonBlockText": "No - I was getting distracted",
         "buttonEditSettingsText": "Edit Settings",
-        "intentionText": "Your intention was \"<INTENTION>\""
+        "intentionText": "Your intention was \"<INTENTION>\"",
+        "firstTempItemAllowText":"Allowed! Heads up: it might be a little annoying at first to have to keep allowing sites/apps but within a few days, you'll have taught Focus Bear what apps and websites are productive."
     },
     "easyPostponeVcInfo": {
         "title": "Ok I get it - now's not a good time. I'll try again in 5 minutes. You can postpone for longer if you need to.",
@@ -806,6 +863,59 @@
         "optionSecondText":"Google",
         "optionThirdText":"Ad on Reddit or Twitter",
         "optionFourthText":"Somewhere else"
+    },
+    "trialExpiredNagInfo": {
+        "buttonUpgradeNowText":"Reactivate",
+        "descriptionText":"Normally I'd guide you through your morning routine at this time. Click Reactivate to set up your Focus Bear subscription and enjoy the productivity and health benefits from the app again.",
+        "subscriptionExpiredText":"Focus Bear subscription expired"
+    },
+    "inactivityNagInfo": {
+        "title":"Still interested in improving your habits and productivity?",
+        "buttonDoItText":"Yeah - let's do it",
+        "buttonCancelText":"No thanks"
+    },
+    "shareFeedbackVcInfo": {
+        "title":"Can you give us any feedback on the app?",
+        "buttonShareFeedbackText":"Share feedback",
+        "buttonAskAgainText":"Ask me in 1hr"
+    },
+    "addFocusTempUrlsOrAppsVcInfo": {
+        "title":"Do you want to permanently allow these Apps or URLs that you used during this session?",
+        "buttonAllowText":"Allow",
+        "titleKeywords":"Allowed keywords:",
+        "keywordsInfoText":"To avoid you having to add websites individually, we can scan the titles of the web pages you allowed in this session and identify the most common key phrases. For example, if you opened ten pages relating to Figma 'How to link between pages in Figma'. 'How to share Figma files' etc. We can detect that Figma is the most common phrase and add it to your allow list. After that, any web page with 'Figma' in the title will be automatically allowed. We don't store the details of the pages you visit - we immediately discard the information after analysing it.\n\nYou can type keywords below that should be allowed. E.g. you can use React Native as a keyword and then any page with that phrase in the URL/title will be allowed.",
+        "tooltipAddkeyword":"Add keyword"
+    },
+    "allTracksVcInfo": {
+        "title":"Here are some focus music tracks (some are binaural beats) you can use to help you focus. FYI the research is ambivalent about binaural beats - you'll likely get similar benefits from using your own music. Just make sure the music doesn't have lyrics otherwise you'll get distracted."
+    },
+    "setUpVcInfo": {
+        "title":"Setup",
+        "customiseFocusModeText":"Customise a focus mode",
+        "customiseHabitText":"Customise your habits",
+        "setBlockedUrlsText":"Set always blocked URLs",
+        "completeMorningRoutineText":"Complete your morning routine 10 times",
+        "completeEveningRoutineText":"Complete your evening routine 10 times",
+        "focusSessionText":"Do 10 focus sessions"
+    },
+    "languageInfo": {
+        "languageEnglish":"English",
+        "languageSpanish":"Spanish"
+    },
+    "breaksBrainDumpVcInfo": {
+        "title":"Capture your thoughts before starting your micro break",
+        "description":"Taking regular micro breaks (every 20 minutes is recommended) is crucial for avoiding eye strain and postural issues. You might be worried that it will take you out of your flow and disrupt your productivity. Let's capture what you were just working on so that you won't lose your train of thought after the break. BTW you'll often find that when you take a break and give your brain some time in the \"default mode network\", you'll come up with novel solutions to a problem you'd been struggling with. Not necessarily a productivity killer at all 😉",
+        "buttonStartBreakText":"Start Micro Break"
+    },
+    "askWorkTimeVcInfo": {
+        "titleStartupTime":"Startup Time:",
+        "titleShutDownTime":"Shutdown Time:",
+        "descriptionStartupTime":"Choose the absolute earliest time you ever plan to start your morning routine. You can start your morning routine at any time after <SHUTOFFTIME>. Before <STARTTIME> your computer will be locked because you should be sleeping 😴 (you can still unlock it if you have an emergency).",
+        "descriptionShutDownTime":"At <SHUTOFFTIME>, Focus Bear will take over your computer and other devices and guide you through your evening routine to help you wind down for the evening.",
+        "questionText":"Set Startup and Shutdown time"
+    },
+
+    "WindowsSpecific": {
+        "welcomeVideoUrl": "https://www.youtube.com/watch?v=xTUIGfmi3xg"
     }
-    
 }

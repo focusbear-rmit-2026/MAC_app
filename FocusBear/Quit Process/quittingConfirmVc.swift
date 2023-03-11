@@ -40,8 +40,17 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
     var dropDown_2_Description = "Oh no! We're really sorry. Can you please let us know what happened?﹡"
     var dropDown_3_Description = "Can you tell us why you want to stop getting habit + break notifications?﹡"
     
+    var dropDownMeetingDescription = "We hope you will start the habits back soon! See you soon."
+    var dropDownSomeOneElseDescription = "We hope you will start the habits back soon! See you soon."
+    var dropDownAnnoyingDescription = "Oh no! We're really sorry. Can you please let us know what happened?﹡"
+    var dropDownRelaxDescription = "We hope you will start the habits back soon! See you soon."
+    
+    
+    
     var dropDown_2_FinalDescription = "We hope you will start the habits back soon! See you soon."
     var dropDown_3_FinalDescription = "We hope you will start the habits back soon! See you soon."
+    
+    var dropDownAnnoyingFinalDescription = "We hope you will start the habits back soon! See you soon."
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -58,7 +67,16 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
         var dropDown_1_Title = "I've got an emergency"
         var dropDown_2_Title = "The app is broken"
 
+        
+        var dropDownMeeting = "I have a meeting"
+        var dropDownSomeOneElse = "Someone else is using my computer"
+        var dropDownAnnoying = "I'm finding Focus Bear annoying"
+        var dropDownRelax = "I want to relax for a while without restrictions"
+        
         var dropDown_3_Title = "Something else"
+        
+        
+        
         
         if let quitInfo = configjson.value(forKey: "quitInfo") as? NSDictionary{
             if let quittingTitle = quitInfo.value(forKey: "quittingTitle") as? String{
@@ -112,10 +130,48 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
                         dropDown_3_FinalDescription = finalDescription
                     }
                 }
+                
+                if let dropDown = quittingConfirmInfo.value(forKey: "dropDownMeeting") as? NSDictionary{
+                    if let title = dropDown.value(forKey: "title") as? String{
+                        dropDownMeeting = title
+                    }
+                    if let description = dropDown.value(forKey: "description") as? String{
+                        dropDownMeetingDescription = description
+                    }
+                }
+                
+                if let dropDown = quittingConfirmInfo.value(forKey: "dropDownSomeOneElse") as? NSDictionary{
+                    if let title = dropDown.value(forKey: "title") as? String{
+                        dropDownSomeOneElse = title
+                    }
+                    if let description = dropDown.value(forKey: "description") as? String{
+                        dropDownSomeOneElseDescription = description
+                    }
+                }
+                if let dropDown = quittingConfirmInfo.value(forKey: "dropDownAnnoying") as? NSDictionary{
+                    if let title = dropDown.value(forKey: "title") as? String{
+                        dropDownAnnoying = title
+                    }
+                    if let description = dropDown.value(forKey: "description") as? String{
+                        dropDownAnnoyingDescription = description
+                    }
+                    if let finalDescription = dropDown.value(forKey: "finalDescription") as? String{
+                        dropDownAnnoyingFinalDescription = finalDescription
+                    }
+                }
+                
+                if let dropDown = quittingConfirmInfo.value(forKey: "dropDownRelax") as? NSDictionary{
+                    if let title = dropDown.value(forKey: "title") as? String{
+                        dropDownRelax = title
+                    }
+                    if let description = dropDown.value(forKey: "description") as? String{
+                        dropDownRelaxDescription = description
+                    }
+                }
             }
             
         }
-        allReasons = [dropDown_0_Title,dropDown_1_Title, dropDown_2_Title, dropDown_3_Title]
+        allReasons = [dropDown_0_Title,dropDown_1_Title, dropDown_2_Title, dropDownMeeting, dropDownSomeOneElse, dropDownAnnoying, dropDownRelax, dropDown_3_Title]
         
         popUpBtnReasons.removeAllItems()
         
@@ -138,7 +194,7 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
         popUpBtnReasons.isEnabled = true
         popUpBtnReasons.selectItem(at: 0)
         btnQuit.isEnabled = false
-        lblTimer.stringValue = "00:05"
+        lblTimer.stringValue = "00:02"
         scrollView.isHidden = true
         scrollView.isHidden = true
         lblDescription.isHidden = true
@@ -173,7 +229,7 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
             lblDescription.isHidden = false
             lblTitleEmail.isHidden = true
             textFieldEmail.isHidden = true
-            lblTimer.stringValue = "00:05"
+            lblTimer.stringValue = "00:02"
             lblDescription.stringValue = dropDown_1_Description
             popUpBtnReasons.isEnabled = false
             startTimer()
@@ -189,8 +245,53 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
             btnQuit.isEnabled = false
             textFieldEmail.stringValue = ""
             lblDescription.stringValue = dropDown_2_Description
-            
         case 3:
+            btnQuit.isHidden = true
+            scrollView.isHidden = true
+            lblTimer.isHidden = false
+            lblDescription.isHidden = false
+            lblTitleEmail.isHidden = true
+            textFieldEmail.isHidden = true
+            lblTimer.stringValue = "00:02"
+            lblDescription.stringValue = dropDownMeetingDescription
+            popUpBtnReasons.isEnabled = false
+            startTimer()
+        case 4:
+            btnQuit.isHidden = true
+            scrollView.isHidden = true
+            lblTimer.isHidden = false
+            lblDescription.isHidden = false
+            lblTitleEmail.isHidden = true
+            textFieldEmail.isHidden = true
+            lblTimer.stringValue = "00:02"
+            lblDescription.stringValue = dropDownSomeOneElseDescription
+            popUpBtnReasons.isEnabled = false
+            startTimer()
+        
+        case 5:
+            btnQuit.isHidden = false
+            scrollView.isHidden = false
+            lblTimer.isHidden = true
+            lblDescription.isHidden = false
+            lblTitleEmail.isHidden = false
+            textFieldEmail.isHidden = false
+            textView.string = ""
+            btnQuit.isEnabled = false
+            textFieldEmail.stringValue = ""
+            lblDescription.stringValue = dropDownAnnoyingDescription
+            
+        case 6:
+            btnQuit.isHidden = true
+            scrollView.isHidden = true
+            lblTimer.isHidden = false
+            lblDescription.isHidden = false
+            lblTitleEmail.isHidden = true
+            textFieldEmail.isHidden = true
+            lblTimer.stringValue = "00:02"
+            lblDescription.stringValue = dropDownRelaxDescription
+            popUpBtnReasons.isEnabled = false
+            startTimer()
+        case 7:
             btnQuit.isHidden = false
             scrollView.isHidden = false
             lblTimer.isHidden = true
@@ -208,7 +309,7 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
     }
     func startTimer() {
         currentTimer = 0
-        totalDuration = 5
+        totalDuration = 2
         let (_,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
         var minute = "\(m)"
         var second = "\(s)"
@@ -263,6 +364,37 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
                             }
                         })
                     }else if self.popUpBtnReasons.indexOfSelectedItem == 3{
+                        addLog(text: "App Quit - I have a meeting")
+                        
+                        let logType = "Quit"
+                        let activity = ""//
+                        
+                        addEntryInStatsCsv(logType: logType, activity: activity, durationInSeconds: "", quantityQuestion: "", quantityLogged: "", startTime: "", workAchieved: "", distractionsEncountered: "", abortReason: "I have a meeting", feedback: "")
+                        appdelegate?.menuItem_Quit()
+                    }else if self.popUpBtnReasons.indexOfSelectedItem == 4{
+                        addLog(text: "App Quit - Someone else is using my computer")
+                        
+                        let logType = "Quit"
+                        let activity = ""//
+                        
+                        addEntryInStatsCsv(logType: logType, activity: activity, durationInSeconds: "", quantityQuestion: "", quantityLogged: "", startTime: "", workAchieved: "", distractionsEncountered: "", abortReason: "Someone else is using my computer", feedback: "")
+                        appdelegate?.menuItem_Quit()
+                    }else if self.popUpBtnReasons.indexOfSelectedItem == 5{
+                        addLog(text: "App Quit - I'm finding Focus Bear annoying")
+                        allApiObject.getQuitJsonToUpload(emailAddress: currentUserEmail, feedback: self.textView.string, quitReason: "I'm finding Focus Bear annoying", completionHandler: {dic in
+                            DispatchQueue.main.async {
+                                appdelegate?.menuItem_Quit()
+                            }
+                        })
+                    }else if self.popUpBtnReasons.indexOfSelectedItem == 6{
+                        addLog(text: "App Quit - I want to relax for a while without restrictions")
+                        
+                        let logType = "Quit"
+                        let activity = ""//
+                        
+                        addEntryInStatsCsv(logType: logType, activity: activity, durationInSeconds: "", quantityQuestion: "", quantityLogged: "", startTime: "", workAchieved: "", distractionsEncountered: "", abortReason: "I want to relax for a while without restrictions", feedback: "")
+                        appdelegate?.menuItem_Quit()
+                    }else if self.popUpBtnReasons.indexOfSelectedItem == 7{
                         addLog(text: "App Quit - Something else")
                         let logType = "Quit"//
                         let activity = ""
@@ -284,13 +416,15 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
         self.lblDescription.isHidden = false
         self.lblTitleEmail.isHidden = true
         self.textFieldEmail.isHidden = true
-        self.lblTimer.stringValue = "00:05"
+        self.lblTimer.stringValue = "00:02"
         self.lblDescription.stringValue = self.dropDown_1_Description
         
         if self.popUpBtnReasons.indexOfSelectedItem == 2{
             self.lblDescription.stringValue = dropDown_2_FinalDescription
-        }else if self.popUpBtnReasons.indexOfSelectedItem == 3{
+        }else if self.popUpBtnReasons.indexOfSelectedItem == 7{
             self.lblDescription.stringValue = dropDown_3_FinalDescription
+        }else if self.popUpBtnReasons.indexOfSelectedItem == 5{
+            self.lblDescription.stringValue = dropDownAnnoyingFinalDescription
         }
         self.popUpBtnReasons.isEnabled = false
         self.startTimer()

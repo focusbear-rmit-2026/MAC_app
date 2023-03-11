@@ -20,7 +20,7 @@ class brainDumpVc: NSViewController, NSTextViewDelegate {
     @IBOutlet weak var lblTitleIntention: NSTextField!
     
     var timer:Timer?
-    var kUserdefaultsFocusModeNotes = "kUserdefaultsFocusModeNotes"
+    
     
     var titleWorkNoteFirst = "Things I'll do in my next break:"
     var titleWorkNoteSecond = "Things you wanted to do in your break:"
@@ -30,20 +30,22 @@ class brainDumpVc: NSViewController, NSTextViewDelegate {
         // Do view setup here.
         lblTitleIntention.stringValue = "Intention:"
         lblTitleTimeRemaining.stringValue = "Time remaining:"
+        lblTitleWorkNote.stringValue = "Dump down ideas you have so you don't forget - anything you write here will remain forever unless you delete it"
         
         if let brainDumpVcInfo = configjson.value(forKey: "brainDumpVcInfo") as? NSDictionary{
             lblTitleIntention.stringValue = brainDumpVcInfo.value(forKey: "titleIntentionText") as? String ?? lblTitleIntention.stringValue
             lblTitleTimeRemaining.stringValue = brainDumpVcInfo.value(forKey: "titleTimeRemainingText") as? String ?? lblTitleTimeRemaining.stringValue
             titleWorkNoteFirst = brainDumpVcInfo.value(forKey: "titleWorkNoteFirst") as? String ?? titleWorkNoteFirst
             titleWorkNoteSecond = brainDumpVcInfo.value(forKey: "titleWorkNoteSecond") as? String ?? titleWorkNoteSecond
+            lblTitleWorkNote.stringValue = brainDumpVcInfo.value(forKey: "writeThingsHereText") as? String ?? lblTitleWorkNote.stringValue
         }
-        lblTitleWorkNote.stringValue = titleWorkNoteFirst
+//        lblTitleWorkNote.stringValue = titleWorkNoteFirst
         textViewIntention.delegate = self
     }
     override func viewWillAppear() {
         
         if isFocusModeOn(){
-            lblTitleWorkNote.stringValue = titleWorkNoteFirst
+//            lblTitleWorkNote.stringValue = titleWorkNoteFirst
             startRefreshRemainingTimer()
             textViewIntention.isEditable = true
             textViewIntention.enclosingScrollView?.isHidden = false
@@ -84,7 +86,7 @@ class brainDumpVc: NSViewController, NSTextViewDelegate {
         }
     }
     func focusModeStarted(){
-        lblTitleWorkNote.stringValue = titleWorkNoteFirst
+//        lblTitleWorkNote.stringValue = titleWorkNoteFirst
         startRefreshRemainingTimer()
         textViewIntention.isEditable = true
         textViewIntention.enclosingScrollView?.isHidden = false
@@ -95,7 +97,6 @@ class brainDumpVc: NSViewController, NSTextViewDelegate {
         lineTopSpace.constant = 66
     }
     func focusModeFinished(){
-        startRefreshRemainingTimer()
         lblTimeRemaining.stringValue = "0"
         timer?.invalidate()
         timer = nil
@@ -109,7 +110,7 @@ class brainDumpVc: NSViewController, NSTextViewDelegate {
         lineTopSpace.constant = 10
     }
     func breakStarted(){
-        lblTitleWorkNote.stringValue = titleWorkNoteSecond
+//        lblTitleWorkNote.stringValue = titleWorkNoteSecond
     }
     func setRemainingTime(){
         if let date = endFocusModeTime{

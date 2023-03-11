@@ -60,10 +60,15 @@ class askAppWorkVc: NSViewController {
         }
         if isHabitsDisabled{
             UserDefaults.standard.set(true, forKey: kUserdefaultsIsHabitsDisabled)
+        }else{
+            UserDefaults.standard.set(false, forKey: kUserdefaultsIsHabitsDisabled)
         }
         
         addLog(text: "askAppWorkVc:- btnContinueClicked:isHabitsDisabled:- \(isHabitsDisabled)")
-        mainViewControllerObj!.showOnboardingBlockedUrlsVc()
+
+        
+        
+        mainViewControllerObj!.showAskWorkTimeVc()
     }
     @IBAction func checkBoxFirstClicked(_ sender: Any) {
         addLog(text: "askAppWorkVc:- checkBoxFirstClicked")

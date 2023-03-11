@@ -157,7 +157,7 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
                                 self.view.window?.close()
                                 self.view.removeFromSuperview()
 
-                                if askPostponeVcObj != nil{//todo test
+                                if askPostponeVcObj != nil{
                                     if askPostponeVcObj!.popUpButtonSelectMinutes != nil{
                                         mainViewControllerObj?.postponeFocusSummaryFor(minutes: Int(askPostponeVcObj!.popUpButtonSelectMinutes.title) ?? 15)
                                     }else{
@@ -275,9 +275,7 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
             if self.view.window == preferencesWindowControllerObj?.window{
                 if !SettingsManagerObject.isPasswordRequireInChangeSettings{
                     self.view.removeFromSuperview()
-                    if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-                        tabview.selectedTabViewItemIndex = 0
-                    }
+                    generalVcObj?.tabView.selectTabViewItem(at: 0)
                     return;
                 }
             }

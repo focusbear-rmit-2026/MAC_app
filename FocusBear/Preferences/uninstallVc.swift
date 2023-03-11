@@ -28,7 +28,7 @@ class uninstallVc: NSViewController {
         addLog(text: "btn Uninstall in settings Clicked")//
 
         if self.uninstallingConfirmVcObj == nil{
-            self.uninstallingConfirmVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("uninstallingConfirmVc")) as? uninstallingConfirmVc
+            self.uninstallingConfirmVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("uninstallingConfirmVc")) as? uninstallingConfirmVc
         }
         self.presentAsSheet(self.uninstallingConfirmVcObj!)
     }

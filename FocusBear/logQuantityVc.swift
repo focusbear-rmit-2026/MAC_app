@@ -83,11 +83,11 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
 //        textFieldQuantityFormatter.maximumFractionDigits = 2
 //        textFieldQuantityFormatter.minimumFractionDigits = 0
     }
+    var take_notes:String = ""
+    var notes:String = ""
     var textFieldStringCount = 0
     var is_skipped = false
-    func resetData(name:String, durationInSeconds:String, logQuantityQuestion:String?, currentState:CURRENTSTATE, logQuantityType:String, activity_id:String, activity_sequence_id:String, activityChoiceId:String?){
-//        getStringFromDate"yyyy-MM-dd HH:mm:ss"
-        //lastActivityPerformedTime
+    func resetData(name:String, durationInSeconds:String, logQuantityQuestion:String?, currentState:CURRENTSTATE, logQuantityType:String, activity_id:String, activity_sequence_id:String, activityChoiceId:String?, take_notes:String, notes:String){
         self.is_skipped = false
         self.activityChoiceId = nil
         self.activityChoiceId = activityChoiceId
@@ -99,7 +99,6 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
         self.durationInSeconds = durationInSeconds
         self.logQuantityType = logQuantityType
         textFieldCount.stringValue = ""
-//        print(timestamp)
         var subTitle = logQuantityQuestion ?? logQuantityQuestionText
         if subTitle.isEmpty{// if logQuantityQuestion is ""
             subTitle = logQuantityQuestionText
@@ -110,6 +109,8 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
         textFieldCount.selectText(self)
         textFieldCount.currentEditor()?.selectedRange = NSRange(location: 0, length: 0)
         btnOk.isEnabled = true
+        self.take_notes = take_notes
+        self.notes = notes
     }
     @IBAction func btnCancelClicked(_ sender: Any) {
         addLog(text:"Log quantity-btnCancelClicked")
@@ -120,6 +121,12 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
         self.view.removeFromSuperview()
         if isReviseQuantity{
             addLog(text:"Log quantity-btnCancelClicked return - isReviseQuantity")
+            if lCurrentState! == ._EVENING_HABIT_{
+                if thirdVcObj!.lastHabitIndex >= arrFilteredEveningHabits.count-1 {
+                    thirdVcObj?.startTimer(duration: 30)// evening habit k baad 30 second k baad shutof ho jay isiliye ye timer lagaya
+                }
+            }
+            thirdVcObj?.btnReviseQuantity.isHidden = false
            return
         }
         
@@ -137,26 +144,32 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
         }else if lCurrentState! == ._ACTIVITY_{
             logType = "break"
         }
-        
-        
-        
-        
-        
+
         addEntryInStatsCsv(logType: logType, activity: name, durationInSeconds: durationInSeconds, quantityQuestion: logQuantityQuestion, quantityLogged: "0.0", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "")
         
-        allApiObject.activityCompletedApi(activity_id: activity_id, activity_sequence_id: activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:0.0, duration_logged:Int(durationInSeconds) ?? 0, choice_id: activityChoiceId, is_skipped: is_skipped, completionHandler: {dic  in
-            DispatchQueue.main.async {
+        
+        
+        
+        if take_notes == END_OF_ACTIVITY{
+            mainViewControllerObj!.showTakeNotesView()
+            takeActivityNotesVcObj?.resetData(durationInSeconds: Int(durationInSeconds) ?? 0, quantity_logged:0.0, activity_id: activity_id, activity_sequence_id: activity_sequence_id, activityChoiceId: activityChoiceId)
+  
+        }else{
+            if lCurrentState! == ._EVENING_HABIT_{
+                if thirdVcObj!.lastHabitIndex >= arrFilteredEveningHabits.count-1 {
+                    thirdVcObj?.startTimer(duration: 30)// evening habit k baad 30 second k baad shutof ho jay isiliye ye timer lagaya
+                }
+            }
+            allApiObject.activityCompletedApi(activity_id: activity_id, activity_sequence_id: activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:0.0, duration_logged:Int(durationInSeconds) ?? 0, choice_id: activityChoiceId, is_skipped: is_skipped, notes: "", completionHandler: {dic  in
+                DispatchQueue.main.async {
+                    
+                }
                 
-            }
-            
-            print(dic)
-        })
-       
-        if lCurrentState! == ._EVENING_HABIT_{
-            if thirdVcObj!.lastHabitIndex >= arrAllEveningHabits.count-1 {
-                thirdVcObj?.startTimer(duration: 30)// evening habit k baad 30 second k baad shutof ho jay isiliye ye timer lagaya
-            }
+                print(dic)
+            })
+           
         }
+        
     }
     
     @IBAction func btnOkClicked(_ sender: Any) {
@@ -176,6 +189,7 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
             return;
         }
         //
+        
         if let doubleVal = Double(textFieldCount.stringValue){
             let startTime = getStringFromDate(date: lastActivityPerformedTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")
 
@@ -201,12 +215,24 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
             thirdVcObj?.loadGraph(activityId: self.activity_id, activityName: self.name, logQuantity: true, logQuantityType: self.logQuantityType, activityChoiceId: self.activityChoiceId, activityStartTime: lastActivityPerformedTime!, duration: durationInSeconds, quantity: "\(doubleVal)")
             
             if !isReviseQuantity{
-                allApiObject.activityCompletedApi(activity_id: activity_id, activity_sequence_id: activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:doubleVal, duration_logged:Int(durationInSeconds) ?? 0, choice_id: activityChoiceId, is_skipped:is_skipped, completionHandler: {dic  in
-                    DispatchQueue.main.async {
-                        
+                
+                if take_notes == END_OF_ACTIVITY{
+                    mainViewControllerObj!.showTakeNotesView()
+                    takeActivityNotesVcObj?.resetData(durationInSeconds: Int(durationInSeconds) ?? 0, quantity_logged:doubleVal, activity_id: activity_id, activity_sequence_id: activity_sequence_id, activityChoiceId: activityChoiceId)
+                }else{
+                    if lCurrentState! == ._EVENING_HABIT_{
+                        if thirdVcObj!.lastHabitIndex >= arrFilteredEveningHabits.count-1 {
+                            thirdVcObj?.startTimer(duration: 30)// evening habit k baad 30 second k baad shutof ho jay isiliye ye timer lagaya
+                        }
                     }
+                    allApiObject.activityCompletedApi(activity_id: activity_id, activity_sequence_id: activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:doubleVal, duration_logged:Int(durationInSeconds) ?? 0, choice_id: activityChoiceId, is_skipped:is_skipped, notes: notes, completionHandler: {dic  in
+                        DispatchQueue.main.async {
+                            
+                        }
 
-                })
+                    })
+                }
+                
             }else{
                 if allApiObject.completedActivityLogId == nil{// it mean activity completed api error found or was offline when activity completed api executed so replace in offline activity data 
                     
@@ -228,13 +254,15 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
 
                     })
                 }
-                
-            }
-            if lCurrentState! == ._EVENING_HABIT_{
-                if thirdVcObj!.lastHabitIndex >= arrAllEveningHabits.count-1 {
-                    thirdVcObj?.startTimer(duration: 30)// evening habit k baad 30 second k baad shutof ho jay isiliye ye timer lagaya
+                if lCurrentState! == ._EVENING_HABIT_{
+                    if thirdVcObj!.lastHabitIndex >= arrFilteredEveningHabits.count-1 {
+                        thirdVcObj?.startTimer(duration: 30)// evening habit k baad 30 second k baad shutof ho jay isiliye ye timer lagaya
+                    }
                 }
             }
+            
+            
+            //what if user clicked on revise quantity during shutoff 30 seconds timer(last evening habit)
         }else{
             lblError.isHidden = false
             lblError.stringValue = "Please enter a valid value."

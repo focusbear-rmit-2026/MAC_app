@@ -27,6 +27,7 @@ class preferencesWindowController: NSWindowController, NSWindowDelegate  {
        if isGettingSchema{
            return false
        }
+//       isSettingsChanged = false
 //    if selectJsonVcObj != nil{
 //        selectJsonVcObj!.boxWidthConstraint.constant = 500
 //        selectJsonVcObj!.boxHeightConstraint.constant = 350

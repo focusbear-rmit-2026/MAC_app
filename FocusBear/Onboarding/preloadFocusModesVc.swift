@@ -21,7 +21,7 @@ class preloadFocusModesVc: NSViewController, NSTextFieldDelegate {
     var titleProgramming = "Programming"
     var titleGraphicDesign = "Graphic Design"
     var titleDataAnalysis = "Data Analysis"
-    
+    var arrDic = [[String : Any]]()
     var gotItText = "Got it. Let's set up a Focus Mode to help you be super productive while you're doing <WORK_TYPE> work."
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -35,7 +35,7 @@ class preloadFocusModesVc: NSViewController, NSTextFieldDelegate {
         
        
         lblTitle.stringValue = "What type of work do you mainly do?"
-        popUpBtnWork.removeAllItems()
+        
 
         textFieldSomethingElse.delegate = self
         btnContinue.title = "Continue"
@@ -55,13 +55,48 @@ class preloadFocusModesVc: NSViewController, NSTextFieldDelegate {
             
             textFieldSomethingElse.placeholderString = preloadFocusModesViewInfo.value(forKey: "placeholderWorkText") as? String ?? textFieldSomethingElse.placeholderString
             gotItText = preloadFocusModesViewInfo.value(forKey: "gotItText") as? String ?? gotItText
+        }//focusModeTemplateData
+
+        if focusModeTemplateData != nil{
+            
+            for item in focusModeTemplateData!{
+                let name = item.value(forKey: "name") as? String ?? ""
+                var allowed_apps = item.value(forKey: "allowed_apps") as? [String] ?? []
+                let allowed_urls = item.value(forKey: "allowed_urls") as? [String] ?? []
+                
+                for i in 0..<allowed_apps.count{
+                    allowed_apps[i] = "/Applications/\(allowed_apps[i]).app"
+                }
+                
+                let dic:[String:Any] = ["name":name, "color": getColorString(color: NSColor(red: 163/255, green: 255/255, blue: 161/255, alpha: 1)), "allowed_apps": allowed_apps, "allowed_urls": allowed_urls, "isOn": false, "isAllowedAllApps":false, "isAllowedListApproach":true, "blockUrlsArray": []]
+                
+                arrDic.append(dic)
+            }
+        }else{
+            arrDic = [
+                ["name":"\(titleProgramming)", "color": getColorString(color: NSColor(red: 163/255, green: 255/255, blue: 161/255, alpha: 1)), "allowed_apps": ["/Applications/Visual Studio Code.app", "/Applications/Xcode.app", "/Applications/Utilities/Terminal.app", "/Applications/Google Chrome.app", "/Applications/iTerm2.app", "/Applications/Docker.app", "/Applications/Firefox.app", "/Applications/Insomnia.app", "/Applications/VirtualBox.app", "/Applications/DBeaver.app", "/Applications/Safari.app"], "allowed_urls": ["https://stackoverflow.com","localhost"], "isOn": false, "isAllowedAllApps":false, "isAllowedListApproach":true, "blockUrlsArray": []],
+                
+                ["name":"\(titleGraphicDesign)", "color": getColorString(color: NSColor(red: 163/255, green: 255/255, blue: 161/255, alpha: 1)), "allowed_apps": ["/Applications/Figma.app", "/Applications/Adobe Illustrator.app", "/Applications/Adobe Photoshop.app", "/Applications/Google Chrome.app", "/Applications/Safari.app"], "allowed_urls": ["https://www.figma.com"], "isOn": false, "isAllowedAllApps":false, "isAllowedListApproach":true, "blockUrlsArray": []],
+                
+                ["name":"\(titleDataAnalysis)", "color": getColorString(color: NSColor(red: 163/255, green: 255/255, blue: 161/255, alpha: 1)), "allowed_apps": ["/Applications/Microsoft Excel.app", "/Applications/Google Chrome.app", "/Applications/Safari.app"], "allowed_urls": ["https://www.office.com"], "isOn": false, "isAllowedAllApps":false, "isAllowedListApproach":true, "blockUrlsArray": []],
+            ]
         }
         
+        arrDic.append(["name":titleSomethingElse, "color": getColorString(color: NSColor(red: 163/255, green: 255/255, blue: 161/255, alpha: 1)), "allowed_apps": ["/Applications/Microsoft Excel.app", "/Applications/Microsoft Word.app", "/Applications/Google Chrome.app", "/System/Applications/Calendar.app", "/Applications/Safari.app"], "allowed_urls": ["https://www.google.com"], "isOn": false, "isAllowedAllApps":false, "isAllowedListApproach":true, "blockUrlsArray": []])
+        
+        popUpBtnWork.removeAllItems()
         popUpBtnWork.addItem(withTitle: titleSelectWorkType)
-        popUpBtnWork.addItem(withTitle: titleProgramming)
-        popUpBtnWork.addItem(withTitle: titleGraphicDesign)
-        popUpBtnWork.addItem(withTitle: titleDataAnalysis)
-        popUpBtnWork.addItem(withTitle: titleSomethingElse)
+        
+        
+        for dic in arrDic{
+            popUpBtnWork.addItem(withTitle: dic["name"] as? String ?? "")
+        }
+//        popUpBtnWork.addItem(withTitle: titleProgramming)
+//        popUpBtnWork.addItem(withTitle: titleGraphicDesign)
+//        popUpBtnWork.addItem(withTitle: titleDataAnalysis)
+//        popUpBtnWork.addItem(withTitle: titleSomethingElse)
+        
+        
         
         lblGotIt.stringValue = ""
         
@@ -71,30 +106,48 @@ class preloadFocusModesVc: NSViewController, NSTextFieldDelegate {
     @IBAction func popUpBtnSelectWorkClicked(_ sender: Any) {
         textFieldSomethingElse.stringValue = ""
         let selectedIndex = popUpBtnWork.indexOfSelectedItem
-        switch selectedIndex {
-        case 0:
+        if selectedIndex == 0{
             btnContinue.isEnabled = false
             textFieldSomethingElse.isHidden = true
             lblGotIt.stringValue = ""
-        case 1:
-            textFieldSomethingElse.isHidden = true
-            btnContinue.isEnabled = true
-            lblGotIt.stringValue = gotItText.replacingOccurrences(of: "<WORK_TYPE>", with: titleProgramming)
-        case 2:
-            textFieldSomethingElse.isHidden = true
-            btnContinue.isEnabled = true
-            lblGotIt.stringValue = gotItText.replacingOccurrences(of: "<WORK_TYPE>", with: titleGraphicDesign)
-        case 3:
-            textFieldSomethingElse.isHidden = true
-            btnContinue.isEnabled = true
-            lblGotIt.stringValue = gotItText.replacingOccurrences(of: "<WORK_TYPE>", with: titleDataAnalysis)
-        case 4:
+        }else if selectedIndex == popUpBtnWork.numberOfItems - 1{
             btnContinue.isEnabled = false
             textFieldSomethingElse.isHidden = false
             lblGotIt.stringValue = ""
-        default:
-            break
+        }else{
+            textFieldSomethingElse.isHidden = true
+            btnContinue.isEnabled = true
+            
+            let title = arrDic[selectedIndex - 1]["name"] as? String ?? ""
+            
+            lblGotIt.stringValue = gotItText.replacingOccurrences(of: "<WORK_TYPE>", with: title)
         }
+        
+        return;// 
+//        switch selectedIndex {
+//        case 0:
+//            btnContinue.isEnabled = false
+//            textFieldSomethingElse.isHidden = true
+//            lblGotIt.stringValue = ""
+//        case 1:
+//            textFieldSomethingElse.isHidden = true
+//            btnContinue.isEnabled = true
+//            lblGotIt.stringValue = gotItText.replacingOccurrences(of: "<WORK_TYPE>", with: titleProgramming)
+//        case 2:
+//            textFieldSomethingElse.isHidden = true
+//            btnContinue.isEnabled = true
+//            lblGotIt.stringValue = gotItText.replacingOccurrences(of: "<WORK_TYPE>", with: titleGraphicDesign)
+//        case 3:
+//            textFieldSomethingElse.isHidden = true
+//            btnContinue.isEnabled = true
+//            lblGotIt.stringValue = gotItText.replacingOccurrences(of: "<WORK_TYPE>", with: titleDataAnalysis)
+//        case 4:
+//            btnContinue.isEnabled = false
+//            textFieldSomethingElse.isHidden = false
+//            lblGotIt.stringValue = ""
+//        default:
+//            break
+//        }
     }
     
     
@@ -105,38 +158,64 @@ class preloadFocusModesVc: NSViewController, NSTextFieldDelegate {
         }
         
         let selectedIndex = popUpBtnWork.indexOfSelectedItem
-
-        var dic: [String : Any]?
-        switch selectedIndex {
-        case 0:
-            return // not possible because button is not enabled if option 0 is selected
-        case 1://Programming
-            dic = ["name":"\(titleProgramming) \(workText)", "color": getColorString(color: NSColor(red: 208/255, green: 150/255, blue: 60/255, alpha: 1)), "allowed_apps": ["/Applications/Visual Studio Code.app", "/Applications/Xcode.app", "/Applications/Utilities/Terminal.app", "/Applications/Google Chrome.app", "/Applications/iTerm2.app", "/Applications/Docker.app", "/Applications/Firefox.app", "/Applications/Insomnia.app", "/Applications/VirtualBox.app", "/Applications/DBeaver.app"], "allowed_urls": ["https://stackoverflow.com","localhost"], "isOn": false, "isAllowedAllApps":false, "jobType":jobTypeProgramming, "isAllowedListApproach":true, "blockUrlsArray": []]//#453, "isBlockedAllUrls":false, "isAllowedAllUrls":false
-
-        case 2://Graphic Design
-            dic = ["name":"\(titleGraphicDesign) \(workText)", "color": getColorString(color: NSColor(red: 208/255, green: 150/255, blue: 60/255, alpha: 1)), "allowed_apps": ["/Applications/Figma.app", "/Applications/Adobe Illustrator.app", "/Applications/Adobe Photoshop.app", "/Applications/Google Chrome.app"], "allowed_urls": ["https://www.figma.com"], "isOn": false, "isAllowedAllApps":false, "jobType":jobTypeGraphicDesign, "isAllowedListApproach":true, "blockUrlsArray": []]//#453, "isBlockedAllUrls":false, "isAllowedAllUrls":false
+        if selectedIndex == 0{
+            return;
+        }else{
             
-        case 3://Data Analysis
-            dic = ["name":"\(titleDataAnalysis) \(workText)", "color": getColorString(color: NSColor(red: 208/255, green: 150/255, blue: 60/255, alpha: 1)), "allowed_apps": ["/Applications/Microsoft Excel.app", "/Applications/Google Chrome.app"], "allowed_urls": ["https://www.office.com"], "isOn": false, "isAllowedAllApps":false, "jobType":jobTypeDataAnalysis, "isAllowedListApproach":true, "blockUrlsArray": []]//#453 , "isBlockedAllUrls":false , "isAllowedAllUrls":false
-        
-        case 4:
-            dic = ["name":"\(textFieldSomethingElse.stringValue) \(workText)", "color": getColorString(color: NSColor(red: 208/255, green: 150/255, blue: 60/255, alpha: 1)), "allowed_apps": ["/Applications/Microsoft Excel.app", "/Applications/Microsoft Word.app", "/Applications/Google Chrome.app", "/System/Applications/Calendar.app"], "allowed_urls": ["https://www.google.com"], "isOn": false, "isAllowedAllApps":false, "jobType":jobTypeSomethingElse, "isAllowedListApproach":true, "blockUrlsArray": []]//#453//todo lsit approach check krni padeegi  sabiki, "isAllowedAllUrls":false , "isBlockedAllUrls":false
-
+            var dic = arrDic[selectedIndex - 1]
             
-        default:
-            break
-        }
-        
-        if dic != nil{
-            let id = getUuid()
-            dic!["id"] = id
-//            UserDefaults.standard.set(dic, forKey: kUserdefaultsFocusAddedFromFirstHabit)
+            if selectedIndex == arrDic.count{
+                dic["name"] = "\(textFieldSomethingElse.stringValue) \(workText)"
+                
+            }else{
+                dic["name"] = ((dic["name"] as? String ?? "") + " " + workText)
+            }
+            //            arrDic[selectedIndex - 1] = dic
+            
+            //            if dic != nil{
+            
+            if dic["id"] == nil{
+                let id = getUuid()
+                dic["id"] = id
+            }
+            
             addLog(text: "preload Focus modeVC:-  button Continue clicked")
             preloadFocusModesWindowControllerObj!.contentViewController = getPreloadFocusModeAppsVcObj()
-            preloadFocusModeAppsVcObj?.resetView(dic: dic!)
+            preloadFocusModeAppsVcObj?.resetView(dic: dic)
 
-
+            
         }
+        
+//        switch selectedIndex {
+//        case 0:
+//            return // not possible because button is not enabled if option 0 is selected
+//        case 1://Programming
+//            dic = ["name":"\(titleProgramming) \(workText)", "color": getColorString(color: NSColor(red: 163/255, green: 255/255, blue: 161/255, alpha: 1)), "allowed_apps": ["/Applications/Visual Studio Code.app", "/Applications/Xcode.app", "/Applications/Utilities/Terminal.app", "/Applications/Google Chrome.app", "/Applications/iTerm2.app", "/Applications/Docker.app", "/Applications/Firefox.app", "/Applications/Insomnia.app", "/Applications/VirtualBox.app", "/Applications/DBeaver.app", "/Applications/Safari.app"], "allowed_urls": ["https://stackoverflow.com","localhost"], "isOn": false, "isAllowedAllApps":false, "jobType":jobTypeProgramming, "isAllowedListApproach":true, "blockUrlsArray": []]//#453, "isBlockedAllUrls":false, "isAllowedAllUrls":false
+//
+//        case 2://Graphic Design
+//            dic = ["name":"\(titleGraphicDesign) \(workText)", "color": getColorString(color: NSColor(red: 163/255, green: 255/255, blue: 161/255, alpha: 1)), "allowed_apps": ["/Applications/Figma.app", "/Applications/Adobe Illustrator.app", "/Applications/Adobe Photoshop.app", "/Applications/Google Chrome.app", "/Applications/Safari.app"], "allowed_urls": ["https://www.figma.com"], "isOn": false, "isAllowedAllApps":false, "jobType":jobTypeGraphicDesign, "isAllowedListApproach":true, "blockUrlsArray": []]//#453, "isBlockedAllUrls":false, "isAllowedAllUrls":false
+//
+//        case 3://Data Analysis
+//            dic = ["name":"\(titleDataAnalysis) \(workText)", "color": getColorString(color: NSColor(red: 163/255, green: 255/255, blue: 161/255, alpha: 1)), "allowed_apps": ["/Applications/Microsoft Excel.app", "/Applications/Google Chrome.app", "/Applications/Safari.app"], "allowed_urls": ["https://www.office.com"], "isOn": false, "isAllowedAllApps":false, "jobType":jobTypeDataAnalysis, "isAllowedListApproach":true, "blockUrlsArray": []]//#453 , "isBlockedAllUrls":false , "isAllowedAllUrls":false
+//
+//        case 4:
+//            dic = ["name":"\(textFieldSomethingElse.stringValue) \(workText)", "color": getColorString(color: NSColor(red: 163/255, green: 255/255, blue: 161/255, alpha: 1)), "allowed_apps": ["/Applications/Microsoft Excel.app", "/Applications/Microsoft Word.app", "/Applications/Google Chrome.app", "/System/Applications/Calendar.app", "/Applications/Safari.app"], "allowed_urls": ["https://www.google.com"], "isOn": false, "isAllowedAllApps":false, "jobType":jobTypeSomethingElse, "isAllowedListApproach":true, "blockUrlsArray": []]//#453// lsit approach check krni padeegi  sabiki, "isAllowedAllUrls":false , "isBlockedAllUrls":false
+//
+//
+//        default:
+//            break
+//        }
+
+//        if dic != nil{
+//            let id = getUuid()
+//            dic!["id"] = id
+////            UserDefaults.standard.set(dic, forKey: kUserdefaultsFocusAddedFromFirstHabit)
+//            addLog(text: "preload Focus modeVC:-  button Continue clicked")
+//            preloadFocusModesWindowControllerObj!.contentViewController = getPreloadFocusModeAppsVcObj()
+//            preloadFocusModeAppsVcObj?.resetView(dic: dic!)
+//
+//
+//        }
         
 //        thirdVcObj?.btnFocesModesLodded()
         

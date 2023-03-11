@@ -47,7 +47,10 @@ class preloadFocusModeAppsVc: NSViewController {
         if let preloadFocusModeAppsVcInfo = configjson.value(forKey: "preloadFocusModeAppsVcInfo") as? NSDictionary{
             btnDone.title = preloadFocusModeAppsVcInfo.value(forKey: "toolTipAdd") as? String ?? btnDone.title
         }
-        
+        if #available(macOS 11.0, *) {
+            btnAddItem.image = NSImage(systemSymbolName: "plus.square.fill", accessibilityDescription: nil)
+            btnRemoveItem.image = NSImage(systemSymbolName: "minus.square.fill", accessibilityDescription: nil)
+        }
     }
     
     func resetView(dic:[String:Any]){
@@ -203,7 +206,10 @@ class preloadFocusModeAppsVc: NSViewController {
             workDic["allowed_urls"] = arrUrls
             
             UserDefaults.standard.set(workDic, forKey: kUserdefaultsFocusAddedFromFirstHabit)
-            appdelegate!.loadCredentialsAndDeviceId()
+            if UserDefaults.standard.object(forKey: kUserDefaultsFirstAppFullLoadDate) == nil{
+                UserDefaults.standard.set(Date(), forKey: kUserDefaultsFirstAppFullLoadDate)
+            }
+            
             preloadFocusModesWindowControllerObj!.contentViewController = getFocusTipsVcObjObj()
             addLog(text: "preload Focus mode apps&urls:-  button Done clicked:- show Focus Tips Vc")
         }

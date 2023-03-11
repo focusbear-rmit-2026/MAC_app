@@ -9,6 +9,7 @@ import Cocoa
 
 class passwordVc: NSViewController {
 
+    @IBOutlet weak var checkBoxSkipEveningHabitAfterCutOff: NSButton!
     @IBOutlet weak var checkBoxQuitApp: NSButton!
     @IBOutlet weak var checkBoxStopPomodoro: NSButton!
     @IBOutlet weak var checkBoxAbortingShutoff: NSButton!
@@ -16,12 +17,14 @@ class passwordVc: NSViewController {
     @IBOutlet weak var checkBoxSkipMorningHabit: NSButton!
     @IBOutlet weak var checkBoxChangeSettings: NSButton!
     
+    @IBOutlet weak var lblCheckBoxSkipEveningHabitAfterCutOff: ignoreMouseTextField!
     @IBOutlet weak var lblCheckBoxQuitApp: NSTextField!
     @IBOutlet weak var lblCheckBoxStopPomodoro: NSTextField!
     @IBOutlet weak var lblCheckBoxAbortingShutoff: NSTextField!
     @IBOutlet weak var lblCheckBoxSkipEveningHabit: NSTextField!
     @IBOutlet weak var lblCheckBoxSkipMorningHabit: NSTextField!
     @IBOutlet weak var lblCheckBoxChangeSettings: NSTextField!
+    
     
     @IBOutlet weak var lblQuestionPassword: NSTextField!
     @IBOutlet weak var lblTitleAskPassword: NSTextField!
@@ -34,6 +37,7 @@ class passwordVc: NSViewController {
     @IBOutlet weak var textFieldNewPassword: NSSecureTextField!
     @IBOutlet weak var textFieldConfirmPassword: NSSecureTextField!
     @IBOutlet weak var lblTitle: NSTextField!
+    
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -53,6 +57,7 @@ class passwordVc: NSViewController {
         btnDisablePassword.title = "Disable Password"
 //        lblInfo.stringValue = "You will need to enter your password - When opening preferences, When aborting an evening routine, When aborting the morning routine."
         
+        lblCheckBoxSkipEveningHabitAfterCutOff.stringValue = "Postponing/skipping evening routine after cutoff time"
         if let passwordPreferencesInfo = configjson.value(forKey: "passwordPreferencesInfo") as? NSDictionary{
 //            if let title = passwordPreferencesInfo.value(forKey: "infoText") as? String{
 //                lblInfo.stringValue = title
@@ -69,6 +74,7 @@ class passwordVc: NSViewController {
             lblCheckBoxSkipEveningHabit.stringValue = passwordPreferencesInfo.value(forKey: "buttonSkipEveningHabitText") as? String ?? lblCheckBoxSkipEveningHabit.stringValue
             lblCheckBoxSkipMorningHabit.stringValue = passwordPreferencesInfo.value(forKey: "buttonSkipMorningHabitText") as? String ?? lblCheckBoxSkipMorningHabit.stringValue
             lblCheckBoxChangeSettings.stringValue = passwordPreferencesInfo.value(forKey: "buttonChangeSettingsText") as? String ?? lblCheckBoxChangeSettings.stringValue
+            lblCheckBoxSkipEveningHabitAfterCutOff.stringValue = passwordPreferencesInfo.value(forKey: "buttonSkipEveningHabitAfterCutOffText") as? String ?? lblCheckBoxSkipEveningHabitAfterCutOff.stringValue
         }
     }
     
@@ -119,7 +125,7 @@ class passwordVc: NSViewController {
             checkBoxSkipEveningHabit.isEnabled = false
             checkBoxSkipMorningHabit.isEnabled = false
             checkBoxChangeSettings.isEnabled = false
-            
+            checkBoxSkipEveningHabitAfterCutOff.isEnabled = false
         }else{
             lblTitle.stringValue = "Change Password"
             btnChangePassword.title = "Change Password"
@@ -153,6 +159,7 @@ class passwordVc: NSViewController {
             checkBoxSkipEveningHabit.isEnabled = true
             checkBoxSkipMorningHabit.isEnabled = true
             checkBoxChangeSettings.isEnabled = true
+            checkBoxSkipEveningHabitAfterCutOff.isEnabled = true
         }
         
         
@@ -173,6 +180,12 @@ class passwordVc: NSViewController {
             checkBoxSkipEveningHabit.state = .on
         }else{
             checkBoxSkipEveningHabit.state = .off
+        }
+        
+        if SettingsManagerObject.isPasswordRequireInSkipEveningAfterCutOff{
+            checkBoxSkipEveningHabitAfterCutOff.state = .on
+        }else{
+            checkBoxSkipEveningHabitAfterCutOff.state = .off
         }
         
         if SettingsManagerObject.isPasswordRequireInAbortShutoff{
@@ -200,8 +213,10 @@ class passwordVc: NSViewController {
         SettingsManagerObject.isSettingsChanged = true
         if checkBoxQuitApp.state == .on{
             SettingsManagerObject.isPasswordRequireInQuitApp = true
+            allApiObject.capturePosthog(event: "require-password-in-quitting-app-enabled", metadata: [:])//#490
         }else{
             SettingsManagerObject.isPasswordRequireInQuitApp = false
+            allApiObject.capturePosthog(event: "require-password-in-quitting-app-disabled", metadata: [:])//#490
         }
     }
     
@@ -209,8 +224,10 @@ class passwordVc: NSViewController {
         SettingsManagerObject.isSettingsChanged = true
         if checkBoxStopPomodoro.state == .on{
             SettingsManagerObject.isPasswordRequireInStopPomodoro = true
+            allApiObject.capturePosthog(event: "require-password-in-stop-pomodoro-enabled", metadata: [:])//#490
         }else{
             SettingsManagerObject.isPasswordRequireInStopPomodoro = false
+            allApiObject.capturePosthog(event: "require-password-in-stop-pomodoro-disabled", metadata: [:])//#490
         }
     }
     
@@ -218,8 +235,10 @@ class passwordVc: NSViewController {
         SettingsManagerObject.isPasswordRequireInAbortShutoff = true
         if checkBoxAbortingShutoff.state == .on{
             SettingsManagerObject.isPasswordRequireInAbortShutoff = true
+            allApiObject.capturePosthog(event: "require-password-in-using-mac-late-at-night-enabled", metadata: [:])//#490
         }else{
             SettingsManagerObject.isPasswordRequireInAbortShutoff = false
+            allApiObject.capturePosthog(event: "require-password-in-using-mac-late-at-night-disabled", metadata: [:])//#490
         }
     }
     
@@ -227,17 +246,32 @@ class passwordVc: NSViewController {
         SettingsManagerObject.isSettingsChanged = true
         if checkBoxSkipEveningHabit.state == .on{
             SettingsManagerObject.isPasswordRequireInSkipEvening = true
+            allApiObject.capturePosthog(event: "require-password-in-skip-evening-routine-enabled", metadata: [:])//#490
         }else{
             SettingsManagerObject.isPasswordRequireInSkipEvening = false
+            allApiObject.capturePosthog(event: "require-password-in-skip-evening-routine-disabled", metadata: [:])//#490
         }
+    }
+    @IBAction func checkBoxSkipEveningHabitAfterCutOffClicked(_ sender: Any) {
+        SettingsManagerObject.isSettingsChanged = true
+        if checkBoxSkipEveningHabitAfterCutOff.state == .on{
+            SettingsManagerObject.isPasswordRequireInSkipEveningAfterCutOff = true
+            allApiObject.capturePosthog(event: "require-password-in-skip-evening-routine-after-cutoff-enabled", metadata: [:])//#490
+        }else{
+            SettingsManagerObject.isPasswordRequireInSkipEveningAfterCutOff = false
+            allApiObject.capturePosthog(event: "require-password-in-skip-evening-routine-after-cutoff-disabled", metadata: [:])//#490
+        }
+        
     }
     
     @IBAction func checkBoxSkipMorningHabitClicked(_ sender: Any) {
         SettingsManagerObject.isSettingsChanged = true
         if checkBoxSkipMorningHabit.state == .on{
             SettingsManagerObject.isPasswordRequireInSkipMorning = true
+            allApiObject.capturePosthog(event: "require-password-in-skip-morning-routine-enabled", metadata: [:])//#490
         }else{
             SettingsManagerObject.isPasswordRequireInSkipMorning = false
+            allApiObject.capturePosthog(event: "require-password-in-skip-morning-routine-disabled", metadata: [:])//#490
         }
     }
     
@@ -245,8 +279,10 @@ class passwordVc: NSViewController {
         SettingsManagerObject.isSettingsChanged = true
         if checkBoxChangeSettings.state == .on{
             SettingsManagerObject.isPasswordRequireInChangeSettings = true
+            allApiObject.capturePosthog(event: "require-password-in-change-settings-enabled", metadata: [:])//#490
         }else{
             SettingsManagerObject.isPasswordRequireInChangeSettings = false
+            allApiObject.capturePosthog(event: "require-password-in-change-settings-disabled", metadata: [:])//#490
         }
     }
     

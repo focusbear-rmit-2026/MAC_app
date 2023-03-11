@@ -142,9 +142,8 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
         }
         setProgres()
     }
-    @IBAction func btnStartFocusClicked(_ sender: Any) {
-        addLog(text: "startingFocusModeVc - btnStartFocusClicked")//
-
+    
+    func startFocusMode(){
         if getEndFocusModeWindowControllerObj().window!.isVisible{
             let timestamp = getStringFromDate(date: startFocusModeTime ?? Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
             addEntryInStatsCsv(logType: "focus block", activity: focusCompletedVcObj!.currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: "\(focusModeMinutesToPerform) of \(focusCompletedVcObj!.currentFocusModeName)", distractionsEncountered: "", abortReason: "", feedback: "")
@@ -166,6 +165,10 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
             timerForFocusMode?.invalidate()
             timerForFocusMode = nil
         }
+        if timerForFocusModeEndNotification != nil{
+            timerForFocusModeEndNotification?.invalidate()
+            timerForFocusModeEndNotification = nil
+        }
         isFocusTimeType = ._HOUR_
         appdelegate?.setFocusModeTimer(hour: nil, minute: totoalMinutes)
         isFocusModeStartedFromPomodoroMode = false
@@ -185,6 +188,31 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
         UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
         self.view.window?.close()
     }
+    @IBAction func btnStartFocusClicked(_ sender: Any) {
+        addLog(text: "startingFocusModeVc - btnStartFocusClicked")//
+        let totalMinutes = (textFieldHourValue.integerValue * 60) + textFieldMinutesValue.integerValue
+        
+        if totalMinutes > 90{
+            let alert: NSAlert = NSAlert()
+            alert.setSharingType()
+            alert.messageText = "Tip: research indicates that 90 minutes is the maximum limit for focused work (ultradian rhythms). After that, your attention will naturally decline and you'll need to take a break."
+            
+            if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
+                if let startingFocusModeInfo = focusInfo.value(forKey: "startingFocusModeInfo") as? NSDictionary{
+                    alert.messageText = startingFocusModeInfo.value(forKey: "tipMaximumMinutesText") as? String ?? alert.messageText
+                }
+            }
+            
+            alert.alertStyle = NSAlert.Style.warning
+            alert.addButton(withTitle: buttonOkText)
+            
+            alert.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
+                self.startFocusMode()
+            })
+        }else{
+            startFocusMode()
+        }
+    }
         
     
     func ResetData(focusModeIndex:Int, focusType:String){
@@ -201,9 +229,9 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
         lblTitle.stringValue = titleText.replacingOccurrences(of: "<FOCUSTYPE>", with: focusType)//"Starting Focus type - \(focusType)"
         
         
-        if arrFocusType[focusModeIndex]["isDefault"] as? Bool == true{
-            showDiscourageFocusView()
-        }
+//        if arrFocusType[focusModeIndex]["isDefault"] as? Bool == true{
+//            showDiscourageFocusView()
+//        }
         
         if arrFocusType[focusIndex]["isLockedFocus"] as? Bool == true{
             lblLockedFocusDescription.isHidden = false
@@ -273,11 +301,11 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
         }
     }
     
-    @objc func showDiscourageFocusView(){
-        addLog(text: "startingFocusModeVc - showDiscourageFocusView")//
-        self.presentAsSheet(getDiscourageDefaultFocusVcObject())
-        getDiscourageDefaultFocusVcObject().resetData()
-    }
+//    @objc func showDiscourageFocusView(){
+//        addLog(text: "startingFocusModeVc - showDiscourageFocusView")//
+//        self.presentAsSheet(getDiscourageDefaultFocusVcObject())
+//        getDiscourageDefaultFocusVcObject().resetData()
+//    }
     
     func controlTextDidChange(_ obj: Notification) {
         if let textfield = obj.object as? NSTextField{

@@ -300,29 +300,29 @@ class pomodoroVc: NSViewController {
     @IBAction func btnEditFocusModeClicked(_ sender: Any) {
         addLog(text: "btnEditFocusModeClicked")//
         
-        if Reachability.isConnectedToNetwork() == false {
-            
-            var noInternetTitle = "No Internet Connection"
-            var noInternetSubTitle = "Make sure your device is connected to the internet."
-            addLog(text: "settings clicked:- No Internet Connection")
-            if let activationNagInfo = configjson.value(forKey: "activationNagInfo") as? NSDictionary{
-                if let text = activationNagInfo.value(forKey: "noInternetTitle") as? String{
-                    noInternetTitle = text
-                }
-                if let text = activationNagInfo.value(forKey: "noInternetSubTitle") as? String{
-                    noInternetSubTitle = text
-                }
-            }
-            let alert = NSAlert()
-            alert.setSharingType()
-            alert.messageText = noInternetTitle
-            alert.informativeText = noInternetSubTitle
-            alert.alertStyle = .warning
-            alert.addButton(withTitle:  buttonOkText)
-            alert.beginSheetModal(for: self.view.window!, completionHandler: nil)
-            
-            return
-        }
+//        if Reachability.isConnectedToNetwork() == false {
+//
+//            var noInternetTitle = "No Internet Connection"
+//            var noInternetSubTitle = "Make sure your device is connected to the internet."
+//            addLog(text: "settings clicked:- No Internet Connection")
+//            if let activationNagInfo = configjson.value(forKey: "activationNagInfo") as? NSDictionary{
+//                if let text = activationNagInfo.value(forKey: "noInternetTitle") as? String{
+//                    noInternetTitle = text
+//                }
+//                if let text = activationNagInfo.value(forKey: "noInternetSubTitle") as? String{
+//                    noInternetSubTitle = text
+//                }
+//            }
+//            let alert = NSAlert()
+//            alert.setSharingType()
+//            alert.messageText = noInternetTitle
+//            alert.informativeText = noInternetSubTitle
+//            alert.alertStyle = .warning
+//            alert.addButton(withTitle:  buttonOkText)
+//            alert.beginSheetModal(for: self.view.window!, completionHandler: nil)
+//
+//            return
+//        }
         
         
         if preferencesWindowControllerObj?.window?.isVisible ?? false{
@@ -368,8 +368,8 @@ class pomodoroVc: NSViewController {
             }
         }
         if textFieldBreakDuration.isEnabled{
-           if textFieldBreakDuration.stringValue.isEmpty{
-                  showAlert(msg: breakDurationEmptyErrorText)
+            if textFieldBreakDuration.stringValue.isEmpty{
+                showAlert(msg: breakDurationEmptyErrorText)
                 return;
             }
             if textFieldBreakDuration.integerValue < 1{
@@ -393,27 +393,27 @@ class pomodoroVc: NSViewController {
         if textFieldBreakDuration.isEnabled{
             currentPomodoroBreakDuration = textFieldBreakDuration.integerValue
         }
-        if arrFocusTypeForPomodoro[popUpBtnFocusType.indexOfSelectedItem]["isDefault"] as? Bool == true{
-            self.presentAsSheet(getDiscourageDefaultFocusVcObject())
-            getDiscourageDefaultFocusVcObject().resetData()
-        }else{
-            if isHardCorePomodoroModeOn{
-                
-            }else if btnCheckBoxHardcodePomodoro.state == .on{
-                isHardCorePomodoroModeOn = true
-                hardcodePmodoroFocusModeName = popUpBtnFocusType.titleOfSelectedItem ?? ""
-                let totalPopmodoroCount = Int(popupBtnSelectPomodoroCount.title) ?? 2
-                let minutes = textFieldWorkDuration.integerValue
-                totalPomodoroCountInHardCorePomodoro = totalPopmodoroCount
-                completedPomodoroCountInHardcorePomodoro = 0
-                
-                let totoalMinutes = (totalPopmodoroCount * minutes) //* 60//(textFieldHourValue.integerValue * 60) + textFieldMinutesValue.integerValue
-                totalMinutesRemainingForHardcodePomodoro = totoalMinutes
-                
-            }
-            pomodoroModeStarted()
-            self.view.window?.close()
+        //        if arrFocusTypeForPomodoro[popUpBtnFocusType.indexOfSelectedItem]["isDefault"] as? Bool == true{
+        //            self.presentAsSheet(getDiscourageDefaultFocusVcObject())
+        //            getDiscourageDefaultFocusVcObject().resetData()
+        //        }else{
+        if isHardCorePomodoroModeOn{
+            
+        }else if btnCheckBoxHardcodePomodoro.state == .on{
+            isHardCorePomodoroModeOn = true
+            hardcodePmodoroFocusModeName = popUpBtnFocusType.titleOfSelectedItem ?? ""
+            let totalPopmodoroCount = Int(popupBtnSelectPomodoroCount.title) ?? 2
+            let minutes = textFieldWorkDuration.integerValue
+            totalPomodoroCountInHardCorePomodoro = totalPopmodoroCount
+            completedPomodoroCountInHardcorePomodoro = 0
+            
+            let totoalMinutes = (totalPopmodoroCount * minutes) //* 60//(textFieldHourValue.integerValue * 60) + textFieldMinutesValue.integerValue
+            totalMinutesRemainingForHardcodePomodoro = totoalMinutes
+            
         }
+        pomodoroModeStarted()
+        self.view.window?.close()
+        //        }
     }
     
    
@@ -460,6 +460,10 @@ class pomodoroVc: NSViewController {
         if timerForFocusMode != nil{
             timerForFocusMode?.invalidate()
             timerForFocusMode = nil
+        }
+        if timerForFocusModeEndNotification != nil{
+            timerForFocusModeEndNotification?.invalidate()
+            timerForFocusModeEndNotification = nil
         }
         isFocusTimeType = ._HOUR_
         
