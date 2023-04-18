@@ -31,7 +31,6 @@ class tblCellFocus: NSTableCellView {
     var isFirstTime = false
     var trackingArea: NSTrackingArea?
 
-    var isEditButttonEnable = true
     
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
@@ -46,10 +45,7 @@ class tblCellFocus: NSTableCellView {
    
     override func mouseEntered(with event: NSEvent) {
         if event.trackingArea == trackingArea{
-            if isEditButttonEnable{
-                btnEditFocusMode.isHidden = false
-            }
-//            NSCursor.pointingHand.set()
+            btnEditFocusMode.isHidden = false
         }
     }
     override func mouseExited(with event: NSEvent) {

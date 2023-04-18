@@ -11,6 +11,11 @@ import Cocoa
 class firstViewController: NSViewController {
     
    
+    @IBOutlet weak var lblTitleSelectActivity: NSTextField!
+    @IBOutlet weak var lblTitleEnterActivityName: NSTextField!
+    @IBOutlet weak var textFieldActivity: NSTextField!
+    @IBOutlet weak var popUpBtnActivities: NSPopUpButton!
+    @IBOutlet weak var boxSelectActivities: NSBox!
     @IBOutlet weak var lblProgress: NSTextField!
     @IBOutlet weak var btnPostponeBreak: underLineButton!
     @IBOutlet weak var btnTopSpace: NSLayoutConstraint!
@@ -27,21 +32,56 @@ class firstViewController: NSViewController {
     @IBOutlet weak var lblTitle: NSTextField!
     @IBOutlet weak var btnStartFirstHabit: NSButton!
     @IBOutlet weak var tblViewHabits: NSTableView!
-//    var isGetKookyButtonVisible = false
+    @IBOutlet weak var btnInfo: cursorButton!
+    //    var isGetKookyButtonVisible = false
     var isFirstTime = false
+    var introActivities = [NSDictionary]()
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
         btnStartFirstHabit.cell?.wraps = true
         lblBeforeYouStart.isHidden = true
 //        lblTitle.font = NSFont(name: "Fenwick", size: lblTitle.font?.pointSize ?? 24)!
+        
+        lblTitleSelectActivity.stringValue = "What 30 seconds of activity do you want to do?"
+        lblTitleEnterActivityName.stringValue = "Enter name of activity"
+        
+        if let dic = configjson.value(forKey: "welcomeInfo") as? NSDictionary{
+            lblTitleSelectActivity.stringValue = dic.value(forKey: "titleSelectActivity") as? String ?? lblTitleSelectActivity.stringValue
+            lblTitleEnterActivityName.stringValue = dic.value(forKey: "titleEnterActivityName") as? String ?? lblTitleEnterActivityName.stringValue
+        }
+        textFieldActivity.delegate = self
     }
 
+    @IBAction func btnInfoClicked(_ sender: Any) {
+        btnInfo.isHidden = true
+        if let dic = configjson.value(forKey: "welcomeInfo") as? NSDictionary{
+            if isHabitsDisabled{
+                lblSubTitle.stringValue = "Throughout the day, I'll remind you to take regular breaks to keep your mind sharp and your body flexible. Here's an example of a break activity: 30 seconds of deep breathing."
+                if let subTitle = dic.value(forKey: "welcomeMessageOnlyBreakIntro") as? String{
+                    lblSubTitle.stringValue = subTitle
+                }
+            }else{
+                if let subTitle = dic.value(forKey: "welcomeMessageIntro") as? String{
+                    lblSubTitle.stringValue = subTitle
+                }
+            }
+        }
+    }
     override func viewWillAppear() {
-        
+        boxSelectActivities.isHidden = true
         lbltimer.isHidden = true
+        btnStartFirstHabit.isEnabled = true
+        btnInfo.isHidden = true
         if isFirstTime{
-            btnPostponeBreak.isHidden = true
+            textFieldActivity.isHidden = true
+            lblTitleEnterActivityName.isHidden = true
+            allApiObject.capturePosthog(event: "start-onboarding-activity-shown", metadata: [:])
+            btnPostponeBreak.isHidden = false
+            btnPostponeBreak.title = "Skip"
+            if let dic = configjson.value(forKey: "welcomeInfo") as? NSDictionary{
+                btnPostponeBreak.title = dic.value(forKey: "buttonSkipText") as? String ?? btnPostponeBreak.title
+            }
             lblProgress.isHidden = true
             imgView.image = NSImage(named: "icon 130")//
             imgViewHeight.constant = 160
@@ -52,28 +92,34 @@ class firstViewController: NSViewController {
             scrollViewHabits.isHidden = true
             btnBottomSpace.constant = 63
             btnTopSpace.constant = 171
-            let welcomeText = "Welcome to Focus Bear"
-            
+            let welcomeText = "Let’s take a quick 30 second break"
+            btnInfo.isHidden = false
             if let dic = configjson.value(forKey: "welcomeInfo") as? NSDictionary{
                 lblTitle.stringValue = dic.value(forKey: "welcomeMessageHeading") as? String ?? welcomeText
-                if isHabitsDisabled{
-                    lblSubTitle.stringValue = "Throughout the day, I'll remind you to take regular breaks to keep your mind sharp and your body flexible. Here's an example of a break activity: 30 seconds of deep breathing."
-                    if let subTitle = dic.value(forKey: "welcomeMessageOnlyBreakIntro") as? String{
-                        lblSubTitle.stringValue = subTitle
-                    }
-                }else{
-                    if let subTitle = dic.value(forKey: "welcomeMessageIntro") as? String{
+                
+                lblSubTitle.stringValue = "Taking breaks throughout the day helps with stress and focus."
+                if let dic = configjson.value(forKey: "welcomeInfo") as? NSDictionary{
+                    if let subTitle = dic.value(forKey: "takingBreaksText") as? String{
                         lblSubTitle.stringValue = subTitle
                     }
                 }
                 
                 if let arr = dic.value(forKey: "introActivities") as? [NSDictionary]{
+                    introActivities = arr
                     let name = arr.first?.value(forKey: "name") as? String ?? ""
                     let durationSeconds = arr.first?.value(forKey: "duration_seconds") as? Int ?? 0
                     let videoUrl = arr.first?.value(forKey: "video_urls") as? [String] ?? []
                     btnStartFirstHabit.title = getstartActivityButtonText(seconds: durationSeconds, name: name)
-                    btnStartFirstHabit.toolTip = btnStartFirstHabit.title
                     introActivity = habit(id:"", name: name, durationSeconds: durationSeconds, urlsArray: videoUrl, logQuantity: false, logQuantityQuestion: nil, openSpecificApps: false, allowUrls: [], allowApps: [], allowedFocusMode: "", activity_sequence_id: "", run_micro_breaks: false, take_notes: "", isPriorityHigh: false, days_of_week: [])
+                    btnStartFirstHabit.isEnabled = true
+                    
+                    
+                    popUpBtnActivities.removeAllItems()
+                    for item in arr{
+                        popUpBtnActivities.addItem(withTitle: item.value(forKey: "name") as? String ?? "")
+                    }
+                    popUpBtnActivities.selectItem(at: 0)
+                    boxSelectActivities.isHidden = false
                 }else{
                     btnStartFirstHabit.title = getstartActivityButtonText(seconds: 60, name: "mindful breathing")//"Start 1 minute of mindful breathing"
                     btnStartFirstHabit.toolTip = btnStartFirstHabit.title
@@ -183,12 +229,40 @@ class firstViewController: NSViewController {
         }
         
     }
+    @IBAction func popUpBtnActivitiesClicked(_ sender: Any) {
+        let index = popUpBtnActivities.indexOfSelectedItem
+        let name = introActivities[index].value(forKey: "name") as? String ?? ""
+        let durationSeconds = introActivities[index].value(forKey: "duration_seconds") as? Int ?? 0
+        let videoUrl = introActivities[index].value(forKey: "video_urls") as? [String] ?? []
+        btnStartFirstHabit.title = getstartActivityButtonText(seconds: durationSeconds, name: name)
+        introActivity = habit(id:"", name: name, durationSeconds: durationSeconds, urlsArray: videoUrl, logQuantity: false, logQuantityQuestion: nil, openSpecificApps: false, allowUrls: [], allowApps: [], allowedFocusMode: "", activity_sequence_id: "", run_micro_breaks: false, take_notes: "", isPriorityHigh: false, days_of_week: [])
+        
+//        if index == (introActivities.count-1){
+//            btnStartFirstHabit.isEnabled = false
+//            lblTitleEnterActivityName.isHidden = false
+//            textFieldActivity.stringValue = ""
+//            textFieldActivity.isHidden = false
+//            textFieldActivity.setFocus()
+//        }else{
+//            btnStartFirstHabit.isEnabled = true
+//            lblTitleEnterActivityName.isHidden = true
+//            textFieldActivity.isHidden = true
+//        }
+        btnStartFirstHabit.isEnabled = true
+        lblTitleEnterActivityName.isHidden = true
+        textFieldActivity.isHidden = true
+
+    }
     var timer:Timer?
     var currentTimer = 0
     var isTimerGoingOn = false
     var totalDuration = 0
 
     @IBAction func btnPostponeClicked(_ sender: Any) {
+        if currentState == ._BREATHING_{
+            mainViewControllerObj?.btnAbortClicked(self)
+            return;
+        }
         thirdVcObj?.btnSkipHabitClicked(self)
     }
     func startTimer(duration:Int) {
@@ -330,5 +404,30 @@ extension firstViewController:NSTableViewDelegate, NSTableViewDataSource {
     
     func tableViewSelectionDidChange(_ notification: Notification) {
         
+    }
+}
+
+extension firstViewController:NSTextFieldDelegate{
+    func controlTextDidChange(_ obj: Notification) {
+        if let textField = obj.object as? NSTextField{
+            if textField == self.textFieldActivity{
+                let title = textField.stringValue
+                let index = popUpBtnActivities.indexOfSelectedItem
+                var name = introActivities[index].value(forKey: "name") as? String ?? ""
+                let durationSeconds = introActivities[index].value(forKey: "duration_seconds") as? Int ?? 0
+                let videoUrl = introActivities[index].value(forKey: "video_urls") as? [String] ?? []
+                if title.isEmpty{
+                    btnStartFirstHabit.isEnabled = false
+                }else{
+                    name = title
+                    btnStartFirstHabit.isEnabled = true
+                }
+                
+                
+                btnStartFirstHabit.title = getstartActivityButtonText(seconds: durationSeconds, name: name)
+                introActivity = habit(id:"", name: name, durationSeconds: durationSeconds, urlsArray: videoUrl, logQuantity: false, logQuantityQuestion: nil, openSpecificApps: false, allowUrls: [], allowApps: [], allowedFocusMode: "", activity_sequence_id: "", run_micro_breaks: false, take_notes: "", isPriorityHigh: false, days_of_week: [])
+                
+            }
+        }
     }
 }

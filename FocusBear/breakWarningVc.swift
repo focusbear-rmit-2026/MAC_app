@@ -10,6 +10,7 @@ import Cocoa
 
 class breakWarningVc: NSViewController {
 
+    @IBOutlet weak var lblDescription: NSTextField!
     @IBOutlet weak var lblTitle: NSTextField!
     @IBOutlet weak var lblTimer: NSTextField!
     @IBOutlet weak var btnPostpone: Button!
@@ -22,20 +23,30 @@ class breakWarningVc: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
+        lblDescription.stringValue = "Micro breaks help keep your energy + alertness levels consistent throughout the day and have positive impacts on your posture (no more screen headaches)."
+        if let breakWarningVcInfo = configjson.value(forKey: "breakWarningVcInfo") as? NSDictionary{
+            lblDescription.stringValue = breakWarningVcInfo.value(forKey: "descriptionText") as? String ?? lblDescription.stringValue
+        }
     }
     func resetView(){
+        var totalDuration = 0
+        for activity in arrFinalBreakActivities{
+            totalDuration += activity.activity.durationSeconds
+        }
+        
         progressBar.isHidden = false
         isPostponing = false
-        lblTitle.stringValue = "Your Break starts in"
+        var title = "Your <DURATION> seconds micro break starts in"
         btnPostpone.title = "Postpone for 5 minutes"
         startTimer(durationSeconds: 30)
         setProgres()
         
         if let breakWarningVcInfo = configjson.value(forKey: "breakWarningVcInfo") as? NSDictionary{
-            lblTitle.stringValue = breakWarningVcInfo.value(forKey: "title") as? String ?? lblTitle.stringValue
+            title = breakWarningVcInfo.value(forKey: "title") as? String ?? title
             btnPostpone.title = breakWarningVcInfo.value(forKey: "buttonPostponeText") as? String ?? btnPostpone.title
         }
         
+        lblTitle.stringValue = title.replacingOccurrences(of: "<DURATION>", with: "\(totalDuration)")
     }
     func startTimer(durationSeconds:Int) {
         if timer != nil{
@@ -107,14 +118,14 @@ class breakWarningVc: NSViewController {
                     mainViewControllerObj?.postponeBreakActivitiesFor(minutes: 5)
                 }else{
                     if currentState == ._ACTIVITY_{// whenever show waring then make current state _ACTIVITY_ beacuse if any thing will happen during waring curent state will change (ex. app can bhi in shutoff state when warning is about to over in this case we will not execute break activity)
-                        mainViewControllerObj?.executeBreakActivities()
+                        mainViewControllerObj?.performBreakActivities()
                     }
                 }
             }
         }
     }
     @objc func performTimerCount() {
-        currentTimer += 1 //todo 1 kro 
+        currentTimer += 1 //todo 1 kro
         setProgres()
     }
     
@@ -125,12 +136,12 @@ class breakWarningVc: NSViewController {
             self.timer?.invalidate()
             self.view.window?.close()
             if currentState == ._ACTIVITY_{// whenever show waring then make current state _ACTIVITY_ beacuse if any thing will happen during waring curent state will change (ex. app can bhi in shutoff state when warning is about to over in this case we will not execute break activity)
-                mainViewControllerObj?.executeBreakActivities()
+                mainViewControllerObj?.performBreakActivities()
             }
             
         }else{
             addLog(text: "breakWarningVc:- btn Postpone clicked")
-            if activityPostponeCount != 0{
+            if activityPostponeCount > 0 && !SettingsManagerObject.isEasySkipEnabled{
                 addLog(text: "breakWarningVc:- btn Postpone timer begin")
                 isPostponing = true
                 self.timer?.invalidate()

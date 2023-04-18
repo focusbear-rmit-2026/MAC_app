@@ -217,6 +217,7 @@ class pomodoroVc: NSViewController {
             lblCompletedPomodoroCount.stringValue = completedPomodoroCountText//"You have completed \(completedPomodoroCountInHardcorePomodoro) of \(totalPomodoroCountInHardCorePomodoro) pomodoros. \(remainingPomodoroCount) more to go."//
             
         }else{
+            checkBoxSkipMicrobreaks.state = .off
             lblTimerUnfocused.isHidden = false
             startTimer()
             textFieldWorkDuration.isEnabled = true
@@ -437,6 +438,7 @@ class pomodoroVc: NSViewController {
         
         for i in 0..<arrFocusType.count{
             arrFocusType[i]["isOn"] = false
+            arrFocusType[i]["isPaused"] = false
         }
         
         if let focusModeId = arrFocusTypeForPomodoro[popUpBtnFocusType.indexOfSelectedItem]["id"] as? String{

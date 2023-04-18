@@ -23,6 +23,13 @@ class commonWindowController: NSWindowController, NSWindowDelegate {
 
     func windowShouldClose(_ sender: NSWindow) -> Bool {
         
+        if self == breakWarningWcObj{
+            breakWarningVcObj?.timer?.invalidate()
+            activityPostponeCount += 1
+            mainViewControllerObj?.postponeBreakActivitiesFor(minutes: 5)
+            return true
+        }
+        
         if popUpOfflineWcObj != nil{
             if self == popUpOfflineWcObj{
                 addLog(text: "pop Up Offline Window close :- quit app")

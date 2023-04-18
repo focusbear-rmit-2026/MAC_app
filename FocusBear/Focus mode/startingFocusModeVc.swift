@@ -9,6 +9,7 @@ import Cocoa
 
 class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
 
+    @IBOutlet weak var checkBoxSkipMicrobreaks: NSButton!
     @IBOutlet weak var lblTimerUnfocused: NSTextField!
     @IBOutlet weak var lblExplanation: NSTextField!
     @IBOutlet weak var lblLockedFocusDescription: NSTextField!
@@ -26,6 +27,11 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
     var focusType = ""
     var titleText = "Starting Focus type - <FOCUSTYPE>"
     var timerText = "Time spend unfocused: <TIME>"
+    var lastFocusModeId = ""
+    var lastIntention = ""
+    var lastHourValue = 0
+    var lastMinuteValue = 0
+    var lastSkipMicroBreakState = false
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -70,11 +76,17 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
         if let pomodoroInfo = configjson.value(forKey: "pomodoroInfo") as? NSDictionary{
             timerText = pomodoroInfo.value(forKey: "timerText") as? String ?? timerText
         }
+        
+        checkBoxSkipMicrobreaks.title = "Skip microbreaks during work blocks?"
+        
+        if let pomodoroInfo = configjson.value(forKey: "pomodoroInfo") as? NSDictionary{
+            checkBoxSkipMicrobreaks.title = pomodoroInfo.value(forKey: "buttonSkipMicrobreaksText") as? String ?? checkBoxSkipMicrobreaks.title
+        }
+ 
     }
 
     override func viewWillAppear() {
-        textViewQuestion.string = ""
-        startTimer()
+        
     }
     override func viewWillDisappear() {
         timer?.invalidate()
@@ -149,6 +161,14 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
             addEntryInStatsCsv(logType: "focus block", activity: focusCompletedVcObj!.currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: "\(focusModeMinutesToPerform) of \(focusCompletedVcObj!.currentFocusModeName)", distractionsEncountered: "", abortReason: "", feedback: "")
             getEndFocusModeWindowControllerObj().window?.close()
         }
+        
+        
+        if checkBoxSkipMicrobreaks.state == .on{
+            isSkipBreakActivityDuringFocus = true
+        }else{
+            isSkipBreakActivityDuringFocus = false
+        }
+        
         let calendar = Calendar.current
         let totoalMinutes = (textFieldHourValue.integerValue * 60) + textFieldMinutesValue.integerValue
         endFocusModeTime = calendar.date(byAdding: .minute, value: totoalMinutes, to: Date())
@@ -183,6 +203,11 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
             allApiObject.capturePosthog(event: "start-lock-in-current-focus", metadata: [:])
         }
         
+        lastIntention = textViewQuestion.string
+        lastHourValue = textFieldHourValue.integerValue
+        lastMinuteValue = textFieldMinutesValue.integerValue
+        lastSkipMicroBreakState = isSkipBreakActivityDuringFocus
+        
         allApiObject.capturePosthog(event: "start-focus-mode-manually", metadata: [:])
         appdelegate!.setIntensionInBrainDumpWindow()
         UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
@@ -213,14 +238,121 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
             startFocusMode()
         }
     }
-        
-    
-    func ResetData(focusModeIndex:Int, focusType:String){
+    func startSameFocusBlockAgain(){
+        startTimer()
         if isPomodoroWindowLodded{
             if pomodoroWindowControllerObj?.window?.isVisible ?? false{
                 pomodoroWindowControllerObj?.window?.close()
             }
         }
+        
+        
+        
+        textFieldHourValue.integerValue = lastHourValue
+        textFieldMinutesValue.integerValue = lastMinuteValue
+        if lastSkipMicroBreakState{
+            checkBoxSkipMicrobreaks.state = .on
+        }else{
+            checkBoxSkipMicrobreaks.state = .off
+        }
+        textViewQuestion.string = lastIntention
+        
+        for i in 0..<arrFocusType.count{
+            if let id = arrFocusType[i]["id"] as? String{
+                if id == lastFocusModeId{
+                    self.focusType = arrFocusType[i]["name"] as? String ?? ""
+                    self.focusIndex = i
+                    break;
+                }
+            }
+        }
+        
+        
+        
+        
+        btnStartFocus.isEnabled = true
+        lblTitle.stringValue = titleText.replacingOccurrences(of: "<FOCUSTYPE>", with: focusType)//"Starting Focus type - \(focusType)"
+
+        if arrFocusType[focusIndex]["isLockedFocus"] as? Bool == true{
+            lblLockedFocusDescription.isHidden = false
+            
+            
+            var appsArray = [String]()
+            var appsUrlArray = [String]()
+            if lastFrontMostApplication != nil{
+                appsArray.append(lastFrontMostApplication!.bundleURL?.path ?? "")
+                var appName = ""
+                var appUrl = ""
+                if let name = lastFrontMostApplication!.localizedName{
+                    appName = name
+                    let nameLowercased = name.lowercased()
+                    
+                    
+                    if let browser = getCurrentBrowserFrom(browserName: nameLowercased){
+                        var defaultPageOfBrowser = ""
+                        if browser == ._SAFARI_{
+                            defaultPageOfBrowser = "favorites:"
+                        }else if browser == ._MICROSOFT_EDGE_{
+                            defaultPageOfBrowser = "edge://newtab"
+                        }else{
+                            defaultPageOfBrowser = "chrome:"
+                        }
+                        
+                        if let url = getActiveTabUrlOf(browser: browser){
+                            if !url.contains(defaultPageOfBrowser){
+                                let domain = getDomainFromUrl(url: url)
+                                appsUrlArray = [domain]
+                                appUrl = domain
+                            }
+                        }
+                    }
+                }
+                
+                if appsUrlArray.count == 0{
+                    var onlyAllowSelectedAppText = "You'll only be able to use <APP>"
+                    if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
+                        if let startingFocusModeInfo = focusInfo.value(forKey: "startingFocusModeInfo") as? NSDictionary{
+                            onlyAllowSelectedAppText = startingFocusModeInfo.value(forKey: "onlyAllowSelectedAppText") as? String ?? onlyAllowSelectedAppText
+                        }
+                    }
+                    lblLockedFocusDescription.stringValue = onlyAllowSelectedAppText.replacingOccurrences(of: "<APP>", with: appName)//(in: "<APP>", with: appName)
+                }else{
+                    var onlyAllowSelectedAppAndUrlText = "You'll only be able to use \"<URL>\" in <APP>"
+                    if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
+                        if let startingFocusModeInfo = focusInfo.value(forKey: "startingFocusModeInfo") as? NSDictionary{
+                            onlyAllowSelectedAppAndUrlText = startingFocusModeInfo.value(forKey: "onlyAllowSelectedAppAndUrlText") as? String ?? onlyAllowSelectedAppAndUrlText
+                        }
+                    }
+                    onlyAllowSelectedAppAndUrlText = onlyAllowSelectedAppAndUrlText.replacingOccurrences(of: "<APP>", with: appName)
+                    lblLockedFocusDescription.stringValue = onlyAllowSelectedAppAndUrlText.replacingOccurrences(of: "<URL>", with: appUrl)
+                }
+            }else{
+                lblLockedFocusDescription.isHidden = true
+            }
+             
+            var dic = arrFocusType[focusIndex]
+            dic["allowed_urls"] = appsUrlArray
+            dic["allowed_apps"] = appsArray
+            dic["isAllowedAllApps"] = false
+//            dic["isAllowedAllUrls"] = false#453
+            dic["isAllowedListApproach"] = true
+            arrFocusType[focusIndex] = dic
+
+        }else{
+            lblLockedFocusDescription.isHidden = true
+        }
+    }
+    
+    func ResetData(focusModeIndex:Int, focusType:String){
+        textViewQuestion.string = ""
+        checkBoxSkipMicrobreaks.state = .off
+        startTimer()
+        if isPomodoroWindowLodded{
+            if pomodoroWindowControllerObj?.window?.isVisible ?? false{
+                pomodoroWindowControllerObj?.window?.close()
+            }
+        }
+        lastFocusModeId = arrFocusType[focusModeIndex]["id"] as? String ?? ""
         self.focusType = focusType
         self.focusIndex = focusModeIndex
         textFieldHourValue.stringValue = "00"
@@ -252,6 +384,8 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
                         var defaultPageOfBrowser = ""
                         if browser == ._SAFARI_{
                             defaultPageOfBrowser = "favorites:"
+                        }else if browser == ._MICROSOFT_EDGE_{
+                            defaultPageOfBrowser = "edge://newtab"
                         }else{
                             defaultPageOfBrowser = "chrome:"
                         }

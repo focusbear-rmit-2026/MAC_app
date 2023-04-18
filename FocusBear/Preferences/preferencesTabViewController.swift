@@ -22,6 +22,7 @@ class preferencesTabViewController: NSTabViewController {
         var tabUninstallText = "Uninstall"
         var tabAccountsText = "Accounts"
         var tabStatsText = "Stats"
+        var tabHelpText = "Help"
         
         if let common = configjson.value(forKey: "common") as? NSDictionary{
             tabSettingsText = common.value(forKey: "tabSettingsText") as? String ?? tabSettingsText
@@ -32,6 +33,7 @@ class preferencesTabViewController: NSTabViewController {
             tabUninstallText = common.value(forKey: "tabUninstallText") as? String ?? tabUninstallText
             tabAccountsText = common.value(forKey: "tabAccountsText") as? String ?? tabAccountsText
             tabStatsText = common.value(forKey: "tabStatsText") as? String ?? tabStatsText
+            tabHelpText = common.value(forKey: "tabHelpText") as? String ?? tabHelpText
         }
         print(self.tabViewItems.count)
       
@@ -84,6 +86,13 @@ class preferencesTabViewController: NSTabViewController {
                         } else {
                             self.tabViewItems[i].image = NSImage(named: "NSTouchBarUserTemplate")
                         }
+                    }else if id  == "Help"{
+                        self.tabViewItems[i].label = tabHelpText
+//                        if #available(macOS 11.0, *) {
+//                            self.tabViewItems[i].image = NSImage(named: "help")
+//                        } else {
+//                            self.tabViewItems[i].image = NSImage(named: "help")
+//                        }
                     }
                 }
             }
@@ -123,7 +132,7 @@ class preferencesTabViewController: NSTabViewController {
 //            let alertReset: NSAlert = NSAlert()
 //
 //            alertReset.setSharingType()
-//            alertReset.messageText = "You've made changes to your habits/breaks but haven't saved them yet. Do you want to save the changes now (the app will restart)?"//todo text
+//            alertReset.messageText = "You've made changes to your habits/breaks but haven't saved them yet. Do you want to save the changes now (the app will restart)?"
 //            alertReset.alertStyle = NSAlert.Style.warning
 //            alertReset.addButton(withTitle: "Save and Restart")
 //            alertReset.addButton(withTitle: "Don't save - I want to make other changes first")

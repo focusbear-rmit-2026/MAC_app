@@ -30,7 +30,11 @@ class easyPostponeVc: NSViewController {
         btnPostpone.title = "Postpone"
         btnDeactivateApp.title = "Deactivate Focus Bear for 4 hours"
         
-        btnCancel.title = buttonCancelText
+        btnCancel.title = "Resume Habits"
+        if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
+            btnCancel.title = menuInfo.value(forKey: "menuItemResumeHabitsTitle") as? String ?? btnCancel.title
+        }
+        
         if let easyPostponeVcInfo = configjson.value(forKey: "easyPostponeVcInfo") as? NSDictionary{
             lblTitle.stringValue = easyPostponeVcInfo.value(forKey: "title") as? String ?? lblTitle.stringValue
             lblTitleSelectMinutes.stringValue = easyPostponeVcInfo.value(forKey: "titleSelectMinutes") as? String ?? lblTitleSelectMinutes.stringValue
@@ -41,7 +45,27 @@ class easyPostponeVc: NSViewController {
     }
     
     @IBAction func btnCancelClicked(_ sender: Any) {
-        
+        if currentState == ._POSTPON_MORNING_HABIT_ || currentState == ._POSTPON_EVENING_HABIT_{
+            currentState = ._NOTHING_
+            if mainViewControllerObj != nil{
+                if mainViewControllerObj?.postponeTimer != nil{
+                    mainViewControllerObj?.postponeTimer?.invalidate()
+                    mainViewControllerObj?.postponeTimer = nil
+                    if smallCountDownWcObj != nil{
+                        if getSmallCountDownWindowObject().window!.isVisible && getsmallCountDownVcObject().isFocusBreak{
+                            smallCountDownVcObj?.closeTimerBox()
+                        }
+                    }
+                }
+                if mainViewControllerObj?.postponeNotificationTimer != nil{
+                    mainViewControllerObj?.postponeNotificationTimer?.invalidate()
+                    mainViewControllerObj?.postponeNotificationTimer = nil
+                }
+            }
+            appdelegate?.backgroundThread()
+            self.view.window?.close()
+            return;
+        }
         if currentHabitPlaying == nil && currentActivityPlaying == nil{
             mainWindowControllerObj?.showWindow(self)
             showBlankWindowInSecondaryMonitor()
@@ -54,12 +78,37 @@ class easyPostponeVc: NSViewController {
     }
     @IBAction func btnPostponeClicked(_ sender: Any) {
         addLog(text: "easyPostponeVc:- button postpone clicked")
+        
+        if currentState == ._POSTPON_MORNING_HABIT_ || currentState == ._POSTPON_EVENING_HABIT_{
+            
+            if mainViewControllerObj != nil{
+                if mainViewControllerObj?.postponeTimer != nil{
+                    mainViewControllerObj?.postponeTimer?.invalidate()
+                    mainViewControllerObj?.postponeTimer = nil
+                    if smallCountDownWcObj != nil{
+                        if getSmallCountDownWindowObject().window!.isVisible && getsmallCountDownVcObject().isFocusBreak{
+                            smallCountDownVcObj?.closeTimerBox()
+                        }
+                    }
+                }
+                if mainViewControllerObj?.postponeNotificationTimer != nil{
+                    mainViewControllerObj?.postponeNotificationTimer?.invalidate()
+                    mainViewControllerObj?.postponeNotificationTimer = nil
+                }
+            }
+
+        }
+        
         if lastCurrentState == ._MORNING_HABIT_{
-            mainViewControllerObj?.postponeMorningHabitFor(minutes: Int(popupButtonMinutes.title) ?? 5)
+            mainViewControllerObj?.postponeMorningHabitFor(minutes: Int(popupButtonMinutes.title) ?? 5, secondsToPostpone: nil)
         }else if lastCurrentState == ._EVENING_HABIT_{
-            mainViewControllerObj?.postponeEveningHabitFor(minutes: Int(popupButtonMinutes.title) ?? 5)
+            mainViewControllerObj?.postponeEveningHabitFor(minutes: Int(popupButtonMinutes.title) ?? 5, secondsToPostpone: nil)
         }else if lastCurrentState == ._ACTIVITY_{
             mainViewControllerObj?.postponeBreakActivitiesFor(minutes: Int(popupButtonMinutes.title) ?? 5)
+        }else if lastCurrentState == ._POSTPON_MORNING_HABIT_{
+            mainViewControllerObj?.postponeMorningHabitFor(minutes: Int(popupButtonMinutes.title) ?? 5, secondsToPostpone: nil)
+        }else if lastCurrentState == ._POSTPON_EVENING_HABIT_{
+            mainViewControllerObj?.postponeEveningHabitFor(minutes: Int(popupButtonMinutes.title) ?? 5, secondsToPostpone: nil)
         }
         self.view.window?.close()
     }

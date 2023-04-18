@@ -192,18 +192,14 @@ class selectJsonVc: NSViewController, NSTextViewDelegate {
 //        settings: {startup_time: '05:30'...},
 //        metadata: {access_token: 'sometokenstring'}
 //        }
-        
-        var jsonResult:NSDictionary?
-        
-        
-        
-        let metadata:NSDictionary = ["access_token":appdelegate!.credential?.accessToken ?? ""]
+
+//        let metadata:NSDictionary = ["access_token":appdelegate!.credential?.accessToken ?? ""]
         
         
         
-        let settingsData = NSMutableDictionary()
-        settingsData["settings"] = stringjson
-        settingsData["metadata"] = metadata
+//        let settingsData = NSMutableDictionary()
+//        settingsData["settings"] = stringjson
+//        settingsData["metadata"] = metadata
         
         let stringJson1 = "{\"settings\": \(stringjson),\"metadata\": {\"access_token\": \"\(appdelegate!.credential?.accessToken ?? "")\"}}"
         
@@ -693,24 +689,20 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
                 NSWorkspace.shared.open(url)
             }
         }else if message.name == "setting_saved"{
-            if message.body as? String == "\"user-edited-settings\"" || message.body as? String == "user-edited-settings"{//todo
-               // isSettingsChanged = true
-            }else{
-                if let data = (message.body as? String ?? "").data(using: String.Encoding.utf8) {
+            if let data = (message.body as? String ?? "").data(using: String.Encoding.utf8) {
+                
+                do {
+                    let jsonResult:NSDictionary = try (JSONSerialization.jsonObject(with: data, options: []) as? NSDictionary ?? [:])
+                    print(jsonResult)
                     
-                    do {
-                        let jsonResult:NSDictionary = try (JSONSerialization.jsonObject(with: data, options: []) as? NSDictionary ?? [:])
-                        print(jsonResult)
-                        
-                        selectJsonVcObj?.jsonReceivedFromWebView(jsonResult: jsonResult)
-//                        isSettingsChanged = false
-                    }
-                    catch{
-                        
-                    }
+                    selectJsonVcObj?.jsonReceivedFromWebView(jsonResult: jsonResult)
+                    //                        isSettingsChanged = false
+                }
+                catch{
+                    
                 }
             }
-            
+
         }else if message.name == "user_edited_settings"{
             
 //            if let data = (message.body as? String ?? "").data(using: String.Encoding.utf8) {

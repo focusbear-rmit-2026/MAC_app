@@ -542,12 +542,13 @@ class SettingsManager:NSObject{
                             }
                         }
                     }
-                    UserDefaults.standard.removeObject(forKey: kUserdefaultsBlockedUrlsFromOnboarding)
+                    //UserDefaults.standard.removeObject(forKey: kUserdefaultsBlockedUrlsFromOnboarding)//will not remove from this userdefaults, agter logout we will bloock urls from this 
                 }else{
-                    arrBlockedUrls = ["facebook.com", "twitter.com", "instagram.com", "tiktok.com", "bbc.com", "cnn.com"]
+                    arrBlockedUrls = ["facebook.com", "twitter.com", "instagram.com", "tiktok.com", "bbc.com", "cnn.com", "reddit.com", "youtube.com"]
                 }
+
+                UserDefaults.standard.set(arrBlockedUrls, forKey: kUserdefaultsArrBlockedUrls)//
                 
-                UserDefaults.standard.set(arrBlockedUrls, forKey: kUserdefaultsArrBlockedUrls)
                 
                 isSettingsChanged = true
                 self.perform(#selector(putUserLocalDeviceSettings))
@@ -560,32 +561,8 @@ class SettingsManager:NSObject{
         )
         
     }
-    @objc func putUserLocalDeviceSettings(){
-        addLog(text: "put User Local Device Settings")
-        if isSettingsChanged{
-            isSettingsChanged = false
-        }else{
-            return
-        }
-        UserDefaults.standard.set(kIsReducedMotion, forKey: kUserdefaultsReducedMotion)
-        UserDefaults.standard.set(isMeetingDetectionEnabled, forKey: kUserdefaultsMeetingDetectionEnabled)
-        UserDefaults.standard.set(showMeetingDetectionAlert, forKey: kUserdefaultsShowMeetingDetectionAlert)
-        UserDefaults.standard.set(isHideDockInActivity, forKey: kUserdefaultsHideDockInActivity)
-        UserDefaults.standard.set(isPromptToRememberHabit, forKey: kUserdefaultsPromptToRememberHabit)
-        UserDefaults.standard.set(isEasySkipEnabled, forKey: kUserdefaultsEasySkipEnabled)
-        UserDefaults.standard.set(isOfficeModeEnabled, forKey: kUserdefaultsOfficeModeEnabled)
-        UserDefaults.standard.set(isCuddlyModeEnabled, forKey: kUserdefaultsCuddlyModeEnabled)
-        UserDefaults.standard.set(isSoundEnabled, forKey: kUserdefaultsEnableSound)//do not sync it
-        
-        
-        UserDefaults.standard.set(isPasswordRequireInChangeSettings, forKey: kUserdefaultsPasswordRequireInChangeSettings)
-        UserDefaults.standard.set(isPasswordRequireInSkipMorning, forKey: kUserdefaultsPasswordRequireInSkipMorning)
-        UserDefaults.standard.set(isPasswordRequireInSkipEvening, forKey: kUserdefaultsPasswordRequireInSkipEvening)
-        UserDefaults.standard.set(isPasswordRequireInSkipEveningAfterCutOff, forKey: kUserdefaultsPasswordRequireInSkipEveningAfterCutOff)
-        UserDefaults.standard.set(isPasswordRequireInAbortShutoff, forKey: kUserdefaultsPasswordRequireInAbortShutoff)
-        UserDefaults.standard.set(isPasswordRequireInStopPomodoro, forKey: kUserdefaultsPasswordRequireInStopPomodoro)
-        UserDefaults.standard.set(isPasswordRequireInQuitApp, forKey: kUserdefaultsPasswordRequireInQuitApp)
-        
+    
+    func getLocalJsonToUpload()->[String : Any]{
         let kIsReducedMotionEnabled = "kIsReducedMotion"
         let kIsMeetingDetectionEnabled = "kIsMeetingDetectionEnabled"
         let kShowMeetingDetectionAlert = "kShowMeetingDetectionAlert"
@@ -646,7 +623,95 @@ class SettingsManager:NSObject{
         if UserDefaults.standard.object(forKey: kUserdefaultsAppPassword) != nil{
             json[kAppPassword] = UserDefaults.standard.object(forKey: kUserdefaultsAppPassword) as? String ?? ""
         }
+        return json
+    }
+    @objc func putUserLocalDeviceSettings(){
+        addLog(text: "put User Local Device Settings")
+        if isSettingsChanged{
+            isSettingsChanged = false
+        }else{
+            return
+        }
+        UserDefaults.standard.set(kIsReducedMotion, forKey: kUserdefaultsReducedMotion)
+        UserDefaults.standard.set(isMeetingDetectionEnabled, forKey: kUserdefaultsMeetingDetectionEnabled)
+        UserDefaults.standard.set(showMeetingDetectionAlert, forKey: kUserdefaultsShowMeetingDetectionAlert)
+        UserDefaults.standard.set(isHideDockInActivity, forKey: kUserdefaultsHideDockInActivity)
+        UserDefaults.standard.set(isPromptToRememberHabit, forKey: kUserdefaultsPromptToRememberHabit)
+        UserDefaults.standard.set(isEasySkipEnabled, forKey: kUserdefaultsEasySkipEnabled)
+        UserDefaults.standard.set(isOfficeModeEnabled, forKey: kUserdefaultsOfficeModeEnabled)
+        UserDefaults.standard.set(isCuddlyModeEnabled, forKey: kUserdefaultsCuddlyModeEnabled)
+        UserDefaults.standard.set(isSoundEnabled, forKey: kUserdefaultsEnableSound)//do not sync it
         
+        
+        UserDefaults.standard.set(isPasswordRequireInChangeSettings, forKey: kUserdefaultsPasswordRequireInChangeSettings)
+        UserDefaults.standard.set(isPasswordRequireInSkipMorning, forKey: kUserdefaultsPasswordRequireInSkipMorning)
+        UserDefaults.standard.set(isPasswordRequireInSkipEvening, forKey: kUserdefaultsPasswordRequireInSkipEvening)
+        UserDefaults.standard.set(isPasswordRequireInSkipEveningAfterCutOff, forKey: kUserdefaultsPasswordRequireInSkipEveningAfterCutOff)
+        UserDefaults.standard.set(isPasswordRequireInAbortShutoff, forKey: kUserdefaultsPasswordRequireInAbortShutoff)
+        UserDefaults.standard.set(isPasswordRequireInStopPomodoro, forKey: kUserdefaultsPasswordRequireInStopPomodoro)
+        UserDefaults.standard.set(isPasswordRequireInQuitApp, forKey: kUserdefaultsPasswordRequireInQuitApp)
+        
+//        let kIsReducedMotionEnabled = "kIsReducedMotion"
+//        let kIsMeetingDetectionEnabled = "kIsMeetingDetectionEnabled"
+//        let kShowMeetingDetectionAlert = "kShowMeetingDetectionAlert"
+//        let kIsPromptToRememberHabit = "kIsPromptToRememberHabit"
+//        let kIsEasySkipEnabled = "kIsEasySkipEnabled"
+//        let kIsOfficeModeEnabled = "kIsOfficeModeEnabled"
+//        //        let kSelectedLanguage = "kSelectedLanguage"
+//        let kHideAllWindowInScreenShots = "kHideAllWindowInScreenShots"
+//        let kPomodoroDurationMinutes = "kPomodoroDurationMinutes"
+//        let kBreakDurationMinutes = "kBreakDurationMinutes"
+//        let kPomodoroModeEnabled = "kPomodoroModeEnabled"
+//        let kHardcorePomodoroEnabled = "kHardcorePomodoroEnabled"
+//        let kHardcorePomodoroFocusedName = "kHardcorePomodoroFocusedName"
+//        let kHardcorePomodoroFocusedCount = "kHardcorePomodoroFocusedCount"
+//        let kHardcorePomodoroSkipMicroBreaks = "kHardcorePomodoroSkipMicroBreaks"
+//        let kHardcorePomodoroArrDays = "kHardcorePomodoroArrDays"
+//
+//
+//        let kIsPasswordRequireInChangeSettings = "kIsPasswordRequireInChangeSettings"
+//        let kIsPasswordRequireInSkipMorning = "kIsPasswordRequireInSkipMorning"
+//        let kIsPasswordRequireInSkipEvening = "kIsPasswordRequireInSkipEvening"
+//        let kIsPasswordRequireInSkipEveningAfterCutOff = "kIsPasswordRequireInSkipEveningAfterCutOff"
+//        let kIsPasswordRequireInAbortShutoff = "kIsPasswordRequireInAbortShutoff"
+//        let kIsPasswordRequireInStopPomodoro = "kIsPasswordRequireInStopPomodoro"
+//        let kIsPasswordRequireInQuitApp = "kIsPasswordRequireInQuitApp"
+//
+//        let kAppPassword = "kAppPassword"
+//        let kArrBlockedUrls = "kArrBlockedUrls"
+//        let kCuddlyModeEnabled = "kCuddlyModeEnabled"
+        
+//        var json: [String: Any] = [
+//            kIsReducedMotionEnabled:kIsReducedMotion,//userId.removingPercentEncoding ?? "",
+//            kIsMeetingDetectionEnabled:isMeetingDetectionEnabled,
+//            kShowMeetingDetectionAlert:showMeetingDetectionAlert,
+//            kIsPromptToRememberHabit:isPromptToRememberHabit,
+//            kIsEasySkipEnabled:isEasySkipEnabled,
+//            kIsOfficeModeEnabled:isOfficeModeEnabled,
+//            kHideAllWindowInScreenShots:UserDefaults.standard.object(forKey: kUserdefaultsHideAllWindowInScreenShots) as? Bool ?? false,
+//            kPomodoroDurationMinutes:UserDefaults.standard.object(forKey: kUserdefaultsPomodoroDurationMinutes) as? Int ?? 0,
+//            kBreakDurationMinutes:UserDefaults.standard.object(forKey: kUserdefaultsBreakDurationMinutes) as? Int ?? 0,
+//            kPomodoroModeEnabled:UserDefaults.standard.object(forKey: kUserdefaultsPomodoroModeEnabled) as? Bool ?? false,
+//            kHardcorePomodoroEnabled:UserDefaults.standard.object(forKey: kUserdefaultsHardcorePomodoroEnabled) as? Bool ?? false,
+//            kHardcorePomodoroFocusedName:UserDefaults.standard.object(forKey: kUserdefaultsHardcorePomodoroFocusedName) as? String ?? "",
+//            kHardcorePomodoroFocusedCount:UserDefaults.standard.object(forKey: kUserdefaultsHardcorePomodoroFocusedCount) as? Int ?? 0,
+//            kHardcorePomodoroSkipMicroBreaks:UserDefaults.standard.object(forKey: kUserdefaultsHardcorePomodoroSkipMicroBreaks) as? Bool ?? false,//
+//            kHardcorePomodoroArrDays:UserDefaults.standard.object(forKey: kUserdefaultsHardcorePomodoroArrDays) as? [String] ?? [],
+//            kArrBlockedUrls:arrBlockedUrls,
+//            kCuddlyModeEnabled:isCuddlyModeEnabled,
+//            kIsPasswordRequireInChangeSettings:isPasswordRequireInChangeSettings,
+//            kIsPasswordRequireInSkipMorning:isPasswordRequireInSkipMorning,
+//            kIsPasswordRequireInSkipEvening:isPasswordRequireInSkipEvening,
+//            kIsPasswordRequireInSkipEveningAfterCutOff:isPasswordRequireInSkipEveningAfterCutOff,
+//            kIsPasswordRequireInAbortShutoff:isPasswordRequireInAbortShutoff,
+//            kIsPasswordRequireInStopPomodoro:isPasswordRequireInStopPomodoro,
+//            kIsPasswordRequireInQuitApp:isPasswordRequireInQuitApp
+//        ]
+//
+//        if UserDefaults.standard.object(forKey: kUserdefaultsAppPassword) != nil{
+//            json[kAppPassword] = UserDefaults.standard.object(forKey: kUserdefaultsAppPassword) as? String ?? ""
+//        }
+        let json = getLocalJsonToUpload()
         
         let dic: [String: [String:Any]] = [
             "MacOS": json

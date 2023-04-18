@@ -47,15 +47,25 @@ class smallCountDownVc: NSViewController {
             mainWindowControllerObj?.window?.setIsVisible(true)
             showBlankWindowInSecondaryMonitor()
             mainViewControllerObj?.btnAbortClicked(self)
+            if quittingWcObj != nil{
+                if quittingWcObj?.window?.isVisible ?? false{
+                    quittingWcObj?.window?.close()
+                }
+            }
+            setDocBarTo(isHide: false)
         }else if currentState == ._FOCUS_SUMMARY_{
             addLog(text:"button Back To My Habits")
             closeTimerBox()
             mainViewControllerObj?.timerGiveOneMoreMinut?.invalidate()
             mainViewControllerObj?.timerGiveOneMoreMinut = nil
             mainViewControllerObj?.showFocusSummaryView()
+        }else if currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_MORNING_HABIT_{
+            addLog(text:"button Extend postpone time Clicked")
+            closeTimerBox()
+            showEasyPostponeWindow()
         }
-        
     }
+    
     @IBAction func btnCloseClicked(_ sender: Any) {
         if isFocusBreak{
             closeTimerBox()
@@ -70,7 +80,7 @@ class smallCountDownVc: NSViewController {
             
             
             
-            if (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._ACTIVITY_) && !(mainWindowControllerObj?.window?.isVisible ?? false){
+            if (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._ACTIVITY_ || currentState == ._SPECIAL_ACTIVITY_) && !(mainWindowControllerObj?.window?.isVisible ?? false){
                 if currentHabitPlaying != nil || currentActivityPlaying != nil{
                     NSApp.hide(self)
                 }
@@ -125,6 +135,13 @@ class smallCountDownVc: NSViewController {
             btnPostpone.title = "Back to my habits"
             if let common = configjson.value(forKey: "common") as? NSDictionary{
                 btnPostpone.title = common.value(forKey: "buttonBackToMyHabitsText") as? String ?? btnPostpone.title
+            }
+        }else if (currentState == ._POSTPON_MORNING_HABIT_ || currentState == ._POSTPON_EVENING_HABIT_) && !msg.isEmpty{
+            lblTimerTopSpaceConstraint.constant = 10
+            btnPostpone.isHidden = false
+            btnPostpone.title = "Postpone"
+            if let common = configjson.value(forKey: "common") as? NSDictionary{
+                btnPostpone.title = common.value(forKey: "buttonPostponeText") as? String ?? btnPostpone.title
             }
         }else{
             lblTimerTopSpaceConstraint.constant = 15

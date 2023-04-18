@@ -45,7 +45,15 @@ class brainDumpVc: NSViewController, NSTextViewDelegate {
     override func viewWillAppear() {
         
         if isFocusModeOn(){
-//            lblTitleWorkNote.stringValue = titleWorkNoteFirst
+            startRefreshRemainingTimer()
+            textViewIntention.isEditable = true
+            textViewIntention.enclosingScrollView?.isHidden = false
+            lblTitleIntention.stringValue = "Intention:"
+            if let brainDumpVcInfo = configjson.value(forKey: "brainDumpVcInfo") as? NSDictionary{
+                lblTitleIntention.stringValue = brainDumpVcInfo.value(forKey: "titleIntentionText") as? String ?? lblTitleIntention.stringValue
+            }
+            lineTopSpace.constant = 66
+        }else if isFocusModePaused(){
             startRefreshRemainingTimer()
             textViewIntention.isEditable = true
             textViewIntention.enclosingScrollView?.isHidden = false
@@ -113,8 +121,8 @@ class brainDumpVc: NSViewController, NSTextViewDelegate {
 //        lblTitleWorkNote.stringValue = titleWorkNoteSecond
     }
     func setRemainingTime(){
-        if let date = endFocusModeTime{
-            let secondsBetween = date.timeIntervalSince(Date())
+        if isFocusModePaused(){
+            let secondsBetween = appdelegate!.remainingFocusModeSecondsAfterPaused
             let (h,m,s) = secondsToHoursMinutesSeconds(seconds: Int(secondsBetween))
             var hour = "\(h)"
             var minute = "\(m)"
@@ -138,11 +146,40 @@ class brainDumpVc: NSViewController, NSTextViewDelegate {
                     self.lblTimeRemaining.stringValue = "\(hour):\(minute):\(second)"
                 }
             }
-  
         }else{
-            lblTimeRemaining.stringValue = "0"
+            if let date = endFocusModeTime{
+                let secondsBetween = date.timeIntervalSince(Date())
+                let (h,m,s) = secondsToHoursMinutesSeconds(seconds: Int(secondsBetween))
+                var hour = "\(h)"
+                var minute = "\(m)"
+                var second = "\(s)"
+                
+                if hour.count == 1 {
+                    hour = "0\(h)"
+                }
+                
+                if minute.count == 1 {
+                    minute = "0\(m)"
+                }
+                if second.count == 1 {
+                    second = "0\(s)"
+                }
+                
+                DispatchQueue.main.async {
+                    if h == 0{
+                        self.lblTimeRemaining.stringValue = "\(minute):\(second)"
+                    }else{
+                        self.lblTimeRemaining.stringValue = "\(hour):\(minute):\(second)"
+                    }
+                }
+      
+            }else{
+                lblTimeRemaining.stringValue = "0"
+            }
         }
+        
     }
+    
     func startRefreshRemainingTimer() {
         if timer != nil{
             timer?.invalidate()
@@ -158,6 +195,7 @@ class brainDumpVc: NSViewController, NSTextViewDelegate {
     
     @objc func performTimerCount() {
         if !isFocusModeOn(){
+            self.setRemainingTime()
             timer?.invalidate()
         }
         DispatchQueue.main.async {

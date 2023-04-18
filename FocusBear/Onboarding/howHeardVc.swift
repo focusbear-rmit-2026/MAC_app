@@ -68,7 +68,7 @@ class howHeardVc: NSViewController {
         
         print(heardFrom)
         allApiObject.capturePosthog(event: "heard_about_focus_bear", metadata: ["heard-from":heardFrom])
-        self.view.window?.close()
+//        self.view.window?.close()
         showOnboardingVideoWindow()
     }
 }

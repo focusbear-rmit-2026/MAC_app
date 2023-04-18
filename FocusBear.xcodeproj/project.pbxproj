@@ -25,12 +25,19 @@
 		8F19BCA5293F360D00F70544 /* whySkipHabitVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F19BCA4293F360D00F70544 /* whySkipHabitVc.swift */; };
 		8F1E18A028EAF3FF00367413 /* macInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F1E189F28EAF3FF00367413 /* macInfo.swift */; };
 		8F1EB55729A34E70004F5196 /* askWorkTimeVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F1EB55629A34E70004F5196 /* askWorkTimeVc.swift */; };
+		8F212FE829DAFF02006620DF /* helpVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F212FE729DAFF02006620DF /* helpVc.swift */; };
 		8F270CB029435EB100E91015 /* onboardingBlockedUrlsVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F270CAF29435EB100E91015 /* onboardingBlockedUrlsVc.swift */; };
 		8F270CB229436D4400E91015 /* tblCellOnboardingBlockedUrls.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F270CB129436D4400E91015 /* tblCellOnboardingBlockedUrls.swift */; };
 		8F28E8322822B15A00310F4E /* uninstallVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F28E8312822B15A00310F4E /* uninstallVc.swift */; };
+		8F2C03AF29C895F60035E8F1 /* blockBlurVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F2C03AE29C895F60035E8F1 /* blockBlurVc.swift */; };
 		8F2F1625291BAC0600F8EFCD /* skipHabitVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F2F1624291BAC0600F8EFCD /* skipHabitVc.swift */; };
 		8F332BD029474EE5009E6792 /* focusTipsVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F332BCF29474EE5009E6792 /* focusTipsVc.swift */; };
 		8F36D517297AB32800A7E4AD /* addFocusTempUrlsOrAppsVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F36D516297AB32700A7E4AD /* addFocusTempUrlsOrAppsVc.swift */; };
+		8F371A6029E3D0300043D7B3 /* onboardingControllingBrowserVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F371A5F29E3D0300043D7B3 /* onboardingControllingBrowserVc.swift */; };
+		8F371A6229E3E1080043D7B3 /* tryBlockUrlVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F371A6129E3E1080043D7B3 /* tryBlockUrlVc.swift */; };
+		8F371A6429E3F96C0043D7B3 /* askBuildHabitsVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F371A6329E3F96B0043D7B3 /* askBuildHabitsVc.swift */; };
+		8F371A6629E424F10043D7B3 /* onboardingPrivacyTipVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F371A6529E424F10043D7B3 /* onboardingPrivacyTipVc.swift */; };
+		8F371A6829E434770043D7B3 /* tblCellBrowsers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F371A6729E434770043D7B3 /* tblCellBrowsers.swift */; };
 		8F378E262976701A00A43C06 /* shareFeedbackVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F378E252976701A00A43C06 /* shareFeedbackVc.swift */; };
 		8F38CCFE292FA464005213DE /* easyPostponeVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F38CCFD292FA464005213DE /* easyPostponeVc.swift */; };
 		8F38CD00292FB1FB005213DE /* habitSkipEasinessVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F38CCFF292FB1FB005213DE /* habitSkipEasinessVc.swift */; };
@@ -77,8 +84,11 @@
 		8F657D7928DF094E008A4E6E /* welcomeOnboardingVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F657D7828DF094E008A4E6E /* welcomeOnboardingVc.swift */; };
 		8F657D7B28DF35D7008A4E6E /* onboardingPostponeVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F657D7A28DF35D7008A4E6E /* onboardingPostponeVc.swift */; };
 		8F66E7F6298547940074546C /* setUpVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F66E7F5298547940074546C /* setUpVc.swift */; };
+		8F69C4FD29E5707100D929CE /* askAccountVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F69C4FC29E5707100D929CE /* askAccountVc.swift */; };
 		8F6A2FB62983F8E400B97F38 /* focusStartHelpImgVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F6A2FB52983F8E400B97F38 /* focusStartHelpImgVc.swift */; };
+		8F6AC5E029E1540F002EBC99 /* welcomeVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F6AC5DF29E1540F002EBC99 /* welcomeVc.swift */; };
 		8F6C10F427BD37F00013972F /* menuViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F6C10F327BD37F00013972F /* menuViewController.swift */; };
+		8F70A56629E699170071A0BE /* askOnboardingVideoVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F70A56529E699170071A0BE /* askOnboardingVideoVc.swift */; };
 		8F70D64528E1C6A600895B3F /* customMessageVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F70D64428E1C6A600895B3F /* customMessageVc.swift */; };
 		8F753FB028E81CBA006DF594 /* grunz__success-low.wav in Resources */ = {isa = PBXBuildFile; fileRef = 8F753FAF28E81CBA006DF594 /* grunz__success-low.wav */; };
 		8F7819DA28E5891D00FB1F63 /* customLoginVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F7819D928E5891D00FB1F63 /* customLoginVc.swift */; };
@@ -104,6 +114,7 @@
 		8F9A5A9A27887889009121E3 /* abortDoneVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F9A5A9927887889009121E3 /* abortDoneVc.swift */; };
 		8F9B0FA429816F9800415247 /* logo.svg in Resources */ = {isa = PBXBuildFile; fileRef = 8F9B0FA329816F9800415247 /* logo.svg */; };
 		8F9BB8B92787307D00BB25D4 /* shutOffTimeVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F9BB8B82787307D00BB25D4 /* shutOffTimeVc.swift */; };
+		8F9C8F9A29C2E7FE00E8040B /* selectHabitPacksVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F9C8F9929C2E7FE00E8040B /* selectHabitPacksVc.swift */; };
 		8F9F364C27ACF89800EB3516 /* activateNowvc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F9F364A27ACF89800EB3516 /* activateNowvc.swift */; };
 		8F9F364F27ACF93300EB3516 /* sevenDaysTrialvc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F9F364E27ACF93300EB3516 /* sevenDaysTrialvc.swift */; };
 		8F9F365327ACFB3B00EB3516 /* SYFlatButton.m in Sources */ = {isa = PBXBuildFile; fileRef = 8F9F365227ACFB3A00EB3516 /* SYFlatButton.m */; };
@@ -141,7 +152,6 @@
 		8FB74AE82861B18A00992C1F /* pomodoroPreferencesAdvancedVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FB74AE72861B18A00992C1F /* pomodoroPreferencesAdvancedVc.swift */; };
 		8FB84AED284B82AA0075180B /* GraphDays.html in Resources */ = {isa = PBXBuildFile; fileRef = 8FB84AEB284B82AA0075180B /* GraphDays.html */; };
 		8FB84AEE284B82AA0075180B /* GraphTime.html in Resources */ = {isa = PBXBuildFile; fileRef = 8FB84AEC284B82AA0075180B /* GraphTime.html */; };
-		8FB84AF0284DD1840075180B /* gifOpenSettings.gif in Resources */ = {isa = PBXBuildFile; fileRef = 8FB84AEF284DD1830075180B /* gifOpenSettings.gif */; };
 		8FB84AF2284DE2550075180B /* config-es.json in Resources */ = {isa = PBXBuildFile; fileRef = 8FB84AF1284DE2550075180B /* config-es.json */; };
 		8FC31BFC28C72AA600E2DD4C /* NewStoryboard.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 8FC31BFB28C72AA600E2DD4C /* NewStoryboard.storyboard */; };
 		8FC31BFE28C757B400E2DD4C /* brainDumpVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FC31BFD28C757B400E2DD4C /* brainDumpVc.swift */; };
@@ -216,12 +226,19 @@
 		8F19BCA4293F360D00F70544 /* whySkipHabitVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = whySkipHabitVc.swift; sourceTree = "<group>"; };
 		8F1E189F28EAF3FF00367413 /* macInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macInfo.swift; sourceTree = "<group>"; };
 		8F1EB55629A34E70004F5196 /* askWorkTimeVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = askWorkTimeVc.swift; sourceTree = "<group>"; };
+		8F212FE729DAFF02006620DF /* helpVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = helpVc.swift; sourceTree = "<group>"; };
 		8F270CAF29435EB100E91015 /* onboardingBlockedUrlsVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = onboardingBlockedUrlsVc.swift; sourceTree = "<group>"; };
 		8F270CB129436D4400E91015 /* tblCellOnboardingBlockedUrls.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = tblCellOnboardingBlockedUrls.swift; sourceTree = "<group>"; };
 		8F28E8312822B15A00310F4E /* uninstallVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = uninstallVc.swift; sourceTree = "<group>"; };
+		8F2C03AE29C895F60035E8F1 /* blockBlurVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = blockBlurVc.swift; sourceTree = "<group>"; };
 		8F2F1624291BAC0600F8EFCD /* skipHabitVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = skipHabitVc.swift; sourceTree = "<group>"; };
 		8F332BCF29474EE5009E6792 /* focusTipsVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = focusTipsVc.swift; sourceTree = "<group>"; };
 		8F36D516297AB32700A7E4AD /* addFocusTempUrlsOrAppsVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = addFocusTempUrlsOrAppsVc.swift; sourceTree = "<group>"; };
+		8F371A5F29E3D0300043D7B3 /* onboardingControllingBrowserVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = onboardingControllingBrowserVc.swift; sourceTree = "<group>"; };
+		8F371A6129E3E1080043D7B3 /* tryBlockUrlVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = tryBlockUrlVc.swift; sourceTree = "<group>"; };
+		8F371A6329E3F96B0043D7B3 /* askBuildHabitsVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = askBuildHabitsVc.swift; sourceTree = "<group>"; };
+		8F371A6529E424F10043D7B3 /* onboardingPrivacyTipVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = onboardingPrivacyTipVc.swift; sourceTree = "<group>"; };
+		8F371A6729E434770043D7B3 /* tblCellBrowsers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = tblCellBrowsers.swift; sourceTree = "<group>"; };
 		8F378E252976701A00A43C06 /* shareFeedbackVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = shareFeedbackVc.swift; sourceTree = "<group>"; };
 		8F38CCFD292FA464005213DE /* easyPostponeVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = easyPostponeVc.swift; sourceTree = "<group>"; };
 		8F38CCFF292FB1FB005213DE /* habitSkipEasinessVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = habitSkipEasinessVc.swift; sourceTree = "<group>"; };
@@ -268,10 +285,13 @@
 		8F657D7828DF094E008A4E6E /* welcomeOnboardingVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = welcomeOnboardingVc.swift; sourceTree = "<group>"; };
 		8F657D7A28DF35D7008A4E6E /* onboardingPostponeVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = onboardingPostponeVc.swift; sourceTree = "<group>"; };
 		8F66E7F5298547940074546C /* setUpVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = setUpVc.swift; sourceTree = "<group>"; };
+		8F69C4FC29E5707100D929CE /* askAccountVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = askAccountVc.swift; sourceTree = "<group>"; };
 		8F69D1E12796A34B00DB3EFD /* AVKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVKit.framework; path = System/Library/Frameworks/AVKit.framework; sourceTree = SDKROOT; };
 		8F69D1E32796A6CE00DB3EFD /* NetworkExtension.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = NetworkExtension.framework; path = System/Library/Frameworks/NetworkExtension.framework; sourceTree = SDKROOT; };
 		8F6A2FB52983F8E400B97F38 /* focusStartHelpImgVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = focusStartHelpImgVc.swift; sourceTree = "<group>"; };
+		8F6AC5DF29E1540F002EBC99 /* welcomeVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = welcomeVc.swift; sourceTree = "<group>"; };
 		8F6C10F327BD37F00013972F /* menuViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = menuViewController.swift; sourceTree = "<group>"; };
+		8F70A56529E699170071A0BE /* askOnboardingVideoVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = askOnboardingVideoVc.swift; sourceTree = "<group>"; };
 		8F70D64428E1C6A600895B3F /* customMessageVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = customMessageVc.swift; sourceTree = "<group>"; };
 		8F753FAF28E81CBA006DF594 /* grunz__success-low.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "grunz__success-low.wav"; sourceTree = "<group>"; };
 		8F7819D928E5891D00FB1F63 /* customLoginVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = customLoginVc.swift; sourceTree = "<group>"; };
@@ -298,6 +318,7 @@
 		8F9A5A9927887889009121E3 /* abortDoneVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = abortDoneVc.swift; sourceTree = "<group>"; };
 		8F9B0FA329816F9800415247 /* logo.svg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = logo.svg; sourceTree = "<group>"; };
 		8F9BB8B82787307D00BB25D4 /* shutOffTimeVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = shutOffTimeVc.swift; sourceTree = "<group>"; };
+		8F9C8F9929C2E7FE00E8040B /* selectHabitPacksVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = selectHabitPacksVc.swift; sourceTree = "<group>"; };
 		8F9F364A27ACF89800EB3516 /* activateNowvc.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = activateNowvc.swift; sourceTree = "<group>"; };
 		8F9F364E27ACF93300EB3516 /* sevenDaysTrialvc.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = sevenDaysTrialvc.swift; sourceTree = "<group>"; };
 		8F9F365127ACFB3A00EB3516 /* SYFlatButton.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SYFlatButton.h; sourceTree = "<group>"; };
@@ -338,7 +359,6 @@
 		8FB74AE72861B18A00992C1F /* pomodoroPreferencesAdvancedVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = pomodoroPreferencesAdvancedVc.swift; sourceTree = "<group>"; };
 		8FB84AEB284B82AA0075180B /* GraphDays.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = GraphDays.html; sourceTree = "<group>"; };
 		8FB84AEC284B82AA0075180B /* GraphTime.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = GraphTime.html; sourceTree = "<group>"; };
-		8FB84AEF284DD1830075180B /* gifOpenSettings.gif */ = {isa = PBXFileReference; lastKnownFileType = image.gif; path = gifOpenSettings.gif; sourceTree = "<group>"; };
 		8FB84AF1284DE2550075180B /* config-es.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "config-es.json"; sourceTree = "<group>"; };
 		8FC31BFB28C72AA600E2DD4C /* NewStoryboard.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = NewStoryboard.storyboard; sourceTree = "<group>"; };
 		8FC31BFD28C757B400E2DD4C /* brainDumpVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = brainDumpVc.swift; sourceTree = "<group>"; };
@@ -534,6 +554,7 @@
 				8F28E8312822B15A00310F4E /* uninstallVc.swift */,
 				8F08FD6F28B60DD60016C741 /* uninstallingConfirmVc.swift */,
 				274C9A90289A8C900066F883 /* accountVc.swift */,
+				8F212FE729DAFF02006620DF /* helpVc.swift */,
 			);
 			path = Preferences;
 			sourceTree = "<group>";
@@ -669,6 +690,7 @@
 				8FE049CF27B77F5F00ABD521 /* logQuantityVc.swift */,
 				8F4088092977DD3600A70130 /* takeActivityNotesVc.swift */,
 				8F3F1F28299BB96400E67F42 /* breaksBrainDumpVc.swift */,
+				8F2C03AE29C895F60035E8F1 /* blockBlurVc.swift */,
 				8FB50EF727BE12CB00A7175B /* menuView */,
 				8F09ACBD29703BF900A0F1D0 /* Tracks */,
 				8FBBD19C2968185100C4C8B7 /* Postpone */,
@@ -703,7 +725,6 @@
 				8FB84AF1284DE2550075180B /* config-es.json */,
 				8F7DCBFF2796B55800EE3282 /* config.json */,
 				8FAC6C8F27805F70008A4180 /* Info.plist */,
-				8FB84AEF284DD1830075180B /* gifOpenSettings.gif */,
 				8FA62B1128603B380075D545 /* TextFieldNumberFormatter.swift */,
 				8F3F893B28BA009F003E5EA4 /* es.lproj */,
 				274E0F4A28902E17000234A3 /* Auth0 */,
@@ -778,7 +799,9 @@
 		8FF9351929110D8C004511C0 /* Onboarding */ = {
 			isa = PBXGroup;
 			children = (
+				8F6AC5DF29E1540F002EBC99 /* welcomeVc.swift */,
 				8F0B63B5290FEC8700DE7EF8 /* askAppWorkVc.swift */,
+				8F9C8F9929C2E7FE00E8040B /* selectHabitPacksVc.swift */,
 				8F1EB55629A34E70004F5196 /* askWorkTimeVc.swift */,
 				8F38CCFF292FB1FB005213DE /* habitSkipEasinessVc.swift */,
 				8F270CAF29435EB100E91015 /* onboardingBlockedUrlsVc.swift */,
@@ -790,6 +813,13 @@
 				8FD180302944791C009062E1 /* preloadFocusModeAppsVc.swift */,
 				8F332BCF29474EE5009E6792 /* focusTipsVc.swift */,
 				8F4B9D6B296C4B62003A3ABD /* howHeardVc.swift */,
+				8F371A6529E424F10043D7B3 /* onboardingPrivacyTipVc.swift */,
+				8F371A5F29E3D0300043D7B3 /* onboardingControllingBrowserVc.swift */,
+				8F371A6729E434770043D7B3 /* tblCellBrowsers.swift */,
+				8F371A6129E3E1080043D7B3 /* tryBlockUrlVc.swift */,
+				8F371A6329E3F96B0043D7B3 /* askBuildHabitsVc.swift */,
+				8F69C4FC29E5707100D929CE /* askAccountVc.swift */,
+				8F70A56529E699170071A0BE /* askOnboardingVideoVc.swift */,
 			);
 			path = Onboarding;
 			sourceTree = "<group>";
@@ -912,7 +942,6 @@
 				8FFBCE8A28549EB1004B77D9 /* PopoverViewController.xib in Resources */,
 				8F461B2D28C0EE490082B0A2 /* Starting the Morning:Evening Routine_5.wav in Resources */,
 				274E0F4C28902E29000234A3 /* Auth0.plist in Resources */,
-				8FB84AF0284DD1840075180B /* gifOpenSettings.gif in Resources */,
 				8F461B0928C0EBBE0082B0A2 /* Completing the Whole Evening Routine_5.wav in Resources */,
 				8F461B2128C0EDD60082B0A2 /* Start Focus Button_2.wav in Resources */,
 				8F461B1A28C0EBE90082B0A2 /* Completing the Whole Morning Routine_2.2.wav in Resources */,
@@ -1001,12 +1030,14 @@
 				8F6C10F427BD37F00013972F /* menuViewController.swift in Sources */,
 				8F92E88627BF8B340085AF8C /* addFocusTypeVc.swift in Sources */,
 				8FAC6C992780671E008A4180 /* globalFile.swift in Sources */,
+				8F69C4FD29E5707100D929CE /* askAccountVc.swift in Sources */,
 				8F5FB26D28FFEB3200586760 /* incorrectTimeVc.swift in Sources */,
 				8F8C52D827BBD53F00E11A38 /* preferencesWindowController.swift in Sources */,
 				8FAD22D927CA514700CDC866 /* commonWindowController.swift in Sources */,
 				8F6138B828B7AA5300A45B1A /* askPostponeVc.swift in Sources */,
 				8F28E8322822B15A00310F4E /* uninstallVc.swift in Sources */,
 				8FA62B1228603B390075D545 /* TextFieldNumberFormatter.swift in Sources */,
+				8F371A6029E3D0300043D7B3 /* onboardingControllingBrowserVc.swift in Sources */,
 				8FB74AE82861B18A00992C1F /* pomodoroPreferencesAdvancedVc.swift in Sources */,
 				8FFBCE8B28549EB1004B77D9 /* PopoverViewController.swift in Sources */,
 				8FF9351B29113EAB004511C0 /* tblCellToolBox.swift in Sources */,
@@ -1015,7 +1046,10 @@
 				8F378E262976701A00A43C06 /* shareFeedbackVc.swift in Sources */,
 				8FAD22DB27CA526200CDC866 /* startingFocusModeVc.swift in Sources */,
 				8F4BD8C527883FBE00ABAEF5 /* KeyCombo.swift in Sources */,
+				8F371A6629E424F10043D7B3 /* onboardingPrivacyTipVc.swift in Sources */,
 				8F7819DA28E5891D00FB1F63 /* customLoginVc.swift in Sources */,
+				8F371A6429E3F96C0043D7B3 /* askBuildHabitsVc.swift in Sources */,
+				8F70A56629E699170071A0BE /* askOnboardingVideoVc.swift in Sources */,
 				8F0E69DC290279500042FAF4 /* customTooltipVc.swift in Sources */,
 				8FAC6C9F2780748D008A4180 /* tblCellHabits.swift in Sources */,
 				8FABDDD327DA2ED600F6A58C /* enterPasswordVc.swift in Sources */,
@@ -1023,16 +1057,20 @@
 				8F9A5A9627885A6D009121E3 /* abortingCountDownVc.swift in Sources */,
 				8F9A5A98278863B9009121E3 /* abortingConfirmVc.swift in Sources */,
 				8FD180312944791C009062E1 /* preloadFocusModeAppsVc.swift in Sources */,
+				8F371A6829E434770043D7B3 /* tblCellBrowsers.swift in Sources */,
 				8F4A3B20290D256F00DCBE39 /* collectionCellToolBox.swift in Sources */,
 				8F98294F2806976B00B17414 /* quittingConfirmVc.swift in Sources */,
 				8F4A3B1B290D0CAE00DCBE39 /* toolBoxVc.swift in Sources */,
+				8F2C03AF29C895F60035E8F1 /* blockBlurVc.swift in Sources */,
 				8F9F364F27ACF93300EB3516 /* sevenDaysTrialvc.swift in Sources */,
+				8F371A6229E3E1080043D7B3 /* tryBlockUrlVc.swift in Sources */,
 				8F5596B42805B49E0044DF28 /* quitCountDownVc.swift in Sources */,
 				8F94E5932976909900BA7E8C /* trialExpiredNag.swift in Sources */,
 				8FAC6CA127808125008A4180 /* timerViewcontroller.swift in Sources */,
 				8FB50EFF27BE811D00A7175B /* tblCellFocusPreferences.swift in Sources */,
 				8F107D22278C4A1E00280B37 /* abortingCantHandleVc.swift in Sources */,
 				274E0F4928902CF1000234A3 /* User.swift in Sources */,
+				8F212FE829DAFF02006620DF /* helpVc.swift in Sources */,
 				8F1E18A028EAF3FF00367413 /* macInfo.swift in Sources */,
 				8F8C52D927BBD53F00E11A38 /* generalVc.swift in Sources */,
 				8FAC6C9D27806DCB008A4180 /* firstViewController.swift in Sources */,
@@ -1059,8 +1097,10 @@
 				8FAC6C8927805F6E008A4180 /* ViewController.swift in Sources */,
 				8F4BD8C627883FBE00ABAEF5 /* Key.swift in Sources */,
 				8F9F365527AD09C000EB3516 /* activationWindowController.swift in Sources */,
+				8F9C8F9A29C2E7FE00E8040B /* selectHabitPacksVc.swift in Sources */,
 				8F0B63B6290FEC8700DE7EF8 /* askAppWorkVc.swift in Sources */,
 				8F9F364C27ACF89800EB3516 /* activateNowvc.swift in Sources */,
+				8F6AC5E029E1540F002EBC99 /* welcomeVc.swift in Sources */,
 				8F1EB55729A34E70004F5196 /* askWorkTimeVc.swift in Sources */,
 				8F93BE5D27CC92CE004FA0BE /* focusSummaryVc.swift in Sources */,
 				8F92E88427BF65AF0085AF8C /* addWebUrlVc.swift in Sources */,
@@ -1291,7 +1331,7 @@
 				CODE_SIGN_IDENTITY = "Developer ID Application: Jeremy Nagel (TCUD568B3U)";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 133;
+				CURRENT_PROJECT_VERSION = 145;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = TCUD568B3U;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1325,7 +1365,7 @@
 				CODE_SIGN_IDENTITY = "Developer ID Application: Jeremy Nagel (TCUD568B3U)";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 133;
+				CURRENT_PROJECT_VERSION = 145;
 				DEVELOPMENT_TEAM = TCUD568B3U;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_TESTABILITY = NO;

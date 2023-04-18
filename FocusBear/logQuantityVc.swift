@@ -143,6 +143,8 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
             logType = "evening routine"
         }else if lCurrentState! == ._ACTIVITY_{
             logType = "break"
+        }else if lCurrentState! == ._SPECIAL_ACTIVITY_{
+            logType = "special activity"
         }
 
         addEntryInStatsCsv(logType: logType, activity: name, durationInSeconds: durationInSeconds, quantityQuestion: logQuantityQuestion, quantityLogged: "0.0", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "")
@@ -160,7 +162,13 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
                     thirdVcObj?.startTimer(duration: 30)// evening habit k baad 30 second k baad shutof ho jay isiliye ye timer lagaya
                 }
             }
-            allApiObject.activityCompletedApi(activity_id: activity_id, activity_sequence_id: activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:0.0, duration_logged:Int(durationInSeconds) ?? 0, choice_id: activityChoiceId, is_skipped: is_skipped, notes: "", completionHandler: {dic  in
+            
+            var should_not_update_current_activity = false
+            if lCurrentState == ._SPECIAL_ACTIVITY_{
+                should_not_update_current_activity = true
+            }
+            
+            allApiObject.activityCompletedApi(activity_id: activity_id, activity_sequence_id: activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:0.0, duration_logged:Int(durationInSeconds) ?? 0, choice_id: activityChoiceId, is_skipped: is_skipped, notes: "", should_not_update_current_activity: should_not_update_current_activity, completionHandler: {dic  in
                 DispatchQueue.main.async {
                     
                 }
@@ -202,6 +210,8 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
                 logType = "evening routine"
             }else if lCurrentState! == ._ACTIVITY_{
                 logType = "break"
+            }else if lCurrentState! == ._SPECIAL_ACTIVITY_{
+                logType = "special activity"
             }
             
             if !isReviseQuantity{
@@ -225,7 +235,12 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
                             thirdVcObj?.startTimer(duration: 30)// evening habit k baad 30 second k baad shutof ho jay isiliye ye timer lagaya
                         }
                     }
-                    allApiObject.activityCompletedApi(activity_id: activity_id, activity_sequence_id: activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:doubleVal, duration_logged:Int(durationInSeconds) ?? 0, choice_id: activityChoiceId, is_skipped:is_skipped, notes: notes, completionHandler: {dic  in
+                    var should_not_update_current_activity = false
+                    if lCurrentState == ._SPECIAL_ACTIVITY_{
+                        should_not_update_current_activity = true
+                    }
+                    
+                    allApiObject.activityCompletedApi(activity_id: activity_id, activity_sequence_id: activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:doubleVal, duration_logged:Int(durationInSeconds) ?? 0, choice_id: activityChoiceId, is_skipped:is_skipped, notes: notes, should_not_update_current_activity: should_not_update_current_activity, completionHandler: {dic  in
                         DispatchQueue.main.async {
                             
                         }

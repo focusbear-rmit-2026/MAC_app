@@ -294,13 +294,13 @@ class askPostponeVc: NSViewController {
                 }else{
                     activityPostponeCount += 1
                     self.view.removeFromSuperview()
-                    mainViewControllerObj?.postponeMorningHabitFor(minutes: postponeTime)
+                    mainViewControllerObj?.postponeMorningHabitFor(minutes: postponeTime, secondsToPostpone: nil)
                 }
                 
             }else{
                 activityPostponeCount += 1
                 self.view.removeFromSuperview()
-                mainViewControllerObj?.postponeMorningHabitFor(minutes: postponeTime)
+                mainViewControllerObj?.postponeMorningHabitFor(minutes: postponeTime, secondsToPostpone: nil)
             }
             
         }else if currentState == ._EVENING_HABIT_{
@@ -316,7 +316,7 @@ class askPostponeVc: NSViewController {
                         }else{
                             activityPostponeCount += 1
                             self.view.removeFromSuperview()
-                            mainViewControllerObj?.postponeEveningHabitFor(minutes: postponeTime)
+                            mainViewControllerObj?.postponeEveningHabitFor(minutes: postponeTime, secondsToPostpone: nil)
                         }
                         
                     }else{
@@ -327,19 +327,19 @@ class askPostponeVc: NSViewController {
                         }else{
                             activityPostponeCount += 1
                             self.view.removeFromSuperview()
-                            mainViewControllerObj?.postponeEveningHabitFor(minutes: postponeTime)
+                            mainViewControllerObj?.postponeEveningHabitFor(minutes: postponeTime, secondsToPostpone: nil)
                         }
                     }
                 }else{
                     activityPostponeCount += 1
                     self.view.removeFromSuperview()
-                    mainViewControllerObj?.postponeEveningHabitFor(minutes: postponeTime)
+                    mainViewControllerObj?.postponeEveningHabitFor(minutes: postponeTime, secondsToPostpone: nil)
                 }
                 
             }else{
                 self.view.removeFromSuperview()
                 activityPostponeCount += 1
-                mainViewControllerObj?.postponeEveningHabitFor(minutes: postponeTime)
+                mainViewControllerObj?.postponeEveningHabitFor(minutes: postponeTime, secondsToPostpone: nil)
             }
             
         }else if currentState == ._ACTIVITY_{

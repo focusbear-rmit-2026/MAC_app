@@ -125,7 +125,7 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
                                 if activityPostponeCount == 0 && postponeTime > 15{
                                     activityPostponeCount += 1
                                     self.view.removeFromSuperview()
-                                    mainViewControllerObj?.postponeMorningHabitFor(minutes: postponeTime)
+                                    mainViewControllerObj?.postponeMorningHabitFor(minutes: postponeTime, secondsToPostpone: nil)
                                     return;
                                 }else{
                                     self.view.removeFromSuperview()
@@ -144,7 +144,7 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
                                 if activityPostponeCount == 0 && postponeTime > 15{
                                     activityPostponeCount += 1
                                     self.view.removeFromSuperview()
-                                    mainViewControllerObj?.postponeEveningHabitFor(minutes: postponeTime)
+                                    mainViewControllerObj?.postponeEveningHabitFor(minutes: postponeTime, secondsToPostpone: nil)
                                     return;
                                 }else{
                                     self.view.removeFromSuperview()

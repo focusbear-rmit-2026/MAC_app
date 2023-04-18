@@ -11,6 +11,7 @@ import Cocoa
 class preloadFocusModesVc: NSViewController, NSTextFieldDelegate {
 
 
+    @IBOutlet weak var lblDescription: NSTextField!
     @IBOutlet weak var lblGotIt: NSTextField!
     @IBOutlet weak var textFieldSomethingElse: NSTextField!
     @IBOutlet weak var btnContinue: Button!
@@ -27,20 +28,20 @@ class preloadFocusModesVc: NSViewController, NSTextFieldDelegate {
         super.viewDidLoad()
         // Do view setup here.
         
+        lblDescription.stringValue = "We'll customise your focus mode depending on type of work you do."
+        
+        
         textFieldSomethingElse.placeholderString = "Rocket Surgery"
         textFieldSomethingElse.isHidden = true
         btnContinue.isEnabled = false
         
         var titleSelectWorkType = "Select work type"
-        
-       
-        lblTitle.stringValue = "What type of work do you mainly do?"
-        
 
+        lblTitle.stringValue = "What type of work do you mainly do?"
+    
         textFieldSomethingElse.delegate = self
         btnContinue.title = "Continue"
-        
-        
+
         var titleSomethingElse = "Something else"
         
         
@@ -55,7 +56,9 @@ class preloadFocusModesVc: NSViewController, NSTextFieldDelegate {
             
             textFieldSomethingElse.placeholderString = preloadFocusModesViewInfo.value(forKey: "placeholderWorkText") as? String ?? textFieldSomethingElse.placeholderString
             gotItText = preloadFocusModesViewInfo.value(forKey: "gotItText") as? String ?? gotItText
-        }//focusModeTemplateData
+            
+            lblDescription.stringValue = preloadFocusModesViewInfo.value(forKey: "description") as? String ?? lblDescription.stringValue
+        }//
 
         if focusModeTemplateData != nil{
             
@@ -170,56 +173,36 @@ class preloadFocusModesVc: NSViewController, NSTextFieldDelegate {
             }else{
                 dic["name"] = ((dic["name"] as? String ?? "") + " " + workText)
             }
-            //            arrDic[selectedIndex - 1] = dic
-            
-            //            if dic != nil{
-            
+
             if dic["id"] == nil{
                 let id = getUuid()
                 dic["id"] = id
             }
             
             addLog(text: "preload Focus modeVC:-  button Continue clicked")
-            preloadFocusModesWindowControllerObj!.contentViewController = getPreloadFocusModeAppsVcObj()
-            preloadFocusModeAppsVcObj?.resetView(dic: dic)
-
             
+//            UserDefaults.standard.set(dic, forKey: kUserdefaultsFocusAddedFromFirstHabit)// iska kaam khatam
+            arrFocusType.insert(dic, at: arrFocusType.count - 1)
+            UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+            allApiObject.addFocusMode(focusType: dic, completionHandler: {newDic in
+                
+            })
+            
+            if preferencesWindowControllerObj != nil{
+                if preferencesWindowControllerObj?.window?.isVisible ?? false{
+                    if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
+                        if tabview.selectedTabViewItemIndex == 1{
+                            focusPreferencesVcObj?.reloadData()
+                        }
+                    }
+                }
+            }
+            UserDefaults.standard.set(true, forKey: kUserdefaultsFocusTipsShown)
+            
+            addLog(text: "show Focus Tips Vc")
+            self.view.window?.contentViewController = getFocusTipsVcObjObj()
         }
-        
-//        switch selectedIndex {
-//        case 0:
-//            return // not possible because button is not enabled if option 0 is selected
-//        case 1://Programming
-//            dic = ["name":"\(titleProgramming) \(workText)", "color": getColorString(color: NSColor(red: 163/255, green: 255/255, blue: 161/255, alpha: 1)), "allowed_apps": ["/Applications/Visual Studio Code.app", "/Applications/Xcode.app", "/Applications/Utilities/Terminal.app", "/Applications/Google Chrome.app", "/Applications/iTerm2.app", "/Applications/Docker.app", "/Applications/Firefox.app", "/Applications/Insomnia.app", "/Applications/VirtualBox.app", "/Applications/DBeaver.app", "/Applications/Safari.app"], "allowed_urls": ["https://stackoverflow.com","localhost"], "isOn": false, "isAllowedAllApps":false, "jobType":jobTypeProgramming, "isAllowedListApproach":true, "blockUrlsArray": []]//#453, "isBlockedAllUrls":false, "isAllowedAllUrls":false
-//
-//        case 2://Graphic Design
-//            dic = ["name":"\(titleGraphicDesign) \(workText)", "color": getColorString(color: NSColor(red: 163/255, green: 255/255, blue: 161/255, alpha: 1)), "allowed_apps": ["/Applications/Figma.app", "/Applications/Adobe Illustrator.app", "/Applications/Adobe Photoshop.app", "/Applications/Google Chrome.app", "/Applications/Safari.app"], "allowed_urls": ["https://www.figma.com"], "isOn": false, "isAllowedAllApps":false, "jobType":jobTypeGraphicDesign, "isAllowedListApproach":true, "blockUrlsArray": []]//#453, "isBlockedAllUrls":false, "isAllowedAllUrls":false
-//
-//        case 3://Data Analysis
-//            dic = ["name":"\(titleDataAnalysis) \(workText)", "color": getColorString(color: NSColor(red: 163/255, green: 255/255, blue: 161/255, alpha: 1)), "allowed_apps": ["/Applications/Microsoft Excel.app", "/Applications/Google Chrome.app", "/Applications/Safari.app"], "allowed_urls": ["https://www.office.com"], "isOn": false, "isAllowedAllApps":false, "jobType":jobTypeDataAnalysis, "isAllowedListApproach":true, "blockUrlsArray": []]//#453 , "isBlockedAllUrls":false , "isAllowedAllUrls":false
-//
-//        case 4:
-//            dic = ["name":"\(textFieldSomethingElse.stringValue) \(workText)", "color": getColorString(color: NSColor(red: 163/255, green: 255/255, blue: 161/255, alpha: 1)), "allowed_apps": ["/Applications/Microsoft Excel.app", "/Applications/Microsoft Word.app", "/Applications/Google Chrome.app", "/System/Applications/Calendar.app", "/Applications/Safari.app"], "allowed_urls": ["https://www.google.com"], "isOn": false, "isAllowedAllApps":false, "jobType":jobTypeSomethingElse, "isAllowedListApproach":true, "blockUrlsArray": []]//#453// lsit approach check krni padeegi  sabiki, "isAllowedAllUrls":false , "isBlockedAllUrls":false
-//
-//
-//        default:
-//            break
-//        }
 
-//        if dic != nil{
-//            let id = getUuid()
-//            dic!["id"] = id
-////            UserDefaults.standard.set(dic, forKey: kUserdefaultsFocusAddedFromFirstHabit)
-//            addLog(text: "preload Focus modeVC:-  button Continue clicked")
-//            preloadFocusModesWindowControllerObj!.contentViewController = getPreloadFocusModeAppsVcObj()
-//            preloadFocusModeAppsVcObj?.resetView(dic: dic!)
-//
-//
-//        }
-        
-//        thirdVcObj?.btnFocesModesLodded()
-        
-        
     }
    
 

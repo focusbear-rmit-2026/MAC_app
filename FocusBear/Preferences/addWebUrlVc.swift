@@ -37,6 +37,8 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
     }
     
     var currenUrlAddingtState:URLADDINGSTATE = ._FOCUS_BLOCK_URL
+    var buttonCancelText = "Cancel"
+    var buttonDeleteUrlText = "Delete URL"
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -52,13 +54,8 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
         lblEnterUrl.stringValue = "Enter single or multiple urls(one in each line)"
         
         if let focusPreferencesInfo = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
-            if let buttonCancelText = focusPreferencesInfo.value(forKey: "buttonCancelText") as? String{
-                btnCancel.title = buttonCancelText
-            }
-//            if let urlPlaceHolderString = focusPreferencesInfo.value(forKey: "urlPlaceHolderString") as? String{
-//                textField.placeholderString = urlPlaceHolderString
-//            }
-
+            buttonCancelText = focusPreferencesInfo.value(forKey: "buttonCancelText") as? String ??  buttonCancelText
+            btnCancel.title = buttonCancelText
             if let invalidDomainText = focusPreferencesInfo.value(forKey: "invalidDomainText") as? String{
                 lblInvalidDomain.stringValue = invalidDomainText
             }
@@ -72,11 +69,13 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
             urlAlreadyExistsText = focusPreferencesInfo.value(forKey: "urlAlreadyExistsText") as? String ?? urlAlreadyExistsText
             lblEnterUrl.stringValue = focusPreferencesInfo.value(forKey: "enterMultiUrlText") as? String ?? lblEnterUrl.stringValue
             
+            buttonDeleteUrlText = focusPreferencesInfo.value(forKey: "buttonDeleteUrlText") as? String ?? buttonDeleteUrlText
         }
         
     }
     override func viewWillAppear() {
 
+        btnCancel.title = buttonCancelText
         
         if currenUrlAddingtState == ._FOCUS_ALLOW_URL{
             lblInstructionFirst.stringValue = "To allow a certain website: domain.com"
@@ -173,7 +172,9 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
                         lblTitle.stringValue = titleEditWebUrl
                     }
                 }
-
+                
+                btnCancel.title = buttonDeleteUrlText
+                btnAdd.isEnabled = true
                 btnAdd.title = buttonSaveText
             }
         }
@@ -556,11 +557,7 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
             }
         }
 
-        
 
-        
-        
-        
         self.dismiss(self)
         
     }
@@ -574,6 +571,23 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
         return pred.evaluate(with: domain)
     }
     @IBAction func btnCancelClicked(_ sender: Any) {
+        
+        if currenUrlAddingtState == ._ALL_BLOCK_URL{
+            if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
+                if tabview.selectedTabViewItemIndex == 1{
+                    if focusPreferencesVcObj != nil{
+                        focusPreferencesVcObj?.btnRemoveUrlClicked(self)
+                    }
+                }else{
+                    if blockedUrlsVcObj != nil{
+                        blockedUrlsVcObj?.btnRemoveUrlClicked(self)
+                    }
+                }
+            }
+            
+
+        }
+        
         self.dismiss(self)
     }
     

@@ -12,7 +12,12 @@ import TrueTime
 
 class focusPreferencesAdvancedVc: NSViewController {
     
-    @IBOutlet weak var checkBoxAutoDoNotDisturb: NSButton!
+    @IBOutlet weak var checkBoxRunShellAfterFocus: NSButton!
+    @IBOutlet weak var checkBoxRunShellBeforeFocus: NSButton!
+    
+    @IBOutlet var textViewRunShelltBeforeFocus: NSTextView!
+    @IBOutlet var textViewRunShelltAfterFocus: NSTextView!
+    
     @IBOutlet weak var lineHorizontal: NSBox!
     @IBOutlet weak var boxTableView: NSBox!
     @IBOutlet weak var bgBox: NSBox!
@@ -31,11 +36,19 @@ class focusPreferencesAdvancedVc: NSViewController {
     @IBOutlet weak var btnSelectAppleScriptAfterFocus: NSButton!
     @IBOutlet weak var btnOk: NSButton!
     
+    var isShellScriptBeforeFocusEdited = false
+    var isShellScriptAfterFocusEdited = false
     
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
-        checkBoxAutoDoNotDisturb.title = "Turn on Do Not Disturb automatically when starting a focus mode."
+
+        textViewRunShelltAfterFocus.delegate = self
+        textViewRunShelltBeforeFocus.delegate = self
+        
+        checkBoxRunShellBeforeFocus.title = "Run shell script before starting focus mode."
+        checkBoxRunShellAfterFocus.title = "Run shell script after finishing focus mode."
+        
         lblInstruction.stringValue = "The URLs here will be blocked during this focus mode. Useful if you want to allow some websites but block others. For example, you could have *.google.com as an allowed URL but block games.google.com"
         var runScriptBeforeText = "Run apple script before starting focus mode."
         var runScriptAfterText = "Run apple script after starting focus mode."
@@ -58,7 +71,9 @@ class focusPreferencesAdvancedVc: NSViewController {
             toolTipRemove = focusPreferencesAdvancedInfo.value(forKey: "toolTipRemove") as? String ?? toolTipRemove
             lblInstruction.stringValue = focusPreferencesAdvancedInfo.value(forKey: "instructionText") as? String ?? lblInstruction.stringValue
             
-            checkBoxAutoDoNotDisturb.title = focusPreferencesAdvancedInfo.value(forKey: "autoOnDoNotDisturbText") as? String ?? checkBoxAutoDoNotDisturb.title
+            checkBoxRunShellBeforeFocus.title = focusPreferencesAdvancedInfo.value(forKey: "runShellCommandBeforeText") as? String ?? checkBoxRunShellBeforeFocus.title
+            checkBoxRunShellAfterFocus.title = focusPreferencesAdvancedInfo.value(forKey: "runShellCommandAfterText") as? String ?? checkBoxRunShellAfterFocus.title
+    
         }
         
         checkBoxRunScriptBeforeFocus.title = runScriptBeforeText
@@ -83,9 +98,21 @@ class focusPreferencesAdvancedVc: NSViewController {
             btnAddUrl.image = NSImage(systemSymbolName: "plus.square.fill", accessibilityDescription: nil)
             btnRemoveUrl.image = NSImage(systemSymbolName: "minus.square.fill", accessibilityDescription: nil)
         }
+        
+        
+//        let task = Process()
+//        var args: [AnyHashable] = []
+//        args.append("-c")
+//        args.append("sleep \(1); open \"/System/Applications/TextEdit.app\"")
+//        task.launchPath = "/bin/sh"
+//        task.arguments = args as? [String]
+//        task.launch()
+        
     }
     override func viewWillAppear() {
         
+        isShellScriptBeforeFocusEdited = false
+        isShellScriptAfterFocusEdited = false
         if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
             if state{
                 self.view.window?.sharingType = .none
@@ -118,6 +145,39 @@ class focusPreferencesAdvancedVc: NSViewController {
                 checkBoxRunScriptAfterFocus.state = .off
             }
             
+            if let val = arrFocusType[row]["isShellCommandBeforeFocusEnabled"] as? Bool{
+                if val{
+                    checkBoxRunShellBeforeFocus.state = .on
+                }else{
+                    checkBoxRunShellBeforeFocus.state = .off
+                }
+            }else{
+                checkBoxRunShellBeforeFocus.state = .off
+            }
+            
+            if let val = arrFocusType[row]["isShellCommandAfterFocusEnabled"] as? Bool{
+                if val{
+                    checkBoxRunShellAfterFocus.state = .on
+                }else{
+                    checkBoxRunShellAfterFocus.state = .off
+                }
+            }else{
+                checkBoxRunShellAfterFocus.state = .off
+            }
+            if let val = arrFocusType[row]["shellCommandBeforeFocusText"] as? String{
+                textViewRunShelltBeforeFocus.string = val
+            }else{
+                textViewRunShelltBeforeFocus.string = ""
+            }
+            
+            if let val = arrFocusType[row]["shellCommandAfterFocusText"] as? String{
+                textViewRunShelltAfterFocus.string = val
+            }else{
+                textViewRunShelltAfterFocus.string = ""
+            }
+            
+            
+            
             if checkBoxRunScriptBeforeFocus.state == .on{
                 btnSelectAppleScriptBeforeFocus.isEnabled = true
             }else{
@@ -128,6 +188,18 @@ class focusPreferencesAdvancedVc: NSViewController {
             }else{
                 btnSelectAppleScriptAfterFocus.isEnabled = false
             }
+            
+            if checkBoxRunShellBeforeFocus.state == .on{
+                textViewRunShelltBeforeFocus.isEditable = true
+            }else{
+                textViewRunShelltBeforeFocus.isEditable = false
+            }
+            if checkBoxRunShellAfterFocus.state == .on{
+                textViewRunShelltAfterFocus.isEditable = true
+            }else{
+                textViewRunShelltAfterFocus.isEditable = false
+            }
+            
             
             
             if let val = arrFocusType[row]["scriptPathBeforeFocus"] as? String{
@@ -157,42 +229,31 @@ class focusPreferencesAdvancedVc: NSViewController {
             
             if let isAllowedListApproach = arrFocusType[row]["isAllowedListApproach"] as? Bool{
                 if arrFocusType[row]["isDefault"] as? Bool == true{
-                    bottomConstraint = NSLayoutConstraint(item: btnOk!, attribute: .top, relatedBy: .equal, toItem: checkBoxAutoDoNotDisturb, attribute: .bottom, multiplier: 1, constant: 14)
+                    bottomConstraint = NSLayoutConstraint(item: btnOk!, attribute: .top, relatedBy: .equal, toItem: textViewRunShelltAfterFocus, attribute: .bottom, multiplier: 1, constant: 14)
                     NSLayoutConstraint.activate([bottomConstraint!])
                     lblTitle.isHidden = true
                     lineHorizontal.isHidden = true
+                    lblInstruction.isHidden = true
                 }else{
                     if isAllowedListApproach{
                         bottomConstraint = NSLayoutConstraint(item: btnOk!, attribute: .top, relatedBy: .equal, toItem: boxTableView, attribute: .bottom, multiplier: 1, constant: 14)
                         NSLayoutConstraint.activate([bottomConstraint!])
                         lblTitle.isHidden = false
                         lineHorizontal.isHidden = false
+                        lblInstruction.isHidden = false
                     }else{
-                        bottomConstraint = NSLayoutConstraint(item: btnOk!, attribute: .top, relatedBy: .equal, toItem: checkBoxAutoDoNotDisturb, attribute: .bottom, multiplier: 1, constant: 14)
+                        bottomConstraint = NSLayoutConstraint(item: btnOk!, attribute: .top, relatedBy: .equal, toItem: textViewRunShelltAfterFocus, attribute: .bottom, multiplier: 1, constant: 14)
                         NSLayoutConstraint.activate([bottomConstraint!])
                         lblTitle.isHidden = true
                         lineHorizontal.isHidden = true
+                        lblInstruction.isHidden = true
                     }
                 }
             }
            
             
-            if let val = arrFocusType[row]["isAutoDoNotDisturbEnabled"] as? Bool{
-                if val{
-                    checkBoxAutoDoNotDisturb.state = .on
-                }else{
-                    checkBoxAutoDoNotDisturb.state = .off
-                }
-            }else{
-                checkBoxAutoDoNotDisturb.state = .off
-            }
-            
         }
         
-//        btnOk
-        
-        
-        //
     }
     var bottomConstraint: NSLayoutConstraint?
     @objc func tableRowBlockedUrlsDoubleClicked(){
@@ -243,6 +304,49 @@ class focusPreferencesAdvancedVc: NSViewController {
             }
         })
     }
+    
+    @IBAction func checkBoxRunShellCommandBeforeFocusClicked(_ sender: Any) {
+        let row = focusPreferencesVcObj?.tblViewFocusType.selectedRow ?? 0
+        if checkBoxRunShellBeforeFocus.state == .on{
+            arrFocusType[row]["isShellCommandBeforeFocusEnabled"] = true
+            textViewRunShelltBeforeFocus.isEditable = true
+            allApiObject.capturePosthog(event: "settings-changed-enable-shell-command-before-focus", metadata: [:])
+            self.view.window?.makeFirstResponder(textViewRunShelltBeforeFocus)
+        }else{
+            arrFocusType[row]["isShellCommandBeforeFocusEnabled"] = false
+            textViewRunShelltBeforeFocus.isEditable = false
+            allApiObject.capturePosthog(event: "settings-changed-enable-shell-command-before-focus", metadata: [:])
+        }
+        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+        
+        allApiObject.editFocusMode(focusType: arrFocusType[row], completionHandler: {newDic in
+            DispatchQueue.main.async {
+
+            }
+        })
+        
+    }
+    
+    @IBAction func checkBoxRunShellCommandAfterFocusClicked(_ sender: Any) {
+        let row = focusPreferencesVcObj?.tblViewFocusType.selectedRow ?? 0
+        if checkBoxRunShellAfterFocus.state == .on{
+            arrFocusType[row]["isShellCommandAfterFocusEnabled"] = true
+            textViewRunShelltAfterFocus.isEditable = true
+            allApiObject.capturePosthog(event: "settings-changed-enable-shell-command-after-focus", metadata: [:])
+            self.view.window?.makeFirstResponder(textViewRunShelltAfterFocus)
+        }else{
+            arrFocusType[row]["isShellCommandAfterFocusEnabled"] = false
+            textViewRunShelltAfterFocus.isEditable = false
+            allApiObject.capturePosthog(event: "settings-changed-enable-shell-command-after-focus", metadata: [:])
+        }
+        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+        allApiObject.editFocusMode(focusType: arrFocusType[row], completionHandler: {newDic in
+            DispatchQueue.main.async {
+
+            }
+        })
+    }
+    
     @IBAction func btnSelectAppleScriptBeforeClicked(_ sender: Any) {
         let row = focusPreferencesVcObj?.tblViewFocusType.selectedRow ?? 0
         let dialog = NSOpenPanel()
@@ -345,70 +449,47 @@ class focusPreferencesAdvancedVc: NSViewController {
             }
         })
         allApiObject.capturePosthog(event: "remove-blocked-url-in-focus-mode", metadata: [:])//#490
-//        if arrFocusType[selectedFocusTypeRow]["isOn"] as? Bool == true{
-//            currentRunningFocusType = arrFocusType[selectedFocusTypeRow]
-//        }
+
         reSetCurrentFocusMode(focusType:arrFocusType[selectedFocusTypeRow])
         
     }
     @IBAction func btnOkClicked(_ sender: Any) {
-        self.dismiss(self)
-    }
-    @IBAction func checkBoxAutoDoNotDisturbClicked(_ sender: Any) {
-        let row = focusPreferencesVcObj?.tblViewFocusType.selectedRow ?? 0
-        if checkBoxAutoDoNotDisturb.state == .on{
+        
+        if isShellScriptBeforeFocusEdited || isShellScriptAfterFocusEdited{
+            let row = focusPreferencesVcObj?.tblViewFocusType.selectedRow ?? 0
             
-            if !isAccessibilityEnabled(isPrompt: false){
-                let alert = NSAlert()
-                alert.setSharingType()
-                alert.messageText = "To turn on Do Not Disturb when starting a Focus Mode, Focus Bear needs Accessibility permissions. Would you like to give the permissions now?"
-                if let focusPreferencesAdvancedInfo = configjson.value(forKey: "focusPreferencesAdvancedInfo") as? NSDictionary{
-                    alert.messageText = focusPreferencesAdvancedInfo.value(forKey: "needDndPermissionText") as? String ?? alert.messageText
-                }
-                alert.addButton(withTitle: buttonOkText)
-                alert.addButton(withTitle: buttonCancelText)
-                alert.beginSheetModal(for: self.view.window!, completionHandler: { response in
-                    if response == .alertFirstButtonReturn{
-                        _ = isAccessibilityEnabled(isPrompt: true)
-                        arrFocusType[row]["isAutoDoNotDisturbEnabled"] = true
-                        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
-                        allApiObject.capturePosthog(event: "settings-changed-enable-dnd", metadata: [:])//#490
-                        allApiObject.editFocusMode(focusType: arrFocusType[row], completionHandler: {newDic in
-                            DispatchQueue.main.async {
-
-                            }
-                        })
-                        preferencesWindowControllerObj!.window!.setFrameOrigin(NSPoint(x: 0, y: 0))
-                    }else{
-                        self.checkBoxAutoDoNotDisturb.state = .off
-                    }
-                })
-                
-            }else{
-                arrFocusType[row]["isAutoDoNotDisturbEnabled"] = true
-                UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
-                
-                allApiObject.capturePosthog(event: "settings-changed-enable-dnd", metadata: [:])//#490
-                
-                allApiObject.editFocusMode(focusType: arrFocusType[row], completionHandler: {newDic in
-                    DispatchQueue.main.async {
-
-                    }
-                })
+            //"shellCommandAfterFocusText"] as? String{"shellCommandBeforeFocusText"
+            
+            
+            if isShellScriptBeforeFocusEdited{
+                arrFocusType[row]["shellCommandBeforeFocusText"] = textViewRunShelltBeforeFocus.string
+                allApiObject.capturePosthog(event: "set-shell-command-before-starting-focus-mode", metadata: [:])
             }
             
-        }else{
-            arrFocusType[row]["isAutoDoNotDisturbEnabled"] = false
+            
+            if isShellScriptAfterFocusEdited{
+                arrFocusType[row]["shellCommandAfterFocusText"] = textViewRunShelltAfterFocus.string
+                allApiObject.capturePosthog(event: "set-shell-command-after-completing-focus-mode", metadata: [:])
+            }
+            
+            
+            
+            
             UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
-            allApiObject.capturePosthog(event: "settings-changed-disable-dnd", metadata: [:])//#490
             allApiObject.editFocusMode(focusType: arrFocusType[row], completionHandler: {newDic in
                 DispatchQueue.main.async {
-
+                    
                 }
             })
+            
         }
         
+        
+        
+        
+        self.dismiss(self)
     }
+
     
 }
 extension focusPreferencesAdvancedVc: NSTableViewDelegate, NSTableViewDataSource{
@@ -469,4 +550,18 @@ extension focusPreferencesAdvancedVc: NSTableViewDelegate, NSTableViewDataSource
     }
     
 
+}
+
+
+extension focusPreferencesAdvancedVc:NSTextViewDelegate{
+    func textDidBeginEditing(_ notification: Notification) {
+        print("textDidBeginEditing")
+        if let textView = notification.object as? NSTextView{
+            if textView == textViewRunShelltBeforeFocus{
+                isShellScriptBeforeFocusEdited = true
+            }else if textView == textViewRunShelltAfterFocus{
+                isShellScriptAfterFocusEdited = true
+            }
+        }
+    }
 }

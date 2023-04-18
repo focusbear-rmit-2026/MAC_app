@@ -16,7 +16,7 @@ class generalVc: NSViewController, NSTextFieldDelegate {
     @IBOutlet weak var tabViewItemPassword: NSTabViewItem!
     @IBOutlet weak var tabViewItemBlockedUrls: NSTabViewItem!
     @IBOutlet weak var tabViewBlockedUrls: NSView!
-    @IBOutlet weak var btnExportLogs: underLineButton!
+    
     @IBOutlet weak var btnLearnPomodoroTechnique: underLineButton!
     
     @IBOutlet weak var lblDescriptionPomodoro: NSTextField!
@@ -146,7 +146,7 @@ class generalVc: NSViewController, NSTextFieldDelegate {
         lblCheckBoxMeetingDetection.stringValue = "Enable meeting detection"
         
         
-        btnExportLogs.title = "Click here to export logs to share with Support Team."
+//        btnExportLogs.title = "Click here to export logs to share with Support Team."
         lblTitleSkipHabits.stringValue = "Skip Habits easiness:"
         lblQuestionSkipHabit.stringValue = "How easy do you want it to be to skip your habits?"
         lblradioButtonEasySkip.stringValue = "Really easy - I want to be able to skip habits/breaks in a hurry"
@@ -268,7 +268,7 @@ class generalVc: NSViewController, NSTextFieldDelegate {
             lblradioButtonEasySkip.stringValue = preferencesInfo.value(forKey: "radioButtonEasySkipText") as? String ?? lblradioButtonEasySkip.stringValue
             lblradioButtonHardSkip.stringValue = preferencesInfo.value(forKey: "radioButtonHardSkipText") as? String ?? lblradioButtonHardSkip.stringValue
             
-            btnExportLogs.title = preferencesInfo.value(forKey: "buttonExportLogsText") as? String ?? btnExportLogs.title
+//            btnExportLogs.title = preferencesInfo.value(forKey: "buttonExportLogsText") as? String ?? btnExportLogs.title
             
             lblTitleMeetingDetection.stringValue = preferencesInfo.value(forKey: "titleMeetingDetection") as? String ?? lblTitleMeetingDetection.stringValue
             lblDescriptionMeetingDetection.stringValue = preferencesInfo.value(forKey: "descriptionMeetingDetectionText") as? String ?? lblDescriptionMeetingDetection.stringValue
@@ -827,6 +827,9 @@ class generalVc: NSViewController, NSTextFieldDelegate {
     }
 
     @IBAction func radioBtnCuddlyBearClicked(_ sender: Any) {
+        if SettingsManagerObject.isCuddlyModeEnabled == true{
+            return;
+        }
         SettingsManagerObject.isSettingsChanged = true
         radioBtnGrizzlyBear.state = .off
         SettingsManagerObject.isCuddlyModeEnabled = true
@@ -834,10 +837,31 @@ class generalVc: NSViewController, NSTextFieldDelegate {
     }
     
     @IBAction func radioBtnGrizzlyBearClicked(_ sender: Any) {
+        if SettingsManagerObject.isCuddlyModeEnabled == false{
+            return;
+        }
         SettingsManagerObject.isSettingsChanged = true
         radioBtnCuddlyBear.state = .off
         SettingsManagerObject.isCuddlyModeEnabled = false
         allApiObject.capturePosthog(event: "settings-changed-focus-bear-mode-grizzly", metadata: [:])//#490
+        
+        let alert = NSAlert()
+        alert.setSharingType()
+        var warningText = "Warning: Grizzly Bear mode is not recommended until you have fully fleshed out your focus modes. We recommend starting with cuddly bear mode and switching to Grizzly Bear mode after a few weeks"
+        if let preferencesInfo = configjson.value(forKey: "preferencesInfo") as? NSDictionary{
+            warningText = preferencesInfo.value(forKey: "warningGrizzlyBearText") as? String ?? warningText
+        }
+        
+        alert.messageText = warningText
+        alert.addButton(withTitle: buttonOkText)
+        
+        if self.view.window != nil{
+            alert.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
+                if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
+                    
+                }
+            })
+        }
     }
     
     @IBAction func checkBoxReduceMotionClicked(_ sender: Any) {
@@ -930,66 +954,66 @@ class generalVc: NSViewController, NSTextFieldDelegate {
          
      }
      */
-    @IBAction func btnExportLogsClicked(_ sender: Any) {
-        let openPanel = NSOpenPanel()
-        openPanel.canChooseFiles = false
-        openPanel.canChooseDirectories = true
-        openPanel.allowsMultipleSelection = false
-        openPanel.treatsFilePackagesAsDirectories = false
-        openPanel.prompt = "Export Logs"
-        openPanel.message = "Export logs to share with Focus Bear Support Team"
-        
-        if let preferencesInfo = configjson.value(forKey: "preferencesInfo") as? NSDictionary{
-            openPanel.prompt = preferencesInfo.value(forKey: "buttonPanelExportLogsText") as? String ?? openPanel.prompt
-            openPanel.message = preferencesInfo.value(forKey: "panelExportLogsText") as? String ?? openPanel.message
-        }
-        if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
-            if state{
-                openPanel.sharingType = .none
-            }
-        }
-    
-        
-        openPanel.beginSheetModal(for: self.view.window!) { response in
-            guard response.rawValue == NSApplication.ModalResponse.OK.rawValue else {
-                return
-            }
-            if let url = openPanel.url {
-                let filemanager = FileManager.default
-                let destUrl = url.appendingPathComponent("FocusBearLogs.zip")
-                if filemanager.fileExists(atPath: destUrl.path){
-                    do{
-                        try filemanager.removeItem(at: destUrl)
-                    }catch{
-                        print(error)
-                    }
-                }
-                //FocusBearLogs.zip
-
-     
-                do{
-                    _ = try DebugLogsFolderURL!.zip(dest: destUrl)
-                }catch{
-                    
-                }
-                
-                
-                var successText = "Your logs are available to share in the FocusBearLogs.zip file in the <URL> directory"
-                if let preferencesInfo = configjson.value(forKey: "preferencesInfo") as? NSDictionary{
-                    successText = preferencesInfo.value(forKey: "exportSuccessText") as? String ?? successText
-                }
-                
-                successText = successText.replacingOccurrences(of: "<URL>", with: url.path)
-                
-                self.showAlert(msg: successText, completionHandler: {_ in
-                    NSWorkspace.shared.activateFileViewerSelecting([destUrl])
-                })
-                
-                allApiObject.capturePosthog(event: "export-logs", metadata: [:])
-                
-            }
-        }
-    }
+//    @IBAction func btnExportLogsClicked(_ sender: Any) {
+//        let openPanel = NSOpenPanel()
+//        openPanel.canChooseFiles = false
+//        openPanel.canChooseDirectories = true
+//        openPanel.allowsMultipleSelection = false
+//        openPanel.treatsFilePackagesAsDirectories = false
+//        openPanel.prompt = "Export Logs"
+//        openPanel.message = "Export logs to share with Focus Bear Support Team"
+//        
+//        if let preferencesInfo = configjson.value(forKey: "preferencesInfo") as? NSDictionary{
+//            openPanel.prompt = preferencesInfo.value(forKey: "buttonPanelExportLogsText") as? String ?? openPanel.prompt
+//            openPanel.message = preferencesInfo.value(forKey: "panelExportLogsText") as? String ?? openPanel.message
+//        }
+//        if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
+//            if state{
+//                openPanel.sharingType = .none
+//            }
+//        }
+//    
+//        
+//        openPanel.beginSheetModal(for: self.view.window!) { response in
+//            guard response.rawValue == NSApplication.ModalResponse.OK.rawValue else {
+//                return
+//            }
+//            if let url = openPanel.url {
+//                let filemanager = FileManager.default
+//                let destUrl = url.appendingPathComponent("FocusBearLogs.zip")
+//                if filemanager.fileExists(atPath: destUrl.path){
+//                    do{
+//                        try filemanager.removeItem(at: destUrl)
+//                    }catch{
+//                        print(error)
+//                    }
+//                }
+//                //FocusBearLogs.zip
+//
+//     
+//                do{
+//                    _ = try DebugLogsFolderURL!.zip(dest: destUrl)
+//                }catch{
+//                    
+//                }
+//                
+//                
+//                var successText = "Your logs are available to share in the FocusBearLogs.zip file in the <URL> directory"
+//                if let preferencesInfo = configjson.value(forKey: "preferencesInfo") as? NSDictionary{
+//                    successText = preferencesInfo.value(forKey: "exportSuccessText") as? String ?? successText
+//                }
+//                
+//                successText = successText.replacingOccurrences(of: "<URL>", with: url.path)
+//                
+//                self.showAlert(msg: successText, completionHandler: {_ in
+//                    NSWorkspace.shared.activateFileViewerSelecting([destUrl])
+//                })
+//                
+//                allApiObject.capturePosthog(event: "export-logs", metadata: [:])
+//                
+//            }
+//        }
+//    }
     @IBAction func btnExportStatisticsClicked(_ sender: Any) {
         let openPanel = NSOpenPanel()
         openPanel.canChooseFiles = false
@@ -1015,7 +1039,9 @@ class generalVc: NSViewController, NSTextFieldDelegate {
             //        if button == NSApplication.ModalResponse.OK {
             if let url = openPanel.url {
                 let filemanager = FileManager.default
-                let destUrl = url.appendingPathComponent(quantityCsvURL.lastPathComponent)
+                
+                
+                let destUrl = url.appendingPathComponent("Focus Bear Data")
                 if filemanager.fileExists(atPath: destUrl.path){
                     do{
                         try filemanager.removeItem(at: destUrl)
@@ -1025,13 +1051,73 @@ class generalVc: NSViewController, NSTextFieldDelegate {
                 }
                 
                 do{
-                    try FileManager.default.copyItem(at: quantityCsvURL, to: destUrl)
+                    try filemanager.createDirectory(at: destUrl, withIntermediateDirectories: false)
+
+                    
+                    // stats
+                    let destCsvUrl = destUrl.appendingPathComponent("Stats.csv")
+                    do{
+                        try FileManager.default.copyItem(at: quantityCsvURL, to: destCsvUrl)
+                    }catch{
+                        print(error)
+                    }
+                    
+                    
+                    // settings
+                    
+                    let destSettingsUrl = destUrl.appendingPathComponent("Habit settings.json")
+                    var jsonString = ""
+                    if let text = UserDefaults.standard.object(forKey: kUserdefaultsSelectedJson) as? String {
+                        jsonString = text
+                    }
+                    if let data = jsonString.data(using: String.Encoding.utf8) {
+                        do{
+                        try data.write(to: destSettingsUrl)
+                        }catch{
+                            print(error)
+                        }
+                    }
+                    
+                    //Preferences
+                    
+                    var preferencesJSon = SettingsManagerObject.getLocalJsonToUpload()
+                    preferencesJSon.removeValue(forKey: "kAppPassword")
+                    let destPreferencessUrl = destUrl.appendingPathComponent("Preferences.json")
+                    
+                    let data = try JSONSerialization.data(withJSONObject: preferencesJSon, options: .init(rawValue: 0))
+                    do{
+                        try data.write(to: destPreferencessUrl)
+                    }catch{
+                        print(error)
+                    }
+                    
+                
+                    //
+                    
+                    
+                    //focus modes
+                    
+                    let focusJSon = arrFocusType
+                    let destFocusJsonUrl = destUrl.appendingPathComponent("Focus Mode settings.json")
+                    
+                    let focusData = try JSONSerialization.data(withJSONObject: focusJSon, options: .init(rawValue: 0))
+                    do{
+                        try focusData.write(to: destFocusJsonUrl)
+                    }catch{
+                        print(error)
+                    }
+                    //
+                    
+                    
+                    
+                    allApiObject.capturePosthog(event: "export-data", metadata: [:])
+                    
                 }catch{
-                    print(error)
+                    
                 }
-                allApiObject.capturePosthog(event: "export-statistics", metadata: [:])
+                
+                
             }
-            //        }
         }
     }
     @IBAction func btnCheckForUpdatesClicked(_ sender: Any) {

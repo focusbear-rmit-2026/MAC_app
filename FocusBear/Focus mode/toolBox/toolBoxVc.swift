@@ -43,53 +43,97 @@ class toolBoxVc: NSViewController {
         
     }
     
-    
+    var isFocusModeOn = false
     func resetView() {
-        
+        isFocusModeOn = Focus_Bear.isFocusModeOn()
         var focusMode = ""
-        for dic in arrFocusType{
-            if dic["isOn"] as? Bool == true{
-                focusMode = dic["name"] as? String ?? ""
+//        for dic in arrFocusType{
+//            if dic["isOn"] as? Bool == true{//
+//                focusMode = dic["name"] as? String ?? ""
+//            }
+//        }
+        if currentHabitPlaying != nil{
+            focusMode = currentHabitPlaying?.name ?? ""
+            
+            var titleText = "The toolbox makes it easy to open the apps and websites that you've allowed in the <ACTIVITY_NAME> activity. You can access it from the Menu under Tools."
+            if let toolBoxVcInfo = configjson.value(forKey: "toolBoxVcInfo") as? NSDictionary{
+                titleText = toolBoxVcInfo.value(forKey: "titleForActivity") as? String ?? titleText
             }
-        }
-        
-        var titleText = "The toolbox makes it easy to open the apps and websites that you've allowed in the <FOCUS_NAME> focus mode. You can access it from the Menu under Tools."
-        if let toolBoxVcInfo = configjson.value(forKey: "toolBoxVcInfo") as? NSDictionary{
-            titleText = toolBoxVcInfo.value(forKey: "title") as? String ?? titleText
-        }
-        titleText = titleText.replacingOccurrences(of: "<FOCUS_NAME>", with: focusMode)
-        
-        lblTitle.stringValue = titleText
-
-        let isAllowedAllAppsInFocus = currentRunningFocusType["isAllowedAllApps"] as? Bool ?? false
-        let allowAppsPath = currentRunningFocusType["allowed_apps"] as? [String] ?? []
-        
-        if allowAppsPath.count == 0 || isAllowedAllAppsInFocus {
-            boxApps.isHidden = true
+            titleText = titleText.replacingOccurrences(of: "<ACTIVITY_NAME>", with: focusMode)
+            lblTitle.stringValue = titleText
+            
         }else{
-            boxApps.isHidden = false
-            collectionViewApps.reloadData()
+            focusMode = currentRunningFocusType["name"] as? String ?? ""
+            var titleText = "The toolbox makes it easy to open the apps and websites that you've allowed in the <FOCUS_NAME> focus mode. You can access it from the Menu under Tools."
+            if let toolBoxVcInfo = configjson.value(forKey: "toolBoxVcInfo") as? NSDictionary{
+                titleText = toolBoxVcInfo.value(forKey: "title") as? String ?? titleText
+            }
+            titleText = titleText.replacingOccurrences(of: "<FOCUS_NAME>", with: focusMode)
+            lblTitle.stringValue = titleText
         }
         
-        let isAllowedAllUrlsInFocus = false//currentRunningFocusType["isAllowedAllUrls"] as? Bool ?? false#453
-        let isAllowedListApproachInFocus = currentRunningFocusType["isAllowedListApproach"] as? Bool ?? false
-        let arrAllowedUrlsForFocus = currentRunningFocusType["allowed_urls"] as? [String] ?? []
-        
-        if arrAllowedUrlsForFocus.count == 0 || isAllowedAllUrlsInFocus || !isAllowedListApproachInFocus{
-            boxUrls.isHidden = true
-        }else{
-            boxUrls.isHidden = false
-            if arrAllowedUrlsForFocus.count > 5{
-                heightScrollView.constant = (5*29) + 5
+        //isAnyAllowedFocusModeActivityRunning
+        if isFocusModeOn || isAnyAllowedFocusModeActivityRunning{
+            let isAllowedAllAppsInFocus = currentRunningFocusType["isAllowedAllApps"] as? Bool ?? false
+            let allowAppsPath = currentRunningFocusType["allowed_apps"] as? [String] ?? []
+            
+            if allowAppsPath.count == 0 || isAllowedAllAppsInFocus {
+                boxApps.isHidden = true
             }else{
-                heightScrollView.constant = CGFloat(arrAllowedUrlsForFocus.count * 29) + 5
+                boxApps.isHidden = false
+                collectionViewApps.reloadData()
             }
-            tblViewUrls.reloadData()
+            
+            let isAllowedAllUrlsInFocus = false//currentRunningFocusType["isAllowedAllUrls"] as? Bool ?? false#453
+            let isAllowedListApproachInFocus = currentRunningFocusType["isAllowedListApproach"] as? Bool ?? false
+            let arrAllowedUrlsForFocus = currentRunningFocusType["allowed_urls"] as? [String] ?? []
+            
+            if arrAllowedUrlsForFocus.count == 0 || isAllowedAllUrlsInFocus || !isAllowedListApproachInFocus{
+                boxUrls.isHidden = true
+            }else{
+                boxUrls.isHidden = false
+                if arrAllowedUrlsForFocus.count > 5{
+                    heightScrollView.constant = (5*29) + 5
+                }else{
+                    heightScrollView.constant = CGFloat(arrAllowedUrlsForFocus.count * 29) + 5
+                }
+                tblViewUrls.reloadData()
+            }
+            
+        }else if currentHabitPlaying != nil{
+            let allowAppsPath = currentHabitPlaying?.allowApps ?? []
+            
+            if allowAppsPath.count == 0{
+                boxApps.isHidden = true
+            }else{
+                boxApps.isHidden = false
+                collectionViewApps.reloadData()
+            }
+            
+
+            let arrAllowedUrlsForFocus = currentHabitPlaying?.allowUrls ?? []
+            
+            if arrAllowedUrlsForFocus.count == 0{
+                boxUrls.isHidden = true
+            }else{
+                boxUrls.isHidden = false
+                if arrAllowedUrlsForFocus.count > 5{
+                    heightScrollView.constant = (5*29) + 5
+                }else{
+                    heightScrollView.constant = CGFloat(arrAllowedUrlsForFocus.count * 29) + 5
+                }
+                tblViewUrls.reloadData()
+            }
         }
-       // heightBox.constant = viewHeight
+        
+
+        
+       
+        
+        
+        
         let screenFrame = NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 1920, height: 1080)
         getToolBoxWindowObject().window?.setFrameOrigin(NSPoint(x: 0, y: ((screenFrame.height) - (self.view.window?.frame.height ?? 100))))
-        
         if UserDefaults.standard.object(forKey: kUserdefaultsDontShowToolBoxAutomatically) as? Bool == false{
             checkBoxDontShow.state = .off
         }else{
@@ -113,58 +157,93 @@ class toolBoxVc: NSViewController {
 extension toolBoxVc:NSCollectionViewDelegate, NSCollectionViewDataSource {
     
     func collectionView(_ collectionView: NSCollectionView, numberOfItemsInSection section: Int) -> Int {
-        let allowAppsPath = currentRunningFocusType["allowed_apps"] as? [String] ?? []
-        return allowAppsPath.count
+        if isFocusModeOn || isAnyAllowedFocusModeActivityRunning{
+            let allowAppsPath = currentRunningFocusType["allowed_apps"] as? [String] ?? []
+            return allowAppsPath.count
+        }else if currentHabitPlaying != nil{
+            let allowAppsPath = currentHabitPlaying?.allowApps ?? []
+            return allowAppsPath.count
+        }else{
+            return 0
+        }
     }
     
     func collectionView(_ collectionView: NSCollectionView, itemForRepresentedObjectAt indexPath: IndexPath) -> NSCollectionViewItem {
         
         let item = collectionView.makeItem(withIdentifier: NSUserInterfaceItemIdentifier(rawValue: "collectionCellToolBox"), for: indexPath) as! collectionCellToolBox
         
-            let allowAppsPath = currentRunningFocusType["allowed_apps"] as? [String] ?? []
+        var allowAppsPath = [String]()
+        
+        if isFocusModeOn || isAnyAllowedFocusModeActivityRunning{
+            allowAppsPath = currentRunningFocusType["allowed_apps"] as? [String] ?? []
             if item.btnIcon != nil{
                 item.btnIcon.image = NSWorkspace.shared.icon(forFile: allowAppsPath[indexPath.item])
             }
-            item.urlString = ""
-            item.btnIcon.target = self
-            item.btnIcon.tag = indexPath.item
-            item.btnIcon.action = #selector(btnOpenAppClicked(sender:))
+        }else if currentHabitPlaying != nil{
+            allowAppsPath = currentHabitPlaying?.allowApps ?? []
+            if item.btnIcon != nil{
+                item.btnIcon.image = NSWorkspace.shared.icon(forFile: "/Applications/\(allowAppsPath[indexPath.item]).app")
+            }
+        }else{
+            return item
+        }
+        
+        
+        item.urlString = ""
+        item.btnIcon.target = self
+        item.btnIcon.tag = indexPath.item
+        item.btnIcon.action = #selector(btnOpenAppClicked(sender:))
         
         return item
     }
     
     @objc func btnOpenAppClicked(sender:NSButton){
         addLog(text: "toolBoxVc:- btnOpenAppClicked")
-        let allowAppsPath = currentRunningFocusType["allowed_apps"] as? [String] ?? []
-        NSWorkspace.shared.launchApplication(allowAppsPath[sender.tag])
+        var allowAppsPath = [String]()
+        
+        if isFocusModeOn || isAnyAllowedFocusModeActivityRunning{
+            allowAppsPath = currentRunningFocusType["allowed_apps"] as? [String] ?? []
+            NSWorkspace.shared.launchApplication(allowAppsPath[sender.tag])
+        }else if currentHabitPlaying != nil{
+            allowAppsPath = currentHabitPlaying?.allowApps ?? []
+            NSWorkspace.shared.launchApplication("/Applications/\(allowAppsPath[sender.tag]).app")
+        }else{
+            return;
+        }
+
         allApiObject.capturePosthog(event: "toolbox-open-app-clicked", metadata: [:])
     }
-//    @objc func btnOpenUrlClicked(sender:NSButton){
-//        addLog(text: "toolBoxVc:- btnOpenUrlClicked")
-//        var url = appdelegate!.arrAllowedUrlsForFocus[sender.tag]
-//        if !url.lowercased().contains("http://") && !url.lowercased().contains("https://"){
-//            url = "http://"+url
-//        }
-//        NSWorkspace.shared.open(URL(string: url)!)
-//        allApiObject.capturePosthog(event: "toolbox-open-url-clicked", metadata: [:])
-//    }
+
     
 }
 
 
 extension toolBoxVc:NSTableViewDelegate, NSTableViewDataSource {
     func numberOfRows(in tableView: NSTableView) -> Int {
-        let arrAllowedUrlsForFocus = currentRunningFocusType["allowed_urls"] as? [String] ?? []
-        return arrAllowedUrlsForFocus.count
+        var arrAllowedUrls = [String]()
+        
+        if isFocusModeOn || isAnyAllowedFocusModeActivityRunning{
+            arrAllowedUrls = currentRunningFocusType["allowed_urls"] as? [String] ?? []
+        }else if currentHabitPlaying != nil{
+            arrAllowedUrls = currentHabitPlaying?.allowUrls ?? []
+        }
+        
+        return arrAllowedUrls.count
     }
 
 
 
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
         if let cell = tableView.makeView(withIdentifier: NSUserInterfaceItemIdentifier(rawValue: "tblCellToolBox"), owner: nil) as? tblCellToolBox {
+            var arrAllowedUrls = [String]()
             
-            let arrAllowedUrlsForFocus = currentRunningFocusType["allowed_urls"] as? [String] ?? []
-            cell.lblUrl.stringValue = arrAllowedUrlsForFocus[row]
+            if isFocusModeOn || isAnyAllowedFocusModeActivityRunning{
+                arrAllowedUrls = currentRunningFocusType["allowed_urls"] as? [String] ?? []
+            }else if currentHabitPlaying != nil{
+                arrAllowedUrls = currentHabitPlaying?.allowUrls ?? []
+            }
+            cell.lblUrl.stringValue = arrAllowedUrls[row]
+            
             return cell
         }
 
@@ -175,8 +254,15 @@ extension toolBoxVc:NSTableViewDelegate, NSTableViewDataSource {
         if tblViewUrls.selectedRow == -1{
             return
         }
-        let arrAllowedUrlsForFocus = currentRunningFocusType["allowed_urls"] as? [String] ?? []
-        var url = arrAllowedUrlsForFocus[tblViewUrls.selectedRow]
+        var arrAllowedUrls = [String]()
+        
+        if isFocusModeOn || isAnyAllowedFocusModeActivityRunning{
+            arrAllowedUrls = currentRunningFocusType["allowed_urls"] as? [String] ?? []
+        }else if currentHabitPlaying != nil{
+            arrAllowedUrls = currentHabitPlaying?.allowUrls ?? []
+        }
+        
+        var url = arrAllowedUrls[tblViewUrls.selectedRow]
         if !url.lowercased().contains("http://") && !url.lowercased().contains("https://"){
             url = "http://"+url
         }

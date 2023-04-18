@@ -19,7 +19,6 @@ class abortingFocusModeVc: NSViewController {
     var currentTimer = 0
     var totalDuration = 10
     var timer:Timer?
-    var activeFocusIndex = 0
     
     var titleText = "Aborting Focus type - <FOCUSTYPE>"
     var arrReasons = ["I achieved what I wanted to too early.", "I have an emergency", "Focus mode is not working properly."]
@@ -84,8 +83,7 @@ class abortingFocusModeVc: NSViewController {
         var focusType = ""
         for i in 0..<arrFocusType.count{
             let focus = arrFocusType[i]
-            activeFocusIndex = i
-            if focus["isOn"] as? Bool == true{
+            if focus["isOn"] as? Bool == true || focus["isPaused"] as? Bool == true{
                 focusType = focus["name"] as? String ?? ""
             }
         }
@@ -162,7 +160,7 @@ class abortingFocusModeVc: NSViewController {
     }
     @IBAction func btnAbortFocusClicked(_ sender: Any) {
         addLog(text: "abortingFocusModeVc - btnAbortFocusClicked")//
-        if isFocusModeOn() == false{
+        if isFocusModeOnOrPaused() == false{
             self.view.window?.close()
             return
         }

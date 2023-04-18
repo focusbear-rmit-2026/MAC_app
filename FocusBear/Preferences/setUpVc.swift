@@ -7,9 +7,11 @@
 //
 
 import Cocoa
+import WebKit
 
-class setUpVc: NSViewController {
+class setUpVc: NSViewController, WKNavigationDelegate {
 
+    @IBOutlet weak var webView: WKWebView!
     @IBOutlet weak var imgViewCustomiseFocusMode: NSImageView!
     @IBOutlet weak var imgViewCustomiseHabit: NSImageView!
     @IBOutlet weak var imgViewSetBlockedUrls: NSImageView!
@@ -60,8 +62,39 @@ class setUpVc: NSViewController {
             lblFocusSession.stringValue = setUpVcInfo.value(forKey: "focusSessionText") as? String ?? lblFocusSession.stringValue
         }
         
+        self.webView.navigationDelegate = self
+        let url = "https://dashboard.focusbear.io/webview/stats"
+        let  fileURL = URL(string: url)
+        let request = NSMutableURLRequest(url: fileURL!)
+        webView.load(request as URLRequest)
     }
     
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        print("*************didFinish navigation**************")
+        DispatchQueue.global().async {
+            sleep(1)
+            DispatchQueue.main.async {
+                self.setAccessTokenToWebView()
+            }
+        }
+    }
+    
+    override func viewDidAppear() {
+        setAccessTokenToWebView()
+        self.view.window?.styleMask.insert(.resizable)
+    }
+
+    func setAccessTokenToWebView(){
+        let stringJson1 = "{access_token: \"\(appdelegate!.credential?.accessToken ?? "")\"}"
+        
+        let javascript = "loadAccessTokenForStats(\(stringJson1));"
+        
+        webView.evaluateJavaScript(javascript,completionHandler: { (html: Any?, error: Error?) in
+            print(error)
+            print("****error")
+            print(html)
+        })
+    }
     override func viewWillAppear() {
         let maximumProgressWidth = boxProgressFull.frame.width - (boxProgressFull.borderWidth*2)
 
@@ -166,6 +199,10 @@ class setUpVc: NSViewController {
         
         boxProgressWidth.constant = CGFloat((Double(maximumProgressWidth)*averageProgress)/100)
         
+        
     }
-    
+ 
+    override func viewWillDisappear() {
+        self.view.window?.styleMask.remove(.resizable)
+    }
 }

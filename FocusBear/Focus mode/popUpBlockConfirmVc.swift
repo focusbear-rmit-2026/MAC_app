@@ -27,6 +27,7 @@ class popUpBlockConfirmVc: NSViewController {
     var browser:BROWSER?
     var titleText = "Do you need to use <URL> when you're focusing on <FOCUSTYPE>?"
     var intentionText = "Your intention was \"<INTENTION>\""
+    var currentPid: pid_t?
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
@@ -47,7 +48,7 @@ class popUpBlockConfirmVc: NSViewController {
         btnEditSettings.buttonColor = NSColor.white.cgColor
     }
     
-    func resetView(blockedAppName:String, currentApp:NSRunningApplication?, url:String, script:String, isBlockApp:Bool, browser:BROWSER?){
+    func resetView(blockedAppName:String, currentApp:NSRunningApplication?, url:String, script:String, isBlockApp:Bool, browser:BROWSER?,currentPid: pid_t?){
         if self.currentApp != nil{
             if self.currentApp == currentApp{
                 return;
@@ -58,7 +59,7 @@ class popUpBlockConfirmVc: NSViewController {
         self.url = url
         var currentRunningFocusModeName = ""
         self.browser = browser
-        
+        self.currentPid = currentPid
         
         
         if isAnyAllowedFocusModeActivityRunning{
@@ -79,7 +80,7 @@ class popUpBlockConfirmVc: NSViewController {
             }else{
                 lblTitle.stringValue = blockTitle
             }
-                
+            
             
         }else{
             var blockTitle = titleText.replacingOccurrences(of: "<URL>", with: url)
@@ -94,6 +95,8 @@ class popUpBlockConfirmVc: NSViewController {
         self.currentApp = currentApp
         currentAppName = blockedAppName
         startTimer(durationSeconds: 15)
+        
+        
     }
     func startTimer(durationSeconds:Int) {
         currentTimer = 0
@@ -152,12 +155,53 @@ class popUpBlockConfirmVc: NSViewController {
             }else{
                 self.lblTimer.stringValue = "\(hour):\(minute):\(second)"
             }
+           
+                
+             
+             
+                    
+                    
+            if let pid = self.currentPid{
+                
+                
+                let options = CGWindowListOption(arrayLiteral: CGWindowListOption.excludeDesktopElements, CGWindowListOption.optionOnScreenOnly)
+                let windowListInfo = CGWindowListCopyWindowInfo(options, CGWindowID(0))
+                let windowInfoList = windowListInfo as NSArray? as? [[String: AnyObject]]
+                
+                for info in windowInfoList! {
+                    let windowPID = info["kCGWindowOwnerPID"] as! UInt32
+                    if  windowPID == pid {
+                        
+                        print(info)
+                        if let windowFrame = info["kCGWindowBounds"] as? NSDictionary{
+                            let height = windowFrame.value(forKey: "Height") as? Int ?? 0
+                            let width = windowFrame.value(forKey: "Width") as? Int ?? 0
+                            let x = windowFrame.value(forKey: "X") as? Int ?? 0
+                            let y = windowFrame.value(forKey: "Y") as? Int ?? 0
+                            
+                            showBlurWindow(frame: NSRect(x: x, y: y, width: width, height: height))
+                            
+                        }
+                        
+                        break;
+                    }
+                }
+            }
+            let blurWindowFrame = blurWcObj?.window?.frame
+            let midX = blurWindowFrame?.midX ?? 0
+            let midY = blurWindowFrame?.midY ?? 0
+            let width = popUpBlockConfirmWcObj?.window?.frame.width ?? 500
+            let height = popUpBlockConfirmWcObj?.window?.frame.height ?? 500
             
             
+            self.view.window?.setFrame(NSRect(x: (midX-(width/2)), y: (midY-(height/2)), width: width, height: height), display: true)
+            
+//            self.view.window?.setFrameOrigin(NSPoint(x: (midX-(width/2)), y: (midY-(height/2))))
             if self.totalDuration <= self.currentTimer {
                 addLog(text: "popUpBlockConfirmVc:- 15 seconds counter completed")
                 self.timer?.invalidate()
                 self.view.window?.close()
+                blurWcObj?.window?.close()
                 if self.currentApp != nil && self.isAppBlocking{
                     appdelegate?.focusBlockUnwantedApp(runningApp: self.currentApp!, appName: self.currentAppName, showNotification: false)
                     self.currentApp = nil
@@ -236,6 +280,7 @@ class popUpBlockConfirmVc: NSViewController {
         }
         self.timer?.invalidate()
         self.view.window?.close()
+        blurWcObj?.window?.close()
     }
     @IBAction func btnAllowAppClicked(_ sender: Any) {
         addLog(text: "popUpBlockConfirmVc:- btnAllowAppClicked")
@@ -254,7 +299,7 @@ class popUpBlockConfirmVc: NSViewController {
         
         self.timer?.invalidate()
         self.view.window?.close()
-        
+        blurWcObj?.window?.close()
         if UserDefaults.standard.object(forKey: kUserdefaultsAlertShownFirstTempAllow)  == nil{
             UserDefaults.standard.set(true, forKey: kUserdefaultsAlertShownFirstTempAllow)
             let alert = NSAlert()
@@ -272,5 +317,6 @@ class popUpBlockConfirmVc: NSViewController {
         self.currentApp = nil
         self.timer?.invalidate()
         self.view.window?.close()
+        blurWcObj?.window?.close()
     }
 }

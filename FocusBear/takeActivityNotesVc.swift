@@ -55,7 +55,12 @@ class takeActivityNotesVc: NSViewController {
                 thirdVcObj?.startTimer(duration: 30)// evening habit k baad 30 second k baad shutof ho jay isiliye ye timer lagaya
             }
         }
-        allApiObject.activityCompletedApi(activity_id: activity_id, activity_sequence_id: activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:quantity_logged, duration_logged:durationInSeconds, choice_id: activityChoiceId, is_skipped: is_skipped, notes: textViewNotes.string, completionHandler: {dic  in
+        var should_not_update_current_activity = false
+        if currentState == ._SPECIAL_ACTIVITY_{
+            should_not_update_current_activity = true
+        }
+        
+        allApiObject.activityCompletedApi(activity_id: activity_id, activity_sequence_id: activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:quantity_logged, duration_logged:durationInSeconds, choice_id: activityChoiceId, is_skipped: is_skipped, notes: textViewNotes.string, should_not_update_current_activity: should_not_update_current_activity, completionHandler: {dic  in
             DispatchQueue.main.async {
                 
             }
