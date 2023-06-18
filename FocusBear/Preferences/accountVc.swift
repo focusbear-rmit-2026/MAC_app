@@ -47,10 +47,20 @@ class accountVc: NSViewController {
             restoreText = accountVcInfo.value(forKey: "restoreText") as? String ?? restoreText
             btnRestorePurchase.title = accountVcInfo.value(forKey: "buttonRestoreText") as? String ?? btnRestorePurchase.title
         }
+        
+        arrForSearchFromSettings.append(["title": lblTitle.stringValue, "tabId": idAccount, "object": lblTitle as Any])
+        arrForSearchFromSettings.append(["title": btnRestorePurchase.title, "tabId": idAccount, "object": btnRestorePurchase as Any])
+        arrForSearchFromSettings.append(["title": btnLogout.title, "tabId": idAccount, "object": btnLogout as Any])
+        arrForSearchFromSettings.append(["title": lblTitleEmailId.stringValue, "tabId": idAccount, "object": lblTitleEmailId as Any])
+        arrForSearchFromSettings.append(["title": lblTitleName.stringValue, "tabId": idAccount, "object": lblTitleName as Any])
+        arrForSearchFromSettings.append(["title": lblTitleUserId.stringValue, "tabId": idAccount, "object": lblTitleUserId as Any])
     }
    
     override func viewWillAppear(){
         addLog(text: "accountVc:- viewWillAppear")
+        
+        preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: 630 + 46, height: 332 + 142))
+        
         if let userId = appdelegate!.user?.userId{
             lblUserId.stringValue = userId
         }else{

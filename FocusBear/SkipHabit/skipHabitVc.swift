@@ -38,6 +38,13 @@ class skipHabitVc: NSViewController {
         timer?.invalidate()
         timer = nil
         self.view.removeFromSuperview()
+        
+//        if currentHabitPlaying != nil{//it means allowed app activity
+//            mainWindowControllerObj?.window?.close()
+//            hideBlankWindowInSecondaryMonitor()
+//            currentState = ._NOTHING_
+//            appdelegate?.backgroundThread()
+//        }
     }
     @IBAction func btnDoHabitClicked(_ sender: Any) {
         timer?.invalidate()
@@ -64,7 +71,7 @@ class skipHabitVc: NSViewController {
         }
     }
     @objc func performTimerCount() {
-        currentTimer += 1
+        currentTimer += 1// todo 1 kro
         let (_,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
         
         var minute = "\(m)"
@@ -100,9 +107,12 @@ class skipHabitVc: NSViewController {
                 if currentAction == ._INPROGRESS_{
                     mainViewControllerObj?.showThirdVc()
                 }
+                if currentAction == ._START_{// break activity case
+                    mainViewControllerObj?.showThirdVc()
+                }
                 
                 if currentState == ._ACTIVITY_{
-
+                    thirdVcObj?.activitySkipped()
                 }else if currentState == ._MORNING_HABIT_{
                     thirdVcObj?.morningHabitSkipped()
                 }else if currentState == ._EVENING_HABIT_{

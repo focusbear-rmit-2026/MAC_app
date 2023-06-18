@@ -37,8 +37,9 @@ class takeActivityNotesVc: NSViewController {
     var activity_sequence_id:String = ""
     var activityChoiceId:String?
     var quantity_logged:Double?
+    var log_quantity_answers: [[String : Any]] = []
     
-    func resetData(durationInSeconds:Int, quantity_logged:Double?, activity_id:String, activity_sequence_id:String, activityChoiceId:String?){
+    func resetData(durationInSeconds:Int, quantity_logged:Double?, activity_id:String, activity_sequence_id:String, activityChoiceId:String?, log_quantity_answers: [[String : Any]]){
         self.is_skipped = false
         self.activityChoiceId = nil
         self.activityChoiceId = activityChoiceId
@@ -47,6 +48,7 @@ class takeActivityNotesVc: NSViewController {
         self.durationInSeconds = durationInSeconds
         self.quantity_logged = nil
         self.quantity_logged = quantity_logged
+        self.log_quantity_answers = log_quantity_answers
     }
     @IBAction func btnOkClicked(_ sender: Any) {
         self.view.removeFromSuperview()
@@ -60,7 +62,7 @@ class takeActivityNotesVc: NSViewController {
             should_not_update_current_activity = true
         }
         
-        allApiObject.activityCompletedApi(activity_id: activity_id, activity_sequence_id: activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:quantity_logged, duration_logged:durationInSeconds, choice_id: activityChoiceId, is_skipped: is_skipped, notes: textViewNotes.string, should_not_update_current_activity: should_not_update_current_activity, completionHandler: {dic  in
+        allApiObject.activityCompletedApi(activity_id: activity_id, activity_sequence_id: activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:quantity_logged, duration_logged:durationInSeconds, choice_id: activityChoiceId, is_skipped: is_skipped, notes: textViewNotes.string, should_not_update_current_activity: should_not_update_current_activity, log_quantity_answers: log_quantity_answers, completionHandler: {dic  in
             DispatchQueue.main.async {
                 
             }

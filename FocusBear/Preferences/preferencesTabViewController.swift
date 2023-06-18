@@ -7,13 +7,15 @@
 
 import Cocoa
 
+
 class preferencesTabViewController: NSTabViewController {
 
+    
     @IBOutlet weak var tabGeneral: NSTabViewItem!
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
-        
+        arrForSearchFromSettings.removeAll()
         var tabSettingsText = "Settings"
         var tabFocusText = "Focus"
         var tabEditHabitsText = "Edit Habits"
@@ -42,52 +44,62 @@ class preferencesTabViewController: NSTabViewController {
                 for i in 0..<self.tabViewItems.count{
                     let tab = self.tabViewItems[i]
                     let id = tab.identifier as? String ?? ""
-                    if id == "Settings"{
+                    if id == idSettings{
                         self.tabViewItems[i].label = tabSettingsText
+                        arrForSearchFromSettings.append(["title": tabSettingsText, "tabId": idSettings])
                         if #available(macOS 11.0, *) {
                             self.tabViewItems[i].image = NSImage(systemSymbolName: "gearshape", accessibilityDescription: nil)
                         } else {
                             self.tabViewItems[i].image = NSImage(named: "NSSmartBadgeTemplate")
                         }
-                    }else if id == "Focus"{
+                    }else if id == idFocus{
                         self.tabViewItems[i].label = tabFocusText
+                        arrForSearchFromSettings.append(["title": tabFocusText, "tabId": idFocus])
                         self.tabViewItems[i].image = NSImage(named: "NSTouchBarQuickLookTemplate")
-                    }else if id == "EditHabits"{
+                    }else if id == idEditHabits{
                         self.tabViewItems[i].label = tabEditHabitsText
+                        arrForSearchFromSettings.append(["title": tabEditHabitsText, "tabId": idEditHabits])
                         if #available(macOS 11.0, *) {
                             self.tabViewItems[i].image = NSImage(systemSymbolName: "checkmark.rectangle", accessibilityDescription: nil)
                         } else {
                             self.tabViewItems[i].image = NSImage(named: "checkmark")
                         }
-                    }else if id == "Password"{
-                        self.tabViewItems[i].label = tabPasswordText
-                        self.tabViewItems[i].image = NSImage(named: "NSLockLockedTemplate")
-                    }else if id == "Blocked URLs"{
-                        self.tabViewItems[i].label = tabBlockedURLsText
-                        if #available(macOS 11.0, *) {
-                            self.tabViewItems[i].image = NSImage(systemSymbolName: "globe", accessibilityDescription: nil)
-                        } else {
-                            self.tabViewItems[i].image = NSImage(named: "NSNetwork")
-                        }
-                    }else if id == "Uninstall"{
-                        self.tabViewItems[i].label = tabUninstallText
-                        self.tabViewItems[i].image = NSImage(named: "NSMenuMixedStateTemplate")
-                    }else if id  == "Accounts"{
-                        self.tabViewItems[i].label = tabAccountsText
-                        if #available(macOS 11.0, *) {
-                            self.tabViewItems[i].image = NSImage(systemSymbolName: "person", accessibilityDescription: nil)
-                        } else {
-                            self.tabViewItems[i].image = NSImage(named: "NSTouchBarUserTemplate")
-                        }
-                    }else if id  == "Stats"{
+                    }
+//                    else if id == idPassword{
+//                        self.tabViewItems[i].label = tabPasswordText
+//                        self.tabViewItems[i].image = NSImage(named: "NSLockLockedTemplate")
+//                    }
+//                    else if id == "Blocked URLs"{
+//                        self.tabViewItems[i].label = tabBlockedURLsText
+//                        if #available(macOS 11.0, *) {
+//                            self.tabViewItems[i].image = NSImage(systemSymbolName: "globe", accessibilityDescription: nil)
+//                        } else {
+//                            self.tabViewItems[i].image = NSImage(named: "NSNetwork")
+//                        }
+//                    }
+//                    else if id == "Uninstall"{
+//                        self.tabViewItems[i].label = tabUninstallText
+//                        self.tabViewItems[i].image = NSImage(named: "NSMenuMixedStateTemplate")
+//                    }
+//                    else if id  == "Accounts"{
+//                        self.tabViewItems[i].label = tabAccountsText
+//                        if #available(macOS 11.0, *) {
+//                            self.tabViewItems[i].image = NSImage(systemSymbolName: "person", accessibilityDescription: nil)
+//                        } else {
+//                            self.tabViewItems[i].image = NSImage(named: "NSTouchBarUserTemplate")
+//                        }
+//                    }
+                    else if id  == idStats{
                         self.tabViewItems[i].label = tabStatsText
+                        arrForSearchFromSettings.append(["title": tabStatsText, "tabId": idStats])
                         if #available(macOS 11.0, *) {
                             self.tabViewItems[i].image = NSImage(systemSymbolName: "person", accessibilityDescription: nil)
                         } else {
                             self.tabViewItems[i].image = NSImage(named: "NSTouchBarUserTemplate")
                         }
-                    }else if id  == "Help"{
+                    }else if id  == idHelp{
                         self.tabViewItems[i].label = tabHelpText
+                        arrForSearchFromSettings.append(["title": tabHelpText, "tabId": idHelp])
 //                        if #available(macOS 11.0, *) {
 //                            self.tabViewItems[i].image = NSImage(named: "help")
 //                        } else {
@@ -97,6 +109,10 @@ class preferencesTabViewController: NSTabViewController {
                 }
             }
         }
+        
+        
+        
+        
     }
     
     override func viewWillAppear() {
@@ -114,9 +130,9 @@ class preferencesTabViewController: NSTabViewController {
         }else if id == "Password"{// ask password for password tab when PasswordRequireInChangeSettings is false
             if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
                 if !SettingsManagerObject.isPasswordRequireInChangeSettings{
-                    self.view.addSubview(enterPasswordVcObj!.view)
-                    self.view.addConstraints(subView: enterPasswordVcObj!.view)
-                    enterPasswordVcObj?.parentVc = nil
+                    self.view.addSubview(getEnterPasswordVcObjForPreferences().view)
+                    self.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
+                    getEnterPasswordVcObjForPreferences().parentVc = nil
                     addLog(text: "Showing enter password view inside preferences")
                 }
             }
@@ -143,7 +159,7 @@ class preferencesTabViewController: NSTabViewController {
 //                    print("okclicked")
 //                    isSettingsChanged = false
 //                }else if modalResponse == .alertSecondButtonReturn{
-//                    self.tabView.selectTabViewItem(at: tabView.indexOfTabViewItem(tabViewItem!))//todo isme ye fuction vapas call hoga kya nahi hua to niche vali conditions manage kro
+//                    self.tabView.selectTabViewItem(at: tabView.indexOfTabViewItem(tabViewItem!))// isme ye fuction vapas call hoga kya nahi hua to niche vali conditions manage kro
 //                }
 //            })
 //
@@ -153,7 +169,7 @@ class preferencesTabViewController: NSTabViewController {
         
         
         if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
-            if self.view.subviews.contains(enterPasswordVcObj!.view){
+            if self.view.subviews.contains(getEnterPasswordVcObjForPreferences().view){
                 return false
             }
         }
@@ -171,3 +187,18 @@ class preferencesTabViewController: NSTabViewController {
     }
 }
  
+
+
+var idGeneral = "General"
+var idPomodoro = "Pomodoro"
+var idAdvanced = "Advanced"
+var idBlockedUrls = "BlockedUrls"
+var idPassword = "Password"
+var idAccount = "Account"
+var idAi = "Ai"
+var idUninstall = "Uninstall"
+var idStats = "Stats"
+var idFocus = "Focus"
+var idEditHabits = "EditHabits"
+var idSettings = "Settings"
+var idHelp = "Help"

@@ -92,8 +92,8 @@ class askBuildHabitsVc: NSViewController {
                                     }
                                 }
                             }
-                            UserDefaults.standard.set("05:15", forKey: kUserdefaultsStartupTimeFromOnboarding)
-                            UserDefaults.standard.set("20:30", forKey: kUserdefaultsShutOffTimeFromOnboarding)
+                            UserDefaults.standard.set("08:30", forKey: kUserdefaultsStartupTimeFromOnboarding)
+                            UserDefaults.standard.set("18:30", forKey: kUserdefaultsShutOffTimeFromOnboarding)
                             
                             UserDefaults.standard.set(true, forKey: kUserdefaultsFirstRun)
                             UserDefaults.standard.set(Date(), forKey: kUserdefaultsLastHabitShowDate)

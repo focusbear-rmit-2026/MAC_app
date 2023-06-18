@@ -10,6 +10,9 @@ import Cocoa
 
 class askAppWorkVc: NSViewController {
 
+    @IBOutlet weak var textFieldAnythingElse: NSTextField!
+    @IBOutlet weak var lblTitleAnythingElse: NSTextField!
+    @IBOutlet weak var boxAnythingElse: NSBox!
     @IBOutlet weak var loader: NSProgressIndicator!
     @IBOutlet weak var checkBoxSecond: NSButton!
     @IBOutlet weak var checkBoxFirst: NSButton!
@@ -30,12 +33,14 @@ class askAppWorkVc: NSViewController {
         lblCheckBoxSecond.stringValue = "Help me stay focused during the work day"
         btnContinue.title = "Continue"
         
+        lblTitleAnythingElse.stringValue = "Anything else you hope Focus Bear can help with? (We'll try to take your feedback on board)"
         if let askAppWorkVcInfo = configjson.value(forKey: "askAppWorkVcInfo") as? NSDictionary{
             lblTitle.stringValue = appName
             lblQuestion.stringValue = askAppWorkVcInfo.value(forKey: "questionText") as? String ?? lblQuestion.stringValue
             lblCheckBoxFirst.stringValue = askAppWorkVcInfo.value(forKey: "checkBoxFirstText") as? String ?? lblCheckBoxFirst.stringValue
             lblCheckBoxSecond.stringValue = askAppWorkVcInfo.value(forKey: "checkBoxSecondText") as? String ?? lblCheckBoxSecond.stringValue
             btnContinue.title = askAppWorkVcInfo.value(forKey: "buttonContinueText") as? String ?? btnContinue.title
+            lblTitleAnythingElse.stringValue = askAppWorkVcInfo.value(forKey: "anythingElseText") as? String ?? lblTitleAnythingElse.stringValue
         }
         allApiObject.capturePosthog(event: "goals-screen-shown", metadata: [:])
     }
@@ -44,6 +49,8 @@ class askAppWorkVc: NSViewController {
         checkBoxFirst.state = .off
         checkBoxSecond.state = .off
         btnContinue.isEnabled = false
+        boxAnythingElse.isHidden = true
+        textFieldAnythingElse.stringValue = ""
     }
     
     @IBAction func btnContinueClicked(_ sender: Any) {
@@ -71,7 +78,11 @@ class askAppWorkVc: NSViewController {
         }
         
         addLog(text: "askAppWorkVc:- btnContinueClicked:isHabitsDisabled:- \(isHabitsDisabled)")
-
+        
+        if !textFieldAnythingElse.stringValue.isEmpty{
+            allApiObject.capturePosthog(event: "anything-else-goals-feedback", metadata: ["feedback":textFieldAnythingElse.stringValue])
+        }
+        
         allApiObject.getHabitPacksInfo(breaks_only: breaks_only, completionHandler: {arrDic in
             DispatchQueue.main.async {
                 self.btnContinue.isEnabled = true
@@ -89,16 +100,22 @@ class askAppWorkVc: NSViewController {
         addLog(text: "askAppWorkVc:- checkBoxFirstClicked")
         if checkBoxFirst.state == .off && checkBoxSecond.state == .off{
             btnContinue.isEnabled = false
+            boxAnythingElse.isHidden = true
         }else{
             btnContinue.isEnabled = true
+            boxAnythingElse.isHidden = false
+            textFieldAnythingElse.setFocus()
         }
     }
     @IBAction func checkBoxSecondClicked(_ sender: Any) {
         addLog(text: "askAppWorkVc:- checkBoxSecondClicked")
         if checkBoxFirst.state == .off && checkBoxSecond.state == .off{
             btnContinue.isEnabled = false
+            boxAnythingElse.isHidden = true
         }else{
             btnContinue.isEnabled = true
+            boxAnythingElse.isHidden = false
+            textFieldAnythingElse.setFocus()
         }
     }
     

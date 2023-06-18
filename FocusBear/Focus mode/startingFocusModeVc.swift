@@ -9,6 +9,8 @@ import Cocoa
 
 class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
 
+    @IBOutlet weak var btnSettings: underLineButton!
+    @IBOutlet weak var btnInfo: cursorButton!
     @IBOutlet weak var checkBoxSkipMicrobreaks: NSButton!
     @IBOutlet weak var lblTimerUnfocused: NSTextField!
     @IBOutlet weak var lblExplanation: NSTextField!
@@ -22,6 +24,8 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
     @IBOutlet weak var lblTitle: NSTextField!
     @IBOutlet weak var lblQuestion: NSTextField!
     @IBOutlet var textViewQuestion: NSTextView!
+    @IBOutlet weak var checkBoxShowTimer: NSButton!
+    @IBOutlet weak var checkBoxSaveIntention: NSButton!
     
     var focusIndex = 0
     var focusType = ""
@@ -37,6 +41,10 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
         super.viewDidLoad()
         // Do view setup here.
         focusModeStartWindowLodded = true
+        checkBoxSaveIntention.title = "Save intention as template"
+        btnSettings.title = "Settings"
+        
+        checkBoxShowTimer.title = "Show timer in menu bar when running a Focus Block"
         btnStartFocus.title = "Start Focus"
         lblHowMuchTime.stringValue = "How much time to focus for:"
         lblHour.stringValue = "hours"
@@ -70,7 +78,9 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
                     lblMinute.stringValue = minutesText
                 }
                 lblExplanation.stringValue = startingFocusModeInfo.value(forKey: "explanationText") as? String ?? lblExplanation.stringValue
-                
+                checkBoxShowTimer.title = startingFocusModeInfo.value(forKey: "buttonShowTimerInMenuText") as? String ?? checkBoxShowTimer.title
+                btnSettings.title = startingFocusModeInfo.value(forKey: "buttonSettingsText") as? String ?? btnSettings.title
+                checkBoxSaveIntention.title = startingFocusModeInfo.value(forKey: "buttonSaveIntentionText") as? String ?? checkBoxSaveIntention.title
             }
         }
         if let pomodoroInfo = configjson.value(forKey: "pomodoroInfo") as? NSDictionary{
@@ -86,11 +96,27 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
     }
 
     override func viewWillAppear() {
+        btnInfo.isHidden = false
+        lblExplanation.isHidden = true
         
+        btnSettings.isHidden = false
+        checkBoxSkipMicrobreaks.isHidden = true
+        checkBoxShowTimer.isHidden = true
+        checkBoxSaveIntention.isHidden = true
     }
     override func viewWillDisappear() {
         timer?.invalidate()
         timer = nil
+    }
+    @IBAction func btnInfoClicked(_ sender: Any) {
+        btnInfo.isHidden = true
+        lblExplanation.isHidden = false
+    }
+    @IBAction func btnSettingsClicked(_ sender: Any) {
+        btnSettings.isHidden = true
+        checkBoxSkipMicrobreaks.isHidden = false
+        checkBoxShowTimer.isHidden = false
+        checkBoxSaveIntention.isHidden = false
     }
     var timer:Timer?
     var currentTimer = 0
@@ -167,6 +193,21 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
             isSkipBreakActivityDuringFocus = true
         }else{
             isSkipBreakActivityDuringFocus = false
+        }
+        
+        if checkBoxShowTimer.state == .on{
+            isShowTimerInFocusEnabled = true
+        }else{
+            isShowTimerInFocusEnabled = false
+        }
+        if checkBoxSaveIntention.state == .on{
+            if textViewQuestion.string.isEmpty{
+                UserDefaults.standard.removeObject(forKey: kUserdefaultsLastFocusSavedIntention)
+            }else{
+                UserDefaults.standard.set(textViewQuestion.string, forKey: kUserdefaultsLastFocusSavedIntention)
+            }
+        }else{
+            UserDefaults.standard.removeObject(forKey: kUserdefaultsLastFocusSavedIntention)
         }
         
         let calendar = Calendar.current
@@ -255,7 +296,14 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
         }else{
             checkBoxSkipMicrobreaks.state = .off
         }
+        
+        if isShowTimerInFocusEnabled{
+            checkBoxShowTimer.state = .on
+        }else{
+            checkBoxShowTimer.state = .off
+        }
         textViewQuestion.string = lastIntention
+        //no need to save checkBoxSaveIntention state for this it willl remain same we are not changing it
         
         for i in 0..<arrFocusType.count{
             if let id = arrFocusType[i]["id"] as? String{
@@ -346,6 +394,8 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
     func ResetData(focusModeIndex:Int, focusType:String){
         textViewQuestion.string = ""
         checkBoxSkipMicrobreaks.state = .off
+        checkBoxShowTimer.state = .off
+        checkBoxSaveIntention.state = .off
         startTimer()
         if isPomodoroWindowLodded{
             if pomodoroWindowControllerObj?.window?.isVisible ?? false{
@@ -360,7 +410,9 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
         btnStartFocus.isEnabled = true
         lblTitle.stringValue = titleText.replacingOccurrences(of: "<FOCUSTYPE>", with: focusType)//"Starting Focus type - \(focusType)"
         
-        
+        if let val = UserDefaults.standard.value(forKey: kUserdefaultsLastFocusSavedIntention) as? String{
+            textViewQuestion.string = val
+        }
 //        if arrFocusType[focusModeIndex]["isDefault"] as? Bool == true{
 //            showDiscourageFocusView()
 //        }

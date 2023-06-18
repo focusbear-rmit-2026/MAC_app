@@ -12,8 +12,9 @@ class collectionCellToolBox: NSCollectionViewItem {
 
     @IBOutlet weak var btnIcon: NSButton!
 //    var isUrl = false
-    var urlString = ""
+    var appName = ""
     var trackingArea: NSTrackingArea?
+    @IBOutlet weak var lblAppName: NSTextField!
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -23,31 +24,34 @@ class collectionCellToolBox: NSCollectionViewItem {
     }
  
     override func viewWillAppear() {
+        
+    }
+    func setTrackingArea(){
         if trackingArea !=  nil{
             btnIcon.removeTrackingArea(trackingArea!)
             trackingArea = nil
         }
-        trackingArea = NSTrackingArea.init(rect: btnIcon.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
-        btnIcon.addTrackingArea(trackingArea!)
+        trackingArea = NSTrackingArea.init(rect: self.view.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
+        self.view.addTrackingArea(trackingArea!)
     }
     
     override func mouseEntered(with event: NSEvent) {
         print("mouseEntered")
         if event.trackingArea == trackingArea{
-            if !urlString.isEmpty{
-                showTooltip(sender: btnIcon, msg: urlString, preferredEdge: NSRectEdge.maxY, maxWidthVal:230)
+            if !appName.isEmpty{
+                showTooltip(sender: self.view, msg: appName, preferredEdge: NSRectEdge.maxY, maxWidthVal:230)
             }
         }
     }
     override func mouseExited(with event: NSEvent) {
         print("mouseExited")
-        if !urlString.isEmpty{
+       // if !appName.isEmpty{
             if popoverTooltip != nil{
                 if popoverTooltip!.isShown{
                     popoverTooltip?.close()
                 }
             }
-        }
+       // }
     }
     
 }

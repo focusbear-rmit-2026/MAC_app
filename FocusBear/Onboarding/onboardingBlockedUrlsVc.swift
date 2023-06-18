@@ -40,6 +40,7 @@ class onboardingBlockedUrlsVc: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
+        btnAddUrl.keyEquivalent = "\r"
         lblTip.stringValue = "In case you're worried - we don't track which websites you're using."
         
         lblEnterUrl.stringValue = "Enter url to block:"
@@ -75,7 +76,7 @@ class onboardingBlockedUrlsVc: NSViewController {
         
      
         var dic:NSMutableDictionary = ["category":categorySocialMedia,"isSelected":false,"tag":777,"arrUrls":[NSMutableDictionary](),"isParent":true]
-        let arrSocialMediaUrls: [NSMutableDictionary] = [["url":"facebook.com", "isSelected":true, "tag":2], ["url":"twitter.com", "isSelected":true, "tag":3], ["url":"instagram.com", "isSelected":true, "tag":4], ["url":"tiktok.com", "isSelected":true, "tag":5], ["url":"youtube.com", "isSelected":true, "tag":6]]
+        let arrSocialMediaUrls: [NSMutableDictionary] = [["url":"facebook.com", "isSelected":true, "tag":2], ["url":"twitter.com", "isSelected":true, "tag":3], ["url":"instagram.com", "isSelected":true, "tag":4], ["url":"tiktok.com", "isSelected":true, "tag":5], ["url":"youtube.com", "isSelected":true, "tag":6], ["url":"reddit.com", "isSelected":true, "tag":9]]
         
         dic["arrUrls"] = arrSocialMediaUrls
         
@@ -84,7 +85,7 @@ class onboardingBlockedUrlsVc: NSViewController {
         
         
         dic = ["category":categoryNews,"isSelected":false,"tag":888,"arrUrls":[NSMutableDictionary](),"isParent":true]
-        let arrNewsUrls: [NSMutableDictionary] = [["url":"bbc.com", "isSelected":true, "tag":7], ["url":"cnn.com", "isSelected":true, "tag":8], ["url":"reddit.com", "isSelected":true, "tag":9]]//if any item added set last item tag
+        let arrNewsUrls: [NSMutableDictionary] = [["url":"bbc.com", "isSelected":true, "tag":7], ["url":"cnn.com", "isSelected":true, "tag":8]]//if any item added set last item tag
         
         dic["arrUrls"] = arrNewsUrls
         

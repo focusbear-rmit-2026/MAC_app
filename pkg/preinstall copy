@@ -1,0 +1,18 @@
+#!/bin/sh
+
+#COPYRIGHT 2021 WISE TECH LABS PRIVATE LIMITED
+os_ver=${2-$(sw_vers -productVersion)}
+echo $os_ver
+# string comparison
+if [[ "$os_ver" =~ 12.* ]]; then
+echo "macOS Monterey"
+exit 0
+else
+echo "(Mac) OS X something"
+exit 1
+fi
+
+ 
+
+
+

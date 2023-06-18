@@ -28,10 +28,17 @@ class breakWarningVc: NSViewController {
             lblDescription.stringValue = breakWarningVcInfo.value(forKey: "descriptionText") as? String ?? lblDescription.stringValue
         }
     }
+    override func viewWillDisappear() {
+        if transparentWcObj != nil{
+            transparentWcObj?.window?.close()
+        }
+    }
     func resetView(){
         var totalDuration = 0
         for activity in arrFinalBreakActivities{
-            totalDuration += activity.activity.durationSeconds
+            if activity.activity.useTimer{
+                totalDuration += activity.activity.durationSeconds
+            }
         }
         
         progressBar.isHidden = false
@@ -42,7 +49,19 @@ class breakWarningVc: NSViewController {
         setProgres()
         
         if let breakWarningVcInfo = configjson.value(forKey: "breakWarningVcInfo") as? NSDictionary{
-            title = breakWarningVcInfo.value(forKey: "title") as? String ?? title
+            if isBreakActivityShowingWhileMeeting{
+                title = "Your <DURATION> seconds mid meeting break starts in"
+                lblDescription.stringValue = "Micro breaks can help you stay focused in meetings."
+                
+                title = breakWarningVcInfo.value(forKey: "titleMeetings") as? String ?? title
+                lblDescription.stringValue = breakWarningVcInfo.value(forKey: "descriptionMeetingsText") as? String ?? lblDescription.stringValue
+            }else{
+                title = "Your <DURATION> seconds micro break starts in"
+                lblDescription.stringValue = "Micro breaks help keep your energy + alertness levels consistent throughout the day and have positive impacts on your posture (no more screen headaches)."
+                
+                title = breakWarningVcInfo.value(forKey: "title") as? String ?? title
+                lblDescription.stringValue = breakWarningVcInfo.value(forKey: "descriptionText") as? String ?? lblDescription.stringValue
+            }
             btnPostpone.title = breakWarningVcInfo.value(forKey: "buttonPostponeText") as? String ?? btnPostpone.title
         }
         
@@ -53,7 +72,7 @@ class breakWarningVc: NSViewController {
             timer?.invalidate()
             timer = nil
         }
-
+        
         currentTimer = 0
         totalDuration = durationSeconds//durationInMinutes*60
         let (h,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
@@ -102,6 +121,11 @@ class breakWarningVc: NSViewController {
         DispatchQueue.main.async {
             if !self.isPostponing{
                 self.progressBar.doubleValue = Double(remainingSeconds)
+                if transparentWcObj != nil{
+                    if transparentWcObj!.window?.isVisible ?? false{
+                        transparentWcObj?.window?.alphaValue = CGFloat(self.currentTimer) / CGFloat(self.totalDuration)
+                    }
+                }
             }
             if h == 0{
                 self.lblTimer.stringValue = "\(minute):\(second)"
@@ -113,9 +137,9 @@ class breakWarningVc: NSViewController {
             if self.totalDuration <= self.currentTimer {
                 self.timer?.invalidate()
                 self.view.window?.close()
-                
+                transparentWcObj?.window?.close()
                 if self.isPostponing{
-                    mainViewControllerObj?.postponeBreakActivitiesFor(minutes: 5)
+                    mainViewControllerObj?.postponeBreakActivitiesFor(minutes: 5, secondsToPostpone: nil)
                 }else{
                     if currentState == ._ACTIVITY_{// whenever show waring then make current state _ACTIVITY_ beacuse if any thing will happen during waring curent state will change (ex. app can bhi in shutoff state when warning is about to over in this case we will not execute break activity)
                         mainViewControllerObj?.performBreakActivities()
@@ -157,7 +181,7 @@ class breakWarningVc: NSViewController {
                 self.timer?.invalidate()
                 self.view.window?.close()
                 activityPostponeCount += 1
-                mainViewControllerObj?.postponeBreakActivitiesFor(minutes: 5)
+                mainViewControllerObj?.postponeBreakActivitiesFor(minutes: 5, secondsToPostpone: nil)
             }
         }
     }

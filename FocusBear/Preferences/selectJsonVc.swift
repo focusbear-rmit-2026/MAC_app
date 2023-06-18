@@ -9,12 +9,11 @@
 import Cocoa
 //import JSONSchema
 import WebKit
-class selectJsonVc: NSViewController, NSTextViewDelegate {
+class selectJsonVc: NSViewController, NSTextViewDelegate, WKNavigationDelegate {
     
     @IBOutlet weak var boxHeightConstraint: NSLayoutConstraint!
     @IBOutlet weak var boxWidthConstraint: NSLayoutConstraint!
     @IBOutlet weak var webview: WKWebView!
-    
     @IBOutlet weak var customBox: NSBox!
     @IBOutlet weak var loader: NSProgressIndicator!
     @IBOutlet weak var btnCancel: cursorButton!
@@ -23,16 +22,13 @@ class selectJsonVc: NSViewController, NSTextViewDelegate {
     @IBOutlet weak var btnSave: cursorButton!
     @IBOutlet var textViewJson: NSTextView!
     @IBOutlet weak var textscrollView: NSScrollView!
-    //    @IBOutlet weak var webview: WKWebView!
-    
     @IBOutlet weak var lblDescription: NSTextField!
     @IBOutlet weak var btnAdvanced: NSButton!
     @IBOutlet weak var btnEditSettings: NSButton!
-    //    var webview: WKWebView?
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
-        print("webview loaded *****************")
         customBox.isHidden = false
         btnCancel.isHidden = true
         selectJsonVcObj = self
@@ -40,7 +36,7 @@ class selectJsonVc: NSViewController, NSTextViewDelegate {
         textViewJson.font = NSFont(name: btnSave!.font?.familyName ?? "", size: 14)
         lblTitle.stringValue = "Enter settings JSON below:"
         lblVisitUrl.stringValue = "Visit focusbear.io/settings-generator to generate settings"
-//        btnCancel.stringValue = buttonCancelText
+        
         btnSave.title = "Save"
         btnEditSettings.title = "Edit Settings"
         btnAdvanced.title = "Advanced"
@@ -101,7 +97,7 @@ class selectJsonVc: NSViewController, NSTextViewDelegate {
         let url = "https://settings.focusbear.io?bust_cache=$\(stringTime)"
 
         let  fileURL = URL(string: url)
-
+        self.webview.navigationDelegate = self
 //        webview!.loadFileURL(fileURL!, allowingReadAccessTo: fileURL!)
         let request = NSMutableURLRequest(url: fileURL!)
         webview!.load(request as URLRequest)
@@ -116,17 +112,11 @@ class selectJsonVc: NSViewController, NSTextViewDelegate {
         lblVisitUrl.isHidden = true
 //        btnCancel.isHidden = true
         btnSave.isHidden = true
-        
-
-        
         customBox.isHidden = false
-
-
         boxWidthConstraint.constant = 1000
         boxHeightConstraint.constant = 600
         lblDescription.isHidden = true
-        
-//        webview.isOpaque = false
+
         webview.backgroundcolor = NSColor.clear
     }
     @IBAction func btnOldViewClicked(_ sender: Any) {
@@ -149,15 +139,26 @@ class selectJsonVc: NSViewController, NSTextViewDelegate {
         boxHeightConstraint.constant = 600
         lblDescription.isHidden = true
     }
+    
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        DispatchQueue.global().async {
+            sleep(1)
+            DispatchQueue.main.async {
+                self.setSettingsToWebView()
+            }
+        }
+    }
     override func viewDidAppear() {
         
-
+    }
+    func setSettingsToWebView(){
         let focusbearEnv = "focusbearEnv('mac');"
         
         webview?.evaluateJavaScript(focusbearEnv,completionHandler: { (html: Any?, error: Error?) in
             print(html)
         })
         
+        //load settings
         
         var stringjson = ""
         if let text = UserDefaults.standard.object(forKey: kUserdefaultsSelectedJson) as? String {
@@ -188,18 +189,7 @@ class selectJsonVc: NSViewController, NSTextViewDelegate {
                 
             }
         }
-//        {
-//        settings: {startup_time: '05:30'...},
-//        metadata: {access_token: 'sometokenstring'}
-//        }
 
-//        let metadata:NSDictionary = ["access_token":appdelegate!.credential?.accessToken ?? ""]
-        
-        
-        
-//        let settingsData = NSMutableDictionary()
-//        settingsData["settings"] = stringjson
-//        settingsData["metadata"] = metadata
         
         let stringJson1 = "{\"settings\": \(stringjson),\"metadata\": {\"access_token\": \"\(appdelegate!.credential?.accessToken ?? "")\"}}"
         
@@ -212,6 +202,7 @@ class selectJsonVc: NSViewController, NSTextViewDelegate {
         })
         
         
+        //load installed apps
         var arrInstalledApps = [String]()
         let urls = FileManager.default.urls(for: .applicationDirectory, in: .localDomainMask)
         let properties = [URLResourceKey.localizedNameKey, URLResourceKey.creationDateKey, URLResourceKey.contentModificationDateKey, URLResourceKey.localizedTypeDescriptionKey,URLResourceKey.nameKey]
@@ -247,6 +238,8 @@ class selectJsonVc: NSViewController, NSTextViewDelegate {
         }
         
         
+        // load focus names
+        
         var arrFocusNames = [[String:String]]()
         for i in 0..<arrFocusType.count{
             if let name = arrFocusType[i]["name"] as? String{
@@ -279,6 +272,7 @@ class selectJsonVc: NSViewController, NSTextViewDelegate {
         
     }
     override func viewWillAppear() {
+        preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: 1000, height: 600))
         allApiObject.capturePosthog(event: "edit-habits", metadata: [:])
         setData()
     }
@@ -688,6 +682,16 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
             if let url = URL(string: message.body as? String ?? ""){
                 NSWorkspace.shared.open(url)
             }
+        }else if message.name == "open_android_app"{
+            print(message.body)
+            if let url = URL(string: message.body as? String ?? ""){
+                NSWorkspace.shared.open(url)
+            }
+        }else if message.name == "open_ios_app"{
+            print(message.body)
+            if let url = URL(string: message.body as? String ?? ""){
+                NSWorkspace.shared.open(url)
+            }
         }else if message.name == "setting_saved"{
             if let data = (message.body as? String ?? "").data(using: String.Encoding.utf8) {
                 
@@ -695,8 +699,16 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
                     let jsonResult:NSDictionary = try (JSONSerialization.jsonObject(with: data, options: []) as? NSDictionary ?? [:])
                     print(jsonResult)
                     
-                    selectJsonVcObj?.jsonReceivedFromWebView(jsonResult: jsonResult)
-                    //                        isSettingsChanged = false
+                    
+                    if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_{
+                        if (mainWindowControllerObj?.window?.isVisible ?? false) && editHabitRoutineVcObj != nil{
+                            editHabitRoutineVcObj?.jsonReceivedFromWebView(jsonResult: jsonResult)
+                        }else{
+                            selectJsonVcObj?.jsonReceivedFromWebView(jsonResult: jsonResult)
+                        }
+                    }else{
+                        selectJsonVcObj?.jsonReceivedFromWebView(jsonResult: jsonResult)
+                    }
                 }
                 catch{
                     

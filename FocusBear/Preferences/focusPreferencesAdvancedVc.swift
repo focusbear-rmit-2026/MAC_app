@@ -108,6 +108,7 @@ class focusPreferencesAdvancedVc: NSViewController {
 //        task.arguments = args as? [String]
 //        task.launch()
         
+        
     }
     override func viewWillAppear() {
         
@@ -120,6 +121,7 @@ class focusPreferencesAdvancedVc: NSViewController {
                 self.view.window?.sharingType = .readOnly
             }
         }
+  
         
         tblView.reloadData()
         

@@ -7,14 +7,35 @@
 //
 
 import Cocoa
+import WebKit
 
-class visualizeInstructionsVc: NSViewController {
+class visualizeInstructionsVc: NSViewController, WKNavigationDelegate {
 
+    @IBOutlet weak var imgView: NSImageView!
+    @IBOutlet weak var loader: NSProgressIndicator!
+    @IBOutlet weak var webView: WKWebView!
     @IBOutlet weak var btnSkipHabit: underLineButton!
     @IBOutlet weak var btnMain: Button!
     @IBOutlet weak var lblTimer: NSTextField!
     @IBOutlet weak var lblVisualizeText: NSTextField!
     @IBOutlet weak var lblTitle: NSTextField!
+    
+    
+    var arrOptions = ["I'm feeling energized - time to begin my habits",
+                      "Let's kick things off - I'm motivated to start my habits",
+                      "I'm ready to get going - let's start implementing my habits",
+                      "I'm pumped up and ready to begin my habits",
+                      "Let's get this show on the road - I'm fired up to start my habits",
+                      "I'm feeling enthusiastic - it's time to start my habits",
+                      "I'm excited to begin my habits - let's get started",
+                      "Let's dive right in - I'm ready to start my habits",
+                      "I'm fired up and ready to make my habits stick",
+                      "I'm eager to start implementing my habits - let's go",
+                      "I'm amped up to begin my habits - let's start now",
+                      "I'm feeling motivated - time to start my habits",
+                      "Let's start building my habits - I'm feeling inspired",
+                      "I'm energized and ready to begin my habits",
+                      "I'm fired up and raring to go - let's start my habits"]
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -30,9 +51,41 @@ class visualizeInstructionsVc: NSViewController {
         if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
             btnSkipHabit.title = activityInfo.value(forKey: "buttonSkipHabitText") as? String ?? btnSkipHabit.title
         }
+        webView.isHidden = true
         
+        if let inspirations = configjson.value(forKey: "inspirations") as? [String]{
+            arrOptions = inspirations
+        }
+        self.webView.navigationDelegate = self
     }
-    override func viewWillAppear() {
+    
+    
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        print("*************didFinish navigation**************")
+        DispatchQueue.global().async {
+            sleep(1)
+            DispatchQueue.main.async {
+                self.setAccessTokenToWebView()
+                self.loader.stopAnimation(self)
+                self.webView.isHidden = false
+            }
+        }
+    }
+   
+
+    func setAccessTokenToWebView(){
+        let stringJson1 = "{access_token: \"\(appdelegate!.credential?.accessToken ?? "")\"}"
+        
+        let javascript = "loadAccessTokenForInspirationPage(\(stringJson1));"
+        
+        webView.evaluateJavaScript(javascript,completionHandler: { (html: Any?, error: Error?) in
+            print(error)
+            print("****error")
+            print(html)
+        })
+    }
+    func startTimer(){
+        self.imgView.isHidden = false
         if currentState == ._MORNING_HABIT_{
             if arrFilteredMorningHabits.count != 0 {
                 let time = arrFilteredMorningHabits[0].durationSeconds!
@@ -44,12 +97,53 @@ class visualizeInstructionsVc: NSViewController {
                 btnMain.title = getstartActivityButtonText(seconds: time, name: arrFilteredEveningHabits[0].name!)
             }
         }
-    }
-    func startTimer(){
+        
+        webView.isHidden = true
         btnMain.isHidden = true
         btnSkipHabit.isHidden = true
         lblTimer.stringValue = ""
-        startTimer(duration: 30)
+        lblVisualizeText.isHidden = false
+        
+        
+        
+        
+        if SettingsManagerObject.isMotivationalMessageEnabled{
+            if Reachability.isConnectedToNetwork() == false{
+                allApiObject.isInternetOn(completionHandler: {isInternetOn in
+                    DispatchQueue.main.async {
+                        if isInternetOn{
+                            self.showWebView()
+                        }else{
+                            self.startTimer(duration: 30)
+                        }
+                    }
+                })
+            }else{
+                showWebView()
+            }
+        }else{
+            startTimer(duration: 30)
+        }
+        
+    }
+
+    func showWebView(){
+        //
+        self.imgView.isHidden = true
+        self.timer?.invalidate()
+        self.btnMain.isHidden = false
+        self.btnSkipHabit.isHidden = false
+        self.lblTimer.isHidden = true
+        self.isTimerGoingOn = false
+        lblTimer.stringValue = ""
+        webView.isHidden = true
+        lblVisualizeText.isHidden = true
+        let url = "http://dashboard.focusbear.io/webview/motivational-summary"
+        let link = URL(string:url)!
+        let request = URLRequest(url: link)
+        self.webView.load(request)
+        self.btnMain.title = self.arrOptions.randomElement() ?? ""
+        loader.startAnimation(self)
     }
     var timer:Timer?
     var currentTimer = 0
@@ -135,6 +229,10 @@ class visualizeInstructionsVc: NSViewController {
 
                     }
                 }
+                
+                if self.webView.isHidden == false{
+                    self.btnMain.title = self.arrOptions.randomElement() ?? ""
+                }
             }
         }
     }
@@ -144,6 +242,11 @@ class visualizeInstructionsVc: NSViewController {
             mainViewControllerObj?.startFirstMorningHabit()
         }else{
             mainViewControllerObj?.startFirstEveningHabit()
+        }
+        if self.webView.isHidden == false{
+            let link = URL(string:"about:blank")!
+            let request = URLRequest(url: link)
+            self.webView.load(request)
         }
     }
     @IBAction func btnSkipClicked(_ sender: Any) {

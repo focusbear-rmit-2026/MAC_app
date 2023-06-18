@@ -144,6 +144,8 @@ class focusCompletedVc: NSViewController {
         let minutes = currentPomodoroWorkDuration
         let breakMinute = currentPomodoroBreakDuration
         completedPomodoroCountInHardcorePomodoro += 1
+        
+      
         if isFocusModeStartedFromPomodoroMode{
             if isHardCorePomodoroModeOn{
                 if totalMinutesRemainingForHardcodePomodoro > minutes{
@@ -157,18 +159,71 @@ class focusCompletedVc: NSViewController {
                 }
             }
             addLog(text: "pomodoro mode Finished")
-            appdelegate?.setTimerForPomodoroMode(delay: TimeInterval(60*breakMinute))
         }
-        self.view.window?.close()
-        
-        showSmallTimerWindow(durationSeconds: 60*breakMinute, msg: "", isFocusBreak: true, currentTimerValue:0)
-        
-        if lastFocusModeTempInfo != nil{
-            showaddFocusTempUrlsOrAppsWindow()
+        if currentState != ._MORNING_HABIT_ && currentState != ._ACTIVITY_ && currentState != ._EVENING_HABIT_ && (isHabitAlreadyShowed || currentState == ._POSTPON_MORNING_HABIT_) && arrAllbreakActivities.count != 0 && !isShutOffTimeGoing() && !isHardCorePomodoroModeOn{
+            
+            let alert = NSAlert()
+            alert.setSharingType()
+            
+            alert.messageText = "Do you want to take a full screen break?"
+            if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
+                if let focusCompletedInfo = focusInfo.value(forKey: "focusCompletedInfo") as? NSDictionary{
+                    alert.messageText = focusCompletedInfo.value(forKey: "alertFullScreenBreakText") as? String ?? alert.messageText
+                }
+            }
+            
+            alert.addButton(withTitle: buttonYesText)
+            alert.addButton(withTitle: buttonNoText)
+            NSApplication.shared.activate(ignoringOtherApps: true)
+            alert.beginSheetModal(for: self.view.window!, completionHandler: { result in
+                if result == .alertFirstButtonReturn{
+                    self.view.window?.close()
+                    if lastFocusModeTempInfo != nil{
+                        showaddFocusTempUrlsOrAppsWindow()
+                    }
+                    if currentState == ._POSTPON_MORNING_HABIT_{
+                        isBreakActivityExecuteFromPostponeMorningHabit = true
+                    }
+                    if currentState == ._POSTPON_EVENING_HABIT_{
+                        isBreakActivityExecuteFromPostponeEveningHabit = true
+                    }
+                    if !isMainWindowLodded{
+                        mainWindowControllerObj?.loadWindow()
+                    }
+                    mainViewControllerObj?.executeBreakActivities()
+                    shouldShowPomodoroAfterBreak = true
+                }else if result == .alertSecondButtonReturn{
+                    if isFocusModeStartedFromPomodoroMode{
+                        appdelegate?.setTimerForPomodoroMode(delay: TimeInterval(60*breakMinute))
+                    }
+                    showSmallTimerWindow(durationSeconds: 60*breakMinute, msg: "", isFocusBreak: true, currentTimerValue:0)
+                    self.view.window?.close()
+                    if lastFocusModeTempInfo != nil{
+                        showaddFocusTempUrlsOrAppsWindow()
+                    }
+                }else{
+                    self.view.window?.close()
+                }
+            })
+            
+        }else{
+            if isFocusModeStartedFromPomodoroMode{
+                appdelegate?.setTimerForPomodoroMode(delay: TimeInterval(60*breakMinute))
+            }
+            
+            showSmallTimerWindow(durationSeconds: 60*breakMinute, msg: "", isFocusBreak: true, currentTimerValue:0)
+            self.view.window?.close()
+            if lastFocusModeTempInfo != nil{
+                showaddFocusTempUrlsOrAppsWindow()
+            }
         }
+        
+        
+        
+        
     }
     
 }
 
-
-
+///Do you want to use AI to decide if websites should be allowed?
+// "We'll use Open AI to decide if the site is valid based on your current focus mode, intention, the URL, the website title and the first 100 characters of the content. This is anonymous - no identifying details are shared. "

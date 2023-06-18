@@ -104,7 +104,7 @@ class easyPostponeVc: NSViewController {
         }else if lastCurrentState == ._EVENING_HABIT_{
             mainViewControllerObj?.postponeEveningHabitFor(minutes: Int(popupButtonMinutes.title) ?? 5, secondsToPostpone: nil)
         }else if lastCurrentState == ._ACTIVITY_{
-            mainViewControllerObj?.postponeBreakActivitiesFor(minutes: Int(popupButtonMinutes.title) ?? 5)
+            mainViewControllerObj?.postponeBreakActivitiesFor(minutes: Int(popupButtonMinutes.title) ?? 5, secondsToPostpone: nil)
         }else if lastCurrentState == ._POSTPON_MORNING_HABIT_{
             mainViewControllerObj?.postponeMorningHabitFor(minutes: Int(popupButtonMinutes.title) ?? 5, secondsToPostpone: nil)
         }else if lastCurrentState == ._POSTPON_EVENING_HABIT_{
@@ -138,14 +138,17 @@ class easyPostponeVc: NSViewController {
             }
             
             sequenceId = arrFilteredEveningHabits.first?.activity_sequence_id ?? ""
+        }else if lastCurrentState == ._ACTIVITY_{
+
         }else{
             addLog(text: "force Complete Current Sequence - no Sequence found to complete")
             return
         }
         
         if sequenceId.isEmpty{
-            addLog(text: "force Complete Current Sequence - SequenceId is blank :- return")
-            return
+            addLog(text: "force Complete Current Sequence - SequenceId is blank")
+            mainViewControllerObj?.disableApp()
+            return;
         }
         addLog(text: "force Complete Current Sequence - forceCompleteIfAnyActivityGoing")
         allApiObject.forceCompleteCurrentSequence(activity_sequence_id: sequenceId, isForToday: true, completionHandler: {json in

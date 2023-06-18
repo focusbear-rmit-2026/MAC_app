@@ -50,7 +50,7 @@ class addFocusTempUrlsOrAppsVc: NSViewController {
         btnAllow.title = "Allow"
         btnCancel.title = buttonCancelText
         lblTitleApps.stringValue = "Apps:"
-        lblTitleUrls.stringValue = "Urls:"
+        lblTitleUrls.stringValue = "URLs:"
         
         if let toolBoxVcInfo = configjson.value(forKey: "toolBoxVcInfo") as? NSDictionary{
             lblTitleApps.stringValue = toolBoxVcInfo.value(forKey: "appsText") as? String ?? lblTitleApps.stringValue

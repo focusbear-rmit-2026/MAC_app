@@ -12,7 +12,7 @@ import Auth0
 class customLoginVc: NSViewController {
 
     @IBOutlet weak var checkBoxPasswordSave: NSButton!
-    @IBOutlet weak var segmentControlPassword: NSSegmentedControl!
+    @IBOutlet weak var segmentControlPassword: cursorSegmentedControl!
     @IBOutlet weak var lblRuleSixth: NSTextField!
     @IBOutlet weak var lblRuleFifth: NSTextField!
     @IBOutlet weak var lblRuleFourth: NSTextField!
@@ -156,7 +156,9 @@ class customLoginVc: NSViewController {
     override func viewWillAppear() {
         reloadView()
     }
-    
+    override func viewWillDisappear() {
+        appdelegate!.menuItemUninstall.isHidden = true
+    }
     func reloadView(){
         textFieldEmail.stringValue = ""
         secureTextFieldPassword.stringValue = ""
@@ -388,31 +390,34 @@ class customLoginVc: NSViewController {
 
 //            Use Focus Mode templates for onboarding#489
             
-            allApiObject.getFocusTemplateInfo(completionHandler: { json in
+            
+            // after login check is there  any need to show ask always block urls view (check form settings api is settings are blank the shw view )
+            var shouldShowOnboardingAfterLogin = true
+            allApiObject.getUserLocalDeviceSettings(completionHandler: { json in
                 if json != nil{
- 
+                    if let settings = json?.value(forKey: "MacOS") as? NSDictionary {//
+                        print(settings)
+                        if settings.allKeys.count == 0{
+                            shouldShowOnboardingAfterLogin = true
+                        }else{
+                            shouldShowOnboardingAfterLogin = false
+                        }
+                        
+                    }
+                    
+                }
+                DispatchQueue.main.async {
+                    if shouldShowOnboardingAfterLogin{
+                        allApiObject.postTermsService()
+                        showChooseFrictionLevelWindow()
+                    }else{
+                        UserDefaults.standard.set(true, forKey: kUserdefaultsVideoShown)
+                        appdelegate!.loadCredentialsAndDeviceId()
+                    }
                 }
             }
             )
-            // after login check is there  any need to show ask always block urls view (check form settings api is settings are blank the shw view )
-            //shouldShowOnboardingBlockedUrlsView = true
-//            allApiObject.getUserLocalDeviceSettings(completionHandler: { json in
-//                if json != nil{
-//                    if let settings = json?.value(forKey: "MacOS") as? NSDictionary {
-//                        print(settings)
-//                        if settings.allKeys.count == 0{
-//                            shouldShowOnboardingBlockedUrlsView = true
-//                        }else{
-//                            shouldShowOnboardingBlockedUrlsView = false
-//                        }
-//                        
-//                    }
-//                    
-//                }
-//            }
-//            )
             
-            showOnboardingCardWindow(isLogin: isLogin)
         }else{
             appdelegate!.loadCredentialsAndDeviceId()
         }

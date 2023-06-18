@@ -19,6 +19,7 @@ class activationWindowController: NSWindowController, NSWindowDelegate {
                 self.window?.sharingType = .none
             }
         }
+        self.window?.appearance = getAppAppearance()
     }
 
     func showSevenDayTrialVc(){

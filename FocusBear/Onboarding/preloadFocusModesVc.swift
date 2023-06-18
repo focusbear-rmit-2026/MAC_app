@@ -60,7 +60,7 @@ class preloadFocusModesVc: NSViewController, NSTextFieldDelegate {
             lblDescription.stringValue = preloadFocusModesViewInfo.value(forKey: "description") as? String ?? lblDescription.stringValue
         }//
 
-        if focusModeTemplateData != nil{
+        if focusModeTemplateData != nil{ 
             
             for item in focusModeTemplateData!{
                 let name = item.value(forKey: "name") as? String ?? ""
@@ -200,7 +200,7 @@ class preloadFocusModesVc: NSViewController, NSTextFieldDelegate {
             UserDefaults.standard.set(true, forKey: kUserdefaultsFocusTipsShown)
             
             addLog(text: "show Focus Tips Vc")
-            self.view.window?.contentViewController = getFocusTipsVcObjObj()
+            self.view.window?.contentViewController = getAiPermissionVcObj()
         }
 
     }
@@ -216,8 +216,8 @@ class preloadFocusModesVc: NSViewController, NSTextFieldDelegate {
                 lblGotIt.stringValue = ""
             }else{
                 if textfield.stringValue.count > 250{
-                    textfield.currentEditor()?.deleteBackward(nil)
-                    return;
+                    let index = textfield.stringValue.index(textfield.stringValue.startIndex, offsetBy: 250)
+                    textfield.stringValue = String(textfield.stringValue.prefix(upTo: index))
                 }
                 
                 btnContinue.isEnabled = true

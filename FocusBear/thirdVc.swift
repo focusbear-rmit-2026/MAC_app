@@ -12,6 +12,8 @@ import WebKit
 class thirdVc: NSViewController {
     
     
+    @IBOutlet weak var btnNextGraph: cursorButton!
+    @IBOutlet weak var btnPreviousGraph: cursorButton!
     @IBOutlet weak var webViewForVideo: WKWebView!
     @IBOutlet weak var btnReviseQuantity: Button!
     @IBOutlet weak var customViewContainer: NSView!
@@ -31,9 +33,9 @@ class thirdVc: NSViewController {
     
     var randomIntToRememberNextHabit: Int = 0
     var lastHabitIndex = -1
-    var lastActivityIndex = -1
+    var lastActivityIndex = -1// 
     
-//    var preloadFocusModesVcObj:preloadFocusModesVc?
+    //    var preloadFocusModesVcObj:preloadFocusModesVc?
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -42,20 +44,15 @@ class thirdVc: NSViewController {
         webViewForVideo.isHidden = true
         btnReviseQuantity.isHidden = true
         lblTimer.isHidden = true
-        if SettingsManagerObject.kIsReducedMotion{
-            imgViewGif.image = nil
-        }else{
-            imgViewGif.image = NSImage(named: "Smile _Small")
-            imgViewGif.animates = true
-        }
+        
         
         boxBreathingFinished.isHidden = true
-//        var string = "Hope you feel calmer. You can now personalise your morning routine by clicking on the icon <icon> on the top bar and choosing settings."
-//        if let dic = configjson.value(forKey: "welcomeInfo") as? NSDictionary{
-//            if let subTitle = dic.value(forKey: "welcomeEndMessage") as? String{
-//                string = subTitle
-//            }
-//        }
+        //        var string = "Hope you feel calmer. You can now personalise your morning routine by clicking on the icon <icon> on the top bar and choosing settings."
+        //        if let dic = configjson.value(forKey: "welcomeInfo") as? NSDictionary{
+        //            if let subTitle = dic.value(forKey: "welcomeEndMessage") as? String{
+        //                string = subTitle
+        //            }
+        //        }
         var string = "I've set up a focus mode for you that has some common apps and URLs you might want to use when you're working. Open the settings from the Focus Bear menu to change what apps and URLs are allowed."
         if let dic = configjson.value(forKey: "welcomeInfo") as? NSDictionary{
             if let subTitle = dic.value(forKey: "preloadFocusModesDoneText") as? String{
@@ -73,12 +70,54 @@ class thirdVc: NSViewController {
         if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
             btnSkipHabit.title = activityInfo.value(forKey: "buttonSkipHabitText") as? String ?? btnSkipHabit.title
         }
+        btnNextGraph.isHidden = true
+        btnPreviousGraph.isHidden = true
+        
     }
-
+    override func viewWillAppear() {
+        if SettingsManagerObject.kIsReducedMotion{
+            imgViewGif.image = nil
+        }else{
+            imgViewGif.image = NSImage(named: "Smile _Small")
+            imgViewGif.animates = true
+        }
+    }
+    @IBAction func btnNextGraphClicked(_ sender: Any) {
+        currentGraphIndex += 1
+        loadGraph(activityId: lastActivityIdForGraph, activityName: lastActivityNameForGraph, logQuantity: lastLogQuantityForGraph, logQuantityType: lastLogQuantityTypeForGraph, activityChoiceId: lastActivityChoiceIdForGraph, activityStartTime: lastActivityStartTimeForGraph, duration: lastActivityDurationForGraph, quantity: lastActivityQuantityForGraph)
+    }
+    
+    @IBAction func btnPreviousGraphClicked(_ sender: Any) {
+        currentGraphIndex -= 1
+        loadGraph(activityId: lastActivityIdForGraph, activityName: lastActivityNameForGraph, logQuantity: lastLogQuantityForGraph, logQuantityType: lastLogQuantityTypeForGraph, activityChoiceId: lastActivityChoiceIdForGraph, activityStartTime: lastActivityStartTimeForGraph, duration: lastActivityDurationForGraph, quantity: lastActivityQuantityForGraph)
+    }
+    var currentGraphIndex = 0
     // date formate to pass iso 8601 formate mm-dd-yyyy
+    var lastActivityIdForGraph = ""
+    var lastActivityNameForGraph = ""
+    var lastLogQuantityForGraph = false
+    var lastLogQuantityTypeForGraph = ""
+    var lastActivityChoiceIdForGraph:String?
+    var lastActivityStartTimeForGraph:Date?
+    var lastActivityDurationForGraph = ""
+    var lastActivityQuantityForGraph = ""
+    var logQuantityQuestionsForGraph:[quantityQuestion] = [quantityQuestion]()
+    
     func loadGraph(activityId:String, activityName:String, logQuantity:Bool, logQuantityType:String, activityChoiceId:String?,  activityStartTime:Date?, duration:String, quantity:String){
         // here is logQuantity is only for avtivity
-        if logQuantity && lastActivityPerformedTime != nil{ // lastActivityPerformedTime qki jb direct incomplete habit start hoti h to pahle ka graph load hota h tb lastActivityPerformedTime ye var nil milta h 
+        
+        lastActivityIdForGraph = activityId
+        lastActivityNameForGraph = activityName
+        lastLogQuantityForGraph = logQuantity
+        lastLogQuantityTypeForGraph = logQuantityType
+        lastActivityChoiceIdForGraph = activityChoiceId
+        lastActivityStartTimeForGraph = activityStartTime
+        lastActivityDurationForGraph = duration
+        lastActivityQuantityForGraph = quantity
+        
+        btnNextGraph.isHidden = true
+        btnPreviousGraph.isHidden = true
+        if logQuantity && lastActivityPerformedTime != nil{ // lastActivityPerformedTime qki jb direct incomplete habit start hoti h to pahle ka graph load hota h tb lastActivityPerformedTime ye var nil milta h
             btnReviseQuantity.isHidden = false
         }else{
             btnReviseQuantity.isHidden = true
@@ -92,7 +131,7 @@ class thirdVc: NSViewController {
                 isSpecialActivityGoing = true
             }
         }
-
+        
         if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || isSpecialHabitGoing{
             var logType = ""
             if currentState == ._MORNING_HABIT_{
@@ -120,221 +159,344 @@ class thirdVc: NSViewController {
                 }
                 
             }
-           // allApiObject.getACtivityStats(activityId: activityId, activityChoiceId: nil, completionHandler: {dic in
-                print(graphOneMonthData)
-                if let items = graphOneMonthData?.value(forKey: "items") as? [[String:Any]]{
-                   
-                    var arrDic = [[String:Any]]()
-                    for item in items{
-                        guard let date = item["date"] as? String else{
-                            continue;
-                        }
-                        if let dateTime = getDateFromStringInUtc(date: date, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"){
-                            var newDic = [String:Any]()
-                            newDic["date"] = dateTime
-                            newDic["dateString"] = getStringFromDate(date: dateTime, dateFormat: "MM-dd-yyyy")
-                            newDic["Duration in seconds"] = item["summary"] ?? ""
-                            newDic["Quantity Logged"] = item["summary"] ?? ""
-                            arrDic.append(newDic)
-                        }
-                        
-                    }
-                   
-                    
-                    
-                    arrDic = arrDic.reversed()// bacuse we want to make struct just like csv, adn in csv entries are old to new
-
-                    if arrDic.count != 0{
-                        let lastItem = arrDic.last!
-                        
-                        if let dateTime = activityStartTime{
-                            
-                            
-                            let dateString = getStringFromDate(date: dateTime, dateFormat: "MM-dd-yyyy")
-                            
-                            if lastItem["dateString"] as? String ?? "" ==  dateString{
-//                                arrDic[arrDic.count - 1] =
-                                let lastDurationString = lastItem["Duration in seconds"] as? String ?? ""
-                                let lastquantityString = lastItem["Quantity Logged"] as? String ?? ""
-                                
-                                
-                                let lastDuration = Double(lastDurationString) ?? 0
-                            
-                                let lastQuantity = Double(lastquantityString) ?? 0
-                                
-                                
-                                let finalDuration = (Double(duration) ?? 0) + lastDuration
-                                let finalQuantity = (Double(quantity) ?? 0) + lastQuantity
-                                
-                                var newDic = [String:Any]()
-                                newDic["date"] = dateTime
-                                newDic["dateString"] = dateString
-                                newDic["Duration in seconds"] = "\(finalDuration)"
-                                newDic["Quantity Logged"] = "\(finalQuantity)"
-                                arrDic[arrDic.count - 1] = newDic
-                                
-                                
-                            }else{
-                                var newDic = [String:Any]()
-                                newDic["date"] = dateTime
-                                newDic["dateString"] = dateString
-                                newDic["Duration in seconds"] = duration
-                                newDic["Quantity Logged"] = quantity
-                                arrDic.append(newDic)
-                            }
-                            
-                        }
-                    }else{
-                        if let dateTime = activityStartTime{
-                            var newDic = [String:Any]()
-                            newDic["date"] = dateTime
-                            newDic["dateString"] = getStringFromDate(date: dateTime, dateFormat: "MM-dd-yyyy")
-                            newDic["Duration in seconds"] = duration
-                            newDic["Quantity Logged"] = quantity
-                            arrDic.append(newDic)
+            if graphOneMonthData != nil{
+                var items = [[String : Any]]()
+                let log_quantity_answers_stats = graphOneMonthData?.value(forKey: "log_quantity_answers_stats") as? [[String:Any]] ?? []
+                
+                
+                var question = ""
+                if logQuantity{
+                    if log_quantity_answers_stats.count > currentGraphIndex{
+                        items = log_quantity_answers_stats[currentGraphIndex]["items"] as? [[String:Any]] ?? []
+                        if let questionDic = log_quantity_answers_stats[currentGraphIndex]["question"] as? NSDictionary{
+                            question = questionDic.value(forKey: "question") as? String ?? ""
                         }
                     }
-                    
-                    DispatchQueue.main.async {
-                        self.loadHabitMonthlyGraphFromCsv(activityName: activityName, logQuantity: logQuantity, arrDic: arrDic)
-                    }
-                    
                 }else{
-                    // no records
-                    DispatchQueue.main.async {
-                        let arrDic = self.readCsv(activityName: activityName, logType: logType)
-                        self.loadHabitMonthlyGraphFromCsv(activityName: activityName, logQuantity: logQuantity, arrDic: arrDic)
+                    items = graphOneMonthData?.value(forKey: "items") as? [[String:Any]] ?? []
+                }
+                
+                
+                
+                if log_quantity_answers_stats.count-1 > currentGraphIndex{
+                    btnNextGraph.isHidden = false
+                }
+                if currentGraphIndex != 0{
+                    btnPreviousGraph.isHidden = false
+                }
+                var arrDic = [[String:Any]]()
+                for item in items{
+                    guard let date = item["date"] as? String else{
+                        continue;
+                    }
+                    if let dateTime = getDateFromStringInUtc(date: date, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"){
+                        var newDic = [String:Any]()
+                        newDic["date"] = dateTime
+                        newDic["dateString"] = getStringFromDate(date: dateTime, dateFormat: "MM-dd-yyyy")
+                        newDic["Duration in seconds"] = item["summary"] ?? ""
+                        newDic["Quantity Logged"] = item["summary"] ?? ""
+                        arrDic.append(newDic)
                     }
                     
                 }
-
-        }else if currentState == ._ACTIVITY_ || isSpecialActivityGoing{
-
-                print(graphOneDayData)
-                print("*****result****")
-                if let items = graphOneDayData as? [[String:Any]]{
-
-                    var arrDic = [[String:Any]]()
-                    for item in items{
-                        guard let date = item["start_time"] as? String else{
-                            continue;
-                        }
-                        if let dateTime = getDateFromStringInUtc(date: date, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"){
+                var currentQuantity:Double = 0
+                
+                if logQuantityQuestionsForGraph.count > currentGraphIndex{
+                    currentQuantity = logQuantityQuestionsForGraph[currentGraphIndex].quantity
+                }
+                
+                
+                arrDic = arrDic.reversed()// bacuse we want to make struct just like csv, adn in csv entries are old to new
+                
+                if arrDic.count != 0{
+                    let lastItem = arrDic.last!
+                    
+                    if let dateTime = activityStartTime{
+                        
+                        
+                        let dateString = getStringFromDate(date: dateTime, dateFormat: "MM-dd-yyyy")
+                        
+                        if lastItem["dateString"] as? String ?? "" ==  dateString{
+                            //                                arrDic[arrDic.count - 1] =
+                            let lastDurationString = lastItem["Duration in seconds"] as? String ?? ""
+                            let lastquantityString = lastItem["Quantity Logged"] as? String ?? ""
+                            
+                            
+                            let lastDuration = Double(lastDurationString) ?? 0
+                            
+                            let lastQuantity = Double(lastquantityString) ?? 0
+                            
+                            
+                            let finalDuration = (Double(duration) ?? 0) + lastDuration
+                            let finalQuantity = currentQuantity + lastQuantity
+                            
                             var newDic = [String:Any]()
                             newDic["date"] = dateTime
-                            newDic["dateString"] = getStringFromDate(date: dateTime, dateFormat: "MM-dd-yyyy")
-                            newDic["Duration in seconds"] = item["duration_logged"]
-                            newDic["Quantity Logged"] = item["quantity_logged"]
+                            newDic["dateString"] = dateString
+                            newDic["Duration in seconds"] = "\(finalDuration)"
+                            newDic["Quantity Logged"] = "\(finalQuantity)"
+                            arrDic[arrDic.count - 1] = newDic
+                            
+                            
+                        }else{
+                            var newDic = [String:Any]()
+                            newDic["date"] = dateTime
+                            newDic["dateString"] = dateString
+                            newDic["Duration in seconds"] = duration
+                            newDic["Quantity Logged"] = "\(currentQuantity)"
                             arrDic.append(newDic)
                         }
-
+                        
                     }
-                    
-                    
-                    arrDic = arrDic.reversed()//
+                }else{
                     if let dateTime = activityStartTime{
                         var newDic = [String:Any]()
                         newDic["date"] = dateTime
                         newDic["dateString"] = getStringFromDate(date: dateTime, dateFormat: "MM-dd-yyyy")
                         newDic["Duration in seconds"] = duration
-                        newDic["Quantity Logged"] = quantity
+                        newDic["Quantity Logged"] = "\(currentQuantity)"
                         arrDic.append(newDic)
                     }
-                    DispatchQueue.main.async {
-                        self.loadBreakFirstGraphFromCsv(activityName: activityName, logQuantity: logQuantity, logQuantityType: logQuantityType, arrDic: arrDic)
-                    }
-
-                }else{
-                    // no records
-                    DispatchQueue.main.async {
-                        let arrDic = self.readCsvForTodayOnly(activityName: activityName, logType: "break")
-                        self.loadBreakFirstGraphFromCsv(activityName: activityName, logQuantity: logQuantity, logQuantityType: logQuantityType, arrDic: arrDic)
-                    }
-
                 }
-
-                print(graphOneMonthData)
-                print("*****result****")
-               // let stat_type = dic?.value(forKey: "stat_type") as? String ?? ""  //quantity // duration
-                if let items = graphOneMonthData?.value(forKey: "items") as? [[String:Any]]{
-                   
-                    var arrDic = [[String:Any]]()
-                    for item in items{
-                        guard let date = item["date"] as? String else{
-                            continue;
-                        }
-                        if let dateTime = getDateFromStringInUtc(date: date, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"){
-                            var newDic = [String:Any]()
-                            newDic["date"] = dateTime
-                            newDic["dateString"] = getStringFromDate(date: dateTime, dateFormat: "MM-dd-yyyy")
-                            newDic["Duration in seconds"] = item["summary"] ?? ""
-                            newDic["Quantity Logged"] = item["summary"] ?? ""
-                            arrDic.append(newDic)
-                        }
-                        
+                if question.isEmpty{
+                    question = activityName
+                }
+                DispatchQueue.main.async {
+                    self.loadHabitMonthlyGraphFromCsv(activityName: question, logQuantity: logQuantity, arrDic: arrDic)
+                }
+                
+            }else{
+                // no records
+                DispatchQueue.main.async {
+                    let arrDic = self.readCsv(activityName: activityName, logType: logType)
+                    self.loadHabitMonthlyGraphFromCsv(activityName: activityName, logQuantity: logQuantity, arrDic: arrDic)
+                }
+                
+            }
+            
+        }else if currentState == ._ACTIVITY_ || isSpecialActivityGoing{
+            
+            //print(graphOneDayData)
+           // print("*****result****")
+            if graphOneDayData != nil{
+                let items = graphOneDayData as? [[String:Any]] ?? []
+                var arrDic = [[String:Any]]()
+                for item in items{
+                    guard let date = item["start_time"] as? String else{
+                        continue;
+                    }
+                    if let dateTime = getDateFromStringInUtc(date: date, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"){
+                        var newDic = [String:Any]()
+                        newDic["date"] = dateTime
+                        newDic["dateString"] = getStringFromDate(date: dateTime, dateFormat: "MM-dd-yyyy")
+                        newDic["Duration in seconds"] = item["duration_logged"]
+                        newDic["Quantity Logged"] = item["quantity_logged"]
+                        arrDic.append(newDic)
                     }
                     
-                    arrDic = arrDic.reversed()// bacuse we want to make struct just like csv, adn in csv entries are old to new
+                }
+                
+                
+                arrDic = arrDic.reversed()//
+                if let dateTime = activityStartTime{
+                    var newDic = [String:Any]()
+                    newDic["date"] = dateTime
+                    newDic["dateString"] = getStringFromDate(date: dateTime, dateFormat: "MM-dd-yyyy")
+                    newDic["Duration in seconds"] = duration
+                    newDic["Quantity Logged"] = quantity
+                    arrDic.append(newDic)
+                }
+                DispatchQueue.main.async {
+                    self.loadBreakFirstGraphFromCsv(activityName: activityName, logQuantity: logQuantity, logQuantityType: logQuantityType, arrDic: arrDic)
+                }
+                
+            }else if graphOneDayDataForQuantity != nil{
+                
+                
+                var currentKey = ""
+                
+                if graphOneMonthData != nil{
+                    let log_quantity_answers_stats = graphOneMonthData?.value(forKey: "log_quantity_answers_stats") as? [[String:Any]] ?? []
+                    if currentGraphIndex < log_quantity_answers_stats.count{
+                        currentKey = log_quantity_answers_stats[currentGraphIndex]["question_id"] as? String ?? ""
+                    }
+                }
+              
+                var currentQuantity:Double = 0
+                
+                if logQuantityQuestionsForGraph.count > currentGraphIndex{
+                    currentQuantity = logQuantityQuestionsForGraph[currentGraphIndex].quantity
+                }
+                
+                let items = graphOneDayDataForQuantity![currentKey] as? [[String:Any]] ?? []
+                var arrDic = [[String:Any]]()
+                for item in items{
+                    guard let date = item["date_logged"] as? String else{
+                        continue;
+                    }
+                    if let dateTime = getDateFromStringInUtc(date: date, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"){
+                        var newDic = [String:Any]()
+                        newDic["date"] = dateTime
+                        newDic["dateString"] = getStringFromDate(date: dateTime, dateFormat: "MM-dd-yyyy")
+                        newDic["Duration in seconds"] = item["duration_logged"]
+                        newDic["Quantity Logged"] = "\(item["logged_value"] as? Double ?? 0)"
+                        arrDic.append(newDic)
+                    }
                     
-                    if arrDic.count != 0{
-                        let lastItem = arrDic.last!
+                }
+                
+                
+//                arrDic = arrDic.reversed()//
+                if let dateTime = activityStartTime{
+                    var newDic = [String:Any]()
+                    newDic["date"] = dateTime
+                    newDic["dateString"] = getStringFromDate(date: dateTime, dateFormat: "MM-dd-yyyy")
+                    newDic["Duration in seconds"] = duration
+                    newDic["Quantity Logged"] = "\(currentQuantity)"
+                    arrDic.append(newDic)
+                }
+                DispatchQueue.main.async {
+                    self.loadBreakFirstGraphFromCsv(activityName: activityName, logQuantity: logQuantity, logQuantityType: logQuantityType, arrDic: arrDic)
+                }
+                
+            }else{
+                // no records
+                DispatchQueue.main.async {
+                    let arrDic = self.readCsvForTodayOnly(activityName: activityName, logType: "break")
+                    self.loadBreakFirstGraphFromCsv(activityName: activityName, logQuantity: logQuantity, logQuantityType: logQuantityType, arrDic: arrDic)
+                }
+                
+            }
+            
+            
+            print(graphOneMonthData)
+            print("*****result****")
+            // let stat_type = dic?.value(forKey: "stat_type") as? String ?? ""  //quantity // duration
+            if graphOneMonthData != nil{
+                
+                var items = [[String : Any]]()
+                
+                let log_quantity_answers_stats = graphOneMonthData?.value(forKey: "log_quantity_answers_stats") as? [[String:Any]] ?? []
+                
+//                let items = log_quantity_answers_stats[currentGraphIndex]["items"] as? [[String:Any]] ?? []
+                var question = ""
+                if logQuantity{
+                    if log_quantity_answers_stats.count > currentGraphIndex{
+                        items = log_quantity_answers_stats[currentGraphIndex]["items"] as? [[String:Any]] ?? []
+                        if let questionDic = log_quantity_answers_stats[currentGraphIndex]["question"] as? NSDictionary{
+                            question = questionDic.value(forKey: "question") as? String ?? ""
+                        }
+                    }
+                }else{
+                    items = graphOneMonthData?.value(forKey: "items") as? [[String:Any]] ?? []
+                }
+                
+                
+                
+                if log_quantity_answers_stats.count-1 > currentGraphIndex{
+                    btnNextGraph.isHidden = false
+                }
+                if currentGraphIndex != 0{
+                    btnPreviousGraph.isHidden = false
+                }
+                var arrDic = [[String:Any]]()
+                for item in items{
+                    guard let date = item["date"] as? String else{
+                        continue;
+                    }
+                    if let dateTime = getDateFromStringInUtc(date: date, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"){
+                        var newDic = [String:Any]()
+                        newDic["date"] = dateTime
+                        newDic["dateString"] = getStringFromDate(date: dateTime, dateFormat: "MM-dd-yyyy")
+                        newDic["Duration in seconds"] = item["summary"] ?? ""
+                        newDic["Quantity Logged"] = item["summary"] ?? ""
+                        arrDic.append(newDic)
+                    }
+                    
+                }
+                var currentQuantity:Double = 0
+                
+                if logQuantityQuestionsForGraph.count > currentGraphIndex{
+                    currentQuantity = logQuantityQuestionsForGraph[currentGraphIndex].quantity
+                }
+                
+                arrDic = arrDic.reversed()// bacuse we want to make struct just like csv, adn in csv entries are old to new
+                
+                if arrDic.count != 0{
+                    let lastItem = arrDic.last!
+                    
+                    if let dateTime = activityStartTime{
                         
-                        if let dateTime = activityStartTime{
+                        
+                        let dateString = getStringFromDate(date: dateTime, dateFormat: "MM-dd-yyyy")
+                        
+                        if lastItem["dateString"] as? String ?? "" ==  dateString{
+                            //                                arrDic[arrDic.count - 1] =
+                            let lastDurationString = lastItem["Duration in seconds"] as? String ?? ""
+                            let lastquantityString = lastItem["Quantity Logged"] as? String ?? ""
                             
                             
-                            let dateString = getStringFromDate(date: dateTime, dateFormat: "MM-dd-yyyy")
+                            let lastDuration = Double(lastDurationString) ?? 0
                             
-                            if lastItem["dateString"] as? String ?? "" ==  dateString{
-//                                arrDic[arrDic.count - 1] =
-                                let lastDurationString = lastItem["Duration in seconds"] as? String ?? ""
-                                let lastquantityString = lastItem["Quantity Logged"] as? String ?? ""
-                                
-                                
-                                let lastDuration = Double(lastDurationString) ?? 0
+                            let lastQuantity = Double(lastquantityString) ?? 0
                             
-                                let lastQuantity = Double(lastquantityString) ?? 0
+                            
+                            let finalDuration = (Double(duration) ?? 0) + lastDuration
+                            let finalQuantity = currentQuantity + lastQuantity//(Double(quantity) ?? 0) + lastQuantity
+                            var newDic = [String:Any]()
+                            
+                            if logQuantityType == "AVG"{
                                 
                                 
-                                let finalDuration = (Double(duration) ?? 0) + lastDuration
-                                let finalQuantity = (Double(quantity) ?? 0) + lastQuantity
-                                var newDic = [String:Any]()
                                 
-                                if logQuantityType == "AVG"{
-                                    
-                                    
-                                    
-                                    var arrDuration = [Double]()
-                                    var arrQuantity = [Double]()
-                                    if let items = graphOneDayData as? [[String:Any]]{
-                                        for item in items{
-                                            arrDuration.append(Double(item["duration_logged"] as? String ?? "") ?? 0)
-                                            arrQuantity.append(Double(item["quantity_logged"] as? String ?? "") ?? 0)
-                                        }
-                                        arrDuration.append(Double(duration) ?? 0)
-                                        arrQuantity.append(Double(quantity) ?? 0)
-
-                                        
-                                        let sumDuration = arrDuration.reduce(0, +)
-                                        let sumQuantity = arrQuantity.reduce(0, +)
-                                        
-                                        let avgQuantity = sumQuantity / Double(arrQuantity.count)
-                                        
-                                        newDic["date"] = dateTime
-                                        newDic["dateString"] = dateString
-                                        newDic["Duration in seconds"] = "\(sumDuration)"
-                                        newDic["Quantity Logged"] = "\(avgQuantity)"
-                                        
-                                    }else{
-                                        newDic["date"] = dateTime
-                                        newDic["dateString"] = dateString
-                                        newDic["Duration in seconds"] = "\(finalDuration)"
-                                        newDic["Quantity Logged"] = "\(finalQuantity)"
+                                var arrDuration = [Double]()
+                                var arrQuantity = [Double]()
+                                if let items = graphOneDayData as? [[String:Any]]{
+                                    for item in items{
+                                        arrDuration.append(Double(item["duration_logged"] as? String ?? "") ?? 0)
+                                        arrQuantity.append(Double(item["quantity_logged"] as? String ?? "") ?? 0)
                                     }
+                                    arrDuration.append(Double(duration) ?? 0)
+                                    arrQuantity.append(currentQuantity)//Double(quantity) ?? 0)
                                     
                                     
+                                    let sumDuration = arrDuration.reduce(0, +)
+                                    let sumQuantity = arrQuantity.reduce(0, +)
+                                    
+                                    let avgQuantity = sumQuantity / Double(arrQuantity.count)
+                                    
+                                    newDic["date"] = dateTime
+                                    newDic["dateString"] = dateString
+                                    newDic["Duration in seconds"] = "\(sumDuration)"
+                                    newDic["Quantity Logged"] = "\(avgQuantity)"
+                                    
+                                }else if graphOneDayDataForQuantity != nil{
+                                    var currentKey = ""
+                                    if graphOneMonthData != nil{
+                                        let log_quantity_answers_stats = graphOneMonthData?.value(forKey: "log_quantity_answers_stats") as? [[String:Any]] ?? []
+                                        if currentGraphIndex < log_quantity_answers_stats.count{
+                                            currentKey = log_quantity_answers_stats[currentGraphIndex]["question_id"] as? String ?? ""
+                                        }
+                                    }
+                                    let items = graphOneDayDataForQuantity![currentKey] as? [[String:Any]] ?? []
+                                    
+                                    for item in items{
+                                        arrDuration.append(Double(item["duration_logged"] as? String ?? "") ?? 0)
+                                        arrQuantity.append(item["logged_value"] as? Double ?? 0)
+                                    }
+                                    arrDuration.append(Double(duration) ?? 0)
+                                    arrQuantity.append(currentQuantity)//Double(quantity) ?? 0)
                                     
                                     
+                                    let sumDuration = arrDuration.reduce(0, +)
+                                    let sumQuantity = arrQuantity.reduce(0, +)
                                     
+                                    let avgQuantity = sumQuantity / Double(arrQuantity.count)
+                                    
+                                    newDic["date"] = dateTime
+                                    newDic["dateString"] = dateString
+                                    newDic["Duration in seconds"] = "\(sumDuration)"
+                                    newDic["Quantity Logged"] = "\(avgQuantity)"
                                     
                                 }else{
                                     newDic["date"] = dateTime
@@ -342,48 +504,56 @@ class thirdVc: NSViewController {
                                     newDic["Duration in seconds"] = "\(finalDuration)"
                                     newDic["Quantity Logged"] = "\(finalQuantity)"
                                 }
-                                
-                                
-                                arrDic[arrDic.count - 1] = newDic
-                                
-                                
                             }else{
-                                var newDic = [String:Any]()
                                 newDic["date"] = dateTime
                                 newDic["dateString"] = dateString
-                                newDic["Duration in seconds"] = duration
-                                newDic["Quantity Logged"] = quantity
-                                arrDic.append(newDic)
+                                newDic["Duration in seconds"] = "\(finalDuration)"
+                                newDic["Quantity Logged"] = "\(finalQuantity)"
                             }
                             
-                        }
-                    }else{
-                        if let dateTime = activityStartTime{
+                            
+                            arrDic[arrDic.count - 1] = newDic
+                            
+                            
+                        }else{
                             var newDic = [String:Any]()
                             newDic["date"] = dateTime
-                            newDic["dateString"] = getStringFromDate(date: dateTime, dateFormat: "MM-dd-yyyy")
+                            newDic["dateString"] = dateString
                             newDic["Duration in seconds"] = duration
-                            newDic["Quantity Logged"] = quantity
+                            newDic["Quantity Logged"] = "\(currentQuantity)"//quantity
                             arrDic.append(newDic)
                         }
+                        
                     }
-                    
-                    
-                    DispatchQueue.main.async {
-                        self.loadBreakSecondGraphFromCsv(activityName: activityName, logQuantity: logQuantity, logQuantityType: logQuantityType, arrDic: arrDic)
-                    }
-                    
                 }else{
-                    // no records
-                    DispatchQueue.main.async {
-                        let arrDic = self.readCsv(activityName: activityName, logType: "break")
-                        self.loadBreakSecondGraphFromCsv(activityName: activityName, logQuantity: logQuantity, logQuantityType: logQuantityType, arrDic: arrDic)
+                    if let dateTime = activityStartTime{
+                        var newDic = [String:Any]()
+                        newDic["date"] = dateTime
+                        newDic["dateString"] = getStringFromDate(date: dateTime, dateFormat: "MM-dd-yyyy")
+                        newDic["Duration in seconds"] = duration
+                        newDic["Quantity Logged"] = "\(currentQuantity)"//quantity
+                        arrDic.append(newDic)
                     }
-                    
                 }
-
+                
+                if question.isEmpty{
+                    question = activityName
+                }
+                DispatchQueue.main.async {
+                    self.loadBreakSecondGraphFromCsv(activityName: question, logQuantity: logQuantity, logQuantityType: logQuantityType, arrDic: arrDic)
+                }
+                
+            }else{
+                // no records
+                DispatchQueue.main.async {
+                    let arrDic = self.readCsv(activityName: activityName, logType: "break")
+                    self.loadBreakSecondGraphFromCsv(activityName: activityName, logQuantity: logQuantity, logQuantityType: logQuantityType, arrDic: arrDic)
+                }
+                
+            }
+            
         }
-
+        
     }
     
     func loadHabitMonthlyGraphFromCsv(activityName:String, logQuantity:Bool, arrDic: [[String : Any]]){
@@ -413,7 +583,7 @@ class thirdVc: NSViewController {
                 
                 
                 webViewGraph1.loadFileURL(fileURL!, allowingReadAccessTo: fileURL!)
-            
+                
                 let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
                 
                 let previousMonth = Calendar.current.date(byAdding: .day, value: -31, to: startDate) ?? startDate
@@ -554,7 +724,7 @@ class thirdVc: NSViewController {
                     minInSecondGraph = 0
                 }
                 
-//                maxInHabitsGraph = roundOffValue(number:maxInHabitsGraph)//
+                //                maxInHabitsGraph = roundOffValue(number:maxInHabitsGraph)//
                 var labelYVal = ""
                 if logQuantity{
                     labelYVal = graphQuantityText
@@ -579,7 +749,7 @@ class thirdVc: NSViewController {
                         
                         
                         DispatchQueue.global().async {
-                            if lastActivityPerformedTime == nil{ //iska mtlb app start hotehi koi morning habit hui thi iska mtlb morning habit k bich mai hi app band ho gai thi ya fir dusre system per app start kreke baki habit yha start ki hai to old habit ka start time ni mika to usleep jyada dala qki graph load ni ho rha tha 
+                            if lastActivityPerformedTime == nil{ //iska mtlb app start hotehi koi morning habit hui thi iska mtlb morning habit k bich mai hi app band ho gai thi ya fir dusre system per app start kreke baki habit yha start ki hai to old habit ka start time ni mika to usleep jyada dala qki graph load ni ho rha tha
                                 usleep(630000)
                                 isHabitGraphLoadedFirstTime = true
                             }else{
@@ -590,7 +760,7 @@ class thirdVc: NSViewController {
                                     isHabitGraphLoadedFirstTime = true
                                 }
                             }
-                        
+                            
                             DispatchQueue.main.async {
                                 self.webViewGraph1?.evaluateJavaScript(script,completionHandler: { (html: Any?, error: Error?) in
                                     print(html)
@@ -613,371 +783,371 @@ class thirdVc: NSViewController {
         }
     }
     
-//    func loadBreakGraphFromCsv(activityName:String, logQuantity:Bool, logQuantityType:String){
-//
-//        stackViewGraph.isHidden = false
-//
-//        btnMainCenterY.constant = 100
-//        if let graphDayspath = Bundle.main.path(forResource: "GraphDays", ofType: "html"), let graphTimepath = Bundle.main.path(forResource: "GraphTime", ofType: "html"), let graphGraphTimeDurationpath = Bundle.main.path(forResource: "GraphTimeDuration", ofType: "html"), let graphDaysDurationpath = Bundle.main.path(forResource: "GraphDaysDuration", ofType: "html"){
-//            print(graphDayspath)
-//            let graphDaysUrl = "file://\(graphDayspath.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")"
-//            let graphDaysDurationUrl = "file://\(graphDaysDurationpath.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")"
-//            let graphTimeUrl = "file://\(graphTimepath.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")"
-//            let graphTimeDurationUrl = "file://\(graphGraphTimeDurationpath.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")"
-//            webViewGraph1.isHidden = false
-//            webViewGraph2.isHidden = false
-//
-//            //                var  fileURL = URL(string: graphDaysUrl)
-//
-//            var fileURL: URL?
-//
-//            if logQuantity{
-//                fileURL = URL(string: graphDaysUrl)
-//            }else{
-//                fileURL = URL(string: graphDaysDurationUrl)
-//            }
-//
-//
-//            webViewGraph2.loadFileURL(fileURL!, allowingReadAccessTo: fileURL!)
-//
-//
-//
-//            let arrDic = readCsv(activityName: activityName, logType: "break")
-//            print(arrDic)// 1 month data
-//
-//            // **********for graph second // monthly*******
-//            var arrGraph1DurationOrQuantity = [String]()
-//
-//            var arrGraph1DateString = [String]()
-//            var arrGraph1Date = [Date]()
-//            let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
-//            let shutoffTime = Calendar.current.date(bySettingHour: shutOffTime!.hour, minute: shutOffTime!.minute, second: startTime!.second, of: Date())!
-//            let previousMonth = Calendar.current.date(byAdding: .day, value: -31, to: startDate) ?? startDate
-//            var isDataWeekly = false
-//            var lastDateAdded = previousMonth// qki pure 1 month ka data chahiye isiliye aaj ki date se -31  se kiya h taki 31 din ka data nilana bhake hi 15 din ka data ho to usse phle ka data fake cretae krenge
-//
-//            if let dic = arrDic.first{
-//                let date = dic["date"] as! Date
-//                let sevenDaysBeforeDate = Calendar.current.date(byAdding: .day, value: -6, to: startDate) ?? startDate
-//                if date.compare(sevenDaysBeforeDate) == .orderedDescending {
-//                    isDataWeekly = true
-//                }
-//            }
-//            //  *************** creating 30 days data *****************    //
-//            let arrDataForGraph = NSMutableDictionary()
-//            for dic in arrDic{
-//                if let date = dic["date"] as? Date{
-//                    // if date.compare(lastDateAdded) == .orderedDescending {// start ate k baad ka ho to
-//                    // let date = dic["date"] as! Date
-//                    let calendarDate = Calendar.current.dateComponents([.day, .year, .month], from: date)
-//                    let calendarLastDate = Calendar.current.dateComponents([.day, .year, .month], from: lastDateAdded)
-//
-//
-//                    if calendarDate.day != nil && calendarLastDate.day != nil{
-//                        let stringDate = dic["dateString"] as! String
-//
-//                        let diffInDays = date.interval(ofComponent: .day, fromDate: lastDateAdded)
-//
-//                        //  stringDate = getStringFromDate(date: date, dateFormat: "HH:mm:ss")
-//                        let duration = dic["Duration in seconds"] as! String
-//                        let quantity = dic["Quantity Logged"] as! String
-//
-//
-//
-//                        if diffInDays == 1{
-//                            var quantityOrDuration:Double = 0
-//                            if logQuantity{
-//                                quantityOrDuration = Double(quantity) ?? 0
-//                            }else{
-//                                quantityOrDuration = Double(duration) ?? 0
-//                            }
-//                            if let data = arrDataForGraph.value(forKey: stringDate) as? NSMutableDictionary{
-//                                var arr = [Double]()
-//                                if let nval = data.value(forKey: "arrQuantityOrDuration") as? [Double]{
-//                                    arr = nval
-//                                }
-//                                arr.append(quantityOrDuration)
-//                                data["arrQuantityOrDuration"] = arr
-//                                arrDataForGraph[stringDate] = data
-//                                lastDateAdded = date
-//
-//                            }else{
-//                                let arr = [quantityOrDuration]
-//                                let ndic:NSMutableDictionary = ["arrQuantityOrDuration":arr, "date":date]
-//                                arrDataForGraph[stringDate] = ndic
-//                                lastDateAdded = date
-//                            }
-//                        }else{
-//                            let missinDayCount = diffInDays - 1
-//                            if missinDayCount > 0 {
-//                                for _ in 1...missinDayCount{
-//                                    if let newDate = Calendar.current.date(byAdding: .day, value: 1, to: lastDateAdded){
-//                                        let newStringDate = getStringFromDate(date: newDate, dateFormat: "MM-dd-yyyy")
-//                                        if newStringDate != stringDate{
-//                                            let arr = [0]
-//                                            let ndic:NSMutableDictionary = ["arrQuantityOrDuration":arr, "date":newDate]
-//                                            arrDataForGraph[newStringDate] = ndic
-//                                            lastDateAdded = newDate
-//                                        }
-//                                    }
-//                                }
-//
-//                                var quantityOrDuration:Double = 0
-//                                if logQuantity{
-//                                    quantityOrDuration = Double(quantity) ?? 0
-//                                }else{
-//                                    quantityOrDuration = Double(duration) ?? 0
-//                                }
-//                                if let data = arrDataForGraph.value(forKey: stringDate) as? NSMutableDictionary{
-//                                    var arr = [Double]()
-//                                    if let nval = data.value(forKey: "arrQuantityOrDuration") as? [Double]{
-//                                        arr = nval
-//                                    }
-//                                    arr.append(quantityOrDuration)
-//                                    data["arrQuantityOrDuration"] = arr
-//                                    arrDataForGraph[stringDate] = data
-//                                    lastDateAdded = date
-//
-//                                }else{
-//                                    let arr = [quantityOrDuration]
-//                                    let ndic:NSMutableDictionary = ["arrQuantityOrDuration":arr, "date":date]
-//                                    arrDataForGraph[stringDate] = ndic
-//                                    lastDateAdded = date
-//                                }
-//
-//                            }
-//
-//                            if diffInDays == 0{
-//                                var quantityOrDuration:Double = 0
-//                                if logQuantity{
-//                                    quantityOrDuration = Double(quantity) ?? 0
-//                                }else{
-//                                    quantityOrDuration = Double(duration) ?? 0
-//                                }
-//                                if let data = arrDataForGraph.value(forKey: stringDate) as? NSMutableDictionary{
-//                                    var arr = [Double]()
-//                                    if let nval = data.value(forKey: "arrQuantityOrDuration") as? [Double]{
-//                                        arr = nval
-//                                    }
-//                                    arr.append(quantityOrDuration)
-//                                    data["arrQuantityOrDuration"] = arr
-//                                    arrDataForGraph[stringDate] = data
-//                                    lastDateAdded = date
-//
-//                                }else{
-//                                    let arr = [quantityOrDuration]
-//                                    let ndic:NSMutableDictionary = ["arrQuantityOrDuration":arr, "date":date]
-//                                    arrDataForGraph[stringDate] = ndic
-//                                    lastDateAdded = date
-//                                }
-//                            }
-//                        }
-//                    }
-//                    //}
-//                }
-//
-//            }
-//            //  **********************************************  //
-//
-//            var arrForMaxValueInSecondGraph = [Double]()
-//            var arrGraphDictionary = [[String:Any]]()
-//            for key in arrDataForGraph.allKeys as? [String] ?? []{
-//
-//                var arrQuantity = [Double]()
-//                if let data = arrDataForGraph.value(forKey: key) as? NSMutableDictionary{
-//                    if let nval = data.value(forKey: "arrQuantityOrDuration") as? [Double]{
-//                        arrQuantity = nval
-//                    }
-//                    let sum = arrQuantity.reduce(0, +)
-//                    var finalVal:Double = sum //default sum
-//                    if logQuantity{
-//                        if logQuantityType == "SUM"{
-//                            finalVal = sum
-//                        }else if logQuantityType == "AVG"{
-//                            finalVal = sum/Double(arrQuantity.count)
-//                        }
-//                    }else{
-//                        finalVal = sum
-//                    }
-//                    arrForMaxValueInSecondGraph.append(finalVal)
-//                    let newStringDate = getStringFromDate(date: data.value(forKey: "date") as? Date ?? Date(), dateFormat: "yyyy-MM-dd")
-//                    let date = data.value(forKey: "date") as? Date ?? Date()
-//                    let dic = ["date":date, "stringDate":newStringDate, "value":"\(finalVal)"] as [String : Any]
-//                    arrGraphDictionary.append(dic)
-//                }
-//            }
-//
-//            arrGraphDictionary.sort { ($0["date"] as! Date).compare($1["date"] as! Date) == .orderedAscending }
-//            if arrGraphDictionary.count == 30{/// adding fake date for making 31 days
-//                let firstDic = arrGraphDictionary.first!
-//                let firstDate = firstDic["date"] as? Date ?? Date()
-//                let previousDate = Calendar.current.date(byAdding: .day, value: -1, to: firstDate) ?? firstDate
-//                let newStringDate = getStringFromDate(date: previousDate, dateFormat: "yyyy-MM-dd")
-//
-//                let dic = ["date":previousDate, "stringDate":newStringDate, "value":"0"] as [String : Any]
-//                arrGraphDictionary.insert(dic, at: 0)
-//            }
-//            for graphData in arrGraphDictionary{
-//                arrGraph1Date.append(graphData["date"] as? Date ?? Date())
-//                arrGraph1DateString.append(graphData["stringDate"] as? String ?? "")
-//                arrGraph1DurationOrQuantity.append(graphData["value"] as? String ?? "")
-//            }
-//
-//
-//            print(arrGraphDictionary)
-//
-//            var maxInSecondGraph = arrForMaxValueInSecondGraph.max() ?? 0
-//
-//
-//
-//
-//
-//            var labelYVal = ""
-//            if logQuantity{
-//                labelYVal = "Quantity"
-//            }else{
-//                labelYVal = "Minutes"
-//            }
-//
-//            if maxInSecondGraph < 99{
-//                maxInSecondGraph = maxInSecondGraph + 10
-//            }else if maxInSecondGraph < 9999{
-//                maxInSecondGraph = maxInSecondGraph + 100
-//            }else {
-//                maxInSecondGraph = maxInSecondGraph + 1000
-//            }
-//
-//            maxInSecondGraph = roundOffValue(number:maxInSecondGraph)
-//            var type = ""
-//            if isDataWeekly{
-//                type = "weekly"
-//            }else{
-//                type = "monthly"
-//            }
-//            let json = [ "label":"\(activityName)" , "labelX":"Date", "labelY":labelYVal, "data": arrGraph1DurationOrQuantity, "type":type, "max":maxInSecondGraph] as [String : Any]
-//            do {
-//                let data = try (JSONSerialization.data(withJSONObject: json, options: .prettyPrinted))
-//                if let str = String(data: data, encoding: String.Encoding.utf8){
-//                    print(str)
-//
-//
-//                    let script = "getData(\(str));"
-//
-//
-//                    DispatchQueue.global().async {
-//                        usleep(500000)//0.5
-//                        DispatchQueue.main.async {
-//                            self.webViewGraph2?.evaluateJavaScript(script,completionHandler: { (html: Any?, error: Error?) in
-//                                print(html)
-//                            })
-//                        }
-//                    }
-//                }
-//            } catch let error as NSError {
-//                print(error)
-//            }
-//
-//
-//            // *****************************graph first****************************************
-//            var graphUrlForDay: URL?
-//
-//            if logQuantity{
-//                graphUrlForDay = URL(string: graphTimeUrl)
-//            }else{
-//                graphUrlForDay = URL(string: graphTimeDurationUrl)
-//            }
-//
-//            webViewGraph1.loadFileURL(graphUrlForDay!, allowingReadAccessTo: graphUrlForDay!)
-//
-//            var arrGraph2Duration = [String]()
-//
-//            var arrGraph2DateString = [String]()
-//            var arrGraph2Date = [Date]()
-//
-//            var arrForMaxValue = [Double]()
-//
-//
-//            for dic in arrDic{
-//                // if let date = dic["date"] as? Date{
-//
-//                let date = dic["date"] as! Date
-//                if date.compare(startDate) == .orderedDescending {
-//                    let stringDate = dic["dateString"] as! String
-//
-//                    let duration = dic["Duration in seconds"] as! String
-//                    let quantity = dic["Quantity Logged"] as! String
-//                    if logQuantity{
-//                        arrGraph2Date.append(date)
-//                        let newStringDate = getStringFromDate(date: date, dateFormat: "yyyy-MM-dd HH:mm:ss")
-//                        arrGraph2DateString.append(newStringDate)
-//                        arrGraph2Duration.append(quantity)
-//                        let doubleQuantithy = Double(quantity) ?? 0
-//                        arrForMaxValue.append(doubleQuantithy)
-//                    }else{
-//                        arrGraph2Date.append(date)
-//                        let newStringDate = getStringFromDate(date: date, dateFormat: "yyyy-MM-dd HH:mm:ss")
-//                        arrGraph2DateString.append(newStringDate)
-//                        let doubleDuration = Double(duration) ?? 0
-//                        arrGraph2Duration.append("\(doubleDuration)")
-//                        arrForMaxValue.append(doubleDuration)
-//                    }
-//                }
-//                //}
-//            }
-//
-//            var max = arrForMaxValue.max() ?? 0
-//            //              adding start and end time in arrGraph2Duration
-//            arrGraph2DateString.insert(getStringFromDate(date: startDate, dateFormat: "yyyy-MM-dd HH:mm:ss"), at: 0)
-//            arrGraph2DateString.append(getStringFromDate(date: shutoffTime, dateFormat: "yyyy-MM-dd HH:mm:ss"))
-//
-//            //              adding Blank values for start and end time in arrGraph2Duration
-//            arrGraph2Duration.insert(" ", at: 0)
-//            arrGraph2Duration.append(" ")
-//
-//            //"yyyy-MM-dd HH:mm:ss"
-//            //                var labelVal = 0
-//            //                var labelYVal = ""
-//            if logQuantity{
-//                labelYVal = "Quantity"
-//            }else{
-//                labelYVal = "Minutes"
-//            }
-//
-//            if max < 99{
-//                max = max + 10
-//            }else if max < 9999{
-//                max = max + 100
-//            }else {
-//                max = max + 1000
-//            }
-//            let jsonForDay = ["label":activityName , "labelX":"Time", "labelY":labelYVal, "TimeValues":arrGraph2DateString, "data": arrGraph2Duration, "max":max] as [String : Any]
-//
-//
-//
-//            do {
-//                let data = try (JSONSerialization.data(withJSONObject: jsonForDay, options: .prettyPrinted))
-//                if let str = String(data: data, encoding: String.Encoding.utf8){
-//                    print(str)
-//
-//
-//                    let script = "getData(\(str));"
-//
-//
-//                    DispatchQueue.global().async {
-//                        usleep(500000)//0.5
-//                        DispatchQueue.main.async {
-//                            self.webViewGraph1?.evaluateJavaScript(script,completionHandler: { (html: Any?, error: Error?) in
-//                                print(html)
-//                            })
-//                        }
-//                    }
-//                }
-//            } catch let error as NSError {
-//                print(error)
-//            }
-//        }
-//
-//    }
+    //    func loadBreakGraphFromCsv(activityName:String, logQuantity:Bool, logQuantityType:String){
+    //
+    //        stackViewGraph.isHidden = false
+    //
+    //        btnMainCenterY.constant = 100
+    //        if let graphDayspath = Bundle.main.path(forResource: "GraphDays", ofType: "html"), let graphTimepath = Bundle.main.path(forResource: "GraphTime", ofType: "html"), let graphGraphTimeDurationpath = Bundle.main.path(forResource: "GraphTimeDuration", ofType: "html"), let graphDaysDurationpath = Bundle.main.path(forResource: "GraphDaysDuration", ofType: "html"){
+    //            print(graphDayspath)
+    //            let graphDaysUrl = "file://\(graphDayspath.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")"
+    //            let graphDaysDurationUrl = "file://\(graphDaysDurationpath.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")"
+    //            let graphTimeUrl = "file://\(graphTimepath.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")"
+    //            let graphTimeDurationUrl = "file://\(graphGraphTimeDurationpath.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")"
+    //            webViewGraph1.isHidden = false
+    //            webViewGraph2.isHidden = false
+    //
+    //            //                var  fileURL = URL(string: graphDaysUrl)
+    //
+    //            var fileURL: URL?
+    //
+    //            if logQuantity{
+    //                fileURL = URL(string: graphDaysUrl)
+    //            }else{
+    //                fileURL = URL(string: graphDaysDurationUrl)
+    //            }
+    //
+    //
+    //            webViewGraph2.loadFileURL(fileURL!, allowingReadAccessTo: fileURL!)
+    //
+    //
+    //
+    //            let arrDic = readCsv(activityName: activityName, logType: "break")
+    //            print(arrDic)// 1 month data
+    //
+    //            // **********for graph second // monthly*******
+    //            var arrGraph1DurationOrQuantity = [String]()
+    //
+    //            var arrGraph1DateString = [String]()
+    //            var arrGraph1Date = [Date]()
+    //            let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
+    //            let shutoffTime = Calendar.current.date(bySettingHour: shutOffTime!.hour, minute: shutOffTime!.minute, second: startTime!.second, of: Date())!
+    //            let previousMonth = Calendar.current.date(byAdding: .day, value: -31, to: startDate) ?? startDate
+    //            var isDataWeekly = false
+    //            var lastDateAdded = previousMonth// qki pure 1 month ka data chahiye isiliye aaj ki date se -31  se kiya h taki 31 din ka data nilana bhake hi 15 din ka data ho to usse phle ka data fake cretae krenge
+    //
+    //            if let dic = arrDic.first{
+    //                let date = dic["date"] as! Date
+    //                let sevenDaysBeforeDate = Calendar.current.date(byAdding: .day, value: -6, to: startDate) ?? startDate
+    //                if date.compare(sevenDaysBeforeDate) == .orderedDescending {
+    //                    isDataWeekly = true
+    //                }
+    //            }
+    //            //  *************** creating 30 days data *****************    //
+    //            let arrDataForGraph = NSMutableDictionary()
+    //            for dic in arrDic{
+    //                if let date = dic["date"] as? Date{
+    //                    // if date.compare(lastDateAdded) == .orderedDescending {// start ate k baad ka ho to
+    //                    // let date = dic["date"] as! Date
+    //                    let calendarDate = Calendar.current.dateComponents([.day, .year, .month], from: date)
+    //                    let calendarLastDate = Calendar.current.dateComponents([.day, .year, .month], from: lastDateAdded)
+    //
+    //
+    //                    if calendarDate.day != nil && calendarLastDate.day != nil{
+    //                        let stringDate = dic["dateString"] as! String
+    //
+    //                        let diffInDays = date.interval(ofComponent: .day, fromDate: lastDateAdded)
+    //
+    //                        //  stringDate = getStringFromDate(date: date, dateFormat: "HH:mm:ss")
+    //                        let duration = dic["Duration in seconds"] as! String
+    //                        let quantity = dic["Quantity Logged"] as! String
+    //
+    //
+    //
+    //                        if diffInDays == 1{
+    //                            var quantityOrDuration:Double = 0
+    //                            if logQuantity{
+    //                                quantityOrDuration = Double(quantity) ?? 0
+    //                            }else{
+    //                                quantityOrDuration = Double(duration) ?? 0
+    //                            }
+    //                            if let data = arrDataForGraph.value(forKey: stringDate) as? NSMutableDictionary{
+    //                                var arr = [Double]()
+    //                                if let nval = data.value(forKey: "arrQuantityOrDuration") as? [Double]{
+    //                                    arr = nval
+    //                                }
+    //                                arr.append(quantityOrDuration)
+    //                                data["arrQuantityOrDuration"] = arr
+    //                                arrDataForGraph[stringDate] = data
+    //                                lastDateAdded = date
+    //
+    //                            }else{
+    //                                let arr = [quantityOrDuration]
+    //                                let ndic:NSMutableDictionary = ["arrQuantityOrDuration":arr, "date":date]
+    //                                arrDataForGraph[stringDate] = ndic
+    //                                lastDateAdded = date
+    //                            }
+    //                        }else{
+    //                            let missinDayCount = diffInDays - 1
+    //                            if missinDayCount > 0 {
+    //                                for _ in 1...missinDayCount{
+    //                                    if let newDate = Calendar.current.date(byAdding: .day, value: 1, to: lastDateAdded){
+    //                                        let newStringDate = getStringFromDate(date: newDate, dateFormat: "MM-dd-yyyy")
+    //                                        if newStringDate != stringDate{
+    //                                            let arr = [0]
+    //                                            let ndic:NSMutableDictionary = ["arrQuantityOrDuration":arr, "date":newDate]
+    //                                            arrDataForGraph[newStringDate] = ndic
+    //                                            lastDateAdded = newDate
+    //                                        }
+    //                                    }
+    //                                }
+    //
+    //                                var quantityOrDuration:Double = 0
+    //                                if logQuantity{
+    //                                    quantityOrDuration = Double(quantity) ?? 0
+    //                                }else{
+    //                                    quantityOrDuration = Double(duration) ?? 0
+    //                                }
+    //                                if let data = arrDataForGraph.value(forKey: stringDate) as? NSMutableDictionary{
+    //                                    var arr = [Double]()
+    //                                    if let nval = data.value(forKey: "arrQuantityOrDuration") as? [Double]{
+    //                                        arr = nval
+    //                                    }
+    //                                    arr.append(quantityOrDuration)
+    //                                    data["arrQuantityOrDuration"] = arr
+    //                                    arrDataForGraph[stringDate] = data
+    //                                    lastDateAdded = date
+    //
+    //                                }else{
+    //                                    let arr = [quantityOrDuration]
+    //                                    let ndic:NSMutableDictionary = ["arrQuantityOrDuration":arr, "date":date]
+    //                                    arrDataForGraph[stringDate] = ndic
+    //                                    lastDateAdded = date
+    //                                }
+    //
+    //                            }
+    //
+    //                            if diffInDays == 0{
+    //                                var quantityOrDuration:Double = 0
+    //                                if logQuantity{
+    //                                    quantityOrDuration = Double(quantity) ?? 0
+    //                                }else{
+    //                                    quantityOrDuration = Double(duration) ?? 0
+    //                                }
+    //                                if let data = arrDataForGraph.value(forKey: stringDate) as? NSMutableDictionary{
+    //                                    var arr = [Double]()
+    //                                    if let nval = data.value(forKey: "arrQuantityOrDuration") as? [Double]{
+    //                                        arr = nval
+    //                                    }
+    //                                    arr.append(quantityOrDuration)
+    //                                    data["arrQuantityOrDuration"] = arr
+    //                                    arrDataForGraph[stringDate] = data
+    //                                    lastDateAdded = date
+    //
+    //                                }else{
+    //                                    let arr = [quantityOrDuration]
+    //                                    let ndic:NSMutableDictionary = ["arrQuantityOrDuration":arr, "date":date]
+    //                                    arrDataForGraph[stringDate] = ndic
+    //                                    lastDateAdded = date
+    //                                }
+    //                            }
+    //                        }
+    //                    }
+    //                    //}
+    //                }
+    //
+    //            }
+    //            //  **********************************************  //
+    //
+    //            var arrForMaxValueInSecondGraph = [Double]()
+    //            var arrGraphDictionary = [[String:Any]]()
+    //            for key in arrDataForGraph.allKeys as? [String] ?? []{
+    //
+    //                var arrQuantity = [Double]()
+    //                if let data = arrDataForGraph.value(forKey: key) as? NSMutableDictionary{
+    //                    if let nval = data.value(forKey: "arrQuantityOrDuration") as? [Double]{
+    //                        arrQuantity = nval
+    //                    }
+    //                    let sum = arrQuantity.reduce(0, +)
+    //                    var finalVal:Double = sum //default sum
+    //                    if logQuantity{
+    //                        if logQuantityType == "SUM"{
+    //                            finalVal = sum
+    //                        }else if logQuantityType == "AVG"{
+    //                            finalVal = sum/Double(arrQuantity.count)
+    //                        }
+    //                    }else{
+    //                        finalVal = sum
+    //                    }
+    //                    arrForMaxValueInSecondGraph.append(finalVal)
+    //                    let newStringDate = getStringFromDate(date: data.value(forKey: "date") as? Date ?? Date(), dateFormat: "yyyy-MM-dd")
+    //                    let date = data.value(forKey: "date") as? Date ?? Date()
+    //                    let dic = ["date":date, "stringDate":newStringDate, "value":"\(finalVal)"] as [String : Any]
+    //                    arrGraphDictionary.append(dic)
+    //                }
+    //            }
+    //
+    //            arrGraphDictionary.sort { ($0["date"] as! Date).compare($1["date"] as! Date) == .orderedAscending }
+    //            if arrGraphDictionary.count == 30{/// adding fake date for making 31 days
+    //                let firstDic = arrGraphDictionary.first!
+    //                let firstDate = firstDic["date"] as? Date ?? Date()
+    //                let previousDate = Calendar.current.date(byAdding: .day, value: -1, to: firstDate) ?? firstDate
+    //                let newStringDate = getStringFromDate(date: previousDate, dateFormat: "yyyy-MM-dd")
+    //
+    //                let dic = ["date":previousDate, "stringDate":newStringDate, "value":"0"] as [String : Any]
+    //                arrGraphDictionary.insert(dic, at: 0)
+    //            }
+    //            for graphData in arrGraphDictionary{
+    //                arrGraph1Date.append(graphData["date"] as? Date ?? Date())
+    //                arrGraph1DateString.append(graphData["stringDate"] as? String ?? "")
+    //                arrGraph1DurationOrQuantity.append(graphData["value"] as? String ?? "")
+    //            }
+    //
+    //
+    //            print(arrGraphDictionary)
+    //
+    //            var maxInSecondGraph = arrForMaxValueInSecondGraph.max() ?? 0
+    //
+    //
+    //
+    //
+    //
+    //            var labelYVal = ""
+    //            if logQuantity{
+    //                labelYVal = "Quantity"
+    //            }else{
+    //                labelYVal = "Minutes"
+    //            }
+    //
+    //            if maxInSecondGraph < 99{
+    //                maxInSecondGraph = maxInSecondGraph + 10
+    //            }else if maxInSecondGraph < 9999{
+    //                maxInSecondGraph = maxInSecondGraph + 100
+    //            }else {
+    //                maxInSecondGraph = maxInSecondGraph + 1000
+    //            }
+    //
+    //            maxInSecondGraph = roundOffValue(number:maxInSecondGraph)
+    //            var type = ""
+    //            if isDataWeekly{
+    //                type = "weekly"
+    //            }else{
+    //                type = "monthly"
+    //            }
+    //            let json = [ "label":"\(activityName)" , "labelX":"Date", "labelY":labelYVal, "data": arrGraph1DurationOrQuantity, "type":type, "max":maxInSecondGraph] as [String : Any]
+    //            do {
+    //                let data = try (JSONSerialization.data(withJSONObject: json, options: .prettyPrinted))
+    //                if let str = String(data: data, encoding: String.Encoding.utf8){
+    //                    print(str)
+    //
+    //
+    //                    let script = "getData(\(str));"
+    //
+    //
+    //                    DispatchQueue.global().async {
+    //                        usleep(500000)//0.5
+    //                        DispatchQueue.main.async {
+    //                            self.webViewGraph2?.evaluateJavaScript(script,completionHandler: { (html: Any?, error: Error?) in
+    //                                print(html)
+    //                            })
+    //                        }
+    //                    }
+    //                }
+    //            } catch let error as NSError {
+    //                print(error)
+    //            }
+    //
+    //
+    //            // *****************************graph first****************************************
+    //            var graphUrlForDay: URL?
+    //
+    //            if logQuantity{
+    //                graphUrlForDay = URL(string: graphTimeUrl)
+    //            }else{
+    //                graphUrlForDay = URL(string: graphTimeDurationUrl)
+    //            }
+    //
+    //            webViewGraph1.loadFileURL(graphUrlForDay!, allowingReadAccessTo: graphUrlForDay!)
+    //
+    //            var arrGraph2Duration = [String]()
+    //
+    //            var arrGraph2DateString = [String]()
+    //            var arrGraph2Date = [Date]()
+    //
+    //            var arrForMaxValue = [Double]()
+    //
+    //
+    //            for dic in arrDic{
+    //                // if let date = dic["date"] as? Date{
+    //
+    //                let date = dic["date"] as! Date
+    //                if date.compare(startDate) == .orderedDescending {
+    //                    let stringDate = dic["dateString"] as! String
+    //
+    //                    let duration = dic["Duration in seconds"] as! String
+    //                    let quantity = dic["Quantity Logged"] as! String
+    //                    if logQuantity{
+    //                        arrGraph2Date.append(date)
+    //                        let newStringDate = getStringFromDate(date: date, dateFormat: "yyyy-MM-dd HH:mm:ss")
+    //                        arrGraph2DateString.append(newStringDate)
+    //                        arrGraph2Duration.append(quantity)
+    //                        let doubleQuantithy = Double(quantity) ?? 0
+    //                        arrForMaxValue.append(doubleQuantithy)
+    //                    }else{
+    //                        arrGraph2Date.append(date)
+    //                        let newStringDate = getStringFromDate(date: date, dateFormat: "yyyy-MM-dd HH:mm:ss")
+    //                        arrGraph2DateString.append(newStringDate)
+    //                        let doubleDuration = Double(duration) ?? 0
+    //                        arrGraph2Duration.append("\(doubleDuration)")
+    //                        arrForMaxValue.append(doubleDuration)
+    //                    }
+    //                }
+    //                //}
+    //            }
+    //
+    //            var max = arrForMaxValue.max() ?? 0
+    //            //              adding start and end time in arrGraph2Duration
+    //            arrGraph2DateString.insert(getStringFromDate(date: startDate, dateFormat: "yyyy-MM-dd HH:mm:ss"), at: 0)
+    //            arrGraph2DateString.append(getStringFromDate(date: shutoffTime, dateFormat: "yyyy-MM-dd HH:mm:ss"))
+    //
+    //            //              adding Blank values for start and end time in arrGraph2Duration
+    //            arrGraph2Duration.insert(" ", at: 0)
+    //            arrGraph2Duration.append(" ")
+    //
+    //            //"yyyy-MM-dd HH:mm:ss"
+    //            //                var labelVal = 0
+    //            //                var labelYVal = ""
+    //            if logQuantity{
+    //                labelYVal = "Quantity"
+    //            }else{
+    //                labelYVal = "Minutes"
+    //            }
+    //
+    //            if max < 99{
+    //                max = max + 10
+    //            }else if max < 9999{
+    //                max = max + 100
+    //            }else {
+    //                max = max + 1000
+    //            }
+    //            let jsonForDay = ["label":activityName , "labelX":"Time", "labelY":labelYVal, "TimeValues":arrGraph2DateString, "data": arrGraph2Duration, "max":max] as [String : Any]
+    //
+    //
+    //
+    //            do {
+    //                let data = try (JSONSerialization.data(withJSONObject: jsonForDay, options: .prettyPrinted))
+    //                if let str = String(data: data, encoding: String.Encoding.utf8){
+    //                    print(str)
+    //
+    //
+    //                    let script = "getData(\(str));"
+    //
+    //
+    //                    DispatchQueue.global().async {
+    //                        usleep(500000)//0.5
+    //                        DispatchQueue.main.async {
+    //                            self.webViewGraph1?.evaluateJavaScript(script,completionHandler: { (html: Any?, error: Error?) in
+    //                                print(html)
+    //                            })
+    //                        }
+    //                    }
+    //                }
+    //            } catch let error as NSError {
+    //                print(error)
+    //            }
+    //        }
+    //
+    //    }
     func loadBreakFirstGraphFromCsv(activityName:String, logQuantity:Bool, logQuantityType:String, arrDic: [[String : Any]]){
         
         stackViewGraph.isHidden = false
@@ -985,20 +1155,20 @@ class thirdVc: NSViewController {
         btnMainCenterY.constant = 100
         webViewForVideo.isHidden = true
         if let graphTimepath = Bundle.main.path(forResource: "GraphTime", ofType: "html"), let graphGraphTimeDurationpath = Bundle.main.path(forResource: "GraphTimeDuration", ofType: "html"){
-   
-
+            
+            
             let graphTimeUrl = "file://\(graphTimepath.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")"
             let graphTimeDurationUrl = "file://\(graphGraphTimeDurationpath.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")"
             webViewGraph1.isHidden = false
-
-            
-          
             
             
             
             
             
-//            let arrDic = readCsv(activityName: activityName, logType: "break")
+            
+            
+            
+            //            let arrDic = readCsv(activityName: activityName, logType: "break")
             print(arrDic)// 1 month data
             
             let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
@@ -1008,10 +1178,10 @@ class thirdVc: NSViewController {
             if currentDate.compare(shutoffTime) == .orderedDescending{//>
                 shutoffTime = Calendar.current.date(byAdding: .second, value: 30, to: currentDate) ?? currentDate
             }
-                
-  
-      
-
+            
+            
+            
+            
             // *****************************graph first****************************************
             var graphUrlForDay: URL?
             
@@ -1036,7 +1206,7 @@ class thirdVc: NSViewController {
                 
                 let date = dic["date"] as! Date
                 if date.compare(startDate) == .orderedDescending {
-                   // let stringDate = dic["dateString"] as! String
+                    // let stringDate = dic["dateString"] as! String
                     
                     let duration = dic["Duration in seconds"] as? String ?? ""
                     let quantity = dic["Quantity Logged"] as? String ?? ""
@@ -1068,7 +1238,7 @@ class thirdVc: NSViewController {
             arrGraph2Duration.insert(" ", at: 0)
             arrGraph2Duration.append(" ")
             
-
+            
             var labelYVal = ""
             if logQuantity{
                 labelYVal = graphQuantityText
@@ -1102,7 +1272,7 @@ class thirdVc: NSViewController {
                     
                     
                     DispatchQueue.global().async {
-//                        usleep(500000)//0.5//
+                        //                        usleep(500000)//0.5//
                         
                         if isBreakDayGraphLoadedFirstTime{
                             usleep(500000)
@@ -1138,7 +1308,7 @@ class thirdVc: NSViewController {
             print(graphDayspath)
             let graphDaysUrl = "file://\(graphDayspath.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")"
             let graphDaysDurationUrl = "file://\(graphDaysDurationpath.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")"
-
+            
             webViewGraph2.isHidden = false
             
             //                var  fileURL = URL(string: graphDaysUrl)
@@ -1156,7 +1326,7 @@ class thirdVc: NSViewController {
             
             
             
-//            let arrDic = readCsv(activityName: activityName, logType: "break")
+            //            let arrDic = readCsv(activityName: activityName, logType: "break")
             print(arrDic)// 1 month data
             
             // **********for graph second // monthly*******
@@ -1382,7 +1552,7 @@ class thirdVc: NSViewController {
             if minInSecondGraph < 0{
                 minInSecondGraph = 0
             }
-//            maxInSecondGraph = roundOffValue(number:maxInSecondGraph)//
+            //            maxInSecondGraph = roundOffValue(number:maxInSecondGraph)//
             var type = ""
             if isDataWeekly{
                 type = "weekly"
@@ -1401,7 +1571,7 @@ class thirdVc: NSViewController {
                     
                     
                     DispatchQueue.global().async {
-//                        usleep(500000)//0.5
+                        //                        usleep(500000)//0.5
                         if isBreakMonthGraphLoadedFirstTime{
                             usleep(500000)
                         }else{
@@ -1423,7 +1593,7 @@ class thirdVc: NSViewController {
             } catch let error as NSError {
                 print(error)
             }
-
+            
         }
         
     }
@@ -1509,7 +1679,7 @@ class thirdVc: NSViewController {
         var arrDic = [[String:Any]]()
         let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
         
-
+        
         var arr = readDataFromCSV(url: quantityCsvURL!)
         print(arr)
         
@@ -1567,18 +1737,17 @@ class thirdVc: NSViewController {
         if let askLogInVcInfo = configjson.value(forKey: "askLogInVcInfo") as? NSDictionary{
             btnMain.title = askLogInVcInfo.value(forKey: "buttonSignUpText") as? String ?? btnMain.title
         }
-        mainViewControllerObj?.btnAbort.isHidden = true
-        mainViewControllerObj?.stackViewTopButtons.isHidden = true
+        mainViewControllerObj?.hideCloseButtons()
         webViewForVideo.isHidden = true
         boxBreathingFinished.isHidden = true
         customViewContainer.isHidden = false
         btnMain.isHidden = false
         let name = introActivity!.name!
-//        if let dic = configjson.value(forKey: "welcomeInfo") as? NSDictionary{
-//            if let arr = dic.value(forKey: "introActivities") as? [NSDictionary]{
-//                name = arr.first?.value(forKey: "name") as? String ?? ""
-//            }
-//        }
+        //        if let dic = configjson.value(forKey: "welcomeInfo") as? NSDictionary{
+        //            if let arr = dic.value(forKey: "introActivities") as? [NSDictionary]{
+        //                name = arr.first?.value(forKey: "name") as? String ?? ""
+        //            }
+        //        }
         
         
         if isSKipped{
@@ -1605,7 +1774,7 @@ class thirdVc: NSViewController {
         btnMainCenterY.constant = 170
         lblProgress.isHidden = true
         imgViewGif.isHidden = true
-
+        
         
         btnMain.title = "Continue"
         if let preloadFocusModesViewInfo = configjson.value(forKey: "preloadFocusModesViewInfo") as? NSDictionary{
@@ -1617,7 +1786,7 @@ class thirdVc: NSViewController {
         btnMain.isHidden = false
         lblTitle.stringValue = ""
         webViewForVideo.isHidden = false
-        var videoUrl = "https://www.youtube.com/watch?v=TvfNJ1AaT9M" 
+        var videoUrl = "https://www.youtube.com/watch?v=TvfNJ1AaT9M"
         
         if let welcomeInfo = configjson.value(forKey: "welcomeInfo") as? NSDictionary{
             videoUrl = welcomeInfo.value(forKey: "welcomeVideoUrl") as? String ?? videoUrl
@@ -1634,11 +1803,11 @@ class thirdVc: NSViewController {
                 
             }
         }
-//        if videoUrl.contains("?"){
-//            videoUrl = videoUrl + "&autoplay=1"
-//        }else{
-//            videoUrl = videoUrl + "?autoplay=1"
-//        }
+        //        if videoUrl.contains("?"){
+        //            videoUrl = videoUrl + "&autoplay=1"
+        //        }else{
+        //            videoUrl = videoUrl + "?autoplay=1"
+        //        }
         let link = URL(string:videoUrl)!
         let request = URLRequest(url: link)
         self.webViewForVideo.load(request)
@@ -1680,6 +1849,14 @@ class thirdVc: NSViewController {
     }
     
     func morningHabitFinished(index:Int) {
+        currentGraphIndex = 0
+        btnNextGraph.isHidden = true
+        btnPreviousGraph.isHidden = true
+        if quittingWcObj != nil{
+            if quittingWcObj?.window?.isVisible ?? false{
+                quittingWcObj?.window?.close()
+            }
+        }
         UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitRunningInfo)
         if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
             btnSkipHabit.title = activityInfo.value(forKey: "buttonSkipHabitText") as? String ?? btnSkipHabit.title
@@ -1701,7 +1878,10 @@ class thirdVc: NSViewController {
         stackViewGraph.isHidden = true
         let lastHabit = arrFilteredMorningHabits[lastHabitIndex].name
         UserDefaults.standard.set(arrFilteredMorningHabits[lastHabitIndex].id, forKey: kUserdefaultsLastHabitID)
-        habitTotalCompletedSeconds += arrFilteredMorningHabits[lastHabitIndex].durationSeconds!
+        if arrFilteredMorningHabits[lastHabitIndex].useTimer{
+            habitTotalCompletedSeconds += arrFilteredMorningHabits[lastHabitIndex].durationSeconds!
+        }
+        let duration = getLastHabitDoneDuration(lastHabit: arrFilteredMorningHabits[lastHabitIndex])
         if arrFilteredMorningHabits[lastHabitIndex].logQuantity{
             webViewGraph1.isHidden = true
             webViewGraph2.isHidden = true
@@ -1714,18 +1894,18 @@ class thirdVc: NSViewController {
                 notes = UserDefaults.standard.object(forKey: kUserdefaultsLastHabitSavedNotes) as? String ?? ""
             }
             
-            logQuantityVcObj?.resetData(name: lastHabit!, durationInSeconds: "\(arrFilteredMorningHabits[lastHabitIndex].durationSeconds!)", logQuantityQuestion: arrFilteredMorningHabits[lastHabitIndex].logQuantityQuestion, currentState: ._MORNING_HABIT_, logQuantityType: "", activity_id: arrFilteredMorningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredMorningHabits[lastHabitIndex].activity_sequence_id, activityChoiceId: nil, take_notes: arrFilteredMorningHabits[lastHabitIndex].take_notes, notes: notes)
+            logQuantityVcObj?.resetData(name: lastHabit!, durationInSeconds: "\(duration)", logQuantityQuestion: arrFilteredMorningHabits[lastHabitIndex].logQuantityQuestion, currentState: ._MORNING_HABIT_, logQuantityType: "", activity_id: arrFilteredMorningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredMorningHabits[lastHabitIndex].activity_sequence_id, activityChoiceId: nil, take_notes: arrFilteredMorningHabits[lastHabitIndex].take_notes, notes: notes, logQuantityQuestions: arrFilteredMorningHabits[lastHabitIndex].logQuantityQuestions)
         }else{
-        
-            let startTime = getStringFromDate(date: lastActivityPerformedTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")
-            addEntryInStatsCsv(logType: "morning routine", activity: lastHabit!, durationInSeconds: "\(arrFilteredMorningHabits[lastHabitIndex].durationSeconds!)", quantityQuestion: "", quantityLogged: "", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "")
             
-            self.loadGraph(activityId: arrFilteredMorningHabits[self.lastHabitIndex].id, activityName: lastHabit ?? "", logQuantity: false, logQuantityType: "", activityChoiceId: nil,activityStartTime: lastActivityPerformedTime!, duration: "\(arrFilteredMorningHabits[lastHabitIndex].durationSeconds!)", quantity: "")
+            let startTime = getStringFromDate(date: lastActivityPerformedTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")
+            addEntryInStatsCsv(logType: "morning routine", activity: lastHabit!, durationInSeconds: "\(duration)", quantityQuestion: "", quantityLogged: "", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "")
+            
+            self.loadGraph(activityId: arrFilteredMorningHabits[self.lastHabitIndex].id, activityName: lastHabit ?? "", logQuantity: false, logQuantityType: "", activityChoiceId: nil,activityStartTime: lastActivityPerformedTime!, duration: "\(duration)", quantity: "")
             
             if arrFilteredMorningHabits[lastHabitIndex].take_notes == END_OF_ACTIVITY{
                 
                 mainViewControllerObj!.showTakeNotesView()
-                takeActivityNotesVcObj?.resetData(durationInSeconds: arrFilteredMorningHabits[lastHabitIndex].durationSeconds!, quantity_logged:nil, activity_id: arrFilteredMorningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredMorningHabits[lastHabitIndex].activity_sequence_id, activityChoiceId: nil)
+                takeActivityNotesVcObj?.resetData(durationInSeconds: duration, quantity_logged:nil, activity_id: arrFilteredMorningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredMorningHabits[lastHabitIndex].activity_sequence_id, activityChoiceId: nil, log_quantity_answers: [])
                 
             }else{
                 var notes = ""
@@ -1734,7 +1914,8 @@ class thirdVc: NSViewController {
                     notes = UserDefaults.standard.object(forKey: kUserdefaultsLastHabitSavedNotes) as? String ?? ""
                 }
                 
-                allApiObject.activityCompletedApi(activity_id: arrFilteredMorningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredMorningHabits[lastHabitIndex].activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:nil, duration_logged:arrFilteredMorningHabits[lastHabitIndex].durationSeconds!, choice_id: nil, is_skipped: false, notes: notes, should_not_update_current_activity: false, completionHandler: {dic  in
+                
+                allApiObject.activityCompletedApi(activity_id: arrFilteredMorningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredMorningHabits[lastHabitIndex].activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:nil, duration_logged:duration, choice_id: nil, is_skipped: false, notes: notes, should_not_update_current_activity: false, log_quantity_answers: [], completionHandler: {dic  in
                     
                     DispatchQueue.main.async {
                         
@@ -1752,11 +1933,12 @@ class thirdVc: NSViewController {
         setProgress()
         
         addLog(text:"\(lastHabit!) finished")
+        var nextActivityName = ""
         if index < arrFilteredMorningHabits.count-1 {
             isSequenceFinished = false
             imgViewGif.isHidden = true
             playEveryActivitySound()
-           
+            nextActivityName = arrFilteredMorningHabits[lastHabitIndex+1].name!
             lblTitle.stringValue = getActivityFinishedText(isLast: false, activityName: lastHabit!)//"\(lastHabit!) finished!✅"
             allApiObject.capturePosthog(event: "complete-morning-routine-activity", metadata: ["routine-type":"morning_routine"])
             if SettingsManagerObject.isPromptToRememberHabit{
@@ -1791,23 +1973,33 @@ class thirdVc: NSViewController {
                 btnMain.title = getstartActivityButtonText(seconds: time!, name: arrFilteredMorningHabits[lastHabitIndex+1].name!)
                 btnMain.toolTip = btnMain.title
             }
+            
+            
         }else {
             isSequenceFinished = true
             allApiObject.capturePosthog(event: "complete-morning-routine", metadata: ["routine-type":"morning_routine"])
             imgViewGif.isHidden = false
             lblTitle.stringValue = getActivityFinishedText(isLast: true, activityName: lastHabit!)
             btnMain.title = unlockMachineButtonText
-            mainViewControllerObj?.btnAbort.isHidden = true
-            mainViewControllerObj?.stackViewTopButtons.isHidden = true
+            mainViewControllerObj?.hideCloseButtons()
             btnMain.toolTip = btnMain.title
             playAfterMorningEveningRoutineSound(isMorning:true)
             isHabitAlreadyShowed = true
             btnSkipHabit.isHidden = true
             UserDefaults.standard.set(Date(), forKey: kUserdefaultsLastHabitShowDate)
         }
+        
+        DispatchQueue.global().async {
+            sleep(1)
+            DispatchQueue.main.async {
+                playActivityFinishedSound(lastActivity: lastHabit ?? "", nextActivity: nextActivityName, isSkipped: false, isAskNext:(self.randomIntToRememberNextHabit == 5))
+            }
+        }
     }
     
+    
     func morningHabitSkippedAndDoneAlready() {
+        
         UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
         UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitRunningInfo)
         lastActivityPerformedTime = Date()
@@ -1838,28 +2030,33 @@ class thirdVc: NSViewController {
         stackViewGraph.isHidden = true
         let lastHabit = arrFilteredMorningHabits[lastHabitIndex].name
         UserDefaults.standard.set(arrFilteredMorningHabits[lastHabitIndex].id, forKey: kUserdefaultsLastHabitID)
-        habitTotalCompletedSeconds += arrFilteredMorningHabits[lastHabitIndex].durationSeconds!
+        if arrFilteredMorningHabits[lastHabitIndex].useTimer{
+            habitTotalCompletedSeconds += arrFilteredMorningHabits[lastHabitIndex].durationSeconds!
+        }
+        let duration = getLastHabitDoneDuration(lastHabit: arrFilteredMorningHabits[lastHabitIndex])
         if arrFilteredMorningHabits[lastHabitIndex].logQuantity{
             webViewGraph1.isHidden = true
             webViewGraph2.isHidden = true
             mainViewControllerObj!.showLogQuantityView()
             logQuantityVcObj?.isReviseQuantity = false
             
-            logQuantityVcObj?.resetData(name: lastHabit!, durationInSeconds: "\(arrFilteredMorningHabits[lastHabitIndex].durationSeconds!)", logQuantityQuestion: arrFilteredMorningHabits[lastHabitIndex].logQuantityQuestion, currentState: ._MORNING_HABIT_, logQuantityType: "", activity_id: arrFilteredMorningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredMorningHabits[lastHabitIndex].activity_sequence_id, activityChoiceId: nil, take_notes: arrFilteredMorningHabits[lastHabitIndex].take_notes, notes: "")
+            logQuantityVcObj?.resetData(name: lastHabit!, durationInSeconds: "\(duration)", logQuantityQuestion: arrFilteredMorningHabits[lastHabitIndex].logQuantityQuestion, currentState: ._MORNING_HABIT_, logQuantityType: "", activity_id: arrFilteredMorningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredMorningHabits[lastHabitIndex].activity_sequence_id, activityChoiceId: nil, take_notes: arrFilteredMorningHabits[lastHabitIndex].take_notes, notes: "", logQuantityQuestions: arrFilteredMorningHabits[lastHabitIndex].logQuantityQuestions)
             logQuantityVcObj?.is_skipped = true
         }else{
             let startTime = getStringFromDate(date: lastActivityPerformedTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")
-            addEntryInStatsCsv(logType: "morning routine", activity: lastHabit!, durationInSeconds: "\(arrFilteredMorningHabits[lastHabitIndex].durationSeconds!)", quantityQuestion: "", quantityLogged: "", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "")
+            addEntryInStatsCsv(logType: "morning routine", activity: lastHabit!, durationInSeconds: "\(duration)", quantityQuestion: "", quantityLogged: "", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "")
             
-            self.loadGraph(activityId: arrFilteredMorningHabits[self.lastHabitIndex].id, activityName: lastHabit ?? "", logQuantity: false, logQuantityType: "", activityChoiceId: nil,activityStartTime: lastActivityPerformedTime!, duration: "\(arrFilteredMorningHabits[lastHabitIndex].durationSeconds!)", quantity: "")
+            self.loadGraph(activityId: arrFilteredMorningHabits[self.lastHabitIndex].id, activityName: lastHabit ?? "", logQuantity: false, logQuantityType: "", activityChoiceId: nil,activityStartTime: lastActivityPerformedTime!, duration: "\(duration)", quantity: "")
             
             if arrFilteredMorningHabits[lastHabitIndex].take_notes == END_OF_ACTIVITY{
                 
                 mainViewControllerObj!.showTakeNotesView()
-                takeActivityNotesVcObj?.resetData(durationInSeconds: arrFilteredMorningHabits[lastHabitIndex].durationSeconds!, quantity_logged:nil, activity_id: arrFilteredMorningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredMorningHabits[lastHabitIndex].activity_sequence_id, activityChoiceId: nil)
+                takeActivityNotesVcObj?.resetData(durationInSeconds: duration, quantity_logged:nil, activity_id: arrFilteredMorningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredMorningHabits[lastHabitIndex].activity_sequence_id, activityChoiceId: nil, log_quantity_answers: [])
                 
             }else{
-                allApiObject.activityCompletedApi(activity_id: arrFilteredMorningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredMorningHabits[lastHabitIndex].activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:nil, duration_logged:arrFilteredMorningHabits[lastHabitIndex].durationSeconds!, choice_id: nil, is_skipped: true, notes: "", should_not_update_current_activity: false, completionHandler: {dic  in
+                
+                
+                allApiObject.activityCompletedApi(activity_id: arrFilteredMorningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredMorningHabits[lastHabitIndex].activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:nil, duration_logged:duration, choice_id: nil, is_skipped: true, notes: "", should_not_update_current_activity: false, log_quantity_answers: [], completionHandler: {dic  in
                     
                     DispatchQueue.main.async {
                         
@@ -1867,7 +2064,7 @@ class thirdVc: NSViewController {
                     print(dic)
                 })
             }
-
+            
         }
         
         
@@ -1875,10 +2072,12 @@ class thirdVc: NSViewController {
         setProgress()
         
         addLog(text:"\(lastHabit!) skipped")
+        var nextActivityName = ""
         if lastHabitIndex < arrFilteredMorningHabits.count-1 {
             isSequenceFinished = false
             imgViewGif.isHidden = true
             playEveryActivitySound()
+            nextActivityName = arrFilteredMorningHabits[lastHabitIndex+1].name!
             lblTitle.stringValue = getActivityFinishedText(isLast: false, activityName: lastHabit!)//"\(lastHabit!) finished!✅"
             allApiObject.capturePosthog(event: "complete-morning-routine-activity", metadata: ["routine-type":"morning_routine"])
             if SettingsManagerObject.isPromptToRememberHabit{
@@ -1919,13 +2118,19 @@ class thirdVc: NSViewController {
             imgViewGif.isHidden = false
             lblTitle.stringValue = getActivityFinishedText(isLast: true, activityName: lastHabit!)
             btnMain.title = unlockMachineButtonText
-            mainViewControllerObj?.btnAbort.isHidden = true
-            mainViewControllerObj?.stackViewTopButtons.isHidden = true
+            mainViewControllerObj?.hideCloseButtons()
             btnMain.toolTip = btnMain.title
             playAfterMorningEveningRoutineSound(isMorning:true)
             isHabitAlreadyShowed = true
             btnSkipHabit.isHidden = true
             UserDefaults.standard.set(Date(), forKey: kUserdefaultsLastHabitShowDate)
+        }
+        
+        DispatchQueue.global().async {
+            sleep(1)
+            DispatchQueue.main.async {
+                playActivityFinishedSound(lastActivity: lastHabit ?? "", nextActivity: nextActivityName, isSkipped: false, isAskNext:(self.randomIntToRememberNextHabit == 5))
+            }
         }
     }
     func setProgress(){
@@ -1934,97 +2139,100 @@ class thirdVc: NSViewController {
         
         if currentState == ._MORNING_HABIT_{
             for i in lastHabitIndex+1..<arrFilteredMorningHabits.count{
-                totalSecondsAllHabits += arrFilteredMorningHabits[i].durationSeconds
+                if arrFilteredMorningHabits[i].useTimer{
+                    totalSecondsAllHabits += arrFilteredMorningHabits[i].durationSeconds
+                }
             }
         }else if currentState == ._EVENING_HABIT_{
             for i in lastHabitIndex+1..<arrFilteredEveningHabits.count{
-                
-                if isHighPrioritySequenceGoing{
-                    if arrFilteredEveningHabits[i].isPriorityHigh{
+                if arrFilteredEveningHabits[i].useTimer{
+                    if isHighPrioritySequenceGoing{
+                        if arrFilteredEveningHabits[i].isPriorityHigh{
+                            totalSecondsAllHabits += arrFilteredEveningHabits[i].durationSeconds
+                        }
+                    }else{
                         totalSecondsAllHabits += arrFilteredEveningHabits[i].durationSeconds
                     }
-                }else{
-                    totalSecondsAllHabits += arrFilteredEveningHabits[i].durationSeconds
                 }
             }
         }
-        let (h,m,s) = secondsToHoursMinutesSeconds(seconds: habitCompletedSeconds)
-        var habitHour = "\(h)"
-        var habitMinute = "\(m)"
-        var habitSecond = "\(s)"
+//        let (h,m,s) = secondsToHoursMinutesSeconds(seconds: habitCompletedSeconds)
+//        var habitHour = "\(h)"
+//        var habitMinute = "\(m)"
+//        var habitSecond = "\(s)"
+//
+//        if habitHour.count == 1 {
+//            habitHour = "0\(h)"
+//        }
+//
+//        if habitMinute.count == 1 {
+//            habitMinute = "0\(m)"
+//        }
+//        if habitSecond.count == 1 {
+//            habitSecond = "0\(s)"
+//        }
+//
+//
+//        let (hour,minute,second) = secondsToHoursMinutesSeconds(seconds: totalSecondsAllHabits)
+//        var totalHour = "\(hour)"
+//        var totalMinute = "\(minute)"
+//        var totalSecond = "\(second)"
+//
+//        if totalHour.count == 1 {
+//            totalHour = "0\(hour)"
+//        }
+//        if totalMinute.count == 1 {
+//            totalMinute = "0\(minute)"
+//        }
+//        if totalSecond.count == 1 {
+//            totalSecond = "0\(second)"
+//        }
         
-        if habitHour.count == 1 {
-            habitHour = "0\(h)"
-        }
-        
-        if habitMinute.count == 1 {
-            habitMinute = "0\(m)"
-        }
-        if habitSecond.count == 1 {
-            habitSecond = "0\(s)"
-        }
-        
-        
-        let (hour,minute,second) = secondsToHoursMinutesSeconds(seconds: totalSecondsAllHabits)
-        var totalHour = "\(hour)"
-        var totalMinute = "\(minute)"
-        var totalSecond = "\(second)"
-        
-        if totalHour.count == 1 {
-            totalHour = "0\(hour)"
-        }
-        if totalMinute.count == 1 {
-            totalMinute = "0\(minute)"
-        }
-        if totalSecond.count == 1 {
-            totalSecond = "0\(second)"
-        }
-        
-        var habitMinutesString: String = ""
-        
-        
-        var totalMinutesString: String = ""
+        let habitMinutesString: String = getStringTime(seconds: habitCompletedSeconds)
         
         
-        if h != 0{
-            habitMinutesString = "\(h)h"
-        }
-        if m != 0{
-            if habitMinutesString.isEmpty{
-                habitMinutesString = "\(m)m"
-            }else{
-                habitMinutesString += " \(m)m"
-            }
-        }
-        if s != 0{
-            if habitMinutesString.isEmpty{
-                habitMinutesString = "\(s)s"
-            }else{
-                habitMinutesString += " \(s)s"
-            }
-        }
+        let totalMinutesString: String = getStringTime(seconds: totalSecondsAllHabits)
         
-        if hour != 0{
-            totalMinutesString = "\(hour)h"
-        }
-        if minute != 0{
-            if totalMinutesString.isEmpty{
-                totalMinutesString = "\(minute)m"
-            }else{
-                totalMinutesString += " \(minute)m"
-            }
-        }
         
-        if second != 0{
-            if totalMinutesString.isEmpty{
-                totalMinutesString = "\(second)s"
-            }else{
-                totalMinutesString += " \(second)s"
-            }
-        }
-        if habitMinutesString.isEmpty{
-            habitMinutesString = "\(m)m"
-        }
+//        if h != 0{
+//            habitMinutesString = "\(h)" + hourText
+//        }
+//        if m != 0{
+//            if habitMinutesString.isEmpty{
+//                habitMinutesString = "\(m)" + minuteText
+//            }else{
+//                habitMinutesString += " \(m)" + minuteText
+//            }
+//        }
+//        if s != 0{
+//            if habitMinutesString.isEmpty{
+//                habitMinutesString = "\(s)" + secondText
+//            }else{
+//                habitMinutesString += " \(s)" + secondText
+//            }
+//        }
+        
+//        if hour != 0{
+//            totalMinutesString = "\(hour)" + hourText
+//        }
+//        if minute != 0{
+//            if totalMinutesString.isEmpty{
+//                totalMinutesString = "\(minute)" + minuteText
+//            }else{
+//                totalMinutesString += " \(minute)" + minuteText
+//            }
+//        }
+//
+//        if second != 0{
+//            if totalMinutesString.isEmpty{
+//                totalMinutesString = "\(second)" + secondText
+//            }else{
+//                totalMinutesString += " \(second)" + secondText
+//            }
+//        }
+//        if habitMinutesString.isEmpty{
+//            habitMinutesString = "\(m)m"
+//        }
         if totalMinutesString.isEmpty{
             var finalSring = "You have completed <duration> of habits."
             if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
@@ -2046,6 +2254,9 @@ class thirdVc: NSViewController {
         
     }
     func morningHabitFinishedAndStartIncompleteNew(index:Int, isLastActivitySkipped:Bool) {
+        currentGraphIndex = 0
+        btnNextGraph.isHidden = true
+        btnPreviousGraph.isHidden = true
         UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
         UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitRunningInfo)
         randomIntToRememberNextHabit = 0
@@ -2069,7 +2280,7 @@ class thirdVc: NSViewController {
         stackViewGraph.isHidden = false
         self.webViewGraph1.isHidden = true
         self.webViewGraph2.isHidden = true
-
+        
         allApiObject.getACtivityStats(activityId: arrFilteredMorningHabits[lastHabitIndex].id, activityChoiceId: nil, completionHandler: {dic in
             DispatchQueue.main.async {
                 self.loadGraph(activityId: arrFilteredMorningHabits[self.lastHabitIndex].id, activityName: lastHabit ?? "", logQuantity: arrFilteredMorningHabits[self.lastHabitIndex].logQuantity, logQuantityType: "", activityChoiceId: nil,activityStartTime: nil, duration: "", quantity: "")
@@ -2104,16 +2315,16 @@ class thirdVc: NSViewController {
                 lblTitle.stringValue = getActivitySkippedText(isLast: true, activityName: lastHabit!)
             }
             btnMain.title = unlockMachineButtonText
-            mainViewControllerObj?.btnAbort.isHidden = true
-            mainViewControllerObj?.stackViewTopButtons.isHidden = true
+            mainViewControllerObj?.hideCloseButtons()
             btnMain.toolTip = btnMain.title
             isHabitAlreadyShowed = true
             btnSkipHabit.isHidden = true
             UserDefaults.standard.set(Date(), forKey: kUserdefaultsLastHabitShowDate)
         }
-      
+        
     }
     func morningHabitSkipped() {
+        
         UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
         UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitRunningInfo)
         if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
@@ -2147,17 +2358,18 @@ class thirdVc: NSViewController {
         stackViewGraph.isHidden = false
         self.webViewGraph1.isHidden = true
         self.webViewGraph2.isHidden = true
-
-      //  allApiObject.getACtivityStats(activityId: arrFilteredMorningHabits[lastHabitIndex].id, activityChoiceId: nil, completionHandler: {dic in
-            DispatchQueue.main.async {
-                self.loadGraph(activityId: arrFilteredMorningHabits[self.lastHabitIndex].id, activityName: lastHabit ?? "", logQuantity: arrFilteredMorningHabits[self.lastHabitIndex].logQuantity, logQuantityType: "", activityChoiceId: nil,activityStartTime: nil, duration: "", quantity: "")
-            }
-       // })
+        
+        //  allApiObject.getACtivityStats(activityId: arrFilteredMorningHabits[lastHabitIndex].id, activityChoiceId: nil, completionHandler: {dic in
+        DispatchQueue.main.async {
+            self.loadGraph(activityId: arrFilteredMorningHabits[self.lastHabitIndex].id, activityName: lastHabit ?? "", logQuantity: arrFilteredMorningHabits[self.lastHabitIndex].logQuantity, logQuantityType: "", activityChoiceId: nil,activityStartTime: nil, duration: "", quantity: "")
+        }
+        // })
         
         setProgress()
         
         
         addLog(text:"\(lastHabit!) Skipped")
+        var nextActivityName = ""
         if index < arrFilteredMorningHabits.count-1 {
             isSequenceFinished = false
             imgViewGif.isHidden = true
@@ -2167,22 +2379,37 @@ class thirdVc: NSViewController {
             btnMain.title = getstartActivityButtonText(seconds: time!, name: arrFilteredMorningHabits[lastHabitIndex+1].name!)
             btnMain.toolTip = btnMain.title
             btnSkipHabit.isHidden = false
+            nextActivityName = arrFilteredMorningHabits[lastHabitIndex+1].name!
         }else {
             imgViewGif.isHidden = false
             isSequenceFinished = true
             lblTitle.stringValue = getActivitySkippedText(isLast: true, activityName: lastHabit!)
             btnMain.title = unlockMachineButtonText
-            mainViewControllerObj?.btnAbort.isHidden = true
-            mainViewControllerObj?.stackViewTopButtons.isHidden = true
+            mainViewControllerObj?.hideCloseButtons()
             btnMain.toolTip = btnMain.title
             isHabitAlreadyShowed = true
             btnSkipHabit.isHidden = true
             UserDefaults.standard.set(Date(), forKey: kUserdefaultsLastHabitShowDate)
         }
+        
+        DispatchQueue.global().async {
+            sleep(1)
+            DispatchQueue.main.async {
+                playActivityFinishedSound(lastActivity: lastHabit ?? "", nextActivity: nextActivityName, isSkipped: true, isAskNext:false)
+            }
+        }
     }
     var isSequenceFinished = false
     
     func eveningHabitFinished(index:Int) {
+        currentGraphIndex = 0
+        btnNextGraph.isHidden = true
+        btnPreviousGraph.isHidden = true
+        if quittingWcObj != nil{// closing this window because we do not want to do some thing from quit window when activity is finishing because from quit window user can skip or postpone
+            if quittingWcObj?.window?.isVisible ?? false{
+                quittingWcObj?.window?.close()
+            }
+        }
         UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitRunningInfo)
         randomIntToRememberNextHabit = 0
         if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
@@ -2204,7 +2431,10 @@ class thirdVc: NSViewController {
         let lastHabit = arrFilteredEveningHabits[lastHabitIndex].name
         UserDefaults.standard.set(arrFilteredEveningHabits[lastHabitIndex].id, forKey: kUserdefaultsLastHabitID)
         stackViewGraph.isHidden = true
-        habitTotalCompletedSeconds += arrFilteredEveningHabits[lastHabitIndex].durationSeconds!
+        if arrFilteredEveningHabits[lastHabitIndex].useTimer{
+            habitTotalCompletedSeconds += arrFilteredEveningHabits[lastHabitIndex].durationSeconds!
+        }
+        let duration = getLastHabitDoneDuration(lastHabit: arrFilteredEveningHabits[lastHabitIndex])
         if arrFilteredEveningHabits[lastHabitIndex].logQuantity{
             webViewGraph1.isHidden = true
             webViewGraph2.isHidden = true
@@ -2217,16 +2447,16 @@ class thirdVc: NSViewController {
                 notes = UserDefaults.standard.object(forKey: kUserdefaultsLastHabitSavedNotes) as? String ?? ""
             }
             
-            logQuantityVcObj?.resetData(name: lastHabit!, durationInSeconds: "\(arrFilteredEveningHabits[lastHabitIndex].durationSeconds!)", logQuantityQuestion: arrFilteredEveningHabits[lastHabitIndex].logQuantityQuestion, currentState: ._EVENING_HABIT_, logQuantityType: "", activity_id: arrFilteredEveningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredEveningHabits[lastHabitIndex].activity_sequence_id, activityChoiceId: nil, take_notes: arrFilteredEveningHabits[lastHabitIndex].take_notes, notes: notes)
+            logQuantityVcObj?.resetData(name: lastHabit!, durationInSeconds: "\(duration)", logQuantityQuestion: arrFilteredEveningHabits[lastHabitIndex].logQuantityQuestion, currentState: ._EVENING_HABIT_, logQuantityType: "", activity_id: arrFilteredEveningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredEveningHabits[lastHabitIndex].activity_sequence_id, activityChoiceId: nil, take_notes: arrFilteredEveningHabits[lastHabitIndex].take_notes, notes: notes, logQuantityQuestions: arrFilteredEveningHabits[lastHabitIndex].logQuantityQuestions)
         }else{
             let startTime = getStringFromDate(date: lastActivityPerformedTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")
-            addEntryInStatsCsv(logType: "evening routine", activity: lastHabit!, durationInSeconds: "\(arrFilteredEveningHabits[lastHabitIndex].durationSeconds!)", quantityQuestion: "", quantityLogged: "", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "")
+            addEntryInStatsCsv(logType: "evening routine", activity: lastHabit!, durationInSeconds: "\(duration)", quantityQuestion: "", quantityLogged: "", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "")
             
-            self.loadGraph(activityId: arrFilteredEveningHabits[self.lastHabitIndex].id, activityName: lastHabit ?? "", logQuantity: false, logQuantityType: "", activityChoiceId: nil,activityStartTime: lastActivityPerformedTime!, duration: "\(arrFilteredEveningHabits[lastHabitIndex].durationSeconds!)", quantity: "")
+            self.loadGraph(activityId: arrFilteredEveningHabits[self.lastHabitIndex].id, activityName: lastHabit ?? "", logQuantity: false, logQuantityType: "", activityChoiceId: nil,activityStartTime: lastActivityPerformedTime!, duration: "\(duration)", quantity: "")
             
             if arrFilteredEveningHabits[lastHabitIndex].take_notes == END_OF_ACTIVITY{
                 mainViewControllerObj!.showTakeNotesView()
-                takeActivityNotesVcObj?.resetData(durationInSeconds: arrFilteredEveningHabits[lastHabitIndex].durationSeconds!, quantity_logged:nil, activity_id: arrFilteredEveningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredEveningHabits[lastHabitIndex].activity_sequence_id, activityChoiceId: nil)
+                takeActivityNotesVcObj?.resetData(durationInSeconds: duration, quantity_logged:nil, activity_id: arrFilteredEveningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredEveningHabits[lastHabitIndex].activity_sequence_id, activityChoiceId: nil, log_quantity_answers: [])
             }else{
                 
                 var notes = ""
@@ -2235,7 +2465,8 @@ class thirdVc: NSViewController {
                     notes = UserDefaults.standard.object(forKey: kUserdefaultsLastHabitSavedNotes) as? String ?? ""
                 }
                 
-                allApiObject.activityCompletedApi(activity_id: arrFilteredEveningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredEveningHabits[lastHabitIndex].activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:nil, duration_logged:arrFilteredEveningHabits[lastHabitIndex].durationSeconds!, choice_id: nil, is_skipped: false, notes: notes, should_not_update_current_activity: false, completionHandler: {dic  in
+                
+                allApiObject.activityCompletedApi(activity_id: arrFilteredEveningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredEveningHabits[lastHabitIndex].activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:nil, duration_logged:duration, choice_id: nil, is_skipped: false, notes: notes, should_not_update_current_activity: false, log_quantity_answers: [], completionHandler: {dic  in
                     
                     DispatchQueue.main.async {
                         
@@ -2270,9 +2501,9 @@ class thirdVc: NSViewController {
         }
         currentHabitIndex = newHabitIndex - 1
         setProgress()
-        
+        var nextActivityName = ""
         if !isSequenceFinished {
-            
+            nextActivityName = arrFilteredEveningHabits[newHabitIndex].name!
             allApiObject.capturePosthog(event: "complete-evening-routine-activity", metadata: ["routine-type":"evening_routine"])
             lblTitle.stringValue = getActivityFinishedText(isLast: false, activityName: lastHabit!)//"\(lastHabit!) finished!✅"
             playEveryActivitySound()
@@ -2324,15 +2555,14 @@ class thirdVc: NSViewController {
                 btnMain.title = common.value(forKey: "wrapupButtonText") as? String ?? btnMain.title
             }
             
-            mainViewControllerObj?.btnAbort.isHidden = true
-            mainViewControllerObj?.stackViewTopButtons.isHidden = true
+            mainViewControllerObj?.hideCloseButtons()
             btnMain.toolTip = btnMain.title
             playAfterMorningEveningRoutineSound(isMorning:false)
             if startTime == nil || shutOffTime == nil{
                 return;
             }
-   
-
+            
+            
             let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
             let shutOffdate = Calendar.current.date(bySettingHour: shutOffTime!.hour, minute: shutOffTime!.minute, second: shutOffTime!.second, of: Date())!
             
@@ -2347,10 +2577,18 @@ class thirdVc: NSViewController {
             btnSkipHabit.isHidden = true
         }
         
-        
+        DispatchQueue.global().async {
+            sleep(1)
+            DispatchQueue.main.async {
+                playActivityFinishedSound(lastActivity: lastHabit ?? "", nextActivity: nextActivityName, isSkipped: false, isAskNext:(self.randomIntToRememberNextHabit == 5))
+            }
+        }
         
     }
     func eveningHabitSkippedAndDoneAlready() {
+        currentGraphIndex = 0
+        btnNextGraph.isHidden = true
+        btnPreviousGraph.isHidden = true
         UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
         UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitRunningInfo)
         lastActivityPerformedTime = Date()
@@ -2380,28 +2618,31 @@ class thirdVc: NSViewController {
         let lastHabit = arrFilteredEveningHabits[lastHabitIndex].name
         UserDefaults.standard.set(arrFilteredEveningHabits[lastHabitIndex].id, forKey: kUserdefaultsLastHabitID)
         stackViewGraph.isHidden = true
-        habitTotalCompletedSeconds += arrFilteredEveningHabits[lastHabitIndex].durationSeconds!
-        
+        if arrFilteredEveningHabits[lastHabitIndex].useTimer{
+            habitTotalCompletedSeconds += arrFilteredEveningHabits[lastHabitIndex].durationSeconds!
+        }
+        let duration = getLastHabitDoneDuration(lastHabit: arrFilteredEveningHabits[lastHabitIndex])
         if arrFilteredEveningHabits[lastHabitIndex].logQuantity{
             webViewGraph1.isHidden = true
             webViewGraph2.isHidden = true
             mainViewControllerObj!.showLogQuantityView()
             logQuantityVcObj?.isReviseQuantity = false
-            logQuantityVcObj?.resetData(name: lastHabit!, durationInSeconds: "\(arrFilteredEveningHabits[lastHabitIndex].durationSeconds!)", logQuantityQuestion: arrFilteredEveningHabits[lastHabitIndex].logQuantityQuestion, currentState: ._EVENING_HABIT_, logQuantityType: "", activity_id: arrFilteredEveningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredEveningHabits[lastHabitIndex].activity_sequence_id, activityChoiceId: nil, take_notes: arrFilteredEveningHabits[lastHabitIndex].take_notes, notes: "")
+            logQuantityVcObj?.resetData(name: lastHabit!, durationInSeconds: "\(duration)", logQuantityQuestion: arrFilteredEveningHabits[lastHabitIndex].logQuantityQuestion, currentState: ._EVENING_HABIT_, logQuantityType: "", activity_id: arrFilteredEveningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredEveningHabits[lastHabitIndex].activity_sequence_id, activityChoiceId: nil, take_notes: arrFilteredEveningHabits[lastHabitIndex].take_notes, notes: "", logQuantityQuestions: arrFilteredEveningHabits[lastHabitIndex].logQuantityQuestions)
             logQuantityVcObj?.is_skipped = true
         }else{
             let startTime = getStringFromDate(date: lastActivityPerformedTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")
-            addEntryInStatsCsv(logType: "evening routine", activity: lastHabit!, durationInSeconds: "\(arrFilteredEveningHabits[lastHabitIndex].durationSeconds!)", quantityQuestion: "", quantityLogged: "", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "")
+            addEntryInStatsCsv(logType: "evening routine", activity: lastHabit!, durationInSeconds: "\(duration)", quantityQuestion: "", quantityLogged: "", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "")
             
-            self.loadGraph(activityId: arrFilteredEveningHabits[self.lastHabitIndex].id, activityName: lastHabit ?? "", logQuantity: false, logQuantityType: "", activityChoiceId: nil,activityStartTime: lastActivityPerformedTime!, duration: "\(arrFilteredEveningHabits[lastHabitIndex].durationSeconds!)", quantity: "")
-        
+            self.loadGraph(activityId: arrFilteredEveningHabits[self.lastHabitIndex].id, activityName: lastHabit ?? "", logQuantity: false, logQuantityType: "", activityChoiceId: nil,activityStartTime: lastActivityPerformedTime!, duration: "\(duration)", quantity: "")
+            
             
             if arrFilteredEveningHabits[lastHabitIndex].take_notes == END_OF_ACTIVITY{
                 mainViewControllerObj!.showTakeNotesView()
-                takeActivityNotesVcObj?.resetData(durationInSeconds: arrFilteredEveningHabits[lastHabitIndex].durationSeconds!, quantity_logged:nil, activity_id: arrFilteredEveningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredEveningHabits[lastHabitIndex].activity_sequence_id, activityChoiceId: nil)
+                takeActivityNotesVcObj?.resetData(durationInSeconds: duration, quantity_logged:nil, activity_id: arrFilteredEveningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredEveningHabits[lastHabitIndex].activity_sequence_id, activityChoiceId: nil, log_quantity_answers: [])
             }else{
                 
-                allApiObject.activityCompletedApi(activity_id: arrFilteredEveningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredEveningHabits[lastHabitIndex].activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:nil, duration_logged:arrFilteredEveningHabits[lastHabitIndex].durationSeconds!, choice_id: nil, is_skipped: true, notes: "", should_not_update_current_activity: false, completionHandler: {dic  in
+                
+                allApiObject.activityCompletedApi(activity_id: arrFilteredEveningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredEveningHabits[lastHabitIndex].activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:nil, duration_logged:duration, choice_id: nil, is_skipped: true, notes: "", should_not_update_current_activity: false, log_quantity_answers: [], completionHandler: {dic  in
                     
                     DispatchQueue.main.async {
                         
@@ -2415,7 +2656,7 @@ class thirdVc: NSViewController {
         
         
         addLog(text:"\(lastHabit!) skipped")
-      
+        
         isSequenceFinished = false
         var newHabitIndex = lastHabitIndex+1
         if lastHabitIndex < arrFilteredEveningHabits.count-1 {
@@ -2435,12 +2676,14 @@ class thirdVc: NSViewController {
         }
         currentHabitIndex = newHabitIndex - 1
         setProgress()
+        var nextActivityName = ""
+        
         if !isSequenceFinished {
             allApiObject.capturePosthog(event: "complete-evening-routine-activity", metadata: ["routine-type":"evening_routine"])
             lblTitle.stringValue = getActivityFinishedText(isLast: false, activityName: lastHabit!)//"\(lastHabit!) finished!✅"
             playEveryActivitySound()
             imgViewGif.isHidden = true
-            
+            nextActivityName = arrFilteredEveningHabits[newHabitIndex].name!
             if SettingsManagerObject.isPromptToRememberHabit && !isHighPrioritySequenceGoing{
                 if !isPromptToRememberHabitShowedInLastHabit{
                     randomIntToRememberNextHabit = Int.random(in: 0..<6)
@@ -2487,8 +2730,7 @@ class thirdVc: NSViewController {
                 btnMain.title = common.value(forKey: "wrapupButtonText") as? String ?? btnMain.title
             }
             
-            mainViewControllerObj?.btnAbort.isHidden = true
-            mainViewControllerObj?.stackViewTopButtons.isHidden = true
+            mainViewControllerObj?.hideCloseButtons()
             btnMain.toolTip = btnMain.title
             playAfterMorningEveningRoutineSound(isMorning:false)
             if startTime == nil || shutOffTime == nil{
@@ -2507,9 +2749,17 @@ class thirdVc: NSViewController {
             }
             btnSkipHabit.isHidden = true
         }
-        
+        DispatchQueue.global().async {
+            sleep(1)
+            DispatchQueue.main.async {
+                playActivityFinishedSound(lastActivity: lastHabit ?? "", nextActivity: nextActivityName, isSkipped: false, isAskNext:(self.randomIntToRememberNextHabit == 5))
+            }
+        }
     }
     func eveningHabitFinishedAndStartIncompleteNew(index:Int, isLastActivitySkipped:Bool) {
+        currentGraphIndex = 0
+        btnNextGraph.isHidden = true
+        btnPreviousGraph.isHidden = true
         UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
         UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitRunningInfo)
         randomIntToRememberNextHabit = 0
@@ -2533,7 +2783,7 @@ class thirdVc: NSViewController {
         stackViewGraph.isHidden = false
         self.webViewGraph1.isHidden = true
         self.webViewGraph2.isHidden = true
-
+        
         
         allApiObject.getACtivityStats(activityId: arrFilteredEveningHabits[self.lastHabitIndex].id, activityChoiceId: nil, completionHandler: {dic in
             DispatchQueue.main.async {
@@ -2544,7 +2794,7 @@ class thirdVc: NSViewController {
         
         
         
-      
+        
         isSequenceFinished = false
         var newHabitIndex = lastHabitIndex+1
         if lastHabitIndex < arrFilteredEveningHabits.count-1 {
@@ -2565,7 +2815,7 @@ class thirdVc: NSViewController {
         setProgress()
         currentHabitIndex = newHabitIndex - 1
         if !isSequenceFinished {
-
+            
             if !isLastActivitySkipped{
                 addLog(text:"\(lastHabit!) Finished")
                 lblTitle.stringValue = getActivityFinishedText(isLast: false, activityName: lastHabit!)//"\(lastHabit!) finished!✅"
@@ -2585,7 +2835,7 @@ class thirdVc: NSViewController {
             }else{
                 startTimer(duration: 30)
             }
-
+            
             imgViewGif.isHidden = false
             if !isLastActivitySkipped{
                 addLog(text:"\(lastHabit!) Finished")
@@ -2599,8 +2849,7 @@ class thirdVc: NSViewController {
                 btnMain.title = common.value(forKey: "wrapupButtonText") as? String ?? btnMain.title
             }
             
-            mainViewControllerObj?.btnAbort.isHidden = true
-            mainViewControllerObj?.stackViewTopButtons.isHidden = true
+            mainViewControllerObj?.hideCloseButtons()
             btnMain.toolTip = btnMain.title
             if startTime == nil || shutOffTime == nil{
                 return;
@@ -2654,7 +2903,7 @@ class thirdVc: NSViewController {
         stackViewGraph.isHidden = false
         self.webViewGraph1.isHidden = true
         self.webViewGraph2.isHidden = true
-
+        
         
         //   allApiObject.getACtivityStats(activityId: arrFilteredEveningHabits[self.lastHabitIndex].id, activityChoiceId: nil, completionHandler: {dic in
         DispatchQueue.main.async {
@@ -2684,6 +2933,7 @@ class thirdVc: NSViewController {
         setProgress()
         currentHabitIndex = newHabitIndex - 1
         addLog(text:"\(lastHabit!) Skipped")
+        var nextActivityName = ""
         if !isSequenceFinished {
             lblTitle.stringValue = getActivitySkippedText(isLast: false, activityName: lastHabit!)
             imgViewGif.isHidden = true
@@ -2692,13 +2942,14 @@ class thirdVc: NSViewController {
             btnMain.title = getstartActivityButtonText(seconds: time!, name: arrFilteredEveningHabits[newHabitIndex].name!)
             btnMain.toolTip = btnMain.title
             btnSkipHabit.isHidden = false
+            nextActivityName = arrFilteredEveningHabits[newHabitIndex].name!
         }else{
             if arrFilteredEveningHabits[lastHabitIndex].logQuantity{
                 
             }else{
                 startTimer(duration: 30)
             }
-
+            
             imgViewGif.isHidden = false
             lblTitle.stringValue = getActivitySkippedText(isLast: true, activityName: lastHabit!)
             btnMain.title = "Let's wrap up for the day"
@@ -2706,8 +2957,7 @@ class thirdVc: NSViewController {
                 btnMain.title = common.value(forKey: "wrapupButtonText") as? String ?? btnMain.title
             }
             
-            mainViewControllerObj?.btnAbort.isHidden = true
-            mainViewControllerObj?.stackViewTopButtons.isHidden = true
+            mainViewControllerObj?.hideCloseButtons()
             btnMain.toolTip = btnMain.title
             if startTime == nil || shutOffTime == nil{
                 return;
@@ -2725,7 +2975,12 @@ class thirdVc: NSViewController {
             }
             btnSkipHabit.isHidden = true
         }
-        
+        DispatchQueue.global().async {
+            sleep(1)
+            DispatchQueue.main.async {
+                playActivityFinishedSound(lastActivity: lastHabit ?? "", nextActivity: nextActivityName, isSkipped: true, isAskNext:false)
+            }
+        }
     }
     var timer:Timer?
     var currentTimer = 0
@@ -2785,7 +3040,11 @@ class thirdVc: NSViewController {
     }
     
     func activityFinished(index:Int) {
-        btnSkipHabit.isHidden = true
+        currentGraphIndex = 0
+        if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
+            btnSkipHabit.title = activityInfo.value(forKey: "buttonSkipHabitText") as? String ?? btnSkipHabit.title
+        }
+        
         btnReviseQuantity.isHidden = true
         customViewContainer.isHidden = true
         webViewForVideo.isHidden = true
@@ -2806,42 +3065,22 @@ class thirdVc: NSViewController {
         var lastActivity = ""//arrAllbreakActivities[lastActivityIndex].name
         var logQuantity:Bool = false
         var durationInSeconds = 0
-        var logQuantityQuestion:String?
         var logQuantityType:String?
         var activity_id:String = ""
         var activity_sequence_id = ""
         let activityChoiceId:String? = lastActivityChoice?.id
         var take_notes = ""
-        if isAnyMandatoryActivityIncluded{
-            if isMandatoryActivityGoing{
-                lastActivity = timerViewcontrollerObj?.currentActicityTitle ?? arrActivitiesIncludeInEveryBreak[lastActivityIndex].name//because name mai activitychoice ka name bhi ho skta h
-                logQuantity = timerViewcontrollerObj?.logActivityQuantity ?? false
-                durationInSeconds = arrActivitiesIncludeInEveryBreak[lastActivityIndex].durationSeconds
-                activity_id = arrActivitiesIncludeInEveryBreak[lastActivityIndex].id
-                activity_sequence_id = arrActivitiesIncludeInEveryBreak[lastActivityIndex].activity_sequence_id
-                logQuantityQuestion = timerViewcontrollerObj?.logQuantityQuestion ?? arrActivitiesIncludeInEveryBreak[lastActivityIndex].logQuantityQuestion
-                logQuantityType = timerViewcontrollerObj?.logQuantityType ?? arrActivitiesIncludeInEveryBreak[lastActivityIndex].logQuantityType
-                take_notes = arrActivitiesIncludeInEveryBreak[lastActivityIndex].take_notes
-            }else{
-                lastActivity = timerViewcontrollerObj?.currentActicityTitle ?? arrActivitiesExcludeInEveryBreak[lastActivityIndex].name
-                logQuantity = timerViewcontrollerObj?.logActivityQuantity ?? false
-                durationInSeconds = arrActivitiesExcludeInEveryBreak[lastActivityIndex].durationSeconds
-                activity_id = arrActivitiesExcludeInEveryBreak[lastActivityIndex].id
-                activity_sequence_id = arrActivitiesExcludeInEveryBreak[lastActivityIndex].activity_sequence_id
-                logQuantityQuestion = timerViewcontrollerObj?.logQuantityQuestion ?? arrActivitiesExcludeInEveryBreak[lastActivityIndex].logQuantityQuestion
-                logQuantityType = timerViewcontrollerObj?.logQuantityType ?? arrActivitiesExcludeInEveryBreak[lastActivityIndex].logQuantityType
-                take_notes = arrActivitiesExcludeInEveryBreak[lastActivityIndex].take_notes
-            }
-        }else{
-            lastActivity = timerViewcontrollerObj?.currentActicityTitle ?? arrAllbreakActivities[lastActivityIndex].name
-            logQuantity = timerViewcontrollerObj?.logActivityQuantity ?? false
-            durationInSeconds = arrActivitiesExcludeInEveryBreak[lastActivityIndex].durationSeconds
-            activity_id = arrActivitiesExcludeInEveryBreak[lastActivityIndex].id
-            activity_sequence_id = arrActivitiesExcludeInEveryBreak[lastActivityIndex].activity_sequence_id
-            logQuantityQuestion = timerViewcontrollerObj?.logQuantityQuestion ?? arrAllbreakActivities[lastActivityIndex].logQuantityQuestion
-            logQuantityType = timerViewcontrollerObj?.logQuantityType ?? arrAllbreakActivities[lastActivityIndex].logQuantityType
-            take_notes = arrActivitiesExcludeInEveryBreak[lastActivityIndex].take_notes
-        }
+        var logQuantityQuestions = [quantityQuestion]()
+
+        lastActivity = timerViewcontrollerObj?.currentActicityTitle ?? arrAllbreakActivities[lastActivityIndex].name
+        logQuantity = timerViewcontrollerObj?.logActivityQuantity ?? false
+        durationInSeconds = getLastActivityDoneDuration(lastActivity: arrFinalBreakActivities[lastActivityIndex].activity)
+        activity_id = arrFinalBreakActivities[lastActivityIndex].activity.id
+        activity_sequence_id = arrFinalBreakActivities[lastActivityIndex].activity.activity_sequence_id
+        logQuantityType = timerViewcontrollerObj?.logQuantityType ?? arrFinalBreakActivities[lastActivityIndex].activity.logQuantityType
+        take_notes = arrFinalBreakActivities[lastActivityIndex].activity.take_notes
+        logQuantityQuestions = timerViewcontrollerObj?.logQuantityQuestions ?? []
+        
         
         if logQuantity{
             webViewGraph1.isHidden = true
@@ -2855,7 +3094,7 @@ class thirdVc: NSViewController {
                 notes = UserDefaults.standard.object(forKey: kUserdefaultsLastActivitySavedNotes) as? String ?? ""
             }
             
-            logQuantityVcObj?.resetData(name: lastActivity, durationInSeconds: "\(durationInSeconds)", logQuantityQuestion: logQuantityQuestion, currentState: ._ACTIVITY_, logQuantityType: logQuantityType ?? "", activity_id: activity_id, activity_sequence_id: activity_sequence_id,activityChoiceId:activityChoiceId, take_notes:take_notes, notes:notes)
+            logQuantityVcObj?.resetData(name: lastActivity, durationInSeconds: "\(durationInSeconds)", logQuantityQuestion: nil, currentState: ._ACTIVITY_, logQuantityType: logQuantityType ?? "", activity_id: activity_id, activity_sequence_id: activity_sequence_id,activityChoiceId:activityChoiceId, take_notes:take_notes, notes:notes, logQuantityQuestions: logQuantityQuestions)
         }else{
             let startTime = getStringFromDate(date: lastActivityPerformedTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")
             addEntryInStatsCsv(logType: "break", activity: lastActivity, durationInSeconds: "\(durationInSeconds)", quantityQuestion: "", quantityLogged: "", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "")
@@ -2864,7 +3103,7 @@ class thirdVc: NSViewController {
             
             if take_notes == END_OF_ACTIVITY{
                 mainViewControllerObj!.showTakeNotesView()
-                takeActivityNotesVcObj?.resetData(durationInSeconds: durationInSeconds, quantity_logged:nil, activity_id: activity_id, activity_sequence_id: activity_sequence_id, activityChoiceId: activityChoiceId)
+                takeActivityNotesVcObj?.resetData(durationInSeconds: durationInSeconds, quantity_logged:nil, activity_id: activity_id, activity_sequence_id: activity_sequence_id, activityChoiceId: activityChoiceId, log_quantity_answers: [])
             }else{
                 
                 var notes = ""
@@ -2873,7 +3112,7 @@ class thirdVc: NSViewController {
                     notes = UserDefaults.standard.object(forKey: kUserdefaultsLastActivitySavedNotes) as? String ?? ""
                 }
                 
-                allApiObject.activityCompletedApi(activity_id: activity_id, activity_sequence_id: activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:nil, duration_logged:durationInSeconds, choice_id: activityChoiceId, is_skipped: false, notes: notes, should_not_update_current_activity: false, completionHandler: {dic  in
+                allApiObject.activityCompletedApi(activity_id: activity_id, activity_sequence_id: activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:nil, duration_logged:durationInSeconds, choice_id: activityChoiceId, is_skipped: false, notes: notes, should_not_update_current_activity: false, log_quantity_answers: [], completionHandler: {dic  in
                     
                     DispatchQueue.main.async {
                         
@@ -2886,85 +3125,31 @@ class thirdVc: NSViewController {
         }
         
         
-        if isAnyMandatoryActivityIncluded{
-            if isMandatoryActivityGoing{
-                
-                if index < arrActivitiesIncludeInEveryBreak.count-1 {
-                    isSequenceFinished = false
-                    lblTitle.stringValue = getActivityFinishedText(isLast: false, activityName: lastActivity)//"\(lastActivity) finished!✅"
-                    currentActivity = arrActivitiesIncludeInEveryBreak[lastActivityIndex+1]
-                    allApiObject.capturePosthog(event: "complete-break-activity", metadata: ["routine-type":"break_activity"])
-                }else {
-                    if arrActivitiesExcludeInEveryBreak.count == 0{
-                        lblTitle.stringValue = getActivityFinishedText(isLast: true, activityName: lastActivity)//"\(lastActivity) finished!✅ You’ve earned your screen time. 💪"
-                        isSequenceFinished = true
-                        btnMain.title = unlockMachineButtonText
-                        mainViewControllerObj?.btnAbort.isHidden = true
-                        mainViewControllerObj?.stackViewTopButtons.isHidden = true
-                        btnMain.toolTip = btnMain.title
-                        imgViewGif.isHidden = false
-                        allApiObject.capturePosthog(event: "complete-all-break-activity", metadata: ["routine-type":"break_activity"])
-                    }else{
-                        isSequenceFinished = false
-                        lblTitle.stringValue = getActivityFinishedText(isLast: false, activityName: lastActivity)//"\(lastActivity) finished!✅"
-                        currentActivityIndex = randomActivityIndex
-                        currentActivity = arrActivitiesExcludeInEveryBreak[currentActivityIndex]
-                        allApiObject.capturePosthog(event: "complete-break-activity", metadata: ["routine-type":"break_activity"])
-                    }
-                }
-            }else{
-                isSequenceFinished = true
-                lblTitle.stringValue = getActivityFinishedText(isLast: true, activityName: lastActivity)//"\(lastActivity) finished!✅ You’ve earned your screen time. 💪"
-                btnMain.title = unlockMachineButtonText
-                mainViewControllerObj?.btnAbort.isHidden = true
-                mainViewControllerObj?.stackViewTopButtons.isHidden = true
-                btnMain.toolTip = btnMain.title
-                imgViewGif.isHidden = false
-                allApiObject.capturePosthog(event: "complete-all-break-activity", metadata: ["routine-type":"break_activity"])
-            }
-        }else{
-            isSequenceFinished = true
+        if index < arrFinalBreakActivities.count-1 {
+            isSequenceFinished = false
+            lblTitle.stringValue = getActivityFinishedText(isLast: false, activityName: lastActivity)//"\(lastActivity) finished!✅"
+            currentActivity = arrFinalBreakActivities[lastActivityIndex+1].activity
+            allApiObject.capturePosthog(event: "complete-break-activity", metadata: ["routine-type":"break_activity"])
+            btnSkipHabit.isHidden = false
+        }else {
             lblTitle.stringValue = getActivityFinishedText(isLast: true, activityName: lastActivity)//"\(lastActivity) finished!✅ You’ve earned your screen time. 💪"
+            isSequenceFinished = true
             btnMain.title = unlockMachineButtonText
+            mainViewControllerObj?.hideCloseButtons()
             btnMain.toolTip = btnMain.title
             imgViewGif.isHidden = false
-            mainViewControllerObj?.btnAbort.isHidden = true
-            mainViewControllerObj?.stackViewTopButtons.isHidden = true
             allApiObject.capturePosthog(event: "complete-all-break-activity", metadata: ["routine-type":"break_activity"])
+            btnSkipHabit.isHidden = true
         }
         
-        
+        var nextActivityName: String = ""
         if currentActivity != nil{
-            
-            var nextActivityName: String = ""
-            
-            
-            if !currentActivity!.isRandomChoice{
+            if currentActivity!.choiceType != ._RANDOM_{
                 nextActivityName = currentActivity!.name
             }else{//random choice
                 currentActivityChoice = nil
-                for filterActivity in arrFinalBreakActivities{
-                    if filterActivity.activity.id == currentActivity?.id{
-                        if let choice = filterActivity.randomChoice{
-                            currentActivityChoice = choice
-                            nextActivityName = currentActivityChoice?.name ?? ""
-                        }
-                    }
-                }
-                
-                if currentActivityChoice == nil{
-                    currentActivityChoice = currentActivity?.choices.randomElement()
-                    if currentActivity?.choices.count != 1{
-                        if let lastChoice = lastShownRandomChoiceDic[currentActivity!.id]{
-                            while lastChoice.id == currentActivityChoice!.id{
-                                currentActivityChoice = currentActivity?.choices.randomElement()
-                            }
-                        }
-                    }
-                    lastShownRandomChoiceDic[currentActivity!.id ?? ""] = currentActivityChoice
-                    nextActivityName = currentActivityChoice?.name ?? ""
-                }
-                
+                currentActivityChoice = arrFinalBreakActivities[lastActivityIndex].randomChoice
+                nextActivityName = currentActivityChoice?.name ?? ""
             }
             
             
@@ -2972,11 +3157,238 @@ class thirdVc: NSViewController {
             activityName = nextActivityName
             btnMain.title = getstartActivityButtonText(seconds: time!, name: nextActivityName)
             btnMain.toolTip = btnMain.title
+
         }
+        
         playEveryActivitySound()
+        DispatchQueue.global().async {
+            sleep(1)
+            DispatchQueue.main.async {
+                playActivityFinishedSound(lastActivity: lastActivity, nextActivity: nextActivityName, isSkipped: false, isAskNext:false)
+            }
+        }
+    }
+    
+    func activitySkippedAndDoneAlready(){
+        currentGraphIndex = 0
+        lastActivityPerformedTime = Date()
+        if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
+            btnSkipHabit.title = activityInfo.value(forKey: "buttonSkipHabitText") as? String ?? btnSkipHabit.title
+        }
+        btnReviseQuantity.isHidden = true
+        customViewContainer.isHidden = true
+        webViewForVideo.isHidden = true
+        lblTimer.isHidden = true
+        boxBg.isHidden = false
+        if rememberNextHabitVcObj != nil{
+            if self.view.subviews.contains(rememberNextHabitVcObj!.view){
+                rememberNextHabitVcObj?.view.removeFromSuperview()
+            }
+        }
+        lblProgress.isHidden = true
+        boxBreathingFinished.isHidden = true
+        if currentAction != ._INPROGRESS_{// if inprogess it means already updated cutrrenthabitindex
+            currentActivityIndex += 1
+        }
+
+        let lastActivityChoice = currentActivityChoice
+        currentActivityChoice = nil
+        var currentActivity:breakActivity?
+
+        imgViewGif.isHidden = true
+        lastActivityIndex = currentActivityIndex
+
+
+        var lastActivity = ""
+        var logQuantity:Bool = false
+        var durationInSeconds = 0
+        var logQuantityType:String?
+        var activity_id:String = ""
+        var activity_sequence_id = ""
+        let activityChoiceId:String? = lastActivityChoice?.id
+        var take_notes = ""
+        var logQuantityQuestions = [quantityQuestion]()
+
+        lastActivity = arrFinalBreakActivities[lastActivityIndex].randomChoice?.name ?? arrFinalBreakActivities[lastActivityIndex].activity.name
+        logQuantity = arrFinalBreakActivities[lastActivityIndex].activity.logQuantity ?? false
+        durationInSeconds = getLastActivityDoneDuration(lastActivity: arrFinalBreakActivities[lastActivityIndex].activity)
+        activity_id = arrFinalBreakActivities[lastActivityIndex].activity.id
+        activity_sequence_id = arrFinalBreakActivities[lastActivityIndex].activity.activity_sequence_id
+        logQuantityType = arrFinalBreakActivities[lastActivityIndex].activity.logQuantityType
+        take_notes = arrFinalBreakActivities[lastActivityIndex].activity.take_notes
+        logQuantityQuestions = arrFinalBreakActivities[lastActivityIndex].activity.logQuantityQuestions
+        
+        if logQuantity{
+            webViewGraph1.isHidden = true
+            webViewGraph2.isHidden = true
+            mainViewControllerObj!.showLogQuantityView()
+            logQuantityVcObj?.isReviseQuantity = false
+
+            var notes = ""
+
+            if take_notes == DURING_ACTIVITY{
+                notes = UserDefaults.standard.object(forKey: kUserdefaultsLastActivitySavedNotes) as? String ?? ""
+            }
+
+            logQuantityVcObj?.resetData(name: lastActivity, durationInSeconds: "\(durationInSeconds)", logQuantityQuestion: nil, currentState: ._ACTIVITY_, logQuantityType: logQuantityType ?? "", activity_id: activity_id, activity_sequence_id: activity_sequence_id,activityChoiceId:activityChoiceId, take_notes:take_notes, notes:notes, logQuantityQuestions: logQuantityQuestions)
+        }else{
+            let startTime = getStringFromDate(date: lastActivityPerformedTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")
+            addEntryInStatsCsv(logType: "break", activity: lastActivity, durationInSeconds: "\(durationInSeconds)", quantityQuestion: "", quantityLogged: "", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "")
+
+            self.loadGraph(activityId: activity_id, activityName: lastActivity, logQuantity: logQuantity, logQuantityType: "", activityChoiceId: activityChoiceId,activityStartTime: lastActivityPerformedTime!, duration: "\(durationInSeconds)", quantity: "")
+
+            if take_notes == END_OF_ACTIVITY{
+                mainViewControllerObj!.showTakeNotesView()
+                takeActivityNotesVcObj?.resetData(durationInSeconds: durationInSeconds, quantity_logged:nil, activity_id: activity_id, activity_sequence_id: activity_sequence_id, activityChoiceId: activityChoiceId, log_quantity_answers: [])
+            }else{
+
+                var notes = ""
+
+                if take_notes == DURING_ACTIVITY{
+                    notes = UserDefaults.standard.object(forKey: kUserdefaultsLastActivitySavedNotes) as? String ?? ""
+                }
+
+                allApiObject.activityCompletedApi(activity_id: activity_id, activity_sequence_id: activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:nil, duration_logged:durationInSeconds, choice_id: activityChoiceId, is_skipped: false, notes: notes, should_not_update_current_activity: false, log_quantity_answers: [], completionHandler: {dic  in
+
+                    DispatchQueue.main.async {
+
+                    }
+                    print(dic)
+                })
+            }
+        }
+
+
+        if currentActivityIndex < arrFinalBreakActivities.count-1 {
+            isSequenceFinished = false
+            lblTitle.stringValue = getActivityFinishedText(isLast: false, activityName: lastActivity)//"\(lastActivity) finished!✅"
+            currentActivity = arrFinalBreakActivities[lastActivityIndex+1].activity
+            allApiObject.capturePosthog(event: "complete-break-activity", metadata: ["routine-type":"break_activity"])
+            btnSkipHabit.isHidden = false
+        }else {
+            lblTitle.stringValue = getActivityFinishedText(isLast: true, activityName: lastActivity)//"\(lastActivity) finished!✅ You’ve earned your screen time. 💪"
+            isSequenceFinished = true
+            btnMain.title = unlockMachineButtonText
+            mainViewControllerObj?.hideCloseButtons()
+            btnMain.toolTip = btnMain.title
+            imgViewGif.isHidden = false
+            allApiObject.capturePosthog(event: "complete-all-break-activity", metadata: ["routine-type":"break_activity"])
+            btnSkipHabit.isHidden = true
+        }
+
+        var nextActivityName: String = ""
+        if currentActivity != nil{
+            if currentActivity!.choiceType != ._RANDOM_{
+                nextActivityName = currentActivity!.name
+            }else{//random choice
+                currentActivityChoice = nil
+                currentActivityChoice = arrFinalBreakActivities[lastActivityIndex].randomChoice
+                nextActivityName = currentActivityChoice?.name ?? ""
+            }
+
+
+            let time = currentActivity!.durationSeconds
+            activityName = nextActivityName
+            btnMain.title = getstartActivityButtonText(seconds: time!, name: nextActivityName)
+            btnMain.toolTip = btnMain.title
+        }
+
+        playEveryActivitySound()
+        DispatchQueue.global().async {
+            sleep(1)
+            DispatchQueue.main.async {
+                playActivityFinishedSound(lastActivity: lastActivity, nextActivity: nextActivityName, isSkipped: false, isAskNext:false)
+            }
+        }
+    }
+    
+    func activitySkipped(){
+        logQuantityQuestionsForGraph = []
+        currentGraphIndex = 0
+        lastActivityPerformedTime = Date()
+        if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
+            btnSkipHabit.title = activityInfo.value(forKey: "buttonSkipHabitText") as? String ?? btnSkipHabit.title
+        }
+
+        btnReviseQuantity.isHidden = true
+        customViewContainer.isHidden = true
+        webViewForVideo.isHidden = true
+        lblTimer.isHidden = true
+        boxBg.isHidden = false
+        if rememberNextHabitVcObj != nil{
+            if self.view.subviews.contains(rememberNextHabitVcObj!.view){
+                rememberNextHabitVcObj?.view.removeFromSuperview()
+            }
+        }
+        lblProgress.isHidden = true
+        boxBreathingFinished.isHidden = true
+        if currentAction != ._INPROGRESS_{// if inprogess it means already updated cutrrenthabitindex
+            currentActivityIndex += 1
+        }
+
+        currentActivityChoice = nil
+        var currentActivity:breakActivity?
+
+        imgViewGif.isHidden = true
+        lastActivityIndex = currentActivityIndex
+        
+        var lastActivity = ""
+        var logQuantity:Bool = false
+        var activity_id:String = ""
+        let activityChoiceId:String? = arrFinalBreakActivities[lastActivityIndex].randomChoice?.id
+
+        lastActivity = arrFinalBreakActivities[lastActivityIndex].randomChoice?.name ?? arrFinalBreakActivities[lastActivityIndex].activity.name
+        logQuantity = arrFinalBreakActivities[lastActivityIndex].activity.logQuantity ?? false
+        activity_id = arrFinalBreakActivities[lastActivityIndex].activity.id
+        
+        self.loadGraph(activityId: activity_id, activityName: lastActivity, logQuantity: logQuantity, logQuantityType: "", activityChoiceId: activityChoiceId,activityStartTime: nil, duration: "", quantity: "")
+        btnReviseQuantity.isHidden = true//do not remove this beacuse in skipping user cant enter quantity
+        
+        if currentActivityIndex < arrFinalBreakActivities.count-1 {
+            isSequenceFinished = false
+            lblTitle.stringValue = getActivitySkippedText(isLast: false, activityName: lastActivity)//"\(lastActivity) finished!✅"
+            currentActivity = arrFinalBreakActivities[lastActivityIndex+1].activity
+            btnSkipHabit.isHidden = false
+        }else {
+            lblTitle.stringValue = getActivitySkippedText(isLast: true, activityName: lastActivity)//"\(lastActivity) finished!✅ You’ve earned your screen time. 💪"
+            isSequenceFinished = true
+            btnMain.title = unlockMachineButtonText
+            mainViewControllerObj?.hideCloseButtons()
+            btnMain.toolTip = btnMain.title
+            imgViewGif.isHidden = false
+            btnSkipHabit.isHidden = true
+        }
+
+        var nextActivityName: String = ""
+        if currentActivity != nil{
+            if currentActivity!.choiceType != ._RANDOM_{
+                nextActivityName = currentActivity!.name
+            }else{//random choice
+                currentActivityChoice = nil
+                currentActivityChoice = arrFinalBreakActivities[lastActivityIndex+1].randomChoice
+                nextActivityName = currentActivityChoice?.name ?? ""
+            }
+
+
+            let time = currentActivity!.durationSeconds
+            activityName = nextActivityName
+            btnMain.title = getstartActivityButtonText(seconds: time!, name: nextActivityName)
+            btnMain.toolTip = btnMain.title
+
+
+        }
+
+
+        DispatchQueue.global().async {
+            sleep(1)
+            DispatchQueue.main.async {
+                playActivityFinishedSound(lastActivity: lastActivity, nextActivity: nextActivityName, isSkipped: true, isAskNext:false)
+            }
+        }
     }
     
     func specialActivityFinished() {
+        currentGraphIndex = 0
         btnSkipHabit.isHidden = true
         btnReviseQuantity.isHidden = true
         customViewContainer.isHidden = true
@@ -2991,7 +3403,7 @@ class thirdVc: NSViewController {
         lblProgress.isHidden = true
         boxBreathingFinished.isHidden = true
         imgViewGif.isHidden = true
-
+        
         var lastActivity = ""
         var logQuantity:Bool = false
         var durationInSeconds = 0
@@ -3001,6 +3413,7 @@ class thirdVc: NSViewController {
         var activity_sequence_id = ""
         var take_notes = ""
         var activityChoiceId:String?
+        var logQuantityQuestions:[quantityQuestion] = [quantityQuestion]()
         if timerViewcontrollerObj?.lastCurrentSpecialHabit != nil{
             logQuantity = timerViewcontrollerObj?.lastCurrentSpecialHabit?.logQuantity ?? false
             take_notes = timerViewcontrollerObj?.lastCurrentSpecialHabit?.take_notes ?? ""
@@ -3008,6 +3421,7 @@ class thirdVc: NSViewController {
             logQuantityQuestion = timerViewcontrollerObj?.lastCurrentSpecialHabit?.logQuantityQuestion
             activity_id = timerViewcontrollerObj?.lastCurrentSpecialHabit?.id ?? ""
             activity_sequence_id = timerViewcontrollerObj?.lastCurrentSpecialHabit?.activity_sequence_id ?? ""
+            logQuantityQuestions = timerViewcontrollerObj?.lastCurrentSpecialHabit?.logQuantityQuestions ?? []
         }else if timerViewcontrollerObj?.lastCurrentSpecialActivity != nil{
             if timerViewcontrollerObj?.lastCurrentSpecialActivityChoice != nil{
                 logQuantity = timerViewcontrollerObj?.lastCurrentSpecialActivityChoice?.logQuantity ?? false
@@ -3015,11 +3429,13 @@ class thirdVc: NSViewController {
                 logQuantityQuestion = timerViewcontrollerObj?.lastCurrentSpecialActivityChoice?.logQuantityQuestion
                 logQuantityType = timerViewcontrollerObj?.lastCurrentSpecialActivityChoice?.logQuantityType ?? ""
                 activityChoiceId = timerViewcontrollerObj?.lastCurrentSpecialActivityChoice?.id ?? ""
+                logQuantityQuestions = timerViewcontrollerObj?.lastCurrentSpecialActivityChoice?.logQuantityQuestions ?? []
             }else{
                 logQuantity = timerViewcontrollerObj?.lastCurrentSpecialActivity?.logQuantity ?? false
                 lastActivity = timerViewcontrollerObj?.lastCurrentSpecialActivity?.name ?? ""
                 logQuantityQuestion = timerViewcontrollerObj?.lastCurrentSpecialActivity?.logQuantityQuestion
                 logQuantityType = timerViewcontrollerObj?.lastCurrentSpecialActivity?.logQuantityType ?? ""
+                logQuantityQuestions = timerViewcontrollerObj?.lastCurrentSpecialActivity?.logQuantityQuestions ?? []
             }
             take_notes = timerViewcontrollerObj?.lastCurrentSpecialActivity?.take_notes ?? ""
             activity_id = timerViewcontrollerObj?.lastCurrentSpecialActivity?.id ?? ""
@@ -3038,7 +3454,7 @@ class thirdVc: NSViewController {
                 notes = UserDefaults.standard.object(forKey: kUserdefaultsLastSpecaialActivitySavedNotes) as? String ?? ""
             }
             
-            logQuantityVcObj?.resetData(name: lastActivity, durationInSeconds: "\(durationInSeconds)", logQuantityQuestion: logQuantityQuestion, currentState: ._SPECIAL_ACTIVITY_, logQuantityType: logQuantityType ?? "", activity_id: activity_id, activity_sequence_id: activity_sequence_id,activityChoiceId:activityChoiceId, take_notes:take_notes, notes:notes)
+            logQuantityVcObj?.resetData(name: lastActivity, durationInSeconds: "\(durationInSeconds)", logQuantityQuestion: logQuantityQuestion, currentState: ._SPECIAL_ACTIVITY_, logQuantityType: logQuantityType ?? "", activity_id: activity_id, activity_sequence_id: activity_sequence_id,activityChoiceId:activityChoiceId, take_notes:take_notes, notes:notes, logQuantityQuestions:logQuantityQuestions)
         }else{
             let startTime = getStringFromDate(date: lastActivityPerformedTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")
             addEntryInStatsCsv(logType: "special activity", activity: lastActivity, durationInSeconds: "\(durationInSeconds)", quantityQuestion: "", quantityLogged: "", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "")
@@ -3047,7 +3463,7 @@ class thirdVc: NSViewController {
             
             if take_notes == END_OF_ACTIVITY{
                 mainViewControllerObj!.showTakeNotesView()
-                takeActivityNotesVcObj?.resetData(durationInSeconds: durationInSeconds, quantity_logged:nil, activity_id: activity_id, activity_sequence_id: activity_sequence_id, activityChoiceId: activityChoiceId)
+                takeActivityNotesVcObj?.resetData(durationInSeconds: durationInSeconds, quantity_logged:nil, activity_id: activity_id, activity_sequence_id: activity_sequence_id, activityChoiceId: activityChoiceId, log_quantity_answers: [])
             }else{
                 
                 var notes = ""
@@ -3056,7 +3472,7 @@ class thirdVc: NSViewController {
                     notes = UserDefaults.standard.object(forKey: kUserdefaultsLastSpecaialActivitySavedNotes) as? String ?? ""
                 }
                 
-                allApiObject.activityCompletedApi(activity_id: activity_id, activity_sequence_id: activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:nil, duration_logged:durationInSeconds, choice_id: activityChoiceId, is_skipped: false, notes: notes, should_not_update_current_activity: true, completionHandler: {dic  in
+                allApiObject.activityCompletedApi(activity_id: activity_id, activity_sequence_id: activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:nil, duration_logged:durationInSeconds, choice_id: activityChoiceId, is_skipped: false, notes: notes, should_not_update_current_activity: true, log_quantity_answers: [], completionHandler: {dic  in
                     
                     DispatchQueue.main.async {
                         
@@ -3067,14 +3483,13 @@ class thirdVc: NSViewController {
             
             
         }
-
+        
         lblTitle.stringValue = getActivityFinishedText(isLast: true, activityName: lastActivity)//"\(lastActivity) finished!✅ You’ve earned your screen time. 💪"
         btnMain.title = unlockMachineButtonText
         imgViewGif.isHidden = false
-        mainViewControllerObj?.btnAbort.isHidden = true
-        mainViewControllerObj?.stackViewTopButtons.isHidden = true
+        mainViewControllerObj?.hideCloseButtons()
         allApiObject.capturePosthog(event: "complete-late-no-more-activity", metadata: [:])
-
+        
         playEveryActivitySound()
     }
     
@@ -3093,7 +3508,9 @@ class thirdVc: NSViewController {
         lblProgress.isHidden = false
         var totalDuration = 0
         for activity in arrFinalBreakActivities{
-            totalDuration += activity.activity.durationSeconds
+            if activity.activity.useTimer{
+                totalDuration += activity.activity.durationSeconds
+            }
         }
         
         var breakDurationText = "Break Activites Duration: <DURATION>"
@@ -3121,39 +3538,20 @@ class thirdVc: NSViewController {
         lastActivityIndex = -1
         
         var seconds: Int = 0
-        var currentActivity:breakActivity?
-        if isMandatoryActivityGoing{
-            currentActivity = arrActivitiesIncludeInEveryBreak[currentActivityIndex]
-        }else{
-            currentActivity = arrActivitiesExcludeInEveryBreak[currentActivityIndex]
-        }
+        let currentActivity = arrFinalBreakActivities[0].activity
+//        if isMandatoryActivityGoing{
+//            currentActivity = arrfinal[currentActivityIndex]
+//        }else{
+//            currentActivity = arrActivitiesExcludeInEveryBreak[currentActivityIndex]
+//        }
         
         
-        if !currentActivity!.isRandomChoice{
+        if currentActivity!.choiceType != ._RANDOM_{
             activityName = currentActivity!.name
         }else{//random choice
             currentActivityChoice = nil
-            for filterActivity in arrFinalBreakActivities{
-                if filterActivity.activity.id == currentActivity?.id{
-                    if let choice = filterActivity.randomChoice{
-                        currentActivityChoice = choice
-                        activityName = currentActivityChoice?.name ?? ""
-                    }
-                }
-            }
-            if currentActivityChoice == nil{
-                currentActivityChoice = currentActivity?.choices.randomElement()
-                if currentActivity?.choices.count != 1{
-                    if let lastChoice = lastShownRandomChoiceDic[currentActivity!.id]{
-                        while lastChoice.id == currentActivityChoice!.id{
-                            currentActivityChoice = currentActivity?.choices.randomElement()
-                        }
-                    }
-                }
-                
-                lastShownRandomChoiceDic[currentActivity!.id ?? ""] = currentActivityChoice
-                activityName = currentActivityChoice?.name ?? ""
-            }
+            currentActivityChoice = arrFinalBreakActivities[0].randomChoice
+            activityName = currentActivityChoice?.name ?? ""
         }
         
         seconds = currentActivity!.durationSeconds
@@ -3169,9 +3567,9 @@ class thirdVc: NSViewController {
         btnReviseQuantity.isHidden = true
         mainViewControllerObj!.showLogQuantityView()
         logQuantityVcObj?.isReviseQuantity = true
-        logQuantityVcObj?.textFieldCount.stringValue = ""
-        logQuantityVcObj?.textFieldCount.selectText(self)
-        logQuantityVcObj?.textFieldCount.currentEditor()?.selectedRange = NSRange(location: 0, length: 0)
+        // logQuantityVcObj?.textFieldCount.stringValue = ""
+        //   logQuantityVcObj?.textFieldCount.selectText(self)
+        //   logQuantityVcObj?.textFieldCount.currentEditor()?.selectedRange = NSRange(location: 0, length: 0)
         if self.timer != nil{
             isTimerGoingOn = false
             lblTimer.isHidden = true
@@ -3216,32 +3614,39 @@ class thirdVc: NSViewController {
         
         
         if currentState == ._BREATHING_{
-//            loadBlankUrl()//old work 26/9/22
+            //            loadBlankUrl()//old work 26/9/22
             boxBreathingFinished.isHidden = true
             mainViewControllerObj?.breathingFinishedUnlockMachine()
         }else if currentState == ._ACTIVITY_ {
             if lastActivityIndex == -1 {
                 mainViewControllerObj?.startCurrentActivity()
             }else{
-                if isAnyMandatoryActivityIncluded{
-                    if isMandatoryActivityGoing{
-                        
-                        if lastActivityIndex < arrActivitiesIncludeInEveryBreak.count-1 {
-                            mainViewControllerObj?.changeActivity()
-                        }else {
-                            if arrActivitiesExcludeInEveryBreak.count == 0{
-                                mainViewControllerObj?.activityFinishedUnlockMachine()
-                            }else{
-                                isMandatoryActivityGoing = false
-                                mainViewControllerObj?.changeActivity()
-                            }
-                        }
-                    }else{
-                        mainViewControllerObj?.activityFinishedUnlockMachine()
-                    }
-                }else{
+//                if isAnyMandatoryActivityIncluded{
+//                    if isMandatoryActivityGoing{
+//
+//                        if lastActivityIndex < arrActivitiesIncludeInEveryBreak.count-1 {
+//                            mainViewControllerObj?.changeActivity()
+//                        }else {
+//                            if arrActivitiesExcludeInEveryBreak.count == 0{
+//                                mainViewControllerObj?.activityFinishedUnlockMachine()
+//                            }else{
+//                                isMandatoryActivityGoing = false
+//                                mainViewControllerObj?.changeActivity()
+//                            }
+//                        }
+//                    }else{
+//                        mainViewControllerObj?.activityFinishedUnlockMachine()
+//                    }
+//                }else{
+//                    mainViewControllerObj?.activityFinishedUnlockMachine()
+//                }
+                
+                if lastActivityIndex < arrFinalBreakActivities.count-1 {
+                    mainViewControllerObj?.changeActivity()
+                }else {
                     mainViewControllerObj?.activityFinishedUnlockMachine()
                 }
+                
                 
             }//2022-10-31 17:04:01
             
@@ -3287,32 +3692,47 @@ class thirdVc: NSViewController {
     }
     
     @IBAction func btnSkipHabitClicked(_ sender: Any) {
-        
-        if currentState == ._ACTIVITY_{
-            mainViewControllerObj?.btnAbortClicked(self)
-            return
-        }
-        
-        
-        
-        var currentHabit:habit?
         if currentState == ._MORNING_HABIT_{
-//            if (UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil) && SettingsManagerObject.isPasswordRequireInSkipMorning{
-//                mainViewControllerObj?.showPasswordView()
-//                enterPasswordVcObj?.parentVc = getWhySkipHabitVcObject()
-//                return;
-//            }
+            let currentHabitId = arrFilteredMorningHabits[currentHabitIndex + 1].id ?? ""
             
-            currentHabit = arrFilteredMorningHabits[currentHabitIndex + 1]
+            allApiObject.getACtivityStats(activityId: currentHabitId, activityChoiceId: nil, completionHandler: {dic in
+                
+            })
         }else if currentState == ._EVENING_HABIT_{
-            currentHabit = arrFilteredEveningHabits[currentHabitIndex + 1]
+            let currentHabitId = arrFilteredEveningHabits[currentHabitIndex + 1].id ?? ""
+            
+            allApiObject.getACtivityStats(activityId: currentHabitId, activityChoiceId: nil, completionHandler: {dic in
+                
+            })
+        }else if currentState == ._ACTIVITY_{
+            let currentActivity = arrFinalBreakActivities[currentActivityIndex + 1].activity
+            let currentActivityId = currentActivity?.id ?? ""
+            let randomChoice = arrFinalBreakActivities[currentActivityIndex + 1].randomChoice
+            
+
+            allApiObject.getACtivityStats(activityId: currentActivityId, activityChoiceId: randomChoice?.id, completionHandler: {dic in
+                
+            })
+            
+            if arrFinalBreakActivities[currentHabitIndex + 1].activity.logQuantity{
+                var questions_ids = [String]()
+                for question in arrFinalBreakActivities[currentHabitIndex + 1].activity.logQuantityQuestions{
+                    questions_ids.append(question.id)
+                }
+                allApiObject.getActivityCurrentDayQuestionsStats(activityId: currentActivityId, activityChoiceId: randomChoice?.id, questions_ids: questions_ids, completionHandler: {dic in
+                    
+                })
+            }else{
+                allApiObject.getACtivityCurrentDayStats(activityId: currentActivityId, activityChoiceId: randomChoice?.id, completionHandler: {dic in
+                    
+                })
+            }
+            
         }else{
             return
         }
-
-        allApiObject.getACtivityStats(activityId: currentHabit!.id, activityChoiceId: nil, completionHandler: {dic in
-            
-        })
+        
+        
         
         mainViewControllerObj?.showWhySkipHabitView()
         return;
@@ -3320,14 +3740,3 @@ class thirdVc: NSViewController {
         
     }
 }
-
-
-
-
-//2022-10-03 06:20:47
-
-//08:43:57
-
-
-
-//2022-10-03 15:50:05

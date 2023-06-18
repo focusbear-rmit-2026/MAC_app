@@ -52,14 +52,11 @@ class askPostponeVc: NSViewController {
             if currentAction == ._INPROGRESS_{
                 mainViewControllerObj?.abortCancel()
             }else if currentAction == ._START_{
-                mainViewControllerObj?.btnAbort.isHidden = false
-                mainViewControllerObj?.stackViewTopButtons.isHidden = false
+                mainViewControllerObj?.showCloseButtons()
             }else if currentAction == ._END_{
-                mainViewControllerObj?.btnAbort.isHidden = false
-                mainViewControllerObj?.stackViewTopButtons.isHidden = false
+                mainViewControllerObj?.showCloseButtons()
             }else if currentAction == ._BRAIN_DUMP_{
-                mainViewControllerObj?.btnAbort.isHidden = false
-                mainViewControllerObj?.stackViewTopButtons.isHidden = false
+                mainViewControllerObj?.showCloseButtons()
             }
         }else{
             self.view.removeFromSuperview()
@@ -350,7 +347,7 @@ class askPostponeVc: NSViewController {
                 addLog(text: "Ask postpone view - Postpone Break Activitie Clicked")
                 activityPostponeCount += 1
                 self.view.removeFromSuperview()
-                mainViewControllerObj?.postponeBreakActivitiesFor(minutes: postponeTime)
+                mainViewControllerObj?.postponeBreakActivitiesFor(minutes: postponeTime, secondsToPostpone: nil)
             }
         }else if currentState == ._FOCUS_SUMMARY_{
             self.view.removeFromSuperview()
@@ -389,7 +386,7 @@ class askPostponeVc: NSViewController {
                 
                 addLog(text: "Ask postpone view - Skip Break Activitie Clicked")
                 self.view.removeFromSuperview()
-                mainViewControllerObj?.postponeBreakActivitiesFor(minutes: breakAfterMinutes)// we will use "postponeBreakActivitiesFor" function to skip break activity beacuse in "setActivitytimer" func there is no code to start morning habit again if break activity started from morning or evening routine(allowed app habit)
+                mainViewControllerObj?.postponeBreakActivitiesFor(minutes: breakAfterMinutes, secondsToPostpone: nil)// we will use "postponeBreakActivitiesFor" function to skip break activity beacuse in "setActivitytimer" func there is no code to start morning habit again if break activity started from morning or evening routine(allowed app habit)
             }
         }else{
             addLog(text: "Ask postpone view - button Abort Clicked")
@@ -446,7 +443,7 @@ class askPostponeVc: NSViewController {
             breakActivities.append(activityDic)
             mutableDic["break_activities"] = breakActivities
             
-            arrAllbreakActivities.append(breakActivity(id:id,name: officeFriendlyActivityName, durationSeconds: 20, IncludeInEveryBreak: false, urlsArray: [], logQuantity:false, isRandomChoice: false, choices: [], logQuantityQuestion: "", openSpecificApps: false, allowUrls: [], allowApps: [], isOfficeFriendly: true, allowedFocusMode: "", logQuantityType: "",activity_sequence_id:activity_sequence_id, take_notes: ""))
+            arrAllbreakActivities.append(breakActivity(id:id,name: officeFriendlyActivityName, durationSeconds: 20, IncludeInEveryBreak: false, urlsArray: [], logQuantity:false, choiceType: ._NONE_, choices: [], logQuantityQuestion: "", openSpecificApps: false, allowUrls: [], allowApps: [], isOfficeFriendly: true, allowedFocusMode: "", logQuantityType: "",activity_sequence_id:activity_sequence_id, take_notes: "", text_instructions: "", imgUrls: [], completion_requirements: "", useTimer: true, checkList:[]))
             
             
             
@@ -499,8 +496,7 @@ class askPostponeVc: NSViewController {
             self.timer = nil
             lblTimer.isHidden = true
             self.view.removeFromSuperview()
-            mainViewControllerObj?.btnAbort.isHidden = false
-            mainViewControllerObj?.stackViewTopButtons.isHidden = false
+            mainViewControllerObj?.showCloseButtons()
         }else{
             self.view.removeFromSuperview()
             mainViewControllerObj?.abortCancel()

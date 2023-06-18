@@ -11,6 +11,10 @@ import Cocoa
 class toolBoxVc: NSViewController {
 
 
+    @IBOutlet weak var lblCheckBoxForActivity: NSTextField!
+    @IBOutlet weak var checkBoxDontShowForActivity: NSButton!
+    @IBOutlet weak var boxForAllowedActivity: NSBox!
+    @IBOutlet weak var boxForFocusMode: NSBox!
     @IBOutlet weak var heightScrollView: NSLayoutConstraint!
     @IBOutlet weak var lblTitleUrls: NSTextField!
     @IBOutlet weak var lblTitleApps: NSTextField!
@@ -25,26 +29,30 @@ class toolBoxVc: NSViewController {
     @IBOutlet weak var scrollViewApps: NSScrollView!
 //    @IBOutlet weak var collectionViewUrls: NSCollectionView!
     @IBOutlet weak var collectionViewApps: NSCollectionView!
+    
+    var arrAllowedApps = [String]()
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
         
-        
+        lblCheckBoxForActivity.stringValue = "Don't Show toolbox when starting a habit with allowed apps"
         lblTitle.stringValue = "The toolbox makes it easy to open the apps and websites that you've allowed in the {focus_mode_name} focus mode. You can access it from the Menu under Tools."
         lblCheckBox.stringValue = "Don't show this anymore when I start a focus block"
         lblTitleApps.stringValue = "Apps:"
-        lblTitleUrls.stringValue = "Urls:"
+        lblTitleUrls.stringValue = "URLs:"
         
         if let toolBoxVcInfo = configjson.value(forKey: "toolBoxVcInfo") as? NSDictionary{
             lblCheckBox.stringValue = toolBoxVcInfo.value(forKey: "checkBoxText") as? String ?? lblCheckBox.stringValue
             lblTitleApps.stringValue = toolBoxVcInfo.value(forKey: "appsText") as? String ?? lblTitleApps.stringValue
             lblTitleUrls.stringValue = toolBoxVcInfo.value(forKey: "urlsText") as? String ?? lblTitleUrls.stringValue
+            lblCheckBoxForActivity.stringValue = toolBoxVcInfo.value(forKey: "checkBoxActivityText") as? String ?? lblCheckBoxForActivity.stringValue
         }
         
     }
     
     var isFocusModeOn = false
     func resetView() {
+        arrAllowedApps.removeAll()
         isFocusModeOn = Focus_Bear.isFocusModeOn()
         var focusMode = ""
 //        for dic in arrFocusType{
@@ -81,6 +89,12 @@ class toolBoxVc: NSViewController {
                 boxApps.isHidden = true
             }else{
                 boxApps.isHidden = false
+                for appPath in allowAppsPath{
+                    if FileManager.default.fileExists(atPath: appPath){
+                        arrAllowedApps.append(appPath)
+                    }
+                }
+                
                 collectionViewApps.reloadData()
             }
             
@@ -100,6 +114,8 @@ class toolBoxVc: NSViewController {
                 tblViewUrls.reloadData()
             }
             
+            boxForFocusMode.isHidden = false
+            boxForAllowedActivity.isHidden = true
         }else if currentHabitPlaying != nil{
             let allowAppsPath = currentHabitPlaying?.allowApps ?? []
             
@@ -107,6 +123,43 @@ class toolBoxVc: NSViewController {
                 boxApps.isHidden = true
             }else{
                 boxApps.isHidden = false
+                
+                let properties = [URLResourceKey.localizedNameKey, URLResourceKey.creationDateKey, URLResourceKey.contentModificationDateKey, URLResourceKey.localizedTypeDescriptionKey,URLResourceKey.nameKey]
+                
+                let array = try? FileManager.default.contentsOfDirectory(at: URL(fileURLWithPath: "/Applications"), includingPropertiesForKeys: properties, options: .skipsHiddenFiles)
+                if array != nil{
+                    
+                    var arrAllDirectoryNames = [String]()
+                    
+                    for url in array!{
+                        
+                        if url.pathExtension != "app"{
+                            if url.isDirectory{
+                                arrAllDirectoryNames.append(url.lastPathComponent)
+                            }
+                            
+                        }
+                        
+                    }
+                    print(arrAllDirectoryNames)
+                    
+                    for app in allowAppsPath{
+                        let appath = "/Applications/\(app).app"
+                        if FileManager.default.fileExists(atPath: appath){
+                            self.arrAllowedApps.append(appath)
+                        }else{
+                            for folder in arrAllDirectoryNames{
+                                let newAppPath = "/Applications/\(folder)/\(app).app"
+                                if FileManager.default.fileExists(atPath: newAppPath){
+                                    self.arrAllowedApps.append(newAppPath)
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+                
+//                self.arrAllowedApps = allowAppsPath
                 collectionViewApps.reloadData()
             }
             
@@ -124,6 +177,9 @@ class toolBoxVc: NSViewController {
                 }
                 tblViewUrls.reloadData()
             }
+            
+            boxForFocusMode.isHidden = true
+            boxForAllowedActivity.isHidden = false
         }
         
 
@@ -139,6 +195,12 @@ class toolBoxVc: NSViewController {
         }else{
             checkBoxDontShow.state = .on
         }
+        
+        if UserDefaults.standard.object(forKey: kUserdefaultsDontShowToolBoxAutomaticallyForActivity) as? Bool == false{
+            checkBoxDontShowForActivity.state = .off
+        }else{
+            checkBoxDontShowForActivity.state = .on
+        }
     }
     @IBAction func checkBoxDontShowAutoClicked(_ sender: Any) {
         if checkBoxDontShow.state == .on{
@@ -152,64 +214,60 @@ class toolBoxVc: NSViewController {
         }
         
     }
+    
+    @IBAction func checkBoxDontShowAutoForActivityClicked(_ sender: Any) {
+        if checkBoxDontShowForActivity.state == .on{
+            allApiObject.capturePosthog(event: "toolbox-checkbox-dont-show-checked-for-activity", metadata: [:])
+            addLog(text: "toolBoxVc:- checkBoxDontShowAutoForActivityClicked:- state is on")
+            UserDefaults.standard.set(true, forKey: kUserdefaultsDontShowToolBoxAutomaticallyForActivity)
+        }else{
+            allApiObject.capturePosthog(event: "toolbox-checkbox-dont-show-unchecked-for-activity", metadata: [:])
+            addLog(text: "toolBoxVc:- checkBoxDontShowAutoForActivityClicked:- state is off")
+            UserDefaults.standard.set(false, forKey: kUserdefaultsDontShowToolBoxAutomaticallyForActivity)
+        }
+        
+    }
 }
 
 extension toolBoxVc:NSCollectionViewDelegate, NSCollectionViewDataSource {
     
     func collectionView(_ collectionView: NSCollectionView, numberOfItemsInSection section: Int) -> Int {
-        if isFocusModeOn || isAnyAllowedFocusModeActivityRunning{
-            let allowAppsPath = currentRunningFocusType["allowed_apps"] as? [String] ?? []
-            return allowAppsPath.count
-        }else if currentHabitPlaying != nil{
-            let allowAppsPath = currentHabitPlaying?.allowApps ?? []
-            return allowAppsPath.count
-        }else{
-            return 0
-        }
+        return arrAllowedApps.count
     }
     
     func collectionView(_ collectionView: NSCollectionView, itemForRepresentedObjectAt indexPath: IndexPath) -> NSCollectionViewItem {
         
         let item = collectionView.makeItem(withIdentifier: NSUserInterfaceItemIdentifier(rawValue: "collectionCellToolBox"), for: indexPath) as! collectionCellToolBox
         
-        var allowAppsPath = [String]()
-        
-        if isFocusModeOn || isAnyAllowedFocusModeActivityRunning{
-            allowAppsPath = currentRunningFocusType["allowed_apps"] as? [String] ?? []
-            if item.btnIcon != nil{
-                item.btnIcon.image = NSWorkspace.shared.icon(forFile: allowAppsPath[indexPath.item])
-            }
-        }else if currentHabitPlaying != nil{
-            allowAppsPath = currentHabitPlaying?.allowApps ?? []
-            if item.btnIcon != nil{
-                item.btnIcon.image = NSWorkspace.shared.icon(forFile: "/Applications/\(allowAppsPath[indexPath.item]).app")
-            }
-        }else{
-            return item
+        if item.btnIcon != nil{
+            item.appName = URL(fileURLWithPath: arrAllowedApps[indexPath.item]).lastPathComponent
+            item.btnIcon.image = NSWorkspace.shared.icon(forFile: arrAllowedApps[indexPath.item])
         }
         
-        
-        item.urlString = ""
+//        if isFocusModeOn || isAnyAllowedFocusModeActivityRunning{
+//            if item.btnIcon != nil{
+//                item.appName = URL(fileURLWithPath: arrAllowedApps[indexPath.item]).lastPathComponent
+//                item.btnIcon.image = NSWorkspace.shared.icon(forFile: arrAllowedApps[indexPath.item])
+//            }
+//        }else if currentHabitPlaying != nil{
+//            if item.btnIcon != nil{
+//                item.appName = "\(arrAllowedApps[indexPath.item]).app"
+//                item.btnIcon.image = NSWorkspace.shared.icon(forFile: "/Applications/\(arrAllowedApps[indexPath.item]).app")
+//            }
+//        }else{
+//            return item
+//        }
+        item.lblAppName.stringValue = item.appName
         item.btnIcon.target = self
         item.btnIcon.tag = indexPath.item
         item.btnIcon.action = #selector(btnOpenAppClicked(sender:))
-        
+        item.setTrackingArea()
         return item
     }
     
     @objc func btnOpenAppClicked(sender:NSButton){
         addLog(text: "toolBoxVc:- btnOpenAppClicked")
-        var allowAppsPath = [String]()
-        
-        if isFocusModeOn || isAnyAllowedFocusModeActivityRunning{
-            allowAppsPath = currentRunningFocusType["allowed_apps"] as? [String] ?? []
-            NSWorkspace.shared.launchApplication(allowAppsPath[sender.tag])
-        }else if currentHabitPlaying != nil{
-            allowAppsPath = currentHabitPlaying?.allowApps ?? []
-            NSWorkspace.shared.launchApplication("/Applications/\(allowAppsPath[sender.tag]).app")
-        }else{
-            return;
-        }
+        NSWorkspace.shared.launchApplication(arrAllowedApps[sender.tag])
 
         allApiObject.capturePosthog(event: "toolbox-open-app-clicked", metadata: [:])
     }

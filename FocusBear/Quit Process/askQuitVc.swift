@@ -256,41 +256,60 @@ class askQuitVc: NSViewController {
         
     }
     
+
     @IBAction func btnSkipClicked(_ sender: Any) {
-        mainWindowControllerObj?.window?.setIsVisible(true)
-        showBlankWindowInSecondaryMonitor()
-        setDocBarTo(isHide: false)
-        timerViewcontrollerObj?.btnPauseClicked(self)
-        
-        if currentHabitPlaying != nil{
-            if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
-                if smallCountDownWcObj?.window != nil{
-                    if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
-                        getSmallCountDownWindowObject().window?.close()
-                        if getsmallCountDownVcObject().timer != nil {
-                            getsmallCountDownVcObject().timer?.invalidate()
-                        }
-                    }
+        addLog(text: "button Skip Clicked")
+        if (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_) && currentAction == ._INPROGRESS_{
+            isLastActivityStoppedInRunningState = true
+            lastActivityStoppedTimerCount = timerViewcontrollerObj?.currentTimer ?? 0
+            mainWindowControllerObj?.showWindow(self)
+            showBlankWindowInSecondaryMonitor()
+            timerViewcontrollerObj?.btnPauseClicked(self)
+            timerViewcontrollerObj?.btnSkipHabitClicked(self)
+            if smallCountDownWcObj != nil{
+                if smallCountDownWcObj!.window?.isVisible ?? false{
+                    getsmallCountDownVcObject().closeTimerBox()
                 }
             }
+            self.view.window?.close()
+        }else{
+            self.view.window?.close()
         }
-        currentHabitPlaying = nil
-        currentActivityPlaying = nil
-        if rememberNextHabitVcObj != nil{
-            if thirdVcObj!.view.subviews.contains(rememberNextHabitVcObj!.view){
-                rememberNextHabitVcObj!.view.removeFromSuperview()
-                thirdVcObj?.boxBg.isHidden = false
-            }
-        }
-        mainViewControllerObj?.showThirdVc()
-        if currentState == ._ACTIVITY_{
-
-        }else if currentState == ._MORNING_HABIT_{
-            thirdVcObj?.morningHabitSkipped()
-        }else if currentState == ._EVENING_HABIT_{
-            thirdVcObj?.eveningHabitSkipped()
-        }
-        self.view.window?.close()
+//        return;
+//        mainWindowControllerObj?.window?.setIsVisible(true)
+//        showBlankWindowInSecondaryMonitor()
+//        setDocBarTo(isHide: false)
+//        timerViewcontrollerObj?.btnPauseClicked(self)
+//
+//        if currentHabitPlaying != nil{
+//            if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
+//                if smallCountDownWcObj?.window != nil{
+//                    if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
+//                        getSmallCountDownWindowObject().window?.close()
+//                        if getsmallCountDownVcObject().timer != nil {
+//                            getsmallCountDownVcObject().timer?.invalidate()
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//        currentHabitPlaying = nil
+//        currentActivityPlaying = nil
+//        if rememberNextHabitVcObj != nil{
+//            if thirdVcObj!.view.subviews.contains(rememberNextHabitVcObj!.view){
+//                rememberNextHabitVcObj!.view.removeFromSuperview()
+//                thirdVcObj?.boxBg.isHidden = false
+//            }
+//        }
+//        mainViewControllerObj?.showThirdVc()
+//        if currentState == ._ACTIVITY_{
+//
+//        }else if currentState == ._MORNING_HABIT_{
+//            thirdVcObj?.morningHabitSkipped()
+//        }else if currentState == ._EVENING_HABIT_{
+//            thirdVcObj?.eveningHabitSkipped()
+//        }
+//        self.view.window?.close()
     }
     
     @IBAction func btnAppQuitClicked(_ sender: Any) {

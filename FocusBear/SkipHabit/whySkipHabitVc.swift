@@ -42,8 +42,12 @@ class whySkipHabitVc: NSViewController {
             mainViewControllerObj?.showThirdVc()
         }
         
+        if currentAction == ._START_{// break activity case
+            mainViewControllerObj?.showThirdVc()
+        }
+        
         if currentState == ._ACTIVITY_{
-
+            thirdVcObj?.activitySkippedAndDoneAlready()
         }else if currentState == ._MORNING_HABIT_{
             thirdVcObj?.morningHabitSkippedAndDoneAlready()
         }else if currentState == ._EVENING_HABIT_{
@@ -56,75 +60,91 @@ class whySkipHabitVc: NSViewController {
         addLog(text: "whySkipHabitVc:- button AlreadyDidItClicked")
         self.view.removeFromSuperview()
         
-        
-        if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
-            if currentState == ._MORNING_HABIT_{
-                if SettingsManagerObject.isPasswordRequireInSkipMorning{
-                    mainViewControllerObj?.showPasswordView()
-                    enterPasswordVcObj?.parentVc = self
-                }else{
-                    skipActivityAlreadyDid()
-                }
-                
-            }else if currentState == ._EVENING_HABIT_{
-                if isHighPrioritySequenceGoing{
-                    if SettingsManagerObject.isPasswordRequireInSkipEveningAfterCutOff{
-                        mainViewControllerObj?.showPasswordView()
-                        enterPasswordVcObj?.parentVc = self
-                    }else{
-                        skipActivityAlreadyDid()
-                    }
-                }else{
-                    if SettingsManagerObject.isPasswordRequireInSkipEvening{
-                        mainViewControllerObj?.showPasswordView()
-                        enterPasswordVcObj?.parentVc = self
-                    }else{
-                        skipActivityAlreadyDid()
-                    }
-                }
-                
-            }
-            
-        }else{
+        if currentState == ._ACTIVITY_{
             skipActivityAlreadyDid()
+        }else{
+            if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
+                if currentState == ._MORNING_HABIT_{
+                    if SettingsManagerObject.isPasswordRequireInSkipMorning{
+                        mainViewControllerObj?.showPasswordView()
+                        enterPasswordVcObj?.parentVc = self
+                    }else{
+                        skipActivityAlreadyDid()
+                    }
+                    
+                }else if currentState == ._EVENING_HABIT_{
+                    if isHighPrioritySequenceGoing{
+                        if SettingsManagerObject.isPasswordRequireInSkipEveningAfterCutOff{
+                            mainViewControllerObj?.showPasswordView()
+                            enterPasswordVcObj?.parentVc = self
+                        }else{
+                            skipActivityAlreadyDid()
+                        }
+                    }else{
+                        if SettingsManagerObject.isPasswordRequireInSkipEvening{
+                            mainViewControllerObj?.showPasswordView()
+                            enterPasswordVcObj?.parentVc = self
+                        }else{
+                            skipActivityAlreadyDid()
+                        }
+                    }
+                    
+                }
+                
+            }else{
+                skipActivityAlreadyDid()
+            }
         }
+        
         
     }
     @IBAction func btnCanNotDoItClicked(_ sender: Any) {
         addLog(text: "whySkipHabitVc:- button CanNotDoItClicked")
         self.view.removeFromSuperview()
-        if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
-            if currentState == ._MORNING_HABIT_{
-                if SettingsManagerObject.isPasswordRequireInSkipMorning{
-                    mainViewControllerObj?.showPasswordView()
-                    enterPasswordVcObj?.parentVc = getSkipHabitVcObject()
-                }else{
-                    mainViewControllerObj?.showSkipHabitView()
-                }
-                
-            }else if currentState == ._EVENING_HABIT_{
-                if isHighPrioritySequenceGoing{
-                    if SettingsManagerObject.isPasswordRequireInSkipEveningAfterCutOff{
-                        mainViewControllerObj?.showPasswordView()
-                        enterPasswordVcObj?.parentVc = getSkipHabitVcObject()
-                    }else{
-                        mainViewControllerObj?.showSkipHabitView()
-                    }
-                }else{
-                    if SettingsManagerObject.isPasswordRequireInSkipEvening{
-                        mainViewControllerObj?.showPasswordView()
-                        enterPasswordVcObj?.parentVc = getSkipHabitVcObject()
-                    }else{
-                        mainViewControllerObj?.showSkipHabitView()
-                    }
-                }
-            }
-        }else{
+        
+        if currentState == ._ACTIVITY_{
             mainViewControllerObj?.showSkipHabitView()
+        }else{
+            if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
+                if currentState == ._MORNING_HABIT_{
+                    if SettingsManagerObject.isPasswordRequireInSkipMorning{
+                        mainViewControllerObj?.showPasswordView()
+                        enterPasswordVcObj?.parentVc = getSkipHabitVcObject()
+                    }else{
+                        mainViewControllerObj?.showSkipHabitView()
+                    }
+                    
+                }else if currentState == ._EVENING_HABIT_{
+                    if isHighPrioritySequenceGoing{
+                        if SettingsManagerObject.isPasswordRequireInSkipEveningAfterCutOff{
+                            mainViewControllerObj?.showPasswordView()
+                            enterPasswordVcObj?.parentVc = getSkipHabitVcObject()
+                        }else{
+                            mainViewControllerObj?.showSkipHabitView()
+                        }
+                    }else{
+                        if SettingsManagerObject.isPasswordRequireInSkipEvening{
+                            mainViewControllerObj?.showPasswordView()
+                            enterPasswordVcObj?.parentVc = getSkipHabitVcObject()
+                        }else{
+                            mainViewControllerObj?.showSkipHabitView()
+                        }
+                    }
+                }
+            }else{
+                mainViewControllerObj?.showSkipHabitView()
+            }
         }
     }
     @IBAction func btnCloseClicked(_ sender: Any) {
         addLog(text: "whySkipHabitVc:- button CloseClicked")
         self.view.removeFromSuperview()
+        
+//        if currentHabitPlaying != nil{//it means allowed app activity
+//            mainWindowControllerObj?.window?.close()
+//            hideBlankWindowInSecondaryMonitor()
+//            currentState = ._NOTHING_
+//            appdelegate?.backgroundThread()
+//        }
     }
 }

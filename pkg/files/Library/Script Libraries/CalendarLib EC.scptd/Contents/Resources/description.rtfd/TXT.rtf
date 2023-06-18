@@ -1,0 +1,365 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2706
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica-Bold;\f1\fswiss\fcharset0 Helvetica;\f2\fswiss\fcharset0 Helvetica-Oblique;
+\f3\fnil\fcharset0 LucidaGrande;\f4\fnil\fcharset0 Verdana-Bold;\f5\fnil\fcharset0 Verdana;
+\f6\fnil\fcharset0 Verdana-Italic;}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue255;\red0\green0\blue0;\red76\green78\blue78;
+\red64\green128\blue0;\red0\green22\blue176;\red108\green5\blue211;\red68\green21\blue176;}
+{\*\expandedcolortbl;;\csgenericrgb\c0\c0\c100000;\csgenericrgb\c0\c0\c0;\csgenericrgb\c29804\c30588\c30588;
+\csgenericrgb\c25098\c50196\c0;\csgenericrgb\c0\c8627\c69020;\csgenericrgb\c42353\c1961\c82745;\csgenericrgb\c26667\c8235\c69020;}
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\sl288\slmult1\slminimum280\sb120\pardirnatural\partightenfactor0
+
+\f0\b\fs36 \cf0 CalendarLib EC\
+
+\f1\b0\fs28 v1.1.5, February 2021\
+CalendarLib EC is a script library for manipulating calendar events without using Calendar.app. It requires OS X 10.11 or later. If you require support for 10.9 or 10.10, you should use the original CalendarLib. The only difference is that the original version also requires the BridgePlus library, and and parameters to the commands are not optional.\
+The advantages of using CalendarLib EC or calendarLib rather than Calendar.app are:\
+* You don't need to have Calendar.app running.\
+* It's much faster. Hugely so, especially if you have a busy schedule.\
+* When you ask for events that fall between two dates, unlike Calendar.app it includes recurring events.\
+* If you want to change how it works, you can edit it to suit.\
+The disadvantages are:\
+* You need to instal two libraries, either in a central Script Libraries folder or within the bundle of applets.\
+* It doesn't support all the features of Calendar.app.\
+
+\f0\b\fs36 Installation\
+
+\f1\b0\fs28 To write scripts using CalendarLib EC, you should place a copy of it in 
+\f0\b ~/Library/Script Libraries
+\f1\b0  or 
+\f0\b /Library/Script Libraries
+\f1\b0 . If you have never used script libraries before, you will have to create this folder. For distribution, you can include the libraries within application bundles; see below.\
+Once it is installed, you can read CalendarLib\'92s dictionary by choosing 
+\f0\b File -> Open Dictionary...
+\f1\b0  in Script Editor. You can also see it in Script Debugger by dragging it over the editor\'92s icon while holding down the option key. Alternatively, you can see it in the enclosed pdf file.\
+
+\f0\b\fs36 Use
+\f1\b0\fs28 \
+Calendar.app uses a traditional scripting object model, but CalendarLib EC takes a different approach. First, you get a reference to the 
+\f0\b event source
+\f1\b0  (the central database of events). As part of this process, you will normally be prompted to approve access to your Calendar. Then you use this event store reference to get a reference to the calendar or calendars you intend to work on. With these two references, you can then fetch/create/modify/delete any 
+\f0\b events
+\f1\b0 . You are also responsible for saving any events you create or modify.\
+Event creation is done with the 
+\f0\b create event
+\f1\b0  command. If you want the event to use other than floating time, you also need to modify your new event using the 
+\f0\b modify zone
+\f1\b0  command. Once you create an event, you save it using the 
+\f0\b store event
+\f1\b0  command. \
+You delete an event using 
+\f0\b remove event
+\f1\b0 .\
+You can search for events either by its id, using 
+\f0\b fetch events by UID
+\f1\b0 , or by supplying a start and end date plus a list of calendars using 
+\f0\b fetch events
+\f1\b0 . Unlike Calendar.app, this also returns recurring events that would happen during the time span. You can filter the result of either initial search. The 
+\f0\b filter events
+\f1\b0  command searches for case-insensitive matches, while the 
+\f0\b filter events by pattern
+\f1\b0  command lets you use wildcards and regular expressions; in both cases, you pass 
+\f2\i missing value
+\f1\i0  for parameters to ignore.\
+Once you have an event, either by creating one of fetching an existing one, you can modify it using 
+\f0\b modify event
+\f1\b0 , 
+\f0\b modify zone
+\f1\b0 , 
+\f0\b modify recurrence
+\f1\b0  and 
+\f0\b stop recurrence
+\f1\b0 . Modifying includes moving to a new calendar. When you finish modifying an event, you have to call 
+\f0\b store event
+\f1\b0  to save the changes.\
+You can also get the properties of an event, using 
+\f0\b event info for
+\f1\b0 , which returns a record. The 
+\f3 \uc0\u8747 
+\f1  command returns the UID as used by Calendar.app. You can also get information about attendees with 
+\f0\b event attendees for
+\f1\b0 , and get details of the recurrence rules with 
+\f0\b event recurrence for
+\f1\b0 .\
+A few examples should demonstrate how to use it. To get a calendar, you need to provide a name plus a type (the possible types are listed in the dictionary):\
+\
+\pard\pardeftab560\li560\fi-560\slleading22\pardirnatural\partightenfactor0
+
+\f4\b\fs24 \cf0 use
+\f5\b0  
+\f6\i \cf2 script
+\f5\i0 \cf0  "CalendarLib EC"\cf3  \cf2 version\cf3  \cf0 "\cf3 1.1.5\cf0 " \cf4 -- put this at the top of your scripts\cf0 \
+
+\f4\b use
+\f5\b0  
+\f6\i \cf2 scripting additions
+\f5\i0 \cf0 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab560\pardirnatural\partightenfactor0
+\cf0 \
+\pard\pardeftab560\li560\fi-560\slleading22\pardirnatural\partightenfactor0
+\cf4 -- fetch properties of events for next week\cf0 \
+
+\f4\b set
+\f5\b0  \cf5 d1\cf0  
+\f4\b to
+\f5\b0  
+\f4\b \cf6 current date
+\f5\b0 \cf0 \
+
+\f4\b set
+\f5\b0  \cf5 d2\cf0  
+\f4\b to
+\f5\b0  \cf5 d1\cf0  + 7 * \cf7 days\cf0 \
+
+\f4\b set
+\f5\b0  \cf5 theStore\cf0  
+\f4\b to
+\f5\b0  
+\f4\b \cf6 fetch store
+\f5\b0 \cf0 \
+
+\f4\b set
+\f5\b0  \cf5 theCal\cf0  
+\f4\b to
+\f5\b0  
+\f4\b \cf6 fetch calendar
+\f5\b0 \cf0  "Home" \cf6 cal type\cf0  
+\f6\i \cf8 cal cloud
+\f5\i0 \cf0  \cf6 event store\cf0  \cf5 theStore\cf0  \cf4 -- change to suit\cf0 \
+
+\f4\b set
+\f5\b0  \cf5 theEvents\cf0  
+\f4\b to
+\f5\b0  
+\f4\b \cf6 fetch events
+\f5\b0 \cf0  \cf6 starting date\cf0  \cf5 d1\cf0  \cf6 ending date\cf0  \cf5 d2\cf0  \cf6 searching cals\cf0  \{\cf5 theCal\cf0 \} \cf6 event store\cf0  \cf5 theStore\cf0 \
+
+\f4\b repeat
+\f5\b0  
+\f4\b with
+\f5\b0  \cf5 anEvent\cf0  
+\f4\b in
+\f5\b0  \cf5 theEvents\cf0 \
+\pard\pardeftab560\li1120\fi-1120\slleading22\pardirnatural\partightenfactor0
+\cf0 	
+\f4\b \cf2 log
+\f5\b0 \cf0  (
+\f4\b \cf6 event info for
+\f5\b0 \cf0  \cf6 event\cf0  \cf5 anEvent\cf0 )\
+	
+\f4\b \cf2 log
+\f5\b0 \cf0  (
+\f4\b \cf6 event identifier for
+\f5\b0 \cf0  \cf6 event\cf0  \cf5 anEvent\cf0 )\
+	
+\f4\b \cf2 log
+\f5\b0 \cf0  (
+\f4\b \cf6 event attendees for
+\f5\b0 \cf0  \cf6 event\cf0  \cf5 anEvent\cf0 )\
+	
+\f4\b \cf2 log
+\f5\b0 \cf0  (
+\f4\b \cf6 event recurrence for
+\f5\b0 \cf0  \cf6 event\cf0  \cf5 anEvent\cf0 )\
+\pard\pardeftab560\li560\fi-560\slleading22\pardirnatural\partightenfactor0
+
+\f4\b \cf0 end
+\f5\b0  
+\f4\b repeat
+\f5\b0 \
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\sl288\slmult1\slminimum280\sb120\pardirnatural\partightenfactor0
+
+\f1\fs28 \cf0 \
+Here is an example of creating an event:\
+\
+\pard\pardeftab560\li560\fi-560\slleading22\pardirnatural\partightenfactor0
+
+\f4\b\fs24 \cf0 use
+\f5\b0  
+\f6\i \cf2 script
+\f5\i0 \cf0  "CalendarLib EC"\cf3  \cf2 version\cf3  \cf0 "\cf3 1.1.5\cf0 " \cf4 -- put this at the top of your scripts\cf0 \
+
+\f4\b use
+\f5\b0  
+\f6\i \cf2 scripting additions
+\f5\i0 \cf0 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab560\pardirnatural\partightenfactor0
+\cf0 \
+\pard\pardeftab560\li560\fi-560\slleading22\pardirnatural\partightenfactor0
+
+\f4\b \cf0 set
+\f5\b0  \cf5 d1\cf0  
+\f4\b to
+\f5\b0  
+\f4\b \cf6 current date
+\f5\b0 \cf0 \
+
+\f4\b set
+\f5\b0  \cf5 d2\cf0  
+\f4\b to
+\f5\b0  \cf5 d1\cf0  + 1 * \cf7 hours\cf0 \
+
+\f4\b set
+\f5\b0  \cf5 theStore\cf0  
+\f4\b to
+\f5\b0  
+\f4\b \cf6 fetch store
+\f5\b0 \cf0 \
+
+\f4\b set
+\f5\b0  \cf5 theCal\cf0  
+\f4\b to
+\f5\b0  
+\f4\b \cf6 fetch calendar
+\f5\b0 \cf0  "Home" \cf6 cal type\cf0  
+\f6\i \cf8 cal cloud
+\f5\i0 \cf0  \cf6 event store\cf0  \cf5 theStore\cf0  \cf4 -- change to suit\cf0 \
+
+\f4\b set
+\f5\b0  \cf5 theEvent\cf0  
+\f4\b to
+\f5\b0  
+\f4\b \cf6 create event
+\f5\b0 \cf0  \cf6 event store\cf0  \cf5 theStore\cf0  \cf6 destination calendar\cf0  \cf5 theCal\cf0  \cf6 event summary\cf0  "A test event" \cf6 starting date\cf0  \cf5 d1\cf0  \cf6 ending date\cf0  \cf5 d2\cf0  \cf6 event location\cf0  "Around here" \cf6 event description\cf0  "some notes" 
+\f4\b without
+\f5\b0  \cf6 runs all day\cf0 \
+\pard\pardeftab560\li560\fi-560\slleading22\pardirnatural\partightenfactor0
+
+\f4\b \cf6 store event
+\f5\b0 \cf0  \cf6 event\cf0  \cf5 theEvent\cf0  \cf6 event store\cf0  \cf5 theStore\cf0 \
+\pard\pardeftab560\li560\fi-560\slleading22\pardirnatural\partightenfactor0
+
+\f4\b \cf0 return
+\f5\b0  
+\f4\b \cf6 event identifier for
+\f5\b0 \cf0  \cf6 event\cf0  \cf5 theEvent\cf0 \
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\sl288\slmult1\slminimum280\sb120\pardirnatural\partightenfactor0
+
+\f1\fs28 \cf0 \
+And here is an example of filtering and getting the properties of the event created above:\
+\
+\pard\pardeftab560\li560\fi-560\slleading22\pardirnatural\partightenfactor0
+
+\f4\b\fs24 \cf0 use
+\f5\b0  
+\f6\i \cf2 script
+\f5\i0 \cf0  "CalendarLib EC"\cf3  \cf2 version\cf3  \cf0 "\cf3 1.1.5\cf0 " \cf4 -- put this at the top of your scripts\cf0 \
+
+\f4\b use
+\f5\b0  
+\f6\i \cf2 scripting additions
+\f5\i0 \cf0 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab560\pardirnatural\partightenfactor0
+\cf0 \
+\pard\pardeftab560\li560\fi-560\slleading22\pardirnatural\partightenfactor0
+
+\f4\b \cf0 set
+\f5\b0  \cf5 d1\cf0  
+\f4\b to
+\f5\b0  
+\f4\b \cf6 current date
+\f5\b0 \cf0 \
+
+\f4\b set
+\f5\b0  \cf5 d2\cf0  
+\f4\b to
+\f5\b0  \cf5 d1\cf0  + 1 * \cf7 hours\cf0 \
+
+\f4\b set
+\f5\b0  \cf5 theStore\cf0  
+\f4\b to
+\f5\b0  
+\f4\b \cf6 fetch store
+\f5\b0 \cf0 \
+
+\f4\b set
+\f5\b0  \cf5 theCal\cf0  
+\f4\b to
+\f5\b0  
+\f4\b \cf6 fetch calendar
+\f5\b0 \cf0  "Home" \cf6 cal type\cf0  
+\f6\i \cf8 cal cloud
+\f5\i0 \cf0  \cf6 event store\cf0  \cf5 theStore\cf0  \cf4 -- change to suit\cf0 \
+
+\f4\b set
+\f5\b0  \cf5 theEvents\cf0  
+\f4\b to
+\f5\b0  
+\f4\b \cf6 fetch events
+\f5\b0 \cf0  \cf6 starting date\cf0  \cf5 d1\cf0  \cf6 ending date\cf0  \cf5 d2\cf0  \cf6 searching cals\cf0  \{\cf5 theCal\cf0 \} \cf6 event store\cf0  \cf5 theStore\cf0 \
+\cf4 -- filter by matching location\cf0 \
+
+\f4\b set
+\f5\b0  \cf5 theEvents\cf0  
+\f4\b to
+\f5\b0  
+\f4\b \cf6 filter events
+\f5\b0 \cf0  \cf6 event list\cf0  \cf5 theEvents\cf0  \cf6 event location\cf0  "around Here"\
+\cf4 -- filter by matching summary using wildcards\cf0 \
+
+\f4\b set
+\f5\b0  \cf5 theEvents\cf0  
+\f4\b to
+\f5\b0  
+\f4\b \cf6 filter events by pattern
+\f5\b0 \cf0  \cf6 event list\cf0  \cf5 theEvents\cf0  \cf6 event summary\cf0  "* test *" 
+\f4\b without
+\f5\b0  \cf6 using regex\cf0 \
+
+\f4\b return
+\f5\b0  
+\f4\b \cf6 event info for
+\f5\b0 \cf0  \cf6 event\cf0  (
+\f6\i \cf2 item
+\f5\i0 \cf0  1 
+\f4\b of
+\f5\b0  \cf5 theEvents\cf0 )\
+\pard\pardeftab560\li560\fi-560\slleading22\pardirnatural\partightenfactor0
+
+\f1\fs28 \cf0 \
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\sl288\slmult1\slminimum280\sb120\pardirnatural\partightenfactor0
+
+\f0\b\fs36 \cf0 Changes\
+
+\f1\b0\fs28 Version 1.1.1 adds a boolean 
+\f0\b all_day
+\f1\b0  property to the record returned by the 
+\f0\b event info for
+\f1\b0  command.\
+\pard\pardeftab560\li560\fi-560\sl288\slmult1\slminimum280\sb120\pardirnatural\partightenfactor0
+\cf0 Version 1.1.2 fixes a bug that would cause an error in trying to get the 
+\f0\b event recurrence
+\f1\b0  for an event for which no end has been defined.\
+Version 1.1.3 fixes a bug that would cause the 
+\f0\b modify zone
+\f1\b0  command to throw an error, plus some dictionary errors.\
+Version 1.1.4 works around an issue where AppleScript compiler would confuse 
+\f2\i specifier
+\f1\i0  and 
+\f2\i reference
+\f1\i0 .\
+Version 1.1.5 works around a bug in the EventKit framework when running on an Apple silicon Mac.\
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\sl288\slmult1\slminimum280\sb120\pardirnatural\partightenfactor0
+
+\f0\b\fs36 \cf0 Deployment\
+
+\f1\b0\fs28 You can embed CalendarLib EC in applets and script bundles for distribution, in which case they do not need to be in 
+\f0\b ~/Library/Script Libraries
+\f1\b0 . You can do this either within Script Editor by showing the Resources sidebar or drawer, or by control-clicking in the Finder and choosing 
+\f0\b Show Package Contents
+\f1\b0 . You then need to make a new folder in 
+\f0\b Contents/Resources
+\f1\b0  called 
+\f0\b Script Libraries
+\f1\b0 , and copy the libraries into it.\
+
+\f0\b\fs36 Legal stuff\
+
+\f1\b0\fs28 CalendarLib EC is Copyright (c) 2015-21 Shane Stanley <sstanley@myriad-com.com.au>\
+All rights reserved.\
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\
+Modified versions should be distributed under a name other than CalendarLib or CalendarLib EC. \
+<https://latenightsw.com/support/freeware/>\
+\
+}

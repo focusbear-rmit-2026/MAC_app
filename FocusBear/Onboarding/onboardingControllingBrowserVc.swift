@@ -10,6 +10,7 @@ import Cocoa
 
 class onboardingControllingBrowserVc: NSViewController {
 
+    @IBOutlet weak var btnDidNotWork: Button!
     @IBOutlet weak var tblView: NSTableView!
     @IBOutlet weak var btnContinue: Button!
     @IBOutlet weak var lblDescription: NSTextField!
@@ -29,7 +30,7 @@ class onboardingControllingBrowserVc: NSViewController {
         lblDescription.stringValue = "Alright, now you need to give Focus Bear permission to block distraction. Open your browser and you'll see a popup seeking permission. Click OK in the popup that shows."//
         btnContinue.title = "Permission Granted"
         btnContinue.isEnabled = false
-        
+        btnDidNotWork.title = "It didn't work"
         
 //        var safariText = "Enable to capture website URLs in Safari to block or allow URLs[NEEDSTRANSLATION]"
 //        var googleChromeText = "Enable to capture website URLs in Google Chrome to block or allow URLs[NEEDSTRANSLATION]"
@@ -42,7 +43,7 @@ class onboardingControllingBrowserVc: NSViewController {
             lblTitle.stringValue = dic.value(forKey: "title") as? String ?? lblTitle.stringValue
             lblDescription.stringValue = dic.value(forKey: "descriptionText") as? String ?? lblDescription.stringValue
             btnContinue.title = dic.value(forKey: "buttonPermissionGrantedText") as? String ?? btnContinue.title
-            
+            btnDidNotWork.title = dic.value(forKey: "buttonDidNotWorkText") as? String ?? btnDidNotWork.title
 //            safariText = dic.value(forKey: "safariText") as? String ?? safariText
 //            googleChromeText = dic.value(forKey: "googleChromeText") as? String ?? googleChromeText
 //            sidekickText = dic.value(forKey: "sidekickText") as? String ?? sidekickText
@@ -85,9 +86,12 @@ class onboardingControllingBrowserVc: NSViewController {
         checkPermission()
         
         allApiObject.capturePosthog(event: "permission-to-block-distractions-shown", metadata: [:])
+        
+        btnDidNotWork.buttonColor = NSColor.white.cgColor
     }
     
     override func viewWillAppear() {
+        UserDefaults.standard.set(true, forKey: kUserdefaultsControllingBrowserVcShown)
         DispatchQueue.global().sync {
             if self.checkPermissionTimer != nil{
                 self.checkPermissionTimer?.invalidate()
@@ -134,6 +138,10 @@ class onboardingControllingBrowserVc: NSViewController {
     }
     
     @IBAction func btnContinueClicked(_ sender: Any) {
+        self.view.window?.contentViewController = getTryBlockUrlVcObject()
+    }
+    @IBAction func btnDidNotWorkClicked(_ sender: Any) {
+        allApiObject.capturePosthog(event: "onboarding-browser-permission-did-not-work", metadata: [:])
         self.view.window?.contentViewController = getTryBlockUrlVcObject()
     }
 }

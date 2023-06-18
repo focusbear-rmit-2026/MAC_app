@@ -11,14 +11,14 @@ import Cocoa
 class focusPreferencesVc: NSViewController, NSMenuDelegate {
     
     
-    @IBOutlet weak var imgViewInfo: NSImageView!
+    
+    @IBOutlet weak var btnDndInfo: hoverInfoButton!
     @IBOutlet weak var checkBoxAutoDoNotDisturb: NSButton!
     @IBOutlet weak var heightTblViewApps: NSLayoutConstraint!
     @IBOutlet weak var lblDescriptionAlwaysBlockedUrls: NSTextField!
     @IBOutlet weak var lblTitleBlockApp: NSTextField!
-    @IBOutlet weak var bntColorBoxInfo: NSButton!
+    @IBOutlet weak var bntColorBoxInfo: hoverInfoButton!
     @IBOutlet weak var lblUrlsQuestion: NSTextField!
-    //    @IBOutlet weak var popUpBtnUrlBox: NSPopUpButton!#453
     @IBOutlet weak var colorWell: NSColorWell!
     @IBOutlet weak var btnAdvanced: NSButton!
     @IBOutlet weak var horizontalLineSeprator: NSBox!
@@ -33,10 +33,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
     @IBOutlet weak var boxAllowedApps: NSBox!
     @IBOutlet weak var lblNoFocusAdded: NSTextField!
     @IBOutlet weak var boxEmptyFocusType: NSBox!
-    //    @IBOutlet weak var toggleButton: CToggleButton!
-    //    @IBOutlet weak var lblTitle: NSTextField!
-    //    @IBOutlet weak var lblTitleAllowedUrls: NSTextField!
-    //    @IBOutlet weak var lblTitleAllowedApps: NSTextField!
+
     @IBOutlet weak var textFieldSelectedFocusType: NSTextField!
     
     @IBOutlet weak var tblViewAllowedApps: NSTableView!
@@ -52,8 +49,8 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
     
     @IBOutlet weak var btnDuplicateFocusType: NSButton!
     
-    var btnInfoColorBoxTrackingArea: NSTrackingArea?
-    var infoAutoDndOnTrackingArea: NSTrackingArea?
+//    var btnInfoColorBoxTrackingArea: NSTrackingArea?
+//    var infoAutoDndOnTrackingArea: NSTrackingArea?
     
     var titleAllowedAllUrls = "Allow all urls"
     var titleAllowedSelectedUrls = "Allow selected urls (works with Safari and Chrome only)"
@@ -80,7 +77,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         
         checkBoxAutoDoNotDisturb.title = "Block Notifications while focusing"
                                     
-        lblDescriptionAlwaysBlockedUrls.stringValue = "When you use this focus mode, all websites will be allowed except for your Always Blocked URLs"
+        
         lblTitleBlockApp.stringValue = "Which apps do you want to block?"
         
         var toolTipAdd = "Add"
@@ -127,7 +124,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
             allowUrlsQuestionText = focusPreferencesInfo.value(forKey: "allowUrlsQuestionText") as? String ?? allowUrlsQuestionText
             blockUrlsQuestionText = focusPreferencesInfo.value(forKey: "blockUrlsQuestionText") as? String ?? blockUrlsQuestionText
             
-            lblDescriptionAlwaysBlockedUrls.stringValue = focusPreferencesInfo.value(forKey: "descriptionAlwaysBlockedUrls") as? String ?? lblDescriptionAlwaysBlockedUrls.stringValue
+//            lblDescriptionAlwaysBlockedUrls.stringValue = focusPreferencesInfo.value(forKey: "descriptionAlwaysBlockedUrls") as? String ?? lblDescriptionAlwaysBlockedUrls.stringValue
             lblTitleBlockApp.stringValue = focusPreferencesInfo.value(forKey: "titleBlockedApps") as? String ?? lblTitleBlockApp.stringValue
             checkBoxAutoDoNotDisturb.title = focusPreferencesInfo.value(forKey: "checkBoxDoNotDisturbText") as? String ?? checkBoxAutoDoNotDisturb.title
         }
@@ -171,12 +168,12 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         
         
         
-        btnInfoColorBoxTrackingArea = NSTrackingArea.init(rect: bntColorBoxInfo.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
-        bntColorBoxInfo.addTrackingArea(btnInfoColorBoxTrackingArea!)
-        
-        
-        infoAutoDndOnTrackingArea = NSTrackingArea.init(rect: imgViewInfo.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
-        imgViewInfo.addTrackingArea(infoAutoDndOnTrackingArea!)
+//        btnInfoColorBoxTrackingArea = NSTrackingArea.init(rect: bntColorBoxInfo.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
+//        bntColorBoxInfo.addTrackingArea(btnInfoColorBoxTrackingArea!)
+//
+//
+//        infoAutoDndOnTrackingArea = NSTrackingArea.init(rect: imgViewInfo.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
+//        imgViewInfo.addTrackingArea(infoAutoDndOnTrackingArea!)
         
         
         if let common = configjson.value(forKey: "common") as? NSDictionary{
@@ -190,27 +187,55 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
             btnRemoveUrl.image = NSImage(systemSymbolName: "minus.square.fill", accessibilityDescription: nil)
         }
         
+        arrForSearchFromSettings.append(["title": btnAddFocusType.title, "tabId": idFocus, "object": btnAddFocusType as Any])
+        arrForSearchFromSettings.append(["title": radioBtnAllowAllApps.title, "tabId": idFocus, "object": radioBtnAllowAllApps as Any])
+        arrForSearchFromSettings.append(["title": radioBtnAllowSelectedApps.title, "tabId": idFocus, "object": radioBtnAllowSelectedApps as Any])
         
-    }
-    
-    
- 
-    override func mouseEntered(with event: NSEvent) {
-        if event.trackingArea == btnInfoColorBoxTrackingArea{
-            showTooltip(sender: bntColorBoxInfo, msg: toolTipColorBox, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
-        }else if event.trackingArea == infoAutoDndOnTrackingArea{
-            showTooltip(sender: imgViewInfo, msg: toolTipDndMode, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
+        arrForSearchFromSettings.append(["title": radioBtnAllowListApproch.title, "tabId": idFocus, "object": radioBtnAllowListApproch as Any])
+        arrForSearchFromSettings.append(["title": radioBtnBlockListApproch.title, "tabId": idFocus, "object": radioBtnBlockListApproch as Any])
+        arrForSearchFromSettings.append(["title": checkBoxAutoDoNotDisturb.title, "tabId": idFocus, "object": checkBoxAutoDoNotDisturb as Any])
+        
+        if focusPreferencesAdvancedVcObj == nil{
+            focusPreferencesAdvancedVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("focusPreferencesAdvancedVc")) as? focusPreferencesAdvancedVc
+            focusPreferencesAdvancedVcObj?.loadView()
         }
-    }
-    override func mouseExited(with event: NSEvent) {
-        if event.trackingArea == btnInfoColorBoxTrackingArea || event.trackingArea == infoAutoDndOnTrackingArea{
-            if popoverTooltip != nil{
-                if popoverTooltip!.isShown{
-                    popoverTooltip?.close()
-                }
+        
+//        if let focusPreferencesAdvancedInfo = configjson.value(forKey: "focusPreferencesAdvancedInfo") as? NSDictionary{
+//            if let msg = focusPreferencesAdvancedInfo.value(forKey: "needDndPermissionText") as? String {
+//                arrForSearchFromSettings.append(["title": msg, "tabId": idFocus])
+//            }
+//        }
+        if let focusPreferencesAdvancedInfo = configjson.value(forKey: "focusPreferencesAdvancedInfo") as? NSDictionary{
+            if let runScriptBeforeText = focusPreferencesAdvancedInfo.value(forKey: "runScriptBeforeText") as? String {
+                arrForSearchFromSettings.append(["title": runScriptBeforeText, "tabId": "focusAdvanced", "object": focusPreferencesAdvancedVcObj?.checkBoxRunScriptBeforeFocus as Any])
+                
             }
+            if let runScriptAfterText = focusPreferencesAdvancedInfo.value(forKey: "runScriptAfterText") as? String{
+                arrForSearchFromSettings.append(["title": runScriptAfterText, "tabId": "focusAdvanced", "object": focusPreferencesAdvancedVcObj?.checkBoxRunScriptAfterFocus as Any])
+            }
+
+            
+            if let title = focusPreferencesAdvancedInfo.value(forKey: "runShellCommandBeforeText") as? String {
+                arrForSearchFromSettings.append(["title": title, "tabId": "focusAdvanced", "object": focusPreferencesAdvancedVcObj?.checkBoxRunShellBeforeFocus as Any])
+            }
+            if let title = focusPreferencesAdvancedInfo.value(forKey: "runShellCommandAfterText") as? String {
+                arrForSearchFromSettings.append(["title": title, "tabId": "focusAdvanced", "object": focusPreferencesAdvancedVcObj?.checkBoxRunShellAfterFocus as Any])
+            }
+    
         }
+        boxAllowedApps.wantsLayer = true
+        boxAllowedApps.layer?.cornerRadius = 5
+        
+        boxAllowedWebUrls.wantsLayer = true
+        boxAllowedWebUrls.layer?.cornerRadius = 5
     }
+    
+    
+    @IBAction func btnDndInfoClicked(_ sender: Any) {
+        showTooltip(sender: btnDndInfo, msg: toolTipDndMode, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
+    }
+    
+
     @IBAction func bntColorBoxInfoClicked(_ sender: Any) {
         addLog(text: "bntColorBoxInfoClicked")
         showTooltip(sender: bntColorBoxInfo, msg: toolTipColorBox, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
@@ -346,6 +371,9 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
     }
     //    var cp = NSColorPanel.shared
     override func viewWillAppear() {
+//        let origin = preferencesWindowControllerObj?.window?.frame.origin ?? NSPoint(x: 50, y: 50)
+//        preferencesWindowControllerObj?.window?.setFrame(NSRect(x: origin.x, y: origin.y, width: 760, height: (634 + 82)), display: true, animate: false)
+        preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: 760, height: 634))
         reloadData()
         if Reachability.isConnectedToNetwork() == false {
             
@@ -361,7 +389,11 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
             
         }
     }
-    
+    override func viewDidAppear() {
+//        self.view.setFrameSize(NSSize(width: 760, height: 634))
+//        let frame = self.view.frame
+//        self.view.frame = NSRect(x: 0, y: frame.minY, width: 760, height: 634)
+    }
     func reloadData(){
         tblViewFocusType.reloadData()
         checkState()
@@ -503,6 +535,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
     @objc func removeFocusClicked(){
         btnRemoveFocusTypeClicked(self)
     }
+    
     @IBAction func btnRemoveFocusTypeClicked(_ sender: Any) {
         if isHardCorePomodoroModeOn{
             let alert = NSAlert()
@@ -931,7 +964,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         allApiObject.capturePosthog(event: "urls-allow-list-approach-in-focus-mode", metadata: [:])//#490
         
     }
-    var popoverFocusHelp:NSPopover?
+    
     @IBAction func btnHelpClicked(_ sender: Any) {
         // = NSPopover()
         //func showTooltip(sender:NSView, msg:String, preferredEdge: NSRectEdge) {
@@ -1134,7 +1167,8 @@ extension focusPreferencesVc:NSTextFieldDelegate{
         if let textfield = obj.object as? NSTextField{
             if textfield == textFieldSelectedFocusType{
                 if textFieldSelectedFocusType.stringValue.count > 250{
-                    textFieldSelectedFocusType.currentEditor()?.deleteBackward(nil)
+                    let index = textfield.stringValue.index(textfield.stringValue.startIndex, offsetBy: 250)
+                    textfield.stringValue = String(textfield.stringValue.prefix(upTo: index))
                 }
             }
         }
@@ -1497,10 +1531,12 @@ extension focusPreferencesVc: NSTableViewDelegate, NSTableViewDataSource{
                 radioBtnAllowListApproch.isHidden = true
                 radioBtnBlockListApproch.isHidden = true
                 lblDescriptionAlwaysBlockedUrls.isHidden = false
+                lblDescriptionAlwaysBlockedUrls.stringValue = "Below is the list of Always Blocked URLs:"
                 
-                lblUrlsQuestion.stringValue = "Below is the list of Always Blocked URLs:"
+                lblUrlsQuestion.stringValue = "When you use this focus mode, all websites will be allowed except for your Always Blocked URLs"
                 if let focusPreferencesInfo = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
-                    lblUrlsQuestion.stringValue = focusPreferencesInfo.value(forKey: "titleBlockedUrls") as? String ?? lblUrlsQuestion.stringValue
+                    lblUrlsQuestion.stringValue = focusPreferencesInfo.value(forKey: "descriptionAlwaysBlockedUrls") as? String ?? lblUrlsQuestion.stringValue
+                    lblDescriptionAlwaysBlockedUrls.stringValue = focusPreferencesInfo.value(forKey: "titleBlockedUrls") as? String ?? lblDescriptionAlwaysBlockedUrls.stringValue
                 }
                 
                 tblViewAllowedUrls.reloadData()

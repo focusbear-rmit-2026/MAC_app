@@ -15,6 +15,7 @@ class SettingsManager:NSObject{
     
     var isSettingsChanged = false
     var isSoundEnabled = true
+    var isAnnouncementEnabled = true
     
     var isPasswordRequireInChangeSettings = true
     var isPasswordRequireInSkipMorning = true
@@ -26,6 +27,11 @@ class SettingsManager:NSObject{
     
     var isCuddlyModeEnabled = true
     
+    var isMotivationalMessageEnabled = true
+    var isAiCheckUrlEnabled = true
+    var isAiAllowUrlShowAlertEnabled = true
+    
+    
     // **blocked urls**
     var arrBlockedUrls = [String]()
     var isOfficeModeEnabled = false
@@ -35,6 +41,15 @@ class SettingsManager:NSObject{
     var isHideDockInActivity = false
     var isPromptToRememberHabit = true
     var isEasySkipEnabled = true
+    var IsShowBreaksInPostponeEnabled = false
+    var IsShowBreaksInCallEnabled = false
+    var isTabLimiterEnabled = false
+    var isFullScreenEnabled = false
+    var shouldReloadAfterForceQuitEnabled = false
+    var selectedFont = arrFont[0]
+    
+    var selectedAppAppearanceIndex = 0
+    var maxTabLimitCount = 5
     
     
     var kUserdefaultsAppPassword = "kUserdefaultsAppPassword"
@@ -58,12 +73,29 @@ class SettingsManager:NSObject{
     var kUserdefaultsShowMeetingDetectionAlert = "kUserdefaultsShowMeetingDetectionAlert"
     
     var kUserdefaultsHideDockInActivity = "kUserdefaultsHideDockInActivity"
+    var kUserdefaultsShowBreaksInPostponing = "kUserdefaultsShowBreaksInPostponing"
+    var kUserdefaultsShowBreaksInCall = "kUserdefaultsShowBreaksInCall"
+    
+    var kUserdefaultsisTabLimiterEnabled = "kUserdefaultsisTabLimiterEnabled"
+    var kUserdefaultsTabLimitCount = "kUserdefaultsTabLimitCount"
+    
+    var kUserdefaultsisFullScreenEnabled = "kUserdefaultsisFullScreenEnabled"
+    var kUserdefaultsShouldReloadAfterForceQuitEnabled = "kUserdefaultsShouldReloadAfterForceQuitEnabled"
+    var kUserdefaultsSelectedFont = "kUserdefaultsSelectedFont"
+    
+    var kUserdefaultsSelectedAppAppearanceIndex = "kUserdefaultsSelectedAppAppearanceIndex"
+    
+    
     var kUserdefaultsPromptToRememberHabit = "kUserdefaultsPromptToRememberHabit"
     var kUserdefaultsEasySkipEnabled = "kUserdefaultsEasySkipEnabled"
     var kUserdefaultsEnableSound = "kUserdefaultsEnableSound"
-    
+    var kUserdefaultsEnableAnnouncement = "kUserdefaultsEnableAnnouncement"
     
     var kUserdefaultsCuddlyModeEnabled = "kUserdefaultsCuddlyModeEnabled"
+    
+    var kUserdefaultsMotivationalMessageEnabled = "kUserdefaultsMotivationalMessageEnabled"
+    var kUserdefaultsAiCheckUrlEnabled = "kUserdefaultsAiCheckUrlEnabled"
+    var kUserdefaultsAiAllowUrlShowAlertEnabled = "kUserdefaultsAiAllowUrlShowAlertEnabled"
     
     var kUserdefaultsPomodoroDurationMinutes = "kUserdefaultsPomodoroDurationMinutes"
     var kUserdefaultsBreakDurationMinutes = "kUserdefaultsBreakDurationMinutes"
@@ -129,10 +161,23 @@ class SettingsManager:NSObject{
 //        kUserdefaultsHideDockInActivity = kUserdefaultsHideDockInActivity + (appdelegate?.user?.userId ?? "")//no ned to do this
         kUserdefaultsPromptToRememberHabit = kUserdefaultsPromptToRememberHabit + (appdelegate?.user?.userId ?? "")
         kUserdefaultsEasySkipEnabled = kUserdefaultsEasySkipEnabled + (appdelegate?.user?.userId ?? "")
-//        kUserdefaultsEnableSound = kUserdefaultsEnableSound + (appdelegate?.user?.userId ?? "")//no ned to do this
+        kUserdefaultsShowBreaksInPostponing = kUserdefaultsShowBreaksInPostponing + (appdelegate?.user?.userId ?? "")
+        kUserdefaultsShowBreaksInCall = kUserdefaultsShowBreaksInCall + (appdelegate?.user?.userId ?? "")
+        
+        kUserdefaultsisTabLimiterEnabled = kUserdefaultsisTabLimiterEnabled + (appdelegate?.user?.userId ?? "")
+        kUserdefaultsTabLimitCount = kUserdefaultsTabLimitCount + (appdelegate?.user?.userId ?? "")
+        
+        kUserdefaultsisFullScreenEnabled = kUserdefaultsisFullScreenEnabled + (appdelegate?.user?.userId ?? "")
+        kUserdefaultsShouldReloadAfterForceQuitEnabled = kUserdefaultsShouldReloadAfterForceQuitEnabled + (appdelegate?.user?.userId ?? "")
+        kUserdefaultsSelectedFont = kUserdefaultsSelectedFont + (appdelegate?.user?.userId ?? "")
+        
+        kUserdefaultsSelectedAppAppearanceIndex = kUserdefaultsSelectedAppAppearanceIndex + (appdelegate?.user?.userId ?? "")
         
         kUserdefaultsCuddlyModeEnabled = kUserdefaultsCuddlyModeEnabled + (appdelegate?.user?.userId ?? "")
         
+        kUserdefaultsMotivationalMessageEnabled = kUserdefaultsMotivationalMessageEnabled + (appdelegate?.user?.userId ?? "")
+        kUserdefaultsAiCheckUrlEnabled = kUserdefaultsAiCheckUrlEnabled + (appdelegate?.user?.userId ?? "")
+        kUserdefaultsAiAllowUrlShowAlertEnabled = kUserdefaultsAiAllowUrlShowAlertEnabled + (appdelegate?.user?.userId ?? "")
         
         kUserdefaultsPomodoroDurationMinutes = kUserdefaultsPomodoroDurationMinutes + (appdelegate?.user?.userId ?? "")
         kUserdefaultsBreakDurationMinutes = kUserdefaultsBreakDurationMinutes + (appdelegate?.user?.userId ?? "")
@@ -151,14 +196,16 @@ class SettingsManager:NSObject{
         
         //  ---------------------------SETTINGS Sound--------------------------//Do not sync it
         if let isEnabled = UserDefaults.standard.object(forKey: kUserdefaultsEnableSound) as? Bool{
-            if isEnabled{
-                isSoundEnabled = true
-            }else{
-                isSoundEnabled = false
-            }
+            isSoundEnabled = isEnabled
         }else{
-            UserDefaults.standard.set(true, forKey: kUserdefaultsEnableSound)
-            isSoundEnabled = true
+            UserDefaults.standard.set(isSoundEnabled, forKey: kUserdefaultsEnableSound)
+        }
+        
+        //  ---------------------------SETTINGS Announcement--------------------------//Do not sync it
+        if let isEnabled = UserDefaults.standard.object(forKey: kUserdefaultsEnableAnnouncement) as? Bool{
+            isAnnouncementEnabled = isEnabled
+        }else{
+            UserDefaults.standard.set(isAnnouncementEnabled, forKey: kUserdefaultsEnableAnnouncement)
         }
         
         //  ---------------------------SETTINGS hide dock in activity--------------------------//Do not sync it
@@ -200,6 +247,19 @@ class SettingsManager:NSObject{
                     
                     let kIsPromptToRememberHabit = "kIsPromptToRememberHabit"
                     let kIsEasySkipEnabled = "kIsEasySkipEnabled"
+                    let kIsShowBreaksInPostponeEnabled = "kIsShowBreaksInPostponeEnabled"
+                    let kIsShowBreaksInCallEnabled = "kIsShowBreaksInCallEnabled"
+                    
+                    
+                    let kisTabLimiterEnabled = "kisTabLimiterEnabled"
+                    let kTabLimitCount = "kTabLimitCount"
+                    
+                    let kisFullScreenEnabled = "kisFullScreenEnabled"
+                    let kShouldReloadAfterForceQuitEnabled = "kShouldReloadAfterForceQuitEnabled"
+                    let kSelectedFont = "kSelectedFont"
+                    
+                    let kSelectedAppAppearanceIndex = "kSelectedAppAppearanceIndex"
+                    
                     let kIsOfficeModeEnabled = "kIsOfficeModeEnabled"
                     //                    let kSelectedLanguage = "kSelectedLanguage"
                     let kHideAllWindowInScreenShots = "kHideAllWindowInScreenShots"
@@ -216,6 +276,11 @@ class SettingsManager:NSObject{
                     let kArrBlockedUrls = "kArrBlockedUrls"
                     
                     let kCuddlyModeEnabled = "kCuddlyModeEnabled"
+                    
+                    let kMotivationalMessageEnabled = "kMotivationalMessageEnabled"
+                    let kAiCheckUrlEnabled = "kAiCheckUrlEnabled"
+                    let kAiAllowUrlShowAlertEnabled = "kAiAllowUrlShowAlertEnabled"
+                    
                     
                     if let val = settings.value(forKey: kIsReducedMotionEnabled) as? Bool{
                         UserDefaults.standard.set(val, forKey: self.kUserdefaultsReducedMotion)
@@ -266,6 +331,34 @@ class SettingsManager:NSObject{
                     if let val = settings.value(forKey: kIsEasySkipEnabled) as? Bool{
                         UserDefaults.standard.set(val, forKey: self.kUserdefaultsEasySkipEnabled)
                     }
+                    if let val = settings.value(forKey: kIsShowBreaksInPostponeEnabled) as? Bool{
+                        UserDefaults.standard.set(val, forKey: self.kUserdefaultsShowBreaksInPostponing)
+                    }
+                    if let val = settings.value(forKey: kIsShowBreaksInCallEnabled) as? Bool{
+                        UserDefaults.standard.set(val, forKey: self.kUserdefaultsShowBreaksInCall)
+                    }
+                    
+                    if let val = settings.value(forKey: kisTabLimiterEnabled) as? Bool{
+                        UserDefaults.standard.set(val, forKey: self.kUserdefaultsisTabLimiterEnabled)
+                    }
+                    if let val = settings.value(forKey: kTabLimitCount) as? Int{
+                        UserDefaults.standard.set(val, forKey: self.kUserdefaultsTabLimitCount)
+                    }
+                    
+                    if let val = settings.value(forKey: kisFullScreenEnabled) as? Int{
+                        UserDefaults.standard.set(val, forKey: self.kUserdefaultsisFullScreenEnabled)
+                    }
+                    if let val = settings.value(forKey: kShouldReloadAfterForceQuitEnabled) as? Int{
+                        UserDefaults.standard.set(val, forKey: self.kUserdefaultsShouldReloadAfterForceQuitEnabled)
+                    }
+                    if let val = settings.value(forKey: kSelectedFont) as? String{
+                        UserDefaults.standard.set(val, forKey: self.kUserdefaultsSelectedFont)
+                    }
+                    
+                    if let val = settings.value(forKey: kSelectedAppAppearanceIndex) as? Int{
+                        UserDefaults.standard.set(val, forKey: self.kUserdefaultsSelectedAppAppearanceIndex)
+                    }
+                    
                     
                     if let val = settings.value(forKey: kIsOfficeModeEnabled) as? Bool{
                         UserDefaults.standard.set(val, forKey: self.kUserdefaultsOfficeModeEnabled)
@@ -315,8 +408,20 @@ class SettingsManager:NSObject{
                     if let val = settings.value(forKey: kAppPassword) as? String{
                         UserDefaults.standard.set(val, forKey: self.kUserdefaultsAppPassword)
                     }
+                    
                     if let val = settings.value(forKey: kCuddlyModeEnabled) as? String{
                         UserDefaults.standard.set(val, forKey: self.kUserdefaultsCuddlyModeEnabled)
+                    }
+                    
+                    if let val = settings.value(forKey: kMotivationalMessageEnabled) as? String{
+                        UserDefaults.standard.set(val, forKey: self.kUserdefaultsMotivationalMessageEnabled)
+                    }
+                    if let val = settings.value(forKey: kAiCheckUrlEnabled) as? String{
+                        UserDefaults.standard.set(val, forKey: self.kUserdefaultsAiCheckUrlEnabled)
+                    }
+                    
+                    if let val = settings.value(forKey: kAiAllowUrlShowAlertEnabled) as? String{
+                        UserDefaults.standard.set(val, forKey: self.kUserdefaultsAiAllowUrlShowAlertEnabled)
                     }
                     
                 }
@@ -384,8 +489,7 @@ class SettingsManager:NSObject{
                     isPasswordRequireInChangeSettings = false
                 }
             }else{
-                UserDefaults.standard.set(true, forKey: kUserdefaultsPasswordRequireInChangeSettings)
-                isPasswordRequireInChangeSettings = true
+                UserDefaults.standard.set(isPasswordRequireInChangeSettings, forKey: kUserdefaultsPasswordRequireInChangeSettings)
             }
             
 
@@ -396,8 +500,7 @@ class SettingsManager:NSObject{
                     isPasswordRequireInSkipMorning = false
                 }
             }else{
-                UserDefaults.standard.set(true, forKey: kUserdefaultsPasswordRequireInSkipMorning)
-                isPasswordRequireInSkipMorning = true
+                UserDefaults.standard.set(isPasswordRequireInSkipMorning, forKey: kUserdefaultsPasswordRequireInSkipMorning)
             }
             
             if let isEnabled = UserDefaults.standard.object(forKey: kUserdefaultsPasswordRequireInSkipEvening) as? Bool{
@@ -407,8 +510,7 @@ class SettingsManager:NSObject{
                     isPasswordRequireInSkipEvening = false
                 }
             }else{
-                UserDefaults.standard.set(true, forKey: kUserdefaultsPasswordRequireInSkipEvening)
-                isPasswordRequireInSkipEvening = true
+                UserDefaults.standard.set(isPasswordRequireInSkipEvening, forKey: kUserdefaultsPasswordRequireInSkipEvening)
             }
             
             if let isEnabled = UserDefaults.standard.object(forKey: kUserdefaultsPasswordRequireInSkipEveningAfterCutOff) as? Bool{
@@ -418,8 +520,7 @@ class SettingsManager:NSObject{
                     isPasswordRequireInSkipEveningAfterCutOff = false
                 }
             }else{
-                UserDefaults.standard.set(true, forKey: kUserdefaultsPasswordRequireInSkipEveningAfterCutOff)
-                isPasswordRequireInSkipEveningAfterCutOff = true
+                UserDefaults.standard.set(isPasswordRequireInSkipEveningAfterCutOff, forKey: kUserdefaultsPasswordRequireInSkipEveningAfterCutOff)
             }
             
             
@@ -430,8 +531,7 @@ class SettingsManager:NSObject{
                     isPasswordRequireInAbortShutoff = false
                 }
             }else{
-                UserDefaults.standard.set(true, forKey: kUserdefaultsPasswordRequireInAbortShutoff)
-                isPasswordRequireInAbortShutoff = true
+                UserDefaults.standard.set(isPasswordRequireInAbortShutoff, forKey: kUserdefaultsPasswordRequireInAbortShutoff)
             }
             
             if let isEnabled = UserDefaults.standard.object(forKey: kUserdefaultsPasswordRequireInStopPomodoro) as? Bool{
@@ -441,8 +541,7 @@ class SettingsManager:NSObject{
                     isPasswordRequireInStopPomodoro = false
                 }
             }else{
-                UserDefaults.standard.set(true, forKey: kUserdefaultsPasswordRequireInStopPomodoro)
-                isPasswordRequireInStopPomodoro = true
+                UserDefaults.standard.set(isPasswordRequireInStopPomodoro, forKey: kUserdefaultsPasswordRequireInStopPomodoro)
             }
             
             if let isEnabled = UserDefaults.standard.object(forKey: kUserdefaultsPasswordRequireInQuitApp) as? Bool{
@@ -452,12 +551,16 @@ class SettingsManager:NSObject{
                     isPasswordRequireInQuitApp = false
                 }
             }else{
-                UserDefaults.standard.set(true, forKey: kUserdefaultsPasswordRequireInQuitApp)
-                isPasswordRequireInQuitApp = true
+                UserDefaults.standard.set(isPasswordRequireInQuitApp, forKey: kUserdefaultsPasswordRequireInQuitApp)
             }
             
-            
-            
+            if let password = UserDefaults.standard.object(forKey: kUserdefaultsPasswordSetInOnboarding) as? String{
+                if UserDefaults.standard.object(forKey: kUserdefaultsAppPassword) == nil{
+                    UserDefaults.standard.set(password, forKey: self.kUserdefaultsAppPassword)
+                }
+                UserDefaults.standard.removeObject(forKey: kUserdefaultsPasswordSetInOnboarding)
+            }
+
             //  ---------------------------SETTINGS Prompt To Remember next Habit--------------------------
             if let isEnabled = UserDefaults.standard.object(forKey: kUserdefaultsPromptToRememberHabit) as? Bool{
                 if isEnabled{
@@ -479,16 +582,67 @@ class SettingsManager:NSObject{
                     isEasySkipEnabled = false
                 }
             }else{
-                UserDefaults.standard.set(true, forKey: kUserdefaultsEasySkipEnabled)
-                isEasySkipEnabled = true
-//                if let val = UserDefaults.standard.object(forKey: kUserdefaultsHabitSkipEasinessFromOnboarding) as? Bool{
-//                    UserDefaults.standard.removeObject(forKey: kUserdefaultsHabitSkipEasinessFromOnboarding)
-//                    UserDefaults.standard.set(val, forKey: kUserdefaultsEasySkipEnabled)
-//                    isEasySkipEnabled = val
-//                }else{
-//                    UserDefaults.standard.set(true, forKey: kUserdefaultsEasySkipEnabled)
-//                    isEasySkipEnabled = true
-//                }
+                UserDefaults.standard.set(isEasySkipEnabled, forKey: kUserdefaultsEasySkipEnabled)
+            }
+            
+            //  ---------------------------SETTINGS show break while postponing Habit--------------------------
+            if let isEnabled = UserDefaults.standard.object(forKey: kUserdefaultsShowBreaksInPostponing) as? Bool{
+                IsShowBreaksInPostponeEnabled = isEnabled
+            }else{
+                UserDefaults.standard.set(IsShowBreaksInPostponeEnabled, forKey: kUserdefaultsShowBreaksInPostponing)
+            }
+            
+            //  ---------------------------SETTINGS show break while in call--------------------------
+            if let isEnabled = UserDefaults.standard.object(forKey: kUserdefaultsShowBreaksInCall) as? Bool{
+                IsShowBreaksInCallEnabled = isEnabled
+            }else{
+                UserDefaults.standard.set(IsShowBreaksInCallEnabled, forKey: kUserdefaultsShowBreaksInCall)
+            }
+            
+            
+            
+            //  ---------------------------SETTINGS Tab Limit--------------------------
+            if let isEnabled = UserDefaults.standard.object(forKey: kUserdefaultsisTabLimiterEnabled) as? Bool{
+                isTabLimiterEnabled = isEnabled
+            }else{
+                UserDefaults.standard.set(isTabLimiterEnabled, forKey: kUserdefaultsisTabLimiterEnabled)
+            }
+            
+            //  ---------------------------SETTINGS Full Screen--------------------------
+            if let isEnabled = UserDefaults.standard.object(forKey: kUserdefaultsisFullScreenEnabled) as? Bool{
+                isFullScreenEnabled = isEnabled
+            }else{
+                UserDefaults.standard.set(isFullScreenEnabled, forKey: kUserdefaultsisFullScreenEnabled)
+            }
+            
+            //  ---------------------------SETTINGS Reload After Force Quit--------------------------
+            if let isEnabled = UserDefaults.standard.object(forKey: kUserdefaultsShouldReloadAfterForceQuitEnabled) as? Bool{
+                shouldReloadAfterForceQuitEnabled = isEnabled
+            }else{
+                UserDefaults.standard.set(shouldReloadAfterForceQuitEnabled, forKey: kUserdefaultsShouldReloadAfterForceQuitEnabled)
+            }
+            
+            //  ---------------------------SETTINGS Selected Font--------------------------
+            if let font = UserDefaults.standard.object(forKey: kUserdefaultsSelectedFont) as? String{
+                selectedFont = font
+            }else{
+                UserDefaults.standard.set(selectedFont, forKey: kUserdefaultsSelectedFont)
+            }
+            
+            
+            //  ---------------------------SETTINGS App Appearance --------------------------
+            if let index = UserDefaults.standard.object(forKey: kUserdefaultsSelectedAppAppearanceIndex) as? Int{
+                selectedAppAppearanceIndex = index
+            }else{
+                UserDefaults.standard.set(selectedAppAppearanceIndex, forKey: kUserdefaultsSelectedAppAppearanceIndex)
+            }
+            
+
+            if let count = UserDefaults.standard.object(forKey: kUserdefaultsTabLimitCount) as? Int{
+                maxTabLimitCount = count
+            }else{
+                UserDefaults.standard.set(5, forKey: kUserdefaultsTabLimitCount)
+                maxTabLimitCount = 5
             }
             
             
@@ -500,9 +654,45 @@ class SettingsManager:NSObject{
                     isCuddlyModeEnabled = false
                 }
             }else{
-                UserDefaults.standard.set(true, forKey: kUserdefaultsCuddlyModeEnabled)
-                isCuddlyModeEnabled = true
+                UserDefaults.standard.set(isCuddlyModeEnabled, forKey: kUserdefaultsCuddlyModeEnabled)
             }
+            
+            //  ---------------------------SETTINGS Motivational Message--------------------------
+            if let isEnabled = UserDefaults.standard.object(forKey: kUserdefaultsMotivationalMessageEnabled) as? Bool{
+                if isEnabled{
+                    isMotivationalMessageEnabled = true
+                }else{
+                    isMotivationalMessageEnabled = false
+                }
+            }else{
+                UserDefaults.standard.set(false, forKey: kUserdefaultsMotivationalMessageEnabled)
+                isMotivationalMessageEnabled = false
+            }
+            
+            //  ---------------------------SETTINGS Ai Check Url Enabled--------------------------
+            if let isEnabled = UserDefaults.standard.object(forKey: kUserdefaultsAiCheckUrlEnabled) as? Bool{
+                if isEnabled{
+                    isAiCheckUrlEnabled = true
+                }else{
+                    isAiCheckUrlEnabled = false
+                }
+            }else{
+                UserDefaults.standard.set(true, forKey: kUserdefaultsAiCheckUrlEnabled)
+                isAiCheckUrlEnabled = true
+            }
+            //  ---------------------------SETTINGS Ai Allow Url Show Alert--------------------------
+            if let isEnabled = UserDefaults.standard.object(forKey: kUserdefaultsAiAllowUrlShowAlertEnabled) as? Bool{
+                if isEnabled{
+                    isAiAllowUrlShowAlertEnabled = true
+                }else{
+                    isAiAllowUrlShowAlertEnabled = false
+                }
+            }else{
+                UserDefaults.standard.set(true, forKey: kUserdefaultsAiAllowUrlShowAlertEnabled)
+                isAiAllowUrlShowAlertEnabled = true
+            }
+            
+            
             // ---------------------------SETTINGS Hide All Window In Screenshots--------------------------
             if UserDefaults.standard.object(forKey: kUserdefaultsHideAllWindowInScreenShots) == nil{
                 UserDefaults.standard.set(false, forKey: kUserdefaultsHideAllWindowInScreenShots)
@@ -568,6 +758,14 @@ class SettingsManager:NSObject{
         let kShowMeetingDetectionAlert = "kShowMeetingDetectionAlert"
         let kIsPromptToRememberHabit = "kIsPromptToRememberHabit"
         let kIsEasySkipEnabled = "kIsEasySkipEnabled"
+        let kIsShowBreaksInPostponeEnabled = "kIsShowBreaksInPostponeEnabled"
+        let kIsShowBreaksInCallEnabled = "kIsShowBreaksInCallEnabled"
+        let kisTabLimiterEnabled = "kisTabLimiterEnabled"
+        let kTabLimitCount = "kTabLimitCount"
+        let kisFullScreenEnabled = "kisFullScreenEnabled"
+        let kShouldReloadAfterForceQuitEnabled = "kShouldReloadAfterForceQuitEnabled"
+        let kSelectedFont = "kSelectedFont"
+        let kSelectedAppAppearanceIndex = "kSelectedAppAppearanceIndex"
         let kIsOfficeModeEnabled = "kIsOfficeModeEnabled"
         //        let kSelectedLanguage = "kSelectedLanguage"
         let kHideAllWindowInScreenShots = "kHideAllWindowInScreenShots"
@@ -593,12 +791,25 @@ class SettingsManager:NSObject{
         let kArrBlockedUrls = "kArrBlockedUrls"
         let kCuddlyModeEnabled = "kCuddlyModeEnabled"
         
+        let kMotivationalMessageEnabled = "kMotivationalMessageEnabled"
+        let kAiCheckUrlEnabled = "kAiCheckUrlEnabled"
+        let kAiAllowUrlShowAlertEnabled = "kAiAllowUrlShowAlertEnabled"
+        let isEditBlockedUrlsOnce = UserDefaults.standard.object(forKey: kUserdefaultsEditBlockedUrlsOnce) as? Bool ?? false
+        
         var json: [String: Any] = [
             kIsReducedMotionEnabled:kIsReducedMotion,//userId.removingPercentEncoding ?? "",
             kIsMeetingDetectionEnabled:isMeetingDetectionEnabled,
             kShowMeetingDetectionAlert:showMeetingDetectionAlert,
             kIsPromptToRememberHabit:isPromptToRememberHabit,
             kIsEasySkipEnabled:isEasySkipEnabled,
+            kIsShowBreaksInPostponeEnabled:IsShowBreaksInPostponeEnabled,
+            kIsShowBreaksInCallEnabled:IsShowBreaksInCallEnabled,
+            kisTabLimiterEnabled:isTabLimiterEnabled,
+            kTabLimitCount:maxTabLimitCount,
+            kisFullScreenEnabled:isFullScreenEnabled,
+            kShouldReloadAfterForceQuitEnabled:shouldReloadAfterForceQuitEnabled,
+            kSelectedFont:selectedFont,
+            kSelectedAppAppearanceIndex:selectedAppAppearanceIndex,
             kIsOfficeModeEnabled:isOfficeModeEnabled,
             kHideAllWindowInScreenShots:UserDefaults.standard.object(forKey: kUserdefaultsHideAllWindowInScreenShots) as? Bool ?? false,
             kPomodoroDurationMinutes:UserDefaults.standard.object(forKey: kUserdefaultsPomodoroDurationMinutes) as? Int ?? 0,
@@ -617,7 +828,11 @@ class SettingsManager:NSObject{
             kIsPasswordRequireInSkipEveningAfterCutOff:isPasswordRequireInSkipEveningAfterCutOff,
             kIsPasswordRequireInAbortShutoff:isPasswordRequireInAbortShutoff,
             kIsPasswordRequireInStopPomodoro:isPasswordRequireInStopPomodoro,
-            kIsPasswordRequireInQuitApp:isPasswordRequireInQuitApp
+            kIsPasswordRequireInQuitApp:isPasswordRequireInQuitApp,
+            kMotivationalMessageEnabled:isMotivationalMessageEnabled,
+            kAiCheckUrlEnabled:isAiCheckUrlEnabled,
+            kAiAllowUrlShowAlertEnabled:isAiAllowUrlShowAlertEnabled,
+            "has_edited_blocked_urls":isEditBlockedUrlsOnce
         ]
         
         if UserDefaults.standard.object(forKey: kUserdefaultsAppPassword) != nil{
@@ -638,10 +853,18 @@ class SettingsManager:NSObject{
         UserDefaults.standard.set(isHideDockInActivity, forKey: kUserdefaultsHideDockInActivity)
         UserDefaults.standard.set(isPromptToRememberHabit, forKey: kUserdefaultsPromptToRememberHabit)
         UserDefaults.standard.set(isEasySkipEnabled, forKey: kUserdefaultsEasySkipEnabled)
+        UserDefaults.standard.set(IsShowBreaksInPostponeEnabled, forKey: kUserdefaultsShowBreaksInPostponing)
+        UserDefaults.standard.set(IsShowBreaksInCallEnabled, forKey: kUserdefaultsShowBreaksInCall)
+        UserDefaults.standard.set(isTabLimiterEnabled, forKey: kUserdefaultsisTabLimiterEnabled)
+        UserDefaults.standard.set(maxTabLimitCount, forKey: kUserdefaultsTabLimitCount)
+        UserDefaults.standard.set(isFullScreenEnabled, forKey: kUserdefaultsisFullScreenEnabled)
+        UserDefaults.standard.set(shouldReloadAfterForceQuitEnabled, forKey: kUserdefaultsShouldReloadAfterForceQuitEnabled)
+        UserDefaults.standard.set(selectedFont, forKey: kUserdefaultsSelectedFont)
+        UserDefaults.standard.set(selectedAppAppearanceIndex, forKey: kUserdefaultsSelectedAppAppearanceIndex)
         UserDefaults.standard.set(isOfficeModeEnabled, forKey: kUserdefaultsOfficeModeEnabled)
         UserDefaults.standard.set(isCuddlyModeEnabled, forKey: kUserdefaultsCuddlyModeEnabled)
         UserDefaults.standard.set(isSoundEnabled, forKey: kUserdefaultsEnableSound)//do not sync it
-        
+        UserDefaults.standard.set(isAnnouncementEnabled, forKey: kUserdefaultsEnableAnnouncement)//do not sync it
         
         UserDefaults.standard.set(isPasswordRequireInChangeSettings, forKey: kUserdefaultsPasswordRequireInChangeSettings)
         UserDefaults.standard.set(isPasswordRequireInSkipMorning, forKey: kUserdefaultsPasswordRequireInSkipMorning)
@@ -651,66 +874,11 @@ class SettingsManager:NSObject{
         UserDefaults.standard.set(isPasswordRequireInStopPomodoro, forKey: kUserdefaultsPasswordRequireInStopPomodoro)
         UserDefaults.standard.set(isPasswordRequireInQuitApp, forKey: kUserdefaultsPasswordRequireInQuitApp)
         
-//        let kIsReducedMotionEnabled = "kIsReducedMotion"
-//        let kIsMeetingDetectionEnabled = "kIsMeetingDetectionEnabled"
-//        let kShowMeetingDetectionAlert = "kShowMeetingDetectionAlert"
-//        let kIsPromptToRememberHabit = "kIsPromptToRememberHabit"
-//        let kIsEasySkipEnabled = "kIsEasySkipEnabled"
-//        let kIsOfficeModeEnabled = "kIsOfficeModeEnabled"
-//        //        let kSelectedLanguage = "kSelectedLanguage"
-//        let kHideAllWindowInScreenShots = "kHideAllWindowInScreenShots"
-//        let kPomodoroDurationMinutes = "kPomodoroDurationMinutes"
-//        let kBreakDurationMinutes = "kBreakDurationMinutes"
-//        let kPomodoroModeEnabled = "kPomodoroModeEnabled"
-//        let kHardcorePomodoroEnabled = "kHardcorePomodoroEnabled"
-//        let kHardcorePomodoroFocusedName = "kHardcorePomodoroFocusedName"
-//        let kHardcorePomodoroFocusedCount = "kHardcorePomodoroFocusedCount"
-//        let kHardcorePomodoroSkipMicroBreaks = "kHardcorePomodoroSkipMicroBreaks"
-//        let kHardcorePomodoroArrDays = "kHardcorePomodoroArrDays"
-//
-//
-//        let kIsPasswordRequireInChangeSettings = "kIsPasswordRequireInChangeSettings"
-//        let kIsPasswordRequireInSkipMorning = "kIsPasswordRequireInSkipMorning"
-//        let kIsPasswordRequireInSkipEvening = "kIsPasswordRequireInSkipEvening"
-//        let kIsPasswordRequireInSkipEveningAfterCutOff = "kIsPasswordRequireInSkipEveningAfterCutOff"
-//        let kIsPasswordRequireInAbortShutoff = "kIsPasswordRequireInAbortShutoff"
-//        let kIsPasswordRequireInStopPomodoro = "kIsPasswordRequireInStopPomodoro"
-//        let kIsPasswordRequireInQuitApp = "kIsPasswordRequireInQuitApp"
-//
-//        let kAppPassword = "kAppPassword"
-//        let kArrBlockedUrls = "kArrBlockedUrls"
-//        let kCuddlyModeEnabled = "kCuddlyModeEnabled"
         
-//        var json: [String: Any] = [
-//            kIsReducedMotionEnabled:kIsReducedMotion,//userId.removingPercentEncoding ?? "",
-//            kIsMeetingDetectionEnabled:isMeetingDetectionEnabled,
-//            kShowMeetingDetectionAlert:showMeetingDetectionAlert,
-//            kIsPromptToRememberHabit:isPromptToRememberHabit,
-//            kIsEasySkipEnabled:isEasySkipEnabled,
-//            kIsOfficeModeEnabled:isOfficeModeEnabled,
-//            kHideAllWindowInScreenShots:UserDefaults.standard.object(forKey: kUserdefaultsHideAllWindowInScreenShots) as? Bool ?? false,
-//            kPomodoroDurationMinutes:UserDefaults.standard.object(forKey: kUserdefaultsPomodoroDurationMinutes) as? Int ?? 0,
-//            kBreakDurationMinutes:UserDefaults.standard.object(forKey: kUserdefaultsBreakDurationMinutes) as? Int ?? 0,
-//            kPomodoroModeEnabled:UserDefaults.standard.object(forKey: kUserdefaultsPomodoroModeEnabled) as? Bool ?? false,
-//            kHardcorePomodoroEnabled:UserDefaults.standard.object(forKey: kUserdefaultsHardcorePomodoroEnabled) as? Bool ?? false,
-//            kHardcorePomodoroFocusedName:UserDefaults.standard.object(forKey: kUserdefaultsHardcorePomodoroFocusedName) as? String ?? "",
-//            kHardcorePomodoroFocusedCount:UserDefaults.standard.object(forKey: kUserdefaultsHardcorePomodoroFocusedCount) as? Int ?? 0,
-//            kHardcorePomodoroSkipMicroBreaks:UserDefaults.standard.object(forKey: kUserdefaultsHardcorePomodoroSkipMicroBreaks) as? Bool ?? false,//
-//            kHardcorePomodoroArrDays:UserDefaults.standard.object(forKey: kUserdefaultsHardcorePomodoroArrDays) as? [String] ?? [],
-//            kArrBlockedUrls:arrBlockedUrls,
-//            kCuddlyModeEnabled:isCuddlyModeEnabled,
-//            kIsPasswordRequireInChangeSettings:isPasswordRequireInChangeSettings,
-//            kIsPasswordRequireInSkipMorning:isPasswordRequireInSkipMorning,
-//            kIsPasswordRequireInSkipEvening:isPasswordRequireInSkipEvening,
-//            kIsPasswordRequireInSkipEveningAfterCutOff:isPasswordRequireInSkipEveningAfterCutOff,
-//            kIsPasswordRequireInAbortShutoff:isPasswordRequireInAbortShutoff,
-//            kIsPasswordRequireInStopPomodoro:isPasswordRequireInStopPomodoro,
-//            kIsPasswordRequireInQuitApp:isPasswordRequireInQuitApp
-//        ]
-//
-//        if UserDefaults.standard.object(forKey: kUserdefaultsAppPassword) != nil{
-//            json[kAppPassword] = UserDefaults.standard.object(forKey: kUserdefaultsAppPassword) as? String ?? ""
-//        }
+        UserDefaults.standard.set(isMotivationalMessageEnabled, forKey: kUserdefaultsMotivationalMessageEnabled)
+        UserDefaults.standard.set(isAiCheckUrlEnabled, forKey: kUserdefaultsAiCheckUrlEnabled)
+        UserDefaults.standard.set(isAiAllowUrlShowAlertEnabled, forKey: kUserdefaultsAiAllowUrlShowAlertEnabled)
+
         let json = getLocalJsonToUpload()
         
         let dic: [String: [String:Any]] = [

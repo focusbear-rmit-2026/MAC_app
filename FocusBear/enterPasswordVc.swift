@@ -189,23 +189,26 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
                     }
                                         
                     if isMainWindowLodded{
-                        if (mainWindowControllerObj?.window!.isVisible)!{//it means isi per aaya hoga
-                            self.view.removeFromSuperview()
-                            if currentState == ._SHUTOFFMAC_{
-                                shutOffTimeVcObj!.getAccessNowClicked()
-                            }else{
-                                mainViewControllerObj?.showAbortStartView()
+                        if self.view.window == mainWindowControllerObj?.window{
+                            if (mainWindowControllerObj?.window!.isVisible)!{//it means isi per aaya hoga
+                                self.view.removeFromSuperview()
+                                if currentState == ._SHUTOFFMAC_{
+                                    shutOffTimeVcObj!.getAccessNowClicked()
+                                }else{
+                                    mainViewControllerObj?.showAbortStartView()
+                                }
+                                return;
                             }
-                            return;
                         }
                     }
                     
 
-                    
-                    if self.view.window == getQuittingWindowObject().window{
-                        getQuittingCountDownVcObject().startTimer()
-                        self.view.removeFromSuperview()
-                        return;
+                    if quittingWcObj != nil{
+                        if self.view.window == getQuittingWindowObject().window{
+                            getQuittingCountDownVcObject().startTimer()
+                            self.view.removeFromSuperview()
+                            return;
+                        }
                     }
                     self.view.removeFromSuperview()
                 }else{
@@ -263,12 +266,14 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
         }
         
         if isMainWindowLodded{
-            if (mainWindowControllerObj?.window!.isVisible)!{//it means isi per aaya hoga
-                self.view.removeFromSuperview()
-                if currentState != ._SHUTOFFMAC_{
-                   mainViewControllerObj?.abortCancel()
+            if self.view.window == mainWindowControllerObj?.window{
+                if (mainWindowControllerObj?.window!.isVisible)!{//it means isi per aaya hoga
+                    self.view.removeFromSuperview()
+                    if currentState != ._SHUTOFFMAC_{
+                        mainViewControllerObj?.abortCancel()
+                    }
+                    return;
                 }
-                return;
             }
         }
         if preferencesWindowControllerObj != nil{ // ask password for password tab when PasswordRequireInChangeSettings is false

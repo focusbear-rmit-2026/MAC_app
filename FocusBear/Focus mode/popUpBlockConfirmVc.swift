@@ -28,6 +28,9 @@ class popUpBlockConfirmVc: NSViewController {
     var titleText = "Do you need to use <URL> when you're focusing on <FOCUSTYPE>?"
     var intentionText = "Your intention was \"<INTENTION>\""
     var currentPid: pid_t?
+    var timerHideAlert:Timer?
+    var lastBlockReasonFromAi = ""
+//    var alertTimer:NSAlert?
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
@@ -48,7 +51,25 @@ class popUpBlockConfirmVc: NSViewController {
         btnEditSettings.buttonColor = NSColor.white.cgColor
     }
     
-    func resetView(blockedAppName:String, currentApp:NSRunningApplication?, url:String, script:String, isBlockApp:Bool, browser:BROWSER?,currentPid: pid_t?){
+    func setTimerHideAlertFewSeconds(){
+        DispatchQueue.global().sync {
+            self.timerHideAlert = Timer.scheduledTimer(timeInterval: 15, target: self, selector: #selector(self.hideAlert), userInfo: nil, repeats: false)
+            RunLoop.main.add((self.timerHideAlert!), forMode: RunLoop.Mode.common)
+        }
+    }
+    @objc func hideAlert(){
+        if alertReasonAutoAllowWcObj != nil{
+            if alertReasonAutoAllowWcObj?.window != nil{
+                //self.view.window?.endSheet(self.alertTimer!.window)
+                alertReasonAutoAllowWcObj?.window?.close()
+            }
+        }
+        if timerHideAlert != nil{
+            timerHideAlert?.invalidate()
+            timerHideAlert = nil
+        }
+    }
+    func resetView(blockedAppName:String, currentApp:NSRunningApplication?, url:String, script:String, isBlockApp:Bool, browser:BROWSER?,currentPid: pid_t?, tabTitle:String?){
         if self.currentApp != nil{
             if self.currentApp == currentApp{
                 return;
@@ -60,7 +81,7 @@ class popUpBlockConfirmVc: NSViewController {
         var currentRunningFocusModeName = ""
         self.browser = browser
         self.currentPid = currentPid
-        
+        lastBlockReasonFromAi = ""
         
         if isAnyAllowedFocusModeActivityRunning{
             if currentHabitPlaying != nil{
@@ -83,13 +104,132 @@ class popUpBlockConfirmVc: NSViewController {
             
             
         }else{
+            
+            if alertReasonAutoAllowWcObj != nil{
+                if alertReasonAutoAllowWcObj?.window != nil{
+                    if alertReasonAutoAllowWcObj?.window?.isVisible ?? false{
+                        alertReasonAutoAllowWcObj?.window?.close()
+                    }
+                }
+            }
+            if timerHideAlert != nil{
+                timerHideAlert?.invalidate()
+                timerHideAlert = nil
+            }
+            
             var blockTitle = titleText.replacingOccurrences(of: "<URL>", with: url)
             blockTitle = blockTitle.replacingOccurrences(of: "<FOCUSTYPE>", with: currentRunningFocusModeName)
+            var intentionText = ""//\n\n" + intentionText.replacingOccurrences(of: "<INTENTION>", with: whatToAchieveInFocusBlock)
             if !whatToAchieveInFocusBlock.isEmpty{
-                lblTitle.stringValue = blockTitle + "\n\n" + intentionText.replacingOccurrences(of: "<INTENTION>", with: whatToAchieveInFocusBlock)//
-            }else{
-                lblTitle.stringValue = blockTitle
+                intentionText = "\n\n" + self.intentionText.replacingOccurrences(of: "<INTENTION>", with: whatToAchieveInFocusBlock)
             }
+            
+            var checkingUrlText = "Checking if this URL is safe to use for your current focus mode. Will take about 4-5 seconds to check. If safe, it will automatically be allowed."
+            
+            if let popUpBlockConfirmVcInfo = configjson.value(forKey: "popUpBlockConfirmVcInfo") as? NSDictionary{
+                checkingUrlText = popUpBlockConfirmVcInfo.value(forKey: "checkingUrlText") as? String ?? checkingUrlText
+            }
+            
+            lblTitle.stringValue = blockTitle + "\n\n" + checkingUrlText + intentionText 
+            
+            
+            //ye sara kaam agar ai ki setting enable h to hi hoga vrna na hoga //
+            
+            
+            if SettingsManagerObject.isAiCheckUrlEnabled{
+                var tab_title = ""
+                if tabTitle == nil{
+                    if browser != nil{
+                        if let title = getActiveTabTitleOf(browser: browser!){
+                            tab_title = title
+                        }
+                    }
+                }else{
+                    tab_title = tabTitle!
+                }
+                
+                allApiObject.chatGPTIsURLSafe(url: url, tab_title: tab_title, focus_mode: currentRunningFocusModeName, intention: whatToAchieveInFocusBlock, completionHandler: {dic, checkedUrl, payload  in
+                    if dic != nil && !self.isAppBlocking{
+                        if url == checkedUrl{
+                            DispatchQueue.main.async{
+                                let reason = dic?.value(forKey: "reason") as? String ?? ""
+                                self.lastBlockReasonFromAi = reason
+                                self.lblTitle.stringValue = blockTitle + "\n\n" + reason + intentionText
+                                if let dProbability = dic?.value(forKey: "allowed_probability") as? Double{
+                                    if(dProbability >= 0.80){
+                                        // Safe URL
+                                        addLog(text: "popUpBlockConfirmVc:- url is safe according to chat gpt")
+                                        allApiObject.capturePosthog(event: "block-popup-allow-automatically", metadata: [:])
+                                        
+                                        arrAllowedUrlsInCuddlyModeCurrentFocus.append(url)
+                                        arrAllowedTabTitlesInCuddlyModeCurrentFocus.append(tab_title)
+                                        
+                                        self.timer?.invalidate()
+                                        self.view.window?.close()
+                                        blurWcObj?.window?.close()
+                                        
+                                        var shouldShowAlert = true
+
+                                        if alertReasonAutoAllowWcObj != nil{
+                                            if alertReasonAutoAllowWcObj?.window != nil{
+                                                if alertReasonAutoAllowWcObj?.window?.isVisible ?? false{
+                                                    shouldShowAlert = false
+                                                }
+                                            }
+                                        }
+                                        if !SettingsManagerObject.isAiAllowUrlShowAlertEnabled{
+                                            shouldShowAlert = false
+                                        }
+                                        if shouldShowAlert{
+                                            self.setTimerHideAlertFewSeconds()
+                                            let percentage = dProbability * 100
+                                            
+                                            var titleUrlSafeText = "Safe site according to AI (probability <PERCENTAGE>%)"
+                                            var reasonText = "Reason: <REASON>"
+                                            var buttonBadDecisionText = "Bad decision"
+                                            var checkboxDonotShowText = "Don't show this anymore"
+                                            
+                                            if let popUpBlockConfirmVcInfo = configjson.value(forKey: "popUpBlockConfirmVcInfo") as? NSDictionary{
+                                                titleUrlSafeText = popUpBlockConfirmVcInfo.value(forKey: "titleUrlSafeText") as? String ?? titleUrlSafeText
+                                                reasonText = popUpBlockConfirmVcInfo.value(forKey: "reasonText") as? String ?? reasonText
+                                                buttonBadDecisionText = popUpBlockConfirmVcInfo.value(forKey: "buttonBadDecisionText") as? String ?? buttonBadDecisionText
+                                                checkboxDonotShowText = popUpBlockConfirmVcInfo.value(forKey: "checkboxDonotShowText") as? String ?? checkboxDonotShowText
+                                            }
+                                            
+                                            titleUrlSafeText = titleUrlSafeText.replacingOccurrences(of: "<PERCENTAGE>", with: "\(percentage)")
+                                            reasonText = reasonText.replacingOccurrences(of: "<REASON>", with: reason)
+                                            
+                                            showAutoUrlAllowWindow(title: titleUrlSafeText, subTitle: reasonText, buttonCancelText: buttonBadDecisionText, checkBoxText: checkboxDonotShowText, payload: payload!, response: dic!)
+                                            
+                                        }
+                                        
+                                        
+                                    }else if(dProbability >= 0.50 && dProbability < 0.80){
+                                        //Ask user
+                                        
+                                    }else{
+                                        //Unsafe url
+                                    }
+                                }
+                                
+                            }
+                        }
+                    }else{
+                        DispatchQueue.main.async{
+                            if !self.isAppBlocking{
+                                var urlNotVerifiedText = "The status of this url could not be verified."
+                                if let popUpBlockConfirmVcInfo = configjson.value(forKey: "popUpBlockConfirmVcInfo") as? NSDictionary{
+                                    urlNotVerifiedText = popUpBlockConfirmVcInfo.value(forKey: "urlNotVerifiedText") as? String ?? urlNotVerifiedText
+                                }
+                                self.lblTitle.stringValue = blockTitle + "\n\n" + urlNotVerifiedText + intentionText
+                            }
+                        }
+                    }
+                })
+                
+                
+            }
+            
         }
         
         self.currentApp = currentApp
@@ -97,7 +237,10 @@ class popUpBlockConfirmVc: NSViewController {
         startTimer(durationSeconds: 15)
         
         
+
+        
     }
+    
     func startTimer(durationSeconds:Int) {
         currentTimer = 0
         totalDuration = durationSeconds//durationInMinutes*60
@@ -155,35 +298,36 @@ class popUpBlockConfirmVc: NSViewController {
             }else{
                 self.lblTimer.stringValue = "\(hour):\(minute):\(second)"
             }
-           
-                
-             
-             
-                    
-                    
+   
             if let pid = self.currentPid{
                 
                 
                 let options = CGWindowListOption(arrayLiteral: CGWindowListOption.excludeDesktopElements, CGWindowListOption.optionOnScreenOnly)
                 let windowListInfo = CGWindowListCopyWindowInfo(options, CGWindowID(0))
                 let windowInfoList = windowListInfo as NSArray? as? [[String: AnyObject]]
-                
+           
                 for info in windowInfoList! {
                     let windowPID = info["kCGWindowOwnerPID"] as! UInt32
                     if  windowPID == pid {
-                        
-                        print(info)
                         if let windowFrame = info["kCGWindowBounds"] as? NSDictionary{
                             let height = windowFrame.value(forKey: "Height") as? Int ?? 0
-                            let width = windowFrame.value(forKey: "Width") as? Int ?? 0
-                            let x = windowFrame.value(forKey: "X") as? Int ?? 0
-                            let y = windowFrame.value(forKey: "Y") as? Int ?? 0
-                            
-                            showBlurWindow(frame: NSRect(x: x, y: y, width: width, height: height))
+                            if height > 100{
+                                let width = windowFrame.value(forKey: "Width") as? Int ?? 0
+                                let x = windowFrame.value(forKey: "X") as? Int ?? 0
+                                let y = windowFrame.value(forKey: "Y") as? Int ?? 0
+                                
+                                if self.view.window?.isVisible ?? false{
+                                    showBlurWindow(frame: NSRect(x: x, y: y, width: width, height: height))
+                                }else{
+                                    if blurWcObj != nil{
+                                        blurWcObj?.window?.close()
+                                    }
+                                } 
+                                break;
+                            }
                             
                         }
                         
-                        break;
                     }
                 }
             }
@@ -206,7 +350,14 @@ class popUpBlockConfirmVc: NSViewController {
                     appdelegate?.focusBlockUnwantedApp(runningApp: self.currentApp!, appName: self.currentAppName, showNotification: false)
                     self.currentApp = nil
                 }else{
-                    appdelegate?.focusBlockUnwantedUrl(script: self.script, url: self.url)
+//                    if ai enable then//
+                    //self.script = lastBlockReasonFromAi
+                    if SettingsManagerObject.isAiCheckUrlEnabled{
+                        appdelegate?.focusBlockUnwantedUrl(script: self.script, url: self.url, lastBlockReasonFromAi: self.lastBlockReasonFromAi)
+                    }else{
+                        appdelegate?.focusBlockUnwantedUrl(script: self.script, url: self.url, lastBlockReasonFromAi: nil)
+                    }
+                    
                 }
             }
         }
@@ -254,9 +405,9 @@ class popUpBlockConfirmVc: NSViewController {
         if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
             tabview.selectedTabViewItemIndex = 1
             if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil && shouldShowPassword{
-                tabview.view.addSubview(Focus_Bear.enterPasswordVcObj!.view)
-                tabview.view.addConstraints(subView: Focus_Bear.enterPasswordVcObj!.view)
-                Focus_Bear.enterPasswordVcObj?.parentVc = nil
+                tabview.view.addSubview(getEnterPasswordVcObjForPreferences().view)
+                tabview.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
+                getEnterPasswordVcObjForPreferences().parentVc = nil
                 addLog(text: "Showing enter password view")
             }
         }
@@ -269,6 +420,7 @@ class popUpBlockConfirmVc: NSViewController {
         }
     }
     
+    
     @IBAction func btnBlockAppClicked(_ sender: Any) {
         addLog(text: "popUpBlockConfirmVc:- btnBlockAppClicked")
         allApiObject.capturePosthog(event: "block-popup-no-i-was-getting-distracted-clicked", metadata: [:])
@@ -276,12 +428,23 @@ class popUpBlockConfirmVc: NSViewController {
             appdelegate?.focusBlockUnwantedApp(runningApp: self.currentApp!, appName: self.currentAppName, showNotification: false)
             self.currentApp = nil
         }else{
-            appdelegate?.focusBlockUnwantedUrl(script: script, url: url)
+            if SettingsManagerObject.isAiCheckUrlEnabled{
+                appdelegate?.focusBlockUnwantedUrl(script: self.script, url: self.url, lastBlockReasonFromAi: self.lastBlockReasonFromAi)
+            }else{
+                appdelegate?.focusBlockUnwantedUrl(script: self.script, url: self.url, lastBlockReasonFromAi: nil)
+            }
+            
+            if timerHideAlert != nil{
+                timerHideAlert?.invalidate()
+                timerHideAlert = nil
+            }
+            
         }
         self.timer?.invalidate()
         self.view.window?.close()
         blurWcObj?.window?.close()
     }
+    
     @IBAction func btnAllowAppClicked(_ sender: Any) {
         addLog(text: "popUpBlockConfirmVc:- btnAllowAppClicked")
         allApiObject.capturePosthog(event: "block-popup-yes-just-this-time-clicked", metadata: [:])
@@ -289,6 +452,10 @@ class popUpBlockConfirmVc: NSViewController {
             arrAllowedAppsInCuddlyModeCurrentFocus.append(currentApp!)
         }else{
             arrAllowedUrlsInCuddlyModeCurrentFocus.append(url)
+            if timerHideAlert != nil{
+                timerHideAlert?.invalidate()
+                timerHideAlert = nil
+            }
         }
              
         if let browser = self.browser{
@@ -303,6 +470,7 @@ class popUpBlockConfirmVc: NSViewController {
         if UserDefaults.standard.object(forKey: kUserdefaultsAlertShownFirstTempAllow)  == nil{
             UserDefaults.standard.set(true, forKey: kUserdefaultsAlertShownFirstTempAllow)
             let alert = NSAlert()
+            alert.setSharingType()
             alert.messageText = "Allowed! Heads up: it might be a little annoying at first to have to keep allowing sites/apps but within a few days, you'll have taught Focus Bear what apps and websites are productive."
             if let popUpBlockConfirmVcInfo = configjson.value(forKey: "popUpBlockConfirmVcInfo") as? NSDictionary{
                 alert.messageText = popUpBlockConfirmVcInfo.value(forKey: "firstTempItemAllowText") as? String ?? alert.messageText
@@ -320,3 +488,4 @@ class popUpBlockConfirmVc: NSViewController {
         blurWcObj?.window?.close()
     }
 }
+//[NEEDSTRANSLATION]

@@ -349,7 +349,7 @@ class AllApi:NSObject {
                 if let httpResponse = response as? HTTPURLResponse{
                     if httpResponse.statusCode == 204{ //it means it is right
                         
-                       // addLog(text: "api call captureEventEndpoint success")
+                        // addLog(text: "api call captureEventEndpoint success")
                         return;
                     }else{
                         addLog(text: "api call captureEventEndpoint error:- statusCode is \(httpResponse.statusCode)")
@@ -435,7 +435,7 @@ class AllApi:NSObject {
                 if let httpResponse = response as? HTTPURLResponse{
                     if httpResponse.statusCode == 200{ //it means it is right
                         
-                     //   addLog(text: "api call capturePosthog success")
+                        //   addLog(text: "api call capturePosthog success")
                         return;
                     }else{
                         addLog(text: "api call capturePosthog error:- statusCode is \(httpResponse.statusCode)")
@@ -469,11 +469,11 @@ class AllApi:NSObject {
             if appdelegate!.credential != nil{
                 var responsePath = "https://api.focusbear.io/user-settings"
                 if isFirstTime{
-//                    if isHabitsDisabled{
-//                        responsePath = "https://api.focusbear.io/habit-packs/default?pack_id=7cff2a97-90ad-4791-98b0-4a79dad32f73&format=break_only"
-//                    }else{
-//                        responsePath = "https://api.focusbear.io/habit-packs/default?pack_id=45ede897-9008-494f-b810-8d5495f6baca&format=routine_and_break"
-//                    }
+                    //                    if isHabitsDisabled{
+                    //                        responsePath = "https://api.focusbear.io/habit-packs/default?pack_id=7cff2a97-90ad-4791-98b0-4a79dad32f73&format=break_only"
+                    //                    }else{
+                    //                        responsePath = "https://api.focusbear.io/habit-packs/default?pack_id=45ede897-9008-494f-b810-8d5495f6baca&format=routine_and_break"
+                    //                    }
                     responsePath = "https://api.focusbear.io/habit-packs/default?pack_id=\(packId)"
                 }
                 
@@ -495,7 +495,7 @@ class AllApi:NSObject {
                                 if data != nil{
                                     do {
                                         if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
-                                            
+                                            applastSettingsGetTime = Date()
                                             addLog(text: "api call getSettings success")
                                             print(jsonResult)
                                             completionHandler(jsonResult)
@@ -651,6 +651,7 @@ class AllApi:NSObject {
     var isApiGetFocusTemplateErrorFound = false
     var isApiGetUserSubscriptionErrorFound = false
     var isApiGetHabitPacksErrorFound = false
+    var isApiPostTermsServiceErrorFound = false
     
     var errorCodeRequestTimeout = -1001
     var errorCodeNoInternet = -1009
@@ -968,7 +969,7 @@ class AllApi:NSObject {
                                             
                                             addLog(text: "api call getUserSubscriptionInfo success")
                                             print(jsonResult)
-                                          
+                                            
                                             completionHandler(jsonResult)
                                             return
                                         }
@@ -1054,7 +1055,10 @@ class AllApi:NSObject {
                                     
                                     addLog(text: "api call getHabitPacksInfo success")
                                     print(jsonResult)
-                                    habitPacksData = jsonResult
+                                    //"pack_name"
+                                    habitPacksData = jsonResult.sorted{
+                                        return $0["pack_name"] as? String ?? "" < $1["pack_name"] as? String ?? ""
+                                    }
                                     completionHandler(jsonResult)
                                     return
                                 }
@@ -1210,8 +1214,9 @@ class AllApi:NSObject {
     var completedChoiceLogId:String?
     //    var isAnyErrorFoundInActivityCompletedApi = false
     
-    func activityCompletedApi(activity_id:String, activity_sequence_id:String, start_time:Date, quantity_logged:Double?, duration_logged:Int, choice_id:String?, is_skipped:Bool, notes:String, should_not_update_current_activity:Bool, completionHandler: @escaping(_ result: NSDictionary?) -> ()){
+    func activityCompletedApi(activity_id:String, activity_sequence_id:String, start_time:Date, quantity_logged:Double?, duration_logged:Int, choice_id:String?, is_skipped:Bool, notes:String, should_not_update_current_activity:Bool, log_quantity_answers:[[String:Any]], completionHandler: @escaping(_ result: NSDictionary?) -> ()){//todo purane quantity ka kya kre iska kya kre
         addLog(text: "func call:- activityCompletedApi completed-activity")
+
         
         appdelegate!.credentialsManager.credentials {credentialsInfo in
             addLog(text: "get updated credentialsInfo from credentialsManager")
@@ -1257,7 +1262,7 @@ class AllApi:NSObject {
                     "finish_time": finish_time_string,
                     "metadata": [:]
                 ]
-             
+                
                 if is_skipped{
                     let dic:[String:Any] = ["skipped_did_complete": true]
                     json["metadata"] = dic
@@ -1271,8 +1276,12 @@ class AllApi:NSObject {
                     json["choice_id"] = choice_id!
                 }
                 
-                if quantity_logged != nil{
-                    json["quantity_logged"] = quantity_logged!
+                //                if quantity_logged != nil{
+                //                    json["quantity_logged"] = quantity_logged!//
+                //                }
+                
+                if log_quantity_answers.count != 0{
+                    json["log_quantity_answers"] = log_quantity_answers
                 }
                 
                 if should_not_update_current_activity{
@@ -1365,7 +1374,7 @@ class AllApi:NSObject {
                                 self.isApiActivityCompletedErrorFound = true
                                 addLog(text: "error activityCompletedApi:- try second time")
                                 
-                                self.activityCompletedApi(activity_id: activity_id, activity_sequence_id: activity_sequence_id, start_time:start_time, quantity_logged:quantity_logged, duration_logged:duration_logged, choice_id: choice_id, is_skipped: is_skipped, notes: notes, should_not_update_current_activity: should_not_update_current_activity, completionHandler: {dic  in
+                                self.activityCompletedApi(activity_id: activity_id, activity_sequence_id: activity_sequence_id, start_time:start_time, quantity_logged:quantity_logged, duration_logged:duration_logged, choice_id: choice_id, is_skipped: is_skipped, notes: notes, should_not_update_current_activity: should_not_update_current_activity, log_quantity_answers: log_quantity_answers, completionHandler: {dic  in
                                     
                                     completionHandler(dic)
                                     return
@@ -1406,7 +1415,7 @@ class AllApi:NSObject {
     }
     
     
-    func activityCompletedReviseApi(activity_id:String, quantity_logged:Double , choice_id:String?, completionHandler: @escaping(_ result: NSDictionary?) -> ()){
+    func activityCompletedReviseApi(activity_id:String, quantity_logged:Double , choice_id:String?, log_quantity_answers:[[String:Any]], completionHandler: @escaping(_ result: NSDictionary?) -> ()){//
         addLog(text: "func call:- activityCompletedReviseApi:- completed-activity/revise/id")
         
         appdelegate!.credentialsManager.credentials {credentialsInfo in
@@ -1431,12 +1440,10 @@ class AllApi:NSObject {
                 
                 
                 let json: [String: Any] = [
-                    "quantity_logged":quantity_logged
+                    "quantity_logged":0,// need to send  quantity_logged 0
+                    "log_quantity_answers":log_quantity_answers
                 ]
                 
-                //            if choice_id != nil{
-                //                json["choice_id"] = choice_id!
-                //            }
                 
                 
                 print("*****************json for activity************")
@@ -1492,7 +1499,7 @@ class AllApi:NSObject {
                                 self.isApiActivityCompletedReviseErrorFound = true
                                 addLog(text: "error activity Completed Revise Api:- try second time")
                                 
-                                allApiObject.activityCompletedReviseApi(activity_id: activity_id, quantity_logged:quantity_logged, choice_id: choice_id, completionHandler: {dic  in
+                                allApiObject.activityCompletedReviseApi(activity_id: activity_id, quantity_logged:quantity_logged, choice_id: choice_id, log_quantity_answers: log_quantity_answers, completionHandler: {dic  in
                                     completionHandler(dic)
                                     return
                                     
@@ -1521,7 +1528,6 @@ class AllApi:NSObject {
     
     func activitySkippedApi(activity_id:String, activity_sequence_id:String, completionHandler: @escaping(_ result: NSDictionary?) -> ()){
         addLog(text: "func call:- activitySkippedApi completed-activity")
-
         
         appdelegate!.credentialsManager.credentials {credentialsInfo in
             addLog(text: "get updated credentialsInfo from credentialsManager")
@@ -1571,7 +1577,7 @@ class AllApi:NSObject {
                             addLog(text: "api call activitySkippedApi success")
                             completionHandler(nil)
                             return
-
+                            
                         }else{
                             addLog(text: "api call activitySkippedApi error:- statusCode is \(httpResponse.statusCode)")
                             self.writeJsonInLog(data: data)
@@ -1641,7 +1647,7 @@ class AllApi:NSObject {
     func syncOfflineDataApi(offineData: [[String : Any]], completionHandler: @escaping(_ result: [NSDictionary]?) -> ()){
         addLog(text: "func call:- activity sync Api completed-activity")
         
-
+        
         appdelegate!.credentialsManager.credentials {credentialsInfo in
             addLog(text: "get updated credentialsInfo from credentialsManager")
             
@@ -1739,7 +1745,7 @@ class AllApi:NSObject {
     
     func forceCompleteCurrentSequence(activity_sequence_id:String, isForToday:Bool, completionHandler: @escaping(_ result: NSDictionary?) -> ()){
         addLog(text: "func call:- forceCompleteCurrentSequence:- completed-activity-sequence/activity_sequence_id/force-complete-current-sequence")
-
+        
         appdelegate!.credentialsManager.credentials {credentialsInfo in
             addLog(text: "get updated credentialsInfo from credentialsManager")
             
@@ -1958,7 +1964,8 @@ class AllApi:NSObject {
                                         if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
                                             print(jsonResult)
                                             addLog(text: "api call getActivityStats success")
-                                            graphOneMonthData = jsonResult
+                                            graphOneMonthData = jsonResult//.mutableCopy() as? NSMutableDictionary
+                                            
                                             addGraphsLog(text: "Monthly Stats:-\(jsonResult)")
                                             completionHandler(jsonResult)
                                             return
@@ -2039,7 +2046,6 @@ class AllApi:NSObject {
                 
                 let id = activityChoiceId ?? activityId
                 
-                
                 let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
                 var shutOffDate = Calendar.current.date(bySettingHour: shutOffTime!.hour, minute: shutOffTime!.minute, second: shutOffTime!.second, of: Date())!
                 let currentDate = Date()
@@ -2063,7 +2069,7 @@ class AllApi:NSObject {
                     request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
                     request.addValue("mac-os", forHTTPHeaderField: "platform")
                     request.addValue(getAppVersionInString(), forHTTPHeaderField: "app-version")
-
+                    
                     let task = URLSession.shared.dataTask(with: request as URLRequest) {
                         data, response, error in
                         
@@ -2138,6 +2144,126 @@ class AllApi:NSObject {
             }
         }
     }
+    
+    func getActivityCurrentDayQuestionsStats(activityId:String, activityChoiceId:String?, questions_ids:[String], completionHandler: @escaping(_ stats:NSDictionary?) -> ()){
+        addLog(text: "func call:- getActivityCurrentDayQuestionsStats:- Completed-activity")
+        
+        appdelegate!.credentialsManager.credentials {credentialsInfo in
+            addLog(text: "get updated credentialsInfo from credentialsManager")
+            
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+            
+            if appdelegate!.credential != nil{
+                
+                let id = activityChoiceId ?? activityId
+                
+                let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
+                var shutOffDate = Calendar.current.date(bySettingHour: shutOffTime!.hour, minute: shutOffTime!.minute, second: shutOffTime!.second, of: Date())!
+                let currentDate = Date()
+                if currentDate.compare(shutOffDate) == .orderedDescending{//>
+                    shutOffDate = Calendar.current.date(byAdding: .second, value: 30, to: currentDate) ?? currentDate
+                }
+                
+                
+                let fromTime = getStringFromDateInUtc(date: startDate, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+                let toTime = getStringFromDateInUtc(date: shutOffDate, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+                
+                
+                let responsePath = "https://api.focusbear.io/completed-activity/answer-logs?from_time=\(fromTime)&to_time=\(toTime)"
+                if let myUrl = NSURL(string: responsePath){
+                    addLog(text: "api call getActivityCurrentDayQuestionsStats \(myUrl)")
+                    let token = appdelegate!.credential!.accessToken
+                    
+                    
+                    let request = NSMutableURLRequest(url:myUrl as URL);
+                    request.httpMethod = "POST";
+                    request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+                    request.addValue("mac-os", forHTTPHeaderField: "platform")
+                    request.addValue(getAppVersionInString(), forHTTPHeaderField: "app-version")
+                    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                    
+                    let json: [String: Any] = [
+                        "question_ids": questions_ids
+                    ]
+                    
+                    let jsonData = try? JSONSerialization.data(withJSONObject: json)
+                    request.httpBody = jsonData
+                    
+                    let task = URLSession.shared.dataTask(with: request as URLRequest) {
+                        data, response, error in
+                        
+                        if let httpResponse = response as? HTTPURLResponse{
+                            self.isApiGetActivityCurrentDayStatsErrorFound = false
+                            if httpResponse.statusCode == 201{ //it means it is right
+                                if data != nil{
+                                    do {
+                                        if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
+                                            print(jsonResult)
+                                            addLog(text: "api call getACtivityCurrentDayStats success")
+                                            graphOneDayDataForQuantity = jsonResult//
+                                            addGraphsLog(text: "Current Day Stats:-\(jsonResult)")
+                                            completionHandler(jsonResult)
+                                            return
+                                        }
+                                        
+                                    }catch{
+                                        addLog(text: "api call getActivityCurrentDayQuestionsStats error:- \(error.localizedDescription)")
+                                        print(error)
+                                        completionHandler(nil)
+                                        return
+                                    }
+                                }
+                                
+                            }else{
+                                addLog(text: "api call getActivityCurrentDayQuestionsStats error:- statusCode is \(httpResponse.statusCode)")
+                                self.writeJsonInLog(data: data)
+                                addLog(text: "accessToken is:- \(token)")
+                                completionHandler(nil)
+                                return
+                            }
+                        }
+                        
+                        if error != nil {
+                            addLog(text: "api call getActivityCurrentDayQuestionsStats error:- \(error!.localizedDescription)")
+                            if (error as? NSError)?.code == self.errorCodeRequestTimeout{
+                                if self.isApiGetActivityCurrentDayStatsErrorFound{
+                                    self.isApiGetActivityCurrentDayStatsErrorFound = false
+                                    completionHandler(nil)
+                                    return
+                                }else{
+                                    self.isApiGetActivityCurrentDayStatsErrorFound = true
+                                    addLog(text: "error getActivityCurrentDayQuestionsStats:- try second time")
+                                    self.getActivityCurrentDayQuestionsStats(activityId: activityId, activityChoiceId: activityChoiceId, questions_ids: questions_ids, completionHandler: {dic in
+                                        completionHandler(dic)
+                                        return
+                                    })
+                                }
+                            }else{
+                                completionHandler(nil)
+                                return
+                            }
+                            
+                            
+                        }else{
+                            completionHandler(nil)
+                            return
+                        }
+                        
+                    }
+                    
+                    task.resume()
+                }else{
+                    addLog(text: "api call getActivityCurrentDayQuestionsStats error:- can't create url")
+                    completionHandler(nil)
+                    return
+                }
+                
+            }else{
+                completionHandler(nil)
+            }
+        }
+    }
+    
     func getAllActivityDaySummary(completionHandler: @escaping(_ stats:NSDictionary?) -> ()){
         addLog(text: "func call:- getAllActivityDaySummary:- completed-activity/day-summary")
         
@@ -2241,7 +2367,7 @@ class AllApi:NSObject {
     }
     func getAbortJsonToUpload(emailAddress:String?, feedback:String, abortReason:String,completionHandler: @escaping(_ result: NSDictionary) -> ()) {
         addLog(text: "func call:- get Abort Json To Upload response")
-
+        
         
         
         
@@ -2315,8 +2441,8 @@ class AllApi:NSObject {
     }
     func getQuitJsonToUpload(emailAddress:String?, feedback:String, quitReason:String,completionHandler: @escaping(_ result: NSDictionary) -> ()) {
         addLog(text: "func call:- get Quit Json To Upload")//
-
-
+        
+        
         let firstRunDate = UserDefaults.standard.object(forKey: kUserdefaultsFirstRunDate) as? Date ?? Date()
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
@@ -2390,7 +2516,7 @@ class AllApi:NSObject {
     func getUninstallJsonToUpload(emailAddress:String?, uninstallReason:String, uninstallDescription:String,completionHandler: @escaping(_ result: NSDictionary) -> ()) {
         
         addLog(text: "func call:- get Uninstall Json To Upload")
-
+        
         let firstRunDate = UserDefaults.standard.object(forKey: kUserdefaultsFirstRunDate) as? Date ?? Date()
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
@@ -3160,7 +3286,7 @@ class AllApi:NSObject {
         }
         else
         {
-//            let session = URLSession(configuration: URLSessionConfiguration.default, delegate: nil, delegateQueue: nil)
+            //            let session = URLSession(configuration: URLSessionConfiguration.default, delegate: nil, delegateQueue: nil)
             var request = URLRequest(url: url!)
             
             request.httpMethod = "GET"
@@ -3170,26 +3296,26 @@ class AllApi:NSObject {
                 {
                     if let response = response as? HTTPURLResponse
                     {
-//                        if response.statusCode == 200
-//                        {
-                            if let data = data
+                        //                        if response.statusCode == 200
+                        //                        {
+                        if let data = data
+                        {
+                            if let _ = try? data.write(to: destinationUrl, options: Data.WritingOptions.atomic)
                             {
-                                if let _ = try? data.write(to: destinationUrl, options: Data.WritingOptions.atomic)
-                                {
-                                    completion(destinationUrl.path, error)
-                                }
-                                else
-                                {
-                                    completion(destinationUrl.path, error)
-                                }
+                                completion(destinationUrl.path, error)
                             }
                             else
                             {
                                 completion(destinationUrl.path, error)
                             }
-//                        }else{
-//                            completion(destinationUrl.path, "error")
-//                        }
+                        }
+                        else
+                        {
+                            completion(destinationUrl.path, error)
+                        }
+                        //                        }else{
+                        //                            completion(destinationUrl.path, "error")
+                        //                        }
                     }
                 }
                 else
@@ -3307,27 +3433,27 @@ class AllApi:NSObject {
     }
     func getKeyWords(completionHandler: @escaping(_ result: [String]?) -> ()){
         addLog(text: "func call:- api getKeyWords")
-
+        
         appdelegate!.credentialsManager.credentials {credentialsInfo in
             addLog(text: "get updated credentialsInfo from credentialsManager")
-
+            
             appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
-
+            
             if appdelegate!.credential != nil{
-
+                
                 let responsePath = "https://api.focusbear.io/tab-keywords"
                 if let myUrl = NSURL(string: responsePath){
                     addLog(text: "api call getKeyWords \(myUrl)")
                     let token = appdelegate!.credential!.accessToken
-
-
+                    
+                    
                     let request = NSMutableURLRequest(url:myUrl as URL);
                     request.httpMethod = "POST";
                     request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
                     request.addValue("mac-os", forHTTPHeaderField: "platform")
                     request.addValue(getAppVersionInString(), forHTTPHeaderField: "app-version")
                     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-
+                    
                     let arr = arrAllowedTabTitlesInCuddlyModeCurrentFocus
                     let parameters = [
                         "titles": arr
@@ -3337,7 +3463,7 @@ class AllApi:NSObject {
                     request.httpBody = jsonData
                     let task = URLSession.shared.dataTask(with: request as URLRequest) {
                         data, response, error in
-
+                        
                         if let httpResponse = response as? HTTPURLResponse{
                             if httpResponse.statusCode == 201{ //it means it is right //
                                 if data != nil{
@@ -3349,7 +3475,7 @@ class AllApi:NSObject {
                                             completionHandler(jsonResult)
                                             return
                                         }
-
+                                        
                                     }catch{
                                         addLog(text: "api call getKeyWords return error:- \(error.localizedDescription)")
                                         completionHandler(nil)
@@ -3365,7 +3491,7 @@ class AllApi:NSObject {
                                 return
                             }
                         }
-
+                        
                         if error != nil {
                             addLog(text: "api call getKeyWords return error:- \(error!.localizedDescription)")
                             completionHandler(nil)
@@ -3374,84 +3500,258 @@ class AllApi:NSObject {
                         completionHandler(nil)
                         return
                     }
-
+                    
                     task.resume()
                 }else{
                     completionHandler(nil)
                 }
-
+                
             }else{
                 completionHandler(nil)
                 return
             }
         }
     }
-//    func sendLink(completionHandler: @escaping(_ result: NSDictionary?) -> ()){
-//
-//        let responsePath = "https://dev-2hidr8ad.us.auth0.com/passwordless/start"
-//        if let myUrl = NSURL(string: responsePath){
-//
-//            let request = NSMutableURLRequest(url:myUrl as URL);
-//            request.httpMethod = "POST";
-//
-//
-//            let parameters = [
-//              "client_id": "dgMrlNC5mM634Sxi9SLqIqi0WvgVpwX7",
-//              "connection": "email",
-//              "email": "prashant.wtl@gmail.com",// email
-//              "send": "link"
-//            ] as [String : Any]
-//            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-//
-//            let jsonData = try? JSONSerialization.data(withJSONObject: parameters)
-//            request.httpBody = jsonData
-//            let task = URLSession.shared.dataTask(with: request as URLRequest) {
-//                data, response, error in
-//
-//                if let httpResponse = response as? HTTPURLResponse{
-//                    if httpResponse.statusCode == 200{ //it means it is right //
-//                        if data != nil{
-//                            do {
-//                                if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
-//                                    addLog(text: "api call getKeyWords return success")
-//                                    completionHandler(jsonResult)
-//                                    return
-//                                }
-//
-//                            }catch{
-//                                addLog(text: "api call getKeyWords return error:- \(error.localizedDescription)")
-//                                completionHandler(nil)
-//                                print(error)
-//                                return;
-//                            }
-//                        }
-//                    }else{
-//
-//                        completionHandler(nil)
-//                        return
-//                    }
-//                }
-//
-//                if error != nil {
-//                    addLog(text: "api call getKeyWords return error:- \(error!.localizedDescription)")
-//                    completionHandler(nil)
-//                    return
-//                }
-//                completionHandler(nil)
-//                return
-//            }
-//
-//            task.resume()
-//        }else{
-//            completionHandler(nil)
-//        }
-//
-//
-//    }
+    //    func sendLink(completionHandler: @escaping(_ result: NSDictionary?) -> ()){
+    //
+    //        let responsePath = "https://dev-2hidr8ad.us.auth0.com/passwordless/start"
+    //        if let myUrl = NSURL(string: responsePath){
+    //
+    //            let request = NSMutableURLRequest(url:myUrl as URL);
+    //            request.httpMethod = "POST";
+    //
+    //
+    //            let parameters = [
+    //              "client_id": "dgMrlNC5mM634Sxi9SLqIqi0WvgVpwX7",
+    //              "connection": "email",
+    //              "email": "prashant.wtl@gmail.com",// email
+    //              "send": "link"
+    //            ] as [String : Any]
+    //            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+    //
+    //            let jsonData = try? JSONSerialization.data(withJSONObject: parameters)
+    //            request.httpBody = jsonData
+    //            let task = URLSession.shared.dataTask(with: request as URLRequest) {
+    //                data, response, error in
+    //
+    //                if let httpResponse = response as? HTTPURLResponse{
+    //                    if httpResponse.statusCode == 200{ //it means it is right //
+    //                        if data != nil{
+    //                            do {
+    //                                if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
+    //                                    addLog(text: "api call getKeyWords return success")
+    //                                    completionHandler(jsonResult)
+    //                                    return
+    //                                }
+    //
+    //                            }catch{
+    //                                addLog(text: "api call getKeyWords return error:- \(error.localizedDescription)")
+    //                                completionHandler(nil)
+    //                                print(error)
+    //                                return;
+    //                            }
+    //                        }
+    //                    }else{
+    //
+    //                        completionHandler(nil)
+    //                        return
+    //                    }
+    //                }
+    //
+    //                if error != nil {
+    //                    addLog(text: "api call getKeyWords return error:- \(error!.localizedDescription)")
+    //                    completionHandler(nil)
+    //                    return
+    //                }
+    //                completionHandler(nil)
+    //                return
+    //            }
+    //
+    //            task.resume()
+    //        }else{
+    //            completionHandler(nil)
+    //        }
+    //
+    //
+    //    }
     
     
-//    func checkEndPoint(completionHandler: @escaping(_ newDic:NSDictionary?) -> ()){//todo remove this
-//        addLog(text: "func call:- startFocusMode:- focus-mode/id/start")
+    func chatGPTIsURLSafe(url: String, tab_title: String, focus_mode: String, intention:String, completionHandler: @escaping(_ newDic:NSDictionary?, _ url:String?, _ payload: [String: Any]?) -> ()){
+        addLog(text: "func call:- chatGPTIsURLSafe")
+        
+        appdelegate!.credentialsManager.credentials {credentialsInfo in
+            addLog(text: "get updated credentialsInfo from credentialsManager")
+            
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+            
+            if appdelegate!.credential != nil{
+                
+                let responsePath = "https://api.focusbear.io/user/is-url-safe-to-use"
+                if let myUrl = NSURL(string: responsePath){
+                    addLog(text: "api call chatGPTIsURLSafe \(myUrl)")
+                    let token = appdelegate!.credential!.accessToken
+                    
+                    
+                    let request = NSMutableURLRequest(url:myUrl as URL);
+                    request.httpMethod = "POST";
+                    request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+                    request.addValue("mac-os", forHTTPHeaderField: "platform")
+                    request.addValue(getAppVersionInString(), forHTTPHeaderField: "app-version")
+                    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                    
+                    
+                    var language = "english"
+                    if currentLanguageCode == "es"{
+                        language = "spanish"
+                    }
+                    let json: [String: Any] = [
+                        "url": url,
+                        "tab_title": tab_title,
+                        "meta_description": "",
+                        "focus_mode": focus_mode,
+                        "language": language,
+                        "intention": intention
+                    ]
+                    
+                    
+                    
+                    
+                    let jsonData = try? JSONSerialization.data(withJSONObject: json)
+                    request.httpBody = jsonData
+                    let task = URLSession.shared.dataTask(with: request as URLRequest) {
+                        data, response, error in
+                        
+                        if let httpResponse = response as? HTTPURLResponse{
+                            //it means it is right
+                            self.isApiStartFocusModeErrorFound = false
+                            if data != nil{
+                                do {
+                                    if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
+                                        
+                                        
+                                        // if let id = jsonResult.value(forKey: "id") as? String{
+                                        
+                                        if httpResponse.statusCode == 201{
+                                            addLog(text: "api call chatGPTIsURLSafe success")
+                                            completionHandler(jsonResult, url, json)
+                                            return
+                                        }else{
+                                            addLog(text: "api call chatGPTIsURLSafe Api error:- statusCode is \(httpResponse.statusCode)")
+                                            self.writeJsonInLog(data: data)
+                                            addLog(text: "accessToken is:- \(token)")
+                                            completionHandler(nil, nil, nil)
+                                            return
+                                        }
+                                    }
+                                    
+                                }catch{
+                                    addLog(text: "api call chatGPTIsURLSafe error:- \(error.localizedDescription)")
+                                    completionHandler(nil, nil, nil)
+                                    print(error)
+                                    return;
+                                }
+                            }
+                            
+                        }
+                        
+                        
+                        if error != nil {
+                            addLog(text: "api call chatGPTIsURLSafe error:- \(error!.localizedDescription)")
+                            completionHandler(nil, nil, nil)
+                            return
+                            
+                            
+                        }else{
+                            completionHandler(nil, nil, nil)
+                            return
+                        }
+                    }
+                    
+                    task.resume()
+                }else{
+                    completionHandler(nil, nil, nil)
+                    return
+                }
+                
+            }else{
+                completionHandler(nil, nil, nil)
+                return
+            }
+        }
+    }
+    
+    
+    func postTermsService(){
+        addLog(text: "func call:- postTermsService")
+        
+        appdelegate!.credentialsManager.credentials {credentialsInfo in
+            addLog(text: "get updated credentialsInfo from credentialsManager")
+            
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+            
+            if appdelegate!.credential != nil{
+                
+                let responsePath = "https://api.focusbear.io/user/consent"
+                if let myUrl = NSURL(string: responsePath){
+                    addLog(text: "api call postTermsService \(myUrl)")
+                    let token = appdelegate!.credential!.accessToken
+                    
+                    
+                    let request = NSMutableURLRequest(url:myUrl as URL);
+                    request.httpMethod = "PUT";
+                    request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+                    request.addValue("mac-os", forHTTPHeaderField: "platform")
+                    request.addValue(getAppVersionInString(), forHTTPHeaderField: "app-version")
+                    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                    
+                    let json: [String: Any] = [
+                        "consent_type": "terms_of_service",
+                        "consent_status": true,
+                        "metadata":["policy_version": "1.0.0"]
+                    ]
+                    
+                    let jsonData = try? JSONSerialization.data(withJSONObject: json)
+                    request.httpBody = jsonData
+                    
+                    let task = URLSession.shared.dataTask(with: request as URLRequest) {
+                        data, response, error in
+                        
+                        if let httpResponse = response as? HTTPURLResponse{
+                            self.isApiPostTermsServiceErrorFound = false
+                            if httpResponse.statusCode == 200{ //it means it is right
+                                //success//
+                                addLog(text: "api call postTermsService success")
+                            }else{
+                                addLog(text: "api call postTermsService error:- statusCode is \(httpResponse.statusCode)")
+                                self.writeJsonInLog(data: data)
+                                addLog(text: "accessToken is:- \(token)")
+                            }
+                        }
+                        
+                        if error != nil {
+                            addLog(text: "api call postTermsService error:- \(error!.localizedDescription)")
+                            if (error as? NSError)?.code == self.errorCodeRequestTimeout{
+                                if self.isApiPostTermsServiceErrorFound{
+                                    self.isApiPostTermsServiceErrorFound = false
+                                }else{
+                                    self.isApiPostTermsServiceErrorFound = true
+                                    addLog(text: "error postTermsService:- try second time")
+                                    self.postTermsService()
+                                }
+                            }
+                        }
+                    }
+                    task.resume()
+                }else{
+                    addLog(text: "api call postTermsService error:- can't create url")
+                }
+                
+            }
+        }
+    }
+    
+//    func uploadAppLogs(id:String,achievements:String, distractions:String, finish_time:Date, completionHandler: @escaping(_ newDic:NSDictionary?) -> ()){
+//        addLog(text: "func call:-  finishFocusMode:- focus-mode/id/finish")
 //
 //        appdelegate!.credentialsManager.credentials {credentialsInfo in
 //            addLog(text: "get updated credentialsInfo from credentialsManager")
@@ -3460,9 +3760,9 @@ class AllApi:NSObject {
 //
 //            if appdelegate!.credential != nil{
 //
-//                let responsePath = "https://api.focusbear.io/user/is-url-safe-to-use"
+//                let responsePath = "https://api.focusbear.io/app-logs"
 //                if let myUrl = NSURL(string: responsePath){
-//                    addLog(text: "api call startFocusMode \(myUrl)")
+//                    addLog(text: "api call finishFocusMode \(myUrl)")
 //                    let token = appdelegate!.credential!.accessToken
 //
 //
@@ -3475,8 +3775,10 @@ class AllApi:NSObject {
 //
 //
 //                    let json: [String: Any] = [
-//                        "url":"google.com",
-//                        "tab_title":"how to use facebook"
+//                        "achievements":achievements,
+//                        "distractions":distractions,
+//                        "finish_time":getStringFromDateInUtc(date: finish_time, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"),
+//                        "focus_duration_seconds":focusModeActualDurationPerformed
 //                    ]
 //
 //
@@ -3489,25 +3791,21 @@ class AllApi:NSObject {
 //
 //                        if let httpResponse = response as? HTTPURLResponse{
 //                            //it means it is right
-//                            self.isApiStartFocusModeErrorFound = false
+//                            self.isApiFinishFocusModeErrorFound = false
 //                            if data != nil{
 //                                do {
 //                                    if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
 //
 //
 //                                        // if let id = jsonResult.value(forKey: "id") as? String{
-//
 //                                        if httpResponse.statusCode == 201{
-//                                            addLog(text: "api call startFocusMode success")
+//                                            addLog(text: "api call finishFocusMode success")
 //                                            completionHandler(jsonResult)
 //                                            return
 //                                        }else{
-//                                            addLog(text: "api call startFocusMode Api error:- statusCode is \(httpResponse.statusCode)")
+//                                            addLog(text: "api call finishFocusMode Api error:- statusCode is \(httpResponse.statusCode)")
 //                                            self.writeJsonInLog(data: data)
 //                                            addLog(text: "accessToken is:- \(token)")
-//                                            if httpResponse.statusCode == 400{//it means may be a focus mode is already running so complete it
-//
-//                                            }
 //                                            completionHandler(nil)
 //                                            return
 //                                        }
@@ -3518,37 +3816,39 @@ class AllApi:NSObject {
 //                                    }
 //
 //                                }catch{
-//                                    addLog(text: "api call startFocusMode error:- \(error.localizedDescription)")
 //                                    completionHandler(nil)
+//                                    addLog(text: "api call finishFocusMode error:- \(error.localizedDescription)")
 //                                    print(error)
 //                                    return;
 //                                }
 //                            }
-//
+//                            //                        }else{
+//                            //                            completionHandler(nil)
+//                            //                            return
+//                            //                        }
 //                        }
 //
 //
 //                        if error != nil {
-//                            addLog(text: "api call startFocusMode error:- \(error!.localizedDescription)")
+//                            addLog(text: "api call finishFocusMode error:- \(error!.localizedDescription)")
 //                            if (error as? NSError)?.code == self.errorCodeRequestTimeout{
-//                                if self.isApiStartFocusModeErrorFound{
-//                                    self.isApiStartFocusModeErrorFound = false
+//                                if self.isApiFinishFocusModeErrorFound{
+//                                    self.isApiFinishFocusModeErrorFound = false
 //                                    completionHandler(nil)
 //                                    return
 //                                }else{
-//                                    self.isApiStartFocusModeErrorFound = true
-//                                    addLog(text: "error startFocusMode:- try second time")
+//                                    self.isApiFinishFocusModeErrorFound = true
+//                                    addLog(text: "error finishFocusMode:- try second time")
 //
-////                                    self.startFocusMode(id: id, intention: intention, start_time: start_time, finish_time: finish_time, completionHandler: {newDic in
-////                                        completionHandler(newDic)
-////                                        return
-////                                    })
+//                                    allApiObject.finishFocusMode(id: id, achievements: achievements, distractions: distractions, finish_time: finish_time, completionHandler: {newDic in
+//                                        completionHandler(newDic)
+//                                        return
+//                                    })
 //                                }
 //                            }else{
 //                                completionHandler(nil)
 //                                return
 //                            }
-//
 //
 //                        }else{
 //                            completionHandler(nil)

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<installer-gui-script minSpecVersion="1">
+<background file="logo.png"  mime-type="image/png"  alignment="bottomleft" />
+<background-darkAqua file="logo_white.png"  mime-type="image/png"  alignment="bottomleft" />
+    <welcome file="WELCOME.rtf"/>
+    <license file="License.rtf"/>
+    <title>Focus Bear</title>
+
+<pkg-ref id="com.App.EarnYourScreentime"/>
+    <options customize="never" require-scripts="false"/>
+    <choices-outline>
+        <line choice="default">
+            <line choice="com.App.EarnYourScreentime"/>
+        </line>
+    </choices-outline>
+    <choice id="default"/>
+    <choice id="com.App.EarnYourScreentime" visible="false">
+        <pkg-ref id="com.App.EarnYourScreentime"/>
+    </choice>
+    <pkg-ref id="com.App.EarnYourScreentime" version="1.0" onConclusion="none">Focus%20Bear-1.0.pkg</pkg-ref>
+</installer-gui-script>

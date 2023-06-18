@@ -1,0 +1,7 @@
+#!/bin/sh
+
+#COPYRIGHT 2022 WISE TECH LABS PRIVATE LIMITED
+
+open "/Applications/Focus Bear.app"
+
+exit 0

@@ -399,7 +399,7 @@ class focusSummaryVc: NSViewController {
             if activity.name.lowercased() == activityName.lowercased(){
                 return activity.logQuantityType
             }else{
-                if activity.isRandomChoice{
+                if activity.choiceType == ._RANDOM_{
                     for choice in activity.choices{
                         if choice.name.lowercased() == activityName.lowercased(){
                             return choice.logQuantityType

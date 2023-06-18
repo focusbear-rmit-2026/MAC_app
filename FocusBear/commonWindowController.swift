@@ -17,6 +17,7 @@ class commonWindowController: NSWindowController, NSWindowDelegate {
                 self.window?.sharingType = .none
             }
         }
+        self.window?.appearance = getAppAppearance()
         
         // Implement this method to handle any initialization after your window controller's window has been loaded from its nib file.
     }
@@ -26,7 +27,7 @@ class commonWindowController: NSWindowController, NSWindowDelegate {
         if self == breakWarningWcObj{
             breakWarningVcObj?.timer?.invalidate()
             activityPostponeCount += 1
-            mainViewControllerObj?.postponeBreakActivitiesFor(minutes: 5)
+            mainViewControllerObj?.postponeBreakActivitiesFor(minutes: 5, secondsToPostpone: nil)
             return true
         }
         
@@ -42,7 +43,7 @@ class commonWindowController: NSWindowController, NSWindowDelegate {
             if self == endingFocusWindowControllerObj{
                 addLog(text: "focus mode completed Window close")
                 focusCompletedVcObj!.btnTakeBreakClicked(self)
-                return true
+                return false
             }
         }
         if appdelegate!.user == nil{

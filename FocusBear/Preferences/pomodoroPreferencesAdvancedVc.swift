@@ -88,6 +88,10 @@ class pomodoroPreferencesAdvancedVc: NSViewController {
         for i in 2...20{
             popUpBtnPomodoroCount.addItem(withTitle: "\(i)")
         }
+        
+        
+        
+        
     }
     override func viewWillAppear() {
 
@@ -98,6 +102,8 @@ class pomodoroPreferencesAdvancedVc: NSViewController {
                 self.view.window?.sharingType = .readOnly
             }
         }
+       
+        
         if let isEnabled = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHardcorePomodoroEnabled) as? Bool{
             if isEnabled{
                 checkBoxUseHardcorePomodoro.state = .on
@@ -210,8 +216,8 @@ class pomodoroPreferencesAdvancedVc: NSViewController {
             }
             
         }else{
-            checkBoxSkipMicrobreaks.state = .off
-            UserDefaults.standard.set(false, forKey: SettingsManagerObject.kUserdefaultsHardcorePomodoroSkipMicroBreaks)
+            checkBoxSkipMicrobreaks.state = .on
+            UserDefaults.standard.set(true, forKey: SettingsManagerObject.kUserdefaultsHardcorePomodoroSkipMicroBreaks)
         }
         
         

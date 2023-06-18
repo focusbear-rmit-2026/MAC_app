@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="20037" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+    <dependencies>
+        <deployment identifier="macosx"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="20037"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <objects>
+        <customObject id="-2" userLabel="File's Owner" customClass="collectionViewItemImage" customModule="Focus_Bear" customModuleProvider="target">
+            <connections>
+                <outlet property="imgView" destination="uwC-QY-MoP" id="Frx-ly-BDB"/>
+                <outlet property="view" destination="Hz6-mo-xeY" id="0bl-1N-x8E"/>
+            </connections>
+        </customObject>
+        <customObject id="-1" userLabel="First Responder" customClass="FirstResponder"/>
+        <customObject id="-3" userLabel="Application" customClass="NSObject"/>
+        <customView id="Hz6-mo-xeY">
+            <rect key="frame" x="0.0" y="0.0" width="169" height="161"/>
+            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+            <subviews>
+                <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="uwC-QY-MoP">
+                    <rect key="frame" x="0.0" y="0.0" width="169" height="161"/>
+                    <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyUpOrDown" id="aka-fx-vNV"/>
+                </imageView>
+            </subviews>
+            <constraints>
+                <constraint firstItem="uwC-QY-MoP" firstAttribute="top" secondItem="Hz6-mo-xeY" secondAttribute="top" id="8ch-00-dg9"/>
+                <constraint firstAttribute="bottom" secondItem="uwC-QY-MoP" secondAttribute="bottom" id="Egc-1s-pQC"/>
+                <constraint firstItem="uwC-QY-MoP" firstAttribute="leading" secondItem="Hz6-mo-xeY" secondAttribute="leading" id="Xg6-cD-uzl"/>
+                <constraint firstAttribute="trailing" secondItem="uwC-QY-MoP" secondAttribute="trailing" id="eAR-MN-Kef"/>
+            </constraints>
+            <point key="canvasLocation" x="-14.5" y="78.5"/>
+        </customView>
+        <customObject id="sik-VI-Fo6" customClass="collectionViewItemImage" customModule="Focus_Bear" customModuleProvider="target"/>
+    </objects>
+</document>

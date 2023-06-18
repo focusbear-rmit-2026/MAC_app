@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleIdentifier</key>
+	<string>com.mycompany.CalendarLib-EC-Master</string>
+	<key>CFBundleName</key>
+	<string>CalendarLib EC</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.1.5</string>
+	<key>CFBundleVersion</key>
+	<string>7</string>
+	<key>NSHumanReadableCopyright</key>
+	<string>2015-21</string>
+	<key>OSAScriptingDefinition</key>
+	<string>ScriptingDictionary</string>
+	<key>WindowState</key>
+	<dict>
+		<key>bundleDividerCollapsed</key>
+		<true/>
+		<key>bundlePositionOfDivider</key>
+		<real>0.0</real>
+		<key>dividerCollapsed</key>
+		<false/>
+		<key>eventLogLevel</key>
+		<integer>2</integer>
+		<key>name</key>
+		<string>ScriptWindowState</string>
+		<key>positionOfDivider</key>
+		<real>293</real>
+		<key>savedFrame</key>
+		<string>134 161 700 678 0 0 1440 875 </string>
+		<key>selectedTab</key>
+		<string>description</string>
+	</dict>
+</dict>
+</plist>

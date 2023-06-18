@@ -104,6 +104,7 @@ class addFocusTypeVc: NSViewController, NSTextFieldDelegate  {
                 self.view.window?.sharingType = .readOnly
             }
         }
+       
         
         lblError.isHidden = true
         btnAdd.keyEquivalent = "\r"
@@ -207,8 +208,9 @@ class addFocusTypeVc: NSViewController, NSTextFieldDelegate  {
         if txtfield == textFieldFocusType{
             lblError.isHidden = true
             if textFieldFocusType.stringValue.count > 250{
-                textFieldFocusType.currentEditor()?.deleteBackward(nil)
-                return;
+//                textFieldFocusType.currentEditor()?.deleteBackward(nil)//
+                let index = textFieldFocusType.stringValue.index(textFieldFocusType.stringValue.startIndex, offsetBy: 250)
+                textFieldFocusType.stringValue = String(textFieldFocusType.stringValue.prefix(upTo: index))
             }
             if textFieldFocusType.stringValue.count == 0{
                 btnAdd.isEnabled = false

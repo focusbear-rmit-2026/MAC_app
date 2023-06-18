@@ -76,12 +76,40 @@ class passwordVc: NSViewController {
             lblCheckBoxChangeSettings.stringValue = passwordPreferencesInfo.value(forKey: "buttonChangeSettingsText") as? String ?? lblCheckBoxChangeSettings.stringValue
             lblCheckBoxSkipEveningHabitAfterCutOff.stringValue = passwordPreferencesInfo.value(forKey: "buttonSkipEveningHabitAfterCutOffText") as? String ?? lblCheckBoxSkipEveningHabitAfterCutOff.stringValue
         }
+        
+        
+        
+        
+        
+        
+        if let passwordPreferencesInfo = configjson.value(forKey: "passwordPreferencesInfo") as? NSDictionary{
+            if let titleChangePassword = passwordPreferencesInfo.value(forKey: "titleChangePassword") as? String{
+                arrForSearchFromSettings.append(["title": titleChangePassword, "tabId": idPassword, "object": lblTitle as Any])
+            }
+            if let titleSetPassword = passwordPreferencesInfo.value(forKey: "titleSetPassword") as? String{
+                arrForSearchFromSettings.append(["title": titleSetPassword, "tabId": idPassword, "object": lblTitle as Any])
+            }
+            if let title = passwordPreferencesInfo.value(forKey: "titleAskPassword") as? String {
+                arrForSearchFromSettings.append(["title": title, "tabId": idPassword, "object": lblTitleAskPassword as Any])
+            }
+        }
+            
+         
+        
+        checkBoxChangeSettings.toolTip = lblCheckBoxChangeSettings.stringValue
+        checkBoxSkipMorningHabit.toolTip = lblCheckBoxSkipMorningHabit.stringValue
+        checkBoxSkipEveningHabit.toolTip = lblCheckBoxSkipEveningHabit.stringValue
+        checkBoxSkipEveningHabitAfterCutOff.toolTip = lblCheckBoxSkipEveningHabitAfterCutOff.stringValue
+        checkBoxAbortingShutoff.toolTip = lblCheckBoxAbortingShutoff.stringValue
+        checkBoxStopPomodoro.toolTip = lblCheckBoxStopPomodoro.stringValue
+        checkBoxQuitApp.toolTip = lblCheckBoxQuitApp.stringValue
     }
     
     override func viewWillDisappear() {
         SettingsManagerObject.putUserLocalDeviceSettings()
     }
     override func viewWillAppear() {
+        preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: 630 + 46, height: 511 + 142))
         resetView()
     }//your password has been disabled.
     //

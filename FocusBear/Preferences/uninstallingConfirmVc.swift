@@ -155,10 +155,21 @@ class uninstallingConfirmVc: NSViewController, NSTextViewDelegate {
     }
     
     func clearAllData(){
-        do{
-            try FileManager.default.removeItem(at: appdelegate!.applicationSupportURL!)
-        }catch{
-            print(error)
+        
+        
+        let properties = [URLResourceKey.localizedNameKey, URLResourceKey.creationDateKey, URLResourceKey.contentModificationDateKey, URLResourceKey.localizedTypeDescriptionKey,URLResourceKey.nameKey]
+        let array = try? FileManager.default.contentsOfDirectory(at: appdelegate!.applicationSupportURL!, includingPropertiesForKeys: properties, options: .skipsHiddenFiles)
+        if array != nil{
+            for url in array!{
+                
+                if url.path.lowercased() != DebugLogsFolderURL.path.lowercased(){
+                    do{
+                        try FileManager.default.removeItem(at: url)
+                    }catch{
+                        print(error)
+                    }
+                }
+            }
         }
         
         var firstRun:Bool?

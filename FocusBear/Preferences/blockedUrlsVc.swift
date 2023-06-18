@@ -37,9 +37,10 @@ class blockedUrlsVc: NSViewController {
             btnAddUrl.image = NSImage(systemSymbolName: "plus.square.fill", accessibilityDescription: nil)
             btnRemoveUrl.image = NSImage(systemSymbolName: "minus.square.fill", accessibilityDescription: nil)
         }
-        
+        arrForSearchFromSettings.append(["title": lblTitle.stringValue, "tabId": idBlockedUrls, "object": lblTitle as Any])
     }
     override func viewWillAppear() {
+        preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: 630 + 46, height: 346 + 142))
         tblView.reloadData()
     }
     override func viewWillDisappear() {

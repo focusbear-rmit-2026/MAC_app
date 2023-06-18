@@ -22,14 +22,12 @@ class howHeardVc: NSViewController {
     var optionFirstText = "Friend recommended it"
     var optionSecondText = "Google"
     var optionThirdText = "Ad on Reddit or Twitter"
+    var optionRemarkableText = "Remarkable"
     var optionFourthText = "Somewhere else"
     
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
-        
-
-        
 
         textfield.delegate = self
         lblTitle.stringValue = "How did you hear about Focus Bear?"
@@ -41,11 +39,12 @@ class howHeardVc: NSViewController {
             optionFirstText = dic.value(forKey: "optionFirstText") as? String ?? optionFirstText
             optionSecondText = dic.value(forKey: "optionSecondText") as? String ?? optionSecondText
             optionThirdText = dic.value(forKey: "optionThirdText") as? String ?? optionThirdText
+            optionRemarkableText = dic.value(forKey: "optionRemarkableText") as? String ?? optionRemarkableText
             optionFourthText = dic.value(forKey: "optionFourthText") as? String ?? optionFourthText
         }
     }
     override func viewWillAppear() {
-        arrayItems = [["title":optionFirstText, "state":false], ["title":optionSecondText, "state":false], ["title":optionThirdText, "state":false]]
+        arrayItems = [["title":optionFirstText, "state":false], ["title":optionSecondText, "state":false], ["title":optionThirdText, "state":false], ["title":optionRemarkableText, "state":false]]
         arrayItems = arrayItems.shuffled()
         arrayItems.append(["title":optionFourthText, "state":false])
         tblView.reloadData()

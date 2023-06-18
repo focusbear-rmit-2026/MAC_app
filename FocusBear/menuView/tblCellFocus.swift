@@ -11,6 +11,7 @@ import Cocoa
 class tblCellFocus: NSTableCellView {
 
 
+    @IBOutlet weak var btnInfoIcon: hoverInfoButton!
     @IBOutlet weak var btnEditFocusMode: NSButton!
     @IBOutlet weak var lblIntension: NSTextField!
     //  @IBOutlet weak var hoursPopupBtn: NSPopUpButton!
@@ -30,7 +31,7 @@ class tblCellFocus: NSTableCellView {
     @IBOutlet weak var boxChildSecond: customBox!
     var isFirstTime = false
     var trackingArea: NSTrackingArea?
-
+    var isInfoIconVisible = false
     
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
@@ -45,12 +46,17 @@ class tblCellFocus: NSTableCellView {
    
     override func mouseEntered(with event: NSEvent) {
         if event.trackingArea == trackingArea{
-            btnEditFocusMode.isHidden = false
+            if isInfoIconVisible{
+                btnInfoIcon.isHidden = false
+            }else{
+                btnEditFocusMode.isHidden = false
+            }
         }
     }
+    
     override func mouseExited(with event: NSEvent) {
         btnEditFocusMode.isHidden = true
-//        NSCursor.pointingHand.set()
+        btnInfoIcon.isHidden = true
     }
     
 }

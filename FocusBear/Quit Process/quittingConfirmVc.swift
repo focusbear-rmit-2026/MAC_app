@@ -194,7 +194,7 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
         popUpBtnReasons.isEnabled = true
         popUpBtnReasons.selectItem(at: 0)
         btnQuit.isEnabled = false
-        lblTimer.stringValue = "00:02"
+        lblTimer.stringValue = "00:01"
         scrollView.isHidden = true
         scrollView.isHidden = true
         lblDescription.isHidden = true
@@ -225,11 +225,11 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
         case 1:
             btnQuit.isHidden = true
             scrollView.isHidden = true
-            lblTimer.isHidden = false
+            lblTimer.isHidden = true//
             lblDescription.isHidden = false
             lblTitleEmail.isHidden = true
             textFieldEmail.isHidden = true
-            lblTimer.stringValue = "00:02"
+            lblTimer.stringValue = "00:01"
             lblDescription.stringValue = dropDown_1_Description
             popUpBtnReasons.isEnabled = false
             startTimer()
@@ -248,22 +248,22 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
         case 3:
             btnQuit.isHidden = true
             scrollView.isHidden = true
-            lblTimer.isHidden = false
+            lblTimer.isHidden = true//
             lblDescription.isHidden = false
             lblTitleEmail.isHidden = true
             textFieldEmail.isHidden = true
-            lblTimer.stringValue = "00:02"
+            lblTimer.stringValue = "00:01"
             lblDescription.stringValue = dropDownMeetingDescription
             popUpBtnReasons.isEnabled = false
             startTimer()
         case 4:
             btnQuit.isHidden = true
             scrollView.isHidden = true
-            lblTimer.isHidden = false
+            lblTimer.isHidden = true//
             lblDescription.isHidden = false
             lblTitleEmail.isHidden = true
             textFieldEmail.isHidden = true
-            lblTimer.stringValue = "00:02"
+            lblTimer.stringValue = "00:01"
             lblDescription.stringValue = dropDownSomeOneElseDescription
             popUpBtnReasons.isEnabled = false
             startTimer()
@@ -283,11 +283,11 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
         case 6:
             btnQuit.isHidden = true
             scrollView.isHidden = true
-            lblTimer.isHidden = false
+            lblTimer.isHidden = true//
             lblDescription.isHidden = false
             lblTitleEmail.isHidden = true
             textFieldEmail.isHidden = true
-            lblTimer.stringValue = "00:02"
+            lblTimer.stringValue = "00:01"
             lblDescription.stringValue = dropDownRelaxDescription
             popUpBtnReasons.isEnabled = false
             startTimer()
@@ -309,17 +309,17 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
     }
     func startTimer() {
         currentTimer = 0
-        totalDuration = 2
-        let (_,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
-        var minute = "\(m)"
-        var second = "\(s)"
-        if minute.count == 1 {
-            minute = "0\(m)"
-        }
-        if second.count == 1 {
-            second = "0\(s)"
-        }
-        self.lblTimer.stringValue = "\(minute):\(second)"
+        totalDuration = 1
+//        let (_,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
+//        var minute = "\(m)"
+//        var second = "\(s)"
+//        if minute.count == 1 {
+//            minute = "0\(m)"
+//        }
+//        if second.count == 1 {
+//            second = "0\(s)"
+//        }
+//        self.lblTimer.stringValue = "\(minute):\(second)"//
         DispatchQueue.global().sync {
             self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
             RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
@@ -329,19 +329,19 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
     @objc func performTimerCount() {
         
         currentTimer += 1
-        let (_,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
-        var minute = "\(m)"
-        var second = "\(s)"
-        
-        if minute.count == 1 {
-            minute = "0\(m)"
-        }
-        if second.count == 1 {
-            second = "0\(s)"
-        }
+//        let (_,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
+//        var minute = "\(m)"
+//        var second = "\(s)"
+//
+//        if minute.count == 1 {
+//            minute = "0\(m)"
+//        }
+//        if second.count == 1 {
+//            second = "0\(s)"
+//        }
         
         DispatchQueue.main.async {
-            self.lblTimer.stringValue = "\(minute):\(second)"
+//            self.lblTimer.stringValue = "\(minute):\(second)"
         }
         if self.totalDuration <= self.currentTimer {
             self.timer?.invalidate()
@@ -412,11 +412,11 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
         addLog(text: "quittingConfirmVc - btnQuitClicked")//
         self.btnQuit.isHidden = true
         self.scrollView.isHidden = true
-        self.lblTimer.isHidden = false
+        self.lblTimer.isHidden = true//
         self.lblDescription.isHidden = false
         self.lblTitleEmail.isHidden = true
         self.textFieldEmail.isHidden = true
-        self.lblTimer.stringValue = "00:02"
+        self.lblTimer.stringValue = "00:01"
         self.lblDescription.stringValue = self.dropDown_1_Description
         
         if self.popUpBtnReasons.indexOfSelectedItem == 2{

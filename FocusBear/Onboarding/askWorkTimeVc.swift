@@ -11,6 +11,12 @@ import Cocoa
 class askWorkTimeVc: NSViewController {
 
   
+   
+    @IBOutlet weak var lblLockSystemTime: NSTextField!
+    @IBOutlet weak var lblEveningRoutineTime: NSTextField!
+    @IBOutlet weak var lblWorkTime: NSTextField!
+    @IBOutlet weak var lblPrepareToWorkTime: NSTextField!
+    @IBOutlet weak var lblMorningRoutineTime: NSTextField!
     @IBOutlet weak var lblQuestionFinishWorkTime: NSTextField!
     @IBOutlet weak var lblQuestionStartWorkTime: NSTextField!
 //    @IBOutlet weak var lblDescriptionShutOffTime: NSTextField!
@@ -71,7 +77,7 @@ class askWorkTimeVc: NSViewController {
     }
     
     override func viewWillAppear() {
-        datePickerStartTime.dateValue = getDateFromString(date: "8:30", dateFormat: "HH:mm") ?? Date()// same time in abort button
+        datePickerStartTime.dateValue = getDateFromString(date: "08:30", dateFormat: "HH:mm") ?? Date()// same time in abort button//
         datePickerShutDownTime.dateValue = getDateFromString(date: "18:30", dateFormat: "HH:mm") ?? Date()
         resetView()
     }
@@ -110,36 +116,52 @@ class askWorkTimeVc: NSViewController {
 //        lblShutOfTime.stringValue = endWorkTimeString
 //
         
-        var explanationText = "Your schedule looks like:\n\n🐥 <MORNING_ROUTINE_START_TIME> - <MORNING_ROUTINE_END_TIME> - Morning routine\n\n💼 <MORNING_ROUTINE_END_TIME> - <START_WORK_TIME> - Prepare to start work (buffer time)\n\n💪 <START_WORK_TIME> - <END_WORK_TIME> - Work\n\n🥱 <END_WORK_TIME> - <EVENING_ROUTINE_END_TIME> - Do evening routine.\n\n😴 <EVENING_ROUTINE_END_TIME> - Finish evening routine - computer locked (you can unlock it if you need it)"
+//        var explanationText = "Your schedule looks like:\n\n🐥 <MORNING_ROUTINE_START_TIME> - <MORNING_ROUTINE_END_TIME> - Morning routine\n\n💼 <MORNING_ROUTINE_END_TIME> - <START_WORK_TIME> - Prepare to start work (buffer time)\n\n💪 <START_WORK_TIME> - <END_WORK_TIME> - Work\n\n🥱 <END_WORK_TIME> - <EVENING_ROUTINE_END_TIME> - Do evening routine.\n\n😴 <EVENING_ROUTINE_END_TIME> - Finish evening routine - computer locked (you can unlock it if you need it)"
+        
+        var titleTimeText = "Your schedule looks like:" // Tu horario se ve así:
+        var morningRoutineTimeText = "🐥 <MORNING_ROUTINE_START_TIME> - <MORNING_ROUTINE_END_TIME> - Morning routine" // 🐥 <MORNING_ROUTINE_START_TIME> - <MORNING_ROUTINE_END_TIME> - Rutina Matutina
+        var prepareToStartWorkTimeText = "💼 <MORNING_ROUTINE_END_TIME> - <START_WORK_TIME> - Prepare to start work (buffer time)"//💼 <MORNING_ROUTINE_END_TIME> - <START_WORK_TIME> - Prepárate para comenzar a trabajar (intérvalo de transición)
+        var workTimeText = "💪 <START_WORK_TIME> - <END_WORK_TIME> - Work"
+        var eveningRoutineTimeText = "🥱 <END_WORK_TIME> - <EVENING_ROUTINE_END_TIME> - Do evening routine."
+        var lockComputerTimeText = "😴 <EVENING_ROUTINE_END_TIME> - Finish evening routine - computer locked (you can unlock it if you need it)"
+
         if let askWorkTimeVcInfo = configjson.value(forKey: "askWorkTimeVcInfo") as? NSDictionary{
-            explanationText = askWorkTimeVcInfo.value(forKey: "explanationText") as? String ?? explanationText
+            titleTimeText = askWorkTimeVcInfo.value(forKey: "titleTimeText") as? String ?? titleTimeText
+            morningRoutineTimeText = askWorkTimeVcInfo.value(forKey: "morningRoutineTimeText") as? String ?? morningRoutineTimeText
+            prepareToStartWorkTimeText = askWorkTimeVcInfo.value(forKey: "prepareToStartWorkTimeText") as? String ?? prepareToStartWorkTimeText
+            workTimeText = askWorkTimeVcInfo.value(forKey: "workTimeText") as? String ?? workTimeText
+            eveningRoutineTimeText = askWorkTimeVcInfo.value(forKey: "eveningRoutineTimeText") as? String ?? eveningRoutineTimeText
+            lockComputerTimeText = askWorkTimeVcInfo.value(forKey: "lockComputerTimeText") as? String ?? lockComputerTimeText
         }
         
-        explanationText = explanationText.replacingOccurrences(of: "<MORNING_ROUTINE_START_TIME>", with: morningRoutineStartTime)
+        morningRoutineTimeText = morningRoutineTimeText.replacingOccurrences(of: "<MORNING_ROUTINE_START_TIME>", with: morningRoutineStartTime)
+        morningRoutineTimeText = morningRoutineTimeText.replacingOccurrences(of: "<MORNING_ROUTINE_END_TIME>", with: morningRoutineEndTimeString)
+        prepareToStartWorkTimeText = prepareToStartWorkTimeText.replacingOccurrences(of: "<MORNING_ROUTINE_END_TIME>", with: morningRoutineEndTimeString)
+        prepareToStartWorkTimeText = prepareToStartWorkTimeText.replacingOccurrences(of: "<START_WORK_TIME>", with: startWorkTimeString)
+        workTimeText = workTimeText.replacingOccurrences(of: "<START_WORK_TIME>", with: startWorkTimeString)
+        workTimeText = workTimeText.replacingOccurrences(of: "<END_WORK_TIME>", with: endWorkTimeString)
+        eveningRoutineTimeText = eveningRoutineTimeText.replacingOccurrences(of: "<END_WORK_TIME>", with: endWorkTimeString)
+        eveningRoutineTimeText = eveningRoutineTimeText.replacingOccurrences(of: "<EVENING_ROUTINE_END_TIME>", with: endEveningRoutineTimeString)
+        lockComputerTimeText = lockComputerTimeText.replacingOccurrences(of: "<EVENING_ROUTINE_END_TIME>", with: endEveningRoutineTimeString)
+
         
-        explanationText = explanationText.replacingOccurrences(of: "<MORNING_ROUTINE_END_TIME>", with: morningRoutineEndTimeString)
-        
-        explanationText = explanationText.replacingOccurrences(of: "<START_WORK_TIME>", with: startWorkTimeString)
-        
-        explanationText = explanationText.replacingOccurrences(of: "<END_WORK_TIME>", with: endWorkTimeString)
-        
-        explanationText = explanationText.replacingOccurrences(of: "<EVENING_ROUTINE_END_TIME>", with: endEveningRoutineTimeString)
-        
-        lblExplanation.stringValue = explanationText
-        
-        
-        
-        
+        lblExplanation.stringValue = titleTimeText
+        lblMorningRoutineTime.stringValue = morningRoutineTimeText
+        lblPrepareToWorkTime.stringValue = prepareToStartWorkTimeText
+        lblWorkTime.stringValue = workTimeText
+        lblEveningRoutineTime.stringValue = eveningRoutineTimeText
+        lblLockSystemTime.stringValue = lockComputerTimeText
     }
     
     @IBAction func btnContinueClicked(_ sender: Any) {
-        let startTime = startUpTime
+        let startTime = getStringFromDate(date: startUpTime, dateFormat: "HH:mm")
         let shutOffTime = getStringFromDate(date: datePickerShutDownTime.dateValue, dateFormat: "HH:mm")
         
         UserDefaults.standard.set(startTime, forKey: kUserdefaultsStartupTimeFromOnboarding)
         UserDefaults.standard.set(shutOffTime, forKey: kUserdefaultsShutOffTimeFromOnboarding)
         
-        appdelegate!.showOnbardingHabit()
+ 
+        mainViewControllerObj!.showAskBreakTimeVc()
     }
     @IBAction func datePickerShutDownTimeClicked(_ sender: Any) {
         resetView()

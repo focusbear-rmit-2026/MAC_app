@@ -7,15 +7,23 @@
 //
 
 import Cocoa
+import WebKit
 
-class helpVc: NSViewController {
+class helpVc: NSViewController, WKNavigationDelegate {
 
+    @IBOutlet weak var webView: WKWebView!
+    @IBOutlet weak var tabViewChatWthApp: NSTabViewItem!
+    @IBOutlet weak var tabViewReportProblem: NSTabViewItem!
+    @IBOutlet weak var tabView: NSTabView!
     @IBOutlet weak var lblTitle: NSTextField!
     @IBOutlet weak var btnExportLogs: underLineButton!
     
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
+        tabViewReportProblem.label = "Report Problem"
+        tabViewChatWthApp.label = "Chat with Focus Bear"
+        
         
         lblTitle.stringValue = "Focus Bear is still a new app and you might encounter issues (or have great ideas on how to make it better). We'd really appreciate your feedback. You can email us at team@focusbear.io. Screenshots are really helpful to let us understand the problem. Also if you had a problem, please export your logs (use the link below) and attach it to the email."
         btnExportLogs.title = "Click here to export logs to share with Support Team."
@@ -23,8 +31,43 @@ class helpVc: NSViewController {
         if let preferencesInfo = configjson.value(forKey: "preferencesInfo") as? NSDictionary{
             btnExportLogs.title = preferencesInfo.value(forKey: "buttonExportLogsText") as? String ?? btnExportLogs.title
             lblTitle.stringValue = preferencesInfo.value(forKey: "helpText") as? String ?? lblTitle.stringValue
+            tabViewReportProblem.label = preferencesInfo.value(forKey: "tabReportProblemText") as? String ?? tabViewReportProblem.label
+            tabViewChatWthApp.label = preferencesInfo.value(forKey: "tabChatText") as? String ?? tabViewChatWthApp.label
+        }
+        
+        self.webView.navigationDelegate = self
+        let url = "https://dashboard.focusbear.io/webview/chat"
+        let  fileURL = URL(string: url)
+        let request = NSMutableURLRequest(url: fileURL!)
+        webView.load(request as URLRequest)
+        
+    }
+    override func viewWillAppear() {
+        tabView.selectTabViewItem(at: 0)
+        preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: 676, height: 570))
+    }
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        print("*************didFinish navigation**************")
+        DispatchQueue.global().async {
+            sleep(1)
+            DispatchQueue.main.async {
+                self.setAccessTokenToWebView()
+            }
         }
     }
+    
+    func setAccessTokenToWebView(){
+        let stringJson1 = "{access_token: \"\(appdelegate!.credential?.accessToken ?? "")\"}"
+        
+        let javascript = "loadAccessTokenForChat(\(stringJson1));"
+        
+        webView.evaluateJavaScript(javascript,completionHandler: { (html: Any?, error: Error?) in
+            print(error)
+            print("****error")
+            print(html)
+        })
+    }
+    
     @IBAction func btnExportLogsClicked(_ sender: Any) {
         let openPanel = NSOpenPanel()
         openPanel.canChooseFiles = false

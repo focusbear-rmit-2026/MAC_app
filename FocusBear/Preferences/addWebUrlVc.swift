@@ -107,6 +107,7 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
                 self.view.window?.sharingType = .readOnly
             }
         }
+    
         
         lblInvalidDomain.isHidden = true
         btnAdd.keyEquivalent = "\r"

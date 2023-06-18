@@ -10,6 +10,7 @@ import Cocoa
 
 class welcomeOnboardingVc: NSViewController {
 
+    @IBOutlet weak var imgview: NSImageView!
     @IBOutlet weak var btnNoThanks: underLineButton!
     @IBOutlet weak var boxSmallInfo: NSBox!
     @IBOutlet weak var boxAllInfo: NSBox!
@@ -64,7 +65,13 @@ class welcomeOnboardingVc: NSViewController {
     }
     var isURlBlockedSuccessfully = false
     override func viewWillAppear() {
-        
+        imgview.animates = true
+        DispatchQueue.global().async {
+            sleep(5)
+            DispatchQueue.main.async {
+                self.imgview.animates = false
+            }
+        }
         if isURlBlockedSuccessfully{
             lblTitleAppName.stringValue = "Awesome! We look forward to helping you block distractions."
             
@@ -163,8 +170,8 @@ class welcomeOnboardingVc: NSViewController {
                                     }
                                 }
                             }
-                            UserDefaults.standard.set("05:15", forKey: kUserdefaultsStartupTimeFromOnboarding)
-                            UserDefaults.standard.set("20:30", forKey: kUserdefaultsShutOffTimeFromOnboarding)
+                            UserDefaults.standard.set("08:30", forKey: kUserdefaultsStartupTimeFromOnboarding)
+                            UserDefaults.standard.set("18:30", forKey: kUserdefaultsShutOffTimeFromOnboarding)
                             
                             UserDefaults.standard.set(true, forKey: kUserdefaultsFirstRun)
                             UserDefaults.standard.set(Date(), forKey: kUserdefaultsLastHabitShowDate)

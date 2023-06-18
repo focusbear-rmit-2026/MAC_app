@@ -8,13 +8,31 @@
 
 import Cocoa
 
-class mainWindowController: NSWindowController {
+class mainWindowController: NSWindowController, NSWindowDelegate {
 
     override func windowDidLoad() {
         super.windowDidLoad()
-  
         
-//    todo
+        if checkIsFullScreenEnabled(){
+            showFullSizeWindow()
+        }else{
+            showSmallSizeWindow()
+        }
+        
+
+        if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
+            if state{
+                self.window?.sharingType = .none
+            }
+        }
+
+        self.window?.appearance = getAppAppearance()
+        
+        self.contentViewController =  mainViewControllerObj
+    }
+
+    
+    func showFullSizeWindow(){
         window!.collectionBehavior = NSWindow.CollectionBehavior.canJoinAllSpaces          // we want these
         window!.canHide = false
         window!.isExcludedFromWindowsMenu = true
@@ -23,20 +41,84 @@ class mainWindowController: NSWindowController {
         window!.animationBehavior = .none
         window!.styleMask = .borderless
         window!.backingType = .buffered
+        self.window?.minSize = NSSize(width: 900, height: 500)
+        self.window?.title = ""
         self.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.numberOfWindowLevelKeys)))
         
+        if isMainWindowLodded{
+            mainViewControllerObj!.boxTopButtons.isHidden = false
+            mainViewControllerObj!.startDateTimer()
+            if self.window?.isVisible ?? false{
+                mainViewControllerObj?.setframe()
+            }
+            let btnTitle = "Please spare me"
+            if let common = configjson.value(forKey: "common") as? NSDictionary{
+                mainViewControllerObj?.btnAbort.title = common.value(forKey: "buttonAbortText") as? String ?? btnTitle
+            }
+        }
+    }
+    
+    func showSmallSizeWindow(){
+//        return;
+        window!.isRestorable = true
+        window!.collectionBehavior = [.fullScreenAllowsTiling, .fullScreenPrimary]
+        self.window?.styleMask = [.resizable, .titled]//
+        self.window?.minSize = NSSize(width: 1371, height: 768)//
+        window!.isExcludedFromWindowsMenu = false
+        self.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.floatingWindow)))
+        self.window?.title = appName
+
+        if isMainWindowLodded{
+            mainViewControllerObj!.boxTopButtons.isHidden = true
+            mainViewControllerObj!.dateTimeTimer?.invalidate()
+            mainViewControllerObj!.lblCurrentDateTime.isHidden = true
+//            if self.window?.isVisible ?? false{
+//                mainViewControllerObj?.setframe()
+//            }
+            if mainViewControllerObj?.btnAbort.isHidden ?? false{
+                self.window?.styleMask.remove(.closable)
+            }else{
+                self.window?.styleMask.insert(.closable)
+            }
+            
+            let btnTitle = "Postpone"
+            if let common = configjson.value(forKey: "common") as? NSDictionary{
+                mainViewControllerObj?.btnAbort.title = common.value(forKey: "buttonPostponeText") as? String ?? btnTitle
+            }
+            
+        }
+    }
+    
+    func windowShouldClose(_ sender: NSWindow) -> Bool {
         
-        if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
-            if state{
-                self.window?.sharingType = .none
+        let views = mainViewControllerObj?.view.subviews ?? []
+        if views.count != 1{// it means sub views are added so nothing will happen, user will need to close subviews first(logquantity view, password box)
+            return false
+        }
+        mainViewControllerObj?.btnAbortClicked(self)
+        return false
+    }
+    
+    func windowWillEnterFullScreen(_ notification: Notification) {
+        print("windowWillEnterFullScreen****")
+        if !checkIsFullScreenEnabled(){
+            if let state = UserDefaults.standard.object(forKey: kUserdefaultsShowDockIcon) as? Bool{
+                if !state{
+                    NSApp.setActivationPolicy(NSApplication.ActivationPolicy.regular)
+                }
+            }
+        }
+    }
+    func windowWillExitFullScreen(_ notification: Notification) {
+        print("windowWillExitFullScreen****")
+        if !checkIsFullScreenEnabled(){
+            if let state = UserDefaults.standard.object(forKey: kUserdefaultsShowDockIcon) as? Bool{
+                if !state{
+                    NSApp.setActivationPolicy(NSApplication.ActivationPolicy.accessory)
+                    NSApplication.shared.activate(ignoringOtherApps: true)
+                }
             }
         }
         
-        
-        self.contentViewController =  mainViewControllerObj
-       
-  
     }
-
-    
 }

@@ -18,8 +18,10 @@ class pomodoroWindowController: NSWindowController, NSWindowDelegate {
                 self.window?.sharingType = .none
             }
         }
+        self.window?.appearance = getAppAppearance()
     }
-
+    
+    
     func windowShouldClose(_ sender: NSWindow) -> Bool {
 
         appdelegate?.setTimerForPomodoroMode(delay: 60*10)

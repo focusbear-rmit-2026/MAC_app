@@ -339,9 +339,9 @@ class pomodoroVc: NSViewController {
             tabview.selectedTabViewItemIndex = 1
             if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
                 if SettingsManagerObject.isPasswordRequireInChangeSettings{
-                    tabview.view.addSubview(enterPasswordVcObj!.view)
-                    tabview.view.addConstraints(subView: enterPasswordVcObj!.view)
-                    enterPasswordVcObj?.parentVc = nil
+                    tabview.view.addSubview(getEnterPasswordVcObjForPreferences().view)
+                    tabview.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
+                    getEnterPasswordVcObjForPreferences().parentVc = nil
                     addLog(text: "Showing enter password view")
                 }
             }

@@ -48,6 +48,8 @@ class breaksBrainDumpVc: NSViewController {
         scrollView.shadowOffset = NSMakeSize(0, 2)
         scrollView.shadowOpacity = 0.15
         scrollView.setShadow()
+        
+        textView.font = NSFont.systemFont(ofSize: 22)
     }
     
     override func viewWillAppear() {
@@ -61,7 +63,12 @@ class breaksBrainDumpVc: NSViewController {
         
         
         if let breaksBrainDumpVcInfo = configjson.value(forKey: "breaksBrainDumpVcInfo") as? NSDictionary{
-            lblSubtitle.stringValue = breaksBrainDumpVcInfo.value(forKey: "subTitle") as? String ?? lblSubtitle.stringValue
+            if isBreakActivityShowingWhileMeeting && currentState == ._ACTIVITY_{
+                lblSubtitle.stringValue = "You're going to focus better on the meeting after this break. Write down any quick thoughts you don't forget."
+                lblSubtitle.stringValue = breaksBrainDumpVcInfo.value(forKey: "subTitleMeetings") as? String ?? lblSubtitle.stringValue
+            }else{
+                lblSubtitle.stringValue = breaksBrainDumpVcInfo.value(forKey: "subTitle") as? String ?? lblSubtitle.stringValue
+            }
             arrPlaceHolders = breaksBrainDumpVcInfo.value(forKey: "placeholders") as? [String] ?? arrPlaceHolders
         }
         
@@ -75,7 +82,7 @@ class breaksBrainDumpVc: NSViewController {
         
         
         
-        textView.placeHolderTitleString = NSAttributedString(string: arrPlaceHolders.randomElement() ?? "", attributes: [NSAttributedString.Key.foregroundColor : NSColor.secondaryLabelColor])
+        textView.placeHolderTitleString = NSAttributedString(string: arrPlaceHolders.randomElement() ?? "", attributes: [NSAttributedString.Key.foregroundColor : NSColor.secondaryLabelColor, NSAttributedString.Key.font : NSFont.systemFont(ofSize: 22)])
     }
     @IBAction func btnInfoClicked(_ sender: Any) {
         btnInfo.isHidden = true
@@ -89,7 +96,10 @@ class breaksBrainDumpVc: NSViewController {
         UserDefaults.standard.set(textView.string, forKey: kUserdefaultsFocusModeNotes)
     }
     @IBAction func btnPostponeBreakClicked(_ sender: Any) {
-        thirdVcObj?.btnSkipHabitClicked(self)
+        if currentState == ._ACTIVITY_{
+            mainViewControllerObj?.btnAbortClicked(self)
+            return
+        }
     }
     
     @IBAction func btnMainClicked(_ sender: Any) {
@@ -99,7 +109,7 @@ class breaksBrainDumpVc: NSViewController {
 }
 
 class customTexView: NSTextView{
-    var placeHolderTitleString: NSAttributedString = NSAttributedString(string: "Place Holder Value", attributes: [NSAttributedString.Key.foregroundColor : NSColor.secondaryLabelColor])
+    var placeHolderTitleString: NSAttributedString = NSAttributedString(string: "Place Holder Value", attributes: [NSAttributedString.Key.foregroundColor : NSColor.secondaryLabelColor, NSAttributedString.Key.font : NSFont.systemFont(ofSize: 22)])
 
     override func becomeFirstResponder() -> Bool {
         self.needsDisplay = true

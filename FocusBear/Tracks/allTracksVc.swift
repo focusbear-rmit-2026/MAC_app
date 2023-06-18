@@ -11,6 +11,8 @@ import AVFoundation
 
 class allTracksVc: NSViewController {
 
+    @IBOutlet weak var lblTitleVolume: NSTextField!
+    @IBOutlet weak var sliderVolume: NSSlider!
     @IBOutlet weak var lblTitle: NSTextField!
     @IBOutlet weak var tblView: NSTableView!
     
@@ -18,10 +20,11 @@ class allTracksVc: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
-        
+        lblTitleVolume.stringValue = "Volume:"
         lblTitle.stringValue = "Here are some focus music tracks (some are binaural beats) you can use to help you focus. FYI the research is ambivalent about binaural beats - you'll likely get similar benefits from using your own music. Just make sure the music doesn't have lyrics otherwise you'll get distracted."
         if let allTracksVcInfo = configjson.value(forKey: "allTracksVcInfo") as? NSDictionary{
             lblTitle.stringValue = allTracksVcInfo.value(forKey: "title") as? String ?? lblTitle.stringValue
+            lblTitleVolume.stringValue = allTracksVcInfo.value(forKey: "titleVolumeText") as? String ?? lblTitleVolume.stringValue
         }
         
         
@@ -37,6 +40,11 @@ class allTracksVc: NSViewController {
             }
         }
         
+    }
+    @IBAction func sliderVolumeClicked(_ sender: Any) {
+        if currentSound != nil{
+            currentSound?.volume = sliderVolume.floatValue
+        }
     }
 }
 extension allTracksVc: NSTableViewDelegate, NSTableViewDataSource{
@@ -209,11 +217,13 @@ extension allTracksVc: NSTableViewDelegate, NSTableViewDataSource{
             arrAllTracks[sender.tag]["isPlaying"] = true
             currentSound = NSSound(contentsOfFile: localUrlString, byReference: true)
             currentSound?.play()
+            currentSound?.volume = sliderVolume.floatValue
             currentSound?.delegate = self
         }
         tblView.reloadData()
         tblView.selectRowIndexes(IndexSet(integer: sender.tag), byExtendingSelection: false)
     }
+    
     @objc func btnDownloadClicked(sender:NSButton){
         let senderTag = sender.tag
         arrAllTracks[senderTag]["isFileDownloading"] = true

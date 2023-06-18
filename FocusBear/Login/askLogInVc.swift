@@ -10,10 +10,11 @@ import Cocoa
 
 class askLogInVc: NSViewController {
     
+    @IBOutlet weak var btnInfo: NSButton!
     @IBOutlet weak var imgView: NSImageView!
     @IBOutlet weak var boxBg: NSBox!
     @IBOutlet weak var btnSignUp: Button!
-    @IBOutlet weak var btnSignIn: Button!
+    @IBOutlet weak var btnSignIn: underLineButton!
     @IBOutlet weak var lblMessage: NSTextField!
     @IBOutlet weak var lblTitle: NSTextField!
     
@@ -25,34 +26,47 @@ class askLogInVc: NSViewController {
         lblTitle.stringValue = "Win your habits.\nAmp up your productivity."
         lblMessage.stringValue = "Sign In with a Focus Bear account to manage your time without thinking about it. Having an account helps you Set your computer use hours, create a custom morning and night routine, and customize your focus modes for different activities."
         var btnSignInTitle = "Sign In"
-        var btnSignUpTitle = "Sign Up"
+//        var btnSignUpTitle = "Sign Up"
         
         if let askLogInVcInfo = configjson.value(forKey: "askLogInVcInfo") as? NSDictionary{
             lblTitle.stringValue = askLogInVcInfo.value(forKey: "title") as? String ?? lblTitle.stringValue
             lblMessage.stringValue = askLogInVcInfo.value(forKey: "messageText") as? String ?? lblMessage.stringValue
             btnSignInTitle = askLogInVcInfo.value(forKey: "buttonSignInText") as? String ?? btnSignInTitle
-            btnSignUpTitle = askLogInVcInfo.value(forKey: "buttonSignUpText") as? String ?? btnSignUpTitle
+//            btnSignUpTitle = askLogInVcInfo.value(forKey: "buttonSignUpText") as? String ?? btnSignUpTitle
         }
         
         
         
         btnSignIn.title = btnSignInTitle
-        btnSignUp.title = btnSignUpTitle
+//        btnSignUp.title = btnSignUpTitle
         btnSignUp.isBordered = false
         
         
         
-        btnSignIn.buttonColor = NSColor.clear.cgColor
-        
-        
-        //        if #available(OSX 12.0, *) {
-        //            isCustomLoginAvailable = false// ager ye kiya to event bi capture krne honge universal login mai
-        //        }else{
-        //            isCustomLoginAvailable = true
-        //        }
-        //        isCustomLoginAvailable = true
+        if let customLoginVcInfo = configjson.value(forKey: "customLoginVcInfo") as? NSDictionary{
+            btnSignUp.title = customLoginVcInfo.value(forKey: "buttonCreateAccountText") as? String ?? btnSignUp.title
+        }
+
     }
-    
+    override func viewWillAppear() {
+        appdelegate!.menuItemUninstall.isHidden = false
+        if let common = configjson.value(forKey: "common") as? NSDictionary{
+            appdelegate!.menuItemUninstall.title = common.value(forKey: "buttonUninstallText") as? String ?? appdelegate!.menuItemUninstall.title
+        }
+        btnInfo.isHidden = false
+        lblMessage.stringValue = "Nearly done! Let's grab a few details to save your habits."
+        if let askLogInVcInfo = configjson.value(forKey: "askLogInVcInfo") as? NSDictionary{
+            lblMessage.stringValue = askLogInVcInfo.value(forKey: "descriptionText") as? String ?? lblMessage.stringValue
+        }
+    }
+    @IBAction func btnInfoClicked(_ sender: Any) {
+        lblMessage.stringValue = "Sign In with a Focus Bear account to manage your time without thinking about it. Having an account helps you Set your computer use hours, create a custom morning and night routine, and customize your focus modes for different activities."
+        
+        if let askLogInVcInfo = configjson.value(forKey: "askLogInVcInfo") as? NSDictionary{
+            lblMessage.stringValue = askLogInVcInfo.value(forKey: "messageText") as? String ?? lblMessage.stringValue
+        }
+        btnInfo.isHidden = true
+    }
     @IBAction func btnSignUpClicked(_ sender: Any) {
         addLog(text:"btnSignUpClicked")
         
