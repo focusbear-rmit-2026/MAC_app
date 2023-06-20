@@ -195,6 +195,12 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
             mainViewControllerObj!.showTakeNotesView()
             takeActivityNotesVcObj?.resetData(durationInSeconds: Int(durationInSeconds) ?? 0, quantity_logged:0.0, activity_id: activity_id, activity_sequence_id: activity_sequence_id, activityChoiceId: activityChoiceId, log_quantity_answers: [])
 
+        }else if isAnyAllowedFocusModeActivityWasRunningInLastActivity{
+            let currentFocusModeName = currentRunningFocusType["name"] as? String ?? ""
+            let currentFocusModeId = currentRunningFocusType["id"] as? String ?? ""
+            
+            mainViewControllerObj!.showFocusCompletedView()
+            focusCompletedForActivityVcObj?.resetData(focusModeName: currentFocusModeName, currentFocusModeId: currentFocusModeId, finish_time: isAnyAllowedFocusModeActivityFinishTime, durationInSeconds: Int(durationInSeconds) ?? 0, quantity_logged:0.0, activity_id: activity_id, activity_sequence_id: activity_sequence_id, activityChoiceId: activityChoiceId, log_quantity_answers: [], notes: notes)
         }else{
             if lCurrentState! == ._EVENING_HABIT_{
                 if thirdVcObj!.lastHabitIndex >= arrFilteredEveningHabits.count-1 {
@@ -207,7 +213,7 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
                 should_not_update_current_activity = true
             }
 
-            allApiObject.activityCompletedApi(activity_id: activity_id, activity_sequence_id: activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:0.0, duration_logged:Int(durationInSeconds) ?? 0, choice_id: activityChoiceId, is_skipped: is_skipped, notes: "", should_not_update_current_activity: should_not_update_current_activity, log_quantity_answers: [], completionHandler: {dic  in
+            allApiObject.activityCompletedApi(activity_id: activity_id, activity_sequence_id: activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:0.0, duration_logged:Int(durationInSeconds) ?? 0, choice_id: activityChoiceId, is_skipped: is_skipped, notes: notes, should_not_update_current_activity: should_not_update_current_activity, log_quantity_answers: [], completionHandler: {dic  in
                 DispatchQueue.main.async {
 
                 }
@@ -307,6 +313,12 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
             if take_notes == END_OF_ACTIVITY{
                 mainViewControllerObj!.showTakeNotesView()
                 takeActivityNotesVcObj?.resetData(durationInSeconds: Int(durationInSeconds) ?? 0, quantity_logged:logQuantityQuestions[0].quantity, activity_id: activity_id, activity_sequence_id: activity_sequence_id, activityChoiceId: activityChoiceId, log_quantity_answers: log_quantity_answers)
+            }else if isAnyAllowedFocusModeActivityWasRunningInLastActivity{
+                let currentFocusModeName = currentRunningFocusType["name"] as? String ?? ""
+                let currentFocusModeId = currentRunningFocusType["id"] as? String ?? ""
+                
+                mainViewControllerObj!.showFocusCompletedView()
+                focusCompletedForActivityVcObj?.resetData(focusModeName: currentFocusModeName, currentFocusModeId: currentFocusModeId, finish_time: isAnyAllowedFocusModeActivityFinishTime, durationInSeconds: Int(durationInSeconds) ?? 0, quantity_logged:logQuantityQuestions[0].quantity, activity_id: activity_id, activity_sequence_id: activity_sequence_id, activityChoiceId: activityChoiceId, log_quantity_answers: log_quantity_answers, notes: notes)
             }else{
                 if lCurrentState! == ._EVENING_HABIT_{
                     if thirdVcObj!.lastHabitIndex >= arrFilteredEveningHabits.count-1 {

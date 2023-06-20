@@ -223,7 +223,10 @@ class ViewController: NSViewController {
         self.view.addConstraints(subView: getTakeActivityNotesVcObj().view)
     }
     
-    
+    func showFocusCompletedView(){
+        self.view.addSubview(getFocusCompletedForActivityVcObj().view)
+        self.view.addConstraints(subView: getFocusCompletedForActivityVcObj().view)
+    }
     func showSkipHabitView(){
         addLog(text: "show SkipHabit View")
         self.view.addSubview(getSkipHabitVcObject().view)
@@ -1978,7 +1981,7 @@ class ViewController: NSViewController {
             }
         }
     }
-    func postponeMorningHabitFor(minutes:Int, secondsToPostpone:Int?){
+    func postponeMorningHabitFor(minutes:Int, secondsToPostpone:Int?, showAskFocusModeView:Bool){
         var seconds = 0
         if secondsToPostpone != nil{
             seconds = secondsToPostpone!
@@ -2035,8 +2038,12 @@ class ViewController: NSViewController {
         if SettingsManagerObject.IsShowBreaksInPostponeEnabled{
             setActivityTimer()
         }
+        
+        if showAskFocusModeView{
+            appdelegate?.menuShowPomodoroModeView()
+        }
     }
-    func postponeEveningHabitFor(minutes:Int, secondsToPostpone:Int?){
+    func postponeEveningHabitFor(minutes:Int, secondsToPostpone:Int?, showAskFocusModeView:Bool){
         var seconds = 0
         if secondsToPostpone != nil{
             seconds = secondsToPostpone!
@@ -2097,6 +2104,9 @@ class ViewController: NSViewController {
         
         if SettingsManagerObject.IsShowBreaksInPostponeEnabled{
             setActivityTimer()
+        }
+        if showAskFocusModeView{
+            appdelegate?.menuShowPomodoroModeView()
         }
     }
     

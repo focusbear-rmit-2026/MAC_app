@@ -75,6 +75,12 @@ class quitCountDownVc: NSViewController {
     override func viewWillDisappear() {
         self.timer?.invalidate()
         self.timer = nil
+        
+        if enterPasswordVcObj != nil{
+            if self.view.subviews.contains(enterPasswordVcObj!.view){
+                enterPasswordVcObj?.view.removeFromSuperview()
+            }
+        }
     }
     var enterPasswordVcObj: enterPasswordVc?
     func resetData(){

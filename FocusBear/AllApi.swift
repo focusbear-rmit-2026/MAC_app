@@ -642,6 +642,7 @@ class AllApi:NSObject {
     var isApiGetActivityCurrentDayStatsErrorFound = false
     var isApiGetAllActivityDaySummaryErrorFound = false
     var isApiAddFocusModeErrorFound = false
+    var isApiUpdateAllFocusModeErrorFound = false
     var isApiDeleteFocusModeErrorFound = false
     var isApiEditFocusModeErrorFound = false
     var isApiStartFocusModeErrorFound = false
@@ -1216,7 +1217,6 @@ class AllApi:NSObject {
     
     func activityCompletedApi(activity_id:String, activity_sequence_id:String, start_time:Date, quantity_logged:Double?, duration_logged:Int, choice_id:String?, is_skipped:Bool, notes:String, should_not_update_current_activity:Bool, log_quantity_answers:[[String:Any]], completionHandler: @escaping(_ result: NSDictionary?) -> ()){//todo purane quantity ka kya kre iska kya kre
         addLog(text: "func call:- activityCompletedApi completed-activity")
-
         
         appdelegate!.credentialsManager.credentials {credentialsInfo in
             addLog(text: "get updated credentialsInfo from credentialsManager")
@@ -2667,6 +2667,7 @@ class AllApi:NSObject {
                         "allowed_urls":focusType["allowed_urls"] as? [String] ?? [],
                         "allowed_apps":focusType["allowed_apps"] as? [String] ?? [],
                         "name":focusType["name"] as? String ?? "",
+                        "tags":focusType["tags"] as? [String] ?? [],
                         "metadata": [:]
                     ]
                     
@@ -2675,6 +2676,7 @@ class AllApi:NSObject {
                     dic.removeValue(forKey: "id")
                     dic.removeValue(forKey: "allowed_urls")
                     dic.removeValue(forKey: "allowed_apps")
+                    dic.removeValue(forKey: "tags")
                     json["metadata"] = dic
                     
                     
@@ -2871,6 +2873,7 @@ class AllApi:NSObject {
                         "allowed_urls":focusType["allowed_urls"] as? [String] ?? [],
                         "allowed_apps":focusType["allowed_apps"] as? [String] ?? [],
                         "name":focusType["name"] as? String ?? "",
+                        "tags":focusType["tags"] as? [String] ?? [],
                         "metadata": [:]
                     ]
                     
@@ -2879,6 +2882,7 @@ class AllApi:NSObject {
                     dic.removeValue(forKey: "name")
                     dic.removeValue(forKey: "allowed_urls")
                     dic.removeValue(forKey: "allowed_apps")
+                    dic.removeValue(forKey: "tags")
                     json["metadata"] = dic
                     
                     let jsonData = try? JSONSerialization.data(withJSONObject: json)
@@ -2954,6 +2958,107 @@ class AllApi:NSObject {
             }
         }
     }
+    
+    func updateAllFocusMode(focusModes:[[String:Any]], completionHandler: @escaping(_ newDic:[NSDictionary]?) -> ()){
+        addLog(text: "func call:- updateAllFocusMode:- focus-mode")
+        
+        
+        appdelegate!.credentialsManager.credentials {credentialsInfo in
+            addLog(text: "get updated credentialsInfo from credentialsManager")
+            
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+            
+            if appdelegate!.credential != nil{
+                
+                let responsePath = "https://api.focusbear.io/focus-mode"
+                if let myUrl = NSURL(string: responsePath){
+                    addLog(text: "api call updateAllFocusMode \(myUrl)")
+                    let token = appdelegate!.credential!.accessToken
+                    
+                    
+                    let request = NSMutableURLRequest(url:myUrl as URL);
+                    request.httpMethod = "PUT";
+                    request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+                    request.addValue("mac-os", forHTTPHeaderField: "platform")
+                    request.addValue(getAppVersionInString(), forHTTPHeaderField: "app-version")
+                    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                    
+
+                    let jsonData = try? JSONSerialization.data(withJSONObject: focusModes)
+                    request.httpBody = jsonData
+                    let task = URLSession.shared.dataTask(with: request as URLRequest) {
+                        data, response, error in
+                        
+                        if let httpResponse = response as? HTTPURLResponse{
+                            self.isApiUpdateAllFocusModeErrorFound = false
+                            if httpResponse.statusCode == 200{ //it means it is right
+                                
+                                if data != nil{
+                                    do {
+                                        if let jsonResult: [NSDictionary] = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? [NSDictionary]{
+                                            
+                                            addLog(text: "api call updateAllFocusMode success")
+                                            completionHandler(jsonResult)
+                                            return
+                                        }
+                                        
+                                    }catch{
+                                        addLog(text: "api call updateAllFocusMode error:- \(error.localizedDescription)")
+                                        completionHandler(nil)
+                                        print(error)
+                                        return;
+                                    }
+                                }
+                            }else{
+                                addLog(text: "api call updateAllFocusMode error:- statusCode is \(httpResponse.statusCode)")
+                                self.writeJsonInLog(data: data)
+                                addLog(text: "accessToken is:- \(token)")
+                                completionHandler(nil)
+                                return
+                            }
+                        }
+                        
+                        
+                        if error != nil {
+                            addLog(text: "api call updateAllFocusMode error:- \(error!.localizedDescription)")
+                            if (error as? NSError)?.code == self.errorCodeRequestTimeout{
+                                if self.isApiUpdateAllFocusModeErrorFound{
+                                    self.isApiUpdateAllFocusModeErrorFound = false
+                                    completionHandler(nil)
+                                    return
+                                }else{
+                                    self.isApiUpdateAllFocusModeErrorFound = true
+                                    addLog(text: "error updateAllFocusMode:- try second time")
+                                    
+                                    self.updateAllFocusMode(focusModes:focusModes, completionHandler: {newDic in
+                                        completionHandler(newDic)
+                                        return
+                                    })
+                                    
+                                }
+                            }else{
+                                completionHandler(nil)
+                                return
+                            }
+                            
+                        }else{
+                            completionHandler(nil)
+                            return
+                        }
+                        
+                    }
+                    
+                    task.resume()
+                }else{
+                    
+                }
+                
+            }else{
+                completionHandler(nil)
+            }
+        }
+    }
+    
     
     func startFocusMode(id:String,intention:String, start_time:Date, finish_time:Date, completionHandler: @escaping(_ newDic:NSDictionary?) -> ()){
         addLog(text: "func call:- startFocusMode:- focus-mode/id/start")

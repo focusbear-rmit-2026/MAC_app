@@ -71,21 +71,21 @@ class preloadFocusModesVc: NSViewController, NSTextFieldDelegate {
                     allowed_apps[i] = "/Applications/\(allowed_apps[i]).app"
                 }
                 
-                let dic:[String:Any] = ["name":name, "color": getColorString(color: NSColor(red: 163/255, green: 255/255, blue: 161/255, alpha: 1)), "allowed_apps": allowed_apps, "allowed_urls": allowed_urls, "isOn": false, "isAllowedAllApps":false, "isAllowedListApproach":true, "blockUrlsArray": []]
+                let dic:[String:Any] = ["name":name, "color": getColorString(color: NSColor(red: 163/255, green: 255/255, blue: 161/255, alpha: 1)), "allowed_apps": allowed_apps, "allowed_urls": allowed_urls, "isOn": false, "isAllowedAllApps":false, "isAllowedListApproach":true, "blockUrlsArray": [], "tags":[]]
                 
                 arrDic.append(dic)
             }
         }else{
             arrDic = [
-                ["name":"\(titleProgramming)", "color": getColorString(color: NSColor(red: 163/255, green: 255/255, blue: 161/255, alpha: 1)), "allowed_apps": ["/Applications/Visual Studio Code.app", "/Applications/Xcode.app", "/Applications/Utilities/Terminal.app", "/Applications/Google Chrome.app", "/Applications/iTerm2.app", "/Applications/Docker.app", "/Applications/Firefox.app", "/Applications/Insomnia.app", "/Applications/VirtualBox.app", "/Applications/DBeaver.app", "/Applications/Safari.app"], "allowed_urls": ["https://stackoverflow.com","localhost"], "isOn": false, "isAllowedAllApps":false, "isAllowedListApproach":true, "blockUrlsArray": []],
+                ["name":"\(titleProgramming)", "color": getColorString(color: NSColor(red: 163/255, green: 255/255, blue: 161/255, alpha: 1)), "allowed_apps": ["/Applications/Visual Studio Code.app", "/Applications/Xcode.app", "/Applications/Utilities/Terminal.app", "/Applications/Google Chrome.app", "/Applications/iTerm2.app", "/Applications/Docker.app", "/Applications/Firefox.app", "/Applications/Insomnia.app", "/Applications/VirtualBox.app", "/Applications/DBeaver.app", "/Applications/Safari.app"], "allowed_urls": ["https://stackoverflow.com","localhost"], "isOn": false, "isAllowedAllApps":false, "isAllowedListApproach":true, "blockUrlsArray": [], "tags":[]],
                 
-                ["name":"\(titleGraphicDesign)", "color": getColorString(color: NSColor(red: 163/255, green: 255/255, blue: 161/255, alpha: 1)), "allowed_apps": ["/Applications/Figma.app", "/Applications/Adobe Illustrator.app", "/Applications/Adobe Photoshop.app", "/Applications/Google Chrome.app", "/Applications/Safari.app"], "allowed_urls": ["https://www.figma.com"], "isOn": false, "isAllowedAllApps":false, "isAllowedListApproach":true, "blockUrlsArray": []],
+                ["name":"\(titleGraphicDesign)", "color": getColorString(color: NSColor(red: 163/255, green: 255/255, blue: 161/255, alpha: 1)), "allowed_apps": ["/Applications/Figma.app", "/Applications/Adobe Illustrator.app", "/Applications/Adobe Photoshop.app", "/Applications/Google Chrome.app", "/Applications/Safari.app"], "allowed_urls": ["https://www.figma.com"], "isOn": false, "isAllowedAllApps":false, "isAllowedListApproach":true, "blockUrlsArray": [], "tags":[]],
                 
-                ["name":"\(titleDataAnalysis)", "color": getColorString(color: NSColor(red: 163/255, green: 255/255, blue: 161/255, alpha: 1)), "allowed_apps": ["/Applications/Microsoft Excel.app", "/Applications/Google Chrome.app", "/Applications/Safari.app"], "allowed_urls": ["https://www.office.com"], "isOn": false, "isAllowedAllApps":false, "isAllowedListApproach":true, "blockUrlsArray": []],
+                ["name":"\(titleDataAnalysis)", "color": getColorString(color: NSColor(red: 163/255, green: 255/255, blue: 161/255, alpha: 1)), "allowed_apps": ["/Applications/Microsoft Excel.app", "/Applications/Google Chrome.app", "/Applications/Safari.app"], "allowed_urls": ["https://www.office.com"], "isOn": false, "isAllowedAllApps":false, "isAllowedListApproach":true, "blockUrlsArray": [], "tags":[]],
             ]
         }
         
-        arrDic.append(["name":titleSomethingElse, "color": getColorString(color: NSColor(red: 163/255, green: 255/255, blue: 161/255, alpha: 1)), "allowed_apps": ["/Applications/Microsoft Excel.app", "/Applications/Microsoft Word.app", "/Applications/Google Chrome.app", "/System/Applications/Calendar.app", "/Applications/Safari.app"], "allowed_urls": ["https://www.google.com"], "isOn": false, "isAllowedAllApps":false, "isAllowedListApproach":true, "blockUrlsArray": []])
+        arrDic.append(["name":titleSomethingElse, "color": getColorString(color: NSColor(red: 163/255, green: 255/255, blue: 161/255, alpha: 1)), "allowed_apps": ["/Applications/Microsoft Excel.app", "/Applications/Microsoft Word.app", "/Applications/Google Chrome.app", "/System/Applications/Calendar.app", "/Applications/Safari.app"], "allowed_urls": ["https://www.google.com"], "isOn": false, "isAllowedAllApps":false, "isAllowedListApproach":true, "blockUrlsArray": [], "tags":[]])
         
         popUpBtnWork.removeAllItems()
         popUpBtnWork.addItem(withTitle: titleSelectWorkType)

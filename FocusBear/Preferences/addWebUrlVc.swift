@@ -336,11 +336,11 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
 
                     reSetCurrentFocusMode(focusType:arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow])
                     
-                    allApiObject.editFocusMode(focusType: dic, completionHandler: {newDic in
-                        DispatchQueue.main.async {
-                            
-                        }
-                    })
+//                    allApiObject.editFocusMode(focusType: dic, completionHandler: {newDic in
+//                        DispatchQueue.main.async {
+//
+//                        }
+//                    })
                     allApiObject.capturePosthog(event: "add-allowed-url-in-focus-mode", metadata: [:])
                 }
                 
@@ -390,11 +390,11 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
 
                 reSetCurrentFocusMode(focusType:arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow])
                 
-                allApiObject.editFocusMode(focusType: dic, completionHandler: {newDic in
-                    DispatchQueue.main.async {
-                        
-                    }
-                })
+//                allApiObject.editFocusMode(focusType: dic, completionHandler: {newDic in
+//                    DispatchQueue.main.async {
+//
+//                    }
+//                })
                 allApiObject.capturePosthog(event: "add-blocked-url-in-focus-mode", metadata: [:])
                 
             }else if currenUrlAddingtState == ._ALL_BLOCK_URL{
@@ -466,11 +466,11 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
                 UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
                 
                 reSetCurrentFocusMode(focusType:arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow])
-                allApiObject.editFocusMode(focusType: dic, completionHandler: {newDic in
-                    DispatchQueue.main.async {
-                        
-                    }
-                })
+//                allApiObject.editFocusMode(focusType: dic, completionHandler: {newDic in
+//                    DispatchQueue.main.async {
+//
+//                    }
+//                })
                 allApiObject.capturePosthog(event: "edit-allowed-url-in-focus-mode", metadata: [:])//#490
             }else if currenUrlAddingtState == ._FOCUS_BLOCK_URL{
                 var urlsArray = [String]()
@@ -499,7 +499,7 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
                 var dic = arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow]
                 dic["blockUrlsArray"] = urlsArray
                 arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow] = dic
-                focusPreferencesAdvancedVcObj?.tblView.reloadData()
+                focusPreferencesAdvancedVcObj?.tblView.reloadData()//todo check kro do do bar hai
                 focusPreferencesAdvancedVcObj?.tblView.selectRowIndexes(IndexSet(arrayLiteral: (self.currentRow)), byExtendingSelection: false)
                 
                 
@@ -514,11 +514,11 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
                 
                 UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
                 reSetCurrentFocusMode(focusType:arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow])
-                allApiObject.editFocusMode(focusType: dic, completionHandler: {newDic in
-                    DispatchQueue.main.async {
-                        
-                    }
-                })
+//                allApiObject.editFocusMode(focusType: dic, completionHandler: {newDic in
+//                    DispatchQueue.main.async {
+//                        
+//                    }
+//                })
                 allApiObject.capturePosthog(event: "edit-blocked-url-in-focus-mode", metadata: [:])//#490
             }else{
                 var isContainAlready = false

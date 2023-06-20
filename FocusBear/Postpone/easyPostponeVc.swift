@@ -100,15 +100,15 @@ class easyPostponeVc: NSViewController {
         }
         
         if lastCurrentState == ._MORNING_HABIT_{
-            mainViewControllerObj?.postponeMorningHabitFor(minutes: Int(popupButtonMinutes.title) ?? 5, secondsToPostpone: nil)
+            mainViewControllerObj?.postponeMorningHabitFor(minutes: Int(popupButtonMinutes.title) ?? 5, secondsToPostpone: nil, showAskFocusModeView:true)
         }else if lastCurrentState == ._EVENING_HABIT_{
-            mainViewControllerObj?.postponeEveningHabitFor(minutes: Int(popupButtonMinutes.title) ?? 5, secondsToPostpone: nil)
+            mainViewControllerObj?.postponeEveningHabitFor(minutes: Int(popupButtonMinutes.title) ?? 5, secondsToPostpone: nil, showAskFocusModeView:true)
         }else if lastCurrentState == ._ACTIVITY_{
             mainViewControllerObj?.postponeBreakActivitiesFor(minutes: Int(popupButtonMinutes.title) ?? 5, secondsToPostpone: nil)
         }else if lastCurrentState == ._POSTPON_MORNING_HABIT_{
-            mainViewControllerObj?.postponeMorningHabitFor(minutes: Int(popupButtonMinutes.title) ?? 5, secondsToPostpone: nil)
+            mainViewControllerObj?.postponeMorningHabitFor(minutes: Int(popupButtonMinutes.title) ?? 5, secondsToPostpone: nil, showAskFocusModeView:false)
         }else if lastCurrentState == ._POSTPON_EVENING_HABIT_{
-            mainViewControllerObj?.postponeEveningHabitFor(minutes: Int(popupButtonMinutes.title) ?? 5, secondsToPostpone: nil)
+            mainViewControllerObj?.postponeEveningHabitFor(minutes: Int(popupButtonMinutes.title) ?? 5, secondsToPostpone: nil, showAskFocusModeView:false)
         }
         self.view.window?.close()
     }

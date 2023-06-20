@@ -94,6 +94,7 @@
 		8F6138B828B7AA5300A45B1A /* askPostponeVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F6138B728B7AA5300A45B1A /* askPostponeVc.swift */; };
 		8F639C0D28D1C9AA006C41C4 /* askLogInVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F639C0C28D1C9AA006C41C4 /* askLogInVc.swift */; };
 		8F64AF8328FE712800E18A2D /* onboardingCardsVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F64AF8228FE712800E18A2D /* onboardingCardsVc.swift */; };
+		8F64E48D2A419A5500B11643 /* focusCompletedForActivityVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F64E48C2A419A5500B11643 /* focusCompletedForActivityVc.swift */; };
 		8F657D7728DF0723008A4E6E /* upgradeNowVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F657D7628DF0723008A4E6E /* upgradeNowVc.swift */; };
 		8F657D7928DF094E008A4E6E /* welcomeOnboardingVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F657D7828DF094E008A4E6E /* welcomeOnboardingVc.swift */; };
 		8F657D7B28DF35D7008A4E6E /* onboardingPostponeVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F657D7A28DF35D7008A4E6E /* onboardingPostponeVc.swift */; };
@@ -325,6 +326,7 @@
 		8F6138B728B7AA5300A45B1A /* askPostponeVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = askPostponeVc.swift; sourceTree = "<group>"; };
 		8F639C0C28D1C9AA006C41C4 /* askLogInVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = askLogInVc.swift; sourceTree = "<group>"; };
 		8F64AF8228FE712800E18A2D /* onboardingCardsVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = onboardingCardsVc.swift; sourceTree = "<group>"; };
+		8F64E48C2A419A5500B11643 /* focusCompletedForActivityVc.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = focusCompletedForActivityVc.swift; sourceTree = "<group>"; };
 		8F657D7628DF0723008A4E6E /* upgradeNowVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = upgradeNowVc.swift; sourceTree = "<group>"; };
 		8F657D7828DF094E008A4E6E /* welcomeOnboardingVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = welcomeOnboardingVc.swift; sourceTree = "<group>"; };
 		8F657D7A28DF35D7008A4E6E /* onboardingPostponeVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = onboardingPostponeVc.swift; sourceTree = "<group>"; };
@@ -643,6 +645,7 @@
 				8F93BE5F27CCA196004FA0BE /* abortingFocusMode.swift */,
 				8FAD22DA27CA526200CDC866 /* startingFocusModeVc.swift */,
 				8FAD22D627CA2F1000CDC866 /* focusCompletedVc.swift */,
+				8F64E48C2A419A5500B11643 /* focusCompletedForActivityVc.swift */,
 				8F93BE5C27CC92CE004FA0BE /* focusSummaryVc.swift */,
 				8FF8E0FE291686EF002938B8 /* popUpBlockConfirmVc.swift */,
 				8F2C03AE29C895F60035E8F1 /* blockBlurVc.swift */,
@@ -1218,6 +1221,7 @@
 				8FB50EF927BE148B00A7175B /* tblCellFocus.swift in Sources */,
 				8F6138B628B7698300A45B1A /* visualizeInstructionsVc.swift in Sources */,
 				8F4B9D6C296C4B62003A3ABD /* howHeardVc.swift in Sources */,
+				8F64E48D2A419A5500B11643 /* focusCompletedForActivityVc.swift in Sources */,
 				8FAC6C8927805F6E008A4180 /* ViewController.swift in Sources */,
 				8F4BD8C627883FBE00ABAEF5 /* Key.swift in Sources */,
 				8F9F365527AD09C000EB3516 /* activationWindowController.swift in Sources */,
@@ -1461,7 +1465,7 @@
 				CODE_SIGN_IDENTITY = "Developer ID Application: Jeremy Nagel (TCUD568B3U)";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 173;
+				CURRENT_PROJECT_VERSION = 174;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = TCUD568B3U;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1495,7 +1499,7 @@
 				CODE_SIGN_IDENTITY = "Developer ID Application: Jeremy Nagel (TCUD568B3U)";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 173;
+				CURRENT_PROJECT_VERSION = 174;
 				DEVELOPMENT_TEAM = TCUD568B3U;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_TESTABILITY = NO;

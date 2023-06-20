@@ -125,7 +125,7 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
                                 if activityPostponeCount == 0 && postponeTime > 15{
                                     activityPostponeCount += 1
                                     self.view.removeFromSuperview()
-                                    mainViewControllerObj?.postponeMorningHabitFor(minutes: postponeTime, secondsToPostpone: nil)
+                                    mainViewControllerObj?.postponeMorningHabitFor(minutes: postponeTime, secondsToPostpone: nil, showAskFocusModeView:true)
                                     return;
                                 }else{
                                     self.view.removeFromSuperview()
@@ -144,7 +144,7 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
                                 if activityPostponeCount == 0 && postponeTime > 15{
                                     activityPostponeCount += 1
                                     self.view.removeFromSuperview()
-                                    mainViewControllerObj?.postponeEveningHabitFor(minutes: postponeTime, secondsToPostpone: nil)
+                                    mainViewControllerObj?.postponeEveningHabitFor(minutes: postponeTime, secondsToPostpone: nil, showAskFocusModeView:true)
                                     return;
                                 }else{
                                     self.view.removeFromSuperview()
@@ -202,7 +202,15 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
                         }
                     }
                     
-
+                    if quittingWcObj != nil{//postpone cancel from password box
+                        if self.view.window == quittingWcObj?.window{
+                            if quittingWcObj?.contentViewController == askQuitVcObj{
+                                askQuitVcObj?.postponeHabits()
+                                self.view.removeFromSuperview()
+                                return;
+                            }
+                        }
+                    }
                     if quittingWcObj != nil{
                         if self.view.window == getQuittingWindowObject().window{
                             getQuittingCountDownVcObject().startTimer()
@@ -285,7 +293,14 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
                 }
             }
         }
-        
+        if quittingWcObj != nil{//postpone cancel from password box
+            if self.view.window == quittingWcObj?.window{
+                if quittingWcObj?.contentViewController == askQuitVcObj{
+                    self.view.removeFromSuperview()
+                    return;
+                }
+            }
+        }
         self.view.window?.close()
         self.view.removeFromSuperview()
         

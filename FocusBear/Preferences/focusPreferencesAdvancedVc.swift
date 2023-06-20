@@ -280,11 +280,11 @@ class focusPreferencesAdvancedVc: NSViewController {
         }
         UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
         
-        allApiObject.editFocusMode(focusType: arrFocusType[row], completionHandler: {newDic in
-            DispatchQueue.main.async {
-
-            }
-        })
+//        allApiObject.editFocusMode(focusType: arrFocusType[row], completionHandler: {newDic in
+//            DispatchQueue.main.async {
+//
+//            }
+//        })
         
     }
     
@@ -300,11 +300,11 @@ class focusPreferencesAdvancedVc: NSViewController {
             allApiObject.capturePosthog(event: "settings-changed-disable-script-after-focus", metadata: [:])//#490
         }
         UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
-        allApiObject.editFocusMode(focusType: arrFocusType[row], completionHandler: {newDic in
-            DispatchQueue.main.async {
-
-            }
-        })
+//        allApiObject.editFocusMode(focusType: arrFocusType[row], completionHandler: {newDic in
+//            DispatchQueue.main.async {
+//
+//            }
+//        })
     }
     
     @IBAction func checkBoxRunShellCommandBeforeFocusClicked(_ sender: Any) {
@@ -321,11 +321,11 @@ class focusPreferencesAdvancedVc: NSViewController {
         }
         UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
         
-        allApiObject.editFocusMode(focusType: arrFocusType[row], completionHandler: {newDic in
-            DispatchQueue.main.async {
-
-            }
-        })
+//        allApiObject.editFocusMode(focusType: arrFocusType[row], completionHandler: {newDic in
+//            DispatchQueue.main.async {
+//
+//            }
+//        })
         
     }
     
@@ -342,11 +342,11 @@ class focusPreferencesAdvancedVc: NSViewController {
             allApiObject.capturePosthog(event: "settings-changed-enable-shell-command-after-focus", metadata: [:])
         }
         UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
-        allApiObject.editFocusMode(focusType: arrFocusType[row], completionHandler: {newDic in
-            DispatchQueue.main.async {
-
-            }
-        })
+//        allApiObject.editFocusMode(focusType: arrFocusType[row], completionHandler: {newDic in
+//            DispatchQueue.main.async {
+//
+//            }
+//        })
     }
     
     @IBAction func btnSelectAppleScriptBeforeClicked(_ sender: Any) {
@@ -372,11 +372,11 @@ class focusPreferencesAdvancedVc: NSViewController {
                     arrFocusType[row]["scriptPathBeforeFocus"] = url.path
                     self.lblUrlCurrentApplescriptBefore.stringValue = url.path
                     UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
-                    allApiObject.editFocusMode(focusType: arrFocusType[row], completionHandler: {newDic in
-                        DispatchQueue.main.async {
-
-                        }
-                    })
+//                    allApiObject.editFocusMode(focusType: arrFocusType[row], completionHandler: {newDic in
+//                        DispatchQueue.main.async {
+//
+//                        }
+//                    })
                     allApiObject.capturePosthog(event: "set-apple-script-before-starting-focus-mode", metadata: [:])
                 }
             }
@@ -406,11 +406,11 @@ class focusPreferencesAdvancedVc: NSViewController {
                     arrFocusType[row]["scriptPathAfterFocus"] = url.path
                     self.lblUrlCurrentApplescriptAfter.stringValue = url.path
                     UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
-                    allApiObject.editFocusMode(focusType: arrFocusType[row], completionHandler: {newDic in
-                        DispatchQueue.main.async {
-
-                        }
-                    })
+//                    allApiObject.editFocusMode(focusType: arrFocusType[row], completionHandler: {newDic in
+//                        DispatchQueue.main.async {
+//
+//                        }
+//                    })
                     allApiObject.capturePosthog(event: "set-apple-script-after-completing-focus-mode", metadata: [:])
                 }
             }
@@ -445,11 +445,11 @@ class focusPreferencesAdvancedVc: NSViewController {
             self.tblView.reloadData()
         }
         UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
-        allApiObject.editFocusMode(focusType: arrFocusType[selectedFocusTypeRow], completionHandler: {newDic in
-            DispatchQueue.main.async {
-
-            }
-        })
+//        allApiObject.editFocusMode(focusType: arrFocusType[selectedFocusTypeRow], completionHandler: {newDic in
+//            DispatchQueue.main.async {
+//
+//            }
+//        })
         allApiObject.capturePosthog(event: "remove-blocked-url-in-focus-mode", metadata: [:])//#490
 
         reSetCurrentFocusMode(focusType:arrFocusType[selectedFocusTypeRow])
@@ -478,11 +478,11 @@ class focusPreferencesAdvancedVc: NSViewController {
             
             
             UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
-            allApiObject.editFocusMode(focusType: arrFocusType[row], completionHandler: {newDic in
-                DispatchQueue.main.async {
-                    
-                }
-            })
+//            allApiObject.editFocusMode(focusType: arrFocusType[row], completionHandler: {newDic in
+//                DispatchQueue.main.async {
+//                    
+//                }
+//            })
             
         }
         

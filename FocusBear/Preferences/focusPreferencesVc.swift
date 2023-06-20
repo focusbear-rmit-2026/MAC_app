@@ -12,6 +12,9 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
     
     
     
+    @IBOutlet weak var btnInfoTags: hoverInfoButton!
+    @IBOutlet weak var lblTitleTags: NSBox!
+    @IBOutlet weak var tokenField: NSTokenField!
     @IBOutlet weak var btnDndInfo: hoverInfoButton!
     @IBOutlet weak var checkBoxAutoDoNotDisturb: NSButton!
     @IBOutlet weak var heightTblViewApps: NSLayoutConstraint!
@@ -70,7 +73,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
-        
+        tokenField.delegate = self
         if let focusPreferencesAdvancedInfo = configjson.value(forKey: "focusPreferencesAdvancedInfo") as? NSDictionary{
             toolTipDndMode = focusPreferencesAdvancedInfo.value(forKey: "autoOnDoNotDisturbText") as? String ?? toolTipDndMode
         }
@@ -268,12 +271,12 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         tblViewFocusType.scrollRowToVisible(tblViewFocusType.selectedRow)
         checkState()
         UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
-        allApiObject.editFocusMode(focusType: dic, completionHandler: {newDic in
-            DispatchQueue.main.async {
-                print("*************************api called*****************")
-                
-            }
-        })
+//        allApiObject.editFocusMode(focusType: dic, completionHandler: {newDic in
+//            DispatchQueue.main.async {
+//                print("*************************api called*****************")
+//                
+//            }
+//        })
         allApiObject.capturePosthog(event: "edit-focus-mode-colour", metadata: [:])
     }
     
@@ -373,7 +376,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
     override func viewWillAppear() {
 //        let origin = preferencesWindowControllerObj?.window?.frame.origin ?? NSPoint(x: 50, y: 50)
 //        preferencesWindowControllerObj?.window?.setFrame(NSRect(x: origin.x, y: origin.y, width: 760, height: (634 + 82)), display: true, animate: false)
-        preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: 760, height: 634))
+        preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: 760, height: 624))
         reloadData()
         if Reachability.isConnectedToNetwork() == false {
             
@@ -388,6 +391,41 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
             })
             
         }
+    }
+    
+    override func viewWillDisappear() {
+//        tokenField.unregisterDraggedTypes()//todo
+//        tokenField.uniq
+        var arrJson = [[String: Any]]()
+        for focusType in arrFocusType{
+            var json: [String: Any] = [
+                "id":focusType["id"] as? String ?? "",
+                "allowed_urls":focusType["allowed_urls"] as? [String] ?? [],
+                "allowed_apps":focusType["allowed_apps"] as? [String] ?? [],
+                "name":focusType["name"] as? String ?? "",
+//                "tags":focusType["tags"] as? [String] ?? [],
+                "metadata": [:]
+            ]
+            var tagsDic = [[String:Any]]()
+            if let tags = focusType["tags"] as? [String]{
+                for tag in tags{
+                    tagsDic.append(["id": getUuid(), "text": tag])
+                }
+            }
+            json["tags"] = tagsDic
+            
+            var dic = focusType
+            dic.removeValue(forKey: "name")
+            dic.removeValue(forKey: "id")
+            dic.removeValue(forKey: "allowed_urls")
+            dic.removeValue(forKey: "allowed_apps")
+            dic.removeValue(forKey: "tags")
+            json["metadata"] = dic
+            arrJson.append(json)
+        }
+        allApiObject.updateAllFocusMode(focusModes: arrJson, completionHandler: {json in 
+            
+        })
     }
     override func viewDidAppear() {
 //        self.view.setFrameSize(NSSize(width: 760, height: 634))
@@ -430,11 +468,11 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         if selectedRow != -1{
             arrFocusType[selectedRow]["isAllowedAllApps"] = true
             UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
-            allApiObject.editFocusMode(focusType: arrFocusType[selectedRow], completionHandler: {newDic in
-                DispatchQueue.main.async {
-                    
-                }
-            })
+//            allApiObject.editFocusMode(focusType: arrFocusType[selectedRow], completionHandler: {newDic in
+//                DispatchQueue.main.async {
+//
+//                }
+//            })
         }
 
         reSetCurrentFocusMode(focusType:arrFocusType[selectedRow])
@@ -458,11 +496,11 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         if selectedRow != -1{
             arrFocusType[selectedRow]["isAllowedAllApps"] = false
             UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
-            allApiObject.editFocusMode(focusType: arrFocusType[selectedRow], completionHandler: {newDic in
-                DispatchQueue.main.async {
-                    
-                }
-            })
+//            allApiObject.editFocusMode(focusType: arrFocusType[selectedRow], completionHandler: {newDic in
+//                DispatchQueue.main.async {
+//
+//                }
+//            })
         }
 
         reSetCurrentFocusMode(focusType:arrFocusType[selectedRow])
@@ -752,17 +790,16 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
                 self.tblViewAllowedApps.selectRowIndexes(IndexSet(arrayLiteral: (appsArray.count - 1)), byExtendingSelection: false)
                 self.tblViewAllowedApps.scrollRowToVisible(appsArray.count - 1)
                 UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
-                //                currentRunningFocusType = arrFocusType[self.tblViewFocusType.selectedRow]
                 reSetCurrentFocusMode(focusType:arrFocusType[self.tblViewFocusType.selectedRow])
                 if isContainAlready{
                     self.showAlertAppAlreadyAdded()
                 }
                 
-                allApiObject.editFocusMode(focusType: arrFocusType[self.tblViewFocusType.selectedRow], completionHandler: {newDic in
-                    DispatchQueue.main.async {
-                        
-                    }
-                })
+//                allApiObject.editFocusMode(focusType: arrFocusType[self.tblViewFocusType.selectedRow], completionHandler: {newDic in
+//                    DispatchQueue.main.async {
+//
+//                    }
+//                })
                 allApiObject.capturePosthog(event: "add-allowed-app-in-focus-mode", metadata: [:])
             }
         }
@@ -816,11 +853,11 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
             self.tblViewAllowedApps.reloadData()
         }
         UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
-        allApiObject.editFocusMode(focusType: arrFocusType[selectedFocusTypeRow], completionHandler: {newDic in
-            DispatchQueue.main.async {
-                
-            }
-        })
+//        allApiObject.editFocusMode(focusType: arrFocusType[selectedFocusTypeRow], completionHandler: {newDic in
+//            DispatchQueue.main.async {
+//
+//            }
+//        })
         reSetCurrentFocusMode(focusType:arrFocusType[selectedFocusTypeRow])
         allApiObject.capturePosthog(event: "remove-allowed-app-in-focus-mode", metadata: [:])//#490
     }
@@ -880,11 +917,11 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
                 self.tblViewAllowedUrls.reloadData()
             }
             UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
-            allApiObject.editFocusMode(focusType: arrFocusType[selectedFocusTypeRow], completionHandler: {newDic in
-                DispatchQueue.main.async {
-                    
-                }
-            })
+//            allApiObject.editFocusMode(focusType: arrFocusType[selectedFocusTypeRow], completionHandler: {newDic in
+//                DispatchQueue.main.async {
+//
+//                }
+//            })
 
             reSetCurrentFocusMode(focusType:arrFocusType[selectedFocusTypeRow])
         }
@@ -932,11 +969,11 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         if selectedRow != -1{
             arrFocusType[selectedRow]["isAllowedListApproach"] = true
             UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
-            allApiObject.editFocusMode(focusType: arrFocusType[selectedRow], completionHandler: {newDic in
-                DispatchQueue.main.async {
-                    
-                }
-            })
+//            allApiObject.editFocusMode(focusType: arrFocusType[selectedRow], completionHandler: {newDic in
+//                DispatchQueue.main.async {
+//
+//                }
+//            })
         }
         reSetCurrentFocusMode(focusType:arrFocusType[selectedRow])
         //        if let isAllowedAllUrls = arrFocusType[tblViewFocusType.selectedRow]["isAllowedAllUrls"] as? Bool{#453
@@ -999,11 +1036,11 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         if selectedRow != -1{
             arrFocusType[selectedRow]["isAllowedListApproach"] = false
             UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
-            allApiObject.editFocusMode(focusType: arrFocusType[selectedRow], completionHandler: {newDic in
-                DispatchQueue.main.async {
-                    
-                }
-            })
+//            allApiObject.editFocusMode(focusType: arrFocusType[selectedRow], completionHandler: {newDic in
+//                DispatchQueue.main.async {
+//
+//                }
+//            })
         }
         reSetCurrentFocusMode(focusType:arrFocusType[selectedRow])
         
@@ -1123,11 +1160,11 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
                             arrFocusType[row]["isAutoDoNotDisturbEnabled"] = true
                             UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
                             allApiObject.capturePosthog(event: "settings-changed-enable-dnd", metadata: [:])//#490
-                            allApiObject.editFocusMode(focusType: arrFocusType[row], completionHandler: {newDic in
-                                DispatchQueue.main.async {
-    
-                                }
-                            })
+//                            allApiObject.editFocusMode(focusType: arrFocusType[row], completionHandler: {newDic in
+//                                DispatchQueue.main.async {
+//
+//                                }
+//                            })
                             preferencesWindowControllerObj!.window!.setFrameOrigin(NSPoint(x: 0, y: 0))
                         }else{
                             self.checkBoxAutoDoNotDisturb.state = .off
@@ -1140,31 +1177,46 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
     
                     allApiObject.capturePosthog(event: "settings-changed-enable-dnd", metadata: [:])//#490
     
-                    allApiObject.editFocusMode(focusType: arrFocusType[row], completionHandler: {newDic in
-                        DispatchQueue.main.async {
-    
-                        }
-                    })
+//                    allApiObject.editFocusMode(focusType: arrFocusType[row], completionHandler: {newDic in
+//                        DispatchQueue.main.async {
+//
+//                        }
+//                    })
                 }
     
             }else{
                 arrFocusType[row]["isAutoDoNotDisturbEnabled"] = false
                 UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
                 allApiObject.capturePosthog(event: "settings-changed-disable-dnd", metadata: [:])//#490
-                allApiObject.editFocusMode(focusType: arrFocusType[row], completionHandler: {newDic in
-                    DispatchQueue.main.async {
-    
-                    }
-                })
+//                allApiObject.editFocusMode(focusType: arrFocusType[row], completionHandler: {newDic in
+//                    DispatchQueue.main.async {
+//
+//                    }
+//                })
             }
     
         }
+    @IBAction func tokenFieldClicked(_ sender: Any) {
+        print("tokrn field clicked")
+    }
+    
+    @IBAction func btnInfoTagsClicked(_ sender: Any) {
+        showTooltip(sender: btnDndInfo, msg: toolTipDndMode, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)//todo text
+    }
 }
 
-extension focusPreferencesVc:NSTextFieldDelegate{
+extension focusPreferencesVc:NSTextFieldDelegate, NSTokenFieldDelegate{
     
     func controlTextDidChange(_ obj: Notification) {
-        if let textfield = obj.object as? NSTextField{
+        if let tokenfield = obj.object as? NSTokenField{
+            if tokenfield == self.tokenField{
+                let selectedRow = tblViewFocusType.selectedRow
+                var dic = arrFocusType[selectedRow]
+                dic["tags"] = self.tokenField.objectValue as? [String] ?? []
+
+                arrFocusType[selectedRow] = dic
+            }
+        }else if let textfield = obj.object as? NSTextField{
             if textfield == textFieldSelectedFocusType{
                 if textFieldSelectedFocusType.stringValue.count > 250{
                     let index = textfield.stringValue.index(textfield.stringValue.startIndex, offsetBy: 250)
@@ -1252,12 +1304,13 @@ extension focusPreferencesVc:NSTextFieldDelegate{
                     
                 }
                 //
-                allApiObject.editFocusMode(focusType: dic, completionHandler: {newDic in
-                    DispatchQueue.main.async { [self] in
-                        print("*************************api called*****************")
-                        textFieldSelectedFocusType.isEnabled = true
-                    }
-                })
+//                allApiObject.editFocusMode(focusType: dic, completionHandler: {newDic in
+//                    DispatchQueue.main.async { [self] in
+//                        print("*************************api called*****************")
+//                        textFieldSelectedFocusType.isEnabled = true
+//                    }
+//                })
+                textFieldSelectedFocusType.isEnabled = true
                 allApiObject.capturePosthog(event: "change-focus-mode-name", metadata: [:])
             }
         }
@@ -1590,6 +1643,12 @@ extension focusPreferencesVc: NSTableViewDelegate, NSTableViewDataSource{
             }else{
                 
             }
+            if let tags = arrFocusType[tblViewFocusType.selectedRow]["tags"] as? [String]{
+                tokenField.objectValue = tags
+            }else{
+                tokenField.objectValue = []
+            }
+            
             if let val = arrFocusType[tblViewFocusType.selectedRow]["isAutoDoNotDisturbEnabled"] as? Bool{
                 if val{
                     checkBoxAutoDoNotDisturb.state = .on

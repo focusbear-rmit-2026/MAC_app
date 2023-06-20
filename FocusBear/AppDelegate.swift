@@ -1166,7 +1166,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
                     
                     if !isDefaultContain{
                         let id = getUuid()
-                        let dic:[String:Any] = ["id":id, "name":"Block super distracting sites/apps", "color": getColorString(color: NSColor(red: 163/255, green: 255/255, blue: 161/255, alpha: 1)), "blocked_apps": [], "allowed_urls": [], "isOn": false, "isAllowedAllApps":false, "isDefault":true, "isAllowedListApproach":false, "blockUrlsArray": []]//#453//
+                        let dic:[String:Any] = ["id":id, "name":"Block super distracting sites/apps", "color": getColorString(color: NSColor(red: 163/255, green: 255/255, blue: 161/255, alpha: 1)), "blocked_apps": [], "allowed_urls": [], "isOn": false, "isAllowedAllApps":false, "isDefault":true, "isAllowedListApproach":false, "blockUrlsArray": [], "tags":[]]//#453//tags
                         //, "isBlockedAllUrls":false , "isAllowedAllUrls":true
                         arrFocusType.insert(dic, at: 0)
                         UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
@@ -1220,7 +1220,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
                     }// if any new default focus mode created then count should be changed in kUserdefaultsFocusTipsShown
                     if !isMeetingsContain{
                         let id = getUuid()
-                        let dic:[String:Any] = ["id":id, "name":"Meetings", "color": getColorString(color: NSColor(red: 163/255, green: 255/255, blue: 161/255, alpha: 1)), "allowed_apps": ["/Applications/Microsoft Teams.app", "/Applications/zoom.us.app", "/Applications/Jitsi.app", "/Applications/Safari.app", "/Applications/Google Chrome.app", "/Applications/Firefox.app", "/Applications/Slack.app", "/Applications/Sidekick.app", "/Applications/Brave Browser.app"], "allowed_urls": ["http://meet.google.com"], "isOn": false, "isAllowedAllApps":false, "isMeetings":true, "isAllowedListApproach":true, "blockUrlsArray": []]//#453 , "isBlockedAllUrls":false , "isAllowedAllUrls":false
+                        let dic:[String:Any] = ["id":id, "name":"Meetings", "color": getColorString(color: NSColor(red: 163/255, green: 255/255, blue: 161/255, alpha: 1)), "allowed_apps": ["/Applications/Microsoft Teams.app", "/Applications/zoom.us.app", "/Applications/Jitsi.app", "/Applications/Safari.app", "/Applications/Google Chrome.app", "/Applications/Firefox.app", "/Applications/Slack.app", "/Applications/Sidekick.app", "/Applications/Brave Browser.app"], "allowed_urls": ["http://meet.google.com"], "isOn": false, "isAllowedAllApps":false, "isMeetings":true, "isAllowedListApproach":true, "blockUrlsArray": [], "tags":[]]//#453 , "isBlockedAllUrls":false , "isAllowedAllUrls":false
                         
                         if arrFocusType.count == 0{
                             arrFocusType.append(dic)
@@ -1236,7 +1236,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
                     }
                     if !islockedFocusContain{
                         let id = getUuid()
-                        let dic:[String:Any] = ["id":id, "name":"Locked Focus on current activity", "color": getColorString(color: NSColor(red: 163/255, green: 255/255, blue: 161/255, alpha: 1)), "allowed_apps": [], "allowed_urls": [], "isOn": false, "isAllowedAllApps":false, "isLockedFocus":true, "isAllowedListApproach":true, "blockUrlsArray": []]//#453 , "isAllowedAllUrls":false , "isBlockedAllUrls":false
+                        let dic:[String:Any] = ["id":id, "name":"Locked Focus on current activity", "color": getColorString(color: NSColor(red: 163/255, green: 255/255, blue: 161/255, alpha: 1)), "allowed_apps": [], "allowed_urls": [], "isOn": false, "isAllowedAllApps":false, "isLockedFocus":true, "isAllowedListApproach":true, "blockUrlsArray": [], "tags":[]]//#453 , "isAllowedAllUrls":false , "isBlockedAllUrls":false
                         
                         if arrFocusType.count == 0{
                             arrFocusType.append(dic)
@@ -2864,105 +2864,76 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
     
     @objc func checkWindowState(){//there will be no habit display on first day
         
-        //        *****************for testing only *********************
-        //
-        //
-        //                                use this to show AllMorningHabits
-        //                                mainWindowControllerObj?.showWindow(self)
-        //                                mainViewControllerObj!.showAllMorningHabits()
-        //                                showBlankWindowInSecondaryMonitor()
-        //
-        //
-        //
-        //
-        //                                first time view
-        //                                mainWindowControllerObj?.showWindow(self)
-        //                                mainViewControllerObj!.showFirstTimeVc()
-        //                                isFirstRun = true
-        //                                showBlankWindowInSecondaryMonitor()
-        //
-        //
-        //
-        //                                use this to show All Activities
-        //                                mainWindowControllerObj?.showWindow(self)
-        //                                mainViewControllerObj?.executeBreakActivities()
-        //                                showBlankWindowInSecondaryMonitor()
-        //                                //////////
-        //
-        //
-        //                                Showing focus summary
-        //                                mainWindowControllerObj?.showWindow(self)
-        //                                mainViewControllerObj?.showFocusSummaryView()
-        //                                showBlankWindowInSecondaryMonitor()
-        //                                //////////
-        //
-        //                                shutoff window
-        //                                mainWindowControllerObj?.showWindow(self)
-        //                                mainViewControllerObj?.shutOffMac()
-        //
-        //                                show evening habits
-        //                                mainWindowControllerObj?.showWindow(self)
-        //                                mainViewControllerObj?.showAllEveningHabits()
-        //                                showBlankWindowInSecondaryMonitor()
-        //                                self.perform(#selector(showMorningHabitAfterTimer), with: nil, afterDelay: 80)
-        //
-        //                                show top timer window
-        //                                showSmallTimerWindow(durationSeconds: 30, name: "yogaa")
-        //
-        //
-        //                                showMorningPomodoroModeView()
-        //
-        //                                show brain dump window
-        //                                showBrainDumpWindow()
-        //                                showAskLoginWindow()//
-        //
-        //
-        //                                use this to show abort done view
-        //                                mainWindowControllerObj?.showWindow(self)
-        //                                mainViewControllerObj!.showAbortConfirmationView()
-        //                                showBlankWindowInSecondaryMonitor()
-        //                                showUpgradeNowWindow()
-        //                                showWelcomeOnboardingWindow()//
-        //                                showOnboardingVideoWindow()
-        //                                showOnboardingCardWindow(isLogin: true)
-        //                                showBreakWarningWindow()
-        //                                showEasyPostponeWindow()
-        //                                showMorningPomodoroModeView()
-        //                                showPreloadFocusModesWindow()
-        //                                preloadFocusModesWindowControllerObj!.contentViewController = getHowHeardVcObj()
-        //                                showUpgradeNowWindow()
-        //                                showPopUpOfflineWindow()
-        //                                showExtraNagsAfterInactivity()
-        //                                showTrialExpiredWindow()
-        //
-        //                                mainWindowControllerObj?.loadWindow()
-        //                                isHabitAlreadyShowed = true
-        //                                UserDefaults.standard.set(Date(), forKey: kUserdefaultsLastHabitShowDate)//
-        //                                UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitShowDate)//
-        //                                UserDefaults.standard.set(Date().dayBefore, forKey: kUserdefaultsLastHabitShowDate)
-        //                                UserDefaults.standard.set(Date().dayBefore, forKey: kUserdefaultsEveningHabitsShowedTillDate)
-        //                                arrKeywordsToAllowInFocus = ["111", "222", "333"]//
-        //                                lastFocusModeTempInfo = lastFocusTempInfo(id: "currentFocusModeId", arrAllowedAppsInCuddlyModeCurrentFocus: [], arrAllowedUrlsInCuddlyModeCurrentFocus: ["google.com", "facebook.com"])
-        //                                showaddFocusTempUrlsOrAppsWindow()//
-        //
-        //                                showSmallTimerWindow(durationSeconds: 500, msg: "Focus mode ends in", isFocusBreak: true, currentTimerValue: 0)
-        //                                showFocusEndWarningWindow()
-        //
-        //                                getPreloadFocusModesWindowControllerObj()
-        //                                preloadFocusModesWindowControllerObj!.contentViewController = getFocusTipsVcObjObj()
-        //                                preloadFocusModesWindowControllerObj!.showWindow(self)
-        //
-        //                                showWelcomeWindow()
-        //                                showHowHeardWindow()
-        //                                showAskLoginWindow()
-        //                                showChooseFrictionLevelWindow()
-        //                                UserDefaults.standard.removeObject(forKey: kUserdefaultsEveningHabitsShowedTillDate)//
-        //                                UserDefaults.standard.set(Date(), forKey: kUserdefaultsLastHabitShowDate)
-        //                                mainWindowControllerObj?.loadWindow()//
-        //                                mainViewControllerObj?.timeToStartBreakActivities()
-        //                                return;//
-        //        todo®
-        //        *******************************************************************
+//        *****************for testing only *********************
+//
+//
+//                                shutoff window
+//                                mainWindowControllerObj?.showWindow(self)
+//                                mainViewControllerObj?.shutOffMac()
+//
+//                                show evening habits
+//                                mainWindowControllerObj?.showWindow(self)
+//                                mainViewControllerObj?.showAllEveningHabits()
+//                                showBlankWindowInSecondaryMonitor()
+//                                self.perform(#selector(showMorningHabitAfterTimer), with: nil, afterDelay: 80)
+//
+//                                show top timer window
+//                                showSmallTimerWindow(durationSeconds: 30, name: "yogaa")
+//
+//
+//                                showMorningPomodoroModeView()
+//
+//                                show brain dump window
+//                                showBrainDumpWindow()
+//                                showAskLoginWindow()//
+//
+//
+//                                use this to show abort done view
+//                                mainWindowControllerObj?.showWindow(self)
+//                                mainViewControllerObj!.showAbortConfirmationView()
+//                                showBlankWindowInSecondaryMonitor()
+//                                showUpgradeNowWindow()
+//                                showWelcomeOnboardingWindow()//
+//                                showOnboardingVideoWindow()
+//                                showOnboardingCardWindow(isLogin: true)
+//                                showBreakWarningWindow()
+//                                showEasyPostponeWindow()
+//                                showMorningPomodoroModeView()
+//                                showPreloadFocusModesWindow()
+//                                preloadFocusModesWindowControllerObj!.contentViewController = getHowHeardVcObj()
+//                                showUpgradeNowWindow()
+//                                showPopUpOfflineWindow()
+//                                showExtraNagsAfterInactivity()
+//                                showTrialExpiredWindow()
+//
+//                                mainWindowControllerObj?.loadWindow()
+//                                isHabitAlreadyShowed = true
+//                                UserDefaults.standard.set(Date(), forKey: kUserdefaultsLastHabitShowDate)//
+//                                UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitShowDate)//
+//                                UserDefaults.standard.set(Date().dayBefore, forKey: kUserdefaultsLastHabitShowDate)
+//                                UserDefaults.standard.set(Date().dayBefore, forKey: kUserdefaultsEveningHabitsShowedTillDate)
+//                                arrKeywordsToAllowInFocus = ["111", "222", "333"]//
+//                                lastFocusModeTempInfo = lastFocusTempInfo(id: "currentFocusModeId", arrAllowedAppsInCuddlyModeCurrentFocus: [], arrAllowedUrlsInCuddlyModeCurrentFocus: ["google.com", "facebook.com"])
+//                                showaddFocusTempUrlsOrAppsWindow()//
+//
+//                                showSmallTimerWindow(durationSeconds: 500, msg: "Focus mode ends in", isFocusBreak: true, currentTimerValue: 0)
+//                                showFocusEndWarningWindow()
+//
+//                                getPreloadFocusModesWindowControllerObj()
+//                                preloadFocusModesWindowControllerObj!.contentViewController = getFocusTipsVcObjObj()
+//                                preloadFocusModesWindowControllerObj!.showWindow(self)
+//
+//                                showWelcomeWindow()
+//                                showHowHeardWindow()
+//                                showAskLoginWindow()
+//                                showChooseFrictionLevelWindow()
+//                                UserDefaults.standard.removeObject(forKey: kUserdefaultsEveningHabitsShowedTillDate)//
+//                                UserDefaults.standard.set(Date(), forKey: kUserdefaultsLastHabitShowDate)
+//                                mainWindowControllerObj?.loadWindow()//
+//                                mainViewControllerObj?.timeToStartBreakActivities()
+//                                return;//
+//        todo®
+//        *******************************************************************
         
         
         
@@ -3988,10 +3959,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
                             closePupUpBlockIfVisible()
                             if currentState == ._MORNING_HABIT_{
                                 mainViewControllerObj?.stopActivityTimer()
-                                mainViewControllerObj?.postponeMorningHabitFor(minutes: 0, secondsToPostpone: durationInSeconds)
+                                mainViewControllerObj?.postponeMorningHabitFor(minutes: 0, secondsToPostpone: durationInSeconds, showAskFocusModeView:false)
                             }else if currentState == ._EVENING_HABIT_{
                                 mainViewControllerObj?.stopActivityTimer()
-                                mainViewControllerObj?.postponeEveningHabitFor(minutes: 0, secondsToPostpone: durationInSeconds)
+                                mainViewControllerObj?.postponeEveningHabitFor(minutes: 0, secondsToPostpone: durationInSeconds, showAskFocusModeView:false)
                             }else if currentState == ._ACTIVITY_{
                                 if breakWarningWcObj != nil{
                                     if breakWarningWcObj?.window?.isVisible ?? false{
@@ -4960,7 +4931,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
                         mainWindowControllerObj?.window?.close()
                         hideBlankWindowInSecondaryMonitor()
                     }
-                    
+
                     let alert = NSAlert()
                     alert.setSharingType()
                     var noHighPriorityActivityText = "No activities with high Priority found"
@@ -7277,6 +7248,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
             
             
             if isAnyAllowedFocusModeActivityRunning{
+                
                 if UserDefaults.standard.object(forKey: kUserdefaultsDontShowToolBoxAutomatically) as? Bool == false{
                     var shouldShowToolBoxWindow = false
                     
@@ -7830,13 +7802,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
                 self.timerAllowUrlForActivity?.invalidate()
                 return;
             }
-            //            if isAnyAllowedFocusModeActivityRunning{
-            //                let isAllowedAllUrlsInFocus = currentRunningFocusType["isAllowedAllUrls"] as? Bool ?? false#453
-            //                let isAllowedListApproachInFocus = currentRunningFocusType["isAllowedListApproach"] as? Bool ?? false
-            //                if isAllowedAllUrlsInFocus && isAllowedListApproachInFocus{
-            //                    return;
-            //                }
-            //            }
+
             if let runningApp = NSWorkspace.shared.frontmostApplication{
                 if let name = runningApp.localizedName{
                     var script: String = ""
@@ -8770,3 +8736,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, SUUpdaterDel
 
 //16/6/23
 // webview msg vala kaam done 
+
+
+// deactivate mai postpone mai password
+// new font add vala kaam 
+
+
+
+//20/6/23
+//password vala kaam
+//pomodoro mode vala kaam
+//popup block confirm vala bug thi solver 
+// focus mode finish screen whem allow focus mode activity finished
+

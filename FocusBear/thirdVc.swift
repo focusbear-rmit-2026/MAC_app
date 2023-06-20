@@ -1882,6 +1882,10 @@ class thirdVc: NSViewController {
             habitTotalCompletedSeconds += arrFilteredMorningHabits[lastHabitIndex].durationSeconds!
         }
         let duration = getLastHabitDoneDuration(lastHabit: arrFilteredMorningHabits[lastHabitIndex])
+        
+        if isAnyAllowedFocusModeActivityWasRunningInLastActivity{
+            isAnyAllowedFocusModeActivityFinishTime = Date()
+        }
         if arrFilteredMorningHabits[lastHabitIndex].logQuantity{
             webViewGraph1.isHidden = true
             webViewGraph2.isHidden = true
@@ -1907,6 +1911,16 @@ class thirdVc: NSViewController {
                 mainViewControllerObj!.showTakeNotesView()
                 takeActivityNotesVcObj?.resetData(durationInSeconds: duration, quantity_logged:nil, activity_id: arrFilteredMorningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredMorningHabits[lastHabitIndex].activity_sequence_id, activityChoiceId: nil, log_quantity_answers: [])
                 
+            }else if isAnyAllowedFocusModeActivityWasRunningInLastActivity{
+                let currentFocusModeName = currentRunningFocusType["name"] as? String ?? ""
+                let currentFocusModeId = currentRunningFocusType["id"] as? String ?? ""
+                var notes = ""
+                
+                if arrFilteredMorningHabits[lastHabitIndex].take_notes == DURING_ACTIVITY{
+                    notes = UserDefaults.standard.object(forKey: kUserdefaultsLastHabitSavedNotes) as? String ?? ""
+                }
+                mainViewControllerObj!.showFocusCompletedView()
+                focusCompletedForActivityVcObj?.resetData(focusModeName: currentFocusModeName, currentFocusModeId: currentFocusModeId, finish_time: isAnyAllowedFocusModeActivityFinishTime, durationInSeconds: duration, quantity_logged:nil, activity_id: arrFilteredEveningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredEveningHabits[lastHabitIndex].activity_sequence_id, activityChoiceId: nil, log_quantity_answers: [], notes: notes)
             }else{
                 var notes = ""
                 
@@ -2053,6 +2067,16 @@ class thirdVc: NSViewController {
                 mainViewControllerObj!.showTakeNotesView()
                 takeActivityNotesVcObj?.resetData(durationInSeconds: duration, quantity_logged:nil, activity_id: arrFilteredMorningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredMorningHabits[lastHabitIndex].activity_sequence_id, activityChoiceId: nil, log_quantity_answers: [])
                 
+            }else if isAnyAllowedFocusModeActivityWasRunningInLastActivity{
+                let currentFocusModeName = currentRunningFocusType["name"] as? String ?? ""
+                let currentFocusModeId = currentRunningFocusType["id"] as? String ?? ""
+                var notes = ""
+                
+                if arrFilteredMorningHabits[lastHabitIndex].take_notes == DURING_ACTIVITY{
+                    notes = UserDefaults.standard.object(forKey: kUserdefaultsLastHabitSavedNotes) as? String ?? ""
+                }
+                mainViewControllerObj!.showFocusCompletedView()
+                focusCompletedForActivityVcObj?.resetData(focusModeName: currentFocusModeName, currentFocusModeId: currentFocusModeId, finish_time: isAnyAllowedFocusModeActivityFinishTime, durationInSeconds: duration, quantity_logged:nil, activity_id: arrFilteredEveningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredEveningHabits[lastHabitIndex].activity_sequence_id, activityChoiceId: nil, log_quantity_answers: [], notes: notes)
             }else{
                 
                 
@@ -2435,6 +2459,11 @@ class thirdVc: NSViewController {
             habitTotalCompletedSeconds += arrFilteredEveningHabits[lastHabitIndex].durationSeconds!
         }
         let duration = getLastHabitDoneDuration(lastHabit: arrFilteredEveningHabits[lastHabitIndex])
+        
+        if isAnyAllowedFocusModeActivityWasRunningInLastActivity{
+            isAnyAllowedFocusModeActivityFinishTime = Date()
+        }
+        
         if arrFilteredEveningHabits[lastHabitIndex].logQuantity{
             webViewGraph1.isHidden = true
             webViewGraph2.isHidden = true
@@ -2457,6 +2486,16 @@ class thirdVc: NSViewController {
             if arrFilteredEveningHabits[lastHabitIndex].take_notes == END_OF_ACTIVITY{
                 mainViewControllerObj!.showTakeNotesView()
                 takeActivityNotesVcObj?.resetData(durationInSeconds: duration, quantity_logged:nil, activity_id: arrFilteredEveningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredEveningHabits[lastHabitIndex].activity_sequence_id, activityChoiceId: nil, log_quantity_answers: [])
+            }else if isAnyAllowedFocusModeActivityWasRunningInLastActivity{
+                let currentFocusModeName = currentRunningFocusType["name"] as? String ?? ""
+                let currentFocusModeId = currentRunningFocusType["id"] as? String ?? ""
+                var notes = ""
+                
+                if arrFilteredEveningHabits[lastHabitIndex].take_notes == DURING_ACTIVITY{
+                    notes = UserDefaults.standard.object(forKey: kUserdefaultsLastHabitSavedNotes) as? String ?? ""
+                }
+                mainViewControllerObj!.showFocusCompletedView()
+                focusCompletedForActivityVcObj?.resetData(focusModeName: currentFocusModeName, currentFocusModeId: currentFocusModeId, finish_time: isAnyAllowedFocusModeActivityFinishTime, durationInSeconds: duration, quantity_logged:nil, activity_id: arrFilteredEveningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredEveningHabits[lastHabitIndex].activity_sequence_id, activityChoiceId: nil, log_quantity_answers: [], notes: notes)
             }else{
                 
                 var notes = ""
@@ -2639,6 +2678,16 @@ class thirdVc: NSViewController {
             if arrFilteredEveningHabits[lastHabitIndex].take_notes == END_OF_ACTIVITY{
                 mainViewControllerObj!.showTakeNotesView()
                 takeActivityNotesVcObj?.resetData(durationInSeconds: duration, quantity_logged:nil, activity_id: arrFilteredEveningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredEveningHabits[lastHabitIndex].activity_sequence_id, activityChoiceId: nil, log_quantity_answers: [])
+            }else if isAnyAllowedFocusModeActivityWasRunningInLastActivity{
+                let currentFocusModeName = currentRunningFocusType["name"] as? String ?? ""
+                let currentFocusModeId = currentRunningFocusType["id"] as? String ?? ""
+                var notes = ""
+                
+                if arrFilteredEveningHabits[lastHabitIndex].take_notes == DURING_ACTIVITY{
+                    notes = UserDefaults.standard.object(forKey: kUserdefaultsLastHabitSavedNotes) as? String ?? ""
+                }
+                mainViewControllerObj!.showFocusCompletedView()
+                focusCompletedForActivityVcObj?.resetData(focusModeName: currentFocusModeName, currentFocusModeId: currentFocusModeId, finish_time: isAnyAllowedFocusModeActivityFinishTime, durationInSeconds: duration, quantity_logged:nil, activity_id: arrFilteredEveningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredEveningHabits[lastHabitIndex].activity_sequence_id, activityChoiceId: nil, log_quantity_answers: [], notes: notes)
             }else{
                 
                 
@@ -2787,7 +2836,7 @@ class thirdVc: NSViewController {
         
         allApiObject.getACtivityStats(activityId: arrFilteredEveningHabits[self.lastHabitIndex].id, activityChoiceId: nil, completionHandler: {dic in
             DispatchQueue.main.async {
-                self.loadGraph(activityId: arrFilteredEveningHabits[self.lastHabitIndex].id, activityName: lastHabit ?? "", logQuantity: false, logQuantityType: "", activityChoiceId: nil,activityStartTime: nil, duration: "", quantity: "")
+                self.loadGraph(activityId: arrFilteredEveningHabits[self.lastHabitIndex].id, activityName: lastHabit ?? "", logQuantity: arrFilteredEveningHabits[self.lastHabitIndex].logQuantity, logQuantityType: "", activityChoiceId: nil,activityStartTime: nil, duration: "", quantity: "")
             }
         })
         

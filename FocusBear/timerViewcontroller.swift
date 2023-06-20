@@ -377,6 +377,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             let filterArr = arrFocusType.filter { $0["id"] as? String == allowedFocusMode}
             if filterArr.count != 0{ //if activity has focus mode and and any focus mode is running then silently terminate focus mode
                 isAnyAllowedFocusModeActivityRunning = true
+                isAnyAllowedFocusModeActivityWasRunningInLastActivity = true
                 whatToAchieveInFocusBlock = ""
                 if let dic = filterArr.first{
                     currentRunningFocusType = dic
@@ -490,6 +491,16 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                 mainWindowControllerObj?.window?.close()
                 appdelegate?.startTimerActivitiesAllowedApp(shouldLaunchAppAndUrl: shouldLaunchAppAndUrl)
                 hideBlankWindowInSecondaryMonitor()
+                
+                if shouldLaunchAppAndUrl{
+                    let endTime = Calendar.current.date(bySetting: .second, value: durationSeconds, of: Date())
+                    
+                    allApiObject.startFocusMode(id: currentRunningFocusType["id"] as? String ?? "", intention: whatToAchieveInFocusBlock, start_time: Date(), finish_time: endTime ?? Date(), completionHandler: {newDic in
+                        DispatchQueue.main.async {
+                            
+                        }
+                    })
+                }
             }else{
                  currentHabitPlaying = nil
             }

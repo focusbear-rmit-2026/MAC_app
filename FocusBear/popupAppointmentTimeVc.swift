@@ -54,9 +54,9 @@ class popupAppointmentTimeVc: NSViewController {
 
         
         if lastCurrentState == ._MORNING_HABIT_{
-            mainViewControllerObj?.postponeMorningHabitFor(minutes: 0, secondsToPostpone: duration)
+            mainViewControllerObj?.postponeMorningHabitFor(minutes: 0, secondsToPostpone: duration, showAskFocusModeView:false)
         }else if lastCurrentState == ._EVENING_HABIT_{
-            mainViewControllerObj?.postponeEveningHabitFor(minutes: 0, secondsToPostpone: duration)
+            mainViewControllerObj?.postponeEveningHabitFor(minutes: 0, secondsToPostpone: duration, showAskFocusModeView:false)
         }else if lastCurrentState == ._ACTIVITY_{
             mainViewControllerObj?.postponeBreakActivitiesFor(minutes: 0, secondsToPostpone: duration)
         }

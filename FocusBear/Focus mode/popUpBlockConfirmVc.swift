@@ -10,6 +10,8 @@ import Cocoa
 
 class popUpBlockConfirmVc: NSViewController {
 
+    @IBOutlet weak var lblAi: NSTextField!
+    @IBOutlet weak var lblIntention: NSTextField!
     @IBOutlet weak var btnEditSettings: Button!
     @IBOutlet weak var btnBlock: Button!
     @IBOutlet weak var btnAllow: Button!
@@ -97,12 +99,13 @@ class popUpBlockConfirmVc: NSViewController {
             var blockTitle = titleText.replacingOccurrences(of: "<URL>", with: blockedAppName)
             blockTitle = blockTitle.replacingOccurrences(of: "<FOCUSTYPE>", with: currentRunningFocusModeName)
             if !whatToAchieveInFocusBlock.isEmpty{
-                lblTitle.stringValue = blockTitle + "\n\n" + intentionText.replacingOccurrences(of: "<INTENTION>", with: whatToAchieveInFocusBlock)//"Your intension was \"\(whatToAchieveInFocusBlock)\""//
+                lblIntention.isHidden = false
+                lblIntention.stringValue = intentionText.replacingOccurrences(of: "<INTENTION>", with: whatToAchieveInFocusBlock)
             }else{
-                lblTitle.stringValue = blockTitle
+                lblIntention.isHidden = true
             }
-            
-            
+            lblTitle.stringValue = blockTitle
+            lblAi.isHidden = true
         }else{
             
             if alertReasonAutoAllowWcObj != nil{
@@ -119,24 +122,31 @@ class popUpBlockConfirmVc: NSViewController {
             
             var blockTitle = titleText.replacingOccurrences(of: "<URL>", with: url)
             blockTitle = blockTitle.replacingOccurrences(of: "<FOCUSTYPE>", with: currentRunningFocusModeName)
-            var intentionText = ""//\n\n" + intentionText.replacingOccurrences(of: "<INTENTION>", with: whatToAchieveInFocusBlock)
+            //var intentionText = ""//\n\n" + intentionText.replacingOccurrences(of: "<INTENTION>", with: whatToAchieveInFocusBlock)
             if !whatToAchieveInFocusBlock.isEmpty{
-                intentionText = "\n\n" + self.intentionText.replacingOccurrences(of: "<INTENTION>", with: whatToAchieveInFocusBlock)
+                lblIntention.isHidden = false
+                lblIntention.stringValue = self.intentionText.replacingOccurrences(of: "<INTENTION>", with: whatToAchieveInFocusBlock)
+            }else{
+                lblIntention.isHidden = true
             }
             
-            var checkingUrlText = "Checking if this URL is safe to use for your current focus mode. Will take about 4-5 seconds to check. If safe, it will automatically be allowed."
-            
-            if let popUpBlockConfirmVcInfo = configjson.value(forKey: "popUpBlockConfirmVcInfo") as? NSDictionary{
-                checkingUrlText = popUpBlockConfirmVcInfo.value(forKey: "checkingUrlText") as? String ?? checkingUrlText
-            }
-            
-            lblTitle.stringValue = blockTitle + "\n\n" + checkingUrlText + intentionText 
             
             
+            lblTitle.stringValue = blockTitle
+            
+
             //ye sara kaam agar ai ki setting enable h to hi hoga vrna na hoga //
             
             
             if SettingsManagerObject.isAiCheckUrlEnabled{
+                
+                var checkingUrlText = "Checking if this URL is safe to use for your current focus mode. Will take about 4-5 seconds to check. If safe, it will automatically be allowed."
+                
+                if let popUpBlockConfirmVcInfo = configjson.value(forKey: "popUpBlockConfirmVcInfo") as? NSDictionary{
+                    checkingUrlText = popUpBlockConfirmVcInfo.value(forKey: "checkingUrlText") as? String ?? checkingUrlText
+                }
+                lblAi.stringValue = checkingUrlText
+                lblAi.isHidden = false
                 var tab_title = ""
                 if tabTitle == nil{
                     if browser != nil{
@@ -154,7 +164,7 @@ class popUpBlockConfirmVc: NSViewController {
                             DispatchQueue.main.async{
                                 let reason = dic?.value(forKey: "reason") as? String ?? ""
                                 self.lastBlockReasonFromAi = reason
-                                self.lblTitle.stringValue = blockTitle + "\n\n" + reason + intentionText
+                                self.lblAi.stringValue = reason
                                 if let dProbability = dic?.value(forKey: "allowed_probability") as? Double{
                                     if(dProbability >= 0.80){
                                         // Safe URL
@@ -221,13 +231,15 @@ class popUpBlockConfirmVc: NSViewController {
                                 if let popUpBlockConfirmVcInfo = configjson.value(forKey: "popUpBlockConfirmVcInfo") as? NSDictionary{
                                     urlNotVerifiedText = popUpBlockConfirmVcInfo.value(forKey: "urlNotVerifiedText") as? String ?? urlNotVerifiedText
                                 }
-                                self.lblTitle.stringValue = blockTitle + "\n\n" + urlNotVerifiedText + intentionText
+                                self.lblAi.stringValue = urlNotVerifiedText
                             }
                         }
                     }
                 })
                 
                 
+            }else{
+                lblAi.isHidden = true
             }
             
         }

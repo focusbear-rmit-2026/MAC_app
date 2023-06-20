@@ -964,6 +964,16 @@ func getTakeActivityNotesVcObj()->takeActivityNotesVc{
 }
 
 
+var focusCompletedForActivityVcObj:focusCompletedForActivityVc?
+
+func getFocusCompletedForActivityVcObj()->focusCompletedForActivityVc{
+    if focusCompletedForActivityVcObj == nil{
+        focusCompletedForActivityVcObj = newStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("focusCompletedForActivityVc")) as? focusCompletedForActivityVc
+    }
+    return focusCompletedForActivityVcObj!
+}
+
+
 var shareFeedbackWindowControllerObj: commonWindowController?
 
 func getShareFeedbackWindowControllerObj()->commonWindowController{
@@ -6353,8 +6363,8 @@ public extension URL {
 //]
 
 var isAnyAllowedFocusModeActivityRunning = false// whenever allowed focus activity started set true this variable
-
-
+var isAnyAllowedFocusModeActivityWasRunningInLastActivity = false
+var isAnyAllowedFocusModeActivityFinishTime = Date()
 
 func reSetCurrentFocusMode(focusType:[String:Any]){
     if isFocusModeOn() || isAnyAllowedFocusModeActivityRunning{
