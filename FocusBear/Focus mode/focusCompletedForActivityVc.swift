@@ -30,17 +30,16 @@ class focusCompletedForActivityVc: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
-        //btnStartAnotherFocusBlock.buttonColor = NSColor.white.cgColor
-       // btnStartAnotherFocusBlock.title = "Start another focus block"
-//        textViewIntention.isFieldEditor = true
-//        textViewAchieve.isFieldEditor = true
-//        textViewDistractions.isFieldEditor = true
 
-        btnContinue.title = "Continue"//todo text
+        btnContinue.title = "Continue"
+        
+        if let askAppWorkVcInfo = configjson.value(forKey: "askAppWorkVcInfo") as? NSDictionary{
+            btnContinue.title = askAppWorkVcInfo.value(forKey: "buttonContinueText") as? String ?? btnContinue.title
+        }
+        
         lblTitle.stringValue = "You did it!"
         lblQuestionFirst.stringValue = "What did you achieve during this time?"
         lblQuestionSecond.stringValue = "Any distractions?"
-//        lblIntentionWas.stringValue = "Your intention was"
         
         if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
             if let focusCompletedInfo = focusInfo.value(forKey: "focusCompletedInfo") as? NSDictionary{
@@ -56,25 +55,14 @@ class focusCompletedForActivityVc: NSViewController {
                 if let questionSecondText = focusCompletedInfo.value(forKey: "questionSecondText") as? String{
                     lblQuestionSecond.stringValue = questionSecondText
                 }
-//                if let titleIntention = focusCompletedInfo.value(forKey: "titleIntention") as? String{
-//                    lblIntentionWas.stringValue = titleIntention
-//                }
                 if let buttonTakeBreakText = focusCompletedInfo.value(forKey: "buttonTakeBreakText") as? String{
                     self.buttonTakeBreakText = buttonTakeBreakText
                 }
-//                btnStartAnotherFocusBlock.title = focusCompletedInfo.value(forKey: "buttonStartFocusText") as? String ?? btnStartAnotherFocusBlock.title
             }
         }
     }
     
-//    override func viewWillAppear() {
-//        if isFocusModeStartedFromPomodoroMode{
-//            btnStartAnotherFocusBlock.isHidden = true
-//        }else{
-//            btnStartAnotherFocusBlock.isHidden = false
-//        }
-//    }
-//
+
     var is_skipped = false
     var durationInSeconds = 0
     var logQuantityQuestion = ""
@@ -93,8 +81,7 @@ class focusCompletedForActivityVc: NSViewController {
         self.finish_time = finish_time
         textFieldAchieve.stringValue = ""
         textFieldDistractions.stringValue = ""
-//        btnTakeBreak.title = buttonTakeBreakText.replacingOccurrences(of: "5", with: "\(currentPomodoroBreakDuration)")
-        lblSubTitle.stringValue = subTitleText.replacingOccurrences(of: "<FOCUSTYPE>", with: currentFocusModeName)//"You have successfully completed the focus block - \(currentFocusModeName)"
+        lblSubTitle.stringValue = subTitleText.replacingOccurrences(of: "<FOCUSTYPE>", with: currentFocusModeName)
 
         self.is_skipped = false
         self.activityChoiceId = nil
@@ -107,145 +94,7 @@ class focusCompletedForActivityVc: NSViewController {
         self.log_quantity_answers = log_quantity_answers
         self.notes = notes
     }
-    
-//    @IBAction func btnStartAnotherFocusBlockClicked(_ sender: Any) {
-//        addLog(text: "focusCompletedVc - btnStartAnotherFocusBlockClicked")//
-//        whatToAchieveInFocusBlock = ""
-//        appdelegate!.setIntensionInBrainDumpWindow()
-//        let timestamp = getStringFromDate(date: startFocusModeTime ?? Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
-//
-//        let achievements = textFieldAchieve.stringValue.components(separatedBy: .newlines).joined()
-//        let distractionsEncountered = textFieldDistractions.stringValue.components(separatedBy: .newlines).joined()
-//
-//        addEntryInStatsCsv(logType: "focus block", activity: currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: achievements, distractionsEncountered: distractionsEncountered, abortReason: "", feedback: "")
-//
-//        allApiObject.finishFocusMode(id: currentFocusModeId, achievements: textFieldAchieve.stringValue, distractions: textFieldDistractions.stringValue, finish_time: self.finish_time ?? Date(), completionHandler: {newDic in
-//            DispatchQueue.main.async {
-//
-//            }
-//        })
-//
-//        self.view.window?.close()
-//
-//        startingFocusWindowControllerObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
-//        startingFocusWindowControllerObj?.contentViewController = startingFocusModeVcObj
-//        startingFocusWindowControllerObj?.showWindow(nil)
-//        startingFocusModeVcObj?.startSameFocusBlockAgain()
-//        NSApplication.shared.activate(ignoringOtherApps: true)
-//    }
-    
-//    @IBAction func btnTakeBreakClicked(_ sender: Any) {
-//        addLog(text: "focusCompletedVc - btnTakeBreakClicked")//
-//        whatToAchieveInFocusBlock = ""
-//        appdelegate!.setIntensionInBrainDumpWindow()
-//        if let notes = UserDefaults.standard.object(forKey: kUserdefaultsFocusModeNotes) as? String {
-//            if !notes.isEmpty{
-//                showBrainDumpWindow()
-//            }
-//        }
-//        if brainDumpWcObj != nil{
-//            if brainDumpWcObj!.window?.isVisible ?? false{
-//                brainDumpVcObj?.breakStarted()
-//            }
-//        }
-//
-//
-//        let timestamp = getStringFromDate(date: startFocusModeTime ?? Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
-//
-//        let achievements = textFieldAchieve.stringValue.components(separatedBy: .newlines).joined()
-//        let distractionsEncountered = textFieldDistractions.stringValue.components(separatedBy: .newlines).joined()
-//
-//        addEntryInStatsCsv(logType: "focus block", activity: currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: achievements, distractionsEncountered: distractionsEncountered, abortReason: "", feedback: "")
-//
-//        allApiObject.finishFocusMode(id: currentFocusModeId, achievements: textFieldAchieve.stringValue, distractions: textFieldDistractions.stringValue, finish_time: self.finish_time ?? Date(), completionHandler: {newDic in
-//            DispatchQueue.main.async {
-//
-//            }
-//        })
-//
-//
-//        let minutes = currentPomodoroWorkDuration
-//        let breakMinute = currentPomodoroBreakDuration
-//        completedPomodoroCountInHardcorePomodoro += 1
-//
-//
-//        if isFocusModeStartedFromPomodoroMode{
-//            if isHardCorePomodoroModeOn{
-//                if totalMinutesRemainingForHardcodePomodoro > minutes{
-//                    totalMinutesRemainingForHardcodePomodoro -= minutes
-//                }else{
-//                    totalMinutesRemainingForHardcodePomodoro = 0
-//                }
-//
-//                if totalMinutesRemainingForHardcodePomodoro == 0{
-//                    isHardCorePomodoroModeOn = false
-//                }
-//            }
-//            addLog(text: "pomodoro mode Finished")
-//        }
-//        if currentState != ._MORNING_HABIT_ && currentState != ._ACTIVITY_ && currentState != ._EVENING_HABIT_ && (isHabitAlreadyShowed || currentState == ._POSTPON_MORNING_HABIT_) && arrAllbreakActivities.count != 0 && !isShutOffTimeGoing() && !isHardCorePomodoroModeOn{
-//
-//            let alert = NSAlert()
-//            alert.setSharingType()
-//
-//            alert.messageText = "Do you want to take a full screen break?"
-//            if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
-//                if let focusCompletedInfo = focusInfo.value(forKey: "focusCompletedInfo") as? NSDictionary{
-//                    alert.messageText = focusCompletedInfo.value(forKey: "alertFullScreenBreakText") as? String ?? alert.messageText
-//                }
-//            }
-//
-//            alert.addButton(withTitle: buttonYesText)
-//            alert.addButton(withTitle: buttonNoText)
-//            NSApplication.shared.activate(ignoringOtherApps: true)
-//            alert.beginSheetModal(for: self.view.window!, completionHandler: { result in
-//                if result == .alertFirstButtonReturn{
-//                    self.view.window?.close()
-//                    if lastFocusModeTempInfo != nil{
-//                        showaddFocusTempUrlsOrAppsWindow()
-//                    }
-//                    if currentState == ._POSTPON_MORNING_HABIT_{
-//                        isBreakActivityExecuteFromPostponeMorningHabit = true
-//                    }
-//                    if currentState == ._POSTPON_EVENING_HABIT_{
-//                        isBreakActivityExecuteFromPostponeEveningHabit = true
-//                    }
-//                    if !isMainWindowLodded{
-//                        mainWindowControllerObj?.loadWindow()
-//                    }
-//                    mainViewControllerObj?.executeBreakActivities()
-//                    shouldShowPomodoroAfterBreak = true
-//                }else if result == .alertSecondButtonReturn{
-//                    if isFocusModeStartedFromPomodoroMode{
-//                        appdelegate?.setTimerForPomodoroMode(delay: TimeInterval(60*breakMinute))
-//                    }
-//                    showSmallTimerWindow(durationSeconds: 60*breakMinute, msg: "", isFocusBreak: true, currentTimerValue:0)
-//                    self.view.window?.close()
-//                    if lastFocusModeTempInfo != nil{
-//                        showaddFocusTempUrlsOrAppsWindow()
-//                    }
-//                }else{
-//                    self.view.window?.close()
-//                }
-//            })
-//
-//        }else{
-//            if isFocusModeStartedFromPomodoroMode{
-//                appdelegate?.setTimerForPomodoroMode(delay: TimeInterval(60*breakMinute))
-//            }
-//
-//            showSmallTimerWindow(durationSeconds: 60*breakMinute, msg: "", isFocusBreak: true, currentTimerValue:0)
-//            self.view.window?.close()
-//            if lastFocusModeTempInfo != nil{
-//                showaddFocusTempUrlsOrAppsWindow()
-//            }
-//        }
-//
-//
-//
-//
-//    }
-    
+
     @IBAction func btnContinueClicked(_ sender: Any) {
         
         self.view.removeFromSuperview()
@@ -272,17 +121,8 @@ class focusCompletedForActivityVc: NSViewController {
         
         
         whatToAchieveInFocusBlock = ""
-        appdelegate!.setIntensionInBrainDumpWindow()
-//        if let notes = UserDefaults.standard.object(forKey: kUserdefaultsFocusModeNotes) as? String {
-//            if !notes.isEmpty{
-//                showBrainDumpWindow()
-//            }
-//        }
-//        if brainDumpWcObj != nil{
-//            if brainDumpWcObj!.window?.isVisible ?? false{
-//                brainDumpVcObj?.breakStarted()
-//            }
-//        }
+        appdelegate!.setIntentionInBrainDumpWindow()
+
         
         
         let timestamp = getStringFromDate(date: lastActivityPerformedTime ?? Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
@@ -301,5 +141,3 @@ class focusCompletedForActivityVc: NSViewController {
     }
 }
 
-///Do you want to use AI to decide if websites should be allowed?
-// "We'll use Open AI to decide if the site is valid based on your current focus mode, intention, the URL, the website title and the first 100 characters of the content. This is anonymous - no identifying details are shared. "

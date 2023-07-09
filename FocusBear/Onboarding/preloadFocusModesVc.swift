@@ -11,6 +11,7 @@ import Cocoa
 class preloadFocusModesVc: NSViewController, NSTextFieldDelegate {
 
 
+    @IBOutlet weak var heightBoxBg: NSLayoutConstraint!
     @IBOutlet weak var lblDescription: NSTextField!
     @IBOutlet weak var lblGotIt: NSTextField!
     @IBOutlet weak var textFieldSomethingElse: NSTextField!
@@ -94,17 +95,16 @@ class preloadFocusModesVc: NSViewController, NSTextFieldDelegate {
         for dic in arrDic{
             popUpBtnWork.addItem(withTitle: dic["name"] as? String ?? "")
         }
-//        popUpBtnWork.addItem(withTitle: titleProgramming)
-//        popUpBtnWork.addItem(withTitle: titleGraphicDesign)
-//        popUpBtnWork.addItem(withTitle: titleDataAnalysis)
-//        popUpBtnWork.addItem(withTitle: titleSomethingElse)
-        
-        
-        
         lblGotIt.stringValue = ""
-        
     }
     
+    override func viewWillAppear() {
+        if SettingsManagerObject.selectedFontIndex == intelOneMonoFontIndex || SettingsManagerObject.selectedFontIndex == openDyslexicFontIndex{
+            heightBoxBg.constant = 660
+        }else{
+            heightBoxBg.constant = 600
+        }
+    }
     
     @IBAction func popUpBtnSelectWorkClicked(_ sender: Any) {
         textFieldSomethingElse.stringValue = ""
@@ -126,31 +126,7 @@ class preloadFocusModesVc: NSViewController, NSTextFieldDelegate {
             lblGotIt.stringValue = gotItText.replacingOccurrences(of: "<WORK_TYPE>", with: title)
         }
         
-        return;// 
-//        switch selectedIndex {
-//        case 0:
-//            btnContinue.isEnabled = false
-//            textFieldSomethingElse.isHidden = true
-//            lblGotIt.stringValue = ""
-//        case 1:
-//            textFieldSomethingElse.isHidden = true
-//            btnContinue.isEnabled = true
-//            lblGotIt.stringValue = gotItText.replacingOccurrences(of: "<WORK_TYPE>", with: titleProgramming)
-//        case 2:
-//            textFieldSomethingElse.isHidden = true
-//            btnContinue.isEnabled = true
-//            lblGotIt.stringValue = gotItText.replacingOccurrences(of: "<WORK_TYPE>", with: titleGraphicDesign)
-//        case 3:
-//            textFieldSomethingElse.isHidden = true
-//            btnContinue.isEnabled = true
-//            lblGotIt.stringValue = gotItText.replacingOccurrences(of: "<WORK_TYPE>", with: titleDataAnalysis)
-//        case 4:
-//            btnContinue.isEnabled = false
-//            textFieldSomethingElse.isHidden = false
-//            lblGotIt.stringValue = ""
-//        default:
-//            break
-//        }
+        return;
     }
     
     
@@ -181,7 +157,6 @@ class preloadFocusModesVc: NSViewController, NSTextFieldDelegate {
             
             addLog(text: "preload Focus modeVC:-  button Continue clicked")
             
-//            UserDefaults.standard.set(dic, forKey: kUserdefaultsFocusAddedFromFirstHabit)// iska kaam khatam
             arrFocusType.insert(dic, at: arrFocusType.count - 1)
             UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
             allApiObject.addFocusMode(focusType: dic, completionHandler: {newDic in

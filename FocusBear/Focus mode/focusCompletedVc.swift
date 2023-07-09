@@ -9,6 +9,7 @@ import Cocoa
 
 class focusCompletedVc: NSViewController {
     
+    @IBOutlet weak var loader: NSProgressIndicator!
     @IBOutlet weak var textFieldDistractions: NSTextField!
     @IBOutlet weak var textFieldAchieve: NSTextField!
     @IBOutlet weak var btnStartAnotherFocusBlock: Button!
@@ -26,16 +27,13 @@ class focusCompletedVc: NSViewController {
     var buttonTakeBreakText = "Take a 5 minute break"
     var currentFocusModeId = ""
     var finish_time:Date?
+    var isShutOffTime = false
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
         btnStartAnotherFocusBlock.buttonColor = NSColor.white.cgColor
         btnStartAnotherFocusBlock.title = "Start another focus block"
-//        textViewIntention.isFieldEditor = true
-//        textViewAchieve.isFieldEditor = true
-//        textViewDistractions.isFieldEditor = true
 
-        
         lblTitle.stringValue = "You did it!"
         lblQuestionFirst.stringValue = "What did you achieve during this time?"
         lblQuestionSecond.stringValue = "Any distractions?"
@@ -67,6 +65,7 @@ class focusCompletedVc: NSViewController {
     }
     
     override func viewWillAppear() {
+        loader.isHidden = true
         if isFocusModeStartedFromPomodoroMode{
             btnStartAnotherFocusBlock.isHidden = true
         }else{
@@ -74,21 +73,34 @@ class focusCompletedVc: NSViewController {
         }
     }
     
-    func resetData(focusModeName:String, currentFocusModeId:String, finish_time:Date){
+    func resetData(focusModeName:String, currentFocusModeId:String, finish_time:Date, isShutOffTime:Bool){
+        self.isShutOffTime = isShutOffTime
         self.currentFocusModeName = focusModeName
         self.currentFocusModeId = currentFocusModeId
         self.finish_time = finish_time
         textFieldAchieve.stringValue = ""
         textFieldDistractions.stringValue = ""
-        btnTakeBreak.title = buttonTakeBreakText.replacingOccurrences(of: "5", with: "\(currentPomodoroBreakDuration)")
+        
         lblSubTitle.stringValue = subTitleText.replacingOccurrences(of: "<FOCUSTYPE>", with: currentFocusModeName)//"You have successfully completed the focus block - \(currentFocusModeName)"
         textViewIntention.string = whatToAchieveInFocusBlock
+        btnTakeBreak.isEnabled = true
+        loader.isHidden = true
+        if isShutOffTime{
+            btnTakeBreak.title = "Continue"
+            if let askAppWorkVcInfo = configjson.value(forKey: "askAppWorkVcInfo") as? NSDictionary{
+                btnTakeBreak.title = askAppWorkVcInfo.value(forKey: "buttonContinueText") as? String ?? btnTakeBreak.title
+            }
+            btnStartAnotherFocusBlock.isHidden = true
+        }else{
+            btnStartAnotherFocusBlock.isHidden = false
+            btnTakeBreak.title = buttonTakeBreakText.replacingOccurrences(of: "5", with: "\(currentPomodoroBreakDuration)")
+        }
     }
     
     @IBAction func btnStartAnotherFocusBlockClicked(_ sender: Any) {
         addLog(text: "focusCompletedVc - btnStartAnotherFocusBlockClicked")//
         whatToAchieveInFocusBlock = ""
-        appdelegate!.setIntensionInBrainDumpWindow()
+        appdelegate!.setIntentionInBrainDumpWindow()
         let timestamp = getStringFromDate(date: startFocusModeTime ?? Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
         
         let achievements = textFieldAchieve.stringValue.components(separatedBy: .newlines).joined()
@@ -114,16 +126,28 @@ class focusCompletedVc: NSViewController {
     @IBAction func btnTakeBreakClicked(_ sender: Any) {
         addLog(text: "focusCompletedVc - btnTakeBreakClicked")//
         whatToAchieveInFocusBlock = ""
-        appdelegate!.setIntensionInBrainDumpWindow()
-        if let notes = UserDefaults.standard.object(forKey: kUserdefaultsFocusModeNotes) as? String {
-            if !notes.isEmpty{
-                showBrainDumpWindow()
+        
+        if !isShutOffTime{
+            appdelegate!.setIntentionInBrainDumpWindow()
+            if let notes = UserDefaults.standard.object(forKey: kUserdefaultsFocusModeNotes) as? String {
+                if !notes.isEmpty{
+                    showBrainDumpWindow()
+                }
             }
-        }
-        if brainDumpWcObj != nil{
-            if brainDumpWcObj!.window?.isVisible ?? false{
-                brainDumpVcObj?.breakStarted()
+            if brainDumpWcObj != nil{
+                if brainDumpWcObj!.window?.isVisible ?? false{
+                    brainDumpVcObj?.breakStarted()
+                }
             }
+        }else{
+            if brainDumpWcObj != nil{
+                if brainDumpWcObj!.window?.isVisible ?? false{
+                    brainDumpWcObj?.window?.close()
+                }
+            }
+            btnTakeBreak.isEnabled = false
+            loader.isHidden = false
+            loader.startAnimation(self)
         }
         
         
@@ -136,7 +160,9 @@ class focusCompletedVc: NSViewController {
 
         allApiObject.finishFocusMode(id: currentFocusModeId, achievements: textFieldAchieve.stringValue, distractions: textFieldDistractions.stringValue, finish_time: self.finish_time ?? Date(), completionHandler: {newDic in
             DispatchQueue.main.async {
-                
+                if self.isShutOffTime{
+                    mainViewControllerObj?.showFocusSummaryView()
+                }
             }
         })
         
@@ -147,18 +173,24 @@ class focusCompletedVc: NSViewController {
         
       
         if isFocusModeStartedFromPomodoroMode{
-            if isHardCorePomodoroModeOn{
-                if totalMinutesRemainingForHardcodePomodoro > minutes{
-                    totalMinutesRemainingForHardcodePomodoro -= minutes
-                }else{
-                    totalMinutesRemainingForHardcodePomodoro = 0
+            if !isShutOffTime{
+                if isHardCorePomodoroModeOn{
+                    if totalMinutesRemainingForHardcodePomodoro > minutes{
+                        totalMinutesRemainingForHardcodePomodoro -= minutes
+                    }else{
+                        totalMinutesRemainingForHardcodePomodoro = 0
+                    }
+                    
+                    if totalMinutesRemainingForHardcodePomodoro == 0{
+                        isHardCorePomodoroModeOn = false
+                    }
                 }
-                
-                if totalMinutesRemainingForHardcodePomodoro == 0{
-                    isHardCorePomodoroModeOn = false
-                }
+                addLog(text: "pomodoro mode Finished")
+            }else{
+                totalMinutesRemainingForHardcodePomodoro = 0
+                isHardCorePomodoroModeOn = false
             }
-            addLog(text: "pomodoro mode Finished")
+            
         }
         if currentState != ._MORNING_HABIT_ && currentState != ._ACTIVITY_ && currentState != ._EVENING_HABIT_ && (isHabitAlreadyShowed || currentState == ._POSTPON_MORNING_HABIT_) && arrAllbreakActivities.count != 0 && !isShutOffTimeGoing() && !isHardCorePomodoroModeOn{
             
@@ -207,14 +239,17 @@ class focusCompletedVc: NSViewController {
             })
             
         }else{
-            if isFocusModeStartedFromPomodoroMode{
-                appdelegate?.setTimerForPomodoroMode(delay: TimeInterval(60*breakMinute))
-            }
-            
-            showSmallTimerWindow(durationSeconds: 60*breakMinute, msg: "", isFocusBreak: true, currentTimerValue:0)
-            self.view.window?.close()
-            if lastFocusModeTempInfo != nil{
-                showaddFocusTempUrlsOrAppsWindow()
+            if !isShutOffTime{
+                if isFocusModeStartedFromPomodoroMode{
+                    appdelegate?.setTimerForPomodoroMode(delay: TimeInterval(60*breakMinute))
+                }
+                
+                showSmallTimerWindow(durationSeconds: 60*breakMinute, msg: "", isFocusBreak: true, currentTimerValue:0)
+                self.view.window?.close()
+                if lastFocusModeTempInfo != nil{
+                    showaddFocusTempUrlsOrAppsWindow()
+                }
+                
             }
         }
         

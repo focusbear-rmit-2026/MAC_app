@@ -21,13 +21,7 @@ let firstViewControllerObj = mainStoryboard.instantiateController(withIdentifier
 
 let timerViewcontrollerObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("timerViewcontroller")) as? timerViewcontroller
 
-//var discourageDefaultFocusVcObj:discourageDefaultFocusVc?
-//func getDiscourageDefaultFocusVcObject()->discourageDefaultFocusVc{
-//    if discourageDefaultFocusVcObj == nil{
-//        discourageDefaultFocusVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("discourageDefaultFocusVc")) as? discourageDefaultFocusVc
-//    }
-//    return discourageDefaultFocusVcObj!
-//}
+
 var quittingWcObj:commonWindowController?
 func getQuittingWindowObject()->commonWindowController{
     if quittingWcObj == nil{
@@ -733,6 +727,7 @@ func getBlurWindowObject()->commonWindowController{
     if blurWcObj == nil{
         blurWcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
         blurWcObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
+        blurWcObj?.window?.ignoresMouseEvents = true
     }
     return blurWcObj!
 }
@@ -837,6 +832,40 @@ func getPopUpBlockConfirmVcObject()->popUpBlockConfirmVc{
 }
 
 
+
+
+// menuTour window object
+var menuTourWcObj:commonWindowController?
+func getMenuTourWcObject()->commonWindowController{
+    if menuTourWcObj == nil{
+        menuTourWcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
+        menuTourWcObj?.window!.collectionBehavior = NSWindow.CollectionBehavior.canJoinAllSpaces
+        menuTourWcObj?.window!.canHide = false
+        menuTourWcObj?.window!.isExcludedFromWindowsMenu = true
+        menuTourWcObj?.window!.hidesOnDeactivate = false
+        menuTourWcObj?.window!.isRestorable = false
+        menuTourWcObj?.window!.animationBehavior = .none
+        menuTourWcObj?.window!.styleMask = .borderless
+        menuTourWcObj?.window!.backingType = .buffered
+        menuTourWcObj?.window?.title = ""
+        menuTourWcObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.numberOfWindowLevelKeys)))
+        menuTourWcObj?.window?.backgroundColor = NSColor.clear
+    }
+    return menuTourWcObj!
+}
+
+// menuTour  vc object
+var menuTourVcObj:menuTourVc?
+func getMenuTourVcObject()->menuTourVc{
+    if menuTourVcObj == nil{
+        menuTourVcObj = newStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("menuTourVc")) as? menuTourVc
+    }
+    return menuTourVcObj!
+}
+
+
+
+
 let thirdVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("thirdVc")) as? thirdVc
 
 //let selectJsonWindowControllerObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("selectJsonWindowController")) as? selectJsonWindowController
@@ -871,6 +900,7 @@ let pomodoroWindowControllerObj = mainStoryboard.instantiateController(withIdent
 let pomodoroVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("pomodoroVc")) as? pomodoroVc
 let focusCompletedVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("focusCompletedVc")) as? focusCompletedVc
 
+let focusCompletedFullScreenVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("focusCompletedVc")) as? focusCompletedVc
 
 let startingFocusWindowControllerObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
 
@@ -973,6 +1003,16 @@ func getFocusCompletedForActivityVcObj()->focusCompletedForActivityVc{
     return focusCompletedForActivityVcObj!
 }
 
+
+
+var logsUploadingVcObj:logsUploadingVc?
+
+func getLogsUploadingVcObjObj()->logsUploadingVc{
+    if logsUploadingVcObj == nil{
+        logsUploadingVcObj = newStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("logsUploadingVc")) as? logsUploadingVc
+    }
+    return logsUploadingVcObj!
+}
 
 var shareFeedbackWindowControllerObj: commonWindowController?
 
@@ -1771,6 +1811,9 @@ func playEveryActivitySound(){
 }
 
 func playAfterMorningEveningRoutineSound(isMorning:Bool){
+    if appdelegate!.isUserOnMeeting{//Don't play sound effects during mid-meeting breaks#662
+        return;
+    }
     if SettingsManagerObject.isSoundEnabled{
         if isMorning{
             if let sound = arrCompletingWholeMorningRoutineSound.randomElement(){
@@ -1792,6 +1835,9 @@ func playFocusModeStartedSound(){
     }
 }
 func playStartMorningEveningRoutineSound(){
+    if appdelegate!.isUserOnMeeting{//Don't play sound effects during mid-meeting breaks#662
+        return;
+    }
     if SettingsManagerObject.isSoundEnabled{
         if let sound = arrStartingMorningEveningRoutineSound.randomElement(){
             NSSound(named: sound)?.play()
@@ -2472,51 +2518,7 @@ class shadowSecureTextField: NSSecureTextField {
     
 }
 var isGettingSchema = false
-//func getSchemsFile(completionHandler: @escaping(_ result: NSDictionary?) -> ()) {
-//    if let myUrl = NSURL(string: "https://focus-bear.github.io/assets/config/settings-schema.json"){
-//
-//        let request = NSMutableURLRequest(url:myUrl as URL);
-//        request.httpMethod = "GET";
-//
-//        let task = URLSession.shared.dataTask(with: request as URLRequest) {
-//            data, response, error in
-//
-//            if let httpResponse = response as? HTTPURLResponse {
-//                if httpResponse.statusCode == 200{
-//
-//                    if data != nil{
-//
-//                        do {
-//                            if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
-//
-//                                print(jsonResult)
-//                                completionHandler(jsonResult)
-//                                return
-//                            }
-//
-//                        }catch{
-//                            print(error)
-//                        }
-//
-//                    }
-//                    completionHandler(nil)
-//                    return
-//                }else{
-//                    completionHandler(nil)
-//                    return
-//                }
-//            }
-//            if error != nil {
-//                completionHandler(nil)
-//                return
-//            }
-//            completionHandler(nil)
-//        }
-//        task.resume()
-//    }else{
-//        completionHandler(nil)
-//    }
-//}
+
 
 
 let allApiObject = AllApi()
@@ -2619,6 +2621,10 @@ func getDateFromStringInUtc(date:String, dateFormat:String)->Date?{
     // Convert String to Date
     return dateFormatter.date(from: string)
 }
+
+
+
+
 //******************************************CreateDirectoryIfNotExist*******************************************************//
 func CreateDirectoryIfNotExist(path:String){
     if !FileManager.default.fileExists(atPath: path){
@@ -2869,7 +2875,7 @@ class customBox: NSBox {
                         let result = alert.runModal()
                         if result == .alertSecondButtonReturn{
                             addLog(text: "Stop current focus from alert and show start focus view")
-                            appdelegate?.focusModeFinished(isSilent: true)
+                            appdelegate?.focusModeFinished(isSilent: true, isShutOffTime: false)
                             showStartingFocusMode(focusModeIndex: tagValue, focusType: arrFocusType[tagValue]["name"] as? String ?? "")
                         }
                         return;
@@ -2894,36 +2900,7 @@ class customBox: NSBox {
                     return;
                 }
                 
-                
-                
-                
-                
-                //  //  //  //  //  //  //
-                
-                // new work starting foces mode
-                
-                //                if arrFocusType[tagValue]["isDefault"] as? Bool == true{
-                //                    if focusPreferencesVcObj != nil{// Discourage Default Focus Vc se pahle preferences band kr denege taki vha se koi focus mode chalu na kar pay
-                //
-                //                        if preferencesWindowControllerObj?.window?.isVisible ?? false{
-                //                            preferencesWindowControllerObj?.window?.close()
-                //                        }
-                //                    }
-                //                    if focusModeStartWindowLodded{
-                //                        if startingFocusWindowControllerObj?.window?.isVisible ?? false{
-                //                            startingFocusWindowControllerObj!.window?.close()
-                //                        }
-                //                    }
-                //                    menuViewControllerObj!.presentAsSheet(getDiscourageDefaultFocusVcObject())
-                //                    getDiscourageDefaultFocusVcObject().resetData()
-                //                }else{
-                
                 showStartingFocusMode(focusModeIndex: tagValue, focusType: arrFocusType[tagValue]["name"] as? String ?? "")
-                //                startingFocusWindowControllerObj?.window.
-                
-                //                }
-                
-                
                 
                 return;
                 
@@ -2962,7 +2939,6 @@ class customBox: NSBox {
     }
     override func mouseExited(with event: NSEvent) {
         super.mouseExited(with: event)
-        //        self.fillColor = NSColor.clear
         mouseDown = false
         NSCursor.arrow.set()
         self.layer?.backgroundColor = NSColor(red: 0/255, green: 0/255, blue: 0/255, alpha: 0).cgColor
@@ -2993,10 +2969,7 @@ func showAbortingFocusModeVc(){
     NSApplication.shared.activate(ignoringOtherApps: true)
 }
 
-//let jobTypeProgramming = "Programming"
-//let jobTypeGraphicDesign = "GraphicDesign"
-//let jobTypeDataAnalysis = "DataAnalysis"
-//let jobTypeSomethingElse = "SomethingElse"
+
 
 var focusDefaultAllowApps = ["finder", "universalaccessauthwarn", "system preferences", "loginwindow", "screensaverengine", "osascript"]
 var arrFocusType = [[String:Any]]()
@@ -3025,10 +2998,6 @@ struct lastFocusTempInfo {
 
 var arrFocusTypeForPomodoro = [[String:Any]]()
 
-//var isAllowedAllAppsInFocus = false
-//var isAllowedAllUrlsInFocus = false
-//var isBlockedAllUrlsInFocus = false
-//var isAllowedListApproachInFocus = true
 var selfAppName = Bundle.main.infoDictionary!["CFBundleName"] as! String
 
 
@@ -3064,16 +3033,16 @@ func intFromHexString(hexStr: String) -> UInt32 {
     return hexInt
 }
 
-var timerForFocusMode:Timer?//jab bhi focus mode disable krenge timer bhi check krenge valid ua to invalidate krenge
+var timerForFocusMode:Timer?
 var timerForFocusModeEndNotification:Timer?
 
 var isFocusTimeType:FocusModeTimeType = ._NONE_
-var endFocusModeTime:Date?// ye to vo h jo start foccus k time per hisab lgaya ki end focus ka time kya hoga
+var endFocusModeTime:Date?// this is focusMode end time wich we calculate at the begning of focus mode
 var startFocusModeTime:Date?
 var startFocusModeTimeForPauseAndResume:Date?
-var focusModeActualDurationPerformed:Int = 0// ye kaam aaygi log vali file jo export hoti hai . usme likhvane k liye.. jese fi focus mode finish hoga duuration is var mai likhva lenge fir log mai add krenge (fir ussse focus summary dikhaynge )
+var focusModeActualDurationPerformed:Int = 0// this will be useful to save in csv and showing focus summary
 var focusModeMinutesToPerform = 0
-var focusModeSecondsToPerform = 0 //pause// resume k liye
+var focusModeSecondsToPerform = 0 //useful in pause resume focus mode
 var unfocusedTime = 0
 enum FocusModeTimeType:Int{
     case _HOUR_ = 11, _TILL_SHUTOFF_, _NONE_
@@ -3424,6 +3393,22 @@ class blankController: NSViewController {
         lblTitle.stringValue = appName//"Focus Bear"
     }
 }
+
+class logsUploadingVc: NSViewController {
+    @IBOutlet weak var lblTitle: NSTextField!
+    @IBOutlet weak var loader: NSProgressIndicator!
+    override func viewDidLoad() {
+        lblTitle.stringValue = "Uploading..."
+        
+        if let common = configjson.value(forKey: "common") as? NSDictionary{
+            lblTitle.stringValue = common.value(forKey: "uploadingText") as? String ?? lblTitle.stringValue
+        }
+    }
+    override func viewWillAppear() {
+        loader.startAnimation(self)
+    }
+}
+
 //4b3eb33632184640b82aa3e3f50fe11b2cdd8b0e82ce48a8bfd1cbe26edc32f5
 
 var newGifsNamesArray = ["Glasses-Bear-250-px_V3", "cheer_250px_trans_centered", "Finger-and-Sign-Bear-250px", "Weight-bear-250-px_V2", "Whistle-bear-250-px"]
@@ -4248,6 +4233,24 @@ func showChooseFrictionLevelWindow(){
     onboardingCardsWcObj?.window?.center()
 }
 
+func showMenuTourWindow(){
+    addLog(text:"showMenuTourWindow")
+    if menuTourWcObj == nil{
+        getMenuTourWcObject().contentViewController = getMenuTourVcObject()
+    }
+    
+//    getMenuTourWcObject().window?.styleMask.remove(.closable)
+    getMenuTourWcObject().showWindow(nil)
+    
+    
+    let screenList = NSScreen.screens
+    for screen in screenList {
+        menuTourWcObj?.window?.setFrame(NSMakeRect(0, 0, NSWidth(screen.frame), NSHeight(screen.frame)), display: true)
+        break;
+    }
+    
+}
+
 
 
 func showOnboardingSetPasswordWindow(){
@@ -4321,20 +4324,9 @@ var onboardingVideoStartTime:Date?
 func showOnboardingVideoWindow(){
     addLog(text:"showOnboardingVideoWindow")
     appdelegate!.checkSystemTimeAndShowWindow()
-    //    if onboardingVideoWcObj == nil{
-    //        getOnboardingVideoWindowObject().contentViewController = getOnboardingVideoVcObject()
-    //        onboardingVideoWcObj?.window?.title = appName
-    //        onboardingVideoWcObj?.window?.styleMask.insert(.resizable)
-    //        onboardingVideoWcObj?.window?.contentMinSize = NSSize(width: 1050, height: 837)
-    //        onboardingVideoWcObj?.window?.setContentSize(NSSize(width: 1050, height: 837))
-    //        onboardingVideoWcObj?.window?.center()
-    //    }
-    //    onboardingCardsWcObj?.window?.styleMask.insert(.resizable)
     onboardingCardsWcObj?.contentViewController = getAskOnboardingVideoVcObject()
     
-    //    getOnboardingVideoVcObject().startOnboardingVideo()
     UserDefaults.standard.set(true, forKey: kUserdefaultsVideoShown)
-    //    onboardingVideoWcObj!.showWindow(nil)
     
 }
 //-------------------------------------------------//
@@ -4359,24 +4351,24 @@ func runShellCommand(command:String){
 
 func workBeforeFocusBegin(index:Int){
     
-    if let val = arrFocusType[index]["isAutoDoNotDisturbEnabled"] as? Bool{
-        if val{
+    if let isAutoDoNotDisturbEnabled = arrFocusType[index]["isAutoDoNotDisturbEnabled"] as? Bool{
+        if isAutoDoNotDisturbEnabled{
             if isAccessibilityEnabled(isPrompt: true){
                 enableDND()
             }
         }
     }
     
-    if let val = arrFocusType[index]["isScriptBeforeFocusEnabled"] as? Bool{
-        if val{
+    if let isScriptBeforeFocusEnabled = arrFocusType[index]["isScriptBeforeFocusEnabled"] as? Bool{
+        if isScriptBeforeFocusEnabled{
             if let path = arrFocusType[index]["scriptPathBeforeFocus"] as? String{
                 runAppleScriptFile(path: path)
             }
         }
     }
     
-    if let val = arrFocusType[index]["isShellCommandBeforeFocusEnabled"] as? Bool{
-        if val{
+    if let isShellCommandBeforeFocusEnabled = arrFocusType[index]["isShellCommandBeforeFocusEnabled"] as? Bool{
+        if isShellCommandBeforeFocusEnabled{
             if let text = arrFocusType[index]["shellCommandBeforeFocusText"] as? String{
                 if !text.isEmpty{
                     runShellCommand(command: text)
@@ -4389,16 +4381,16 @@ func workBeforeFocusBegin(index:Int){
 
 func workAfterFocusBegin(index:Int){
     
-    if let val = arrFocusType[index]["isAutoDoNotDisturbEnabled"] as? Bool{
-        if val{
+    if let isAutoDoNotDisturbEnabled = arrFocusType[index]["isAutoDoNotDisturbEnabled"] as? Bool{
+        if isAutoDoNotDisturbEnabled{
             if isAccessibilityEnabled(isPrompt: false){
                 disableDND()
             }
         }
     }
     
-    if let val = arrFocusType[index]["isScriptAfterFocusEnabled"] as? Bool{
-        if val{
+    if let isScriptAfterFocusEnabled = arrFocusType[index]["isScriptAfterFocusEnabled"] as? Bool{
+        if isScriptAfterFocusEnabled{
             if let path = arrFocusType[index]["scriptPathAfterFocus"] as? String{
                 runAppleScriptFile(path: path)
             }
@@ -4406,8 +4398,8 @@ func workAfterFocusBegin(index:Int){
     }
     
     
-    if let val = arrFocusType[index]["isShellCommandAfterFocusEnabled"] as? Bool{
-        if val{
+    if let isShellCommandAfterFocusEnabled = arrFocusType[index]["isShellCommandAfterFocusEnabled"] as? Bool{
+        if isShellCommandAfterFocusEnabled{
             if let text = arrFocusType[index]["shellCommandAfterFocusText"] as? String{
                 if !text.isEmpty{
                     runShellCommand(command: text)
@@ -4484,13 +4476,7 @@ class PopoverAwareTextField: NSTextField, NSPopoverDelegate {
     var itemsArr = [String]()
     var popoverViewControllerObj:PopoverViewController?// = PopoverViewController()
     var selectedItemId = -1
-    //    lazy var popover: NSPopover = {
-    //        let popover = NSPopover()
-    //        popover.behavior = .semitransient
-    //        popover.contentViewController = popoverViewControllerObj
-    //        popover.delegate = self
-    //        return popover
-    //    }()
+    
     
     override func becomeFirstResponder() -> Bool {
         
@@ -4502,10 +4488,6 @@ class PopoverAwareTextField: NSTextField, NSPopoverDelegate {
         if itemsArr.count != 0{
             selectedItemId = -1
             
-            
-            //            self.superview?.addSubview(popoverViewControllerObj.view)
-            //            addConstraints()
-            //            popover.show(relativeTo: self.frame, of: NSApp.keyWindow?.contentView ?? self, preferredEdge: .minY)
             popoverViewControllerObj!.view.isHidden = false
             popoverViewControllerObj!.textFieldObj = self
             popoverViewControllerObj!.ReloadData(arr: itemsArr)
@@ -4518,44 +4500,12 @@ class PopoverAwareTextField: NSTextField, NSPopoverDelegate {
         return super.becomeFirstResponder()
     }
     
-    //    func addConstraints() {
-    ////        popoverViewControllerObj.view.translatesAutoresizingMaskIntoConstraints = false
-    //        //Trailing
-    //        let width = NSLayoutConstraint(item: popoverViewControllerObj.view, attribute: .width, relatedBy: .equal, toItem: self, attribute: .width, multiplier: 1.0, constant: 0.0)
-    //        //Leading
-    //        let leading = NSLayoutConstraint(item: popoverViewControllerObj.view, attribute: .leading, relatedBy: .equal, toItem: self, attribute: .leading, multiplier: 1.0, constant: 0.0)
-    //        //Bottom
-    ////        let bottom = NSLayoutConstraint(item: popoverViewControllerObj.view, attribute: .bottom, relatedBy: .equal, toItem: self.superview, attribute: .bottom, multiplier: 1.0, constant: 0.0)
-    //        //Height to be fixed for SubView same as AdHeight
-    //        let height = NSLayoutConstraint(item: popoverViewControllerObj.view, attribute: .top, relatedBy: .equal, toItem: self, attribute: .top, multiplier: 1.0, constant: 0.0)
-    //        self.addConstraint(width)
-    ////        self.superview?.addConstraint(bottom)
-    //        self.superview?.addConstraint(leading)
-    //        //Add height constraint to the subview, as subview owns it.
-    //        self.addConstraint(height)
-    //    }
+    
     
     @objc func Close(){
-        //        popover.close()/////
         popoverViewControllerObj!.view.isHidden = true
     }
-    //    @objc func ChangeState(){
-    //        isShown = false
-    //    }
     
-    //    func popoverDidClose(_ notification: Notification) {
-    //        self.perform(#selector(ChangeState), with: nil, afterDelay: 1)
-    //    }
-    
-    //    override func keyDown(with event: NSEvent) {
-    //        if event.keyCode == 126{
-    //            return
-    //        }
-    //        if event.keyCode == 125{
-    //            return
-    //        }
-    //        super.keyDown(with: event)
-    //    }
     override func keyUp(with theEvent: NSEvent) {
         
         if theEvent.keyCode == 53 || theEvent.keyCode == 48{//esc,tab
@@ -4595,9 +4545,6 @@ class PopoverAwareTextField: NSTextField, NSPopoverDelegate {
         if self.itemsArr.count != 0 {
             matches.removeAll()
             for result in self.itemsArr {
-                //                if let _ = result.range(of: self.stringValue, options: [String.CompareOptions.anchored, .caseInsensitive]) {
-                //                    matches.append(result)
-                //                }
                 if result.localizedStandardContains(self.stringValue){
                     matches.append(result)
                 }
@@ -4610,8 +4557,6 @@ class PopoverAwareTextField: NSTextField, NSPopoverDelegate {
         }
         if matches.count > 0 {
             let range = self.currentEditor()?.selectedRange
-            //            popover.show(relativeTo: self.frame, of: self, preferredEdge: .maxY)
-            //            popover.show(relativeTo: self.frame, of: NSApp.keyWindow?.contentView ?? self, preferredEdge: .minY)//////
             popoverViewControllerObj!.view.isHidden = false
             popoverViewControllerObj!.textFieldObj = self
             popoverViewControllerObj!.ReloadData(arr: matches)
@@ -4620,7 +4565,6 @@ class PopoverAwareTextField: NSTextField, NSPopoverDelegate {
             self.selectText(self)
             self.currentEditor()?.selectedRange = range ?? NSMakeRange(0, 0)
         } else{
-            //            popover.close()/////
             popoverViewControllerObj!.view.isHidden = true
         }
     }
@@ -4708,9 +4652,6 @@ class PopoverAwareSearchField: NSSearchField, NSPopoverDelegate {
         if self.itemsArr.count != 0 {
             matches.removeAll()
             for result in self.itemsArr {
-                //                if let _ = result.range(of: self.stringValue, options: [String.CompareOptions.anchored, .caseInsensitive]) {
-                //                    matches.append(result)
-                //                }
                 if ((result)["title"] as? String ?? "").localizedStandardContains(self.stringValue){
                     matches.append(result)
                 }
@@ -4777,34 +4718,6 @@ func roundOffValue(number : Double) -> Double {
 }
 
 
-//func isPartialStringValid(_ partialString: String, newEditingString newString: AutoreleasingUnsafeMutablePointer<NSString?>?, errorDescription error: AutoreleasingUnsafeMutablePointer<NSString?>?) -> Bool {
-//    var error = error
-//
-//
-//
-//    let nonDigits = CharacterSet(charactersIn: "0123456789.").inverted
-//
-//    if (partialString as NSString).rangeOfCharacter(from: nonDigits).location != NSNotFound {
-//
-//        error = AutoreleasingUnsafeMutablePointer<NSString?>(mutating: "Input is not an integer")
-//
-//        return false
-//    } else {
-//
-//        error = nil
-//
-//        return true
-//    }
-//}
-
-
-
-
-
-
-
-
-
 
 extension NSTextField{
     func setFocus(){
@@ -4815,37 +4728,12 @@ extension NSTextField{
 
 
 
-
-
-
-
-
-//public extension NSTextField
-//{
-//    var isFocused:Bool {
-//        if
-//            window?.firstResponder is NSTextView,
-//            let fieldEditor = window?.fieldEditor(false, for: nil),
-//            let delegate = fieldEditor.delegate as? NSTextField,
-//            self == delegate
-//        {
-//            return true
-//        }
-//        return false
-//    }
-//}
-
-
 func getUuid()->String{
     return UUID().uuidString.lowercased()
 }
 
 
 func showAlertNoInternet(window:NSWindow){
-    //        if self.view.window == nil{// doing this beacuse when window is opening for the first time and if window is not completely loddded than it should wait for window (verna crash ho rha tha)
-    //            self.perform(#selector(showAlertNoInternet), with: nil, afterDelay: 1)
-    //            return;
-    //        }
     var noInternetTitle = "No Internet Connection"
     var noInternetSubTitle = "Make sure your device is connected to the internet."
     addLog(text: "No Internet Connection")
@@ -5664,7 +5552,32 @@ class PopoverBackgroundView:NSView {
     }
 }
 
-//var isSettingsChanged = false
+
+
+class PopoverContentViewForMenuTour:NSView {
+    var backgroundView:PopoverBackgroundViewForMenuTour?
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        if let frameView = self.window?.contentView?.superview {
+            if backgroundView == nil {
+                backgroundView = PopoverBackgroundViewForMenuTour(frame: frameView.bounds)
+                backgroundView!.autoresizingMask = NSView.AutoresizingMask([.width, .height]);
+                frameView.addSubview(backgroundView!, positioned: NSWindow.OrderingMode.below, relativeTo: frameView)
+            }
+        }
+    }
+}
+
+class PopoverBackgroundViewForMenuTour:NSView {
+    override func draw(_ dirtyRect: NSRect) {
+        NSColor.white.set()
+        //  NSRectFill(self.bounds)
+        bounds.fill()
+        
+    }
+}
+
+
 
 //var headercolor = NSColor(red: 62/255, green: 70/255, blue: 106/255, alpha: 1)
 class CustomScroller: NSScroller {
@@ -5779,87 +5692,92 @@ var appVersion = ""
 var macOSVersion = ""
 
 
+// **************************Font Work*******************************//
+
+let arrFont:[fontStyle] = [fontStyle(name: "System Font", regularFontName: "System Font", boldFontName: "System Font Bold"),
+                           fontStyle(name: "Arial", regularFontName: "Arial", boldFontName: "Arial Bold"),
+                           fontStyle(name: "Comic Sans MS", regularFontName: "Comic Sans MS", boldFontName: "Comic Sans MS Bold"),
+                           fontStyle(name: "Verdana", regularFontName: "Verdana", boldFontName: "Verdana Bold"),
+                           fontStyle(name: "Tahoma", regularFontName: "Tahoma", boldFontName: "Tahoma Bold"),
+                           fontStyle(name: "Trebuchet MS", regularFontName: "Trebuchet MS", boldFontName: "Trebuchet MS Bold"),
+                           fontStyle(name: "Helvetica", regularFontName: "Helvetica", boldFontName: "Helvetica Bold"),
+                           fontStyle(name: "IntelOneMono", regularFontName: "IntelOneMono-Regular", boldFontName: "IntelOneMono-Regular"),
+                           fontStyle(name: "OpenDyslexic", regularFontName: "OpenDyslexicThree-Regular", boldFontName: "OpenDyslexicThree-Regular"),
+                           fontStyle(name: "Poppins", regularFontName: "Poppins-Regular", boldFontName: "Poppins-Regular")]
+
+struct fontStyle{
+    var name = ""
+    var regularFontName = ""
+    var boldFontName = ""
+    
+    init(name:String, regularFontName:String, boldFontName:String){
+        self.name = name
+        self.regularFontName = regularFontName
+        self.boldFontName = boldFontName
+    }
+}
+let intelOneMonoFontIndex = 7
+let openDyslexicFontIndex = 8
+
 extension NSTextField {//CourierNewPSMT // CourierNewPS-BoldMT
-    open override func awakeFromNib() {//System Font Bold
+    open override func awakeFromNib() {
         super.awakeFromNib()
-        //        backgroundColor = .clear
-        //        font = UIFont(name: "Helvetica", size: font.pointSize)
-        let fontName = SettingsManagerObject.selectedFont
+        let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex]
         
         if self.font?.fontName == "CourierNewPS-BoldMT"{
-            font = NSFont(name: "\(fontName) Bold", size: self.font?.pointSize ?? 24)!
+            font = NSFont(name: selectedFont.boldFontName, size: self.font?.pointSize ?? 24)
         }else if self.font?.fontName == "CourierNewPSMT"{
-            font = NSFont(name: fontName, size: self.font?.pointSize ?? 24)!
+            font = NSFont(name: selectedFont.regularFontName, size: self.font?.pointSize ?? 24)
         }else if self.font?.fontName == ".AppleSystemUIFontBold"{
-            font = NSFont(name: "\(fontName) Bold", size: self.font?.pointSize ?? 24)!
+            font = NSFont(name: selectedFont.boldFontName, size: self.font?.pointSize ?? 24)
         }else if self.font?.fontName == ".AppleSystemUIFont"{
-            font = NSFont(name: fontName, size: self.font?.pointSize ?? 24)!
+            font = NSFont(name: selectedFont.regularFontName, size: self.font?.pointSize ?? 24)
         }else if self.font?.fontName == ".SF NS Regular"{
-            font = NSFont(name: fontName, size: self.font?.pointSize ?? 24)!
+            font = NSFont(name: selectedFont.regularFontName, size: self.font?.pointSize ?? 24)
         }else{
-            font = NSFont(name: fontName, size: self.font?.pointSize ?? 24)!
+            font = NSFont(name: selectedFont.regularFontName, size: self.font?.pointSize ?? 24)
         }
-        //        font = NSFont(name: "System Font", size: self.font?.pointSize ?? 24)!
-        //        font = NSFont(name: "IntelOneMono-Regular", size: self.font?.pointSize ?? 24)//
-        
-        
-        //        font = NSFont(name: "Arial Bold", size: self.font?.pointSize ?? 24)!//
-        
-        
-        //        font = NSFont(name: "Comic Sans MS Bold", size: self.font?.pointSize ?? 24)!//
-        //        font = NSFont(name: "Verdana", size: self.font?.pointSize ?? 24)!//
-        //        font = NSFont(name: "Tahoma Bold", size: self.font?.pointSize ?? 24)!//
-        
-        //        font = NSFont(name: "Trebuchet MS", size: self.font?.pointSize ?? 24)!//
-        //        font = NSFont(name: "Helvetica", size: self.font?.pointSize ?? 24)!//
-        
     }
 }
 
 extension NSButton {
-    open override func awakeFromNib() {//System Font Regular
+    open override func awakeFromNib() {
         super.awakeFromNib()
-        //        backgroundColor = .clear
-        //        font = UIFont(name: "Helvetica", size: font.pointSize)
-        let fontName = SettingsManagerObject.selectedFont
+        let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex]
         
         if self.font?.fontName == "CourierNewPS-BoldMT"{
-            font = NSFont(name: "\(fontName) Bold", size: self.font?.pointSize ?? 24)!
+            font = NSFont(name: selectedFont.boldFontName, size: self.font?.pointSize ?? 24)
         }else if self.font?.fontName == "CourierNewPSMT"{
-            font = NSFont(name: fontName, size: self.font?.pointSize ?? 24)!
+            font = NSFont(name: selectedFont.regularFontName, size: self.font?.pointSize ?? 24)
         }else if self.font?.fontName == ".AppleSystemUIFontBold"{
-            font = NSFont(name: "\(fontName) Bold", size: self.font?.pointSize ?? 24)!
+            font = NSFont(name: selectedFont.boldFontName, size: self.font?.pointSize ?? 24)
         }else if self.font?.fontName == ".AppleSystemUIFont"{
-            font = NSFont(name: fontName, size: self.font?.pointSize ?? 24)!
+            font = NSFont(name: selectedFont.regularFontName, size: self.font?.pointSize ?? 24)
         }else if self.font?.fontName == ".SF NS Regular"{
-            font = NSFont(name: fontName, size: self.font?.pointSize ?? 24)!//"System Font Regular"
+            font = NSFont(name: selectedFont.regularFontName, size: self.font?.pointSize ?? 24)//"System Font Regular"
         }else{
-            font = NSFont(name: fontName, size: self.font?.pointSize ?? 24)!
+            font = NSFont(name: selectedFont.regularFontName, size: self.font?.pointSize ?? 24)
         }
-        
-        //        font = NSFont(name: "Arial", size: self.font?.pointSize ?? 24)!//
-        //        font?.fontDescriptor.fontAttributes = NSFontDescriptor.AttributeName.init(rawValue: "NSCTFontUIUsageAttribute")
-        
     }
 }
 extension NSSegmentedControl {
     open override func awakeFromNib() {
         super.awakeFromNib()
         
-        let fontName = SettingsManagerObject.selectedFont
+        let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex]
         
         if self.font?.fontName == "CourierNewPS-BoldMT"{
-            font = NSFont(name: "\(fontName) Bold", size: self.font?.pointSize ?? 24)!
+            font = NSFont(name: selectedFont.boldFontName, size: self.font?.pointSize ?? 24)
         }else if self.font?.fontName == "CourierNewPSMT"{
-            font = NSFont(name: fontName, size: self.font?.pointSize ?? 24)!
+            font = NSFont(name: selectedFont.regularFontName, size: self.font?.pointSize ?? 24)
         }else if self.font?.fontName == ".AppleSystemUIFontBold"{
-            font = NSFont(name: "\(fontName) Bold", size: self.font?.pointSize ?? 24)!
+            font = NSFont(name: selectedFont.boldFontName, size: self.font?.pointSize ?? 24)
         }else if self.font?.fontName == ".AppleSystemUIFont"{
-            font = NSFont(name: fontName, size: self.font?.pointSize ?? 24)!
+            font = NSFont(name: selectedFont.regularFontName, size: self.font?.pointSize ?? 24)
         }else if self.font?.fontName == ".SF NS Regular"{
-            font = NSFont(name: fontName, size: self.font?.pointSize ?? 24)!//"System Font Regular"
+            font = NSFont(name: selectedFont.regularFontName, size: self.font?.pointSize ?? 24)//"System Font Regular"
         }else{
-            font = NSFont(name: fontName, size: self.font?.pointSize ?? 24)!
+            font = NSFont(name: selectedFont.regularFontName, size: self.font?.pointSize ?? 24)
         }
     }
 }
@@ -5868,25 +5786,49 @@ extension NSTabView {
     open override func awakeFromNib() {
         super.awakeFromNib()
         
-        let fontName = SettingsManagerObject.selectedFont
+        let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex]
         
         if self.font.fontName == "CourierNewPS-BoldMT"{
-            font = NSFont(name: "\(fontName) Bold", size: self.font.pointSize)!
+            font = NSFont(name: selectedFont.boldFontName, size: self.font.pointSize)!
         }else if self.font.fontName == "CourierNewPSMT"{
-            font = NSFont(name: fontName, size: self.font.pointSize)!
+            font = NSFont(name: selectedFont.regularFontName, size: self.font.pointSize)!
         }else if self.font.fontName == ".AppleSystemUIFontBold"{
-            font = NSFont(name: "\(fontName) Bold", size: self.font.pointSize)!
+            font = NSFont(name: selectedFont.boldFontName, size: self.font.pointSize)!
         }else if self.font.fontName == ".AppleSystemUIFont"{
-            font = NSFont(name: fontName, size: self.font.pointSize)!
+            font = NSFont(name: selectedFont.regularFontName, size: self.font.pointSize)!
         }else if self.font.fontName == ".SF NS Regular"{
-            font = NSFont(name: fontName, size: self.font.pointSize)!//"System Font Regular"
+            font = NSFont(name: selectedFont.regularFontName, size: self.font.pointSize)!//"System Font Regular"
         }else{
-            font = NSFont(name: fontName, size: self.font.pointSize)!
+            font = NSFont(name: selectedFont.regularFontName, size: self.font.pointSize)!
         }
         
     }
 }
 
+extension NSTextView {
+    open override func awakeFromNib() {
+        super.awakeFromNib()
+        
+        let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex]
+        if self.font != nil{
+            if self.font!.fontName == "CourierNewPS-BoldMT"{
+                font = NSFont(name: selectedFont.boldFontName, size: self.font!.pointSize)!
+            }else if self.font!.fontName == "CourierNewPSMT"{
+                font = NSFont(name: selectedFont.regularFontName, size: self.font!.pointSize)!
+            }else if self.font!.fontName == ".AppleSystemUIFontBold"{
+                font = NSFont(name: selectedFont.boldFontName, size: self.font!.pointSize)!
+            }else if self.font!.fontName == ".AppleSystemUIFont"{
+                font = NSFont(name: selectedFont.regularFontName, size: self.font!.pointSize)!
+            }else if self.font!.fontName == ".SF NS Regular"{
+                font = NSFont(name: selectedFont.regularFontName, size: self.font!.pointSize)!//"System Font Regular"
+            }else{
+                font = NSFont(name: selectedFont.regularFontName, size: self.font!.pointSize)!
+            }
+        }else{
+            font = NSFont(name: selectedFont.regularFontName, size: 13)!
+        }
+    }
+}
 
 
 extension NSFont {
@@ -5933,6 +5875,7 @@ extension NSFont {
     }
 }
 
+//  /////////////////////////////////////////////////////////////////////////
 
 var popoverFocusHelp:NSPopover?
 var popoverTooltip:NSPopover?// = NSPopover()
@@ -6337,30 +6280,7 @@ public extension URL {
         return destURL
     }
 }
-//[
-//  {
-//    "completed_activity_log": {
-//      "user_id": "string",
-//      "activity_id": "string",
-//      "activity_sequence_id": "string",
-//      "start_time": "2022-12-15T12:47:23.044Z",
-//      "finish_time": "2022-12-15T12:47:23.045Z",
-//      "quantity_logged": 0,
-//      "duration_logged": 0,
-//      "completed_sequence_id": "string",
-//      "activity_note": "string",
-//      "metadata": {},
-//
-//
-//
-//
-//      "id": "string",
-//      "created_at": "string",
-//      "updated_at": "string"
-//    }
-//
-//  }
-//]
+
 
 var isAnyAllowedFocusModeActivityRunning = false// whenever allowed focus activity started set true this variable
 var isAnyAllowedFocusModeActivityWasRunningInLastActivity = false
@@ -6385,84 +6305,13 @@ func closePupUpBlockIfVisible(){
 }
 
 
-
-//func playSound(){ sahi hai ye 
-//
-//    NSSound(contentsOfFile: "/Users/prashant/Desktop/untitled folder/audio.mp3", byReference: true)?.play()
-//
-//}
-
-
-//            let audio = AVPlayer.init(url: URL(fileURLWithPath: "/Users/prashant/Desktop/untitled folder/audio.mp3"))
-//                // after initialization play audio its just like click on play button
-//            audio.play()
-//
-//            do {
-//                let player = try AVAudioPlayer(contentsOf: URL(fileURLWithPath: "/Users/prashant/Desktop/untitled folder/audio.mp3"))
-//                player.prepareToPlay()
-//                player.play()
-//            } catch let error {
-//                print(error.localizedDescription)
-//            }
-
-//            var myAudio: AVAudioPlayer!
-//
-//            do {
-//                let sound = try AVAudioPlayer(contentsOf: URL(fileURLWithPath: "/Users/prashant/Desktop/untitled folder/audio.mp3"))
-//                myAudio = sound
-//                let play = sound.play()
-//                print(play)
-//            } catch {
-//                //
-//                print(error)
-//            }
-
-
-
-//        NSSound(contentsOfFile: "/Users/prashant/Desktop/untitled folder/audio.mp3", byReference: true)
-//        downloadFileAsync(url: URL(string: "https://focus-music.f3db181aa5e95c474bda11234481eea9.r2.cloudflarestorage.com/demo-audio.mp3?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=75432c5154f51b8777736b6545f2bbfe%2F20230110%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20230110T110934Z&X-Amz-Expires=36000&X-Amz-Signature=57eb6bd0903dc06e7471231b55a77f64435ec531d404bf6dcf2709da40b822b0&X-Amz-SignedHeaders=host"), destinationUrl: URL(fileURLWithPath: "/Users/prashant/Desktop/untitled folder/audio.mp3")) { (success, error) in
-//            if error == nil {
-//                NSSound(named: sound)?.play()
-//
-//                print("downloded")
-//            }else{
-//
-//
-//            }
-//
-//        }
-
 var arrAllTracks = [[String:Any]]()
 var kUserdefaultsAllTracks = "kUserdefaultsAllTracks"
-//struct track {
-//    var id:String!
-//    var name:String!
-//    var artist:String!
-//    var description:String!
-//    var download_url:String!
-//    var url:URL!
-//    var isPlaying:Bool = false
-//    init(id:String, name:String, artist:String, description:String, download_url:String, url:URL) {
-//        self.id = id
-//        self.name = name
-//        self.artist = artist
-//        self.description = description
-//        self.download_url = download_url
-//        self.url = url
-//    }
-//}
+
 
 
 func checkAllTracksDownloadState(){
     for track in arrAllTracks{
-        //        if track["isFileDownloading"] as? Bool == true{
-        //            let localUrlString = track["url"] as? String ?? ""
-        //            let localUrl = URL(fileURLWithPath: localUrlString)
-        //            let download_urlString = track["download_url"] as? String ?? ""
-        //            let download_url = URL(string: download_urlString)//URL(fileURLWithPath: download_urlString)
-        //            let id = track["id"] as? String ?? ""
-        
-        
         let thumbnailLocalUrlString = track["thumbnailLocalUrl"] as? String ?? ""
         let thumbnailLocalUrl = URL(fileURLWithPath: thumbnailLocalUrlString)
         let thumbnail_download_urlString = track["thumbnail_download_url"] as? String ?? ""
@@ -6481,42 +6330,6 @@ func checkAllTracksDownloadState(){
             }
             break;
         }
-        
-        
-        //            allApiObject.downloadFileAsync(url: download_url, destinationUrl: localUrl){ (success, error) in
-        //                print(success)
-        //                print(id)
-        ////                print(name)
-        //
-        //                for i in 0..<arrAllTracks.count{
-        //                    if arrAllTracks[i]["id"] as? String == id{
-        //
-        //                        arrAllTracks[i]["isFileDownloading"] = false
-        //
-        //                        if FileManager.default.fileExists(atPath: localUrl.path){
-        //                            arrAllTracks[i]["isFileDownloded"] = true
-        //                        }else{
-        //                            arrAllTracks[i]["isFileDownloded"] = false
-        //                        }
-        //
-        //                        checkAllTracksDownloadState()
-        //                        DispatchQueue.main.async {
-        //                            if allTracksVcObj != nil && allTracksWindowControllerObj != nil{
-        //                                if allTracksWindowControllerObj?.window?.isVisible ?? false{
-        //                                    allTracksVcObj?.tblView.reloadData()
-        //                                }
-        //                            }
-        //                        }
-        //
-        //                        break;
-        //                    }
-        //                }
-        //
-        //            }
-        
-        
-        
-        //        }
     }
 }
 
@@ -6608,64 +6421,38 @@ func getAppAppearance()->NSAppearance?{
 
 
 
-
-
-
-
-//import AVFoundation
-//let detector = ScreenSharingDetector()
-//class ScreenSharingDetector {
-//    private var captureSession: AVCaptureSession?
-//
-//    func startDetection() {
-//        let captureScreenInput = AVCaptureScreenInput(displayID: CGMainDisplayID())
-//        let captureSession = AVCaptureSession()
-//
-//        if captureScreenInput != nil{
-//            if captureSession.canAddInput(captureScreenInput!) {
-//                captureSession.addInput(captureScreenInput!)
-//                self.captureSession = captureSession
-//
-//                NotificationCenter.default.addObserver(self,
-//                                                       selector: #selector(screenSharingStarted),
-//                                                       name: NSNotification.Name.AVCaptureSessionDidStartRunning,
-//                                                       object: nil)
-//
-//                NotificationCenter.default.addObserver(self,
-//                                                       selector: #selector(screenSharingStopped),
-//                                                       name: NSNotification.Name.AVCaptureSessionDidStopRunning,
-//                                                       object: nil)
-//
-//                captureSession.startRunning()
-//            }
-//        }
-//
-//    }
-//
-//    func stopDetection() {
-//        if let captureSession = captureSession {
-//            captureSession.stopRunning()
-//            self.captureSession = nil
-//        }
-//    }
-//
-//    @objc private func screenSharingStarted() {
-//        print("Screen sharing started")
-//        // Perform additional actions when screen sharing starts
-//    }
-//
-//    @objc private func screenSharingStopped() {
-//        print("Screen sharing stopped")
-//        // Perform additional actions when screen sharing stops
-//    }
-//}
-
-//// Example usage
-//let detector = ScreenSharingDetector()
-//detector.startDetection()
-//
-//// Keep the detection running for as long as needed...
-//
-//// To stop the detection:
-//detector.stopDetection()
-let arrFont = ["System Font", "Arial", "Comic Sans MS", "Verdana", "Tahoma", "Trebuchet MS", "Helvetica"]
+class CustomSliderCell: NSSliderCell {
+    required init(coder aDecoder: NSCoder) {
+        super.init(coder: aDecoder)
+    }
+    override func drawBar(inside aRect: NSRect, flipped: Bool) {
+        var rect = aRect
+        rect.size.height = aRect.height
+        let barRadius = CGFloat(2.5)
+        let value = CGFloat((self.doubleValue - self.minValue) / (self.maxValue - self.minValue))
+        let finalWidth = CGFloat(value * (self.controlView!.frame.size.width - 8))
+        var leftRect = rect
+        leftRect.size.width = finalWidth
+        let bg = NSBezierPath(roundedRect: rect, xRadius: barRadius, yRadius: barRadius)
+        NSColor.lightGray.setFill()
+        bg.fill()
+    }
+}
+class RLSlider: NSSlider {
+    init() {
+        super.init(frame: NSZeroRect)
+        addFilter()
+    }
+    
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        addFilter()
+    }
+    
+    func addFilter() {
+        let colorFilter = CIFilter(name: "CIFalseColor")!
+        colorFilter.setDefaults()
+        colorFilter.setValue(CIColor(cgColor: NSColor.lightGray.cgColor), forKey: "inputColor1")
+        self.contentFilters = [colorFilter]
+    }
+}

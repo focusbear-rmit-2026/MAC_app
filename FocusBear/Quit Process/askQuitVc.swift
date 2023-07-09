@@ -73,9 +73,11 @@ class askQuitVc: NSViewController {
     override func viewWillAppear() {
         if SettingsManagerObject.kIsReducedMotion{
             imgView.image = nil
+            imgView.isHidden = true
         }else{
             imgView.image = NSImage(named: "Crying_small")
             imgView.animates = true
+            imgView.isHidden = false
         }
         var isEasyPostponeWindowVisible = false
         

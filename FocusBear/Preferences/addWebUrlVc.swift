@@ -132,8 +132,8 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
                 }
                 currentRow = selectedRow
                 var urlsArray = [String]()
-                if let arr = arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow]["allowed_urls"] as? [String]{
-                    urlsArray = arr
+                if let allowed_urls = arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow]["allowed_urls"] as? [String]{
+                    urlsArray = allowed_urls
                 }
                 
                 textField.stringValue = urlsArray[selectedRow]
@@ -146,8 +146,8 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
                 }
                 currentRow = selectedRow
                 var urlsArray = [String]()
-                if let arr = arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow]["blockUrlsArray"] as? [String]{
-                    urlsArray = arr
+                if let blockUrlsArray = arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow]["blockUrlsArray"] as? [String]{
+                    urlsArray = blockUrlsArray
                 }
                 
                 textField.stringValue = urlsArray[selectedRow]
@@ -282,8 +282,8 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
                 var isOnboardingProcess = false
                 if UserDefaults.standard.object(forKey: kUserdefaultsVideoShown) != nil{
                     if focusPreferencesVcObj != nil{
-                        if let arr = arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow]["allowed_urls"] as? [String]{
-                            urlsArray = arr
+                        if let allowed_urls = arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow]["allowed_urls"] as? [String]{
+                            urlsArray = allowed_urls
                         }
                     }
                 }else{
@@ -308,17 +308,7 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
                         urlsArray.append(item)
                     }
                 }
-                
-              
-//                if !urlsArray.contains(where: {$0.lowercased() == textView.string.lowercased() }) {
-//                    urlsArray.append(textView.string)
-//                }else{
-//                    lblInvalidDomain.isHidden = false
-//                    lblInvalidDomain.stringValue = urlAlreadyExistsText.replacingOccurrences(of: "<APPNAME>", with: textView.string)
-//                    return;
-//                }
-                
-                
+
                 if isOnboardingProcess{
                     preloadFocusModeAppsVcObj?.arrUrls = urlsArray
                     preloadFocusModeAppsVcObj?.tblView.reloadData()
@@ -335,12 +325,7 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
                     UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
 
                     reSetCurrentFocusMode(focusType:arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow])
-                    
-//                    allApiObject.editFocusMode(focusType: dic, completionHandler: {newDic in
-//                        DispatchQueue.main.async {
-//
-//                        }
-//                    })
+
                     allApiObject.capturePosthog(event: "add-allowed-url-in-focus-mode", metadata: [:])
                 }
                 
@@ -348,16 +333,10 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
                 
             }else if currenUrlAddingtState == ._FOCUS_BLOCK_URL{
                 var urlsArray = [String]()
-                if let arr = arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow]["blockUrlsArray"] as? [String]{
-                    urlsArray = arr
+                if let blockUrlsArray = arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow]["blockUrlsArray"] as? [String]{
+                    urlsArray = blockUrlsArray
                 }
-//                if !urlsArray.contains(where: {$0.lowercased() == textView.string.lowercased() }) {
-//                    urlsArray.append(textView.string)
-//                }else{
-//                    lblInvalidDomain.isHidden = false
-//                    lblInvalidDomain.stringValue = urlAlreadyExistsText.replacingOccurrences(of: "<APPNAME>", with: textView.string)
-//                    return;
-//                }
+
               
                 if cehckIsItemAlreadyAdded(urlsArray: urlsArray){
                     lblInvalidDomain.isHidden = false
@@ -389,12 +368,6 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
                 UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
 
                 reSetCurrentFocusMode(focusType:arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow])
-                
-//                allApiObject.editFocusMode(focusType: dic, completionHandler: {newDic in
-//                    DispatchQueue.main.async {
-//
-//                    }
-//                })
                 allApiObject.capturePosthog(event: "add-blocked-url-in-focus-mode", metadata: [:])
                 
             }else if currenUrlAddingtState == ._ALL_BLOCK_URL{
@@ -466,11 +439,6 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
                 UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
                 
                 reSetCurrentFocusMode(focusType:arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow])
-//                allApiObject.editFocusMode(focusType: dic, completionHandler: {newDic in
-//                    DispatchQueue.main.async {
-//
-//                    }
-//                })
                 allApiObject.capturePosthog(event: "edit-allowed-url-in-focus-mode", metadata: [:])//#490
             }else if currenUrlAddingtState == ._FOCUS_BLOCK_URL{
                 var urlsArray = [String]()
@@ -514,11 +482,6 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
                 
                 UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
                 reSetCurrentFocusMode(focusType:arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow])
-//                allApiObject.editFocusMode(focusType: dic, completionHandler: {newDic in
-//                    DispatchQueue.main.async {
-//                        
-//                    }
-//                })
                 allApiObject.capturePosthog(event: "edit-blocked-url-in-focus-mode", metadata: [:])//#490
             }else{
                 var isContainAlready = false

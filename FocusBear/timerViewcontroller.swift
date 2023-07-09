@@ -363,11 +363,8 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
     
     
     func  checkActivityExtraAllowedAppsAndUrls(allowedFocusMode:String){
-        //        activityAllowedFocusApps.removeAll()
-        //        activityAllowedFocusUrls.removeAll()
-        //                activityAllowedFocusMode = nil
         isAnyAllowedFocusModeActivityRunning = false
-        
+        isAnyAllowedFocusModeActivityWasRunningInLastActivity = false
         arrBlockedAppsInCuddlyModeCurrentFocus.removeAll()
         arrAllowedAppsInCuddlyModeCurrentFocus.removeAll()
         arrAllowedUrlsInCuddlyModeCurrentFocus.removeAll()
@@ -430,6 +427,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
     func startTimerHabit(durationSeconds:Int, name:String,currentHabit: habit, currentTimerValue:Int) {
         
         let url = getRandomVideoUrl(activityId:currentHabit.id, urlsArray: currentHabit.urlsArray)
+        addLog(text:"Current Activity id is :- \(currentHabit.id ?? "")")
         
         UserDefaults.standard.set(Date(), forKey: kUserdefaultsLastHabitsStartedDate)
         isAnyAllowedFocusModeActivityRunning = false
@@ -438,7 +436,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         }
         if isFocusModeOnOrPaused(){
             addLog(text: "Activity start:- Focus Mode Finished")
-            appdelegate?.focusModeFinished(isSilent: true)
+            appdelegate?.focusModeFinished(isSilent: true, isShutOffTime: false)
         }
         isLastActivityStoppedInRunningState = false
         lastActivityRunningId = ""
@@ -639,7 +637,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             }
         }
 
-        
+        addLog(text:"Special Activity id is :- \(activityId)")
         let url = getRandomVideoUrl(activityId:activityId, urlsArray: urlsArray)
         
 
@@ -914,19 +912,14 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         //lastActivityStoppedTimerCount = 0
         
         var url: String?
-        
+        addLog(text:"Current Activity id is :- \(currentActivity.id ?? "")")
         if currentChoice == nil{
             url = getRandomVideoUrl(activityId:currentActivity.id, urlsArray: urlsArray)
         }else{
+            addLog(text:"Current Activity id is :- \(currentChoice!.id ?? "")")
             url = getRandomVideoUrl(activityId:currentChoice!.id, urlsArray: urlsArray)
         }
         
-        
-        
-        if isFocusModeOnOrPaused(){
-            addLog(text: "Activity start:- Focus Mode Finished")
-            appdelegate?.focusModeFinished(isSilent: true)
-        }
         
         isAnyAllowedFocusModeActivityRunning = false
         btnSkipHabit.isHidden = true
@@ -1098,8 +1091,8 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             self.timerHideBearAnimation = Timer.scheduledTimer(timeInterval: 5, target: self, selector: #selector(self.hideBearAnimation), userInfo: nil, repeats: false)
         }
         if kIsReducedMotion && tabCount > 0{
-            titleTopSpace.constant = 80
-            boxTimerCenterY = boxTimerCenterY.setMultiplier(multiplier: 1.8)
+            titleTopSpace.constant = 50
+            boxTimerCenterY = boxTimerCenterY.setMultiplier(multiplier: 1.75)
             if boxInstructions.isHidden == false{
                 if  collectionViewImges.enclosingScrollView?.isHidden == false{
                     DispatchQueue.global().async {
@@ -1434,6 +1427,37 @@ extension timerViewcontroller:NSTextViewDelegate{
             }
         }
     }
+    
+    func textViewDidChangeSelection(_ notification: Notification) {
+        if let textView = notification.object as? NSTextView{
+            adjustFontSizeToFit(textView:textView)
+        }
+    }
+    
+    func adjustFontSizeToFit(textView:NSTextView) {
+        guard let textContainer = textView.textContainer else{
+            return;
+        }
+        guard let layoutManager = textView.layoutManager else{
+            return;
+        }
+        
+        let textBounds = layoutManager.usedRect(for: textContainer)
+        let availableSize = textView.bounds.size
+        
+        let scaleFactor = min(availableSize.width / textBounds.size.width, availableSize.height / textBounds.size.height)
+        let currentFontSize = textView.font?.pointSize ?? 14
+        
+        var newFontSize = currentFontSize * scaleFactor
+        if newFontSize > 30 {
+            newFontSize = 30
+        }
+        let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex]
+        let font = NSFont(name: selectedFont.regularFontName, size: newFontSize)!
+        
+        textViewInstructions.font = font
+        textViewNotes.font = font
+    }
 }
 extension timerViewcontroller:NSCollectionViewDelegate, NSCollectionViewDataSource {
     
@@ -1509,4 +1533,6 @@ extension timerViewcontroller:NSTableViewDelegate, NSTableViewDataSource {
         tblViewCheckList.reloadData()
     }
 }
+
+
 

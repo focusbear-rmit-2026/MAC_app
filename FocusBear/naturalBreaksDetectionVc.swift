@@ -10,6 +10,7 @@ import Cocoa
 
 class naturalBreaksDetectionVc: NSViewController {
 
+    @IBOutlet weak var widthBox: NSLayoutConstraint!
     @IBOutlet weak var btnSecond: Button!
     @IBOutlet weak var btnFirst: Button!
     @IBOutlet weak var lblSubTitle: NSTextField!
@@ -20,6 +21,12 @@ class naturalBreaksDetectionVc: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
+        
+        if SettingsManagerObject.selectedFontIndex == intelOneMonoFontIndex || SettingsManagerObject.selectedFontIndex == openDyslexicFontIndex{
+            widthBox.constant = 350
+        }else{
+            widthBox.constant = 261
+        }
     }
     func resetView(){
         lblTitle.stringValue = "It looks like you're on a break. Well done on taking care of yourself."

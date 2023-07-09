@@ -411,20 +411,6 @@ class focusSummaryVc: NSViewController {
         
         return ""
     }
-//    @IBAction func btnClickHereToSeeClicked(_ sender: Any) {
-////        btnClickHere.isHidden = true
-//        scrollViewFocusSummary.isHidden = false
-//        tblViewFocusSummary.reloadData()
-//        scrollViewActivitySummaryTotal.isHidden = false
-//        scrollViewActivitySummaryAverage.isHidden = false
-//        scrollViewActivitySummaryDuration.isHidden = false
-//        tblViewActivitySummaryTotal.reloadData()
-//        tblViewActivitySummaryAverage.reloadData()
-//        tblViewActivitySummaryDuration.reloadData()
-//        lblTotalFocusTime.isHidden = false
-//        lblFocusSummary.isHidden = false
-//        lblActivitySummary.isHidden = false
-//    }
     
     @IBAction func btnContinueClicked(_ sender: Any) {
         addLog(text: "button continue Clicked from focus summary")

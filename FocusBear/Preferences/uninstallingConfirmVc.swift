@@ -9,7 +9,7 @@
 import Cocoa
 
 class uninstallingConfirmVc: NSViewController, NSTextViewDelegate {
-
+    
     @IBOutlet weak var lblMinimumCharacter: NSTextField!
     @IBOutlet var textView: NSTextView!
     @IBOutlet weak var scrollView: shadowScrollViewForTextView!
@@ -20,6 +20,9 @@ class uninstallingConfirmVc: NSViewController, NSTextViewDelegate {
     @IBOutlet weak var lblQuestion: NSTextField!
     @IBOutlet weak var lblTitle: NSTextField!
     @IBOutlet weak var btnUninstall: NSButton!
+    
+    let brokenAppReasonIndex = 1
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
@@ -41,7 +44,6 @@ class uninstallingConfirmVc: NSViewController, NSTextViewDelegate {
         
         if let common = configjson.value(forKey: "common") as? NSDictionary{
             lblTitle.stringValue = common.value(forKey: "uninstallingText") as? String ?? lblTitle.stringValue
-//            lblQuestion.stringValue = common.value(forKey: "askUninstallReasonText") as? String ?? lblQuestion.stringValue
             lblQuestion.stringValue = common.value(forKey: "askUninstallReasonText2") as? String ?? lblQuestion.stringValue
             lblMinimumCharacter.stringValue = common.value(forKey: "minimumCharacterText") as? String ?? lblMinimumCharacter.stringValue
             buttonSelectReasonText = common.value(forKey: "buttonSelectReasonText") as? String ?? buttonSelectReasonText
@@ -99,31 +101,77 @@ class uninstallingConfirmVc: NSViewController, NSTextViewDelegate {
     }
     @IBAction func btnUninstallClicked(_ sender: Any) {
         addLog(text: "btn Uninstall in nag Clicked")//
-        var alert: NSAlert = NSAlert()
+        
+        if popUpButton.indexOfSelectedItem == brokenAppReasonIndex{
+            let alert: NSAlert = NSAlert()
+            alert.setSharingType()
+            alert.messageText = "Do you want to upload the logs to our server for us to review what was broken?"
+            if let common = configjson.value(forKey: "common") as? NSDictionary{
+                alert.messageText = common.value(forKey: "alertUploadLogText") as? String ?? alert.messageText
+            }
+            let yesText = buttonYesText
+            let noText = buttonNoText
+            
+            alert.alertStyle = NSAlert.Style.warning
+            alert.addButton(withTitle: yesText)
+            alert.addButton(withTitle: noText)
+            
+            
+            alert.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
+                if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
+                    print("okclicked")
+                    addLog(text: "btn Upload logs alert yes Clicked")//
+                    
+                    self.view.addSubview(getLogsUploadingVcObjObj().view)
+                    self.view.addConstraints(subView: getLogsUploadingVcObjObj().view)
+                    allApiObject.uploadAppLogs(completionHandler: {json in //
+                        DispatchQueue.main.async {
+                            getLogsUploadingVcObjObj().view.removeFromSuperview()
+                            self.showAppCloseAlert()
+                        }
+                    })
+                }else{
+                    self.showAppCloseAlert()
+                }
+            })
+        }else{
+            self.showAppCloseAlert()
+        }
+    }
+    
+    
+    func showAppCloseAlert(){
+        var alert = NSAlert()
         alert.setSharingType()
-        alert.messageText = "Are you sure you want to giveup all your habits and uninstall Focus Bear?"
-        var yesText = "Yes"
-        var noText = "No"
+        
         var uninstallDoneText = "All the app related processes will abort and the app will close itself and then you can drag the app and move to trash/bin."
         if let common = configjson.value(forKey: "common") as? NSDictionary{
-            alert.messageText = common.value(forKey: "uninstallConfirmText") as? String ?? alert.messageText
-            yesText = common.value(forKey: "yesText") as? String ?? yesText
-            noText = common.value(forKey: "noText") as? String ?? noText
             uninstallDoneText = common.value(forKey: "uninstallDoneText") as? String ?? uninstallDoneText
         }
-        alert.alertStyle = NSAlert.Style.warning
-        alert.addButton(withTitle: yesText)
-        alert.addButton(withTitle: noText)
-
-
+        
+        alert.messageText = uninstallDoneText
+        alert.addButton(withTitle: buttonOkText)
+        
+        
+        
         alert.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
             if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
                 print("okclicked")
-                addLog(text: "btn Uninstall alert yes Clicked")//
+                
+                
                 alert = NSAlert()
                 alert.setSharingType()
-                alert.messageText = uninstallDoneText
+                
+                var reminderText = "Quick reminder: you need to drag the Focus Bear from the Applications folder to Trash to fully uninstall the app."
+                if let common = configjson.value(forKey: "common") as? NSDictionary{
+                    reminderText = common.value(forKey: "reminderUninstallText") as? String ?? uninstallDoneText
+                }
+                
+                alert.messageText = reminderText
                 alert.addButton(withTitle: buttonOkText)
+                
+                
+                
                 alert.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
                     if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
                         print("okclicked")
@@ -132,6 +180,7 @@ class uninstallingConfirmVc: NSViewController, NSTextViewDelegate {
                         
                     }
                 })
+
             }
         })
     }
@@ -188,16 +237,12 @@ class uninstallingConfirmVc: NSViewController, NSTextViewDelegate {
         if firstRun != nil{
             UserDefaults.standard.set(firstRun!, forKey: kUserdefaultsFirstRun)
         }
-        
-        
+
         if firstVideoShown != nil{
             UserDefaults.standard.set(firstVideoShown!, forKey: kUserdefaultsVideoShown)
         }
         
-        
-
         UserDefaults.standard.synchronize()
-//        LaunchOnStartup.setLaunchAtStartup(false)
     }
 }
 

@@ -67,6 +67,7 @@ class commonWindowController: NSWindowController, NSWindowDelegate {
                 appdelegate!.loadCredentialsAndDeviceId()
                 let secondsBetween = Date().timeIntervalSince(onboardingVideoStartTime ?? Date())
                 allApiObject.capturePosthog(event: "onboarding-video-watched", metadata: ["watched_duration_seconds":Int(secondsBetween)])
+                showMenuTourWindow()
             }
         }
         

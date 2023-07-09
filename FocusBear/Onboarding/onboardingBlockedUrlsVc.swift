@@ -10,6 +10,7 @@ import Cocoa
 
 class onboardingBlockedUrlsVc: NSViewController {
     
+    @IBOutlet weak var lblBlockedCount: NSTextField!
     @IBOutlet weak var outlineView: NSOutlineView!
     @IBOutlet weak var lblTip: NSTextField!
     @IBOutlet weak var btnAddUrl: Button!
@@ -42,7 +43,7 @@ class onboardingBlockedUrlsVc: NSViewController {
         // Do view setup here.
         btnAddUrl.keyEquivalent = "\r"
         lblTip.stringValue = "In case you're worried - we don't track which websites you're using."
-        
+        lblBlockedCount.stringValue = "6 sites will always be blocked." 
         lblEnterUrl.stringValue = "Enter url to block:"
         btnAddUrl.title = "Add url"
         
@@ -96,8 +97,46 @@ class onboardingBlockedUrlsVc: NSViewController {
         outlineView.reloadData()
         
         allApiObject.capturePosthog(event: "onboarding-blocked-urls-shown", metadata: [:])
+        recheckBlockedUrlsCount()
     }
     
+    func recheckBlockedUrlsCount(){
+        var selectedUrlsCount = 0
+        for datadict in arrBlockedUrlsStructure{
+            if  datadict.value(forKey: "arrUrls") is  [NSMutableDictionary]{
+                let arrdic = datadict.value(forKey: "arrUrls") as! [NSMutableDictionary]
+                for dic in arrdic{
+                    if let state = dic["isSelected"] as? Bool{
+                        if state == true{
+                            selectedUrlsCount += 1
+                        }
+                    }
+                }
+            }
+        }
+        
+        
+        
+        var blockSitesCountText = ""
+        
+        if selectedUrlsCount == 1{
+            blockSitesCountText = "1 site will always be blocked."
+            if let onboardingBlockedUrlsInfo = configjson.value(forKey: "onboardingBlockedUrlsInfo") as? NSDictionary{
+                blockSitesCountText = onboardingBlockedUrlsInfo.value(forKey: "oneSiteBlockText") as? String ?? blockSitesCountText
+            }
+            
+            blockSitesCountText = blockSitesCountText.replacingOccurrences(of: "<COUNT>", with: "\(selectedUrlsCount)")
+        }else{
+            blockSitesCountText = "<COUNT> sites will always be blocked."
+            if let onboardingBlockedUrlsInfo = configjson.value(forKey: "onboardingBlockedUrlsInfo") as? NSDictionary{
+                blockSitesCountText = onboardingBlockedUrlsInfo.value(forKey: "blockSitesCountText") as? String ?? blockSitesCountText
+            }
+            
+            blockSitesCountText = blockSitesCountText.replacingOccurrences(of: "<COUNT>", with: "\(selectedUrlsCount)")
+        }
+
+        lblBlockedCount.stringValue = blockSitesCountText
+    }
     override func viewWillAppear() {
         if let item = outlineView.item(atRow: 1){
             outlineView.expandItem(item)
@@ -173,16 +212,12 @@ class onboardingBlockedUrlsVc: NSViewController {
             outlineView.expandItem(item)
         }
         outlineView.scrollRowToVisible(outlineView.numberOfRows - 1)
-//        outlineView.expandItem(<#T##item: Any?##Any?#>, expandChildren: <#T##Bool#>)
-//        arrBlockedUrls.append(["url":domain, "isSelected":true])
-//        tblView.reloadData()
-//        tblView.selectRowIndexes(IndexSet(arrayLiteral: (arrBlockedUrls.count - 1)), byExtendingSelection: false)
-//        tblView.scrollRowToVisible(arrBlockedUrls.count - 1)
         
         btnAddUrl.isEnabled = false
         textFieldUrl.stringValue = ""
         UserDefaults.standard.set(true, forKey: kUserdefaultsEditBlockedUrlsOnce)
         btnContinue.isEnabled = true
+        recheckBlockedUrlsCount()
     }
     
     func changeStateInCategory(datadict:inout [NSMutableDictionary],newstate:Bool){
@@ -234,14 +269,16 @@ class onboardingBlockedUrlsVc: NSViewController {
                 for urlDic in arrUrls{
                     if urlDic["isSelected"] as? Bool == true{
                         btnContinue.isEnabled = true
+                        recheckBlockedUrlsCount()
                         return;
                     }
                 }
             }
         }
         btnContinue.isEnabled = false
-        
+        recheckBlockedUrlsCount()
     }
+    
 }
 
 extension onboardingBlockedUrlsVc:NSTextFieldDelegate{

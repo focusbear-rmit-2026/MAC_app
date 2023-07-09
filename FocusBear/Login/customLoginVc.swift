@@ -11,6 +11,8 @@ import Auth0
 
 class customLoginVc: NSViewController {
 
+    @IBOutlet weak var boxPasswordGenerated: NSBox!
+    @IBOutlet weak var lblPasswordGenerate: NSTextField!
     @IBOutlet weak var checkBoxPasswordSave: NSButton!
     @IBOutlet weak var segmentControlPassword: cursorSegmentedControl!
     @IBOutlet weak var lblRuleSixth: NSTextField!
@@ -36,7 +38,6 @@ class customLoginVc: NSViewController {
     @IBOutlet weak var textFieldConfirmPasword: NSTextField!
     @IBOutlet weak var textFieldPassword: NSTextField!
     @IBOutlet weak var topSpaceLblTitle: NSLayoutConstraint!
-//    @IBOutlet weak var lblPasswordRules: NSTextField!
     @IBOutlet weak var lblTitlePasswordRules: NSTextField!
     @IBOutlet weak var loader: NSProgressIndicator!
     @IBOutlet weak var secureTextFieldConfirmPassword: NSSecureTextField!
@@ -53,9 +54,11 @@ class customLoginVc: NSViewController {
     @IBOutlet weak var lblSubtitle: NSTextField!
     @IBOutlet weak var lblTitle: NSTextField!
     @IBOutlet weak var lblEmailAddress: NSTextField!
-    @IBOutlet weak var btnCopyPassword: underLineButton!
+    @IBOutlet weak var btnCopyPassword: Button!
     @IBOutlet weak var btnRefreshPassword: cursorButton!
     
+    
+    var btnShowPasswordTrackingArea: NSTrackingArea?
     
     var isLogin = true
     
@@ -75,6 +78,7 @@ class customLoginVc: NSViewController {
         super.viewDidLoad()
         // Do view setup here.
         
+        lblPasswordGenerate.stringValue = "We generated a password for you"
         segmentControlPassword.selectedSegmentBezelColor = NSColor.systemBlue
         
         btnRefreshPassword.toolTip = "Refresh password"
@@ -141,6 +145,8 @@ class customLoginVc: NSViewController {
             btnCopyPassword.title = customLoginVcInfo.value(forKey: "buttonCopyPasswordText") as? String ?? btnCopyPassword.title
             generatePasswordText = customLoginVcInfo.value(forKey: "generatePasswordText") as? String ?? generatePasswordText
             useOwnPasswordText = customLoginVcInfo.value(forKey: "useOwnPasswordText") as? String ?? useOwnPasswordText
+            
+            lblPasswordGenerate.stringValue = customLoginVcInfo.value(forKey: "passwordGenerateText") as? String ?? lblPasswordGenerate.stringValue
         }
         
         segmentControlPassword.setLabel(generatePasswordText, forSegment: 0)
@@ -151,6 +157,10 @@ class customLoginVc: NSViewController {
         secureTextFieldPassword.delegate = self
         secureTextFieldConfirmPassword.delegate = self
         
+        
+        btnShowPasswordTrackingArea = NSTrackingArea.init(rect: btnShowPassword.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
+        btnShowPassword.addTrackingArea(btnShowPasswordTrackingArea!)
+        
     }
     
     override func viewWillAppear() {
@@ -159,6 +169,51 @@ class customLoginVc: NSViewController {
     override func viewWillDisappear() {
         appdelegate!.menuItemUninstall.isHidden = true
     }
+    
+    func showAnimation(){
+        DispatchQueue.global().async {
+            usleep(50000)
+            for i in 0..<6{
+                if i % 2 == 0{
+                    DispatchQueue.main.async {
+                        if self.boxPasswordGenerated.isHidden{
+                            return;
+                        }
+                        self.boxPasswordGenerated.fillColor = NSColor(red: 255/255, green: 255/255, blue: 0/255, alpha: 1)
+                    }
+                }else{
+                    DispatchQueue.main.async {
+                        self.boxPasswordGenerated.fillColor = NSColor.clear
+                        if self.boxPasswordGenerated.isHidden{
+                            return;
+                        }
+                    }
+                }
+                usleep(500000)
+            }
+        }
+    }
+    
+    override func mouseEntered(with event: NSEvent) {
+        if event.trackingArea == btnShowPasswordTrackingArea{
+            var msg = "Show Password"
+            if let customLoginVcInfo = configjson.value(forKey: "customLoginVcInfo") as? NSDictionary{
+                msg = customLoginVcInfo.value(forKey: "tooltipShowPassword") as? String ?? msg
+            }
+            showTooltip(sender: btnShowPassword, msg: msg , preferredEdge: NSRectEdge.minY, maxWidthVal:230)
+        }
+    }
+    
+    override func mouseExited(with event: NSEvent) {
+        if event.trackingArea == btnShowPasswordTrackingArea{
+            if popoverTooltip != nil{
+                if popoverTooltip!.isShown{
+                    popoverTooltip?.close()
+                }
+            }
+        }
+    }
+    
     func reloadView(){
         textFieldEmail.stringValue = ""
         secureTextFieldPassword.stringValue = ""
@@ -186,6 +241,7 @@ class customLoginVc: NSViewController {
         
         if isLogin{
             addLog(text: "login view ")
+            boxPasswordGenerated.isHidden = true
             checkBoxPasswordSave.isHidden = true
             btnCreateAccount.keyEquivalent = ""
             btnSignIn.keyEquivalent = "\r"
@@ -211,6 +267,8 @@ class customLoginVc: NSViewController {
             btnRefreshPassword.isHidden = true
         }else{
             addLog(text: "signup view ")
+            boxPasswordGenerated.isHidden = false
+            showAnimation()
             segmentControlPassword.isHidden = false
             segmentControlPassword.selectedSegment = 0
             btnCreateAccount.keyEquivalent = "\r"
@@ -865,10 +923,13 @@ class customLoginVc: NSViewController {
             btnRefreshPassword.isHidden = true
             checkBoxPasswordSave.isHidden = true
             btnCreateAccount.isEnabled = false
+            boxPasswordGenerated.isHidden = true
         }else{
             if checkBoxPasswordSave.isHidden == false{// do not need to generate password again if pervious selected segment was same
                 return;
             }
+            boxPasswordGenerated.isHidden = false
+            showAnimation()
             checkBoxPasswordSave.isHidden = false
             checkBoxPasswordSave.state = .off
             btnCopyPassword.isHidden = false

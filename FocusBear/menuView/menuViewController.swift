@@ -111,9 +111,6 @@ class menuViewController: NSViewController {
         segmentControlOfficeMode.selectedSegmentBezelColor = NSColor.systemBlue
         
         lblTitleOpenCheckLists.stringValue = "Open checklist"
-        
-        
-        
         boxStartBreak.isHidden = true
         
         boxLockCurrentFocus.isHidden = true
@@ -192,8 +189,8 @@ class menuViewController: NSViewController {
             lblTitleOpenCheckLists.stringValue = menuInfo.value(forKey: "menuItemOpenChecklistTitle") as? String ?? lblTitleOpenCheckLists.stringValue
         }
         
-        segmentControlOfficeMode.setLabel(titleOfficeMode, forSegment: 0)// = "Office Mode"
-        segmentControlOfficeMode.setLabel(titleWFHMode, forSegment: 1)//.label(forSegment: 1)// = "WFH Mode"//rodo text
+        segmentControlOfficeMode.setLabel(titleOfficeMode, forSegment: 0)
+        segmentControlOfficeMode.setLabel(titleWFHMode, forSegment: 1)
         
         
         if let common = configjson.value(forKey: "common") as? NSDictionary{
@@ -240,22 +237,22 @@ class menuViewController: NSViewController {
         
         if let common = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
             for i in 0..<arrFocusType.count{
-                if let state = arrFocusType[i]["isDefault"] as? Bool{
-                    if  state{
+                if let isDefault = arrFocusType[i]["isDefault"] as? Bool{
+                    if  isDefault{
                         if let defaultFocusText = common.value(forKey: "defaultFocusText") as? String{
                             arrFocusType[i]["name"] = defaultFocusText
                         }
                     }
                 }
-                if let state = arrFocusType[i]["isMeetings"] as? Bool{
-                    if  state{
+                if let isMeetings = arrFocusType[i]["isMeetings"] as? Bool{
+                    if  isMeetings{
                         if let defaultFocusText = common.value(forKey: "meetingsFocusText") as? String{
                             arrFocusType[i]["name"] = defaultFocusText
                         }
                     }
                 }
-                if let state = arrFocusType[i]["isLockedFocus"] as? Bool{
-                    if  state{
+                if let isLockedFocus = arrFocusType[i]["isLockedFocus"] as? Bool{
+                    if  isLockedFocus{
                         if let defaultFocusText = common.value(forKey: "lockedFocusText") as? String{
                             arrFocusType[i]["name"] = defaultFocusText
                         }
@@ -1192,25 +1189,13 @@ class menuViewController: NSViewController {
 extension menuViewController: NSTableViewDelegate, NSTableViewDataSource{
     
     func numberOfRows(in tableView: NSTableView) -> Int {
-        print("reload")
         var isFocusModeOn = false
         var isFocusModePaused = false
-//        var isMeetingsFocusOn = false
         for dic in arrFocusType{
             if dic["isOn"] as? Bool == true{
                 isFocusModeOn = true
-//                if let state = dic["isMeetings"] as? Bool{
-//                    if  state{
-//                        isMeetingsFocusOn = true
-//                    }
-//                }
             }else if dic["isPaused"] as? Bool == true{
                 isFocusModePaused = true
-//                if let state = dic["isMeetings"] as? Bool{
-//                    if  state{
-//                        isMeetingsFocusOn = true
-//                    }
-//                }
             }
         }
         if isFocusModeOn || isFocusModePaused{
@@ -1230,7 +1215,6 @@ extension menuViewController: NSTableViewDelegate, NSTableViewDataSource{
                         
                         titleTimeRemainingText = titleTimeRemainingText + " " + getStringTimeFromSeconds(seconds: Int(secondsBetween))
                         lblOn.stringValue = titleTimeRemainingText + " " + "(\(untilTimeText.replacingOccurrences(of: "<TIME>", with: stringTime)))"//"On Until \(stringTime)"
-                        
                     }else{
                         lblOn.stringValue = onText
                     }
@@ -1272,30 +1256,19 @@ extension menuViewController: NSTableViewDelegate, NSTableViewDataSource{
         }else{
             lblOn.isHidden = true
         }
+        
+        if UserDefaults.standard.object(forKey: kUserdefaultsFocusTipsShown) == nil{
+            return 1
+        }
+        
         if isHardCorePomodoroModeOn{
             lblTitleFocus.stringValue = itemHardcorePomodoroTitle
             return 1
         }
         lblTitleFocus.stringValue = itemFocusTitle
         
-        if UserDefaults.standard.object(forKey: kUserdefaultsFocusTipsShown) == nil{
-            return 1
-        }
+
         
-//        //don't show meetings on Mac only show if it is running (beacuse user will not able to stop it if it remains hidden while running) 2/5/23
-//
-//        if  isFocusModeOn || isFocusModePaused{
-//            if !isMeetingsFocusOn{
-//                if arrFocusType.count != 0{
-//                    return arrFocusType.count - 1
-//                }
-//            }
-//        }else{
-//            if arrFocusType.count != 0{
-//                return arrFocusType.count - 1
-//            }
-//        }
-//        //
         
         return arrFocusType.count
     }
@@ -1335,12 +1308,12 @@ extension menuViewController: NSTableViewDelegate, NSTableViewDataSource{
             cell.imgViewAppIcon.isHidden = false
             if arrFocusType[cRow]["isOn"] as? Bool == true{
                 cell.imgViewAppIcon.image = NSImage(named: NSImage.touchBarPauseTemplateName)
-                cell.lblTitle.font = NSFont(name: "\(SettingsManagerObject.selectedFont) Bold", size: cell.lblTitle.font?.pointSize ?? 12)//NSFont.boldSystemFont(ofSize: cell.lblTitle.font?.pointSize ?? 12)
+                cell.lblTitle.font = NSFont(name: arrFont[SettingsManagerObject.selectedFontIndex].boldFontName, size: cell.lblTitle.font?.pointSize ?? 12)
                 cell.lblTitle.textColor = buttonTitleColor
                 if let color = arrFocusType[cRow]["color"] as? String{
                     cell.boxColor.fillColor = HexToColor(hexString: color)
                 }
-                
+                cell.backgroundcolor = NSColor.black.withAlphaComponent(0.1)
                 if whatToAchieveInFocusBlock.isEmpty{
                     cell.lblIntension.isHidden = true
                 }else{
@@ -1351,14 +1324,16 @@ extension menuViewController: NSTableViewDelegate, NSTableViewDataSource{
                 cell.boxColor.fillColor = .tertiaryLabelColor
                 cell.imgViewAppIcon.image = NSImage(named: NSImage.touchBarPlayPauseTemplateName)
                 cell.lblIntension.isHidden = true
-                cell.lblTitle.font = NSFont(name: SettingsManagerObject.selectedFont, size: cell.lblTitle.font?.pointSize ?? 12)//NSFont.systemFont(ofSize: cell.lblTitle.font?.pointSize ?? 12)
+                cell.lblTitle.font = NSFont(name: arrFont[SettingsManagerObject.selectedFontIndex].regularFontName, size: cell.lblTitle.font?.pointSize ?? 12)//NSFont.systemFont(ofSize: cell.lblTitle.font?.pointSize ?? 12)
                 cell.lblTitle.textColor = NSColor.black
+                cell.backgroundcolor = NSColor.black.withAlphaComponent(0.1)
             }else{//on NSTouchBarPlayTemplate
                 cell.boxColor.fillColor = .tertiaryLabelColor
                 cell.imgViewAppIcon.image = NSImage(named: NSImage.Name("NSTouchBarPlayTemplate"))
                 cell.lblIntension.isHidden = true
-                cell.lblTitle.font = NSFont(name: SettingsManagerObject.selectedFont, size: cell.lblTitle.font?.pointSize ?? 12)//NSFont.systemFont(ofSize: cell.lblTitle.font?.pointSize ?? 12)
+                cell.lblTitle.font = NSFont(name: arrFont[SettingsManagerObject.selectedFontIndex].regularFontName, size: cell.lblTitle.font?.pointSize ?? 12)//NSFont.systemFont(ofSize: cell.lblTitle.font?.pointSize ?? 12)
                 cell.lblTitle.textColor = NSColor.black
+                cell.backgroundcolor = NSColor.clear
             }
             
             cell.btnEditFocusMode.isHidden = true

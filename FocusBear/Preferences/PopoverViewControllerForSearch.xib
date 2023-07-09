@@ -31,7 +31,7 @@
                                     <rect key="frame" x="0.0" y="0.0" width="167" height="184"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
-                                        <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="plain" columnSelection="YES" multipleSelection="NO" emptySelection="NO" autosaveColumns="NO" rowSizeStyle="automatic" viewBased="YES" id="T5h-mo-UOr">
+                                        <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="plain" columnSelection="YES" multipleSelection="NO" emptySelection="NO" autosaveColumns="NO" usesAutomaticRowHeights="YES" viewBased="YES" id="T5h-mo-UOr">
                                             <rect key="frame" x="0.0" y="0.0" width="167" height="184"/>
                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                             <size key="intercellSpacing" width="3" height="2"/>
@@ -50,13 +50,12 @@
                                                     </textFieldCell>
                                                     <tableColumnResizingMask key="resizingMask" resizeWithTable="YES" userResizable="YES"/>
                                                     <prototypeCellViews>
-                                                        <tableCellView identifier="Popover" id="gfD-cV-x8O">
+                                                        <tableCellView identifier="Popover" misplaced="YES" id="gfD-cV-x8O">
                                                             <rect key="frame" x="1" y="1" width="164" height="17"/>
                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                             <subviews>
-                                                                <textField verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="38O-Vt-6AV">
-                                                                    <rect key="frame" x="0.0" y="0.0" width="164" height="17"/>
-                                                                    <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
+                                                                <textField verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="38O-Vt-6AV">
+                                                                    <rect key="frame" x="0.0" y="0.0" width="164" height="16"/>
                                                                     <textFieldCell key="cell" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" title="Table View Cell" id="fvH-1i-7yI">
                                                                         <font key="font" metaFont="system"/>
                                                                         <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -64,6 +63,12 @@
                                                                     </textFieldCell>
                                                                 </textField>
                                                             </subviews>
+                                                            <constraints>
+                                                                <constraint firstAttribute="bottom" secondItem="38O-Vt-6AV" secondAttribute="bottom" id="Di8-R6-QhK"/>
+                                                                <constraint firstAttribute="trailing" secondItem="38O-Vt-6AV" secondAttribute="trailing" constant="2" id="QZa-dn-cVx"/>
+                                                                <constraint firstItem="38O-Vt-6AV" firstAttribute="top" secondItem="gfD-cV-x8O" secondAttribute="top" id="a8f-mm-rAX"/>
+                                                                <constraint firstItem="38O-Vt-6AV" firstAttribute="leading" secondItem="gfD-cV-x8O" secondAttribute="leading" constant="2" id="hof-yt-79u"/>
+                                                            </constraints>
                                                             <connections>
                                                                 <outlet property="textField" destination="38O-Vt-6AV" id="yvS-tm-tDm"/>
                                                             </connections>

@@ -25,7 +25,7 @@ class easyPostponeVc: NSViewController {
         lblTitleSelectMinutes.stringValue = "Select minutes to postpone:"
         
         popupButtonMinutes.removeAllItems()
-        popupButtonMinutes.addItems(withTitles: ["5", "10", "15", "20", "30", "45", "60"])
+        popupButtonMinutes.addItems(withTitles: ["5", "10", "15", "20", "30", "45", "60", "90"])
         
         btnPostpone.title = "Postpone"
         btnDeactivateApp.title = "Deactivate Focus Bear for 4 hours"

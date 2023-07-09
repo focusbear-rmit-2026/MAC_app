@@ -125,9 +125,7 @@ class preferencesTabViewController: NSTabViewController {
         print("tab view selection change")
         print(self.selectedTabViewItemIndex)
         let id = tabViewItem?.identifier as? String ?? ""
-        if id == "EditHabits"{
-            selectJsonVcObj?.setData()
-        }else if id == "Password"{// ask password for password tab when PasswordRequireInChangeSettings is false
+        if id == "Password"{// ask password for password tab when PasswordRequireInChangeSettings is false
             if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
                 if !SettingsManagerObject.isPasswordRequireInChangeSettings{
                     self.view.addSubview(getEnterPasswordVcObjForPreferences().view)
@@ -140,48 +138,16 @@ class preferencesTabViewController: NSTabViewController {
     }
     
     override func tabView(_ tabView: NSTabView, shouldSelect tabViewItem: NSTabViewItem?) -> Bool {
-        
-        //self.tabViewItems
-//        let lastSelectedTabId = self.tabViewItems[self.selectedTabViewItemIndex].identifier as? String ?? ""
-//        if isSettingsChanged && lastSelectedTabId == "EditHabits"{
-//
-//            let alertReset: NSAlert = NSAlert()
-//
-//            alertReset.setSharingType()
-//            alertReset.messageText = "You've made changes to your habits/breaks but haven't saved them yet. Do you want to save the changes now (the app will restart)?"
-//            alertReset.alertStyle = NSAlert.Style.warning
-//            alertReset.addButton(withTitle: "Save and Restart")
-//            alertReset.addButton(withTitle: "Don't save - I want to make other changes first")
-//
-//
-//            alertReset.beginSheetModal(for: view.window!, completionHandler: { (modalResponse) in
-//                if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
-//                    print("okclicked")
-//                    isSettingsChanged = false
-//                }else if modalResponse == .alertSecondButtonReturn{
-//                    self.tabView.selectTabViewItem(at: tabView.indexOfTabViewItem(tabViewItem!))// isme ye fuction vapas call hoga kya nahi hua to niche vali conditions manage kro
-//                }
-//            })
-//
-//
-//            return false
-//        }
-        
-        
         if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
             if self.view.subviews.contains(getEnterPasswordVcObjForPreferences().view){
                 return false
             }
         }
-        if isPurchased == false && daysLeft <= 0{// if UserDefaults.standard.object(forKey: "trialExpired") != nil{
+        if isPurchased == false && daysLeft <= 0{
             let id = tabViewItem?.identifier as? String ?? ""
-//            if id != "Uninstall" && id != "Accounts"{
-//                return false
-//            }
             if id != "Settings"{
                 return false
             }
-            
         }
         return true
     }

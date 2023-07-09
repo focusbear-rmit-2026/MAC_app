@@ -46,27 +46,17 @@ class chooseFrictionLevelVc: NSViewController {
             btnContinue.title = chooseFrictionLevelVcInfo.value(forKey: "buttonContinueText") as? String ?? btnContinue.title
         }
         
-        
+        //slider.tint = NSColor.blue
         UserDefaults.standard.removeObject(forKey: kUserdefaultsPasswordSetInOnboarding)
     }
     
     @IBAction func btnContinueClicked(_ sender: Any) {
         switch slider.integerValue {
         case 1:
-            allApiObject.capturePosthog(event: "choose-friction-level", metadata: ["friction-level":"super_strict"])
-            showOnboardingSetPasswordWindow()
-            SettingsManagerObject.isFullScreenEnabled = true
-            SettingsManagerObject.isCuddlyModeEnabled = false
-            SettingsManagerObject.isEasySkipEnabled = false
-            SettingsManagerObject.shouldReloadAfterForceQuitEnabled = true
+            alertDoubleConfirm()
             break;
         case 2:
-            allApiObject.capturePosthog(event: "choose-friction-level", metadata: ["friction-level":"strict"])
-            showOnboardingSetPasswordWindow()
-            SettingsManagerObject.isFullScreenEnabled = true
-            SettingsManagerObject.isCuddlyModeEnabled = true
-            SettingsManagerObject.isEasySkipEnabled = false
-            SettingsManagerObject.shouldReloadAfterForceQuitEnabled = true
+            alertDoubleConfirm()
             break;
         case 3:
             allApiObject.capturePosthog(event: "choose-friction-level", metadata: ["friction-level":"slightly_strict"])
@@ -97,5 +87,47 @@ class chooseFrictionLevelVc: NSViewController {
         }
         
         
+    }
+    
+    func alertDoubleConfirm(){
+        let alert = NSAlert()
+        alert.setSharingType()
+        alert.alertStyle = .informational
+        
+        var messageText = "Are you sure? We recommend starting with a less strict mode initially and gradually amp up the strictness if you need it."
+        
+        if let chooseFrictionLevelVcInfo = configjson.value(forKey: "chooseFrictionLevelVcInfo") as? NSDictionary{
+            messageText = chooseFrictionLevelVcInfo.value(forKey: "alertDoubleConfirmText") as? String ?? messageText
+        }
+        
+        alert.messageText = messageText
+        alert.addButton(withTitle: buttonYesText)
+        alert.addButton(withTitle: buttonNoText)
+        alert.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
+            if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
+                switch self.slider.integerValue {
+                case 1:
+                    allApiObject.capturePosthog(event: "choose-friction-level", metadata: ["friction-level":"super_strict"])
+                    showOnboardingSetPasswordWindow()
+                    SettingsManagerObject.isFullScreenEnabled = true
+                    SettingsManagerObject.isCuddlyModeEnabled = false
+                    SettingsManagerObject.isEasySkipEnabled = false
+                    SettingsManagerObject.shouldReloadAfterForceQuitEnabled = true
+                    break;
+                case 2:
+                    allApiObject.capturePosthog(event: "choose-friction-level", metadata: ["friction-level":"strict"])
+                    showOnboardingSetPasswordWindow()
+                    SettingsManagerObject.isFullScreenEnabled = true
+                    SettingsManagerObject.isCuddlyModeEnabled = true
+                    SettingsManagerObject.isEasySkipEnabled = false
+                    SettingsManagerObject.shouldReloadAfterForceQuitEnabled = true
+                    break;
+                default:
+                    break;
+                }
+                
+            }
+            
+        })
     }
 }

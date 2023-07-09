@@ -14,9 +14,9 @@ class AllApi:NSObject {
     
     func getConfigFile(fileUrl:String, completionHandler: @escaping(_ result: NSDictionary?) -> ()) {
         addLog(text: "func call:- downloading config file")
-        if let myUrl = NSURL(string: fileUrl){
-            addLog(text: "api call getConfigFile \(myUrl)")
-            let request = NSMutableURLRequest(url:myUrl as URL);
+        if let responsePathUrl = NSURL(string: fileUrl){
+            addLog(text: "api call getConfigFile \(responsePathUrl)")
+            let request = NSMutableURLRequest(url:responsePathUrl as URL);
             request.httpMethod = "GET";
             
             let task = URLSession.shared.dataTask(with: request as URLRequest) {
@@ -100,12 +100,12 @@ class AllApi:NSObject {
             if appdelegate!.credential != nil{
                 
                 let responsePath = "https://api.focusbear.io/user-settings"
-                if let myUrl = NSURL(string: responsePath){
-                    addLog(text: "api call isSettingsValid \(myUrl)")
+                if let responsePathUrl = NSURL(string: responsePath){
+                    addLog(text: "api call isSettingsValid \(responsePathUrl)")
                     let token = appdelegate!.credential!.accessToken
                     
                     
-                    let request = NSMutableURLRequest(url:myUrl as URL);
+                    let request = NSMutableURLRequest(url:responsePathUrl as URL);
                     request.httpMethod = "PUT";
                     request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
                     request.addValue("mac-os", forHTTPHeaderField: "platform")
@@ -187,12 +187,12 @@ class AllApi:NSObject {
             if appdelegate!.credential != nil{
                 
                 let responsePath = "https://api.focusbear.io/device"
-                if let myUrl = NSURL(string: responsePath){
-                    addLog(text: "api call getDeviceId \(myUrl)")
+                if let responsePathUrl = NSURL(string: responsePath){
+                    addLog(text: "api call getDeviceId \(responsePathUrl)")
                     let token = appdelegate!.credential!.accessToken
                     
                     
-                    let request = NSMutableURLRequest(url:myUrl as URL);
+                    let request = NSMutableURLRequest(url:responsePathUrl as URL);
                     request.httpMethod = "POST";
                     request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
                     request.addValue("mac-os", forHTTPHeaderField: "platform")
@@ -291,13 +291,12 @@ class AllApi:NSObject {
         addLog(text: "captureEventEndpoint event: \(event)")
         
         let responsePath = "https://api.focusbear.io/events"
-        if let myUrl = NSURL(string: responsePath){
+        if let responsePathUrl = NSURL(string: responsePath){
             guard let token = appdelegate!.credential?.accessToken else{
                 addLog(text: "func call:- captureEventEndpoint return:- no accessToken found")
                 return
             }
-            //addLog(text: "api call captureEventEndpoint \(myUrl)")
-            let request = NSMutableURLRequest(url:myUrl as URL);
+            let request = NSMutableURLRequest(url:responsePathUrl as URL);
             request.httpMethod = "POST";
             request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -379,10 +378,10 @@ class AllApi:NSObject {
         addLog(text: "capturePosthog event: \(event)")
         
         let responsePath = "https://app.posthog.com/capture/"
-        if let myUrl = NSURL(string: responsePath){
+        if let responsePathUrl = NSURL(string: responsePath){
             
-            //addLog(text: "api call capture \(myUrl)")
-            let request = NSMutableURLRequest(url:myUrl as URL);
+            //addLog(text: "api call capture \(responsePathUrl)")
+            let request = NSMutableURLRequest(url:responsePathUrl as URL);
             request.httpMethod = "POST";
             
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -467,7 +466,7 @@ class AllApi:NSObject {
             
             appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
             if appdelegate!.credential != nil{
-                var responsePath = "https://api.focusbear.io/user-settings"
+                var responsePath = "https://api.focusbear.io/user-settings?language=\(currentLanguageCode)"
                 if isFirstTime{
                     //                    if isHabitsDisabled{
                     //                        responsePath = "https://api.focusbear.io/habit-packs/default?pack_id=7cff2a97-90ad-4791-98b0-4a79dad32f73&format=break_only"
@@ -477,11 +476,11 @@ class AllApi:NSObject {
                     responsePath = "https://api.focusbear.io/habit-packs/default?pack_id=\(packId)"
                 }
                 
-                if let myUrl = NSURL(string: responsePath){
-                    addLog(text: "api call getSettings \(myUrl)")
+                if let responsePathUrl = NSURL(string: responsePath){
+                    addLog(text: "api call getSettings \(responsePathUrl)")
                     let token = appdelegate!.credential!.accessToken
                     
-                    let request = NSMutableURLRequest(url:myUrl as URL);
+                    let request = NSMutableURLRequest(url:responsePathUrl as URL);
                     request.httpMethod = "GET";
                     request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
                     request.addValue("mac-os", forHTTPHeaderField: "platform")
@@ -549,11 +548,11 @@ class AllApi:NSObject {
             
             if appdelegate!.credential != nil{
                 let responsePath = "https://api.focusbear.io/user-local-device-settings"
-                if let myUrl = NSURL(string: responsePath){
-                    addLog(text: "api call getSettings \(myUrl)")
+                if let responsePathUrl = NSURL(string: responsePath){
+                    addLog(text: "api call getSettings \(responsePathUrl)")
                     let token = appdelegate!.credential!.accessToken
                     
-                    let request = NSMutableURLRequest(url:myUrl as URL);
+                    let request = NSMutableURLRequest(url:responsePathUrl as URL);
                     request.httpMethod = "GET";
                     request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
                     request.addValue("mac-os", forHTTPHeaderField: "platform")
@@ -654,6 +653,10 @@ class AllApi:NSObject {
     var isApiGetHabitPacksErrorFound = false
     var isApiPostTermsServiceErrorFound = false
     
+    var isApiGetFocusModeTagsErrorFound = false
+    
+    var isApiUploadLogsErrorFound = false
+    
     var errorCodeRequestTimeout = -1001
     var errorCodeNoInternet = -1009
     
@@ -668,12 +671,12 @@ class AllApi:NSObject {
             appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
             if appdelegate!.credential != nil{
                 let responsePath = "https://api.focusbear.io/user/details/current-activity-props"//
-                if let myUrl = NSURL(string: responsePath){
-                    addLog(text: "api call getLastActivityInfo \(myUrl)")
+                if let responsePathUrl = NSURL(string: responsePath){
+                    addLog(text: "api call getLastActivityInfo \(responsePathUrl)")
                     let token = appdelegate!.credential!.accessToken
                     
                     
-                    let request = NSMutableURLRequest(url:myUrl as URL);
+                    let request = NSMutableURLRequest(url:responsePathUrl as URL);
                     request.httpMethod = "GET";
                     request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
                     request.addValue("mac-os", forHTTPHeaderField: "platform")
@@ -761,11 +764,11 @@ class AllApi:NSObject {
             
             if appdelegate!.credential != nil{
                 let responsePath = "https://api.focusbear.io/user/details"
-                if let myUrl = NSURL(string: responsePath){
-                    addLog(text: "api call getuserDetailsInfo \(myUrl)")
+                if let responsePathUrl = NSURL(string: responsePath){
+                    addLog(text: "api call getuserDetailsInfo \(responsePathUrl)")
                     let token = appdelegate!.credential!.accessToken
                     
-                    let request = NSMutableURLRequest(url:myUrl as URL);
+                    let request = NSMutableURLRequest(url:responsePathUrl as URL);
                     request.httpMethod = "GET";
                     request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
                     request.addValue("mac-os", forHTTPHeaderField: "platform")
@@ -855,11 +858,11 @@ class AllApi:NSObject {
             
             if appdelegate!.credential != nil{
                 let responsePath = "https://api.focusbear.io/focus-mode-template?featured_for_onboarding=true&language=\(currentLanguageCode)"
-                if let myUrl = NSURL(string: responsePath){
-                    addLog(text: "api call getFocusTemplateInfo \(myUrl)")
+                if let responsePathUrl = NSURL(string: responsePath){
+                    addLog(text: "api call getFocusTemplateInfo \(responsePathUrl)")
                     let token = appdelegate!.credential!.accessToken
                     
-                    let request = NSMutableURLRequest(url:myUrl as URL);
+                    let request = NSMutableURLRequest(url:responsePathUrl as URL);
                     request.httpMethod = "GET";
                     request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
                     request.addValue("mac-os", forHTTPHeaderField: "platform")
@@ -948,11 +951,11 @@ class AllApi:NSObject {
             
             if appdelegate!.credential != nil{
                 let responsePath = "https://api.focusbear.io/user/subscription"
-                if let myUrl = NSURL(string: responsePath){
-                    addLog(text: "api call getUserSubscriptionInfo \(myUrl)")
+                if let responsePathUrl = NSURL(string: responsePath){
+                    addLog(text: "api call getUserSubscriptionInfo \(responsePathUrl)")
                     let token = appdelegate!.credential!.accessToken
                     
-                    let request = NSMutableURLRequest(url:myUrl as URL);
+                    let request = NSMutableURLRequest(url:responsePathUrl as URL);
                     request.httpMethod = "GET";
                     request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
                     request.addValue("mac-os", forHTTPHeaderField: "platform")
@@ -1035,10 +1038,10 @@ class AllApi:NSObject {
         addLog(text: "func call:- getHabitPacksInfo")
         
         let responsePath = "https://api.focusbear.io/habit-packs?featured_for_onboarding=true&breaks_only=\(breaks_only)"//&language=\(currentLanguageCode)//
-        if let myUrl = NSURL(string: responsePath){
-            addLog(text: "api call getHabitPacksInfo \(myUrl)")
+        if let responsePathUrl = NSURL(string: responsePath){
+            addLog(text: "api call getHabitPacksInfo \(responsePathUrl)")
             
-            let request = NSMutableURLRequest(url:myUrl as URL);
+            let request = NSMutableURLRequest(url:responsePathUrl as URL);
             request.httpMethod = "GET";
             //request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
             request.addValue("mac-os", forHTTPHeaderField: "platform")
@@ -1127,12 +1130,12 @@ class AllApi:NSObject {
             if appdelegate!.credential != nil{
                 
                 let responsePath = "https://api.focusbear.io/user-local-device-settings"
-                if let myUrl = NSURL(string: responsePath){
-                    addLog(text: "api call putUserLocalDeviceSettings \(myUrl)")
+                if let responsePathUrl = NSURL(string: responsePath){
+                    addLog(text: "api call putUserLocalDeviceSettings \(responsePathUrl)")
                     let token = appdelegate!.credential!.accessToken
                     
                     
-                    let request = NSMutableURLRequest(url:myUrl as URL);
+                    let request = NSMutableURLRequest(url:responsePathUrl as URL);
                     request.httpMethod = "PUT";
                     request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
                     request.addValue("mac-os", forHTTPHeaderField: "platform")
@@ -1239,11 +1242,11 @@ class AllApi:NSObject {
             let finish_time_string = getStringFromDateInUtc(date: finish_time, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
             
             let responsePath = "https://api.focusbear.io/completed-activity"
-            if let myUrl = NSURL(string: responsePath){
-                addLog(text: "api call activityCompletedApi \(myUrl)")
+            if let responsePathUrl = NSURL(string: responsePath){
+                addLog(text: "api call activityCompletedApi \(responsePathUrl) for activityId: \(activity_id), choice_id: \(choice_id ?? "")")
                 let token = appdelegate!.credential?.accessToken ?? ""
                 
-                let request = NSMutableURLRequest(url:myUrl as URL);
+                let request = NSMutableURLRequest(url:responsePathUrl as URL);
                 request.httpMethod = "POST";
                 request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
                 request.addValue("mac-os", forHTTPHeaderField: "platform")
@@ -1426,11 +1429,11 @@ class AllApi:NSObject {
             let id = choice_id ?? activity_id
             
             let responsePath = "https://api.focusbear.io/completed-activity/revise/\(id)"
-            if let myUrl = NSURL(string: responsePath){
-                addLog(text: "api call activity Completed Revise Api \(myUrl)")
+            if let responsePathUrl = NSURL(string: responsePath){
+                addLog(text: "api call activity Completed Revise Api \(responsePathUrl)")
                 let token = appdelegate!.credential?.accessToken ?? ""
                 
-                let request = NSMutableURLRequest(url:myUrl as URL);
+                let request = NSMutableURLRequest(url:responsePathUrl as URL);
                 request.httpMethod = "PATCH";
                 request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
                 request.addValue("mac-os", forHTTPHeaderField: "platform")
@@ -1537,11 +1540,11 @@ class AllApi:NSObject {
             
             
             let responsePath = "https://api.focusbear.io/completed-activity/skip"
-            if let myUrl = NSURL(string: responsePath){
-                addLog(text: "api call activitySkippedApi \(myUrl)")
+            if let responsePathUrl = NSURL(string: responsePath){
+                addLog(text: "api call activitySkippedApi \(responsePathUrl)")
                 let token = appdelegate!.credential?.accessToken ?? ""
                 
-                let request = NSMutableURLRequest(url:myUrl as URL);
+                let request = NSMutableURLRequest(url:responsePathUrl as URL);
                 request.httpMethod = "POST";
                 request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
                 request.addValue("mac-os", forHTTPHeaderField: "platform")
@@ -1656,11 +1659,11 @@ class AllApi:NSObject {
             
             
             let responsePath = "https://api.focusbear.io/completed-activity/sync"
-            if let myUrl = NSURL(string: responsePath){
-                addLog(text: "api call activitysyncApi \(myUrl)")
+            if let responsePathUrl = NSURL(string: responsePath){
+                addLog(text: "api call activitysyncApi \(responsePathUrl)")
                 let token = appdelegate!.credential?.accessToken ?? ""
                 
-                let request = NSMutableURLRequest(url:myUrl as URL);
+                let request = NSMutableURLRequest(url:responsePathUrl as URL);
                 request.httpMethod = "POST";
                 request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
                 request.addValue("mac-os", forHTTPHeaderField: "platform")
@@ -1755,11 +1758,11 @@ class AllApi:NSObject {
             if isForToday == true{
                 responsePath += "?cancel_habits_for_today=true"
             }
-            if let myUrl = NSURL(string: responsePath){
-                addLog(text: "api call forceCompleteCurrentSequence \(myUrl)")
+            if let responsePathUrl = NSURL(string: responsePath){
+                addLog(text: "api call forceCompleteCurrentSequence \(responsePathUrl)")
                 let token = appdelegate!.credential?.accessToken ?? ""
                 
-                let request = NSMutableURLRequest(url:myUrl as URL);
+                let request = NSMutableURLRequest(url:responsePathUrl as URL);
                 request.httpMethod = "POST";
                 request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
                 request.addValue("mac-os", forHTTPHeaderField: "platform")
@@ -1860,12 +1863,12 @@ class AllApi:NSObject {
             if appdelegate!.credential != nil{
                 
                 let responsePath = "https://api.focusbear.io/tracks"
-                if let myUrl = NSURL(string: responsePath){
-                    addLog(text: "api call getAllTracks \(myUrl)")
+                if let responsePathUrl = NSURL(string: responsePath){
+                    addLog(text: "api call getAllTracks \(responsePathUrl)")
                     let token = appdelegate!.credential!.accessToken
                     
                     
-                    let request = NSMutableURLRequest(url:myUrl as URL);
+                    let request = NSMutableURLRequest(url:responsePathUrl as URL);
                     request.httpMethod = "GET";
                     request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
                     request.addValue("mac-os", forHTTPHeaderField: "platform")
@@ -1942,12 +1945,12 @@ class AllApi:NSObject {
                 
                 let zone = TimeZone.current
                 let responsePath = "https://api.focusbear.io/completed-activity/\(id)/stats?days_number=30&timezone=\(zone.identifier)"
-                if let myUrl = NSURL(string: responsePath){
-                    addLog(text: "api call getActivityStats \(myUrl)")
+                if let responsePathUrl = NSURL(string: responsePath){
+                    addLog(text: "api call getActivityStats \(responsePathUrl)")
                     let token = appdelegate!.credential!.accessToken
                     
                     
-                    let request = NSMutableURLRequest(url:myUrl as URL);
+                    let request = NSMutableURLRequest(url:responsePathUrl as URL);
                     request.httpMethod = "GET";
                     request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
                     request.addValue("mac-os", forHTTPHeaderField: "platform")
@@ -2059,12 +2062,12 @@ class AllApi:NSObject {
                 
                 
                 let responsePath = "https://api.focusbear.io/completed-activity/\(id)?from_time=\(fromTime)&to_time=\(toTime)"
-                if let myUrl = NSURL(string: responsePath){
-                    addLog(text: "api call getACtivityCurrentDayStats \(myUrl)")
+                if let responsePathUrl = NSURL(string: responsePath){
+                    addLog(text: "api call getACtivityCurrentDayStats \(responsePathUrl)")
                     let token = appdelegate!.credential!.accessToken
                     
                     
-                    let request = NSMutableURLRequest(url:myUrl as URL);
+                    let request = NSMutableURLRequest(url:responsePathUrl as URL);
                     request.httpMethod = "GET";
                     request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
                     request.addValue("mac-os", forHTTPHeaderField: "platform")
@@ -2170,12 +2173,12 @@ class AllApi:NSObject {
                 
                 
                 let responsePath = "https://api.focusbear.io/completed-activity/answer-logs?from_time=\(fromTime)&to_time=\(toTime)"
-                if let myUrl = NSURL(string: responsePath){
-                    addLog(text: "api call getActivityCurrentDayQuestionsStats \(myUrl)")
+                if let responsePathUrl = NSURL(string: responsePath){
+                    addLog(text: "api call getActivityCurrentDayQuestionsStats \(responsePathUrl)")
                     let token = appdelegate!.credential!.accessToken
                     
                     
-                    let request = NSMutableURLRequest(url:myUrl as URL);
+                    let request = NSMutableURLRequest(url:responsePathUrl as URL);
                     request.httpMethod = "POST";
                     request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
                     request.addValue("mac-os", forHTTPHeaderField: "platform")
@@ -2275,12 +2278,12 @@ class AllApi:NSObject {
             if appdelegate!.credential != nil{
                 let zone = TimeZone.current
                 let responsePath = "https://api.focusbear.io/completed-activity/day-summary?timezone=\(zone.identifier)"
-                if let myUrl = NSURL(string: responsePath){
-                    addLog(text: "api call getAllActivityDaySummary \(myUrl)")
+                if let responsePathUrl = NSURL(string: responsePath){
+                    addLog(text: "api call getAllActivityDaySummary \(responsePathUrl)")
                     let token = appdelegate!.credential!.accessToken
                     
                     
-                    let request = NSMutableURLRequest(url:myUrl as URL);
+                    let request = NSMutableURLRequest(url:responsePathUrl as URL);
                     request.httpMethod = "GET";
                     request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
                     request.addValue("mac-os", forHTTPHeaderField: "platform")
@@ -2385,9 +2388,9 @@ class AllApi:NSObject {
         
         
         let responsePath = webhookUrl
-        if let myUrl = NSURL(string: responsePath){
+        if let responsePathUrl = NSURL(string: responsePath){
             
-            let request = NSMutableURLRequest(url:myUrl as URL);
+            let request = NSMutableURLRequest(url:responsePathUrl as URL);
             request.httpMethod = "POST";
             
             let json = jsonResult//[[String: String]]()
@@ -2457,9 +2460,9 @@ class AllApi:NSObject {
         
         
         let responsePath = webhookUrl
-        if let myUrl = NSURL(string: responsePath){
+        if let responsePathUrl = NSURL(string: responsePath){
             
-            let request = NSMutableURLRequest(url:myUrl as URL);
+            let request = NSMutableURLRequest(url:responsePathUrl as URL);
             request.httpMethod = "POST";
             
             let json = jsonResult//[[String: String]]()
@@ -2531,9 +2534,9 @@ class AllApi:NSObject {
         
         
         let responsePath = webhookUrl
-        if let myUrl = NSURL(string: responsePath){
+        if let responsePathUrl = NSURL(string: responsePath){
             
-            let request = NSMutableURLRequest(url:myUrl as URL);
+            let request = NSMutableURLRequest(url:responsePathUrl as URL);
             request.httpMethod = "POST";
             
             let json = jsonResult//[[String: String]]()
@@ -2590,9 +2593,9 @@ class AllApi:NSObject {
         //80F7CCF5-7FE54D41-B5A2DD9F-4A84B894
         //    isUploadingPopupResponse = true
         let responsePath = "https://api.gumroad.com/v2/licenses/verify?product_permalink=xdkkds&license_key=\(license_key)"
-        if let myUrl = NSURL(string: responsePath){
-            addLog(text: "api call getConfigFile \(myUrl)")
-            let request = NSMutableURLRequest(url:myUrl as URL);
+        if let responsePathUrl = NSURL(string: responsePath){
+            addLog(text: "api call getConfigFile \(responsePathUrl)")
+            let request = NSMutableURLRequest(url:responsePathUrl as URL);
             request.httpMethod = "POST";
             
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -2649,12 +2652,12 @@ class AllApi:NSObject {
             if appdelegate!.credential != nil{
                 
                 let responsePath = "https://api.focusbear.io/focus-mode"
-                if let myUrl = NSURL(string: responsePath){
-                    addLog(text: "api call addFocusMode \(myUrl)")
+                if let responsePathUrl = NSURL(string: responsePath){
+                    addLog(text: "api call addFocusMode \(responsePathUrl)")
                     let token = appdelegate!.credential!.accessToken
                     
                     
-                    let request = NSMutableURLRequest(url:myUrl as URL);
+                    let request = NSMutableURLRequest(url:responsePathUrl as URL);
                     request.httpMethod = "POST";
                     request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
                     request.addValue("mac-os", forHTTPHeaderField: "platform")
@@ -2768,12 +2771,12 @@ class AllApi:NSObject {
             
             if appdelegate!.credential != nil{
                 let responsePath = "https://api.focusbear.io/focus-mode?id=\(id)"
-                if let myUrl = NSURL(string: responsePath){
-                    addLog(text: "api call deleteFocusMode \(myUrl)")
+                if let responsePathUrl = NSURL(string: responsePath){
+                    addLog(text: "api call deleteFocusMode \(responsePathUrl)")
                     let token = appdelegate!.credential!.accessToken
                     
                     
-                    let request = NSMutableURLRequest(url:myUrl as URL);
+                    let request = NSMutableURLRequest(url:responsePathUrl as URL);
                     request.httpMethod = "DELETE";
                     request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
                     request.addValue("mac-os", forHTTPHeaderField: "platform")
@@ -2856,12 +2859,12 @@ class AllApi:NSObject {
             if appdelegate!.credential != nil{
                 
                 let responsePath = "https://api.focusbear.io/focus-mode/\(focusType["id"] as? String ?? "")"
-                if let myUrl = NSURL(string: responsePath){
-                    addLog(text: "api call editFocusMode \(myUrl)")
+                if let responsePathUrl = NSURL(string: responsePath){
+                    addLog(text: "api call editFocusMode \(responsePathUrl)")
                     let token = appdelegate!.credential!.accessToken
                     
                     
-                    let request = NSMutableURLRequest(url:myUrl as URL);
+                    let request = NSMutableURLRequest(url:responsePathUrl as URL);
                     request.httpMethod = "PATCH";
                     request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
                     request.addValue("mac-os", forHTTPHeaderField: "platform")
@@ -2971,12 +2974,12 @@ class AllApi:NSObject {
             if appdelegate!.credential != nil{
                 
                 let responsePath = "https://api.focusbear.io/focus-mode"
-                if let myUrl = NSURL(string: responsePath){
-                    addLog(text: "api call updateAllFocusMode \(myUrl)")
+                if let responsePathUrl = NSURL(string: responsePath){
+                    addLog(text: "api call updateAllFocusMode \(responsePathUrl)")
                     let token = appdelegate!.credential!.accessToken
                     
                     
-                    let request = NSMutableURLRequest(url:myUrl as URL);
+                    let request = NSMutableURLRequest(url:responsePathUrl as URL);
                     request.httpMethod = "PUT";
                     request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
                     request.addValue("mac-os", forHTTPHeaderField: "platform")
@@ -3071,12 +3074,12 @@ class AllApi:NSObject {
             if appdelegate!.credential != nil{
                 
                 let responsePath = "https://api.focusbear.io/focus-mode/\(id)/start"
-                if let myUrl = NSURL(string: responsePath){
-                    addLog(text: "api call startFocusMode \(myUrl)")
+                if let responsePathUrl = NSURL(string: responsePath){
+                    addLog(text: "api call startFocusMode \(responsePathUrl)")
                     let token = appdelegate!.credential!.accessToken
                     
                     
-                    let request = NSMutableURLRequest(url:myUrl as URL);
+                    let request = NSMutableURLRequest(url:responsePathUrl as URL);
                     request.httpMethod = "POST";
                     request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
                     request.addValue("mac-os", forHTTPHeaderField: "platform")
@@ -3194,12 +3197,12 @@ class AllApi:NSObject {
             if appdelegate!.credential != nil{
                 
                 let responsePath = "https://api.focusbear.io/focus-mode/\(id)/finish"
-                if let myUrl = NSURL(string: responsePath){
-                    addLog(text: "api call finishFocusMode \(myUrl)")
+                if let responsePathUrl = NSURL(string: responsePath){
+                    addLog(text: "api call finishFocusMode \(responsePathUrl)")
                     let token = appdelegate!.credential!.accessToken
                     
                     
-                    let request = NSMutableURLRequest(url:myUrl as URL);
+                    let request = NSMutableURLRequest(url:responsePathUrl as URL);
                     request.httpMethod = "POST";
                     request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
                     request.addValue("mac-os", forHTTPHeaderField: "platform")
@@ -3314,9 +3317,9 @@ class AllApi:NSObject {
         
         
         let responsePath = "https://dev-2hidr8ad.us.auth0.com/dbconnections/change_password"
-        if let myUrl = NSURL(string: responsePath){
+        if let responsePathUrl = NSURL(string: responsePath){
             
-            let request = NSMutableURLRequest(url:myUrl as URL);
+            let request = NSMutableURLRequest(url:responsePathUrl as URL);
             request.httpMethod = "POST";
             
             let json = jsonResult//[[String: String]]()
@@ -3495,10 +3498,10 @@ class AllApi:NSObject {
         
         
         let responsePath = "https://api.focusbear.io/api"
-        if let myUrl = NSURL(string: responsePath){
-            addLog(text: "api call isInternetOn \(myUrl)")
+        if let responsePathUrl = NSURL(string: responsePath){
+            addLog(text: "api call isInternetOn \(responsePathUrl)")
             
-            let request = NSMutableURLRequest(url:myUrl as URL);
+            let request = NSMutableURLRequest(url:responsePathUrl as URL);
             request.httpMethod = "GET";
             
             request.addValue("mac-os", forHTTPHeaderField: "platform")
@@ -3547,12 +3550,12 @@ class AllApi:NSObject {
             if appdelegate!.credential != nil{
                 
                 let responsePath = "https://api.focusbear.io/tab-keywords"
-                if let myUrl = NSURL(string: responsePath){
-                    addLog(text: "api call getKeyWords \(myUrl)")
+                if let responsePathUrl = NSURL(string: responsePath){
+                    addLog(text: "api call getKeyWords \(responsePathUrl)")
                     let token = appdelegate!.credential!.accessToken
                     
                     
-                    let request = NSMutableURLRequest(url:myUrl as URL);
+                    let request = NSMutableURLRequest(url:responsePathUrl as URL);
                     request.httpMethod = "POST";
                     request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
                     request.addValue("mac-os", forHTTPHeaderField: "platform")
@@ -3617,68 +3620,7 @@ class AllApi:NSObject {
             }
         }
     }
-    //    func sendLink(completionHandler: @escaping(_ result: NSDictionary?) -> ()){
-    //
-    //        let responsePath = "https://dev-2hidr8ad.us.auth0.com/passwordless/start"
-    //        if let myUrl = NSURL(string: responsePath){
-    //
-    //            let request = NSMutableURLRequest(url:myUrl as URL);
-    //            request.httpMethod = "POST";
-    //
-    //
-    //            let parameters = [
-    //              "client_id": "dgMrlNC5mM634Sxi9SLqIqi0WvgVpwX7",
-    //              "connection": "email",
-    //              "email": "prashant.wtl@gmail.com",// email
-    //              "send": "link"
-    //            ] as [String : Any]
-    //            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-    //
-    //            let jsonData = try? JSONSerialization.data(withJSONObject: parameters)
-    //            request.httpBody = jsonData
-    //            let task = URLSession.shared.dataTask(with: request as URLRequest) {
-    //                data, response, error in
-    //
-    //                if let httpResponse = response as? HTTPURLResponse{
-    //                    if httpResponse.statusCode == 200{ //it means it is right //
-    //                        if data != nil{
-    //                            do {
-    //                                if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
-    //                                    addLog(text: "api call getKeyWords return success")
-    //                                    completionHandler(jsonResult)
-    //                                    return
-    //                                }
-    //
-    //                            }catch{
-    //                                addLog(text: "api call getKeyWords return error:- \(error.localizedDescription)")
-    //                                completionHandler(nil)
-    //                                print(error)
-    //                                return;
-    //                            }
-    //                        }
-    //                    }else{
-    //
-    //                        completionHandler(nil)
-    //                        return
-    //                    }
-    //                }
-    //
-    //                if error != nil {
-    //                    addLog(text: "api call getKeyWords return error:- \(error!.localizedDescription)")
-    //                    completionHandler(nil)
-    //                    return
-    //                }
-    //                completionHandler(nil)
-    //                return
-    //            }
-    //
-    //            task.resume()
-    //        }else{
-    //            completionHandler(nil)
-    //        }
-    //
-    //
-    //    }
+    
     
     
     func chatGPTIsURLSafe(url: String, tab_title: String, focus_mode: String, intention:String, completionHandler: @escaping(_ newDic:NSDictionary?, _ url:String?, _ payload: [String: Any]?) -> ()){
@@ -3692,12 +3634,12 @@ class AllApi:NSObject {
             if appdelegate!.credential != nil{
                 
                 let responsePath = "https://api.focusbear.io/user/is-url-safe-to-use"
-                if let myUrl = NSURL(string: responsePath){
-                    addLog(text: "api call chatGPTIsURLSafe \(myUrl)")
+                if let responsePathUrl = NSURL(string: responsePath){
+                    addLog(text: "api call chatGPTIsURLSafe \(responsePathUrl)")
                     let token = appdelegate!.credential!.accessToken
                     
                     
-                    let request = NSMutableURLRequest(url:myUrl as URL);
+                    let request = NSMutableURLRequest(url:responsePathUrl as URL);
                     request.httpMethod = "POST";
                     request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
                     request.addValue("mac-os", forHTTPHeaderField: "platform")
@@ -3797,12 +3739,12 @@ class AllApi:NSObject {
             if appdelegate!.credential != nil{
                 
                 let responsePath = "https://api.focusbear.io/user/consent"
-                if let myUrl = NSURL(string: responsePath){
-                    addLog(text: "api call postTermsService \(myUrl)")
+                if let responsePathUrl = NSURL(string: responsePath){
+                    addLog(text: "api call postTermsService \(responsePathUrl)")
                     let token = appdelegate!.credential!.accessToken
                     
                     
-                    let request = NSMutableURLRequest(url:myUrl as URL);
+                    let request = NSMutableURLRequest(url:responsePathUrl as URL);
                     request.httpMethod = "PUT";
                     request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
                     request.addValue("mac-os", forHTTPHeaderField: "platform")
@@ -3855,123 +3797,216 @@ class AllApi:NSObject {
         }
     }
     
-//    func uploadAppLogs(id:String,achievements:String, distractions:String, finish_time:Date, completionHandler: @escaping(_ newDic:NSDictionary?) -> ()){
-//        addLog(text: "func call:-  finishFocusMode:- focus-mode/id/finish")
-//
-//        appdelegate!.credentialsManager.credentials {credentialsInfo in
-//            addLog(text: "get updated credentialsInfo from credentialsManager")
-//
-//            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
-//
-//            if appdelegate!.credential != nil{
-//
-//                let responsePath = "https://api.focusbear.io/app-logs"
-//                if let myUrl = NSURL(string: responsePath){
-//                    addLog(text: "api call finishFocusMode \(myUrl)")
-//                    let token = appdelegate!.credential!.accessToken
-//
-//
-//                    let request = NSMutableURLRequest(url:myUrl as URL);
-//                    request.httpMethod = "POST";
-//                    request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-//                    request.addValue("mac-os", forHTTPHeaderField: "platform")
-//                    request.addValue(getAppVersionInString(), forHTTPHeaderField: "app-version")
+    func uploadAppLogs(completionHandler: @escaping(_ val:Bool?) -> ()){
+        addLog(text: "func call:-  uploadAppLogs")
+        
+        appdelegate!.credentialsManager.credentials {credentialsInfo in
+            addLog(text: "get updated credentialsInfo from credentialsManager")
+            
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+            
+            if appdelegate!.credential != nil{
+                
+                let responsePath = "https://api.focusbear.io/app-logs"
+                if let responsePathUrl = NSURL(string: responsePath){
+                    addLog(text: "api call uploadAppLogs \(responsePathUrl)")
+                    let token = appdelegate!.credential!.accessToken
+                    
+                    let boundary = generateBoundaryString()
+                    
+                    let request = NSMutableURLRequest(url:responsePathUrl as URL);
+                    request.httpMethod = "POST";
+                    request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+                    request.addValue("mac-os", forHTTPHeaderField: "platform")
+                    request.addValue(getAppVersionInString(), forHTTPHeaderField: "app-version")
 //                    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-//
-//
-//                    let json: [String: Any] = [
-//                        "achievements":achievements,
-//                        "distractions":distractions,
-//                        "finish_time":getStringFromDateInUtc(date: finish_time, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"),
-//                        "focus_duration_seconds":focusModeActualDurationPerformed
-//                    ]
-//
-//
-//
-//
-//                    let jsonData = try? JSONSerialization.data(withJSONObject: json)
-//                    request.httpBody = jsonData
-//                    let task = URLSession.shared.dataTask(with: request as URLRequest) {
-//                        data, response, error in
-//
-//                        if let httpResponse = response as? HTTPURLResponse{
-//                            //it means it is right
-//                            self.isApiFinishFocusModeErrorFound = false
-//                            if data != nil{
-//                                do {
-//                                    if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
-//
-//
-//                                        // if let id = jsonResult.value(forKey: "id") as? String{
-//                                        if httpResponse.statusCode == 201{
-//                                            addLog(text: "api call finishFocusMode success")
-//                                            completionHandler(jsonResult)
-//                                            return
-//                                        }else{
-//                                            addLog(text: "api call finishFocusMode Api error:- statusCode is \(httpResponse.statusCode)")
-//                                            self.writeJsonInLog(data: data)
-//                                            addLog(text: "accessToken is:- \(token)")
-//                                            completionHandler(nil)
-//                                            return
-//                                        }
-//
-//
-//                                        //  }
-//
-//                                    }
-//
-//                                }catch{
-//                                    completionHandler(nil)
-//                                    addLog(text: "api call finishFocusMode error:- \(error.localizedDescription)")
-//                                    print(error)
-//                                    return;
-//                                }
-//                            }
-//                            //                        }else{
-//                            //                            completionHandler(nil)
-//                            //                            return
-//                            //                        }
-//                        }
-//
-//
-//                        if error != nil {
-//                            addLog(text: "api call finishFocusMode error:- \(error!.localizedDescription)")
-//                            if (error as? NSError)?.code == self.errorCodeRequestTimeout{
-//                                if self.isApiFinishFocusModeErrorFound{
-//                                    self.isApiFinishFocusModeErrorFound = false
-//                                    completionHandler(nil)
-//                                    return
-//                                }else{
-//                                    self.isApiFinishFocusModeErrorFound = true
-//                                    addLog(text: "error finishFocusMode:- try second time")
-//
-//                                    allApiObject.finishFocusMode(id: id, achievements: achievements, distractions: distractions, finish_time: finish_time, completionHandler: {newDic in
-//                                        completionHandler(newDic)
-//                                        return
-//                                    })
-//                                }
-//                            }else{
-//                                completionHandler(nil)
-//                                return
-//                            }
-//
-//                        }else{
-//                            completionHandler(nil)
-//                            return
-//                        }
-//                    }
-//
-//                    task.resume()
-//                }else{
-//                    completionHandler(nil)
-//                    return
-//                }
-//
-//            }else{
-//                completionHandler(nil)
-//                return
-//            }
-//        }
-//    }
+                    request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+                    
+                    
+                    let fileName = "Debug_Logs.txt"
+                    let mimeType = "text/plain"
+                    let body = NSMutableData()
+                    var data:Data?
+                    
+                    if FileManager.default.fileExists(atPath: DebugLogsURL.path){
+                        if let nsData = NSData(contentsOfFile: DebugLogsURL.path) {
+                            data =  nsData as Data
+                        }else{
+                            completionHandler(nil)
+                            addLog(text: "api call uploadAppLogs:- data nil")
+                            return;
+                        }
+                    }
+                    //define the data post parameter
+                    body.append("--\(boundary)\r\n".data(using: .utf8)!)
+                    body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(fileName)\"\r\n".data(using: .utf8)!)
+                    body.append("Content-Type: text/plain\r\n\r\n".data(using: .utf8)!)
+                    body.append(data!)
+                    body.append("\r\n".data(using: .utf8)!)
+                    body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+
+                    
+                    request.httpBody = body as Data
+                    let task = URLSession.shared.dataTask(with: request as URLRequest) {
+                        data, response, error in
+                        
+                        if let httpResponse = response as? HTTPURLResponse{
+                            //it means it is right
+                            self.isApiUploadLogsErrorFound = false
+
+                            if httpResponse.statusCode == 201{
+                                addLog(text: "api call uploadAppLogs success")
+                                completionHandler(true)
+                                return
+                            }else{
+                                addLog(text: "api call uploadAppLogs Api error:- statusCode is \(httpResponse.statusCode)")
+                                self.writeJsonInLog(data: data)
+                                addLog(text: "accessToken is:- \(token)")
+                                completionHandler(nil)
+                                return
+                            }
+
+                        }
+                        
+                        
+                        if error != nil {
+                            addLog(text: "api call uploadAppLogs error:- \(error!.localizedDescription)")
+                            if (error as? NSError)?.code == self.errorCodeRequestTimeout{
+                                if self.isApiUploadLogsErrorFound{
+                                    self.isApiUploadLogsErrorFound = false
+                                    completionHandler(nil)
+                                    return
+                                }else{
+                                    self.isApiUploadLogsErrorFound = true
+                                    addLog(text: "error uploadAppLogs:- try second time")
+                                    
+                                    allApiObject.uploadAppLogs(completionHandler: {newDic in
+                                        completionHandler(newDic)
+                                        return
+                                    })
+                                }
+                            }else{
+                                completionHandler(nil)
+                                return
+                            }
+                            
+                        }else{
+                            completionHandler(nil)
+                            return
+                        }
+                    }
+                    
+                    task.resume()
+                }else{
+                    completionHandler(nil)
+                    return
+                }
+                
+            }else{
+                completionHandler(nil)
+                return
+            }
+        }
+    }
+    
+    func getFocusModeTags(completionHandler: @escaping(_ result: [NSDictionary]?) -> ()) {
+        addLog(text: "func call:- getFocusModeTags")
+
+        appdelegate!.credentialsManager.credentials {credentialsInfo in
+            addLog(text: "get updated credentialsInfo from credentialsManager")
+            
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+            if appdelegate!.credential != nil{
+                let responsePath = "https://api.focusbear.io/focus-mode/tags"//
+                if let responsePathUrl = NSURL(string: responsePath){
+                    addLog(text: "api call getFocusModeTags \(responsePathUrl)")
+                    let token = appdelegate!.credential!.accessToken
+                    
+                    
+                    let request = NSMutableURLRequest(url:responsePathUrl as URL);
+                    request.httpMethod = "GET";
+                    request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+                    request.addValue("mac-os", forHTTPHeaderField: "platform")
+                    request.addValue(getAppVersionInString(), forHTTPHeaderField: "app-version")
+                    let task = URLSession.shared.dataTask(with: request as URLRequest) {
+                        data, response, error in
+                        
+                        if let httpResponse = response as? HTTPURLResponse {
+                            self.isApiGetFocusModeTagsErrorFound = false
+                            if httpResponse.statusCode == 200{
+                                
+                                if data != nil{
+                                    
+                                    
+                                    do {
+                                        if let jsonResult: [NSDictionary] = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? [NSDictionary]{
+                                            
+                                            addLog(text: "api call getFocusModeTags success")
+                                            print(jsonResult)
+                                            completionHandler(jsonResult)
+                                            return
+                                        }
+                                        
+                                    }catch{
+                                        print(error)
+                                        addLog(text: "error get getFocusModeTags file: \(error.localizedDescription)")
+                                        completionHandler(nil)
+                                        return
+                                    }
+                                    
+                                }
+                                
+                                completionHandler(nil)
+                                return
+                            }else{
+                                addLog(text: "api call getFocusModeTags Api error:- statusCode is \(httpResponse.statusCode)")
+                                self.writeJsonInLog(data: data)
+                                addLog(text: "accessToken is:- \(token)")
+                                completionHandler(nil)
+                                return
+                            }
+                        }
+                        if error != nil {
+                            addLog(text: "error getFocusModeTags: \(error!.localizedDescription)")
+                            if (error as? NSError)?.code == self.errorCodeRequestTimeout{
+                                if self.isApiGetFocusModeTagsErrorFound{
+                                    self.isApiGetFocusModeTagsErrorFound = false
+                                    completionHandler(nil)
+                                    return
+                                }else{
+                                    self.isApiGetFocusModeTagsErrorFound = true
+                                    addLog(text: "error getFocusModeTags:- try second time")
+                                    self.getFocusModeTags(completionHandler: { json in
+                                        completionHandler(json)
+                                        return
+                                    })
+                                }
+                            }else{
+                                completionHandler(nil)
+                                return
+                            }
+                            
+                        }else{
+                            completionHandler(nil)
+                            return
+                        }
+                    }
+                    task.resume()
+                }else{
+                    completionHandler(nil)
+                }
+            }else{
+                completionHandler(nil)
+            }
+        }
+    }
 }
 
+
+
+
+
+func generateBoundaryString() -> String
+{
+    return "Boundary-\(NSUUID().uuidString)"
+}

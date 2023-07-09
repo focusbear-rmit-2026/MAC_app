@@ -46,6 +46,7 @@ class askOnboardingVideoVc: NSViewController {
         }
         self.view.window?.close()
         appdelegate!.loadCredentialsAndDeviceId()
+        showMenuTourWindow()
     }
     @IBAction func btnPlayVideoClicked(_ sender: Any) {
         if webView.isHidden == false{

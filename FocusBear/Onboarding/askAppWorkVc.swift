@@ -10,6 +10,8 @@ import Cocoa
 
 class askAppWorkVc: NSViewController {
 
+    @IBOutlet weak var btnInfoStayFocused: hoverInfoButton!
+    @IBOutlet weak var btnInfoBuildHabits: hoverInfoButton!
     @IBOutlet weak var textFieldAnythingElse: NSTextField!
     @IBOutlet weak var lblTitleAnythingElse: NSTextField!
     @IBOutlet weak var boxAnythingElse: NSBox!
@@ -53,6 +55,20 @@ class askAppWorkVc: NSViewController {
         textFieldAnythingElse.stringValue = ""
     }
     
+    @IBAction func btnInfoBuildHabitsClicked(_ sender: Any) {
+        var msg = "Focus Bear can help you with morning and evening routines. The app will guide you through habits like mindfulness, journalling, exercise, planning your day or anything you care about."
+        if let askAppWorkVcInfo = configjson.value(forKey: "askAppWorkVcInfo") as? NSDictionary{
+            msg = askAppWorkVcInfo.value(forKey: "infoBuildHabitsText") as? String ?? msg
+        }
+        showTooltip(sender: btnInfoBuildHabits, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
+    }
+    @IBAction func btnInfoStayFocusedClicked(_ sender: Any) {
+        var msg = "Focus Bear can help block distracting websites and apps while you're working to help you get more done."
+        if let askAppWorkVcInfo = configjson.value(forKey: "askAppWorkVcInfo") as? NSDictionary{
+            msg = askAppWorkVcInfo.value(forKey: "infoStayFocusedText") as? String ?? msg
+        }
+        showTooltip(sender: btnInfoStayFocused, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
+    }
     @IBAction func btnContinueClicked(_ sender: Any) {
         btnContinue.isEnabled = false
         loader.startAnimation(self)

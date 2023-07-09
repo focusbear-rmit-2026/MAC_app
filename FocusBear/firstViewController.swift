@@ -10,7 +10,7 @@ import Cocoa
 
 class firstViewController: NSViewController {
     
-   
+    
     @IBOutlet weak var btnEditHabits: Button!
     @IBOutlet weak var lblTitleSelectActivity: NSTextField!
     @IBOutlet weak var lblTitleEnterActivityName: NSTextField!
@@ -42,7 +42,7 @@ class firstViewController: NSViewController {
         // Do view setup here.
         btnStartFirstHabit.cell?.wraps = true
         lblBeforeYouStart.isHidden = true
-//        lblTitle.font = NSFont(name: "Fenwick", size: lblTitle.font?.pointSize ?? 24)!
+        //        lblTitle.font = NSFont(name: "Fenwick", size: lblTitle.font?.pointSize ?? 24)!
         btnEditHabits.title = "Customise my habits first"
         lblTitleSelectActivity.stringValue = "What 30 seconds of activity do you want to do?"
         lblTitleEnterActivityName.stringValue = "Enter name of activity"
@@ -56,7 +56,7 @@ class firstViewController: NSViewController {
         
         btnEditHabits.buttonColor = NSColor.white.cgColor
     }
-
+    
     @IBAction func btnInfoClicked(_ sender: Any) {
         btnInfo.isHidden = true
         if let dic = configjson.value(forKey: "welcomeInfo") as? NSDictionary{
@@ -160,11 +160,10 @@ class firstViewController: NSViewController {
                 }
                 habitTotalCompletedSeconds = 0
                 lblTitle.stringValue = startMorningHabitTitleText
-//                if isGetKookyButtonVisible{
-                    btnStartFirstHabit.title = "Begin"
-                    if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
-                        btnStartFirstHabit.title = activityInfo.value(forKey: "buttonBeginText") as? String ?? btnStartFirstHabit.title
-                    }
+                btnStartFirstHabit.title = "Begin"
+                if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
+                    btnStartFirstHabit.title = activityInfo.value(forKey: "buttonBeginText") as? String ?? btnStartFirstHabit.title
+                }
                 
                 tblViewHabits.isHidden = false
                 scrollViewHabits.isHidden = false
@@ -173,7 +172,7 @@ class firstViewController: NSViewController {
                 
                 
             }else if currentState == ._EVENING_HABIT_{
-
+                
                 if !has_edited_settings{
                     btnEditHabits.isHidden = false
                 }
@@ -188,20 +187,11 @@ class firstViewController: NSViewController {
                 lblTitle.stringValue = startEveningHabitTitleText
                 habitTotalCompletedSeconds = 0
                 
+                btnStartFirstHabit.title = "Begin"
+                if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
+                    btnStartFirstHabit.title = activityInfo.value(forKey: "buttonBeginText") as? String ?? btnStartFirstHabit.title
+                }
                 
-//                if isGetKookyButtonVisible{
-                    btnStartFirstHabit.title = "Begin"
-                    if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
-                        btnStartFirstHabit.title = activityInfo.value(forKey: "buttonBeginText") as? String ?? btnStartFirstHabit.title
-                    }
-//                }else{
-//                    if arrFilteredEveningHabits.count != 0 {
-//                        let time = arrFilteredEveningHabits[0].durationSeconds!
-//                        btnStartFirstHabit.title = getstartActivityButtonText(seconds: time, name: arrFilteredEveningHabits[0].name!)
-//                        btnStartFirstHabit.toolTip = btnStartFirstHabit.title
-//                    }
-//                }
-
                 tblViewHabits.isHidden = false
                 scrollViewHabits.isHidden = false
                 tblViewHabits.reloadData()
@@ -210,8 +200,8 @@ class firstViewController: NSViewController {
                 btnEditHabits.isHidden = true
                 btnPostponeBreak.isHidden = false
                 lblProgress.isHidden = false
-
-
+                
+                
                 btnPostponeBreak.title = "Skip this habit for today"
                 if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
                     btnPostponeBreak.title = activityInfo.value(forKey: "buttonSkipHabitText") as? String ?? btnPostponeBreak.title
@@ -219,7 +209,7 @@ class firstViewController: NSViewController {
                 
                 lblTitle.stringValue = thirdVcObj?.lblTitle.stringValue ?? ""
                 btnStartFirstHabit.title = thirdVcObj?.btnMain.title ?? ""
-
+                
                 lblProgress.stringValue = thirdVcObj?.lblProgress.stringValue ?? ""
                 
                 
@@ -230,7 +220,7 @@ class firstViewController: NSViewController {
                 imgViewTopSpace.constant = 35
                 imgViewBottomSpace.constant = 5
                 habitTotalCompletedSeconds = 0
-
+                
                 
                 tblViewHabits.isHidden = false
                 scrollViewHabits.isHidden = false
@@ -247,27 +237,16 @@ class firstViewController: NSViewController {
         btnStartFirstHabit.title = getstartActivityButtonText(seconds: durationSeconds, name: name)
         introActivity = habit(id:"", name: name, durationSeconds: durationSeconds, urlsArray: videoUrl, logQuantity: false, logQuantityQuestion: nil, openSpecificApps: false, allowUrls: [], allowApps: [], allowedFocusMode: "", activity_sequence_id: "", run_micro_breaks: false, take_notes: "", isPriorityHigh: false, days_of_week: [], text_instructions: "", imgUrls: [], completion_requirements: "", useTimer: true, checkList:[])
         
-//        if index == (introActivities.count-1){
-//            btnStartFirstHabit.isEnabled = false
-//            lblTitleEnterActivityName.isHidden = false
-//            textFieldActivity.stringValue = ""
-//            textFieldActivity.isHidden = false
-//            textFieldActivity.setFocus()
-//        }else{
-//            btnStartFirstHabit.isEnabled = true
-//            lblTitleEnterActivityName.isHidden = true
-//            textFieldActivity.isHidden = true
-//        }
         btnStartFirstHabit.isEnabled = true
         lblTitleEnterActivityName.isHidden = true
         textFieldActivity.isHidden = true
-
+        
     }
     var timer:Timer?
     var currentTimer = 0
     var isTimerGoingOn = false
     var totalDuration = 0
-
+    
     @IBAction func btnPostponeClicked(_ sender: Any) {
         if currentState == ._BREATHING_{
             mainViewControllerObj?.btnAbortClicked(self)
@@ -275,7 +254,7 @@ class firstViewController: NSViewController {
         }
         thirdVcObj?.btnSkipHabitClicked(self)
     }
-
+    
     
     @IBAction func btnEditHabitsClicked(_ sender: Any) {
         self.view.addSubview(getEditHabitRoutineVcObject().view)

@@ -250,7 +250,7 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
         lastSkipMicroBreakState = isSkipBreakActivityDuringFocus
         
         allApiObject.capturePosthog(event: "start-focus-mode-manually", metadata: [:])
-        appdelegate!.setIntensionInBrainDumpWindow()
+        appdelegate!.setIntentionInBrainDumpWindow()
         UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
         self.view.window?.close()
     }

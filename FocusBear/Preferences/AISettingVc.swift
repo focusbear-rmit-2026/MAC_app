@@ -26,6 +26,8 @@ class AISettingVc: NSViewController {
     @IBOutlet weak var lblCheckBoxShowAllowAlert: NSTextField!
     @IBOutlet weak var lblTitleShowAllowAlert: NSTextField!
     
+    let viewHeightDefault = 303
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
@@ -68,8 +70,11 @@ class AISettingVc: NSViewController {
     }
     
     override func viewWillAppear() {
-        preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: 630 + 46, height: 303 + 142))
-        
+        if SettingsManagerObject.selectedFontIndex == intelOneMonoFontIndex || SettingsManagerObject.selectedFontIndex == openDyslexicFontIndex{
+            preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: (preferencesWindowControllerObj?.settingsTabDefaultWidthForBigFonts ?? 0) + (preferencesWindowControllerObj?.extraSpaceWidthInSettingsTab ?? 0), height: viewHeightDefault + (preferencesWindowControllerObj?.extraSpaceHeightInSettingsTab ?? 0)))
+        }else{
+            preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: (preferencesWindowControllerObj?.settingsTabDefaultWidth ?? 0) + (preferencesWindowControllerObj?.extraSpaceWidthInSettingsTab ?? 0), height: viewHeightDefault + (preferencesWindowControllerObj?.extraSpaceHeightInSettingsTab ?? 0)))
+        }
         if SettingsManagerObject.isMotivationalMessageEnabled{
             checkBoxMorningMotivation.state = .on
         }else{

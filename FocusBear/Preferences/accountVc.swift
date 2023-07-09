@@ -24,7 +24,7 @@ class accountVc: NSViewController {
     @IBOutlet weak var lblVersionState: NSTextField!
     
     var restoreText = "If you've already purchased Focus Bear subscription, you can restore that purchase."
-    
+    let viewHeightDefault = 332
         
     override func viewDidLoad() {
         
@@ -55,24 +55,21 @@ class accountVc: NSViewController {
         arrForSearchFromSettings.append(["title": lblTitleName.stringValue, "tabId": idAccount, "object": lblTitleName as Any])
         arrForSearchFromSettings.append(["title": lblTitleUserId.stringValue, "tabId": idAccount, "object": lblTitleUserId as Any])
     }
-   
+    
     override func viewWillAppear(){
         addLog(text: "accountVc:- viewWillAppear")
-        
-        preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: 630 + 46, height: 332 + 142))
+
+        if SettingsManagerObject.selectedFontIndex == intelOneMonoFontIndex || SettingsManagerObject.selectedFontIndex == openDyslexicFontIndex{
+            preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: (preferencesWindowControllerObj?.settingsTabDefaultWidthForBigFonts ?? 0) + (preferencesWindowControllerObj?.extraSpaceWidthInSettingsTab ?? 0), height: viewHeightDefault + (preferencesWindowControllerObj?.extraSpaceHeightInSettingsTab ?? 0)))
+        }else{
+            preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: (preferencesWindowControllerObj?.settingsTabDefaultWidth ?? 0) + (preferencesWindowControllerObj?.extraSpaceWidthInSettingsTab ?? 0), height: viewHeightDefault + (preferencesWindowControllerObj?.extraSpaceHeightInSettingsTab ?? 0)))
+        }
         
         if let userId = appdelegate!.user?.userId{
             lblUserId.stringValue = userId
         }else{
             lblUserId.stringValue = ""
         }
-//        if let user = User(from: appdelegate?.credential?.idToken ?? ""){
-//            lblName.stringValue = user.name
-//            lblEmaiId.stringValue = user.email
-//        }else{
-//            lblName.stringValue = ""
-//            lblEmaiId.stringValue = ""
-//        }
         lblName.stringValue = currentUserName
         lblEmaiId.stringValue = currentUserEmail
         
@@ -82,9 +79,7 @@ class accountVc: NSViewController {
             if let text = common.value(forKey: "daysRemainingText") as? String{
                 daysRemainingText = text
             }
-//            if let text = common.value(forKey: "trialExpiredText") as? String{
-//                trialExpiredText = text
-//            }
+
         }
         if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
             trialExpiredText = menuInfo.value(forKey: "subscriptionExpiredText") as? String ?? trialExpiredText
@@ -99,7 +94,6 @@ class accountVc: NSViewController {
                 lblVersionState.stringValue = daysRemainingText.replacingOccurrences(of: "<DAYS>", with: "\(daysremaining)")//"Trial version - \(daysremaining) of 7 trial days remaining"//
             }
         }else{
-//            UserDefaults.standard.removeObject(forKey: "trialExpired")
             lblVersionState.stringValue = "Registered Version"
             if let accountVcInfo = configjson.value(forKey: "accountVcInfo") as? NSDictionary{
                 lblVersionState.stringValue = accountVcInfo.value(forKey: "registeredVersionText") as? String ?? lblVersionState.stringValue

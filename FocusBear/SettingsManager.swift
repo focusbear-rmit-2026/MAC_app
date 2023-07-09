@@ -46,7 +46,8 @@ class SettingsManager:NSObject{
     var isTabLimiterEnabled = false
     var isFullScreenEnabled = false
     var shouldReloadAfterForceQuitEnabled = false
-    var selectedFont = arrFont[0]
+    var selectedFontIndex = 0
+    var cuddlyModeProgressCount = 0
     
     var selectedAppAppearanceIndex = 0
     var maxTabLimitCount = 5
@@ -81,7 +82,8 @@ class SettingsManager:NSObject{
     
     var kUserdefaultsisFullScreenEnabled = "kUserdefaultsisFullScreenEnabled"
     var kUserdefaultsShouldReloadAfterForceQuitEnabled = "kUserdefaultsShouldReloadAfterForceQuitEnabled"
-    var kUserdefaultsSelectedFont = "kUserdefaultsSelectedFont"
+    var kUserdefaultsselectedFontIndex = "kUserdefaultsselectedFontIndex"
+    var kUserdefaultsCuddlyModeProgressCount = "kUserdefaultsCuddlyModeProgressCount"
     
     var kUserdefaultsSelectedAppAppearanceIndex = "kUserdefaultsSelectedAppAppearanceIndex"
     
@@ -169,7 +171,8 @@ class SettingsManager:NSObject{
         
         kUserdefaultsisFullScreenEnabled = kUserdefaultsisFullScreenEnabled + (appdelegate?.user?.userId ?? "")
         kUserdefaultsShouldReloadAfterForceQuitEnabled = kUserdefaultsShouldReloadAfterForceQuitEnabled + (appdelegate?.user?.userId ?? "")
-        kUserdefaultsSelectedFont = kUserdefaultsSelectedFont + (appdelegate?.user?.userId ?? "")
+        kUserdefaultsselectedFontIndex = kUserdefaultsselectedFontIndex + (appdelegate?.user?.userId ?? "")
+        kUserdefaultsCuddlyModeProgressCount = kUserdefaultsCuddlyModeProgressCount + (appdelegate?.user?.userId ?? "")
         
         kUserdefaultsSelectedAppAppearanceIndex = kUserdefaultsSelectedAppAppearanceIndex + (appdelegate?.user?.userId ?? "")
         
@@ -256,7 +259,9 @@ class SettingsManager:NSObject{
                     
                     let kisFullScreenEnabled = "kisFullScreenEnabled"
                     let kShouldReloadAfterForceQuitEnabled = "kShouldReloadAfterForceQuitEnabled"
-                    let kSelectedFont = "kSelectedFont"
+                    let kselectedFontIndex = "kselectedFontIndex"
+                    let kCuddlyModeProgressCount = "kCuddlyModeProgressCount"
+                    
                     
                     let kSelectedAppAppearanceIndex = "kSelectedAppAppearanceIndex"
                     
@@ -351,9 +356,14 @@ class SettingsManager:NSObject{
                     if let val = settings.value(forKey: kShouldReloadAfterForceQuitEnabled) as? Int{
                         UserDefaults.standard.set(val, forKey: self.kUserdefaultsShouldReloadAfterForceQuitEnabled)
                     }
-                    if let val = settings.value(forKey: kSelectedFont) as? String{
-                        UserDefaults.standard.set(val, forKey: self.kUserdefaultsSelectedFont)
+                    if let val = settings.value(forKey: kselectedFontIndex) as? Int{
+                        UserDefaults.standard.set(val, forKey: self.kUserdefaultsselectedFontIndex)
                     }
+                    
+                    if let progress = settings.value(forKey: kCuddlyModeProgressCount) as? Int{
+                        UserDefaults.standard.set(progress, forKey: self.kUserdefaultsCuddlyModeProgressCount)
+                    }
+                    
                     
                     if let val = settings.value(forKey: kSelectedAppAppearanceIndex) as? Int{
                         UserDefaults.standard.set(val, forKey: self.kUserdefaultsSelectedAppAppearanceIndex)
@@ -623,11 +633,19 @@ class SettingsManager:NSObject{
             }
             
             //  ---------------------------SETTINGS Selected Font--------------------------
-            if let font = UserDefaults.standard.object(forKey: kUserdefaultsSelectedFont) as? String{
-                selectedFont = font
+            if let font = UserDefaults.standard.object(forKey: kUserdefaultsselectedFontIndex) as? Int{
+                selectedFontIndex = font
             }else{
-                UserDefaults.standard.set(selectedFont, forKey: kUserdefaultsSelectedFont)
+                UserDefaults.standard.set(selectedFontIndex, forKey: kUserdefaultsselectedFontIndex)
             }
+            
+            //  ---------------------------SETTINGS Progress Count--------------------------
+            if let progressCount = UserDefaults.standard.object(forKey: kUserdefaultsCuddlyModeProgressCount) as? Int{
+                cuddlyModeProgressCount = progressCount
+            }else{
+                UserDefaults.standard.set(cuddlyModeProgressCount, forKey: kUserdefaultsCuddlyModeProgressCount)
+            }
+            
             
             
             //  ---------------------------SETTINGS App Appearance --------------------------
@@ -665,8 +683,7 @@ class SettingsManager:NSObject{
                     isMotivationalMessageEnabled = false
                 }
             }else{
-                UserDefaults.standard.set(false, forKey: kUserdefaultsMotivationalMessageEnabled)
-                isMotivationalMessageEnabled = false
+                UserDefaults.standard.set(isMotivationalMessageEnabled, forKey: kUserdefaultsMotivationalMessageEnabled)
             }
             
             //  ---------------------------SETTINGS Ai Check Url Enabled--------------------------
@@ -764,7 +781,8 @@ class SettingsManager:NSObject{
         let kTabLimitCount = "kTabLimitCount"
         let kisFullScreenEnabled = "kisFullScreenEnabled"
         let kShouldReloadAfterForceQuitEnabled = "kShouldReloadAfterForceQuitEnabled"
-        let kSelectedFont = "kSelectedFont"
+        let kselectedFontIndex = "kselectedFontIndex"
+        let kCuddlyModeProgressCount = "kCuddlyModeProgressCount"
         let kSelectedAppAppearanceIndex = "kSelectedAppAppearanceIndex"
         let kIsOfficeModeEnabled = "kIsOfficeModeEnabled"
         //        let kSelectedLanguage = "kSelectedLanguage"
@@ -808,7 +826,8 @@ class SettingsManager:NSObject{
             kTabLimitCount:maxTabLimitCount,
             kisFullScreenEnabled:isFullScreenEnabled,
             kShouldReloadAfterForceQuitEnabled:shouldReloadAfterForceQuitEnabled,
-            kSelectedFont:selectedFont,
+            kselectedFontIndex:selectedFontIndex,
+            kCuddlyModeProgressCount:cuddlyModeProgressCount,
             kSelectedAppAppearanceIndex:selectedAppAppearanceIndex,
             kIsOfficeModeEnabled:isOfficeModeEnabled,
             kHideAllWindowInScreenShots:UserDefaults.standard.object(forKey: kUserdefaultsHideAllWindowInScreenShots) as? Bool ?? false,
@@ -859,7 +878,8 @@ class SettingsManager:NSObject{
         UserDefaults.standard.set(maxTabLimitCount, forKey: kUserdefaultsTabLimitCount)
         UserDefaults.standard.set(isFullScreenEnabled, forKey: kUserdefaultsisFullScreenEnabled)
         UserDefaults.standard.set(shouldReloadAfterForceQuitEnabled, forKey: kUserdefaultsShouldReloadAfterForceQuitEnabled)
-        UserDefaults.standard.set(selectedFont, forKey: kUserdefaultsSelectedFont)
+        UserDefaults.standard.set(selectedFontIndex, forKey: kUserdefaultsselectedFontIndex)
+        UserDefaults.standard.set(cuddlyModeProgressCount, forKey: kUserdefaultsCuddlyModeProgressCount)
         UserDefaults.standard.set(selectedAppAppearanceIndex, forKey: kUserdefaultsSelectedAppAppearanceIndex)
         UserDefaults.standard.set(isOfficeModeEnabled, forKey: kUserdefaultsOfficeModeEnabled)
         UserDefaults.standard.set(isCuddlyModeEnabled, forKey: kUserdefaultsCuddlyModeEnabled)

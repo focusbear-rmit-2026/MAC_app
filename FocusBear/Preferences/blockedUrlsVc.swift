@@ -14,13 +14,14 @@ class blockedUrlsVc: NSViewController {
     @IBOutlet weak var btnRemoveUrl: NSButton!
     @IBOutlet weak var lblTitle: NSTextField!
     @IBOutlet weak var tblView: NSTableView!
+    
+    let viewHeightDefault = 346
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
         lblTitle.stringValue = "Always Blocked URLs"
         tblView.doubleAction = #selector(tableRowAllowedUrlsDoubleClicked)
-//        blockedUrlsVcObj = self
-        
         lblSubTitle.stringValue = "\"Block these URLs even if you're not in a focus block. You might want to put social media or news sites that you would rather not use at any time. You can always set up an evening routine activity where you explicitly allow access to Facebook so that you can still stay connected - just not during your morning routine/work day.\""
         
         if let blockedUrlsViewInfo = configjson.value(forKey: "blockedUrlsViewInfo") as? NSDictionary{
@@ -40,7 +41,11 @@ class blockedUrlsVc: NSViewController {
         arrForSearchFromSettings.append(["title": lblTitle.stringValue, "tabId": idBlockedUrls, "object": lblTitle as Any])
     }
     override func viewWillAppear() {
-        preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: 630 + 46, height: 346 + 142))
+        if SettingsManagerObject.selectedFontIndex == intelOneMonoFontIndex || SettingsManagerObject.selectedFontIndex == openDyslexicFontIndex{
+            preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: (preferencesWindowControllerObj?.settingsTabDefaultWidthForBigFonts ?? 0) + (preferencesWindowControllerObj?.extraSpaceWidthInSettingsTab ?? 0), height: viewHeightDefault + (preferencesWindowControllerObj?.extraSpaceHeightInSettingsTab ?? 0)))
+        }else{
+            preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: (preferencesWindowControllerObj?.settingsTabDefaultWidth ?? 0) + (preferencesWindowControllerObj?.extraSpaceWidthInSettingsTab ?? 0), height: viewHeightDefault + (preferencesWindowControllerObj?.extraSpaceHeightInSettingsTab ?? 0)))
+        }
         tblView.reloadData()
     }
     override func viewWillDisappear() {

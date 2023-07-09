@@ -120,31 +120,48 @@ class smallCountDownVc: NSViewController {
         }
     }
     
+    
     func startTimerHabit(durationSeconds:Int, msg:String, currentTimerValue:Int) {
+        let lblTopSpaceInBigFont:CGFloat = 3
+        let lblTopSpaceInNormalFont:CGFloat = 10
+        let lblTopSpaceDefault:CGFloat = 15
         
         if (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_) && !isFocusBreak{
-            lblTimerTopSpaceConstraint.constant = 10
+            if SettingsManagerObject.selectedFontIndex == intelOneMonoFontIndex || SettingsManagerObject.selectedFontIndex == openDyslexicFontIndex{
+                lblTimerTopSpaceConstraint.constant = lblTopSpaceInBigFont
+            }else{
+                lblTimerTopSpaceConstraint.constant = lblTopSpaceInNormalFont
+            }
             btnPostpone.isHidden = false
             btnPostpone.title = "Postpone"
             if let common = configjson.value(forKey: "common") as? NSDictionary{
                 btnPostpone.title = common.value(forKey: "buttonPostponeText") as? String ?? btnPostpone.title
             }
         }else if currentState == ._FOCUS_SUMMARY_{
-            lblTimerTopSpaceConstraint.constant = 10
+            if SettingsManagerObject.selectedFontIndex == intelOneMonoFontIndex || SettingsManagerObject.selectedFontIndex == openDyslexicFontIndex{
+                lblTimerTopSpaceConstraint.constant = lblTopSpaceInBigFont
+            }else{
+                lblTimerTopSpaceConstraint.constant = lblTopSpaceInNormalFont
+            }
             btnPostpone.isHidden = false
             btnPostpone.title = "Back to my habits"
             if let common = configjson.value(forKey: "common") as? NSDictionary{
                 btnPostpone.title = common.value(forKey: "buttonBackToMyHabitsText") as? String ?? btnPostpone.title
             }
         }else if (currentState == ._POSTPON_MORNING_HABIT_ || currentState == ._POSTPON_EVENING_HABIT_) && !msg.isEmpty{
-            lblTimerTopSpaceConstraint.constant = 10
+            
+            if SettingsManagerObject.selectedFontIndex == intelOneMonoFontIndex || SettingsManagerObject.selectedFontIndex == openDyslexicFontIndex{
+                lblTimerTopSpaceConstraint.constant = lblTopSpaceInBigFont
+            }else{
+                lblTimerTopSpaceConstraint.constant = lblTopSpaceInNormalFont
+            }
             btnPostpone.isHidden = false
             btnPostpone.title = "Postpone"
             if let common = configjson.value(forKey: "common") as? NSDictionary{
                 btnPostpone.title = common.value(forKey: "buttonPostponeText") as? String ?? btnPostpone.title
             }
         }else{
-            lblTimerTopSpaceConstraint.constant = 15
+            lblTimerTopSpaceConstraint.constant = lblTopSpaceDefault
             btnPostpone.isHidden = true
         }
         self.view.window?.alphaValue = 1

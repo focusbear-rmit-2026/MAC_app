@@ -11,6 +11,7 @@ import Cocoa
 class brainDumpVc: NSViewController, NSTextViewDelegate {
 
     
+    @IBOutlet weak var btnSave: Button!
     @IBOutlet weak var lineTopSpace: NSLayoutConstraint!
     @IBOutlet var textViewWorkNote: NSTextView!
     @IBOutlet weak var lblTitleWorkNote: NSTextField!
@@ -39,8 +40,14 @@ class brainDumpVc: NSViewController, NSTextViewDelegate {
             titleWorkNoteSecond = brainDumpVcInfo.value(forKey: "titleWorkNoteSecond") as? String ?? titleWorkNoteSecond
             lblTitleWorkNote.stringValue = brainDumpVcInfo.value(forKey: "writeThingsHereText") as? String ?? lblTitleWorkNote.stringValue
         }
-//        lblTitleWorkNote.stringValue = titleWorkNoteFirst
         textViewIntention.delegate = self
+        btnSave.title = "Save"
+        
+        
+        if let focusPreferencesInfo = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
+            btnSave.title = focusPreferencesInfo.value(forKey: "buttonSaveText") as? String ?? btnSave.title
+        }
+        
     }
     override func viewWillAppear() {
         
@@ -201,5 +208,8 @@ class brainDumpVc: NSViewController, NSTextViewDelegate {
         DispatchQueue.main.async {
             self.setRemainingTime()
         }
+    }
+    @IBAction func btnSaveClicked(_ sender: Any) {
+        self.view.window?.close()
     }
 }

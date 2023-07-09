@@ -16,6 +16,7 @@ class abortingFocusModeVc: NSViewController {
     @IBOutlet weak var lblTitle: NSTextField!
     @IBOutlet weak var popUpBtnAbortReasons: NSPopUpButton!
     
+    
     var currentTimer = 0
     var totalDuration = 10
     var timer:Timer?
@@ -24,15 +25,15 @@ class abortingFocusModeVc: NSViewController {
     var arrReasons = ["I achieved what I wanted to too early.", "I have an emergency", "Focus mode is not working properly."]
     
     var focusName = ""
+    var reasonWorkCompletedText = ""
+    var reasonEmergencyText = ""
+    var reasonFocusModeNotWorkingText = ""
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
         lblQuestionFirst.stringValue = "Can you share why you're aborting?"
         popUpBtnAbortReasons.removeAllItems()
-        //        popUpBtnAbortReasons.addItem(withTitle: "Focus mode is not working properly.")
-        //        popUpBtnAbortReasons.addItem(withTitle: "I achieved what I wanted to too early.")
-        //        popUpBtnAbortReasons.addItem(withTitle: "I have an emergency")
-        
         btnCancel.title = "Cancel"
         btnAbortFocus.title = "Abort Focus"
         
@@ -66,20 +67,46 @@ class abortingFocusModeVc: NSViewController {
         }
         
         
-        popUpBtnAbortReasons.addItems(withTitles: arrReasons)
+        
         btnCancel.buttonColor = NSColor.white.cgColor
     }
     
     var currentReasonIndex = 0
     func ResetData(){
-        if currentReasonIndex < 2{
-            popUpBtnAbortReasons.selectItem(at: currentReasonIndex)
-            currentReasonIndex += 1
-        }else{
-            popUpBtnAbortReasons.selectItem(at: 2)
-            currentReasonIndex = 0
+        
+        
+        
+        if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
+            if let abortingFocusModeInfo = focusInfo.value(forKey: "abortingFocusModeInfo") as? NSDictionary{
+                if let reasons = abortingFocusModeInfo.value(forKey: "reasonsFirstText") as? String{
+                    reasonWorkCompletedText = reasons
+                }
+                if let reasons = abortingFocusModeInfo.value(forKey: "reasonsSecondText") as? String{
+                    reasonEmergencyText = reasons
+                }
+                if let reasons = abortingFocusModeInfo.value(forKey: "reasonsThirdText") as? String{
+                    reasonFocusModeNotWorkingText = reasons
+                }
+            }
+        }
+        
+        arrReasons.removeAll()
+        let arr = [1,2,3]
+        let randomIndex = Int(arc4random_uniform(UInt32(arr.count)))
+        let randomnumber = arr[randomIndex]
+        if randomnumber == 1{
+            arrReasons = [reasonWorkCompletedText, reasonEmergencyText, reasonFocusModeNotWorkingText]
+        }else if randomnumber == 2{
+            arrReasons = [reasonEmergencyText, reasonFocusModeNotWorkingText, reasonWorkCompletedText]
+        }else if randomnumber == 3{
+            arrReasons = [reasonFocusModeNotWorkingText, reasonWorkCompletedText, reasonEmergencyText]
         }
 
+        popUpBtnAbortReasons.removeAllItems()
+        popUpBtnAbortReasons.addItem(withTitle: "")
+        popUpBtnAbortReasons.addItems(withTitles: arrReasons)
+        popUpBtnAbortReasons.selectItem(at: 0)
+        
         var focusType = ""
         for i in 0..<arrFocusType.count{
             let focus = arrFocusType[i]
@@ -91,7 +118,7 @@ class abortingFocusModeVc: NSViewController {
         lblTitle.stringValue = titleText.replacingOccurrences(of: "<FOCUSTYPE>", with: focusType)//"Aborting Focus type - \(focusType)"
         
         if SettingsManagerObject.isEasySkipEnabled{
-            self.btnAbortFocus.isEnabled = true
+            self.btnAbortFocus.isEnabled = false
             self.lblSeconds.isHidden = true
         }else{
             startTimer()
@@ -146,8 +173,13 @@ class abortingFocusModeVc: NSViewController {
             self.timer?.invalidate()
             DispatchQueue.global().async {
                 DispatchQueue.main.async {
-                    self.btnAbortFocus.isEnabled = true
                     self.lblSeconds.isHidden = true
+                    
+                    if self.popUpBtnAbortReasons.titleOfSelectedItem == ""{
+                        self.btnAbortFocus.isEnabled = false
+                    }else{
+                        self.btnAbortFocus.isEnabled = true
+                    }
                 }
             }
         }
@@ -157,6 +189,16 @@ class abortingFocusModeVc: NSViewController {
             self.timer?.invalidate()
         }
         self.view.window?.close()
+    }
+    
+    @IBAction func popUpBtnAbortReasonsClicked(_ sender: Any) {
+        if popUpBtnAbortReasons.titleOfSelectedItem == ""{
+            self.btnAbortFocus.isEnabled = false
+        }else if lblSeconds.isHidden{
+            self.btnAbortFocus.isEnabled = true
+        }else{
+            self.btnAbortFocus.isEnabled = false
+        }
     }
     @IBAction func btnAbortFocusClicked(_ sender: Any) {
         addLog(text: "abortingFocusModeVc - btnAbortFocusClicked")//
@@ -168,13 +210,13 @@ class abortingFocusModeVc: NSViewController {
         let isAutoMeetingsModeStarted = appdelegate!.isAutoMeetingsModeStarted
         let appUsedInAutoMeetingFocusMode = appdelegate!.appUsedInAutoMeetingFocusMode
         var reason = ""
-        if popUpBtnAbortReasons.indexOfSelectedItem == 2{
+        if popUpBtnAbortReasons.titleOfSelectedItem == reasonFocusModeNotWorkingText{
             reason = "Focus mode is not working properly."
             appdelegate?.focusModeAborted()
-        }else if popUpBtnAbortReasons.indexOfSelectedItem == 0{
+        }else if popUpBtnAbortReasons.titleOfSelectedItem == reasonWorkCompletedText{
             reason = "I achieved what I wanted to too early."
-            appdelegate?.focusModeFinished(isSilent: false)
-        }else if popUpBtnAbortReasons.indexOfSelectedItem == 1{
+            appdelegate?.focusModeFinished(isSilent: false, isShutOffTime: false)
+        }else if popUpBtnAbortReasons.titleOfSelectedItem == reasonEmergencyText{
             reason = "I have an emergency"
             appdelegate?.focusModeAborted()
         }

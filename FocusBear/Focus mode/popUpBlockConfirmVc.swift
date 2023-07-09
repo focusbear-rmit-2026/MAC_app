@@ -10,6 +10,10 @@ import Cocoa
 
 class popUpBlockConfirmVc: NSViewController {
 
+    @IBOutlet weak var progressBar: NSProgressIndicator!
+    @IBOutlet weak var stackViewProgress: NSStackView!
+    @IBOutlet weak var btnInfoProgress: hoverInfoButton!
+    @IBOutlet weak var lblProgress: NSTextField!
     @IBOutlet weak var lblAi: NSTextField!
     @IBOutlet weak var lblIntention: NSTextField!
     @IBOutlet weak var btnEditSettings: Button!
@@ -32,7 +36,7 @@ class popUpBlockConfirmVc: NSViewController {
     var currentPid: pid_t?
     var timerHideAlert:Timer?
     var lastBlockReasonFromAi = ""
-//    var alertTimer:NSAlert?
+    let maxProgressCount = 50
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
@@ -51,6 +55,7 @@ class popUpBlockConfirmVc: NSViewController {
         
         btnAllow.buttonColor = NSColor.white.cgColor
         btnEditSettings.buttonColor = NSColor.white.cgColor
+        stackViewProgress.isHidden = true
     }
     
     func setTimerHideAlertFewSeconds(){
@@ -84,6 +89,14 @@ class popUpBlockConfirmVc: NSViewController {
         self.browser = browser
         self.currentPid = currentPid
         lastBlockReasonFromAi = ""
+        
+        if SettingsManagerObject.cuddlyModeProgressCount >= maxProgressCount{
+            stackViewProgress.isHidden = true
+        }else{
+            stackViewProgress.isHidden = false
+            lblProgress.stringValue = "\(SettingsManagerObject.cuddlyModeProgressCount) / \(maxProgressCount)"
+            progressBar.doubleValue = Double(SettingsManagerObject.cuddlyModeProgressCount)
+        }
         
         if isAnyAllowedFocusModeActivityRunning{
             if currentHabitPlaying != nil{
@@ -247,10 +260,6 @@ class popUpBlockConfirmVc: NSViewController {
         self.currentApp = currentApp
         currentAppName = blockedAppName
         startTimer(durationSeconds: 15)
-        
-        
-
-        
     }
     
     func startTimer(durationSeconds:Int) {
@@ -455,6 +464,12 @@ class popUpBlockConfirmVc: NSViewController {
         self.timer?.invalidate()
         self.view.window?.close()
         blurWcObj?.window?.close()
+        
+        if stackViewProgress.isHidden == false{
+            SettingsManagerObject.isSettingsChanged = true
+            SettingsManagerObject.cuddlyModeProgressCount = SettingsManagerObject.cuddlyModeProgressCount + 1
+            SettingsManagerObject.putUserLocalDeviceSettings()
+        }
     }
     
     @IBAction func btnAllowAppClicked(_ sender: Any) {
@@ -491,6 +506,12 @@ class popUpBlockConfirmVc: NSViewController {
             alert.addButton(withTitle: buttonOkText)
             alert.runModal()
         }
+        
+        if stackViewProgress.isHidden == false{
+            SettingsManagerObject.isSettingsChanged = true
+            SettingsManagerObject.cuddlyModeProgressCount = SettingsManagerObject.cuddlyModeProgressCount + 1
+            SettingsManagerObject.putUserLocalDeviceSettings()
+        }
     }
     
     func closeWindow(){
@@ -499,5 +520,12 @@ class popUpBlockConfirmVc: NSViewController {
         self.view.window?.close()
         blurWcObj?.window?.close()
     }
+    @IBAction func btnInfoProgressClicked(_ sender: Any) {
+        var messageText = "You're teaching Focus Bear what sites and apps are productive for you. It takes a bit of effort at first but within a few days, you'll have taught Focus Bear what apps and websites are productive."
+        if let popUpBlockConfirmVcInfo = configjson.value(forKey: "popUpBlockConfirmVcInfo") as? NSDictionary{
+            messageText = popUpBlockConfirmVcInfo.value(forKey: "progressInfoText") as? String ?? messageText
+        }
+        showTooltip(sender: btnInfoProgress, msg: messageText, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
+    }
 }
-//[NEEDSTRANSLATION]
+

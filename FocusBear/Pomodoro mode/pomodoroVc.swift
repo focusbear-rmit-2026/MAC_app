@@ -42,6 +42,7 @@ class pomodoroVc: NSViewController {
     
     var timerText = "Time spend unfocused: <TIME>"
     
+    let noItemSelectedIndex = -1
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
@@ -75,13 +76,7 @@ class pomodoroVc: NSViewController {
         btnLetsDoIt.title = "Let's do it"
         btnCheckBoxHardcodePomodoro.title = "Use hardcode pomodoro mode (lock in the focus mode for multiple pomodoros)"
         lblHowManyPomodoro.stringValue = "How many pomodoros you want to focus for:"
-        
-//        var minute = 25
-//        if let duration = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsPomodoroDurationMinutes) as? Int{
-//            minute = duration
-//        }
-        
-        
+
         
         if let pomodoroInfo = configjson.value(forKey: "pomodoroInfo") as? NSDictionary{
             if let title = pomodoroInfo.value(forKey: "title") as? String{
@@ -131,7 +126,7 @@ class pomodoroVc: NSViewController {
         
         lblCompletedPomodoroCount.isHidden = true
         whatToAchieveInFocusBlock = ""
-        appdelegate!.setIntensionInBrainDumpWindow()
+        appdelegate!.setIntentionInBrainDumpWindow()
         textViewAchieve.string = ""
         reFillFocusTypeList()
         if startingFocusWindowControllerObj?.window?.isVisible ?? false{
@@ -153,7 +148,7 @@ class pomodoroVc: NSViewController {
                popUpBtnFocusType.selectItem(withTitle: name)
            }
             
-            if popUpBtnFocusType.indexOfSelectedItem == -1{
+            if popUpBtnFocusType.indexOfSelectedItem == noItemSelectedIndex{//noItemSelectedIndex shows there is no item seleted so select at 0 index
                 popUpBtnFocusType.selectItem(at: 0)
             }
             
@@ -383,7 +378,7 @@ class pomodoroVc: NSViewController {
         }
         if isHardCorePomodoroModeOn{
             whatToAchieveInFocusBlock = textViewAchieve.string
-            appdelegate!.setIntensionInBrainDumpWindow()
+            appdelegate!.setIntentionInBrainDumpWindow()
             appdelegate!.setStatusBarButtonTitleForFocusMode(title: whatToAchieveInFocusBlock)
             self.view.window?.close()
             return;
@@ -477,7 +472,7 @@ class pomodoroVc: NSViewController {
             isSkipBreakActivityDuringPomodoro = false
         }
         whatToAchieveInFocusBlock = textViewAchieve.string
-        appdelegate!.setIntensionInBrainDumpWindow()
+        appdelegate!.setIntentionInBrainDumpWindow()
         appdelegate!.focusModeStartted()
 
         

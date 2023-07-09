@@ -7,7 +7,6 @@
 //
 
 import Cocoa
-//import JSONSchema
 import WebKit
 class selectJsonVc: NSViewController, NSTextViewDelegate, WKNavigationDelegate {
     
@@ -15,52 +14,22 @@ class selectJsonVc: NSViewController, NSTextViewDelegate, WKNavigationDelegate {
     @IBOutlet weak var boxWidthConstraint: NSLayoutConstraint!
     @IBOutlet weak var webview: WKWebView!
     @IBOutlet weak var customBox: NSBox!
-    @IBOutlet weak var loader: NSProgressIndicator!
-    @IBOutlet weak var btnCancel: cursorButton!
-    @IBOutlet weak var lblVisitUrl: NSTextField!
-    @IBOutlet weak var lblTitle: NSTextField!
-    @IBOutlet weak var btnSave: cursorButton!
-    @IBOutlet var textViewJson: NSTextView!
-    @IBOutlet weak var textscrollView: NSScrollView!
-    @IBOutlet weak var lblDescription: NSTextField!
-    @IBOutlet weak var btnAdvanced: NSButton!
-    @IBOutlet weak var btnEditSettings: NSButton!
+
+
+    var timer:Timer?
+    var currentTimer = 0
+    var totalDuration = 0
+    
+    let viewWidthDefault = 1000
+    let viewHeightDefault = 600
     
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
-        customBox.isHidden = false
-        btnCancel.isHidden = true
         selectJsonVcObj = self
-        textViewJson.delegate = self
-        textViewJson.font = NSFont(name: btnSave!.font?.familyName ?? "", size: 14)
-        lblTitle.stringValue = "Enter settings JSON below:"
-        lblVisitUrl.stringValue = "Visit focusbear.io/settings-generator to generate settings"
-        
-        btnSave.title = "Save"
-        btnEditSettings.title = "Edit Settings"
-        btnAdvanced.title = "Advanced"
-        lblDescription.stringValue = "Click on \"Edit Settings\" to modify your existing settings.\nIf you are an advanced user click on \"Advanced\" to view or edit settings JSON"
-        
-        
-        
+
         if let settings = configjson.value(forKey: "settings") as? NSDictionary{
-            if let title = settings.value(forKey: "title") as? String{
-                lblTitle.stringValue = title
-            }
-            if let buttonSaveText = settings.value(forKey: "buttonSaveText") as? String{
-                btnSave.title = buttonSaveText
-            }
-            
-            if let buttonEditSettingsText = settings.value(forKey: "buttonEditSettingsText") as? String{
-                btnEditSettings.title = buttonEditSettingsText
-            }
-            if let buttonAdvancedText = settings.value(forKey: "buttonAdvancedText") as? String{
-                btnAdvanced.title = buttonAdvancedText
-            }
-            if let description = settings.value(forKey: "description") as? String{
-               lblDescription.stringValue = description
-            }
+
             if let visitText = settings.value(forKey: "visitText") as? String, let settingUrl = settings.value(forKey: "settingUrl") as? String{
                 if visitText.localizedCaseInsensitiveContains("<SETTINGURL>"){
                     let paragraph = NSMutableParagraphStyle()
@@ -82,7 +51,6 @@ class selectJsonVc: NSViewController, NSTextViewDelegate, WKNavigationDelegate {
                             mainstr.append(str)
                         }
                     }
-                    lblVisitUrl.attributedStringValue = mainstr
                 }
             }
             
@@ -98,47 +66,14 @@ class selectJsonVc: NSViewController, NSTextViewDelegate, WKNavigationDelegate {
 
         let  fileURL = URL(string: url)
         self.webview.navigationDelegate = self
-//        webview!.loadFileURL(fileURL!, allowingReadAccessTo: fileURL!)
         let request = NSMutableURLRequest(url: fileURL!)
         webview!.load(request as URLRequest)
-        
-        
-        //1200/950
-//        boxWidthConstraint.constant = 500
-//        boxHeightConstraint.constant = 350
-        
-        textscrollView.isHidden = true
-        lblTitle.isHidden = true
-        lblVisitUrl.isHidden = true
-//        btnCancel.isHidden = true
-        btnSave.isHidden = true
-        customBox.isHidden = false
-        boxWidthConstraint.constant = 1000
-        boxHeightConstraint.constant = 600
-        lblDescription.isHidden = true
 
+        boxWidthConstraint.constant = CGFloat(viewWidthDefault)
+        boxHeightConstraint.constant = CGFloat(viewHeightDefault)
         webview.backgroundcolor = NSColor.clear
     }
-    @IBAction func btnOldViewClicked(_ sender: Any) {
-        customBox.isHidden = true
-        textscrollView.isHidden = false
-        lblTitle.isHidden = false
-        btnSave.isHidden = false
-        boxWidthConstraint.constant = 1000
-        boxHeightConstraint.constant = 600
-        lblDescription.isHidden = true
-    }
-    @IBAction func btnNewTabViewCicked(_ sender: Any) {
-        customBox.isHidden = false
-        textscrollView.isHidden = true
-        lblTitle.isHidden = true
-        lblVisitUrl.isHidden = true
-//        btnCancel.isHidden = true
-        btnSave.isHidden = true
-        boxWidthConstraint.constant = 1000
-        boxHeightConstraint.constant = 600
-        lblDescription.isHidden = true
-    }
+
     
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         DispatchQueue.global().async {
@@ -148,56 +83,15 @@ class selectJsonVc: NSViewController, NSTextViewDelegate, WKNavigationDelegate {
             }
         }
     }
-    override func viewDidAppear() {
-        
-    }
-    func setSettingsToWebView(){
-        let focusbearEnv = "focusbearEnv('mac');"
-        
-        webview?.evaluateJavaScript(focusbearEnv,completionHandler: { (html: Any?, error: Error?) in
-            print(html)
-        })
-        
-        //load settings
-        
-        var stringjson = ""
-        if let text = UserDefaults.standard.object(forKey: kUserdefaultsSelectedJson) as? String {
-            stringjson = text
-        }else {
-            if let path = Bundle.main.path(forResource: "settings", ofType: "json") {
-                let url = URL(fileURLWithPath: path)
-                do {
-                    
-                    let text2 = try String(contentsOf: url, encoding: .utf8)
-                    stringjson = text2
-                    //                    let data = try Data(contentsOf: url, options: .mappedIfSafe)
-                    //
-                    //                    do {
-                    //                        if let dicResult: NSDictionary = try JSONSerialization.jsonObject(with: data, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary {
-                    //                            jsonResult = dicResult
-                    //                            print(jsonResult)
-                    //
-                    //                        }
-                    //
-                    //                    }catch {
-                    //                        print(error)
-                    //                    }
-                    
-                } catch {
-                    // handle error
-                }
-                
-            }
-        }
 
+    
+    func setSettingsToWebView(){
+        let settingsJson = "{\"access_token\":\"\(appdelegate!.credential?.accessToken ?? "")\",\"platform\":\"mac\"}"
         
-        let stringJson1 = "{\"settings\": \(stringjson),\"metadata\": {\"access_token\": \"\(appdelegate!.credential?.accessToken ?? "")\"}}"
-        
-        let javascript = "loadSettingsData(\(stringJson1));"
+        let javascript = "loadSettingsData(\(settingsJson));"
         
         webview?.evaluateJavaScript(javascript,completionHandler: { (html: Any?, error: Error?) in
             print(error)
-            print("****error")
             print(html)
         })
         
@@ -271,211 +165,17 @@ class selectJsonVc: NSViewController, NSTextViewDelegate, WKNavigationDelegate {
        
         
     }
+    
+    
     override func viewWillAppear() {
-        preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: 1000, height: 600))
+        self.setSettingsToWebView()
+        preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: viewWidthDefault, height: viewHeightDefault))
         allApiObject.capturePosthog(event: "edit-habits", metadata: [:])
-        setData()
     }
-    
-    func setData(){
-        //        var jsonResult = NSDictionary()
-        
-        btnSave.isEnabled = false
-        if let text = UserDefaults.standard.object(forKey: kUserdefaultsSelectedJson) as? String {
-            textViewJson.string = text
-        }else {
-            if let path = Bundle.main.path(forResource: "settings", ofType: "json") {
-                let url = URL(fileURLWithPath: path)
-                do {
-                    
-                    let text2 = try String(contentsOf: url, encoding: .utf8)
-                    textViewJson.string = text2
-                    //                    let data = try Data(contentsOf: url, options: .mappedIfSafe)
-                    //
-                    //                    do {
-                    //                        if let dicResult: NSDictionary = try JSONSerialization.jsonObject(with: data, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary {
-                    //                            jsonResult = dicResult
-                    //                            print(jsonResult)
-                    //
-                    //                        }
-                    //
-                    //                    }catch {
-                    //                        print(error)
-                    //                    }
-                    
-                } catch {
-                    // handle error
-                }
-                
-            }
-        }
-        //        textViewJson.string = jsonResult.description
-    }
-    //    func jsonToString(json: AnyObject){
-    //        do {
-    //            let data1 =  try JSONSerialization.data(withJSONObject: json, options: JSONSerialization.WritingOptions.prettyPrinted) // first of all convert json to the data
-    //            let convertedString = String(data: data1, encoding: String.Encoding.utf8) // the data will be converted to the string
-    //            print(convertedString) // <-- here is ur string
-    //
-    //        } catch let myJSONError {
-    //            print(myJSONError)
-    //        }
-    //
-    //    }
-    //    @IBAction func btnLinkClicked(_ sender: Any) {
-    //        if let url = URL(string: "http://focusbear.io/settings-generator") {
-    //            NSWorkspace.shared.open(url)
-    //        }
-    //    }focusbear.io/settings-generator
-    
-   
-    @IBAction func btnCancelClicked(_ sender: Any) {
-        self.view.window?.close()
-    }
-    @IBAction func btnSaveClicked(_ sender: Any) {
 
-        isGettingSchema = true
-        btnSave.isEnabled = false
-//        btnCancel.isEnabled = false
-        loader.startAnimation(self)
-        var text = self.textViewJson.string.replacingOccurrences(of: "”", with: "\"")
-        text = text.replacingOccurrences(of: "“", with: "\"")
-        self.textViewJson.string = text
-        if let data = self.textViewJson.string.data(using: String.Encoding.utf8) {
-            
-            do {
-                let jsonResult:NSDictionary = try (JSONSerialization.jsonObject(with: data, options: []) as? NSDictionary ?? [:])
-                
-                allApiObject.isSettingsValid(settings: jsonResult, completionHandler: {dic,statusCode  in
-                    DispatchQueue.main.async {
-                        isGettingSchema = false
-                        self.btnSave.isEnabled = true
-        //                self.btnCancel.isEnabled = true
-                        self.loader.stopAnimation(self)
-                        
-                        if dic == nil && statusCode == 0{
-                            let alert = NSAlert()
-                            alert.setSharingType()
-                            alert.alertStyle = .informational
-                            
-                            var schemaError = "Your settings cannot be validated."
-                            var buttonOkText = "OK"
-                            if let settings = configjson.value(forKey: "settings") as? NSDictionary{
-                                schemaError = settings.value(forKey: "schemaError") as? String ?? schemaError
-                                buttonOkText = settings.value(forKey: "buttonOkText") as? String ?? buttonOkText
-                            }
-                            alert.messageText = schemaError
-                            alert.addButton(withTitle: buttonOkText)
-                            
-                            alert.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
-                                if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
-                                }
-                                
-                                
-                            })
-                        }else{
-                            
-                            if statusCode == 200{
-
-                                
-                                do {
-                                    let jsonResultData =  try JSONSerialization.data(withJSONObject: dic!, options: JSONSerialization.WritingOptions.prettyPrinted)
-                                    
-                                    print(jsonResultData)
-                                    
-                                    if let backToString = String(data: jsonResultData, encoding: String.Encoding.utf8){
-                                        UserDefaults.standard.set(backToString, forKey: kUserdefaultsSelectedJson)
-                                        appdelegate?.quitAndRestartApp()
-                                    }
-                                    
-                                    
-                                } catch let myJSONError {
-                                    print(myJSONError)
-                                }
-                                
-                            }else{
-                                
-                                
-                                let alert = NSAlert()
-                                alert.setSharingType()
-                                alert.alertStyle = .informational
-                                
-                                var settingIsNotValidText = "Sorry it seems like your settings aren’t valid. Please generate settings at focusbear.io/settings"
-                                var buttonOkText = "OK"
-                                if let settings = configjson.value(forKey: "settings") as? NSDictionary{
-                                    settingIsNotValidText = settings.value(forKey: "settingIsNotValidText") as? String ?? settingIsNotValidText
-                                    buttonOkText = settings.value(forKey: "buttonOkText") as? String ?? buttonOkText
-                                }
-                                
-                                alert.messageText = settingIsNotValidText
-                                if let message = dic?.value(forKey: "message") as? NSArray{
-                                    alert.informativeText = "\(message)"
-                                }
-                                
-                                alert.addButton(withTitle: buttonOkText)
-                                
-                                //let buttons = alertremoveitem.buttons
-                                // alertremoveitem.beginSheetModal(for: self.window!, completionHandler: nil)
-                                alert.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
-                                    if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
-                                        self.setData()
-                                    }
-                                    
-                                    
-                                })
-                                
-                            }
-                            
-                        }
-                    }
-                })
-                
-            } catch let error as NSError {
-                isGettingSchema = false
-                self.btnSave.isEnabled = true
-                self.loader.stopAnimation(self)
-                let alert = NSAlert()
-                alert.setSharingType()
-                alert.alertStyle = .informational
-                
-                var schemaError = "Your settings cannot be validated."
-                var buttonOkText = "OK"
-                if let settings = configjson.value(forKey: "settings") as? NSDictionary{
-                    schemaError = settings.value(forKey: "schemaError") as? String ?? schemaError
-                    buttonOkText = settings.value(forKey: "buttonOkText") as? String ?? buttonOkText
-                }
-                alert.messageText = schemaError
-                alert.addButton(withTitle: buttonOkText)
-                alert.informativeText = error.localizedDescription
-                alert.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
-                    if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
-                    }
-                    
-                    self.setData()
-                })
-                print(error)
-            }
-            
-        }
-        
-        
-        
-//        
-//        Vishnu Sharma
-//        WTLVishnu45
-        
-        //  } catch let error as NSError {
-        //     print(error)
-        // }
-        //   }
-        
-        
-    }
     var alertSettingChanged:NSAlert?
 
     func jsonReceivedFromWebView(jsonResult: NSDictionary){
-        
-        
         isGettingSchema = true
         
         allApiObject.isSettingsValid(settings: jsonResult, completionHandler: {dic,statusCode  in
@@ -518,7 +218,6 @@ class selectJsonVc: NSViewController, NSTextViewDelegate, WKNavigationDelegate {
                         }
                         
                         self.alertSettingChanged!.messageText = settingIsValidText
-//                        self.alertSettingChanged!.informativeText = "00:15"
                         self.alertSettingChanged!.addButton(withTitle: buttonOkText)
                         
                         self.startTimer(durationSeconds: 15)
@@ -582,9 +281,7 @@ class selectJsonVc: NSViewController, NSTextViewDelegate, WKNavigationDelegate {
         })
         
     }
-    var timer:Timer?
-    var currentTimer = 0
-    var totalDuration = 0
+    
     func startTimer(durationSeconds:Int) {
         if timer != nil{
             timer?.invalidate()
@@ -654,25 +351,12 @@ class selectJsonVc: NSViewController, NSTextViewDelegate, WKNavigationDelegate {
     }
 
     @objc func performTimerCount() {
-
         currentTimer += 1 
         setProgres()
-        
     }
     
-    func textDidChange(_ notification: Notification) {
-        guard let textView = notification.object as? NSTextView else {
-            return
-        }
-        if textView == textViewJson {
-            if textViewJson.string.isEmpty {
-                btnSave.isEnabled = false
-            }else {
-                btnSave.isEnabled = true
-            }
-        }
-    }
 }//user-edited-settings
+
 class MessageHandler: NSObject, WKScriptMessageHandler {
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
 //        print(message.body)
@@ -717,43 +401,10 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
 
         }else if message.name == "user_edited_settings"{
             
-//            if let data = (message.body as? String ?? "").data(using: String.Encoding.utf8) {
-//
-//                do {
-//                    let jsonResult:NSDictionary = try (JSONSerialization.jsonObject(with: data, options: []) as? NSDictionary ?? [:])
-//                    print(jsonResult)
-//
-////                    selectJsonVcObj?.jsonReceivedFromWebView(jsonResult: jsonResult)
-//
-//                    isSettingsChanged = true
-//                }
-//                catch{
-//
-//                }
-//            }
             
             
         }
         
-        
-        
-        
-        //        if message.body as? String ?? "" == "setting_saved"{
-        //            print("correct")
-        //        }
-        
     }
 }
-
-//func makeWebView() -> WKWebView {
-////    let preferences = WKPreferences()
-////    preferences.javaScriptEnabled = true
-//    let handler = MessageHandler()
-//    let configuration = WKWebViewConfiguration()
-//    configuration.userContentController.add(handler, name: "setting_saved")
-//    configuration.preferences.javaScriptEnabled = true// = preferences
-//    return WKWebView(frame: .zero, configuration: configuration)
-//}
-
-
 

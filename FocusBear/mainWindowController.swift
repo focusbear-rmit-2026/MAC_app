@@ -9,7 +9,10 @@
 import Cocoa
 
 class mainWindowController: NSWindowController, NSWindowDelegate {
-
+    
+    let smallWindowMinWidth = 1371
+    let smallWindowMinHeight = 768
+    
     override func windowDidLoad() {
         super.windowDidLoad()
         
@@ -18,19 +21,17 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
         }else{
             showSmallSizeWindow()
         }
-        
-
         if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
             if state{
                 self.window?.sharingType = .none
             }
         }
-
+        
         self.window?.appearance = getAppAppearance()
         
         self.contentViewController =  mainViewControllerObj
     }
-
+    
     
     func showFullSizeWindow(){
         window!.collectionBehavior = NSWindow.CollectionBehavior.canJoinAllSpaces          // we want these
@@ -41,7 +42,7 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
         window!.animationBehavior = .none
         window!.styleMask = .borderless
         window!.backingType = .buffered
-        self.window?.minSize = NSSize(width: 900, height: 500)
+        self.window?.minSize = NSSize(width: 900, height: 500)// unused
         self.window?.title = ""
         self.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.numberOfWindowLevelKeys)))
         
@@ -59,22 +60,18 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
     }
     
     func showSmallSizeWindow(){
-//        return;
         window!.isRestorable = true
         window!.collectionBehavior = [.fullScreenAllowsTiling, .fullScreenPrimary]
-        self.window?.styleMask = [.resizable, .titled]//
-        self.window?.minSize = NSSize(width: 1371, height: 768)//
+        self.window?.styleMask = [.resizable, .titled]
+        self.window?.minSize = NSSize(width: smallWindowMinWidth, height: smallWindowMinHeight)
         window!.isExcludedFromWindowsMenu = false
         self.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.floatingWindow)))
         self.window?.title = appName
-
+        
         if isMainWindowLodded{
             mainViewControllerObj!.boxTopButtons.isHidden = true
             mainViewControllerObj!.dateTimeTimer?.invalidate()
             mainViewControllerObj!.lblCurrentDateTime.isHidden = true
-//            if self.window?.isVisible ?? false{
-//                mainViewControllerObj?.setframe()
-//            }
             if mainViewControllerObj?.btnAbort.isHidden ?? false{
                 self.window?.styleMask.remove(.closable)
             }else{

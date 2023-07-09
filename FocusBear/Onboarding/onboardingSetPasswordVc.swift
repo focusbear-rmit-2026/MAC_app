@@ -29,16 +29,15 @@ class onboardingSetPasswordVc: NSViewController {
     
     @IBOutlet weak var lblQuestionPassword: NSTextField!
     @IBOutlet weak var lblTitleAskPassword: NSTextField!
-//    @IBOutlet weak var btnDisablePassword: NSButton!
     @IBOutlet weak var lblConfirmPassword: NSTextField!
     @IBOutlet weak var lblNewPassword: NSTextField!
-//    @IBOutlet weak var lblPasswordState: NSTextField!
-//    @IBOutlet weak var lblInfo: NSTextField!
     @IBOutlet weak var btnChangePassword: NSButton!
     @IBOutlet weak var textFieldNewPassword: NSSecureTextField!
     @IBOutlet weak var textFieldConfirmPassword: NSSecureTextField!
     @IBOutlet weak var lblTitle: NSTextField!
     
+    @IBOutlet weak var checkBoxSavedPassword: NSButton!
+    @IBOutlet weak var lblCheckBoxSavedPassword: ignoreMouseTextField!
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -55,22 +54,13 @@ class onboardingSetPasswordVc: NSViewController {
         
         btnContinue.title = "Continue"
         
+        lblCheckBoxSavedPassword.stringValue = "I've saved the password somewhere safe"
         if let chooseFrictionLevelVcInfo = configjson.value(forKey: "chooseFrictionLevelVcInfo") as? NSDictionary{
             btnContinue.title = chooseFrictionLevelVcInfo.value(forKey: "buttonContinueText") as? String ?? btnContinue.title
         }
-        
-       // btnDisablePassword.title = "Disable Password"
-//        lblInfo.stringValue = "You will need to enter your password - When opening preferences, When aborting an evening routine, When aborting the morning routine."
-        
+
         lblCheckBoxSkipEveningHabitAfterCutOff.stringValue = "Postponing/skipping evening routine after cutoff time"
         if let passwordPreferencesInfo = configjson.value(forKey: "passwordPreferencesInfo") as? NSDictionary{
-//            if let title = passwordPreferencesInfo.value(forKey: "infoText") as? String{
-//                lblInfo.stringValue = title
-//            }
-//            if let title = passwordPreferencesInfo.value(forKey: "buttonDisablePasswordText") as? String{
-//                //btnDisablePassword.title = title
-//            }
-            
             lblTitleAskPassword.stringValue = passwordPreferencesInfo.value(forKey: "titleAskPassword") as? String ?? lblTitleAskPassword.stringValue
             lblQuestionPassword.stringValue = passwordPreferencesInfo.value(forKey: "questionPassword") as? String ?? lblQuestionPassword.stringValue
             lblCheckBoxQuitApp.stringValue = passwordPreferencesInfo.value(forKey: "buttonQuitAppText") as? String ?? lblCheckBoxQuitApp.stringValue
@@ -80,9 +70,12 @@ class onboardingSetPasswordVc: NSViewController {
             lblCheckBoxSkipMorningHabit.stringValue = passwordPreferencesInfo.value(forKey: "buttonSkipMorningHabitText") as? String ?? lblCheckBoxSkipMorningHabit.stringValue
             lblCheckBoxChangeSettings.stringValue = passwordPreferencesInfo.value(forKey: "buttonChangeSettingsText") as? String ?? lblCheckBoxChangeSettings.stringValue
             lblCheckBoxSkipEveningHabitAfterCutOff.stringValue = passwordPreferencesInfo.value(forKey: "buttonSkipEveningHabitAfterCutOffText") as? String ?? lblCheckBoxSkipEveningHabitAfterCutOff.stringValue
+            lblCheckBoxSavedPassword.stringValue = passwordPreferencesInfo.value(forKey: "buttonSavedPasswordText") as? String ?? lblCheckBoxSavedPassword.stringValue
         }
 
-    
+        checkBoxSavedPassword.isHidden = true
+        lblCheckBoxSavedPassword.isHidden = true
+        btnContinue.isEnabled = true
     }
     
 
@@ -138,9 +131,6 @@ class onboardingSetPasswordVc: NSViewController {
             btnChangePassword.title = "Change Password"
             textFieldNewPassword.placeholderString = "*****"
             textFieldConfirmPassword.placeholderString = "*****"
-           // lblPasswordState.stringValue = "You have an active password set."
-            
-//            btnDisablePassword.isHidden = false
             if let passwordPreferencesInfo = configjson.value(forKey: "passwordPreferencesInfo") as? NSDictionary{
                 if let titleChangePassword = passwordPreferencesInfo.value(forKey: "titleChangePassword") as? String{
                     lblTitle.stringValue = titleChangePassword
@@ -148,10 +138,6 @@ class onboardingSetPasswordVc: NSViewController {
                 if let buttonChangePasswordText = passwordPreferencesInfo.value(forKey: "buttonChangePasswordText") as? String{
                     btnChangePassword.title = buttonChangePasswordText
                 }
-                if let passwordSetText = passwordPreferencesInfo.value(forKey: "passwordSetText") as? String{
-                   // lblPasswordState.stringValue = passwordSetText
-                }
-                
                 if let newPasswordPlaceholderText = passwordPreferencesInfo.value(forKey: "newPasswordPlaceholderText") as? String{
                     lblNewPassword.stringValue = newPasswordPlaceholderText
                 }
@@ -249,54 +235,14 @@ class onboardingSetPasswordVc: NSViewController {
         }
     }
     
+    @IBAction func checkBoxSavedPasswordClicked(_ sender: Any) {
+        if checkBoxSavedPassword.state == .on{
+            btnContinue.isEnabled = true
+        }else{
+            btnContinue.isEnabled = false
+        }
+    }
     
-    
-    
-    
-    
-//    @IBAction func btnDisablePasswordClicked(_ sender: Any) {
-//
-//        var alert: NSAlert = NSAlert()
-//        alert.setSharingType()
-//        alert.messageText = "Are you sure you want to disable your password?"
-//        if let passwordPreferencesInfo = configjson.value(forKey: "passwordPreferencesInfo") as? NSDictionary{
-//            if let passwordDisableAskText = passwordPreferencesInfo.value(forKey: "passwordDisableAskText") as? String{
-//                alert.messageText = passwordDisableAskText
-//            }
-//        }
-//        alert.informativeText = ""
-//        alert.alertStyle = NSAlert.Style.warning
-//        alert.addButton(withTitle: buttonYesText)
-//        alert.addButton(withTitle: buttonNoText)
-//        alert.beginSheetModal(for: view.window!, completionHandler: { (modalResponse) in
-//            if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
-//                print("okclicked")
-//                UserDefaults.standard.removeObject(forKey: SettingsManagerObject.kUserdefaultsAppPassword)
-//                SettingsManagerObject.isSettingsChanged = true
-//                SettingsManagerObject.putUserLocalDeviceSettings()
-//                self.resetView()
-//                allApiObject.capturePosthog(event: "disable-password", metadata: [:])
-//                alert = NSAlert()
-//                alert.setSharingType()
-//                alert.messageText = "Your password has been disabled."
-//                if let passwordPreferencesInfo = configjson.value(forKey: "passwordPreferencesInfo") as? NSDictionary{
-//                    if let passwordDisableDoneText = passwordPreferencesInfo.value(forKey: "passwordDisableDoneText") as? String{
-//                        alert.messageText = passwordDisableDoneText
-//                    }
-//                }
-//                alert.informativeText = ""
-//                alert.alertStyle = NSAlert.Style.warning
-//                alert.addButton(withTitle: buttonOkText)
-//
-//                alert.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
-//                    if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
-//                        print("okclicked")
-//                        // self.txtFieldEmail.stringValue = ""
-//                    }
-//                })
-//            }
-//        })
-//    }
     
     @IBAction func btnChangePasswordClicked(_ sender: Any) {
 
@@ -353,6 +299,10 @@ class onboardingSetPasswordVc: NSViewController {
             UserDefaults.standard.set(base64password, forKey: kUserdefaultsPasswordSetInOnboarding)
             resetView()
             allApiObject.capturePosthog(event: "change-password", metadata: [:])//
+            checkBoxSavedPassword.isHidden = false
+            lblCheckBoxSavedPassword.isHidden = false
+            checkBoxSavedPassword.state = .off
+            btnContinue.isEnabled = false
         }else{
             var passwordNotMatchAlertTitle = "Passwords do not match."
             var passwordNotMatchAlertSubTitle = "Confirm Password does not match with the main password. Please re enter."

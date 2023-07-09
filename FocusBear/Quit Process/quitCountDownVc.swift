@@ -67,9 +67,11 @@ class quitCountDownVc: NSViewController {
     override func viewWillAppear() {
         if SettingsManagerObject.kIsReducedMotion{
             imgViewGif.image = nil
+            imgViewGif.isHidden = true
         }else{
             imgViewGif.image = NSImage(named: "Crying_small")
             imgViewGif.animates = true
+            imgViewGif.isHidden = false
         }
     }
     override func viewWillDisappear() {

@@ -39,15 +39,22 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
     @IBOutlet weak var boxEmergency: NSBox!
     @IBOutlet weak var popUpBtnReasons: NSPopUpButton!
     @IBOutlet weak var imgViewGif: NSImageView!
-    //    @IBOutlet weak var lblConfirmAbort: NSTextField!
-//    @IBOutlet weak var btnAbortCancel: NSButton!
-//    @IBOutlet weak var textField: NSTextField!
-    
+
     var currentTimer = 0
     var totalDuration = 10
     var timer:Timer?
     var descriptionNewOptions = "Restoring access immediately and cancelling habits for next 4 hours.. Your normal routine will resume after that."
     var allReasons = [String]()
+    
+    let emergencyReasonIndex = 1
+    let brokenAppReasonIndex = 2
+    let habitsTooHardReasonIndex = 3
+    let haveMeetingReasonIndex = 4
+    let someOneElseReasonIndex = 5
+    let appAnnoyingReasonIndex = 6
+    let wantToRelaxReasonIndex = 7
+    let somethingElseReasonIndex = 8
+    
     override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -175,7 +182,7 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
             
         }
         allReasons = [dropDown_0_Title,dropDown_1_Title, dropDown_2_Title, dropDown_3_Title, dropDownMeeting, dropDownSomeOneElse, dropDownAnnoying, dropDownRelax, dropDown_4_Title]
-        
+
         popUpBtnReasons.removeAllItems()
         
         popUpBtnReasons.addItems(withTitles: allReasons)
@@ -197,8 +204,6 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
         boxSomethingElse.isHidden = true
         popUpBtnReasons.isEnabled = true
         popUpBtnReasons.selectItem(at: 0)
-//        self.textField.stringValue = ""
-//        lblConfirmAbort.isHidden = true
         btnDeactivateAppBroken.isEnabled = false
         lblTimerEmergency.stringValue = "00:05"
 
@@ -209,7 +214,7 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
             return
         }
         if textView == textViewAppBroken{
-            if popUpBtnReasons.indexOfSelectedItem == 2 || popUpBtnReasons.indexOfSelectedItem == 6{
+            if popUpBtnReasons.indexOfSelectedItem == brokenAppReasonIndex || popUpBtnReasons.indexOfSelectedItem == appAnnoyingReasonIndex{
                 if textView.string.isEmpty{
                     btnDeactivateAppBroken.isEnabled = false
                 }else{
@@ -217,7 +222,7 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
                 }
             }
         }else if textView == textViewSomethingElse{
-            if popUpBtnReasons.indexOfSelectedItem == 8{
+            if popUpBtnReasons.indexOfSelectedItem == somethingElseReasonIndex{
                 if textView.string.isEmpty{
                     btnDeactivate_boxSomethingElse.isEnabled = false
                 }else{
@@ -226,22 +231,7 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
             }
         }
     }
-//    func controlTextDidChange(_ obj: Notification) {
-//        if let textField = obj.object as? NSTextField{
-//            if textField == self.textField{
-//                if textField.stringValue == "igiveuponmymorningroutine"{
-//                    btnAbortCancel.isHidden = true
-//                    lblConfirmAbort.isHidden = false
-//                    self.perform(#selector(abortDone), with: nil, afterDelay: 3)
-//                }
-//            }
-//        }
-//    }
-//    @objc func abortDone(){
-//        mainViewControllerObj?.showAbortDoneView()
-//    }
-//    @IBAction func btnAbortCancelClicked(_ sender: Any) {
-//    }
+
     @IBAction func popUpBtnReasonsClicked(_ sender: Any) {
         let index = popUpBtnReasons.indexOfSelectedItem
         switch index {
@@ -339,7 +329,7 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
             RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
         }
         
-        if popUpBtnReasons.indexOfSelectedItem == 1{
+        if popUpBtnReasons.indexOfSelectedItem == emergencyReasonIndex{
             if lastCurrentState == ._MORNING_HABIT_{
                 allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"morning_routine", "deactivate-reason":"I've got an emergency"])
             }else if lastCurrentState == ._EVENING_HABIT_{
@@ -347,7 +337,7 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
             }else if lastCurrentState == ._ACTIVITY_{
                 allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"break_activity", "deactivate-reason":"I've got an emergency"])
             }
-        }else if popUpBtnReasons.indexOfSelectedItem == 4{
+        }else if popUpBtnReasons.indexOfSelectedItem == haveMeetingReasonIndex{
             if lastCurrentState == ._MORNING_HABIT_{
                 allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"morning_routine", "deactivate-reason":"I have a meeting"])
             }else if lastCurrentState == ._EVENING_HABIT_{
@@ -355,7 +345,7 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
             }else if lastCurrentState == ._ACTIVITY_{
                 allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"break_activity", "deactivate-reason":"I have a meeting"])
             }
-        }else if popUpBtnReasons.indexOfSelectedItem == 5{
+        }else if popUpBtnReasons.indexOfSelectedItem == someOneElseReasonIndex{
             if lastCurrentState == ._MORNING_HABIT_{
                 allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"morning_routine", "deactivate-reason":"Someone else is using my computer"])
             }else if lastCurrentState == ._EVENING_HABIT_{
@@ -363,7 +353,7 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
             }else if lastCurrentState == ._ACTIVITY_{
                 allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"break_activity", "deactivate-reason":"Someone else is using my computer"])
             }
-        }else if popUpBtnReasons.indexOfSelectedItem == 7{
+        }else if popUpBtnReasons.indexOfSelectedItem == wantToRelaxReasonIndex{
             if lastCurrentState == ._MORNING_HABIT_{
                 allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"morning_routine", "deactivate-reason":"I want to relax for a while without restrictions"])
             }else if lastCurrentState == ._EVENING_HABIT_{
@@ -413,13 +403,13 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
                     }
                     
 
-                    if self.popUpBtnReasons.indexOfSelectedItem == 1{
+                    if self.popUpBtnReasons.indexOfSelectedItem == self.emergencyReasonIndex{
                         addEntryInStatsCsv(logType: logType, activity: activity, durationInSeconds: "", quantityQuestion: "", quantityLogged: "", startTime: "", workAchieved: "", distractionsEncountered: "", abortReason: "I've got an emergency", feedback: "")
-                    }else if self.popUpBtnReasons.indexOfSelectedItem == 4{
+                    }else if self.popUpBtnReasons.indexOfSelectedItem == self.haveMeetingReasonIndex{
                         addEntryInStatsCsv(logType: logType, activity: activity, durationInSeconds: "", quantityQuestion: "", quantityLogged: "", startTime: "", workAchieved: "", distractionsEncountered: "", abortReason: "I have a meeting", feedback: "")
-                    }else if self.popUpBtnReasons.indexOfSelectedItem == 5{
+                    }else if self.popUpBtnReasons.indexOfSelectedItem == self.someOneElseReasonIndex{
                         addEntryInStatsCsv(logType: logType, activity: activity, durationInSeconds: "", quantityQuestion: "", quantityLogged: "", startTime: "", workAchieved: "", distractionsEncountered: "", abortReason: "Someone else is using my computer", feedback: "")
-                    }else if self.popUpBtnReasons.indexOfSelectedItem == 7{
+                    }else if self.popUpBtnReasons.indexOfSelectedItem == self.wantToRelaxReasonIndex{
                         addEntryInStatsCsv(logType: logType, activity: activity, durationInSeconds: "", quantityQuestion: "", quantityLogged: "", startTime: "", workAchieved: "", distractionsEncountered: "", abortReason: "I want to relax for a while without restrictions", feedback: "")
                     }
                     
@@ -432,8 +422,9 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
         }
     }
     @IBAction func btnDeactivateAppBrokenClicked(_ sender: Any) {
-        addLog(text: "btnDeactivateAppBrokenClicked")//
-        if self.popUpBtnReasons.indexOfSelectedItem == 2{
+        
+        if self.popUpBtnReasons.indexOfSelectedItem == brokenAppReasonIndex{
+            addLog(text: "btnDeactivateAppBrokenClicked")//
             if lastCurrentState == ._MORNING_HABIT_{
                 allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"morning_routine", "deactivate-reason":"The app is broken", "detailed-reason":textViewAppBroken.string])
             }else if lastCurrentState == ._EVENING_HABIT_{
@@ -442,13 +433,48 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
                 allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"break_activity", "deactivate-reason":"The app is broken", "detailed-reason":textViewAppBroken.string])
             }
             
+            let alert: NSAlert = NSAlert()
+            alert.setSharingType()
+            alert.messageText = "Do you want to upload the logs to our server for us to review what was broken?"
+            if let common = configjson.value(forKey: "common") as? NSDictionary{
+                alert.messageText = common.value(forKey: "alertUploadLogText") as? String ?? alert.messageText
+            }
+            let yesText = buttonYesText
+            let noText = buttonNoText
             
-            allApiObject.getAbortJsonToUpload(emailAddress: currentUserEmail, feedback: textViewAppBroken.string, abortReason: "The app is broken", completionHandler: {dic in
-                DispatchQueue.main.async {
-                    mainViewControllerObj?.showAbortDoneView()
+            alert.alertStyle = NSAlert.Style.warning
+            alert.addButton(withTitle: yesText)
+            alert.addButton(withTitle: noText)
+
+
+            alert.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
+                if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
+                    print("okclicked")
+                    addLog(text: "btn Upload logs alert yes Clicked")//
+                    
+                    self.view.addSubview(getLogsUploadingVcObjObj().view)
+                    self.view.addConstraints(subView: getLogsUploadingVcObjObj().view)
+                    allApiObject.uploadAppLogs(completionHandler: {json in 
+                        DispatchQueue.main.async {
+                            getLogsUploadingVcObjObj().view.removeFromSuperview()
+                            allApiObject.getAbortJsonToUpload(emailAddress: currentUserEmail, feedback: self.textViewAppBroken.string, abortReason: "The app is broken", completionHandler: {dic in
+                                DispatchQueue.main.async {
+                                    mainViewControllerObj?.showAbortDoneView()
+                                }
+                            })
+                        }
+                    })
+                }else{
+                    allApiObject.getAbortJsonToUpload(emailAddress: currentUserEmail, feedback: self.textViewAppBroken.string, abortReason: "The app is broken", completionHandler: {dic in
+                        DispatchQueue.main.async {
+                            mainViewControllerObj?.showAbortDoneView()
+                        }
+                    })
                 }
             })
-        }else if self.popUpBtnReasons.indexOfSelectedItem == 6{
+            
+        }else if self.popUpBtnReasons.indexOfSelectedItem == appAnnoyingReasonIndex{
+            addLog(text: "btnFocusBearannoyingClicked")//
             if lastCurrentState == ._MORNING_HABIT_{
                 allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"morning_routine", "deactivate-reason":"I'm finding Focus Bear annoying", "detailed-reason":textViewAppBroken.string])
             }else if lastCurrentState == ._EVENING_HABIT_{
@@ -630,15 +656,8 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
         }
         
         addEntryInStatsCsv(logType: logType, activity: activity, durationInSeconds: "", quantityQuestion: "", quantityLogged: "", startTime: "", workAchieved: "", distractionsEncountered: "", abortReason: "Something else", feedback: textViewSomethingElse.string)
-        
-        
+            
         mainViewControllerObj?.showAbortDoneView()
-//        getAbortJsonToUpload(emailAddress: textFieldEmail_SomethingELse.stringValue, feedback: textViewSomethingElse.string, abortReason: "Something else", completionHandler: {dic in
-//            DispatchQueue.main.async {
-//                mainViewControllerObj?.showAbortDoneView()
-//            }
-//        })
-        
     }
 }
 

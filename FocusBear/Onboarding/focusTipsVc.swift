@@ -10,6 +10,7 @@ import Cocoa
 
 class focusTipsVc: NSViewController {
 
+    @IBOutlet weak var heightBoxBg: NSLayoutConstraint!
     @IBOutlet weak var imgViewAppIcon: NSImageView!
     @IBOutlet weak var boxSmall_slide0: NSBox!
     @IBOutlet weak var boxSmall_slide1: NSBox!
@@ -80,7 +81,11 @@ class focusTipsVc: NSViewController {
     }
     
     override func viewWillAppear() {
-        
+        if SettingsManagerObject.selectedFontIndex == intelOneMonoFontIndex || SettingsManagerObject.selectedFontIndex == openDyslexicFontIndex{
+            heightBoxBg.constant = 660
+        }else{
+            heightBoxBg.constant = 600
+        }
         currentSlideIndex = 0
         recheckSlideState()
     }

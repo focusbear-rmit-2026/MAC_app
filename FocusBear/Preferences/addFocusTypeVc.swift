@@ -22,7 +22,6 @@ class addFocusTypeVc: NSViewController, NSTextFieldDelegate  {
     
 //    var isAdding = true
     var buttonAddText = "Add"
-//    var buttonSaveText = "Save"
     var titleAddFocusType = "Add Focus Type"
 //    var titleEditFocusType = "Edit Focus Type"
     

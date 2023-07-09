@@ -201,29 +201,6 @@ class rememberNextHabitVc: NSViewController, NSTextFieldDelegate {
         }
     }
     
-    @IBAction func popupBtnHabitsClicked(_ sender: Any) {
-        //        if popupBtnHabits.indexOfSelectedItem == 0{
-        //            return
-        //        }
-        //        let index = popupBtnHabits.indexOfSelectedItem - 1
-        //
-        //        var nextHabit:habit?
-        ////        var selectedHabit:habit?
-        //        if currentState == ._MORNING_HABIT_{
-        //            nextHabit = arrFilteredMorningHabits[nextHabitIndex]
-        //        }else if currentState == ._EVENING_HABIT_{
-        //            nextHabit = arrFilteredEveningHabits[nextHabitIndex]
-        //        }
-        //        if arrHabitNames[index] == nextHabit?.name{
-        //            lblSelectionResult.stringValue = arrRandomPhraseRightChoice.randomElement() ?? ""
-        //        }else{
-        //            lblSelectionResult.stringValue = (arrRandomPhraseWrongChoice.randomElement() ?? "").replacingOccurrences(of: "<CORRECT_HABIT_NAME>", with: nextHabit?.name ?? "")
-        //        }
-        //
-        //        lblSelectionResult.isHidden = false
-        //        btnStartNextHabit.isHidden = false
-    }
-    
     @IBAction func btnStartNextHabitClicked(_ sender: Any) {
         addLog(text:"rememberNextHabitVc:- button Start Next Habit Clicked")
         self.view.removeFromSuperview()

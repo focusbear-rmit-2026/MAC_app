@@ -11,6 +11,8 @@ import WebKit
 
 class selectHabitPacksVc: NSViewController {
 
+    @IBOutlet weak var lblHabitPackInfo: NSTextField!
+    @IBOutlet weak var lblChooseOptions: NSTextField!
     @IBOutlet weak var lblDescription: NSTextField!
     @IBOutlet weak var btnContinue: Button!
     @IBOutlet weak var lblTitle: NSTextField!
@@ -27,16 +29,19 @@ class selectHabitPacksVc: NSViewController {
         super.viewDidLoad()
         // Do view setup here.
         lblTitle.stringValue = "Welcome to Focus Bear"
-        lblQuestion.stringValue = "Select habits from Featured Habit Packs to get you started using Focus Bear"
+        lblQuestion.stringValue = "Choose a habit pack to get started"
         btnContinue.title = "Continue"
+        lblChooseOptions.stringValue = "Choose one of the following options:"
+        lblHabitPackInfo.stringValue = "A habit pack is a collection of habits to do in the morning, the evening and during breaks"
         lblTitle.isHidden = true
         
         if let askAppWorkVcInfo = configjson.value(forKey: "askAppWorkVcInfo") as? NSDictionary{
-            //lblTitle.stringValue = askAppWorkVcInfo.value(forKey: "title") as? String ?? lblTitle.stringValue
             btnContinue.title = askAppWorkVcInfo.value(forKey: "buttonContinueText") as? String ?? btnContinue.title
             lblQuestion.stringValue = askAppWorkVcInfo.value(forKey: "titleSelectHabitPack") as? String ?? lblQuestion.stringValue
             morningRoutineText = askAppWorkVcInfo.value(forKey: "morningRoutineText") as? String ?? morningRoutineText
             eveningRoutineText = askAppWorkVcInfo.value(forKey: "eveningRoutineText") as? String ?? eveningRoutineText
+            lblChooseOptions.stringValue = askAppWorkVcInfo.value(forKey: "chooseOptionsText") as? String ?? lblChooseOptions.stringValue
+            lblHabitPackInfo.stringValue = askAppWorkVcInfo.value(forKey: "habitPackInfoText") as? String ?? lblHabitPackInfo.stringValue
         }
         allApiObject.capturePosthog(event: "habit-packs-shown", metadata: [:])
     }
@@ -57,24 +62,28 @@ class selectHabitPacksVc: NSViewController {
         }
         if popUpBtn.numberOfItems != 0{
             popUpBtn.selectItem(at: 0)
-//            let description = habitPacksData![0]["welcome_message_plain_text"] as? String ?? ""
             morningRoutineDuration = habitPacksData![0]["morning_routine_duration_seconds"] as? Int ?? 0
             eveningRoutineDuration = habitPacksData![0]["evening_routine_duration_seconds"] as? Int ?? 0
-//            let morningroutineDurationText = morningRoutineText + " " + getStringTime(seconds: morningroutineDuration)
-//            let eveningroutineDurationText = eveningRoutineText + " " + getStringTime(seconds: eveningroutineDuration)
-//            lblDescription.stringValue = description + "\n\n" + morningroutineDurationText + "\n\n" + eveningroutineDurationText
             loadVideoAt(index: 0)
         }
         lblDescription.isHidden = true
+        
+        if isHabitsDisabled{
+            lblQuestion.stringValue = "Choose your break activities to get started"
+            if let askAppWorkVcInfo = configjson.value(forKey: "askAppWorkVcInfo") as? NSDictionary{
+                lblQuestion.stringValue = askAppWorkVcInfo.value(forKey: "titleSelectBreaks") as? String ?? lblQuestion.stringValue
+            }
+        }else{
+            lblQuestion.stringValue = "Choose a habit pack to get started"
+            if let askAppWorkVcInfo = configjson.value(forKey: "askAppWorkVcInfo") as? NSDictionary{
+                lblQuestion.stringValue = askAppWorkVcInfo.value(forKey: "titleSelectHabitPack") as? String ?? lblQuestion.stringValue
+            }
+        }
     }
     @IBAction func popUpBtnClicked(_ sender: Any) {
         let index = popUpBtn.indexOfSelectedItem
-//        let description = habitPacksData![index]["welcome_message_plain_text"] as? String ?? ""
         morningRoutineDuration = habitPacksData![index]["morning_routine_duration_seconds"] as? Int ?? 0
         eveningRoutineDuration = habitPacksData![index]["evening_routine_duration_seconds"] as? Int ?? 0
-//        let morningroutineDurationText = morningRoutineText + " " + getStringTime(seconds: morningroutineDuration)
-//        let eveningroutineDurationText = eveningRoutineText + " " + getStringTime(seconds: eveningroutineDuration)
-//        lblDescription.stringValue = description + "\n\n" + morningroutineDurationText + "\n\n" + eveningroutineDurationText
         loadVideoAt(index: index)
     }
     

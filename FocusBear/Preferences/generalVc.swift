@@ -16,7 +16,6 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {
     @IBOutlet weak var lblTitleDarkMode: NSTextField!
     @IBOutlet weak var customViewForList: NSView!
     @IBOutlet weak var searchField: PopoverAwareSearchField!
-    //@IBOutlet weak var tabViewItemSetup: NSTabViewItem!
     @IBOutlet weak var tabViewItemAi: NSTabViewItem!
     @IBOutlet weak var tabViewItemUninstall: NSTabViewItem!
     @IBOutlet weak var tabViewItemAccount: NSTabViewItem!
@@ -32,7 +31,6 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {
     @IBOutlet weak var tabViewItemGeneral: NSTabViewItem!
     @IBOutlet weak var tabViewItemPomodoro: NSTabViewItem!
     @IBOutlet weak var tabView: NSTabView!
-    @IBOutlet weak var boxPopupWidth: NSLayoutConstraint!
     
     @IBOutlet weak var boxPopup: NSBox!
     @IBOutlet weak var btnCheckForUpdates: Button!
@@ -144,6 +142,10 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {
     var breakDurationEmptyErrorText = "Break Duration can not be empty."
     var breakDurationZeroErrorText = "Break Duration can not be 0."
     
+    let viewGeneralHeightDefault = 598
+    let viewPomodoroHeightDefault = 303
+    let viewAdvancedHeightDefault = 593
+    
     var searchResultMenu:NSMenu = NSMenu()
     
     lazy var searchesMenu: NSMenu = {
@@ -191,7 +193,12 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {
         lblTitleFont.stringValue = "Application Font:"
         popUpBtnFont.removeAllItems()
         
-        popUpBtnFont.addItems(withTitles: arrFont)
+        var fontTitles = [String]()
+        for font in arrFont{
+            fontTitles.append(font.name)
+        }
+        
+        popUpBtnFont.addItems(withTitles: fontTitles)
         
         lblTitleReloadAppAfterForceQuit.stringValue = "Reload:"
         lblCheckboxReloadAppAfterForceQuit.stringValue = "Reload after Force Quit"
@@ -456,12 +463,7 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {
         
         self.tabViewItemPassword.view?.addSubview(getPasswordVcObject().view)
         self.tabViewItemPassword.view?.addConstraints(subView: getPasswordVcObject().view)
-        
-        
-        //        self.tabViewItemSetup.view?.addSubview(getSetUpVcObject().view)
-        //        self.tabViewItemSetup.view?.addConstraints(subView: getSetUpVcObject().view)
-        
-        
+
         self.tabViewItemAccount.view?.addSubview(getAccountVcObject().view)
         self.tabViewItemAccount.view?.addConstraints(subView: getAccountVcObject().view)
         
@@ -474,9 +476,7 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {
         textFieldTabLimitCount.delegate = self
         
         searchField.itemsArr = arrForSearchFromSettings
-        
-        
-        
+
         arrForSearchFromSettings.append(["title": lblTitleAppMode.stringValue, "tabId": idGeneral, "object": lblTitleAppMode as Any])
         arrForSearchFromSettings.append(["title": radioBtnCuddlyBear.title, "tabId": idGeneral, "object": radioBtnCuddlyBear as Any])
         arrForSearchFromSettings.append(["title": radioBtnGrizzlyBear.title, "tabId": idGeneral, "object": radioBtnGrizzlyBear as Any])
@@ -617,20 +617,8 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {
         searchField.stringValue = ""
     }
     
-    // Ask for password:
-    // Quitting app
-    // Aborting shutoff
-    // Stopping Super pomodoro mode
-    
     override func viewWillAppear() {
         searchField.itemsArr = arrForSearchFromSettings
-        //        if currentLanguageCode == "es"{
-        //            boxPopupWidth.constant = 380
-        //        }else{
-        //            boxPopupWidth.constant = 280
-        //        }
-        //        boxPopup.isHidden = true
-        //        BoxBlackLayerForPopup.isHidden = true
         
         if isPurchased == false && daysLeft <= 0{
             self.tabView.selectTabViewItem(tabViewItemAccount)
@@ -775,19 +763,32 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {
         
         popUpBtnDarkMode.selectItem(at: SettingsManagerObject.selectedAppAppearanceIndex)
         
-        popUpBtnFont.selectItem(withTitle: SettingsManagerObject.selectedFont)
+        popUpBtnFont.selectItem(at: SettingsManagerObject.selectedFontIndex)
+        
         
         
         if self.tabView.selectedTabViewItem == tabViewItemGeneral{
-            preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: 630 + 46, height: 598 + 142))
+            if SettingsManagerObject.selectedFontIndex == intelOneMonoFontIndex || SettingsManagerObject.selectedFontIndex == openDyslexicFontIndex{
+                preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: (preferencesWindowControllerObj?.settingsTabDefaultWidthForBigFonts ?? 0) + (preferencesWindowControllerObj?.extraSpaceWidthInSettingsTab ?? 0), height: viewGeneralHeightDefault + (preferencesWindowControllerObj?.extraSpaceHeightInSettingsTab ?? 0)))
+            }else{
+                preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: (preferencesWindowControllerObj?.settingsTabDefaultWidth ?? 0) + (preferencesWindowControllerObj?.extraSpaceWidthInSettingsTab ?? 0), height: viewGeneralHeightDefault + (preferencesWindowControllerObj?.extraSpaceHeightInSettingsTab ?? 0)))
+            }
         }else if self.tabView.selectedTabViewItem == tabViewItemPomodoro{
-            preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: 630 + 46, height: 303 + 142))
+            if SettingsManagerObject.selectedFontIndex == intelOneMonoFontIndex || SettingsManagerObject.selectedFontIndex == openDyslexicFontIndex{
+                preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: (preferencesWindowControllerObj?.settingsTabDefaultWidthForBigFonts ?? 0) + (preferencesWindowControllerObj?.extraSpaceWidthInSettingsTab ?? 0), height: viewPomodoroHeightDefault + (preferencesWindowControllerObj?.extraSpaceHeightInSettingsTab ?? 0)))
+            }else{
+                preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: (preferencesWindowControllerObj?.settingsTabDefaultWidth ?? 0) + (preferencesWindowControllerObj?.extraSpaceWidthInSettingsTab ?? 0), height: viewPomodoroHeightDefault + (preferencesWindowControllerObj?.extraSpaceHeightInSettingsTab ?? 0)))
+            }
         }else if self.tabView.selectedTabViewItem == tabViewItemAdvanced{
-            preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: 630 + 46, height: 593 + 142))
+            if SettingsManagerObject.selectedFontIndex == intelOneMonoFontIndex || SettingsManagerObject.selectedFontIndex == openDyslexicFontIndex{
+                preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: (preferencesWindowControllerObj?.settingsTabDefaultWidthForBigFonts ?? 0) + (preferencesWindowControllerObj?.extraSpaceWidthInSettingsTab ?? 0), height: viewAdvancedHeightDefault + (preferencesWindowControllerObj?.extraSpaceHeightInSettingsTab ?? 0)))
+            }else{
+                preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: (preferencesWindowControllerObj?.settingsTabDefaultWidth ?? 0) + (preferencesWindowControllerObj?.extraSpaceWidthInSettingsTab ?? 0), height: viewAdvancedHeightDefault + (preferencesWindowControllerObj?.extraSpaceHeightInSettingsTab ?? 0)))
+            }
         }
-        
-        
     }
+    
+    
     override func viewWillDisappear() {
         SettingsManagerObject.putUserLocalDeviceSettings()
     }
@@ -1661,7 +1662,7 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {
         }
     }
     @IBAction func popUpBtnFontClicked(_ sender: Any) {
-        if SettingsManagerObject.selectedFont == popUpBtnFont.title{
+        if SettingsManagerObject.selectedFontIndex == popUpBtnFont.indexOfSelectedItem{
             return;
         }
 
@@ -1681,7 +1682,7 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {
             addLog(text: "font changed by user to \(self.popUpBtnFont.title)")
             
             SettingsManagerObject.isSettingsChanged = true
-            SettingsManagerObject.selectedFont = self.popUpBtnFont.title
+            SettingsManagerObject.selectedFontIndex = self.popUpBtnFont.indexOfSelectedItem
             allApiObject.capturePosthog(event: "settings-changed-font-\"\(self.popUpBtnFont.title)\"", metadata: [:])
             
             self.view.window?.close()
@@ -1712,11 +1713,23 @@ extension generalVc:NSTabViewDelegate{
                     }
                 }
             }else if self.tabView.selectedTabViewItem == tabViewItemGeneral{
-                preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: 630 + 46, height: 598 + 142))
+                if SettingsManagerObject.selectedFontIndex == intelOneMonoFontIndex || SettingsManagerObject.selectedFontIndex == openDyslexicFontIndex{
+                    preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: (preferencesWindowControllerObj?.settingsTabDefaultWidthForBigFonts ?? 0) + (preferencesWindowControllerObj?.extraSpaceWidthInSettingsTab ?? 0), height: viewGeneralHeightDefault + (preferencesWindowControllerObj?.extraSpaceHeightInSettingsTab ?? 0)))
+                }else{
+                    preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: (preferencesWindowControllerObj?.settingsTabDefaultWidth ?? 0) + (preferencesWindowControllerObj?.extraSpaceWidthInSettingsTab ?? 0), height: viewGeneralHeightDefault + (preferencesWindowControllerObj?.extraSpaceHeightInSettingsTab ?? 0)))
+                }
             }else if self.tabView.selectedTabViewItem == tabViewItemPomodoro{
-                preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: 630 + 46, height: 303 + 142))
+                if SettingsManagerObject.selectedFontIndex == intelOneMonoFontIndex || SettingsManagerObject.selectedFontIndex == openDyslexicFontIndex{
+                    preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: (preferencesWindowControllerObj?.settingsTabDefaultWidthForBigFonts ?? 0) + (preferencesWindowControllerObj?.extraSpaceWidthInSettingsTab ?? 0), height: viewPomodoroHeightDefault + (preferencesWindowControllerObj?.extraSpaceHeightInSettingsTab ?? 0)))
+                }else{
+                    preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: (preferencesWindowControllerObj?.settingsTabDefaultWidth ?? 0) + (preferencesWindowControllerObj?.extraSpaceWidthInSettingsTab ?? 0), height: viewPomodoroHeightDefault + (preferencesWindowControllerObj?.extraSpaceHeightInSettingsTab ?? 0)))
+                }
             }else if self.tabView.selectedTabViewItem == tabViewItemAdvanced{
-                preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: 630 + 46, height: 593 + 142))
+                if SettingsManagerObject.selectedFontIndex == intelOneMonoFontIndex || SettingsManagerObject.selectedFontIndex == openDyslexicFontIndex{
+                    preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: (preferencesWindowControllerObj?.settingsTabDefaultWidthForBigFonts ?? 0) + (preferencesWindowControllerObj?.extraSpaceWidthInSettingsTab ?? 0), height: viewAdvancedHeightDefault + (preferencesWindowControllerObj?.extraSpaceHeightInSettingsTab ?? 0)))
+                }else{
+                    preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: (preferencesWindowControllerObj?.settingsTabDefaultWidth ?? 0) + (preferencesWindowControllerObj?.extraSpaceWidthInSettingsTab ?? 0), height: viewAdvancedHeightDefault + (preferencesWindowControllerObj?.extraSpaceHeightInSettingsTab ?? 0)))
+                }
             }
         }
     }

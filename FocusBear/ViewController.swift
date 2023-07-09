@@ -77,7 +77,7 @@ class ViewController: NSViewController {
         }
         
         if checkIsFullScreenEnabled(){
-            setframe()//todo // uncomment
+            setframe()//todo  uncomment
         }else{
             if self.view.window != nil{
                 if isBreakActivityShowingWhileMeeting && currentState == ._ACTIVITY_{
@@ -91,7 +91,7 @@ class ViewController: NSViewController {
                         let x = ((screenWidth/2) - (width/2))
                         let y = ((screenHeight/2) - (height/2))
                         
-                        let newFrame = NSRect(origin: NSPoint(x: x, y: y), size: self.view.window!.minSize)//self.view.window?.minSize
+                        let newFrame = NSRect(origin: NSPoint(x: x, y: y), size: self.view.window!.minSize)
                         self.view.window?.setFrame(newFrame, display: true)
                         break;
                     }
@@ -112,7 +112,7 @@ class ViewController: NSViewController {
     }
     @objc func setframe() {
         let screenList = NSScreen.screens
-        for screen in screenList {  // create the corresponding windows
+        for screen in screenList {
             self.view.window?.setFrame(NSMakeRect(0, 0, NSWidth(screen.frame), NSHeight(screen.frame)), display: true)
             break;
         }
@@ -155,9 +155,9 @@ class ViewController: NSViewController {
         let shutOffdate = Calendar.current.date(bySettingHour: shutOffTime!.hour, minute: shutOffTime!.minute, second: shutOffTime!.second, of: Date())!
         
         let curreentDate = Date()
-        if curreentDate > shutOffdate{// iska matlab 20-24 k bich
+        if curreentDate > shutOffdate{
 
-        }else if curreentDate < startDate{ //  iska mtlb 1 se 10 k bich ka time
+        }else if curreentDate < startDate{
 //
         }else{// not shutoff time//
             currentState = ._NOTHING_
@@ -185,6 +185,19 @@ class ViewController: NSViewController {
             }
         })
         
+    }
+    @objc func showDayEndFocusCompletedView(){
+        currentState = ._FOCUS_SUMMARY_
+        if !(mainWindowControllerObj?.window!.isVisible)! {
+            mainWindowControllerObj?.showWindow(self)
+        }
+        showBlankWindowInSecondaryMonitor()
+        
+        addLog(text: "Showing Completed View")
+        self.hideCloseButtons()
+        self.removeSubViews()
+        self.containerView.addSubview(focusCompletedFullScreenVcObj!.view)
+        self.containerView.addConstraints(subView: focusCompletedFullScreenVcObj!.view)
     }
     
     var timerGiveOneMoreMinut:Timer?
@@ -226,6 +239,27 @@ class ViewController: NSViewController {
     func showFocusCompletedView(){
         self.view.addSubview(getFocusCompletedForActivityVcObj().view)
         self.view.addConstraints(subView: getFocusCompletedForActivityVcObj().view)
+    }
+    
+    func checkIsAnyUserInputSubViewAdded()->Bool{
+        if logQuantityVcObj != nil{
+            if self.view.subviews.contains(logQuantityVcObj!.view){
+                return true
+            }
+        }
+        
+        if takeActivityNotesVcObj != nil{
+            if self.view.subviews.contains(takeActivityNotesVcObj!.view){
+                return true
+            }
+        }
+
+        if focusCompletedForActivityVcObj != nil{
+            if self.view.subviews.contains(focusCompletedForActivityVcObj!.view){
+                return true
+            }
+        }
+        return false
     }
     func showSkipHabitView(){
         addLog(text: "show SkipHabit View")
@@ -482,16 +516,12 @@ class ViewController: NSViewController {
                 }
             }
         }else if currentState == ._ACTIVITY_{
-            
-            
             var lastSavedPostponeTime = Date()
             activityPostponeCount = 0
             var lastSavedPostponeCount = activityPostponeCount
             let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
             
             if let infoDic = UserDefaults.standard.object(forKey: kUserdefaultsLastBreakActivityPostponeInfo) as? [String:Any]{
-                
-         
                 if let postponeCount =  infoDic["postponeCount"] as? Int{
                     lastSavedPostponeCount = postponeCount
                 }
@@ -499,18 +529,13 @@ class ViewController: NSViewController {
                     lastSavedPostponeTime = date
                 }
             }
-            
-                
+  
             if lastSavedPostponeTime.compare(startDate) == .orderedDescending{
                     activityPostponeCount = lastSavedPostponeCount
             }
-                
-            
-            
-            
             
             if SettingsManagerObject.isEasySkipEnabled{
-                if currentAction == ._START_{
+                if currentAction == ._START_ || currentAction == ._BRAIN_DUMP_{
                     
                     if currentActivityPlaying != nil{
                         if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
@@ -525,22 +550,7 @@ class ViewController: NSViewController {
                     hideBlankWindowInSecondaryMonitor()
                     showEasyPostponeWindow()
                     if currentActivityPlaying != nil{
-//                        isAnyAllowedFocusModeActivityRunning = false
-//                        currentActivityPlaying = nil// beacuse there is ono easy postpone cancel
                         closePupUpBlockIfVisible()
-                        
-//                        arrBlockedAppsInCuddlyModeCurrentFocus.removeAll()
-//                        arrAllowedAppsInCuddlyModeCurrentFocus.removeAll()
-//                        arrAllowedUrlsInCuddlyModeCurrentFocus.removeAll()
-//                        arrBlockedUrlsInCuddlyModeCurrentFocus.removeAll()
-//
-//                        if smallCountDownWcObj != nil{// close timer window is easy postpone because there is no come back from easy postpone view
-//                            if smallCountDownWcObj?.window != nil{
-//                                if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
-//                                    getSmallCountDownWindowObject().window!.close()
-//                                }
-//                            }
-//                        }
                     }
                 }else{
                     postponeBreakActivitiesFor(minutes: breakAfterMinutes, secondsToPostpone: nil)
@@ -909,11 +919,7 @@ class ViewController: NSViewController {
                 easyPostponeWcObj?.window?.close()
             }
         }
-        if popupAppointmentTimeWcObj != nil{
-            if popupAppointmentTimeWcObj?.window?.isVisible ?? false{
-                popupAppointmentTimeWcObj?.window?.close()
-            }
-        }
+        
         
         if currentAction == ._VISUALIZE_{// did this beacuse we dont want user do to visualize again if he has don once for a habit
             currentState = ._EVENING_HABIT_
@@ -1032,11 +1038,7 @@ class ViewController: NSViewController {
                 easyPostponeWcObj?.window?.close()
             }
         }
-        if popupAppointmentTimeWcObj != nil{
-            if popupAppointmentTimeWcObj?.window?.isVisible ?? false{
-                popupAppointmentTimeWcObj?.window?.close()
-            }
-        }
+        
         if currentAction == ._VISUALIZE_{// did this beacuse we dont want user do to visualize again if he has don once for a habit
             currentState = ._MORNING_HABIT_
             showVisualizeInstructionsVc()
@@ -1263,13 +1265,7 @@ class ViewController: NSViewController {
                 easyPostponeWcObj?.window?.close()
             }
         }
-        
-        if popupAppointmentTimeWcObj != nil{
-            if popupAppointmentTimeWcObj?.window?.isVisible ?? false{
-                popupAppointmentTimeWcObj?.window?.close()
-            }
-        }
-        
+
         UserDefaults.standard.set(Date(), forKey: kUserdefaultsLastHabitsStartedDate)
         
         var lastSavedActivityTime = Date()
@@ -1350,9 +1346,7 @@ class ViewController: NSViewController {
             showBlankWindowInSecondaryMonitor()
             setDocBarTo(isHide: false)
         }
-        //        activityAllowedFocusApps.removeAll()
-        //        activityAllowedFocusUrls.removeAll()
-        //                activityAllowedFocusMode = nil
+
         isAnyAllowedFocusModeActivityRunning = false
         currentHabitPlaying = nil
         if toolBoxWcObj != nil{
@@ -1388,9 +1382,6 @@ class ViewController: NSViewController {
         addLog(text:"func startDirectIncompleteEveningHabitAtIndex")
         currentState = ._EVENING_HABIT_// pahle isiliye kiya qki load graph mai check lagaya hua h state ka
         currentAction = ._END_
-        //        activityAllowedFocusApps.removeAll()
-        //        activityAllowedFocusUrls.removeAll()
-        //                activityAllowedFocusMode = nil
         isAnyAllowedFocusModeActivityRunning = false
         currentHabitPlaying = nil
         
@@ -1418,11 +1409,6 @@ class ViewController: NSViewController {
             }
         }
         
-        if popupAppointmentTimeWcObj != nil{
-            if popupAppointmentTimeWcObj?.window?.isVisible ?? false{
-                popupAppointmentTimeWcObj?.window?.close()
-            }
-        }
         
         UserDefaults.standard.set(Date(), forKey: kUserdefaultsLastHabitsStartedDate)
         
@@ -1520,9 +1506,7 @@ class ViewController: NSViewController {
             showBlankWindowInSecondaryMonitor()
             setDocBarTo(isHide: false)
         }
-        //        activityAllowedFocusApps.removeAll()
-        //        activityAllowedFocusUrls.removeAll()
-        //                activityAllowedFocusMode = nil
+
         isAnyAllowedFocusModeActivityRunning = false
         currentActivityPlaying = nil
         arrBlockedAppsInCuddlyModeCurrentFocus.removeAll()
@@ -1582,7 +1566,6 @@ class ViewController: NSViewController {
         currentHabitIndex += 1
         containerView.addSubview(timerViewcontrollerObj!.view)
         containerView.addConstraints(subView: timerViewcontrollerObj!.view)
-//        let videoUrl = getRandomVideoUrl(activityId:arrFilteredMorningHabits[currentHabitIndex].id, urlsArray: arrFilteredMorningHabits[currentHabitIndex].urlsArray)
         timerViewcontrollerObj?.startTimerHabit(durationSeconds: arrFilteredMorningHabits[currentHabitIndex].durationSeconds, name: arrFilteredMorningHabits[currentHabitIndex].name!, currentHabit: arrFilteredMorningHabits[currentHabitIndex], currentTimerValue:0)
         currentState = ._MORNING_HABIT_
         currentAction = ._INPROGRESS_
@@ -1612,23 +1595,16 @@ class ViewController: NSViewController {
     }
     
     func startSpecialActivity(duration:Int,habit:habit?, activity:breakActivity?){
-//        allApiObject.capturePosthog(event: "start-break-activity", metadata: ["routine-type":"break_activity"])
-//        addLog(text:"start Current Activity called")
-        
+  
         if easyPostponeWcObj != nil{
             if easyPostponeWcObj?.window?.isVisible ?? false{
                 easyPostponeWcObj?.window?.close()
             }
         }
-        if popupAppointmentTimeWcObj != nil{
-            if popupAppointmentTimeWcObj?.window?.isVisible ?? false{
-                popupAppointmentTimeWcObj?.window?.close()
-            }
-        }
         
         if isFocusModeOnOrPaused(){
             addLog(text: "Special Activity start:- Focus Mode Finished")
-            appdelegate?.focusModeFinished(isSilent: true)
+            appdelegate?.focusModeFinished(isSilent: true, isShutOffTime: false)
         
         }
         mainWindowControllerObj?.showWindow(self)
@@ -1652,6 +1628,7 @@ class ViewController: NSViewController {
         
         timerViewcontrollerObj?.startSpecialActivity(durationSeconds: duration, currentHabit: habit, currentActivity: activity, currentChoice: currentChoice)
     }
+    
     func startCurrentActivity() {
         allApiObject.capturePosthog(event: "start-break-activity", metadata: ["routine-type":"break_activity"])
         addLog(text:"start Current Activity called")
@@ -1667,35 +1644,7 @@ class ViewController: NSViewController {
         }else{
             timerViewcontrollerObj?.startTimerActivity(durationInSeconds: currentActivity.durationSeconds, name: currentActivity.name!, urlsArray: currentActivity.urlsArray, logQuantityQuestion: currentActivity.logQuantityQuestions, currentActivity: currentActivity, currentChoice: nil, logQuantity: currentActivity.logQuantity, logQuantityType: currentActivity.logQuantityType)
         }
-        
-//        if isMandatoryActivityGoing{
-//            let currentActivity = arrActivitiesIncludeInEveryBreak[currentActivityIndex]
-//
-//            if currentActivity.choiceType != ._RANDOM_{
-//                timerViewcontrollerObj?.startTimerActivity(durationInSeconds: currentActivity.durationSeconds, name: currentActivity.name!, urlsArray: currentActivity.urlsArray, logQuantityQuestion: currentActivity.logQuantityQuestions, currentActivity: currentActivity, currentChoice: nil, logQuantity: currentActivity.logQuantity, logQuantityType: currentActivity.logQuantityType)
-//            }else{//random choice
-//                if let randomChoice = thirdVcObj?.currentActivityChoice{//currentActivity.choices.randomElement(){
-//                    timerViewcontrollerObj?.startTimerActivity(durationInSeconds: currentActivity.durationSeconds, name: randomChoice.name, urlsArray: randomChoice.urlsArray, logQuantityQuestion: randomChoice.logQuantityQuestions, currentActivity: currentActivity, currentChoice: randomChoice, logQuantity: randomChoice.logQuantity, logQuantityType: randomChoice.logQuantityType)
-//                }else if let randomChoice = currentActivity.choices.randomElement(){
-//                    timerViewcontrollerObj?.startTimerActivity(durationInSeconds: currentActivity.durationSeconds, name: randomChoice.name, urlsArray: randomChoice.urlsArray, logQuantityQuestion: randomChoice.logQuantityQuestions, currentActivity: currentActivity, currentChoice: randomChoice, logQuantity: randomChoice.logQuantity, logQuantityType: randomChoice.logQuantityType)
-//                }
-//            }
-//
-//
-//        }else{
-//            let currentActivity = arrActivitiesExcludeInEveryBreak[currentActivityIndex]
-//            if currentActivity.choiceType != ._RANDOM_{
-//                timerViewcontrollerObj?.startTimerActivity(durationInSeconds: currentActivity.durationSeconds, name: currentActivity.name!, urlsArray: currentActivity.urlsArray, logQuantityQuestion: currentActivity.logQuantityQuestions, currentActivity: currentActivity, currentChoice: nil, logQuantity: currentActivity.logQuantity, logQuantityType: currentActivity.logQuantityType)
-//            }else{//random choice
-//                if let randomChoice = thirdVcObj?.currentActivityChoice{//currentActivity.choices.randomElement(){
-//                    timerViewcontrollerObj?.startTimerActivity(durationInSeconds: currentActivity.durationSeconds, name: randomChoice.name, urlsArray: randomChoice.urlsArray, logQuantityQuestion: randomChoice.logQuantityQuestions, currentActivity: currentActivity, currentChoice: randomChoice, logQuantity: randomChoice.logQuantity, logQuantityType: randomChoice.logQuantityType)
-//                }else if let randomChoice = currentActivity.choices.randomElement(){
-//                    timerViewcontrollerObj?.startTimerActivity(durationInSeconds: currentActivity.durationSeconds, name: randomChoice.name, urlsArray: randomChoice.urlsArray, logQuantityQuestion: randomChoice.logQuantityQuestions, currentActivity: currentActivity, currentChoice: randomChoice, logQuantity: randomChoice.logQuantity, logQuantityType: randomChoice.logQuantityType)
-//                }
-//            }
 
-//        }
-        
         currentState = ._ACTIVITY_
         currentAction = ._INPROGRESS_
     }
@@ -1719,67 +1668,6 @@ class ViewController: NSViewController {
         }else{
             timerViewcontrollerObj?.startTimerActivity(durationInSeconds: currentActivity.durationSeconds, name: currentActivity.name!, urlsArray: currentActivity.urlsArray, logQuantityQuestion: currentActivity.logQuantityQuestions, currentActivity: currentActivity, currentChoice: nil, logQuantity: currentActivity.logQuantity, logQuantityType: currentActivity.logQuantityType)
         }
-        
-//        if isAnyMandatoryActivityIncluded{
-//            if isMandatoryActivityGoing{
-//                let lastIndex = currentActivityIndex
-//                currentActivityIndex += 1
-//                if currentActivityIndex > arrActivitiesIncludeInEveryBreak.count - 1{
-//                    currentActivityIndex = lastIndex// phle hi current index le rakhki thi ..is condition k liye
-//                    isMandatoryActivityGoing = false//
-//
-//                    let currentActivity = arrActivitiesExcludeInEveryBreak[currentActivityIndex]
-//
-//                    if currentActivity.choiceType != ._RANDOM_{
-//                        timerViewcontrollerObj?.startTimerActivity(durationInSeconds: currentActivity.durationSeconds, name: currentActivity.name!, urlsArray: currentActivity.urlsArray, logQuantityQuestion: currentActivity.logQuantityQuestions, currentActivity: currentActivity, currentChoice: nil, logQuantity: currentActivity.logQuantity, logQuantityType: currentActivity.logQuantityType)
-//                    }else{
-//                        if let randomChoice = thirdVcObj?.currentActivityChoice{//currentActivity.choices.randomElement(){
-//                            timerViewcontrollerObj?.startTimerActivity(durationInSeconds: currentActivity.durationSeconds, name: randomChoice.name, urlsArray: randomChoice.urlsArray, logQuantityQuestion: randomChoice.logQuantityQuestions, currentActivity: currentActivity, currentChoice: randomChoice, logQuantity: randomChoice.logQuantity, logQuantityType: randomChoice.logQuantityType)
-//                        }else if let randomChoice = currentActivity.choices.randomElement(){
-//                            timerViewcontrollerObj?.startTimerActivity(durationInSeconds: currentActivity.durationSeconds, name: randomChoice.name, urlsArray: randomChoice.urlsArray, logQuantityQuestion: randomChoice.logQuantityQuestions, currentActivity: currentActivity, currentChoice: randomChoice, logQuantity: randomChoice.logQuantity, logQuantityType: randomChoice.logQuantityType)
-//                        }
-//                    }
-//
-//                }else{
-//                    let currentActivity = arrActivitiesIncludeInEveryBreak[currentActivityIndex]
-//
-//                    if currentActivity.choiceType != ._RANDOM_{
-//                        timerViewcontrollerObj?.startTimerActivity(durationInSeconds: currentActivity.durationSeconds, name: currentActivity.name!, urlsArray: currentActivity.urlsArray, logQuantityQuestion: currentActivity.logQuantityQuestions, currentActivity: currentActivity, currentChoice: nil, logQuantity: currentActivity.logQuantity, logQuantityType: currentActivity.logQuantityType)
-//                    }else{
-//                        if let randomChoice = thirdVcObj?.currentActivityChoice{//currentActivity.choices.randomElement(){
-//                            timerViewcontrollerObj?.startTimerActivity(durationInSeconds: currentActivity.durationSeconds, name: randomChoice.name, urlsArray: randomChoice.urlsArray, logQuantityQuestion: randomChoice.logQuantityQuestions, currentActivity: currentActivity, currentChoice: randomChoice, logQuantity: randomChoice.logQuantity, logQuantityType: randomChoice.logQuantityType)
-//                        }else if let randomChoice = currentActivity.choices.randomElement(){
-//                            timerViewcontrollerObj?.startTimerActivity(durationInSeconds: currentActivity.durationSeconds, name: randomChoice.name, urlsArray: randomChoice.urlsArray, logQuantityQuestion: randomChoice.logQuantityQuestions, currentActivity: currentActivity, currentChoice: randomChoice, logQuantity: randomChoice.logQuantity, logQuantityType: randomChoice.logQuantityType)
-//                        }
-//                    }
-//                }
-//            }else{
-//                let currentActivity = arrActivitiesExcludeInEveryBreak[currentActivityIndex]
-//
-//                if currentActivity.choiceType != ._RANDOM_{
-//                    timerViewcontrollerObj?.startTimerActivity(durationInSeconds: currentActivity.durationSeconds, name: currentActivity.name!, urlsArray: currentActivity.urlsArray, logQuantityQuestion: currentActivity.logQuantityQuestions, currentActivity: currentActivity, currentChoice: nil, logQuantity: currentActivity.logQuantity, logQuantityType: currentActivity.logQuantityType)
-//                }else{
-//                    if let randomChoice = thirdVcObj?.currentActivityChoice{//currentActivity.choices.randomElement(){
-//                        timerViewcontrollerObj?.startTimerActivity(durationInSeconds: currentActivity.durationSeconds, name: randomChoice.name, urlsArray: randomChoice.urlsArray, logQuantityQuestion: randomChoice.logQuantityQuestions, currentActivity: currentActivity, currentChoice: randomChoice, logQuantity: randomChoice.logQuantity, logQuantityType: randomChoice.logQuantityType)
-//                    }else if let randomChoice = currentActivity.choices.randomElement(){
-//                        timerViewcontrollerObj?.startTimerActivity(durationInSeconds: currentActivity.durationSeconds, name: randomChoice.name, urlsArray: randomChoice.urlsArray, logQuantityQuestion: randomChoice.logQuantityQuestions, currentActivity: currentActivity, currentChoice: randomChoice, logQuantity: randomChoice.logQuantity, logQuantityType: randomChoice.logQuantityType)
-//                    }
-//                }
-//            }
-//        }else{
-//            currentActivityIndex += 1
-//            let currentActivity = arrActivitiesExcludeInEveryBreak[currentActivityIndex]
-//
-//            if currentActivity.choiceType != ._RANDOM_{
-//                timerViewcontrollerObj?.startTimerActivity(durationInSeconds: currentActivity.durationSeconds, name: currentActivity.name!, urlsArray: currentActivity.urlsArray, logQuantityQuestion: currentActivity.logQuantityQuestions, currentActivity: currentActivity, currentChoice: nil, logQuantity: currentActivity.logQuantity, logQuantityType: currentActivity.logQuantityType)
-//            }else{
-//                if let randomChoice = thirdVcObj?.currentActivityChoice{//currentActivity.choices.randomElement(){
-//                    timerViewcontrollerObj?.startTimerActivity(durationInSeconds: currentActivity.durationSeconds, name: randomChoice.name, urlsArray: randomChoice.urlsArray, logQuantityQuestion: randomChoice.logQuantityQuestions, currentActivity: currentActivity, currentChoice: randomChoice, logQuantity: randomChoice.logQuantity, logQuantityType: randomChoice.logQuantityType)
-//                }else if let randomChoice = currentActivity.choices.randomElement(){
-//                    timerViewcontrollerObj?.startTimerActivity(durationInSeconds: currentActivity.durationSeconds, name: randomChoice.name, urlsArray: randomChoice.urlsArray, logQuantityQuestion: randomChoice.logQuantityQuestions, currentActivity: currentActivity, currentChoice: randomChoice, logQuantity: randomChoice.logQuantity, logQuantityType: randomChoice.logQuantityType)
-//                }
-//            }
-//        }
         
         currentState = ._ACTIVITY_
         currentAction = ._INPROGRESS_
@@ -2041,6 +1929,7 @@ class ViewController: NSViewController {
         
         if showAskFocusModeView{
             appdelegate?.menuShowPomodoroModeView()
+            pomodoroVcObj!.textFieldWorkDuration.integerValue = minutes
         }
     }
     func postponeEveningHabitFor(minutes:Int, secondsToPostpone:Int?, showAskFocusModeView:Bool){
@@ -2107,6 +1996,7 @@ class ViewController: NSViewController {
         }
         if showAskFocusModeView{
             appdelegate?.menuShowPomodoroModeView()
+            pomodoroVcObj!.textFieldWorkDuration.integerValue = minutes
         }
     }
     
@@ -2286,6 +2176,14 @@ class ViewController: NSViewController {
                 addLog(text: "Special activity is running :- Break Activities cancelled.")
                 return;
             }
+            
+            if popupAppointmentTimeWcObj != nil{
+                if popupAppointmentTimeWcObj?.window?.isVisible ?? false{
+                    addLog(text: "Appointment popup is visible :- Break Activities cancelled.")
+                    return;
+                }
+            }
+            
             isBreakActivityExecuteFromPostponeMorningHabit = false
             isBreakActivityExecuteFromPostponeEveningHabit = false
             
@@ -2374,11 +2272,7 @@ class ViewController: NSViewController {
                             }
                         }
                     }
-                    // self.timerAllowAppForActivity?.invalidate() ye invalid nahi hua //
-                    
-                    
-                    
-                   // //////////////
+
                 }else{
                     addLog(text: "Morning habit showing, Break Activities cancelled.")
                     return;

@@ -24,6 +24,7 @@ class takeActivityNotesVc: NSViewController {
         }
         
         btnOk.title = buttonOkText
+        textViewNotes.delegate = self
     }
     
     override func viewWillAppear() {
@@ -80,5 +81,35 @@ class takeActivityNotesVc: NSViewController {
         }
         
         
+    }
+}
+
+extension takeActivityNotesVc:NSTextViewDelegate{
+    func textViewDidChangeSelection(_ notification: Notification) {
+        adjustFontSizeToFit()
+    }
+    
+    func adjustFontSizeToFit() {
+        guard let textContainer = textViewNotes.textContainer else{
+            return;
+        }
+        guard let layoutManager = textViewNotes.layoutManager else{
+            return;
+        }
+        
+        let textBounds = layoutManager.usedRect(for: textContainer)
+        let availableSize = textViewNotes.bounds.size
+        
+        let scaleFactor = min(availableSize.width / textBounds.size.width, availableSize.height / textBounds.size.height)
+        let currentFontSize = textViewNotes.font?.pointSize ?? 14
+        
+        var newFontSize = currentFontSize * scaleFactor
+        if newFontSize > 30 {
+            newFontSize = 30
+        }
+        
+        let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex]
+        let font = NSFont(name: selectedFont.regularFontName, size: newFontSize)!
+        textViewNotes.font = font
     }
 }

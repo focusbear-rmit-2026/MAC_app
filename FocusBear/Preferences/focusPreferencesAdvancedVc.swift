@@ -87,9 +87,7 @@ class focusPreferencesAdvancedVc: NSViewController {
         lblTitle.stringValue = titleBlockedUrls
         btnOk.title = buttonOkText
         tblView.doubleAction = #selector(tableRowBlockedUrlsDoubleClicked)
-        
-        
-        
+
         btnAddUrl.toolTip = toolTipAdd
         btnRemoveUrl.toolTip = toolTipRemove
         
@@ -98,17 +96,7 @@ class focusPreferencesAdvancedVc: NSViewController {
             btnAddUrl.image = NSImage(systemSymbolName: "plus.square.fill", accessibilityDescription: nil)
             btnRemoveUrl.image = NSImage(systemSymbolName: "minus.square.fill", accessibilityDescription: nil)
         }
-        
-        
-//        let task = Process()
-//        var args: [AnyHashable] = []
-//        args.append("-c")
-//        args.append("sleep \(1); open \"/System/Applications/TextEdit.app\"")
-//        task.launchPath = "/bin/sh"
-//        task.arguments = args as? [String]
-//        task.launch()
-        
-        
+
     }
     override func viewWillAppear() {
         
@@ -127,8 +115,8 @@ class focusPreferencesAdvancedVc: NSViewController {
         
         let row = focusPreferencesVcObj?.tblViewFocusType.selectedRow ?? 0
         if row != -1{
-            if let val = arrFocusType[row]["isScriptBeforeFocusEnabled"] as? Bool{
-                if val{
+            if let isScriptEnabled = arrFocusType[row]["isScriptBeforeFocusEnabled"] as? Bool{
+                if isScriptEnabled{
                     checkBoxRunScriptBeforeFocus.state = .on
                 }else{
                     checkBoxRunScriptBeforeFocus.state = .off
@@ -137,8 +125,8 @@ class focusPreferencesAdvancedVc: NSViewController {
                 checkBoxRunScriptBeforeFocus.state = .off
             }
             
-            if let val = arrFocusType[row]["isScriptAfterFocusEnabled"] as? Bool{
-                if val{
+            if let isScriptEnabled = arrFocusType[row]["isScriptAfterFocusEnabled"] as? Bool{
+                if isScriptEnabled{
                     checkBoxRunScriptAfterFocus.state = .on
                 }else{
                     checkBoxRunScriptAfterFocus.state = .off
@@ -147,8 +135,8 @@ class focusPreferencesAdvancedVc: NSViewController {
                 checkBoxRunScriptAfterFocus.state = .off
             }
             
-            if let val = arrFocusType[row]["isShellCommandBeforeFocusEnabled"] as? Bool{
-                if val{
+            if let isShellCommandEnabled = arrFocusType[row]["isShellCommandBeforeFocusEnabled"] as? Bool{
+                if isShellCommandEnabled{
                     checkBoxRunShellBeforeFocus.state = .on
                 }else{
                     checkBoxRunShellBeforeFocus.state = .off
@@ -157,8 +145,8 @@ class focusPreferencesAdvancedVc: NSViewController {
                 checkBoxRunShellBeforeFocus.state = .off
             }
             
-            if let val = arrFocusType[row]["isShellCommandAfterFocusEnabled"] as? Bool{
-                if val{
+            if let isShellCommandEnabled = arrFocusType[row]["isShellCommandAfterFocusEnabled"] as? Bool{
+                if isShellCommandEnabled{
                     checkBoxRunShellAfterFocus.state = .on
                 }else{
                     checkBoxRunShellAfterFocus.state = .off
@@ -166,14 +154,14 @@ class focusPreferencesAdvancedVc: NSViewController {
             }else{
                 checkBoxRunShellAfterFocus.state = .off
             }
-            if let val = arrFocusType[row]["shellCommandBeforeFocusText"] as? String{
-                textViewRunShelltBeforeFocus.string = val
+            if let shellCommand = arrFocusType[row]["shellCommandBeforeFocusText"] as? String{
+                textViewRunShelltBeforeFocus.string = shellCommand
             }else{
                 textViewRunShelltBeforeFocus.string = ""
             }
             
-            if let val = arrFocusType[row]["shellCommandAfterFocusText"] as? String{
-                textViewRunShelltAfterFocus.string = val
+            if let shellCommand = arrFocusType[row]["shellCommandAfterFocusText"] as? String{
+                textViewRunShelltAfterFocus.string = shellCommand
             }else{
                 textViewRunShelltAfterFocus.string = ""
             }
@@ -204,9 +192,11 @@ class focusPreferencesAdvancedVc: NSViewController {
             
             
             
-            if let val = arrFocusType[row]["scriptPathBeforeFocus"] as? String{
-                lblUrlCurrentApplescriptBefore.stringValue = val
+            if let scriptPath = arrFocusType[row]["scriptPathBeforeFocus"] as? String{
+                lblUrlCurrentApplescriptBefore.stringValue = scriptPath
+                lblUrlCurrentApplescriptBefore.toolTip = scriptPath
             }else{
+                lblUrlCurrentApplescriptBefore.toolTip = ""
                 lblUrlCurrentApplescriptBefore.stringValue = "Please select a apple script."
                 if let focusPreferencesAdvancedInfo = configjson.value(forKey: "focusPreferencesAdvancedInfo") as? NSDictionary{
                     lblUrlCurrentApplescriptBefore.stringValue = focusPreferencesAdvancedInfo.value(forKey: "pleaseSelectScriptText") as? String ?? lblUrlCurrentApplescriptBefore.stringValue
@@ -214,9 +204,11 @@ class focusPreferencesAdvancedVc: NSViewController {
                     
             }
             
-            if let val = arrFocusType[row]["scriptPathAfterFocus"] as? String{
-                lblUrlCurrentApplescriptAfter.stringValue = val
+            if let scriptPath = arrFocusType[row]["scriptPathAfterFocus"] as? String{
+                lblUrlCurrentApplescriptAfter.stringValue = scriptPath
+                lblUrlCurrentApplescriptAfter.toolTip = scriptPath
             }else{
+                lblUrlCurrentApplescriptAfter.toolTip = ""
                 lblUrlCurrentApplescriptAfter.stringValue = "Please select a apple script."
                 if let focusPreferencesAdvancedInfo = configjson.value(forKey: "focusPreferencesAdvancedInfo") as? NSDictionary{
                     lblUrlCurrentApplescriptAfter.stringValue = focusPreferencesAdvancedInfo.value(forKey: "pleaseSelectScriptText") as? String ?? lblUrlCurrentApplescriptAfter.stringValue
@@ -252,10 +244,7 @@ class focusPreferencesAdvancedVc: NSViewController {
                     }
                 }
             }
-           
-            
         }
-        
     }
     var bottomConstraint: NSLayoutConstraint?
     @objc func tableRowBlockedUrlsDoubleClicked(){
@@ -280,12 +269,6 @@ class focusPreferencesAdvancedVc: NSViewController {
         }
         UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
         
-//        allApiObject.editFocusMode(focusType: arrFocusType[row], completionHandler: {newDic in
-//            DispatchQueue.main.async {
-//
-//            }
-//        })
-        
     }
     
     @IBAction func checkBoxRunScriptAfterFocusClicked(_ sender: Any) {
@@ -300,11 +283,7 @@ class focusPreferencesAdvancedVc: NSViewController {
             allApiObject.capturePosthog(event: "settings-changed-disable-script-after-focus", metadata: [:])//#490
         }
         UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
-//        allApiObject.editFocusMode(focusType: arrFocusType[row], completionHandler: {newDic in
-//            DispatchQueue.main.async {
-//
-//            }
-//        })
+
     }
     
     @IBAction func checkBoxRunShellCommandBeforeFocusClicked(_ sender: Any) {
@@ -320,12 +299,7 @@ class focusPreferencesAdvancedVc: NSViewController {
             allApiObject.capturePosthog(event: "settings-changed-enable-shell-command-before-focus", metadata: [:])
         }
         UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
-        
-//        allApiObject.editFocusMode(focusType: arrFocusType[row], completionHandler: {newDic in
-//            DispatchQueue.main.async {
-//
-//            }
-//        })
+
         
     }
     
@@ -342,11 +316,7 @@ class focusPreferencesAdvancedVc: NSViewController {
             allApiObject.capturePosthog(event: "settings-changed-enable-shell-command-after-focus", metadata: [:])
         }
         UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
-//        allApiObject.editFocusMode(focusType: arrFocusType[row], completionHandler: {newDic in
-//            DispatchQueue.main.async {
-//
-//            }
-//        })
+
     }
     
     @IBAction func btnSelectAppleScriptBeforeClicked(_ sender: Any) {
@@ -371,12 +341,9 @@ class focusPreferencesAdvancedVc: NSViewController {
                 if let url = dialog.url {
                     arrFocusType[row]["scriptPathBeforeFocus"] = url.path
                     self.lblUrlCurrentApplescriptBefore.stringValue = url.path
+                    self.lblUrlCurrentApplescriptBefore.toolTip = url.path
                     UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
-//                    allApiObject.editFocusMode(focusType: arrFocusType[row], completionHandler: {newDic in
-//                        DispatchQueue.main.async {
-//
-//                        }
-//                    })
+
                     allApiObject.capturePosthog(event: "set-apple-script-before-starting-focus-mode", metadata: [:])
                 }
             }
@@ -405,12 +372,9 @@ class focusPreferencesAdvancedVc: NSViewController {
                 if let url = dialog.url {
                     arrFocusType[row]["scriptPathAfterFocus"] = url.path
                     self.lblUrlCurrentApplescriptAfter.stringValue = url.path
+                    self.lblUrlCurrentApplescriptAfter.toolTip = url.path
                     UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
-//                    allApiObject.editFocusMode(focusType: arrFocusType[row], completionHandler: {newDic in
-//                        DispatchQueue.main.async {
-//
-//                        }
-//                    })
+
                     allApiObject.capturePosthog(event: "set-apple-script-after-completing-focus-mode", metadata: [:])
                 }
             }
@@ -436,20 +400,16 @@ class focusPreferencesAdvancedVc: NSViewController {
         
         if arrFocusType.count > selectedFocusTypeRow{
 
-            if var arr = arrFocusType[selectedFocusTypeRow]["blockUrlsArray"] as? [String]{
-                if arr.count > selectedUrlsRow{
-                    arr.remove(at: selectedUrlsRow)
+            if var blockUrlsArray = arrFocusType[selectedFocusTypeRow]["blockUrlsArray"] as? [String]{
+                if blockUrlsArray.count > selectedUrlsRow{
+                    blockUrlsArray.remove(at: selectedUrlsRow)
                 }
-                arrFocusType[selectedFocusTypeRow]["blockUrlsArray"] = arr
+                arrFocusType[selectedFocusTypeRow]["blockUrlsArray"] = blockUrlsArray
             }
             self.tblView.reloadData()
         }
         UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
-//        allApiObject.editFocusMode(focusType: arrFocusType[selectedFocusTypeRow], completionHandler: {newDic in
-//            DispatchQueue.main.async {
-//
-//            }
-//        })
+
         allApiObject.capturePosthog(event: "remove-blocked-url-in-focus-mode", metadata: [:])//#490
 
         reSetCurrentFocusMode(focusType:arrFocusType[selectedFocusTypeRow])
@@ -459,10 +419,7 @@ class focusPreferencesAdvancedVc: NSViewController {
         
         if isShellScriptBeforeFocusEdited || isShellScriptAfterFocusEdited{
             let row = focusPreferencesVcObj?.tblViewFocusType.selectedRow ?? 0
-            
-            //"shellCommandAfterFocusText"] as? String{"shellCommandBeforeFocusText"
-            
-            
+
             if isShellScriptBeforeFocusEdited{
                 arrFocusType[row]["shellCommandBeforeFocusText"] = textViewRunShelltBeforeFocus.string
                 allApiObject.capturePosthog(event: "set-shell-command-before-starting-focus-mode", metadata: [:])
@@ -473,16 +430,9 @@ class focusPreferencesAdvancedVc: NSViewController {
                 arrFocusType[row]["shellCommandAfterFocusText"] = textViewRunShelltAfterFocus.string
                 allApiObject.capturePosthog(event: "set-shell-command-after-completing-focus-mode", metadata: [:])
             }
-            
-            
-            
-            
+     
             UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
-//            allApiObject.editFocusMode(focusType: arrFocusType[row], completionHandler: {newDic in
-//                DispatchQueue.main.async {
-//                    
-//                }
-//            })
+
             
         }
         
@@ -503,9 +453,9 @@ extension focusPreferencesAdvancedVc: NSTableViewDelegate, NSTableViewDataSource
         }else {
             let row = focusPreferencesVcObj?.tblViewFocusType.selectedRow ?? 0
             if row != -1{
-                if let arr = arrFocusType[row]["blockUrlsArray"] as? [String]{
+                if let blockUrlsArray = arrFocusType[row]["blockUrlsArray"] as? [String]{
                     btnRemoveUrl.isEnabled = false
-                    return arr.count
+                    return blockUrlsArray.count
                 }
             }
             
@@ -516,10 +466,9 @@ extension focusPreferencesAdvancedVc: NSTableViewDelegate, NSTableViewDataSource
         if let cell = tableView.makeView(withIdentifier: NSUserInterfaceItemIdentifier(rawValue: "tblCellFocusPreferences"), owner: nil) as? tblCellFocusPreferences {
             
             
-            if let arr = arrFocusType[focusPreferencesVcObj?.tblViewFocusType.selectedRow ?? 0]["blockUrlsArray"] as? [String]{
-                //                        let url = URL(fileURLWithPath: arr[row])
-                if row < arr.count{
-                    cell.lblTitle.stringValue = arr[row]
+            if let blockUrlsArray = arrFocusType[focusPreferencesVcObj?.tblViewFocusType.selectedRow ?? 0]["blockUrlsArray"] as? [String]{
+                if row < blockUrlsArray.count{
+                    cell.lblTitle.stringValue = blockUrlsArray[row]
                     cell.imgView.image = NSImage(named: NSImage.networkName)
                 }else{
                     cell.lblTitle.stringValue = ""
@@ -532,9 +481,7 @@ extension focusPreferencesAdvancedVc: NSTableViewDelegate, NSTableViewDataSource
         
         return NSTableCellView()
     }
-//    func tableView(_ tableView: NSTableView, heightOfRow row: Int) -> CGFloat {
 
-//    }
     func tableViewSelectionDidChange(_ notification: Notification) {
         print("tableViewSelectionDidChange")
         guard let tblview = notification.object as? NSTableView else {

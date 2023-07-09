@@ -10,6 +10,7 @@ import Cocoa
 
 class aiPermissionVc: NSViewController {
 
+    @IBOutlet weak var heightBoxBg: NSLayoutConstraint!
     @IBOutlet weak var btnCancel: Button!
     @IBOutlet weak var btnOk: Button!
     @IBOutlet weak var lblSubTitle: NSTextField!
@@ -28,6 +29,14 @@ class aiPermissionVc: NSViewController {
             btnCancel.title = aiPermissionVcInfo.value(forKey: "buttonCancelText") as? String ?? btnCancel.title
         }
         btnCancel.buttonColor = NSColor.white.cgColor
+    }
+    
+    override func viewWillAppear() {
+        if SettingsManagerObject.selectedFontIndex == intelOneMonoFontIndex || SettingsManagerObject.selectedFontIndex == openDyslexicFontIndex{
+            heightBoxBg.constant = 660
+        }else{
+            heightBoxBg.constant = 600
+        }
     }
     
     @IBAction func btnOkClicked(_ sender: Any) {

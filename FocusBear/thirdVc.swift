@@ -2067,16 +2067,6 @@ class thirdVc: NSViewController {
                 mainViewControllerObj!.showTakeNotesView()
                 takeActivityNotesVcObj?.resetData(durationInSeconds: duration, quantity_logged:nil, activity_id: arrFilteredMorningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredMorningHabits[lastHabitIndex].activity_sequence_id, activityChoiceId: nil, log_quantity_answers: [])
                 
-            }else if isAnyAllowedFocusModeActivityWasRunningInLastActivity{
-                let currentFocusModeName = currentRunningFocusType["name"] as? String ?? ""
-                let currentFocusModeId = currentRunningFocusType["id"] as? String ?? ""
-                var notes = ""
-                
-                if arrFilteredMorningHabits[lastHabitIndex].take_notes == DURING_ACTIVITY{
-                    notes = UserDefaults.standard.object(forKey: kUserdefaultsLastHabitSavedNotes) as? String ?? ""
-                }
-                mainViewControllerObj!.showFocusCompletedView()
-                focusCompletedForActivityVcObj?.resetData(focusModeName: currentFocusModeName, currentFocusModeId: currentFocusModeId, finish_time: isAnyAllowedFocusModeActivityFinishTime, durationInSeconds: duration, quantity_logged:nil, activity_id: arrFilteredEveningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredEveningHabits[lastHabitIndex].activity_sequence_id, activityChoiceId: nil, log_quantity_answers: [], notes: notes)
             }else{
                 
                 
@@ -2180,83 +2170,13 @@ class thirdVc: NSViewController {
                 }
             }
         }
-//        let (h,m,s) = secondsToHoursMinutesSeconds(seconds: habitCompletedSeconds)
-//        var habitHour = "\(h)"
-//        var habitMinute = "\(m)"
-//        var habitSecond = "\(s)"
-//
-//        if habitHour.count == 1 {
-//            habitHour = "0\(h)"
-//        }
-//
-//        if habitMinute.count == 1 {
-//            habitMinute = "0\(m)"
-//        }
-//        if habitSecond.count == 1 {
-//            habitSecond = "0\(s)"
-//        }
-//
-//
-//        let (hour,minute,second) = secondsToHoursMinutesSeconds(seconds: totalSecondsAllHabits)
-//        var totalHour = "\(hour)"
-//        var totalMinute = "\(minute)"
-//        var totalSecond = "\(second)"
-//
-//        if totalHour.count == 1 {
-//            totalHour = "0\(hour)"
-//        }
-//        if totalMinute.count == 1 {
-//            totalMinute = "0\(minute)"
-//        }
-//        if totalSecond.count == 1 {
-//            totalSecond = "0\(second)"
-//        }
-        
+  
         let habitMinutesString: String = getStringTime(seconds: habitCompletedSeconds)
         
         
         let totalMinutesString: String = getStringTime(seconds: totalSecondsAllHabits)
         
-        
-//        if h != 0{
-//            habitMinutesString = "\(h)" + hourText
-//        }
-//        if m != 0{
-//            if habitMinutesString.isEmpty{
-//                habitMinutesString = "\(m)" + minuteText
-//            }else{
-//                habitMinutesString += " \(m)" + minuteText
-//            }
-//        }
-//        if s != 0{
-//            if habitMinutesString.isEmpty{
-//                habitMinutesString = "\(s)" + secondText
-//            }else{
-//                habitMinutesString += " \(s)" + secondText
-//            }
-//        }
-        
-//        if hour != 0{
-//            totalMinutesString = "\(hour)" + hourText
-//        }
-//        if minute != 0{
-//            if totalMinutesString.isEmpty{
-//                totalMinutesString = "\(minute)" + minuteText
-//            }else{
-//                totalMinutesString += " \(minute)" + minuteText
-//            }
-//        }
-//
-//        if second != 0{
-//            if totalMinutesString.isEmpty{
-//                totalMinutesString = "\(second)" + secondText
-//            }else{
-//                totalMinutesString += " \(second)" + secondText
-//            }
-//        }
-//        if habitMinutesString.isEmpty{
-//            habitMinutesString = "\(m)m"
-//        }
+
         if totalMinutesString.isEmpty{
             var finalSring = "You have completed <duration> of habits."
             if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
@@ -2678,16 +2598,6 @@ class thirdVc: NSViewController {
             if arrFilteredEveningHabits[lastHabitIndex].take_notes == END_OF_ACTIVITY{
                 mainViewControllerObj!.showTakeNotesView()
                 takeActivityNotesVcObj?.resetData(durationInSeconds: duration, quantity_logged:nil, activity_id: arrFilteredEveningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredEveningHabits[lastHabitIndex].activity_sequence_id, activityChoiceId: nil, log_quantity_answers: [])
-            }else if isAnyAllowedFocusModeActivityWasRunningInLastActivity{
-                let currentFocusModeName = currentRunningFocusType["name"] as? String ?? ""
-                let currentFocusModeId = currentRunningFocusType["id"] as? String ?? ""
-                var notes = ""
-                
-                if arrFilteredEveningHabits[lastHabitIndex].take_notes == DURING_ACTIVITY{
-                    notes = UserDefaults.standard.object(forKey: kUserdefaultsLastHabitSavedNotes) as? String ?? ""
-                }
-                mainViewControllerObj!.showFocusCompletedView()
-                focusCompletedForActivityVcObj?.resetData(focusModeName: currentFocusModeName, currentFocusModeId: currentFocusModeId, finish_time: isAnyAllowedFocusModeActivityFinishTime, durationInSeconds: duration, quantity_logged:nil, activity_id: arrFilteredEveningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredEveningHabits[lastHabitIndex].activity_sequence_id, activityChoiceId: nil, log_quantity_answers: [], notes: notes)
             }else{
                 
                 
@@ -3197,7 +3107,7 @@ class thirdVc: NSViewController {
                 nextActivityName = currentActivity!.name
             }else{//random choice
                 currentActivityChoice = nil
-                currentActivityChoice = arrFinalBreakActivities[lastActivityIndex].randomChoice
+                currentActivityChoice = arrFinalBreakActivities[lastActivityIndex+1].randomChoice
                 nextActivityName = currentActivityChoice?.name ?? ""
             }
             
@@ -3588,13 +3498,7 @@ class thirdVc: NSViewController {
         
         var seconds: Int = 0
         let currentActivity = arrFinalBreakActivities[0].activity
-//        if isMandatoryActivityGoing{
-//            currentActivity = arrfinal[currentActivityIndex]
-//        }else{
-//            currentActivity = arrActivitiesExcludeInEveryBreak[currentActivityIndex]
-//        }
-        
-        
+
         if currentActivity!.choiceType != ._RANDOM_{
             activityName = currentActivity!.name
         }else{//random choice
@@ -3639,6 +3543,7 @@ class thirdVc: NSViewController {
             appdelegate!.loadCredentialsAndDeviceId()
             let secondsBetween = Date().timeIntervalSince(onboardingVideoStartTime ?? Date())
             allApiObject.capturePosthog(event: "onboarding-video-watched", metadata: ["watched_duration_seconds":Int(secondsBetween)])
+            showMenuTourWindow()
             return;
         }
         
@@ -3663,42 +3568,18 @@ class thirdVc: NSViewController {
         
         
         if currentState == ._BREATHING_{
-            //            loadBlankUrl()//old work 26/9/22
             boxBreathingFinished.isHidden = true
             mainViewControllerObj?.breathingFinishedUnlockMachine()
         }else if currentState == ._ACTIVITY_ {
             if lastActivityIndex == -1 {
                 mainViewControllerObj?.startCurrentActivity()
             }else{
-//                if isAnyMandatoryActivityIncluded{
-//                    if isMandatoryActivityGoing{
-//
-//                        if lastActivityIndex < arrActivitiesIncludeInEveryBreak.count-1 {
-//                            mainViewControllerObj?.changeActivity()
-//                        }else {
-//                            if arrActivitiesExcludeInEveryBreak.count == 0{
-//                                mainViewControllerObj?.activityFinishedUnlockMachine()
-//                            }else{
-//                                isMandatoryActivityGoing = false
-//                                mainViewControllerObj?.changeActivity()
-//                            }
-//                        }
-//                    }else{
-//                        mainViewControllerObj?.activityFinishedUnlockMachine()
-//                    }
-//                }else{
-//                    mainViewControllerObj?.activityFinishedUnlockMachine()
-//                }
-                
                 if lastActivityIndex < arrFinalBreakActivities.count-1 {
                     mainViewControllerObj?.changeActivity()
                 }else {
                     mainViewControllerObj?.activityFinishedUnlockMachine()
                 }
-                
-                
-            }//2022-10-31 17:04:01
-            
+            }
         }else if currentState == ._MORNING_HABIT_{
             if !isSequenceFinished{
                 if randomIntToRememberNextHabit == 5{

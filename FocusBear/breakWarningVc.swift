@@ -10,6 +10,9 @@ import Cocoa
 
 class breakWarningVc: NSViewController {
 
+    @IBOutlet weak var boxWidth: NSLayoutConstraint!
+    @IBOutlet weak var popupButtonMinutes: NSPopUpButton!
+    @IBOutlet weak var lblTitleSelectMinutes: NSTextField!
     @IBOutlet weak var lblDescription: NSTextField!
     @IBOutlet weak var lblTitle: NSTextField!
     @IBOutlet weak var lblTimer: NSTextField!
@@ -23,9 +26,25 @@ class breakWarningVc: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
+        
+        
+        lblTitleSelectMinutes.stringValue = "Select minutes to postpone:"
+        
+        popupButtonMinutes.removeAllItems()
+        popupButtonMinutes.addItems(withTitles: ["5", "10", "15", "20", "30", "45", "60", "90"])
+        
         lblDescription.stringValue = "Micro breaks help keep your energy + alertness levels consistent throughout the day and have positive impacts on your posture (no more screen headaches)."
         if let breakWarningVcInfo = configjson.value(forKey: "breakWarningVcInfo") as? NSDictionary{
             lblDescription.stringValue = breakWarningVcInfo.value(forKey: "descriptionText") as? String ?? lblDescription.stringValue
+        }
+        
+        if let easyPostponeVcInfo = configjson.value(forKey: "easyPostponeVcInfo") as? NSDictionary{
+            lblTitleSelectMinutes.stringValue = easyPostponeVcInfo.value(forKey: "titleSelectMinutes") as? String ?? lblTitleSelectMinutes.stringValue
+        }
+        if SettingsManagerObject.selectedFontIndex == intelOneMonoFontIndex || SettingsManagerObject.selectedFontIndex == openDyslexicFontIndex{
+            boxWidth.constant = 350
+        }else{
+            boxWidth.constant = 300
         }
     }
     override func viewWillDisappear() {
@@ -66,6 +85,7 @@ class breakWarningVc: NSViewController {
         }
         
         lblTitle.stringValue = title.replacingOccurrences(of: "<DURATION>", with: "\(totalDuration)")
+        popUpBtnClicked(self)
     }
     func startTimer(durationSeconds:Int) {
         if timer != nil{
@@ -139,7 +159,7 @@ class breakWarningVc: NSViewController {
                 self.view.window?.close()
                 transparentWcObj?.window?.close()
                 if self.isPostponing{
-                    mainViewControllerObj?.postponeBreakActivitiesFor(minutes: 5, secondsToPostpone: nil)
+                    mainViewControllerObj?.postponeBreakActivitiesFor(minutes: Int(self.popupButtonMinutes.title) ?? 5, secondsToPostpone: nil)
                 }else{
                     if currentState == ._ACTIVITY_{// whenever show waring then make current state _ACTIVITY_ beacuse if any thing will happen during waring curent state will change (ex. app can bhi in shutoff state when warning is about to over in this case we will not execute break activity)
                         mainViewControllerObj?.performBreakActivities()
@@ -153,6 +173,14 @@ class breakWarningVc: NSViewController {
         setProgres()
     }
     
+    @IBAction func popUpBtnClicked(_ sender: Any) {
+        btnPostpone.title = "Postpone for 5 minutes"
+        let duration = Int(popupButtonMinutes.title) ?? 5
+        if let breakWarningVcInfo = configjson.value(forKey: "breakWarningVcInfo") as? NSDictionary{
+            let title = breakWarningVcInfo.value(forKey: "buttonPostponeText") as? String ?? btnPostpone.title
+            btnPostpone.title = title.replacingOccurrences(of: "5", with: "\(duration)")
+        }
+    }
     @IBAction func btnPostponeClicked(_ sender: Any) {
         addLog(text: "breakWarningVc:- btnPostponeClicked")
         if isPostponing{
@@ -181,7 +209,7 @@ class breakWarningVc: NSViewController {
                 self.timer?.invalidate()
                 self.view.window?.close()
                 activityPostponeCount += 1
-                mainViewControllerObj?.postponeBreakActivitiesFor(minutes: 5, secondsToPostpone: nil)
+                mainViewControllerObj?.postponeBreakActivitiesFor(minutes: Int(popupButtonMinutes.title) ?? 5, secondsToPostpone: nil)
             }
         }
     }

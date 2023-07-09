@@ -38,7 +38,7 @@ class passwordVc: NSViewController {
     @IBOutlet weak var textFieldConfirmPassword: NSSecureTextField!
     @IBOutlet weak var lblTitle: NSTextField!
     
-    
+    let viewHeightDefault = 511
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
@@ -55,13 +55,9 @@ class passwordVc: NSViewController {
         
         
         btnDisablePassword.title = "Disable Password"
-//        lblInfo.stringValue = "You will need to enter your password - When opening preferences, When aborting an evening routine, When aborting the morning routine."
-        
         lblCheckBoxSkipEveningHabitAfterCutOff.stringValue = "Postponing/skipping evening routine after cutoff time"
         if let passwordPreferencesInfo = configjson.value(forKey: "passwordPreferencesInfo") as? NSDictionary{
-//            if let title = passwordPreferencesInfo.value(forKey: "infoText") as? String{
-//                lblInfo.stringValue = title
-//            }
+
             if let title = passwordPreferencesInfo.value(forKey: "buttonDisablePasswordText") as? String{
                 btnDisablePassword.title = title
             }
@@ -109,7 +105,11 @@ class passwordVc: NSViewController {
         SettingsManagerObject.putUserLocalDeviceSettings()
     }
     override func viewWillAppear() {
-        preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: 630 + 46, height: 511 + 142))
+        if SettingsManagerObject.selectedFontIndex == intelOneMonoFontIndex || SettingsManagerObject.selectedFontIndex == openDyslexicFontIndex{
+            preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: (preferencesWindowControllerObj?.settingsTabDefaultWidthForBigFonts ?? 0) + (preferencesWindowControllerObj?.extraSpaceWidthInSettingsTab ?? 0), height: viewHeightDefault + (preferencesWindowControllerObj?.extraSpaceHeightInSettingsTab ?? 0)))
+        }else{
+            preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: (preferencesWindowControllerObj?.settingsTabDefaultWidth ?? 0) + (preferencesWindowControllerObj?.extraSpaceWidthInSettingsTab ?? 0), height: viewHeightDefault + (preferencesWindowControllerObj?.extraSpaceHeightInSettingsTab ?? 0)))
+        }
         resetView()
     }//your password has been disabled.
     //

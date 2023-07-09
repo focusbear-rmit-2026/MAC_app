@@ -53,36 +53,8 @@ class editHabitRoutineVc: NSViewController, WKNavigationDelegate {
     }
     
     func setSettingsToWebView(){
-        let focusbearEnv = "focusbearEnv('mac');"
-        
-        webView?.evaluateJavaScript(focusbearEnv,completionHandler: { (html: Any?, error: Error?) in
-            print(html)
-        })
-        
-        //load settings
-        
-        var stringjson = ""
-        if let text = UserDefaults.standard.object(forKey: kUserdefaultsSelectedJson) as? String {
-            stringjson = text
-        }else {
-            if let path = Bundle.main.path(forResource: "settings", ofType: "json") {
-                let url = URL(fileURLWithPath: path)
-                do {
-                    
-                    let text2 = try String(contentsOf: url, encoding: .utf8)
-                    stringjson = text2
-                    
-                } catch {
-                    // handle error
-                }
-                
-            }
-        }
-
-        
-        let stringJson1 = "{\"settings\": \(stringjson),\"metadata\": {\"access_token\": \"\(appdelegate!.credential?.accessToken ?? "")\"}}"
-        
-        let javascript = "loadSettingsData(\(stringJson1));"
+        let settingsJson = "{\"access_token\":\"\(appdelegate!.credential?.accessToken ?? "")\",\"platform\":\"mac\"}"
+        let javascript = "loadSettingsData(\(settingsJson));"
         
         webView?.evaluateJavaScript(javascript,completionHandler: { (html: Any?, error: Error?) in
             print(error)
