@@ -10,7 +10,9 @@ import Cocoa
 
 class tblCellBrowsers: NSTableCellView {
 
-    @IBOutlet weak var lblDescription: NSTextField!
+    @IBOutlet weak var btnInfo: hoverInfoButton!
+    @IBOutlet weak var lineBottom: NSBox!
+    @IBOutlet weak var lblFirefoxPermission: NSTextField!
     @IBOutlet weak var imgView: NSImageView!
     @IBOutlet weak var lblState: NSTextField!
     @IBOutlet weak var btnRequest: Button!

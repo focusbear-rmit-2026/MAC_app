@@ -22,7 +22,8 @@ class focusEndWarningVc: NSViewController {
     var timer:Timer?
     var currentTimer = 0
     var totalDuration = 0
-    
+    var alertExtendPostpone: NSAlert?
+    let enterPasswordVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("enterPasswordVc")) as? enterPasswordVc
     override func viewDidLoad() {
         super.viewDidLoad()
         lblTitle.stringValue = "Focus mode ends in"
@@ -37,10 +38,6 @@ class focusEndWarningVc: NSViewController {
             btnExtend.title = common.value(forKey: "buttonExtendText") as? String ?? btnExtend.title
             
         }
-        
-        
-        
-        
         btnCancel.title = buttonCancelText
         popUpBtn.removeAllItems()
         popUpBtn.addItems(withTitles: ["5", "10", "15", "20", "25", "30", "45", "90"])
@@ -52,6 +49,17 @@ class focusEndWarningVc: NSViewController {
         if timer != nil{
             timer?.invalidate()
             timer = nil
+        }
+        if alertExtendPostpone != nil{
+            if alertExtendPostpone!.window.isVisible{
+                self.view.window!.endSheet(alertExtendPostpone!.window)
+            }
+        }
+        
+        if enterPasswordVcObj != nil{
+            if enterPasswordVcObj?.presentingViewController == self{
+                enterPasswordVcObj!.dismiss(enterPasswordVcObj)
+            }
         }
     }
     func startTimer(durationSeconds:Int) {
@@ -124,10 +132,99 @@ class focusEndWarningVc: NSViewController {
         setProgres()
     }
     @IBAction func btnExtendClicked(_ sender: Any) {
+        let totalMinutes = Int(popUpBtn.title) ?? 0
+        if currentState == ._POSTPON_MORNING_HABIT_ || currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_{
+            if mainViewControllerObj?.postponeTimer != nil {
+                if mainViewControllerObj!.postponeTimer!.isValid{
+                    let currentTime = Date()
+                    let breakTime = mainViewControllerObj!.postponeTimer!.fireDate
+                    let diffMinute = Calendar.current.dateComponents([.minute], from: currentTime, to: breakTime).minute ?? 0
+                    if diffMinute < totalMinutes{
+                        alertExtendPostpone = NSAlert()
+                        alertExtendPostpone!.setSharingType()
+                        alertExtendPostpone!.messageText = "Focus duration is longer than habit postpone duration."
+                        alertExtendPostpone!.informativeText = "You may want to extend the postpone duration to match the focus session duration. Click on the desired button to start the focus session."
+                        var buttonExtendPostponeText = "Extend postpone duration"
+                        var buttonDoNotExtendPostponeText = "Do not extend postpone duration"
+                        
+                        if let pomodoroInfo = configjson.value(forKey: "pomodoroInfo") as? NSDictionary{
+                            alertExtendPostpone!.messageText = pomodoroInfo.value(forKey: "alertExtendPostponeText") as? String ?? alertExtendPostpone!.messageText
+                            alertExtendPostpone!.informativeText = pomodoroInfo.value(forKey: "alertExtendPostponeDescription") as? String ?? alertExtendPostpone!.informativeText
+                            buttonExtendPostponeText = pomodoroInfo.value(forKey: "buttonExtendPostponeText") as? String ?? buttonExtendPostponeText
+                            buttonDoNotExtendPostponeText = pomodoroInfo.value(forKey: "buttonDoNotExtendPostponeText") as? String ?? buttonDoNotExtendPostponeText
+                        }
+                        alertExtendPostpone!.alertStyle = NSAlert.Style.warning
+                        alertExtendPostpone!.addButton(withTitle: buttonExtendPostponeText)
+                        alertExtendPostpone!.addButton(withTitle: buttonDoNotExtendPostponeText)
+                        
+                        alertExtendPostpone!.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
+                            if modalResponse == .alertFirstButtonReturn{
+                                if currentState == ._POSTPON_MORNING_HABIT_{
+                                    if SettingsManagerObject.isEasySkipEnabled{
+                                        mainViewControllerObj?.postponeMorningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
+                                        self.extendFocusMode()
+                                    }else{
+                                        if SettingsManagerObject.isPasswordRequireInSkipMorning && shouldAskPassword(){
+                                            self.presentAsSheet(self.enterPasswordVcObj!)
+                                            self.enterPasswordVcObj?.parentVc = self
+                                        }else{
+                                            mainViewControllerObj?.postponeMorningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
+                                            self.extendFocusMode()
+                                        }
+                                    }
+                                }else if currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_{
+                                    
+                                    var shouldAskPasswordForEvening = false
+                                    if shouldAskPassword() &&  !SettingsManagerObject.isEasySkipEnabled{
+                                        var isCutOffTimeGoing = false
+                                        if cutOffTime != nil {
+                                            let cutOffDate = Calendar.current.date(bySettingHour: cutOffTime!.hour, minute: cutOffTime!.minute, second: cutOffTime!.second, of: Date())!
+                                            let currentDate = Date()
+                                            if currentDate > cutOffDate{
+                                                isCutOffTimeGoing = true
+                                            }
+                                        }
+                                        
+                                        if isCutOffTimeGoing{
+                                            if SettingsManagerObject.isPasswordRequireInSkipEveningAfterCutOff{
+                                                shouldAskPasswordForEvening = true
+                                            }
+                                        }else{
+                                            if SettingsManagerObject.isPasswordRequireInSkipEvening{
+                                                shouldAskPasswordForEvening = true
+                                            }
+                                        }
+                                    }
+                                    if shouldAskPasswordForEvening{
+                                        self.presentAsSheet(self.enterPasswordVcObj!)
+                                        self.enterPasswordVcObj?.parentVc = self
+                                    }else{
+                                        if currentState == ._EVENING_HABIT_{
+                                            mainViewControllerObj?.postponeEveningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
+                                        }else if currentState == ._POSTPON_FOCUS_SUMMARY_{
+                                            mainViewControllerObj?.postponeFocusSummaryFor(minutes: totalMinutes + 2)
+                                        }
+                                        self.extendFocusMode()
+                                    }
+                                }
+                            }
+                            
+                        })
+                        return;
+                    }
+                }
+            }
+        }
+        
+        
+        self.extendFocusMode()
+        
+    }
+    
+    func extendFocusMode(){
         appdelegate?.extendFocusModeFor(minutes: Int(popUpBtn.title) ?? 0)
         self.view.window?.close()
     }
-    
     @IBAction func btnCancelClicked(_ sender: Any) {
         self.view.window?.close()
     }

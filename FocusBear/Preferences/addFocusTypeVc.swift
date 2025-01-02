@@ -90,7 +90,7 @@ class addFocusTypeVc: NSViewController, NSTextFieldDelegate  {
     }
     
     @IBAction func bntColorBoxInfoClicked(_ sender: Any) {
-        addLog(text: "bntColorBoxInfoClicked")
+        addLog(text: "[user-action] bntColorBoxInfoClicked")
         showTooltip(sender: bntColorBoxInfo, msg: toolTipColorBox, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
     }
     
@@ -166,13 +166,25 @@ class addFocusTypeVc: NSViewController, NSTextFieldDelegate  {
             }
         }
         let id = getUuid()
-        let dic:[String:Any] = ["id":id, "name":textFieldFocusType.stringValue, "color": getColorString(color: colorWell.color), "allowed_apps": [], "allowed_urls": [], "isOn": false, "isAllowedAllApps":true, "isAllowedListApproach":false, "blockUrlsArray": [], "tags":[]]//, "isAllowedAllUrls":true , "isBlockedAllUrls":false#453
+        let dic:[String:Any] = ["id":id, "name":textFieldFocusType.stringValue, "color": getColorString(color: colorWell.color), "allowed_apps": [], "allowed_urls": [], "isOn": false, "isAllowedAllApps":true, "isAllowedListApproach":false, "blockUrlsArray": [], "tags":[], "focusAlignmentScoreThreshold": defaultFocusAlignmentScoreToShowDistractingPopUp]//, "isAllowedAllUrls":true , "isBlockedAllUrls":false#453
         
-        let row = focusPreferencesVcObj?.tblViewFocusType.numberOfRows ?? 0// becos
+        let row = focusPreferencesVcObj?.tblViewFocusType.numberOfRows ?? 0
         arrFocusType.insert(dic, at: row)
-        focusPreferencesVcObj?.tblViewFocusType.insertRows(at: IndexSet(arrayLiteral: row), withAnimation: .effectFade)
-        focusPreferencesVcObj?.tblViewFocusType.selectRowIndexes(IndexSet(arrayLiteral: row), byExtendingSelection: false)
-        focusPreferencesVcObj?.tblViewFocusType.scrollRowToVisible(row)
+        sortFocusModes()
+        
+        for i in 0..<arrFocusType.count{
+            if let idFocusMode = arrFocusType[i]["id"] as? String{
+                if idFocusMode == id{
+                    focusPreferencesVcObj?.tblViewFocusType.insertRows(at: IndexSet(arrayLiteral: i), withAnimation: .effectFade)
+                    focusPreferencesVcObj?.tblViewFocusType.selectRowIndexes(IndexSet(arrayLiteral: i), byExtendingSelection: false)
+                    focusPreferencesVcObj?.tblViewFocusType.scrollRowToVisible(i)
+                    break;
+                }
+            }
+        }
+        
+        
+        
         focusPreferencesVcObj?.checkState()
         
         
@@ -187,17 +199,7 @@ class addFocusTypeVc: NSViewController, NSTextFieldDelegate  {
             }
         }
         
-        allApiObject.addFocusMode(focusType: dic, completionHandler: {newDic in
-            if newDic != nil{
-//                dic["id"] = newDic!.value(forKey: "id") as? String ?? ""//["id"] as? String ?? ""
-//                arrFocusType[row] = dic
-//                UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
-                DispatchQueue.main.async {
-                    
-                }
-            }
-            
-        })
+        allApiObject.addFocusMode(focusType: dic)
         allApiObject.capturePosthog(event: "add-new-focus-mode", metadata: [:])
     }
     func controlTextDidChange(_ obj: Notification) {

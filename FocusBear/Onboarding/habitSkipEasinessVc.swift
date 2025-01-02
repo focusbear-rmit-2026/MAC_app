@@ -55,17 +55,17 @@ class habitSkipEasinessVc: NSViewController {
         
         UserDefaults.standard.set(isHabitSkipEasy, forKey: kUserdefaultsHabitSkipEasinessFromOnboarding)
         
-        addLog(text: "habitSkip Onboarding view:- btnContinueClicked:isHabitSkipEasy:- \(isHabitSkipEasy)")
+        addLog(text: "[user-action] habitSkip Onboarding view:- btnContinueClicked:isHabitSkipEasy:- \(isHabitSkipEasy)")
        // mainViewControllerObj!.showOnboardingBlockedUrlsVc()
     }
     
     @IBAction func radioBtnFirstClicked(_ sender: Any) {
-        addLog(text: "habitSkip Onboarding view:- button Really easy to skip Clicked")
+        addLog(text: "[user-action] habitSkip Onboarding view:- button Really easy to skip Clicked")
         radioBtnSecond.state = .off
     }
     
     @IBAction func radioBtnSecondClicked(_ sender: Any) {
-        addLog(text: "habitSkip Onboarding view:- button Make it hard to skip Clicked")
+        addLog(text: "[user-action] habitSkip Onboarding view:- button Make it hard to skip Clicked")
         radioBtnFirst.state = .off
     }
 }

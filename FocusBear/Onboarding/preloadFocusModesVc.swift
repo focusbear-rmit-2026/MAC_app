@@ -19,19 +19,18 @@ class preloadFocusModesVc: NSViewController, NSTextFieldDelegate {
     @IBOutlet weak var popUpBtnWork: NSPopUpButton!
     @IBOutlet weak var lblTitle: NSTextField!
     //71
-    
+    let selectWorkTypeIndex = 0
     var titleProgramming = "Programming"
     var titleGraphicDesign = "Graphic Design"
     var titleDataAnalysis = "Data Analysis"
     var arrDic = [[String : Any]]()
     var gotItText = "Got it. Let's set up a Focus Mode to help you be super productive while you're doing <WORK_TYPE> work."
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
         
         lblDescription.stringValue = "We'll customise your focus mode depending on type of work you do."
-        
-        
         textFieldSomethingElse.placeholderString = "Rocket Surgery"
         textFieldSomethingElse.isHidden = true
         btnContinue.isEnabled = false
@@ -42,7 +41,6 @@ class preloadFocusModesVc: NSViewController, NSTextFieldDelegate {
     
         textFieldSomethingElse.delegate = self
         btnContinue.title = "Continue"
-
         var titleSomethingElse = "Something else"
         
         
@@ -59,10 +57,9 @@ class preloadFocusModesVc: NSViewController, NSTextFieldDelegate {
             gotItText = preloadFocusModesViewInfo.value(forKey: "gotItText") as? String ?? gotItText
             
             lblDescription.stringValue = preloadFocusModesViewInfo.value(forKey: "description") as? String ?? lblDescription.stringValue
-        }//
+        }
 
-        if focusModeTemplateData != nil{ 
-            
+        if focusModeTemplateData != nil{
             for item in focusModeTemplateData!{
                 let name = item.value(forKey: "name") as? String ?? ""
                 var allowed_apps = item.value(forKey: "allowed_apps") as? [String] ?? []
@@ -72,21 +69,21 @@ class preloadFocusModesVc: NSViewController, NSTextFieldDelegate {
                     allowed_apps[i] = "/Applications/\(allowed_apps[i]).app"
                 }
                 
-                let dic:[String:Any] = ["name":name, "color": getColorString(color: NSColor(red: 163/255, green: 255/255, blue: 161/255, alpha: 1)), "allowed_apps": allowed_apps, "allowed_urls": allowed_urls, "isOn": false, "isAllowedAllApps":false, "isAllowedListApproach":true, "blockUrlsArray": [], "tags":[]]
+                let dic:[String:Any] = ["name":name, "color": getColorString(color: NSColor(red: 163/255, green: 255/255, blue: 161/255, alpha: 1)), "allowed_apps": allowed_apps, "allowed_urls": allowed_urls, "isOn": false, "isAllowedAllApps":false, "isAllowedListApproach":true, "blockUrlsArray": [], "tags":[], "focusAlignmentScoreThreshold": defaultFocusAlignmentScoreToShowDistractingPopUp]
                 
                 arrDic.append(dic)
             }
         }else{
             arrDic = [
-                ["name":"\(titleProgramming)", "color": getColorString(color: NSColor(red: 163/255, green: 255/255, blue: 161/255, alpha: 1)), "allowed_apps": ["/Applications/Visual Studio Code.app", "/Applications/Xcode.app", "/Applications/Utilities/Terminal.app", "/Applications/Google Chrome.app", "/Applications/iTerm2.app", "/Applications/Docker.app", "/Applications/Firefox.app", "/Applications/Insomnia.app", "/Applications/VirtualBox.app", "/Applications/DBeaver.app", "/Applications/Safari.app"], "allowed_urls": ["https://stackoverflow.com","localhost"], "isOn": false, "isAllowedAllApps":false, "isAllowedListApproach":true, "blockUrlsArray": [], "tags":[]],
+                ["name":"\(titleProgramming)", "color": getColorString(color: NSColor(red: 163/255, green: 255/255, blue: 161/255, alpha: 1)), "allowed_apps": ["/Applications/Visual Studio Code.app", "/Applications/Xcode.app", "/Applications/Utilities/Terminal.app", "/Applications/Google Chrome.app", "/Applications/iTerm2.app", "/Applications/Docker.app", "/Applications/Firefox.app", "/Applications/Insomnia.app", "/Applications/VirtualBox.app", "/Applications/DBeaver.app", "/Applications/Safari.app"], "allowed_urls": ["https://stackoverflow.com","localhost"], "isOn": false, "isAllowedAllApps":false, "isAllowedListApproach":true, "blockUrlsArray": [], "tags":[], "focusAlignmentScoreThreshold": defaultFocusAlignmentScoreToShowDistractingPopUp],
                 
-                ["name":"\(titleGraphicDesign)", "color": getColorString(color: NSColor(red: 163/255, green: 255/255, blue: 161/255, alpha: 1)), "allowed_apps": ["/Applications/Figma.app", "/Applications/Adobe Illustrator.app", "/Applications/Adobe Photoshop.app", "/Applications/Google Chrome.app", "/Applications/Safari.app"], "allowed_urls": ["https://www.figma.com"], "isOn": false, "isAllowedAllApps":false, "isAllowedListApproach":true, "blockUrlsArray": [], "tags":[]],
+                ["name":"\(titleGraphicDesign)", "color": getColorString(color: NSColor(red: 163/255, green: 255/255, blue: 161/255, alpha: 1)), "allowed_apps": ["/Applications/Figma.app", "/Applications/Adobe Illustrator.app", "/Applications/Adobe Photoshop.app", "/Applications/Google Chrome.app", "/Applications/Safari.app"], "allowed_urls": ["https://www.figma.com"], "isOn": false, "isAllowedAllApps":false, "isAllowedListApproach":true, "blockUrlsArray": [], "tags":[], "focusAlignmentScoreThreshold": defaultFocusAlignmentScoreToShowDistractingPopUp],
                 
-                ["name":"\(titleDataAnalysis)", "color": getColorString(color: NSColor(red: 163/255, green: 255/255, blue: 161/255, alpha: 1)), "allowed_apps": ["/Applications/Microsoft Excel.app", "/Applications/Google Chrome.app", "/Applications/Safari.app"], "allowed_urls": ["https://www.office.com"], "isOn": false, "isAllowedAllApps":false, "isAllowedListApproach":true, "blockUrlsArray": [], "tags":[]],
+                ["name":"\(titleDataAnalysis)", "color": getColorString(color: NSColor(red: 163/255, green: 255/255, blue: 161/255, alpha: 1)), "allowed_apps": ["/Applications/Microsoft Excel.app", "/Applications/Google Chrome.app", "/Applications/Safari.app"], "allowed_urls": ["https://www.office.com"], "isOn": false, "isAllowedAllApps":false, "isAllowedListApproach":true, "blockUrlsArray": [], "tags":[], "focusAlignmentScoreThreshold": defaultFocusAlignmentScoreToShowDistractingPopUp],
             ]
         }
         
-        arrDic.append(["name":titleSomethingElse, "color": getColorString(color: NSColor(red: 163/255, green: 255/255, blue: 161/255, alpha: 1)), "allowed_apps": ["/Applications/Microsoft Excel.app", "/Applications/Microsoft Word.app", "/Applications/Google Chrome.app", "/System/Applications/Calendar.app", "/Applications/Safari.app"], "allowed_urls": ["https://www.google.com"], "isOn": false, "isAllowedAllApps":false, "isAllowedListApproach":true, "blockUrlsArray": [], "tags":[]])
+        arrDic.append(["name":titleSomethingElse, "color": getColorString(color: NSColor(red: 163/255, green: 255/255, blue: 161/255, alpha: 1)), "allowed_apps": ["/Applications/Microsoft Excel.app", "/Applications/Microsoft Word.app", "/Applications/Google Chrome.app", "/System/Applications/Calendar.app", "/Applications/Safari.app"], "allowed_urls": ["https://www.google.com"], "isOn": false, "isAllowedAllApps":false, "isAllowedListApproach":true, "blockUrlsArray": [], "tags":[], "focusAlignmentScoreThreshold": defaultFocusAlignmentScoreToShowDistractingPopUp])
         
         popUpBtnWork.removeAllItems()
         popUpBtnWork.addItem(withTitle: titleSelectWorkType)
@@ -95,6 +92,7 @@ class preloadFocusModesVc: NSViewController, NSTextFieldDelegate {
         for dic in arrDic{
             popUpBtnWork.addItem(withTitle: dic["name"] as? String ?? "")
         }
+        
         lblGotIt.stringValue = ""
     }
     
@@ -109,13 +107,14 @@ class preloadFocusModesVc: NSViewController, NSTextFieldDelegate {
     @IBAction func popUpBtnSelectWorkClicked(_ sender: Any) {
         textFieldSomethingElse.stringValue = ""
         let selectedIndex = popUpBtnWork.indexOfSelectedItem
-        if selectedIndex == 0{
+        if selectedIndex == selectWorkTypeIndex{
             btnContinue.isEnabled = false
             textFieldSomethingElse.isHidden = true
             lblGotIt.stringValue = ""
         }else if selectedIndex == popUpBtnWork.numberOfItems - 1{
             btnContinue.isEnabled = false
             textFieldSomethingElse.isHidden = false
+            textFieldSomethingElse.setFocus()
             lblGotIt.stringValue = ""
         }else{
             textFieldSomethingElse.isHidden = true
@@ -137,7 +136,7 @@ class preloadFocusModesVc: NSViewController, NSTextFieldDelegate {
         }
         
         let selectedIndex = popUpBtnWork.indexOfSelectedItem
-        if selectedIndex == 0{
+        if selectedIndex == selectWorkTypeIndex{
             return;
         }else{
             
@@ -155,18 +154,17 @@ class preloadFocusModesVc: NSViewController, NSTextFieldDelegate {
                 dic["id"] = id
             }
             
-            addLog(text: "preload Focus modeVC:-  button Continue clicked")
+            addLog(text: "[user-action] preload Focus modeVC:-  button Continue clicked")
             
             arrFocusType.insert(dic, at: arrFocusType.count - 1)
+            sortFocusModes()
             UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
-            allApiObject.addFocusMode(focusType: dic, completionHandler: {newDic in
-                
-            })
+            allApiObject.addFocusMode(focusType: dic)
             
             if preferencesWindowControllerObj != nil{
                 if preferencesWindowControllerObj?.window?.isVisible ?? false{
                     if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-                        if tabview.selectedTabViewItemIndex == 1{
+                        if tabview.selectedTabViewItemIndex == preferencesFocusModesIndex{
                             focusPreferencesVcObj?.reloadData()
                         }
                     }
@@ -174,7 +172,7 @@ class preloadFocusModesVc: NSViewController, NSTextFieldDelegate {
             }
             UserDefaults.standard.set(true, forKey: kUserdefaultsFocusTipsShown)
             
-            addLog(text: "show Focus Tips Vc")
+            addLog(text: "[user-action] show Ai Permission Vc")
             self.view.window?.contentViewController = getAiPermissionVcObj()
         }
 

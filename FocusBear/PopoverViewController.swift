@@ -1,11 +1,3 @@
-//
-//  PopoverViewController.swift
-//  ThinkBizz Business Dynamics
-//
-//  Created by Prashant Sawnani on 10/11/20.
-//  Copyright © 2020 ThinkBizz. All rights reserved.
-//
-
 import Cocoa
 
 class PopoverViewController: NSViewController {
@@ -29,14 +21,14 @@ class PopoverViewController: NSViewController {
         }
     }
     @objc func doubleClicked(){
-        addLog(text:"rememberNextHabitVc:- doubleClicked")
+        addLog(text:"[user-action] rememberNextHabitVc:- doubleClicked")
         if tblView.selectedRow != -1{
             textFieldObj?.stringValue = itemsarr[tblView.selectedRow]["title"] as? String ?? ""
             textFieldObj?.selectedItemId = itemsarr[tblView.selectedRow]["id"] as? Int ?? 0
             textFieldObj?.Close()
         }
         
-        textFieldObj?.parentVcObj?.optionSelectedByUser()
+//        textFieldObj?.parentVcObj?.optionSelectedByUser()
     }
     
     @objc func selectNext(){
@@ -45,13 +37,7 @@ class PopoverViewController: NSViewController {
         }
         let selectedRow = tblView.selectedRow
         tblView.selectRowIndexes(IndexSet(arrayLiteral: selectedRow+1), byExtendingSelection: false)
-        
-//        if tblView.selectedRow != -1{
-//            textFieldObj?.stringValue = itemsarr[tblView.selectedRow]
-//            textFieldObj?.Close()
-//        }else{
-//
-//        }
+
     }
     @objc func selectPrevious(){
         if tblView == nil{
@@ -82,39 +68,17 @@ extension PopoverViewController: NSTableViewDataSource, NSTableViewDelegate {
     }
     
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
-        
         var cellView: NSTableCellView?
-        
-        
-        
+
         let item = itemsarr[row]
         cellView = tableView.makeView(withIdentifier: NSUserInterfaceItemIdentifier(rawValue: "Popover"), owner: nil) as? NSTableCellView
         cellView?.textField?.stringValue = item["title"] as? String ?? ""
-//        let font = NSFont(name: "System", size: 10)
-//        cellView?.textField?.font = font
-        
-        
-        
         return cellView!
-        
     }
     
-//    func tableView(_ tableView: NSTableView, heightOfRow row: Int) -> CGFloat {
-//        var rowHeight: CGFloat?
-//        if tableView == self.addPhoneTableView || tableView == self.addEmailTableView {
-//            rowHeight = 26
-//        } else if tableView == self.attachmentTableView {
-//            rowHeight = 17
-//        }
-//        return rowHeight!
-//    }
+
     
     func tableViewSelectionDidChange(_ notification: Notification) {
-//        if tblView.selectedRow != -1{
-//            textFieldObj?.stringValue = itemsarr[tblView.selectedRow]
-//            textFieldObj?.Close()
-//        }
-
         
     }
     

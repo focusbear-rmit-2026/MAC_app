@@ -23,8 +23,12 @@ class pomodoroWindowController: NSWindowController, NSWindowDelegate {
     
     
     func windowShouldClose(_ sender: NSWindow) -> Bool {
-
-        appdelegate?.setTimerForPomodoroMode(delay: 60*10)
+        if SettingsManagerObject.isGeekModeEnabled{
+            if pomodoroVcObj?.isShowingMorningPomodoro ?? false{
+                appdelegate?.setTimerForPomodoroMode(delay: 60*10)
+            }
+        }
+        allApiObject.capturePosthog(event: "start-focus-session-popup-closed", metadata: [:])
         return true
     }
 

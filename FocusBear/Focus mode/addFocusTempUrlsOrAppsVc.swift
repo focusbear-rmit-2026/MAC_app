@@ -259,11 +259,7 @@ class addFocusTempUrlsOrAppsVc: NSViewController {
                 arrFocusType[i]["allowed_urls"] = urlsArray
                 
                 UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
-                allApiObject.editFocusMode(focusType: arrFocusType[i], completionHandler: {newDic in
-                    DispatchQueue.main.async {
-                        
-                    }
-                })
+                updateAllFocusModes()
                 
 
                 allApiObject.capturePosthog(event: "add-temp-items-to-focus-mode", metadata: [:])
@@ -317,7 +313,9 @@ extension addFocusTempUrlsOrAppsVc:NSTableViewDelegate, NSTableViewDataSource {
                 cell.btnCheckBox.action = #selector(btnCheckBoxAppClicked(sender:))
             }else if tableView == tblViewUrls{
                 state = arrAllowedUrls[row]["state"] as? Bool ?? false
-                cell.btnCheckBox.title = arrAllowedUrls[row]["item"] as? String ?? ""
+                cell.textFieldTitle.stringValue = arrAllowedUrls[row]["item"] as? String ?? ""
+                cell.textFieldTitle.delegate = self
+                cell.textFieldTitle.tag = row
                 cell.btnCheckBox.action = #selector(btnCheckBoxUrlClicked(sender:))
             }else if tableView == tblViewKeywords{
                 state = arrAllowedKeywords[row]["state"] as? Bool ?? false
@@ -332,10 +330,6 @@ extension addFocusTempUrlsOrAppsVc:NSTableViewDelegate, NSTableViewDataSource {
             }else{
                 cell.btnCheckBox.state = .off
             }
-           
-            
-            
-            
             return cell
         }
 
@@ -381,45 +375,59 @@ extension addFocusTempUrlsOrAppsVc:NSTableViewDelegate, NSTableViewDataSource {
 
 extension addFocusTempUrlsOrAppsVc:NSTextFieldDelegate{
     func controlTextDidEndEditing(_ obj: Notification) {
-        if arrAllowedKeywords.count == 0{
-            return;
-        }
+        
         if let textField = obj.object as? NSTextField{
-            if textField.tag >= arrAllowedKeywords.count{
-                return;
-            }
-            if textField.stringValue.isEmpty{
-                textField.stringValue = arrAllowedKeywords[textField.tag]["item"] as? String ?? ""
-                return;
-            }
-            
-            
-            
-            for i in 0..<arrAllowedKeywords.count{
-                if i != textField.tag{
-                    if((arrAllowedKeywords[i]["item"] as? String ?? "").caseInsensitiveCompare(textField.stringValue) == .orderedSame){
-                       
-                        var alreadyExistsText = "<APPNAME> already exists in the list."
-                        if let focusPreferencesInfo = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
-                            alreadyExistsText = focusPreferencesInfo.value(forKey: "urlAlreadyExistsText") as? String ?? alreadyExistsText
+            if arrAllowedKeywords.count != 0{
+                if let cellView = tblViewKeywords.view(atColumn: 0, row: textField.tag, makeIfNecessary: false) as? tblCellOnboardingBlockedUrls{
+                    if cellView.textFieldTitle == textField{
+                        if textField.tag >= arrAllowedKeywords.count{
+                            return;
                         }
-                        alreadyExistsText = alreadyExistsText.replacingOccurrences(of: "<APPNAME>", with: textField.stringValue)
-                        textField.stringValue = arrAllowedKeywords[textField.tag]["item"] as? String ?? ""
-                        
-                        let alert = NSAlert()
-                        alert.messageText = alreadyExistsText
-                        alert.addButton(withTitle: buttonOkText)
-                        alert.beginSheetModal(for: self.view.window!)
+                        if textField.stringValue.isEmpty{
+                            textField.stringValue = arrAllowedKeywords[textField.tag]["item"] as? String ?? ""
+                            return;
+                        }
+                        for i in 0..<arrAllowedKeywords.count{
+                            if i != textField.tag{
+                                if((arrAllowedKeywords[i]["item"] as? String ?? "").caseInsensitiveCompare(textField.stringValue) == .orderedSame){
+                                   
+                                    var alreadyExistsText = "<APPNAME> already exists in the list."
+                                    if let focusPreferencesInfo = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
+                                        alreadyExistsText = focusPreferencesInfo.value(forKey: "urlAlreadyExistsText") as? String ?? alreadyExistsText
+                                    }
+                                    alreadyExistsText = alreadyExistsText.replacingOccurrences(of: "<APPNAME>", with: textField.stringValue)
+                                    textField.stringValue = arrAllowedKeywords[textField.tag]["item"] as? String ?? ""
+                                    
+                                    let alert = NSAlert()
+                                    alert.messageText = alreadyExistsText
+                                    alert.addButton(withTitle: buttonOkText)
+                                    alert.beginSheetModal(for: self.view.window!)
+                                    return;
+                                }
+                            }
+                        }
+                        arrAllowedKeywords[textField.tag]["item"] = textField.stringValue
+                        tblViewKeywords.reloadData()
                         return;
                     }
                 }
             }
             
-            
-            
-            
-            arrAllowedKeywords[textField.tag]["item"] = textField.stringValue
-            tblViewKeywords.reloadData()
+            if arrAllowedUrls.count != 0{
+                if let cellView = tblViewUrls.view(atColumn: 0, row: textField.tag, makeIfNecessary: false) as? tblCellOnboardingBlockedUrls{
+                    if cellView.textFieldTitle == textField{
+                        if textField.tag >= arrAllowedUrls.count{
+                            return;
+                        }
+                        if textField.stringValue.isEmpty{
+                            textField.stringValue = arrAllowedUrls[textField.tag]["item"] as? String ?? ""
+                            return;
+                        }
+                        arrAllowedUrls[textField.tag]["item"] = textField.stringValue
+                        tblViewUrls.reloadData()
+                    }
+                }
+            }
         }
     }
 }

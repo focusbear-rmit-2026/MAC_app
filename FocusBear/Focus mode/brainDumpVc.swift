@@ -9,8 +9,10 @@
 import Cocoa
 
 class brainDumpVc: NSViewController, NSTextViewDelegate {
-
     
+    
+    @IBOutlet weak var btnStartFocus: Button!
+    @IBOutlet weak var lblNotesSaveInfo: NSTextField!
     @IBOutlet weak var btnSave: Button!
     @IBOutlet weak var lineTopSpace: NSLayoutConstraint!
     @IBOutlet var textViewWorkNote: NSTextView!
@@ -25,29 +27,39 @@ class brainDumpVc: NSViewController, NSTextViewDelegate {
     
     var titleWorkNoteFirst = "Things I'll do in my next break:"
     var titleWorkNoteSecond = "Things you wanted to do in your break:"
-    
+    var titleTimeRemainingText = "Time remaining:"
+    var titleTimeSpentText = "Time spent:"
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
+        lblNotesSaveInfo.stringValue = "Your notes will automatically save"
+        btnSave.title = "Close"
+        btnStartFocus.title = "Start Focus"
+        
+        if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
+            if let startingFocusModeInfo = focusInfo.value(forKey: "startingFocusModeInfo") as? NSDictionary{
+                if let buttonStartFocusText = startingFocusModeInfo.value(forKey: "buttonStartFocusText") as? String{
+                    btnStartFocus.title = buttonStartFocusText
+                }
+            }
+        }
         lblTitleIntention.stringValue = "Intention:"
         lblTitleTimeRemaining.stringValue = "Time remaining:"
         lblTitleWorkNote.stringValue = "Dump down ideas you have so you don't forget - anything you write here will remain forever unless you delete it"
         
         if let brainDumpVcInfo = configjson.value(forKey: "brainDumpVcInfo") as? NSDictionary{
             lblTitleIntention.stringValue = brainDumpVcInfo.value(forKey: "titleIntentionText") as? String ?? lblTitleIntention.stringValue
-            lblTitleTimeRemaining.stringValue = brainDumpVcInfo.value(forKey: "titleTimeRemainingText") as? String ?? lblTitleTimeRemaining.stringValue
+            titleTimeRemainingText = brainDumpVcInfo.value(forKey: "titleTimeRemainingText") as? String ?? titleTimeRemainingText
             titleWorkNoteFirst = brainDumpVcInfo.value(forKey: "titleWorkNoteFirst") as? String ?? titleWorkNoteFirst
             titleWorkNoteSecond = brainDumpVcInfo.value(forKey: "titleWorkNoteSecond") as? String ?? titleWorkNoteSecond
             lblTitleWorkNote.stringValue = brainDumpVcInfo.value(forKey: "writeThingsHereText") as? String ?? lblTitleWorkNote.stringValue
+            titleTimeSpentText = brainDumpVcInfo.value(forKey: "titleTimeSpentText") as? String ?? titleTimeSpentText
+            lblNotesSaveInfo.stringValue = brainDumpVcInfo.value(forKey: "notesSaveInfoText") as? String ?? lblNotesSaveInfo.stringValue
+            btnSave.title = brainDumpVcInfo.value(forKey: "buttonCloseText") as? String ?? btnSave.title
         }
+        lblTitleTimeRemaining.stringValue = titleTimeRemainingText
         textViewIntention.delegate = self
-        btnSave.title = "Save"
-        
-        
-        if let focusPreferencesInfo = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
-            btnSave.title = focusPreferencesInfo.value(forKey: "buttonSaveText") as? String ?? btnSave.title
-        }
-        
+        textViewWorkNote.delegate = self
     }
     override func viewWillAppear() {
         
@@ -55,6 +67,7 @@ class brainDumpVc: NSViewController, NSTextViewDelegate {
             startRefreshRemainingTimer()
             textViewIntention.isEditable = true
             textViewIntention.enclosingScrollView?.isHidden = false
+            btnStartFocus.isHidden = true
             lblTitleIntention.stringValue = "Intention:"
             if let brainDumpVcInfo = configjson.value(forKey: "brainDumpVcInfo") as? NSDictionary{
                 lblTitleIntention.stringValue = brainDumpVcInfo.value(forKey: "titleIntentionText") as? String ?? lblTitleIntention.stringValue
@@ -64,6 +77,7 @@ class brainDumpVc: NSViewController, NSTextViewDelegate {
             startRefreshRemainingTimer()
             textViewIntention.isEditable = true
             textViewIntention.enclosingScrollView?.isHidden = false
+            btnStartFocus.isHidden = true
             lblTitleIntention.stringValue = "Intention:"
             if let brainDumpVcInfo = configjson.value(forKey: "brainDumpVcInfo") as? NSDictionary{
                 lblTitleIntention.stringValue = brainDumpVcInfo.value(forKey: "titleIntentionText") as? String ?? lblTitleIntention.stringValue
@@ -74,23 +88,32 @@ class brainDumpVc: NSViewController, NSTextViewDelegate {
             textViewIntention.isEditable = false
             textViewIntention.isSelectable = false
             textViewIntention.enclosingScrollView?.isHidden = true
+            btnStartFocus.isHidden = false
             lblTitleIntention.stringValue = "You're currently not in a focus session"
             if let brainDumpVcInfo = configjson.value(forKey: "brainDumpVcInfo") as? NSDictionary{
                 lblTitleIntention.stringValue = brainDumpVcInfo.value(forKey: "titleNotFocusSession") as? String ?? lblTitleIntention.stringValue
             }
-            lineTopSpace.constant = 10
+            lineTopSpace.constant = 50
         }
-        textViewIntention.string = whatToAchieveInFocusBlock
-        
+        brainDumpVcObj?.textViewIntention.isEditable = true
+        if textViewIntention.enclosingScrollView?.isHidden == false{
+            textViewIntention.string = whatToAchieveInFocusBlock
+            if whatToAchieveInFocusBlock.isEmpty{
+                if !focusModeTaskString.isEmpty{
+                    textViewIntention.string = getFocusModeTaskString()
+                    brainDumpVcObj?.textViewIntention.isEditable = false
+                }
+            }
+        }
         if let notes = UserDefaults.standard.object(forKey: kUserdefaultsFocusModeNotes) as? String {
             textViewWorkNote.string = notes
         }else{
             textViewWorkNote.string = ""
         }
+ 
     }
     override func viewWillDisappear() {
         timer?.invalidate()
-        UserDefaults.standard.set(textViewWorkNote.string, forKey: kUserdefaultsFocusModeNotes)
     }
     func textDidChange(_ notification: Notification) {
         guard let textView = notification.object as? NSTextView else{
@@ -98,13 +121,15 @@ class brainDumpVc: NSViewController, NSTextViewDelegate {
         }
         if textView == self.textViewIntention{
             whatToAchieveInFocusBlock = textView.string
+        }else if textView == textViewWorkNote{
+            UserDefaults.standard.set(textViewWorkNote.string, forKey: kUserdefaultsFocusModeNotes)
         }
     }
     func focusModeStarted(){
-//        lblTitleWorkNote.stringValue = titleWorkNoteFirst
         startRefreshRemainingTimer()
         textViewIntention.isEditable = true
         textViewIntention.enclosingScrollView?.isHidden = false
+        btnStartFocus.isHidden = true
         lblTitleIntention.stringValue = "Intention:"
         if let brainDumpVcInfo = configjson.value(forKey: "brainDumpVcInfo") as? NSDictionary{
             lblTitleIntention.stringValue = brainDumpVcInfo.value(forKey: "titleIntentionText") as? String ?? lblTitleIntention.stringValue
@@ -112,20 +137,22 @@ class brainDumpVc: NSViewController, NSTextViewDelegate {
         lineTopSpace.constant = 66
     }
     func focusModeFinished(){
+        brainDumpVcObj?.textViewIntention.isEditable = true
         lblTimeRemaining.stringValue = "0"
         timer?.invalidate()
         timer = nil
         textViewIntention.isEditable = false
         textViewIntention.isSelectable = false
         textViewIntention.enclosingScrollView?.isHidden = true
+        btnStartFocus.isHidden = false
         lblTitleIntention.stringValue = "You're currently not in a focus session"
         if let brainDumpVcInfo = configjson.value(forKey: "brainDumpVcInfo") as? NSDictionary{
             lblTitleIntention.stringValue = brainDumpVcInfo.value(forKey: "titleNotFocusSession") as? String ?? lblTitleIntention.stringValue
         }
-        lineTopSpace.constant = 10
+        lineTopSpace.constant = 50
     }
     func breakStarted(){
-//        lblTitleWorkNote.stringValue = titleWorkNoteSecond
+        //        lblTitleWorkNote.stringValue = titleWorkNoteSecond
     }
     func setRemainingTime(){
         if isFocusModePaused(){
@@ -155,7 +182,18 @@ class brainDumpVc: NSViewController, NSTextViewDelegate {
             }
         }else{
             if let date = endFocusModeTime{
-                let secondsBetween = date.timeIntervalSince(Date())
+                
+                var secondsBetween: TimeInterval = 0
+                
+                if timerForFocusMode != nil{
+                    lblTitleTimeRemaining.stringValue = titleTimeRemainingText
+                    secondsBetween = date.timeIntervalSince(Date())
+                }else{
+                    lblTitleTimeRemaining.stringValue = titleTimeSpentText
+                    if startFocusModeTime != nil{
+                        secondsBetween = Date().timeIntervalSince(startFocusModeTime!)
+                    }
+                }
                 let (h,m,s) = secondsToHoursMinutesSeconds(seconds: Int(secondsBetween))
                 var hour = "\(h)"
                 var minute = "\(m)"
@@ -179,7 +217,7 @@ class brainDumpVc: NSViewController, NSTextViewDelegate {
                         self.lblTimeRemaining.stringValue = "\(hour):\(minute):\(second)"
                     }
                 }
-      
+                
             }else{
                 lblTimeRemaining.stringValue = "0"
             }
@@ -209,7 +247,50 @@ class brainDumpVc: NSViewController, NSTextViewDelegate {
             self.setRemainingTime()
         }
     }
+    
     @IBAction func btnSaveClicked(_ sender: Any) {
         self.view.window?.close()
     }
+    
+    @IBAction func btnStartFocusClicked(_ sender: Any) {
+        if isPurchased == false && daysLeft <= 0{
+            if trialExpiredNagWcObj != nil{
+                if trialExpiredNagWcObj?.window?.isVisible ?? false{
+                    return;
+                }
+            }
+            showUpgradeNowWindow()
+            return;
+        }
+        if isHardCorePomodoroModeOn{
+            let alert = NSAlert()
+            alert.setSharingType()
+            alert.messageText = "You can not start a focus mode while Super Pomodoro session is running."
+            if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
+                if let startingFocusModeInfo = focusInfo.value(forKey: "startingFocusModeInfo") as? NSDictionary{
+                    alert.messageText = startingFocusModeInfo.value(forKey: "pomodoroRunningCantStartFocusText") as? String ?? alert.messageText
+                }
+            }
+            NSApplication.shared.activate(ignoringOtherApps: true)
+            alert.beginSheetModal(for: self.view.window!, completionHandler: nil)
+            return;
+        }else{
+            if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._ACTIVITY_ || currentState == ._SPECIAL_ACTIVITY_{
+                let alert = NSAlert()
+                alert.setSharingType()
+                alert.messageText = "You can not start a focus mode while an activity is running."
+                
+                if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
+                    if let startingFocusModeInfo = focusInfo.value(forKey: "startingFocusModeInfo") as? NSDictionary{
+                        alert.messageText = startingFocusModeInfo.value(forKey: "activityRunningCantStartFocusText") as? String ?? alert.messageText
+                    }
+                }
+                NSApplication.shared.activate(ignoringOtherApps: true)
+                alert.beginSheetModal(for: self.view.window!, completionHandler: nil)
+                return;
+            }
+        }
+        appdelegate?.menuShowPomodoroModeView()
+    }
 }
+

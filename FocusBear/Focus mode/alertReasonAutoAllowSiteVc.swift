@@ -8,7 +8,7 @@
 
 import Cocoa
 
-class alertReasonAutoAllowSiteVc: NSViewController {
+class alertReasonAutoAllowSiteVc: NSViewController {// this view is not in use 20/2/24
 
     @IBOutlet weak var btnCheckBox: NSButton!
     @IBOutlet weak var btnCancel: Button!
@@ -37,26 +37,25 @@ class alertReasonAutoAllowSiteVc: NSViewController {
     
     @IBAction func btnCancelClicked(_ sender: Any) {
         self.view.window?.close()
-        if btnCheckBox.state == .on{
-            SettingsManagerObject.isAiAllowUrlShowAlertEnabled = false
-            SettingsManagerObject.isSettingsChanged = true
-            SettingsManagerObject.putUserLocalDeviceSettings()
-        }
-        popUpBlockConfirmVcObj?.timerHideAlert?.invalidate()
-        popUpBlockConfirmVcObj?.timerHideAlert = nil
-    }
-    @IBAction func btnOkClicked(_ sender: Any) {
-        self.view.window?.close()
         if payload != nil && response != nil{
             allApiObject.capturePosthog(event: "bad-decision-ai-allowed-url", metadata: ["payload":payload!, "response":response!])
         }
-        
         if btnCheckBox.state == .on{
-            SettingsManagerObject.isAiAllowUrlShowAlertEnabled = false
-            SettingsManagerObject.isSettingsChanged = true
-            SettingsManagerObject.putUserLocalDeviceSettings()
+//            SettingsManagerObject.isAiAllowUrlShowAlertEnabled = false
+//            SettingsManagerObject.isSettingsChanged = true
+//            SettingsManagerObject.putUserLocalDeviceSettings()
         }
-        popUpBlockConfirmVcObj?.timerHideAlert?.invalidate()
-        popUpBlockConfirmVcObj?.timerHideAlert = nil
+//        appdelegate?.timerHideAiSafeSiteAlert?.invalidate()
+//        appdelegate?.timerHideAiSafeSiteAlert = nil
+    }
+    @IBAction func btnOkClicked(_ sender: Any) {
+        self.view.window?.close()
+//        if btnCheckBox.state == .on{
+//            SettingsManagerObject.isAiAllowUrlShowAlertEnabled = false
+//            SettingsManagerObject.isSettingsChanged = true
+//            SettingsManagerObject.putUserLocalDeviceSettings()
+//        }
+//        appdelegate?.timerHideAiSafeSiteAlert?.invalidate()
+//        appdelegate?.timerHideAiSafeSiteAlert = nil
     }
 }

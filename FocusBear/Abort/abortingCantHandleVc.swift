@@ -148,7 +148,7 @@ class abortingCantHandleVc: NSViewController, NSTextViewDelegate {
         }
     }
     @IBAction func btnMainClicked(_ sender: Any) {
-        addLog(text: "abortingCantHandleVc - btnMainClicked")//
+        addLog(text: "[user-action] abortingCantHandleVc - btnMainClicked")//
         if isViewStartingSmall{
             //30 seconds work
 //            if lastCurrentState == ._MORNING_HABIT_{
@@ -170,7 +170,7 @@ class abortingCantHandleVc: NSViewController, NSTextViewDelegate {
                 activity = "break"
             }
             
-            addEntryInStatsCsv(logType: logType, activity: activity, durationInSeconds: "", quantityQuestion: "", quantityLogged: "", startTime: "", workAchieved: "", distractionsEncountered: "", abortReason: "Start shortened routine", feedback: textViewFeedback.string)
+            addEntryInStatsCsv(logType: logType, activity: activity, durationInSeconds: "", quantityQuestion: "", quantityLogged: "", startTime: "", workAchieved: "", distractionsEncountered: "", abortReason: "Start shortened routine", feedback: textViewFeedback.string, tags:"")
             
             appdelegate?.quitAndRestartApp()//agar ye ni ayga to aage ka flow set kro
 //            getAbortJsonToUpload(emailAddress: textFieldEmail.stringValue, feedback: textViewFeedback.string, abortReason: "Start shortened routine", completionHandler: {dic in
@@ -195,7 +195,7 @@ class abortingCantHandleVc: NSViewController, NSTextViewDelegate {
                 allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"break_activity", "deactivate-reason":"Deactivate routine + breaks", "detailed-reason":textViewFeedback.string])
             }
             
-            addEntryInStatsCsv(logType: logType, activity: activity, durationInSeconds: "", quantityQuestion: "", quantityLogged: "", startTime: "", workAchieved: "", distractionsEncountered: "", abortReason: "Deactivate routine + breaks", feedback: textViewFeedback.string)
+            addEntryInStatsCsv(logType: logType, activity: activity, durationInSeconds: "", quantityQuestion: "", quantityLogged: "", startTime: "", workAchieved: "", distractionsEncountered: "", abortReason: "Deactivate routine + breaks", feedback: textViewFeedback.string, tags:"")
             
             mainViewControllerObj?.showAbortDoneView()
 //            getAbortJsonToUpload(emailAddress: textFieldEmail.stringValue, feedback: textViewFeedback.string, abortReason: "Deactivate routine + breaks", completionHandler: {dic in

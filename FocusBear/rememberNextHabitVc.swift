@@ -13,13 +13,9 @@ class rememberNextHabitVc: NSViewController, NSTextFieldDelegate {
     @IBOutlet weak var lblPleaseEnterToChoose: NSTextField!
     @IBOutlet weak var btnSkipHabit: underLineButton!
     @IBOutlet weak var customViewForList: NSView!
-    @IBOutlet weak var comboBoxHabits: NSComboBox!
+    @IBOutlet weak var comboBoxHabits: searchableComboBox!
     @IBOutlet weak var textFieldNextHabit: PopoverAwareTextField!
-    
-    //    @IBOutlet weak var tblViewHabits: NSTableView!
-    //    @IBOutlet weak var textFieldNextHabit: NSTextField!
     @IBOutlet weak var btnStartNextHabit: Button!
-    //    @IBOutlet weak var popupBtnHabits: NSPopUpButton!
     @IBOutlet weak var lblQuestion: NSTextField!
     @IBOutlet weak var lblDescription: NSTextField!
     @IBOutlet weak var lblTitle: NSTextField!
@@ -32,7 +28,12 @@ class rememberNextHabitVc: NSViewController, NSTextFieldDelegate {
     var menuHabits = NSMenu()
     var arrHabitNames = [String]()
     var arrSearchedHabitNames = [String]()
-    
+    var moreActionsMenu = NSMenu()
+    var startAnotherHabitVcObj:startAnotherHabitVc?
+    var chooseHabitsVCObj: chooseHabitsVC?
+    var menuItemSkipHabit: NSMenuItem!
+    var menuItemSelectAnotherHabit: NSMenuItem!
+    var menuItemChooseHabits: NSMenuItem!
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
@@ -92,37 +93,37 @@ class rememberNextHabitVc: NSViewController, NSTextFieldDelegate {
         
         arrRandomPhraseWrongChoice.append(randomPhraseWrongChoice1)
         arrRandomPhraseWrongChoice.append(randomPhraseWrongChoice2)
+
+        comboBoxHabits.customDelegate = self
+
+        btnSkipHabit.title = buttonMoreActionsText
+        textFieldNextHabit.isHidden = true
+        customViewForList.isHidden = true
         
-        //        textFieldNextHabit.delegate = self
-        //        tblViewHabits.delegate = self
-        //        tblViewHabits.dataSource = self
+        menuItemSkipHabit = NSMenuItem(title: "Skip this habit for today", action: #selector(menuItemSkipHabitClicked), keyEquivalent: "")
+        menuItemSkipHabit.target = self
+        moreActionsMenu.addItem(menuItemSkipHabit)
         
-        //        let searchBar = NSSearchField()
-        //        searchBar.menu
         
-        //        popupBtnHabits.sear
-        comboBoxHabits.delegate = self
-        comboBoxHabits.dataSource = self
+        menuItemSelectAnotherHabit = NSMenuItem(title: "Choose another habit", action: #selector(menuItemSelectAnotherHabitClicked), keyEquivalent: "")
+        menuItemSelectAnotherHabit.target = self
+        moreActionsMenu.addItem(menuItemSelectAnotherHabit)
         
-        let popoverViewControllerObj = PopoverViewController()
-        textFieldNextHabit.popoverViewControllerObj = popoverViewControllerObj
-        self.customViewForList.addSubview(popoverViewControllerObj.view)
-        self.customViewForList.addConstraints(subView: popoverViewControllerObj.view)
-        textFieldNextHabit.popoverViewControllerObj?.view.isHidden = true
-        comboBoxHabits.isHidden = true// not in use // hide hi rhta h
-        //
+
+        menuItemChooseHabits = NSMenuItem(title: "Select the habits to do from the list of all habits", action: #selector(menuItemChooseHabitsClicked), keyEquivalent: "")
+        menuItemChooseHabits.target = self
+        moreActionsMenu.addItem(menuItemChooseHabits)
         
-        textFieldNextHabit.delegate = self
-        textFieldNextHabit.parentVcObj = self
-        btnSkipHabit.title = "Skip this habit for today"
         if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
-            btnSkipHabit.title = activityInfo.value(forKey: "buttonSkipHabitText") as? String ?? btnSkipHabit.title
+            menuItemSelectAnotherHabit.title = activityInfo.value(forKey: "buttonChooseHabitText") as? String ?? menuItemSelectAnotherHabit.title
+            menuItemChooseHabits.title = activityInfo.value(forKey: "menuItemSelectHabitsText") as? String ?? menuItemChooseHabits.title
         }
+        
     }
     
     func resetData(){
         addLog(text:"rememberNextHabitVc:- func resetData")
-        textFieldNextHabit.stringValue = ""
+//        textFieldNextHabit.stringValue = ""
         
         lblSelectionResult.isHidden = true
         btnStartNextHabit.isHidden = true
@@ -130,9 +131,7 @@ class rememberNextHabitVc: NSViewController, NSTextFieldDelegate {
         var lastHabitName = ""
         var nextHabitName = ""
         var nextHabitTime = 0
-        
-        
-        
+
         var selectHabitText = "Select Habit"
         if let rememberNextHabitViewInfo = configjson.value(forKey: "rememberNextHabitViewInfo") as? NSDictionary{
             if let text = rememberNextHabitViewInfo.value(forKey: "selectHabitText") as? String{
@@ -156,40 +155,30 @@ class rememberNextHabitVc: NSViewController, NSTextFieldDelegate {
             for habit in arrFilteredEveningHabits{
                 arrHabitNames.append(habit.name)
             }
-            
             arrHabitNames.shuffle()
-            //            for habit in arrHabitNames{
-            //                 popupBtnHabits.addItem(withTitle: habit)
-            //            }
             lastHabitName = arrFilteredEveningHabits[nextHabitIndex-1].name
             nextHabitName = arrFilteredEveningHabits[nextHabitIndex].name
             nextHabitTime = arrFilteredEveningHabits[nextHabitIndex].durationSeconds
         }
         
-        lblQuestion.stringValue = questionText.replacingOccurrences(of: "<LAST_HABIT_NAME>", with: lastHabitName)//"You just completed \(lastHabitName). What habit will you do next?"
+        lblQuestion.stringValue = questionText.replacingOccurrences(of: "<LAST_HABIT_NAME>", with: lastHabitName)
         btnStartNextHabit.title = getstartActivityButtonText(seconds: nextHabitTime, name: nextHabitName)
-        //        textFieldNextHabit.stringValue = ""
-        
-        //        for habit in arrHabitNames{
-        //            //            if habit.localizedStandardContains(textfield.stringValue){
-        //            let item = NSMenuItem(title: habit, action: #selector(menuItemClicked), keyEquivalent: "")
-        //            item.target=self
-        //            arrSearchedHabitNames.append(habit)
-        //            //}
-        //            menuHabits.addItem(item)
-        //        }
-        
-        //        comboBoxHabits.ite
         comboBoxHabits.reloadData()
         comboBoxHabits.placeholderString = selectHabitText
         comboBoxHabits.stringValue = ""
         
+        comboBoxHabits.items.removeAll()
+        comboBoxHabits.stringValue = ""
         
         textFieldNextHabit.itemsArr.removeAll()
         for habit in arrHabitNames{
             textFieldNextHabit.itemsArr.append(habit)
+            comboBoxHabits.items.append(habit)
         }
+
         btnSkipHabit.isHidden = true
+        textFieldNextHabit.setFocus()
+        comboBoxHabits.setFocus()
     }
     
     func controlTextDidEndEditing(_ obj: Notification) {
@@ -202,21 +191,129 @@ class rememberNextHabitVc: NSViewController, NSTextFieldDelegate {
     }
     
     @IBAction func btnStartNextHabitClicked(_ sender: Any) {
-        addLog(text:"rememberNextHabitVc:- button Start Next Habit Clicked")
+        addLog(text:"[user-action] rememberNextHabitVc:- button Start Next Habit Clicked")
         self.view.removeFromSuperview()
         thirdVcObj?.boxBg.isHidden = false
         thirdVcObj?.btnMainClicked(self)
     }
-    func optionSelectedByUser(){
+
+    @IBAction func comboBoxHabitAction(_ sender: Any) {
+        itemSelectedByUser(comboBox: comboBoxHabits)
+    }
+    @IBAction func btnSkipHabitClicked(_ sender: Any) {
+        if currentState == ._MORNING_HABIT_{
+            if currentHabitIndex == arrFilteredMorningHabits.count - 2{
+                menuItemSelectAnotherHabit.isHidden = true
+            }else{
+                menuItemSelectAnotherHabit.isHidden = false
+            }
+            var remaingHabitsCount = 0
+            for i in 0..<arrPreFilteredMorningHabits.count{
+                let id = arrPreFilteredMorningHabits[i].id ?? ""
+                let isActivityCompleted = isActivityCompleted(id: id, habits: arrFilteredMorningHabits)
+                if !isActivityCompleted{
+                    remaingHabitsCount += 1
+                }
+            }
+            if remaingHabitsCount > 1{
+                menuItemChooseHabits.isHidden = false
+            }else{
+                menuItemChooseHabits.isHidden = true
+            }
+            
+        }else if currentState == ._EVENING_HABIT_{
+            if currentHabitIndex == arrFilteredEveningHabits.count - 2{
+                menuItemSelectAnotherHabit.isHidden = true
+            }else{
+                if isHighPrioritySequenceGoing{
+                    var isAnyHighPriorityHabitRemaining = false
+                    for i in currentHabitIndex + 2..<arrFilteredEveningHabits.count{
+                        if arrFilteredEveningHabits[i].isPriorityHigh{
+                            isAnyHighPriorityHabitRemaining = true
+                            break;
+                        }
+                    }
+                    if isAnyHighPriorityHabitRemaining{
+                        menuItemSelectAnotherHabit.isHidden = false
+                    }else{
+                        menuItemSelectAnotherHabit.isHidden = true
+                    }
+                }else{
+                    menuItemSelectAnotherHabit.isHidden = false
+                }
+            }
+            
+            var remaingHabitsCount = 0
+            for i in 0..<arrPreFilteredEveningHabits.count{
+                let id = arrPreFilteredEveningHabits[i].id ?? ""
+                let isActivityCompleted = isActivityCompleted(id: id, habits: arrFilteredEveningHabits)
+                if !isActivityCompleted{
+                    if isHighPrioritySequenceGoing{
+                        if arrPreFilteredEveningHabits[i].isPriorityHigh{
+                            remaingHabitsCount += 1
+                        }
+                    }else{
+                        remaingHabitsCount += 1
+                    }
+                }
+            }
+            if remaingHabitsCount > 1{
+                menuItemChooseHabits.isHidden = false
+            }else{
+                menuItemChooseHabits.isHidden = true
+            }
+        }
+        func isActivityCompleted(id:String, habits:[habit])->Bool{
+            for i in 0..<currentHabitIndex + 1{
+                let habit = habits[i]
+                if habit.id == id{
+                    return true
+                }
+            }
+            return false
+        }
+        if !SettingsManagerObject.isOutOfOrderHabitsAllowed{
+            menuItemSelectAnotherHabit.isHidden = true
+        }
+        let p = NSPoint(x: (sender as AnyObject).frame.origin.x, y: (sender as AnyObject).frame.origin.y - 8 )
+        moreActionsMenu.popUp(positioning: nil, at: p, in: (sender as AnyObject).superview)
+    }
+    
+    @objc func menuItemSkipHabitClicked(){
+        thirdVcObj?.menuItemSkipHabitClicked()
+    }
+
+    @objc func menuItemSelectAnotherHabitClicked(){
+        if startAnotherHabitVcObj == nil{
+            startAnotherHabitVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("startAnotherHabitVc")) as? startAnotherHabitVc
+        }
+        startAnotherHabitVcObj!.currentHabitIndex = currentHabitIndex + 1
+        self.presentAsSheet(startAnotherHabitVcObj!)
+    }
+    @objc func menuItemChooseHabitsClicked(){
+        if chooseHabitsVCObj == nil{
+            chooseHabitsVCObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("chooseHabitsVC")) as? chooseHabitsVC
+        }
+        chooseHabitsVCObj!.currentHabitIndex = currentHabitIndex
+        self.presentAsSheet(chooseHabitsVCObj!)
+    }
+
+}
+
+
+extension rememberNextHabitVc: SearchableComboBoxDelegate{
+    func itemSelectedByUser(comboBox: searchableComboBox) {
+        if comboBox.stringValue.isEmpty{
+            return;
+        }
         addLog(text:"rememberNextHabitVc:- optionSelectedByUser")
         var nextHabit:habit?
-        //        var selectedHabit:habit?
         if currentState == ._MORNING_HABIT_{
             nextHabit = arrFilteredMorningHabits[nextHabitIndex]
         }else if currentState == ._EVENING_HABIT_{
             nextHabit = arrFilteredEveningHabits[nextHabitIndex]
         }
-        if textFieldNextHabit.stringValue == nextHabit?.name{
+        if comboBox.stringValue == nextHabit?.name{
             lblSelectionResult.stringValue = arrRandomPhraseRightChoice.randomElement() ?? ""
         }else{
             lblSelectionResult.stringValue = (arrRandomPhraseWrongChoice.randomElement() ?? "").replacingOccurrences(of: "<CORRECT_HABIT_NAME>", with: nextHabit?.name ?? "")
@@ -225,128 +322,5 @@ class rememberNextHabitVc: NSViewController, NSTextFieldDelegate {
         lblSelectionResult.isHidden = false
         btnStartNextHabit.isHidden = false
         btnSkipHabit.isHidden = false
-    }
-    @IBAction func comboBoxHabitAction(_ sender: Any) {
-        print("workDone")
-        
-    }
-    @IBAction func btnSkipHabitClicked(_ sender: Any) {
-        thirdVcObj?.btnSkipHabitClicked(self)
-    }
-}
-
-
-//extension rememberNextHabitVc:NSTextFieldDelegate{
-//    func controlTextDidBeginEditing(_ obj: Notification) {
-//        guard let textfield = obj.object as? NSTextField else{
-//                return
-//        }
-//        print("begin")
-////        menuHabits.removeAllItems()
-////        let p = NSPoint(x: textfield.frame.origin.x, y: textfield.frame.origin.y - 5 )
-////        menuHabits.popUp(positioning: nil, at: p, in: textfield.superview)
-//
-//
-//    }
-//
-//    func controlTextDidEndEditing(_ obj: Notification) {
-//        guard let textfield = obj.object as? NSTextField else{
-//                return
-//        }
-//        print("End")
-////        menuHabits.removeAllItems()
-//
-////        tblViewHabits.enclosingScrollView!.isHidden = true
-//    }
-//    @objc func menuItemClicked(sender:NSMenuItem){
-//
-//    }
-//    func controlTextDidChange(_ obj: Notification) {
-//        guard let textfield = obj.object as? NSTextField else{
-//                return
-//        }
-//        print("Change")
-////        arrSearchedHabitNames.removeAll()
-////        for habit in arrHabitNames{
-////            if habit.localizedStandardContains(textfield.stringValue){
-//////                let item = NSMenuItem(title: habit, action: #selector(menuItemClicked), keyEquivalent: "")
-//////                item.target=self
-////                arrSearchedHabitNames.append(habit)
-////            }
-////        }
-////        tblViewHabits.enclosingScrollView!.isHidden = false
-////        tblViewHabits.reloadData()
-//
-////        let p = NSPoint(x: textfield.frame.origin.x, y: textfield.frame.origin.y - 5 )
-////        menuHabits.popUp(positioning: nil, at: p, in: textfield.superview)
-//    }
-//}
-
-//extension rememberNextHabitVc: NSTableViewDelegate, NSTableViewDataSource{
-//
-//    func numberOfRows(in tableView: NSTableView) -> Int {
-//        if textFieldNextHabit.stringValue.isEmpty{
-//            return arrHabitNames.count
-//        }else{
-//            return arrSearchedHabitNames.count
-//        }
-//
-//    }
-//    func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
-//        if let cell = tableView.makeView(withIdentifier: NSUserInterfaceItemIdentifier(rawValue: "tblCellHabits"), owner: nil) as? tblCellHabits {
-//
-//            if textFieldNextHabit.stringValue.isEmpty{
-//                cell.lblTitle.stringValue = arrHabitNames[row]
-//            }else{
-//                cell.lblTitle.stringValue = arrSearchedHabitNames[row]
-//            }
-//            return cell
-//        }
-//
-//        return NSTableCellView()
-//    }
-//}
-
-extension rememberNextHabitVc: NSComboBoxDelegate, NSComboBoxDataSource{
-    
-    func comboBox(_ comboBox: NSComboBox, objectValueForItemAt index: Int) -> Any? {
-        return arrHabitNames[index]
-    }
-    
-    func numberOfItems(in comboBox: NSComboBox) -> Int {
-        return arrHabitNames.count
-    }
-    
-    func comboBox(_ comboBox: NSComboBox, indexOfItemWithStringValue string: String) -> Int {
-        var i = 0
-        for str in arrHabitNames {
-            if str == string{
-                return i
-            }
-            i += 1
-        }
-        return -1
-    }
-    func comboBox(_ comboBox: NSComboBox, completedString string: String) -> String? {
-        
-        print("SubString = \(string)")
-        
-        for state in arrHabitNames {
-            // substring must have less characters then stings to search
-            if string.count < state.count{
-                // only use first part of the strings in the list with length of the search string
-                let statePartialStr = state.lowercased()[state.lowercased().startIndex..<state.lowercased().index(state.lowercased().startIndex, offsetBy: string.count)]
-                if statePartialStr.range(of: string.lowercased()) != nil {
-                    print("SubString Match = \(state)")
-                    return state
-                }
-                //                else{
-                //                    if state.lowercased().contains(string.lowercased()){
-                //                        return state
-                //                    }
-                //                }
-            }
-        }
-        return ""
     }
 }

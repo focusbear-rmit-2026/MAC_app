@@ -1,0 +1,88 @@
+//
+//  customAlertVc.swift
+//  Focus Bear
+//
+//  Created by Prashant Sawnani on 14/08/24.
+//  Copyright © 2024 Focus Bear. All rights reserved.
+//
+
+import Cocoa
+
+class customAlertVc: NSViewController {
+
+    @IBOutlet weak var checkBox: NSButton!
+    @IBOutlet weak var btnCancel: Button!
+    @IBOutlet weak var btnOk: Button!
+    @IBOutlet weak var lblSubTitle: NSTextField!
+    @IBOutlet weak var lblTitle: NSTextField!
+    
+    var completionHandler: ((Bool) -> Void)?
+    var timerAutoClose:Timer?
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        // Do view setup here.
+        btnCancel.buttonColor = NSColor.white.cgColor
+    }
+    
+    func resetData(title:String, body:String?, buttonOkText:String, buttonCancelText:String?, checkBoxText: String?, autoClose:Bool, completionHandler: @escaping (Bool) -> Void){
+        lblTitle.stringValue = title
+
+        if let body = body {
+            lblSubTitle.isHidden = false
+            lblSubTitle.stringValue = body
+        }else{
+            lblSubTitle.isHidden = true
+        }
+        
+        btnOk.title = buttonOkText
+        if let buttonCancelText = buttonCancelText {
+            btnCancel.isHidden = false
+            btnCancel.title = buttonCancelText
+        }else{
+            btnCancel.isHidden = true
+        }
+        if let checkBoxText = checkBoxText {
+            checkBox.isHidden = false
+            checkBox.title = checkBoxText
+        }else{
+            checkBox.isHidden = true
+        }
+        timerAutoClose?.invalidate()
+        timerAutoClose = nil
+        if autoClose{
+            self.timerAutoClose = Timer.scheduledTimer(timeInterval: 15, target: self, selector: #selector(self.closeAlert), userInfo: nil, repeats: false)
+            RunLoop.main.add((self.timerAutoClose!), forMode: RunLoop.Mode.common)
+        }
+        
+        self.completionHandler = completionHandler
+    }
+    
+    override func viewWillDisappear() {
+        timerAutoClose?.invalidate()
+        timerAutoClose = nil
+    }
+    @IBAction func checkBoxClicked(_ sender: Any) {
+        
+    }
+    
+    @objc func closeAlert(){
+        self.view.window?.close()
+        if completionHandler != nil{
+            completionHandler!(false)
+        }
+    }
+    
+    @IBAction func btnCancelClicked(_ sender: Any) {
+        self.view.window?.close()
+        if completionHandler != nil{
+            completionHandler!(false)
+        }
+    }
+    
+    @IBAction func btnOkClicked(_ sender: Any) {
+        self.view.window?.close()
+        if completionHandler != nil{
+            completionHandler!(true)
+        }
+    }
+}

@@ -9,7 +9,7 @@
 import Cocoa
 import WebKit
 
-class selectHabitPacksVc: NSViewController {
+class selectHabitPacksVc: NSViewController {// not in use
 
     @IBOutlet weak var lblHabitPackInfo: NSTextField!
     @IBOutlet weak var lblChooseOptions: NSTextField!
@@ -45,10 +45,15 @@ class selectHabitPacksVc: NSViewController {
         }
         allApiObject.capturePosthog(event: "habit-packs-shown", metadata: [:])
     }
+    override func viewDidAppear() {
+//        showOnboardingProgress(view: self.view, progress: 12)
+    }
     override func viewWillDisappear() {
         let link = URL(string:"about:blank")!
         let request = URLRequest(url: link)
         self.webView.load(request)
+        hideOnboardingProgress(view: self.view)
+        hideOnboardingBellIcon(view: self.view)
     }
     override func viewWillAppear() {
         popUpBtn.removeAllItems()
@@ -81,15 +86,17 @@ class selectHabitPacksVc: NSViewController {
         }
     }
     @IBAction func popUpBtnClicked(_ sender: Any) {
-        let index = popUpBtn.indexOfSelectedItem
-        morningRoutineDuration = habitPacksData![index]["morning_routine_duration_seconds"] as? Int ?? 0
-        eveningRoutineDuration = habitPacksData![index]["evening_routine_duration_seconds"] as? Int ?? 0
-        loadVideoAt(index: index)
+        if habitPacksData?.count != 0{
+            let index = popUpBtn.indexOfSelectedItem
+            morningRoutineDuration = habitPacksData![index]["morning_routine_duration_seconds"] as? Int ?? 0
+            eveningRoutineDuration = habitPacksData![index]["evening_routine_duration_seconds"] as? Int ?? 0
+            loadVideoAt(index: index)
+        }
     }
     
     func loadVideoAt(index:Int){
         let id = habitPacksData![index]["id"] as? String ?? ""
-        let url = "https://dashboard.focusbear.io/habit-packs/share/\(id)?embedded=true"
+        let url = "https://dashboard.focusbear.io/habit-packs/share/\(id)?embedded=true&bust_cache=\(getUuid())"
         let link = URL(string:url)!
         let request = URLRequest(url: link)
         self.webView.load(request)

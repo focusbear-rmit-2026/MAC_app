@@ -50,8 +50,10 @@ class takeActivityNotesVc: NSViewController {
         self.quantity_logged = nil
         self.quantity_logged = quantity_logged
         self.log_quantity_answers = log_quantity_answers
+        self.view.window?.makeFirstResponder(textViewNotes)
     }
     @IBAction func btnOkClicked(_ sender: Any) {
+        addLog(text:"[user-action] takeActivityNotesVc-btnOkClicked")
         self.view.removeFromSuperview()
         
         if isAnyAllowedFocusModeActivityWasRunningInLastActivity{
@@ -107,9 +109,8 @@ extension takeActivityNotesVc:NSTextViewDelegate{
         if newFontSize > 30 {
             newFontSize = 30
         }
-        
-        let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex]
-        let font = NSFont(name: selectedFont.regularFontName, size: newFontSize)!
+
+        let font = getRegularFont(size: newFontSize)
         textViewNotes.font = font
     }
 }

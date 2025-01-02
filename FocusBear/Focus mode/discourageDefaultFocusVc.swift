@@ -49,11 +49,11 @@ class discourageDefaultFocusVc: NSViewController {
             }
         }
         
-        isDiscourageDefaultFocusVcVisible = true
+        //isDiscourageDefaultFocusVcVisible = true
     }
     override func viewWillDisappear() {
         print("viewWillDisappear")
-        isDiscourageDefaultFocusVcVisible = false
+        //isDiscourageDefaultFocusVcVisible = false
     }
     func resetData(){
         lblTimer.isHidden = true
@@ -75,7 +75,7 @@ class discourageDefaultFocusVc: NSViewController {
     
     
     @IBAction func btnShutupClicked(_ sender: Any) {
-        addLog(text: "discourageDefaultFocusVc - btnEditFocusModeClicked")//
+        addLog(text: "[user-action] discourageDefaultFocusVc - btnEditFocusModeClicked")//
         lblTimer.isHidden = false
         btnCancel.isHidden = true
         btnShutUp.isHidden = true
@@ -95,7 +95,7 @@ class discourageDefaultFocusVc: NSViewController {
     }
     
     @IBAction func btnCancelClicked(_ sender: Any) {
-        addLog(text: "discourageDefaultFocusVc - btnCancelClicked")//
+        addLog(text: "[user-action] discourageDefaultFocusVc - btnCancelClicked")//
         if focusModeStartWindowLodded{
             if startingFocusWindowControllerObj?.window?.isVisible ?? false{
                 if self.view.window?.sheetParent?.windowController == startingFocusWindowControllerObj{
@@ -149,7 +149,7 @@ class discourageDefaultFocusVc: NSViewController {
             DispatchQueue.global().async {
                 DispatchQueue.main.async {
                     self.dismiss(self)
-                    if isPomodoroWindowLodded{
+                    if pomodoroWindowControllerObj != nil{
                         if pomodoroWindowControllerObj?.window?.isVisible ?? false{//it means pomodoro start hoga
                             if pomodoroVcObj!.btnCheckBoxHardcodePomodoro.state == .on{
                                 isHardCorePomodoroModeOn = true
@@ -158,9 +158,6 @@ class discourageDefaultFocusVc: NSViewController {
                                 let minutes = currentPomodoroWorkDuration
                                 totalPomodoroCountInHardCorePomodoro = totalPopmodoroCount
                                 completedPomodoroCountInHardcorePomodoro = 0
-//                                if let duration = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsPomodoroDurationMinutes) as? Int{
-//                                    minutes = duration
-//                                }
                                 let totoalMinutes = (totalPopmodoroCount * minutes)// * 60//(textFieldHourValue.integerValue * 60) + textFieldMinutesValue.integerValue
                                 totalMinutesRemainingForHardcodePomodoro = totoalMinutes
                             }

@@ -10,26 +10,19 @@ import Cocoa
 
 class quittingConfirmVc: NSViewController, NSTextViewDelegate {
 
-
- 
- 
+    @IBOutlet weak var popUpBtnAppNotWorking: NSPopUpButton!
     @IBOutlet weak var scrollView: NSScrollView!
     @IBOutlet weak var lblSubTitle: NSTextField!
     @IBOutlet weak var lblTitle: NSTextField!
- 
     @IBOutlet var textView: NSTextView!
     @IBOutlet weak var textFieldEmail: NSTextField!
-    @IBOutlet weak var btnQuit: NSButton!
-
+    @IBOutlet weak var btnQuit: Button!
     @IBOutlet weak var lblTitleEmail: NSTextField!
-    
     @IBOutlet weak var lblTimer: NSTextField!
     @IBOutlet weak var lblDescription: NSTextField!
-
-
     @IBOutlet weak var popUpBtnReasons: NSPopUpButton!
     @IBOutlet weak var imgViewGif: NSImageView!
-
+    @IBOutlet weak var btnCancelQuit: Button!
     
     var currentTimer = 0
     var totalDuration = 10
@@ -60,6 +53,12 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
     let wantToRelaxReasonIndex = 6
     let somethingElseReasonIndex = 7
     let selectReasonIndex = 0
+    
+    
+    let reasonFocusModeIndex = 1
+    let reasonHabitsIndex = 2
+    let reasonBlockingIndex = 3
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         lblTitle.stringValue = "Quitting.."
@@ -69,12 +68,17 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
 
         var dropDown_0_Title = "Select a reason"
         var dropDown_1_Title = "I've got an emergency"
-        var dropDown_2_Title = "The app is broken"
+        var dropDown_2_Title = "App not working properly"
         var dropDownMeeting = "I have a meeting"
         var dropDownSomeOneElse = "Someone else is using my computer"
         var dropDownAnnoying = "I'm finding Focus Bear annoying"
         var dropDownRelax = "I want to relax for a while without restrictions"
         var dropDown_3_Title = "Something else"
+        
+        var reasonFocusMode = "My focus modes are not working properly"
+        var reasonHabits = "My habits are not working properly"
+        var reasonBlocking = "The blocking features are not working properly"
+        
         
         if let quitInfo = configjson.value(forKey: "quitInfo") as? NSDictionary{
             if let quittingTitle = quitInfo.value(forKey: "quittingTitle") as? String{
@@ -105,17 +109,20 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
                     }
                 }
                 
-                if let dropDown_2 = quittingConfirmInfo.value(forKey: "dropDown_2") as? NSDictionary{
-                    if let title = dropDown_2.value(forKey: "title") as? String{
+                if let dropDownAppNotWorking = quittingConfirmInfo.value(forKey: "dropDownAppNotWorking") as? NSDictionary{
+                    if let title = dropDownAppNotWorking.value(forKey: "title") as? String{
                         dropDown_2_Title = title
                     }
-                    if let description = dropDown_2.value(forKey: "description") as? String{
+                    if let description = dropDownAppNotWorking.value(forKey: "description") as? String{
                         dropDown_2_Description = description
                     }
 
-                    if let finalDescription = dropDown_2.value(forKey: "finalDescription") as? String{
+                    if let finalDescription = dropDownAppNotWorking.value(forKey: "finalDescription") as? String{
                         dropDown_2_FinalDescription = finalDescription
                     }
+                    reasonFocusMode = dropDownAppNotWorking.value(forKey: "reasonFocusMode") as? String ?? reasonFocusMode
+                    reasonHabits = dropDownAppNotWorking.value(forKey: "reasonHabits") as? String ?? reasonHabits
+                    reasonBlocking = dropDownAppNotWorking.value(forKey: "reasonBlocking") as? String ?? reasonBlocking
                 }
                 if let dropDown_3 = quittingConfirmInfo.value(forKey: "dropDown_3") as? NSDictionary{
                     if let title = dropDown_3.value(forKey: "title") as? String{
@@ -167,7 +174,11 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
                     }
                 }
             }
-            
+            if let abortInfo = configjson.value(forKey: "quitInfo") as? NSDictionary{
+                if let quittingCountDownInfo = abortInfo.value(forKey: "quittingCountDownInfo") as? NSDictionary{
+                    btnCancelQuit.title = quittingCountDownInfo.value(forKey: "buttonQuitCancelText") as? String ?? btnCancelQuit.title
+                }
+            }
         }
         allReasons = [dropDown_0_Title,dropDown_1_Title, dropDown_2_Title, dropDownMeeting, dropDownSomeOneElse, dropDownAnnoying, dropDownRelax, dropDown_3_Title]
         
@@ -175,6 +186,13 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
         
         popUpBtnReasons.addItems(withTitles: allReasons)
         textView.delegate = self
+        
+        
+        popUpBtnAppNotWorking.removeAllItems()
+        popUpBtnAppNotWorking.addItems(withTitles: [dropDown_0_Title, reasonFocusMode, reasonHabits, reasonBlocking])
+        popUpBtnAppNotWorking.selectItem(at: selectReasonIndex)
+        popUpBtnAppNotWorking.isHidden = true
+        btnQuit.buttonColor = NSColor.white.cgColor
     }
     override func viewWillAppear() {
         if SettingsManagerObject.kIsReducedMotion{
@@ -189,10 +207,19 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
     override func viewWillDisappear() {
         self.timer?.invalidate()
         self.timer = nil
+        if enterPasswordVcObj != nil{
+            if self.view.subviews.contains(enterPasswordVcObj!.view){
+                enterPasswordVcObj?.view.removeFromSuperview()
+            }
+        }
     }
+
+    var enterPasswordVcObj: enterPasswordVc?
     func resetData(){
+        popUpBtnAppNotWorking.isHidden = true
+        popUpBtnAppNotWorking.selectItem(at: selectReasonIndex)
         popUpBtnReasons.isEnabled = true
-        popUpBtnReasons.selectItem(at: selectReasonIndex)//todo har jahag
+        popUpBtnReasons.selectItem(at: selectReasonIndex)
         btnQuit.isEnabled = false
         lblTimer.stringValue = "00:01"
         scrollView.isHidden = true
@@ -202,30 +229,47 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
         btnQuit.isHidden = true
         lblTitleEmail.isHidden = true
         textFieldEmail.isHidden = true
+        
+        if shouldAskPassword(){
+            if SettingsManagerObject.isPasswordRequireInQuitApp{
+                if self.enterPasswordVcObj == nil{
+                    self.enterPasswordVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("enterPasswordVc")) as?enterPasswordVc
+                }
+                self.view.addSubview(self.enterPasswordVcObj!.view)
+                self.view.addConstraints(subView: self.enterPasswordVcObj!.view)
+                self.enterPasswordVcObj?.removeConstraints()
+                addLog(text: "Showing enter password view from quit")
+            }
+            
+        }
     }
-    
+
     func textDidChange(_ notification: Notification) {
         guard let textView = notification.object as? NSTextView else{
             return
         }
-        if textView == self.textView{
-            if textView.string.isEmpty{
-                btnQuit.isEnabled = false
-            }else{
-                btnQuit.isEnabled = true
-            }
+        if popUpBtnReasons.indexOfSelectedItem == brokenAppReasonIndex{
+            return;
         }
+//        if textView == self.textView{
+//            if textView.string.isEmpty{
+//                btnQuit.isEnabled = false
+//            }else{
+//                btnQuit.isEnabled = true
+//            }
+//        }
     }
 
     @IBAction func popUpBtnReasonsClicked(_ sender: Any) {
+        popUpBtnAppNotWorking.isHidden = true
         let index = popUpBtnReasons.indexOfSelectedItem
         switch index {
-        case 0:
+        case selectReasonIndex:
             resetData()
-        case 1:
+        case emergencyReasonIndex:
             btnQuit.isHidden = true
             scrollView.isHidden = true
-            lblTimer.isHidden = true//
+            lblTimer.isHidden = true
             lblDescription.isHidden = false
             lblTitleEmail.isHidden = true
             textFieldEmail.isHidden = true
@@ -233,8 +277,8 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
             lblDescription.stringValue = dropDown_1_Description
             popUpBtnReasons.isEnabled = false
             startTimer()
-        case 2:
-
+        case brokenAppReasonIndex:
+            popUpBtnAppNotWorking.isHidden = false
             btnQuit.isHidden = false
             scrollView.isHidden = false
             lblTimer.isHidden = true
@@ -245,10 +289,10 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
             btnQuit.isEnabled = false
             textFieldEmail.stringValue = ""
             lblDescription.stringValue = dropDown_2_Description
-        case 3:
+        case haveMeetingReasonIndex:
             btnQuit.isHidden = true
             scrollView.isHidden = true
-            lblTimer.isHidden = true//
+            lblTimer.isHidden = true
             lblDescription.isHidden = false
             lblTitleEmail.isHidden = true
             textFieldEmail.isHidden = true
@@ -256,7 +300,7 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
             lblDescription.stringValue = dropDownMeetingDescription
             popUpBtnReasons.isEnabled = false
             startTimer()
-        case 4:
+        case someOneElseReasonIndex:
             btnQuit.isHidden = true
             scrollView.isHidden = true
             lblTimer.isHidden = true//
@@ -268,7 +312,7 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
             popUpBtnReasons.isEnabled = false
             startTimer()
         
-        case 5:
+        case appAnnoyingReasonIndex:
             btnQuit.isHidden = false
             scrollView.isHidden = false
             lblTimer.isHidden = true
@@ -276,14 +320,14 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
             lblTitleEmail.isHidden = false
             textFieldEmail.isHidden = false
             textView.string = ""
-            btnQuit.isEnabled = false
+            btnQuit.isEnabled = true
             textFieldEmail.stringValue = ""
             lblDescription.stringValue = dropDownAnnoyingDescription
             
-        case 6:
+        case wantToRelaxReasonIndex:
             btnQuit.isHidden = true
             scrollView.isHidden = true
-            lblTimer.isHidden = true//
+            lblTimer.isHidden = true
             lblDescription.isHidden = false
             lblTitleEmail.isHidden = true
             textFieldEmail.isHidden = true
@@ -291,7 +335,7 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
             lblDescription.stringValue = dropDownRelaxDescription
             popUpBtnReasons.isEnabled = false
             startTimer()
-        case 7:
+        case somethingElseReasonIndex:
             btnQuit.isHidden = false
             scrollView.isHidden = false
             lblTimer.isHidden = true
@@ -299,7 +343,7 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
             lblTitleEmail.isHidden = false
             textFieldEmail.isHidden = false
             textView.string = ""
-            btnQuit.isEnabled = false
+            btnQuit.isEnabled = true
             textFieldEmail.stringValue = ""
             lblDescription.stringValue = dropDown_3_Description
    
@@ -310,6 +354,66 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
     func startTimer() {
         currentTimer = 0
         totalDuration = 1
+        if self.popUpBtnReasons.indexOfSelectedItem == self.emergencyReasonIndex{
+            addLog(text: "App Quit - I've got an emergency")
+            
+            let logType = "Quit"
+            let activity = ""
+            UserDefaults.standard.set("I've got an emergency", forKey: kUserDefaultsLastQuitReason)
+            addEntryInStatsCsv(logType: logType, activity: activity, durationInSeconds: "", quantityQuestion: "", quantityLogged: "", startTime: "", workAchieved: "", distractionsEncountered: "", abortReason: "I've got an emergency", feedback: "", tags:"")
+
+            allApiObject.capturePosthog(event: "app-quit", metadata: ["quitReason":"I've got an emergency", "usageStartDate":getFirstRunDateString(), "daysSinceUserInstalledFocusBear": getDaysSinceAppInstalled()])
+        }else if self.popUpBtnReasons.indexOfSelectedItem == self.brokenAppReasonIndex{
+            addLog(text: "App Quit - The app is broken")
+            var quitReason = "App not working properly:"
+            
+            if popUpBtnAppNotWorking.indexOfSelectedItem == reasonFocusModeIndex{
+                quitReason = quitReason + " " + "My focus modes are not working properly"
+            }else if popUpBtnAppNotWorking.indexOfSelectedItem == reasonHabitsIndex{
+                quitReason = quitReason + " " + "My habits are not working properly"
+            }else if popUpBtnAppNotWorking.indexOfSelectedItem == reasonBlockingIndex{
+                quitReason = quitReason + " " + "The blocking features are not working properly"
+            }
+            UserDefaults.standard.set(quitReason, forKey: kUserDefaultsLastQuitReason)
+            allApiObject.capturePosthog(event: "app-quit", metadata: ["quitReason":quitReason, "usageStartDate":getFirstRunDateString(), "feedback":self.textView.string, "daysSinceUserInstalledFocusBear": getDaysSinceAppInstalled()])
+            
+        }else if self.popUpBtnReasons.indexOfSelectedItem == self.haveMeetingReasonIndex{
+            addLog(text: "App Quit - I have a meeting")
+            
+            let logType = "Quit"
+            let activity = ""//
+            UserDefaults.standard.set("I have a meeting", forKey: kUserDefaultsLastQuitReason)
+            addEntryInStatsCsv(logType: logType, activity: activity, durationInSeconds: "", quantityQuestion: "", quantityLogged: "", startTime: "", workAchieved: "", distractionsEncountered: "", abortReason: "I have a meeting", feedback: "", tags:"")
+            allApiObject.capturePosthog(event: "app-quit", metadata: ["quitReason":"I have a meeting", "usageStartDate":getFirstRunDateString(), "daysSinceUserInstalledFocusBear": getDaysSinceAppInstalled()])
+        }else if self.popUpBtnReasons.indexOfSelectedItem == self.someOneElseReasonIndex{
+            addLog(text: "App Quit - Someone else is using my computer")
+            
+            let logType = "Quit"
+            let activity = ""
+            UserDefaults.standard.set("Someone else is using my computer", forKey: kUserDefaultsLastQuitReason)
+            addEntryInStatsCsv(logType: logType, activity: activity, durationInSeconds: "", quantityQuestion: "", quantityLogged: "", startTime: "", workAchieved: "", distractionsEncountered: "", abortReason: "Someone else is using my computer", feedback: "", tags:"")
+            allApiObject.capturePosthog(event: "app-quit", metadata: ["quitReason":"Someone else is using my computer", "usageStartDate":getFirstRunDateString(), "daysSinceUserInstalledFocusBear": getDaysSinceAppInstalled()])
+        }else if self.popUpBtnReasons.indexOfSelectedItem == self.appAnnoyingReasonIndex{
+            addLog(text: "App Quit - I'm finding Focus Bear annoying")
+            UserDefaults.standard.set("I'm finding Focus Bear annoying", forKey: kUserDefaultsLastQuitReason)
+            allApiObject.capturePosthog(event: "app-quit", metadata: ["quitReason":"I'm finding Focus Bear annoying", "usageStartDate":getFirstRunDateString(), "feedback":self.textView.string, "daysSinceUserInstalledFocusBear": getDaysSinceAppInstalled()])
+        }else if self.popUpBtnReasons.indexOfSelectedItem == self.wantToRelaxReasonIndex{
+            addLog(text: "App Quit - I want to relax for a while without restrictions")
+            
+            let logType = "Quit"
+            let activity = ""
+            UserDefaults.standard.set("I want to relax for a while without restrictions", forKey: kUserDefaultsLastQuitReason)
+            addEntryInStatsCsv(logType: logType, activity: activity, durationInSeconds: "", quantityQuestion: "", quantityLogged: "", startTime: "", workAchieved: "", distractionsEncountered: "", abortReason: "I want to relax for a while without restrictions", feedback: "", tags:"")
+            allApiObject.capturePosthog(event: "app-quit", metadata: ["quitReason":"I want to relax for a while without restrictions", "usageStartDate":getFirstRunDateString(), "daysSinceUserInstalledFocusBear": getDaysSinceAppInstalled()])
+        }else if self.popUpBtnReasons.indexOfSelectedItem == self.somethingElseReasonIndex{
+            addLog(text: "App Quit - Something else")
+            let logType = "Quit"//
+            let activity = ""
+            UserDefaults.standard.set("Something else", forKey: kUserDefaultsLastQuitReason)
+            
+            addEntryInStatsCsv(logType: logType, activity: activity, durationInSeconds: "", quantityQuestion: "", quantityLogged: "", startTime: "", workAchieved: "", distractionsEncountered: "", abortReason: "Something else", feedback: self.textView.string, tags:"")
+            allApiObject.capturePosthog(event: "app-quit", metadata: ["quitReason":"Something else", "usageStartDate":getFirstRunDateString(), "feedback":self.textView.string, "daysSinceUserInstalledFocusBear": getDaysSinceAppInstalled()])
+        }
         DispatchQueue.global().sync {
             self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
             RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
@@ -317,9 +421,7 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
         }
     }
     @objc func performTimerCount() {
-        
         currentTimer += 1
-        
         DispatchQueue.main.async {
 
         }
@@ -327,79 +429,35 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
             self.timer?.invalidate()
             DispatchQueue.global().async {
                 DispatchQueue.main.async {
-                    
-                    if self.popUpBtnReasons.indexOfSelectedItem == self.emergencyReasonIndex{
-                        addLog(text: "App Quit - I've got an emergency")
-                        
-                        let logType = "Quit"
-                        let activity = ""
-                        
-                        addEntryInStatsCsv(logType: logType, activity: activity, durationInSeconds: "", quantityQuestion: "", quantityLogged: "", startTime: "", workAchieved: "", distractionsEncountered: "", abortReason: "I've got an emergency", feedback: "")
-                        appdelegate?.menuItem_Quit()
-                    }else if self.popUpBtnReasons.indexOfSelectedItem == self.brokenAppReasonIndex{
-                        addLog(text: "App Quit - The app is broken")
-                        allApiObject.getQuitJsonToUpload(emailAddress: currentUserEmail, feedback: self.textView.string, quitReason: "The app is broken", completionHandler: {dic in
-                            DispatchQueue.main.async {
-                                appdelegate?.menuItem_Quit()
-                            }
-                        })
-                    }else if self.popUpBtnReasons.indexOfSelectedItem == self.haveMeetingReasonIndex{
-                        addLog(text: "App Quit - I have a meeting")
-                        
-                        let logType = "Quit"
-                        let activity = ""//
-                        
-                        addEntryInStatsCsv(logType: logType, activity: activity, durationInSeconds: "", quantityQuestion: "", quantityLogged: "", startTime: "", workAchieved: "", distractionsEncountered: "", abortReason: "I have a meeting", feedback: "")
-                        appdelegate?.menuItem_Quit()
-                    }else if self.popUpBtnReasons.indexOfSelectedItem == self.someOneElseReasonIndex{
-                        addLog(text: "App Quit - Someone else is using my computer")
-                        
-                        let logType = "Quit"
-                        let activity = ""//
-                        
-                        addEntryInStatsCsv(logType: logType, activity: activity, durationInSeconds: "", quantityQuestion: "", quantityLogged: "", startTime: "", workAchieved: "", distractionsEncountered: "", abortReason: "Someone else is using my computer", feedback: "")
-                        appdelegate?.menuItem_Quit()
-                    }else if self.popUpBtnReasons.indexOfSelectedItem == self.appAnnoyingReasonIndex{
-                        addLog(text: "App Quit - I'm finding Focus Bear annoying")
-                        allApiObject.getQuitJsonToUpload(emailAddress: currentUserEmail, feedback: self.textView.string, quitReason: "I'm finding Focus Bear annoying", completionHandler: {dic in
-                            DispatchQueue.main.async {
-                                appdelegate?.menuItem_Quit()
-                            }
-                        })
-                    }else if self.popUpBtnReasons.indexOfSelectedItem == self.wantToRelaxReasonIndex{
-                        addLog(text: "App Quit - I want to relax for a while without restrictions")
-                        
-                        let logType = "Quit"
-                        let activity = ""//
-                        
-                        addEntryInStatsCsv(logType: logType, activity: activity, durationInSeconds: "", quantityQuestion: "", quantityLogged: "", startTime: "", workAchieved: "", distractionsEncountered: "", abortReason: "I want to relax for a while without restrictions", feedback: "")
-                        appdelegate?.menuItem_Quit()
-                    }else if self.popUpBtnReasons.indexOfSelectedItem == self.somethingElseReasonIndex{
-                        addLog(text: "App Quit - Something else")
-                        let logType = "Quit"//
-                        let activity = ""
-                        
-                        addEntryInStatsCsv(logType: logType, activity: activity, durationInSeconds: "", quantityQuestion: "", quantityLogged: "", startTime: "", workAchieved: "", distractionsEncountered: "", abortReason: "Something else", feedback: self.textView.string)
-                        appdelegate?.menuItem_Quit()
-                    }
+//                    appdelegate?.menuItem_Quit()
+                    appdelegate?.quitAppForUser()
                 }
             }
         }
     }
 
-   
+    @IBAction func popUpBtnAppNotWorkingClicked(_ sender: Any) {
+        if popUpBtnAppNotWorking.indexOfSelectedItem == selectReasonIndex{
+            btnQuit.isEnabled = false
+        }else{
+            btnQuit.isEnabled = true
+        }
+    }
+    @IBAction func btnCancelQuitClicked(_ sender: Any) {
+        self.view.window?.close()
+    }
     @IBAction func btnQuitClicked(_ sender: Any) {
-        addLog(text: "quittingConfirmVc - btnQuitClicked")//
+        addLog(text: "[user-action] quittingConfirmVc - btnQuitClicked")
         self.btnQuit.isHidden = true
         self.scrollView.isHidden = true
-        self.lblTimer.isHidden = true//
+        self.lblTimer.isHidden = true
         self.lblDescription.isHidden = false
         self.lblTitleEmail.isHidden = true
         self.textFieldEmail.isHidden = true
         self.lblTimer.stringValue = "00:01"
         self.lblDescription.stringValue = self.dropDown_1_Description
         
-        if self.popUpBtnReasons.indexOfSelectedItem == 2{
+        if self.popUpBtnReasons.indexOfSelectedItem == brokenAppReasonIndex{
             let alert: NSAlert = NSAlert()
             alert.setSharingType()
             alert.messageText = "Do you want to upload the logs to our server for us to review what was broken?"
@@ -413,10 +471,11 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
             alert.addButton(withTitle: noText)
             alert.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
                 if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
-                    addLog(text: "btn Upload logs alert yes Clicked")//
+                    addLog(text: "[user-action] btn Upload logs alert yes Clicked")
                     self.view.addSubview(getLogsUploadingVcObjObj().view)
                     self.view.addConstraints(subView: getLogsUploadingVcObjObj().view)
-                    allApiObject.uploadAppLogs(completionHandler: {json in //
+                    let quitReason = self.textView.string.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) ?? self.textView.string
+                    allApiObject.uploadAppLogs(feedback: quitReason, completionHandler: {json in
                         DispatchQueue.main.async {
                             getLogsUploadingVcObjObj().view.removeFromSuperview()
                             self.popUpBtnReasons.isEnabled = false
@@ -430,19 +489,16 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
                 }
             })
             self.lblDescription.stringValue = dropDown_2_FinalDescription
-        }else if self.popUpBtnReasons.indexOfSelectedItem == 7{
+        }else if self.popUpBtnReasons.indexOfSelectedItem == somethingElseReasonIndex{
             self.lblDescription.stringValue = dropDown_3_FinalDescription
             self.popUpBtnReasons.isEnabled = false
             self.startTimer()
-        }else if self.popUpBtnReasons.indexOfSelectedItem == 5{
+        }else if self.popUpBtnReasons.indexOfSelectedItem == appAnnoyingReasonIndex{
             self.lblDescription.stringValue = dropDownAnnoyingFinalDescription
             self.popUpBtnReasons.isEnabled = false
             self.startTimer()
         }
-        
     }
-    
-
 }
 
 

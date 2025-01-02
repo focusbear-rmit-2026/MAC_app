@@ -155,7 +155,7 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
                 btnAdd.title = buttonSaveText
             }else if currenUrlAddingtState == ._ALL_BLOCK_URL{
                 if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-                    if tabview.selectedTabViewItemIndex == 1{
+                    if tabview.selectedTabViewItemIndex == preferencesFocusModesIndex && SettingsManagerObject.isGeekModeEnabled{
                         var selectedRow = focusPreferencesVcObj?.tblViewAllowedUrls.selectedRow ?? 0
                         if selectedRow == -1{
                             selectedRow = 0
@@ -181,81 +181,16 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
         }
     }
     @IBAction func btnAddClicked(_ sender: Any) {
-        //let domain = textView.string//textField.stringValue
         var arrDomain = [String]()
         var domain = ""
         if isAdding{
             domain = textView.string.trimmingCharacters(in: .whitespacesAndNewlines)
-//            domain = domain.trimmingCharacters(in: .whitespaces)
             arrDomain = domain.components(separatedBy: "\n")
-//            if let lastItem = arrDomain.last{
-//                if lastItem.isEmpty{
-//                    //arrDomain.removeLast()
-//                }
-//            }
             arrDomain = arrDomain.filter{ !$0.isEmpty }
             print(arrDomain)
         }else{
             domain = textField.stringValue
         }
-//        var isStartFound = false
-//        if !isAdding{
-//            if domain.contains("*"){
-//                let string = domain.replacingOccurrences(of: "*", with: "")
-//                if string.count == 0{
-//                    isStartFound = true
-//                }
-//            }
-//        }else{
-//            var i = 0
-//            var arrCount = arrDomain.count
-//            while i < arrCount{
-//                if arrDomain[i].contains("*"){
-//                    let string = arrDomain[i].replacingOccurrences(of: "*", with: "")
-//                    if string.count == 0{
-//                        arrDomain.remove(at: i)
-//                        arrCount -= 1
-//                    }else{
-//                        i += 1
-//                    }
-//                }else{
-//                    i += 1
-//                }
-//            }
-//            if arrDomain.count == 0{
-//                isStartFound = true
-//            }
-//        }
-//
-//        if isStartFound{
-//            lblInvalidDomain.isHidden = false
-//            if currenUrlAddingtState == ._FOCUS_ALLOW_URL{
-//                lblInvalidDomain.stringValue = "Adding * will allow all urls. Please use another combination."//"If you want to allow all urls please select \"Allow all urls\" instead." text
-//                if let focusPreferencesInfo = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
-//                    if let invalidDomainText = focusPreferencesInfo.value(forKey: "invalidDomainTextSecond") as? String{
-//                        //lblInvalidDomain.stringValue = invalidDomainText
-//                    }
-//                }
-//            }else if currenUrlAddingtState == ._FOCUS_BLOCK_URL{
-//                lblInvalidDomain.stringValue = "Adding * will block all urls. Please use another combination."
-//                if let blockedUrlsViewInfo = configjson.value(forKey: "blockedUrlsViewInfo") as? NSDictionary{
-//                    if let invalidDomainText = blockedUrlsViewInfo.value(forKey: "invalidDomainText") as? String{
-//                        lblInvalidDomain.stringValue = invalidDomainText
-//                    }
-//                }
-//            }else if currenUrlAddingtState == ._ALL_BLOCK_URL{
-//                lblInvalidDomain.stringValue = "Adding * will block all urls. Please use another combination."
-//                if let blockedUrlsViewInfo = configjson.value(forKey: "blockedUrlsViewInfo") as? NSDictionary{
-//                    if let invalidDomainText = blockedUrlsViewInfo.value(forKey: "invalidDomainText") as? String{
-//                        lblInvalidDomain.stringValue = invalidDomainText
-//                    }
-//                }
-//            }
-//
-//
-//            return;
-//        }
-        
         func cehckIsItemAlreadyAdded(urlsArray: [String])->Bool{
             
             var i = 0
@@ -318,6 +253,13 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
                     var dic = arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow]
                     dic["allowed_urls"] = urlsArray
                     
+                    // doing this because if user has alllowed a url  manually by cuddly mode popup then his score is < 80 but if user added same url in allow list then his score should be 100
+                    if isFocusModeOn() || isAnyAllowedFocusModeActivityRunning{
+                        for item in arrDomain{
+                            updateProbabilityOf(currentUrl: item)
+                        }
+                    }
+                    //--------------------------------------------------------------------------//
                     arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow] = dic
                     focusPreferencesVcObj?.tblViewAllowedUrls.reloadData()
                     focusPreferencesVcObj?.tblViewAllowedUrls.selectRowIndexes(IndexSet(arrayLiteral: (urlsArray.count - 1)), byExtendingSelection: false)
@@ -388,7 +330,7 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
                 
                 
                 if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-                    if tabview.selectedTabViewItemIndex == 1{
+                    if tabview.selectedTabViewItemIndex == preferencesFocusModesIndex && SettingsManagerObject.isGeekModeEnabled{
                         focusPreferencesVcObj?.tblViewAllowedUrls.reloadData()
                         focusPreferencesVcObj?.tblViewAllowedUrls.selectRowIndexes(IndexSet(arrayLiteral: (SettingsManagerObject.arrBlockedUrls.count - 1)), byExtendingSelection: false)
                         focusPreferencesVcObj?.tblViewAllowedUrls.scrollRowToVisible(SettingsManagerObject.arrBlockedUrls.count - 1)
@@ -429,7 +371,11 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
                     return;
                 }
 
-                
+                // doing this because if user has alllowed a url  manually by cuddly mode popup then his score is < 80 but if user added same url in allow list then his score should be 100
+                if isFocusModeOn() || isAnyAllowedFocusModeActivityRunning{
+                    updateProbabilityOf(currentUrl: domain)
+                }
+                //--------------------------------------------------------------------------//
                 
                 var dic = arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow]
                 dic["allowed_urls"] = urlsArray
@@ -467,7 +413,7 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
                 var dic = arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow]
                 dic["blockUrlsArray"] = urlsArray
                 arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow] = dic
-                focusPreferencesAdvancedVcObj?.tblView.reloadData()//todo check kro do do bar hai
+                focusPreferencesAdvancedVcObj?.tblView.reloadData()
                 focusPreferencesAdvancedVcObj?.tblView.selectRowIndexes(IndexSet(arrayLiteral: (self.currentRow)), byExtendingSelection: false)
                 
                 
@@ -505,7 +451,7 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
                 
                 
                 if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-                    if tabview.selectedTabViewItemIndex == 1{
+                    if tabview.selectedTabViewItemIndex == preferencesFocusModesIndex && SettingsManagerObject.isGeekModeEnabled{
                         focusPreferencesVcObj?.tblViewAllowedUrls.reloadData()
                         focusPreferencesVcObj?.tblViewAllowedUrls.selectRowIndexes(IndexSet(arrayLiteral: (currentRow)), byExtendingSelection: false)
                     }else{
@@ -525,6 +471,23 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
         self.dismiss(self)
         
     }
+    func updateProbabilityOf(currentUrl:String){
+        if isCuddlyModeEnabled() && SettingsManagerObject.isAiCheckUrlEnabled && !isBlockSuperDistractingFocusModeOn(){
+            let keys = dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus.keys
+            for key in keys{
+                if var dictionary = dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[key]{
+                    if dictionary["isVisibleUrl"] != nil{
+                        let url = key
+                        let isAllowed = appdelegate!.validation.isUrlValid(urlToCheck: url, allowUrl: currentUrl)
+                        if isAllowed{
+                            dictionary["probability"] = 1.0
+                            dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[key] = dictionary
+                        }
+                    }
+                }
+            }
+        }
+    }
     func isValidDomain(domain:String?) -> Bool {
         
         guard domain != nil else { return false }
@@ -534,24 +497,23 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
         let pred = NSPredicate(format:"SELF MATCHES %@", regEx)
         return pred.evaluate(with: domain)
     }
+    
     @IBAction func btnCancelClicked(_ sender: Any) {
-        
-        if currenUrlAddingtState == ._ALL_BLOCK_URL{
-            if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-                if tabview.selectedTabViewItemIndex == 1{
-                    if focusPreferencesVcObj != nil{
-                        focusPreferencesVcObj?.btnRemoveUrlClicked(self)
-                    }
-                }else{
-                    if blockedUrlsVcObj != nil{
-                        blockedUrlsVcObj?.btnRemoveUrlClicked(self)
+        if !isAdding{
+            if currenUrlAddingtState == ._ALL_BLOCK_URL{
+                if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
+                    if tabview.selectedTabViewItemIndex == preferencesFocusModesIndex && SettingsManagerObject.isGeekModeEnabled{
+                        if focusPreferencesVcObj != nil{
+                            focusPreferencesVcObj?.btnRemoveUrlClicked(self)
+                        }
+                    }else{
+                        if blockedUrlsVcObj != nil{
+                            blockedUrlsVcObj?.btnRemoveUrlClicked(self)
+                        }
                     }
                 }
             }
-            
-
         }
-        
         self.dismiss(self)
     }
     

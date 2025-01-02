@@ -8,7 +8,19 @@
 import Cocoa
 
 class focusSummaryVc: NSViewController {
-
+    
+    @IBOutlet weak var lblTotalBreaksTimeGeekMode: NSTextField!
+    @IBOutlet weak var lblTitleTimeSpentOnBreaks: NSTextField!
+    @IBOutlet weak var lblTimeSpentOnBreaks: NSTextField!
+    @IBOutlet weak var lblTimeSpentDisabledApp: NSTextField!
+    @IBOutlet weak var lblTimeSpentEnableApp: NSTextField!
+    @IBOutlet weak var lblTotalTimeOnBlockedSItes: NSTextField!
+    @IBOutlet weak var lblTotalDistractingSites: NSTextField!
+    @IBOutlet weak var lblTitleTimeSpentDisabledApp: NSTextField!
+    @IBOutlet weak var lblTitleTimeSpentEnableApp: NSTextField!
+    @IBOutlet weak var lblTitleTotalTimeOnBlockedSItes: NSTextField!
+    @IBOutlet weak var lblTitleTotalDistractingSites: NSTextField!
+    
     @IBOutlet weak var btnNeedMoreTime: Button!
     @IBOutlet weak var lblTotalFocusTime: NSTextField!
     @IBOutlet weak var btnContinue: Button!
@@ -22,10 +34,11 @@ class focusSummaryVc: NSViewController {
     @IBOutlet weak var tblViewActivitySummaryDuration: NSTableView!
     @IBOutlet weak var tblViewFocusSummary: NSTableView!
     @IBOutlet weak var lblTitle: NSTextField!
-    @IBOutlet weak var btnClickHere: underLineButton!
     @IBOutlet weak var lblActivitySummary: NSTextField!
     @IBOutlet weak var lblFocusSummary: NSTextField!
-   
+  
+    
+    @IBOutlet weak var boxSimpleMode: NSBox!
     var viewVisibleCount = 0
     
     var titleText = "You completed <COUNT> focus blocks today."
@@ -39,20 +52,24 @@ class focusSummaryVc: NSViewController {
     var activityTableColumnFirstText = "Activity"
     var activityTableColumnSecondText = "Total Quantity"
     var activityTableColumnThirdText = "Average"
-
+    
     var activityTableColumnSixthText = "Total Duration"
     var totalFocusTimeText = "Total focus time: <TIME>"
     
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
-        btnClickHere.isHidden = true
+        lblTitleTimeSpentOnBreaks.stringValue = "Time spent on breaks"
+        lblTitleTimeSpentDisabledApp.stringValue = "Time spent with blocking deactivated:"
+        lblTitleTimeSpentEnableApp.stringValue = "Time spent with blocking activated:"
+        lblTitleTotalTimeOnBlockedSItes.stringValue = "Time spent on super distracting sites:"
+        lblTitleTotalDistractingSites.stringValue = "Total distracting sites blocked:"
         btnNeedMoreTime.buttonColor = NSColor.white.cgColor
-//        btnClickHere.title = "Click here to see what you achieved."
         btnContinue.title = "Continue"
         lblActivitySummary.stringValue = "Activity Summary:"
         lblFocusSummary.stringValue = "Focus Summary:"
         
+//        boxSimpleMode.fillColor = NSColor.clear
         if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
             if let focusSummaryInfo = focusInfo.value(forKey: "focusSummaryInfo") as? NSDictionary{
                 if let title = focusSummaryInfo.value(forKey: "title") as? String{
@@ -120,78 +137,157 @@ class focusSummaryVc: NSViewController {
         arrActivitySummaryTotalDic.removeAll()
         arrActivitySummaryDurationDic.removeAll()
         arrFocusSummaryDic.removeAll()
-        if allActivityTodaySummaryData != nil{
-
-            if let arr = allActivityTodaySummaryData!.value(forKey: "focusSummary") as? [[String:Any]]{
-                for item in arr{
-                    let name = item["name"] as? String ?? ""
-                    let duration = item["duration"] as? Double ?? 0
-                    var start_time = item["start_time"] as? String ?? ""
-                    let achievements = item["achievements"] as? String ?? ""
-                    let distractions = item["distractions"] as? String ?? ""
-                    if let date = getDateFromStringInUtc(date: start_time, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'") {
-                        start_time = getStringFromDate(date: date, dateFormat: "yyyy-MM-dd HH:mm:ss")
+        
+        if SettingsManagerObject.isGeekModeEnabled{
+            scrollViewFocusSummary.isHidden = false
+            scrollViewActivitySummaryTotal.isHidden = false
+            scrollViewActivitySummaryAverage.isHidden = false
+            scrollViewActivitySummaryDuration.isHidden = false
+            lblTotalFocusTime.isHidden = false
+            lblFocusSummary.isHidden = false
+            lblActivitySummary.isHidden = false
+            boxSimpleMode.isHidden = true
+            
+            if allActivityTodaySummaryData != nil{
+                
+                if let arr = allActivityTodaySummaryData!.value(forKey: "focusSummary") as? [[String:Any]]{
+                    for item in arr{
+                        let name = item["name"] as? String ?? ""
+                        let duration = item["duration"] as? Double ?? 0
+                        var start_time = item["start_time"] as? String ?? ""
+                        var achievements = item["achievements"] as? String ?? ""
+                        let distractions = item["distractions"] as? String ?? ""
+                        if let date = getDateFromStringInUtc(date: start_time, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'") {
+                            start_time = getStringFromDate(date: date, dateFormat: "yyyy-MM-dd HH:mm:ss")
+                        }
+                        achievements = achievements.removingPercentEncoding ?? achievements
+                        let dic = ["Activity":name, "Duration in seconds":"\(Int(duration))", "Start Time": start_time, "Work achieved": achievements, "Distractions encountered": distractions]
+                        arrFocusSummaryDic.append(dic)
                     }
-                   
-                    let dic = ["Activity":name, "Duration in seconds":"\(Int(duration))", "Start Time": start_time, "Work achieved": achievements, "Distractions encountered": distractions]
-                    arrFocusSummaryDic.append(dic)
+                }
+                
+                if let arr = allActivityTodaySummaryData!.value(forKey: "daySummaryAVG") as? [[String:Any]]{
+                    for item in arr{
+                        let name = item["name"] as? String ?? ""
+                        let quantity = item["quantity"] as? Double ?? 0
+                        let dic = ["Activity":name, "quantity":"\(roundDoubleValue(val: quantity))"]
+                        arrActivitySummaryAverageDic.append(dic)
+                    }
+                }
+                if let arr = allActivityTodaySummaryData!.value(forKey: "daySummarySUM") as? [[String:Any]]{
+                    for item in arr{
+                        let name = item["name"] as? String ?? ""
+                        let quantity = item["quantity"] as? Double ?? 0
+                        let dic = ["Activity":name, "quantity":"\(roundDoubleValue(val: quantity))"]
+                        arrActivitySummaryTotalDic.append(dic)
+                    }
+                }
+                if let arr = allActivityTodaySummaryData!.value(forKey: "daySummaryDuration") as? [[String:Any]]{
+                    for item in arr{
+                        let name = item["name"] as? String ?? ""
+                        let duration = item["duration"] as? Int ?? 0//will be in integer
+                        let dic = ["Activity":name, "duration":"\(duration)"]
+                        arrActivitySummaryDurationDic.append(dic)
+                    }
+                }
+                var totalSeconds = 0
+                for i in 0..<arrFocusSummaryDic.count{
+                    let stirngCount = arrFocusSummaryDic[i]["Duration in seconds"] ?? ""
+                    let seconds = Int(stirngCount) ?? 0
+                    totalSeconds += seconds
+                }
+                
+                let (h,m,s) = secondsToHoursMinutesSeconds(seconds: totalSeconds)
+                
+                let time = "\(h)h \(m)m \(s)s"
+                lblTotalFocusTime .stringValue = totalFocusTimeText.replacingOccurrences(of: "<TIME>", with: time)
+            }else{
+                readCsv()
+            }
+            
+            
+            tblViewFocusSummary.reloadData()
+            tblViewActivitySummaryTotal.reloadData()
+            tblViewActivitySummaryAverage.reloadData()
+            tblViewActivitySummaryDuration.reloadData()
+            
+            lblTitle.stringValue = titleText.replacingOccurrences(of: "<COUNT>", with: "\(arrFocusSummaryDic.count)")//"You completed \(arrFocusSummaryDic.count) focus blocks today."
+            
+            let arrDuration = UserDefaults.standard.object(forKey: kUserdefaultsArrayBreaksDurations) as? [Int] ?? []
+            let totalDuration = arrDuration.reduce(0, +)
+            
+            let timeSpentText = "Total time spent on breaks: <TIME>"
+            lblTotalBreaksTimeGeekMode.stringValue = timeSpentText.replacingOccurrences(of: "<TIME>", with: getStringTimeFromSeconds(seconds: totalDuration)) // todo text
+            
+        }else{
+            scrollViewFocusSummary.isHidden = true
+            scrollViewActivitySummaryTotal.isHidden = true
+            scrollViewActivitySummaryAverage.isHidden = true
+            scrollViewActivitySummaryDuration.isHidden = true
+            lblTotalFocusTime.isHidden = true
+            lblFocusSummary.isHidden = true
+            lblActivitySummary.isHidden = true
+            boxSimpleMode.isHidden = false
+            lblTitle.stringValue = "Your day summary"
+            lblTitleTimeSpentDisabledApp.stringValue = "Time spent with blocking deactivated:"
+            lblTitleTimeSpentEnableApp.stringValue = "Time spent with blocking activated:"
+            lblTitleTotalTimeOnBlockedSItes.stringValue = "Time spent on super distracting sites:"
+            lblTitleTotalDistractingSites.stringValue = "Total distracting sites blocked:"
+            lblTitleTimeSpentOnBreaks.stringValue = "Total time spent on breaks:" // todo text
+            
+            
+            if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
+                if let focusSummaryInfo = focusInfo.value(forKey: "focusSummaryInfo") as? NSDictionary{
+                    lblTitle.stringValue = focusSummaryInfo.value(forKey: "titleDaySummary") as? String ?? lblTitle.stringValue
+                    lblTitleTimeSpentDisabledApp.stringValue = focusSummaryInfo.value(forKey: "titleTimeSpentDisabledApp") as? String ?? lblTitleTimeSpentDisabledApp.stringValue
+                    lblTitleTimeSpentEnableApp.stringValue = focusSummaryInfo.value(forKey: "titleTimeSpentEnableApp") as? String ?? lblTitleTimeSpentEnableApp.stringValue
+                    lblTitleTotalTimeOnBlockedSItes.stringValue = focusSummaryInfo.value(forKey: "titleTotalTimeOnBlockedSItes") as? String ?? lblTitleTotalTimeOnBlockedSItes.stringValue
+                    lblTitleTotalDistractingSites.stringValue = focusSummaryInfo.value(forKey: "titleTotalDistractingSites") as? String ?? lblTitleTotalDistractingSites.stringValue
                 }
             }
             
-            if let arr = allActivityTodaySummaryData!.value(forKey: "daySummaryAVG") as? [[String:Any]]{
-                for item in arr{
-                    let name = item["name"] as? String ?? ""
-                    let quantity = item["quantity"] as? Double ?? 0
-                    let dic = ["Activity":name, "quantity":"\(quantity)"]
-                    arrActivitySummaryAverageDic.append(dic)
+            var totalDurationaSaved = 0
+            if let timeSpentInfo = UserDefaults.standard.object(forKey: kUserdefaultsTotalTimeSpentOnDistractingSites) as? [String:Any]{
+                if let date = timeSpentInfo["date"] as? Date, let duration = timeSpentInfo["duration"] as? Int{
+                    if Calendar.current.isDateInToday(date){
+                        totalDurationaSaved = duration
+                    }
                 }
             }
-            if let arr = allActivityTodaySummaryData!.value(forKey: "daySummarySUM") as? [[String:Any]]{
-                for item in arr{
-                    let name = item["name"] as? String ?? ""
-                    let quantity = item["quantity"] as? Double ?? 0
-                    let dic = ["Activity":name, "quantity":"\(quantity)"]
-                    arrActivitySummaryTotalDic.append(dic)
+            
+            var totalBlockedSites = 0
+            if let blockInfo = UserDefaults.standard.object(forKey: kUserdefaultsTotalDistractingSitesBlocked) as? [String:Any]{
+                if let date = blockInfo["date"] as? Date, let count = blockInfo["count"] as? Int{
+                    if Calendar.current.isDateInToday(date){
+                        totalBlockedSites = count
+                    }
                 }
             }
-            if let arr = allActivityTodaySummaryData!.value(forKey: "daySummaryDuration") as? [[String:Any]]{
-                for item in arr{
-                    let name = item["name"] as? String ?? ""
-                    let duration = item["duration"] as? Int ?? 0//will be in integer
-                    let dic = ["Activity":name, "duration":"\(duration)"]
-                    arrActivitySummaryDurationDic.append(dic)
-                }
-            }
-            var totalSeconds = 0
-           for i in 0..<arrFocusSummaryDic.count{
-               let stirngCount = arrFocusSummaryDic[i]["Duration in seconds"] ?? ""
-               let seconds = Int(stirngCount) ?? 0
-               totalSeconds += seconds
-           }
+            
+            
+            var totalAppEnableTime = SettingsManagerObject.totalAppEnableTime
+            var totalAppDisableTime = SettingsManagerObject.totalAppDisableTime
+                
+            if isAppEnable{
+                let diffSeconds = Calendar.current.dateComponents([.second], from: SettingsManagerObject.appEnableDate ?? Date(), to: Date()).second ?? 0
+                totalAppEnableTime = totalAppEnableTime + diffSeconds
 
-           let (h,m,s) = secondsToHoursMinutesSeconds(seconds: totalSeconds)
-           
-           let time = "\(h)h \(m)m \(s)s"
-           lblTotalFocusTime .stringValue = totalFocusTimeText.replacingOccurrences(of: "<TIME>", with: time)
-        }else{
-            readCsv()
+            }else{
+                let diffSeconds = Calendar.current.dateComponents([.second], from: SettingsManagerObject.appDisableDate ?? Date(), to: Date()).second ?? 0
+                totalAppDisableTime = totalAppDisableTime + diffSeconds
+                
+            }
+            
+            lblTimeSpentEnableApp.stringValue = getStringTimeFromSeconds(seconds: totalAppEnableTime)
+            lblTimeSpentDisabledApp.stringValue = getStringTimeFromSeconds(seconds: totalAppDisableTime)
+            lblTotalTimeOnBlockedSItes.stringValue = getStringTimeFromSeconds(seconds: totalDurationaSaved)
+            lblTotalDistractingSites.integerValue = totalBlockedSites
+            
+            let arrDuration = UserDefaults.standard.object(forKey: kUserdefaultsArrayBreaksDurations) as? [Int] ?? []
+            let totalDuration = arrDuration.reduce(0, +)
+            
+            lblTimeSpentOnBreaks.stringValue = getStringTimeFromSeconds(seconds: totalDuration)
         }
-        
-        
-        scrollViewFocusSummary.isHidden = false
-        tblViewFocusSummary.reloadData()
-        scrollViewActivitySummaryTotal.isHidden = false
-        scrollViewActivitySummaryAverage.isHidden = false
-        scrollViewActivitySummaryDuration.isHidden = false
-        tblViewActivitySummaryTotal.reloadData()
-        tblViewActivitySummaryAverage.reloadData()
-        tblViewActivitySummaryDuration.reloadData()
-        lblTotalFocusTime.isHidden = false
-        lblFocusSummary.isHidden = false
-        lblActivitySummary.isHidden = false
-        
-        lblTitle.stringValue = titleText.replacingOccurrences(of: "<COUNT>", with: "\(arrFocusSummaryDic.count)")//"You completed \(arrFocusSummaryDic.count) focus blocks today."
-        
         
         
         
@@ -220,6 +316,34 @@ class focusSummaryVc: NSViewController {
     override func viewDidAppear() {
         
     }
+    func getStringTimeFromSeconds(seconds : Int)->String{
+        let (h,m,s) = secondsToHoursMinutesSeconds(seconds: seconds)
+        var stringTime: String = ""
+        if h != 0{
+            stringTime = "\(h)" + hoursHText
+        }
+        if m != 0{
+            if stringTime.isEmpty{
+                stringTime = "\(m)" + minutesMText
+            }else{
+                stringTime += " \(m)" + minutesMText
+            }
+        }
+        if s != 0{
+            if stringTime.isEmpty{
+                stringTime = "\(s)" + secondsSText
+            }else{
+                stringTime += " \(s)" + secondsSText
+            }
+        }
+        if stringTime.isEmpty{
+            stringTime += "\(m)" + minutesMText
+        }
+        return stringTime
+    }
+    
+    
+    
     var arrFocusSummaryDic = [[String:String]]()
     
     var arrActivitySummaryTotalDic = [[String:String]]()
@@ -229,8 +353,6 @@ class focusSummaryVc: NSViewController {
     func readCsv(){
         var arrActivitySummaryDic = [[String:String]]()
         let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
-        
-//       startDate = Calendar.current.date(byAdding: .day, value: -10, to: startDate)!// remove this
         
         var arr = readDataFromCSV(url: quantityCsvURL!)
         print(arr)
@@ -272,7 +394,7 @@ class focusSummaryVc: NSViewController {
             }
             
         }
-//        tblViewSummary.reloadData()
+        //        tblViewSummary.reloadData()
         print(arrActivitySummaryDic)
         var newDic = [String:Any]()
         
@@ -372,13 +494,13 @@ class focusSummaryVc: NSViewController {
                     arrActivitySummaryDurationDic.append(summaryDic)
                 }
                 
-//                arrActivitySummaryDic.append(summaryDic)
+                //                arrActivitySummaryDic.append(summaryDic)
             }
         }
         
         
-//        lblTotalFocusTime
-         var totalSeconds = 0
+        //        lblTotalFocusTime
+        var totalSeconds = 0
         for i in 0..<arrFocusSummaryDic.count{
             let stirngCount = arrFocusSummaryDic[i]["Duration in seconds"] ?? ""
             let seconds = Int(stirngCount) ?? 0
@@ -413,7 +535,7 @@ class focusSummaryVc: NSViewController {
     }
     
     @IBAction func btnContinueClicked(_ sender: Any) {
-        addLog(text: "button continue Clicked from focus summary")
+        addLog(text: "[user-action] button continue Clicked from focus summary")
         let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
         let shutOffdate = Calendar.current.date(bySettingHour: shutOffTime!.hour, minute: shutOffTime!.minute, second: shutOffTime!.second, of: Date())!
         
@@ -425,36 +547,48 @@ class focusSummaryVc: NSViewController {
         }else if curreentDate < startDate{ //  iska mtlb 1 se 10 k bich ka time
             UserDefaults.standard.set(startDate, forKey: kUserdefaultsFocusSummaryShowedTillDate)
         }else{// not shut off time
-
+            
         }
         
-        
+        UserDefaults.standard.removeObject(forKey: kUserdefaultsArrayBreaksDurations)
         currentState = ._NOTHING_
         appdelegate?.shutOffMac()
         viewVisibleCount = 0
     }
     @IBAction func btnNeedMoreTimeClicked(_ sender: Any) {
         if viewVisibleCount == 0{
-            addLog(text: "button Need one More minute Clicked from focus summary")
-            mainViewControllerObj?.giveOneMoreMinuteBeforeShutOffMac()
+            addLog(text: "[user-action] button Need one More minute Clicked from focus summary")
+            if cutOffTime != nil && SettingsManagerObject.isPasswordRequireInSkipEveningAfterCutOff && !SettingsManagerObject.isEasySkipEnabled{
+                let cutOffDate = Calendar.current.date(bySettingHour: cutOffTime!.hour, minute: cutOffTime!.minute, second: cutOffTime!.second, of: Date())!
+                let currentDate = Date()
+                if currentDate > cutOffDate && shouldAskPassword(){
+                    mainViewControllerObj?.showPasswordView()
+                }else{
+                    postponeFocusSummaryForOneMinute()
+                }
+            }else{
+                postponeFocusSummaryForOneMinute()
+            }
         }else{
-            addLog(text: "button I still need to work more Clicked from focus summary")
+            addLog(text: "[user-action] button I still need to work more Clicked from focus summary")
             mainViewControllerObj?.btnAbortClicked(self)
         }
-        
+    }
+    
+    func postponeFocusSummaryForOneMinute(){
+        mainViewControllerObj?.giveOneMoreMinuteBeforeShutOffMac()
         viewVisibleCount += 1
-        
     }
 }
 
 
 extension focusSummaryVc: NSTableViewDelegate, NSTableViewDataSource {
     /*
-    focus type
-    start time
-    work achived
-    destruction encountered
-    */
+     focus type
+     start time
+     work achived
+     destruction encountered
+     */
     func numberOfRows(in tableView: NSTableView) -> Int {
         if tableView == tblViewFocusSummary{
             for i in 0..<tableView.tableColumns.count{
@@ -507,7 +641,7 @@ extension focusSummaryVc: NSTableViewDelegate, NSTableViewDataSource {
         }
         return 0
     }
-
+    
     
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
         if let cell = tableView.makeView(withIdentifier: NSUserInterfaceItemIdentifier(rawValue: "cell_list"), owner: nil) as? NSTableCellView {
@@ -542,14 +676,6 @@ extension focusSummaryVc: NSTableViewDelegate, NSTableViewDataSource {
                     }else if tableColumn == tblViewActivitySummaryTotal.tableColumns[1]{
                         cell.textField?.stringValue = arrActivitySummaryTotalDic[row]["quantity"] ?? ""
                     }
-                    
-//                    else if tableColumn == tblViewActivitySummaryTotal.tableColumns[2]{
-//                        cell.textField?.stringValue = arrActivitySummaryTotalDic[row]["average"] ?? ""
-////                    }else if tableColumn == tblViewActivitySummaryTotal.tableColumns[3]{
-////                        cell.textField?.stringValue = arrActivitySummaryTotalDic[row]["max"] ?? ""
-////                    }else if tableColumn == tblViewActivitySummaryTotal.tableColumns[4]{
-////                        cell.textField?.stringValue = arrActivitySummaryTotalDic[row]["min"] ?? ""
-//                    }
                 }
             }else if tableView == tblViewActivitySummaryAverage{
                 if tableColumn != nil{
@@ -580,7 +706,7 @@ extension focusSummaryVc: NSTableViewDelegate, NSTableViewDataSource {
                 }
             }
             
-         return cell
+            return cell
         }
         return NSTableCellView()
     }

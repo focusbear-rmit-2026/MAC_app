@@ -23,14 +23,7 @@ class onboardingBlockedUrlsVc: NSViewController {
     @IBOutlet weak var lblQuestion: NSTextField!
     //@IBOutlet weak var lblTitle: NSTextField!
     
-    var arrBlockedUrls:[[String:Any]] = [["url":"facebook.com", "isSelected":true],
-                                         ["url":"twitter.com", "isSelected":true],
-                                         ["url":"instagram.com", "isSelected":true],
-                                         ["url":"tiktok.com", "isSelected":true],
-                                         ["url":"bbc.com", "isSelected":true],
-                                         ["url":"cnn.com", "isSelected":true],
-                                         ["url":"reddit.com", "isSelected":true],
-                                         ["url":"youtube.com", "isSelected":true]]
+    var arrBlockedUrls:[[String:Any]] = []
     
     var arrBlockedUrlsStructure = [NSMutableDictionary]()
     var lastItemTag = 0
@@ -54,7 +47,7 @@ class onboardingBlockedUrlsVc: NSViewController {
         btnContinue.title = "Continue"
         var categorySocialMedia = "Social Media"
         var categoryNews = "News"
-        
+        var categoryStreamingServices = "Streaming services"
         
         if let onboardingBlockedUrlsInfo = configjson.value(forKey: "onboardingBlockedUrlsInfo") as? NSDictionary{
             //  lblTitle.stringValue = onboardingBlockedUrlsInfo.value(forKey: "title") as? String ?? lblTitle.stringValue
@@ -68,36 +61,51 @@ class onboardingBlockedUrlsVc: NSViewController {
             categorySocialMedia = onboardingBlockedUrlsInfo.value(forKey: "categorySocialMedia") as? String ?? categorySocialMedia
             categoryNews = onboardingBlockedUrlsInfo.value(forKey: "categoryNews") as? String ?? categoryNews
             categoryOthers = onboardingBlockedUrlsInfo.value(forKey: "categoryOthers") as? String ?? categoryOthers
+            categoryStreamingServices = onboardingBlockedUrlsInfo.value(forKey: "categoryStreamingServices") as? String ?? categoryStreamingServices
         }
         
-
-        
         textFieldUrl.delegate = self
-        
-        
      
         var dic:NSMutableDictionary = ["category":categorySocialMedia,"isSelected":false,"tag":777,"arrUrls":[NSMutableDictionary](),"isParent":true]
-        let arrSocialMediaUrls: [NSMutableDictionary] = [["url":"facebook.com", "isSelected":true, "tag":2], ["url":"twitter.com", "isSelected":true, "tag":3], ["url":"instagram.com", "isSelected":true, "tag":4], ["url":"tiktok.com", "isSelected":true, "tag":5], ["url":"youtube.com", "isSelected":true, "tag":6], ["url":"reddit.com", "isSelected":true, "tag":9]]
+        let arrSocialMediaUrls: [NSMutableDictionary] = [["url":"facebook.com", "isSelected":true, "tag":2], ["url":"x.com", "isSelected":true, "tag":3], ["url":"instagram.com", "isSelected":true, "tag":4], ["url":"tiktok.com", "isSelected":true, "tag":5], ["url":"youtube.com", "isSelected":true, "tag":6], ["url":"reddit.com", "isSelected":true, "tag":9], ["url":"www.linkedin.com/feed/", "isSelected":true, "tag":10]]
         
         dic["arrUrls"] = arrSocialMediaUrls
         
         arrBlockedUrlsStructure.append(dic)
         
-        
-        
         dic = ["category":categoryNews,"isSelected":false,"tag":888,"arrUrls":[NSMutableDictionary](),"isParent":true]
-        let arrNewsUrls: [NSMutableDictionary] = [["url":"bbc.com", "isSelected":true, "tag":7], ["url":"cnn.com", "isSelected":true, "tag":8]]//if any item added set last item tag
+        let arrNewsUrls: [NSMutableDictionary] = [["url":"bbc.com", "isSelected":true, "tag":7], ["url":"cnn.com", "isSelected":true, "tag":8], ["url":"theguardian.com", "isSelected":true, "tag":11], ["url":"abc.net.au", "isSelected":true, "tag":12], ["url":"news", "isSelected":true, "tag":13]]//if any item added set last item tag
         
         dic["arrUrls"] = arrNewsUrls
         
         arrBlockedUrlsStructure.append(dic)
         
         
-        lastItemTag = 10
+        dic = ["category":categoryStreamingServices,"isSelected":false,"tag":999,"arrUrls":[NSMutableDictionary](),"isParent":true]
+        let arrStreamingUrls: [NSMutableDictionary] = [["url":"netflix", "isSelected":true, "tag":14], ["url":"disney", "isSelected":true, "tag":15], ["url":"hulu", "isSelected":true, "tag":16]]//if any item added set last item tag
+        
+        dic["arrUrls"] = arrStreamingUrls
+        
+        arrBlockedUrlsStructure.append(dic)
+        
+        lastItemTag = 17
         outlineView.reloadData()
         
         allApiObject.capturePosthog(event: "onboarding-blocked-urls-shown", metadata: [:])
+        addLog(text: "onboardingBlockedUrlsVc-shown")
         recheckBlockedUrlsCount()
+    }
+    
+    override func viewDidAppear() {
+        getOnboardingProgressVcObj().loadView()
+        onboardingProgressVcObj?.totalProgress = 26
+        onboardingProgressVcObj!.lblTitleProgress.stringValue = onboardingProgressVcObj!.titleActivatingBlockingProgress 
+        showOnboardingProgress(view: self.view, progress: 2)
+        showOnboardingBellIcon(view: self.view, screen: "onboarding-blocked-urls-screen")
+    }
+    override func viewWillDisappear() {
+        hideOnboardingProgress(view: self.view)
+        hideOnboardingBellIcon(view: self.view)
     }
     
     func recheckBlockedUrlsCount(){
@@ -120,14 +128,14 @@ class onboardingBlockedUrlsVc: NSViewController {
         var blockSitesCountText = ""
         
         if selectedUrlsCount == 1{
-            blockSitesCountText = "1 site will always be blocked."
+            blockSitesCountText = "1 site will be blocked."
             if let onboardingBlockedUrlsInfo = configjson.value(forKey: "onboardingBlockedUrlsInfo") as? NSDictionary{
                 blockSitesCountText = onboardingBlockedUrlsInfo.value(forKey: "oneSiteBlockText") as? String ?? blockSitesCountText
             }
             
             blockSitesCountText = blockSitesCountText.replacingOccurrences(of: "<COUNT>", with: "\(selectedUrlsCount)")
         }else{
-            blockSitesCountText = "<COUNT> sites will always be blocked."
+            blockSitesCountText = "<COUNT> sites will be blocked."
             if let onboardingBlockedUrlsInfo = configjson.value(forKey: "onboardingBlockedUrlsInfo") as? NSDictionary{
                 blockSitesCountText = onboardingBlockedUrlsInfo.value(forKey: "blockSitesCountText") as? String ?? blockSitesCountText
             }
@@ -138,6 +146,10 @@ class onboardingBlockedUrlsVc: NSViewController {
         lblBlockedCount.stringValue = blockSitesCountText
     }
     override func viewWillAppear() {
+        if let item = outlineView.item(atRow: 2){
+            outlineView.expandItem(item)
+        }
+        
         if let item = outlineView.item(atRow: 1){
             outlineView.expandItem(item)
         }
@@ -150,11 +162,10 @@ class onboardingBlockedUrlsVc: NSViewController {
         textFieldUrl.stringValue = ""
     }
     @IBAction func btnContinueClicked(_ sender: Any) {
-        addLog(text: "onboardingBlockedUrlsVc:- Button Continue clicked")
+        addLog(text: "[user-action] onboardingBlockedUrlsVc:- Button Continue clicked")
         
         arrBlockedUrls.removeAll()
-        
-        //"url":"facebook.com", "isSelected":true]
+
         for dic in arrBlockedUrlsStructure{
             if let arrUrls = dic["arrUrls"] as? [NSMutableDictionary]{
                 for urlDic in arrUrls{
@@ -164,14 +175,16 @@ class onboardingBlockedUrlsVc: NSViewController {
         }
         print(arrBlockedUrls)
         UserDefaults.standard.set(arrBlockedUrls, forKey: kUserdefaultsBlockedUrlsFromOnboarding)
-        //        appdelegate!.showOnbardingHabit()
-        //        self.view.window?.close()
-        //        showPreloadFocusModesWindow()
-        
-        self.view.window?.contentViewController = getOnboardingPrivacyTipVcObject()
+
+        if onboardingDistractionTypesVcObj?.checkBoxSecond.state == .on{
+            self.view.window?.contentViewController = getOnboardingBlockedAppsVcObject()
+        }else{
+            self.view.window?.contentViewController = getOnboardingBlockingScheduleVcObject()
+        }
+        //  ------------------------//
     }
     @IBAction func btnAddUrlClicked(_ sender: Any) {
-        addLog(text: "onboardingBlockedUrlsVc:- Button Add Url clicked")
+        addLog(text: "[user-action] onboardingBlockedUrlsVc:- Button Add Url clicked")
         let domain = textFieldUrl.stringValue
         for dic in arrBlockedUrlsStructure{
             if let arrUrls = dic["arrUrls"] as? [NSMutableDictionary]{
@@ -188,7 +201,7 @@ class onboardingBlockedUrlsVc: NSViewController {
         }
         if let lastCategoryInfo = arrBlockedUrlsStructure.last{
             if lastCategoryInfo["isOther"] == nil{
-                let dic:NSMutableDictionary = ["category":categoryOthers,"isSelected":false,"tag":999,"arrUrls":[NSMutableDictionary](),"isParent":true, "isOther":true]
+                let dic:NSMutableDictionary = ["category":categoryOthers,"isSelected":false,"tag":1111,"arrUrls":[NSMutableDictionary](),"isParent":true, "isOther":true]
                 
                 let otherUrls: [NSMutableDictionary] = [["url":domain, "isSelected":true, "tag":lastItemTag]]
                 lastItemTag += 1
@@ -212,6 +225,8 @@ class onboardingBlockedUrlsVc: NSViewController {
             outlineView.expandItem(item)
         }
         outlineView.scrollRowToVisible(outlineView.numberOfRows - 1)
+        
+        allApiObject.capturePosthog(event: "new-block-url-added", metadata: [:])
         
         btnAddUrl.isEnabled = false
         textFieldUrl.stringValue = ""

@@ -10,13 +10,14 @@ import Cocoa
 
 class whySkipHabitVc: NSViewController {
 
+    @IBOutlet weak var btnSkipCompletely: underLineButton!
     @IBOutlet weak var btnCanNotDoIt: Button!
     @IBOutlet weak var btnAlreadyDidIt: Button!
     @IBOutlet weak var lblTitle: NSTextField!
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
-        
+        btnSkipCompletely.title = "Skip micro break Completely"
         lblTitle.stringValue = "Why do you want to skip?"
         btnAlreadyDidIt.title = "I already did it"
         btnCanNotDoIt.title = "Can't do it today"
@@ -25,9 +26,17 @@ class whySkipHabitVc: NSViewController {
             lblTitle.stringValue = whySkipHabitVcInfo.value(forKey: "title") as? String ?? lblTitle.stringValue
             btnAlreadyDidIt.title = whySkipHabitVcInfo.value(forKey: "buttonAlreadyDidItText") as? String ?? btnAlreadyDidIt.title
             btnCanNotDoIt.title = whySkipHabitVcInfo.value(forKey: "buttonCanNotDoItText") as? String ?? btnCanNotDoIt.title
+            btnSkipCompletely.title = whySkipHabitVcInfo.value(forKey: "buttonSkipBreaksCompletely") as? String ?? btnSkipCompletely.title
+        }
+        btnCanNotDoIt.buttonColor = NSColor.white.cgColor
+    }
+    override func viewWillAppear() {
+        if currentState == ._ACTIVITY_{
+            btnSkipCompletely.isHidden = false
+        }else{
+            btnSkipCompletely.isHidden = true
         }
     }
-    
     func skipActivityAlreadyDid(){
         if rememberNextHabitVcObj != nil{
             if thirdVcObj!.view.subviews.contains(rememberNextHabitVcObj!.view){
@@ -57,13 +66,13 @@ class whySkipHabitVc: NSViewController {
     }
     
     @IBAction func btnAlreadyDidItClicked(_ sender: Any) {
-        addLog(text: "whySkipHabitVc:- button AlreadyDidItClicked")
+        addLog(text: "[user-action] whySkipHabitVc:- button AlreadyDidItClicked")
         self.view.removeFromSuperview()
         
         if currentState == ._ACTIVITY_{
             skipActivityAlreadyDid()
         }else{
-            if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
+            if shouldAskPassword(){
                 if currentState == ._MORNING_HABIT_{
                     if SettingsManagerObject.isPasswordRequireInSkipMorning{
                         mainViewControllerObj?.showPasswordView()
@@ -90,7 +99,6 @@ class whySkipHabitVc: NSViewController {
                     }
                     
                 }
-                
             }else{
                 skipActivityAlreadyDid()
             }
@@ -99,13 +107,13 @@ class whySkipHabitVc: NSViewController {
         
     }
     @IBAction func btnCanNotDoItClicked(_ sender: Any) {
-        addLog(text: "whySkipHabitVc:- button CanNotDoItClicked")
+        addLog(text: "[user-action] whySkipHabitVc:- button CanNotDoItClicked")
         self.view.removeFromSuperview()
         
         if currentState == ._ACTIVITY_{
             mainViewControllerObj?.showSkipHabitView()
         }else{
-            if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
+            if shouldAskPassword(){
                 if currentState == ._MORNING_HABIT_{
                     if SettingsManagerObject.isPasswordRequireInSkipMorning{
                         mainViewControllerObj?.showPasswordView()
@@ -137,14 +145,13 @@ class whySkipHabitVc: NSViewController {
         }
     }
     @IBAction func btnCloseClicked(_ sender: Any) {
-        addLog(text: "whySkipHabitVc:- button CloseClicked")
+        addLog(text: "[user-action] whySkipHabitVc:- button CloseClicked")
         self.view.removeFromSuperview()
-        
-//        if currentHabitPlaying != nil{//it means allowed app activity
-//            mainWindowControllerObj?.window?.close()
-//            hideBlankWindowInSecondaryMonitor()
-//            currentState = ._NOTHING_
-//            appdelegate?.backgroundThread()
-//        }
+    }
+    
+    @IBAction func btnSkipCompletelyClicked(_ sender: Any) {
+        addLog(text: "[user-action] whySkipHabitVc - Skip Break Activities Completely Clicked")
+        self.view.removeFromSuperview()
+        mainViewControllerObj?.postponeBreakActivitiesFor(minutes: breakAfterMinutes, secondsToPostpone: nil)
     }
 }

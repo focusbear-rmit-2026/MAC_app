@@ -8,7 +8,15 @@
 
 import Cocoa
 
-class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {
+class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {// this is not in use
+    
+    
+    @IBOutlet weak var lblTitleShortcut: NSTextField!
+    @IBOutlet weak var lblrecordShorcutPomodoro: NSTextField!
+    @IBOutlet weak var btnClearShortcutPomodoro: NSButton!
+    @IBOutlet weak var btnRecordShortcutPomodoro: NSButton!
+    @IBOutlet weak var boxRecordShortcutPomodoro: NSBox!
+    
     
     @IBOutlet weak var popUpBtnFont: NSPopUpButton!
     @IBOutlet weak var lblTitleFont: NSTextField!
@@ -22,6 +30,7 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {
     @IBOutlet weak var tabViewItemPassword: NSTabViewItem!
     @IBOutlet weak var tabViewItemBlockedUrls: NSTabViewItem!
     @IBOutlet weak var tabViewBlockedUrls: NSView!
+    @IBOutlet weak var tabViewItemBlockedApps: NSTabViewItem!
     
     @IBOutlet weak var btnLearnPomodoroTechnique: underLineButton!
     
@@ -89,20 +98,15 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {
     @IBOutlet weak var lblDescriptionGrizzlyBear: NSTextField!
     @IBOutlet weak var radioBtnGrizzlyBear: NSButton!
     @IBOutlet weak var radioBtnCuddlyBear: NSButton!
-    
-    
-    
+
     @IBOutlet weak var lblTitleMeetingDetection: NSTextField!
     @IBOutlet weak var lblDescriptionMeetingDetection: NSTextField!
     @IBOutlet weak var lblCheckBoxMeetingDetection: NSTextField!
-    
     @IBOutlet weak var checkBoxMeetingDetection: NSButton!
     
     @IBOutlet weak var lblCheckBoxShowMeetingDetectionPopup: NSTextField!
-    
+
     @IBOutlet weak var checkBoxShowMeetingDetectionPopup: NSButton!
-    
-    
     @IBOutlet weak var lblTitleHideDock: NSTextField!
     @IBOutlet weak var lblDescriptionHideDock: NSTextField!
     @IBOutlet weak var lblCheckBoxHideDock: NSTextField!
@@ -112,9 +116,7 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {
     @IBOutlet weak var checkboxShowBreaksInPostpone: NSButton!
     @IBOutlet weak var lblCheckboxShowBreaksInPostpone: NSTextField!
     @IBOutlet weak var lblTitleShowBreaksInPostpone: NSTextField!
-    
-    
-    
+
     @IBOutlet weak var lblTitleTabLimiter: NSTextField!
     @IBOutlet weak var lblCheckboxOpenMoreTabs: NSTextField!
     @IBOutlet weak var checkboxOpenMoreTabs: NSButton!
@@ -126,8 +128,6 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {
     @IBOutlet weak var lblCheckboxFullScreenEnabled: ignoreMouseTextField!
     @IBOutlet weak var lblTitleFullScreen: NSTextField!
     @IBOutlet weak var checkBoxFullScreenEnabled: NSButton!
-    
-    
     
     @IBOutlet weak var checkboxReloadAppAfterForceQuit: NSButton!
     @IBOutlet weak var lblCheckboxReloadAppAfterForceQuit: NSTextField!
@@ -146,26 +146,14 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {
     let viewPomodoroHeightDefault = 303
     let viewAdvancedHeightDefault = 593
     
-    var searchResultMenu:NSMenu = NSMenu()
+    let copySystemPreferencesIndex = 0
+    let alwaysDarkModeIndex = 1
+    let neverDarkModeIndex = 2
     
-    lazy var searchesMenu: NSMenu = {
-        
-        let menu = NSMenu(title: "Recents")
-        
-        let i1 = menu.addItem(withTitle: "Recents Search", action: nil, keyEquivalent: "")
-        i1.tag = Int(NSSearchField.recentsTitleMenuItemTag)
-        
-        let i2 = menu.addItem(withTitle: "Item", action: nil, keyEquivalent: "")
-        i2.tag = Int(NSSearchField.recentsMenuItemTag)
-        
-        let i3 = menu.addItem(withTitle: "Clear", action: nil, keyEquivalent: "")
-        i3.tag = Int(NSSearchField.clearRecentsMenuItemTag)
-        
-        let i4 = menu.addItem(withTitle: "No Recent Search", action: nil, keyEquivalent: "")
-        i4.tag = Int(NSSearchField.noRecentsMenuItemTag)
-        
-        return menu
-    }()
+    var searchResultMenu:NSMenu = NSMenu()
+    var isAddingPomodoroShortcut = false
+    var borderPomodoroShortcutNormalColor = NSColor.gray
+
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -177,19 +165,23 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {
         self.customViewForList.addSubview(popoverViewControllerObj.view)
         self.customViewForList.addConstraints(subView: popoverViewControllerObj.view)
         searchField.popoverViewControllerObj?.view.isHidden = true
-        searchField.parentVcObj = self
+//        searchField.parentVcObj = self
         
-        
+        tabViewItemBlockedApps.label = "Blocked Apps"
         
         tabViewItemGeneral.identifier = idGeneral
         tabViewItemPomodoro.identifier = idPomodoro
         tabViewItemAdvanced.identifier = idAdvanced
         tabViewItemBlockedUrls.identifier = idBlockedUrls
+        tabViewItemBlockedApps.identifier = idBlockedApps
         tabViewItemPassword.identifier = idPassword
         tabViewItemAccount.identifier = idAccount
         tabViewItemAi.identifier = idAi
         tabViewItemUninstall.identifier = idUninstall
         
+        
+        lblTitleShortcut.stringValue = "Shortcut to start pomodoro:"
+        lblrecordShorcutPomodoro.stringValue = "Record Shortcut"
         lblTitleFont.stringValue = "Application Font:"
         popUpBtnFont.removeAllItems()
         
@@ -258,7 +250,7 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {
         
         
         
-        lblDescriptionPomodoro.stringValue = "Pomodoro Mode cycles between deep work blocks where a focus mode is turned on (and distractions turned off) and break periods."
+        lblDescriptionPomodoro.stringValue = "Focus Sessions (pomodoro mode) cycles between deep work blocks where a focus mode is turned on (and distractions turned off) and break periods."
         btnLearnPomodoroTechnique.title = "Learn more about the pomodoro technique here."
         
         
@@ -281,6 +273,7 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {
             tabViewItemBlockedUrls.label = common.value(forKey: "tabBlockedURLsText") as? String ?? tabViewItemBlockedUrls.label
             tabViewItemPassword.label = common.value(forKey: "tabPasswordText") as? String ?? tabViewItemPassword.label
             tabViewItemAi.label = common.value(forKey: "tabAIText") as? String ?? tabViewItemAi.label
+            tabViewItemBlockedApps.label = common.value(forKey: "tabBlockedAppsText") as? String ?? tabViewItemBlockedApps.label
         }
         
         lblTitleStatistics.stringValue = "Statistics:"
@@ -290,7 +283,6 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {
         
         if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
             btnExportStatistics.title = menuInfo.value(forKey: "menuItemExportStatisticsTitle") as? String ?? btnExportStatistics.title
-            
             btnCheckForUpdates.title = menuInfo.value(forKey: "menuItemCheckForUpdatesTitle") as? String ?? btnCheckForUpdates.title
         }
         
@@ -373,8 +365,7 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {
             lblradioButtonEasySkip.stringValue = preferencesInfo.value(forKey: "radioButtonEasySkipText") as? String ?? lblradioButtonEasySkip.stringValue
             lblradioButtonHardSkip.stringValue = preferencesInfo.value(forKey: "radioButtonHardSkipText") as? String ?? lblradioButtonHardSkip.stringValue
             
-            //            btnExportLogs.title = preferencesInfo.value(forKey: "buttonExportLogsText") as? String ?? btnExportLogs.title
-            
+        
             lblTitleMeetingDetection.stringValue = preferencesInfo.value(forKey: "titleMeetingDetection") as? String ?? lblTitleMeetingDetection.stringValue
             lblDescriptionMeetingDetection.stringValue = preferencesInfo.value(forKey: "descriptionMeetingDetectionText") as? String ?? lblDescriptionMeetingDetection.stringValue
             lblCheckBoxMeetingDetection.stringValue = preferencesInfo.value(forKey: "checkBoxMeetingDetectionText") as? String ?? lblCheckBoxMeetingDetection.stringValue
@@ -397,13 +388,9 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {
             
             lblCheckboxFullScreenEnabled.stringValue = preferencesInfo.value(forKey: "checkBoxFullScreenEnabledText") as? String ?? lblCheckboxFullScreenEnabled.stringValue
             lblTitleFullScreen.stringValue = preferencesInfo.value(forKey: "titleFullScreen") as? String ?? lblTitleFullScreen.stringValue
-            
-            
-            
+
             lblTitleDarkMode.stringValue = preferencesInfo.value(forKey: "titleDarkMode") as? String ?? lblTitleDarkMode.stringValue
-            
-            
-            
+
             if let appAppearanceOptions = preferencesInfo.value(forKey: "appAppearanceOptions") as? [String]{
                 if appAppearanceOptions.count != 0{
                     popUpBtnDarkMode.removeAllItems()
@@ -420,6 +407,9 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {
             lblCheckboxReloadAppAfterForceQuit.stringValue = preferencesInfo.value(forKey: "checkBoxReloadAppAfterForceQuitText") as? String ?? lblCheckboxReloadAppAfterForceQuit.stringValue
             
             lblTitleFont.stringValue = preferencesInfo.value(forKey: "titleFont") as? String ?? lblTitleFont.stringValue
+            
+            lblTitleShortcut.stringValue = preferencesInfo.value(forKey: "titlePomodoroShortcut") as? String ?? lblTitleShortcut.stringValue
+            lblrecordShorcutPomodoro.stringValue = preferencesInfo.value(forKey: "recordShorcutText") as? String ?? lblrecordShorcutPomodoro.stringValue
         }
         
         lblTitlePomodoroModeDuration.stringValue = pomodoroModeDurationText
@@ -461,6 +451,9 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {
         self.tabViewBlockedUrls.addSubview(getBlockedUrlsVcObject().view)
         self.tabViewBlockedUrls.addConstraints(subView: getBlockedUrlsVcObject().view)
         
+        self.tabViewItemBlockedApps.view?.addSubview(getBlockedAppsVcObject().view)
+        self.tabViewItemBlockedApps.view?.addConstraints(subView: getBlockedAppsVcObject().view)
+        
         self.tabViewItemPassword.view?.addSubview(getPasswordVcObject().view)
         self.tabViewItemPassword.view?.addConstraints(subView: getPasswordVcObject().view)
 
@@ -499,6 +492,7 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {
         
         arrForSearchFromSettings.append(["title": lblTitlePomodoroModeDuration.stringValue, "tabId": idPomodoro, "object": lblTitlePomodoroModeDuration as Any])
         arrForSearchFromSettings.append(["title": lblTitleBreakDuration.stringValue, "tabId": idPomodoro, "object": lblTitleBreakDuration as Any])
+        arrForSearchFromSettings.append(["title": lblTitleShortcut.stringValue, "tabId": idPomodoro, "object": lblTitleShortcut as Any])
         
         
         arrForSearchFromSettings.append(["title": lblTitleMeetingDetection.stringValue, "tabId": idAdvanced, "object": lblTitleMeetingDetection as Any])
@@ -566,6 +560,72 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {
         checkboxOpenMoreTabs.toolTip = lblCheckboxOpenMoreTabs.stringValue
     }
     
+    @IBAction func btnRecordShortcutPomodoroClicked(_ sender: Any) {
+        resetCurrentRecording()
+        isAddingPomodoroShortcut = true
+        lblrecordShorcutPomodoro.stringValue = ""
+        btnClearShortcutPomodoro.isHidden = true
+        boxRecordShortcutPomodoro.borderColor = NSColor.blue
+        appdelegate?.unregisterPomodoroShortcut()
+        flags = []
+        char = ""
+        self.view.window?.makeFirstResponder(nil)
+    }
+    
+    @objc func resetCurrentRecording(){
+        if isAddingPomodoroShortcut{
+            reload_newShotShortcut()
+            if flags.isEmpty == false{
+                appdelegate?.registerPomodoroShortcut()
+            }
+            
+        }
+    }
+    
+    @objc func reload_newShotShortcut(){
+        char = ""
+        flags = NSEvent.modifierFlags
+        char = SettingsManagerObject.startPomodoroShortcutChar
+
+        let sflags = SettingsManagerObject.startPomodoroShortcutFlags
+        updateFlags(sflags: sflags)
+        
+        
+        if flags.isEmpty == true && char == ""{
+            lblrecordShorcutPomodoro.stringValue = "Record Shortcut"
+            if let preferencesInfo = configjson.value(forKey: "preferencesInfo") as? NSDictionary{
+                lblrecordShorcutPomodoro.stringValue = preferencesInfo.value(forKey: "recordShorcutText") as? String ?? lblrecordShorcutPomodoro.stringValue
+            }
+            btnClearShortcutPomodoro.isHidden = true
+        }else{
+            lblrecordShorcutPomodoro.stringValue = "\(flags)\(char)"
+            btnClearShortcutPomodoro.isHidden = false
+        }
+        boxRecordShortcutPomodoro.borderColor = borderPomodoroShortcutNormalColor
+    }
+    
+    func shortcutAdded(){
+        isAddingPomodoroShortcut  = false
+        boxRecordShortcutPomodoro.borderColor = borderPomodoroShortcutNormalColor
+        btnClearShortcutPomodoro.isHidden = false
+    }
+    @IBAction func btnClearShortcutPomodoroClicked(_ sender: Any) {
+        flags = []
+        char = ""
+        appdelegate?.unregisterPomodoroShortcut()
+        SettingsManagerObject.startPomodoroShortcutChar = ""
+        SettingsManagerObject.startPomodoroShortcutFlags = []
+        lblrecordShorcutPomodoro.stringValue = "Record Shortcut"
+        if let preferencesInfo = configjson.value(forKey: "preferencesInfo") as? NSDictionary{
+            lblrecordShorcutPomodoro.stringValue = preferencesInfo.value(forKey: "recordShorcutText") as? String ?? lblrecordShorcutPomodoro.stringValue
+        }
+        btnClearShortcutPomodoro.isHidden = true
+        boxRecordShortcutPomodoro.borderColor = borderPomodoroShortcutNormalColor
+        SettingsManagerObject.isSettingsChanged = true
+        
+    }
+    
+    
     func optionSelectedByUser(id:String, object:NSView?){
         addLog(text:"generalVc:- optionSelectedByUser")
         
@@ -609,7 +669,7 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {
             }
             if id == "focusAdvanced"{
                 if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-                    tabview.selectedTabViewItemIndex = 1
+                    tabview.selectedTabViewItemIndex = preferencesFocusModesIndex
                     focusPreferencesVcObj?.btnAdvancedClicked(self)
                 }
             }
@@ -618,6 +678,11 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {
     }
     
     override func viewWillAppear() {
+        
+        isAddingPomodoroShortcut = false
+        boxRecordShortcutPomodoro.borderColor = borderPomodoroShortcutNormalColor
+        reload_newShotShortcut()
+        
         searchField.itemsArr = arrForSearchFromSettings
         
         if isPurchased == false && daysLeft <= 0{
@@ -790,6 +855,8 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {
     
     
     override func viewWillDisappear() {
+        resetCurrentRecording()
+        isAddingPomodoroShortcut = false
         SettingsManagerObject.putUserLocalDeviceSettings()
     }
     override func viewDidAppear() {
@@ -812,11 +879,12 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {
         
         if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
             if self.tabView.selectedTabViewItem == tabViewItemPassword{
-                if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
+                if shouldAskPassword(){
                     if !SettingsManagerObject.isPasswordRequireInChangeSettings{
                         tabview.view.addSubview(getEnterPasswordVcObjForPreferences().view)
                         tabview.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
                         getEnterPasswordVcObjForPreferences().parentVc = nil
+                        enterPasswordVcObjForPreferences?.removeConstraints()
                         addLog(text: "Showing enter password view inside preferences")
                     }
                 }
@@ -929,25 +997,7 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {
             }
         }
     }
-    //    func controlTextDidChange(_ obj: Notification) {
-    //        if let textfield = obj.object as? NSTextField{
-    //            if textfield == textFieldPomodoroDuration{
-    //                var count = textfield.integerValue
-    //                if count < 5 {
-    //                    count = 5
-    //                }
-    //                if count > 720{
-    //                    count = 720
-    //                }
-    ////                if count < 10{
-    ////                    textfield.stringValue = "0\(count)"
-    ////                }else{
-    //                    textfield.stringValue = "\(count)"
-    ////                }
-    //                UserDefaults.standard.set(count, forKey: SettingsManagerObject.kUserdefaultsPomodoroDurationMinutes)
-    //            }
-    //        }
-    //    }
+
     
     func controlTextDidEndEditing(_ obj: Notification) {
         if let textfield = obj.object as? NSTextField{
@@ -956,7 +1006,7 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {
                 if textFieldPomodoroDuration.stringValue.isEmpty{
                     showAlert(msg: workDurationEmptyErrorText, completionHandler: {_ in
                         if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-                            tabview.selectedTabViewItemIndex = 3
+                            tabview.selectedTabViewItemIndex = preferencesEditHabitsIndex
                         }
                         self.tabView.selectTabViewItem(self.tabViewItemPomodoro)
                         if let duration = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsPomodoroDurationMinutes) as? Int{
@@ -969,7 +1019,7 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {
                 if textFieldPomodoroDuration.integerValue < 1{
                     showAlert(msg: workDurationZeroErrorText, completionHandler: {_ in
                         if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-                            tabview.selectedTabViewItemIndex = 3
+                            tabview.selectedTabViewItemIndex = preferencesEditHabitsIndex
                         }
                         self.tabView.selectTabViewItem(self.tabViewItemPomodoro)
                         if let duration = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsPomodoroDurationMinutes) as? Int{
@@ -992,7 +1042,7 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {
                 if textFieldBreakDuration.stringValue.isEmpty{
                     showAlert(msg: breakDurationEmptyErrorText, completionHandler: {_ in
                         if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-                            tabview.selectedTabViewItemIndex = 3
+                            tabview.selectedTabViewItemIndex = preferencesEditHabitsIndex
                         }
                         self.tabView.selectTabViewItem(self.tabViewItemPomodoro)
                         if let duration = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsBreakDurationMinutes) as? Int{
@@ -1005,7 +1055,7 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {
                 if textFieldBreakDuration.integerValue < 1{
                     showAlert(msg: breakDurationZeroErrorText, completionHandler: {_ in
                         if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-                            tabview.selectedTabViewItemIndex = 3
+                            tabview.selectedTabViewItemIndex = preferencesEditHabitsIndex
                         }
                         self.tabView.selectTabViewItem(self.tabViewItemPomodoro)
                         if let duration = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsBreakDurationMinutes) as? Int{
@@ -1036,7 +1086,7 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {
                     }
                     showAlert(msg: msg, completionHandler: {_ in
                         if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-                            tabview.selectedTabViewItemIndex = 3
+                            tabview.selectedTabViewItemIndex = preferencesEditHabitsIndex
                         }
                         self.tabView.selectTabViewItem(self.tabViewItemAdvanced)
                         self.textFieldTabLimitCount.integerValue = SettingsManagerObject.maxTabLimitCount
@@ -1058,7 +1108,7 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {
             }
         }
     }
-    var filterArr = [[String : String]]()
+//    var filterArr = [[String : String]]()
     func controlTextDidChange(_ obj: Notification) {
         print("controlTextDidChange")
         if let searchfield = obj.object as? NSSearchField{
@@ -1087,6 +1137,8 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {
         })
     }
     
+    
+    
     @IBAction func popUpBtnDarkModeClicked(_ sender: Any) {
         if popUpBtnDarkMode.indexOfSelectedItem == SettingsManagerObject.selectedAppAppearanceIndex{
             return;
@@ -1097,13 +1149,13 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {
         var appearance: NSAppearance?
         
         switch SettingsManagerObject.selectedAppAppearanceIndex {
-        case 0:
+        case copySystemPreferencesIndex:
             allApiObject.capturePosthog(event: "settings-changed-app-mode", metadata: ["mode":"copy_system_preferences"])
             appearance = NSApp!.appearance
-        case 1:
+        case alwaysDarkModeIndex:
             allApiObject.capturePosthog(event: "settings-changed-app-mode", metadata: ["mode":"always_dark_mode"])
             appearance = NSAppearance(named: .darkAqua)
-        case 2:
+        case neverDarkModeIndex:
             allApiObject.capturePosthog(event: "settings-changed-app-mode", metadata: ["mode":"never_dark_mode"])
             appearance = NSAppearance(named: .aqua)
         default:
@@ -1155,7 +1207,8 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {
                 addLog(text: "language changed by user to \(self.popUpBtnselectLanguage.title)")
                 UserDefaults.standard.set(arrLanguageDic[self.popUpBtnselectLanguage.indexOfSelectedItem]["id"], forKey: kUserdefaultsSelectedLanguage)
                 
-                
+//                sharedDefaults?.setValue(arrLanguageDic[self.popUpBtnselectLanguage.indexOfSelectedItem]["id"], forKeyPath: kUserdefaultsSharedSelectedLanguage)
+//                sharedDefaults?.synchronize()
                 var languageName = arrLanguageDic[self.popUpBtnselectLanguage.indexOfSelectedItem]["languageName"] ?? ""
                 languageName = languageName.lowercased()
                 
@@ -1294,7 +1347,6 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {
             SettingsManagerObject.kIsReducedMotion = false
             allApiObject.capturePosthog(event: "settings-changed-disable-reduce-motion", metadata: [:])//#490
         }
-        
     }
     
     @IBAction func checkBoxMeetingDetectionClicked(_ sender: Any) {
@@ -1318,8 +1370,6 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {
             SettingsManagerObject.showMeetingDetectionAlert = false
             allApiObject.capturePosthog(event: "settings-changed-disable-meeting-popup", metadata: [:])//#490
         }
-        
-        
     }
     
     @IBAction func checkBoxHideDockClicked(_ sender: Any) {
@@ -1407,75 +1457,7 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {
         self.presentAsSheet(pomodoroPreferencesAdvancedVcObj!)
     }
     
-    /*
-     let url = URL(fileURLWithPath: "/Users/prashant/Library/Application Support/com.App.EarnYourScreentime/Logs")
-     let destUrl = URL(fileURLWithPath: "/Users/prashant/Library/Application Support/com.App.EarnYourScreentime/Logs.zip")
-     do{
-     try url.zip(dest: destUrl)
-     }catch{
-     
-     }
-     */
-    //    @IBAction func btnExportLogsClicked(_ sender: Any) {
-    //        let openPanel = NSOpenPanel()
-    //        openPanel.canChooseFiles = false
-    //        openPanel.canChooseDirectories = true
-    //        openPanel.allowsMultipleSelection = false
-    //        openPanel.treatsFilePackagesAsDirectories = false
-    //        openPanel.prompt = "Export Logs"
-    //        openPanel.message = "Export logs to share with Focus Bear Support Team"
-    //
-    //        if let preferencesInfo = configjson.value(forKey: "preferencesInfo") as? NSDictionary{
-    //            openPanel.prompt = preferencesInfo.value(forKey: "buttonPanelExportLogsText") as? String ?? openPanel.prompt
-    //            openPanel.message = preferencesInfo.value(forKey: "panelExportLogsText") as? String ?? openPanel.message
-    //        }
-    //        if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
-    //            if state{
-    //                openPanel.sharingType = .none
-    //            }
-    //        }
-    //
-    //
-    //        openPanel.beginSheetModal(for: self.view.window!) { response in
-    //            guard response.rawValue == NSApplication.ModalResponse.OK.rawValue else {
-    //                return
-    //            }
-    //            if let url = openPanel.url {
-    //                let filemanager = FileManager.default
-    //                let destUrl = url.appendingPathComponent("FocusBearLogs.zip")
-    //                if filemanager.fileExists(atPath: destUrl.path){
-    //                    do{
-    //                        try filemanager.removeItem(at: destUrl)
-    //                    }catch{
-    //                        print(error)
-    //                    }
-    //                }
-    //                //FocusBearLogs.zip
-    //
-    //
-    //                do{
-    //                    _ = try DebugLogsFolderURL!.zip(dest: destUrl)
-    //                }catch{
-    //
-    //                }
-    //
-    //
-    //                var successText = "Your logs are available to share in the FocusBearLogs.zip file in the <URL> directory"
-    //                if let preferencesInfo = configjson.value(forKey: "preferencesInfo") as? NSDictionary{
-    //                    successText = preferencesInfo.value(forKey: "exportSuccessText") as? String ?? successText
-    //                }
-    //
-    //                successText = successText.replacingOccurrences(of: "<URL>", with: url.path)
-    //
-    //                self.showAlert(msg: successText, completionHandler: {_ in
-    //                    NSWorkspace.shared.activateFileViewerSelecting([destUrl])
-    //                })
-    //
-    //                allApiObject.capturePosthog(event: "export-logs", metadata: [:])
-    //
-    //            }
-    //        }
-    //    }
+
     @IBAction func btnExportStatisticsClicked(_ sender: Any) {
         let openPanel = NSOpenPanel()
         openPanel.canChooseFiles = false
@@ -1583,7 +1565,7 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {
         }
     }
     @IBAction func btnCheckForUpdatesClicked(_ sender: Any) {
-        addLog(text: "btnCheckForUpdatesClicked")//
+        addLog(text: "[user-action] btnCheckForUpdatesClicked")//
         appdelegate!.updater?.checkForUpdates(self)
         preferencesWindowControllerObj?.window?.miniaturize(self)
         allApiObject.capturePosthog(event: "check-for-updates-manually", metadata: [:])
@@ -1628,13 +1610,13 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {
         if checkBoxFullScreenEnabled.state == .on{
             SettingsManagerObject.isFullScreenEnabled = true
             allApiObject.capturePosthog(event: "settings-changed-enable-full-screen", metadata: [:])
-            if isMainWindowLodded{
+            if isMainWindowLoaded{
                 mainWindowControllerObj?.showFullSizeWindow()
             }
         }else{
             SettingsManagerObject.isFullScreenEnabled = false
             allApiObject.capturePosthog(event: "settings-changed-disable-full-screen", metadata: [:])
-            if isMainWindowLodded{
+            if isMainWindowLoaded{
                 mainWindowControllerObj?.showSmallSizeWindow()
             }
         }
@@ -1666,7 +1648,6 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {
             return;
         }
 
-        
         let alert = NSAlert()
         alert.setSharingType()
         var alertChangeLanguageInfoText = "Focus Bear will restart for the changes to take effect."
@@ -1693,8 +1674,6 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {
                 }
             }
         })
-        
-        
     }
 }
 
@@ -1704,11 +1683,12 @@ extension generalVc:NSTabViewDelegate{
         print("tab view selection change")
         if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
             if tabViewItem == tabViewItemPassword{
-                if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
+                if shouldAskPassword(){
                     if !SettingsManagerObject.isPasswordRequireInChangeSettings{
                         tabview.view.addSubview(getEnterPasswordVcObjForPreferences().view)
                         tabview.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
                         getEnterPasswordVcObjForPreferences().parentVc = nil
+                        enterPasswordVcObjForPreferences?.removeConstraints()
                         addLog(text: "Showing enter password view inside preferences")
                     }
                 }

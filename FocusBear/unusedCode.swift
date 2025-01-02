@@ -188,7 +188,6 @@
 //
 //
 //
-//                                showMorningPomodoroModeView()
 //
 //                                show brain dump window
 //                                showBrainDumpWindow()
@@ -199,25 +198,20 @@
 //                                mainWindowControllerObj?.showWindow(self)
 //                                mainViewControllerObj!.showAbortConfirmationView()
 //                                showBlankWindowInSecondaryMonitor()
-//                                showUpgradeNowWindow()
 //                                showWelcomeOnboardingWindow()//
 //                                showOnboardingVideoWindow()
 //                                showOnboardingCardWindow(isLogin: true)
 //                                showBreakWarningWindow()
 //                                showEasyPostponeWindow()
-//                                showMorningPomodoroModeView()
 //                                showPreloadFocusModesWindow()
 //                                preloadFocusModesWindowControllerObj!.contentViewController = getHowHeardVcObj()
-//                                showUpgradeNowWindow()
 //                                showPopUpOfflineWindow()
 //                                showExtraNagsAfterInactivity()
 //                                showTrialExpiredWindow()
 //
 //                                mainWindowControllerObj?.loadWindow()
 //                                isHabitAlreadyShowed = true
-//                                UserDefaults.standard.set(Date(), forKey: kUserdefaultsLastHabitShowDate)//
-//                                UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitShowDate)//
-//                                UserDefaults.standard.set(Date().dayBefore, forKey: kUserdefaultsLastHabitShowDate)
+
 //                                UserDefaults.standard.set(Date().dayBefore, forKey: kUserdefaultsEveningHabitsShowedTillDate)
 //                                arrKeywordsToAllowInFocus = ["111", "222", "333"]//
 //                                lastFocusModeTempInfo = lastFocusTempInfo(id: "currentFocusModeId", arrAllowedAppsInCuddlyModeCurrentFocus: [], arrAllowedUrlsInCuddlyModeCurrentFocus: ["google.com", "facebook.com"])
@@ -233,13 +227,7 @@
 //                                showHowHeardWindow()
 //                                showAskLoginWindow()
 //                                showChooseFrictionLevelWindow()
-//                                UserDefaults.standard.removeObject(forKey: kUserdefaultsEveningHabitsShowedTillDate)//
-//                                UserDefaults.standard.set(Date(), forKey: kUserdefaultsLastHabitShowDate)
-//                                mainWindowControllerObj?.loadWindow()//
-//                                mainViewControllerObj?.timeToStartBreakActivities()
-//                                mainWindowControllerObj?.showWindow(self)
-//                                mainViewControllerObj?.showAbortConfirmationView()
-//                                UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitShowDate)
+//
 //                                showNaturalBreakDetectionWindow()
 //                                showChooseFrictionLevelWindow()
 //                                showCustomLoginWindow(isLogin: false)
@@ -293,3 +281,54 @@
 //        completionHandler(nil)
 //    }
 //}
+
+
+
+// remove this block below
+//                UserDefaults.standard.removeObject(forKey: kUserdefaultsIsUserLoggedIn)
+//                UserDefaults.standard.removeObject(forKey: kUserdefaultsFirstRun)
+//                UserDefaults.standard.removeObject(forKey: kUserdefaultsVideoShown)
+//                UserDefaults.standard.removeObject(forKey: kUserdefaultsSelectedJson)
+//                self.user = nil
+//                let _ = self.credentialsManager.clear()
+//                self.credential = nil
+//                UserDefaults.standard.removeObject(forKey: kUserdefaultsIsUserLoggedIn)
+///////  remove this code above
+
+// done 28/7/23
+// short cut key in search
+// hide text box in set intention
+// rearrange code
+// bug solved focus end screen
+
+
+//aisettingsvc
+
+
+
+//if event.keyCode == 122{//f1
+//    char = "f1"
+//}else if event.keyCode == 120 {//f2
+//    char = "f2"
+//}else if event.keyCode == 99 {//f3
+//    char = "f3"
+//}else if event.keyCode == 118 {//f4
+//    char = "f4"
+//}else if event.keyCode == 96 {//f5
+//    char = "f5"
+//}else if event.keyCode == 97 {//f6
+//    char = "f6"
+//}else if event.keyCode == 98 {//f7
+//    char = "f7"
+//}else if event.keyCode == 100 {//f8
+//    char = "f8"
+//}else if event.keyCode == 101 {//f9
+//    char = "f9"
+//}else if event.keyCode == 109 {//f10
+//    char = "f10"
+//}else if event.keyCode == 103 {//f11
+//    char = "f11"
+//}else if event.keyCode == 111 {//f12
+//    char = "f12"
+//}
+//We're going to request permissions to control Chrome / Safari / Other browsers / System Events. This is needed to block distracting websites when you start a focus mode or to hide/unhide the dock.

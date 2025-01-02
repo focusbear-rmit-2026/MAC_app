@@ -9,14 +9,8 @@
 import Cocoa
 
 class focusPreferencesVc: NSViewController, NSMenuDelegate {
-    
-    
-    
-    @IBOutlet weak var btnInfoTags: hoverInfoButton!
-    @IBOutlet weak var lblTitleTags: NSBox!
-    @IBOutlet weak var tokenField: NSTokenField!
-    @IBOutlet weak var btnDndInfo: hoverInfoButton!
-    @IBOutlet weak var checkBoxAutoDoNotDisturb: NSButton!
+
+    @IBOutlet weak var btnInfoBlockedUrls: hoverInfoButton!
     @IBOutlet weak var heightTblViewApps: NSLayoutConstraint!
     @IBOutlet weak var lblDescriptionAlwaysBlockedUrls: NSTextField!
     @IBOutlet weak var lblTitleBlockApp: NSTextField!
@@ -52,9 +46,6 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
     
     @IBOutlet weak var btnDuplicateFocusType: NSButton!
     
-//    var btnInfoColorBoxTrackingArea: NSTrackingArea?
-//    var infoAutoDndOnTrackingArea: NSTrackingArea?
-    
     var titleAllowedAllUrls = "Allow all urls"
     var titleAllowedSelectedUrls = "Allow selected urls (works with Safari and Chrome only)"
     
@@ -66,43 +57,30 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
     
     var toolTipRemove = "Remove"
     var toolTipDuplicate = "Duplicate"
-    
-    var toolTipDndMode = "Turn on Do Not Disturb automatically when starting a focus mode."
     var toolTipColorBox = "Choose a color to be displayed in the background of the top menu bar icon to help identify the Focus Mode you are running."
     
     let viewWidthDefault = 760
     let viewHeightDefault = 624
-    
+
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do view setup here.
-        tokenField.delegate = self
-        if let focusPreferencesAdvancedInfo = configjson.value(forKey: "focusPreferencesAdvancedInfo") as? NSDictionary{
-            toolTipDndMode = focusPreferencesAdvancedInfo.value(forKey: "autoOnDoNotDisturbText") as? String ?? toolTipDndMode
-        }
-        
-        checkBoxAutoDoNotDisturb.title = "Block Notifications while focusing"
-                                    
-        
+        // Do view setup here
+        addLog(text: "focusPreferencesVc viewdidload start")
         lblTitleBlockApp.stringValue = "Which apps do you want to block?"
-        
         var toolTipAdd = "Add"
-        
-        
+
         lblUrlsQuestion.stringValue = "How do you want to allow URLs?"
         
         btnAddFocusType.title = "Add Focus Mode"
         btnDuplicateFocusType.title = "Duplicate"
         btnRemoveFocusType.title = "Delete"
         
-        radioBtnAllowListApproch.title = "Follow Allow List Approach for Blocking URLS"
-        radioBtnBlockListApproch.title = "Follow Block List Approach for Blocking URLS"
+        radioBtnAllowListApproch.title = "Allow List:"
+        radioBtnBlockListApproch.title = "Block List:"
         
         focusPreferencesVcObj = self
         var titleAllowedAllApps = "Allow all apps"
         var titleAllowedSelectedApps = "Allow selected apps"
-        
-        
         var titleFocusType = "Use Focus Modes to stay focused on a certain type of work. Start a focus mode from the Focus Bear menu."
         
         var noFocusAddedText = "Please add a Focus Type in left panel."
@@ -121,17 +99,14 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
             btnAddFocusType.title = focusPreferencesInfo.value(forKey: "buttonAddFocusTypeText") as? String ?? btnAddFocusType.title
             btnRemoveFocusType.title = focusPreferencesInfo.value(forKey: "buttonDeleteFocusTypeText") as? String ?? btnRemoveFocusType.title
             
-            
             titleBlockAllUrls = focusPreferencesInfo.value(forKey: "titleBlockedAllUrls") as? String ?? titleBlockAllUrls
             titleBlockSelectedUrls = focusPreferencesInfo.value(forKey: "titleBlockedSelectedUrls") as? String ?? titleBlockSelectedUrls
-            radioBtnAllowListApproch.title = focusPreferencesInfo.value(forKey: "titleAllowUrlListApproch") as? String ?? radioBtnAllowListApproch.title
-            radioBtnBlockListApproch.title = focusPreferencesInfo.value(forKey: "titleBlockUrlListApproch") as? String ?? radioBtnBlockListApproch.title
+            radioBtnAllowListApproch.title = focusPreferencesInfo.value(forKey: "titleAllowUrlList") as? String ?? radioBtnAllowListApproch.title
+            radioBtnBlockListApproch.title = focusPreferencesInfo.value(forKey: "titleBlockUrlList") as? String ?? radioBtnBlockListApproch.title
             
             allowUrlsQuestionText = focusPreferencesInfo.value(forKey: "allowUrlsQuestionText") as? String ?? allowUrlsQuestionText
             blockUrlsQuestionText = focusPreferencesInfo.value(forKey: "blockUrlsQuestionText") as? String ?? blockUrlsQuestionText
-
             lblTitleBlockApp.stringValue = focusPreferencesInfo.value(forKey: "titleBlockedApps") as? String ?? lblTitleBlockApp.stringValue
-            checkBoxAutoDoNotDisturb.title = focusPreferencesInfo.value(forKey: "checkBoxDoNotDisturbText") as? String ?? checkBoxAutoDoNotDisturb.title
         }
         lblTitleFocusType.stringValue = titleFocusType
         radioBtnAllowAllApps.title = titleAllowedAllApps
@@ -179,7 +154,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         
         arrForSearchFromSettings.append(["title": radioBtnAllowListApproch.title, "tabId": idFocus, "object": radioBtnAllowListApproch as Any])
         arrForSearchFromSettings.append(["title": radioBtnBlockListApproch.title, "tabId": idFocus, "object": radioBtnBlockListApproch as Any])
-        arrForSearchFromSettings.append(["title": checkBoxAutoDoNotDisturb.title, "tabId": idFocus, "object": checkBoxAutoDoNotDisturb as Any])
+        
         
         if focusPreferencesAdvancedVcObj == nil{
             focusPreferencesAdvancedVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("focusPreferencesAdvancedVc")) as? focusPreferencesAdvancedVc
@@ -188,37 +163,44 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
 
         if let focusPreferencesAdvancedInfo = configjson.value(forKey: "focusPreferencesAdvancedInfo") as? NSDictionary{
             if let runScriptBeforeText = focusPreferencesAdvancedInfo.value(forKey: "runScriptBeforeText") as? String {
-                arrForSearchFromSettings.append(["title": runScriptBeforeText, "tabId": "focusAdvanced", "object": focusPreferencesAdvancedVcObj?.checkBoxRunScriptBeforeFocus as Any])
+                arrForSearchFromSettings.append(["title": runScriptBeforeText, "tabId": "focusAdvanced", "object": focusPreferencesAdvancedVcObj?.bgBox as Any])
                 
             }
             if let runScriptAfterText = focusPreferencesAdvancedInfo.value(forKey: "runScriptAfterText") as? String{
-                arrForSearchFromSettings.append(["title": runScriptAfterText, "tabId": "focusAdvanced", "object": focusPreferencesAdvancedVcObj?.checkBoxRunScriptAfterFocus as Any])
+                arrForSearchFromSettings.append(["title": runScriptAfterText, "tabId": "focusAdvanced", "object": focusPreferencesAdvancedVcObj?.bgBox as Any])
             }
 
             
             if let title = focusPreferencesAdvancedInfo.value(forKey: "runShellCommandBeforeText") as? String {
-                arrForSearchFromSettings.append(["title": title, "tabId": "focusAdvanced", "object": focusPreferencesAdvancedVcObj?.checkBoxRunShellBeforeFocus as Any])
+                arrForSearchFromSettings.append(["title": title, "tabId": "focusAdvanced", "object": focusPreferencesAdvancedVcObj?.bgBox as Any])
             }
             if let title = focusPreferencesAdvancedInfo.value(forKey: "runShellCommandAfterText") as? String {
-                arrForSearchFromSettings.append(["title": title, "tabId": "focusAdvanced", "object": focusPreferencesAdvancedVcObj?.checkBoxRunShellAfterFocus as Any])
+                arrForSearchFromSettings.append(["title": title, "tabId": "focusAdvanced", "object": focusPreferencesAdvancedVcObj?.bgBox as Any])
             }
-    
+            if let title = focusPreferencesAdvancedInfo.value(forKey: "focusAlignmentScoreTitle") as? String {
+                arrForSearchFromSettings.append(["title": title, "tabId": "focusAdvanced", "object": focusPreferencesAdvancedVcObj?.bgBox as Any])
+            }
+
+            arrForSearchFromSettings.append(["title": focusPreferencesAdvancedVcObj?.checkBoxAutoDoNotDisturb.title ?? "", "tabId": "focusAdvanced", "object": focusPreferencesAdvancedVcObj?.checkBoxAutoDoNotDisturb as Any])
         }
+        
+        if let focusPreferencesInfo = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
+            if let title = focusPreferencesInfo.value(forKey: "titleTags") as? String {
+                arrForSearchFromSettings.append(["title": title, "tabId": "focusAdvanced", "object": focusPreferencesAdvancedVcObj?.bgBox as Any])
+            }
+        }
+        
         boxAllowedApps.wantsLayer = true
         boxAllowedApps.layer?.cornerRadius = 5
         
         boxAllowedWebUrls.wantsLayer = true
         boxAllowedWebUrls.layer?.cornerRadius = 5
+        addLog(text: "focusPreferencesVc viewdidload end")
     }
-    
-    
-    @IBAction func btnDndInfoClicked(_ sender: Any) {
-        showTooltip(sender: btnDndInfo, msg: toolTipDndMode, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
-    }
-    
+
 
     @IBAction func bntColorBoxInfoClicked(_ sender: Any) {
-        addLog(text: "bntColorBoxInfoClicked")
+        addLog(text: "[user-action] bntColorBoxInfoClicked")
         showTooltip(sender: bntColorBoxInfo, msg: toolTipColorBox, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
     }
     
@@ -269,6 +251,13 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         if (item["isLockedFocus"] as? Bool) != nil{
             item.removeValue(forKey: "isLockedFocus")
         }
+        if (item["isRelaxFocus"] as? Bool) != nil{
+            item.removeValue(forKey: "isRelaxFocus")
+        }
+        if (item["isDeepWorkFocus"] as? Bool) != nil{
+            item.removeValue(forKey: "isDeepWorkFocus")
+        }
+        
         let oldName = item["name"] as? String ?? ""
         var count = 1
         var newName = oldName + " \(count)"
@@ -285,8 +274,8 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         item["isOn"] = false
         item["isPaused"] = false
         item.removeValue(forKey: "id")
-        let id = getUuid()
-        item["id"] = id
+        let idFocusMode = getUuid()
+        item["id"] = idFocusMode
         var newRow = 0
         if !isDefault{//if default than duplicate will second last //tod test
             newRow = row + 1
@@ -294,24 +283,21 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
             newRow = row
         }
         arrFocusType.insert(item, at: newRow)
-        
-        
-        tblViewFocusType.insertRows(at: IndexSet(arrayLiteral: newRow), withAnimation: .effectFade)
-        tblViewFocusType.selectRowIndexes(IndexSet(arrayLiteral: newRow), byExtendingSelection: false)
-        tblViewFocusType.scrollRowToVisible(newRow)
-        
+        sortFocusModes()
+        tblViewFocusType.reloadData()
+        for i in 0..<arrFocusType.count{
+            if arrFocusType[i]["id"] as? String == idFocusMode{
+                tblViewFocusType.selectRowIndexes(IndexSet(arrayLiteral: i), byExtendingSelection: false)
+                tblViewFocusType.scrollRowToVisible(i)
+                break;
+            }
+        }
+
         UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
         
-        allApiObject.addFocusMode(focusType: item, completionHandler: { newDic in
-            if newDic != nil{
-                DispatchQueue.main.async {
-                    //                    item["id"] = newDic!.value(forKey: "id") as? String ?? ""//["id"] as? String ?? ""
-                    
-                }
-            }
-            
-        })
+        allApiObject.addFocusMode(focusType: item)
         allApiObject.capturePosthog(event: "duplicate-focus-mode", metadata: [:])
+        resetPomodoroVcFocusListIfNeeded()
         
     }
     @objc func duplicateFocusClicked(){
@@ -346,6 +332,10 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
     
     
     override func viewWillAppear() {
+        focusPreferencesAdvancedVcObj?.arrAllTags.removeAll()
+        for tagInfo in arrAllFocusModeTags{
+            focusPreferencesAdvancedVcObj?.arrAllTags.append(tagInfo["text"] ?? "")
+        }
         preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: viewWidthDefault, height: viewHeightDefault))
         reloadData()
         if Reachability.isConnectedToNetwork() == false {
@@ -364,38 +354,11 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
     }
     
     override func viewWillDisappear() {
-        var arrJson = [[String: Any]]()
-        for focusType in arrFocusType{
-            var json: [String: Any] = [
-                "id":focusType["id"] as? String ?? "",
-                "allowed_urls":focusType["allowed_urls"] as? [String] ?? [],
-                "allowed_apps":focusType["allowed_apps"] as? [String] ?? [],
-                "name":focusType["name"] as? String ?? "",
-//                "tags":focusType["tags"] as? [String] ?? [],
-                "metadata": [:]
-            ]
-            var tagsDic = [[String:Any]]()
-            if let tags = focusType["tags"] as? [String]{
-                for tag in tags{
-                    tagsDic.append(["id": getUuid(), "text": tag])
-                }
-            }
-            json["tags"] = tagsDic
-            
-            var dic = focusType
-            dic.removeValue(forKey: "name")
-            dic.removeValue(forKey: "id")
-            dic.removeValue(forKey: "allowed_urls")
-            dic.removeValue(forKey: "allowed_apps")
-            dic.removeValue(forKey: "tags")
-            json["metadata"] = dic
-            arrJson.append(json)
-        }
-        allApiObject.updateAllFocusMode(focusModes: arrJson, completionHandler: {json in 
-            
-        })
+        focusPreferencesAdvancedVcObj?.arrAllTags.removeAll()
+        updateAllFocusModes()
     }
 
+    
     func reloadData(){
         tblViewFocusType.reloadData()
         checkState()
@@ -844,6 +807,22 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
             focusPreferencesAdvancedVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("focusPreferencesAdvancedVc")) as? focusPreferencesAdvancedVc
         }
         self.presentAsSheet(focusPreferencesAdvancedVcObj!)
+        
+        if let tags = arrFocusType[tblViewFocusType.selectedRow]["tags"] as? [String]{
+            focusPreferencesAdvancedVcObj!.tokenField.objectValue = tags
+        }else{
+            focusPreferencesAdvancedVcObj!.tokenField.objectValue = []
+        }
+        
+        if let isAutoDoNotDisturbEnabled = arrFocusType[tblViewFocusType.selectedRow]["isAutoDoNotDisturbEnabled"] as? Bool{
+            if isAutoDoNotDisturbEnabled{
+                focusPreferencesAdvancedVcObj!.checkBoxAutoDoNotDisturb.state = .on
+            }else{
+                focusPreferencesAdvancedVcObj!.checkBoxAutoDoNotDisturb.state = .off
+            }
+        }else{
+            focusPreferencesAdvancedVcObj!.checkBoxAutoDoNotDisturb.state = .off
+        }
         allApiObject.capturePosthog(event: "open-advanced-focus-mode-preferences", metadata: [:])
     }
     
@@ -914,155 +893,22 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         showTooltip(sender: sender, msg: meetingsFocusInfoText, preferredEdge: .minY, maxWidthVal:230)
     }
     
-        @IBAction func checkBoxAutoDoNotDisturbClicked(_ sender: Any) {
-            let row = tblViewFocusType.selectedRow
-            if checkBoxAutoDoNotDisturb.state == .on{
-    
-                if !isAccessibilityEnabled(isPrompt: false){
-                    let alert = NSAlert()
-                    alert.setSharingType()
-                    alert.messageText = "To turn on Do Not Disturb when starting a Focus Mode, Focus Bear needs Accessibility permissions. Would you like to give the permissions now?"
-                    if let focusPreferencesAdvancedInfo = configjson.value(forKey: "focusPreferencesAdvancedInfo") as? NSDictionary{
-                        alert.messageText = focusPreferencesAdvancedInfo.value(forKey: "needDndPermissionText") as? String ?? alert.messageText
-                    }
-                    alert.addButton(withTitle: buttonOkText)
-                    alert.addButton(withTitle: buttonCancelText)
-                    alert.beginSheetModal(for: self.view.window!, completionHandler: { response in
-                        if response == .alertFirstButtonReturn{
-                            _ = isAccessibilityEnabled(isPrompt: true)
-                            arrFocusType[row]["isAutoDoNotDisturbEnabled"] = true
-                            UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
-                            allApiObject.capturePosthog(event: "settings-changed-enable-dnd", metadata: [:])//#490
-                            preferencesWindowControllerObj!.window!.setFrameOrigin(NSPoint(x: 0, y: 0))
-                        }else{
-                            self.checkBoxAutoDoNotDisturb.state = .off
-                        }
-                    })
-    
-                }else{
-                    arrFocusType[row]["isAutoDoNotDisturbEnabled"] = true
-                    UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
-                    allApiObject.capturePosthog(event: "settings-changed-enable-dnd", metadata: [:])//#490
-                }
-    
-            }else{
-                arrFocusType[row]["isAutoDoNotDisturbEnabled"] = false
-                UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
-                allApiObject.capturePosthog(event: "settings-changed-disable-dnd", metadata: [:])//#490
-            }
-    
-        }
+        
     @IBAction func tokenFieldClicked(_ sender: Any) {
         print("tokrn field clicked")
     }
     
-}
-
-extension focusPreferencesVc:NSTextFieldDelegate, NSTokenFieldDelegate{
-    
-    func controlTextDidChange(_ obj: Notification) {
-        if let tokenfield = obj.object as? NSTokenField{
-            if tokenfield == self.tokenField{
-                let selectedRow = tblViewFocusType.selectedRow
-                var dic = arrFocusType[selectedRow]
-                dic["tags"] = self.tokenField.objectValue as? [String] ?? []
-
-                arrFocusType[selectedRow] = dic
-            }
-        }else if let textfield = obj.object as? NSTextField{
-            if textfield == textFieldSelectedFocusType{
-                if textFieldSelectedFocusType.stringValue.count > 250{
-                    let index = textfield.stringValue.index(textfield.stringValue.startIndex, offsetBy: 250)
-                    textfield.stringValue = String(textfield.stringValue.prefix(upTo: index))
-                }
-            }
+    @IBAction func btnInfoBlockedUrlsClicked(_ sender: Any) {
+        var msg = "Super distracting sites are automatically blocked"
+        if let focusPreferencesInfo = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
+            msg = focusPreferencesInfo.value(forKey: "infoAlwaysBlockedUrlsText") as? String ?? msg
         }
-    }
-    func controlTextDidEndEditing(_ obj: Notification) {
-        if let textfield = obj.object as? NSTextField{
-            if textfield == textFieldSelectedFocusType{
-                let selectedRow = tblViewFocusType.selectedRow
-                let newName = textFieldSelectedFocusType.stringValue.lowercased
-                if textFieldSelectedFocusType.stringValue.isEmpty{
-                    if let name = arrFocusType[tblViewFocusType.selectedRow]["name"] as? String{
-                        textFieldSelectedFocusType.stringValue = name
-                    }
-                    return;
-                }
-                for i in 0..<arrFocusType.count{
-                    if i != selectedRow{
-                        let dic = arrFocusType[i]
-                        if let name = dic["name"] as? String{
-                            if name.lowercased() == newName(){
-                                let alert = NSAlert()
-                                alert.setSharingType()
-                                alert.messageText = "Focus type with the same name already exist."
-                                
-                                if let focusPreferencesInfo = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
-                                    if let errorSameFocusType = focusPreferencesInfo.value(forKey: "errorSameFocusType") as? String{
-                                        alert.messageText = errorSameFocusType
-                                    }
-                                }
-                                alert.addButton(withTitle: buttonOkText)
-                                alert.beginSheetModal(for: self.view.window!, completionHandler: nil)
-                                
-                                if let name = arrFocusType[tblViewFocusType.selectedRow]["name"] as? String{
-                                    textFieldSelectedFocusType.stringValue = name
-                                }
-                                return;
-                            }
-                        }
-                    }
-                }
-                
-                
-                var dic = arrFocusType[selectedRow]
-                let oldName = dic["name"] as? String ?? ""
-                dic["name"] = textFieldSelectedFocusType.stringValue
-                
-                if isHardCorePomodoroModeOn{
-                    if dic["isOn"] as? Bool == true{
-                        hardcodePmodoroFocusModeName = textFieldSelectedFocusType.stringValue
-                    }
-                }
-                textFieldSelectedFocusType.isEnabled = false
-                
-                arrFocusType[selectedRow] = dic
-                tblViewFocusType.reloadData(forRowIndexes: IndexSet(arrayLiteral: selectedRow), columnIndexes: IndexSet(arrayLiteral: 0))
-                
-                tblViewFocusType.selectRowIndexes(IndexSet(arrayLiteral: selectedRow), byExtendingSelection: false)
-                tblViewFocusType.scrollRowToVisible(selectedRow)
-                checkState()
-                UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
-                
-                
-                
-                
-                // if auto pomodoro mode is on and if hardcore pomodoro is also enabled then if user change focus mode name which is selected in hardcore pomodoro focus then hardcore pomodoro focus name should be change here :-
-                if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsPomodoroModeEnabled) as? Bool{
-                    if state{
-                        if let hardCorePomodoroState = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHardcorePomodoroEnabled) as? Bool{
-                            
-                            if hardCorePomodoroState{
-                                if let name = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHardcorePomodoroFocusedName) as? String{
-                                    if oldName == name{
-                                        UserDefaults.standard.set(textFieldSelectedFocusType.stringValue, forKey: SettingsManagerObject.kUserdefaultsHardcorePomodoroFocusedName)
-                                    }
-                                }
-                                
-                            }
-                            
-                        }
-                    }
-                    
-                }
-                
-                textFieldSelectedFocusType.isEnabled = true
-                allApiObject.capturePosthog(event: "change-focus-mode-name", metadata: [:])
-            }
-        }
+        
+        showTooltip(sender: btnInfoBlockedUrls, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
     }
 }
+
+
 
 
 extension focusPreferencesVc: NSTableViewDelegate, NSTableViewDataSource{
@@ -1077,6 +923,12 @@ extension focusPreferencesVc: NSTableViewDelegate, NSTableViewDataSource{
             }else {
                 let row = tblViewFocusType.selectedRow
                 if row != -1{
+                    let isRelaxFocus = arrFocusType[row]["isRelaxFocus"] as? Bool ?? false
+                    if isRelaxFocus{
+                        btnRemoveApp.isEnabled = false
+                        return 0
+                    }
+                    
                     if arrFocusType[row]["isDefault"] as? Bool == true {
                         if let arr = arrFocusType[row]["blocked_apps"] as? [String]{
                             btnRemoveApp.isEnabled = false
@@ -1103,7 +955,11 @@ extension focusPreferencesVc: NSTableViewDelegate, NSTableViewDataSource{
             }else {
                 let row = tblViewFocusType.selectedRow
                 if row != -1{
-                    
+                    let isRelaxFocus = arrFocusType[row]["isRelaxFocus"] as? Bool ?? false
+                    if isRelaxFocus{
+                        btnRemoveApp.isEnabled = false
+                        return 0
+                    }
                     if arrFocusType[tblViewFocusType.selectedRow]["isDefault"] as? Bool == true {
                         btnRemoveUrl.isEnabled = false
                         return SettingsManagerObject.arrBlockedUrls.count
@@ -1146,8 +1002,8 @@ extension focusPreferencesVc: NSTableViewDelegate, NSTableViewDataSource{
 
                 cell.btnDuplicate.target = self
                 cell.btnDuplicate.action = #selector(duplicateFocusClicked)
-
-                if arrFocusType[row]["isDefault"] as? Bool == true || arrFocusType[row]["isMeetings"] as? Bool == true || arrFocusType[row]["isLockedFocus"] as? Bool == true{
+                
+                if arrFocusType[row]["isDefault"] as? Bool == true || arrFocusType[row]["isMeetings"] as? Bool == true || arrFocusType[row]["isLockedFocus"] as? Bool == true || arrFocusType[row]["isRelaxFocus"] as? Bool == true || arrFocusType[row]["isDeepWorkFocus"] as? Bool == true{
                     cell.btnRemove.isHidden = true
                 }else{
                     cell.btnRemove.isHidden = false
@@ -1248,14 +1104,17 @@ extension focusPreferencesVc: NSTableViewDelegate, NSTableViewDataSource{
         
         return customView
     }
+    
     func tableViewSelectionDidChange(_ notification: Notification) {
         print("tableViewSelectionDidChange")
         guard let tblview = notification.object as? NSTableView else {
             return
         }
         let selectedRow = tblview.selectedRow
-        if tblview == tblViewFocusType
-        {
+        if tblview == tblViewFocusType{
+            
+            let isRelaxFocus = arrFocusType[selectedRow]["isRelaxFocus"] as? Bool ?? false
+            
             for row in 0..<tblViewFocusType.numberOfRows{
                 if row == selectedRow{
                     if let cell = tblViewFocusType.view(atColumn: 0, row: selectedRow, makeIfNecessary: true) as? tblCellFocusPreferences{
@@ -1271,12 +1130,30 @@ extension focusPreferencesVc: NSTableViewDelegate, NSTableViewDataSource{
             btnRemoveApp.isEnabled = false
             btnRemoveUrl.isEnabled = false
             
+            boxAllowedWebUrls.alphaValue = 1
+            tblViewAllowedUrls.isEnabled = true
+            tblViewAllowedUrls.isHidden = false
             
-            if arrFocusType[tblViewFocusType.selectedRow]["isDefault"] as? Bool == true {
+            if isRelaxFocus{
+                radioBtnAllowAllApps.isHidden = false
+                radioBtnAllowSelectedApps.isHidden = true
+                lblTitleBlockApp.isHidden = true
+                heightTblViewApps.constant = 185
+                tblViewAllowedApps.isEnabled = false
+                tblViewAllowedApps.isHidden = true
+                boxAllowedApps.alphaValue = 0
+                btnAddApp.isEnabled = false
+                btnRemoveApp.isEnabled = false
+                btnAddApp.isHidden = false
+                btnRemoveApp.isHidden = false
+                
+                tblViewAllowedApps.reloadData()
+                
+            }else if arrFocusType[tblViewFocusType.selectedRow]["isDefault"] as? Bool == true {
                 radioBtnAllowAllApps.isHidden = true
                 radioBtnAllowSelectedApps.isHidden = true
                 lblTitleBlockApp.isHidden = false
-                heightTblViewApps.constant = 150
+                heightTblViewApps.constant = 140
                 tblViewAllowedApps.isEnabled = true
                 tblViewAllowedApps.isHidden = false
                 boxAllowedApps.alphaValue = 1
@@ -1301,7 +1178,6 @@ extension focusPreferencesVc: NSTableViewDelegate, NSTableViewDataSource{
                         radioBtnAllowSelectedApps.state = .off
                         tblViewAllowedApps.isEnabled = false
                         tblViewAllowedApps.isHidden = true
-                        //                    boxAllowedApps.isHidden = true
                         boxAllowedApps.alphaValue = 0
                         tblViewAllowedApps.deselectAll(self)
                         btnAddApp.isEnabled = false
@@ -1313,7 +1189,6 @@ extension focusPreferencesVc: NSTableViewDelegate, NSTableViewDataSource{
                         radioBtnAllowSelectedApps.state = .on
                         tblViewAllowedApps.isEnabled = true
                         tblViewAllowedApps.isHidden = false
-                        //                    boxAllowedApps.isHidden = false
                         boxAllowedApps.alphaValue = 1
                         btnAddApp.isEnabled = true
                         btnRemoveApp.isEnabled = true
@@ -1325,11 +1200,25 @@ extension focusPreferencesVc: NSTableViewDelegate, NSTableViewDataSource{
                 tblViewAllowedApps.reloadData()
                 
             }
-            
-            
-            if arrFocusType[tblViewFocusType.selectedRow]["isDefault"] as? Bool == true {
+            if isRelaxFocus{
                 radioBtnAllowListApproch.isHidden = true
                 radioBtnBlockListApproch.isHidden = true
+                btnInfoBlockedUrls.isHidden = true
+                lblDescriptionAlwaysBlockedUrls.isHidden = true
+                lblUrlsQuestion.stringValue = "All websites are allowed"
+                if let focusPreferencesInfo = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
+                    lblUrlsQuestion.stringValue = focusPreferencesInfo.value(forKey: "allWebsitesAllowedText") as? String ?? lblUrlsQuestion.stringValue
+                }
+                boxAllowedWebUrls.alphaValue = 0
+                tblViewAllowedUrls.isEnabled = false
+                tblViewAllowedUrls.isHidden = true
+                tblViewAllowedUrls.reloadData()
+                radioBtnAllowAllApps.state = .on
+                radioBtnAllowSelectedApps.state = .off
+            } else if arrFocusType[tblViewFocusType.selectedRow]["isDefault"] as? Bool == true {
+                radioBtnAllowListApproch.isHidden = true
+                radioBtnBlockListApproch.isHidden = true
+                btnInfoBlockedUrls.isHidden = true
                 lblDescriptionAlwaysBlockedUrls.isHidden = false
                 lblDescriptionAlwaysBlockedUrls.stringValue = "Below is the list of Always Blocked URLs:"
                 
@@ -1344,6 +1233,7 @@ extension focusPreferencesVc: NSTableViewDelegate, NSTableViewDataSource{
             }else{
                 radioBtnAllowListApproch.isHidden = false
                 radioBtnBlockListApproch.isHidden = false
+                btnInfoBlockedUrls.isHidden = false
                 lblDescriptionAlwaysBlockedUrls.isHidden = true
                 
                 if let isAllowedListApproach = arrFocusType[tblViewFocusType.selectedRow]["isAllowedListApproach"] as? Bool{
@@ -1390,24 +1280,10 @@ extension focusPreferencesVc: NSTableViewDelegate, NSTableViewDataSource{
             }else{
                 
             }
-            if let tags = arrFocusType[tblViewFocusType.selectedRow]["tags"] as? [String]{
-                tokenField.objectValue = tags
-            }else{
-                tokenField.objectValue = []
-            }
             
-            if let isAutoDoNotDisturbEnabled = arrFocusType[tblViewFocusType.selectedRow]["isAutoDoNotDisturbEnabled"] as? Bool{
-                if isAutoDoNotDisturbEnabled{
-                    checkBoxAutoDoNotDisturb.state = .on
-                }else{
-                    checkBoxAutoDoNotDisturb.state = .off
-                }
-            }else{
-                checkBoxAutoDoNotDisturb.state = .off
-            }
             
             // default focus modes and meetings focus mode are not allowed to change names but user can change color
-            if arrFocusType[tblViewFocusType.selectedRow]["isDefault"] as? Bool == true || arrFocusType[tblViewFocusType.selectedRow]["isMeetings"] as? Bool == true || arrFocusType[tblViewFocusType.selectedRow]["isLockedFocus"] as? Bool == true{//this key will only be awailable in default focus type
+            if arrFocusType[tblViewFocusType.selectedRow]["isDefault"] as? Bool == true || arrFocusType[tblViewFocusType.selectedRow]["isMeetings"] as? Bool == true || arrFocusType[tblViewFocusType.selectedRow]["isLockedFocus"] as? Bool == true || arrFocusType[tblViewFocusType.selectedRow]["isDeepWorkFocus"] as? Bool == true || isRelaxFocus{//this key will only be awailable in default focus type
                 
                 textFieldSelectedFocusType.isEditable = false
                 textFieldSelectedFocusType.isSelectable = false
@@ -1434,7 +1310,10 @@ extension focusPreferencesVc: NSTableViewDelegate, NSTableViewDataSource{
             }
         }
     }
-
+    
+    func tableView(_ tableView: NSTableView, shouldSelectRow row: Int) -> Bool {
+        return true
+    }
     
 }
 
@@ -1451,3 +1330,112 @@ class TableRowViewResult: NSTableRowView {
 }
 
 
+
+
+
+extension focusPreferencesVc:NSTextFieldDelegate{
+    
+    func controlTextDidChange(_ obj: Notification) {
+        if let textfield = obj.object as? NSTextField{
+            if textfield == textFieldSelectedFocusType{
+                if textFieldSelectedFocusType.stringValue.count > 250{
+                    let index = textfield.stringValue.index(textfield.stringValue.startIndex, offsetBy: 250)
+                    textfield.stringValue = String(textfield.stringValue.prefix(upTo: index))
+                }
+            }
+        }
+    }
+    func controlTextDidEndEditing(_ obj: Notification) {
+        if let textfield = obj.object as? NSTextField{
+            if textfield == textFieldSelectedFocusType{
+                let selectedRow = tblViewFocusType.selectedRow
+                let newName = textFieldSelectedFocusType.stringValue.lowercased
+                if textFieldSelectedFocusType.stringValue.isEmpty{
+                    if let name = arrFocusType[tblViewFocusType.selectedRow]["name"] as? String{
+                        textFieldSelectedFocusType.stringValue = name
+                    }
+                    return;
+                }
+                for i in 0..<arrFocusType.count{
+                    if i != selectedRow{
+                        let dic = arrFocusType[i]
+                        if let name = dic["name"] as? String{
+                            if name.lowercased() == newName(){
+                                let alert = NSAlert()
+                                alert.setSharingType()
+                                alert.messageText = "Focus type with the same name already exist."
+                                
+                                if let focusPreferencesInfo = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
+                                    if let errorSameFocusType = focusPreferencesInfo.value(forKey: "errorSameFocusType") as? String{
+                                        alert.messageText = errorSameFocusType
+                                    }
+                                }
+                                alert.addButton(withTitle: buttonOkText)
+                                alert.beginSheetModal(for: self.view.window!, completionHandler: nil)
+                                
+                                if let name = arrFocusType[tblViewFocusType.selectedRow]["name"] as? String{
+                                    textFieldSelectedFocusType.stringValue = name
+                                }
+                                return;
+                            }
+                        }
+                    }
+                }
+                
+                
+                var dic = arrFocusType[selectedRow]
+                let oldName = dic["name"] as? String ?? ""
+                dic["name"] = textFieldSelectedFocusType.stringValue
+                
+                if isHardCorePomodoroModeOn{
+                    if dic["isOn"] as? Bool == true{
+                        hardcodePmodoroFocusModeName = textFieldSelectedFocusType.stringValue
+                    }
+                }
+                let idFocusMode = dic["id"] as? String ?? ""
+                textFieldSelectedFocusType.isEnabled = false
+                
+                arrFocusType[selectedRow] = dic
+
+                
+                // if auto pomodoro mode is on and if hardcore pomodoro is also enabled then if user change focus mode name which is selected in hardcore pomodoro focus then hardcore pomodoro focus name should be change here :-
+                if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsPomodoroModeEnabled) as? Bool{
+                    if state{
+                        if let hardCorePomodoroState = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHardcorePomodoroEnabled) as? Bool{
+                            
+                            if hardCorePomodoroState{
+                                if let name = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHardcorePomodoroFocusedName) as? String{
+                                    if oldName == name{
+                                        UserDefaults.standard.set(textFieldSelectedFocusType.stringValue, forKey: SettingsManagerObject.kUserdefaultsHardcorePomodoroFocusedName)
+                                    }
+                                }
+                                
+                            }
+                            
+                        }
+                    }
+                    
+                }
+                
+                sortFocusModes()
+                
+                tblViewFocusType.reloadData()
+                for i in 0..<arrFocusType.count{
+                    if arrFocusType[i]["id"] as? String == idFocusMode{
+                        tblViewFocusType.selectRowIndexes(IndexSet(arrayLiteral: i), byExtendingSelection: false)
+                        tblViewFocusType.scrollRowToVisible(i)
+                        break;
+                    }
+                }
+                checkState()
+                
+                UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+                
+                textFieldSelectedFocusType.isEnabled = true
+                allApiObject.capturePosthog(event: "change-focus-mode-name", metadata: [:])
+                resetPomodoroVcFocusListIfNeeded()
+            }
+        }
+    }
+    
+}

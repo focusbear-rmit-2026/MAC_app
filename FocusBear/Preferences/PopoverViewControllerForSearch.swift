@@ -1,11 +1,3 @@
-//
-//  PopoverViewController.swift
-//  ThinkBizz Business Dynamics
-//
-//  Created by Prashant Sawnani on 10/11/20.
-//  Copyright © 2020 ThinkBizz. All rights reserved.
-//
-
 import Cocoa
 
 class PopoverViewControllerForSearch: NSViewController {
@@ -20,6 +12,8 @@ class PopoverViewControllerForSearch: NSViewController {
         tblView.delegate = self
         tblView.dataSource = self
         
+        self.view.wantsLayer = true
+        self.view.layer?.cornerRadius = 5
     }
     
     @objc func ReloadData(arr:[[String:Any]]){
@@ -29,7 +23,7 @@ class PopoverViewControllerForSearch: NSViewController {
 //        }
     }
     @objc func doubleClicked(){
-        addLog(text:"rememberNextHabitVc:- doubleClicked")
+        addLog(text:"[user-action] rememberNextHabitVc:- doubleClicked")
         var id = ""
         var object:NSView?
         

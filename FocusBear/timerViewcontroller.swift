@@ -12,10 +12,13 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
     
     
   
+    @IBOutlet weak var boxBg: NSBox!
+    @IBOutlet weak var btnTutorial: cursorButton!
+    @IBOutlet weak var webViewTutorial: WKWebView!
+    @IBOutlet weak var boxTutorial: NSBox!
     @IBOutlet weak var lblCompletionRequirements: NSTextField!
     @IBOutlet weak var boxCompletionRequirements: NSBox!
     @IBOutlet weak var btnIAmDone: Button!
-    @IBOutlet weak var btnChooseDifferentVideo: underLineButton!
     @IBOutlet weak var stackViewCustomTab: NSStackView!
     @IBOutlet weak var boxHabitImagesWidth: NSLayoutConstraint!
     @IBOutlet weak var collectionViewImges: NSCollectionView!
@@ -60,21 +63,40 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
     var startTimerValue = 0// we starts timer after video lodded completely and if user has postponed habit at 10 second then we start again habit after postpone time finished from 10 seconds directly  and to hold that value till video  load we are using this variable.
 
     var textCompletionRequirements = "Complete After: <REQUIREMENTS>"
-//    var btnPauseTitle = "Pause Activity"
-//    var btnResumeTitle = "Resume Activity"
     let pauseIcon = NSImage(named: NSImage.touchBarPauseTemplateName)
     let playIcon = NSImage(named: NSImage.touchBarPlayTemplateName)
+    
+    var moreActionsMenu = NSMenu()
+    var startAnotherHabitVcObj:startAnotherHabitVc?
+    var menuItemSkipHabit: NSMenuItem!
+    var menuItemChooseHabit: NSMenuItem!
+    var menuItemChooseVideo: NSMenuItem!
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
+        btnTutorial.title = "Tutorial"
+        menuItemSkipHabit = NSMenuItem(title: "Skip this habit for today", action: #selector(menuItemSkipHabitClicked), keyEquivalent: "")
+        menuItemSkipHabit.target = self
+        moreActionsMenu.addItem(menuItemSkipHabit)
+                
+        menuItemChooseHabit = NSMenuItem(title: "Choose another habit", action: #selector(menuItemChooseAnotherHabitClicked), keyEquivalent: "")
+        menuItemChooseHabit.target = self
+        moreActionsMenu.addItem(menuItemChooseHabit)
+
+        menuItemChooseVideo = NSMenuItem(title: "Choose a different video", action: #selector(menuItemChooseAnotherVideoClicked), keyEquivalent: "")
+        menuItemChooseVideo.target = self
+        moreActionsMenu.addItem(menuItemChooseVideo)
+        
+        
         tblViewCheckList.delegate = self
         tblViewCheckList.dataSource = self
-        
+       
         lblTitleCheckList.stringValue = "Check List"
         btnTabCheckList.title = "Check List"
         
         btnIAmDone.title = "I'm done"
-        btnChooseDifferentVideo.title = "Choose a different video"
+       
         btnTabVideo.title = "Video"
         btnTabNotes.title = "Notes"
         btnTabInstructions.title = "Instructions"
@@ -83,8 +105,9 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         
         textViewNotes.delegate = self
         btnSkipHabit.isHidden = true
-        btnChooseDifferentVideo.isHidden = true
+
         self.webView.navigationDelegate = self
+        self.webViewTutorial.navigationDelegate = self
         boxTimerCenterY = boxTimerCenterY.setMultiplier(multiplier: 1.6)
         
         boxTimer.wantsLayer = true
@@ -93,11 +116,6 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         boxTimer.layer?.shadowColor = NSColor.black.cgColor
         boxTimer.layer?.shadowOffset = NSMakeSize(0, -2)
         boxTimer.layer?.shadowRadius = 5
-        
-//        if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
-//            btnPauseTitle = activityInfo.value(forKey: "buttonPauseText") as? String ?? btnPauseTitle
-//            btnResumeTitle = activityInfo.value(forKey: "buttonResumeText") as? String ?? btnResumeTitle
-//        }
         
         boxPlay.wantsLayer = true
         boxPlay.shadow = NSShadow()
@@ -114,37 +132,48 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             lblTitleTakeNotes.stringValue = activityInfo.value(forKey: "titleTakeNotes") as? String ?? lblTitleTakeNotes.stringValue
             btnSkipHabit.title = activityInfo.value(forKey: "buttonSkipHabitText") as? String ?? btnSkipHabit.title
             btnTabInstructions.title = activityInfo.value(forKey: "buttonInstructionsText") as? String ?? btnTabInstructions.title
-            btnChooseDifferentVideo.title = activityInfo.value(forKey: "buttonChooseVideoText") as? String ?? btnChooseDifferentVideo.title
+            menuItemChooseVideo.title = activityInfo.value(forKey: "buttonChooseVideoText") as? String ?? menuItemChooseVideo.title
             btnIAmDone.title = activityInfo.value(forKey: "buttonActivityDoneText") as? String ?? btnIAmDone.title
             textCompletionRequirements = activityInfo.value(forKey: "completionRequirementsText") as? String ?? textCompletionRequirements
             lblTitleCheckList.stringValue = activityInfo.value(forKey: "titleCheckList") as? String ?? lblTitleCheckList.stringValue
             btnTabCheckList.title = activityInfo.value(forKey: "titleCheckList") as? String ?? btnTabCheckList.title
+            menuItemChooseHabit.title = activityInfo.value(forKey: "buttonChooseHabitText") as? String ?? menuItemChooseHabit.title
+            menuItemSkipHabit.title = activityInfo.value(forKey: "buttonSkipHabitText") as? String ?? menuItemSkipHabit.title
+            btnTutorial.title = activityInfo.value(forKey: "buttonTutorialText") as? String ?? btnTutorial.title
         }
         boxInstructions.isHidden = true
         btnTabInstructions.isHidden = true
         
         boxCheckList.isHidden = true
         btnTabCheckList.isHidden = true
+        boxTutorial.isHidden = true
     }
     override func viewWillAppear() {
         self.timerHideBearAnimation?.invalidate()
         self.timerHideBearAnimation = nil
         btnSkipHabit.isHidden = true
-        btnChooseDifferentVideo.isHidden = true
     }
     override func viewWillDisappear() {
         self.timerHideBearAnimation?.invalidate()
         self.timerHideBearAnimation = nil
+        boxBg.isHidden = false
+        if askIntentionAllowedFocusModeActivityObj != nil{
+            if askIntentionAllowedFocusModeActivityObj?.presentingViewController == self{
+                askIntentionAllowedFocusModeActivityObj?.dismiss(askIntentionAllowedFocusModeActivityObj)
+            }
+        }
     }
     @IBAction func btnTabInstructionsClicked(_ sender: Any) {
         webView.isHidden = true
         boxTakeNotes.isHidden = true
         boxCheckList.isHidden = true
+        boxTutorial.isHidden = true
         btnTabVideo.state = .off
         btnTabNotes.state = .off
         btnTabInstructions.state = .on
         boxInstructions.isHidden = false
         btnTabCheckList.state = .off
+        btnTutorial.state = .off
         if  collectionViewImges.enclosingScrollView?.isHidden == false{
             let containerWidth = stackViewCustomTab.frame.width
             let itemsWidth:CGFloat = CGFloat((arrImgUrls.count * 140) + ((arrImgUrls.count - 1)*10) + 5)
@@ -159,52 +188,101 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         webView.isHidden = true
         boxTakeNotes.isHidden = false
         boxCheckList.isHidden = true
+        boxTutorial.isHidden = true
         btnTabVideo.state = .off
         btnTabNotes.state = .on
         btnTabInstructions.state = .off
         boxInstructions.isHidden = true
         btnTabCheckList.state = .off
+        btnTutorial.state = .off
+        self.view.window?.makeFirstResponder(textViewNotes)
     }
     @IBAction func btnTabVideoClicked(_ sender: Any) {
         webView.isHidden = false
         boxTakeNotes.isHidden = true
         boxInstructions.isHidden = true
         boxCheckList.isHidden = true
+        boxTutorial.isHidden = true
         btnTabVideo.state = .on
         btnTabNotes.state = .off
         btnTabInstructions.state = .off
         btnTabCheckList.state = .off
+        btnTutorial.state = .off
     }
     @IBAction func btnTabCheckListClicked(_ sender: Any) {
         webView.isHidden = true
         boxTakeNotes.isHidden = true
         boxInstructions.isHidden = true
         boxCheckList.isHidden = false
+        boxTutorial.isHidden = true
         btnTabVideo.state = .off
         btnTabNotes.state = .off
         btnTabInstructions.state = .off
         btnTabCheckList.state = .on
+        btnTutorial.state = .off
+    }
+    @IBAction func btnTabTutorialClicked(_ sender: Any) {
+        webView.isHidden = true
+        boxTakeNotes.isHidden = true
+        boxInstructions.isHidden = true
+        boxCheckList.isHidden = true
+        boxTutorial.isHidden = false
+        btnTabVideo.state = .off
+        btnTabNotes.state = .off
+        btnTabInstructions.state = .off
+        btnTabCheckList.state = .off
+        btnTutorial.state = .on
     }
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         print("*************didFinish navigation**************")
-        if isVideoLoding{
-            isVideoLoding = false
-        }
-        
-        if isActivityPaused{
-            DispatchQueue.global().async {
-                sleep(1)
-                DispatchQueue.main.async {
-                    if self.isActivityPaused{
-                        if #available(macOS 12.0, *) {
-                            webView.setAllMediaPlaybackSuspended(true)
-                        } else {
-                            // Fallback on earlier versions
+        if webView == self.webView{
+            if isVideoLoding{
+                isVideoLoding = false
+            }
+            if currentState == ._ACTIVITY_ && appdelegate!.isUserOnMeeting{//Mute video volume during in meeting breaks #796
+                if #available(macOS 12.0, *) {
+                    self.webView.pauseAllMediaPlayback()
+                } else {
+                    // Fallback on earlier versions
+                }
+            }
+            if isActivityPaused{
+                DispatchQueue.global().async {
+                    sleep(1)
+                    DispatchQueue.main.async {
+                        if self.isActivityPaused{
+                            if #available(macOS 12.0, *) {
+                                webView.setAllMediaPlaybackSuspended(true)
+                            } else {
+                                // Fallback on earlier versions
+                            }
                         }
                     }
                 }
             }
+        }else if webView == self.webViewTutorial{
+            setAccessTokenToTutorialWebView()
         }
+    }
+    func setAccessTokenToTutorialWebView(){
+        var theme = "LIGHT"
+        if preferencesWindowControllerObj != nil{
+            if preferencesWindowControllerObj!.window!.hasDarkAppearance{
+                theme = "DARK"
+            }else {
+                theme = "LIGHT"
+            }
+        }
+        let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex].webFontName
+        let stringJson = "{access_token: \"\(appdelegate!.credential?.accessToken ?? "")\",\"font\":\"\(selectedFont)\",\"lang\":\"\(currentLanguageCode)\",\"theme\":\"\(theme)\",\"platform\":\"mac\",\"type\":\"mac\"}"
+    
+        let settingsFunc = String(format: "let waitForAppLoaded = setInterval(() => { if (window.loadAccessTokenForCourse) { loadAccessTokenForCourse(%@); clearInterval(waitForAppLoaded); } }, 100);", stringJson)
+    
+        webViewTutorial.evaluateJavaScript(settingsFunc,completionHandler: { (html: Any?, error: Error?) in
+            print(error)
+            print("****error")
+            print(html)
+        })
     }
     var isVideoLoding = false{
         didSet{
@@ -222,9 +300,15 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
     var isVideoLodded = false
     var arrImgUrls = [String]()
     var arrCheckList = [[String:Any]]()
+    
     func changeVideoUrl(url:String){
         var videoUrl = url
         if videoUrl.lowercased().contains("watch?v="){
+            if videoUrl.contains("&"){// removing additional param
+                if let firstItem =  videoUrl.components(separatedBy: "&").first{
+                    videoUrl = firstItem
+                }
+            }
             videoUrl = videoUrl.replacingOccurrences(of: "watch?v=", with: "embed/")
         }else{
             // doing this beacuse if video is embedded than it will not play
@@ -250,6 +334,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         self.webView.load(request)
         allApiObject.capturePosthog(event: "play-youtube-video-in-activity", metadata: [:])
     }
+    
     func loadWebViewTo(url:String?){
         btnTabVideo.isHidden = true
         isVideoLodded = false
@@ -259,6 +344,11 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             tabCount += 1
             btnTabVideo.isHidden = false
             if videoUrl.lowercased().contains("watch?v="){
+                if videoUrl.contains("&"){// removing additional param
+                    if let firstItem =  videoUrl.components(separatedBy: "&").first{
+                        videoUrl = firstItem
+                    }
+                }
                 videoUrl = videoUrl.replacingOccurrences(of: "watch?v=", with: "embed/")
             }else{
                 // doing this beacuse if video is embedded than it will not play
@@ -361,24 +451,62 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         }
     }
     
-    
-    func  checkActivityExtraAllowedAppsAndUrls(allowedFocusMode:String){
+    func checkTutorialState(id:String){
+        if !id.isEmpty{
+            let url = "http://dashboard.focusbear.io/webview/course?course_id=\(id)&bust_cache=\(getUuid())"
+            let link = URL(string:url)!
+            let request = URLRequest(url: link)
+            self.webViewTutorial.load(request)
+            btnTutorial.isHidden = false
+            boxTutorial.isHidden = false
+            tabCount += 1
+        }else{
+            btnTutorial.isHidden = true
+            boxTutorial.isHidden = true
+        }
+    }
+    func  checkActivityExtraAllowedAppsAndUrls(allowedFocusMode:String, duration:Int){
         isAnyAllowedFocusModeActivityRunning = false
         isAnyAllowedFocusModeActivityWasRunningInLastActivity = false
         arrBlockedAppsInCuddlyModeCurrentFocus.removeAll()
         arrAllowedAppsInCuddlyModeCurrentFocus.removeAll()
         arrAllowedUrlsInCuddlyModeCurrentFocus.removeAll()
         arrBlockedUrlsInCuddlyModeCurrentFocus.removeAll()
+        arrAllowedDomianInCuddlyModeCurrentFocus.removeAll()
+        dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus.removeAll()
         
         if !allowedFocusMode.isEmpty{
             let filterArr = arrFocusType.filter { $0["id"] as? String == allowedFocusMode}
             if filterArr.count != 0{ //if activity has focus mode and and any focus mode is running then silently terminate focus mode
                 isAnyAllowedFocusModeActivityRunning = true
                 isAnyAllowedFocusModeActivityWasRunningInLastActivity = true
-                whatToAchieveInFocusBlock = ""
+                
+                
                 if let dic = filterArr.first{
                     currentRunningFocusType = dic
-
+                    let lastIntentionUsed = dic["lastIntentionUsed"] as? String ?? ""
+                    whatToAchieveInFocusBlock = lastIntentionUsed
+                    appdelegate!.statusbutton?.imagePosition = .imageLeft
+                    appdelegate!.setStatusBarButtonColorForFocusMode(color: nil, colorString: dic["color"] as? String ?? "")
+                    appdelegate!.setStatusBarButtonTitleForFocusMode(title: whatToAchieveInFocusBlock)
+                    
+                    if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled{
+                        focusModeTaskString = dic["lastTaskUsed"] as? String ?? ""
+                        var minutes = 1
+                        if duration > 60{
+                            minutes = duration / 60
+                        }
+                        shouldReloadTaskPlayer = true
+                        showTaskPlayerWindow(totalDuration: minutes, intention: whatToAchieveInFocusBlock, automatically:true)
+                    }else{
+                        focusModeTaskString = ""
+                    }
+                }
+                
+                if SettingsManagerObject.isCuddlyModeEnabled{
+                    currentFocusModeStrictness = ._STRICT_
+                }else{
+                    currentFocusModeStrictness = ._SUPER_STRICT_
                 }
                 
             }
@@ -424,8 +552,42 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         }
     }
     var tabCount = 0
+    func tryStartTimerHabit(durationSeconds:Int, name:String,currentHabit: habit, currentTimerValue:Int) {
+        if askIntentionAllowedFocusModeActivityObj != nil{
+            if askIntentionAllowedFocusModeActivityObj?.presentingViewController == self{
+                askIntentionAllowedFocusModeActivityObj?.dismiss(lateMorningHabitPopupVcObj)
+            }
+        }
+        var isFocusModeActivity = false
+        if let focusModeId = currentHabit.allowedFocusMode{
+            if !focusModeId.isEmpty && currentTimerValue == 0{
+                let filterArr = arrFocusType.filter { $0["id"] as? String == focusModeId}
+                if filterArr.count != 0{
+                    if let dic = filterArr.first{
+                        isFocusModeActivity = true
+                        let lastIntentionUsed = dic["lastIntentionUsed"] as? String ?? ""
+                        let name = dic["name"] as? String ?? ""
+                        boxBg.isHidden = true
+                        allApiObject.capturePosthog(event: "ask-intention-allowed-focus-mode-activity-shown", metadata: [:])
+                        self.presentAsSheet(getAskIntentionAllowedFocusModeActivityObject())
+                        askIntentionAllowedFocusModeActivityObj?.resetData(focusMode: name, intention: lastIntentionUsed, durationSeconds:durationSeconds, name:name,currentHabit: currentHabit, currentTimerValue:currentTimerValue)
+                        getTaskPlayerVcObject().loadView()
+                        getTaskPlayerVcObject().loadRequest()
+                    }
+                }
+            }else if !focusModeId.isEmpty{
+                getTaskPlayerVcObject().loadView()
+                getTaskPlayerVcObject().loadRequest()
+            }
+        }
+        if !isFocusModeActivity{
+            startTimerHabit(durationSeconds: durationSeconds, name: name, currentHabit: currentHabit, currentTimerValue: currentTimerValue)
+        }
+    }
+    
+    
     func startTimerHabit(durationSeconds:Int, name:String,currentHabit: habit, currentTimerValue:Int) {
-        
+        boxBg.isHidden = false
         let url = getRandomVideoUrl(activityId:currentHabit.id, urlsArray: currentHabit.urlsArray)
         addLog(text:"Current Activity id is :- \(currentHabit.id ?? "")")
         
@@ -436,7 +598,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         }
         if isFocusModeOnOrPaused(){
             addLog(text: "Activity start:- Focus Mode Finished")
-            appdelegate?.focusModeFinished(isSilent: true, isShutOffTime: false)
+            appdelegate?.focusModeFinished(isSilent: true, isShutOffTime: false, isMorningRoutineTime: false)
         }
         isLastActivityStoppedInRunningState = false
         lastActivityRunningId = ""
@@ -446,7 +608,6 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         isActivityPaused = false
         self.btnPause.image = pauseIcon
         btnSkipHabit.isHidden = true
-        btnChooseDifferentVideo.isHidden = true
         graphOneMonthData = nil
         graphOneDayData = nil
         graphOneDayDataForQuantity = nil
@@ -459,7 +620,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             thirdVcObj?.loadView()
         }
         disableSystemSleep()
-        checkActivityExtraAllowedAppsAndUrls(allowedFocusMode: currentHabit.allowedFocusMode)
+        checkActivityExtraAllowedAppsAndUrls(allowedFocusMode: currentHabit.allowedFocusMode, duration: durationSeconds)
         
         
         
@@ -470,12 +631,18 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             shouldLaunchAppAndUrl = false
         }
         
-        
-        
-        if currentHabit.openSpecificApps{
+        currentRelaxHabitPlaying = nil
+        if currentHabit.showSavedDistractingWebsites{
+            currentRelaxHabitPlaying = currentHabit
+            showRelaxModeWindow(durationSeconds: durationSeconds, currentTimerValue: currentTimerValue)
+            mainWindowControllerObj?.window?.close()
+            hideBlankWindowInSecondaryMonitor()
+        }else if currentHabit.openSpecificApps{
             currentHabitPlaying = currentHabit
             if currentHabit.useTimer{
                 showSmallTimerWindow(durationSeconds: durationSeconds, msg: getDoSomeActivityText(activityName: name), isFocusBreak: false, currentTimerValue:currentTimerValue)
+            }else{
+                showcompletionRequirementsWindow(title: currentHabit.completion_requirements)
             }
             mainWindowControllerObj?.window?.close()
             appdelegate?.startTimerActivitiesAllowedApp(shouldLaunchAppAndUrl: shouldLaunchAppAndUrl)
@@ -485,6 +652,8 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                 currentHabitPlaying = currentHabit
                 if currentHabit.useTimer{
                     showSmallTimerWindow(durationSeconds: durationSeconds, msg: getDoSomeActivityText(activityName: name), isFocusBreak: false, currentTimerValue:currentTimerValue)
+                }else{
+                    showcompletionRequirementsWindow(title: currentHabit.completion_requirements)
                 }
                 mainWindowControllerObj?.window?.close()
                 appdelegate?.startTimerActivitiesAllowedApp(shouldLaunchAppAndUrl: shouldLaunchAppAndUrl)
@@ -492,7 +661,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                 
                 if shouldLaunchAppAndUrl{
                     let endTime = Calendar.current.date(bySetting: .second, value: durationSeconds, of: Date())
-                    
+                    focusModeTaskString = ""
                     allApiObject.startFocusMode(id: currentRunningFocusType["id"] as? String ?? "", intention: whatToAchieveInFocusBlock, start_time: Date(), finish_time: endTime ?? Date(), completionHandler: {newDic in
                         DispatchQueue.main.async {
                             
@@ -522,6 +691,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                 textViewNotes.string = UserDefaults.standard.object(forKey: kUserdefaultsLastHabitSavedNotes) as? String ?? ""
             }
             btnTabNotes.isHidden = false
+            self.view.window?.makeFirstResponder(textViewNotes)
         }else{
             UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
             textViewNotes.string = ""
@@ -535,6 +705,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         
         checkListState(list: currentHabit.checkList)
         
+        checkTutorialState(id: currentHabit.tutorial)
         
         if tabCount > 1{
             boxButtonTabViews.isHidden = false
@@ -546,6 +717,8 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                 btnTabNotesClicked(self)
             }else if btnTabCheckList.isHidden == false{
                 btnTabCheckListClicked(self)
+            }else if btnTutorial.isHidden == false{
+                btnTabTutorialClicked(self)
             }
         }
 
@@ -594,12 +767,9 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             boxCompletionRequirements.isHidden = false
             lblCompletionRequirements.stringValue = textCompletionRequirements.replacingOccurrences(of: "<REQUIREMENTS>", with: currentHabit.completion_requirements)
         }
-        
-        
+        writeStringToHabitInfo(isFinishTime: false, activityName: name)
         
     }
-    
-    
     var lastCurrentSpecialHabit:habit?
     var lastCurrentSpecialActivity:breakActivity?
     var lastCurrentSpecialActivityChoice:activityChoice?
@@ -646,7 +816,6 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         isActivityPaused = false
         self.btnPause.image = pauseIcon
         btnSkipHabit.isHidden = true
-        btnChooseDifferentVideo.isHidden = true
         graphOneMonthData = nil
         graphOneDayData = nil
         graphOneDayDataForQuantity = nil
@@ -666,15 +835,15 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         
         
         let useTimer = true//
-        let completion_requirements = ""
+        //let completion_requirements = ""
         if currentHabit != nil{
 //            useTimer = currentHabit!.useTimer
 //            completion_requirements = currentHabit!.completion_requirements
-            checkActivityExtraAllowedAppsAndUrls(allowedFocusMode: currentHabit!.allowedFocusMode)
+            checkActivityExtraAllowedAppsAndUrls(allowedFocusMode: currentHabit!.allowedFocusMode, duration: durationSeconds)
         }else if currentActivity != nil{
 //            useTimer = currentActivity!.useTimer
 //            completion_requirements = currentActivity!.completion_requirements
-            checkActivityExtraAllowedAppsAndUrls(allowedFocusMode: currentActivity!.allowedFocusMode)
+            checkActivityExtraAllowedAppsAndUrls(allowedFocusMode: currentActivity!.allowedFocusMode, duration: durationSeconds)
         }
 
         
@@ -740,6 +909,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         if currentHabit != nil{
             checkInstructionsState(text_instructions: currentHabit!.text_instructions, imgUrls: currentHabit!.imgUrls)
             checkListState(list: currentHabit!.checkList)
+            checkTutorialState(id: currentHabit!.tutorial)
         }else if currentActivity != nil{
             checkInstructionsState(text_instructions: currentActivity!.text_instructions, imgUrls: currentActivity!.imgUrls)
             checkListState(list: currentActivity!.checkList)
@@ -754,6 +924,8 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                 btnTabNotesClicked(self)
             }else if btnTabCheckList.isHidden == false{
                 btnTabCheckListClicked(self)
+            }else if btnTutorial.isHidden == false{
+                btnTabTutorialClicked(self)
             }
         }
         
@@ -805,7 +977,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
 //            lblCompletionRequirements.stringValue = textCompletionRequirements.replacingOccurrences(of: "<REQUIREMENTS>", with: completion_requirements)
         }
         
-        
+        writeStringToHabitInfo(isFinishTime: false, activityName: name)
     }
     
     @objc func hideBearAnimation(){
@@ -845,7 +1017,6 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         }//!getsmallCountDownVcObject().isFocusBreak{
         disableSystemSleep()
         btnSkipHabit.isHidden = true
-        btnChooseDifferentVideo.isHidden = true
         lblTitle.stringValue = getDoSomeActivityText(activityName: name)//"Do some \(arrFilteredMorningHabits[currentHabitIndex].name!)."
         
         if useTimer{
@@ -896,9 +1067,66 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                     loadWebViewTo(url: url)
                 }
             }
+            menuItemChooseHabit.isHidden = true
+            menuItemChooseVideo.isHidden = true
             btnSkipHabit.isHidden = false
+            
+            if currentState == ._MORNING_HABIT_{
+                if currentHabitIndex == arrFilteredMorningHabits.count - 1{
+                    menuItemChooseHabit.isHidden = true
+                    addLog(text:"Hide menu Item Select Another Habit")
+                }else{
+                    menuItemChooseHabit.isHidden = false
+                    addLog(text:"Show menu Item Select Another Habit")
+                }
+                if !SettingsManagerObject.isOutOfOrderHabitsAllowed{
+                    menuItemChooseHabit.isHidden = true
+                    addLog(text:"Hide menu Item Select Another Habit:- Reason: Out Of Order Habits are not Allowed")
+                }
+            }else if currentState == ._EVENING_HABIT_{
+                if currentHabitIndex == arrFilteredEveningHabits.count - 1{
+                    menuItemChooseHabit.isHidden = true
+                    addLog(text:"Hide menu Item Select Another Habit:- Reason: last habit")
+                }else{
+                    if isHighPrioritySequenceGoing{
+                        var isAnyHighPriorityHabitRemaining = false
+                        for i in currentHabitIndex + 1..<arrFilteredEveningHabits.count{
+                            if arrFilteredEveningHabits[i].isPriorityHigh{
+                                
+                                if let cutOffTime = arrFilteredEveningHabits[i].cutOffTime{
+                                    let cutOffDate = Calendar.current.date(bySettingHour: cutOffTime.hour, minute: cutOffTime.minute, second: cutOffTime.second, of: Date())!
+                                    let currentDate = Date()
+                                    if currentDate > cutOffDate{
+                                        continue;
+                                    }
+                                }
+                                
+                                
+                                isAnyHighPriorityHabitRemaining = true
+                                break;
+                            }
+                        }
+                        if isAnyHighPriorityHabitRemaining{
+                            menuItemChooseHabit.isHidden = false
+                            addLog(text:"Show menu Item Select Another Habit:- Reason: High Priority Habit Remaining")
+                        }else{
+                            menuItemChooseHabit.isHidden = true
+                            addLog(text:"Hide menu Item Select Another Habit:- Reason: No High Priority Habit Remaining")
+                        }
+                    }else{
+                        menuItemChooseHabit.isHidden = false
+                        addLog(text:"Show menu Item Select Another Habit")
+                    }
+                }
+                if !SettingsManagerObject.isOutOfOrderHabitsAllowed{
+                    menuItemChooseHabit.isHidden = true
+                    addLog(text:"Hide menu Item Select Another Habit:- Reason: Out Of Order Habits are not Allowed")
+                }
+            }
             if currentState != ._BREATHING_{
-                btnChooseDifferentVideo.isHidden = false
+                if videoUrlsArray.count > 1{
+                    menuItemChooseVideo.isHidden = false
+                }
             }
         }
         
@@ -923,7 +1151,6 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         
         isAnyAllowedFocusModeActivityRunning = false
         btnSkipHabit.isHidden = true
-        btnChooseDifferentVideo.isHidden = true
         isActivityPaused = false
         self.btnPause.image = pauseIcon
         graphOneMonthData = nil
@@ -959,7 +1186,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         logActivityQuantity = logQuantity
 //        activityPostponeCount = 0
         
-        checkActivityExtraAllowedAppsAndUrls(allowedFocusMode: currentActivity.allowedFocusMode)
+        checkActivityExtraAllowedAppsAndUrls(allowedFocusMode: currentActivity.allowedFocusMode, duration: durationInSeconds)
         
         if currentActivity.openSpecificApps{
             currentActivityPlaying = currentActivity
@@ -1077,6 +1304,9 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
 //            lblCompletionRequirements.stringValue = currentActivity.completion_requirements
             lblCompletionRequirements.stringValue = textCompletionRequirements.replacingOccurrences(of: "<REQUIREMENTS>", with: currentActivity.completion_requirements)
         }
+        
+
+        writeStringToHabitInfo(isFinishTime: false, activityName: name)
     }
   
     func resetConstraintsForVideoAndGif(kIsReducedMotion:Bool){
@@ -1117,7 +1347,6 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
     func resumeTimerActivity(durationInSeconds:Int,name:String, url:String?, useTimer:Bool) {
         disableSystemSleep()
         btnSkipHabit.isHidden = true
-        btnChooseDifferentVideo.isHidden = true
         lblTitle.stringValue = getDoSomeActivityText(activityName: name)//"Do some \(name)."
         
         if useTimer{
@@ -1175,9 +1404,12 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
     }
     func startBreathing() {
         allApiObject.capturePosthog(event: "ongoing-onboarding-activity-shown", metadata: [:])
+        btnSkipHabit.title = "Skip"
+        if let dic = configjson.value(forKey: "welcomeInfo") as? NSDictionary{
+            btnSkipHabit.title = dic.value(forKey: "buttonSkipText") as? String ?? btnSkipHabit.title
+        }
         isActivityPaused = false
-        btnSkipHabit.isHidden = true
-        btnChooseDifferentVideo.isHidden = true
+        btnSkipHabit.isHidden = false
         self.btnPause.image = pauseIcon
         loadWebViewTo(url: introActivity!.urlsArray.randomElement())
         resetConstraintsForVideoAndGif(kIsReducedMotion: SettingsManagerObject.kIsReducedMotion)
@@ -1186,7 +1418,15 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         textViewNotes.string = ""
         textViewNotes.enclosingScrollView?.isHidden = true
         boxTakeNotes.isHidden = true
+        btnTabNotes.isHidden = true
         
+        boxInstructions.isHidden = true
+        btnTabInstructions.isHidden = true
+        
+        boxCheckList.isHidden = true
+        btnTabCheckList.isHidden = true
+        boxTutorial.isHidden = true
+        btnTutorial.isHidden = true
         lblTitle.stringValue = getDoSomeActivityText(activityName: introActivity!.name!)//"Do some \(introActivity!.name!)."
         currentTimer = 0
         totalDuration = introActivity!.durationSeconds!
@@ -1230,7 +1470,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         self.webView.load(request)
     }
     @objc func performTimerCount() {
-        currentTimer += 1//todo 1
+        currentTimer += 1
         let (h,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
         
         var hour = "\(h)"
@@ -1268,6 +1508,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                     popUpCheckListWcObj?.window?.close()
                 }
             }
+
             DispatchQueue.global().async {
                 DispatchQueue.main.async {
                     self.loadBlankUrl()
@@ -1293,6 +1534,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         }
         
         if isActivityPaused{
+            addLog(text:"[user-action]Ongoing activity:-btn Resume Clicked")
             isActivityPaused = false
             allApiObject.capturePosthog(event: "resume-activity", metadata: [:])
             DispatchQueue.main.async {
@@ -1308,16 +1550,23 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                     // Fallback on earlier versions
                 }
             }
-            btnSkipHabit.isHidden = true
-            btnChooseDifferentVideo.isHidden = true
+            if currentState != ._BREATHING_{
+                btnSkipHabit.isHidden = true
+            }
             if currentHabitPlaying != nil{
                 if boxTimer.isHidden == false{
                     showSmallTimerWindow(durationSeconds: totalDuration, msg: lblTitle.stringValue, isFocusBreak: false, currentTimerValue:currentTimer)
                 }
                 mainWindowControllerObj?.window?.close()
                 hideBlankWindowInSecondaryMonitor()
+            }else if currentRelaxHabitPlaying != nil{
+                showRelaxModeWindow(durationSeconds: totalDuration, currentTimerValue: currentTimer)
+                mainWindowControllerObj?.window?.close()
+                hideBlankWindowInSecondaryMonitor()
             }
+            
         }else{
+            addLog(text:"[user-action]Ongoing activity:-btn Pause Clicked")
             self.btnPause.image = playIcon
             isActivityPaused = true
             allApiObject.capturePosthog(event: "pause-activity", metadata: [:])
@@ -1333,42 +1582,86 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
                 btnSkipHabit.title = activityInfo.value(forKey: "buttonSkipHabitText") as? String ?? btnSkipHabit.title
             }
-            
+
+            btnSkipHabit.isHidden = true
+            menuItemChooseHabit.isHidden = true
+            menuItemChooseVideo.isHidden = true
             
             if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_{
                 btnSkipHabit.isHidden = false
-                if isVideoLodded{
-                    if videoUrlsArray.count > 1{
-                        btnChooseDifferentVideo.isHidden = false
+                
+                if currentState == ._MORNING_HABIT_{
+                    if currentHabitIndex == arrFilteredMorningHabits.count - 1{
+                        menuItemChooseHabit.isHidden = true
+                        addLog(text:"Hide menu Item Select Another Habit")
+                    }else{
+                        menuItemChooseHabit.isHidden = false
+                        addLog(text:"Show menu Item Select Another Habit")
+                    }
+                }else if currentState == ._EVENING_HABIT_{
+                    if currentHabitIndex == arrFilteredEveningHabits.count - 1{
+                        menuItemChooseHabit.isHidden = true
+                        addLog(text:"Hide menu Item Select Another Habit:- Reason: last habit")
+                    }else{
+                        if isHighPrioritySequenceGoing{
+                            var isAnyHighPriorityHabitRemaining = false
+                            for i in currentHabitIndex + 1..<arrFilteredEveningHabits.count{
+                                if arrFilteredEveningHabits[i].isPriorityHigh{
+                                    if let cutOffTime = arrFilteredEveningHabits[i].cutOffTime{
+                                        let cutOffDate = Calendar.current.date(bySettingHour: cutOffTime.hour, minute: cutOffTime.minute, second: cutOffTime.second, of: Date())!
+                                        let currentDate = Date()
+                                        if currentDate > cutOffDate{
+                                            continue;
+                                        }
+                                    }
+                                    
+                                    isAnyHighPriorityHabitRemaining = true
+                                    break;
+                                }
+                            }
+                            if isAnyHighPriorityHabitRemaining{
+                                menuItemChooseHabit.isHidden = false
+                                addLog(text:"Show menu Item Select Another Habit:- Reason: High Priority Habit Remaining")
+                            }else{
+                                menuItemChooseHabit.isHidden = true
+                                addLog(text:"Hide menu Item Select Another Habit:- Reason: No High Priority Habit Remaining")
+                            }
+                        }else{
+                            menuItemChooseHabit.isHidden = false
+                            addLog(text:"Show menu Item Select Another Habit")
+                        }
                     }
                 }
-                btnSkipHabit.title = "Skip this habit for today"
-                if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
-                    btnSkipHabit.title = activityInfo.value(forKey: "buttonSkipHabitText") as? String ?? btnSkipHabit.title
+                if isVideoLodded{
+                    if videoUrlsArray.count > 1{
+                        menuItemChooseVideo.isHidden = false
+                    }
+                }
+                btnSkipHabit.title = buttonMoreActionsText
+                if !SettingsManagerObject.isOutOfOrderHabitsAllowed{
+                    menuItemChooseHabit.isHidden = true
+                    addLog(text:"Hide menu Item Select Another Habit:- Reason: Out Of Order Habits are not Allowed")
                 }
             }else if currentState == ._BREATHING_{
                 btnSkipHabit.isHidden = false
-                btnChooseDifferentVideo.isHidden = true
+                menuItemChooseHabit.isHidden = true
+                menuItemChooseVideo.isHidden = true
                 btnSkipHabit.title = "Skip"
                 if let dic = configjson.value(forKey: "welcomeInfo") as? NSDictionary{
                     btnSkipHabit.title = dic.value(forKey: "buttonSkipText") as? String ?? btnSkipHabit.title
                 }
             }else if currentState == ._ACTIVITY_{
                 btnSkipHabit.isHidden = false
-                btnChooseDifferentVideo.isHidden = true
-                btnSkipHabit.title = "Skip this habit for today"
-                if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
-                    btnSkipHabit.title = activityInfo.value(forKey: "buttonSkipHabitText") as? String ?? btnSkipHabit.title
-                }
-            }else{
-                btnSkipHabit.isHidden = true
-                btnChooseDifferentVideo.isHidden = true
+                menuItemChooseHabit.isHidden = true
+                menuItemChooseVideo.isHidden = true
+                btnSkipHabit.title = buttonMoreActionsText
             }
         }
         
     }
     
     @IBAction func btnIAmDoneClicked(_ sender: Any) {
+        addLog(text:"[user-action]ongoing activity:-btnIAmDoneClicked")
         self.timer?.invalidate()
         enableSystemSleep()
         if popUpCheckListWcObj != nil{
@@ -1395,12 +1688,29 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
     }
     @IBAction func btnSkipHabitClicked(_ sender: Any) {
         if currentState == ._BREATHING_{
+            if !isActivityPaused{
+                btnPauseClicked(self)
+            }
             mainViewControllerObj?.breathingOver(isSKipped: true)
         }else{
-            mainViewControllerObj?.showWhySkipHabitView()
+            addLog(text:"Show more Actions menu")
+            let p = NSPoint(x: (sender as AnyObject).frame.origin.x, y: (sender as AnyObject).frame.origin.y - 8 )
+            moreActionsMenu.popUp(positioning: nil, at: p, in: (sender as AnyObject).superview)
         }
-        
     }
+    
+    @objc func menuItemSkipHabitClicked(){
+        mainViewControllerObj?.showWhySkipHabitView()
+    }
+    
+    @objc func menuItemChooseAnotherHabitClicked(){
+        btnStartAnotherHabitClicked(self)
+    }
+    
+    @objc func menuItemChooseAnotherVideoClicked(){
+        btnChooseDifferentVideoClicked(self)
+    }
+    
     @IBAction func btnChooseDifferentVideoClicked(_ sender: Any) {
         if boxButtonTabViews.isHidden == false && isVideoLodded{
             btnTabVideoClicked(self)
@@ -1409,6 +1719,15 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         if let url = getRandomVideoUrl(activityId:currentActivityIdForVideo, urlsArray: videoUrlsArray){
             changeVideoUrl(url: url)
         }
+    }
+    
+
+    @IBAction func btnStartAnotherHabitClicked(_ sender: Any) {
+        if startAnotherHabitVcObj == nil{
+            startAnotherHabitVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("startAnotherHabitVc")) as? startAnotherHabitVc
+        }
+        startAnotherHabitVcObj!.currentHabitIndex = currentHabitIndex
+        self.presentAsSheet(startAnotherHabitVcObj!)
     }
 }
 
@@ -1452,8 +1771,7 @@ extension timerViewcontroller:NSTextViewDelegate{
         if newFontSize > 30 {
             newFontSize = 30
         }
-        let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex]
-        let font = NSFont(name: selectedFont.regularFontName, size: newFontSize)!
+        let font = getRegularFont(size: newFontSize)
         
         textViewInstructions.font = font
         textViewNotes.font = font
@@ -1470,7 +1788,7 @@ extension timerViewcontroller:NSCollectionViewDelegate, NSCollectionViewDataSour
         let item = collectionView.makeItem(withIdentifier: NSUserInterfaceItemIdentifier(rawValue: "collectionViewItemImage"), for: indexPath) as! collectionViewItemImage
         
         if indexPath.item < arrImgUrls.count{
-            if let url = URL(string: arrImgUrls[indexPath.item]){
+            if let url = URL(string: arrImgUrls[indexPath.item].addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? arrImgUrls[indexPath.item]){
                 DispatchQueue.global().async {
                     DispatchQueue.main.async {
                         item.imgView.image = NSImage(contentsOf: url)

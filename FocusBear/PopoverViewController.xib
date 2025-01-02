@@ -19,19 +19,19 @@
             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
             <subviews>
                 <box boxType="custom" borderWidth="0.0" cornerRadius="2" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="dZQ-3v-iZH">
-                    <rect key="frame" x="0.0" y="0.0" width="179" height="195"/>
+                    <rect key="frame" x="0.0" y="0.0" width="179" height="178"/>
                     <view key="contentView" id="DWz-D7-EbQ">
-                        <rect key="frame" x="0.0" y="0.0" width="179" height="195"/>
+                        <rect key="frame" x="0.0" y="0.0" width="179" height="178"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <scrollView borderType="line" autohidesScrollers="YES" horizontalLineScroll="19" horizontalPageScroll="10" verticalLineScroll="19" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="OtE-kg-Tgl">
-                                <rect key="frame" x="0.0" y="0.0" width="179" height="195"/>
+                                <rect key="frame" x="0.0" y="0.0" width="179" height="178"/>
                                 <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="aGa-1c-Rh0">
-                                    <rect key="frame" x="1" y="1" width="177" height="193"/>
+                                    <rect key="frame" x="1" y="1" width="177" height="176"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
                                         <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="plain" columnSelection="YES" multipleSelection="NO" emptySelection="NO" autosaveColumns="NO" usesAutomaticRowHeights="YES" viewBased="YES" id="T5h-mo-UOr">
-                                            <rect key="frame" x="0.0" y="0.0" width="177" height="193"/>
+                                            <rect key="frame" x="0.0" y="0.0" width="177" height="176"/>
                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                             <size key="intercellSpacing" width="3" height="2"/>
                                             <color key="backgroundColor" red="1" green="1" blue="1" alpha="0.0" colorSpace="custom" customColorSpace="sRGB"/>
@@ -95,7 +95,7 @@
                             <constraint firstItem="OtE-kg-Tgl" firstAttribute="top" secondItem="DWz-D7-EbQ" secondAttribute="top" id="jvx-58-ieP"/>
                         </constraints>
                     </view>
-                    <color key="fillColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
+                    <color key="fillColor" name="windowBackgroundColor" catalog="System" colorSpace="catalog"/>
                 </box>
             </subviews>
             <constraints>
@@ -108,7 +108,7 @@
                 <constraint firstItem="dZQ-3v-iZH" firstAttribute="leading" secondItem="Hz6-mo-xeY" secondAttribute="leading" id="vuL-Nc-OsC"/>
                 <constraint firstItem="dZQ-3v-iZH" firstAttribute="top" secondItem="Hz6-mo-xeY" secondAttribute="top" id="wD9-gz-ACl"/>
             </constraints>
-            <point key="canvasLocation" x="-1.5" y="32"/>
+            <point key="canvasLocation" x="-1.5" y="31.5"/>
         </customView>
     </objects>
 </document>

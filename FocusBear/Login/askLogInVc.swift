@@ -7,6 +7,7 @@
 //
 
 import Cocoa
+import Auth0 // todo
 
 class askLogInVc: NSViewController {
     
@@ -14,39 +15,37 @@ class askLogInVc: NSViewController {
     @IBOutlet weak var imgView: NSImageView!
     @IBOutlet weak var boxBg: NSBox!
     @IBOutlet weak var btnSignUp: Button!
-    @IBOutlet weak var btnSignIn: underLineButton!
+    @IBOutlet weak var btnSignInWithEmail: underLineButton!
     @IBOutlet weak var lblMessage: NSTextField!
     @IBOutlet weak var lblTitle: NSTextField!
+    @IBOutlet weak var btnSignInWithGoogle: underLineButton!
+    @IBOutlet weak var btnSignInWithApple: underLineButton!
     
-    //    var isCustomLoginAvailable = false
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
         
         lblTitle.stringValue = "Win your habits.\nAmp up your productivity."
         lblMessage.stringValue = "Sign In with a Focus Bear account to manage your time without thinking about it. Having an account helps you Set your computer use hours, create a custom morning and night routine, and customize your focus modes for different activities."
-        var btnSignInTitle = "Sign In"
-//        var btnSignUpTitle = "Sign Up"
+        
+        btnSignInWithEmail.title = "Sign In with Email"
+        btnSignInWithGoogle.title = "Sign In with Google"
+        btnSignInWithApple.title = "Sign In with Apple"
         
         if let askLogInVcInfo = configjson.value(forKey: "askLogInVcInfo") as? NSDictionary{
             lblTitle.stringValue = askLogInVcInfo.value(forKey: "title") as? String ?? lblTitle.stringValue
             lblMessage.stringValue = askLogInVcInfo.value(forKey: "messageText") as? String ?? lblMessage.stringValue
-            btnSignInTitle = askLogInVcInfo.value(forKey: "buttonSignInText") as? String ?? btnSignInTitle
-//            btnSignUpTitle = askLogInVcInfo.value(forKey: "buttonSignUpText") as? String ?? btnSignUpTitle
+            btnSignInWithEmail.title = askLogInVcInfo.value(forKey: "buttonSignInEmailText") as? String ?? btnSignInWithEmail.title
+            btnSignInWithGoogle.title = askLogInVcInfo.value(forKey: "buttonSignInGoogleText") as? String ?? btnSignInWithGoogle.title
+            btnSignInWithApple.title = askLogInVcInfo.value(forKey: "buttonSignInAppleText") as? String ?? btnSignInWithApple.title
         }
-        
-        
-        
-        btnSignIn.title = btnSignInTitle
-//        btnSignUp.title = btnSignUpTitle
+
         btnSignUp.isBordered = false
-        
-        
-        
+
         if let customLoginVcInfo = configjson.value(forKey: "customLoginVcInfo") as? NSDictionary{
             btnSignUp.title = customLoginVcInfo.value(forKey: "buttonCreateAccountText") as? String ?? btnSignUp.title
         }
-
+        allApiObject.capturePosthog(event: "pre-signin-view-shown", metadata: [:])
     }
     override func viewWillAppear() {
         appdelegate!.menuItemUninstall.isHidden = false
@@ -54,12 +53,15 @@ class askLogInVc: NSViewController {
             appdelegate!.menuItemUninstall.title = common.value(forKey: "buttonUninstallText") as? String ?? appdelegate!.menuItemUninstall.title
         }
         btnInfo.isHidden = false
-        lblMessage.stringValue = "Nearly done! Let's grab a few details to save your habits."
+        lblMessage.stringValue = "Learn why this is needed"
         if let askLogInVcInfo = configjson.value(forKey: "askLogInVcInfo") as? NSDictionary{
             lblMessage.stringValue = askLogInVcInfo.value(forKey: "descriptionText") as? String ?? lblMessage.stringValue
         }
     }
     @IBAction func btnInfoClicked(_ sender: Any) {
+        
+        allApiObject.capturePosthog(event: "pre-signin-view-info-icon-clicked", metadata: [:])
+        
         lblMessage.stringValue = "Sign In with a Focus Bear account to manage your time without thinking about it. Having an account helps you Set your computer use hours, create a custom morning and night routine, and customize your focus modes for different activities."
         
         if let askLogInVcInfo = configjson.value(forKey: "askLogInVcInfo") as? NSDictionary{
@@ -68,44 +70,89 @@ class askLogInVc: NSViewController {
         btnInfo.isHidden = true
     }
     @IBAction func btnSignUpClicked(_ sender: Any) {
-        addLog(text:"btnSignUpClicked")
-        
-//        if Reachability.isConnectedToNetwork() == false {
-//            if self.view.window != nil{
-//                showAlertNoInternet(window: self.view.window!)
-//            }
-//            return
-//        }
-        
+        addLog(text:"[user-action] btnSignUpClicked")
+        allApiObject.capturePosthog(event: "button-signup-with-email-clicked", metadata: [:])
         self.view.window?.close()
-        
-        //        if !isCustomLoginAvailable {
-        //            appdelegate!.statusbutton?.action = #selector(appdelegate!.topIconClickd)
-        //            appdelegate!.login(isLogin: false)
-        //        }else{
         showCustomLoginWindow(isLogin: false)
-        //        }
-        
     }
-    @IBAction func btnSignInClicked(_ sender: Any) {
-        addLog(text:"btnSignInClicked")
-        
-//        if Reachability.isConnectedToNetwork() == false {
-//            if self.view.window != nil{
-//                showAlertNoInternet(window: self.view.window!)
-//            }
-//            return
-//        }
-        
+    @IBAction func btnSignInWithEmailClicked(_ sender: Any) {
+        addLog(text:"[user-action] btnSignInClicked")
+        allApiObject.capturePosthog(event: "button-signin-with-email-clicked", metadata: [:])
         self.view.window?.close()
-        
-        //        if !isCustomLoginAvailable {
-        //            appdelegate!.statusbutton?.action = #selector(appdelegate!.topIconClickd)
-        //            appdelegate!.login(isLogin: true)
-        //        }else{
-        showCustomLoginWindow(isLogin: true)
-        //        }
-        
+        showCustomLoginWindow(isLogin: true) 
+    }
+    
+    var loginComingSoonMsgVcObj:loginComingSoonMsgVc?
+    func loginComingSoonMsgVcObject()->loginComingSoonMsgVc{
+        if loginComingSoonMsgVcObj == nil{
+            loginComingSoonMsgVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("loginComingSoonMsgVc")) as? loginComingSoonMsgVc
+        }
+        return loginComingSoonMsgVcObj!
+    }
+    @IBAction func btnSignInWithGoogleClicked(_ sender: Any) {
+
+//        Auth0
+//            .webAuth()
+//            .connection("google-oauth2") // The connection name for Google
+//            .audience("https://auth.focusbear.io/api/v2/")
+//            .scope("openid profile email offline_access")
+//            .start { result in
+//                switch result {
+//                case .success(let credentials):
+//                    print("Logged in with Google: \(credentials)")
+//                    // Handle successful login, save credentials, or transition to the next screen
+//                    print(credentials.accessToken)
+//
+//                    self.view.window?.close()
+//                    appdelegate!.statusbutton?.action = nil
+//                    appdelegate!.user = AuthUser(from: credentials.accessToken)
+//                    allApiObject.capturePosthog(event: "login-homemade", metadata: [:])
+//                    let _ = appdelegate!.credentialsManager.store(credentials: credentials)
+//                    UserDefaults.standard.set(true, forKey: kUserdefaultsIsUserLoggedIn)
+//                    appdelegate!.loadCredentialsAndDeviceId()
+//
+//
+//
+//                case .failure(let error):
+//                    print("Google login failed: \(error)")
+//                    // Handle login failure, show an error message
+//                }
+//            }
+//
+//        return; // todo
+        addLog(text:"[user-action] btnSignInWithGoogleClicked")
+        allApiObject.capturePosthog(event: "button-signin-with-google-clicked", metadata: [:])
+        self.presentAsSheet(loginComingSoonMsgVcObject())
+    }
+    @IBAction func btnSignInWithAppleClicked(_ sender: Any) {
+//        Auth0
+//            .webAuth()
+//            .connection("apple") // The connection name for Apple
+//            .start { result in
+//                switch result {
+//                case .success(let credentials):
+//                    print("Logged in with Apple: \(credentials)")
+//                    // Handle successful login, save credentials, or transition to the next screen
+//
+//                    self.view.window?.close()
+//                    appdelegate!.statusbutton?.action = nil
+//                    appdelegate!.user = AuthUser(from: credentials.accessToken)
+//                    allApiObject.capturePosthog(event: "login-homemade", metadata: [:])
+//                    let _ = appdelegate!.credentialsManager.store(credentials: credentials)
+//                    UserDefaults.standard.set(true, forKey: kUserdefaultsIsUserLoggedIn)
+//                    appdelegate!.loadCredentialsAndDeviceId()
+//
+//                case .failure(let error):
+//                    print("Apple login failed: \(error)")
+//                    // Handle login failure, show an error message
+//                }
+//            }
+//
+//
+//        return;
+        addLog(text:"[user-action] btnSignInWithAppleClicked")
+        allApiObject.capturePosthog(event: "button-signin-with-apple-clicked", metadata: [:])
+        self.presentAsSheet(loginComingSoonMsgVcObject())
     }
     func showAlertNoInternet(window:NSWindow){
         var noInternetTitle = "No Internet Connection"
@@ -130,5 +177,3 @@ class askLogInVc: NSViewController {
         })
     }
 }
-
-//

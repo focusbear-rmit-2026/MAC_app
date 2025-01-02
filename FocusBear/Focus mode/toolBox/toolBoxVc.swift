@@ -9,8 +9,8 @@
 import Cocoa
 
 class toolBoxVc: NSViewController {
-
-
+    
+    
     @IBOutlet weak var lblCheckBoxForActivity: NSTextField!
     @IBOutlet weak var checkBoxDontShowForActivity: NSButton!
     @IBOutlet weak var boxForAllowedActivity: NSBox!
@@ -24,10 +24,10 @@ class toolBoxVc: NSViewController {
     @IBOutlet weak var tblViewUrls: NSTableView!
     @IBOutlet weak var boxUrls: NSBox!
     @IBOutlet weak var boxApps: NSBox!
-//    @IBOutlet weak var heightBox: NSLayoutConstraint!
-//    @IBOutlet weak var scrollViewUrls: NSScrollView!
+    //    @IBOutlet weak var heightBox: NSLayoutConstraint!
+    //    @IBOutlet weak var scrollViewUrls: NSScrollView!
     @IBOutlet weak var scrollViewApps: NSScrollView!
-//    @IBOutlet weak var collectionViewUrls: NSCollectionView!
+    //    @IBOutlet weak var collectionViewUrls: NSCollectionView!
     @IBOutlet weak var collectionViewApps: NSCollectionView!
     
     var arrAllowedApps = [String]()
@@ -55,11 +55,7 @@ class toolBoxVc: NSViewController {
         arrAllowedApps.removeAll()
         isFocusModeOn = Focus_Bear.isFocusModeOn()
         var focusMode = ""
-//        for dic in arrFocusType{
-//            if dic["isOn"] as? Bool == true{//
-//                focusMode = dic["name"] as? String ?? ""
-//            }
-//        }
+        
         if currentHabitPlaying != nil{
             focusMode = currentHabitPlaying?.name ?? ""
             
@@ -123,46 +119,26 @@ class toolBoxVc: NSViewController {
                 boxApps.isHidden = true
             }else{
                 boxApps.isHidden = false
-                
-                let properties = [URLResourceKey.localizedNameKey, URLResourceKey.creationDateKey, URLResourceKey.contentModificationDateKey, URLResourceKey.localizedTypeDescriptionKey,URLResourceKey.nameKey]
-                
-                let array = try? FileManager.default.contentsOfDirectory(at: URL(fileURLWithPath: "/Applications"), includingPropertiesForKeys: properties, options: .skipsHiddenFiles)
-                if array != nil{
+                for app in allowAppsPath{
                     
-                    var arrAllDirectoryNames = [String]()
-                    
-                    for url in array!{
-                        
-                        if url.pathExtension != "app"{
-                            if url.isDirectory{
-                                arrAllDirectoryNames.append(url.lastPathComponent)
-                            }
-                            
+                    let urls = FileManager.default.urls(for: .applicationDirectory, in: [.systemDomainMask, .localDomainMask])
+                    for url in urls{
+                        var appUrl = url.appendingPathComponent("\(app).app")
+                        if FileManager.default.fileExists(atPath: appUrl.path){
+                            self.arrAllowedApps.append(appUrl.path)
+                            break;
                         }
-                        
-                    }
-                    print(arrAllDirectoryNames)
-                    
-                    for app in allowAppsPath{
-                        let appath = "/Applications/\(app).app"
-                        if FileManager.default.fileExists(atPath: appath){
-                            self.arrAllowedApps.append(appath)
-                        }else{
-                            for folder in arrAllDirectoryNames{
-                                let newAppPath = "/Applications/\(folder)/\(app).app"
-                                if FileManager.default.fileExists(atPath: newAppPath){
-                                    self.arrAllowedApps.append(newAppPath)
-                                    break;
-                                }
-                            }
+                        let utilitiesUrl = url.appendingPathComponent("Utilities")
+                        appUrl = utilitiesUrl.appendingPathComponent("\(app).app")
+                        if FileManager.default.fileExists(atPath: appUrl.path){
+                            self.arrAllowedApps.append(appUrl.path)
+                            break;
                         }
                     }
+                    
                 }
-                
-//                self.arrAllowedApps = allowAppsPath
                 collectionViewApps.reloadData()
             }
-            
 
             let arrAllowedUrlsForFocus = currentHabitPlaying?.allowUrls ?? []
             
@@ -181,13 +157,7 @@ class toolBoxVc: NSViewController {
             boxForFocusMode.isHidden = true
             boxForAllowedActivity.isHidden = false
         }
-        
 
-        
-       
-        
-        
-        
         let screenFrame = NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 1920, height: 1080)
         getToolBoxWindowObject().window?.setFrameOrigin(NSPoint(x: 0, y: ((screenFrame.height) - (self.view.window?.frame.height ?? 100))))
         if UserDefaults.standard.object(forKey: kUserdefaultsDontShowToolBoxAutomatically) as? Bool == false{
@@ -243,20 +213,6 @@ extension toolBoxVc:NSCollectionViewDelegate, NSCollectionViewDataSource {
             item.appName = URL(fileURLWithPath: arrAllowedApps[indexPath.item]).lastPathComponent
             item.btnIcon.image = NSWorkspace.shared.icon(forFile: arrAllowedApps[indexPath.item])
         }
-        
-//        if isFocusModeOn || isAnyAllowedFocusModeActivityRunning{
-//            if item.btnIcon != nil{
-//                item.appName = URL(fileURLWithPath: arrAllowedApps[indexPath.item]).lastPathComponent
-//                item.btnIcon.image = NSWorkspace.shared.icon(forFile: arrAllowedApps[indexPath.item])
-//            }
-//        }else if currentHabitPlaying != nil{
-//            if item.btnIcon != nil{
-//                item.appName = "\(arrAllowedApps[indexPath.item]).app"
-//                item.btnIcon.image = NSWorkspace.shared.icon(forFile: "/Applications/\(arrAllowedApps[indexPath.item]).app")
-//            }
-//        }else{
-//            return item
-//        }
         item.lblAppName.stringValue = item.appName
         item.btnIcon.target = self
         item.btnIcon.tag = indexPath.item
@@ -266,12 +222,12 @@ extension toolBoxVc:NSCollectionViewDelegate, NSCollectionViewDataSource {
     }
     
     @objc func btnOpenAppClicked(sender:NSButton){
-        addLog(text: "toolBoxVc:- btnOpenAppClicked")
+        addLog(text: "[user-action] toolBoxVc:- btnOpenAppClicked")
         NSWorkspace.shared.launchApplication(arrAllowedApps[sender.tag])
-
+        
         allApiObject.capturePosthog(event: "toolbox-open-app-clicked", metadata: [:])
     }
-
+    
     
 }
 
@@ -288,9 +244,9 @@ extension toolBoxVc:NSTableViewDelegate, NSTableViewDataSource {
         
         return arrAllowedUrls.count
     }
-
-
-
+    
+    
+    
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
         if let cell = tableView.makeView(withIdentifier: NSUserInterfaceItemIdentifier(rawValue: "tblCellToolBox"), owner: nil) as? tblCellToolBox {
             var arrAllowedUrls = [String]()
@@ -304,10 +260,10 @@ extension toolBoxVc:NSTableViewDelegate, NSTableViewDataSource {
             
             return cell
         }
-
+        
         return NSTableCellView()
     }
-
+    
     func tableViewSelectionDidChange(_ notification: Notification) {
         if tblViewUrls.selectedRow == -1{
             return
@@ -326,7 +282,7 @@ extension toolBoxVc:NSTableViewDelegate, NSTableViewDataSource {
         }
         NSWorkspace.shared.open(URL(string: url)!)
         tblViewUrls.reloadData()
-        addLog(text: "toolBoxVc:- OpenUrlClicked")
+        addLog(text: "[user-action] toolBoxVc:- OpenUrlClicked")
         allApiObject.capturePosthog(event: "toolbox-open-url-clicked", metadata: [:])
     }
 }

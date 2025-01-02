@@ -10,6 +10,7 @@ import Cocoa
 
 class tblCellLogQuantity: NSTableCellView {
 
+    @IBOutlet weak var topSpaceStackView: NSLayoutConstraint!
     @IBOutlet weak var lblMaximum: NSTextField!
     @IBOutlet weak var lblMinimum: NSTextField!
     @IBOutlet weak var lblMaximumDescription: NSTextField!

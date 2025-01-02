@@ -1,11 +1,3 @@
-//
-//  TextFieldNumberFormatter.swift
-//  ThinkBizz Business Dynamics
-//
-//  Created by Chandresh Bhavsar on 14/04/20.
-//  Copyright © 2020 ThinkBizz. All rights reserved.
-//
-
 import Cocoa
 
 class TextFieldNumberFormatter: NumberFormatter {

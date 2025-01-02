@@ -25,16 +25,4 @@ class loginHelpVc: NSViewController {//not in use
         
         
     }
-    
-//    @IBAction func btnClickHereClicked(_ sender: Any) {
-//        addLog(text:"loginHelpVc btnClickHereClicked")
-////        appdelegate!.sessionStart = false
-//        askLogInVcObj?.isCustomLoginAvailable = true
-//        showCustomLoginWindow(isLogin: true)
-//        self.view.window?.close()
-//    }
-//    @IBAction func btnCloseClicked(_ sender: Any) {
-//        addLog(text:"loginHelpVc btnCloseClicked")
-//        self.view.window?.close()
-//    }
 }

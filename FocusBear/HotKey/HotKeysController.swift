@@ -68,7 +68,7 @@ final class HotKeysController {
 		// Ensure registration worked
 		guard registerError == noErr, eventHotKey != nil else {
             //registtration faild
-//            preferencesWindowControllerObj?.shortcutFailed_alert()
+            preferencesWindowControllerObj?.shortcutFailed_alert()
 			return
 		}
 

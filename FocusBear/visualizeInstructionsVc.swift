@@ -4,13 +4,15 @@
 //
 //  Created by Prashant Sawnani on 25/08/22.
 //  Copyright © 2022 Focus Bear. All rights reserved.
-//
 
 import Cocoa
 import WebKit
 
-class visualizeInstructionsVc: NSViewController, WKNavigationDelegate {
+class visualizeInstructionsVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate {
 
+    @IBOutlet weak var boxStarRating: NSBox!
+    @IBOutlet weak var stackViewStarRating: NSStackView!
+    @IBOutlet weak var btnSkipTimer: underLineButton!
     @IBOutlet weak var imgView: NSImageView!
     @IBOutlet weak var loader: NSProgressIndicator!
     @IBOutlet weak var webView: WKWebView!
@@ -19,7 +21,15 @@ class visualizeInstructionsVc: NSViewController, WKNavigationDelegate {
     @IBOutlet weak var lblTimer: NSTextField!
     @IBOutlet weak var lblVisualizeText: NSTextField!
     @IBOutlet weak var lblTitle: NSTextField!
+    @IBOutlet weak var btnStarFirst: cursorButton!
+    @IBOutlet weak var btnStarSecond: cursorButton!
+    @IBOutlet weak var btnStarThird: cursorButton!
+    @IBOutlet weak var btnStarFourth: cursorButton!
+    @IBOutlet weak var btnStarFifth: cursorButton!
+    @IBOutlet weak var lblHowMotivated: NSTextField!
+    @IBOutlet weak var textFieldRating: NSTextField!
     
+    var isMotivationalMessageShowing = false
     
     var arrOptions = ["I'm feeling energized - time to begin my habits",
                       "Let's kick things off - I'm motivated to start my habits",
@@ -40,12 +50,14 @@ class visualizeInstructionsVc: NSViewController, WKNavigationDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
+        lblHowMotivated.stringValue = "How motivated do you feel to do your habits?"
         lblTitle.stringValue = "Get Focused"
         lblVisualizeText.stringValue = "Before you begin your morning routine, take 30 seconds to engage in \"extrapersonal focus\": try your best to keep your eyes fixed on the target. Research from Balcetis and colleagues in 2020 indicates that concentrating on a visual point will sharpen your focus and increase the likelihood of completing your routine."
         
         if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
             lblVisualizeText.stringValue = activityInfo.value(forKey: "visualizeDescriptionText") as? String ?? lblVisualizeText.stringValue
             lblTitle.stringValue = activityInfo.value(forKey: "titleGetFocused") as? String ?? lblTitle.stringValue
+            lblHowMotivated.stringValue = activityInfo.value(forKey: "questionHowMotivatedText") as? String ?? lblHowMotivated.stringValue
         }
         btnSkipHabit.title = "Skip this habit for today"
         if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
@@ -57,35 +69,130 @@ class visualizeInstructionsVc: NSViewController, WKNavigationDelegate {
             arrOptions = inspirations
         }
         self.webView.navigationDelegate = self
+        btnSkipTimer.title = "Skip"
+        if let dic = configjson.value(forKey: "welcomeInfo") as? NSDictionary{
+            btnSkipTimer.title = dic.value(forKey: "buttonSkipText") as? String ?? btnSkipTimer.title
+        }
+        textFieldRating.placeholderString = "What is motivating you to do your habits today?"
     }
     
-    
+    override func viewWillDisappear() {
+        isMotivationalMessageShowing = false
+    }
+
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         print("*************didFinish navigation**************")
         DispatchQueue.global().async {
             sleep(1)
             DispatchQueue.main.async {
+                self.removeWebViewLoadFailedView(webView: webView)
                 self.setAccessTokenToWebView()
                 self.loader.stopAnimation(self)
                 self.webView.isHidden = false
+                self.boxStarRating.isHidden = false
+            }
+        }
+    }
+
+    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        handleLoadError(webView: webView)
+    }
+    
+    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+        handleLoadError(webView: webView)
+    }
+  
+
+    var webViewLoadFailedVcObj:webViewLoadFailedVc?
+    func removeWebViewLoadFailedView(webView: WKWebView) {
+        if webViewLoadFailedVcObj != nil{
+            if webView.subviews.contains(webViewLoadFailedVcObj!.view){
+                webViewLoadFailedVcObj?.view.removeFromSuperview()
             }
         }
     }
    
+    func handleLoadError(webView: WKWebView) {
+        if webViewLoadFailedVcObj != nil{
+            if webView.subviews.contains(webViewLoadFailedVcObj!.view){
+                return;
+            }
+        }
+        webViewLoadFailedVcObj = getWebViewLoadFailedVcObject()
+        webViewLoadFailedVcObj!.customDelegate = self
+        webViewLoadFailedVcObj?.webView = webView
+        webView.addSubview(webViewLoadFailedVcObj!.view)
+        webView.addConstraints(subView: webViewLoadFailedVcObj!.view)
+    }
 
+    func reloadClicked(webView:WKWebView) {
+        loadWebView()
+    }
+    
     func setAccessTokenToWebView(){
-        let stringJson1 = "{access_token: \"\(appdelegate!.credential?.accessToken ?? "")\"}"
+        var theme = "LIGHT"
+        if preferencesWindowControllerObj != nil{
+            if preferencesWindowControllerObj!.window!.hasDarkAppearance{
+                theme = "DARK"
+            }else {
+                theme = "LIGHT"
+            }
+        }
+        let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex].webFontName
+        let stringJson = "{access_token: \"\(appdelegate!.credential?.accessToken ?? "")\",\"font\":\"\(selectedFont)\",\"lang\":\"\(currentLanguageCode)\",\"theme\":\"\(theme)\",\"motivation_type\":\"desktop\"}"
         
-        let javascript = "loadAccessTokenForInspirationPage(\(stringJson1));"
+//        let javascript = "loadAccessTokenForInspirationPage(\(stringJson));"
+        let settingsFunc = String(format: "let waitForAppLoaded = setInterval(() => { if (window.loadAccessTokenForInspirationPage) { loadAccessTokenForInspirationPage(%@); clearInterval(waitForAppLoaded); } }, 100);", stringJson)
         
-        webView.evaluateJavaScript(javascript,completionHandler: { (html: Any?, error: Error?) in
+        webView.evaluateJavaScript(settingsFunc,completionHandler: { (html: Any?, error: Error?) in
             print(error)
             print("****error")
             print(html)
         })
     }
+    var currentRatingCount = 0
+    func updateStarRatingView(){
+        btnStarFirst.image = NSImage(named: "star_Gray")
+        btnStarSecond.image = NSImage(named: "star_Gray")
+        btnStarThird.image = NSImage(named: "star_Gray")
+        btnStarFourth.image = NSImage(named: "star_Gray")
+        btnStarFifth.image = NSImage(named: "star_Gray")
+        
+//        if currentRatingCount == 0{
+//            btnMain.isEnabled = false
+//            btnSkipHabit.isEnabled = false
+//        }else{
+//            btnMain.isEnabled = true
+//            btnSkipHabit.isEnabled = true
+//        }
+        if currentRatingCount == 1{
+            btnStarFirst.image = NSImage(named: "star_Golden")
+        }else if currentRatingCount == 2{
+            btnStarFirst.image = NSImage(named: "star_Golden")
+            btnStarSecond.image = NSImage(named: "star_Golden")
+        }else if currentRatingCount == 3{
+            btnStarFirst.image = NSImage(named: "star_Golden")
+            btnStarSecond.image = NSImage(named: "star_Golden")
+            btnStarThird.image = NSImage(named: "star_Golden")
+        }else if currentRatingCount == 4{
+            btnStarFirst.image = NSImage(named: "star_Golden")
+            btnStarSecond.image = NSImage(named: "star_Golden")
+            btnStarThird.image = NSImage(named: "star_Golden")
+            btnStarFourth.image = NSImage(named: "star_Golden")
+        }else if currentRatingCount == 5{
+            btnStarFirst.image = NSImage(named: "star_Golden")
+            btnStarSecond.image = NSImage(named: "star_Golden")
+            btnStarThird.image = NSImage(named: "star_Golden")
+            btnStarFourth.image = NSImage(named: "star_Golden")
+            btnStarFifth.image = NSImage(named: "star_Golden")
+        }
+    }
+    
     func startTimer(){
-        self.imgView.isHidden = false
+        currentRatingCount = 0
+        updateStarRatingView()
+        textFieldRating.stringValue = ""
+        btnSkipTimer.isHidden = true
         if currentState == ._MORNING_HABIT_{
             if arrFilteredMorningHabits.count != 0 {
                 let time = arrFilteredMorningHabits[0].durationSeconds!
@@ -98,17 +205,8 @@ class visualizeInstructionsVc: NSViewController, WKNavigationDelegate {
             }
         }
         
-        webView.isHidden = true
-        btnMain.isHidden = true
-        btnSkipHabit.isHidden = true
-        lblTimer.stringValue = ""
-        lblVisualizeText.isHidden = false
-        
-        
-        
-        
-        if SettingsManagerObject.isMotivationalMessageEnabled{
-            if Reachability.isConnectedToNetwork() == false{
+        if !isMotivationalMessageShowing{
+            if SettingsManagerObject.isMotivationalMessageEnabled{
                 allApiObject.isInternetOn(completionHandler: {isInternetOn in
                     DispatchQueue.main.async {
                         if isInternetOn{
@@ -119,30 +217,55 @@ class visualizeInstructionsVc: NSViewController, WKNavigationDelegate {
                     }
                 })
             }else{
-                showWebView()
+                startTimer(duration: 30)
             }
-        }else{
-            startTimer(duration: 30)
         }
         
+        // after screen shows if webview is not lodded show star rating after 2 seconds
+        Timer.scheduledTimer(withTimeInterval: 5, repeats: false) { timer in
+            self.boxStarRating.isHidden = false
+        }
     }
-
+    func tryPreLoadMotivationalMessage(){
+        self.isMotivationalMessageShowing = false
+        self.imgView.isHidden = false
+        webView.isHidden = true
+        btnMain.isHidden = true
+        btnSkipHabit.isHidden = true
+        lblTimer.stringValue = ""
+        lblVisualizeText.isHidden = false
+        if SettingsManagerObject.isMotivationalMessageEnabled{
+            allApiObject.isInternetOn(completionHandler: {isInternetOn in
+                DispatchQueue.main.async {
+                    if isInternetOn{
+                        self.showWebView()
+                    }
+                }
+            })
+        }
+    }
     func showWebView(){
-        //
+        isMotivationalMessageShowing = true
+        self.boxStarRating.isHidden = true
         self.imgView.isHidden = true
         self.timer?.invalidate()
         self.btnMain.isHidden = false
         self.btnSkipHabit.isHidden = false
+        self.btnSkipTimer.isHidden = true
         self.lblTimer.isHidden = true
         self.isTimerGoingOn = false
         lblTimer.stringValue = ""
         webView.isHidden = true
         lblVisualizeText.isHidden = true
-        let url = "http://dashboard.focusbear.io/webview/motivational-summary"
+        loadWebView()
+        self.btnMain.title = self.arrOptions.randomElement() ?? ""
+    }
+    
+    func loadWebView(){
+        let url = "http://dashboard.focusbear.io/webview/motivational-summary?bust_cache=\(getUuid())"
         let link = URL(string:url)!
         let request = URLRequest(url: link)
         self.webView.load(request)
-        self.btnMain.title = self.arrOptions.randomElement() ?? ""
         loader.startAnimation(self)
     }
     var timer:Timer?
@@ -151,6 +274,15 @@ class visualizeInstructionsVc: NSViewController, WKNavigationDelegate {
     var totalDuration = 0
     
     func startTimer(duration:Int) {
+        btnSkipTimer.isHidden = false
+        self.imgView.isHidden = false
+        webView.isHidden = true
+        btnMain.isHidden = true
+        btnSkipHabit.isHidden = true
+        lblTimer.stringValue = ""
+        lblVisualizeText.isHidden = false
+        
+        isMotivationalMessageShowing = false
         if isTimerGoingOn{
             btnMain.isHidden = true
             lblTimer.isHidden = false
@@ -179,7 +311,7 @@ class visualizeInstructionsVc: NSViewController, WKNavigationDelegate {
         }
     }
     @objc func performTimerCount() {
-        currentTimer += 1// todo 1 kro
+        currentTimer += 1
         let (_,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
         
         var minute = "\(m)"
@@ -199,6 +331,7 @@ class visualizeInstructionsVc: NSViewController, WKNavigationDelegate {
             
             self.timer?.invalidate()
             DispatchQueue.main.async {
+                self.btnSkipTimer.isHidden = true
                 playEveryActivitySound()
                 self.btnMain.isHidden = false
                 self.btnSkipHabit.isHidden = false
@@ -216,9 +349,17 @@ class visualizeInstructionsVc: NSViewController, WKNavigationDelegate {
                         if isHighPrioritySequenceGoing{
                             for i in 0..<arrFilteredEveningHabits.count{
                                 if arrFilteredEveningHabits[i].isPriorityHigh{
+                                    if let cutOffTime = arrFilteredEveningHabits[i].cutOffTime{
+                                        let cutOffDate = Calendar.current.date(bySettingHour: cutOffTime.hour, minute: cutOffTime.minute, second: cutOffTime.second, of: Date())!
+                                        let currentDate = Date()
+                                        if currentDate > cutOffDate{
+                                            continue;
+                                        }
+                                    }
                                     let time = arrFilteredEveningHabits[i].durationSeconds!
                                     self.btnMain.title = getstartActivityButtonText(seconds: time, name: arrFilteredEveningHabits[i].name!)
                                     break;
+                                    
                                 }
                             } 
                         }else{
@@ -237,10 +378,12 @@ class visualizeInstructionsVc: NSViewController, WKNavigationDelegate {
         }
     }
     @IBAction func btnMainClicked(_ sender: Any) {
-        addLog(text:"visualizeInstructionsVc - btnMainClicked :- \(btnMain.title)")
+        addLog(text:"[user-action] visualizeInstructionsVc - btnMainClicked :- \(btnMain.title)")
         if currentState == ._MORNING_HABIT_{
+            allApiObject.capturePosthog(event: "routine-motivation-level", metadata: ["routine-type":"morning_routine", "motivation-level":currentRatingCount, "motivation-comments":textFieldRating.stringValue])
             mainViewControllerObj?.startFirstMorningHabit()
         }else{
+            allApiObject.capturePosthog(event: "routine-motivation-level", metadata: ["routine-type":"evening_routine", "motivation-level":currentRatingCount, "motivation-comments":textFieldRating.stringValue])
             mainViewControllerObj?.startFirstEveningHabit()
         }
         if self.webView.isHidden == false{
@@ -250,8 +393,40 @@ class visualizeInstructionsVc: NSViewController, WKNavigationDelegate {
         }
     }
     @IBAction func btnSkipClicked(_ sender: Any) {
-        addLog(text:"visualizeInstructionsVc - btnSkipClicked :- \(btnSkipHabit.title)")
-        thirdVcObj?.loadView()
-        thirdVcObj?.btnSkipHabitClicked(self)
+        addLog(text:"[user-action] visualizeInstructionsVc - btnSkipClicked :- \(btnSkipHabit.title)")
+        if !(thirdVcObj?.isViewLoaded ?? false){
+            thirdVcObj?.loadView()
+        }
+        thirdVcObj?.menuItemSkipHabitClicked()
     }
+    @IBAction func btnSkipTimerClicked(_ sender: Any) {
+        currentTimer = totalDuration
+        performTimerCount()
+    }
+    
+    @IBAction func btnStarFirstClicked(_ sender: Any) {
+        currentRatingCount = 1
+        updateStarRatingView()
+    }
+    
+    @IBAction func btnStarSecondClicked(_ sender: Any) {
+        currentRatingCount = 2
+        updateStarRatingView()
+    }
+    
+    @IBAction func btnStarThirdClicked(_ sender: Any) {
+        currentRatingCount = 3
+        updateStarRatingView()
+    }
+    
+    @IBAction func btnStarFourthClicked(_ sender: Any) {
+        currentRatingCount = 4
+        updateStarRatingView()
+    }
+    
+    @IBAction func btnStarFifthClicked(_ sender: Any) {
+        currentRatingCount = 5
+        updateStarRatingView()
+    }
+    
 }

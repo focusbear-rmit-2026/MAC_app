@@ -8,21 +8,21 @@
 
 import Cocoa
 
-class welcomeOnboardingVc: NSViewController {
-
+class welcomeOnboardingVc: NSViewController {// not in use 
+    
     @IBOutlet weak var imgview: NSImageView!
     @IBOutlet weak var btnNoThanks: underLineButton!
-    @IBOutlet weak var boxSmallInfo: NSBox!
+//    @IBOutlet weak var boxSmallInfo: NSBox!
     @IBOutlet weak var boxAllInfo: NSBox!
     @IBOutlet weak var lblAllRights: NSTextField!
     @IBOutlet weak var btnLetsDoIt: Button!
     @IBOutlet weak var btnLater: Button!
-    @IBOutlet weak var lblDescriptionSecond: NSTextField!
-    @IBOutlet weak var lblDescriptionFirst: NSTextField!
+//    @IBOutlet weak var lblDescriptionSecond: NSTextField!
+//    @IBOutlet weak var lblDescriptionFirst: NSTextField!
     @IBOutlet weak var lblSubTitle: NSTextField!
 //    @IBOutlet weak var imgView: NSImageView!
     @IBOutlet weak var lblTitleAppName: NSTextField!
-    @IBOutlet weak var lblGotTwoMinutes: NSTextField!
+//    @IBOutlet weak var lblGotTwoMinutes: NSTextField!
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
@@ -31,37 +31,42 @@ class welcomeOnboardingVc: NSViewController {
         //lblSubTitle.stringValue = "Welcome aboard!"
         btnNoThanks.title = "No Thanks"
         
-        lblDescriptionFirst.stringValue = "Looking forward to helping you form healthy habits and get more deep work done. The onboarding process takes 5 minutes and requires 100% attention from you."
-        lblDescriptionSecond.stringValue = "You won't be able to use other apps during the onboarding. Do you have time now or shall we do it a bit later?"
+//        lblDescriptionFirst.stringValue = "Looking forward to helping you form healthy habits and get more deep work done. The onboarding process takes 5 minutes and requires 100% attention from you."
+//        lblDescriptionSecond.stringValue = "You won't be able to use other apps during the onboarding. Do you have time now or shall we do it a bit later?"
         btnLater.title = "A bit later please"
         btnLetsDoIt.title = "Let's do it"
-        lblAllRights.stringValue = "© 2022-2023 Focus Bear All Rights Reserved."
+        lblAllRights.stringValue = "© 2022-2024 Focus Bear All Rights Reserved."
         
-        lblGotTwoMinutes.stringValue = "Got two minutes to try out our habit guide feature?"
+//        lblGotTwoMinutes.stringValue = "Got two minutes to try out our habit guide feature?"
         
         lblSubTitle.stringValue = "Next Up: Building habits to support focus"
         
         if let welcomeOnboardingVcInfo = configjson.value(forKey: "welcomeOnboardingVcInfo") as? NSDictionary{
             //lblSubTitle.stringValue = welcomeOnboardingVcInfo.value(forKey: "subTitle") as? String ?? lblSubTitle.stringValue
-            lblDescriptionFirst.stringValue = welcomeOnboardingVcInfo.value(forKey: "descriptionFirstText") as? String ?? lblDescriptionFirst.stringValue
-            lblDescriptionSecond.stringValue = welcomeOnboardingVcInfo.value(forKey: "descriptionSecondText") as? String ?? lblDescriptionSecond.stringValue
+//            lblDescriptionFirst.stringValue = welcomeOnboardingVcInfo.value(forKey: "descriptionFirstText") as? String ?? lblDescriptionFirst.stringValue
+//            lblDescriptionSecond.stringValue = welcomeOnboardingVcInfo.value(forKey: "descriptionSecondText") as? String ?? lblDescriptionSecond.stringValue
             btnLater.title = welcomeOnboardingVcInfo.value(forKey: "buttonLaterText") as? String ?? btnLater.title
             btnLetsDoIt.title = welcomeOnboardingVcInfo.value(forKey: "buttonLetsDoItText") as? String ?? btnLetsDoIt.title
             lblAllRights.stringValue = welcomeOnboardingVcInfo.value(forKey: "allRightsReservedText") as? String ?? lblAllRights.stringValue
-            lblGotTwoMinutes.stringValue = welcomeOnboardingVcInfo.value(forKey: "gotTwoMinutesText") as? String ?? lblGotTwoMinutes.stringValue
+//            lblGotTwoMinutes.stringValue = welcomeOnboardingVcInfo.value(forKey: "gotTwoMinutesText") as? String ?? lblGotTwoMinutes.stringValue
             lblSubTitle.stringValue = welcomeOnboardingVcInfo.value(forKey: "subTitleNewText") as? String ?? lblSubTitle.stringValue
             btnNoThanks.title = welcomeOnboardingVcInfo.value(forKey: "buttonNoText") as? String ?? btnNoThanks.title
         }
         
         
-        
         allApiObject.capturePosthog(event: "onboarding-habit-start-view-shown", metadata: [:])
-        
+        addLog(text: "[user-action] onboarding-habit-start-view-shown")
+    }
+    override func viewDidAppear() {
+//        showOnboardingProgress(view: self.view, progress: 7)
+    }
+    override func viewWillDisappear() {
+//        hideOnboardingProgress(view: self.view)
     }
     
     @IBAction func btnInfoClicked(_ sender: Any) {
-        boxSmallInfo.isHidden = true
-        boxAllInfo.isHidden = false
+//        boxSmallInfo.isHidden = true
+//        boxAllInfo.isHidden = false
     }
     var isURlBlockedSuccessfully = false
     override func viewWillAppear() {
@@ -88,8 +93,8 @@ class welcomeOnboardingVc: NSViewController {
         }
         
         
-        boxSmallInfo.isHidden = false
-        boxAllInfo.isHidden = true
+//        boxSmallInfo.isHidden = false
+//        boxAllInfo.isHidden = true
     }
     @IBAction func btnLaterClicked(_ sender: Any) {
         addLog(text: "btnLaterClicked.")
@@ -97,7 +102,14 @@ class welcomeOnboardingVc: NSViewController {
     }
     
     @IBAction func btnLetsDoItClicked(_ sender: Any) {
-        addLog(text: "btnLetsDoItClicked.")
+        addLog(text: "[user-action] btnLetsDoItClicked.")
+        allApiObject.capturePosthog(event: "button-lets-do-it-clicked", metadata: [:])
+        UserDefaults.standard.set(true, forKey: kUserdefaultsFirstRun)
+        self.view.window?.contentViewController = getAskAccountVcObject()
+        return;
+        
+        
+        
         allApiObject.capturePosthog(event: "button-lets-do-it-clicked", metadata: [:])
         let alert = NSAlert()
         alert.setSharingType()
@@ -119,8 +131,16 @@ class welcomeOnboardingVc: NSViewController {
         alert.beginSheetModal(for: self.view.window!, completionHandler: {result in
             if result == .alertFirstButtonReturn{
                 addLog(text: "Alert:- btnLetsDoItClicked.")
+                
+                // new oboarding // 11/7/24 (full screen habit will come after login )
+                allApiObject.capturePosthog(event: "button-no-thanks-clicked", metadata: [:])
+                UserDefaults.standard.set(true, forKey: kUserdefaultsFirstRun)
+                self.view.window?.contentViewController = getAskAccountVcObject()
+                return;
+                //
+                
                 self.view.window?.close()
-                appdelegate!.showAskAppWork()//showOnbardingHabit()
+                appdelegate!.showAskOccupation()//showOnbardingHabit()
             }else {
                 addLog(text: "Alert:- btnLaterClicked.")
                 self.presentAsSheet(getOnboardingPostponeVcObject())
@@ -129,60 +149,11 @@ class welcomeOnboardingVc: NSViewController {
 
     }
     @IBAction func btnNoThanksClicked(_ sender: Any) {
+        // new oboarding // 11/7/24 (full screen habit will come after login )
+        addLog(text: "[user-action] btnNoThanksClicked.")
         allApiObject.capturePosthog(event: "button-no-thanks-clicked", metadata: [:])
-        let alert = NSAlert()
-        alert.setSharingType()
-        var alertText = "Are you sure? You can start with really tiny habits like 2 minutes of meditation in the morning.\nFocus Bear was built by a neurodiverse team (a few of us have ADHD) and we find the habit features make a huge difference to how the rest of the day goes."
-        
-        var buttonOkShowHabitText = "OK fine - show me the habit feature"
-        var buttonCancelHabitText = "No I'm not interested right now"
-        
-        
-        if let dic = configjson.value(forKey: "welcomeOnboardingVcInfo") as? NSDictionary{
-            alertText = dic.value(forKey: "alertConfirmText") as? String ?? alertText
-            buttonOkShowHabitText = dic.value(forKey: "buttonOkShowHabitText") as? String ?? buttonOkShowHabitText
-            buttonCancelHabitText = dic.value(forKey: "buttonCancelHabitText") as? String ?? buttonCancelHabitText
-        }
-
-        alert.messageText = alertText
-        alert.addButton(withTitle: buttonOkShowHabitText)
-        alert.addButton(withTitle: buttonCancelHabitText)
-        
-        alert.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
-            if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
-                self.btnLetsDoItClicked(self)
-            }else if(modalResponse == NSApplication.ModalResponse.alertSecondButtonReturn){
-                
-                
-                isHabitsDisabled = false
-                UserDefaults.standard.set(false, forKey: kUserdefaultsIsHabitsDisabled)
-                allApiObject.getHabitPacksInfo(breaks_only: false, completionHandler: {arrDic in
-                    
-                    if arrDic != nil{
-                        print(arrDic)
-                        DispatchQueue.main.async {
-                            if habitPacksData != nil{
-                                if habitPacksData!.count != 0{
-                                    let pack = habitPacksData![0]
-                                    let id = pack["id"] as? String ?? ""
-                                    if !id.isEmpty{
-                                        UserDefaults.standard.set(id, forKey: kUserdefaultsPackIdSelected)
-                                    }
-                                }
-                            }
-                            UserDefaults.standard.set("08:30", forKey: kUserdefaultsStartupTimeFromOnboarding)
-                            UserDefaults.standard.set("18:30", forKey: kUserdefaultsShutOffTimeFromOnboarding)
-                            
-                            UserDefaults.standard.set(true, forKey: kUserdefaultsFirstRun)
-                            UserDefaults.standard.set(Date(), forKey: kUserdefaultsLastHabitShowDate)
-                        }
-                    }
-                })
-                
-                
-                self.view.window?.contentViewController = getAskAccountVcObject()
-            }
-        })
+        UserDefaults.standard.set(true, forKey: kUserdefaultsFirstRun)
+        self.view.window?.contentViewController = getAskAccountVcObject()
     }
     
 }

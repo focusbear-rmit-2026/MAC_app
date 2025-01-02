@@ -79,7 +79,7 @@ class preloadFocusModeAppsVc: NSViewController {
     }
     
     @IBAction func btnRemoveItemClicked(_ sender: Any) {
-        addLog(text: "preload Focus mode apps&urls:-  button Remove Item clicked")
+        addLog(text: "[user-action] preload Focus mode apps&urls:-  button Remove Item clicked")
         let selectedRow = tblView.selectedRow
         if selectedRow == -1{
             return
@@ -92,7 +92,7 @@ class preloadFocusModeAppsVc: NSViewController {
         tblView.reloadData()
     }
     @IBAction func btnAddItemClicked(_ sender: Any) {
-        addLog(text: "preload Focus mode apps&urls:-  button Add Item clicked")
+        addLog(text: "[user-action] preload Focus mode apps&urls:-  button Add Item clicked")
         if isAddingApp{
             
             let openPanel = NSOpenPanel()
@@ -211,7 +211,7 @@ class preloadFocusModeAppsVc: NSViewController {
             }
             
             preloadFocusModesWindowControllerObj!.contentViewController = getFocusTipsVcObjObj()
-            addLog(text: "preload Focus mode apps&urls:-  button Done clicked:- show Focus Tips Vc")
+            addLog(text: "[user-action] preload Focus mode apps&urls:-  button Done clicked:- show Focus Tips Vc")
         }
     }
 }

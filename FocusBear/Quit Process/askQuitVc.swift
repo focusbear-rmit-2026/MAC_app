@@ -9,7 +9,8 @@
 import Cocoa
 
 class askQuitVc: NSViewController {
-
+    
+    @IBOutlet weak var loader: NSProgressIndicator!
     @IBOutlet weak var popUpBtnHour: NSPopUpButton!
     @IBOutlet weak var lblSelectHours: NSTextField!
     @IBOutlet weak var imgView: NSImageView!
@@ -31,6 +32,8 @@ class askQuitVc: NSViewController {
     var buttonPostponeFewMinutesText = "Postpone habits for <MINUTE> minutes"
     
     var enterPasswordVcObj: enterPasswordVc?
+    
+    let oneHourIndex = 3
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
@@ -148,23 +151,29 @@ class askQuitVc: NSViewController {
             }
         }
     }
-    
+    let fiveMinutesIndex = 0
+    let fifteenMinutesIndex = 1
+    let thirtyMinutesIndex = 2
+    let twoHourIndex = 4
+    let fourHourIndex = 5
+    let twelveHourIndex = 6
+    let twentyFourHourIndex = 7
     @IBAction func popUpBtnHourClicked(_ sender: Any) {
         let index = popUpBtnHour.indexOfSelectedItem
-        if index == 3{
+        if index == oneHourIndex{
             if isPostponeInfoShowing{
                 btnBreakFourHours.title = buttonPostponeOneHourText
             }else{
                 btnBreakFourHours.title = buttonBreakOneHourText
             }
-        }else if index < 3{
+        }else if index < oneHourIndex{
             var minutes = 30
             switch index {
-            case 0:
+            case fiveMinutesIndex:
                 minutes = 5
-            case 1:
+            case fifteenMinutesIndex:
                 minutes = 15
-            case 2:
+            case thirtyMinutesIndex:
                 minutes = 30
             default:
                 minutes = 30
@@ -177,13 +186,13 @@ class askQuitVc: NSViewController {
         }else{
             var hour  = 4
             switch index {
-            case 4:
+            case twoHourIndex:
                 hour = 2
-            case 5:
+            case fourHourIndex:
                 hour = 4
-            case 6:
+            case twelveHourIndex:
                 hour = 12
-            case 7:
+            case twentyFourHourIndex:
                 hour = 24
             default:
                 hour = 4
@@ -201,28 +210,28 @@ class askQuitVc: NSViewController {
         let index = popUpBtnHour.indexOfSelectedItem
         var minutes = 0
         
-        if index == 3{
+        if index == oneHourIndex{
             minutes = 60
-        }else if index < 3{
+        }else if index < oneHourIndex{
             switch index {
-            case 0:
+            case fiveMinutesIndex:
                 minutes = 5
-            case 1:
+            case fifteenMinutesIndex:
                 minutes = 15
-            case 2:
+            case thirtyMinutesIndex:
                 minutes = 30
             default:
                 minutes = 30
             }
         }else{
             switch index {
-            case 4:
+            case twoHourIndex:
                 minutes = 120
-            case 5:
+            case fourHourIndex:
                 minutes = 240
-            case 6:
+            case twelveHourIndex:
                 minutes = 720
-            case 7:
+            case twentyFourHourIndex:
                 minutes = 1440
             default:
                 minutes = 4
@@ -231,14 +240,12 @@ class askQuitVc: NSViewController {
         return minutes
     }
     @IBAction func btnBreakFourHoursClicked(_ sender: Any) {
-        let minutes = getMinutes()
-
-        if isPostponeInfoShowing{
+        if isPostponeInfoShowing{//
             mainViewControllerObj?.refreshLastPostponeCount()
             if SettingsManagerObject.isEasySkipEnabled{
                 postponeHabits()
             }else{
-                if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
+                if shouldAskPassword(){
                     if currentState == ._MORNING_HABIT_ {
                         if SettingsManagerObject.isPasswordRequireInSkipMorning{
                             showPasswordView()
@@ -246,10 +253,18 @@ class askQuitVc: NSViewController {
                             postponeHabits()
                         }
                     }else if currentState == ._EVENING_HABIT_{
-                        if SettingsManagerObject.isPasswordRequireInSkipEvening{
-                            showPasswordView()
+                        if isHighPrioritySequenceGoing{
+                            if SettingsManagerObject.isPasswordRequireInSkipEveningAfterCutOff{
+                                showPasswordView()
+                            }else{
+                                postponeHabits()
+                            }
                         }else{
-                            postponeHabits()
+                            if SettingsManagerObject.isPasswordRequireInSkipEvening{
+                                showPasswordView()
+                            }else{
+                                postponeHabits()
+                            }
                         }
                     }
                 }else{
@@ -257,20 +272,85 @@ class askQuitVc: NSViewController {
                 }
             }
         }else{
-            let date = Date().addingTimeInterval(TimeInterval(minutes * 60))//Calendar.current.date(bySetting: .hour, value: 4, of: Date())
-            UserDefaults.standard.set(date, forKey: kUserdefaults4HourReActivateTime)
-            addLog(text: "App Deactivated for \(minutes) minutes - I've got an emergency")
-
-            addEntryInStatsCsv(logType: "quit abort", activity: "quit", durationInSeconds: "", quantityQuestion: "", quantityLogged: "", startTime: "", workAchieved: "", distractionsEncountered: "", abortReason: "I've got an emergency", feedback: "")
-            mainViewControllerObj?.disableApp()
+            if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
+                if SettingsManagerObject.isPasswordRequireInQuitApp{
+                    showPasswordView()
+                    self.enterPasswordVcObj?.isShowingForDeactivatingApp = true
+                    return;
+                }
+            }
+            tryDeactivateApp()
         }
     }
+    
+    func tryDeactivateApp(){
+        if currentState == ._MORNING_HABIT_ || currentState == ._POSTPON_MORNING_HABIT_{
+            let alert = NSAlert()
+            alert.setSharingType()
+            alert.alertStyle = .informational
+            var titleSkipMorningHabit = "Do you want to do your morning routine later today or skip it?"
+            var buttonSkipMorningHabitText = "Skip my morning routine"
+            var buttonWillDoMorningHabitText = "I'll do my morning routine"
+            if let quitInfo = configjson.value(forKey: "quitInfo") as? NSDictionary{
+                if let askQuitVcInfo = quitInfo.value(forKey: "askQuitVcInfo") as? NSDictionary{
+                    titleSkipMorningHabit = askQuitVcInfo.value(forKey: "titleSkipMorningHabit") as? String ?? titleSkipMorningHabit
+                    buttonSkipMorningHabitText =  askQuitVcInfo.value(forKey: "buttonSkipMorningHabitText") as? String ?? buttonSkipMorningHabitText
+                    buttonWillDoMorningHabitText =  askQuitVcInfo.value(forKey: "buttonWillDoMorningHabitText") as? String ?? buttonWillDoMorningHabitText
+                }
+            }
+            alert.messageText = titleSkipMorningHabit
+            
+            alert.addButton(withTitle: buttonWillDoMorningHabitText)
+            alert.addButton(withTitle: buttonSkipMorningHabitText)
+            alert.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
+                if(modalResponse == NSApplication.ModalResponse.alertSecondButtonReturn){
+                    let sequenceId = arrFilteredMorningHabits.first?.activity_sequence_id ?? ""
+                    allApiObject.forceCompleteCurrentSequence(activity_sequence_id: sequenceId, isForToday: true, completionHandler: {json in
+                        print("forceCompleteCurrentSequence success")
+                    })
+                    UserDefaults.standard.set(Date(), forKey: kUserdefaultsLastHabitShowDate)
+                    isHabitAlreadyShowed = true
+                    if mainWindowControllerObj?.window?.isVisible ?? false{
+                        mainWindowControllerObj?.window?.close()
+                        hideBlankWindowInSecondaryMonitor()
+                    }
+                    addLog(text: "morning habit skipped by user while turn it off for 4 hours")
+                    
+                    self.deavtivateApp()
+                }else{
+                    self.deavtivateApp()
+                }
+            })
+        }else{
+            deavtivateApp()
+        }
+    }
+    func deavtivateApp(){
+        let minutes = getMinutes()
+        let date = Date().addingTimeInterval(TimeInterval(minutes * 60))//Calendar.current.date(bySetting: .hour, value: 4, of: Date())
+        UserDefaults.standard.set(date, forKey: kUserdefaults4HourReActivateTime)
+        addLog(text: "App Deactivated for \(minutes) minutes - I've got an emergency")
+        allApiObject.capturePosthog(event: "turn-it-off-for-x-duration", metadata: [:])
+        addEntryInStatsCsv(logType: "quit abort", activity: "quit", durationInSeconds: "", quantityQuestion: "", quantityLogged: "", startTime: "", workAchieved: "", distractionsEncountered: "", abortReason: "I've got an emergency", feedback: "", tags:"")
+        loader.startAnimation(self)
+        btnBreakFourHours.isEnabled = false
+        DispatchQueue.global().async {//waiting for posthog
+            sleep(1)
+            DispatchQueue.main.async {
+                mainViewControllerObj?.disableApp()
+            }
+        }
+    }
+    
     func showPasswordView(){
         if self.enterPasswordVcObj == nil{
             self.enterPasswordVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("enterPasswordVc")) as? enterPasswordVc
         }
+        
         self.view.addSubview(self.enterPasswordVcObj!.view)
         self.view.addConstraints(subView: self.enterPasswordVcObj!.view)
+        self.enterPasswordVcObj?.removeConstraints()
+        self.enterPasswordVcObj?.isShowingForDeactivatingApp = false
     }
     func postponeHabits(){
         let minutes = getMinutes()
@@ -291,70 +371,62 @@ class askQuitVc: NSViewController {
             closePupUpBlockIfVisible()
         }
         if currentState == ._MORNING_HABIT_{
-            mainViewControllerObj?.postponeMorningHabitFor(minutes: minutes, secondsToPostpone: nil, showAskFocusModeView:true)
+            mainViewControllerObj?.postponeMorningHabitFor(minutes: minutes, secondsToPostpone: nil, showAskFocusModeView: true, showAskIntention: true)
         }else if currentState == ._EVENING_HABIT_{
-            mainViewControllerObj?.postponeEveningHabitFor(minutes: minutes, secondsToPostpone: nil, showAskFocusModeView:true)
+            mainViewControllerObj?.postponeEveningHabitFor(minutes: minutes, secondsToPostpone: nil, showAskFocusModeView: true, showAskIntention: true)
+        }
+        
+        if relaxModeWcObj != nil{
+            if relaxModeWcObj!.window?.isVisible ?? false{
+                relaxModeVcObj?.closeTimerBox()
+            }
         }
         self.view.window?.close()
     }
-
+    
     @IBAction func btnSkipClicked(_ sender: Any) {
-        addLog(text: "button Skip Clicked")
+        addLog(text: "[user-action] button Skip Clicked")
         if (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_) && currentAction == ._INPROGRESS_{
             isLastActivityStoppedInRunningState = true
             lastActivityStoppedTimerCount = timerViewcontrollerObj?.currentTimer ?? 0
             mainWindowControllerObj?.showWindow(self)
             showBlankWindowInSecondaryMonitor()
             timerViewcontrollerObj?.btnPauseClicked(self)
-            timerViewcontrollerObj?.btnSkipHabitClicked(self)
+            timerViewcontrollerObj?.menuItemSkipHabitClicked()
             if smallCountDownWcObj != nil{
                 if smallCountDownWcObj!.window?.isVisible ?? false{
                     getsmallCountDownVcObject().closeTimerBox()
                 }
             }
+            
+            if relaxModeWcObj != nil{
+                if relaxModeWcObj!.window?.isVisible ?? false{
+                    relaxModeVcObj?.closeTimerBox()
+                }
+            }
+            
             self.view.window?.close()
         }else{
             self.view.window?.close()
         }
-//        return;
-//        mainWindowControllerObj?.window?.setIsVisible(true)
-//        showBlankWindowInSecondaryMonitor()
-//        setDocBarTo(isHide: false)
-//        timerViewcontrollerObj?.btnPauseClicked(self)
-//
-//        if currentHabitPlaying != nil{
-//            if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
-//                if smallCountDownWcObj?.window != nil{
-//                    if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
-//                        getSmallCountDownWindowObject().window?.close()
-//                        if getsmallCountDownVcObject().timer != nil {
-//                            getsmallCountDownVcObject().timer?.invalidate()
-//                        }
-//                    }
-//                }
-//            }
-//        }
-//        currentHabitPlaying = nil
-//        currentActivityPlaying = nil
-//        if rememberNextHabitVcObj != nil{
-//            if thirdVcObj!.view.subviews.contains(rememberNextHabitVcObj!.view){
-//                rememberNextHabitVcObj!.view.removeFromSuperview()
-//                thirdVcObj?.boxBg.isHidden = false
-//            }
-//        }
-//        mainViewControllerObj?.showThirdVc()
-//        if currentState == ._ACTIVITY_{
-//
-//        }else if currentState == ._MORNING_HABIT_{
-//            thirdVcObj?.morningHabitSkipped()
-//        }else if currentState == ._EVENING_HABIT_{
-//            thirdVcObj?.eveningHabitSkipped()
-//        }
-//        self.view.window?.close()
     }
     
     @IBAction func btnAppQuitClicked(_ sender: Any) {
-        getQuittingWindowObject().contentViewController = getQuittingCountDownVcObject()
-        getQuittingCountDownVcObject().resetData()
+        addLog(text: "[user-action] - Turn it off completely Clicked")
+        loader.startAnimation(self)
+        allApiObject.getuserLongTermGoals(completionHandler: {arrGoals in
+            DispatchQueue.main.async {
+                self.loader.stopAnimation(self)
+                if arrGoals != nil{
+                    if arrGoals!.count != 0{
+                        getLongTermGoalsVcObject().arrGoals = arrGoals!
+                        self.presentAsSheet(getLongTermGoalsVcObject())
+                        return;
+                    }
+                }
+                showQuittingConfirmView()
+            }
+        })
     }
+    
 }

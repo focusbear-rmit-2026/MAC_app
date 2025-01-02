@@ -9,7 +9,7 @@
 import Cocoa
 import WebKit
 
-class setUpVc: NSViewController, WKNavigationDelegate {
+class setUpVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate {
 
     @IBOutlet weak var webView: WKWebView!
     @IBOutlet weak var imgViewCustomiseFocusMode: NSImageView!
@@ -41,23 +41,31 @@ class setUpVc: NSViewController, WKNavigationDelegate {
     @IBOutlet weak var lblFocusSessionProgress: NSTextField!
     
     
+    let copySystemPreferencesIndex = 0
+    let alwaysDarkModeIndex = 1
+    let neverDarkModeIndex = 2
     
     let viewWidthDefault = 1040
     let viewHeightDefault = 682
     
     override func viewDidLoad() {
         super.viewDidLoad()
-
+        addLog(text: "statsVc viewdidload start")
         self.webView.navigationDelegate = self
-        let url = "https://dashboard.focusbear.io/webview/stats"
-        let  fileURL = URL(string: url)
-        let request = NSMutableURLRequest(url: fileURL!)
-        webView.load(request as URLRequest)
+        loadWebView()
         
         let handler = MessageHandler()
         webView.configuration.userContentController.add(handler, name: "open_android_app")
         webView.configuration.userContentController.add(handler, name: "open_ios_app")
-        
+        webView.configuration.userContentController.add(handler, name: "download_focus_summaries")
+        addLog(text: "statsVc viewdidload end")
+    }
+    
+    func loadWebView(){
+        let url = "https://dashboard.focusbear.io/webview/stats?bust_cache=\(getUuid())"
+        let  fileURL = URL(string: url)
+        let request = NSMutableURLRequest(url: fileURL!)
+        webView.load(request as URLRequest)
     }
     
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
@@ -65,12 +73,46 @@ class setUpVc: NSViewController, WKNavigationDelegate {
         DispatchQueue.global().async {
             sleep(1)
             DispatchQueue.main.async {
+                self.removeWebViewLoadFailedView(webView: webView)
                 self.setAccessTokenToWebView()
             }
         }
     }
     
+    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        handleLoadError(webView: webView)
+    }
     
+    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+        handleLoadError(webView: webView)
+    }
+  
+
+    var webViewLoadFailedVcObj:webViewLoadFailedVc?
+    func removeWebViewLoadFailedView(webView: WKWebView) {
+        if webViewLoadFailedVcObj != nil{
+            if webView.subviews.contains(webViewLoadFailedVcObj!.view){
+                webViewLoadFailedVcObj?.view.removeFromSuperview()
+            }
+        }
+    }
+   
+    func handleLoadError(webView: WKWebView) {
+        if webViewLoadFailedVcObj != nil{
+            if webView.subviews.contains(webViewLoadFailedVcObj!.view){
+                return;
+            }
+        }
+        webViewLoadFailedVcObj = getWebViewLoadFailedVcObject()
+        webViewLoadFailedVcObj!.customDelegate = self
+        webViewLoadFailedVcObj?.webView = webView
+        webView.addSubview(webViewLoadFailedVcObj!.view)
+        webView.addConstraints(subView: webViewLoadFailedVcObj!.view)
+    }
+    
+    func reloadClicked(webView:WKWebView){
+        loadWebView()
+    }
     
     override func viewWillAppear() {
         preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: viewWidthDefault, height: viewHeightDefault))
@@ -80,7 +122,16 @@ class setUpVc: NSViewController, WKNavigationDelegate {
     }
 
     func setAccessTokenToWebView(){
-        let stringJson1 = "{\"access_token\":\"\(appdelegate!.credential?.accessToken ?? "")\",\"type\":\"mac\",\"lang\":\"\(currentLanguageCode)\"}"
+        var theme = "LIGHT"
+        if preferencesWindowControllerObj != nil{
+            if preferencesWindowControllerObj!.window!.hasDarkAppearance{
+                theme = "DARK"
+            }else {
+                theme = "LIGHT"
+            }
+        }
+        let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex].webFontName
+        let stringJson1 = "{\"access_token\":\"\(appdelegate!.credential?.accessToken ?? "")\",\"type\":\"mac\",\"lang\":\"\(currentLanguageCode)\",\"theme\":\"\(theme)\",\"font\":\"\(selectedFont)\"}"
         
         let javascript = "loadAccessTokenForStats(\(stringJson1));"
         

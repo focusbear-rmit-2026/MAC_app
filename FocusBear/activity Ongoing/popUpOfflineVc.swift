@@ -36,7 +36,7 @@ class popUpOfflineVc: NSViewController {
     }
     
     @IBAction func btnIAmOnlineClicked(_ sender: Any) {
-        addLog(text: "popUpOfflineVc   btnIAmOnlineClicked")
+        addLog(text: "[user-action] popUpOfflineVc   btnIAmOnlineClicked")
         
         if Reachability.isConnectedToNetwork() == true {
             internetWorking()

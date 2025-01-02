@@ -10,6 +10,7 @@ import Cocoa
 
 class tryBlockUrlVc: NSViewController {
 
+    @IBOutlet weak var btnClickOpenUrl: underLineButton!
     @IBOutlet weak var btnLeft: Button!
     @IBOutlet weak var btnContinue: Button!
     @IBOutlet weak var lblDescription: NSTextField!
@@ -20,23 +21,26 @@ class tryBlockUrlVc: NSViewController {
         case _NOTHING_ = 111, _DID_NOT_WORKED_
     }
     var tryBlockState:CURRENTBLOCKSTATE = ._NOTHING_
-    
+    var blockedUrlString = ""
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
         lblTitle.stringValue = "Distraction Shield activated!"
-        var description = "Try it out - Please attemp to access <BLOCKED_URL> through your web browser. It should block the site."
-
-        btnContinue.title = "It blocked it!"
-        btnLeft.title = "It didn't block it 😒"
-        imgView.image = #imageLiteral(resourceName: "img_BlockedPage")
+        var description = "Try opening <BLOCKED_URL>. Focus Bear will help you be more intentional with how you use the site."
+        var buttonOpenUrlText = "Click here to open <BLOCKED_URL> now"
+        
+        
+        btnContinue.title = "It didn't stop me at all"
+        btnLeft.title = "It made me more intentional"
+        imgView.image = #imageLiteral(resourceName: "img_BlockedPageIntention")
         tryBlockState = ._NOTHING_
         
         if let dic = configjson.value(forKey: "tryBlockUrlVcInfo") as? NSDictionary{
             lblTitle.stringValue = dic.value(forKey: "titleShieldActivated") as? String ?? lblTitle.stringValue
-            description = dic.value(forKey: "descriptionTryBlockText") as? String ?? description
-            btnContinue.title = dic.value(forKey: "buttonItBlockedText") as? String ?? btnContinue.title
-            btnLeft.title = dic.value(forKey: "buttonDidNotBlockedText") as? String ?? btnLeft.title
+            description = dic.value(forKey: "descriptionTryIntentionText") as? String ?? description
+            btnContinue.title = dic.value(forKey: "buttonItBlockedNewText") as? String ?? btnContinue.title
+            btnLeft.title = dic.value(forKey: "buttonDidNotBlockedNewText") as? String ?? btnLeft.title
+            buttonOpenUrlText = dic.value(forKey: "buttonOpenUrlText") as? String ?? buttonOpenUrlText
         }
         
         
@@ -55,8 +59,28 @@ class tryBlockUrlVc: NSViewController {
         if url.isEmpty{
             url = "facebook.com"
         }
+        blockedUrlString = url
+        let descriptionText = description.replacingOccurrences(of: "<BLOCKED_URL>", with: url)
+        buttonOpenUrlText = buttonOpenUrlText.replacingOccurrences(of: "<BLOCKED_URL>", with: url)
+        btnClickOpenUrl.title = buttonOpenUrlText
         
-        lblDescription.stringValue = description.replacingOccurrences(of: "<BLOCKED_URL>", with: url)
+        lblDescription.stringValue = descriptionText
+        if let location = description.indexOf(target: "<BLOCKED_URL>"){
+            let attributedString = NSMutableAttributedString(string: descriptionText)
+            
+            
+            if let font: NSFont = NSFontManager.shared.font(
+                withFamily: "Verdana",
+                traits: NSFontTraitMask(rawValue: NSFontTraitMask.RawValue(NSFontItalicTrait)),
+                weight: 3,
+                size: lblDescription.font?.pointSize ?? 20
+            ){
+                
+                attributedString.addAttribute(NSAttributedString.Key.font, value: font, range: NSRange(location:location,length:(url.count)))
+                lblDescription.attributedStringValue = attributedString
+            }
+        }
+        
         
         
         if let blockedUrls = UserDefaults.standard.object(forKey: kUserdefaultsBlockedUrlsFromOnboarding) as? [[String:Any]]{
@@ -68,21 +92,32 @@ class tryBlockUrlVc: NSViewController {
                     }
                 }
             }
-//            UserDefaults.standard.set(SettingsManagerObject.arrBlockedUrls, forKey: SettingsManagerObject.kUserdefaultsArrBlockedUrls)
-//            UserDefaults.standard.removeObject(forKey: kUserdefaultsBlockedUrlsFromOnboarding)
         }
         btnLeft.buttonColor = NSColor.white.cgColor
+        btnClickOpenUrl.isHidden = false
         
         allApiObject.capturePosthog(event: "distraction-shield-activated-shown", metadata: [:])
+        addLog(text: "[user-action] distraction-shield-activated-shown")
     }
     
+    override func viewDidAppear() {
+        showOnboardingProgress(view: self.view, progress: 24)
+        showOnboardingBellIcon(view: self.view, screen: "distraction-shield-activated-screen")
+        tryBlockingVcShownInOnboarding = true
+    }
+    
+    override func viewWillDisappear() {
+        hideOnboardingProgress(view: self.view)
+        hideOnboardingBellIcon(view: self.view)
+    }
     
     @IBAction func btnLeftClicked(_ sender: Any) {
+        btnClickOpenUrl.isHidden = true
         if tryBlockState == ._NOTHING_{
             allApiObject.capturePosthog(event: "button-didnt-blocked-clicked", metadata: [:])
-            
+            addLog(text: "[user-action] tryBlockUrlVc:- button didnt blocked clicked")
             lblTitle.stringValue = "Oops! Which browser did you try?"
-            lblDescription.stringValue = "Did you use Safari or Chrome?\nWe can only block if you use those browsers."
+            lblDescription.stringValue = "Did you use Safari or Chrome?\nWe can only block if you use those browsers." 
             btnLeft.title = "Still not working"
             btnContinue.title = "I just tried those browsers and it worked!"
             
@@ -96,34 +131,33 @@ class tryBlockUrlVc: NSViewController {
             tryBlockState = ._DID_NOT_WORKED_
             imgView.image = #imageLiteral(resourceName: "img_browsers")
         }else if tryBlockState == ._DID_NOT_WORKED_{
+            addLog(text: "[user-action] tryBlockUrlVc:- button still not working clicked")
             allApiObject.capturePosthog(event: "button-still-not-working-clicked", metadata: [:])
-            let alert = NSAlert()
-            alert.setSharingType()
-            var messageText = "Sorry about that 😓 Any chance you could email us (team@focusbear.io) and we'll try and fix it for you?"
-            
-
-            if let dic = configjson.value(forKey: "tryBlockUrlVcInfo") as? NSDictionary{
-                messageText = dic.value(forKey: "emailUsText") as? String ?? messageText
-            }
-            
-            alert.messageText = messageText
-            alert.addButton(withTitle: buttonOkText)
-            
-            
-            alert.beginSheetModal(for: self.view.window!, completionHandler: {result in
-                getWelcomeOnboardingVcObject().isURlBlockedSuccessfully = false
-                self.view.window?.contentViewController = getWelcomeOnboardingVcObject()
-            })
+            UserDefaults.standard.set(true, forKey: kUserdefaultsFirstRun)
+            self.presentAsSheet(getAskDetailsNotBlockingVcObject())
         }
     }
     @IBAction func btnRightClicked(_ sender: Any) {
+        btnClickOpenUrl.isHidden = true
         if tryBlockState == ._NOTHING_{
+            addLog(text: "[user-action] tryBlockUrlVc:- button blocked clicked")
             allApiObject.capturePosthog(event: "button-blocked-clicked", metadata: [:])
         }else{
+            addLog(text: "[user-action] tryBlockUrlVc:- button just tried those browsers clicked")
             allApiObject.capturePosthog(event: "button-just-tried-those-browsers-clicked", metadata: [:])
         }
-        getWelcomeOnboardingVcObject().isURlBlockedSuccessfully = true
-        self.view.window?.contentViewController = getWelcomeOnboardingVcObject()
+        UserDefaults.standard.set(true, forKey: kUserdefaultsFirstRun)
+        self.view.window?.contentViewController = getAskAccountVcObject()
     }
     
+    @IBAction func btnOpenUrlClicked(_ sender: Any) {
+        addLog(text: "[user-action] tryBlockUrlVc:- btnOpenUrlClicked")
+        if !blockedUrlString.lowercased().contains("http://") && !blockedUrlString.lowercased().contains("https://"){
+            blockedUrlString = "http://"+blockedUrlString
+        }
+        if let url = URL(string: blockedUrlString){
+            NSWorkspace.shared.open(url)
+        }
+    }
 }
+

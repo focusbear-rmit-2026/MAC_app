@@ -113,9 +113,6 @@ class onboardingCardsVc: NSViewController {
         }
         
         isHabitsDisabled = true// beacuse do not neet to show habit card
-//        if let val = UserDefaults.standard.object(forKey: kUserdefaultsIsHabitsDisabled) as? Bool{
-//            isHabitsDisabled = val
-//        }
         if isHabitsDisabled{
             arrFinalCurrentDic = arrCurrentDic
             arrFinalCurrentDic.remove(at: 1)
@@ -257,14 +254,14 @@ class onboardingCardsVc: NSViewController {
     }
     
     @IBAction func btnBackClicked(_ sender: Any) {
-        addLog(text:"onboardingCardsVc:- btnBackClicked")
+        addLog(text:"[user-action] onboardingCardsVc:- btnBackClicked")
         currentSlideIndex -= 1
         recheckSlideState()
     }
     
     @IBAction func btnGotItClicked(_ sender: Any) {
         if currentSlideIndex == arrFinalCurrentDic.count - 1{
-            addLog(text:"onboardingCardsVc:- btnGotItClicked")
+            addLog(text:"[user-action] onboardingCardsVc:- btnGotItClicked")
 //            shouldShowOnboardingBlockedUrlsView = false//
 //            if shouldShowOnboardingBlockedUrlsView{
 //                self.view.window?.windowController?.contentViewController = getOnboardingBlockedUrlsVcObject()
@@ -274,7 +271,7 @@ class onboardingCardsVc: NSViewController {
 //            }
             self.view.window?.contentViewController = getHowHeardVcObj()
         }else{
-            addLog(text:"onboardingCardsVc:- btnNextClicked")
+            addLog(text:"[user-action] onboardingCardsVc:- btnNextClicked")
             allApiObject.capturePosthog(event: "reviewed-onboarding-tip", metadata: [:])
             currentSlideIndex += 1
             

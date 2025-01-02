@@ -10,8 +10,8 @@ import Cocoa
 
 class mainWindowController: NSWindowController, NSWindowDelegate {
     
-    let smallWindowMinWidth = 1371
-    let smallWindowMinHeight = 768
+    let smallWindowMinWidth = 1360
+    let smallWindowMinHeight = 660
     
     override func windowDidLoad() {
         super.windowDidLoad()
@@ -28,7 +28,6 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
         }
         
         self.window?.appearance = getAppAppearance()
-        
         self.contentViewController =  mainViewControllerObj
     }
     
@@ -46,7 +45,7 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
         self.window?.title = ""
         self.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.numberOfWindowLevelKeys)))
         
-        if isMainWindowLodded{
+        if isMainWindowLoaded{
             mainViewControllerObj!.boxTopButtons.isHidden = false
             mainViewControllerObj!.startDateTimer()
             if self.window?.isVisible ?? false{
@@ -68,7 +67,7 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
         self.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.floatingWindow)))
         self.window?.title = appName
         
-        if isMainWindowLodded{
+        if isMainWindowLoaded{
             mainViewControllerObj!.boxTopButtons.isHidden = true
             mainViewControllerObj!.dateTimeTimer?.invalidate()
             mainViewControllerObj!.lblCurrentDateTime.isHidden = true
@@ -82,7 +81,12 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
             if let common = configjson.value(forKey: "common") as? NSDictionary{
                 mainViewControllerObj?.btnAbort.title = common.value(forKey: "buttonPostponeText") as? String ?? btnTitle
             }
-            
+            if currentState == ._ASK_APP_WORK_{
+                let btnTitle = "Skip"
+                if let dic = configjson.value(forKey: "welcomeInfo") as? NSDictionary{
+                    mainViewControllerObj?.btnAbort.title = dic.value(forKey: "buttonSkipText") as? String ?? btnTitle
+                }
+            }
         }
     }
     

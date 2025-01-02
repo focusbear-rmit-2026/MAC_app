@@ -1,6 +1,6 @@
 import JWTDecode
 
-struct User {
+struct AuthUser {
     let id: String
     let name: String
     let email: String
@@ -11,7 +11,7 @@ struct User {
     let userId: String
 }
 
-extension User {
+extension AuthUser {
     init?(from idToken: String) {
         guard let jwt = try? decode(jwt: idToken),
               let id = jwt.subject

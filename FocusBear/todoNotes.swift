@@ -1,5 +1,5 @@
 //
-//  todoNotes.swift
+//
 //  Focus Bear
 //
 //  Created by Prashant Sawnani on 04/07/23.
@@ -21,14 +21,12 @@
 
 
 //todo always add new search items in search
-//todo always seet new height if new item added in preferences
+// always seet new height if new item added in preferences
 //there will be no habit display on first day
 
-//6/7
 
-//font done
-// yelow box don
-// text view chamge font done 
-// appointment box done 
-// pomodoro time corrction done
+//annnoying things
+//showing pomodoro window again if user close pomodoro window 1fter 10 minutes
+
+
 

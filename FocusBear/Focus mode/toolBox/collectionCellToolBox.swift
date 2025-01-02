@@ -36,7 +36,6 @@ class collectionCellToolBox: NSCollectionViewItem {
     }
     
     override func mouseEntered(with event: NSEvent) {
-        print("mouseEntered")
         if event.trackingArea == trackingArea{
             if !appName.isEmpty{
                 showTooltip(sender: self.view, msg: appName, preferredEdge: NSRectEdge.maxY, maxWidthVal:230)
@@ -44,14 +43,10 @@ class collectionCellToolBox: NSCollectionViewItem {
         }
     }
     override func mouseExited(with event: NSEvent) {
-        print("mouseExited")
-       // if !appName.isEmpty{
-            if popoverTooltip != nil{
-                if popoverTooltip!.isShown{
-                    popoverTooltip?.close()
-                }
+        if popoverTooltip != nil{
+            if popoverTooltip!.isShown{
+                popoverTooltip?.close()
             }
-       // }
+        }
     }
-    
 }

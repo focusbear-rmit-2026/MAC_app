@@ -29,7 +29,7 @@ class incorrectTimeVc: NSViewController {
     }
     
     @IBAction func btnIAmReadyClicked(_ sender: Any) {
-        addLog(text: "incorrectTimeVc:- btnIAmReadyClicked")
+        addLog(text: "[user-action] incorrectTimeVc:- btnIAmReadyClicked")
         self.view.window?.close()
         NSApplication.shared.stopModal()
     }
@@ -63,7 +63,7 @@ class incorrectTimeVc: NSViewController {
         }
     }
     @IBAction func btnInstructionsClicked(_ sender: Any) {
-        addLog(text: "incorrectTimeVc:- btnInstructionsClicked")
+        addLog(text: "[user-action] incorrectTimeVc:- btnInstructionsClicked")
         if let url = URL(string: "https://support.apple.com/en-in/guide/mac-help/mchlp2996/mac"){
             NSWorkspace.shared.open(url)
         }

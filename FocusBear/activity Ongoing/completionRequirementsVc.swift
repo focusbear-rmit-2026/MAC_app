@@ -31,7 +31,7 @@ class completionRequirementsVc: NSViewController {
         lblTitle.stringValue = textCompletionRequirements.replacingOccurrences(of: "<REQUIREMENTS>", with: title)
     }
     @IBAction func btnDoneClicked(_ sender: Any) {
-        self.view.window?.close()
         timerViewcontrollerObj?.btnIAmDoneClicked(self)
+        self.view.window?.close()
     }
 }

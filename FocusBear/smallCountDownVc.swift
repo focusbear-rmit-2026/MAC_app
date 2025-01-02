@@ -10,6 +10,7 @@ import Cocoa
 
 class smallCountDownVc: NSViewController {
 
+    @IBOutlet weak var btnSkip: underLineButton!
     @IBOutlet weak var btnClose: cursorButton!
     @IBOutlet weak var lblTimerTopSpaceConstraint: NSLayoutConstraint!
     @IBOutlet weak var btnPostpone: underLineButton!
@@ -24,7 +25,12 @@ class smallCountDownVc: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
+        btnSkip.title = "Skip"
+        btnSkip.isHidden = true
         
+        if let dic = configjson.value(forKey: "welcomeInfo") as? NSDictionary{
+            btnSkip.title = dic.value(forKey: "buttonSkipText") as? String ?? btnSkip.title
+        }
     }
     
     func closeTimerBox(){
@@ -38,12 +44,37 @@ class smallCountDownVc: NSViewController {
     override func viewWillAppear() {
 //        btnPostpone.isHidden = true
         //****** Allow  postpone from timer window in morning evening routine in allow app case******//#213  date- 5/9/22
-        
     }
     
+    @IBAction func btnSkipClicked(_ sender: Any) {
+        addLog(text: "[user-action] smallCountDownVc:- button Skip Clicked")
+        if (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_) && currentAction == ._INPROGRESS_{
+            isLastActivityStoppedInRunningState = true
+            lastActivityStoppedTimerCount = timerViewcontrollerObj?.currentTimer ?? 0
+            mainWindowControllerObj?.showWindow(self)
+            showBlankWindowInSecondaryMonitor()
+            timerViewcontrollerObj?.btnPauseClicked(self)
+            timerViewcontrollerObj?.menuItemSkipHabitClicked()
+            if smallCountDownWcObj != nil{
+                if smallCountDownWcObj!.window?.isVisible ?? false{
+                    getsmallCountDownVcObject().closeTimerBox()
+                }
+            }
+            
+            if relaxModeWcObj != nil{
+                if relaxModeWcObj!.window?.isVisible ?? false{
+                    relaxModeVcObj?.closeTimerBox()
+                }
+            }
+            
+            self.view.window?.close()
+        }else{
+            self.view.window?.close()
+        }
+    }
     @IBAction func btnPostponeClicked(_ sender: Any) {
         if (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_) && !isFocusBreak{
-            addLog(text:"button Postpone Clicked")
+            addLog(text:"[user-action] smallCountDownVc:- button Postpone Clicked")
             mainWindowControllerObj?.window?.setIsVisible(true)
             showBlankWindowInSecondaryMonitor()
             mainViewControllerObj?.btnAbortClicked(self)
@@ -60,7 +91,8 @@ class smallCountDownVc: NSViewController {
             mainViewControllerObj?.timerGiveOneMoreMinut = nil
             mainViewControllerObj?.showFocusSummaryView()
         }else if currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_MORNING_HABIT_{
-            addLog(text:"button Extend postpone time Clicked")
+            addLog(text:"[user-action] button Extend postpone time Clicked")
+            lastCurrentState = currentState 
             closeTimerBox()
             showEasyPostponeWindow()
         }
@@ -70,19 +102,19 @@ class smallCountDownVc: NSViewController {
         if isFocusBreak{
             closeTimerBox()
         }else{
-//            let (_,m,_) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
-//            if m < 2{
-//                closeTimerBox()
-//            }else{
-//                self.view.window?.alphaValue = 0
-//            }
             self.view.window?.alphaValue = 0
-            
-            
-            
             if (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._ACTIVITY_ || currentState == ._SPECIAL_ACTIVITY_) && !(mainWindowControllerObj?.window?.isVisible ?? false){
                 if currentHabitPlaying != nil || currentActivityPlaying != nil{
-                    NSApp.hide(self)
+                    var isAnyStanderdWindowVisible = false
+                    
+                    for win in NSApp.windows{
+                        if win.isVisible && win.hasTitleBar{
+                            isAnyStanderdWindowVisible = true
+                        }
+                    }
+                    if !isAnyStanderdWindowVisible{
+                        NSApp.hide(self)
+                    }
                 }
             }
         }
@@ -137,6 +169,7 @@ class smallCountDownVc: NSViewController {
             if let common = configjson.value(forKey: "common") as? NSDictionary{
                 btnPostpone.title = common.value(forKey: "buttonPostponeText") as? String ?? btnPostpone.title
             }
+            btnSkip.isHidden = false
         }else if currentState == ._FOCUS_SUMMARY_{
             if SettingsManagerObject.selectedFontIndex == intelOneMonoFontIndex || SettingsManagerObject.selectedFontIndex == openDyslexicFontIndex{
                 lblTimerTopSpaceConstraint.constant = lblTopSpaceInBigFont
@@ -148,6 +181,7 @@ class smallCountDownVc: NSViewController {
             if let common = configjson.value(forKey: "common") as? NSDictionary{
                 btnPostpone.title = common.value(forKey: "buttonBackToMyHabitsText") as? String ?? btnPostpone.title
             }
+            btnSkip.isHidden = true
         }else if (currentState == ._POSTPON_MORNING_HABIT_ || currentState == ._POSTPON_EVENING_HABIT_) && !msg.isEmpty{
             
             if SettingsManagerObject.selectedFontIndex == intelOneMonoFontIndex || SettingsManagerObject.selectedFontIndex == openDyslexicFontIndex{
@@ -160,9 +194,11 @@ class smallCountDownVc: NSViewController {
             if let common = configjson.value(forKey: "common") as? NSDictionary{
                 btnPostpone.title = common.value(forKey: "buttonPostponeText") as? String ?? btnPostpone.title
             }
+            btnSkip.isHidden = true
         }else{
             lblTimerTopSpaceConstraint.constant = lblTopSpaceDefault
             btnPostpone.isHidden = true
+            btnSkip.isHidden = true
         }
         self.view.window?.alphaValue = 1
         

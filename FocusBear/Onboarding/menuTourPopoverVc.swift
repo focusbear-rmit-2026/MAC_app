@@ -8,6 +8,11 @@
 
 import Cocoa
 
+protocol TourDelegate {
+    func buttonNextClicked()
+    func buttonCloseClicked()
+}
+
 class menuTourPopoverVc: NSViewController {
 
     @IBOutlet weak var lblMainTitle: NSTextField!
@@ -22,24 +27,25 @@ class menuTourPopoverVc: NSViewController {
     @IBOutlet weak var lblTitle: NSTextField!
     
     var arrList = [String]()
+    var delegate: TourDelegate?
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
         tblView.delegate = self
         tblView.dataSource = self
         tblView.reloadData()
-        lblMainTitle.stringValue = "Focus Bear Menu"
-        if let menuTourVcInfo = configjson.value(forKey: "menuTourVcInfo") as? NSDictionary{
-            lblMainTitle.stringValue = menuTourVcInfo.value(forKey: "title") as? String ?? lblTitle.stringValue
-        }
+        
     }
     
-    func showCurrentMessage(title:String, description:String, buttonTitle:String, indexText:String, arrList:[String], progress:Int){
+    func showCurrentMessage(title:String, description:String, buttonTitle:String, indexText:String, arrList:[String], progress:Int, progressMaxValue:Int){
+        addLog(text: "menuTourVc showCurrentMessage")
         lblTitle.stringValue = title
         lblDescription.stringValue = description
         btnNext.title = buttonTitle
         lblCurrentIndex.stringValue = indexText
         progressBar.doubleValue = Double(progress)
+        progressBar.maxValue = Double(progressMaxValue)
         self.arrList = arrList
         if arrList.count == 0{
             scrollView.isHidden = true
@@ -56,10 +62,10 @@ class menuTourPopoverVc: NSViewController {
         }
     }
     @IBAction func btnCloseClicked(_ sender: Any) {
-        menuTourVcObj!.btnCloseClicked(self)
+        delegate?.buttonCloseClicked()
     }
     @IBAction func btnNextClicked(_ sender: Any) {
-        menuTourVcObj!.btnNextClickedFromPopover()
+        delegate?.buttonNextClicked()
     }
 }
 

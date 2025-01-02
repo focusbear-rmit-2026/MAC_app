@@ -85,6 +85,8 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
         
 //        textFieldQuantityFormatter.maximumFractionDigits = 2
 //        textFieldQuantityFormatter.minimumFractionDigits = 0
+        
+//        tblView.allowsColumnSelection = true
     }
     
     
@@ -113,17 +115,13 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
         subTitle = subTitle.replacingOccurrences(of: "<activity>", with: name)
         self.logQuantityQuestion = subTitle
         lblSubTitle.stringValue = subTitle
-//        textFieldCount.selectText(self)
-//        textFieldCount.currentEditor()?.selectedRange = NSRange(location: 0, length: 0)
         btnOk.isEnabled = true
         self.take_notes = take_notes
         self.notes = notes
-//        currentQuestionIndex = 0
         self.logQuantityQuestions = logQuantityQuestions
-       // showCurrentQuestion()
-        var height = self.logQuantityQuestions.count * 69
-        if height > 276{
-            height = 276
+        var height = self.logQuantityQuestions.count * 74
+        if height > 296{
+            height = 296
         }
         
         
@@ -139,20 +137,48 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
         tblView.reloadData()
         
         for i in 0..<tblView.numberOfRows{
-            if self.logQuantityQuestions[i].maxValue == 0 && self.logQuantityQuestions[i].minValue == 0{
-                tblView.scrollRowToVisible(i)
-                if let item = tblView.view(atColumn: 0, row: i, makeIfNecessary: true) as? tblCellLogQuantity{
-                    if item.textFieldCount.isHidden == false{
-                        item.textFieldCount.setFocus()
-                    }
+            if let item = tblView.view(atColumn: 0, row: i, makeIfNecessary: true) as? tblCellLogQuantity{
+                if item.textFieldCount.isHidden == false{
+                    tblView.scrollRowToVisible(i)
+                    item.textFieldCount.setFocus()
+                    break;
+                }else if item.lblSliderValue.isHidden == false{
+                    tblView.scrollRowToVisible(i)
+                    item.lblSliderValue.setFocusAndSelectText()
+                    break;
                 }
-                break;
             }
         }
     }
 
+    func tabClickedSelectNextTextField()->Bool{
+        if logQuantityQuestions.count > 1{
+            for row in 0..<logQuantityQuestions.count{
+                if let cell = tblView.view(atColumn: 0, row: row, makeIfNecessary: true) as? tblCellLogQuantity{
+                    if cell.textFieldCount.isFirstResponder || cell.lblSliderValue.isFirstResponder{
+                        var newRow = row
+                        if row == logQuantityQuestions.count - 1{
+                            newRow = 0
+                        }else{
+                            newRow = row + 1
+                        }
+                        tblView.scrollRowToVisible(newRow)
+                        if let cell = tblView.view(atColumn: 0, row: newRow, makeIfNecessary: true) as? tblCellLogQuantity{
+                            if !cell.lblSliderValue.isHidden{
+                                cell.lblSliderValue.setFocus()
+                            }else{
+                                cell.textFieldCount.setFocus()
+                            }
+                            return true
+                        }
+                    }
+                }
+            }
+        }
+        return false
+    }
     @IBAction func btnCancelClicked(_ sender: Any) {
-        addLog(text:"Log quantity-btnCancelClicked")
+        addLog(text:"[user-action] Log quantity-btnCancelClicked")
         if lastActivityPerformedTime == nil{// nil is not possible but we are doing this
             lastActivityPerformedTime = Date()
         }
@@ -186,10 +212,7 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
             logType = "special activity"
         }
 
-        addEntryInStatsCsv(logType: logType, activity: name, durationInSeconds: durationInSeconds, quantityQuestion: logQuantityQuestion, quantityLogged: "0.0", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "")
-
-
-
+        addEntryInStatsCsv(logType: logType, activity: name, durationInSeconds: durationInSeconds, quantityQuestion: logQuantityQuestion, quantityLogged: "0.0", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "", tags:"")
 
         if take_notes == END_OF_ACTIVITY{
             mainViewControllerObj!.showTakeNotesView()
@@ -224,57 +247,15 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
         }
         
     }
-//    @IBAction func sliderClicked(_ sender: Any) {
-//        let val = Double(round(100 * sliderQuantity.doubleValue) / 100)
-//        lblSliderValue.stringValue = "\(val)"
-//    }
+
     
     @IBAction func btnOkClicked(_ sender: Any) {
-        addLog(text:"Log quantity-btnOkClicked")
+        addLog(text:"[user-action] Log quantity-btnOkClicked")
         
         if lastActivityPerformedTime == nil{// nil is not possible but we are doing this
             lastActivityPerformedTime = Date()
         }
-//        if textFieldCount.isHidden == false{//
-//            if textFieldCount.stringValue.isEmpty{
-//                lblError.isHidden = false//
-//                lblError.stringValue = "Log quantity can not be empty."
-//                if let logQuantityInfo = configjson.value(forKey: "logQuantityInfo") as? NSDictionary{
-//                    if let quantityIsEmptyText = logQuantityInfo.value(forKey: "quantityIsEmptyText") as? String{
-//                        lblError.stringValue = quantityIsEmptyText
-//                    }
-//                }
-//                return;
-//            }
-//        }
 
-
-//        var doubleVal:Double = 0
-//
-//        if textFieldCount.isHidden == false{
-//            if let val = Double(textFieldCount.stringValue){
-//                doubleVal = val
-//                //what if user clicked on revise quantity during shutoff 30 seconds timer(last evening habit)
-//            }else{
-//                lblError.isHidden = false
-//                lblError.stringValue = "Please enter a valid value."
-//                if let logQuantityInfo = configjson.value(forKey: "logQuantityInfo") as? NSDictionary{
-//                    if let enterValidValueText = logQuantityInfo.value(forKey: "enterValidValueText") as? String{
-//                        lblError.stringValue = enterValidValueText
-//                    }
-//                }
-//            }
-//
-//        }else{
-//            doubleVal = sliderQuantity.doubleValue
-//        }
-//        logQuantityQuestions[currentQuestionIndex].quantity = doubleVal
-
-        
-        
-        
-        
-//        return;
         let startTime = getStringFromDate(date: lastActivityPerformedTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")
 
         var logType = ""
@@ -291,7 +272,7 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
         }
 
         if !isReviseQuantity{
-            addEntryInStatsCsv(logType: logType, activity: name, durationInSeconds: durationInSeconds, quantityQuestion: logQuantityQuestion, quantityLogged: "\(logQuantityQuestions[0].quantity)", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "")
+            addEntryInStatsCsv(logType: logType, activity: name, durationInSeconds: durationInSeconds, quantityQuestion: logQuantityQuestion, quantityLogged: "\(logQuantityQuestions[0].quantity)", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "", tags:"")
         }else{
             replaceLastEntryInStatsCsv(logType: logType, activity: name, durationInSeconds: durationInSeconds, quantityQuestion: logQuantityQuestion, quantityLogged: "\(logQuantityQuestions[0].quantity)", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "")
         }
@@ -374,6 +355,28 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
     func controlTextDidChange(_ obj: Notification) {
         if let textfield = obj.object as? NSTextField{
             lblError.isHidden = true
+            
+            if textfield.tag < 0{
+                return;
+            }
+            
+            if let item = tblView.view(atColumn: 0, row: textfield.tag, makeIfNecessary: false) as? tblCellLogQuantity{
+                if item.lblSliderValue == textfield{
+                    let value = textfield.stringValue
+                    let result = value.trimmingCharacters(in: CharacterSet(charactersIn: "0123456789.").inverted)
+                    let doubleValue = Double(result) ?? item.sliderQuantity.doubleValue
+                    if doubleValue < item.sliderQuantity.minValue{
+                        //value = item.sliderQuantity.minValue
+                    }else if doubleValue > item.sliderQuantity.maxValue{
+                        //value = item.sliderQuantity.maxValue
+                    }else{
+                        item.sliderQuantity.doubleValue = doubleValue
+                        logQuantityQuestions[textfield.tag].quantity = doubleValue
+                        item.lblSliderValue.stringValue = result
+                    }
+                    
+                }
+            }
         }
     }
     func controlTextDidEndEditing(_ obj: Notification) {
@@ -409,13 +412,13 @@ extension logQuantityVc:NSTableViewDelegate, NSTableViewDataSource {
             if row < logQuantityQuestions.count{
                 if logQuantityQuestions[row].maxValue == 0 && logQuantityQuestions[row].minValue == 0{
                     cell.textFieldCount.isHidden = false
-                    //cell.textFieldCount.setFocus()
                     cell.sliderQuantity.isHidden = true
                     cell.lblSliderValue.isHidden = true
                     cell.textFieldCount.delegate = self
                     cell.textFieldCount.tag = row
                     let formatter = TwoDigitFormatter()
                     cell.textFieldCount.formatter = formatter
+                    cell.topSpaceStackView.constant = 10
                     cell.lblMinimumDescription.isHidden = true
                     cell.lblMaximumDescription.isHidden = true
                     cell.lblMinimum.isHidden = true
@@ -428,10 +431,11 @@ extension logQuantityVc:NSTableViewDelegate, NSTableViewDataSource {
                     cell.sliderQuantity.maxValue = Double(logQuantityQuestions[row].maxValue)
                     cell.lblSliderValue.isHidden = false
                     cell.sliderQuantity.doubleValue = logQuantityQuestions[row].quantity
-                    
+                    cell.topSpaceStackView.constant = 24
                     cell.lblMinimum.isHidden = false
                     cell.lblMaximum.isHidden = false
-                    
+                    cell.lblSliderValue.delegate = self
+                    cell.lblSliderValue.tag = row
                     let val = Double(round(100 * cell.sliderQuantity.doubleValue) / 100)
                     cell.lblSliderValue.stringValue = "\(val)"
                     if logQuantityQuestions[row].minValueDescription.isEmpty{
@@ -466,10 +470,6 @@ extension logQuantityVc:NSTableViewDelegate, NSTableViewDataSource {
         return NSTableCellView()
     }
     
-//    func tableViewSelectionDidChange(_ notification: Notification) {
-//
-//    }
-//
     @objc func sliderClicked(sender:NSSlider){
         if let item = tblView.view(atColumn: 0, row: sender.tag, makeIfNecessary: false) as? tblCellLogQuantity{
             if item.sliderQuantity == sender{

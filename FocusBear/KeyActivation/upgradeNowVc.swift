@@ -10,6 +10,7 @@ import Cocoa
 
 class upgradeNowVc: NSViewController {
 
+    @IBOutlet weak var btnContinue: underLineButton!
     @IBOutlet weak var btnUserId: NSButton!
     @IBOutlet weak var lblTitleUserId: NSTextField!
     @IBOutlet weak var textFieldUserId: NSTextField!
@@ -25,6 +26,10 @@ class upgradeNowVc: NSViewController {
     @IBOutlet weak var lblPointFirst: NSTextField!
     @IBOutlet weak var lblTitleAppName: NSTextField!
     @IBOutlet weak var imgView: NSImageView!
+    @IBOutlet weak var btnInfo: hoverInfoButton!
+    
+    var vcShownFromExpireUsageAlert = false
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
@@ -41,7 +46,7 @@ class upgradeNowVc: NSViewController {
         
         textFieldUserId.isEditable = false
         textFieldUserId.isSelectable = true
-        
+        btnContinue.title = "Continue with limited features"
         btnUserId.toolTip = "Copy user id"
         lblTitleUserId.stringValue = "Your user id:"
         
@@ -71,10 +76,8 @@ class upgradeNowVc: NSViewController {
             
             btnUserId.toolTip = upgradeNowVcInfo.value(forKey: "toolTipCopyId") as? String ?? btnUserId.toolTip
             lblTitleUserId.stringValue = upgradeNowVcInfo.value(forKey: "titleUserId") as? String ?? lblTitleUserId.stringValue
-            
+            btnContinue.title = upgradeNowVcInfo.value(forKey: "buttonContinueText") as? String ?? btnContinue.title
         }
-
-       
     }
     override func viewWillAppear() {
         addLog(text: "upgradeNowVc:- viewWillAppear.")
@@ -102,13 +105,16 @@ class upgradeNowVc: NSViewController {
         }
     }
     @IBAction func btnUpgradeNowClicked(_ sender: Any) {
-        addLog(text: "btnUpgradeNowClicked.")
-        let buynow_path = upgradeNowUrl
-        NSWorkspace.shared.open(URL(string: buynow_path)!)
-        upgradeButtonWasClicked = true
+        addLog(text: "[user-action] btnUpgradeNowClicked.")
+        allApiObject.capturePosthog(event: "upgrade-nag-button-upgrade-clicked", metadata: [:])
+//        let buynow_path = upgradeNowUrl
+//        NSWorkspace.shared.open(URL(string: buynow_path)!)
+        self.presentAsSheet(getManageSubscriptionVcObject())
+        
+//        upgradeButtonWasClicked = true// 
     }
     @IBAction func btnRestorePurchasesClicked(_ sender: Any) {
-        addLog(text: "btnRestorePurchasesClicked.")
+        addLog(text: "[user-action] btnRestorePurchasesClicked.")
         allApiObject.capturePosthog(event: "sync-payment-status", metadata: ["from":"upgrade_nag"])
         self.loader.startAnimation(self)
         self.btnRestorePurchases.isEnabled = false
@@ -130,5 +136,90 @@ class upgradeNowVc: NSViewController {
             }
             
         })
+    }
+    
+    func syncPaymentStatus(){
+        self.loader.startAnimation(self)
+        self.btnRestorePurchases.isEnabled = false
+        appdelegate?.renewToken(window: self.view.window!, completionHandler: {
+            DispatchQueue.main.async {
+                self.loader.stopAnimation(self)
+                self.btnRestorePurchases.isEnabled = true
+
+                if daysLeft > 0{
+                    self.view.window?.close()
+                }
+                
+                if !isPurchased && daysLeft <= 0{
+                    self.lblSubscriptionExpired.isHidden = false
+                }else{
+                    self.lblSubscriptionExpired.isHidden = true
+                }
+                
+            }
+            
+        })
+    }
+    @IBAction func btnContinueClicked(_ sender: Any) {
+        addLog(text: "[user-action] btnContinueClicked.")
+        allApiObject.capturePosthog(event: "upgrade-nag-button-continue-clicked", metadata: [:])
+        self.view.window?.close()
+        if !isAppInitialLodded{
+            appdelegate?.initialWork()
+        }
+        if (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._ACTIVITY_) && vcShownFromExpireUsageAlert{
+            mainWindowControllerObj?.showWindow(self)
+            showBlankWindowInSecondaryMonitor()
+            if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_{
+                firstViewControllerObj?.showConfirmRoutineDurationViewIfNeeded()
+            }
+        }
+        vcShownFromExpireUsageAlert = false
+    }
+    @IBAction func btnInfoClicked(_ sender: Any) {
+        
+        var titleBasicVersion = "Basic Version allow you access to limited features"
+        var pointSimplePomodoroText = "* Simple Pomodoro"
+        var pointLimitedBlockText = "* Block up to <COUNT> websites & apps"
+        var pointLimitedHabitsText = "* Limited Morning & Evening Routines"
+        var pointLimitedMicroBreaksText = "* Limited Micro-Breaks"
+        var pointNoGeekModeText = "* No access to Geek Mode"
+        
+        if let upgradeNowVcInfo = configjson.value(forKey: "upgradeNowVcInfo") as? NSDictionary{
+            titleBasicVersion = upgradeNowVcInfo.value(forKey: "titleBasicVersion") as? String ?? titleBasicVersion
+            pointSimplePomodoroText = upgradeNowVcInfo.value(forKey: "pointSimplePomodoroText") as? String ?? pointSimplePomodoroText
+            pointLimitedBlockText = upgradeNowVcInfo.value(forKey: "pointLimitedBlockText") as? String ?? pointLimitedBlockText
+            pointLimitedHabitsText = upgradeNowVcInfo.value(forKey: "pointLimitedHabitsText") as? String ?? pointLimitedHabitsText
+            pointLimitedMicroBreaksText = upgradeNowVcInfo.value(forKey: "pointLimitedMicroBreaksText") as? String ?? pointLimitedMicroBreaksText
+            pointNoGeekModeText = upgradeNowVcInfo.value(forKey: "pointNoGeekModeText") as? String ?? pointNoGeekModeText
+        }
+        
+        
+        pointLimitedBlockText = pointLimitedBlockText.replacingOccurrences(of: "<COUNT>", with: "\(alwaysBlockedUrlsCountInExpireApp)")
+        
+        var msg = titleBasicVersion
+
+        msg = msg + "\n\n"
+        msg = msg + pointSimplePomodoroText
+        
+        msg = msg + "\n"
+        msg = msg + pointLimitedBlockText
+        
+        
+        msg = msg + "\n"
+        msg = msg + pointLimitedHabitsText
+        
+        
+        msg = msg + "\n"
+        msg = msg + pointLimitedMicroBreaksText
+        
+        msg = msg + "\n"
+        msg = msg + pointNoGeekModeText
+        
+        
+//        if let setIntentionBlockedUrlsVcInfo = configjson.value(forKey: "setIntentionBlockedUrlsVcInfo") as? NSDictionary{
+//            msg = setIntentionBlockedUrlsVcInfo.value(forKey: "privacyNoteText") as? String ?? msg
+//        }
+        showTooltip(sender: btnInfo, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:350)
     }
 }

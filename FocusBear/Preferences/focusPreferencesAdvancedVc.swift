@@ -12,6 +12,24 @@ import TrueTime
 
 class focusPreferencesAdvancedVc: NSViewController {
     
+    @IBOutlet weak var popUpBtnFocusAlignmentScore: NSPopUpButton!
+    @IBOutlet weak var lblFocusAlignmentScore: NSTextField!
+    @IBOutlet weak var tblViewApps: NSTableView!
+    @IBOutlet weak var btnRemoveApp: cursorButton!
+    @IBOutlet weak var btnAddApp: cursorButton!
+    @IBOutlet weak var boxHeaderBlockUrlsAndApps: NSBox!
+    @IBOutlet weak var stackViewUrlsAndApps: NSStackView!
+    @IBOutlet weak var boxBlockApps: NSBox!
+    @IBOutlet weak var boxBlockUrls: NSBox!
+    @IBOutlet weak var btnShowBlockedUrlsAndApps: cursorButton!
+    @IBOutlet weak var lblTitleBlockedUrlsAndApps: NSTextField!
+    @IBOutlet weak var btnShowScripts: cursorButton!
+    @IBOutlet weak var lblTitleScripts: NSTextField!
+    @IBOutlet weak var lineSepraterScripts: NSBox!
+    @IBOutlet weak var boxShellScriptAfter: NSBox!
+    @IBOutlet weak var boxShellScriptBefore: NSBox!
+    @IBOutlet weak var boxAppleScriptAfter: NSBox!
+    @IBOutlet weak var boxAppleScriptBefore: NSBox!
     @IBOutlet weak var checkBoxRunShellAfterFocus: NSButton!
     @IBOutlet weak var checkBoxRunShellBeforeFocus: NSButton!
     
@@ -21,10 +39,12 @@ class focusPreferencesAdvancedVc: NSViewController {
     @IBOutlet weak var lineHorizontal: NSBox!
     @IBOutlet weak var boxTableView: NSBox!
     @IBOutlet weak var bgBox: NSBox!
-    @IBOutlet weak var lblInstruction: NSTextField!
-    @IBOutlet weak var btnAddUrl: NSButton!
-    @IBOutlet weak var btnRemoveUrl: NSButton!
-    @IBOutlet weak var lblTitle: NSTextField!
+    @IBOutlet weak var lblInstructionBlockedApps: NSTextField!
+    @IBOutlet weak var lblInstructionBlockedUrls: NSTextField!
+    @IBOutlet weak var btnAddUrl: cursorButton!
+    @IBOutlet weak var btnRemoveUrl: cursorButton!
+    @IBOutlet weak var lblTitleBlockedApps: NSTextField!
+    @IBOutlet weak var lblTitleBlockedUrls: NSTextField!
     @IBOutlet weak var tblView: NSTableView!
     @IBOutlet weak var lblUrlCurrentApplescriptAfter: NSTextField!
     @IBOutlet weak var lblUrlCurrentApplescriptBefore: NSTextField!
@@ -36,9 +56,19 @@ class focusPreferencesAdvancedVc: NSViewController {
     @IBOutlet weak var btnSelectAppleScriptAfterFocus: NSButton!
     @IBOutlet weak var btnOk: NSButton!
     
+    @IBOutlet weak var lblTitleTags: NSTextField!
+    @IBOutlet weak var btnInfoTags: hoverInfoButton!
+    
+    @IBOutlet weak var tokenField: NSTokenField!
+    @IBOutlet weak var btnDndInfo: hoverInfoButton!
+    @IBOutlet weak var checkBoxAutoDoNotDisturb: NSButton!
+    
     var isShellScriptBeforeFocusEdited = false
     var isShellScriptAfterFocusEdited = false
+    var toolTipDndMode = "Turn on Do Not Disturb automatically when starting a focus mode."
     
+    var defaultTokenMenu = NSMenu()
+    var arrAllTags = [String]()
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
@@ -46,10 +76,36 @@ class focusPreferencesAdvancedVc: NSViewController {
         textViewRunShelltAfterFocus.delegate = self
         textViewRunShelltBeforeFocus.delegate = self
         
+        tokenField.delegate = self
+        
+        lblFocusAlignmentScore.stringValue = "Show distracting site popup only when focus alignment score is less than"
+        
+        lblTitleScripts.stringValue = "Run scripts before/after habits"
+        lblTitleBlockedUrlsAndApps.stringValue = "Blocked URLs and Apps"
+        lblTitleBlockedApps.stringValue = "Blocked Apps"
+        lblInstructionBlockedApps.stringValue = "The Apps here will be blocked during this focus mode. Useful if you want to allow some apps but block others. For example, you could have Safari as an allowed app but block Google Chrome"
+        
+        
+        
+        lblTitleTags.stringValue = "Reporting Tags:"
+        if let focusPreferencesAdvancedInfo = configjson.value(forKey: "focusPreferencesAdvancedInfo") as? NSDictionary{
+            toolTipDndMode = focusPreferencesAdvancedInfo.value(forKey: "autoOnDoNotDisturbText") as? String ?? toolTipDndMode
+        }
+        
+        if let focusPreferencesInfo = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
+            checkBoxAutoDoNotDisturb.title = focusPreferencesInfo.value(forKey: "checkBoxDoNotDisturbText") as? String ?? checkBoxAutoDoNotDisturb.title
+            lblTitleTags.stringValue = focusPreferencesInfo.value(forKey: "titleTags") as? String ?? lblTitleTags.stringValue
+        }
+        
+        
+        checkBoxAutoDoNotDisturb.title = "Block Notifications while focusing"
+        
+        
+        
         checkBoxRunShellBeforeFocus.title = "Run shell script before starting focus mode."
         checkBoxRunShellAfterFocus.title = "Run shell script after finishing focus mode."
         
-        lblInstruction.stringValue = "The URLs here will be blocked during this focus mode. Useful if you want to allow some websites but block others. For example, you could have *.google.com as an allowed URL but block games.google.com"
+        lblInstructionBlockedUrls.stringValue = "The URLs here will be blocked during this focus mode. Useful if you want to allow some websites but block others. For example, you could have *.google.com as an allowed URL but block games.google.com"
         var runScriptBeforeText = "Run apple script before starting focus mode."
         var runScriptAfterText = "Run apple script after starting focus mode."
         var titleCurrentAppleScript = "Current Apple script:"
@@ -69,11 +125,16 @@ class focusPreferencesAdvancedVc: NSViewController {
 
             toolTipAdd = focusPreferencesAdvancedInfo.value(forKey: "toolTipAdd") as? String ?? toolTipAdd
             toolTipRemove = focusPreferencesAdvancedInfo.value(forKey: "toolTipRemove") as? String ?? toolTipRemove
-            lblInstruction.stringValue = focusPreferencesAdvancedInfo.value(forKey: "instructionText") as? String ?? lblInstruction.stringValue
+            lblInstructionBlockedUrls.stringValue = focusPreferencesAdvancedInfo.value(forKey: "instructionText") as? String ?? lblInstructionBlockedUrls.stringValue
             
             checkBoxRunShellBeforeFocus.title = focusPreferencesAdvancedInfo.value(forKey: "runShellCommandBeforeText") as? String ?? checkBoxRunShellBeforeFocus.title
             checkBoxRunShellAfterFocus.title = focusPreferencesAdvancedInfo.value(forKey: "runShellCommandAfterText") as? String ?? checkBoxRunShellAfterFocus.title
     
+            lblTitleScripts.stringValue = focusPreferencesAdvancedInfo.value(forKey: "titleScripts") as? String ?? lblTitleScripts.stringValue
+            lblTitleBlockedUrlsAndApps.stringValue = focusPreferencesAdvancedInfo.value(forKey: "titleBlockedUrlsAndApps") as? String ?? lblTitleBlockedUrlsAndApps.stringValue
+            lblTitleBlockedApps.stringValue = focusPreferencesAdvancedInfo.value(forKey: "titleBlockedApps") as? String ?? lblTitleBlockedApps.stringValue
+            lblInstructionBlockedApps.stringValue = focusPreferencesAdvancedInfo.value(forKey: "instructionBlockedApps") as? String ?? lblInstructionBlockedApps.stringValue
+            lblFocusAlignmentScore.stringValue = focusPreferencesAdvancedInfo.value(forKey: "focusAlignmentScoreTitle") as? String ?? lblFocusAlignmentScore.stringValue
         }
         
         checkBoxRunScriptBeforeFocus.title = runScriptBeforeText
@@ -84,7 +145,7 @@ class focusPreferencesAdvancedVc: NSViewController {
         lblTitleCurrentApplescriptAfter.stringValue = titleCurrentAppleScript
         btnSelectAppleScriptAfterFocus.title = buttonSelectScriptText
         
-        lblTitle.stringValue = titleBlockedUrls
+        lblTitleBlockedUrls.stringValue = titleBlockedUrls
         btnOk.title = buttonOkText
         tblView.doubleAction = #selector(tableRowBlockedUrlsDoubleClicked)
 
@@ -95,11 +156,14 @@ class focusPreferencesAdvancedVc: NSViewController {
         if #available(macOS 11.0, *) {
             btnAddUrl.image = NSImage(systemSymbolName: "plus.square.fill", accessibilityDescription: nil)
             btnRemoveUrl.image = NSImage(systemSymbolName: "minus.square.fill", accessibilityDescription: nil)
+            btnAddApp.image = NSImage(systemSymbolName: "plus.square.fill", accessibilityDescription: nil)
+            btnRemoveApp.image = NSImage(systemSymbolName: "minus.square.fill", accessibilityDescription: nil)
         }
 
+        popUpBtnFocusAlignmentScore.removeAllItems()
+        popUpBtnFocusAlignmentScore.addItems(withTitles: arrFocusAlignmentScore)
     }
     override func viewWillAppear() {
-        
         isShellScriptBeforeFocusEdited = false
         isShellScriptAfterFocusEdited = false
         if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
@@ -109,10 +173,7 @@ class focusPreferencesAdvancedVc: NSViewController {
                 self.view.window?.sharingType = .readOnly
             }
         }
-  
-        
-        tblView.reloadData()
-        
+
         let row = focusPreferencesVcObj?.tblViewFocusType.selectedRow ?? 0
         if row != -1{
             if let isScriptEnabled = arrFocusType[row]["isScriptBeforeFocusEnabled"] as? Bool{
@@ -165,8 +226,13 @@ class focusPreferencesAdvancedVc: NSViewController {
             }else{
                 textViewRunShelltAfterFocus.string = ""
             }
-            
-            
+
+            if let focusAlignmentScore = arrFocusType[row]["focusAlignmentScoreThreshold"] as? Int{
+                popUpBtnFocusAlignmentScore.selectItem(withTitle: "\(focusAlignmentScore)")
+            }else{
+                popUpBtnFocusAlignmentScore.selectItem(withTitle: "\(defaultFocusAlignmentScoreToShowDistractingPopUp)")
+            }
+
             
             if checkBoxRunScriptBeforeFocus.state == .on{
                 btnSelectAppleScriptBeforeFocus.isEnabled = true
@@ -189,9 +255,7 @@ class focusPreferencesAdvancedVc: NSViewController {
             }else{
                 textViewRunShelltAfterFocus.isEditable = false
             }
-            
-            
-            
+       
             if let scriptPath = arrFocusType[row]["scriptPathBeforeFocus"] as? String{
                 lblUrlCurrentApplescriptBefore.stringValue = scriptPath
                 lblUrlCurrentApplescriptBefore.toolTip = scriptPath
@@ -215,38 +279,48 @@ class focusPreferencesAdvancedVc: NSViewController {
                 }
             }
           
-            if bottomConstraint != nil{
-                NSLayoutConstraint.deactivate([bottomConstraint!])
-                bottomConstraint = nil
-            }
-            
-            
+
             if let isAllowedListApproach = arrFocusType[row]["isAllowedListApproach"] as? Bool{
                 if arrFocusType[row]["isDefault"] as? Bool == true{
-                    bottomConstraint = NSLayoutConstraint(item: btnOk!, attribute: .top, relatedBy: .equal, toItem: textViewRunShelltAfterFocus, attribute: .bottom, multiplier: 1, constant: 14)
-                    NSLayoutConstraint.activate([bottomConstraint!])
-                    lblTitle.isHidden = true
                     lineHorizontal.isHidden = true
-                    lblInstruction.isHidden = true
+                    boxBlockUrls.isHidden = true
+                    boxBlockApps.isHidden = true
+                    boxHeaderBlockUrlsAndApps.isHidden = true
+                }else if arrFocusType[row]["isRelaxFocus"] as? Bool == true{
+                    lineHorizontal.isHidden = true
+                    boxBlockUrls.isHidden = true
+                    boxBlockApps.isHidden = true
+                    boxHeaderBlockUrlsAndApps.isHidden = true
                 }else{
                     if isAllowedListApproach{
-                        bottomConstraint = NSLayoutConstraint(item: btnOk!, attribute: .top, relatedBy: .equal, toItem: boxTableView, attribute: .bottom, multiplier: 1, constant: 14)
-                        NSLayoutConstraint.activate([bottomConstraint!])
-                        lblTitle.isHidden = false
                         lineHorizontal.isHidden = false
-                        lblInstruction.isHidden = false
+                        boxBlockUrls.isHidden = false
+                        boxBlockApps.isHidden = false
+                        boxHeaderBlockUrlsAndApps.isHidden = false
                     }else{
-                        bottomConstraint = NSLayoutConstraint(item: btnOk!, attribute: .top, relatedBy: .equal, toItem: textViewRunShelltAfterFocus, attribute: .bottom, multiplier: 1, constant: 14)
-                        NSLayoutConstraint.activate([bottomConstraint!])
-                        lblTitle.isHidden = true
-                        lineHorizontal.isHidden = true
-                        lblInstruction.isHidden = true
+                        lineHorizontal.isHidden = false
+                        boxBlockUrls.isHidden = true
+                        boxBlockApps.isHidden = false
+                        boxHeaderBlockUrlsAndApps.isHidden = false
                     }
                 }
             }
+            tblView.reloadData()
+            tblViewApps.reloadData()
         }
+
+        btnShowScripts.image = NSImage(named: "NSTouchBarGoForwardTemplate")
+        boxAppleScriptAfter.isHidden = true
+        boxAppleScriptBefore.isHidden = true
+        boxShellScriptAfter.isHidden = true
+        boxShellScriptBefore.isHidden = true
+        lineSepraterScripts.isHidden = true
+
+        btnShowBlockedUrlsAndApps.image = NSImage(named: "NSTouchBarGoForwardTemplate")
+        stackViewUrlsAndApps.isHidden = true
     }
-    var bottomConstraint: NSLayoutConstraint?
+
+    
     @objc func tableRowBlockedUrlsDoubleClicked(){
         let selectedTow = tblView.selectedRow
         if selectedTow == -1{
@@ -416,9 +490,17 @@ class focusPreferencesAdvancedVc: NSViewController {
         
     }
     @IBAction func btnOkClicked(_ sender: Any) {
+        let row = focusPreferencesVcObj?.tblViewFocusType.selectedRow ?? 0
+        let oldFocusAlignmentScoreThreshold = arrFocusType[row]["focusAlignmentScoreThreshold"] as? Int ?? -1
+        let focusAlignmentScoreThreshold = Int(popUpBtnFocusAlignmentScore.titleOfSelectedItem ?? "") ?? 80
+        if oldFocusAlignmentScoreThreshold != focusAlignmentScoreThreshold{
+            arrFocusType[row]["focusAlignmentScoreThreshold"] = focusAlignmentScoreThreshold
+            UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+            allApiObject.capturePosthog(event: "focus-alignment-score-threshold-changed", metadata: [:])
+        }
+
         
         if isShellScriptBeforeFocusEdited || isShellScriptAfterFocusEdited{
-            let row = focusPreferencesVcObj?.tblViewFocusType.selectedRow ?? 0
 
             if isShellScriptBeforeFocusEdited{
                 arrFocusType[row]["shellCommandBeforeFocusText"] = textViewRunShelltBeforeFocus.string
@@ -432,50 +514,270 @@ class focusPreferencesAdvancedVc: NSViewController {
             }
      
             UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
-
-            
         }
-        
-        
-        
-        
         self.dismiss(self)
     }
 
+    @IBAction func btnDndInfoClicked(_ sender: Any) {
+        showTooltip(sender: btnDndInfo, msg: toolTipDndMode, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
+    }
+    @IBAction func btnInfoTagsClicked(_ sender: Any) {
+        var tagsInfoText = "Add tags to be able to prepare time logs for specific focus blocks. Examples of tags would be: billable, jones, client, Project 1."
+        if let focusPreferencesInfo = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
+            tagsInfoText = focusPreferencesInfo.value(forKey: "tagsInfoText") as? String ?? tagsInfoText
+        }
+        showTooltip(sender: btnInfoTags, msg: tagsInfoText, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
+    }
     
+    @objc private func menuItemClicked(_ menuItem: NSMenuItem) {
+        if let fieldEditor = tokenField?.currentEditor() {
+            let textRange = fieldEditor.selectedRange
+            let replaceString = menuItem.title
+            fieldEditor.replaceCharacters(in: textRange, with: replaceString)
+            fieldEditor.selectedRange = NSMakeRange(textRange.location, replaceString.count)
+        }
+    }
+    
+    @IBAction func btnShowBlockedUrlsAndAppsClicked(_ sender: Any) {
+        if stackViewUrlsAndApps.isHidden{
+            btnShowBlockedUrlsAndApps.image = NSImage(named: "NSTouchBarGoDownTemplate")
+            stackViewUrlsAndApps.isHidden = false
+        }else{
+            btnShowBlockedUrlsAndApps.image = NSImage(named: "NSTouchBarGoForwardTemplate")
+            stackViewUrlsAndApps.isHidden = true
+        }
+    }
+    @IBAction func btnShowScriptsClicked(_ sender: Any) {
+        if boxAppleScriptBefore.isHidden{
+            btnShowScripts.image = NSImage(named: "NSTouchBarGoDownTemplate")
+            boxAppleScriptAfter.isHidden = false
+            boxAppleScriptBefore.isHidden = false
+            boxShellScriptAfter.isHidden = false
+            boxShellScriptBefore.isHidden = false
+            lineSepraterScripts.isHidden = false
+        }else{
+            btnShowScripts.image = NSImage(named: "NSTouchBarGoForwardTemplate")
+            boxAppleScriptAfter.isHidden = true
+            boxAppleScriptBefore.isHidden = true
+            boxShellScriptAfter.isHidden = true
+            boxShellScriptBefore.isHidden = true
+            lineSepraterScripts.isHidden = true
+        }
+    }
+    @IBAction func btnAddAppClicked(_ sender: Any) {
+        let openPanel = NSOpenPanel()
+        openPanel.canChooseFiles = true
+        openPanel.canChooseDirectories = false
+        openPanel.allowsMultipleSelection = true
+        openPanel.treatsFilePackagesAsDirectories = false
+        openPanel.directoryURL = URL(fileURLWithPath: "/Applications")
+        openPanel.allowedFileTypes = ["app"]
+        
+        if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
+            if state{
+                openPanel.sharingType = .none
+            }
+        }
+        openPanel.prompt = "Select"
+        
+        if let focusPreferencesInfo = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
+            if let title = focusPreferencesInfo.value(forKey: "buttonSelectAppText") as? String{
+                openPanel.prompt = title
+            }
+        }
+        openPanel.beginSheetModal(for: self.view.window!) { response in
+            guard response.rawValue == NSApplication.ModalResponse.OK.rawValue else {
+                //                if var arr =
+                
+                return
+            }
+            let urls = openPanel.urls
+            
+            let selectedFocusTypeRow = focusPreferencesVcObj?.tblViewFocusType.selectedRow ?? 0
+            if selectedFocusTypeRow == -1{
+                return
+            }
+
+
+            var appsArray = [String]()
+            var appsUrlArray = [URL]()
+            if let arr = arrFocusType[selectedFocusTypeRow]["blockAppsArray"] as? [String]{
+                appsArray = arr
+            }
+            
+            for path in appsArray{
+                let url = URL(fileURLWithPath: path)
+                appsUrlArray.append(url)
+            }
+            var isContainAlready = false
+            for url in urls{
+                var isFoundAlready = false
+                for addedUrl in appsUrlArray{
+                    if addedUrl.lastPathComponent.lowercased() == url.lastPathComponent.lowercased(){
+                        isFoundAlready = true
+                        break;
+                    }
+                }
+                if !isFoundAlready{
+                    appsArray.append(url.path)
+                }else{
+                    isContainAlready = true
+                }
+            }
+            
+            arrFocusType[selectedFocusTypeRow]["blockAppsArray"] = appsArray
+            
+            self.tblViewApps.reloadData()
+            self.tblViewApps.selectRowIndexes(IndexSet(arrayLiteral: (appsArray.count - 1)), byExtendingSelection: false)
+            self.tblViewApps.scrollRowToVisible(appsArray.count - 1)
+            UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+            if isContainAlready{
+                self.showAlertAppAlreadyAdded()
+            }
+            allApiObject.capturePosthog(event: "add-blocked-app-in-focus-mode", metadata: [:])
+            
+        }
+        
+    }
+    func showAlertAppAlreadyAdded(){
+        let alert = NSAlert()
+        alert.setSharingType()
+        alert.alertStyle = .informational
+        
+        var messageText = "Some of the apps selected are already present in the list."
+        if let focusPreferencesInfo = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
+            messageText = focusPreferencesInfo.value(forKey: "appAlreadyExistsText") as? String ?? messageText
+        }
+        alert.messageText = messageText
+        alert.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
+            if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
+            }
+        })
+    }
+    @IBAction func btnRemoveAppClicked(_ sender: Any) {
+        let selectedFocusTypeRow = focusPreferencesVcObj?.tblViewFocusType.selectedRow ?? 0
+        if selectedFocusTypeRow == -1{
+            return
+        }
+        let selectedAppsRow = tblViewApps.selectedRow
+        if selectedAppsRow == -1{
+            return
+        }
+        if arrFocusType.count > selectedFocusTypeRow{
+            if var blockAppsArray = arrFocusType[selectedFocusTypeRow]["blockAppsArray"] as? [String]{
+                if blockAppsArray.count > selectedAppsRow{
+                    blockAppsArray.remove(at: selectedAppsRow)
+                }
+                arrFocusType[selectedFocusTypeRow]["blockAppsArray"] = blockAppsArray
+            }
+            self.tblViewApps.reloadData()
+        }
+        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+        allApiObject.capturePosthog(event: "remove-blocked-app-in-focus-mode", metadata: [:])
+        reSetCurrentFocusMode(focusType:arrFocusType[selectedFocusTypeRow])
+    }
+    
+    @IBAction func checkBoxAutoDoNotDisturbClicked(_ sender: Any) {
+        let row = focusPreferencesVcObj?.tblViewFocusType.selectedRow ?? 0
+        if checkBoxAutoDoNotDisturb.state == .on{
+
+            if !isAccessibilityEnabled(isPrompt: false){
+                let alert = NSAlert()
+                alert.setSharingType()
+                alert.messageText = "To turn on Do Not Disturb when starting a Focus Mode, Focus Bear needs Accessibility permissions. Would you like to give the permissions now?"
+                if let focusPreferencesAdvancedInfo = configjson.value(forKey: "focusPreferencesAdvancedInfo") as? NSDictionary{
+                    alert.messageText = focusPreferencesAdvancedInfo.value(forKey: "needDndPermissionText") as? String ?? alert.messageText
+                }
+                alert.addButton(withTitle: buttonOkText)
+                alert.addButton(withTitle: buttonCancelText)
+                alert.beginSheetModal(for: self.view.window!, completionHandler: { response in
+                    if response == .alertFirstButtonReturn{
+                        _ = isAccessibilityEnabled(isPrompt: true)
+                        arrFocusType[row]["isAutoDoNotDisturbEnabled"] = true
+                        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+                        allApiObject.capturePosthog(event: "settings-changed-enable-dnd", metadata: [:])//#490
+                        preferencesWindowControllerObj!.window!.setFrameOrigin(NSPoint(x: 0, y: 0))
+                    }else{
+                        self.checkBoxAutoDoNotDisturb.state = .off
+                    }
+                })
+
+            }else{
+                arrFocusType[row]["isAutoDoNotDisturbEnabled"] = true
+                UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+                allApiObject.capturePosthog(event: "settings-changed-enable-dnd", metadata: [:])//#490
+            }
+
+        }else{
+            arrFocusType[row]["isAutoDoNotDisturbEnabled"] = false
+            UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+            allApiObject.capturePosthog(event: "settings-changed-disable-dnd", metadata: [:])//#490
+        }
+
+    }
+    
+    @IBAction func popUpBtnFocusAlignmentScoreClicked(_ sender: Any) {
+        
+    }
 }
 extension focusPreferencesAdvancedVc: NSTableViewDelegate, NSTableViewDataSource{
     
     func numberOfRows(in tableView: NSTableView) -> Int {
-        
-        if arrFocusType.count == 0{
-            return 0
-        }else {
-            let row = focusPreferencesVcObj?.tblViewFocusType.selectedRow ?? 0
-            if row != -1{
-                if let blockUrlsArray = arrFocusType[row]["blockUrlsArray"] as? [String]{
-                    btnRemoveUrl.isEnabled = false
-                    return blockUrlsArray.count
+        if tableView == tblView{
+            if arrFocusType.count == 0{
+                return 0
+            }else {
+                let row = focusPreferencesVcObj?.tblViewFocusType.selectedRow ?? 0
+                if row != -1{
+                    if let blockUrlsArray = arrFocusType[row]["blockUrlsArray"] as? [String]{
+                        btnRemoveUrl.isEnabled = false
+                        return blockUrlsArray.count
+                    }
                 }
+                
             }
-            
+        }else if tableView == tblViewApps{
+            if arrFocusType.count == 0{
+                return 0
+            }else {
+                let row = focusPreferencesVcObj?.tblViewFocusType.selectedRow ?? 0
+                if row != -1{
+                    if let blockUrlsArray = arrFocusType[row]["blockAppsArray"] as? [String]{
+                        btnRemoveApp.isEnabled = false
+                        return blockUrlsArray.count
+                    }
+                }
+                
+            }
         }
+        
         return 0
     }
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
         if let cell = tableView.makeView(withIdentifier: NSUserInterfaceItemIdentifier(rawValue: "tblCellFocusPreferences"), owner: nil) as? tblCellFocusPreferences {
             
-            
-            if let blockUrlsArray = arrFocusType[focusPreferencesVcObj?.tblViewFocusType.selectedRow ?? 0]["blockUrlsArray"] as? [String]{
-                if row < blockUrlsArray.count{
-                    cell.lblTitle.stringValue = blockUrlsArray[row]
-                    cell.imgView.image = NSImage(named: NSImage.networkName)
-                }else{
-                    cell.lblTitle.stringValue = ""
-                    cell.imgView.image = nil
+            if tableView == tblView{
+                if let blockUrlsArray = arrFocusType[focusPreferencesVcObj?.tblViewFocusType.selectedRow ?? 0]["blockUrlsArray"] as? [String]{
+                    if row < blockUrlsArray.count{
+                        cell.lblTitle.stringValue = blockUrlsArray[row]
+                        cell.imgView.image = NSImage(named: NSImage.networkName)
+                    }else{
+                        cell.lblTitle.stringValue = ""
+                        cell.imgView.image = nil
+                    }
+                }
+            }else if tableView == tblViewApps{
+                if let blockUrlsArray = arrFocusType[focusPreferencesVcObj?.tblViewFocusType.selectedRow ?? 0]["blockAppsArray"] as? [String]{
+                    if row < blockUrlsArray.count{
+                        let url = URL(fileURLWithPath: blockUrlsArray[row])
+                        cell.lblTitle.stringValue = url.lastPathComponent
+                        cell.imgView.image = NSWorkspace.shared.icon(forFile: url.path)
+                    }else{
+                        cell.lblTitle.stringValue = ""
+                        cell.imgView.image = nil
+                    }
                 }
             }
-            
             return cell
         }
         
@@ -495,6 +797,12 @@ extension focusPreferencesAdvancedVc: NSTableViewDelegate, NSTableViewDataSource
             }else{
                 btnRemoveUrl.isEnabled = true
             }
+        }else if tblview == tblViewApps{
+            if selectedRow == -1{
+                btnRemoveApp.isEnabled = false
+            }else{
+                btnRemoveApp.isEnabled = true
+            }
         }
     }
     
@@ -513,4 +821,66 @@ extension focusPreferencesAdvancedVc:NSTextViewDelegate{
             }
         }
     }
+}
+extension focusPreferencesAdvancedVc:NSTextFieldDelegate, NSTokenFieldDelegate{
+    
+    func controlTextDidChange(_ obj: Notification) {
+        if let tokenfield = obj.object as? NSTokenField{
+            if tokenfield == self.tokenField{
+                let selectedRow = focusPreferencesVcObj?.tblViewFocusType.selectedRow ?? 0
+                var dic = arrFocusType[selectedRow]
+                dic["tags"] = self.tokenField.objectValue as? [String] ?? []
+
+                arrFocusType[selectedRow] = dic
+            }
+        }
+    }
+
+    
+    func tokenField(_ tokenField: NSTokenField, hasMenuForRepresentedObject representedObject: Any) -> Bool {
+        return true
+    }
+    func tokenField(_ tokenField: NSTokenField,
+                    menuForRepresentedObject representedObject: Any) -> NSMenu? {
+        defaultTokenMenu.removeAllItems()
+        for habit in arrAllTags{//
+            let item = NSMenuItem(title: habit, action: #selector(menuItemClicked), keyEquivalent: "")
+            item.target = self
+            defaultTokenMenu.addItem(item)
+        }
+        
+        return defaultTokenMenu
+    }
+    
+    func tokenField(_ tokenField: NSTokenField, completionsForSubstring substring: String, indexOfToken tokenIndex: Int, indexOfSelectedItem selectedIndex: UnsafeMutablePointer<Int>?) -> [Any]? {
+        return arrAllTags.filter { $0.lowercased().hasPrefix(substring.lowercased()) }
+    }
+    
+    func tokenField(_ tokenField: NSTokenField, shouldAdd tokens: [Any], at index: Int) -> [Any] {
+        DispatchQueue.global().async {
+            //usleep(50000)
+            DispatchQueue.main.async {
+                
+                let selectedRow = focusPreferencesVcObj?.tblViewFocusType.selectedRow ?? 0
+                var dic = arrFocusType[selectedRow]
+                //dic["tags"] = self.tokenField.objectValue as? [String] ?? []
+                let tags = self.tokenField.objectValue as? [String] ?? []
+                
+                var finalTags = [String]()
+                for i in 0..<tags.count{
+                    if !finalTags.contains(where: {$0.caseInsensitiveCompare(tags[i]) == .orderedSame}) {
+                        finalTags.append(tags[i])
+                        if !self.arrAllTags.contains(where: {$0.caseInsensitiveCompare(tags[i]) == .orderedSame}) {
+                            self.arrAllTags.append(tags[i])
+                        }
+                    }
+                }
+                dic["tags"] = finalTags
+                arrFocusType[selectedRow] = dic
+                self.tokenField.objectValue = finalTags
+            }
+        }
+        return tokens
+    }
+    
 }

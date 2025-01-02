@@ -179,7 +179,7 @@ class customLoginVc: NSViewController {
                         if self.boxPasswordGenerated.isHidden{
                             return;
                         }
-                        self.boxPasswordGenerated.fillColor = NSColor(red: 255/255, green: 255/255, blue: 0/255, alpha: 1)
+                        self.boxPasswordGenerated.fillColor = self.lblTitle.textColor ?? NSColor.red
                     }
                 }else{
                     DispatchQueue.main.async {
@@ -241,6 +241,8 @@ class customLoginVc: NSViewController {
         
         if isLogin{
             addLog(text: "login view ")
+            allApiObject.capturePosthog(event: "view-signin-shown", metadata: [:])
+            secureTextFieldPassword.isEditable = true
             boxPasswordGenerated.isHidden = true
             checkBoxPasswordSave.isHidden = true
             btnCreateAccount.keyEquivalent = ""
@@ -267,6 +269,9 @@ class customLoginVc: NSViewController {
             btnRefreshPassword.isHidden = true
         }else{
             addLog(text: "signup view ")
+            allApiObject.capturePosthog(event: "view-signup-shown", metadata: [:])
+            secureTextFieldPassword.isEditable = false
+            secureTextFieldPassword.isSelectable = false
             boxPasswordGenerated.isHidden = false
             showAnimation()
             segmentControlPassword.isHidden = false
@@ -308,12 +313,13 @@ class customLoginVc: NSViewController {
     }
     
     @IBAction func btnBackClicked(_ sender: Any) {
-        addLog(text: "btnBackClicked")
+        addLog(text: "[user-action] btnBackClicked")
         showAskLoginWindow()
     }
     
     @IBAction func btnSignInClicked(_ sender: Any) {
-        addLog(text: "btnSignInClicked")
+        addLog(text: "[user-action] btnSignInClicked")
+        allApiObject.capturePosthog(event: "button-signin-clicked", metadata: [:])
         var password = secureTextFieldPassword.stringValue
         
         if secureTextFieldPassword.isHidden == false{
@@ -438,48 +444,16 @@ class customLoginVc: NSViewController {
     func loginDone(credentials: (Credentials), isLogin:Bool){
         addLog(text: "Custom Login success")
         self.view.window?.close()
+        UserDefaults.standard.removeObject(forKey: kUserdefaultsLastBreaksStartTime)
+        UserDefaults.standard.removeObject(forKey: kUserdefaultsArrayBreaksDurations)
         appdelegate!.statusbutton?.action = nil
-        appdelegate!.user = User(from: credentials.accessToken)
+        appdelegate!.user = AuthUser(from: credentials.accessToken)
         allApiObject.capturePosthog(event: "login-homemade", metadata: [:])
         let _ = appdelegate!.credentialsManager.store(credentials: credentials)
         UserDefaults.standard.set(true, forKey: kUserdefaultsIsUserLoggedIn)
-        
-        if UserDefaults.standard.object(forKey: kUserdefaultsVideoShown) == nil{
-
-//            Use Focus Mode templates for onboarding#489
-            
-            
-            // after login check is there  any need to show ask always block urls view (check form settings api is settings are blank the shw view )
-            var shouldShowOnboardingAfterLogin = true
-            allApiObject.getUserLocalDeviceSettings(completionHandler: { json in
-                if json != nil{
-                    if let settings = json?.value(forKey: "MacOS") as? NSDictionary {//
-                        print(settings)
-                        if settings.allKeys.count == 0{
-                            shouldShowOnboardingAfterLogin = true
-                        }else{
-                            shouldShowOnboardingAfterLogin = false
-                        }
-                        
-                    }
-                    
-                }
-                DispatchQueue.main.async {
-                    if shouldShowOnboardingAfterLogin{
-                        allApiObject.postTermsService()
-                        showChooseFrictionLevelWindow()
-                    }else{
-                        UserDefaults.standard.set(true, forKey: kUserdefaultsVideoShown)
-                        appdelegate!.loadCredentialsAndDeviceId()
-                    }
-                }
-            }
-            )
-            
-        }else{
-            appdelegate!.loadCredentialsAndDeviceId()
-        }
+        appdelegate!.loadCredentialsAndDeviceId()
     }
+    
     @IBAction func btnShowConfirmPasswordClicked(_ sender: Any) {
         if textFieldConfirmPasword.isHidden{
             textFieldConfirmPasword.stringValue = secureTextFieldConfirmPassword.stringValue
@@ -550,14 +524,9 @@ class customLoginVc: NSViewController {
         }
     }
     @IBAction func btnForgotPasswordClicked(_ sender: Any) {
-     
-        addLog(text: "btnForgotPasswordClicked")
-        
-        
-        
-
-        if textFieldEmail.stringValue.isEmpty == true
-        {
+        addLog(text: "[user-action] btnForgotPasswordClicked")
+        allApiObject.capturePosthog(event: "button-forgot-password-clicked", metadata: [:])
+        if textFieldEmail.stringValue.isEmpty{
             alertforvalidation(question: titleEmailIsBlank, text: emailInvalidText)
             return
         }
@@ -591,7 +560,7 @@ class customLoginVc: NSViewController {
         
     }
     @IBAction func btnCreateAccountClicked(_ sender: Any) {
-        addLog(text: "CreateAccountClicked")
+        addLog(text: "[user-action] CreateAccountClicked")
         var password = secureTextFieldPassword.stringValue
 //        var confirmPassword = secureTextFieldConfirmPassword.stringValue
         
@@ -612,6 +581,7 @@ class customLoginVc: NSViewController {
             isLogin = false
             reloadView()
         }else{
+            allApiObject.capturePosthog(event: "button-create-account-clicked", metadata: [:])
             if textFieldEmail.stringValue.isEmpty == true
             {
                 alertforvalidation(question: titleEmailIsBlank, text: emailInvalidText)
@@ -910,6 +880,9 @@ class customLoginVc: NSViewController {
     
     @IBAction func segmentControlPasswordClicked(_ sender: Any) {
         if segmentControlPassword.selectedSegment == 1{
+            allApiObject.capturePosthog(event: "button-use-own-password-clicked", metadata: [:])
+            secureTextFieldPassword.isEditable = true
+            secureTextFieldPassword.isSelectable = true
             stackViewPasswordRules.isHidden = false
             lblTitlePasswordRules.isHidden = false
             textFieldPassword.stringValue = ""
@@ -928,6 +901,9 @@ class customLoginVc: NSViewController {
             if checkBoxPasswordSave.isHidden == false{// do not need to generate password again if pervious selected segment was same
                 return;
             }
+            allApiObject.capturePosthog(event: "button-generate-password-clicked", metadata: [:])
+            secureTextFieldPassword.isEditable = false
+            secureTextFieldPassword.isSelectable = false
             boxPasswordGenerated.isHidden = false
             showAnimation()
             checkBoxPasswordSave.isHidden = false
@@ -944,6 +920,7 @@ class customLoginVc: NSViewController {
             }
             imgViewValidPassword.isHidden = true
             btnCreateAccount.isEnabled = false
+            textFieldEmail.setFocus()
         }
 
     }
@@ -995,6 +972,7 @@ class customLoginVc: NSViewController {
     }
     @IBAction func checkBoxPasswordSaveClicked(_ sender: Any) {
         if checkBoxPasswordSave.state == .on{
+            allApiObject.capturePosthog(event: "saved-password-safe-checked", metadata: [:])
             var passWord = secureTextFieldPassword.stringValue
             if secureTextFieldPassword.isHidden == false{
                 passWord = secureTextFieldPassword.stringValue

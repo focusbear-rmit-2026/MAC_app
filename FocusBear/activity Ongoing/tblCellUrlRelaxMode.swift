@@ -1,0 +1,39 @@
+//
+//  tblCellUrlRelaxMode.swift
+//  Focus Bear
+//
+//  Created by Prashant Sawnani on 14/07/23.
+//  Copyright © 2023 Focus Bear. All rights reserved.
+//
+
+import Cocoa
+
+class tblCellUrlRelaxMode: NSTableCellView {
+
+    
+    @IBOutlet weak var lblTitle: NSTextField!
+    @IBOutlet weak var checkBox: NSButton!
+    var isFirstTime = false
+    var trackingArea: NSTrackingArea?
+
+    override func draw(_ dirtyRect: NSRect) {
+        super.draw(dirtyRect)
+
+        // Drawing code here.
+        if !isFirstTime {
+            isFirstTime = true
+            trackingArea = NSTrackingArea.init(rect: self.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
+            self.addTrackingArea(trackingArea!)
+        }
+    }
+   
+    override func mouseEntered(with event: NSEvent) {
+        if event.trackingArea == trackingArea{
+            NSCursor.pointingHand.set()
+        }
+    }
+    override func mouseExited(with event: NSEvent) {
+        NSCursor.arrow.set()
+    }
+    
+}

@@ -8,7 +8,7 @@
 
 import Cocoa
 
-class AISettingVc: NSViewController {
+class AISettingVc: NSViewController {// this is not in use
 
     @IBOutlet weak var checkBoxMorningMotivation: NSButton!
     @IBOutlet weak var lblCheckBoxMorningMotivation: NSTextField!
@@ -26,7 +26,7 @@ class AISettingVc: NSViewController {
     @IBOutlet weak var lblCheckBoxShowAllowAlert: NSTextField!
     @IBOutlet weak var lblTitleShowAllowAlert: NSTextField!
     
-    let viewHeightDefault = 303
+    
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -70,11 +70,6 @@ class AISettingVc: NSViewController {
     }
     
     override func viewWillAppear() {
-        if SettingsManagerObject.selectedFontIndex == intelOneMonoFontIndex || SettingsManagerObject.selectedFontIndex == openDyslexicFontIndex{
-            preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: (preferencesWindowControllerObj?.settingsTabDefaultWidthForBigFonts ?? 0) + (preferencesWindowControllerObj?.extraSpaceWidthInSettingsTab ?? 0), height: viewHeightDefault + (preferencesWindowControllerObj?.extraSpaceHeightInSettingsTab ?? 0)))
-        }else{
-            preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: (preferencesWindowControllerObj?.settingsTabDefaultWidth ?? 0) + (preferencesWindowControllerObj?.extraSpaceWidthInSettingsTab ?? 0), height: viewHeightDefault + (preferencesWindowControllerObj?.extraSpaceHeightInSettingsTab ?? 0)))
-        }
         if SettingsManagerObject.isMotivationalMessageEnabled{
             checkBoxMorningMotivation.state = .on
         }else{
@@ -87,11 +82,11 @@ class AISettingVc: NSViewController {
             checkBoxWhichWebsiteAllow.state = .off
         }
         
-        if SettingsManagerObject.isAiAllowUrlShowAlertEnabled{
-            checkBoxShowAllowAlert.state = .on
-        }else{
-            checkBoxShowAllowAlert.state = .off
-        }
+//        if SettingsManagerObject.isAiAllowUrlShowAlertEnabled{
+//            checkBoxShowAllowAlert.state = .on
+//        }else{
+//            checkBoxShowAllowAlert.state = .off
+//        }
         
     }
     @IBAction func checkBoxMorningMotivationClicked(_ sender: Any) {
@@ -114,14 +109,14 @@ class AISettingVc: NSViewController {
         }
         SettingsManagerObject.isSettingsChanged = true
     }
-    @IBAction func checkBoxShowAllowAlertClicked(_ sender: Any) {
-        if checkBoxShowAllowAlert.state == .on{
-            SettingsManagerObject.isAiAllowUrlShowAlertEnabled = true
-            allApiObject.capturePosthog(event: "settings-changed-ai-allow-website-alert-enabled", metadata: [:])
-        }else{
-            SettingsManagerObject.isAiAllowUrlShowAlertEnabled = false
-            allApiObject.capturePosthog(event: "settings-changed-ai-allow-website-alert-disabled", metadata: [:])
-        }
-        SettingsManagerObject.isSettingsChanged = true
-    }
+//    @IBAction func checkBoxShowAllowAlertClicked(_ sender: Any) {
+//        if checkBoxShowAllowAlert.state == .on{
+//            SettingsManagerObject.isAiAllowUrlShowAlertEnabled = true
+//            allApiObject.capturePosthog(event: "settings-changed-ai-allow-website-alert-enabled", metadata: [:])
+//        }else{
+//            SettingsManagerObject.isAiAllowUrlShowAlertEnabled = false
+//            allApiObject.capturePosthog(event: "settings-changed-ai-allow-website-alert-disabled", metadata: [:])
+//        }
+//        SettingsManagerObject.isSettingsChanged = true
+//    }
 }

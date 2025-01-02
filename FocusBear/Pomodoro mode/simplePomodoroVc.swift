@@ -1,0 +1,868 @@
+//
+//  pomodoroVc.swift
+//  Focus Bear
+//
+//  Created by Prashant Sawnani on 26/02/22.
+import Cocoa
+
+class simplePomodoroVc: NSViewController {
+    
+    @IBOutlet weak var lblStrictnessNormal: NSTextField!
+    @IBOutlet weak var lblStrictnessStrict: NSTextField!
+    @IBOutlet weak var lblStrictnessSuperStrict: NSTextField!
+    @IBOutlet weak var lblTitleStrictnessLevel: NSTextField!
+    @IBOutlet weak var btnStrictnessNormal: hoverInfoButton!
+    @IBOutlet weak var btnStrictnessSuperStrict: hoverInfoButton!
+    @IBOutlet weak var btnStrictnessStrict: hoverInfoButton!
+    @IBOutlet weak var sliderStrictness: CustomSlider!
+    @IBOutlet weak var btnInfoAiBlocking: hoverInfoButton!
+    @IBOutlet weak var boxTitle: NSBox!
+    @IBOutlet weak var radioButtonBlockingStyleDistractingSites: NSButton!
+    @IBOutlet weak var radioButtonBlockingStyleAi: NSButton!
+    @IBOutlet weak var lblTitleBlockingStyle: NSTextField!
+    @IBOutlet weak var topSpaceLblTitle: NSLayoutConstraint!
+    @IBOutlet weak var heightBtnLetsDoIt: NSLayoutConstraint!
+    @IBOutlet weak var lblTimerUnfocused: NSTextField!
+    @IBOutlet weak var lblMinutesBreakDuration: NSTextField!
+    @IBOutlet weak var lblMinutesWorkDuration: NSTextField!
+    @IBOutlet weak var textFieldBreakDuration: NSTextField!
+    @IBOutlet weak var textFieldWorkDuration: NSTextField!
+    @IBOutlet weak var lblTitleBreakDuration: NSTextField!
+    @IBOutlet weak var lblTitleWorkDuration: NSTextField!
+    
+ 
+    @IBOutlet weak var lblTitle: NSTextField!
+    @IBOutlet weak var lblQuestionFirst: NSTextField!
+    @IBOutlet weak var btnLetsDoIt: Button!
+    @IBOutlet var textViewAchieve: NSTextView!
+
+
+    @IBOutlet weak var btnInfoPomodoro: cursorButton!
+    
+    let workRatio = 5
+    let breakRatio = 1
+    var isBreakDurationComesFromBreakRatio = false
+    var questionSecondText = "Which focus mode do you want to use?"
+    var chooseTheFocusModeText = "Choose the focus mode and duration - you won't be able to change the focus mode until the time is up (you still get to use any app/website during the 5 minutes break)"
+    
+    var workDurationEmptyErrorText = "Work Duration can not be empty."
+    var workDurationZeroErrorText = "Work Duration can not be 0."
+    var breakDurationEmptyErrorText = "Break Duration can not be empty."
+    var breakDurationZeroErrorText = "Break Duration can not be 0."
+    
+    var timerText = "Time spend unfocused: <TIME>"
+    
+    
+   
+    var popoverTooltip:NSPopover?// = NSPopover()
+    
+    var pomodoroTooltipVcObj:pomodoroTooltipVc?
+    var alertExtendPostpone: NSAlert?
+    let enterPasswordVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("enterPasswordVc")) as? enterPasswordVc // only for cutOffTime in hardskip
+    var indexText = "<CURRENTINDEX> of <TOTALCOUNT>"
+    var arrTourMessages: [[String : String]] = []
+    var currentTourIndex = 0
+    var isIntentionFromMorningPostpone = false
+    let popoverMenuTour = NSPopover()
+    var menuTourPopoverVcObj: menuTourPopoverVc?
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        // Do view setup here.
+//        arrTourMessages.removeAll()
+        
+        
+        lblTitleStrictnessLevel.stringValue = "Strictness level:"
+        lblStrictnessNormal.stringValue = "Normal"
+        lblStrictnessStrict.stringValue = "Strict"
+        lblStrictnessSuperStrict.stringValue = "Super strict"
+        
+        lblTitleBlockingStyle.stringValue = "Blocking Style:"
+        radioButtonBlockingStyleAi.title = "AI powered blocking (recommended)"
+        radioButtonBlockingStyleDistractingSites.title = "Just block super distracting sites"
+        
+        var buttonNextText = "Next >"
+        var buttonFinishText = "Finish"
+
+
+        textFieldBreakDuration.formatter = IntegerFormatter()
+        textFieldWorkDuration.formatter = IntegerFormatter()
+        textFieldWorkDuration.delegate = self
+        textFieldBreakDuration.delegate = self
+        lblTitleWorkDuration.stringValue = "Focus Mode duration:"
+        lblTitleBreakDuration.stringValue = "Break duration:"
+        lblMinutesWorkDuration.stringValue = "minutes"
+        lblMinutesBreakDuration.stringValue = "minutes"
+        
+        if let preferencesInfo = configjson.value(forKey: "preferencesInfo") as? NSDictionary{
+            lblTitleWorkDuration.stringValue = preferencesInfo.value(forKey: "pomodoroModeDurationText") as? String ?? lblTitleWorkDuration.stringValue
+            lblMinutesWorkDuration.stringValue = preferencesInfo.value(forKey: "minutesText") as? String ?? lblMinutesWorkDuration.stringValue
+            lblTitleBreakDuration.stringValue = preferencesInfo.value(forKey: "breakDurationText") as? String ?? lblTitleBreakDuration.stringValue
+            lblMinutesBreakDuration.stringValue = preferencesInfo.value(forKey: "minutesText") as? String ?? lblMinutesBreakDuration.stringValue
+            
+            workDurationEmptyErrorText = preferencesInfo.value(forKey: "workDurationEmptyErrorText") as? String ?? workDurationEmptyErrorText
+            workDurationZeroErrorText = preferencesInfo.value(forKey: "workDurationZeroErrorText") as? String ?? workDurationZeroErrorText
+            breakDurationEmptyErrorText = preferencesInfo.value(forKey: "breakDurationEmptyErrorText") as? String ?? breakDurationEmptyErrorText
+            breakDurationZeroErrorText = preferencesInfo.value(forKey: "breakDurationZeroErrorText") as? String ?? breakDurationZeroErrorText
+            
+        }
+        
+        if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
+            if let startingFocusModeInfo = focusInfo.value(forKey: "startingFocusModeInfo") as? NSDictionary{
+                lblStrictnessNormal.stringValue = startingFocusModeInfo.value(forKey: "strictnessNormalText") as? String ?? lblStrictnessNormal.stringValue
+                lblStrictnessStrict.stringValue = startingFocusModeInfo.value(forKey: "strictnessStrictText") as? String ?? lblStrictnessStrict.stringValue
+                lblStrictnessSuperStrict.stringValue = startingFocusModeInfo.value(forKey: "strictnessSuperStrictText") as? String ?? lblStrictnessSuperStrict.stringValue
+                lblTitleStrictnessLevel.stringValue = startingFocusModeInfo.value(forKey: "titleStrictnessLevel") as? String ?? lblTitleStrictnessLevel.stringValue
+            }
+        }
+        
+        if let menuTourVcInfo = configjson.value(forKey: "menuTourVcInfo") as? NSDictionary{
+            buttonNextText = menuTourVcInfo.value(forKey: "buttonNextText") as? String ?? buttonNextText
+            buttonFinishText = menuTourVcInfo.value(forKey: "buttonFinishText") as? String ?? buttonFinishText
+            indexText = menuTourVcInfo.value(forKey: "indexText") as? String ?? indexText
+        }
+        
+        
+        lblTitle.stringValue = "Pomodoro time!"
+        var questionFirstText = "What do you want to achieve in this focus session?"
+        btnLetsDoIt.title = "Let's do it"
+
+        
+        var tourSelectTasks = "Select tasks"
+        var descriptionSelectTasks = "Choose tasks to focus on from Focus Bear's inbuilt to do list"
+        var tourIntention = "Freeform intention"
+        var descriptionIntention = "If you don't want to bother creating tasks, you can write a quick intention for what you'll do during this focus session"
+        
+        if let pomodoroInfo = configjson.value(forKey: "pomodoroInfo") as? NSDictionary{
+            if let title = pomodoroInfo.value(forKey: "title") as? String{
+                lblTitle.stringValue = title
+            }
+            if let questionFirst = pomodoroInfo.value(forKey: "questionFirstText") as? String{
+                questionFirstText = questionFirst
+            }
+            if let questionSecondText = pomodoroInfo.value(forKey: "questionSecondText") as? String{
+                self.questionSecondText = questionSecondText
+            }
+            if let buttonLetsDoItText = pomodoroInfo.value(forKey: "buttonLetsDoItText") as? String{
+                btnLetsDoIt.title = buttonLetsDoItText
+            }
+            
+            if let chooseTheFocusModeText = pomodoroInfo.value(forKey: "chooseTheFocusModeText") as? String{
+                self.chooseTheFocusModeText = chooseTheFocusModeText
+            }
+            timerText = pomodoroInfo.value(forKey: "timerText") as? String ?? timerText
+
+            
+            tourSelectTasks = pomodoroInfo.value(forKey: "tourSelectTasks") as? String ?? tourSelectTasks
+            descriptionSelectTasks = pomodoroInfo.value(forKey: "descriptionSelectTasks") as? String ?? descriptionSelectTasks
+            tourIntention = pomodoroInfo.value(forKey: "tourIntention") as? String ?? tourIntention
+            descriptionIntention = pomodoroInfo.value(forKey: "descriptionIntention") as? String ?? descriptionIntention
+            lblTitleBlockingStyle.stringValue = pomodoroInfo.value(forKey: "titleBlockingStyleText") as? String ?? lblTitleBlockingStyle.stringValue
+            radioButtonBlockingStyleAi.title = pomodoroInfo.value(forKey: "buttonBlockingStyleAiText") as? String ?? radioButtonBlockingStyleAi.title
+            radioButtonBlockingStyleDistractingSites.title = pomodoroInfo.value(forKey: "buttonBlockingStyleDistractingSitesText") as? String ?? radioButtonBlockingStyleDistractingSites.title
+        }
+        lblQuestionFirst.stringValue = questionFirstText
+        
+        var titleTour =  "Start Focus Session"
+        var titlePomodoroTime = "Focus Time"
+        var subTitlePomodoroTime = "You do 25 minutes of work (could be shorter or longer) and then have a 5 minute break. Click on the (i) to learn more about how it works."
+        var titleBlockingStyle = "Blocking style"
+        var subTitleBlockingStyle = "If you enable AI powered blocking, Focus Bear will use AI to check whether each website is relevant for what you’re trying to achieve in this focus session. It’s privacy safe - your identity is not shared with the AI."
+        var titleWorkDuration = "Pomodoro mode duration"
+        var subTitleWorkDuration = "Put in how long you want to focus for"
+        var titleBreakDuration = "Break duration"
+        var subTitleBreakDuration = "How long will you have as a break once you finish focusing"
+        var titleIntention = "Intention"
+        var subTitleIntention = "Put in what you hope to achieve during this focus session. Helps avoid getting distracted because you’re clear what your goals are."
+        var titleStrictnessLevel = "Strictness level"
+        var subTitleStrictnessLevel = "Adjust the slider to increase the strictness of your Focus session."
+        
+        
+        
+        if let simplePomodoroVcInfo = configjson.value(forKey: "simplePomodoroVcInfo") as? NSDictionary{
+            titleTour = simplePomodoroVcInfo.value(forKey: "titleTour") as? String ?? titleTour
+            titlePomodoroTime = simplePomodoroVcInfo.value(forKey: "titlePomodoroTime") as? String ?? titlePomodoroTime
+            subTitlePomodoroTime = simplePomodoroVcInfo.value(forKey: "subTitlePomodoroTime") as? String ?? subTitlePomodoroTime
+            titleBlockingStyle = simplePomodoroVcInfo.value(forKey: "titleBlockingStyle") as? String ?? titleBlockingStyle
+            subTitleBlockingStyle = simplePomodoroVcInfo.value(forKey: "subTitleBlockingStyle") as? String ?? subTitleBlockingStyle
+            titleWorkDuration = simplePomodoroVcInfo.value(forKey: "titleWorkDuration") as? String ?? titleWorkDuration
+            subTitleWorkDuration = simplePomodoroVcInfo.value(forKey: "subTitleWorkDuration") as? String ?? subTitleWorkDuration
+            titleBreakDuration = simplePomodoroVcInfo.value(forKey: "titleBreakDuration") as? String ?? titleBreakDuration
+            subTitleBreakDuration = simplePomodoroVcInfo.value(forKey: "subTitleBreakDuration") as? String ?? subTitleBreakDuration
+            titleIntention = simplePomodoroVcInfo.value(forKey: "titleIntention") as? String ?? titleIntention
+            subTitleIntention = simplePomodoroVcInfo.value(forKey: "subTitleIntention") as? String ?? subTitleIntention
+            titleStrictnessLevel = simplePomodoroVcInfo.value(forKey: "titleStrictnessLevel") as? String ?? titleStrictnessLevel
+            subTitleStrictnessLevel = simplePomodoroVcInfo.value(forKey: "subTitleStrictnessLevel") as? String ?? subTitleStrictnessLevel
+        }
+        
+        arrTourMessages = [
+            ["title": titlePomodoroTime, "description": subTitlePomodoroTime],
+            ["title": titleBlockingStyle, "description": subTitleBlockingStyle],
+            ["title": titleWorkDuration, "description": subTitleWorkDuration],
+            ["title": titleBreakDuration, "description": subTitleBreakDuration],
+            ["title": titleIntention, "description": subTitleIntention],
+            ["title": titleStrictnessLevel, "description": subTitleStrictnessLevel]
+        ]
+        
+        
+        for i in 0..<arrTourMessages.count{
+            if i == arrTourMessages.count - 1{
+                arrTourMessages[i]["buttonTitle"] = buttonFinishText
+            }else{
+                arrTourMessages[i]["buttonTitle"] = buttonNextText
+            }
+        }
+        if UserDefaults.standard.object(forKey: kUserdefaultsPomodoroTourShown) == nil{
+            menuTourPopoverVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("menuTourPopoverVc")) as? menuTourPopoverVc
+            popoverMenuTour.contentViewController = menuTourPopoverVcObj
+            popoverMenuTour.animates = false
+            popoverMenuTour.behavior = .applicationDefined
+            currentTourIndex = 0
+            menuTourPopoverVcObj?.delegate = self
+            menuTourPopoverVcObj?.loadView()
+            menuTourPopoverVcObj?.lblMainTitle.stringValue = titleTour
+        }
+        
+        
+        
+        textViewAchieve.delegate = self
+        viewDidResize()
+    }
+    
+    override func viewDidAppear() {
+        if UserDefaults.standard.object(forKey: kUserdefaultsPomodoroTourShown) == nil{
+            popoverMenuTour.show(relativeTo: boxTitle.bounds, of: boxTitle, preferredEdge: NSRectEdge.minX)
+         
+            var currentIndexText = indexText.replacingOccurrences(of: "<CURRENTINDEX>", with: "\(currentTourIndex + 1)")
+            currentIndexText = currentIndexText.replacingOccurrences(of: "<TOTALCOUNT>", with: "\(arrTourMessages.count)")
+            menuTourPopoverVcObj?.showCurrentMessage(title: arrTourMessages[currentTourIndex]["title"] ?? "", description: arrTourMessages[currentTourIndex]["description"] ?? "", buttonTitle: arrTourMessages[currentTourIndex]["buttonTitle"] ?? "", indexText: currentIndexText, arrList: [], progress: currentTourIndex + 1, progressMaxValue: arrTourMessages.count)
+            UserDefaults.standard.set(true, forKey: kUserdefaultsPomodoroTourShown)
+        }
+    }
+    
+    func updateBreakDuration(){
+        let workDuration = textFieldWorkDuration.integerValue
+        
+        var breakDuration =  Int((Double(workDuration) / Double(5)) * Double(breakRatio))
+        if breakDuration < 1{
+            breakDuration = 1
+        }
+        textFieldBreakDuration.stringValue = "\(breakDuration)"
+        isBreakDurationComesFromBreakRatio = true
+        print("isBreakDurationComesFromBreakRatio true")
+    }
+    
+    var focusModeKey = "isDefault"
+    func loadLastIntentionOfFocusMode(){
+        textViewAchieve.string = ""
+        
+        if radioButtonBlockingStyleAi.state == .on{
+            focusModeKey = "isDeepWorkFocus"
+        }else{
+            focusModeKey = "isDefault"
+        }
+        for i in 0..<arrFocusType.count{
+            if let isDeepWorkFocus = arrFocusType[i][focusModeKey] as? Bool{//this key will only be awailable in default focus type
+                if  isDeepWorkFocus{
+                    let lastIntentionUsed = arrFocusType[i]["lastIntentionUsed"] as? String ?? ""
+                    textViewAchieve.string = lastIntentionUsed
+                    break;
+                }
+            }
+        }
+        if textViewAchieve.string.isEmpty{
+            btnLetsDoIt.isEnabled = false
+        }else{
+            btnLetsDoIt.isEnabled = true
+        }
+    }
+    override func viewWillAppear() {
+        getTaskPlayerVcObject().loadView()
+        getTaskPlayerVcObject().loadRequest()
+        
+        if let index = UserDefaults.standard.object(forKey: kUserdefaultsLastFocusModeStrictness) as? Int{
+            sliderStrictness.integerValue = index
+        }else{
+            if SettingsManagerObject.isCuddlyModeEnabled{
+                sliderStrictness.integerValue = 1
+            }else{
+                sliderStrictness.integerValue = 3
+            }
+        }
+        
+        
+        if isExpired{
+            radioButtonBlockingStyleAi.state = .off
+            radioButtonBlockingStyleDistractingSites.state = .on
+        }else{
+            if let state = UserDefaults.standard.object(forKey: kUserdefaultsSimplePomodoroAiBlockingSelected) as? Bool{
+                if state{
+                    radioButtonBlockingStyleAi.state = .on
+                    radioButtonBlockingStyleDistractingSites.state = .off
+                }else{
+                    radioButtonBlockingStyleAi.state = .off
+                    radioButtonBlockingStyleDistractingSites.state = .on
+                }
+            }else{
+                UserDefaults.standard.set(true, forKey: kUserdefaultsSimplePomodoroAiBlockingSelected)
+                radioButtonBlockingStyleAi.state = .on
+                radioButtonBlockingStyleDistractingSites.state = .off
+            }
+        }
+        loadLastIntentionOfFocusMode()
+        
+        
+        if startingFocusWindowControllerObj?.window?.isVisible ?? false{
+            if startingFocusWindowControllerObj?.contentViewController == startingFocusModeVcObj{
+                startingFocusWindowControllerObj?.close()
+            }
+        }
+        lblTimerUnfocused.isHidden = false
+        startTimer()
+        textFieldWorkDuration.isEnabled = true
+        textFieldBreakDuration.isEnabled = true
+        btnLetsDoIt.isEnabled = true
+        
+        if let duration = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsPomodoroDurationMinutes) as? Int{
+            textFieldWorkDuration.stringValue = "\(duration)"
+        }
+        updateBreakDuration()
+        
+
+        self.view.window?.styleMask.insert(.closable)
+        
+        viewDidResize()
+    }
+    
+    
+
+    @objc func viewDidResize(){
+        print("viewDidResize")
+        let screenFrame = NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 1920, height: 1080)
+
+        if screenFrame.height < 900{
+            var fontSizeNinteen:CGFloat = 19
+            var fontSizeTwelve:CGFloat = 12
+            var fontSizeEleven:CGFloat = 11
+            var fontSizeSixteen:CGFloat = 16
+            
+            
+            if SettingsManagerObject.selectedFontIndex == intelOneMonoFontIndex || SettingsManagerObject.selectedFontIndex == openDyslexicFontIndex{
+                fontSizeNinteen = 14
+                fontSizeTwelve = 9
+                fontSizeEleven = 9
+                fontSizeSixteen = 13
+                
+                heightBtnLetsDoIt.constant = 30
+                topSpaceLblTitle.constant = 10
+            }else{
+                heightBtnLetsDoIt.constant = 34
+                topSpaceLblTitle.constant = 20
+            }
+            lblTitle.font = getRegularFont(size: fontSizeNinteen)
+
+            lblQuestionFirst.font = getRegularFont(size: fontSizeTwelve)
+
+            lblTitleWorkDuration.font =  getRegularFont(size: fontSizeTwelve)
+            lblTitleBreakDuration.font =  getRegularFont(size: fontSizeTwelve)
+            lblMinutesWorkDuration.font =  getRegularFont(size: fontSizeTwelve)
+            lblMinutesBreakDuration.font =  getRegularFont(size: fontSizeTwelve)
+            textFieldWorkDuration.font =  getRegularFont(size: fontSizeEleven)
+            textFieldBreakDuration.font =  getRegularFont(size: fontSizeEleven)
+
+
+            lblTimerUnfocused.font =  getRegularFont(size: fontSizeTwelve)
+            btnLetsDoIt.font =  getRegularFont(size: fontSizeSixteen)
+
+        }else{
+            lblTitle.font =  getRegularFont(size: 25)
+            lblQuestionFirst.font =  getRegularFont(size: 14)
+            lblTitleWorkDuration.font =  getRegularFont(size: 14)
+            lblTitleBreakDuration.font =  getRegularFont(size: 14)
+            lblMinutesWorkDuration.font =  getRegularFont(size: 14)
+            lblMinutesBreakDuration.font =  getRegularFont(size: 14)
+            textFieldWorkDuration.font =  getRegularFont(size: 13)
+            textFieldBreakDuration.font =  getRegularFont(size: 13)
+
+            lblTimerUnfocused.font =  getRegularFont(size: 14)
+            btnLetsDoIt.font =  getRegularFont(size: 20)
+   
+            heightBtnLetsDoIt.constant = 40
+            topSpaceLblTitle.constant = 35
+        }
+    }
+    
+    
+    @IBAction func radioButtonBlockingStyleAiClicked(_ sender: Any) {
+        if isExpired{
+            radioButtonBlockingStyleAi.state = .off
+            var titleNoAiBlocking = "AI blocking is only supported in Pro edition."
+            if let upgradeToProNagVcInfo = configjson.value(forKey: "upgradeToProNagVcInfo") as? NSDictionary{
+                titleNoAiBlocking = upgradeToProNagVcInfo.value(forKey: "titleNoAiBlocking") as? String ?? titleNoAiBlocking
+            }
+            showUpgradeToProNagWindow(titleText: titleNoAiBlocking, reason: "activate_ai_blocking_focus_session")
+            return;
+        }
+        radioButtonBlockingStyleDistractingSites.state = .off
+        loadLastIntentionOfFocusMode()
+    }
+    
+    
+    @IBAction func radioButtonBlockingStyleDistractingSitesClicked(_ sender: Any) {
+        radioButtonBlockingStyleAi.state = .off
+        loadLastIntentionOfFocusMode()
+    }
+    
+
+    
+    func showAlert(msg:String){
+        let alertWarning = NSAlert()
+        alertWarning.setSharingType()
+        alertWarning.messageText = msg
+        alertWarning.addButton(withTitle: buttonOkText)
+        alertWarning.beginSheetModal(for: self.view.window!, completionHandler:nil)
+    }
+    
+    @IBAction func btnLetsDoItClicked(_ sender: Any) {
+        addLog(text: "[user-action] btnLetsDoItClicked")//
+        if textFieldWorkDuration.isEnabled{
+            if textFieldWorkDuration.stringValue.isEmpty{
+                showAlert(msg: workDurationEmptyErrorText)
+                return;
+            }
+            if textFieldWorkDuration.integerValue < 1{
+                showAlert(msg: workDurationZeroErrorText)
+                return;
+            }
+        }
+        if textFieldBreakDuration.isEnabled{
+            if textFieldBreakDuration.stringValue.isEmpty{
+                showAlert(msg: breakDurationEmptyErrorText)
+                return;
+            }
+            if textFieldBreakDuration.integerValue < 1{
+                showAlert(msg: breakDurationZeroErrorText)
+                return;
+            }
+        }
+        
+
+        
+        if textFieldWorkDuration.isEnabled{
+            currentPomodoroWorkDuration = textFieldWorkDuration.integerValue
+        }
+        if textFieldBreakDuration.isEnabled{
+            currentPomodoroBreakDuration = textFieldBreakDuration.integerValue
+        }
+        
+
+        
+        
+        let totalMinutes = textFieldWorkDuration.integerValue
+        
+        if currentState == ._POSTPON_MORNING_HABIT_ || currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_{
+            if mainViewControllerObj?.postponeTimer != nil {
+                if mainViewControllerObj!.postponeTimer!.isValid{
+                    let currentTime = Date()
+                    let breakTime = mainViewControllerObj!.postponeTimer!.fireDate
+                    let diffMinute = Calendar.current.dateComponents([.minute], from: currentTime, to: breakTime).minute ?? 0
+                    if diffMinute < totalMinutes{
+                        alertExtendPostpone = NSAlert()
+                        alertExtendPostpone!.setSharingType()
+                        
+                        alertExtendPostpone!.messageText = "Focus duration is longer than habit postpone duration."
+                        alertExtendPostpone!.informativeText = "You may want to extend the postpone duration to match the focus session duration. Click on the desired button to start the focus session."
+                        var buttonExtendPostponeText = "Extend postpone duration"
+                        var buttonDoNotExtendPostponeText = "Do not extend postpone duration"
+                        
+                        if let pomodoroInfo = configjson.value(forKey: "pomodoroInfo") as? NSDictionary{
+                            alertExtendPostpone!.messageText = pomodoroInfo.value(forKey: "alertExtendPostponeText") as? String ?? alertExtendPostpone!.messageText
+                            alertExtendPostpone!.informativeText = pomodoroInfo.value(forKey: "alertExtendPostponeDescription") as? String ?? alertExtendPostpone!.informativeText
+                            buttonExtendPostponeText = pomodoroInfo.value(forKey: "buttonExtendPostponeText") as? String ?? buttonExtendPostponeText
+                            buttonDoNotExtendPostponeText = pomodoroInfo.value(forKey: "buttonDoNotExtendPostponeText") as? String ?? buttonDoNotExtendPostponeText
+                        }
+                        
+                        
+                        alertExtendPostpone!.alertStyle = NSAlert.Style.warning
+                        alertExtendPostpone!.addButton(withTitle: buttonExtendPostponeText)
+                        alertExtendPostpone!.addButton(withTitle: buttonDoNotExtendPostponeText)
+                        
+                        alertExtendPostpone!.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
+                            if modalResponse == .alertFirstButtonReturn{
+                                if currentState == ._POSTPON_MORNING_HABIT_{
+                                    mainViewControllerObj?.postponeMorningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
+                                    self.pomodoroModeStarted()
+                                }else if currentState == ._POSTPON_EVENING_HABIT_{
+                                    if SettingsManagerObject.isEasySkipEnabled{
+                                        mainViewControllerObj?.postponeEveningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
+                                        self.pomodoroModeStarted()
+                                    }else{
+                                        var shouldAskPasswordForEvening = false
+                                        if shouldAskPassword() && cutOffTime != nil && SettingsManagerObject.isPasswordRequireInSkipEveningAfterCutOff{
+                                            let cutOffDate = Calendar.current.date(bySettingHour: cutOffTime!.hour, minute: cutOffTime!.minute, second: cutOffTime!.second, of: Date())!
+                                            let currentDate = Date()
+                                            if currentDate > cutOffDate{
+                                                shouldAskPasswordForEvening = true
+                                            }
+                                        }
+                                        
+                                        if shouldAskPasswordForEvening{
+                                            self.presentAsSheet(self.enterPasswordVcObj!)
+                                            self.enterPasswordVcObj?.parentVc = self
+                                            return;
+                                        }else{
+                                            mainViewControllerObj?.postponeEveningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
+                                            self.pomodoroModeStarted()
+                                        }
+                                    }
+                                }else if currentState == ._POSTPON_FOCUS_SUMMARY_{
+                                    mainViewControllerObj?.postponeFocusSummaryFor(minutes: totalMinutes + 2)
+                                    self.pomodoroModeStarted()
+                                }
+                            }else if modalResponse == .alertSecondButtonReturn{
+                                self.pomodoroModeStarted()
+                            }
+                            self.view.window?.close()
+                            allApiObject.capturePosthog(event: "start-focus-session-popup-closed", metadata: [:])
+                        })
+                        return;
+                    }
+                }
+            }
+        }
+        pomodoroModeStarted()
+        self.view.window?.close()
+        allApiObject.capturePosthog(event: "start-focus-session-popup-closed", metadata: [:])
+    }
+    
+    
+    func pomodoroModeStarted(){
+        addLog(text: "pomodoro mode Started")
+        isFocusModeStartedAutomatically = false
+        if arrFocusTypeForPomodoro.count == 0{
+            return
+        }
+        if sliderStrictness.integerValue == 1{
+            currentFocusModeStrictness = ._NORMAL_
+        }else if sliderStrictness.integerValue == 2{
+            currentFocusModeStrictness = ._STRICT_
+        }else if sliderStrictness.integerValue == 3{
+            currentFocusModeStrictness = ._SUPER_STRICT_
+        }
+        UserDefaults.standard.set(sliderStrictness.integerValue, forKey: kUserdefaultsLastFocusModeStrictness)
+        if getEndFocusModeWindowControllerObj().window!.isVisible{
+            let timestamp = getStringFromDate(date: startFocusModeTime ?? Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
+            addEntryInStatsCsv(logType: "focus block", activity: focusCompletedVcObj!.currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: "\(focusModeMinutesToPerform) of \(focusCompletedVcObj!.currentFocusModeName)", distractionsEncountered: "", abortReason: "", feedback: "", tags:"")
+            getEndFocusModeWindowControllerObj().window?.close()
+        }
+        let minute = textFieldWorkDuration.integerValue
+        let calendar = Calendar.current
+        endFocusModeTime = calendar.date(byAdding: .minute, value: minute, to: Date())
+        startFocusModeTime = Date()
+        
+        for i in 0..<arrFocusType.count{
+            arrFocusType[i]["isOn"] = false
+            arrFocusType[i]["isPaused"] = false
+        }
+        
+        getTotalFocuedTime()
+        //After finishing pomodoro block, clicking start another focus block doesn't use correct focus mode #741
+        startingFocusModeVcObj?.loadView()
+        //
+        if radioButtonBlockingStyleAi.state == .on{
+            UserDefaults.standard.set(true, forKey: kUserdefaultsSimplePomodoroAiBlockingSelected)
+            SettingsManagerObject.isAiCheckUrlEnabled = true
+        }else{
+            UserDefaults.standard.set(false, forKey: kUserdefaultsSimplePomodoroAiBlockingSelected)
+            SettingsManagerObject.isAiCheckUrlEnabled = false
+        }
+        
+        minFocusAlignmentScoreToShowDistractingPopUp = 90
+        for i in 0..<arrFocusType.count{
+            if let isDeepWorkFocus = arrFocusType[i][focusModeKey] as? Bool{//this key will only be awailable in default focus type
+                if  isDeepWorkFocus{
+                    arrFocusType[i]["isOn"] = true
+                    shouldReloadTaskPlayer = true
+                    if isAccessibilityEnabled(isPrompt: true){
+                        enableDND()
+                    }
+                    workBeforeFocusBegin(index: i)
+                    if !textViewAchieve.string.isEmpty{
+                        arrFocusType[i]["lastIntentionUsed"] = textViewAchieve.string
+                    }else{
+                        arrFocusType[i]["lastIntentionUsed"] = ""
+                    }
+                    if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled{
+                        focusModeTaskString = arrFocusType[i]["lastTaskUsed"] as? String ?? ""
+                    }else{
+                        focusModeTaskString = ""
+                    }
+                    UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+                    updateAllFocusModes()
+                    
+                    appdelegate!.setStatusBarButtonColorForFocusMode(color: nil, colorString:arrFocusType[i]["color"] as? String ?? "")
+                    break;
+                }
+            }
+            
+        }
+        
+        
+        isFocusModeRunning = true
+        appdelegate!.setStatusBarButtonTitleForFocusMode(title: textViewAchieve.string)
+        appdelegate!.statusbutton?.imagePosition = .imageLeft
+        
+            
+        
+        if timerForFocusMode != nil{
+            timerForFocusMode?.invalidate()
+            timerForFocusMode = nil
+        }
+        if timerForFocusModeEndNotification != nil{
+            timerForFocusModeEndNotification?.invalidate()
+            timerForFocusModeEndNotification = nil
+        }
+        isFocusTimeType = ._HOUR_
+        
+        appdelegate?.setFocusModeTimer(hour: nil, minute: minute)
+        isFocusModeStartedFromPomodoroMode = true
+    
+        isSkipBreakActivityDuringPomodoro = true
+        whatToAchieveInFocusBlock = textViewAchieve.string
+        appdelegate!.setIntentionInBrainDumpWindow()
+        appdelegate!.focusModeStartted(isStartedByPusher: false)
+        
+        if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled{
+            showTaskPlayerWindow(totalDuration: minute, intention: textViewAchieve.string, automatically:true)
+        }
+        //After finishing pomodoro block, clicking start another focus block doesn't use correct focus mode #741
+        startingFocusModeVcObj?.lastIntention = textViewAchieve.string
+        startingFocusModeVcObj?.lastHourValue = 0
+        startingFocusModeVcObj?.lastMinuteValue = textFieldWorkDuration.integerValue
+        startingFocusModeVcObj?.lastSkipMicroBreakState = isSkipBreakActivityDuringPomodoro
+        //
+        allApiObject.capturePosthog(event: "start-focus-session-manually", metadata: ["type":"simple-focus", "focusDuration":currentPomodoroWorkDuration, "breakDuration":currentPomodoroBreakDuration])
+ 
+    }
+
+    
+    func passwordIsCorrect(){
+        print("password Correct")
+        isHardCorePomodoroModeOn = false
+        self.view.window?.close()
+        allApiObject.capturePosthog(event: "start-focus-session-popup-closed", metadata: [:])
+    }
+    override func viewWillDisappear() {
+        isIntentionFromMorningPostpone = false
+        timer?.invalidate()
+        timer = nil
+        if alertExtendPostpone != nil{
+            if alertExtendPostpone!.window.isVisible{
+                self.view.window!.endSheet(alertExtendPostpone!.window)
+            }
+        }
+        if enterPasswordVcObj != nil{
+            if self == enterPasswordVcObj!.presentingViewController{
+                enterPasswordVcObj!.dismiss(enterPasswordVcObj!)
+            }
+        }
+    }
+    var timer:Timer?
+    var currentTimer = 0
+    func startTimer() {
+        if timer != nil{
+            timer?.invalidate()
+            timer = nil
+        }
+        
+        currentTimer = unfocusedTime
+        let (h,m,s) = secondsToHoursMinutesSeconds(seconds: currentTimer)
+        var hour = "\(h)"
+        var minute = "\(m)"
+        var second = "\(s)"
+        
+        if hour.count == 1 {
+            hour = "0\(h)"
+        }
+        if minute.count == 1 {
+            minute = "0\(m)"
+        }
+        if second.count == 1 {
+            second = "0\(s)"
+        }
+        self.lblTimerUnfocused.stringValue = timerText.replacingOccurrences(of: "<TIME>", with: "\(hour):\(minute):\(second)")//"Time spend unfocused: \(hour):\(minute):\(second)"//
+        DispatchQueue.main.async {
+            self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
+            RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
+        }
+    }
+    func setProgres(){
+        let remainingSeconds = currentTimer
+        let (h,m,s) = secondsToHoursMinutesSeconds(seconds: remainingSeconds)
+        var hour = "\(h)"
+        var minute = "\(m)"
+        var second = "\(s)"
+        
+        if hour.count == 1 {
+            hour = "0\(h)"
+        }
+        
+        if minute.count == 1 {
+            minute = "0\(m)"
+        }
+        if second.count == 1 {
+            second = "0\(s)"
+        }
+        
+        DispatchQueue.main.async {
+            self.lblTimerUnfocused.stringValue = self.timerText.replacingOccurrences(of: "<TIME>", with: "\(hour):\(minute):\(second)")//"Time spend unfocused: \(hour):\(minute):\(second)"//
+        }
+    }
+    @objc func performTimerCount() {
+        if !appdelegate!.isSystemSleep && !appdelegate!.isScreenSaverStart && currentState != ._ACTIVITY_{
+            currentTimer += 1
+        }
+        setProgres()
+    }
+
+
+
+    @IBAction func btnInfoAiBlockingClicked(_ sender: Any) {
+        var toolTipAiBlocking = "When you open a website you haven't specifically blocked or allowed, we'll use AI to check whether the website is relevant or not based on your focus intention. In strict mode, it will block it immediately if it's not relevant. In non strict mode, it will show a popup asking whether you really need it."
+        if let simplePomodoroVcInfo = configjson.value(forKey: "simplePomodoroVcInfo") as? NSDictionary{
+            toolTipAiBlocking = simplePomodoroVcInfo.value(forKey: "toolTipAiBlocking") as? String ?? toolTipAiBlocking
+        }
+        
+        showTooltip(sender: btnInfoAiBlocking, msg: toolTipAiBlocking, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
+    }
+    @IBAction func btnInfoPomodoroClicked(_ sender: Any) {
+        if popoverTooltip == nil{
+            popoverTooltip = NSPopover()
+            popoverTooltip!.behavior = .transient
+            popoverTooltip!.animates = false
+            //        popoverTooltip!.delegate = appdelegate
+        }
+        if popoverTooltip!.isShown{
+            popoverTooltip?.close()
+        }
+        let vc = getPomodoroTooltipVcObject()
+
+        func getPomodoroTooltipVcObject()->pomodoroTooltipVc{
+            if pomodoroTooltipVcObj == nil{
+                pomodoroTooltipVcObj = newStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("pomodoroTooltipVc")) as? pomodoroTooltipVc
+            }
+            return pomodoroTooltipVcObj!
+        }
+        popoverTooltip!.contentViewController = vc
+        popoverTooltip!.contentSize = vc.view.frame.size
+        
+        popoverTooltip!.show(relativeTo: btnInfoPomodoro.bounds, of: btnInfoPomodoro, preferredEdge: NSRectEdge.maxX)
+    }
+    
+    
+    @IBAction func btnStrictnessNormalClicked(_ sender: Any) {
+        var msg = "can pause/stop focus session at any time"
+        if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
+            if let startingFocusModeInfo = focusInfo.value(forKey: "startingFocusModeInfo") as? NSDictionary{
+                msg = startingFocusModeInfo.value(forKey: "strictnessNormalTooltip") as? String ?? msg
+            }
+        }
+        
+        showTooltip(sender: btnStrictnessNormal, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
+    }
+    
+    @IBAction func btnStrictnessStrictClicked(_ sender: Any) {
+        var msg = "requires countdown timer before pausing/stopping focus session"
+        if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
+            if let startingFocusModeInfo = focusInfo.value(forKey: "startingFocusModeInfo") as? NSDictionary{
+                msg = startingFocusModeInfo.value(forKey: "strictnessStrictTooltip") as? String ?? msg
+            }
+        }
+        
+        showTooltip(sender: btnStrictnessStrict, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
+    }
+
+    @IBAction func btnStrictnessSuperStrictClicked(_ sender: Any) {
+        var msg = "immediately block urls + prevents pausing/stopping focus session or opening settings"
+        if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
+            if let startingFocusModeInfo = focusInfo.value(forKey: "startingFocusModeInfo") as? NSDictionary{
+                msg = startingFocusModeInfo.value(forKey: "strictnessSuperStrictTooltip") as? String ?? msg
+            }
+        }
+        
+        showTooltip(sender: btnStrictnessSuperStrict, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
+    }
+    
+    
+    @IBAction func sliderStrictnessClicked(_ sender: Any) {
+        if sliderStrictness.integerValue == 3{
+            var strictnessSuperStrictClickedText = "I understand I cannot stop this focus session until it ends. I am committed to avoiding distractions and getting a ton of work done."
+            if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
+                if let startingFocusModeInfo = focusInfo.value(forKey: "startingFocusModeInfo") as? NSDictionary{
+                    strictnessSuperStrictClickedText = startingFocusModeInfo.value(forKey: "strictnessSuperStrictClickedText") as? String ?? strictnessSuperStrictClickedText
+                }
+            }
+            
+            showTooltip(sender: sliderStrictness, msg: strictnessSuperStrictClickedText, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
+        }
+    }
+}
+
+
+
+
+
+
+extension simplePomodoroVc: NSTextFieldDelegate, NSTextViewDelegate{
+    func controlTextDidChange(_ obj: Notification) {
+        if let textField = obj.object as? NSTextField{
+            if textField == textFieldWorkDuration{
+                updateBreakDuration()
+            }else if textField == textFieldBreakDuration{
+                isBreakDurationComesFromBreakRatio = false
+                print("isBreakDurationComesFromBreakRatio false")
+            }
+        }
+    }
+    
+    func textDidChange(_ notification: Notification) {
+        guard let textView = notification.object as? NSTextView else{
+            return
+        }
+        if textView == textViewAchieve{
+            if textView.string.isEmpty{
+                btnLetsDoIt.isEnabled = false
+            }else{
+                btnLetsDoIt.isEnabled = true
+            }
+        }
+    }
+}
+
+extension simplePomodoroVc: TourDelegate{
+    func buttonNextClicked() {
+        currentTourIndex += 1
+        if currentTourIndex == 1{
+            popoverMenuTour.show(relativeTo: lblTitleBlockingStyle.bounds, of: lblTitleBlockingStyle, preferredEdge: NSRectEdge.minX)
+        }else if currentTourIndex == 2{
+            popoverMenuTour.show(relativeTo: lblTitleWorkDuration.bounds, of: lblTitleWorkDuration, preferredEdge: NSRectEdge.minX)
+        }else if currentTourIndex == 3{
+            popoverMenuTour.show(relativeTo: lblTitleBreakDuration.bounds, of: lblTitleBreakDuration, preferredEdge: NSRectEdge.minX)
+        }else if currentTourIndex == 4{
+            popoverMenuTour.show(relativeTo: lblQuestionFirst.bounds, of: lblQuestionFirst, preferredEdge: NSRectEdge.minX)
+        }else if currentTourIndex == 5{
+            popoverMenuTour.show(relativeTo: lblTitleStrictnessLevel.bounds, of: lblTitleStrictnessLevel, preferredEdge: NSRectEdge.minX)
+        }
+        if currentTourIndex < arrTourMessages.count{
+            var currentIndexText = indexText.replacingOccurrences(of: "<CURRENTINDEX>", with: "\(currentTourIndex + 1)")
+            currentIndexText = currentIndexText.replacingOccurrences(of: "<TOTALCOUNT>", with: "\(arrTourMessages.count)")
+            menuTourPopoverVcObj?.showCurrentMessage(title: arrTourMessages[currentTourIndex]["title"] ?? "", description: arrTourMessages[currentTourIndex]["description"] ?? "", buttonTitle: arrTourMessages[currentTourIndex]["buttonTitle"] ?? "", indexText: currentIndexText, arrList: [], progress: currentTourIndex + 1, progressMaxValue: arrTourMessages.count)
+        }else{
+            popoverMenuTour.close()
+        }
+    }
+    func buttonCloseClicked() {
+        popoverMenuTour.close()
+    }
+}
+

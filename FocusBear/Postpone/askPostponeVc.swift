@@ -278,12 +278,12 @@ class askPostponeVc: NSViewController {
     
     
     @IBAction func btnPostponeClicked(_ sender: Any) {
-        addLog(text: "Ask postpone view - button Postpone Clicked")
+        addLog(text: "[user-action] Ask postpone view - button Postpone Clicked")
         let postponeTime = Int(popUpButtonSelectMinutes.title) ?? 15
         if currentState == ._MORNING_HABIT_{
             if activityPostponeCount == 0 && postponeTime > 15{//when user clicks Please spare me for the first time, if the user selects to postpones for longer than 15 then the password will be asked.//#441
                 
-                if (UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil) && SettingsManagerObject.isPasswordRequireInSkipMorning{
+                if shouldAskPassword() && SettingsManagerObject.isPasswordRequireInSkipMorning{
                     self.view.removeFromSuperview()
                     mainViewControllerObj?.showPasswordView()
                     enterPasswordVcObj?.parentVc = self
@@ -291,30 +291,23 @@ class askPostponeVc: NSViewController {
                 }else{
                     activityPostponeCount += 1
                     self.view.removeFromSuperview()
-                    mainViewControllerObj?.postponeMorningHabitFor(minutes: postponeTime, secondsToPostpone: nil, showAskFocusModeView:true)
+                    mainViewControllerObj?.postponeMorningHabitFor(minutes: postponeTime, secondsToPostpone: nil, showAskFocusModeView: true, showAskIntention: true)
                 }
                 
             }else{
                 activityPostponeCount += 1
                 self.view.removeFromSuperview()
-                mainViewControllerObj?.postponeMorningHabitFor(minutes: postponeTime, secondsToPostpone: nil, showAskFocusModeView:true)
+                mainViewControllerObj?.postponeMorningHabitFor(minutes: postponeTime, secondsToPostpone: nil, showAskFocusModeView: true, showAskIntention: true)
             }
             
         }else if currentState == ._EVENING_HABIT_{
             if activityPostponeCount == 0 && postponeTime > 15{//when user clicks Please spare me for the first time, if the user selects to postpones for longer than 15 then the password will be asked.//#441
                 
-                if (UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil){
-                    
-                    if isHighPrioritySequenceGoing{
-                        if SettingsManagerObject.isPasswordRequireInSkipEveningAfterCutOff{
-                            self.view.removeFromSuperview()
-                            mainViewControllerObj?.showPasswordView()
-                            enterPasswordVcObj?.parentVc = self
-                        }else{
-                            activityPostponeCount += 1
-                            self.view.removeFromSuperview()
-                            mainViewControllerObj?.postponeEveningHabitFor(minutes: postponeTime, secondsToPostpone: nil, showAskFocusModeView:true)
-                        }
+                if shouldAskPassword(){
+                    if isHighPrioritySequenceGoing{// allready asked password if high Priority Sequence is Going
+                        self.view.removeFromSuperview()
+                        activityPostponeCount += 1
+                        mainViewControllerObj?.postponeEveningHabitFor(minutes: postponeTime, secondsToPostpone: nil, showAskFocusModeView: true, showAskIntention: true)
                         
                     }else{
                         if SettingsManagerObject.isPasswordRequireInSkipEvening{
@@ -324,27 +317,27 @@ class askPostponeVc: NSViewController {
                         }else{
                             activityPostponeCount += 1
                             self.view.removeFromSuperview()
-                            mainViewControllerObj?.postponeEveningHabitFor(minutes: postponeTime, secondsToPostpone: nil, showAskFocusModeView:true)
+                            mainViewControllerObj?.postponeEveningHabitFor(minutes: postponeTime, secondsToPostpone: nil, showAskFocusModeView: true, showAskIntention: true)
                         }
                     }
                 }else{
                     activityPostponeCount += 1
                     self.view.removeFromSuperview()
-                    mainViewControllerObj?.postponeEveningHabitFor(minutes: postponeTime, secondsToPostpone: nil, showAskFocusModeView:true)
+                    mainViewControllerObj?.postponeEveningHabitFor(minutes: postponeTime, secondsToPostpone: nil, showAskFocusModeView: true, showAskIntention: true)
                 }
                 
             }else{
                 self.view.removeFromSuperview()
                 activityPostponeCount += 1
-                mainViewControllerObj?.postponeEveningHabitFor(minutes: postponeTime, secondsToPostpone: nil, showAskFocusModeView:true)
+                mainViewControllerObj?.postponeEveningHabitFor(minutes: postponeTime, secondsToPostpone: nil, showAskFocusModeView: true, showAskIntention: true)
             }
             
         }else if currentState == ._ACTIVITY_{
             if isShowingAskOfficeModeView{
-                addLog(text: "Ask postpone view - Show Activityostpone View")
+                addLog(text: "Ask postpone view - Show Activity postpone View")
                 showActivityostponeView()
             }else{//skip break activities
-                addLog(text: "Ask postpone view - Postpone Break Activitie Clicked")
+                addLog(text: "Ask postpone view - Postpone Break Activitie")
                 activityPostponeCount += 1
                 self.view.removeFromSuperview()
                 mainViewControllerObj?.postponeBreakActivitiesFor(minutes: postponeTime, secondsToPostpone: nil)
@@ -352,8 +345,26 @@ class askPostponeVc: NSViewController {
         }else if currentState == ._FOCUS_SUMMARY_{
             self.view.removeFromSuperview()
             
-            if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
-                if SettingsManagerObject.isPasswordRequireInSkipEvening{
+            if shouldAskPassword() && !SettingsManagerObject.isEasySkipEnabled{
+                var shouldShowPasswordView = false
+                if cutOffTime != nil{
+                    let cutOffDate = Calendar.current.date(bySettingHour: cutOffTime!.hour, minute: cutOffTime!.minute, second: cutOffTime!.second, of: Date())!
+                    let currentDate = Date()
+                    if currentDate > cutOffDate{
+                        if SettingsManagerObject.isPasswordRequireInSkipEveningAfterCutOff{
+                            shouldShowPasswordView = true
+                        }
+                    }else{
+                        if SettingsManagerObject.isPasswordRequireInSkipEvening{
+                            shouldShowPasswordView = true
+                        }
+                    }
+                }else{
+                    if SettingsManagerObject.isPasswordRequireInSkipEvening{
+                        shouldShowPasswordView = true
+                    }
+                }
+                if shouldShowPasswordView{
                     mainViewControllerObj?.showPasswordView()
                     enterPasswordVcObj?.parentVc = self
                 }else{
@@ -369,6 +380,7 @@ class askPostponeVc: NSViewController {
     @IBAction func btnAbortBreakClicked(_ sender: Any) {
         if currentState == ._ACTIVITY_{
             if isShowingAskOfficeModeView{//enableOffcieMode
+                addLog(text: "[user-action] Ask postpone view - Enabled Office Mode clicked")
                 let filterArr = arrAllbreakActivities.filter { $0.isOfficeFriendly == true}
                 if filterArr.count == 0{ //no activity found with isOfficeFriendly
                     //crete office friendy activity and start brek activity
@@ -384,12 +396,12 @@ class askPostponeVc: NSViewController {
                 }
             }else{
                 
-                addLog(text: "Ask postpone view - Skip Break Activitie Clicked")
+                addLog(text: "[user-action] Ask postpone view - Skip Break Activitie Clicked")
                 self.view.removeFromSuperview()
                 mainViewControllerObj?.postponeBreakActivitiesFor(minutes: breakAfterMinutes, secondsToPostpone: nil)// we will use "postponeBreakActivitiesFor" function to skip break activity beacuse in "setActivitytimer" func there is no code to start morning habit again if break activity started from morning or evening routine(allowed app habit)
             }
         }else{
-            addLog(text: "Ask postpone view - button Abort Clicked")
+            addLog(text: "[user-action] Ask postpone view - button Abort Clicked")
             self.view.removeFromSuperview()
             mainViewControllerObj?.processAborting()
         }
@@ -445,12 +457,9 @@ class askPostponeVc: NSViewController {
             
             arrAllbreakActivities.append(breakActivity(id:id,name: officeFriendlyActivityName, durationSeconds: 20, IncludeInEveryBreak: false, urlsArray: [], logQuantity:false, choiceType: ._NONE_, choices: [], logQuantityQuestion: "", openSpecificApps: false, allowUrls: [], allowApps: [], isOfficeFriendly: true, allowedFocusMode: "", logQuantityType: "",activity_sequence_id:activity_sequence_id, take_notes: "", text_instructions: "", imgUrls: [], completion_requirements: "", useTimer: true, checkList:[]))
             
+
             
-            
-            
-            
-            
-            allApiObject.isSettingsValid(settings: mutableDic, completionHandler: {dic,statusCode  in
+            allApiObject.isSettingsValid(settings: mutableDic, isOnboarding:false, completionHandler: {dic,statusCode  in
                 DispatchQueue.main.async {
 
                     
@@ -460,8 +469,6 @@ class askPostponeVc: NSViewController {
                     }else{
                         
                         if statusCode == 200{
-
-                            
                             do {
                                 let jsonResultData =  try JSONSerialization.data(withJSONObject: dic!, options: JSONSerialization.WritingOptions.prettyPrinted)
                                 
@@ -471,8 +478,6 @@ class askPostponeVc: NSViewController {
                                     UserDefaults.standard.set(backToString, forKey: kUserdefaultsSelectedJson)
                                     
                                 }
-                                
-                                
                             } catch let myJSONError {
                                 print(myJSONError)
                             }
@@ -483,13 +488,11 @@ class askPostponeVc: NSViewController {
                     }
                 }
             })
-
         }
-
     }
     
     @IBAction func btnOkIWillDoBreakClicked(_ sender: Any) {
-        addLog(text: "Ask postpone view - button Ok I Will Do activity Clicked")
+        addLog(text: "[user-action] Ask postpone view - button Ok I Will Do activity Clicked")
 
         if currentState == ._ACTIVITY_{
             self.timer?.invalidate()
@@ -503,11 +506,10 @@ class askPostponeVc: NSViewController {
             self.timer?.invalidate()
             self.timer = nil
         }
-        
     }
-    
 
     func startTimer(duration:Int) {
+        self.timer?.invalidate()
         lblTimer.isHidden = false
         currentTimer = 0
         totalDuration = duration

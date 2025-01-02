@@ -1,16 +1,25 @@
 PODS:
-  - JSONSchema (0.6.0)
+  - NWWebSocket (0.5.3)
+  - PusherSwift (10.1.4):
+    - NWWebSocket (~> 0.5.3)
+    - TweetNacl (~> 1.0.0)
   - Sentry (7.10.0):
     - Sentry/Core (= 7.10.0)
   - Sentry/Core (7.10.0)
+  - TrueTime (5.0.3)
+  - TweetNacl (1.0.2)
 
 DEPENDENCIES:
-  - JSONSchema
+  - PusherSwift
   - Sentry (from `https://github.com/getsentry/sentry-cocoa.git`, tag `7.10.0`)
+  - TrueTime
 
 SPEC REPOS:
   trunk:
-    - JSONSchema
+    - NWWebSocket
+    - PusherSwift
+    - TrueTime
+    - TweetNacl
 
 EXTERNAL SOURCES:
   Sentry:
@@ -23,9 +32,12 @@ CHECKOUT OPTIONS:
     :tag: 7.10.0
 
 SPEC CHECKSUMS:
-  JSONSchema: c84ae39b71107fec1d5c3ef0bc0a23ab49daee0c
+  NWWebSocket: 05fc4419102f33934f87157d70228837e327064f
+  PusherSwift: 671c49e9c5441e30960d2e0282a879b2f8c80bcb
   Sentry: 6ff0eac197e699126c024993eba40a7462e92941
+  TrueTime: b49551ffafb28a9dee04e51b226f42a416010842
+  TweetNacl: 3abf4d1d2082b0114e7a67410e300892448951e6
 
-PODFILE CHECKSUM: 14103350e421fc5c495e04056e8b175a0d33ce9f
+PODFILE CHECKSUM: 78073e36dca8fc92048dc3827511fc85ed548500
 
-COCOAPODS: 1.11.2
+COCOAPODS: 1.13.0

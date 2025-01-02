@@ -32,7 +32,12 @@ class skipHabitVc: NSViewController {
     }
     func resetView(){
         addLog(text: "skipHabitVc - resetView")
-        startTimer(duration: 15) 
+        
+        if SettingsManagerObject.isEasySkipEnabled{
+            skipHabit()
+        }else{
+            startTimer(duration: 15)
+        }
     }
     @IBAction func btnCloseClicked(_ sender: Any) {
         timer?.invalidate()
@@ -71,7 +76,7 @@ class skipHabitVc: NSViewController {
         }
     }
     @objc func performTimerCount() {
-        currentTimer += 1// todo 1 kro
+        currentTimer += 1
         let (_,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
         
         var minute = "\(m)"
@@ -91,34 +96,37 @@ class skipHabitVc: NSViewController {
             
             self.timer?.invalidate()
             DispatchQueue.main.async {
-
-                self.lblTimer.isHidden = true
-                self.view.removeFromSuperview()
-                
-                if rememberNextHabitVcObj != nil{
-                    if thirdVcObj!.view.subviews.contains(rememberNextHabitVcObj!.view){
-                        rememberNextHabitVcObj!.view.removeFromSuperview()
-                        thirdVcObj?.boxBg.isHidden = false
-                    }
-                }
-                if currentAction == ._VISUALIZE_{
-                    mainViewControllerObj?.showThirdVc()
-                }
-                if currentAction == ._INPROGRESS_{
-                    mainViewControllerObj?.showThirdVc()
-                }
-                if currentAction == ._START_{// break activity case
-                    mainViewControllerObj?.showThirdVc()
-                }
-                
-                if currentState == ._ACTIVITY_{
-                    thirdVcObj?.activitySkipped()
-                }else if currentState == ._MORNING_HABIT_{
-                    thirdVcObj?.morningHabitSkipped()
-                }else if currentState == ._EVENING_HABIT_{
-                    thirdVcObj?.eveningHabitSkipped()
-                }
+                self.skipHabit()
             }
+        }
+    }
+    
+    func skipHabit(){
+        self.lblTimer.isHidden = true
+        self.view.removeFromSuperview()
+        
+        if rememberNextHabitVcObj != nil{
+            if thirdVcObj!.view.subviews.contains(rememberNextHabitVcObj!.view){
+                rememberNextHabitVcObj!.view.removeFromSuperview()
+                thirdVcObj?.boxBg.isHidden = false
+            }
+        }
+        if currentAction == ._VISUALIZE_{
+            mainViewControllerObj?.showThirdVc()
+        }
+        if currentAction == ._INPROGRESS_{
+            mainViewControllerObj?.showThirdVc()
+        }
+        if currentAction == ._START_{// break activity case
+            mainViewControllerObj?.showThirdVc()
+        }
+        
+        if currentState == ._ACTIVITY_{
+            thirdVcObj?.activitySkipped()
+        }else if currentState == ._MORNING_HABIT_{
+            thirdVcObj?.morningHabitSkipped()
+        }else if currentState == ._EVENING_HABIT_{
+            thirdVcObj?.eveningHabitSkipped()
         }
     }
 }

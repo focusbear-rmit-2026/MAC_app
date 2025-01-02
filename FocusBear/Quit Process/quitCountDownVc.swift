@@ -8,8 +8,9 @@
 
 import Cocoa
 
-class quitCountDownVc: NSViewController {
+class quitCountDownVc: NSViewController {// not in use 
     
+    @IBOutlet weak var btnContinue: Button!
     @IBOutlet weak var imgViewGif: NSImageView!
     @IBOutlet weak var lblTitle: NSTextField!
     @IBOutlet weak var lblSeconds: NSTextField!
@@ -19,16 +20,14 @@ class quitCountDownVc: NSViewController {
     @IBOutlet weak var btnCancelAbort: NSButton!
     @IBOutlet weak var lblEmailId: NSTextField!
     @IBOutlet weak var lblPleaseEmail: NSTextField!
-    var currentTimer = 0
-    var totalDuration = 2
-    var timer:Timer?
+//    var currentTimer = 0
+//    var totalDuration = 2
+//    var timer:Timer?
     
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do view setup here.
 
-        
         lblEmailId.stringValue = emailID
         if let abortInfo = configjson.value(forKey: "quitInfo") as? NSDictionary{
             if let quittingTitle = abortInfo.value(forKey: "quittingTitle") as? String{
@@ -62,6 +61,10 @@ class quitCountDownVc: NSViewController {
             }
             
         }
+        
+        btnContinue.title = buttonContinueText
+        self.lblSeconds.stringValue = ""
+        btnContinue.buttonColor = NSColor.white.cgColor
     }
     
     override func viewWillAppear() {
@@ -75,9 +78,6 @@ class quitCountDownVc: NSViewController {
         }
     }
     override func viewWillDisappear() {
-        self.timer?.invalidate()
-        self.timer = nil
-        
         if enterPasswordVcObj != nil{
             if self.view.subviews.contains(enterPasswordVcObj!.view){
                 enterPasswordVcObj?.view.removeFromSuperview()
@@ -86,91 +86,89 @@ class quitCountDownVc: NSViewController {
     }
     var enterPasswordVcObj: enterPasswordVc?
     func resetData(){
-        
-        if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
+        if shouldAskPassword(){
             if SettingsManagerObject.isPasswordRequireInQuitApp{
                 if self.enterPasswordVcObj == nil{
                     self.enterPasswordVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("enterPasswordVc")) as?enterPasswordVc
                 }
                 self.view.addSubview(self.enterPasswordVcObj!.view)
                 self.view.addConstraints(subView: self.enterPasswordVcObj!.view)
+                self.enterPasswordVcObj?.removeConstraints()
                 addLog(text: "Showing enter password view from quit")
-                currentTimer = 0
-                totalDuration = 2
-                let (_,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
-                var minute = "\(m)"
-                var second = "\(s)"
-                if minute.count == 1 {
-                    minute = "0\(m)"
-                }
-                if second.count == 1 {
-                    second = "0\(s)"
-                }
-                self.lblSeconds.stringValue = "\(minute):\(second)"
-            }else{
-                startTimer()
             }
             
-        }else{
-            startTimer()
         }
     }
     
     func startTimer() {
-        currentTimer = 0
-        totalDuration = 2
-        let (_,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
-        var minute = "\(m)"
-        var second = "\(s)"
-        if minute.count == 1 {
-            minute = "0\(m)"
-        }
-        if second.count == 1 {
-            second = "0\(s)"
-        }
-        self.lblSeconds.stringValue = "\(minute):\(second)"
-        DispatchQueue.global().sync {
-            self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
-            RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
-            print("xxxxx")
-        }
+//        currentTimer = 0
+//        totalDuration = 2
+//        let (_,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
+//        var minute = "\(m)"
+//        var second = "\(s)"
+//        if minute.count == 1 {
+//            minute = "0\(m)"
+//        }
+//        if second.count == 1 {
+//            second = "0\(s)"
+//        }
+//        self.lblSeconds.stringValue = "\(minute):\(second)"
+//        DispatchQueue.global().sync {
+//            self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
+//            RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
+//            print("xxxxx")
+//        }
     }
     
-    @objc func performTimerCount() {
-        
-        currentTimer += 1
-        let (_,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
-        var minute = "\(m)"
-        var second = "\(s)"
-        
-        if minute.count == 1 {
-            minute = "0\(m)"
-        }
-        if second.count == 1 {
-            second = "0\(s)"
-        }
-        
-        DispatchQueue.main.async {
-            self.lblSeconds.stringValue = "\(minute):\(second)"
-        }
-        if self.totalDuration <= self.currentTimer {
-            self.timer?.invalidate()
-            DispatchQueue.global().async {
-                DispatchQueue.main.async {
-                    getQuittingWindowObject().contentViewController = getQuittingConfirmVcObject()
-                    getQuittingConfirmVcObject().resetData()
-                }
-            }
-        }
-    }
+//    @objc func performTimerCount() {
+//
+//        currentTimer += 1
+//        let (_,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
+//        var minute = "\(m)"
+//        var second = "\(s)"
+//
+//        if minute.count == 1 {
+//            minute = "0\(m)"
+//        }
+//        if second.count == 1 {
+//            second = "0\(s)"
+//        }
+//
+//        DispatchQueue.main.async {
+//            self.lblSeconds.stringValue = "\(minute):\(second)"
+//        }
+//        if self.totalDuration <= self.currentTimer {
+//            self.timer?.invalidate()
+//            DispatchQueue.global().async {
+//                DispatchQueue.main.async {
+//                    getQuittingWindowObject().contentViewController = getQuittingConfirmVcObject()
+//                    getQuittingConfirmVcObject().resetData()
+//                }
+//            }
+//        }
+//    }
     
     
     @IBAction func btnEmaiClicked(_ sender: Any) {
     }
+    
     @IBAction func btnCancelAbortClicked(_ sender: Any) {
-        addLog(text: "quitCountDownVc - btnCancelAbortClicked")//
-        self.timer?.invalidate()
-        self.timer = nil
+        addLog(text: "[user-action] quitCountDownVc - btnCancelAbortClicked")//
         self.view.window?.close()
     }
+    
+    @IBAction func btnContinueClicked(_ sender: Any) {
+        addLog(text: "[user-action] quitCountDownVc - btnContinueClicked")//
+        let currentDate = Date()
+        let firstRunDate = UserDefaults.standard.object(forKey: kUserdefaultsFirstRunDate) as? Date ?? currentDate
+        let diffDays = Calendar.current.dateComponents([.day], from: firstRunDate, to: currentDate).day ?? 0
+        
+        if diffDays > 2{
+            getQuittingWindowObject().contentViewController = getQuittingConfirmVcObject()
+            getQuittingConfirmVcObject().resetData()
+        }else{
+            getQuittingWindowObject().contentViewController = getInitialQuitFeedbackVcObject()
+        }
+    }
+
 }

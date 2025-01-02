@@ -140,18 +140,18 @@ class focusTipsVc: NSViewController {
         
     }
     @IBAction func btnBackClicked(_ sender: Any) {
-        addLog(text: "focusTipsVc:-  Button Back clicked")
+        addLog(text: "[user-action] focusTipsVc:-  Button Back clicked")
         currentSlideIndex -= 1
         recheckSlideState()
     }
     
     @IBAction func btnGotItClicked(_ sender: Any) {
         if currentSlideIndex == arrCurrentDic.count - 1{
-            addLog(text:"focusTipsVc:- btn GotIt Clicked")
+            addLog(text:"[user-action] focusTipsVc:- btn GotIt Clicked")
 //            preloadFocusModesWindowControllerObj!.contentViewController = getHowHeardVcObj()
             self.view.window?.close()
         }else{
-            addLog(text:"focusTipsVc:- btn Next Clicked")
+            addLog(text:"[user-action] focusTipsVc:- btn Next Clicked")
             currentSlideIndex += 1
             
             recheckSlideState()

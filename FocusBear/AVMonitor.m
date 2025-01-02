@@ -160,7 +160,7 @@ bail:
         
         //check if apple
         // also check input source
-        NSLog(@"manufacturer: %@", currentMic.manufacturer);
+        //NSLog(@"manufacturer: %@", currentMic.manufacturer);
         
         if( (YES == [currentMic.manufacturer isEqualToString:@"Apple Inc."]) &&
             (YES == [[[currentMic activeInputSource] inputSourceID] isEqualToString:@"imic"]) )
@@ -224,27 +224,10 @@ bail:
 //is built-in mic on?
 -(BOOL)isMicOn
 {
-    
     BOOL isMicOn = NO;
-    //flag
-//    int isOn;
-//    IsMicrophoneOn(&isOn);
-//
-//    if (1 == isOn)
-//    {
-//        isMicOn = YES;
-//
-//    }
-//
-//    return isMicOn;
-    
-    // return yha se
-    
     //mic's ID
     AudioObjectID builtInMic = 0;
-    
-    //dbg msg
-    //os_log_debug(logHandle, "checking if built-in mic is active");
+
     
     //find mic
     builtInMic = [self findBuiltInMic];
@@ -276,16 +259,7 @@ bail:
     
     //init size
     propertySize = sizeof(isRunning);
-    
-//    OSStatus statusIsBluetooth = -1;
-//
-//    statusIsBluetooth = AudioDeviceGetProperty(deviceID, 0, false, kAudioDevicePropertyTransportType, &propertySize, &isRunning);
-//
-//    if (isRunning==kAudioDeviceTransportTypeBluetooth) {
-//        // it's bluetooth
-//        NSLog(@"C.kAudioDeviceTransportTypeBluetooth");
-//    }
-    
+
     //query to get 'kAudioDevicePropertyDeviceIsRunningSomewhere' status
     status = AudioDeviceGetProperty(deviceID, 0, false, kAudioDevicePropertyDeviceIsRunningSomewhere, &propertySize, &isRunning);
     if(noErr != status)

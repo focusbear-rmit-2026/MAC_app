@@ -9,6 +9,7 @@ import Cocoa
 
 class onboardingSetPasswordVc: NSViewController {
 
+    @IBOutlet weak var lblDescription: NSTextField!
     @IBOutlet weak var btnContinue: Button!
     @IBOutlet weak var checkBoxSkipEveningHabitAfterCutOff: NSButton!
     @IBOutlet weak var checkBoxQuitApp: NSButton!
@@ -17,6 +18,7 @@ class onboardingSetPasswordVc: NSViewController {
     @IBOutlet weak var checkBoxSkipEveningHabit: NSButton!
     @IBOutlet weak var checkBoxSkipMorningHabit: NSButton!
     @IBOutlet weak var checkBoxChangeSettings: NSButton!
+    @IBOutlet weak var checkBoxUseRelaxFocusMode: NSButton!
     
     @IBOutlet weak var lblCheckBoxSkipEveningHabitAfterCutOff: ignoreMouseTextField!
     @IBOutlet weak var lblCheckBoxQuitApp: NSTextField!
@@ -25,7 +27,7 @@ class onboardingSetPasswordVc: NSViewController {
     @IBOutlet weak var lblCheckBoxSkipEveningHabit: NSTextField!
     @IBOutlet weak var lblCheckBoxSkipMorningHabit: NSTextField!
     @IBOutlet weak var lblCheckBoxChangeSettings: NSTextField!
-    
+    @IBOutlet weak var lblCheckBoxUseRelaxFocusMode: ignoreMouseTextField!
     
     @IBOutlet weak var lblQuestionPassword: NSTextField!
     @IBOutlet weak var lblTitleAskPassword: NSTextField!
@@ -42,10 +44,13 @@ class onboardingSetPasswordVc: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
+        lblTitle.stringValue = "Set a password to unlock the computer"
+        lblDescription.stringValue = "To make it harder to impulsively use your computer late at night or before you've done your morning routine, you can set a password. This is not the same as your login password. We recommend that you get an accountability partner to set the password. That way, you have to ask them to use your computer at a time you probably shouldn't be using it."
+        lblCheckBoxUseRelaxFocusMode.stringValue = "Allow using relax focus mode"
         lblTitleAskPassword.stringValue = "Ask for password:"
         lblQuestionPassword.stringValue = "When do you want to require a password?"
        
-        lblCheckBoxQuitApp.stringValue = "Quitting app"
+        lblCheckBoxQuitApp.stringValue = "Quitting/deactivating app"
         lblCheckBoxStopPomodoro.stringValue = "Stopping Super pomodoro mode"
         lblCheckBoxAbortingShutoff.stringValue = "Aborting shutoff"
         lblCheckBoxSkipEveningHabit.stringValue = "Postponing/skipping evening routine"
@@ -71,6 +76,10 @@ class onboardingSetPasswordVc: NSViewController {
             lblCheckBoxChangeSettings.stringValue = passwordPreferencesInfo.value(forKey: "buttonChangeSettingsText") as? String ?? lblCheckBoxChangeSettings.stringValue
             lblCheckBoxSkipEveningHabitAfterCutOff.stringValue = passwordPreferencesInfo.value(forKey: "buttonSkipEveningHabitAfterCutOffText") as? String ?? lblCheckBoxSkipEveningHabitAfterCutOff.stringValue
             lblCheckBoxSavedPassword.stringValue = passwordPreferencesInfo.value(forKey: "buttonSavedPasswordText") as? String ?? lblCheckBoxSavedPassword.stringValue
+            lblCheckBoxUseRelaxFocusMode.stringValue = passwordPreferencesInfo.value(forKey: "buttonUseRelaxFocusModeText") as? String ?? lblCheckBoxUseRelaxFocusMode.stringValue
+            
+            lblTitle.stringValue = passwordPreferencesInfo.value(forKey: "titleSetPasswordOnboarding") as? String ?? lblTitle.stringValue
+            lblDescription.stringValue = passwordPreferencesInfo.value(forKey: "descriptionSetPasswordOnboarding") as? String ?? lblDescription.stringValue
         }
 
         checkBoxSavedPassword.isHidden = true
@@ -90,7 +99,7 @@ class onboardingSetPasswordVc: NSViewController {
         lblConfirmPassword.stringValue = "Confirm Password"
 
         if UserDefaults.standard.object(forKey: kUserdefaultsPasswordSetInOnboarding) == nil{
-            lblTitle.stringValue = "Set Password"
+            
             btnChangePassword.title = "Set Password"
             textFieldNewPassword.placeholderString = "New Password"
             textFieldConfirmPassword.placeholderString = "Confirm Password"
@@ -100,7 +109,6 @@ class onboardingSetPasswordVc: NSViewController {
             
             if let passwordPreferencesInfo = configjson.value(forKey: "passwordPreferencesInfo") as? NSDictionary{
                 if let titleSetPassword = passwordPreferencesInfo.value(forKey: "titleSetPassword") as? String{
-                    lblTitle.stringValue = titleSetPassword
                 }
                 if let buttonSetPasswordText = passwordPreferencesInfo.value(forKey: "buttonSetPasswordText") as? String{
                     btnChangePassword.title = buttonSetPasswordText
@@ -124,16 +132,15 @@ class onboardingSetPasswordVc: NSViewController {
             checkBoxSkipMorningHabit.isEnabled = false
             checkBoxChangeSettings.isEnabled = false
             checkBoxSkipEveningHabitAfterCutOff.isEnabled = false
+            checkBoxUseRelaxFocusMode.isEnabled = false
         }
         
         else{
-            lblTitle.stringValue = "Change Password"
             btnChangePassword.title = "Change Password"
             textFieldNewPassword.placeholderString = "*****"
             textFieldConfirmPassword.placeholderString = "*****"
             if let passwordPreferencesInfo = configjson.value(forKey: "passwordPreferencesInfo") as? NSDictionary{
                 if let titleChangePassword = passwordPreferencesInfo.value(forKey: "titleChangePassword") as? String{
-                    lblTitle.stringValue = titleChangePassword
                 }
                 if let buttonChangePasswordText = passwordPreferencesInfo.value(forKey: "buttonChangePasswordText") as? String{
                     btnChangePassword.title = buttonChangePasswordText
@@ -153,6 +160,7 @@ class onboardingSetPasswordVc: NSViewController {
             checkBoxSkipMorningHabit.isEnabled = true
             checkBoxChangeSettings.isEnabled = true
             checkBoxSkipEveningHabitAfterCutOff.isEnabled = true
+            checkBoxUseRelaxFocusMode.isEnabled = true
         }
 
         checkBoxChangeSettings.state = .on
@@ -162,6 +170,17 @@ class onboardingSetPasswordVc: NSViewController {
         checkBoxAbortingShutoff.state = .on
         checkBoxStopPomodoro.state = .on
         checkBoxQuitApp.state = .on
+        checkBoxUseRelaxFocusMode.state = .on
+    }
+    
+    @IBAction func checkBoxUseRelaxFocusModeClicked(_ sender: Any) {
+        if checkBoxUseRelaxFocusMode.state == .on{
+            SettingsManagerObject.isPasswordRequireInUseRelaxFocusMode = true
+            allApiObject.capturePosthog(event: "require-password-in-use-relax-focus-mode-enabled", metadata: [:])
+        }else{
+            SettingsManagerObject.isPasswordRequireInUseRelaxFocusMode = false
+            allApiObject.capturePosthog(event: "require-password-in-use-relax-focus-mode-disabled", metadata: [:])
+        }
     }
     
     

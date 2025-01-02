@@ -18,8 +18,8 @@ class askBreakTimeVc: NSViewController {
     @IBOutlet weak var lblQuestion: NSTextField!
     @IBOutlet weak var lblTitle: NSTextField!
     @IBOutlet weak var lblMinutes: NSTextField!
-    
-    @IBOutlet weak var btnInfo: NSButton!
+    @IBOutlet weak var btnInfo: hoverInfoButton!
+
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
@@ -42,24 +42,34 @@ class askBreakTimeVc: NSViewController {
         }
         
     }
+    override func viewWillDisappear() {
+        hideOnboardingProgress(view: self.view)
+        hideOnboardingBellIcon(view: self.view)
+    }
     override func viewDidAppear() {
+        showOnboardingProgress(view: self.view, progress: 11)
+        showOnboardingBellIcon(view: self.view, screen: "ask-break-time-screen")
         textFieldMinutes.integerValue = defaultBreakDurationValue
         stepper.integerValue = defaultBreakDurationValue
         textFieldMinutes.setFocus()
     }
     @IBAction func btnInfoClicked(_ sender: Any) {
-        btnInfo.isHidden = true
-        lblDescription.stringValue = "To avoid screen headaches and neck strain, Focus Bear will encourage you to take breaks at regular intervals. We give you a 30 second warning so you can postpone the break if it's a bad time. We also detect if you're in a meeting and don't show breaks as that might lead to awkward screensharing moments otherwise!"//
+//        allApiObject.capturePosthog(event: "ask-break-time-info-icon-clicked", metadata: [:])
+        var msg = "To avoid screen headaches and neck strain, Focus Bear will encourage you to take breaks at regular intervals. We give you a 30 second warning so you can postpone the break if it's a bad time. We also detect if you're in a meeting and don't show breaks as that might lead to awkward screensharing moments otherwise!"
         if let askBreakTimeVcInfo = configjson.value(forKey: "askBreakTimeVcInfo") as? NSDictionary{
-            lblDescription.stringValue = askBreakTimeVcInfo.value(forKey: "fullDescriptionText") as? String ?? lblDescription.stringValue
+            msg = askBreakTimeVcInfo.value(forKey: "fullDescriptionText") as? String ?? msg
         }
+        showTooltip(sender: btnInfo, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:300)
+        
     }
     @IBAction func btnContinueClicked(_ sender: Any) {
         UserDefaults.standard.set(textFieldMinutes.integerValue, forKey: kUserdefaultsBreakDurationValue)
+        allApiObject.capturePosthog(event: "ask-break-time-continue-clicked", metadata: [:])
         appdelegate!.showOnbardingHabit()
     }
     @IBAction func stepperMinutesClicked(_ sender: Any) {
         textFieldMinutes.stringValue = "\(stepper.integerValue)"
+        allApiObject.capturePosthog(event: "break-time-edited", metadata: [:])
     }
 }
 
@@ -76,6 +86,7 @@ extension askBreakTimeVc: NSTextFieldDelegate{
                 }
                 textFieldMinutes.stringValue = "\(count)"
                 stepper.integerValue = count
+                allApiObject.capturePosthog(event: "break-time-edited", metadata: [:])
             }
         }
     }

@@ -8,7 +8,7 @@
 
 import Cocoa
 import WebKit
-class askOnboardingVideoVc: NSViewController {
+class askOnboardingVideoVc: NSViewController {// not in use
 
     @IBOutlet weak var bgBoxHeight: NSLayoutConstraint!
     @IBOutlet weak var webView: WKWebView!
@@ -35,7 +35,9 @@ class askOnboardingVideoVc: NSViewController {
         }
         
     }
-    
+    override func viewWillAppear() {
+        appdelegate!.statusbutton?.action = #selector(appdelegate!.showAlertOnboardingVideo)//
+    }
     func closeWindow(){
         if webView.isHidden == false{ // onboarding view is lodded
             let link = URL(string:"about:blank")!
@@ -45,7 +47,8 @@ class askOnboardingVideoVc: NSViewController {
             allApiObject.capturePosthog(event: "onboarding-video-watched", metadata: ["watched_duration_seconds":Int(secondsBetween)])
         }
         self.view.window?.close()
-        appdelegate!.loadCredentialsAndDeviceId()
+        appdelegate!.loadCredentialsAndDeviceId() // not in use 
+        appdelegate!.statusbutton?.action = nil
         showMenuTourWindow()
     }
     @IBAction func btnPlayVideoClicked(_ sender: Any) {

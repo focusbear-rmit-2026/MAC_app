@@ -206,12 +206,10 @@ extension allTracksVc: NSTableViewDelegate, NSTableViewDataSource{
             }
         }else{
             for i in 0..<arrAllTracks.count{
-                //if arrAllTracks[i]["isPlaying"] as? Bool == true{
-                    arrAllTracks[i]["isPlaying"] = false
-                    arrAllTracks[i]["isPaused"] = false
-                    currentSound?.stop()
-                    currentSound = nil
-                //}
+                arrAllTracks[i]["isPlaying"] = false
+                arrAllTracks[i]["isPaused"] = false
+                currentSound?.stop()
+                currentSound = nil
             }
             
             arrAllTracks[sender.tag]["isPlaying"] = true

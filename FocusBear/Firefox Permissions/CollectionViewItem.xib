@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="15705" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+    <dependencies>
+        <deployment identifier="macosx"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="15705"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <objects>
+        <customObject id="-2" userLabel="File's Owner" customClass="CollectionViewItem" customModule="Fast_Text" customModuleProvider="target">
+            <connections>
+                <outlet property="view" destination="Hz6-mo-xeY" id="0bl-1N-x8E"/>
+            </connections>
+        </customObject>
+        <customObject id="-1" userLabel="First Responder" customClass="FirstResponder"/>
+        <customObject id="-3" userLabel="Application" customClass="NSObject"/>
+        <customView id="Hz6-mo-xeY">
+            <rect key="frame" x="0.0" y="0.0" width="480" height="272"/>
+            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+            <subviews>
+                <box boxType="custom" borderWidth="0.0" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="8nM-W9-oes">
+                    <rect key="frame" x="0.0" y="0.0" width="480" height="272"/>
+                    <view key="contentView" id="9hD-59-eHQ">
+                        <rect key="frame" x="0.0" y="0.0" width="480" height="272"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <imageView horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="Ydd-9q-qyq">
+                                <rect key="frame" x="0.0" y="0.0" width="480" height="272"/>
+                                <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyUpOrDown" image="NSApplicationIcon" id="87P-Ke-bHf"/>
+                            </imageView>
+                        </subviews>
+                        <constraints>
+                            <constraint firstItem="Ydd-9q-qyq" firstAttribute="leading" secondItem="9hD-59-eHQ" secondAttribute="leading" id="BYq-mo-yal"/>
+                            <constraint firstAttribute="trailing" secondItem="Ydd-9q-qyq" secondAttribute="trailing" id="bfx-4H-qW3"/>
+                            <constraint firstAttribute="bottom" secondItem="Ydd-9q-qyq" secondAttribute="bottom" id="qCi-h0-jah"/>
+                            <constraint firstItem="Ydd-9q-qyq" firstAttribute="top" secondItem="9hD-59-eHQ" secondAttribute="top" id="s8o-Fz-MbW"/>
+                        </constraints>
+                    </view>
+                    <color key="fillColor" red="1" green="0.27058823529411763" blue="0.22745098039215686" alpha="0.0" colorSpace="custom" customColorSpace="sRGB"/>
+                </box>
+            </subviews>
+            <constraints>
+                <constraint firstItem="8nM-W9-oes" firstAttribute="top" secondItem="Hz6-mo-xeY" secondAttribute="top" id="MQE-cg-nYx"/>
+                <constraint firstAttribute="bottom" secondItem="8nM-W9-oes" secondAttribute="bottom" id="W0b-ZW-r83"/>
+                <constraint firstItem="8nM-W9-oes" firstAttribute="leading" secondItem="Hz6-mo-xeY" secondAttribute="leading" id="c71-nH-8Ao"/>
+                <constraint firstAttribute="trailing" secondItem="8nM-W9-oes" secondAttribute="trailing" id="uFO-Dl-zYk"/>
+            </constraints>
+            <point key="canvasLocation" x="140" y="154"/>
+        </customView>
+        <customObject id="UFJ-Wt-WIX" customClass="CollectionViewItem" customModule="Fast_Text" customModuleProvider="target"/>
+    </objects>
+    <resources>
+        <image name="NSApplicationIcon" width="32" height="32"/>
+    </resources>
+</document>

@@ -9,6 +9,8 @@ import Cocoa
 
 class abortingFocusModeVc: NSViewController {
 
+    @IBOutlet weak var stackViewWhyStopFocusMode: NSStackView!
+    @IBOutlet weak var lblStrictModeActivated: NSTextField!
     @IBOutlet weak var lblSeconds: NSTextField!
     @IBOutlet weak var btnAbortFocus: Button!
     @IBOutlet weak var btnCancel: Button!
@@ -22,13 +24,15 @@ class abortingFocusModeVc: NSViewController {
     var timer:Timer?
     
     var titleText = "Aborting Focus type - <FOCUSTYPE>"
+    var titlePauseText = "Pausing Focus type - <FOCUSTYPE>"
+    
     var arrReasons = ["I achieved what I wanted to too early.", "I have an emergency", "Focus mode is not working properly."]
     
     var focusName = ""
     var reasonWorkCompletedText = ""
     var reasonEmergencyText = ""
     var reasonFocusModeNotWorkingText = ""
-    
+    var isPausingFocusMode = false
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
@@ -37,15 +41,12 @@ class abortingFocusModeVc: NSViewController {
         btnCancel.title = "Cancel"
         btnAbortFocus.title = "Abort Focus"
         
+        lblStrictModeActivated.stringValue = "Strict mode activated: you asked me to show a 15 second countdown timer before you can pause / deactivate"
         
         if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
             if let abortingFocusModeInfo = focusInfo.value(forKey: "abortingFocusModeInfo") as? NSDictionary{
-                if let title = abortingFocusModeInfo.value(forKey: "title") as? String{
-                    titleText = title
-                }
-                if let questionText = abortingFocusModeInfo.value(forKey: "questionText") as? String{
-                    lblQuestionFirst.stringValue = questionText
-                }
+                titleText = abortingFocusModeInfo.value(forKey: "title") as? String ?? titleText
+                lblQuestionFirst.stringValue = abortingFocusModeInfo.value(forKey: "questionText") as? String ?? lblQuestionFirst.stringValue
                 if let reasonsFirstText = abortingFocusModeInfo.value(forKey: "reasonsFirstText") as? String{
                     arrReasons[0] = reasonsFirstText
                 }
@@ -56,13 +57,11 @@ class abortingFocusModeVc: NSViewController {
                     arrReasons[2] = reasonsThirdText
                 }
                 
-                if let buttonCancelText = abortingFocusModeInfo.value(forKey: "buttonCancelText") as? String{
-                    btnCancel.title = buttonCancelText
-                }
+                btnCancel.title = abortingFocusModeInfo.value(forKey: "buttonCancelText") as? String ?? btnCancel.title
                 
-                if let buttonAbortFocusText = abortingFocusModeInfo.value(forKey: "buttonAbortFocusText") as? String{
-                    btnAbortFocus.title = buttonAbortFocusText
-                }
+                btnAbortFocus.title = abortingFocusModeInfo.value(forKey: "buttonAbortFocusText") as? String ?? btnAbortFocus.title
+                titlePauseText = abortingFocusModeInfo.value(forKey: "titlePauseText") as? String ?? titlePauseText
+                lblStrictModeActivated.stringValue = abortingFocusModeInfo.value(forKey: "strictModeText") as? String ?? lblStrictModeActivated.stringValue
             }
         }
         
@@ -70,12 +69,12 @@ class abortingFocusModeVc: NSViewController {
         
         btnCancel.buttonColor = NSColor.white.cgColor
     }
-    
+    override func viewWillAppear() {
+        closePomodoroWindowIOfVisible()
+    }
     var currentReasonIndex = 0
-    func ResetData(){
-        
-        
-        
+    func ResetData(forPause:Bool){
+        isPausingFocusMode = forPause
         if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
             if let abortingFocusModeInfo = focusInfo.value(forKey: "abortingFocusModeInfo") as? NSDictionary{
                 if let reasons = abortingFocusModeInfo.value(forKey: "reasonsFirstText") as? String{
@@ -115,13 +114,34 @@ class abortingFocusModeVc: NSViewController {
             }
         }
         focusName = focusType
-        lblTitle.stringValue = titleText.replacingOccurrences(of: "<FOCUSTYPE>", with: focusType)//"Aborting Focus type - \(focusType)"
         
-        if SettingsManagerObject.isEasySkipEnabled{
-            self.btnAbortFocus.isEnabled = false
-            self.lblSeconds.isHidden = true
-        }else{
+
+        self.btnAbortFocus.isEnabled = false
+        self.lblSeconds.isHidden = true
+        self.lblStrictModeActivated.isHidden = true
+        if currentFocusModeStrictness == ._STRICT_{
+            self.lblStrictModeActivated.isHidden = false
             startTimer()
+        }
+        if forPause{
+            stackViewWhyStopFocusMode.isHidden = true
+            lblTitle.stringValue = titlePauseText.replacingOccurrences(of: "<FOCUSTYPE>", with: focusType)
+            btnAbortFocus.title = "Pause Focus Block"
+            if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
+                if let abortingFocusModeInfo = focusInfo.value(forKey: "abortingFocusModeInfo") as? NSDictionary{
+                    btnAbortFocus.title = abortingFocusModeInfo.value(forKey: "buttonPauseFocusText") as? String ?? btnAbortFocus.title
+                }
+            }
+        }else{
+            stackViewWhyStopFocusMode.isHidden = false
+            lblTitle.stringValue = titleText.replacingOccurrences(of: "<FOCUSTYPE>", with: focusType)
+            btnAbortFocus.title = "Deactivate Focus Block"
+            if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
+                if let abortingFocusModeInfo = focusInfo.value(forKey: "abortingFocusModeInfo") as? NSDictionary{
+                    btnAbortFocus.title = abortingFocusModeInfo.value(forKey: "buttonAbortFocusText") as? String ?? btnAbortFocus.title
+                }
+            }
+            
         }
     }
     
@@ -132,7 +152,7 @@ class abortingFocusModeVc: NSViewController {
         self.btnAbortFocus.isEnabled = false
         self.lblSeconds.isHidden = false
         currentTimer = 0
-        totalDuration = 5
+        totalDuration = 15
         let (_,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
         var minute = "\(m)"
         var second = "\(s)"
@@ -175,10 +195,14 @@ class abortingFocusModeVc: NSViewController {
                 DispatchQueue.main.async {
                     self.lblSeconds.isHidden = true
                     
-                    if self.popUpBtnAbortReasons.titleOfSelectedItem == ""{
-                        self.btnAbortFocus.isEnabled = false
-                    }else{
+                    if self.isPausingFocusMode{
                         self.btnAbortFocus.isEnabled = true
+                    }else{
+                        if self.popUpBtnAbortReasons.titleOfSelectedItem == ""{
+                            self.btnAbortFocus.isEnabled = false
+                        }else{
+                            self.btnAbortFocus.isEnabled = true
+                        }
                     }
                 }
             }
@@ -201,33 +225,53 @@ class abortingFocusModeVc: NSViewController {
         }
     }
     @IBAction func btnAbortFocusClicked(_ sender: Any) {
-        addLog(text: "abortingFocusModeVc - btnAbortFocusClicked")//
+        addLog(text: "[user-action] abortingFocusModeVc - btnAbortFocusClicked")//
         if isFocusModeOnOrPaused() == false{
             self.view.window?.close()
             return
         }
-        isHardCorePomodoroModeOn = false
-        let isAutoMeetingsModeStarted = appdelegate!.isAutoMeetingsModeStarted
-        let appUsedInAutoMeetingFocusMode = appdelegate!.appUsedInAutoMeetingFocusMode
-        var reason = ""
-        if popUpBtnAbortReasons.titleOfSelectedItem == reasonFocusModeNotWorkingText{
-            reason = "Focus mode is not working properly."
-            appdelegate?.focusModeAborted()
-        }else if popUpBtnAbortReasons.titleOfSelectedItem == reasonWorkCompletedText{
-            reason = "I achieved what I wanted to too early."
-            appdelegate?.focusModeFinished(isSilent: false, isShutOffTime: false)
-        }else if popUpBtnAbortReasons.titleOfSelectedItem == reasonEmergencyText{
-            reason = "I have an emergency"
-            appdelegate?.focusModeAborted()
-        }
-        addLog(text: "Focus mode abort clicked with reason - \(reason)")
-        let timestamp = getStringFromDate(date: startFocusModeTime ?? Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
-        if isAutoMeetingsModeStarted{
-            addEntryInStatsCsv(logType: "focus mode abort", activity: "focus block - \(focusName)", durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: "Meeting using {\(appUsedInAutoMeetingFocusMode)}", distractionsEncountered: "", abortReason: reason, feedback: "")
+        if isPausingFocusMode{
+            for i in 0..<arrFocusType.count{
+                if arrFocusType[i]["isOn"] as? Bool == true{
+                    appdelegate?.pauseFocusMode(index: i)
+//                    menuViewControllerObj?.tblViewFocusMode.reloadData()
+                    addLog(text: "Focus mode paused after 15 seconds timer")
+                    break;
+                }
+            }
         }else{
-           addEntryInStatsCsv(logType: "focus mode abort", activity: "focus block - \(focusName)", durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: "", distractionsEncountered: "", abortReason: reason, feedback: "")
+            isHardCorePomodoroModeOn = false
+            let isAutoMeetingsModeStarted = appdelegate!.isAutoMeetingsModeStarted
+            let appUsedInAutoMeetingFocusMode = appdelegate!.appUsedInAutoMeetingFocusMode
+            var reason = ""
+            if popUpBtnAbortReasons.titleOfSelectedItem == reasonFocusModeNotWorkingText{
+                reason = "Focus mode is not working properly."
+                if !focusModeTaskString.isEmpty{
+                    appdelegate?.focusModeFinished(isSilent: false, isShutOffTime: false, isMorningRoutineTime: false)
+                }else{
+                    appdelegate?.focusModeAborted()
+                }
+                
+            }else if popUpBtnAbortReasons.titleOfSelectedItem == reasonWorkCompletedText{
+                reason = "I achieved what I wanted to too early."
+                appdelegate?.focusModeFinished(isSilent: false, isShutOffTime: false, isMorningRoutineTime: false)
+            }else if popUpBtnAbortReasons.titleOfSelectedItem == reasonEmergencyText{
+                reason = "I have an emergency"
+                if !focusModeTaskString.isEmpty{
+                    appdelegate?.focusModeFinished(isSilent: false, isShutOffTime: false, isMorningRoutineTime: false)
+                }else{
+                    appdelegate?.focusModeAborted()
+                }
+            }
+            addLog(text: "Focus mode abort clicked with reason - \(reason)")
+            let timestamp = getStringFromDate(date: startFocusModeTime ?? Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
+            if isAutoMeetingsModeStarted{
+                addEntryInStatsCsv(logType: "focus mode abort", activity: "focus block - \(focusName)", durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: "Meeting using {\(appUsedInAutoMeetingFocusMode)}", distractionsEncountered: "", abortReason: reason, feedback: "", tags:"")
+            }else{
+               addEntryInStatsCsv(logType: "focus mode abort", activity: "focus block - \(focusName)", durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: "", distractionsEncountered: "", abortReason: reason, feedback: "", tags:"")
+            }
         }
-        
+
         self.view.window?.close()
     }
 }

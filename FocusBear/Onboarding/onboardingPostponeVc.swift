@@ -33,14 +33,14 @@ class onboardingPostponeVc: NSViewController {
     }
     
     @IBAction func btnPostponeClicked(_ sender: Any) {
-        addLog(text: "btnPostponeClicked.")
+        addLog(text: "[user-action] btnPostponeClicked.")
         self.dismiss(self)
         getWelcomeOnboardingWindowObject().close()
         appdelegate!.postponeOnboardingHabitFor(minutes: Int(popUpButtonSelectMinutes.title) ?? 15)
         allApiObject.capturePosthog(event: "postpone-initial-onboarding", metadata: [:])
     }
     @IBAction func btnCloseClicked(_ sender: Any) {
-        addLog(text: "btnCloseClicked.")
+        addLog(text: "[user-action] btnCloseClicked.")
         self.dismiss(self)
     }
 }
