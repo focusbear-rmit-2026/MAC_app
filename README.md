@@ -71,6 +71,5 @@ file:///Users/prashant/Library/Application%20Support/com.App.EarnYourScreentime/
   - `&block_mode="cuddly" / "grizzly"`
   - If `shouldShowTour`:
     - `&show_tour=true`
-
-give me a format that I can copy and paste directly in the readme file
-
+   
+Other documentation can follow below.
