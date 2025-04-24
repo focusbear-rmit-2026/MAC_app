@@ -97,6 +97,13 @@ class preferencesTabViewController: NSTabViewController {
         }
         reloadDataForAppMode()
     }
+    override func viewDidAppear() {
+        if SettingsManagerObject.isStrictnessLevelSuperGentle(){
+            self.view.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.normalWindow)))
+        }else{
+            self.view.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
+        }
+    }
     var tabViewItemFocus:NSTabViewItem?
     var tabViewItemStrictnesss:NSTabViewItem?
 
@@ -122,6 +129,43 @@ class preferencesTabViewController: NSTabViewController {
         
         self.insertTabViewItem(tabViewItemStrictnesss!, at: 2)
     }
+    
+    func newUrlOrAppAdded(){// show permissions if not added
+        if UserDefaults.standard.object(forKey: kUserdefaultsIsAnyDistractionSetByUser) == nil{
+            UserDefaults.standard.set(true, forKey: kUserdefaultsIsAnyDistractionSetByUser)
+        }
+        if UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) == nil{
+            let alertWarning = NSAlert()
+            alertWarning.setSharingType()
+            alertWarning.messageText = "Do you want to block distractions?"
+            alertWarning.informativeText = "You can block distracting websites and distracting apps. You will need to allow permissions to block distracting websites."
+            var buttonBlockText = "Yeah - block them!"
+            var buttonNoText = "No thanks"
+
+            if let simplePomodoroVcInfo = configjson.value(forKey: "simplePomodoroVcInfo") as? NSDictionary{
+                alertWarning.messageText = simplePomodoroVcInfo.value(forKey: "alertWarningPermissionsTitle") as? String ?? alertWarning.messageText
+                alertWarning.informativeText = simplePomodoroVcInfo.value(forKey: "alertWarningSetDistractionsInfo") as? String ?? alertWarning.informativeText
+                buttonBlockText = simplePomodoroVcInfo.value(forKey: "buttonBlockText") as? String ?? buttonBlockText
+                buttonNoText = simplePomodoroVcInfo.value(forKey: "buttonNoText") as? String ?? buttonNoText
+            }
+            
+            alertWarning.addButton(withTitle: buttonBlockText)
+            alertWarning.addButton(withTitle: buttonNoText)
+            
+            alertWarning.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
+                
+                if modalResponse == .alertFirstButtonReturn{
+                    showExplainingPermissionsWindow()
+                    explainingPermissionsVcObj?.showingFromPomodoro = false
+                    self.view.window?.close()
+                }
+                
+            })
+            UserDefaults.standard.set(true, forKey: kUserdefaultsBrowsersPermissionsSetByUser)
+            return;
+        }
+    }
+    
     func reloadDataForAppMode(){
         if SettingsManagerObject.isGeekModeEnabled{
             var isFocusTabAdded = false

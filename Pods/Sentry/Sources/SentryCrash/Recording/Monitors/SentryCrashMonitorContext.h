@@ -1,3 +1,4 @@
+// Adapted from: https://github.com/kstenerud/KSCrash
 //
 //  SentryCrashMonitorContext.h
 //
@@ -40,10 +41,6 @@ extern "C" {
 typedef struct SentryCrash_MonitorContext {
     /** Unique identifier for this event. */
     const char *eventID;
-    /**
-     If true, so reported user exception will have the current snapshot.
-     */
-    bool currentSnapshotUserReported;
 
     /** If true, the environment has crashed hard, and only async-safe
      *  functions should be used.
@@ -121,7 +118,7 @@ typedef struct SentryCrash_MonitorContext {
         /** The exception name. */
         const char *name;
 
-        /** The language the exception occured in. */
+        /** The language the exception occurred in. */
         const char *language;
 
         /** The line of code where the exception occurred. Can be NULL. */
@@ -182,6 +179,12 @@ typedef struct SentryCrash_MonitorContext {
         const char *kernelVersion;
         const char *osVersion;
         bool isJailbroken;
+        /**
+         * @warning We must not send this information off device because Apple forbids that.
+         * We are allowed send the amount of time that has elapsed between events that occurred
+         * within the app though. For more information see
+         * https://developer.apple.com/documentation/bundleresources/privacy_manifest_files/describing_use_of_required_reason_api#4278394.
+         */
         const char *bootTime;
         const char *appStartTime;
         const char *executablePath;
@@ -196,16 +199,14 @@ typedef struct SentryCrash_MonitorContext {
         int cpuSubType;
         int binaryCPUType;
         int binaryCPUSubType;
-        const char *timezone;
         const char *processName;
         int processID;
         int parentProcessID;
         const char *deviceAppHash;
         const char *buildType;
-        uint64_t storageSize;
         uint64_t memorySize;
-        uint64_t freeMemory;
-        uint64_t usableMemory;
+        uint64_t freeMemorySize;
+        uint64_t usableMemorySize;
     } System;
 
     struct {
@@ -218,9 +219,6 @@ typedef struct SentryCrash_MonitorContext {
         /** Reason field from the last deallocated exception. */
         const char *reason;
     } ZombieException;
-
-    /** Full path to the console log, if any. */
-    const char *consoleLogPath;
 
 } SentryCrash_MonitorContext;
 

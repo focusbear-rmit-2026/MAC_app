@@ -11,6 +11,7 @@ import WebKit
 
 class webViewLoadFailedVc: NSViewController {
 
+    @IBOutlet weak var loader: NSProgressIndicator!
     @IBOutlet weak var btnReload: Button!
     @IBOutlet weak var lblTitle: NSTextField!
     var webView:WKWebView?
@@ -26,9 +27,14 @@ class webViewLoadFailedVc: NSViewController {
             btnReload.title = webViewLoadFailedVcInfo.value(forKey: "buttonReloadText") as? String ?? btnReload.title
         }
     }
-    
+    func reloadData(){
+        loader.stopAnimation(self)
+        btnReload.isEnabled = true
+    }
     @IBAction func btnReloadClicked(_ sender: Any) {
         if let webView = webView{
+            loader.startAnimation(self)
+            btnReload.isEnabled = false
             customDelegate?.reloadClicked(webView: webView)
         }
     }

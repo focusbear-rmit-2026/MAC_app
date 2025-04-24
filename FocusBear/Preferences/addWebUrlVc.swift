@@ -325,7 +325,9 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
                 }
                 UserDefaults.standard.set(true, forKey: kUserdefaultsEditBlockedUrlsOnce)
                 
-                
+                if let tabview = preferencesWindowControllerObj?.contentViewController as? preferencesTabViewController{
+                    tabview.newUrlOrAppAdded()
+                }
                 
                 
                 

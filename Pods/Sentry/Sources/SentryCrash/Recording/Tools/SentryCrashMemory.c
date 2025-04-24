@@ -1,3 +1,4 @@
+// Adapted from: https://github.com/kstenerud/KSCrash
 //
 //  SentryCrashMemory.c
 //
@@ -26,8 +27,7 @@
 
 #include "SentryCrashMemory.h"
 
-//#define SentryCrashLogger_LocalLevel TRACE
-#include "SentryCrashLogger.h"
+#include "SentryAsyncSafeLog.h"
 
 #include <_types/_uint8_t.h>
 #include <mach/mach.h>

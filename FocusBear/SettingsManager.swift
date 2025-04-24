@@ -9,12 +9,21 @@
 import Cocoa
 
 class SettingsManager:NSObject{
-
+    
+    let strictnessLevelSuperGentle = 1
+    let strictnessLevelGentle = 2
+    let strictnessLevelSlightlyStrict = 3
+    let strictnessLevelStrict = 4
+    let strictnessLevelSuperStrict = 5
+    
     var isSettingsChanged = false
     var isSoundEnabled = true
     var isAnnouncementEnabled = false
     var isGeekModeEnabled = true
+    var isMenuPopoverEnabled = false // menu is popover or a a window
+    var isAdvancedAnalyticsInFocusModeEnabled = false// Advance analytics during focus mode //27/1/25 //  default  will be false
     
+    var isFocusVisualIndicatorEnabled = true
     
     var isPasswordRequireInChangeSettings = true
     var isPasswordRequireInSkipMorning = true
@@ -38,7 +47,7 @@ class SettingsManager:NSObject{
     
     var isMotivationalMessageEnabled = true
     var isAiCheckUrlEnabled = true
-//    var isAiAllowUrlShowAlertEnabled = true
+    //    var isAiAllowUrlShowAlertEnabled = true
     
     
     // **blocked urls**
@@ -62,8 +71,11 @@ class SettingsManager:NSObject{
     var showToDoPlayerAutomaticallyEnabled = true
     var showBrainDumpAfterMorningRoutineEnabled = false
     var isMicroBreaksEnabled = true
-    var blockingSchedule:BLOCKINGSCHEDULE = ._UNTIL_I_FINISH_WORK_
+    var blockingSchedule:BLOCKINGSCHEDULE = ._WHEN_START_FOCUS_SESSION_
     
+    
+    var brainDumpCustomUrlEnabled = false
+    var brainDumpCustomUrlValue = ""
     
     var shouldReloadAfterForceQuitEnabled = false
     var selectedFontIndex = 0
@@ -136,7 +148,7 @@ class SettingsManager:NSObject{
     
     var kUserdefaultsLocalDeviceSettings = "kUserdefaultsLocalDeviceSettings"
     
-//    var kUserdefaultsAiAllowUrlShowAlertEnabled = "kUserdefaultsAiAllowUrlShowAlertEnabled"
+    //    var kUserdefaultsAiAllowUrlShowAlertEnabled = "kUserdefaultsAiAllowUrlShowAlertEnabled"
     
     var kUserdefaultsPomodoroDurationMinutes = "kUserdefaultsPomodoroDurationMinutes"
     var kUserdefaultsBreakDurationMinutes = "kUserdefaultsBreakDurationMinutes"
@@ -200,7 +212,7 @@ class SettingsManager:NSObject{
         kUserdefaultsPasswordRequireInStopPomodoro = kUserdefaultsPasswordRequireInStopPomodoro + (appdelegate?.user?.userId ?? "")
         kUserdefaultsPasswordRequireInQuitApp = kUserdefaultsPasswordRequireInQuitApp + (appdelegate?.user?.userId ?? "")
         kUserdefaultsPasswordRequireInUseRelaxFocusMode = kUserdefaultsPasswordRequireInUseRelaxFocusMode + (appdelegate?.user?.userId ?? "")
-
+        
         kUserdefaultsArrBlockedUrls = kUserdefaultsArrBlockedUrls + (appdelegate?.user?.userId ?? "")
         kUserdefaultsArrBlockedApps = kUserdefaultsArrBlockedApps + (appdelegate?.user?.userId ?? "")
         kUserdefaultsOfficeModeEnabled = kUserdefaultsOfficeModeEnabled + (appdelegate?.user?.userId ?? "")
@@ -208,7 +220,7 @@ class SettingsManager:NSObject{
         kUserdefaultsMeetingDetectionEnabled = kUserdefaultsMeetingDetectionEnabled + (appdelegate?.user?.userId ?? "")
         kUserdefaultsBlockDistractingSitesDuringMeetingsEnabled = kUserdefaultsBlockDistractingSitesDuringMeetingsEnabled + (appdelegate?.user?.userId ?? "")
         kUserdefaultsShowMeetingDetectionAlert = kUserdefaultsShowMeetingDetectionAlert + (appdelegate?.user?.userId ?? "")
-//        kUserdefaultsHideDockInActivity = kUserdefaultsHideDockInActivity + (appdelegate?.user?.userId ?? "")//no ned to do this
+        //        kUserdefaultsHideDockInActivity = kUserdefaultsHideDockInActivity + (appdelegate?.user?.userId ?? "")//no ned to do this
         kUserdefaultsPromptToRememberHabit = kUserdefaultsPromptToRememberHabit + (appdelegate?.user?.userId ?? "")
         kUserdefaultsEasySkipEnabled = kUserdefaultsEasySkipEnabled + (appdelegate?.user?.userId ?? "")
         kUserdefaultsShowBreaksInPostponing = kUserdefaultsShowBreaksInPostponing + (appdelegate?.user?.userId ?? "")
@@ -236,7 +248,7 @@ class SettingsManager:NSObject{
         kUserdefaultsMotivationalMessageEnabled = kUserdefaultsMotivationalMessageEnabled + (appdelegate?.user?.userId ?? "")
         
         kUserdefaultsAiCheckUrlEnabled = kUserdefaultsAiCheckUrlEnabled + (appdelegate?.user?.userId ?? "")
-//        kUserdefaultsAiAllowUrlShowAlertEnabled = kUserdefaultsAiAllowUrlShowAlertEnabled + (appdelegate?.user?.userId ?? "")
+        //        kUserdefaultsAiAllowUrlShowAlertEnabled = kUserdefaultsAiAllowUrlShowAlertEnabled + (appdelegate?.user?.userId ?? "")
         
         kUserdefaultsPomodoroDurationMinutes = kUserdefaultsPomodoroDurationMinutes + (appdelegate?.user?.userId ?? "")
         kUserdefaultsBreakDurationMinutes = kUserdefaultsBreakDurationMinutes + (appdelegate?.user?.userId ?? "")
@@ -376,6 +388,11 @@ class SettingsManager:NSObject{
                 let kAiCheckUrlEnabled = "kAiCheckUrlEnabled"
                 
                 let kShowToDoPlayerAutomatically = "kShowToDoPlayerAutomatically"
+                let kBrainDumpCustomUrlEnabled = "kBrainDumpCustomUrlEnabled"
+                let kIsMenuPopoverEnabled = "kIsMenuPopoverEnabled"
+                let kIsAdvancedAnalyticsInFocusModeEnabled = "kIsAdvancedAnalyticsInFocusModeEnabled"
+                let kIsFocusVisualIndicatorEnabled = "kIsFocusVisualIndicatorEnabled"
+                let kBrainDumpCustomUrlValue = "kBrainDumpCustomUrlValue"
                 let kShowBrainDumpAfterMorningRoutine = "kShowBrainDumpAfterMorningRoutine"
                 let kMicroBreaksEnabled = "kMicroBreaksEnabled"
                 let kBlockingSchedule = "kBlockingSchedule"
@@ -578,6 +595,32 @@ class SettingsManager:NSObject{
                     UserDefaults.standard.set(val, forKey: self.kUserdefaultsAiCheckUrlEnabled)
                 }
                 
+                if let val = settings.value(forKey: kBrainDumpCustomUrlEnabled) as? Bool{
+                    brainDumpCustomUrlEnabled = val
+                }
+                
+                
+                if let val = settings.value(forKey: kIsMenuPopoverEnabled) as? Bool{
+                    isMenuPopoverEnabled = val
+                }else{
+                    if isSettingsBlank{
+                        isMenuPopoverEnabled = false
+                    }else{
+                        isMenuPopoverEnabled = true// keep enable popover for old users
+                    }
+                }
+                
+                if let val = settings.value(forKey: kIsAdvancedAnalyticsInFocusModeEnabled) as? Bool{
+                    isAdvancedAnalyticsInFocusModeEnabled = val
+                }
+                
+                if let val = settings.value(forKey: kIsFocusVisualIndicatorEnabled) as? Bool{
+                    isFocusVisualIndicatorEnabled = val
+                }
+                
+                if let val = settings.value(forKey: kBrainDumpCustomUrlValue) as? String{
+                    brainDumpCustomUrlValue = val
+                }
                 
                 if let val = settings.value(forKey: kShowToDoPlayerAutomatically) as? Bool{
                     showToDoPlayerAutomaticallyEnabled = val
@@ -597,12 +640,12 @@ class SettingsManager:NSObject{
                 }
                 
                 if let val = settings.value(forKey: kBlockingSchedule) as? Int{// read from settings
-                    blockingSchedule = BLOCKINGSCHEDULE(rawValue: val) ?? ._UNTIL_I_FINISH_WORK_
+                    blockingSchedule = BLOCKINGSCHEDULE(rawValue: val) ?? ._WHEN_START_FOCUS_SESSION_
                 }else{
                     if let val = UserDefaults.standard.object(forKey: kUserdefaultsBlockingScheduleFromOnboarding) as? Int{// read from onboarding
-                        blockingSchedule = BLOCKINGSCHEDULE(rawValue: val) ?? ._UNTIL_I_FINISH_WORK_
+                        blockingSchedule = BLOCKINGSCHEDULE(rawValue: val) ?? ._WHEN_START_FOCUS_SESSION_
                     }else{
-                        blockingSchedule = ._UNTIL_I_FINISH_WORK_// default
+                        blockingSchedule = ._WHEN_START_FOCUS_SESSION_// default
                     }
                 }
             }
@@ -1000,41 +1043,35 @@ class SettingsManager:NSObject{
             
             if let arr = UserDefaults.standard.object(forKey: kUserdefaultsArrBlockedUrls) as? [String]{
                 arrBlockedUrls = arr
+            }else{
+                UserDefaults.standard.set(arrBlockedUrls, forKey: kUserdefaultsArrBlockedUrls)
             }
             
             if let arr = UserDefaults.standard.object(forKey: kUserdefaultsArrBlockedApps) as? [String]{
                 arrBlockedApps = arr
             }else{
-                if let arrBlockedApps = UserDefaults.standard.object(forKey: kUserdefaultsBlockedAppsFromOnboarding) as? [String]{
-                    UserDefaults.standard.set(arrBlockedApps, forKey: kUserdefaultsArrBlockedApps)
-                    UserDefaults.standard.removeObject(forKey: kUserdefaultsBlockedAppsFromOnboarding)
-                    self.arrBlockedApps = arrBlockedApps
-                }else{
-                    UserDefaults.standard.set(arrBlockedApps, forKey: kUserdefaultsArrBlockedApps)
-                }
+                UserDefaults.standard.set(arrBlockedApps, forKey: kUserdefaultsArrBlockedApps)
             }
             
             if isSettingsBlank{
-                if let blockedUrls = UserDefaults.standard.object(forKey: kUserdefaultsBlockedUrlsFromOnboarding) as? [[String:Any]]{
-                    arrBlockedUrls.removeAll()
-                    for i in 0..<blockedUrls.count{
-                        if let isSelected = blockedUrls[i]["isSelected"] as? Bool {
-                            if isSelected{
-                                arrBlockedUrls.append(blockedUrls[i]["url"] as? String ?? "")
-                            }
-                        }
-                    }
-                    //UserDefaults.standard.removeObject(forKey: kUserdefaultsBlockedUrlsFromOnboarding)//will not remove from this userdefaults, after logout we will bloock urls from this
-                }else{
-                    arrBlockedUrls = ["facebook.com", "x.com", "instagram.com", "tiktok.com", "bbc.com", "cnn.com", "reddit.com", "youtube.com"]
-                }
+                //                if let blockedUrls = UserDefaults.standard.object(forKey: kUserdefaultsBlockedUrlsFromOnboarding) as? [[String:Any]]{
+                //                    arrBlockedUrls.removeAll()
+                //                    for i in 0..<blockedUrls.count{
+                //                        if let isSelected = blockedUrls[i]["isSelected"] as? Bool {
+                //                            if isSelected{
+                //                                arrBlockedUrls.append(blockedUrls[i]["url"] as? String ?? "")
+                //                            }
+                //                        }
+                //                    }
+                //                    //UserDefaults.standard.removeObject(forKey: kUserdefaultsBlockedUrlsFromOnboarding)//will not remove from this userdefaults, after logout we will bloock urls from this
+                //                }
                 
-                UserDefaults.standard.set(arrBlockedUrls, forKey: kUserdefaultsArrBlockedUrls)//
-
-                isSettingsChanged = true
-                self.perform(#selector(putUserLocalDeviceSettings))
+                //                UserDefaults.standard.set(arrBlockedUrls, forKey: kUserdefaultsArrBlockedUrls)//
+                
+                //                isSettingsChanged = true
+                //                self.perform(#selector(putUserLocalDeviceSettings))
             }
-
+            
             completionHandler()
             return
         }
@@ -1100,11 +1137,16 @@ class SettingsManager:NSObject{
         let kMotivationalMessageEnabled = "kMotivationalMessageEnabled"
         let kAiCheckUrlEnabled = "kAiCheckUrlEnabled"
         let kShowToDoPlayerAutomatically = "kShowToDoPlayerAutomatically"
+        let kBrainDumpCustomUrlEnabled = "kBrainDumpCustomUrlEnabled"
+        let kIsMenuPopoverEnabled = "kIsMenuPopoverEnabled"
+        let kIsAdvancedAnalyticsInFocusModeEnabled = "kIsAdvancedAnalyticsInFocusModeEnabled"
+        let kIsFocusVisualIndicatorEnabled = "kIsFocusVisualIndicatorEnabled"
+        let kBrainDumpCustomUrlValue = "kBrainDumpCustomUrlValue"
         let kShowBrainDumpAfterMorningRoutine = "kShowBrainDumpAfterMorningRoutine"
         let kMicroBreaksEnabled = "kMicroBreaksEnabled"
         let kBlockingSchedule = "kBlockingSchedule"
         
-//        let kAiAllowUrlShowAlertEnabled = "kAiAllowUrlShowAlertEnabled"
+        //        let kAiAllowUrlShowAlertEnabled = "kAiAllowUrlShowAlertEnabled"
         let isEditBlockedUrlsOnce = UserDefaults.standard.object(forKey: kUserdefaultsEditBlockedUrlsOnce) as? Bool ?? false
         
         var json: [String: Any] = [
@@ -1159,6 +1201,11 @@ class SettingsManager:NSObject{
             kMotivationalMessageEnabled:isMotivationalMessageEnabled,
             kAiCheckUrlEnabled:isAiCheckUrlEnabled,
             kShowToDoPlayerAutomatically:showToDoPlayerAutomaticallyEnabled,
+            kBrainDumpCustomUrlEnabled:brainDumpCustomUrlEnabled,
+            kIsMenuPopoverEnabled: isMenuPopoverEnabled,
+            kIsAdvancedAnalyticsInFocusModeEnabled:isAdvancedAnalyticsInFocusModeEnabled,
+            kIsFocusVisualIndicatorEnabled:isFocusVisualIndicatorEnabled,
+            kBrainDumpCustomUrlValue:brainDumpCustomUrlValue,
             kShowBrainDumpAfterMorningRoutine:showBrainDumpAfterMorningRoutineEnabled,
             kMicroBreaksEnabled:isMicroBreaksEnabled,
             kBlockingSchedule:blockingSchedule.rawValue,
@@ -1219,8 +1266,8 @@ class SettingsManager:NSObject{
         
         UserDefaults.standard.set(isMotivationalMessageEnabled, forKey: kUserdefaultsMotivationalMessageEnabled)
         UserDefaults.standard.set(isAiCheckUrlEnabled, forKey: kUserdefaultsAiCheckUrlEnabled)
-//        UserDefaults.standard.set(isAiAllowUrlShowAlertEnabled, forKey: kUserdefaultsAiAllowUrlShowAlertEnabled)
-
+        //        UserDefaults.standard.set(isAiAllowUrlShowAlertEnabled, forKey: kUserdefaultsAiAllowUrlShowAlertEnabled)
+        
         let json = getLocalJsonToUpload()
         
         let dic: [String: [String:Any]] = [
@@ -1308,7 +1355,7 @@ class SettingsManager:NSObject{
             
             totalAppEnableTime = settingsDictionary.value(forKey: "totalAppEnableTime") as? Int ?? 0
             totalAppDisableTime = settingsDictionary.value(forKey: "totalAppDisableTime") as? Int ?? 0
-    
+            
             
             if let date = settingsDictionary.value(forKey: "appEnableDate") as? Date{
                 appEnableDate = date
@@ -1335,12 +1382,122 @@ class SettingsManager:NSObject{
             
         }else{
             if isAppEnable{
-               appEnableDate = Date()
+                appEnableDate = Date()
             }else{
                 appDisableDate = Date()
             }
             writeLocalSettings()
         }
+    }
+    
+    
+    func getCurrentStrictnessLevel()-> Int{
+        var superGentleSettingsEnableCount = 0
+        var gentleSettingsEnableCount = 0
+        var slightlyStrictSettingsEnableCount = 0
+        var strictSettingsEnableCount = 0
+        var superStrictSettingsEnableCount = 0
+        
+        if isFullScreenEnabled{
+            gentleSettingsEnableCount += 1
+            slightlyStrictSettingsEnableCount += 1
+            strictSettingsEnableCount += 1
+            superStrictSettingsEnableCount += 1
+        }else{
+            superGentleSettingsEnableCount += 1
+        }
+        
+        if isCuddlyModeEnabled{
+            superGentleSettingsEnableCount += 1
+            gentleSettingsEnableCount += 1
+            slightlyStrictSettingsEnableCount += 1
+            strictSettingsEnableCount += 1
+        }else{
+            superStrictSettingsEnableCount += 1
+        }
+        
+        if isEasySkipEnabled{
+            superGentleSettingsEnableCount += 1
+            gentleSettingsEnableCount += 1
+        }else{
+            slightlyStrictSettingsEnableCount += 1
+            strictSettingsEnableCount += 1
+            superStrictSettingsEnableCount += 1
+        }
+        
+        if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsDoNotBlockUrlsDuringSuperPomodoroBreaks) as? Bool ?? false{
+            superGentleSettingsEnableCount += 1
+            gentleSettingsEnableCount += 1
+        }else{
+            slightlyStrictSettingsEnableCount += 1
+            strictSettingsEnableCount += 1
+            superStrictSettingsEnableCount += 1
+        }
+        
+        if shouldReloadAfterForceQuitEnabled{
+            strictSettingsEnableCount += 1
+            superStrictSettingsEnableCount += 1
+        }else{
+            superGentleSettingsEnableCount += 1
+            gentleSettingsEnableCount += 1
+            slightlyStrictSettingsEnableCount += 1
+        }
+        
+        if immediatelyBlockDistractingSites{
+            superStrictSettingsEnableCount += 1
+        }else{
+            superGentleSettingsEnableCount += 1
+            gentleSettingsEnableCount += 1
+            slightlyStrictSettingsEnableCount += 1
+            strictSettingsEnableCount += 1
+        }
+        
+        if immediatelyBlockDistractingApps{
+            superStrictSettingsEnableCount += 1
+        }else{
+            superGentleSettingsEnableCount += 1
+            gentleSettingsEnableCount += 1
+            slightlyStrictSettingsEnableCount += 1
+            strictSettingsEnableCount += 1
+        }
+        
+        if isRequiredIntentionInPostpone{
+            superStrictSettingsEnableCount += 1
+            strictSettingsEnableCount += 1
+        }else{
+            superGentleSettingsEnableCount += 1
+            gentleSettingsEnableCount += 1
+            slightlyStrictSettingsEnableCount += 1
+        }
+        
+        let arrSettingsEnableCount = [superGentleSettingsEnableCount,
+                                      gentleSettingsEnableCount,
+                                      slightlyStrictSettingsEnableCount,
+                                      strictSettingsEnableCount,
+                                      superStrictSettingsEnableCount]
+        
+        let maxValue = arrSettingsEnableCount.max()
+        var currentStrictnessLevel = 1
+        if maxValue == superGentleSettingsEnableCount{
+            currentStrictnessLevel = strictnessLevelSuperGentle
+        }else if maxValue == gentleSettingsEnableCount{
+            currentStrictnessLevel = strictnessLevelGentle
+        }else if maxValue == slightlyStrictSettingsEnableCount{
+            currentStrictnessLevel = strictnessLevelSlightlyStrict
+        }else if maxValue == strictSettingsEnableCount{
+            currentStrictnessLevel = strictnessLevelStrict
+        }else if maxValue == superStrictSettingsEnableCount{
+            currentStrictnessLevel = strictnessLevelSuperStrict
+        }
+        return currentStrictnessLevel
+    }
+    
+    func isStrictnessLevelSuperGentle()->Bool{
+        let level = getCurrentStrictnessLevel()
+        if level == strictnessLevelSuperGentle{
+            return true
+        }
+        return false
     }
 }
 

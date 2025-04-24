@@ -42,6 +42,11 @@ var kUserdefaultsBeginEveningHabitClickedDate = "kUserdefaultsBeginEveningHabitC
 var kUserdefaultsFirefoxPermissionShown = "kUserdefaultsFirefoxPermissionShown"
 var kUserdefaultsAllBrowsersPermissionInfo = "kUserdefaultsAllBrowsersPermissionInfo"
 
+var kUserdefaultsBrowsersPermissionsSetByUser = "kUserdefaultsBrowsersPermissionsSetByUser"
+var kUserdefaultsIsAnyDistractionSetByUser = "kUserdefaultsIsAnyDistractionSetByUser"
+
+
+
 var kUserdefaultsSimplePomodoroAiBlockingSelected = "kUserdefaultsSimplePomodoroAiBlockingSelected"
 
 let kUserdefaultsFirstRun = "kUserdefaultsFirstRun"// first habit k liye use ful hai
@@ -67,6 +72,8 @@ var kUserdefaultsLastHabitsStartedDate = "kUserdefaultsLastHabitsStartedDate"
 var kUserdefaultsLastHabitID = "kUserdefaultsLastHabitID"
 
 var kUserdefaultsLastHabitRunningInfo = "kUserdefaultsLastHabitRunningInfo"
+var kUserdefaultsLastCustomRoutineHabitRunningInfo = "kUserdefaultsLastCustomRoutineHabitRunningInfo"
+
 var kUserdefaultsLastSequencePostponeInfo = "kUserdefaultsLastSequencePostponeInfo"
 
 var kUserdefaultsLastSequenceSelectHabitsInfo = "kUserdefaultsLastSequenceSelectHabitsInfo"
@@ -152,6 +159,8 @@ var kUserdefaultsIsHabitsDisabledFromOnboarding = "kUserdefaultsIsHabitsDisabled
 
 var kUserdefaultsLastHabitSavedNotes = "kUserdefaultsLastHabitSavedNotes"
 var kUserdefaultsLastActivitySavedNotes = "kUserdefaultsLastActivitySavedNotes"
+var kUserdefaultsLastCustomRoutineHabitSavedNotes = "kUserdefaultsLastCustomRoutineHabitSavedNotes"
+
 
 var kUserdefaultsLastSpecaialActivitySavedNotes = "kUserdefaultsLastSpecaialActivitySavedNotes"
 var kUserdefaultsAllTracks = "kUserdefaultsAllTracks"
@@ -166,22 +175,31 @@ var kUserdefaultsDontShowConfirmGeekModeAlert = "kUserdefaultsDontShowConfirmGee
 var kUserDefaultsOpenTodoPlayerFirstTime = "kUserDefaultsOpenTodoPlayerFirstTime"
 
 var kUserDefaultsHideAppModeOption = "kUserDefaultsHideAppModeOption"
+var kUserDefaultsHideShowBrainDumpOption = "kUserDefaultsHideShowBrainDumpOption"
 
-var kUserDefaultsCustomGoals = "kUserDefaultsCustomGoals"
 
 var kUserDefaultsBlockPageTourShowed = "kUserDefaultsBlockPageTourShowed"
 
 var kUserDefaultsHowHeardAboutApp = "kUserDefaultsHowHeardAboutApp"
 
 var kUserDefaultsLastQuitReason = "kUserDefaultsLastQuitReason"
- 
-
-var kUserDefaultsSelectedOccupationForPosthog = "kUserDefaultsSelectedOccupation"
-
-var kUserDefaultsCareFactorHabitsForPosthog = "kUserDefaultsCareFactorHabits"
 var kUserdefaultsManageTaskFirstTime = "kUserdefaultsManageTaskFirstTime"
 
 var kUserdefaultsBlockingScheduleFromOnboarding = "kUserdefaultsBlockingScheduleFromOnboarding"
 
 var kUserdefaultsLastBreaksStartTime = "kUserdefaultsLastBreaksStartTime"
 var kUserdefaultsArrayBreaksDurations = "kUserdefaultsArrayBreaksDurations"
+
+
+var kUserDefaultsCustomGoals = "kUserDefaultsCustomGoals"
+var kUserDefaultsSelectedOccupationForPosthog = "kUserDefaultsSelectedOccupation"
+var kUserDefaultsCareFactorHabitsForPosthog = "kUserDefaultsCareFactorHabits"
+var kUserDefaultsCustomGoalsKey = "kUserDefaultsCustomGoals"
+var kUserDefaultsSelectedOccupationForPosthogKey = "kUserDefaultsSelectedOccupation"
+var kUserDefaultsCareFactorHabitsForPosthogKey = "kUserDefaultsCareFactorHabits"
+
+
+let kUserDefaultsLastNudgeScoreWindowXPoisition = "nudgeScoreWindowXPoisition"
+
+let kUserDefaultsLastUserEmailBeforeLogout = "kUserDefaultsLastUserEmailBeforeLogout"
+let kUserDefaultsLastUserLoginWithGoogle = "kUserDefaultsLastUserLoginWithGoogle"

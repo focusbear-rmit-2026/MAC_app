@@ -117,6 +117,7 @@ class selectJsonVc: NSViewController, NSTextViewDelegate, WKNavigationDelegate, 
     func handleLoadError(webView: WKWebView) {
         if webViewLoadFailedVcObj != nil{
             if webView.subviews.contains(webViewLoadFailedVcObj!.view){
+                webViewLoadFailedVcObj?.reloadData()
                 return;
             }
         }
@@ -125,6 +126,7 @@ class selectJsonVc: NSViewController, NSTextViewDelegate, WKNavigationDelegate, 
         webViewLoadFailedVcObj?.webView = webView
         webView.addSubview(webViewLoadFailedVcObj!.view)
         webView.addConstraints(subView: webViewLoadFailedVcObj!.view)
+        webViewLoadFailedVcObj?.reloadData()
     }
     
     
@@ -190,7 +192,7 @@ class selectJsonVc: NSViewController, NSTextViewDelegate, WKNavigationDelegate, 
         }
         
         
-        
+        addLog(text: "Load Installed Apps to web settings:- \(arrInstalledApps)")
         let mutableDic = NSMutableDictionary()
         mutableDic["installedApps"] = arrInstalledApps
         
@@ -485,7 +487,27 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
         }else if message.name == "send_new_task_added_to_todo_player"{
             print(message.body)
             focusModeTaskString = message.body as? String ?? ""
-            
+            var currentFocusModeIndex = 0
+            if (isFocusModeRunning || isAnyAllowedFocusModeActivityRunning){
+                if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._CUSTOM_ROUTINE_{
+                    for i in 0..<arrFocusType.count{
+                        let dic = arrFocusType[i]
+                        if dic["id"] as? String == currentRunningFocusType["id"] as? String{
+                            currentFocusModeIndex = i
+                            break;
+                        }
+                    }
+                }else{
+                    for i in 0..<arrFocusType.count{
+                        let dic = arrFocusType[i]
+                        if dic["isOn"] as? Bool == true{
+                            currentFocusModeIndex = i
+                            break;
+                        }
+                    }
+                }
+                arrFocusType[currentFocusModeIndex]["lastTaskUsed"] = focusModeTaskString
+            }
         }else if message.name == "send_intention"{
             print(message.body)
             let intention = message.body as? String ?? ""
@@ -539,7 +561,7 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
                     focusModeTaskString = message.body as? String ?? ""
                     var arrTaskNotCompleted = [[String : Any]]()
                     
-                    if !focusModeTaskString.isEmpty{
+                    if !focusModeTaskStringIsEmpty(){
                         if let data = focusModeTaskString.data(using: String.Encoding.utf8) {
                             do {
                                 let jsonResult:[[String: Any]] = try (JSONSerialization.jsonObject(with: data, options: []) as? [[String: Any]] ?? [])
@@ -572,7 +594,7 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
                                     }
                                 }
                                 
-                                if currentAction == ._END_ && (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_){
+                                if currentAction == ._END_ && (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._CUSTOM_ROUTINE_){
                                     if (mainViewControllerObj?.containerView.subviews.contains(thirdVcObj!.view))!{
                                         if focusCompletedForActivityVcObj != nil{
                                             if (mainViewControllerObj?.view.subviews.contains((focusCompletedForActivityVcObj!.view)))!{
@@ -615,8 +637,28 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
                         }
                     }
                     
-                    addTaskVcObj!.dismiss(addTaskVcObj)
                     allApiObject.capturePosthog(event: "mark-tasks-on-focus-session-end-screen-saved-and-closed", metadata: [:])
+                    
+                    let alert = NSAlert()
+                    alert.setSharingType()
+                    alert.alertStyle = .informational
+                    alert.messageText = "Your tasks have been saved."
+                    if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
+                        if let focusCompletedInfo = focusInfo.value(forKey: "focusCompletedInfo") as? NSDictionary{
+                            alert.messageText = focusCompletedInfo.value(forKey: "tasksSavedText") as? String ?? alert.messageText
+                        }
+                    }
+                    
+                    alert.addButton(withTitle: buttonOkText)
+                    if let window = addTaskVcObj?.view.window{
+                        alert.beginSheetModal(for: window, completionHandler: { (modalResponse) in
+                            if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
+                                
+                            }
+                        })
+                    }else{// will not execute
+                        addTaskVcObj?.dismiss(addTaskVcObj)
+                    }
                     return;
                 }
             }

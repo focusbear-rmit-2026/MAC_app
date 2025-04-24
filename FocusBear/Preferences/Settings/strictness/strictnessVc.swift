@@ -216,97 +216,11 @@ class strictnessVc: NSViewController {
         }
         
     }
+    
     func reloadStrictnessLevelState(){
-        var superGentleSettingsEnableCount = 0
-        var gentleSettingsEnableCount = 0
-        var slightlyStrictSettingsEnableCount = 0
-        var strictSettingsEnableCount = 0
-        var superStrictSettingsEnableCount = 0
-        
-        if SettingsManagerObject.isFullScreenEnabled{
-            gentleSettingsEnableCount += 1
-            slightlyStrictSettingsEnableCount += 1
-            strictSettingsEnableCount += 1
-            superStrictSettingsEnableCount += 1
-        }else{
-            superGentleSettingsEnableCount += 1
-        }
-        
-        if SettingsManagerObject.isCuddlyModeEnabled{
-            superGentleSettingsEnableCount += 1
-            gentleSettingsEnableCount += 1
-            slightlyStrictSettingsEnableCount += 1
-            strictSettingsEnableCount += 1
-        }else{
-            superStrictSettingsEnableCount += 1
-        }
-        
-        if SettingsManagerObject.isEasySkipEnabled{
-            superGentleSettingsEnableCount += 1
-            gentleSettingsEnableCount += 1
-        }else{
-            slightlyStrictSettingsEnableCount += 1
-            strictSettingsEnableCount += 1
-            superStrictSettingsEnableCount += 1
-        }
-
-        if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsDoNotBlockUrlsDuringSuperPomodoroBreaks) as? Bool ?? false{
-            superGentleSettingsEnableCount += 1
-            gentleSettingsEnableCount += 1
-        }else{
-            slightlyStrictSettingsEnableCount += 1
-            strictSettingsEnableCount += 1
-            superStrictSettingsEnableCount += 1
-        }
-        
-        if SettingsManagerObject.shouldReloadAfterForceQuitEnabled{
-            strictSettingsEnableCount += 1
-            superStrictSettingsEnableCount += 1
-        }else{
-            superGentleSettingsEnableCount += 1
-            gentleSettingsEnableCount += 1
-            slightlyStrictSettingsEnableCount += 1
-        }
-        
-        if SettingsManagerObject.immediatelyBlockDistractingSites{
-            superStrictSettingsEnableCount += 1
-        }else{
-            superGentleSettingsEnableCount += 1
-            gentleSettingsEnableCount += 1
-            slightlyStrictSettingsEnableCount += 1
-            strictSettingsEnableCount += 1
-        }
-        
-        if SettingsManagerObject.immediatelyBlockDistractingApps{
-            superStrictSettingsEnableCount += 1
-        }else{
-            superGentleSettingsEnableCount += 1
-            gentleSettingsEnableCount += 1
-            slightlyStrictSettingsEnableCount += 1
-            strictSettingsEnableCount += 1
-        }
-        
-        
-        let arrSettingsEnableCount = [superGentleSettingsEnableCount,
-                                      gentleSettingsEnableCount,
-                                      slightlyStrictSettingsEnableCount,
-                                      strictSettingsEnableCount,
-                                      superStrictSettingsEnableCount]
-        
-        let maxValue = arrSettingsEnableCount.max()
-        
-        if maxValue == superGentleSettingsEnableCount{
-            sliderStrictness.integerValue = 1
-        }else if maxValue == gentleSettingsEnableCount{
-            sliderStrictness.integerValue = 2
-        }else if maxValue == slightlyStrictSettingsEnableCount{
-            sliderStrictness.integerValue = 3
-        }else if maxValue == strictSettingsEnableCount{
-            sliderStrictness.integerValue = 4
-        }else if maxValue == superStrictSettingsEnableCount{
-            sliderStrictness.integerValue = 5
-        }
-        currentStrictnessLevel = sliderStrictness.integerValue
+        let strictnessLevel = SettingsManagerObject.getCurrentStrictnessLevel()
+        sliderStrictness.integerValue = strictnessLevel
+        currentStrictnessLevel = strictnessLevel
     }
  
     @IBAction func sliderStrictnessClicked(_ sender: Any) {

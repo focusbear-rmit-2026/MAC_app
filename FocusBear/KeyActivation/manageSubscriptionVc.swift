@@ -57,6 +57,7 @@ class manageSubscriptionVc: NSViewController, WKNavigationDelegate, webViewLoadF
     func handleLoadError(webView: WKWebView) {
         if webViewLoadFailedVcObj != nil{
             if webView.subviews.contains(webViewLoadFailedVcObj!.view){
+                webViewLoadFailedVcObj?.reloadData()
                 return;
             }
         }
@@ -65,6 +66,7 @@ class manageSubscriptionVc: NSViewController, WKNavigationDelegate, webViewLoadF
         webViewLoadFailedVcObj?.webView = webView
         webView.addSubview(webViewLoadFailedVcObj!.view)
         webView.addConstraints(subView: webViewLoadFailedVcObj!.view)
+        webViewLoadFailedVcObj?.reloadData()
     }
     
     func reloadClicked(webView:WKWebView){

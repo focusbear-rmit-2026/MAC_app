@@ -133,6 +133,33 @@ extension browserTabLimiterVc: NSTextFieldDelegate{
 extension browserTabLimiterVc: SettingToggleItemDelegate{
     func switchClicked(state: NSControl.StateValue, object: settingToggleItemVc) {
         if object == enableTabLimiterItemVcObj{
+            if state == .on{
+                if UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) == nil{
+                    enableTabLimiterItemVcObj?.btnSwitch.state = .off
+                    
+                    let alertWarning = NSAlert()
+                    alertWarning.setSharingType()
+                    alertWarning.messageText = "Browser Permissions Required"
+                    alertWarning.informativeText = "To enable the Browser Tab Limiter, permissions to manage browser tabs are required. Would you like to grant these permissions now?"
+                    alertWarning.addButton(withTitle: buttonOkText)
+                    alertWarning.addButton(withTitle: buttonCancelText)
+                    
+                    if let preferencesInfo = configjson.value(forKey: "preferencesInfo") as? NSDictionary{
+                        alertWarning.messageText = preferencesInfo.value(forKey: "alertWarningBrowserPermissionsTitle") as? String ?? alertWarning.messageText
+                        alertWarning.informativeText = preferencesInfo.value(forKey: "alertWarningBrowserPermissionsInfo") as? String ?? alertWarning.informativeText
+                    }
+                    
+                    alertWarning.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
+                        if modalResponse == .alertFirstButtonReturn{
+                            showExplainingPermissionsWindow()
+                            explainingPermissionsVcObj?.showingFromPomodoro = false
+                            UserDefaults.standard.set(true, forKey: kUserdefaultsBrowsersPermissionsSetByUser) // if ok clicked then then only save here
+                            self.view.window?.close()
+                        }
+                    })
+                    return;//
+                }
+            }
             SettingsManagerObject.isSettingsChanged = true
             if state == .on{
                 SettingsManagerObject.isTabLimiterEnabled = true

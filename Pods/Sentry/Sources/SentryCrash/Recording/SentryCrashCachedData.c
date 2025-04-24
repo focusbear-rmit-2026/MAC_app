@@ -1,3 +1,4 @@
+// Adapted from: https://github.com/kstenerud/KSCrash
 //
 //  SentryCrashCachedData.c
 //
@@ -23,9 +24,9 @@
 //
 
 #include "SentryCrashCachedData.h"
+#include "SentryInternalCDefines.h"
 
-//#define SentryCrashLogger_LocalLevel TRACE
-#include "SentryCrashLogger.h"
+#include "SentryAsyncSafeLog.h"
 
 #include <errno.h>
 #include <mach/mach.h>
@@ -50,9 +51,10 @@ static const char **g_allThreadNames;
 static const char **g_allQueueNames;
 static int g_allThreadsCount;
 static _Atomic(int) g_semaphoreCount;
+static bool g_hasThreadStarted = false;
 
 static void
-updateThreadList()
+updateThreadList(void) SENTRY_DISABLE_THREAD_SANITIZER("Known data race to fix")
 {
     const task_t thisTask = mach_task_self();
     int oldThreadsCount = g_allThreadsCount;
@@ -63,7 +65,11 @@ updateThreadList()
 
     mach_msg_type_number_t allThreadsCount;
     thread_act_array_t threads;
-    task_threads(thisTask, &threads, &allThreadsCount);
+    kern_return_t kr;
+    if ((kr = task_threads(thisTask, &threads, &allThreadsCount)) != KERN_SUCCESS) {
+        SENTRY_ASYNC_SAFE_LOG_ERROR("task_threads: %s", mach_error_string(kr));
+        return;
+    }
 
     allMachThreads = calloc(allThreadsCount, sizeof(*allMachThreads));
     allPThreads = calloc(allThreadsCount, sizeof(*allPThreads));
@@ -123,6 +129,7 @@ updateThreadList()
 
 static void *
 monitorCachedData(__unused void *const userData)
+    SENTRY_DISABLE_THREAD_SANITIZER("Known data race to fix")
 {
     static int quickPollCount = 4;
     usleep(1);
@@ -143,7 +150,12 @@ monitorCachedData(__unused void *const userData)
 
 void
 sentrycrashccd_init(int pollingIntervalInSeconds)
+    SENTRY_DISABLE_THREAD_SANITIZER("Known data race to fix")
 {
+    if (g_hasThreadStarted == true) {
+        return;
+    }
+    g_hasThreadStarted = true;
     g_pollingIntervalInSeconds = pollingIntervalInSeconds;
     pthread_attr_t attr;
     pthread_attr_init(&attr);
@@ -151,13 +163,28 @@ sentrycrashccd_init(int pollingIntervalInSeconds)
     int error = pthread_create(
         &g_cacheThread, &attr, &monitorCachedData, "SentryCrash Cached Data Monitor");
     if (error != 0) {
-        SentryCrashLOG_ERROR("pthread_create_suspended_np: %s", strerror(error));
+        SENTRY_ASYNC_SAFE_LOG_ERROR("pthread_create_suspended_np: %s", strerror(error));
     }
     pthread_attr_destroy(&attr);
 }
 
 void
-sentrycrashccd_freeze()
+sentrycrashccd_close(void)
+{
+    if (g_hasThreadStarted == true) {
+        g_hasThreadStarted = false;
+        pthread_cancel(g_cacheThread);
+    }
+}
+
+bool
+sentrycrashccd_hasThreadStarted(void)
+{
+    return g_hasThreadStarted;
+}
+
+void
+sentrycrashccd_freeze(void)
 {
     if (g_semaphoreCount++ <= 0) {
         // Sleep just in case the cached data thread is in the middle of an
@@ -167,7 +194,7 @@ sentrycrashccd_freeze()
 }
 
 void
-sentrycrashccd_unfreeze()
+sentrycrashccd_unfreeze(void)
 {
     if (--g_semaphoreCount < 0) {
         // Handle extra calls to unfreeze somewhat gracefully.
@@ -175,17 +202,9 @@ sentrycrashccd_unfreeze()
     }
 }
 
-SentryCrashThread *
-sentrycrashccd_getAllThreads(int *threadCount)
-{
-    if (threadCount != NULL) {
-        *threadCount = g_allThreadsCount;
-    }
-    return g_allMachThreads;
-}
-
 const char *
 sentrycrashccd_getThreadName(SentryCrashThread thread)
+    SENTRY_DISABLE_THREAD_SANITIZER("Known data race to fix")
 {
     if (g_allThreadNames != NULL) {
         for (int i = 0; i < g_allThreadsCount; i++) {

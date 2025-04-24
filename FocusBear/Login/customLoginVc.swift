@@ -451,6 +451,7 @@ class customLoginVc: NSViewController {
         allApiObject.capturePosthog(event: "login-homemade", metadata: [:])
         let _ = appdelegate!.credentialsManager.store(credentials: credentials)
         UserDefaults.standard.set(true, forKey: kUserdefaultsIsUserLoggedIn)
+        appdelegate!.needToCheckEmailVerification = true
         appdelegate!.loadCredentialsAndDeviceId()
     }
     
@@ -559,6 +560,7 @@ class customLoginVc: NSViewController {
         })
         
     }
+    
     @IBAction func btnCreateAccountClicked(_ sender: Any) {
         addLog(text: "[user-action] CreateAccountClicked")
         var password = secureTextFieldPassword.stringValue

@@ -29,4 +29,75 @@
 //showing pomodoro window again if user close pomodoro window 1fter 10 minutes
 
 
+/*
+blockpage params
+ 
+ 1. block page :-
+ 
+ if isCurrentUrlAllowedInFocsMode{
+     if isAnyAllowedFocusModeActivityRunning(habit focusmode) == true{
+         block_type="morning-habit" / "evening-habit" / "special-activity"
+         block_mode = "cuddly" / "grizzly"
+     
+         if currentFocusModeStrictness != ._SUPER_STRICT_{
+            cuddly_bear_mode=true
+            reason=The website URL is allowed in focus mode.
+         }
 
+      }else{
+        let focusModeExpiryTimeString = "&focus_mode_end_time=\(stringTime)"
+        focus_mode_end_time=Time
+        focus_mode=focusMode
+        focus_mode_intention=intention
+         if currentFocusModeStrictness != ._SUPER_STRICT_{
+            cuddly_bear_mode=true
+            reason=The website URL is allowed in focus mode.
+         }
+      }
+ 
+ }else{
+     block_type=always-blocked
+     block_mode = "cuddly" / "grizzly"
+     if shouldShowTour{
+        &show_tour=true
+     }
+}
+
+
+ 
+ 2. focus mode:-
+ 
+ focus_mode_end_time=Time
+ focus_mode=focusMode
+ focus_mode_intention=intention
+ if currentFocusModeStrictness != ._SUPER_STRICT_{
+    cuddly_bear_mode=true
+    reason=AIREASON
+ }
+ 
+  
+ habit:-
+     block_type=morning-habit/evening-habit/special-activity
+ 
+ 
+ 
+ habit focusmode:-
+ 
+    block_type="morning-habit" / "evening-habit" / "special-activity"
+ if settings cuddly mode is enabled){
+    cuddly_bear_mode=true
+    reason=AIREASON
+ }
+  
+ if isRunningAppFullScreen || isStageManagerEnabled{
+     confirm_ai_distracting_url=true
+ }
+ version=1.20.351
+ encouraging_info
+ old_url
+ 
+*/
+//file:///Users/prashant/Library/Application%20Support/com.App.EarnYourScreentime/focus-block.html?old_url=https%3A%2F%2Fwww.facebook.com%2F&block_type=always-blocked&block_mode=cuddly&encouraging_info=%7B%0A%20%20%22long_term_goals%22%20%3A%20%5B%0A%20%20%20%20%22Meditate%20consistently%22%0A%20%20%5D,%0A%20%20%22focused_time%22%20%3A%201799.992%0A%7D&version=1.20.351
+
+
+// old supublicedkey  tdVYiEz/MSjLl07DnhYNXOqHrNS7Tf/j5aCtwR/Tt6s=

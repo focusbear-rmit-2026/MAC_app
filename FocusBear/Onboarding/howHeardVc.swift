@@ -8,7 +8,7 @@
 
 import Cocoa
 
-class howHeardVc: NSViewController {
+class howHeardVc: NSViewController { // not in use 
 
     @IBOutlet weak var textfield: NSTextField!
 //    @IBOutlet weak var tblView: NSTableView!

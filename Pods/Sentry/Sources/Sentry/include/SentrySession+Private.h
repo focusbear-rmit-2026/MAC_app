@@ -1,10 +1,12 @@
 #import "SentrySession.h"
-#import <Foundation/Foundation.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface
-SentrySession (Private)
+NSString *nameForSentrySessionStatus(SentrySessionStatus status);
+
+@interface SentrySession ()
+
+@property (nonatomic) NSUInteger errors;
 
 - (void)setFlagInit;
 

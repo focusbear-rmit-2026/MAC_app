@@ -1566,7 +1566,7 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {/
     }
     @IBAction func btnCheckForUpdatesClicked(_ sender: Any) {
         addLog(text: "[user-action] btnCheckForUpdatesClicked")//
-        appdelegate!.updater?.checkForUpdates(self)
+        appdelegate!.updater?.checkForUpdates(self) 
         preferencesWindowControllerObj?.window?.miniaturize(self)
         allApiObject.capturePosthog(event: "check-for-updates-manually", metadata: [:])
     }

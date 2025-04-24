@@ -18,6 +18,10 @@ class uIVc: NSViewController {
     let hideDockBarItemVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingToggleItemVc")) as? settingToggleItemVc
     let darkModeItemVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingPopUpButtonItemVc")) as? settingPopUpButtonItemVc
     let selectLanguageItemVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingPopUpButtonItemVc")) as? settingPopUpButtonItemVc
+    let enablePopoverMenuItemVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingToggleItemVc")) as? settingToggleItemVc
+    
+    let focusVisualIndicatorSettingVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingToggleItemVc")) as? settingToggleItemVc
+    
     
     let copySystemPreferencesIndex = 0
     let alwaysDarkModeIndex = 1
@@ -33,7 +37,7 @@ class uIVc: NSViewController {
         var ui_SelectLanguage = "We’ve translated the app into a few languages. Choose your preferred language here. Let us know if you need a different language by emailing support@focusbear.io"
         var ui_DarkMode = "Eye-friendly option! Opt for Dark Mode to reduce screen brightness and eye strain."
         var ui_HideDockInAllowedAppActivities = "Distraction-free mode! Sometimes app icons in the dock are distracting. Toggle this setting on to hide the dock while you’re doing habits with allowed apps. For example, you could have a journaling habit that only gives you access to your journaling app. If you enable this setting, you won’t see the dock with all its temptations."
-        
+        var ui_EnablePopoverMenu = "Enable this option to display the Focus Bear menu as a popover."
         
         
         if let tooltips = configjson.value(forKey: "tooltips") as? NSDictionary{
@@ -42,6 +46,7 @@ class uIVc: NSViewController {
             ui_SelectLanguage = tooltips.value(forKey: "ui_SelectLanguage") as? String ?? ui_SelectLanguage
             ui_DarkMode = tooltips.value(forKey: "ui_DarkMode") as? String ?? ui_DarkMode
             ui_HideDockInAllowedAppActivities = tooltips.value(forKey: "ui_HideDockInAllowedAppActivities") as? String ?? ui_HideDockInAllowedAppActivities
+            ui_EnablePopoverMenu = tooltips.value(forKey: "ui_EnablePopoverMenu") as? String ?? ui_EnablePopoverMenu
         }
 
         
@@ -56,6 +61,12 @@ class uIVc: NSViewController {
         
         var descriptionHideDockText = "Enable this to hide dock during allowed apps activities to minimize distractions. \"System Events\" permission will be required for this."
         var checkBoxHideDockText = "Hide dock during activities having allowed apps."
+        var switchButtonEnablePopoverMenuText = "Show Focus Bear menu as popover"
+        
+        
+        var titleFocusVisualIndicator = "Show focus visual indicator"
+        var descriptionFocusVisualIndicator = "Display a visual indicator when the focus alignment score drops."
+        
         
         if let preferencesInfo = configjson.value(forKey: "preferencesInfo") as? NSDictionary{
             checkBoxFullScreenEnabledText = preferencesInfo.value(forKey: "checkBoxFullScreenEnabledText") as? String ?? checkBoxFullScreenEnabledText
@@ -71,7 +82,10 @@ class uIVc: NSViewController {
             
             descriptionHideDockText = preferencesInfo.value(forKey: "descriptionHideDockText") as? String ?? descriptionHideDockText
             checkBoxHideDockText = preferencesInfo.value(forKey: "checkBoxHideDockText") as? String ?? checkBoxHideDockText
+            switchButtonEnablePopoverMenuText = preferencesInfo.value(forKey: "switchButtonEnablePopoverMenuText") as? String ?? switchButtonEnablePopoverMenuText
             
+            titleFocusVisualIndicator = preferencesInfo.value(forKey: "switchButtonFocusVisualIndicatoText") as? String ?? titleFocusVisualIndicator
+            descriptionFocusVisualIndicator = preferencesInfo.value(forKey: "descriptionFocusVisualIndicatorText") as? String ?? descriptionFocusVisualIndicator
         }
 
         stackView.addView(fullScreenEnabledItemVcObj!.view, in: .bottom)
@@ -106,6 +120,26 @@ class uIVc: NSViewController {
         darkModeItemVcObj?.toolTip = ui_DarkMode
         
         
+        
+        
+        stackView.addView(focusVisualIndicatorSettingVcObj!.view, in: .bottom)
+        focusVisualIndicatorSettingVcObj?.lblTitle.stringValue = titleFocusVisualIndicator
+        focusVisualIndicatorSettingVcObj?.lblSubTitle.stringValue = descriptionFocusVisualIndicator
+        focusVisualIndicatorSettingVcObj?.lblSubTitle.isHidden = false
+        focusVisualIndicatorSettingVcObj?.delegate = self
+        focusVisualIndicatorSettingVcObj?.lineBottom.isHidden = false
+//        focusVisualIndicatorSettingVcObj?.toolTip = ui_EnablePopoverMenu
+        
+        
+        stackView.addView(enablePopoverMenuItemVcObj!.view, in: .bottom)
+        enablePopoverMenuItemVcObj?.lblTitle.stringValue = switchButtonEnablePopoverMenuText
+        enablePopoverMenuItemVcObj?.lblSubTitle.isHidden = true
+        enablePopoverMenuItemVcObj?.delegate = self
+        enablePopoverMenuItemVcObj?.lineBottom.isHidden = false
+        enablePopoverMenuItemVcObj?.toolTip = ui_EnablePopoverMenu
+        
+        
+        
         stackView.addView(hideDockBarItemVcObj!.view, in: .bottom)
         hideDockBarItemVcObj?.lblTitle.stringValue = checkBoxHideDockText
         hideDockBarItemVcObj?.lblSubTitle.stringValue = descriptionHideDockText
@@ -113,14 +147,23 @@ class uIVc: NSViewController {
         hideDockBarItemVcObj?.lineBottom.isHidden = true
         hideDockBarItemVcObj?.toolTip = ui_HideDockInAllowedAppActivities
         
+
+        
         arrForSearchFromSettings.append(["title": checkBoxFullScreenEnabledText, "tabId": idUi, "object": fullScreenEnabledItemVcObj!.bgBox as Any])
         arrForSearchFromSettings.append(["title": checkBoxShowDockIconText, "tabId": idUi, "object": showDockIconItemVcObj!.bgBox as Any])
         arrForSearchFromSettings.append(["title": titleSelectLanguage, "tabId": idUi, "object": selectLanguageItemVcObj!.bgBox as Any])
         arrForSearchFromSettings.append(["title": titleDarkMode, "tabId": idUi, "object": darkModeItemVcObj!.bgBox as Any])
         arrForSearchFromSettings.append(["title": checkBoxHideDockText, "tabId": idUi, "object": hideDockBarItemVcObj!.bgBox as Any])
+        arrForSearchFromSettings.append(["title": switchButtonEnablePopoverMenuText, "tabId": idUi, "object": enablePopoverMenuItemVcObj!.bgBox as Any])
+        
+        arrForSearchFromSettings.append(["title": titleFocusVisualIndicator, "tabId": idUi, "object": focusVisualIndicatorSettingVcObj!.bgBox as Any])
+        
         
         arrForSearchFromSimpleModeSettings.append(["title": titleSelectLanguage, "tabId": idUi, "object": selectLanguageItemVcObj!.bgBox as Any])
         arrForSearchFromSimpleModeSettings.append(["title": titleDarkMode, "tabId": idUi, "object": darkModeItemVcObj!.bgBox as Any])
+        arrForSearchFromSimpleModeSettings.append(["title": switchButtonEnablePopoverMenuText, "tabId": idUi, "object": enablePopoverMenuItemVcObj!.bgBox as Any])
+        arrForSearchFromSimpleModeSettings.append(["title": titleFocusVisualIndicator, "tabId": idUi, "object": focusVisualIndicatorSettingVcObj!.bgBox as Any])
+        
     }
     
     override func viewWillAppear() {
@@ -142,6 +185,19 @@ class uIVc: NSViewController {
         }else{
             lblTitle.stringValue = ""
         }
+        
+        if SettingsManagerObject.isMenuPopoverEnabled{
+            enablePopoverMenuItemVcObj?.btnSwitch.state = .on
+        }else{
+            enablePopoverMenuItemVcObj?.btnSwitch.state = .off
+        }
+        
+        if SettingsManagerObject.isFocusVisualIndicatorEnabled{
+            focusVisualIndicatorSettingVcObj?.btnSwitch.state = .on
+        }else{
+            focusVisualIndicatorSettingVcObj?.btnSwitch.state = .off
+        }
+        
         reloadDataForAppMode()
     }
     
@@ -150,7 +206,7 @@ class uIVc: NSViewController {
             hideDockBarItemVcObj?.view.isHidden = false
             showDockIconItemVcObj?.view.isHidden = false
             fullScreenEnabledItemVcObj?.view.isHidden = false
-            darkModeItemVcObj?.lineBottom.isHidden = false
+            enablePopoverMenuItemVcObj?.lineBottom.isHidden = false
             if SettingsManagerObject.isFullScreenEnabled{
                 fullScreenEnabledItemVcObj?.btnSwitch.state = .on
             }else{
@@ -172,7 +228,7 @@ class uIVc: NSViewController {
             hideDockBarItemVcObj?.view.isHidden = true
             showDockIconItemVcObj?.view.isHidden = true
             fullScreenEnabledItemVcObj?.view.isHidden = true
-            darkModeItemVcObj?.lineBottom.isHidden = true
+            enablePopoverMenuItemVcObj?.lineBottom.isHidden = true
         }
     }
     
@@ -314,6 +370,23 @@ extension uIVc: SettingToggleItemDelegate, SettingPopUpButtonItemDelegate{
                 SettingsManagerObject.isHideDockInActivity = false
                 allApiObject.capturePosthog(event: "settings-changed-hide-dock-disabled", metadata: [:])//#490
             }
+        }else if object == enablePopoverMenuItemVcObj{
+            SettingsManagerObject.isSettingsChanged = true
+            if state == .on{
+                enableMenuPopover()
+            }else{
+                disableMenuPopover()
+            }
+        }else if object == focusVisualIndicatorSettingVcObj{
+            SettingsManagerObject.isSettingsChanged = true
+            if state == .on{
+                SettingsManagerObject.isFocusVisualIndicatorEnabled = true
+            }else{
+                SettingsManagerObject.isFocusVisualIndicatorEnabled = false
+            }
         }
     }
 }
+
+
+

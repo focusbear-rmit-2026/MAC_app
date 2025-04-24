@@ -1,3 +1,4 @@
+// Adapted from: https://github.com/kstenerud/KSCrash
 //
 //  SentryCrashReportFixer.c
 //
@@ -24,11 +25,11 @@
 // THE SOFTWARE.
 //
 
+#include "SentryAsyncSafeLog.h"
 #include "SentryCrashDate.h"
 #include "SentryCrashJSONCodec.h"
-#include "SentryCrashLogger.h"
 #include "SentryCrashReportFields.h"
-#include "SentryCrashSystemCapabilities.h"
+#include "SentryInternalCDefines.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -59,7 +60,7 @@ increaseDepth(FixupContext *context, const char *name)
     if (name == NULL) {
         *context->objectPath[context->currentDepth] = '\0';
     } else {
-        strncpy(context->objectPath[context->currentDepth], name,
+        strlcpy(context->objectPath[context->currentDepth], name,
             sizeof(context->objectPath[context->currentDepth]));
     }
     context->currentDepth++;
@@ -140,6 +141,13 @@ onIntegerElement(const char *const name, const int64_t value, void *const userDa
         result = sentrycrashjson_addIntegerElement(context->encodeContext, name, value);
     }
     return result;
+}
+
+static int
+onUIntegerElement(const char *const name, const uint64_t value, void *const userData)
+{
+    FixupContext *context = (FixupContext *)userData;
+    return sentrycrashjson_addUIntegerElement(context->encodeContext, name, value);
 }
 
 static int
@@ -230,13 +238,15 @@ sentrycrashcrf_fixupCrashReport(const char *crashReport)
         .onEndData = onEndData,
         .onFloatingPointElement = onFloatingPointElement,
         .onIntegerElement = onIntegerElement,
+        .onUIntegerElement = onUIntegerElement,
         .onNullElement = onNullElement,
         .onStringElement = onStringElement,
     };
     int stringBufferLength = SentryCrashMAX_STRINGBUFFERSIZE;
     char *stringBuffer = malloc((unsigned)stringBufferLength);
     if (stringBuffer == NULL) {
-        SentryCrashLOG_ERROR("Failed to allocate string buffer of size %ul", stringBufferLength);
+        SENTRY_ASYNC_SAFE_LOG_ERROR(
+            "Failed to allocate string buffer of size %ul", stringBufferLength);
         return NULL;
     }
     int crashReportLength = (int)strlen(crashReport);
@@ -244,7 +254,7 @@ sentrycrashcrf_fixupCrashReport(const char *crashReport)
     char *fixedReport = malloc((unsigned)fixedReportLength);
     if (fixedReport == NULL) {
         free(stringBuffer);
-        SentryCrashLOG_ERROR(
+        SENTRY_ASYNC_SAFE_LOG_ERROR(
             "Failed to allocate fixed report buffer of size %ld", fixedReportLength);
         return NULL;
     }
@@ -264,7 +274,8 @@ sentrycrashcrf_fixupCrashReport(const char *crashReport)
     *fixupContext.outputPtr = '\0';
     free(stringBuffer);
     if (result != SentryCrashJSON_OK) {
-        SentryCrashLOG_ERROR("Could not decode report: %s", sentrycrashjson_stringForError(result));
+        SENTRY_ASYNC_SAFE_LOG_ERROR(
+            "Could not decode report: %s", sentrycrashjson_stringForError(result));
         free(fixedReport);
         return NULL;
     }

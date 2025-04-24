@@ -1,3 +1,4 @@
+// Adapted from: https://github.com/kstenerud/KSCrash
 //
 //  SentryCrashDynamicLinker.h
 //
@@ -43,9 +44,6 @@ typedef struct {
     const uint8_t *uuid;
     int cpuType;
     int cpuSubType;
-    uint64_t majorVersion;
-    uint64_t minorVersion;
-    uint64_t revisionVersion;
     const char *crashInfoMessage;
     const char *crashInfoMessage2;
 } SentryCrashBinaryImage;
@@ -62,7 +60,7 @@ int sentrycrashdl_imageCount(void);
  *
  * @return True if the image was successfully queried.
  */
-bool sentrycrashdl_getBinaryImage(int index, SentryCrashBinaryImage *buffer);
+bool sentrycrashdl_getBinaryImage(int index, SentryCrashBinaryImage *buffer, bool isCrash);
 
 /** Get information about a binary image based on mach_header.
  *
@@ -74,8 +72,8 @@ bool sentrycrashdl_getBinaryImage(int index, SentryCrashBinaryImage *buffer);
  *
  * @return True if the image was successfully queried.
  */
-bool sentrycrashdl_getBinaryImageForHeader(
-    const void *const header_ptr, const char *const image_name, SentryCrashBinaryImage *buffer);
+bool sentrycrashdl_getBinaryImageForHeader(const void *const header_ptr,
+    const char *const image_name, SentryCrashBinaryImage *buffer, bool isCrash);
 
 /** Find a loaded binary image with the specified name.
  *
@@ -98,7 +96,11 @@ uint32_t sentrycrashdl_imageNamed(const char *const imageName, bool exactMatch);
  */
 const uint8_t *sentrycrashdl_imageUUID(const char *const imageName, bool exactMatch);
 
-/** async-safe version of dladdr.
+/**
+ * ATTENTION: This method isn't async-safe as it accesses @c _dyld_get_image_header, which acquires
+ * a lock. We plan on removing this method with
+ * https://github.com/getsentry/sentry-cocoa/issues/2996.
+ *
  *
  * This method searches the dynamic loader for information about any image
  * containing the specified address. It may not be entirely successful in

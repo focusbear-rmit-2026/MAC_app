@@ -15,6 +15,7 @@ class intentionBlockedUrlsVc: NSViewController {
     @IBOutlet var textViewIntention: NSTextView!
     @IBOutlet weak var lblTitle: NSTextField!
     @IBOutlet weak var imgView: NSImageView!
+    @IBOutlet weak var lblTimer: NSTextField!
     
     var tabUrl:String = ""
     var script = ""
@@ -24,7 +25,7 @@ class intentionBlockedUrlsVc: NSViewController {
     var isAppBlocking = true
     var blockedAppName = ""
     var timer:Timer?
-    
+    var allowFor24Hours = false
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
@@ -45,7 +46,7 @@ class intentionBlockedUrlsVc: NSViewController {
             self.timer?.invalidate()
             self.timer = nil
         }
-        
+        print("viewWillDisappear********Intentionbox")
         if isAppBlocking{
             saveLastVisibleTimeForCurrentApp()
         }else{
@@ -54,51 +55,88 @@ class intentionBlockedUrlsVc: NSViewController {
     }
     
     func setTimerHideWindow(){
-        if self.timer != nil{
-            self.timer?.invalidate()
-            self.timer = nil
+        lblTimer.stringValue = ""
+        self.timer?.invalidate()
+        self.timer = nil
+        print("setTimerHideWindow********Intentionbox1")
+        self.timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
+            print("setTimerHideWindow********Intentionbox3")
+            self?.checkWindowState()
         }
-        self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.checkWindowState), userInfo: nil, repeats: true)
         RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
+        print("setTimerHideWindow********Intentionbox2")
+        checkWindowState()
     }
     
     @objc func checkWindowState(){
-        
+        print("checkWindowState********Intentionbox")
         var isBlocked = true
-        var isUrlAllreadyChecked = false
-//        var intention = ""
-//        var isClosed = false
-        var alllowUrlEndTime:Date?
-//        var urlAllreadyCheckedIndex = -1
-        for i in 0..<arrAlwaysBlockedSitesData.count{
-            let dictionary = arrAlwaysBlockedSitesData[i]
-            if let blockUrl = dictionary["url"] as? String{
-                if blockUrl.lowercased() == self.tabUrl.lowercased(){
-                    isBlocked = dictionary["isBlocked"] as? Bool ?? false
-//                    intention = dictionary["intention"] as? String ?? ""
-//                    isClosed = dictionary["closed"] as? Bool ?? false
-                    alllowUrlEndTime = dictionary["endTime"] as? Date
-                    isUrlAllreadyChecked = true
-//                    urlAllreadyCheckedIndex = i
-                    break;
+        var isItemAllreadyChecked = false
+        var alllowItemEndTime:Date?
+        
+        if isAppBlocking{
+            if !self.blockedAppName.isEmpty{
+                for i in 0..<arrAlwaysBlockedAppsData.count{
+                    let dictionary = arrAlwaysBlockedAppsData[i]
+                    if let blockApp = dictionary["app"] as? String{
+                        if blockApp.lowercased() == blockedAppName.lowercased(){
+                            isBlocked = dictionary["isBlocked"] as? Bool ?? false
+                            alllowItemEndTime = dictionary["endTime"] as? Date
+                            isItemAllreadyChecked = true
+                            break;
+                        }
+                    }
+                }
+            }
+        }else{
+            for i in 0..<arrAlwaysBlockedSitesData.count{
+                let dictionary = arrAlwaysBlockedSitesData[i]
+                if let blockUrl = dictionary["url"] as? String{
+                    if blockUrl.lowercased() == self.tabUrl.lowercased(){
+                        isBlocked = dictionary["isBlocked"] as? Bool ?? false
+                        alllowItemEndTime = dictionary["endTime"] as? Date
+                        isItemAllreadyChecked = true
+                        break;
+                    }
                 }
             }
         }
-        if isUrlAllreadyChecked{
+        
+        
+        if isItemAllreadyChecked && !allowFor24Hours{
             if isBlocked{
                 self.view.window?.close()
             }else {
-//                var shouldSetIntentionAgain = false
-                if alllowUrlEndTime != nil{
-                    if Date().compare(alllowUrlEndTime!) == .orderedDescending{ //>
+                if alllowItemEndTime != nil{
+                    let diffSeconds = Calendar.current.dateComponents([.second], from: Date(), to: alllowItemEndTime!).second ?? 0
+                    
+                    if diffSeconds <= 0{
                         self.view.window?.close()
+                    }
+                    let (h,m,s) = secondsToHoursMinutesSeconds(seconds: diffSeconds)
+                    var hour = "\(h)"
+                    var minute = "\(m)"
+                    var second = "\(s)"
+                    
+                    if hour.count == 1 {
+                        hour = "0\(h)"
+                    }
+                    if minute.count == 1 {
+                        minute = "0\(m)"
+                    }
+                    if second.count == 1 {
+                        second = "0\(s)"
+                    }
+                    if h == 0{
+                        self.lblTimer.stringValue = "\(minute):\(second)"
+                    }else{
+                        self.lblTimer.stringValue = "\(hour):\(minute):\(second)"
                     }
                 }
             }
         }
         
     }
-    
     
     func saveLastVisibleTimeForCurrentUrl(){
         if !self.tabUrl.isEmpty{
@@ -128,7 +166,8 @@ class intentionBlockedUrlsVc: NSViewController {
         }
     }
     
-    func resetView(script: String, url:String, browser: BROWSER?, intention:String, currentPid: pid_t?){
+    func resetView(script: String, url:String, browser: BROWSER?, intention:String, currentPid: pid_t?, allowFor24Hours:Bool){
+        self.allowFor24Hours = allowFor24Hours
         var title = "You said <SITE> is super distracting for you. What do you want to achieve during your time here?"
         if let intentionBlockedUrlsVcInfo = configjson.value(forKey: "intentionBlockedUrlsVcInfo") as? NSDictionary{
             title = intentionBlockedUrlsVcInfo.value(forKey: "title") as? String ?? title
@@ -148,13 +187,11 @@ class intentionBlockedUrlsVc: NSViewController {
         if let intentionBlockedUrlsVcInfo = configjson.value(forKey: "intentionBlockedUrlsVcInfo") as? NSDictionary{
             btnIAmDoneBlockAgain.title = intentionBlockedUrlsVcInfo.value(forKey: "buttonBlockText") as? String ?? btnIAmDoneBlockAgain.title
         }
-        if self.timer != nil{
-            self.timer?.invalidate()
-            self.timer = nil
-        }
+        self.setTimerHideWindow()
     }
     
     func resetView(currentApp:NSRunningApplication?, blockedAppName:String, intention:String){
+        allowFor24Hours = false
         var title = "You said <SITE> is super distracting for you. What do you want to achieve during your time here?"
         if let intentionBlockedUrlsVcInfo = configjson.value(forKey: "intentionBlockedUrlsVcInfo") as? NSDictionary{
             title = intentionBlockedUrlsVcInfo.value(forKey: "title") as? String ?? title
@@ -174,6 +211,7 @@ class intentionBlockedUrlsVc: NSViewController {
         if let intentionBlockedUrlsVcInfo = configjson.value(forKey: "intentionBlockedUrlsVcInfo") as? NSDictionary{
             btnIAmDoneBlockAgain.title = intentionBlockedUrlsVcInfo.value(forKey: "buttonBlockAppText") as? String ?? btnIAmDoneBlockAgain.title
         }
+        setTimerHideWindow()
     }
     
     

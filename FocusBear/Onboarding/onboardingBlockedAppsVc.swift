@@ -166,7 +166,27 @@ class onboardingBlockedAppsVc: NSViewController {
     @IBAction func btnContinueClicked(_ sender: Any) {
         addLog(text: "[user-action] onboardingBlockedAppsVc:- Button Continue clicked")
         UserDefaults.standard.set(arrBlockedApps, forKey: kUserdefaultsBlockedAppsFromOnboarding)
-        self.view.window?.contentViewController = getOnboardingBlockingScheduleVcObject()
+
+        SettingsManagerObject.arrBlockedApps = arrBlockedApps
+        UserDefaults.standard.set(SettingsManagerObject.arrBlockedApps, forKey: SettingsManagerObject.kUserdefaultsArrBlockedApps)//
+
+        SettingsManagerObject.isSettingsChanged = true
+        SettingsManagerObject.putUserLocalDeviceSettings()
+        
+        if UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) == nil{
+            self.view.window?.contentViewController = getExplainingPermissionsVcObject()
+            explainingPermissionsVcObj?.showingFromPomodoro = true
+            UserDefaults.standard.set(true, forKey: kUserdefaultsBrowsersPermissionsSetByUser)
+        }else{
+            self.view.window?.close()
+            if SettingsManagerObject.isGeekModeEnabled{
+                appdelegate?.menuShowPomodoroModeView()
+                pomodoroVcObj?.textViewAchieve.string = pomodoroVcObj?.intentionToShowAgain ?? ""
+            }else{
+                appdelegate?.menuShowSimplePomodoroModeView()
+                simplePomodoroVcObj?.textViewAchieve.string = simplePomodoroVcObj?.intentionToShowAgain ?? ""
+            }
+        }
     }
 }
 

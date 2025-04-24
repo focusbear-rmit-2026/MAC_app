@@ -1,0 +1,5 @@
+
+cd /Users/prashant/Downloads/Sparkle-1.26.0
+
+./bin/generate_appcast /Users/prashant/Documents/Apps/EarnYourScreentime/update_builds
+

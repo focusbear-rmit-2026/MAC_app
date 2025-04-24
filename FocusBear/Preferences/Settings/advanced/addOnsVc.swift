@@ -141,6 +141,24 @@ class addOnsVc: NSViewController {
         }
     }
     
+    func highlightAdvanceAanalyticsItemBox(){
+        if let object = timeTrackerEnabledItemVcObj?.bgBox{
+            object.wantsLayer = true
+            object.layer?.cornerRadius = 3
+            object.layer?.borderWidth = 1
+            object.layer?.borderColor = NSColor.labelColor.cgColor
+            DispatchQueue.global().async {
+                sleep(2)
+                DispatchQueue.main.async {
+                    object.layer?.cornerRadius = 0
+                    object.layer?.borderWidth = 0
+                    object.layer?.borderColor = NSColor.clear.cgColor
+                    object.wantsLayer = false
+                }
+            }
+        }
+    }
+    
     @IBAction func btnBackClicked(_ sender: Any) {
         settingsContainerVcObj?.showAdvancedView()
     }

@@ -147,6 +147,7 @@ class blockingScheduleVc: NSViewController, WKNavigationDelegate, webViewLoadFai
     func handleLoadError(webView: WKWebView) {
         if webViewLoadFailedVcObj != nil{
             if webView.subviews.contains(webViewLoadFailedVcObj!.view){
+                webViewLoadFailedVcObj?.reloadData()
                 return;
             }
         }
@@ -155,6 +156,7 @@ class blockingScheduleVc: NSViewController, WKNavigationDelegate, webViewLoadFai
         webViewLoadFailedVcObj?.webView = webView
         webView.addSubview(webViewLoadFailedVcObj!.view)
         webView.addConstraints(subView: webViewLoadFailedVcObj!.view)
+        webViewLoadFailedVcObj?.reloadData()
     }
     
     func reloadClicked(webView:WKWebView){

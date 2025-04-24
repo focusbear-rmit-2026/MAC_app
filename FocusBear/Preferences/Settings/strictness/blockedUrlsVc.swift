@@ -90,6 +90,8 @@ class blockedUrlsVc: NSViewController {
         self.presentAsSheet(addWebUrlVcObj!)
     }
     
+    
+    
     @IBAction func checkBoxImmediatelyBlockClicked(_ sender: Any) {
         SettingsManagerObject.isSettingsChanged = true
         if checkBoxImmediatelyBlock.state == .on{

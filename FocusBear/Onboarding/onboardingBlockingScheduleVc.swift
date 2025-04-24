@@ -8,7 +8,7 @@
 
 import Cocoa
 
-class onboardingBlockingScheduleVc: NSViewController {
+class onboardingBlockingScheduleVc: NSViewController { // not in use 
 
     @IBOutlet weak var btnContinue: Button!
     @IBOutlet weak var lblDescriptionFirst: NSTextField!
@@ -101,6 +101,6 @@ class onboardingBlockingScheduleVc: NSViewController {
             UserDefaults.standard.set(BLOCKINGSCHEDULE._CUSTOM_SCHEDULE_.rawValue, forKey: kUserdefaultsBlockingScheduleFromOnboarding)
         }
         
-        self.view.window?.contentViewController = getOnboardingPrivacyTipVcObject()
+        
     }
 }

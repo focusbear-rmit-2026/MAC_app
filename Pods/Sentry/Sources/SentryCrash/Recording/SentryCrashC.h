@@ -1,3 +1,4 @@
+// Adapted from: https://github.com/kstenerud/KSCrash
 //
 //  SentryCrashC.h
 //
@@ -48,6 +49,8 @@ extern "C" {
  */
 SentryCrashMonitorType sentrycrash_install(const char *appName, const char *const installPath);
 
+void sentrycrash_uninstall(void);
+
 /** Set the crash types that will be handled.
  * Some crash types may not be enabled depending on circumstances (e.g. running
  * in a debugger).
@@ -67,23 +70,6 @@ SentryCrashMonitorType sentrycrash_setMonitoring(SentryCrashMonitorType monitors
  *                     NULL = delete.
  */
 void sentrycrash_setUserInfoJSON(const char *const userInfoJSON);
-
-/** Set the maximum time to allow the main thread to run without returning.
- * If a task occupies the main thread for longer than this interval, the
- * watchdog will consider the queue deadlocked and shut down the app and write a
- * crash report.
- *
- * Warning: Make SURE that nothing in your app that runs on the main thread
- * takes longer to complete than this value or it WILL get shut down! This
- * includes your app startup process, so you may need to push app initialization
- * to another thread, or perhaps set this to a higher value until your
- * application has been fully initialized.
- *
- * 0 = Disabled.
- *
- * Default: 0
- */
-void sentrycrash_setDeadlockWatchdogInterval(double deadlockWatchdogInterval);
 
 /** If true, introspect memory contents during a crash.
  * Any Objective-C objects or C strings near the stack pointer or referenced by
@@ -115,16 +101,9 @@ void sentrycrash_setDoNotIntrospectClasses(const char **doNotIntrospectClasses, 
  */
 void sentrycrash_setCrashNotifyCallback(const SentryCrashReportWriteCallback onCrashNotify);
 
-/** Set if SentryCrashLOG console messages should be appended to the report.
- *
- * @param shouldAddConsoleLogToReport If true, add the log to the report.
- */
-void sentrycrash_setAddConsoleLogToReport(bool shouldAddConsoleLogToReport);
-
 /** Set if SentryCrash should print the previous log to the console on startup.
  *  This is for debugging purposes.
  */
-void sentrycrash_setPrintPreviousLog(bool shouldPrintPreviousLog);
 
 /** Set the maximum number of reports allowed on disk before old ones get
  * deleted.
@@ -133,33 +112,38 @@ void sentrycrash_setPrintPreviousLog(bool shouldPrintPreviousLog);
  */
 void sentrycrash_setMaxReportCount(int maxReportCount);
 
-/** Report a custom, user defined exception.
- * This can be useful when dealing with scripting languages.
+/**
+ * @typedef SaveAttachmentCallback
  *
- * If terminateProgram is true, all sentries will be uninstalled and the
- * application will terminate with an abort().
+ * This typedef defines a function pointer to a callback that will be called during crashes
+ * to request extra attachments to be saved.
  *
- * @param name The exception name (for namespacing exception types).
- *
- * @param reason A description of why the exception occurred.
- *
- * @param language A unique language identifier.
- *
- * @param lineOfCode A copy of the offending line of code (NULL = ignore).
- *
- * @param stackTrace JSON encoded array containing stack trace information (one
- * frame per array entry). The frame structure can be anything you want,
- * including bare strings.
- *
- * @param logAllThreads If true, suspend all threads and log their state. Note
- * that this incurs a performance penalty, so it's best to use only on fatal
- * errors.
- *
- * @param terminateProgram If true, do not return from this function call.
- * Terminate the program instead.
+ * @param directoryPath The path to a directory where the view hierarchy should be saved.
  */
-void sentrycrash_reportUserException(const char *name, const char *reason, const char *language,
-    const char *lineOfCode, const char *stackTrace, bool logAllThreads, bool terminateProgram);
+typedef void (*SaveAttachmentCallback)(const char *directoryPath);
+
+/**
+ * Set the callback to be called at the end of a crash to make the app save a screenshot;
+ *
+ * @param callback function pointer that will be called with a path to a directory where the screen
+ * shot should be saved.
+ */
+void sentrycrash_setSaveScreenshots(SaveAttachmentCallback callback);
+
+/**
+ * Set the callback to be called at the end of a crash to make the app save the view hierarchy
+ * descriptions;
+ *
+ * @param callback function pointer that will be called with a path to a directory where the view
+ * hierarchy should be saved.
+ */
+void sentrycrash_setSaveViewHierarchy(SaveAttachmentCallback callback);
+
+/**
+ * Set the callback to be called at the end of a crash to make the app save the ongoing transaction
+ * bound to the scope.
+ */
+void sentrycrash_setSaveTransaction(void (*callback)(void));
 
 #pragma mark-- Notifications --
 
@@ -227,6 +211,29 @@ void sentrycrash_deleteAllReports(void);
  * @param reportID An ID of report to delete.
  */
 void sentrycrash_deleteReportWithID(int64_t reportID);
+
+/**
+ * For testing purpose.
+ * Indicates that a callback was registered for screenshot.
+ */
+bool sentrycrash_hasSaveScreenshotCallback(void);
+
+/**
+ * For testing purpose.
+ * Indicates that a callback was registered for view hierarchy.
+ */
+bool sentrycrash_hasSaveViewHierarchyCallback(void);
+
+/**
+ * For testing purpose.
+ * Indicates that a callback was registered for saving the transaction.
+ */
+bool sentrycrash_hasSaveTransaction(void);
+
+/**
+ * For testing purposes.
+ */
+void sentrycrash_invokeSaveTransaction(void);
 
 #ifdef __cplusplus
 }

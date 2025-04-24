@@ -1,3 +1,4 @@
+// Adapted from: https://github.com/kstenerud/KSCrash
 //
 //  SentryCrashCachedData.h
 //
@@ -28,11 +29,11 @@
 #include "SentryCrashThread.h"
 
 void sentrycrashccd_init(int pollingIntervalInSeconds);
+void sentrycrashccd_close(void);
+bool sentrycrashccd_hasThreadStarted(void);
 
 void sentrycrashccd_freeze(void);
 void sentrycrashccd_unfreeze(void);
-
-SentryCrashThread *sentrycrashccd_getAllThreads(int *threadCount);
 
 const char *sentrycrashccd_getThreadName(SentryCrashThread thread);
 

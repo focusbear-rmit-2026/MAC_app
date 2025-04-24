@@ -65,9 +65,17 @@ class onboardingBlockedUrlsVc: NSViewController {
         }
         
         textFieldUrl.delegate = self
-     
+
+        //**//
         var dic:NSMutableDictionary = ["category":categorySocialMedia,"isSelected":false,"tag":777,"arrUrls":[NSMutableDictionary](),"isParent":true]
-        let arrSocialMediaUrls: [NSMutableDictionary] = [["url":"facebook.com", "isSelected":true, "tag":2], ["url":"x.com", "isSelected":true, "tag":3], ["url":"instagram.com", "isSelected":true, "tag":4], ["url":"tiktok.com", "isSelected":true, "tag":5], ["url":"youtube.com", "isSelected":true, "tag":6], ["url":"reddit.com", "isSelected":true, "tag":9], ["url":"www.linkedin.com/feed/", "isSelected":true, "tag":10]]
+        var arrSocialMediaUrls: [NSMutableDictionary] = [["url":"facebook.com", "isSelected":true, "tag":2], ["url":"x.com", "isSelected":true, "tag":3], ["url":"instagram.com", "isSelected":true, "tag":4], ["url":"tiktok.com", "isSelected":true, "tag":5], ["url":"youtube.com", "isSelected":true, "tag":6], ["url":"reddit.com", "isSelected":true, "tag":9], ["url":"www.linkedin.com/feed/", "isSelected":true, "tag":10]]// if any change in urls inside above block then below code needs to check again
+        
+        // remove youtube.com if occupation is student
+        let selectedIndex = UserDefaults.standard.object(forKey: kUserDefaultsSelectedOccupationIndex) as? Int ?? 0
+        if selectedIndex == occupationStudentIndex{
+            arrSocialMediaUrls.remove(at: 4)
+        }
+        //**//
         
         dic["arrUrls"] = arrSocialMediaUrls
         
@@ -97,14 +105,9 @@ class onboardingBlockedUrlsVc: NSViewController {
     }
     
     override func viewDidAppear() {
-        getOnboardingProgressVcObj().loadView()
-        onboardingProgressVcObj?.totalProgress = 26
-        onboardingProgressVcObj!.lblTitleProgress.stringValue = onboardingProgressVcObj!.titleActivatingBlockingProgress 
-        showOnboardingProgress(view: self.view, progress: 2)
         showOnboardingBellIcon(view: self.view, screen: "onboarding-blocked-urls-screen")
     }
     override func viewWillDisappear() {
-        hideOnboardingProgress(view: self.view)
         hideOnboardingBellIcon(view: self.view)
     }
     
@@ -173,13 +176,40 @@ class onboardingBlockedUrlsVc: NSViewController {
                 }
             }
         }
-        print(arrBlockedUrls)
+//        print(arrBlockedUrls)
         UserDefaults.standard.set(arrBlockedUrls, forKey: kUserdefaultsBlockedUrlsFromOnboarding)
 
+
+        SettingsManagerObject.arrBlockedUrls.removeAll()
+        for i in 0..<arrBlockedUrls.count{
+            if let isSelected = arrBlockedUrls[i]["isSelected"] as? Bool {
+                if isSelected{
+                    SettingsManagerObject.arrBlockedUrls.append(arrBlockedUrls[i]["url"] as? String ?? "")
+                }
+            }
+        }
+        UserDefaults.standard.set(SettingsManagerObject.arrBlockedUrls, forKey: SettingsManagerObject.kUserdefaultsArrBlockedUrls)//
+
+        SettingsManagerObject.isSettingsChanged = true
+        SettingsManagerObject.putUserLocalDeviceSettings()
+        
         if onboardingDistractionTypesVcObj?.checkBoxSecond.state == .on{
             self.view.window?.contentViewController = getOnboardingBlockedAppsVcObject()
         }else{
-            self.view.window?.contentViewController = getOnboardingBlockingScheduleVcObject()
+            if UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) == nil{
+                self.view.window?.contentViewController = getExplainingPermissionsVcObject()
+                explainingPermissionsVcObj?.showingFromPomodoro = true
+                UserDefaults.standard.set(true, forKey: kUserdefaultsBrowsersPermissionsSetByUser)
+            }else{
+                self.view.window?.close()
+                if SettingsManagerObject.isGeekModeEnabled{
+                    appdelegate?.menuShowPomodoroModeView()
+                    pomodoroVcObj?.textViewAchieve.string = pomodoroVcObj?.intentionToShowAgain ?? ""
+                }else{
+                    appdelegate?.menuShowSimplePomodoroModeView()
+                    simplePomodoroVcObj?.textViewAchieve.string = simplePomodoroVcObj?.intentionToShowAgain ?? ""
+                }
+            }
         }
         //  ------------------------//
     }
@@ -248,17 +278,21 @@ class onboardingBlockedUrlsVc: NSViewController {
                     if var dic = data.value(forKey: "arrUrls") as? [NSMutableDictionary]{
                         if sender.state == .off || sender.state == .mixed{
                             data ["isSelected"] = false
+                            allApiObject.capturePosthog(event: "block-category-unchecked", metadata: [:])
                             changeStateInCategory(datadict: &dic, newstate: false)
                         }else if sender.state == .on{
                             data ["isSelected"] = true
                             changeStateInCategory(datadict: &dic, newstate: true)
+                            allApiObject.capturePosthog(event: "block-category-checked", metadata: [:])
                         }
                     }
                 }else{
                     if data.value(forKey: "isSelected") as? Bool  == false{
                         data ["isSelected"] = true
+                        allApiObject.capturePosthog(event: "block-url-checked", metadata: [:])
                     }else{
                         data ["isSelected"] = false
+                        allApiObject.capturePosthog(event: "block-url-unchecked", metadata: [:])
                     }
                 }
                 break;

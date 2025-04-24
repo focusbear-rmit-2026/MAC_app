@@ -5,21 +5,29 @@
 #import "SentryCrashStackCursor.h"
 #import "SentryCrashStackCursor_SelfThread.h"
 #import "SentryCrashThread.h"
+#import "SentryFormatter.h"
 #import "SentryFrame.h"
-#import "SentryHexAddressFormatter.h"
 #import "SentryStacktrace.h"
 #import "SentryStacktraceBuilder.h"
 #import "SentryThread.h"
 #import <Foundation/Foundation.h>
 #include <execinfo.h>
+#include <pthread.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
+SentryCrashThread mainThreadID;
+
 @implementation SentryCrashDefaultMachineContextWrapper
+
++ (void)load
+{
+    mainThreadID = pthread_mach_thread_np(pthread_self());
+}
 
 - (void)fillContextForCurrentThread:(struct SentryCrashMachineContext *)context
 {
-    sentrycrashmc_getContextForThread(sentrycrashthread_self(), context, true);
+    sentrycrashmc_getContextForThread(sentrycrashthread_self(), context, YES);
 }
 
 - (int)getThreadCount:(struct SentryCrashMachineContext *)context
@@ -33,11 +41,16 @@ NS_ASSUME_NONNULL_BEGIN
     return thread;
 }
 
-- (void)getThreadName:(const SentryCrashThread)thread
+- (BOOL)getThreadName:(const SentryCrashThread)thread
             andBuffer:(char *const)buffer
          andBufLength:(int)bufLength;
 {
-    sentrycrashthread_getThreadName(thread, buffer, bufLength);
+    return sentrycrashthread_getThreadName(thread, buffer, bufLength) == true;
+}
+
+- (BOOL)isMainThread:(SentryCrashThread)thread
+{
+    return thread == mainThreadID;
 }
 
 @end

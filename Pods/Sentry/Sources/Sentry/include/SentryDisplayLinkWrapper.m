@@ -1,6 +1,7 @@
 #import "SentryDisplayLinkWrapper.h"
 
 #if SENTRY_HAS_UIKIT
+
 #    import <UIKit/UIKit.h>
 
 @implementation SentryDisplayLinkWrapper {
@@ -12,6 +13,11 @@
     return displayLink.timestamp;
 }
 
+- (CFTimeInterval)targetTimestamp API_AVAILABLE(ios(10.0), tvos(10.0))
+{
+    return displayLink.targetTimestamp;
+}
+
 - (void)linkWithTarget:(id)target selector:(SEL)sel
 {
     displayLink = [CADisplayLink displayLinkWithTarget:target selector:sel];
@@ -21,8 +27,14 @@
 - (void)invalidate
 {
     [displayLink invalidate];
+    displayLink = nil;
+}
+
+- (BOOL)isRunning
+{
+    return displayLink != nil && !displayLink.isPaused;
 }
 
 @end
 
-#endif
+#endif // SENTRY_HAS_UIKIT

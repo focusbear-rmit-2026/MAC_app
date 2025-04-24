@@ -1,3 +1,4 @@
+// Adapted from: https://github.com/kstenerud/KSCrash
 //
 //  SentryCrashString.m
 //
@@ -25,7 +26,7 @@
 //
 
 #include "SentryCrashString.h"
-#include "SentryCrashSystemCapabilities.h"
+#include "SentryInternalCDefines.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -164,7 +165,10 @@ sentrycrashstring_isNullTerminatedUTF8String(const void *memory, int minLength, 
                 unlikely_if((*ptr & 0xc0) != 0x80) { return false; }
             }
         }
-        else unlikely_if(ch < 0x20 && !g_printableControlChars[ch]) { return false; }
+        else unlikely_if(ch < 0x20 && !g_printableControlChars[ch])
+        {
+            return false;
+        }
     }
     return false;
 }
@@ -441,13 +445,8 @@ sentrycrashstring_extractHexValue(const char *string, int stringLength, uint64_t
         const unsigned char *current = (const unsigned char *)string;
         const unsigned char *const end = current + stringLength;
         for (;;) {
-#if SentryCrashCRASH_HAS_STRNSTR
             current = (const unsigned char *)strnstr(
                 (const char *)current, "0x", (unsigned)(end - current));
-#else
-            current = (const unsigned char *)strstr((const char *)current, "0x");
-            unlikely_if(current >= end) { return false; }
-#endif
             unlikely_if(!current) { return false; }
             current += 2;
 

@@ -1,69 +1,91 @@
 #import "SentryFramesTracker.h"
-#import "SentryDisplayLinkWrapper.h"
-#import <SentryScreenFrames.h>
-#include <stdatomic.h>
 
 #if SENTRY_HAS_UIKIT
-#    import <UIKit/UIKit.h>
+
+#    import "SentryCompiler.h"
+#    import "SentryDelayedFrame.h"
+#    import "SentryDelayedFramesTracker.h"
+#    import "SentryDispatchQueueWrapper.h"
+#    import "SentryDisplayLinkWrapper.h"
+#    import "SentryInternalCDefines.h"
+#    import "SentryLog.h"
+#    import "SentryNSNotificationCenterWrapper.h"
+#    import "SentryProfilingConditionals.h"
+#    import "SentrySwift.h"
+#    import "SentryTime.h"
+#    import "SentryTracer.h"
+#    import <SentryScreenFrames.h>
+#    include <stdatomic.h>
+
+#    if SENTRY_TARGET_PROFILING_SUPPORTED
+#        import "SentryContinuousProfiler.h"
+#        import "SentryTraceProfiler.h"
+
+/** A mutable version of @c SentryFrameInfoTimeSeries so we can accumulate results. */
+typedef NSMutableArray<NSDictionary<NSString *, NSNumber *> *> SentryMutableFrameInfoTimeSeries;
+#    endif // SENTRY_TARGET_PROFILING_SUPPORTED
 
 static CFTimeInterval const SentryFrozenFrameThreshold = 0.7;
-static CFTimeInterval const SentryPreviousFrameInitalValue = -1;
+static CFTimeInterval const SentryPreviousFrameInitialValue = -1;
 
-/**
- * Relaxed memoring ordering is typical for incrementing counters. This operation only requires
- * atomicity but not ordering or synchronization.
- */
-static memory_order const SentryFramesMemoryOrder = memory_order_relaxed;
+@interface SentryFramesTracker ()
 
-@interface
-SentryFramesTracker ()
+@property (nonatomic, assign, readonly) BOOL isStarted;
 
 @property (nonatomic, strong, readonly) SentryDisplayLinkWrapper *displayLinkWrapper;
-@property (nonatomic, assign, readonly) CFTimeInterval slowFrameThreshold;
+@property (nonatomic, strong, readonly) id<SentryCurrentDateProvider> dateProvider;
+@property (nonatomic, strong, readonly) SentryDispatchQueueWrapper *dispatchQueueWrapper;
+@property (nonatomic, strong) SentryNSNotificationCenterWrapper *notificationCenter;
 @property (nonatomic, assign) CFTimeInterval previousFrameTimestamp;
+@property (nonatomic) uint64_t previousFrameSystemTimestamp;
+@property (nonatomic) uint64_t currentFrameRate;
+@property (nonatomic, strong) NSHashTable<id<SentryFramesTrackerListener>> *listeners;
+#    if SENTRY_TARGET_PROFILING_SUPPORTED
+@property (nonatomic, readwrite) SentryMutableFrameInfoTimeSeries *frozenFrameTimestamps;
+@property (nonatomic, readwrite) SentryMutableFrameInfoTimeSeries *slowFrameTimestamps;
+@property (nonatomic, readwrite) SentryMutableFrameInfoTimeSeries *frameRateTimestamps;
+#    endif // SENTRY_TARGET_PROFILING_SUPPORTED
+
+@property (nonatomic, strong) SentryDelayedFramesTracker *delayedFramesTracker;
 
 @end
 
-@implementation SentryFramesTracker {
-
-    /**
-     * With 32 bit we can track frames with 120 fps for around 414 days (2^32 / (120* 60 * 60 *
-     * 24)).
-     */
-    atomic_uint_fast32_t _totalFrames;
-    atomic_uint_fast32_t _slowFrames;
-    atomic_uint_fast32_t _frozenFrames;
-}
-
-+ (instancetype)sharedInstance
+CFTimeInterval
+slowFrameThreshold(uint64_t actualFramesPerSecond)
 {
-    static SentryFramesTracker *sharedInstance = nil;
-    static dispatch_once_t onceToken;
-    dispatch_once(&onceToken, ^{
-        sharedInstance =
-            [[self alloc] initWithDisplayLinkWrapper:[[SentryDisplayLinkWrapper alloc] init]];
-    });
-    return sharedInstance;
+    // Most frames take just a few microseconds longer than the optimal calculated duration.
+    // Therefore we subtract one, because otherwise almost all frames would be slow.
+    return 1.0 / (actualFramesPerSecond - 1.0);
 }
 
-/** Internal constructor for testing */
+@implementation SentryFramesTracker {
+    unsigned int _totalFrames;
+    unsigned int _slowFrames;
+    unsigned int _frozenFrames;
+}
+
 - (instancetype)initWithDisplayLinkWrapper:(SentryDisplayLinkWrapper *)displayLinkWrapper
+                              dateProvider:(id<SentryCurrentDateProvider>)dateProvider
+                      dispatchQueueWrapper:(SentryDispatchQueueWrapper *)dispatchQueueWrapper
+                        notificationCenter:(SentryNSNotificationCenterWrapper *)notificationCenter
+                 keepDelayedFramesDuration:(CFTimeInterval)keepDelayedFramesDuration
 {
     if (self = [super init]) {
         _isRunning = NO;
+        _isStarted = NO;
         _displayLinkWrapper = displayLinkWrapper;
+        _dateProvider = dateProvider;
+        _dispatchQueueWrapper = dispatchQueueWrapper;
+        _notificationCenter = notificationCenter;
+        _delayedFramesTracker = [[SentryDelayedFramesTracker alloc]
+            initWithKeepDelayedFramesDuration:keepDelayedFramesDuration
+                                 dateProvider:dateProvider];
 
-        // If we can't get the frame rate we assume it is 60.
-        double maximumFramesPerSecond = 60.0;
-        if (@available(iOS 10.3, tvOS 10.3, macCatalyst 13.0, *)) {
-            maximumFramesPerSecond = (double)UIScreen.mainScreen.maximumFramesPerSecond;
-        }
+        _listeners = [NSHashTable weakObjectsHashTable];
 
-        // Most frames take just a few microseconds longer than the optimal caculated duration.
-        // Therefore we substract one, because otherwise almost all frames would be slow.
-        _slowFrameThreshold = 1 / (maximumFramesPerSecond - 1);
-
+        _currentFrameRate = 60;
         [self resetFrames];
+        SENTRY_LOG_DEBUG(@"Initialized frame tracker %@", self);
     }
     return self;
 }
@@ -74,60 +96,274 @@ SentryFramesTracker ()
     _displayLinkWrapper = displayLinkWrapper;
 }
 
-/** Internal for testing */
 - (void)resetFrames
 {
-    atomic_store_explicit(&_totalFrames, 0, SentryFramesMemoryOrder);
-    atomic_store_explicit(&_frozenFrames, 0, SentryFramesMemoryOrder);
-    atomic_store_explicit(&_slowFrames, 0, SentryFramesMemoryOrder);
+    _totalFrames = 0;
+    _frozenFrames = 0;
+    _slowFrames = 0;
 
-    self.previousFrameTimestamp = SentryPreviousFrameInitalValue;
+    self.previousFrameTimestamp = SentryPreviousFrameInitialValue;
+#    if SENTRY_TARGET_PROFILING_SUPPORTED
+    [self resetProfilingTimestampsInternal];
+#    endif // SENTRY_TARGET_PROFILING_SUPPORTED
+
+    [self.delayedFramesTracker resetDelayedFramesTimeStamps];
 }
+
+#    if SENTRY_TARGET_PROFILING_SUPPORTED
+- (void)resetProfilingTimestamps
+{
+    // The DisplayLink callback always runs on the main thread. We dispatch this to the main thread
+    // instead to avoid using locks in the DisplayLink callback.
+    [self.dispatchQueueWrapper
+        dispatchAsyncOnMainQueue:^{ [self resetProfilingTimestampsInternal]; }];
+}
+
+- (void)resetProfilingTimestampsInternal
+{
+    SENTRY_LOG_DEBUG(@"Resetting profiling GPU timeseries data.");
+    self.frozenFrameTimestamps = [SentryMutableFrameInfoTimeSeries array];
+    self.slowFrameTimestamps = [SentryMutableFrameInfoTimeSeries array];
+    self.frameRateTimestamps = [SentryMutableFrameInfoTimeSeries array];
+}
+
+#    endif // SENTRY_TARGET_PROFILING_SUPPORTED
 
 - (void)start
 {
+    if (_isStarted) {
+        return;
+    }
+
+    _isStarted = YES;
+
+    [self.notificationCenter
+        addObserver:self
+           selector:@selector(didBecomeActive)
+               name:SentryNSNotificationCenterWrapper.didBecomeActiveNotificationName];
+
+    [self.notificationCenter
+        addObserver:self
+           selector:@selector(willResignActive)
+               name:SentryNSNotificationCenterWrapper.willResignActiveNotificationName];
+
+    [self unpause];
+}
+
+- (void)didBecomeActive
+{
+    [self unpause];
+}
+
+- (void)willResignActive
+{
+    [self pause];
+}
+
+- (void)unpause
+{
+    if (_isRunning) {
+        return;
+    }
+
     _isRunning = YES;
+
     [_displayLinkWrapper linkWithTarget:self selector:@selector(displayLinkCallback)];
 }
 
 - (void)displayLinkCallback
 {
-    CFTimeInterval lastFrameTimestamp = self.displayLinkWrapper.timestamp;
+    CFTimeInterval thisFrameTimestamp = self.displayLinkWrapper.timestamp;
+    uint64_t thisFrameSystemTimestamp = self.dateProvider.systemTime;
 
-    if (self.previousFrameTimestamp == SentryPreviousFrameInitalValue) {
-        self.previousFrameTimestamp = lastFrameTimestamp;
+    if (self.previousFrameTimestamp == SentryPreviousFrameInitialValue) {
+        self.previousFrameTimestamp = thisFrameTimestamp;
+        self.previousFrameSystemTimestamp = thisFrameSystemTimestamp;
+        [self.delayedFramesTracker setPreviousFrameSystemTimestamp:thisFrameSystemTimestamp];
+        [self reportNewFrame];
         return;
     }
 
-    CFTimeInterval frameDuration = lastFrameTimestamp - self.previousFrameTimestamp;
-    self.previousFrameTimestamp = lastFrameTimestamp;
-
-    if (frameDuration > self.slowFrameThreshold && frameDuration <= SentryFrozenFrameThreshold) {
-        atomic_fetch_add_explicit(&_slowFrames, 1, SentryFramesMemoryOrder);
+    // Calculate the actual frame rate as pointed out by the Apple docs:
+    // https://developer.apple.com/documentation/quartzcore/cadisplaylink?language=objc The actual
+    // frame rate can change at any time by setting preferredFramesPerSecond or due to ProMotion
+    // display, low power mode, critical thermal state, and accessibility settings. Therefore we
+    // need to check the frame rate for every callback.
+    // targetTimestamp is only available on iOS 10.0 and tvOS 10.0 and above. We use a fallback of
+    // 60 fps.
+    _currentFrameRate = 60;
+    if (self.displayLinkWrapper.targetTimestamp != self.displayLinkWrapper.timestamp) {
+        _currentFrameRate = (uint64_t)round(
+            (1 / (self.displayLinkWrapper.targetTimestamp - self.displayLinkWrapper.timestamp)));
     }
 
-    if (frameDuration > SentryFrozenFrameThreshold) {
-        atomic_fetch_add_explicit(&_frozenFrames, 1, SentryFramesMemoryOrder);
+#    if SENTRY_TARGET_PROFILING_SUPPORTED
+    NSDate *thisFrameNSDate = self.dateProvider.date;
+    BOOL isContinuousProfiling = [SentryContinuousProfiler isCurrentlyProfiling];
+    NSNumber *profilingTimestamp = isContinuousProfiling ? @(thisFrameNSDate.timeIntervalSince1970)
+                                                         : @(thisFrameSystemTimestamp);
+    if ([SentryTraceProfiler isCurrentlyProfiling] || isContinuousProfiling) {
+        BOOL hasNoFrameRatesYet = self.frameRateTimestamps.count == 0;
+        uint64_t previousFrameRate
+            = self.frameRateTimestamps.lastObject[@"value"].unsignedLongLongValue;
+        BOOL frameRateChanged = previousFrameRate != _currentFrameRate;
+        BOOL shouldRecordNewFrameRate = hasNoFrameRatesYet || frameRateChanged;
+        if (shouldRecordNewFrameRate) {
+            SENTRY_LOG_DEBUG(@"Recording new frame rate at %@.", profilingTimestamp);
+            [self recordTimestamp:profilingTimestamp
+                            value:@(_currentFrameRate)
+                            array:self.frameRateTimestamps];
+        }
+    }
+#    endif // SENTRY_TARGET_PROFILING_SUPPORTED
+
+    CFTimeInterval frameDuration = thisFrameTimestamp - self.previousFrameTimestamp;
+
+    if (frameDuration > slowFrameThreshold(_currentFrameRate)
+        && frameDuration <= SentryFrozenFrameThreshold) {
+        _slowFrames++;
+#    if SENTRY_TARGET_PROFILING_SUPPORTED
+        SENTRY_LOG_DEBUG(
+            @"Detected slow frame starting at %@ (frame tracker: %@).", profilingTimestamp, self);
+        [self recordTimestamp:profilingTimestamp
+                        value:@(thisFrameSystemTimestamp - self.previousFrameSystemTimestamp)
+                        array:self.slowFrameTimestamps];
+#    endif // SENTRY_TARGET_PROFILING_SUPPORTED
+    } else if (frameDuration > SentryFrozenFrameThreshold) {
+        _frozenFrames++;
+#    if SENTRY_TARGET_PROFILING_SUPPORTED
+        SENTRY_LOG_DEBUG(@"Detected frozen frame starting at %@.", profilingTimestamp);
+        [self recordTimestamp:profilingTimestamp
+                        value:@(thisFrameSystemTimestamp - self.previousFrameSystemTimestamp)
+                        array:self.frozenFrameTimestamps];
+#    endif // SENTRY_TARGET_PROFILING_SUPPORTED
     }
 
-    atomic_fetch_add_explicit(&_totalFrames, 1, SentryFramesMemoryOrder);
+    if (frameDuration > slowFrameThreshold(_currentFrameRate)) {
+        [self.delayedFramesTracker recordDelayedFrame:self.previousFrameSystemTimestamp
+                             thisFrameSystemTimestamp:thisFrameSystemTimestamp
+                                     expectedDuration:slowFrameThreshold(_currentFrameRate)
+                                       actualDuration:frameDuration];
+    } else {
+        [self.delayedFramesTracker setPreviousFrameSystemTimestamp:thisFrameSystemTimestamp];
+    }
+
+    _totalFrames++;
+    self.previousFrameTimestamp = thisFrameTimestamp;
+    self.previousFrameSystemTimestamp = thisFrameSystemTimestamp;
+    [self reportNewFrame];
 }
 
-- (SentryScreenFrames *)currentFrames
+- (void)reportNewFrame
 {
-    NSUInteger total = atomic_load_explicit(&_totalFrames, SentryFramesMemoryOrder);
-    NSUInteger slow = atomic_load_explicit(&_slowFrames, SentryFramesMemoryOrder);
-    NSUInteger frozen = atomic_load_explicit(&_frozenFrames, SentryFramesMemoryOrder);
-
-    return [[SentryScreenFrames alloc] initWithTotal:total frozen:frozen slow:slow];
+    NSDate *newFrameDate = [self.dateProvider date];
+    // We need to copy the list because some listeners will remove themselves
+    // from the list during the callback, causing a crash during iteration.
+    NSArray<id<SentryFramesTrackerListener>> *listeners = [self.listeners copy];
+    for (id<SentryFramesTrackerListener> listener in listeners) {
+        [listener framesTrackerHasNewFrame:newFrameDate];
+    }
 }
 
-- (void)stop
+#    if SENTRY_TARGET_PROFILING_SUPPORTED
+- (void)recordTimestamp:(NSNumber *)timestamp value:(NSNumber *)value array:(NSMutableArray *)array
+{
+    BOOL shouldRecord = [SentryTraceProfiler isCurrentlyProfiling] ||
+        [SentryContinuousProfiler isCurrentlyProfiling];
+#        if defined(SENTRY_TEST) || defined(SENTRY_TEST_CI)
+    shouldRecord = YES;
+#        endif // defined(SENTRY_TEST) || defined(SENTRY_TEST_CI)
+    if (shouldRecord) {
+        [array addObject:@{ @"timestamp" : timestamp, @"value" : value }];
+    }
+}
+#    endif // SENTRY_TARGET_PROFILING_SUPPORTED
+
+- (SentryScreenFrames *)currentFrames SENTRY_DISABLE_THREAD_SANITIZER()
+{
+#    if SENTRY_TARGET_PROFILING_SUPPORTED
+    return [[SentryScreenFrames alloc] initWithTotal:_totalFrames
+                                              frozen:_frozenFrames
+                                                slow:_slowFrames
+                                 slowFrameTimestamps:self.slowFrameTimestamps
+                               frozenFrameTimestamps:self.frozenFrameTimestamps
+                                 frameRateTimestamps:self.frameRateTimestamps];
+#    else
+    return [[SentryScreenFrames alloc] initWithTotal:_totalFrames
+                                              frozen:_frozenFrames
+                                                slow:_slowFrames];
+#    endif // SENTRY_TARGET_PROFILING_SUPPORTED
+}
+
+- (SentryFramesDelayResult *)getFramesDelay:(uint64_t)startSystemTimestamp
+                         endSystemTimestamp:(uint64_t)endSystemTimestamp
+    SENTRY_DISABLE_THREAD_SANITIZER()
+{
+    return [self.delayedFramesTracker getFramesDelay:startSystemTimestamp
+                                  endSystemTimestamp:endSystemTimestamp
+                                           isRunning:_isRunning
+                                  slowFrameThreshold:slowFrameThreshold(_currentFrameRate)];
+}
+
+- (void)addListener:(id<SentryFramesTrackerListener>)listener
+{
+    // Adding listeners on the main thread to avoid race condition with new frame callback
+    [self.dispatchQueueWrapper dispatchAsyncOnMainQueue:^{ [self.listeners addObject:listener]; }];
+}
+
+- (void)removeListener:(id<SentryFramesTrackerListener>)listener
+{
+    // Removing listeners on the main thread to avoid race condition with new frame callback
+    [self.dispatchQueueWrapper
+        dispatchAsyncOnMainQueue:^{ [self.listeners removeObject:listener]; }];
+}
+
+- (void)pause
 {
     _isRunning = NO;
     [self.displayLinkWrapper invalidate];
 }
 
+- (void)stop
+{
+    if (!_isStarted) {
+        return;
+    }
+
+    _isStarted = NO;
+
+    [self pause];
+    [self.delayedFramesTracker resetDelayedFramesTimeStamps];
+
+    // Remove the observers with the most specific detail possible, see
+    // https://developer.apple.com/documentation/foundation/nsnotificationcenter/1413994-removeobserver
+    [self.notificationCenter
+        removeObserver:self
+                  name:SentryNSNotificationCenterWrapper.didBecomeActiveNotificationName];
+    [self.notificationCenter
+        removeObserver:self
+                  name:SentryNSNotificationCenterWrapper.willResignActiveNotificationName];
+
+    @synchronized(self.listeners) {
+        [self.listeners removeAllObjects];
+    }
+}
+
+- (void)dealloc
+{
+    [self stop];
+}
+
 @end
 
-#endif
+BOOL
+sentryShouldAddSlowFrozenFramesData(
+    NSInteger totalFrames, NSInteger slowFrames, NSInteger frozenFrames)
+{
+    BOOL allBiggerThanOrEqualToZero = totalFrames >= 0 && slowFrames >= 0 && frozenFrames >= 0;
+    BOOL oneBiggerThanZero = totalFrames > 0 || slowFrames > 0 || frozenFrames > 0;
+
+    return allBiggerThanOrEqualToZero && oneBiggerThanZero;
+}
+
+#endif // SENTRY_HAS_UIKIT

@@ -124,7 +124,7 @@ class abortingFocusModeVc: NSViewController {
             startTimer()
         }
         if forPause{
-            stackViewWhyStopFocusMode.isHidden = true
+//            stackViewWhyStopFocusMode.isHidden = true
             lblTitle.stringValue = titlePauseText.replacingOccurrences(of: "<FOCUSTYPE>", with: focusType)
             btnAbortFocus.title = "Pause Focus Block"
             if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
@@ -133,7 +133,7 @@ class abortingFocusModeVc: NSViewController {
                 }
             }
         }else{
-            stackViewWhyStopFocusMode.isHidden = false
+//            stackViewWhyStopFocusMode.isHidden = false
             lblTitle.stringValue = titleText.replacingOccurrences(of: "<FOCUSTYPE>", with: focusType)
             btnAbortFocus.title = "Deactivate Focus Block"
             if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
@@ -198,11 +198,7 @@ class abortingFocusModeVc: NSViewController {
                     if self.isPausingFocusMode{
                         self.btnAbortFocus.isEnabled = true
                     }else{
-                        if self.popUpBtnAbortReasons.titleOfSelectedItem == ""{
-                            self.btnAbortFocus.isEnabled = false
-                        }else{
-                            self.btnAbortFocus.isEnabled = true
-                        }
+                        self.btnAbortFocus.isEnabled = true
                     }
                 }
             }
@@ -244,25 +240,28 @@ class abortingFocusModeVc: NSViewController {
             let isAutoMeetingsModeStarted = appdelegate!.isAutoMeetingsModeStarted
             let appUsedInAutoMeetingFocusMode = appdelegate!.appUsedInAutoMeetingFocusMode
             var reason = ""
-            if popUpBtnAbortReasons.titleOfSelectedItem == reasonFocusModeNotWorkingText{
-                reason = "Focus mode is not working properly."
-                if !focusModeTaskString.isEmpty{
-                    appdelegate?.focusModeFinished(isSilent: false, isShutOffTime: false, isMorningRoutineTime: false)
-                }else{
-                    appdelegate?.focusModeAborted()
-                }
-                
-            }else if popUpBtnAbortReasons.titleOfSelectedItem == reasonWorkCompletedText{
-                reason = "I achieved what I wanted to too early."
-                appdelegate?.focusModeFinished(isSilent: false, isShutOffTime: false, isMorningRoutineTime: false)
-            }else if popUpBtnAbortReasons.titleOfSelectedItem == reasonEmergencyText{
-                reason = "I have an emergency"
-                if !focusModeTaskString.isEmpty{
-                    appdelegate?.focusModeFinished(isSilent: false, isShutOffTime: false, isMorningRoutineTime: false)
-                }else{
-                    appdelegate?.focusModeAborted()
-                }
-            }
+//            if popUpBtnAbortReasons.titleOfSelectedItem == reasonFocusModeNotWorkingText{
+//                reason = "Focus mode is not working properly."
+//                if !focusModeTaskStringIsEmpty(){
+//                    appdelegate?.tryFocusModeFinished(isSilent: false, isShutOffTime: false, isMorningRoutineTime: false, allowExtend:false)
+//                }else{
+//                    appdelegate?.focusModeAborted()
+//                }
+//
+//            }else if popUpBtnAbortReasons.titleOfSelectedItem == reasonWorkCompletedText{
+//                reason = "I achieved what I wanted to too early."
+//                appdelegate?.tryFocusModeFinished(isSilent: false, isShutOffTime: false, isMorningRoutineTime: false, allowExtend:false)
+//            }else if popUpBtnAbortReasons.titleOfSelectedItem == reasonEmergencyText{
+//                reason = "I have an emergency"
+//                if !focusModeTaskStringIsEmpty(){
+//                    appdelegate?.tryFocusModeFinished(isSilent: false, isShutOffTime: false, isMorningRoutineTime: false, allowExtend:false)
+//                }else{
+//                    appdelegate?.focusModeAborted()
+//                }
+//            }
+            reason = "I achieved what I wanted to too early."
+            appdelegate?.tryFocusModeFinished(isSilent: false, isShutOffTime: false, isMorningRoutineTime: false, allowExtend:false, isCustomRoutineTime:false)
+            
             addLog(text: "Focus mode abort clicked with reason - \(reason)")
             let timestamp = getStringFromDate(date: startFocusModeTime ?? Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
             if isAutoMeetingsModeStarted{

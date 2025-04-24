@@ -1,17 +1,25 @@
 #import "SentryRateLimitParser.h"
-#import "SentryCurrentDate.h"
+#import "SentryDataCategoryMapper.h"
 #import "SentryDateUtil.h"
-#import "SentryRateLimitCategoryMapper.h"
-#import <Foundation/Foundation.h>
+#import "SentrySwift.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface
-SentryRateLimitParser ()
+@interface SentryRateLimitParser ()
+
+@property (nonatomic, strong) id<SentryCurrentDateProvider> currentDateProvider;
 
 @end
 
 @implementation SentryRateLimitParser
+
+- (instancetype)initWithCurrentDateProvider:(id<SentryCurrentDateProvider>)currentDateProvider
+{
+    if (self = [super init]) {
+        self.currentDateProvider = currentDateProvider;
+    }
+    return self;
+}
 
 - (NSDictionary<NSNumber *, NSDate *> *)parse:(NSString *)header
 {
@@ -35,8 +43,24 @@ SentryRateLimitParser ()
         }
 
         for (NSNumber *category in [self parseCategories:parameters[1]]) {
-            rateLimits[category] = [self getLongerRateLimit:rateLimits[category]
-                                      andRateLimitInSeconds:rateLimitInSeconds];
+            SentryDataCategory dataCategory
+                = sentryDataCategoryForNSUInteger(category.integerValue);
+
+            // Namespaces should only be available for MetricBucket
+            if (dataCategory == kSentryDataCategoryMetricBucket && parameters.count > 4) {
+                NSString *namespacesAsString = parameters[4];
+
+                NSArray<NSString *> *namespaces =
+                    [namespacesAsString componentsSeparatedByString:@";"];
+                if (namespacesAsString.length == 0 || [namespaces containsObject:@"custom"]) {
+                    rateLimits[category] = [self getLongerRateLimit:rateLimits[category]
+                                              andRateLimitInSeconds:rateLimitInSeconds];
+                }
+
+            } else {
+                rateLimits[category] = [self getLongerRateLimit:rateLimits[category]
+                                          andRateLimitInSeconds:rateLimitInSeconds];
+            }
         }
     }
 
@@ -57,30 +81,6 @@ SentryRateLimitParser ()
     return [numberFormatter numberFromString:string];
 }
 
-- (SentryRateLimitCategory)mapStringToCategory:(NSString *)category
-{
-    SentryRateLimitCategory result = kSentryRateLimitCategoryUnknown;
-    if ([category isEqualToString:@""]) {
-        result = kSentryRateLimitCategoryAll;
-    }
-    if ([category isEqualToString:@"default"]) {
-        result = kSentryRateLimitCategoryDefault;
-    }
-    if ([category isEqualToString:@"error"]) {
-        result = kSentryRateLimitCategoryError;
-    }
-    if ([category isEqualToString:@"session"]) {
-        result = kSentryRateLimitCategorySession;
-    }
-    if ([category isEqualToString:@"transaction"]) {
-        result = kSentryRateLimitCategoryTransaction;
-    }
-    if ([category isEqualToString:@"attachment"]) {
-        result = kSentryRateLimitCategoryAttachment;
-    }
-    return result;
-}
-
 - (NSArray<NSNumber *> *)parseCategories:(NSString *)categoriesAsString
 {
     // The categories are a semicolon separated list. If this parameter is empty
@@ -88,10 +88,11 @@ SentryRateLimitParser ()
     // category even if this parameter is empty.
     NSMutableArray<NSNumber *> *categories = [NSMutableArray new];
     for (NSString *categoryAsString in [categoriesAsString componentsSeparatedByString:@";"]) {
-        SentryRateLimitCategory category = [self mapStringToCategory:categoryAsString];
+        SentryDataCategory category = sentryDataCategoryForString(categoryAsString);
 
-        // Unknown categories must be ignored
-        if (category != kSentryRateLimitCategoryUnknown) {
+        // Unknown categories must be ignored. UserFeedback is not listed for rate limits, see
+        // https://develop.sentry.dev/sdk/rate-limiting/#definitions
+        if (category != kSentryDataCategoryUnknown && category != kSentryDataCategoryUserFeedback) {
             [categories addObject:@(category)];
         }
     }
@@ -102,8 +103,8 @@ SentryRateLimitParser ()
 - (NSDate *)getLongerRateLimit:(NSDate *)existingRateLimit
          andRateLimitInSeconds:(NSNumber *)newRateLimitInSeconds
 {
-    NSDate *newDate =
-        [SentryCurrentDate.date dateByAddingTimeInterval:[newRateLimitInSeconds doubleValue]];
+    NSDate *newDate = [self.currentDateProvider.date
+        dateByAddingTimeInterval:[newRateLimitInSeconds doubleValue]];
     return [SentryDateUtil getMaximumDate:newDate andOther:existingRateLimit];
 }
 

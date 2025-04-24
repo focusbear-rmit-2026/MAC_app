@@ -127,10 +127,12 @@ class focusEndWarningVc: NSViewController {
             }
         }
     }
+    
     @objc func performTimerCount() {
         currentTimer += 1
         setProgres()
     }
+    
     @IBAction func btnExtendClicked(_ sender: Any) {
         let totalMinutes = Int(popUpBtn.title) ?? 0
         if currentState == ._POSTPON_MORNING_HABIT_ || currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_{
@@ -207,6 +209,8 @@ class focusEndWarningVc: NSViewController {
                                         self.extendFocusMode()
                                     }
                                 }
+                            }else{
+                                self.extendFocusMode()
                             }
                             
                         })
@@ -222,6 +226,7 @@ class focusEndWarningVc: NSViewController {
     }
     
     func extendFocusMode(){
+        allApiObject.capturePosthog(event: "extend-focus-session-from-warning", metadata: [:])
         appdelegate?.extendFocusModeFor(minutes: Int(popUpBtn.title) ?? 0)
         self.view.window?.close()
     }

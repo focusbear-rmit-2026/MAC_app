@@ -23,6 +23,7 @@ class todoListToolVc: NSViewController, WKNavigationDelegate, webViewLoadFailedD
             
         })
     }
+    
     func reloadData(){
         let webUrl:String = "https://dashboard.focusbear.io/webview/tools-todo-list?bust_cache=\(getUuid())"
         let link = URL(string:webUrl)!
@@ -61,6 +62,7 @@ class todoListToolVc: NSViewController, WKNavigationDelegate, webViewLoadFailedD
     func handleLoadError(webView: WKWebView) {
         if webViewLoadFailedVcObj != nil{
             if webView.subviews.contains(webViewLoadFailedVcObj!.view){
+                webViewLoadFailedVcObj?.reloadData()
                 return;
             }
         }
@@ -69,13 +71,14 @@ class todoListToolVc: NSViewController, WKNavigationDelegate, webViewLoadFailedD
         webViewLoadFailedVcObj?.webView = webView
         webView.addSubview(webViewLoadFailedVcObj!.view)
         webView.addConstraints(subView: webViewLoadFailedVcObj!.view)
+        webViewLoadFailedVcObj?.reloadData()
     }
     
     func reloadClicked(webView:WKWebView){
         reloadData()
     }
     
-    func setAccessTokenToWebView(){
+    func setAccessTokenToWebView(){// todo font add kro 
         let intention = whatToAchieveInFocusBlock
         var stringJson = "{\"access_token\": \"\(appdelegate!.credential?.accessToken ?? "")\",\"platform\":\"mac\",\"lang\":\"\(currentLanguageCode)\"}"
         

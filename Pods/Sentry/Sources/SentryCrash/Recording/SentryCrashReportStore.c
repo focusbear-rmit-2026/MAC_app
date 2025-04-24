@@ -1,3 +1,4 @@
+// Adapted from: https://github.com/kstenerud/KSCrash
 //
 //  SentryCrashReportStore.c
 //
@@ -25,8 +26,8 @@
 //
 
 #include "SentryCrashReportStore.h"
+#include "SentryAsyncSafeLog.h"
 #include "SentryCrashFileUtils.h"
-#include "SentryCrashLogger.h"
 
 #include <dirent.h>
 #include <errno.h>
@@ -59,7 +60,7 @@ compareInt64(const void *a, const void *b)
 }
 
 static inline int64_t
-getNextUniqueID()
+getNextUniqueID(void)
 {
     return g_nextUniqueIDHigh + g_nextUniqueIDLow++;
 }
@@ -74,26 +75,40 @@ getCrashReportPathByID(int64_t id, char *pathBuffer)
 static int64_t
 getReportIDFromFilename(const char *filename)
 {
-    char scanFormat[100];
+    char scanFormat[SentryCrashCRS_MAX_PATH_LENGTH];
     snprintf(scanFormat, sizeof(scanFormat), "%s-report-%%" PRIx64 ".json", g_appName);
 
     int64_t reportID = 0;
     sscanf(filename, scanFormat, &reportID);
+
+    return reportID;
+}
+
+static int64_t
+getReportIDFromFilePath(const char *filepath)
+{
+    char scanFormat[SentryCrashCRS_MAX_PATH_LENGTH];
+    snprintf(
+        scanFormat, sizeof(scanFormat), "%s/%s-report-%%" PRIx64 ".json", g_reportsPath, g_appName);
+
+    int64_t reportID = 0;
+    sscanf(filepath, scanFormat, &reportID);
+
     return reportID;
 }
 
 static int
-getReportCount()
+getReportCount(void)
 {
     int count = 0;
     DIR *dir = opendir(g_reportsPath);
     if (dir == NULL) {
-        SentryCrashLOG_ERROR("Could not open directory %s", g_reportsPath);
+        SENTRY_ASYNC_SAFE_LOG_ERROR("Could not open directory %s", g_reportsPath);
         goto done;
     }
     struct dirent *ent;
     while ((ent = readdir(dir)) != NULL) {
-        if (getReportIDFromFilename(ent->d_name) > 0) {
+        if (ent->d_type != DT_DIR && getReportIDFromFilename(ent->d_name) > 0) {
             count++;
         }
     }
@@ -111,7 +126,7 @@ getReportIDs(int64_t *reportIDs, int count)
     int index = 0;
     DIR *dir = opendir(g_reportsPath);
     if (dir == NULL) {
-        SentryCrashLOG_ERROR("Could not open directory %s", g_reportsPath);
+        SENTRY_ASYNC_SAFE_LOG_ERROR("Could not open directory %s", g_reportsPath);
         goto done;
     }
 
@@ -133,7 +148,7 @@ done:
 }
 
 static void
-pruneReports()
+pruneReports(void)
 {
     int reportCount = getReportCount();
     if (reportCount > g_maxReportCount) {
@@ -147,7 +162,7 @@ pruneReports()
 }
 
 static void
-initializeIDs()
+initializeIDs(void)
 {
     time_t rawTime;
     time(&rawTime);
@@ -159,7 +174,8 @@ initializeIDs()
     baseID <<= 23;
 
     g_nextUniqueIDHigh = baseID & ~0xffffffff;
-    g_nextUniqueIDLow = (uint32_t)(baseID & 0xffffffff);
+    uint32_t lowerBaseID = (uint32_t)(baseID & 0xffffffff);
+    g_nextUniqueIDLow = lowerBaseID;
 }
 
 // Public API
@@ -183,7 +199,7 @@ sentrycrashcrs_getNextCrashReportPath(char *crashReportPathBuffer)
 }
 
 int
-sentrycrashcrs_getReportCount()
+sentrycrashcrs_getReportCount(void)
 {
     pthread_mutex_lock(&g_mutex);
     int count = getReportCount();
@@ -200,6 +216,12 @@ sentrycrashcrs_getReportIDs(int64_t *reportIDs, int count)
     return count;
 }
 
+void
+sentrycrashcrs_getCrashReportPathById(int64_t reportId, char *pathBuffer)
+{
+    getCrashReportPathByID(reportId, pathBuffer);
+}
+
 char *
 sentrycrashcrs_readReport(int64_t reportID)
 {
@@ -212,6 +234,19 @@ sentrycrashcrs_readReport(int64_t reportID)
     return result;
 }
 
+void
+sentrycrashcrs_getAttachmentsPath_forReportId(int64_t reportID, char *pathBuffer)
+{
+    snprintf(pathBuffer, SentryCrashCRS_MAX_PATH_LENGTH, "%s/%s-report-%016llx-attachments",
+        g_reportsPath, g_appName, reportID);
+}
+
+void
+sentrycrashcrs_getAttachmentsPath_forReport(const char *reportPath, char *pathBuffer)
+{
+    sentrycrashcrs_getAttachmentsPath_forReportId(getReportIDFromFilePath(reportPath), pathBuffer);
+}
+
 int64_t
 sentrycrashcrs_addUserReport(const char *report, int reportLength)
 {
@@ -222,16 +257,17 @@ sentrycrashcrs_addUserReport(const char *report, int reportLength)
 
     int fd = open(crashReportPath, O_WRONLY | O_CREAT, 0644);
     if (fd < 0) {
-        SentryCrashLOG_ERROR("Could not open file %s: %s", crashReportPath, strerror(errno));
+        SENTRY_ASYNC_SAFE_LOG_ERROR("Could not open file %s: %s", crashReportPath, strerror(errno));
         goto done;
     }
 
     int bytesWritten = (int)write(fd, report, (unsigned)reportLength);
     if (bytesWritten < 0) {
-        SentryCrashLOG_ERROR("Could not write to file %s: %s", crashReportPath, strerror(errno));
+        SENTRY_ASYNC_SAFE_LOG_ERROR(
+            "Could not write to file %s: %s", crashReportPath, strerror(errno));
         goto done;
     } else if (bytesWritten < reportLength) {
-        SentryCrashLOG_ERROR("Expected to write %d bytes to file %s, but only wrote %d",
+        SENTRY_ASYNC_SAFE_LOG_ERROR("Expected to write %d bytes to file %s, but only wrote %d",
             crashReportPath, reportLength, bytesWritten);
     }
 
@@ -245,7 +281,7 @@ done:
 }
 
 void
-sentrycrashcrs_deleteAllReports()
+sentrycrashcrs_deleteAllReports(void)
 {
     pthread_mutex_lock(&g_mutex);
     sentrycrashfu_deleteContentsOfPath(g_reportsPath);

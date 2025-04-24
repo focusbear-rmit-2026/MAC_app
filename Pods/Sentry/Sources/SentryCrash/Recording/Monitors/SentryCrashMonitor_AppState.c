@@ -1,3 +1,4 @@
+// Adapted from: https://github.com/kstenerud/KSCrash
 //
 //  SentryCrashMonitor_AppState.c
 //
@@ -30,8 +31,7 @@
 #include "SentryCrashJSONCodec.h"
 #include "SentryCrashMonitorContext.h"
 
-//#define SentryCrashLogger_LocalLevel TRACE
-#include "SentryCrashLogger.h"
+#include "SentryAsyncSafeLog.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -49,6 +49,7 @@
 
 #define kKeyFormatVersion "version"
 #define kKeyCrashedLastLaunch "crashedLastLaunch"
+#define kKeyDurationFromCrashStateInitToLastCrash "durationFromCrashStateInitToLastCrash"
 #define kKeyActiveDurationSinceLastCrash "activeDurationSinceLastCrash"
 #define kKeyBackgroundDurationSinceLastCrash "backgroundDurationSinceLastCrash"
 #define kKeyLaunchesSinceLastCrash "launchesSinceLastCrash"
@@ -64,6 +65,8 @@ static const char *g_stateFilePath;
 
 /** Current state. */
 static SentryCrash_AppState g_state;
+
+static double g_crashstate_initialize_time;
 
 static volatile bool g_isEnabled = false;
 
@@ -96,6 +99,10 @@ onFloatingPointElement(const char *const name, const double value, void *const u
         return SentryCrashJSON_ERROR_INVALID_DATA;
     }
 
+    if (strcmp(name, kKeyDurationFromCrashStateInitToLastCrash) == 0) {
+        state->durationFromCrashStateInitToLastCrash = value;
+    }
+
     if (strcmp(name, kKeyActiveDurationSinceLastCrash) == 0) {
         state->activeDurationSinceLastCrash = value;
     }
@@ -117,7 +124,7 @@ onIntegerElement(const char *const name, const int64_t value, void *const userDa
 
     if (strcmp(name, kKeyFormatVersion) == 0) {
         if (value != kFormatVersion) {
-            SentryCrashLOG_ERROR("Expected version 1 but got %" PRId64, value);
+            SENTRY_ASYNC_SAFE_LOG_ERROR("Expected version 1 but got %" PRId64, value);
             return SentryCrashJSON_ERROR_INVALID_DATA;
         }
     } else if (strcmp(name, kKeyLaunchesSinceLastCrash) == 0) {
@@ -128,6 +135,13 @@ onIntegerElement(const char *const name, const int64_t value, void *const userDa
 
     // FP value might have been written as a whole number.
     return onFloatingPointElement(name, value, userData);
+}
+
+static int
+onUIntegerElement(
+    __unused const char *const name, __unused const uint64_t value, __unused void *const userData)
+{
+    return SentryCrashJSON_OK;
 }
 
 static int
@@ -182,7 +196,7 @@ addJSONData(const char *const data, const int length, void *const userData)
 // ============================================================================
 
 static double
-getCurentTime()
+getCurentTime(void)
 {
     struct timeval tv;
     gettimeofday(&tv, NULL);
@@ -215,7 +229,7 @@ loadState(const char *const path)
     char *data;
     int length;
     if (!sentrycrashfu_readEntireFile(path, &data, &length, 50000)) {
-        SentryCrashLOG_ERROR("%s: Could not load file", path);
+        SENTRY_ASYNC_SAFE_LOG_ERROR("%s: Could not load file", path);
         return false;
     }
 
@@ -227,6 +241,7 @@ loadState(const char *const path)
     callbacks.onEndData = onEndData;
     callbacks.onFloatingPointElement = onFloatingPointElement;
     callbacks.onIntegerElement = onIntegerElement;
+    callbacks.onUIntegerElement = onUIntegerElement;
     callbacks.onNullElement = onNullElement;
     callbacks.onStringElement = onStringElement;
 
@@ -237,7 +252,7 @@ loadState(const char *const path)
         data, (int)length, stringBuffer, sizeof(stringBuffer), &callbacks, &g_state, &errorOffset);
     free(data);
     if (result != SentryCrashJSON_OK) {
-        SentryCrashLOG_ERROR(
+        SENTRY_ASYNC_SAFE_LOG_ERROR(
             "%s, offset %d: %s", path, errorOffset, sentrycrashjson_stringForError(result));
         return false;
     }
@@ -255,7 +270,8 @@ saveState(const char *const path)
 {
     int fd = open(path, O_RDWR | O_CREAT | O_TRUNC, 0644);
     if (fd < 0) {
-        SentryCrashLOG_ERROR("Could not open file %s for writing: %s", path, strerror(errno));
+        SENTRY_ASYNC_SAFE_LOG_ERROR(
+            "Could not open file %s for writing: %s", path, strerror(errno));
         return false;
     }
 
@@ -274,6 +290,22 @@ saveState(const char *const path)
     // Record this launch crashed state into "crashed last launch" field.
     if ((result = sentrycrashjson_addBooleanElement(
              &JSONContext, kKeyCrashedLastLaunch, g_state.crashedThisLaunch))
+        != SentryCrashJSON_OK) {
+        goto done;
+    }
+
+    // SentryCrash resets the app state when enabling it in setEnabled. To keep the value alive for
+    // the application's lifetime, we don't modify the g_state. Instead, we only save the value to
+    // the crash state file without setting it to g_state. When initializing the app state, the code
+    // reads the value from the file and keeps it in memory. The code uses the same pattern for
+    // CrashedLastLaunch. Ideally, we would refactor this, but we must be aware of possible side
+    // effects.
+    double durationFromCrashStateInitToLastCrash = 0;
+    if (g_state.crashedThisLaunch) {
+        durationFromCrashStateInitToLastCrash = timeSince(g_crashstate_initialize_time);
+    }
+    if ((result = sentrycrashjson_addFloatingPointElement(&JSONContext,
+             kKeyDurationFromCrashStateInitToLastCrash, durationFromCrashStateInitToLastCrash))
         != SentryCrashJSON_OK) {
         goto done;
     }
@@ -302,7 +334,7 @@ saveState(const char *const path)
 done:
     close(fd);
     if (result != SentryCrashJSON_OK) {
-        SentryCrashLOG_ERROR("%s: %s", path, sentrycrashjson_stringForError(result));
+        SENTRY_ASYNC_SAFE_LOG_ERROR("%s: %s", path, sentrycrashjson_stringForError(result));
         return false;
     }
     return true;
@@ -315,13 +347,14 @@ done:
 void
 sentrycrashstate_initialize(const char *const stateFilePath)
 {
+    g_crashstate_initialize_time = getCurentTime();
     g_stateFilePath = strdup(stateFilePath);
     memset(&g_state, 0, sizeof(g_state));
     loadState(g_stateFilePath);
 }
 
 bool
-sentrycrashstate_reset()
+sentrycrashstate_reset(void)
 {
     if (g_isEnabled) {
         g_state.sessionsSinceLaunch = 1;
@@ -343,6 +376,12 @@ sentrycrashstate_reset()
         return saveState(g_stateFilePath);
     }
     return false;
+}
+
+const char *
+sentrycrashstate_filePath(void)
+{
+    return g_stateFilePath;
 }
 
 void
@@ -411,7 +450,7 @@ sentrycrashstate_notifyAppCrash(void)
     }
 }
 
-const SentryCrash_AppState *const
+const SentryCrash_AppState *
 sentrycrashstate_currentState(void)
 {
     return &g_state;
@@ -429,7 +468,7 @@ setEnabled(bool isEnabled)
 }
 
 static bool
-isEnabled()
+isEnabled(void)
 {
     return g_isEnabled;
 }
@@ -456,7 +495,7 @@ addContextualInfoToEvent(SentryCrash_MonitorContext *eventContext)
 }
 
 SentryCrashMonitorAPI *
-sentrycrashcm_appstate_getAPI()
+sentrycrashcm_appstate_getAPI(void)
 {
     static SentryCrashMonitorAPI api = { .setEnabled = setEnabled,
         .isEnabled = isEnabled,

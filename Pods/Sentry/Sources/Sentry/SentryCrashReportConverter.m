@@ -1,13 +1,15 @@
 #import "SentryCrashReportConverter.h"
-#import "NSDate+SentryExtras.h"
+#import "SentryBreadcrumb+Private.h"
 #import "SentryBreadcrumb.h"
 #import "SentryCrashStackCursor.h"
+#import "SentryDateUtils.h"
 #import "SentryDebugMeta.h"
 #import "SentryEvent.h"
 #import "SentryException.h"
+#import "SentryFormatter.h"
 #import "SentryFrame.h"
-#import "SentryHexAddressFormatter.h"
 #import "SentryInAppLogic.h"
+#import "SentryInternalDefines.h"
 #import "SentryLog.h"
 #import "SentryMechanism.h"
 #import "SentryMechanismMeta.h"
@@ -15,8 +17,7 @@
 #import "SentryThread.h"
 #import "SentryUser.h"
 
-@interface
-SentryCrashReportConverter ()
+@interface SentryCrashReportConverter ()
 
 @property (nonatomic, strong) NSDictionary *report;
 @property (nonatomic, assign) NSInteger crashedThreadIndex;
@@ -24,6 +25,7 @@ SentryCrashReportConverter ()
 @property (nonatomic, strong) NSArray *binaryImages;
 @property (nonatomic, strong) NSArray *threads;
 @property (nonatomic, strong) NSDictionary *systemContext;
+@property (nonatomic, strong) NSDictionary *applicationStats;
 @property (nonatomic, strong) NSString *diagnosis;
 @property (nonatomic, strong) SentryInAppLogic *inAppLogic;
 
@@ -37,7 +39,6 @@ SentryCrashReportConverter ()
     if (self) {
         self.report = report;
         self.inAppLogic = inAppLogic;
-        self.systemContext = report[@"system"];
 
         NSDictionary *userContextUnMerged = report[@"user"];
         if (userContextUnMerged == nil) {
@@ -71,6 +72,11 @@ SentryCrashReportConverter ()
         self.diagnosis = crashContext[@"diagnosis"];
         self.exceptionContext = crashContext[@"error"];
         [self initThreads:crashContext[@"threads"]];
+
+        self.systemContext = report[@"system"];
+        if (self.systemContext[@"application_stats"] != nil) {
+            self.applicationStats = self.systemContext[@"application_stats"];
+        }
     }
     return self;
 }
@@ -103,16 +109,31 @@ SentryCrashReportConverter ()
             event.timestamp = [NSDate
                 dateWithTimeIntervalSince1970:[self.report[@"report"][@"timestamp"] integerValue]];
         } else {
-            event.timestamp =
-                [NSDate sentry_fromIso8601String:self.report[@"report"][@"timestamp"]];
+            event.timestamp = sentry_fromIso8601String(self.report[@"report"][@"timestamp"]);
         }
-        event.debugMeta = [self convertDebugMeta];
         event.threads = [self convertThreads];
+        event.debugMeta = [self debugMetaForThreads:event.threads];
         event.exceptions = [self convertExceptions];
 
         event.dist = self.userContext[@"dist"];
         event.environment = self.userContext[@"environment"];
-        event.context = self.userContext[@"context"];
+
+        NSMutableDictionary *mutableContext =
+            [[NSMutableDictionary alloc] initWithDictionary:self.userContext[@"context"]];
+        if (self.userContext[@"traceContext"]) {
+            mutableContext[@"trace"] = self.userContext[@"traceContext"];
+        }
+
+        NSMutableDictionary *appContext;
+        if (mutableContext[@"app"] != nil) {
+            appContext = [mutableContext[@"app"] mutableCopy];
+        } else {
+            appContext = [NSMutableDictionary new];
+        }
+        appContext[@"in_foreground"] = self.applicationStats[@"application_in_foreground"];
+        mutableContext[@"app"] = appContext;
+        event.context = mutableContext;
+
         event.extra = self.userContext[@"extra"];
         event.tags = self.userContext[@"tags"];
         //    event.level we do not set the level here since this always resulted
@@ -127,12 +148,11 @@ SentryCrashReportConverter ()
         // We want to set the release and dist to the version from the crash report
         // itself otherwise it can happend that we have two different version when
         // the app crashes right before an app update #218 #219
-        NSDictionary *appContext = event.context[@"app"];
         if (nil == event.releaseName && appContext[@"app_identifier"] && appContext[@"app_version"]
             && appContext[@"app_build"]) {
             event.releaseName =
                 [NSString stringWithFormat:@"%@@%@+%@", appContext[@"app_identifier"],
-                          appContext[@"app_version"], appContext[@"app_build"]];
+                    appContext[@"app_version"], appContext[@"app_build"]];
         }
 
         if (nil == event.dist && appContext[@"app_build"]) {
@@ -141,11 +161,8 @@ SentryCrashReportConverter ()
 
         return event;
     } @catch (NSException *exception) {
-        NSString *errorMessage =
-            [NSString stringWithFormat:@"Could not convert report:%@", exception.description];
-        [SentryLog logWithMessage:errorMessage andLevel:kSentryLevelError];
+        SENTRY_LOG_ERROR(@"Could not convert report:%@", exception.description);
     }
-
     return nil;
 }
 
@@ -174,7 +191,8 @@ SentryCrashReportConverter ()
                      category:storedCrumb[@"category"]];
             crumb.message = storedCrumb[@"message"];
             crumb.type = storedCrumb[@"type"];
-            crumb.timestamp = [NSDate sentry_fromIso8601String:storedCrumb[@"timestamp"]];
+            crumb.origin = storedCrumb[@"origin"];
+            crumb.timestamp = sentry_fromIso8601String(storedCrumb[@"timestamp"]);
             crumb.data = storedCrumb[@"data"];
             [breadcrumbs addObject:crumb];
         }
@@ -247,6 +265,8 @@ SentryCrashReportConverter ()
     thread.crashed = threadDictionary[@"crashed"];
     thread.current = threadDictionary[@"current_thread"];
     thread.name = threadDictionary[@"name"];
+    // We don't have access to the MachineContextWrapper but we know first thread is always the main
+    thread.isMain = [NSNumber numberWithBool:thread.threadId.intValue == 0];
     if (nil == thread.name) {
         thread.name = threadDictionary[@"dispatch_queue"];
     }
@@ -316,22 +336,41 @@ SentryCrashReportConverter ()
     return [self threadAtIndex:self.crashedThreadIndex];
 }
 
-- (NSArray<SentryDebugMeta *> *)convertDebugMeta
+- (SentryDebugMeta *)debugMetaFromBinaryImageDictionary:(NSDictionary *)sourceImage
 {
-    NSMutableArray<SentryDebugMeta *> *result = [NSMutableArray new];
-    for (NSDictionary *sourceImage in self.binaryImages) {
-        SentryDebugMeta *debugMeta = [[SentryDebugMeta alloc] init];
-        debugMeta.uuid = sourceImage[@"uuid"];
-        debugMeta.type = @"apple";
-        // We default to 0 on the server if not sent
-        if ([sourceImage[@"image_vmaddr"] integerValue] > 0) {
-            debugMeta.imageVmAddress = sentry_formatHexAddress(sourceImage[@"image_vmaddr"]);
-        }
-        debugMeta.imageAddress = sentry_formatHexAddress(sourceImage[@"image_addr"]);
-        debugMeta.imageSize = sourceImage[@"image_size"];
-        debugMeta.name = sourceImage[@"name"];
-        [result addObject:debugMeta];
+    SentryDebugMeta *debugMeta = [[SentryDebugMeta alloc] init];
+    debugMeta.debugID = sourceImage[@"uuid"];
+    debugMeta.type = SentryDebugImageType;
+    // We default to 0 on the server if not sent
+    if ([sourceImage[@"image_vmaddr"] integerValue] > 0) {
+        debugMeta.imageVmAddress = sentry_formatHexAddress(sourceImage[@"image_vmaddr"]);
     }
+    debugMeta.imageAddress = sentry_formatHexAddress(sourceImage[@"image_addr"]);
+    debugMeta.imageSize = sourceImage[@"image_size"];
+    debugMeta.codeFile = sourceImage[@"name"];
+    return debugMeta;
+}
+
+- (NSArray<SentryDebugMeta *> *)debugMetaForThreads:(NSArray<SentryThread *> *)threads
+{
+    NSMutableSet<NSString *> *imageNames = [[NSMutableSet alloc] init];
+
+    for (SentryThread *thread in threads) {
+        for (SentryFrame *frame in thread.stacktrace.frames) {
+            if (frame.imageAddress && ![imageNames containsObject:frame.imageAddress]) {
+                [imageNames addObject:frame.imageAddress];
+            }
+        }
+    }
+
+    NSMutableArray<SentryDebugMeta *> *result = [NSMutableArray new];
+
+    for (NSDictionary *sourceImage in self.binaryImages) {
+        if ([imageNames containsObject:sentry_formatHexAddress(sourceImage[@"image_addr"])]) {
+            [result addObject:[self debugMetaFromBinaryImageDictionary:sourceImage]];
+        }
+    }
+
     return result;
 }
 
@@ -351,16 +390,16 @@ SentryCrashReportConverter ()
     } else if ([exceptionType isEqualToString:@"mach"]) {
         exception = [[SentryException alloc]
             initWithValue:[NSString stringWithFormat:@"Exception %@, Code %@, Subcode %@",
-                                    self.exceptionContext[@"mach"][@"exception"],
-                                    self.exceptionContext[@"mach"][@"code"],
-                                    self.exceptionContext[@"mach"][@"subcode"]]
+                              self.exceptionContext[@"mach"][@"exception"],
+                              self.exceptionContext[@"mach"][@"code"],
+                              self.exceptionContext[@"mach"][@"subcode"]]
                      type:self.exceptionContext[@"mach"][@"exception_name"]];
     } else if ([exceptionType isEqualToString:@"signal"]) {
-        exception = [[SentryException alloc]
-            initWithValue:[NSString stringWithFormat:@"Signal %@, Code %@",
-                                    self.exceptionContext[@"signal"][@"signal"],
-                                    self.exceptionContext[@"signal"][@"code"]]
-                     type:self.exceptionContext[@"signal"][@"name"]];
+        exception =
+            [[SentryException alloc] initWithValue:[NSString stringWithFormat:@"Signal %@, Code %@",
+                                                       self.exceptionContext[@"signal"][@"signal"],
+                                                       self.exceptionContext[@"signal"][@"code"]]
+                                              type:self.exceptionContext[@"signal"][@"name"]];
     } else if ([exceptionType isEqualToString:@"user"]) {
         NSString *exceptionReason =
             [NSString stringWithFormat:@"%@", self.exceptionContext[@"reason"]];
@@ -433,9 +472,8 @@ SentryCrashReportConverter ()
         }
     }
     if (reasons.count > 0) {
-        exception.value =
-            [[[reasons array] sortedArrayUsingSelector:@selector(localizedCaseInsensitiveCompare:)]
-                componentsJoinedByString:@" > "];
+        exception.value = [[[reasons array] sortedArrayUsingSelector:@selector
+            (localizedCaseInsensitiveCompare:)] componentsJoinedByString:@" > "];
     }
 }
 
@@ -443,27 +481,26 @@ SentryCrashReportConverter ()
  * Get the message of fatalError, assert, and precondition to set it as the exception value if the
  * crashInfo contains the message.
  *
- * Swift puts the messages of fatalError, assert, and precondition into the crashInfo of the
- * libswiftCore.dylib. We found somewhat proof that the swift runtime uses __crash_info: fatalError
- * (1) calls swift_reportError (2) calls reportOnCrash (3) which uses (4) the __crash_info (5). The
- * documentation of Apple and Swift doesn't mention anything about where the __crash_info ends up.
- * Trying fatalError, assert, and precondition on iPhone, iPhone simulator, and macOS all showed
- * that the message ends up in the crashInfo of the libswiftCore.dylib. For example, on the
- * simulator, other binary images also contain a crash_info_message with information about the
- * stacktrace. We only care about the message of fatalError, assert, or precondition, and we already
- * get the stacktrace from the threads, retrieving it from libswiftCore.dylib seems to be the most
- * reliable option.
+ * Swift puts the messages of fatalError, assert, and precondition into the @c crashInfo of the
+ * @c libswiftCore.dylib. We found somewhat proof that the swift runtime uses @c __crash_info:
+ * fatalError (1) calls @c swift_reportError (2) calls @c reportOnCrash (3) which uses (4) the
+ * @c __crash_info (5). The documentation of Apple and Swift doesn't mention anything about where
+ * the @c __crash_info ends up. Trying fatalError, assert, and precondition on iPhone, iPhone
+ * simulator, and macOS all showed that the message ends up in the crashInfo of the
+ * @c libswiftCore.dylib. For example, on the simulator, other binary images also contain a
+ * @c crash_info_message with information about the stacktrace. We only care about the message of
+ * fatalError, assert, or precondition, and we already get the stacktrace from the threads,
+ * retrieving it from @c libswiftCore.dylib seems to be the most reliable option.
  *
- * Links:
- *  1.
+ * @seealso
  * https://github.com/apple/swift/blob/d1bb98b11ede375a1cee739f964b7d23b6657aaf/stdlib/public/runtime/Errors.cpp#L365-L377
- *  2.
+ * @seealso
  * https://github.com/apple/swift/blob/d1bb98b11ede375a1cee739f964b7d23b6657aaf/stdlib/public/runtime/Errors.cpp#L361
- *  3.
+ * @seealso
  * https://github.com/apple/swift/blob/d1bb98b11ede375a1cee739f964b7d23b6657aaf/stdlib/public/runtime/Errors.cpp#L269-L293
- *  4.
+ * @seealso
  * https://github.com/apple/swift/blob/d1bb98b11ede375a1cee739f964b7d23b6657aaf/stdlib/public/runtime/Errors.cpp#L264-L293
- *  5.
+ * @seealso
  * https://github.com/apple/swift/blob/d1bb98b11ede375a1cee739f964b7d23b6657aaf/include/swift/Runtime/Debug.h#L29-L58
  */
 - (void)enhanceValueFromCrashInfoMessage:(SentryException *)exception

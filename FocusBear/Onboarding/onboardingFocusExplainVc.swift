@@ -121,6 +121,7 @@ class onboardingFocusExplainVc: NSViewController, WKNavigationDelegate, webViewL
     func handleLoadError(webView: WKWebView) {
         if webViewLoadFailedVcObj != nil{
             if webView.subviews.contains(webViewLoadFailedVcObj!.view){
+                webViewLoadFailedVcObj?.reloadData()
                 return;
             }
         }
@@ -129,6 +130,7 @@ class onboardingFocusExplainVc: NSViewController, WKNavigationDelegate, webViewL
         webViewLoadFailedVcObj?.webView = webView
         webView.addSubview(webViewLoadFailedVcObj!.view)
         webView.addConstraints(subView: webViewLoadFailedVcObj!.view)
+        webViewLoadFailedVcObj?.reloadData()
     }
     
     func reloadClicked(webView:WKWebView){

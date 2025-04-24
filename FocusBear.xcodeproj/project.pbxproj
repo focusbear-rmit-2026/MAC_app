@@ -3,10 +3,19 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 52;
+	objectVersion = 54;
 	objects = {
 
 /* Begin PBXBuildFile section */
+		13395D412DB900440094F019 /* focusModeData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13395D402DB900380094F019 /* focusModeData.swift */; };
+		135CBDAF2D967009003BA438 /* routine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 135CBDAE2D967005003BA438 /* routine.swift */; };
+		1361E6E52DB76A1900E6DE3F /* unverifiedEmailVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1361E6E42DB76A1900E6DE3F /* unverifiedEmailVc.swift */; };
+		137CD6032D9D4ACC00A8385A /* Sparkle.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 137CD6022D9D4ACC00A8385A /* Sparkle.framework */; };
+		137CD6042D9D4ACC00A8385A /* Sparkle.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 137CD6022D9D4ACC00A8385A /* Sparkle.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		13A45A2E2DB3DB12009ECF81 /* superGentleQuitVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13A45A2D2DB3DB12009ECF81 /* superGentleQuitVc.swift */; };
+		13AAC9DC2D97CC76000AD619 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8F7DCC022796E8D200EE3282 /* WebKit.framework */; };
+		13AAC9E12D9819F7000AD619 /* customRoutineTimeVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13AAC9E02D9819F7000AD619 /* customRoutineTimeVc.swift */; };
+		13EC6E022DB26FBE0031303D /* nudgeStartAnotherFocusSessionVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13EC6E012DB26FBE0031303D /* nudgeStartAnotherFocusSessionVc.swift */; };
 		274C9A91289A8C910066F883 /* accountVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 274C9A90289A8C900066F883 /* accountVc.swift */; };
 		274C9A93289BF8D70066F883 /* SettingsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 274C9A92289BF8D40066F883 /* SettingsManager.swift */; };
 		274E0F472890291D000234A3 /* Auth0 in Frameworks */ = {isa = PBXBuildFile; productRef = 274E0F462890291D000234A3 /* Auth0 */; };
@@ -40,6 +49,7 @@
 		8F0E69DC290279500042FAF4 /* customTooltipVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F0E69DB290279500042FAF4 /* customTooltipVc.swift */; };
 		8F107D22278C4A1E00280B37 /* abortingCantHandleVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F107D21278C4A1E00280B37 /* abortingCantHandleVc.swift */; };
 		8F1333932A443EF3004EDE65 /* intelone-mono-font-family-regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 8F1333922A44389A004EDE65 /* intelone-mono-font-family-regular.ttf */; };
+		8F1456BC2D40B32600130B21 /* TabMatrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F1456BB2D40B32600130B21 /* TabMatrics.swift */; };
 		8F15F9042CAFC7BF00CCD49E /* Accessibility_Video.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 8F15F9032CAFC1D700CCD49E /* Accessibility_Video.mp4 */; };
 		8F19BCA5293F360D00F70544 /* whySkipHabitVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F19BCA4293F360D00F70544 /* whySkipHabitVc.swift */; };
 		8F1DC4A22BC1155800A51383 /* tabStrictnessContainerVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F1DC4A12BC1155800A51383 /* tabStrictnessContainerVc.swift */; };
@@ -63,6 +73,8 @@
 		8F2E993A2B31CC52001AF655 /* addOnsVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F2E99392B31CC51001AF655 /* addOnsVc.swift */; };
 		8F2F1625291BAC0600F8EFCD /* skipHabitVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F2F1624291BAC0600F8EFCD /* skipHabitVc.swift */; };
 		8F332BD029474EE5009E6792 /* focusTipsVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F332BCF29474EE5009E6792 /* focusTipsVc.swift */; };
+		8F344A042D882532003D82A4 /* allCsvFilesData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F344A032D882532003D82A4 /* allCsvFilesData.swift */; };
+		8F3567212D3A71B200F62403 /* showHideWindows.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F3567202D3A71B200F62403 /* showHideWindows.swift */; };
 		8F35B27E2D1185D50000EB70 /* askDetailsNotBlockingVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F35B27D2D1185D50000EB70 /* askDetailsNotBlockingVc.swift */; };
 		8F36D517297AB32800A7E4AD /* addFocusTempUrlsOrAppsVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F36D516297AB32700A7E4AD /* addFocusTempUrlsOrAppsVc.swift */; };
 		8F371A6029E3D0300043D7B3 /* onboardingControllingBrowserVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F371A5F29E3D0300043D7B3 /* onboardingControllingBrowserVc.swift */; };
@@ -106,9 +118,9 @@
 		8F461B1A28C0EBE90082B0A2 /* Completing the Whole Morning Routine_2.2.wav in Resources */ = {isa = PBXBuildFile; fileRef = 8F461B1428C0EBE80082B0A2 /* Completing the Whole Morning Routine_2.2.wav */; };
 		8F461B2028C0EDD60082B0A2 /* Start Focus Button_1.wav in Resources */ = {isa = PBXBuildFile; fileRef = 8F461B1D28C0EDD50082B0A2 /* Start Focus Button_1.wav */; };
 		8F461B2128C0EDD60082B0A2 /* Start Focus Button_2.wav in Resources */ = {isa = PBXBuildFile; fileRef = 8F461B1E28C0EDD50082B0A2 /* Start Focus Button_2.wav */; };
-		8F461B2B28C0EE490082B0A2 /* Starting the Morning:Evening Routine_4.wav in Resources */ = {isa = PBXBuildFile; fileRef = 8F461B2528C0EE480082B0A2 /* Starting the Morning:Evening Routine_4.wav */; };
-		8F461B2D28C0EE490082B0A2 /* Starting the Morning:Evening Routine_5.wav in Resources */ = {isa = PBXBuildFile; fileRef = 8F461B2728C0EE490082B0A2 /* Starting the Morning:Evening Routine_5.wav */; };
-		8F461B2F28C0EE490082B0A2 /* Starting the Morning:Evening Routine_2.wav in Resources */ = {isa = PBXBuildFile; fileRef = 8F461B2928C0EE490082B0A2 /* Starting the Morning:Evening Routine_2.wav */; };
+		8F461B2B28C0EE490082B0A2 /* Starting the MorningEvening Routine_4.wav in Resources */ = {isa = PBXBuildFile; fileRef = 8F461B2528C0EE480082B0A2 /* Starting the MorningEvening Routine_4.wav */; };
+		8F461B2D28C0EE490082B0A2 /* Starting the MorningEvening Routine_5.wav in Resources */ = {isa = PBXBuildFile; fileRef = 8F461B2728C0EE490082B0A2 /* Starting the MorningEvening Routine_5.wav */; };
+		8F461B2F28C0EE490082B0A2 /* Starting the MorningEvening Routine_2.wav in Resources */ = {isa = PBXBuildFile; fileRef = 8F461B2928C0EE490082B0A2 /* Starting the MorningEvening Routine_2.wav */; };
 		8F492726291A60F600BE10CA /* askQuitVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F492725291A60F600BE10CA /* askQuitVc.swift */; };
 		8F49A83327DC74980016845E /* Finger-and-Sign-Bear-250px.gif in Resources */ = {isa = PBXBuildFile; fileRef = 8F49A83227DC74980016845E /* Finger-and-Sign-Bear-250px.gif */; };
 		8F4A3B1B290D0CAE00DCBE39 /* toolBoxVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F4A3B1A290D0CAE00DCBE39 /* toolBoxVc.swift */; };
@@ -125,6 +137,8 @@
 		8F51EFB727E0741700EFF0A8 /* blockedUrlsVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F51EFB627E0741700EFF0A8 /* blockedUrlsVc.swift */; };
 		8F54E92E2785662A00CC4E7B /* selectJsonVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F54E92D2785662A00CC4E7B /* selectJsonVc.swift */; };
 		8F5596B42805B49E0044DF28 /* quitCountDownVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F5596B32805B49E0044DF28 /* quitCountDownVc.swift */; };
+		8F59374F2D49F6CD00442292 /* nudgeFocusAlignmentScoreDippingVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F59374E2D49F6CD00442292 /* nudgeFocusAlignmentScoreDippingVc.swift */; };
+		8F5937512D49FA2900442292 /* nudgeFocusAlignmentScoreDippingWc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F5937502D49FA2800442292 /* nudgeFocusAlignmentScoreDippingWc.swift */; };
 		8F59952529714197009D49CD /* audio Wave.gif in Resources */ = {isa = PBXBuildFile; fileRef = 8F59952429714197009D49CD /* audio Wave.gif */; };
 		8F5B03282CD8F62900F261D3 /* onboardingBlockingScheduleVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F5B03272CD8F62800F261D3 /* onboardingBlockingScheduleVc.swift */; };
 		8F5BCE5929FFCB96009799CD /* alertMaxTabLimitVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F5BCE5829FFCB96009799CD /* alertMaxTabLimitVc.swift */; };
@@ -168,7 +182,6 @@
 		8F7C2BB92B50026A0003824A /* frictionSetPasswordVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F7C2BB82B50026A0003824A /* frictionSetPasswordVc.swift */; };
 		8F7DA75E2B1B412000B2E1CC /* pusherEvents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F7DA75D2B1B412000B2E1CC /* pusherEvents.swift */; };
 		8F7DCC002796B55800EE3282 /* config.json in Resources */ = {isa = PBXBuildFile; fileRef = 8F7DCBFF2796B55800EE3282 /* config.json */; };
-		8F7DCC032796E8D200EE3282 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8F7DCC022796E8D200EE3282 /* WebKit.framework */; };
 		8F7ED7432CC0F1E100AB973D /* taskPlayerWc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F7ED7422CC0F1E100AB973D /* taskPlayerWc.swift */; };
 		8F7FD6092AA9B2B200E14257 /* addTaskVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F7FD6082AA9B2B200E14257 /* addTaskVc.swift */; };
 		8F8073812B3D3F2E004935B5 /* CollectionViewItem.xib in Resources */ = {isa = PBXBuildFile; fileRef = 8F80737F2B3D3F2E004935B5 /* CollectionViewItem.xib */; };
@@ -281,6 +294,7 @@
 		8FCD13B42C2BD9A3005EEA63 /* globalFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FCD13B32C2BD9A3005EEA63 /* globalFile.swift */; };
 		8FCD13B62C2BF015005EEA63 /* nudgeWc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FCD13B52C2BF015005EEA63 /* nudgeWc.swift */; };
 		8FCE07AB2931F2A300DF4530 /* popUpOfflineVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FCE07AA2931F2A300DF4530 /* popUpOfflineVc.swift */; };
+		8FD0F7F62D437BC100ED3496 /* tblCellFocsedCompletedItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FD0F7F52D437BC100ED3496 /* tblCellFocsedCompletedItem.swift */; };
 		8FD1053F27EEE44100B7728E /* Focus_BearTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FD1053E27EEE44100B7728E /* Focus_BearTests.swift */; };
 		8FD1054727EF1A3B00B7728E /* urlValidation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FD1054627EF1A3B00B7728E /* urlValidation.swift */; };
 		8FD1054B27EF221800B7728E /* validationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FD1054A27EF221800B7728E /* validationTest.swift */; };
@@ -291,8 +305,6 @@
 		8FDA8591279A8E83008AD6AA /* AVMonitor.m in Sources */ = {isa = PBXBuildFile; fileRef = 8FDA8590279A8E82008AD6AA /* AVMonitor.m */; };
 		8FDCA2C32CAACE9B0014623D /* initialQuitFeedbackVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FDCA2C22CAACE9A0014623D /* initialQuitFeedbackVc.swift */; };
 		8FE049D027B77F5F00ABD521 /* logQuantityVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FE049CF27B77F5F00ABD521 /* logQuantityVc.swift */; };
-		8FE13DF527ED887200BD620A /* Sparkle.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8FE13DF427ED887200BD620A /* Sparkle.framework */; };
-		8FE13DF627ED887200BD620A /* Sparkle.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 8FE13DF427ED887200BD620A /* Sparkle.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		8FE5587E2CEC703300C44387 /* bellVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FE5587D2CEC703300C44387 /* bellVc.swift */; };
 		8FE558802CEC7E1F00C44387 /* bellSuggestionsVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FE5587F2CEC7E1F00C44387 /* bellSuggestionsVc.swift */; };
 		8FE5E5B32C468EB000420717 /* Nags.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 8FE5E5B22C468EB000420717 /* Nags.storyboard */; };
@@ -302,6 +314,7 @@
 		8FE99DA42CF855EA003BCA3E /* onboardingBlockedAppsVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FE99DA32CF855EA003BCA3E /* onboardingBlockedAppsVc.swift */; };
 		8FEFC59629FA894800ADF1E6 /* popupAppointmentTimeVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FEFC59529FA894800ADF1E6 /* popupAppointmentTimeVc.swift */; };
 		8FF1CD9B2A57D7340092AB9B /* menuTourPopoverVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FF1CD9A2A57D7340092AB9B /* menuTourPopoverVc.swift */; };
+		8FF591322D70406E0068E17C /* reportBadAIResponseVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FF591312D70406E0068E17C /* reportBadAIResponseVc.swift */; };
 		8FF889722CA3DEBC00BD69E8 /* askProcrastinatingVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FF889712CA3DEBC00BD69E8 /* askProcrastinatingVc.swift */; };
 		8FF8E0FF291686EF002938B8 /* popUpBlockConfirmVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FF8E0FE291686EF002938B8 /* popUpBlockConfirmVc.swift */; };
 		8FF9351B29113EAB004511C0 /* tblCellToolBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FF9351A29113EAB004511C0 /* tblCellToolBox.swift */; };
@@ -310,7 +323,7 @@
 		8FFBCE8B28549EB1004B77D9 /* PopoverViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FFBCE8928549EB1004B77D9 /* PopoverViewController.swift */; };
 		8FFF70632858A13200164E2B /* GraphTimeDuration.html in Resources */ = {isa = PBXBuildFile; fileRef = 8FFF70622858A13200164E2B /* GraphTimeDuration.html */; };
 		8FFF70652858A59800164E2B /* GraphDaysDuration.html in Resources */ = {isa = PBXBuildFile; fileRef = 8FFF70642858A59800164E2B /* GraphDaysDuration.html */; };
-		C8EF4579EB042AD0E9A0C75D /* Pods_Focus_Bear.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 91F527851714A11B24B39567 /* Pods_Focus_Bear.framework */; };
+		BEED37F6C1373AFCB67BCF04 /* Pods_Focus_Bear.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E339C651791746EA3D066A6A /* Pods_Focus_Bear.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -324,6 +337,17 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		137CD6052D9D4ACC00A8385A /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				137CD6042D9D4ACC00A8385A /* Sparkle.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		8F77575828DD96D9007A976D /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -334,26 +358,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		8FE13DF727ED887200BD620A /* Embed Frameworks */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "";
-			dstSubfolderSpec = 10;
-			files = (
-				8FE13DF627ED887200BD620A /* Sparkle.framework in Embed Frameworks */,
-			);
-			name = "Embed Frameworks";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		13395D402DB900380094F019 /* focusModeData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = focusModeData.swift; sourceTree = "<group>"; };
+		135CBDAE2D967005003BA438 /* routine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = routine.swift; sourceTree = "<group>"; };
+		1361E6E42DB76A1900E6DE3F /* unverifiedEmailVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = unverifiedEmailVc.swift; sourceTree = "<group>"; };
+		137CD6022D9D4ACC00A8385A /* Sparkle.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Sparkle.framework; sourceTree = "<group>"; };
+		13A45A2D2DB3DB12009ECF81 /* superGentleQuitVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = superGentleQuitVc.swift; sourceTree = "<group>"; };
+		13AAC9E02D9819F7000AD619 /* customRoutineTimeVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = customRoutineTimeVc.swift; sourceTree = "<group>"; };
+		13EC6E012DB26FBE0031303D /* nudgeStartAnotherFocusSessionVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = nudgeStartAnotherFocusSessionVc.swift; sourceTree = "<group>"; };
 		274C9A90289A8C900066F883 /* accountVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = accountVc.swift; sourceTree = "<group>"; };
 		274C9A92289BF8D40066F883 /* SettingsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsManager.swift; sourceTree = "<group>"; };
 		274E0F4828902CF1000234A3 /* User.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
 		274E0F4B28902E28000234A3 /* Auth0.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Auth0.plist; sourceTree = "<group>"; };
 		274E671528951DDC0030163F /* AllApi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllApi.swift; sourceTree = "<group>"; };
-		4EC80A321F5CE51D8520D4AF /* Pods-Focus Bear.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Focus Bear.release.xcconfig"; path = "Target Support Files/Pods-Focus Bear/Pods-Focus Bear.release.xcconfig"; sourceTree = "<group>"; };
+		889FCE3E1080DC22C97AB6D8 /* Pods-Focus Bear.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Focus Bear.debug.xcconfig"; path = "Target Support Files/Pods-Focus Bear/Pods-Focus Bear.debug.xcconfig"; sourceTree = "<group>"; };
 		8F02AF412A751A5200BA6536 /* blockedAppsVc.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = blockedAppsVc.swift; sourceTree = "<group>"; };
 		8F0419432C353B9C00481ACD /* breakSurveyVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = breakSurveyVc.swift; sourceTree = "<group>"; };
 		8F0419452C353D4100481ACD /* getViewControllersObject.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = getViewControllersObject.swift; sourceTree = "<group>"; };
@@ -382,6 +402,7 @@
 		8F0E69DB290279500042FAF4 /* customTooltipVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = customTooltipVc.swift; sourceTree = "<group>"; };
 		8F107D21278C4A1E00280B37 /* abortingCantHandleVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = abortingCantHandleVc.swift; sourceTree = "<group>"; };
 		8F1333922A44389A004EDE65 /* intelone-mono-font-family-regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "intelone-mono-font-family-regular.ttf"; sourceTree = "<group>"; };
+		8F1456BB2D40B32600130B21 /* TabMatrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabMatrics.swift; sourceTree = "<group>"; };
 		8F15F9032CAFC1D700CCD49E /* Accessibility_Video.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = Accessibility_Video.mp4; sourceTree = "<group>"; };
 		8F19BCA4293F360D00F70544 /* whySkipHabitVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = whySkipHabitVc.swift; sourceTree = "<group>"; };
 		8F1DC4A12BC1155800A51383 /* tabStrictnessContainerVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = tabStrictnessContainerVc.swift; sourceTree = "<group>"; };
@@ -405,6 +426,8 @@
 		8F2E99392B31CC51001AF655 /* addOnsVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = addOnsVc.swift; sourceTree = "<group>"; };
 		8F2F1624291BAC0600F8EFCD /* skipHabitVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = skipHabitVc.swift; sourceTree = "<group>"; };
 		8F332BCF29474EE5009E6792 /* focusTipsVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = focusTipsVc.swift; sourceTree = "<group>"; };
+		8F344A032D882532003D82A4 /* allCsvFilesData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = allCsvFilesData.swift; sourceTree = "<group>"; };
+		8F3567202D3A71B200F62403 /* showHideWindows.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = showHideWindows.swift; sourceTree = "<group>"; };
 		8F35B27D2D1185D50000EB70 /* askDetailsNotBlockingVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = askDetailsNotBlockingVc.swift; sourceTree = "<group>"; };
 		8F36D516297AB32700A7E4AD /* addFocusTempUrlsOrAppsVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = addFocusTempUrlsOrAppsVc.swift; sourceTree = "<group>"; };
 		8F371A5F29E3D0300043D7B3 /* onboardingControllingBrowserVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = onboardingControllingBrowserVc.swift; sourceTree = "<group>"; };
@@ -457,9 +480,9 @@
 		8F461B1428C0EBE80082B0A2 /* Completing the Whole Morning Routine_2.2.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "Completing the Whole Morning Routine_2.2.wav"; sourceTree = "<group>"; };
 		8F461B1D28C0EDD50082B0A2 /* Start Focus Button_1.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "Start Focus Button_1.wav"; sourceTree = "<group>"; };
 		8F461B1E28C0EDD50082B0A2 /* Start Focus Button_2.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "Start Focus Button_2.wav"; sourceTree = "<group>"; };
-		8F461B2528C0EE480082B0A2 /* Starting the Morning:Evening Routine_4.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "Starting the Morning:Evening Routine_4.wav"; sourceTree = "<group>"; };
-		8F461B2728C0EE490082B0A2 /* Starting the Morning:Evening Routine_5.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "Starting the Morning:Evening Routine_5.wav"; sourceTree = "<group>"; };
-		8F461B2928C0EE490082B0A2 /* Starting the Morning:Evening Routine_2.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "Starting the Morning:Evening Routine_2.wav"; sourceTree = "<group>"; };
+		8F461B2528C0EE480082B0A2 /* Starting the MorningEvening Routine_4.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "Starting the MorningEvening Routine_4.wav"; sourceTree = "<group>"; };
+		8F461B2728C0EE490082B0A2 /* Starting the MorningEvening Routine_5.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "Starting the MorningEvening Routine_5.wav"; sourceTree = "<group>"; };
+		8F461B2928C0EE490082B0A2 /* Starting the MorningEvening Routine_2.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "Starting the MorningEvening Routine_2.wav"; sourceTree = "<group>"; };
 		8F492725291A60F600BE10CA /* askQuitVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = askQuitVc.swift; sourceTree = "<group>"; };
 		8F49A83227DC74980016845E /* Finger-and-Sign-Bear-250px.gif */ = {isa = PBXFileReference; lastKnownFileType = image.gif; path = "Finger-and-Sign-Bear-250px.gif"; sourceTree = "<group>"; };
 		8F4A3B1A290D0CAE00DCBE39 /* toolBoxVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = toolBoxVc.swift; sourceTree = "<group>"; };
@@ -476,6 +499,8 @@
 		8F51EFB627E0741700EFF0A8 /* blockedUrlsVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = blockedUrlsVc.swift; sourceTree = "<group>"; };
 		8F54E92D2785662A00CC4E7B /* selectJsonVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = selectJsonVc.swift; sourceTree = "<group>"; };
 		8F5596B32805B49E0044DF28 /* quitCountDownVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = quitCountDownVc.swift; sourceTree = "<group>"; };
+		8F59374E2D49F6CD00442292 /* nudgeFocusAlignmentScoreDippingVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = nudgeFocusAlignmentScoreDippingVc.swift; sourceTree = "<group>"; };
+		8F5937502D49FA2800442292 /* nudgeFocusAlignmentScoreDippingWc.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = nudgeFocusAlignmentScoreDippingWc.swift; sourceTree = "<group>"; };
 		8F59952429714197009D49CD /* audio Wave.gif */ = {isa = PBXFileReference; lastKnownFileType = image.gif; path = "audio Wave.gif"; sourceTree = "<group>"; };
 		8F5B03272CD8F62800F261D3 /* onboardingBlockingScheduleVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = onboardingBlockingScheduleVc.swift; sourceTree = "<group>"; };
 		8F5BCE5829FFCB96009799CD /* alertMaxTabLimitVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = alertMaxTabLimitVc.swift; sourceTree = "<group>"; };
@@ -635,6 +660,7 @@
 		8FCD13B32C2BD9A3005EEA63 /* globalFile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = globalFile.swift; sourceTree = "<group>"; };
 		8FCD13B52C2BF015005EEA63 /* nudgeWc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = nudgeWc.swift; sourceTree = "<group>"; };
 		8FCE07AA2931F2A300DF4530 /* popUpOfflineVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = popUpOfflineVc.swift; sourceTree = "<group>"; };
+		8FD0F7F52D437BC100ED3496 /* tblCellFocsedCompletedItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = tblCellFocsedCompletedItem.swift; sourceTree = "<group>"; };
 		8FD1053C27EEE44100B7728E /* Focus BearTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Focus BearTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		8FD1053E27EEE44100B7728E /* Focus_BearTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Focus_BearTests.swift; sourceTree = "<group>"; };
 		8FD1054027EEE44100B7728E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -648,7 +674,6 @@
 		8FDA8590279A8E82008AD6AA /* AVMonitor.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVMonitor.m; sourceTree = "<group>"; };
 		8FDCA2C22CAACE9A0014623D /* initialQuitFeedbackVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = initialQuitFeedbackVc.swift; sourceTree = "<group>"; };
 		8FE049CF27B77F5F00ABD521 /* logQuantityVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = logQuantityVc.swift; sourceTree = "<group>"; };
-		8FE13DF427ED887200BD620A /* Sparkle.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Sparkle.framework; sourceTree = "<group>"; };
 		8FE5587D2CEC703300C44387 /* bellVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = bellVc.swift; sourceTree = "<group>"; };
 		8FE5587F2CEC7E1F00C44387 /* bellSuggestionsVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = bellSuggestionsVc.swift; sourceTree = "<group>"; };
 		8FE5E5B22C468EB000420717 /* Nags.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = Nags.storyboard; sourceTree = "<group>"; };
@@ -658,6 +683,7 @@
 		8FE99DA32CF855EA003BCA3E /* onboardingBlockedAppsVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = onboardingBlockedAppsVc.swift; sourceTree = "<group>"; };
 		8FEFC59529FA894800ADF1E6 /* popupAppointmentTimeVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = popupAppointmentTimeVc.swift; sourceTree = "<group>"; };
 		8FF1CD9A2A57D7340092AB9B /* menuTourPopoverVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = menuTourPopoverVc.swift; sourceTree = "<group>"; };
+		8FF591312D70406E0068E17C /* reportBadAIResponseVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = reportBadAIResponseVc.swift; sourceTree = "<group>"; };
 		8FF889712CA3DEBC00BD69E8 /* askProcrastinatingVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = askProcrastinatingVc.swift; sourceTree = "<group>"; };
 		8FF8E0FE291686EF002938B8 /* popUpBlockConfirmVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = popUpBlockConfirmVc.swift; sourceTree = "<group>"; };
 		8FF9351A29113EAB004511C0 /* tblCellToolBox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = tblCellToolBox.swift; sourceTree = "<group>"; };
@@ -666,8 +692,8 @@
 		8FFBCE8928549EB1004B77D9 /* PopoverViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PopoverViewController.swift; sourceTree = "<group>"; };
 		8FFF70622858A13200164E2B /* GraphTimeDuration.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = GraphTimeDuration.html; sourceTree = "<group>"; };
 		8FFF70642858A59800164E2B /* GraphDaysDuration.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = GraphDaysDuration.html; sourceTree = "<group>"; };
-		91F527851714A11B24B39567 /* Pods_Focus_Bear.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Focus_Bear.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		E2000A664BA01C14CA14A2C8 /* Pods-Focus Bear.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Focus Bear.debug.xcconfig"; path = "Target Support Files/Pods-Focus Bear/Pods-Focus Bear.debug.xcconfig"; sourceTree = "<group>"; };
+		E339C651791746EA3D066A6A /* Pods_Focus_Bear.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Focus_Bear.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		F4A04585FA1D0F1940D23631 /* Pods-Focus Bear.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Focus Bear.release.xcconfig"; path = "Target Support Files/Pods-Focus Bear/Pods-Focus Bear.release.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -683,10 +709,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				8FB66A322B3FD7FF00951B09 /* AVKit.framework in Frameworks */,
-				8F7DCC032796E8D200EE3282 /* WebKit.framework in Frameworks */,
-				8FE13DF527ED887200BD620A /* Sparkle.framework in Frameworks */,
-				C8EF4579EB042AD0E9A0C75D /* Pods_Focus_Bear.framework in Frameworks */,
 				274E0F472890291D000234A3 /* Auth0 in Frameworks */,
+				137CD6032D9D4ACC00A8385A /* Sparkle.framework in Frameworks */,
+				13AAC9DC2D97CC76000AD619 /* WebKit.framework in Frameworks */,
+				BEED37F6C1373AFCB67BCF04 /* Pods_Focus_Bear.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -700,6 +726,24 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		135CBDAD2D966CCC003BA438 /* Routine */ = {
+			isa = PBXGroup;
+			children = (
+				8F6138B528B7698300A45B1A /* visualizeInstructionsVc.swift */,
+				8FAC6C9C27806DCB008A4180 /* firstViewController.swift */,
+				8F99C8D52A13AE1D00FD2403 /* editHabitRoutineVc.swift */,
+				8FAC6CA027808125008A4180 /* timerViewcontroller.swift */,
+				8F050A0827842B8400F3CE17 /* thirdVc.swift */,
+				13AAC9E02D9819F7000AD619 /* customRoutineTimeVc.swift */,
+				8FAC6C9E2780748D008A4180 /* tblCellHabits.swift */,
+				8F94EF882836094400355E66 /* rememberNextHabitVc.swift */,
+				8F1E3F752B2ADC24005CE096 /* startAnotherHabitVc.swift */,
+				8F779DF92B80DD600011E1BE /* chooseHabitsVC.swift */,
+				135CBDAE2D967005003BA438 /* routine.swift */,
+			);
+			path = Routine;
+			sourceTree = "<group>";
+		};
 		274E0F4A28902E17000234A3 /* Auth0 */ = {
 			isa = PBXGroup;
 			children = (
@@ -855,9 +899,9 @@
 		8F461B2328C0EE190082B0A2 /* StartingMorningEveningRoutine */ = {
 			isa = PBXGroup;
 			children = (
-				8F461B2928C0EE490082B0A2 /* Starting the Morning:Evening Routine_2.wav */,
-				8F461B2528C0EE480082B0A2 /* Starting the Morning:Evening Routine_4.wav */,
-				8F461B2728C0EE490082B0A2 /* Starting the Morning:Evening Routine_5.wav */,
+				8F461B2928C0EE490082B0A2 /* Starting the MorningEvening Routine_2.wav */,
+				8F461B2528C0EE480082B0A2 /* Starting the MorningEvening Routine_4.wav */,
+				8F461B2728C0EE490082B0A2 /* Starting the MorningEvening Routine_5.wav */,
 			);
 			path = StartingMorningEveningRoutine;
 			sourceTree = "<group>";
@@ -874,14 +918,28 @@
 			path = HotKey;
 			sourceTree = "<group>";
 		};
+		8F6866052D15488800DC2C21 /* Onboarding Permissions */ = {
+			isa = PBXGroup;
+			children = (
+				8F23A1DB2CAE508A0042CE2A /* explainingPermissionsVc.swift */,
+				8F2B7C6E2C3BFAF100829B59 /* accessibilityPermissionVc.swift */,
+				8F3CF1742CA17301004D72B0 /* systemEventsPermissionVc.swift */,
+				8F371A5F29E3D0300043D7B3 /* onboardingControllingBrowserVc.swift */,
+				8F371A6729E434770043D7B3 /* tblCellBrowsers.swift */,
+				8F371A6129E3E1080043D7B3 /* tryBlockUrlVc.swift */,
+				8F35B27D2D1185D50000EB70 /* askDetailsNotBlockingVc.swift */,
+			);
+			path = "Onboarding Permissions";
+			sourceTree = "<group>";
+		};
 		8F69D1E02796A34B00DB3EFD /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				8FE13DF427ED887200BD620A /* Sparkle.framework */,
+				137CD6022D9D4ACC00A8385A /* Sparkle.framework */,
 				8F7DCC022796E8D200EE3282 /* WebKit.framework */,
 				8F69D1E32796A6CE00DB3EFD /* NetworkExtension.framework */,
 				8F69D1E12796A34B00DB3EFD /* AVKit.framework */,
-				91F527851714A11B24B39567 /* Pods_Focus_Bear.framework */,
+				E339C651791746EA3D066A6A /* Pods_Focus_Bear.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -976,6 +1034,8 @@
 				8F7ED7422CC0F1E100AB973D /* taskPlayerWc.swift */,
 				8FB0DBD62BEA27D1006DE02F /* taskPlayerVc.swift */,
 				8FA692FC2B90B31600FF4862 /* confirmRunScriptVc.swift */,
+				8FD0F7F52D437BC100ED3496 /* tblCellFocsedCompletedItem.swift */,
+				13EC6E012DB26FBE0031303D /* nudgeStartAnotherFocusSessionVc.swift */,
 				8FBBD19D2968283200C4C8B7 /* toolBox */,
 			);
 			path = "Focus mode";
@@ -988,6 +1048,7 @@
 				8F5596B32805B49E0044DF28 /* quitCountDownVc.swift */,
 				8F98294E2806976B00B17414 /* quittingConfirmVc.swift */,
 				8FDCA2C22CAACE9A0014623D /* initialQuitFeedbackVc.swift */,
+				13A45A2D2DB3DB12009ECF81 /* superGentleQuitVc.swift */,
 			);
 			path = "Quit Process";
 			sourceTree = "<group>";
@@ -1086,14 +1147,8 @@
 				8FAC6C8627805F6D008A4180 /* AppDelegate.swift */,
 				8FAC6C962780612B008A4180 /* mainWindowController.swift */,
 				8FAC6C8827805F6E008A4180 /* ViewController.swift */,
-				8F6138B528B7698300A45B1A /* visualizeInstructionsVc.swift */,
-				8FAC6C9C27806DCB008A4180 /* firstViewController.swift */,
-				8F99C8D52A13AE1D00FD2403 /* editHabitRoutineVc.swift */,
-				8FAC6CA027808125008A4180 /* timerViewcontroller.swift */,
-				8F050A0827842B8400F3CE17 /* thirdVc.swift */,
-				8FAC6C9E2780748D008A4180 /* tblCellHabits.swift */,
+				135CBDAD2D966CCC003BA438 /* Routine */,
 				8F9BB8B82787307D00BB25D4 /* shutOffTimeVc.swift */,
-				8F94EF882836094400355E66 /* rememberNextHabitVc.swift */,
 				8FFBCE8928549EB1004B77D9 /* PopoverViewController.swift */,
 				8FFBCE8828549EB1004B77D9 /* PopoverViewController.xib */,
 				8F0E69DB290279500042FAF4 /* customTooltipVc.swift */,
@@ -1110,11 +1165,8 @@
 				8F70A53C2A67E383001E1DFE /* loaderVc.swift */,
 				8F3D784A2A6A6C1B00CE936B /* setIntentionBlockedUrlsVc.swift */,
 				8F3D784C2A6A70A200CE936B /* intentionBlockedUrlsVc.swift */,
-				8F8E9AA52AAB021900F7CD32 /* surveyVc.swift */,
 				8F6B1E2A2B07769900552211 /* timeTrackerVc.swift */,
 				8F6DAD832B32A84400CB210B /* lateNoMorePopUpVc.swift */,
-				8F1E3F752B2ADC24005CE096 /* startAnotherHabitVc.swift */,
-				8F779DF92B80DD600011E1BE /* chooseHabitsVC.swift */,
 				8FAB113A2B42ABD9006D1261 /* longTermGoalsVc.swift */,
 				8FBD6DFD2B6A760000CC9430 /* lateMorningHabitPopupVc.swift */,
 				8F45E5002B7C995F0063088E /* savedSitesForLaterVc.swift */,
@@ -1146,12 +1198,16 @@
 				8F050A0B278467B000F3CE17 /* FocusBear-Bridging-Header.h */,
 				8F8869CB2AE38CBB0089E109 /* searchableComboBox.swift */,
 				8FAC6C982780671E008A4180 /* globalFile.swift */,
-				8F250F532CC63E460058DC85 /* allBrowsers.swift */,
+				13395D402DB900380094F019 /* focusModeData.swift */,
 				8F0419452C353D4100481ACD /* getViewControllersObject.swift */,
+				8F3567202D3A71B200F62403 /* showHideWindows.swift */,
+				8F250F532CC63E460058DC85 /* allBrowsers.swift */,
 				8F0419472C353DCA00481ACD /* allUserdefaults.swift */,
 				8FCD13AF2C2BD8AA005EEA63 /* Buttons.swift */,
 				274C9A92289BF8D40066F883 /* SettingsManager.swift */,
 				274E671528951DDC0030163F /* AllApi.swift */,
+				8F1456BB2D40B32600130B21 /* TabMatrics.swift */,
+				8F344A032D882532003D82A4 /* allCsvFilesData.swift */,
 				8F7DA75D2B1B412000B2E1CC /* pusherEvents.swift */,
 				8FD86E1B2A54303A004F6761 /* unusedCode.swift */,
 				8FD1054627EF1A3B00B7728E /* urlValidation.swift */,
@@ -1298,8 +1354,13 @@
 				8FFABCB32C7C78990084597D /* confirmRoutineDurationVc.swift */,
 				8FB257862C7DF0EA00794A43 /* askIntentionAllowedFocusModeActivity.swift */,
 				8F861DB92CB8F36A000BCF72 /* webViewLoadFailedVc.swift */,
+				8F8E9AA52AAB021900F7CD32 /* surveyVc.swift */,
 				8FE5587D2CEC703300C44387 /* bellVc.swift */,
 				8FE5587F2CEC7E1F00C44387 /* bellSuggestionsVc.swift */,
+				8F5937502D49FA2800442292 /* nudgeFocusAlignmentScoreDippingWc.swift */,
+				8F59374E2D49F6CD00442292 /* nudgeFocusAlignmentScoreDippingVc.swift */,
+				8FF591312D70406E0068E17C /* reportBadAIResponseVc.swift */,
+				1361E6E42DB76A1900E6DE3F /* unverifiedEmailVc.swift */,
 			);
 			path = Popups;
 			sourceTree = "<group>";
@@ -1308,6 +1369,7 @@
 			isa = PBXGroup;
 			children = (
 				8F6AC5DF29E1540F002EBC99 /* welcomeVc.swift */,
+				8F371A6529E424F10043D7B3 /* onboardingPrivacyTipVc.swift */,
 				8F9A72352C99A72F007A316D /* onboardingFeedbackVc.swift */,
 				8F0734662C52190F002FACE8 /* onboardingFocusExplainVc.swift */,
 				8F0734682C5228F1002FACE8 /* onboardingHabitExplainVc.swift */,
@@ -1316,14 +1378,7 @@
 				8FE99DA32CF855EA003BCA3E /* onboardingBlockedAppsVc.swift */,
 				8F5B03272CD8F62800F261D3 /* onboardingBlockingScheduleVc.swift */,
 				8F270CB129436D4400E91015 /* tblCellOnboardingBlockedUrls.swift */,
-				8F371A6529E424F10043D7B3 /* onboardingPrivacyTipVc.swift */,
-				8F23A1DB2CAE508A0042CE2A /* explainingPermissionsVc.swift */,
-				8F2B7C6E2C3BFAF100829B59 /* accessibilityPermissionVc.swift */,
-				8F3CF1742CA17301004D72B0 /* systemEventsPermissionVc.swift */,
-				8F371A5F29E3D0300043D7B3 /* onboardingControllingBrowserVc.swift */,
-				8F371A6729E434770043D7B3 /* tblCellBrowsers.swift */,
-				8F371A6129E3E1080043D7B3 /* tryBlockUrlVc.swift */,
-				8F35B27D2D1185D50000EB70 /* askDetailsNotBlockingVc.swift */,
+				8F6866052D15488800DC2C21 /* Onboarding Permissions */,
 				8F657D7828DF094E008A4E6E /* welcomeOnboardingVc.swift */,
 				8F1DC4A32BC1364500A51383 /* askOccupationVc.swift */,
 				8F1DC4A52BC13A1900A51383 /* collectionViewItemOccupation.swift */,
@@ -1364,8 +1419,8 @@
 		C39F497A522955388D68AA8B /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				E2000A664BA01C14CA14A2C8 /* Pods-Focus Bear.debug.xcconfig */,
-				4EC80A321F5CE51D8520D4AF /* Pods-Focus Bear.release.xcconfig */,
+				889FCE3E1080DC22C97AB6D8 /* Pods-Focus Bear.debug.xcconfig */,
+				F4A04585FA1D0F1940D23631 /* Pods-Focus Bear.release.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
@@ -1394,13 +1449,13 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 8FAC6C9327805F70008A4180 /* Build configuration list for PBXNativeTarget "Focus Bear" */;
 			buildPhases = (
-				0638F25ECA8DC338287F5FE0 /* [CP] Check Pods Manifest.lock */,
+				FC0AF1DA62E0DD77E6BACA24 /* [CP] Check Pods Manifest.lock */,
 				8FAC6C7F27805F6D008A4180 /* Sources */,
 				8FAC6C8027805F6D008A4180 /* Frameworks */,
 				8FAC6C8127805F6D008A4180 /* Resources */,
-				391F0B3FDDC7CB285663B31F /* [CP] Embed Pods Frameworks */,
-				8FE13DF727ED887200BD620A /* Embed Frameworks */,
 				8F77575828DD96D9007A976D /* CopyFiles */,
+				3F268440EC1EB9CD7C1DB69B /* [CP] Embed Pods Frameworks */,
+				137CD6052D9D4ACC00A8385A /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -1439,7 +1494,7 @@
 			isa = PBXProject;
 			attributes = {
 				LastSwiftUpdateCheck = 1340;
-				LastUpgradeCheck = 1130;
+				LastUpgradeCheck = 1340;
 				ORGANIZATIONNAME = "Focus Bear";
 				TargetAttributes = {
 					8F396D192C2AB53800C8896A = {
@@ -1496,7 +1551,7 @@
 				8F3F894728BA00A0003E5EA4 /* SUUpdateAlert.strings in Resources */,
 				8FB84AEE284B82AA0075180B /* GraphTime.html in Resources */,
 				8FB84AED284B82AA0075180B /* GraphDays.html in Resources */,
-				8F461B2B28C0EE490082B0A2 /* Starting the Morning:Evening Routine_4.wav in Resources */,
+				8F461B2B28C0EE490082B0A2 /* Starting the MorningEvening Routine_4.wav in Resources */,
 				8F8073812B3D3F2E004935B5 /* CollectionViewItem.xib in Resources */,
 				8F9B0FA429816F9800415247 /* logo.svg in Resources */,
 				8F4A3B21290D256F00DCBE39 /* collectionCellToolBox.xib in Resources */,
@@ -1511,7 +1566,7 @@
 				8F8A53F827AA4ABB00A01E2D /* Smile _Small.gif in Resources */,
 				8FFBCE8A28549EB1004B77D9 /* PopoverViewController.xib in Resources */,
 				8F762D292A431FA800E24FE2 /* OpenDyslexic3-Regular.ttf in Resources */,
-				8F461B2D28C0EE490082B0A2 /* Starting the Morning:Evening Routine_5.wav in Resources */,
+				8F461B2D28C0EE490082B0A2 /* Starting the MorningEvening Routine_5.wav in Resources */,
 				8F15F9042CAFC7BF00CCD49E /* Accessibility_Video.mp4 in Resources */,
 				274E0F4C28902E29000234A3 /* Auth0.plist in Resources */,
 				8F461B0928C0EBBE0082B0A2 /* Completing the Whole Evening Routine_5.wav in Resources */,
@@ -1534,7 +1589,7 @@
 				8FFF70652858A59800164E2B /* GraphDaysDuration.html in Resources */,
 				8FABDDD027D9E2D900F6A58C /* Weight-bear-250-px_V2.gif in Resources */,
 				8F3F894528BA00A0003E5EA4 /* SUAutomaticUpdateAlert.strings in Resources */,
-				8F461B2F28C0EE490082B0A2 /* Starting the Morning:Evening Routine_2.wav in Resources */,
+				8F461B2F28C0EE490082B0A2 /* Starting the MorningEvening Routine_2.wav in Resources */,
 				8FABDDD127D9E2D900F6A58C /* Whistle-bear-250-px.gif in Resources */,
 				8FAC6C8E27805F70008A4180 /* Main.storyboard in Resources */,
 				8F7DCC002796B55800EE3282 /* config.json in Resources */,
@@ -1559,7 +1614,24 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		0638F25ECA8DC338287F5FE0 /* [CP] Check Pods Manifest.lock */ = {
+		3F268440EC1EB9CD7C1DB69B /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-Focus Bear/Pods-Focus Bear-frameworks-${CONFIGURATION}-input-files.xcfilelist",
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-Focus Bear/Pods-Focus Bear-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Focus Bear/Pods-Focus Bear-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		FC0AF1DA62E0DD77E6BACA24 /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -1579,23 +1651,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
-		391F0B3FDDC7CB285663B31F /* [CP] Embed Pods Frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-Focus Bear/Pods-Focus Bear-frameworks-${CONFIGURATION}-input-files.xcfilelist",
-			);
-			name = "[CP] Embed Pods Frameworks";
-			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-Focus Bear/Pods-Focus Bear-frameworks-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Focus Bear/Pods-Focus Bear-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
@@ -1643,6 +1698,7 @@
 				8F5BCE5929FFCB96009799CD /* alertMaxTabLimitVc.swift in Sources */,
 				8F8073872B3D93A4004935B5 /* firefoxPermissionVideoVc.swift in Sources */,
 				8FB74AE82861B18A00992C1F /* pomodoroPreferencesAdvancedVc.swift in Sources */,
+				8F1456BC2D40B32600130B21 /* TabMatrics.swift in Sources */,
 				8FB2221A2BA8734400F3DA68 /* createTaskVc.swift in Sources */,
 				8F3CF1752CA17301004D72B0 /* systemEventsPermissionVc.swift in Sources */,
 				8F7210762A18CCBA00D53EF3 /* chooseFrictionLevelVc.swift in Sources */,
@@ -1695,13 +1751,16 @@
 				8F4A3B1B290D0CAE00DCBE39 /* toolBoxVc.swift in Sources */,
 				8F2C03AF29C895F60035E8F1 /* blockBlurVc.swift in Sources */,
 				8FBD6DFC2B6A0DCB00CC9430 /* tblCellSettingsSideBar.swift in Sources */,
+				8F5937512D49FA2900442292 /* nudgeFocusAlignmentScoreDippingWc.swift in Sources */,
 				8F396D152C2A997E00C8896A /* installHabitPacksVc.swift in Sources */,
 				8FB222182BA865F400F3DA68 /* blankLayerVc.swift in Sources */,
 				8F371A6229E3E1080043D7B3 /* tryBlockUrlVc.swift in Sources */,
 				8F5596B42805B49E0044DF28 /* quitCountDownVc.swift in Sources */,
 				8FA7D36929F3FB94007AD2C1 /* AISettingVc.swift in Sources */,
+				13395D412DB900440094F019 /* focusModeData.swift in Sources */,
 				8F94E5932976909900BA7E8C /* trialExpiredNag.swift in Sources */,
 				8FAC6CA127808125008A4180 /* timerViewcontroller.swift in Sources */,
+				8F59374F2D49F6CD00442292 /* nudgeFocusAlignmentScoreDippingVc.swift in Sources */,
 				8FB50EFF27BE811D00A7175B /* tblCellFocusPreferences.swift in Sources */,
 				8F107D22278C4A1E00280B37 /* abortingCantHandleVc.swift in Sources */,
 				274E0F4928902CF1000234A3 /* User.swift in Sources */,
@@ -1724,18 +1783,22 @@
 				8F66E7F6298547940074546C /* setUpVc.swift in Sources */,
 				8F0E69DA290267DE0042FAF4 /* customNotificationVc.swift in Sources */,
 				8FA62B1428605B150075D545 /* preloadFocusModesVc.swift in Sources */,
+				13A45A2E2DB3DB12009ECF81 /* superGentleQuitVc.swift in Sources */,
+				8F344A042D882532003D82A4 /* allCsvFilesData.swift in Sources */,
 				8F492726291A60F600BE10CA /* askQuitVc.swift in Sources */,
 				8F3DD01A29F3B4ED00E23715 /* AHServiceManagement.m in Sources */,
 				8F1FBAE629F2A46000AA1979 /* naturalBreaksDetectionVc.swift in Sources */,
 				8FD1054727EF1A3B00B7728E /* urlValidation.swift in Sources */,
 				8FB0DBD72BEA27D1006DE02F /* taskPlayerVc.swift in Sources */,
 				8F332BD029474EE5009E6792 /* focusTipsVc.swift in Sources */,
+				13AAC9E12D9819F7000AD619 /* customRoutineTimeVc.swift in Sources */,
 				8F2B7C6F2C3BFAF100829B59 /* accessibilityPermissionVc.swift in Sources */,
 				8F8C3FD62A8CB79A005CAF96 /* advancedVc.swift in Sources */,
 				8FA0FEE22C9EDEB00071D8CC /* blockingScheduleVc.swift in Sources */,
 				8F8E9AA62AAB021900F7CD32 /* surveyVc.swift in Sources */,
 				8FA7D36729F3E686007AD2C1 /* aiPermissionVc.swift in Sources */,
 				8F4BD8C427883FBE00ABAEF5 /* NSEventModifierFlags+HotKey.swift in Sources */,
+				8FD0F7F62D437BC100ED3496 /* tblCellFocsedCompletedItem.swift in Sources */,
 				8FAD22D727CA2F1000CDC866 /* focusCompletedVc.swift in Sources */,
 				8F3D784B2A6A6C1B00CE936B /* setIntentionBlockedUrlsVc.swift in Sources */,
 				8FEFC59629FA894800ADF1E6 /* popupAppointmentTimeVc.swift in Sources */,
@@ -1746,6 +1809,7 @@
 				8F40880A2977DD3600A70130 /* takeActivityNotesVc.swift in Sources */,
 				8F54E92E2785662A00CC4E7B /* selectJsonVc.swift in Sources */,
 				8FBE37A82A8F62060018402A /* settingsSplitViewController.swift in Sources */,
+				13EC6E022DB26FBE0031303D /* nudgeStartAnotherFocusSessionVc.swift in Sources */,
 				8F7ED7432CC0F1E100AB973D /* taskPlayerWc.swift in Sources */,
 				8FB257872C7DF0EB00794A43 /* askIntentionAllowedFocusModeActivity.swift in Sources */,
 				8F4BD8C827883FBE00ABAEF5 /* HotKey.swift in Sources */,
@@ -1767,6 +1831,7 @@
 				8F6AC5E029E1540F002EBC99 /* welcomeVc.swift in Sources */,
 				8F1EB55729A34E70004F5196 /* askWorkTimeVc.swift in Sources */,
 				8F93BE5D27CC92CE004FA0BE /* focusSummaryVc.swift in Sources */,
+				8F3567212D3A71B200F62403 /* showHideWindows.swift in Sources */,
 				8F6B1E2B2B07769900552211 /* timeTrackerVc.swift in Sources */,
 				8F92E88427BF65AF0085AF8C /* addWebUrlVc.swift in Sources */,
 				8F9A5A9A27887889009121E3 /* abortDoneVc.swift in Sources */,
@@ -1810,7 +1875,9 @@
 				8FBD6DFE2B6A760000CC9430 /* lateMorningHabitPopupVc.swift in Sources */,
 				8F7C2BB92B50026A0003824A /* frictionSetPasswordVc.swift in Sources */,
 				8F70D64528E1C6A600895B3F /* customMessageVc.swift in Sources */,
+				8FF591322D70406E0068E17C /* reportBadAIResponseVc.swift in Sources */,
 				8FB60BB92C09E4B200E5F95D /* simplePomodoroVc.swift in Sources */,
+				1361E6E52DB76A1900E6DE3F /* unverifiedEmailVc.swift in Sources */,
 				8F93BE6027CCA196004FA0BE /* abortingFocusMode.swift in Sources */,
 				8FAD22D527CA047700CDC866 /* pomodoroVc.swift in Sources */,
 				8F1FBAE429F2590300AA1979 /* alertReasonAutoAllowSiteVc.swift in Sources */,
@@ -1827,6 +1894,7 @@
 				8FF889722CA3DEBC00BD69E8 /* askProcrastinatingVc.swift in Sources */,
 				8F51EFB727E0741700EFF0A8 /* blockedUrlsVc.swift in Sources */,
 				8F07346B2C526AA1002FACE8 /* informationPopoverVc.swift in Sources */,
+				135CBDAF2D967009003BA438 /* routine.swift in Sources */,
 				8F4E34BD29BC52FB00E161F4 /* focusEndWarningVc.swift in Sources */,
 				8F09ACBF29703C1B00A0F1D0 /* allTracksVc.swift in Sources */,
 				8FAC6C972780612B008A4180 /* mainWindowController.swift in Sources */,
@@ -1934,11 +2002,13 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CODE_SIGN_ENTITLEMENTS = FBHelper/FBHelper.entitlements;
-				CODE_SIGN_IDENTITY = "Developer ID Application: Jeremy Nagel (TCUD568B3U)";
+				CODE_SIGN_IDENTITY = "Developer ID Application: Focus Bear Pty Ltd (TCUD568B3U)";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application: Focus Bear Pty Ltd (TCUD568B3U)";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = TCUD568B3U;
+				"DEVELOPMENT_TEAM[sdk=macosx*]" = TCUD568B3U;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = FBHelper/Info.plist;
@@ -1954,6 +2024,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.focusbear.focusbearhelper;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = FocusBearHelperPersonalAcProfilePrashant;
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = FocusBearHelperPersonalAcProfilePrashant;
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -1968,11 +2039,13 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CODE_SIGN_ENTITLEMENTS = FBHelper/FBHelper.entitlements;
-				CODE_SIGN_IDENTITY = "Developer ID Application: Jeremy Nagel (TCUD568B3U)";
+				CODE_SIGN_IDENTITY = "Developer ID Application: Focus Bear Pty Ltd (TCUD568B3U)";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application: Focus Bear Pty Ltd (TCUD568B3U)";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = TCUD568B3U;
+				"DEVELOPMENT_TEAM[sdk=macosx*]" = TCUD568B3U;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = FBHelper/Info.plist;
@@ -1988,6 +2061,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.focusbear.focusbearhelper;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = FocusBearHelperPersonalAcProfilePrashant;
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = FocusBearHelperPersonalAcProfilePrashant;
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -1998,6 +2072,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -2020,6 +2095,7 @@
 				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
 				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
@@ -2058,6 +2134,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -2080,6 +2157,7 @@
 				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
 				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
@@ -2109,17 +2187,19 @@
 		};
 		8FAC6C9427805F70008A4180 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = E2000A664BA01C14CA14A2C8 /* Pods-Focus Bear.debug.xcconfig */;
+			baseConfigurationReference = 889FCE3E1080DC22C97AB6D8 /* Pods-Focus Bear.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = "Focus Bear.entitlements";
-				CODE_SIGN_IDENTITY = "Developer ID Application: Jeremy Nagel (TCUD568B3U)";
+				CODE_SIGN_IDENTITY = "Developer ID Application: Focus Bear Pty Ltd (TCUD568B3U)";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application: Focus Bear Pty Ltd (TCUD568B3U)";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 332;
+				CURRENT_PROJECT_VERSION = 361;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = TCUD568B3U;
+				"DEVELOPMENT_TEAM[sdk=macosx*]" = TCUD568B3U;
 				ENABLE_HARDENED_RUNTIME = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -2131,10 +2211,11 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
-				MARKETING_VERSION = 1.17;
+				MARKETING_VERSION = 1.22;
 				PRODUCT_BUNDLE_IDENTIFIER = com.App.EarnYourScreentime;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = FocusBearMainAppProfile;
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = FocusBearMainAppProfile;
 				SWIFT_OBJC_BRIDGING_HEADER = "FocusBear/FocusBear-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -2143,16 +2224,18 @@
 		};
 		8FAC6C9527805F70008A4180 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 4EC80A321F5CE51D8520D4AF /* Pods-Focus Bear.release.xcconfig */;
+			baseConfigurationReference = F4A04585FA1D0F1940D23631 /* Pods-Focus Bear.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = "Focus Bear.entitlements";
-				CODE_SIGN_IDENTITY = "Developer ID Application: Jeremy Nagel (TCUD568B3U)";
+				CODE_SIGN_IDENTITY = "Developer ID Application: Focus Bear Pty Ltd (TCUD568B3U)";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application: Focus Bear Pty Ltd (TCUD568B3U)";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 332;
+				CURRENT_PROJECT_VERSION = 361;
 				DEVELOPMENT_TEAM = TCUD568B3U;
+				"DEVELOPMENT_TEAM[sdk=macosx*]" = TCUD568B3U;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_TESTABILITY = NO;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -2165,10 +2248,11 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
-				MARKETING_VERSION = 1.17;
+				MARKETING_VERSION = 1.22;
 				PRODUCT_BUNDLE_IDENTIFIER = com.App.EarnYourScreentime;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = FocusBearMainAppProfile;
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = FocusBearMainAppProfile;
 				SWIFT_OBJC_BRIDGING_HEADER = "FocusBear/FocusBear-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 			};

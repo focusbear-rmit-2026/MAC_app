@@ -35,7 +35,7 @@ class pusherEvents:NSObject, PusherDelegate {
         // bind a callback to handle an event
         _ = channel.bind(eventName: "focus-mode-started", eventCallback: { (event: PusherEvent) in
             if let data = event.data {
-                if isFocusModeOn() || isHardCorePomodoroModeOn || currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._ACTIVITY_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._SHUTOFFMAC_{
+                if isFocusModeOn() || isHardCorePomodoroModeOn || currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._ACTIVITY_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._SHUTOFFMAC_ || currentState == ._CUSTOM_ROUTINE_{
                     return;
                 }
                 if let data = data.data(using: .utf8) {
@@ -73,6 +73,7 @@ class pusherEvents:NSObject, PusherDelegate {
                                         startFocusModeTime = Date()
                                         endFocusModeTime = calendar.date(byAdding: .minute, value: diffMinutes, to: startFocusModeTime!)
                                         currentFocusModeStrictness = ._NORMAL_
+                                        addLog(text: "focus mode is normal mode")
                                         arrFocusType[currentFocusModeIndex]["isOn"] = true
                                         shouldReloadTaskPlayer = true
                                         if let isAutoDoNotDisturbEnabled = arrFocusType[currentFocusModeIndex]["isAutoDoNotDisturbEnabled"] as? Bool{
@@ -229,12 +230,7 @@ class pusherEvents:NSObject, PusherDelegate {
 
                 appdelegate!.isAutoMeetingsModeStarted = false
                 appdelegate!.appUsedInAutoMeetingFocusMode = ""
-                arrBlockedAppsInCuddlyModeCurrentFocus.removeAll()
-                arrAllowedAppsInCuddlyModeCurrentFocus.removeAll()
-                arrAllowedUrlsInCuddlyModeCurrentFocus.removeAll()
-                arrBlockedUrlsInCuddlyModeCurrentFocus.removeAll()
-                dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus.removeAll()
-                arrAllowedDomianInCuddlyModeCurrentFocus.removeAll()
+                refreshFocusModeData()
                 closePupUpBlockIfVisible()
             }
         })
@@ -261,7 +257,7 @@ class pusherEvents:NSObject, PusherDelegate {
                             
                             
                             var shouldIgnore = false
-                            if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_{
+                            if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._CUSTOM_ROUTINE_{
                                 if dictionary["leader_device_id"] as? String == currentDeviceId{
                                     shouldIgnore = true
                                 }

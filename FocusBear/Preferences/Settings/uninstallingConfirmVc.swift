@@ -206,7 +206,7 @@ class uninstallingConfirmVc: NSViewController, NSTextViewDelegate {
         appdelegate!.credential = nil
         self.clearAllData()
         appdelegate!.terminateFromSelf = true
-        NSApp.terminate(self)
+        quitApplicationSmoothly()
       //  allApiObject.getUninstallJsonToUpload(emailAddress: currentUserEmail, uninstallReason: popUpButton.titleOfSelectedItem ?? "", uninstallDescription: textView.string, completionHandler: {dic in
         //    DispatchQueue.main.async {
                 

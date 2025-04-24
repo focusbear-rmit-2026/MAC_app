@@ -1,3 +1,4 @@
+// Adapted from: https://github.com/kstenerud/KSCrash
 //
 //  SentryCrashReport.m
 //
@@ -26,6 +27,7 @@
 
 #include "SentryCrashReport.h"
 
+#include "SentryCrashBinaryImageCache.h"
 #include "SentryCrashCPU.h"
 #include "SentryCrashCachedData.h"
 #include "SentryCrashDynamicLinker.h"
@@ -33,7 +35,6 @@
 #include "SentryCrashJSONCodec.h"
 #include "SentryCrashMach.h"
 #include "SentryCrashMemory.h"
-#include "SentryCrashMonitor_Zombie.h"
 #include "SentryCrashObjC.h"
 #include "SentryCrashReportFields.h"
 #include "SentryCrashReportVersion.h"
@@ -42,13 +43,12 @@
 #include "SentryCrashStackCursor_Backtrace.h"
 #include "SentryCrashStackCursor_MachineContext.h"
 #include "SentryCrashString.h"
-#include "SentryCrashSystemCapabilities.h"
 #include "SentryCrashThread.h"
 #include "SentryCrashUUIDConversion.h"
+#include "SentryInternalCDefines.h"
 #include "SentryScopeSyncC.h"
 
-//#define SentryCrashLogger_LocalLevel TRACE
-#include "SentryCrashLogger.h"
+#include "SentryAsyncSafeLog.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -106,7 +106,6 @@ typedef struct {
 
 static const char *g_userInfoJSON;
 static SentryCrash_IntrospectionRules g_introspectionRules;
-static SentryCrashReportWriteCallback g_userSectionWriteCallback;
 
 #pragma mark Callbacks
 
@@ -135,7 +134,7 @@ static void
 addUIntegerElement(
     const SentryCrashReportWriter *const writer, const char *const key, const uint64_t value)
 {
-    sentrycrashjson_addIntegerElement(getJsonContext(writer), key, (int64_t)value);
+    sentrycrashjson_addUIntegerElement(getJsonContext(writer), key, value);
 }
 
 static void
@@ -152,22 +151,22 @@ addTextFileElement(
 {
     const int fd = open(filePath, O_RDONLY);
     if (fd < 0) {
-        SentryCrashLOG_ERROR("Could not open file %s: %s", filePath, strerror(errno));
+        SENTRY_ASYNC_SAFE_LOG_ERROR("Could not open file %s: %s", filePath, strerror(errno));
         return;
     }
 
     if (sentrycrashjson_beginStringElement(getJsonContext(writer), key) != SentryCrashJSON_OK) {
-        SentryCrashLOG_ERROR("Could not start string element");
+        SENTRY_ASYNC_SAFE_LOG_ERROR("Could not start string element");
         goto done;
     }
 
     char buffer[512];
     int bytesRead;
     for (bytesRead = (int)read(fd, buffer, sizeof(buffer)); bytesRead > 0;
-         bytesRead = (int)read(fd, buffer, sizeof(buffer))) {
+        bytesRead = (int)read(fd, buffer, sizeof(buffer))) {
         if (sentrycrashjson_appendStringElement(getJsonContext(writer), buffer, bytesRead)
             != SentryCrashJSON_OK) {
-            SentryCrashLOG_ERROR("Could not append string element");
+            SENTRY_ASYNC_SAFE_LOG_ERROR("Could not append string element");
             goto done;
         }
     }
@@ -584,7 +583,8 @@ writeUnknownObjectContents(const SentryCrashReportWriter *const writer, const ch
                     writeMemoryContents(writer, ivar->name, (uintptr_t)pointer, limit);
                     break;
                 default:
-                    SentryCrashLOG_DEBUG("%s: Unknown ivar type [%s]", ivar->name, ivar->type);
+                    SENTRY_ASYNC_SAFE_LOG_DEBUG(
+                        "%s: Unknown ivar type [%s]", ivar->name, ivar->type);
                 }
             }
         }
@@ -606,23 +606,9 @@ isRestrictedClass(const char *name)
     return false;
 }
 
-static void
-writeZombieIfPresent(
-    const SentryCrashReportWriter *const writer, const char *const key, const uintptr_t address)
-{
-#if SentryCrashCRASH_HAS_OBJC
-    const void *object = (const void *)address;
-    const char *zombieClassName = sentrycrashzombie_className(object);
-    if (zombieClassName != NULL) {
-        writer->addStringElement(writer, key, zombieClassName);
-    }
-#endif
-}
-
 static bool
 writeObjCObject(const SentryCrashReportWriter *const writer, const uintptr_t address, int *limit)
 {
-#if SentryCrashCRASH_HAS_OBJC
     const void *object = (const void *)address;
     switch (sentrycrashobjc_objectType(object)) {
     case SentryCrashObjCTypeClass:
@@ -676,7 +662,6 @@ writeObjCObject(const SentryCrashReportWriter *const writer, const uintptr_t add
     case SentryCrashObjCTypeUnknown:
         break;
     }
-#endif
 
     return false;
 }
@@ -701,7 +686,6 @@ writeMemoryContents(const SentryCrashReportWriter *const writer, const char *con
     writer->beginObject(writer, key);
     {
         writer->addUIntegerElement(writer, SentryCrashField_Address, address);
-        writeZombieIfPresent(writer, SentryCrashField_LastDeallocObject, address);
         if (!writeObjCObject(writer, address, limit)) {
             if (object == NULL) {
                 writer->addStringElement(
@@ -724,13 +708,11 @@ isValidPointer(const uintptr_t address)
         return false;
     }
 
-#if SentryCrashCRASH_HAS_OBJC
     if (sentrycrashobjc_isTaggedPointer((const void *)address)) {
         if (!sentrycrashobjc_isValidTaggedPointer((const void *)address)) {
             return false;
         }
     }
-#endif
 
     return true;
 }
@@ -744,15 +726,9 @@ isNotableAddress(const uintptr_t address)
 
     const void *object = (const void *)address;
 
-#if SentryCrashCRASH_HAS_OBJC
-    if (sentrycrashzombie_className(object) != NULL) {
-        return true;
-    }
-
     if (sentrycrashobjc_objectType(object) != SentryCrashObjCTypeUnknown) {
         return true;
     }
-#endif
 
     if (isValidString(object)) {
         return true;
@@ -936,7 +912,7 @@ writeNotableStackContents(const SentryCrashReportWriter *const writer,
     for (uintptr_t address = lowAddress; address < highAddress; address += sizeof(address)) {
         if (sentrycrashmem_copySafely(
                 (void *)address, &contentsAsPointer, sizeof(contentsAsPointer))) {
-            sprintf(nameBuffer, "stack@%p", (void *)address);
+            snprintf(nameBuffer, sizeof(nameBuffer), "stack@%p", (void *)address);
             writeMemoryContentsIfNotable(writer, nameBuffer, contentsAsPointer);
         }
     }
@@ -1094,11 +1070,10 @@ writeThread(const SentryCrashReportWriter *const writer, const char *const key,
 {
     bool isCrashedThread = sentrycrashmc_isCrashedContext(machineContext);
     SentryCrashThread thread = sentrycrashmc_getThreadFromContext(machineContext);
-    SentryCrashLOG_DEBUG(
+    SENTRY_ASYNC_SAFE_LOG_DEBUG(
         "Writing thread %x (index %d). is crashed: %d", thread, threadIndex, isCrashedThread);
 
     SentryCrashStackCursor stackCursor;
-    stackCursor.async_caller = NULL;
 
     bool hasBacktrace = getStackCursor(crash, machineContext, &stackCursor);
 
@@ -1131,8 +1106,6 @@ writeThread(const SentryCrashReportWriter *const writer, const char *const key,
         }
     }
     writer->endContainer(writer);
-
-    sentrycrash_async_backtrace_decref(stackCursor.async_caller);
 }
 
 /** Write information about all threads to the report.
@@ -1159,7 +1132,7 @@ writeAllThreads(const SentryCrashReportWriter *const writer, const char *const k
     // Fetch info for all threads.
     writer->beginArray(writer, key);
     {
-        SentryCrashLOG_DEBUG("Writing %d threads.", threadCount);
+        SENTRY_ASYNC_SAFE_LOG_DEBUG("Writing %d threads.", threadCount);
         for (int i = 0; i < threadCount; i++) {
             SentryCrashThread thread = sentrycrashmc_getThreadAtIndex(context, i);
             if (thread == offendingThread) {
@@ -1181,40 +1154,38 @@ writeAllThreads(const SentryCrashReportWriter *const writer, const char *const k
  *
  * @param key The object key, if needed.
  *
- * @param index Which image to write about.
+ * @param image Which image to write about.
  */
 static void
-writeBinaryImage(
-    const SentryCrashReportWriter *const writer, const char *const key, const int index)
+writeBinaryImage(const SentryCrashReportWriter *const writer, const char *const key,
+    SentryCrashBinaryImage *image)
 {
-    SentryCrashBinaryImage image = { 0 };
-    if (!sentrycrashdl_getBinaryImage(index, &image)) {
-        return;
-    }
-
     writer->beginObject(writer, key);
     {
-        writer->addUIntegerElement(writer, SentryCrashField_ImageAddress, image.address);
-        writer->addUIntegerElement(writer, SentryCrashField_ImageVmAddress, image.vmAddress);
-        writer->addUIntegerElement(writer, SentryCrashField_ImageSize, image.size);
-        writer->addStringElement(writer, SentryCrashField_Name, image.name);
-        writer->addUUIDElement(writer, SentryCrashField_UUID, image.uuid);
-        writer->addIntegerElement(writer, SentryCrashField_CPUType, image.cpuType);
-        writer->addIntegerElement(writer, SentryCrashField_CPUSubType, image.cpuSubType);
-        writer->addUIntegerElement(writer, SentryCrashField_ImageMajorVersion, image.majorVersion);
-        writer->addUIntegerElement(writer, SentryCrashField_ImageMinorVersion, image.minorVersion);
-        writer->addUIntegerElement(
-            writer, SentryCrashField_ImageRevisionVersion, image.revisionVersion);
-        if (image.crashInfoMessage != NULL) {
+        writer->addUIntegerElement(writer, SentryCrashField_ImageAddress, image->address);
+        writer->addUIntegerElement(writer, SentryCrashField_ImageVmAddress, image->vmAddress);
+        writer->addUIntegerElement(writer, SentryCrashField_ImageSize, image->size);
+        writer->addStringElement(writer, SentryCrashField_Name, image->name);
+        writer->addUUIDElement(writer, SentryCrashField_UUID, image->uuid);
+        writer->addIntegerElement(writer, SentryCrashField_CPUType, image->cpuType);
+        writer->addIntegerElement(writer, SentryCrashField_CPUSubType, image->cpuSubType);
+        if (image->crashInfoMessage != NULL) {
             writer->addStringElement(
-                writer, SentryCrashField_ImageCrashInfoMessage, image.crashInfoMessage);
+                writer, SentryCrashField_ImageCrashInfoMessage, image->crashInfoMessage);
         }
-        if (image.crashInfoMessage2 != NULL) {
+        if (image->crashInfoMessage2 != NULL) {
             writer->addStringElement(
-                writer, SentryCrashField_ImageCrashInfoMessage2, image.crashInfoMessage2);
+                writer, SentryCrashField_ImageCrashInfoMessage2, image->crashInfoMessage2);
         }
     }
     writer->endContainer(writer);
+}
+
+static void
+binaryImagesIteratorCallback(SentryCrashBinaryImage *image, void *context)
+{
+    SentryCrashReportWriter *writer = (SentryCrashReportWriter *)context;
+    writeBinaryImage(writer, NULL, image);
 }
 
 /** Write information about all images to the report.
@@ -1226,14 +1197,8 @@ writeBinaryImage(
 static void
 writeBinaryImages(const SentryCrashReportWriter *const writer, const char *const key)
 {
-    const int imageCount = sentrycrashdl_imageCount();
-
     writer->beginArray(writer, key);
-    {
-        for (int iImg = 0; iImg < imageCount; iImg++) {
-            writeBinaryImage(writer, NULL, iImg);
-        }
-    }
+    sentrycrashbic_iterateOverImages(&binaryImagesIteratorCallback, (void *)writer);
     writer->endContainer(writer);
 }
 
@@ -1252,9 +1217,9 @@ writeMemoryInfo(const SentryCrashReportWriter *const writer, const char *const k
         writer->addUIntegerElement(
             writer, SentryCrashField_Size, monitorContext->System.memorySize);
         writer->addUIntegerElement(
-            writer, SentryCrashField_Usable, monitorContext->System.usableMemory);
+            writer, SentryCrashField_Usable, monitorContext->System.usableMemorySize);
         writer->addUIntegerElement(
-            writer, SentryCrashField_Free, monitorContext->System.freeMemory);
+            writer, SentryCrashField_Free, monitorContext->System.freeMemorySize);
     }
     writer->endContainer(writer);
 }
@@ -1273,7 +1238,7 @@ writeError(const SentryCrashReportWriter *const writer, const char *const key,
 {
     writer->beginObject(writer, key);
     {
-#if SentryCrashCRASH_HOST_APPLE
+#if SENTRY_HOST_APPLE
         writer->beginObject(writer, SentryCrashField_Mach);
         {
             const char *machExceptionName = sentrycrashmach_exceptionName(crash->mach.type);
@@ -1290,7 +1255,7 @@ writeError(const SentryCrashReportWriter *const writer, const char *const key,
                 writer->addStringElement(writer, SentryCrashField_CodeName, machCodeName);
             }
             writer->addUIntegerElement(
-                writer, SentryCrashField_Subcode, (unsigned)crash->mach.subcode);
+                writer, SentryCrashField_Subcode, (size_t)crash->mach.subcode);
         }
         writer->endContainer(writer);
 #endif
@@ -1319,9 +1284,6 @@ writeError(const SentryCrashReportWriter *const writer, const char *const key,
 
         // Gather specific info.
         switch (crash->crashType) {
-        case SentryCrashMonitorTypeMainThreadDeadlock:
-            writer->addStringElement(writer, SentryCrashField_Type, SentryCrashExcType_Deadlock);
-            break;
 
         case SentryCrashMonitorTypeMachException:
             writer->addStringElement(writer, SentryCrashField_Type, SentryCrashExcType_Mach);
@@ -1344,8 +1306,9 @@ writeError(const SentryCrashReportWriter *const writer, const char *const key,
                 writer->addStringElement(writer, SentryCrashField_Name, crash->NSException.name);
                 writer->addStringElement(
                     writer, SentryCrashField_UserInfo, crash->NSException.userInfo);
-                writeAddressReferencedByString(
-                    writer, SentryCrashField_ReferencedObject, crash->crashReason);
+                if (crash->crashReason != NULL) {
+                    writer->addStringElement(writer, SentryCrashField_Reason, crash->crashReason);
+                }
             }
             writer->endContainer(writer);
             break;
@@ -1354,31 +1317,9 @@ writeError(const SentryCrashReportWriter *const writer, const char *const key,
             writer->addStringElement(writer, SentryCrashField_Type, SentryCrashExcType_Signal);
             break;
 
-        case SentryCrashMonitorTypeUserReported: {
-            writer->addStringElement(writer, SentryCrashField_Type, SentryCrashExcType_User);
-            writer->beginObject(writer, SentryCrashField_UserReported);
-            {
-                writer->addStringElement(writer, SentryCrashField_Name, crash->userException.name);
-                if (crash->userException.language != NULL) {
-                    writer->addStringElement(
-                        writer, SentryCrashField_Language, crash->userException.language);
-                }
-                if (crash->userException.lineOfCode != NULL) {
-                    writer->addStringElement(
-                        writer, SentryCrashField_LineOfCode, crash->userException.lineOfCode);
-                }
-                if (crash->userException.customStackTrace != NULL) {
-                    writer->addJSONElement(writer, SentryCrashField_Backtrace,
-                        crash->userException.customStackTrace, true);
-                }
-            }
-            writer->endContainer(writer);
-            break;
-        }
         case SentryCrashMonitorTypeSystem:
         case SentryCrashMonitorTypeApplicationState:
-        case SentryCrashMonitorTypeZombie:
-            SentryCrashLOG_ERROR(
+            SENTRY_ASYNC_SAFE_LOG_ERROR(
                 "Crash monitor type 0x%x shouldn't be able to cause events!", crash->crashType);
             break;
         }
@@ -1470,7 +1411,7 @@ writeReportInfo(const SentryCrashReportWriter *const writer, const char *const k
 {
     writer->beginObject(writer, key);
     {
-        writer->addStringElement(writer, SentryCrashField_Version, SentryCrashCRASH_REPORT_VERSION);
+        writer->addStringElement(writer, SentryCrashField_Version, SENTRY_REPORT_VERSION);
         writer->addStringElement(writer, SentryCrashField_ID, reportID);
         writer->addStringElement(writer, SentryCrashField_ProcessName, processName);
         writer->addIntegerElement(writer, SentryCrashField_Timestamp, time(NULL));
@@ -1529,12 +1470,13 @@ sentrycrashreport_writeRecrashReport(
     char writeBuffer[1024];
     SentryCrashBufferedWriter bufferedWriter;
     static char tempPath[SentryCrashFU_MAX_PATH_LENGTH];
-    strncpy(tempPath, path, sizeof(tempPath) - 10);
-    strncpy(tempPath + strlen(tempPath) - 5, ".old", 5);
-    SentryCrashLOG_INFO("Writing recrash report to %s", path);
+    strlcpy(tempPath, path, sizeof(tempPath) - 10);
+    strlcpy(tempPath + strlen(tempPath) - 5, ".old", 5);
+    SENTRY_ASYNC_SAFE_LOG_INFO("Writing recrash report to %s", path);
 
     if (rename(path, tempPath) < 0) {
-        SentryCrashLOG_ERROR("Could not rename %s to %s: %s", path, tempPath, strerror(errno));
+        SENTRY_ASYNC_SAFE_LOG_ERROR(
+            "Could not rename %s to %s: %s", path, tempPath, strerror(errno));
     }
     if (!sentrycrashfu_openBufferedWriter(
             &bufferedWriter, path, writeBuffer, sizeof(writeBuffer))) {
@@ -1556,7 +1498,7 @@ sentrycrashreport_writeRecrashReport(
         writeRecrash(writer, SentryCrashField_RecrashReport, tempPath);
         sentrycrashfu_flushBufferedWriter(&bufferedWriter);
         if (remove(tempPath) < 0) {
-            SentryCrashLOG_ERROR("Could not remove %s: %s", tempPath, strerror(errno));
+            SENTRY_ASYNC_SAFE_LOG_ERROR("Could not remove %s: %s", tempPath, strerror(errno));
         }
         writeReportInfo(writer, SentryCrashField_Report, SentryCrashReportType_Minimal,
             monitorContext->eventID, monitorContext->System.processName);
@@ -1600,8 +1542,6 @@ writeSystemInfo(const SentryCrashReportWriter *const writer, const char *const k
         writer->addBooleanElement(
             writer, SentryCrashField_Jailbroken, monitorContext->System.isJailbroken);
         writer->addStringElement(
-            writer, SentryCrashField_BootTime, monitorContext->System.bootTime);
-        writer->addStringElement(
             writer, SentryCrashField_AppStartTime, monitorContext->System.appStartTime);
         writer->addStringElement(
             writer, SentryCrashField_ExecutablePath, monitorContext->System.executablePath);
@@ -1626,8 +1566,6 @@ writeSystemInfo(const SentryCrashReportWriter *const writer, const char *const k
         writer->addIntegerElement(
             writer, SentryCrashField_BinaryCPUSubType, monitorContext->System.binaryCPUSubType);
         writer->addStringElement(
-            writer, SentryCrashField_TimeZone, monitorContext->System.timezone);
-        writer->addStringElement(
             writer, SentryCrashField_ProcessName, monitorContext->System.processName);
         writer->addIntegerElement(
             writer, SentryCrashField_ProcessID, monitorContext->System.processID);
@@ -1637,8 +1575,6 @@ writeSystemInfo(const SentryCrashReportWriter *const writer, const char *const k
             writer, SentryCrashField_DeviceAppHash, monitorContext->System.deviceAppHash);
         writer->addStringElement(
             writer, SentryCrashField_BuildType, monitorContext->System.buildType);
-        writer->addIntegerElement(
-            writer, SentryCrashField_Storage, (int64_t)monitorContext->System.storageSize);
 
         writeMemoryInfo(writer, SentryCrashField_Memory, monitorContext);
         writeAppStats(writer, SentryCrashField_AppStats, monitorContext);
@@ -1652,10 +1588,7 @@ writeDebugInfo(const SentryCrashReportWriter *const writer, const char *const ke
 {
     writer->beginObject(writer, key);
     {
-        if (monitorContext->consoleLogPath != NULL) {
-            addTextLinesFromFile(
-                writer, SentryCrashField_ConsoleLog, monitorContext->consoleLogPath);
-        }
+        addTextLinesFromFile(writer, SentryCrashField_ConsoleLog, g_logFilename);
     }
     writer->endContainer(writer);
 }
@@ -1674,6 +1607,9 @@ writeScopeJson(const SentryCrashReportWriter *const writer)
         }
         if (scope->context) {
             addJSONElement(writer, "context", scope->context, false);
+        }
+        if (scope->traceContext) {
+            addJSONElement(writer, "traceContext", scope->traceContext, false);
         }
         if (scope->environment) {
             addJSONElement(writer, "environment", scope->environment, false);
@@ -1724,7 +1660,7 @@ void
 sentrycrashreport_writeStandardReport(
     const SentryCrash_MonitorContext *const monitorContext, const char *const path)
 {
-    SentryCrashLOG_INFO("Writing crash report to %s", path);
+    SENTRY_ASYNC_SAFE_LOG_INFO("Writing crash report to %s", path);
     char writeBuffer[1024];
     SentryCrashBufferedWriter bufferedWriter;
 
@@ -1777,13 +1713,6 @@ sentrycrashreport_writeStandardReport(
         } else {
             writer->beginObject(writer, SentryCrashField_User);
         }
-
-        if (g_userSectionWriteCallback != NULL) {
-            sentrycrashfu_flushBufferedWriter(&bufferedWriter);
-            if (monitorContext->currentSnapshotUserReported == false) {
-                g_userSectionWriteCallback(writer);
-            }
-        }
         writer->endContainer(writer);
         sentrycrashfu_flushBufferedWriter(&bufferedWriter);
 
@@ -1800,7 +1729,7 @@ void
 sentrycrashreport_setUserInfoJSON(const char *const userInfoJSON)
 {
     static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-    SentryCrashLOG_TRACE("set userInfoJSON to %p", userInfoJSON);
+    SENTRY_ASYNC_SAFE_LOG_TRACE("set userInfoJSON to %p", userInfoJSON);
 
     pthread_mutex_lock(&mutex);
     if (g_userInfoJSON != NULL) {
@@ -1832,7 +1761,7 @@ sentrycrashreport_setDoNotIntrospectClasses(const char **doNotIntrospectClasses,
         newClassesLength = length;
         newClasses = malloc(sizeof(*newClasses) * (unsigned)newClassesLength);
         if (newClasses == NULL) {
-            SentryCrashLOG_ERROR("Could not allocate memory");
+            SENTRY_ASYNC_SAFE_LOG_ERROR("Could not allocate memory");
             return;
         }
 
@@ -1852,12 +1781,4 @@ sentrycrashreport_setDoNotIntrospectClasses(const char **doNotIntrospectClasses,
         }
         free(oldClasses);
     }
-}
-
-void
-sentrycrashreport_setUserSectionWriteCallback(
-    const SentryCrashReportWriteCallback userSectionWriteCallback)
-{
-    SentryCrashLOG_TRACE("Set userSectionWriteCallback to %p", userSectionWriteCallback);
-    g_userSectionWriteCallback = userSectionWriteCallback;
 }

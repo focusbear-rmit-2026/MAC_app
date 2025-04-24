@@ -1,0 +1,6 @@
+${PODS_ROOT}/Target Support Files/Pods-Focus Bear/Pods-Focus Bear-frameworks.sh
+${BUILT_PRODUCTS_DIR}/NWWebSocket/NWWebSocket.framework
+${BUILT_PRODUCTS_DIR}/PusherSwift/PusherSwift.framework
+${BUILT_PRODUCTS_DIR}/Sentry/Sentry.framework
+${BUILT_PRODUCTS_DIR}/TrueTime/TrueTime.framework
+${BUILT_PRODUCTS_DIR}/TweetNacl/TweetNacl.framework

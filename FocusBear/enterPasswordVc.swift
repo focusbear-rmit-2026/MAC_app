@@ -103,7 +103,14 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
         }
     }
     override func viewWillDisappear() {
-        
+        // Hide password dialogue from screenshots  #1276  // reset after password view removes
+        if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
+            if state{
+                self.view.window?.sharingType = .none
+            }else{
+                self.view.window?.sharingType = .readOnly
+            }
+        }
     }
     override func viewDidDisappear() {
         
@@ -111,6 +118,9 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
     override func viewDidAppear() {
         textFieldPassword.selectText(self)
         textFieldPassword.currentEditor()?.selectedRange = NSRange(location: 0, length: 0)
+        
+        //Hide password dialogue from screenshots  #1276
+        self.view.window?.sharingType = .none
     }
     
     @IBAction func btnOkClicked(_ sender: Any) {
@@ -229,6 +239,18 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
                     mainViewControllerObj?.postponeFocusSummaryFor(minutes: totalMinutes + 2)
                 }
                 focusEndWarningVcObj!.extendFocusMode()
+                return;
+            }else if parentVc == addTaskVcObj{
+                self.dismiss(self)
+                let totalMinutes = Int(addTaskVcObj?.popUpBtnSelectMinutes.title ?? "1") ?? 0
+                if currentState == ._POSTPON_MORNING_HABIT_{
+                    mainViewControllerObj?.postponeMorningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
+                }else if currentState == ._POSTPON_EVENING_HABIT_{
+                    mainViewControllerObj?.postponeEveningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
+                }else if currentState == ._POSTPON_FOCUS_SUMMARY_{
+                    mainViewControllerObj?.postponeFocusSummaryFor(minutes: totalMinutes + 2)
+                }
+                addTaskVcObj?.extendFocusMode()
                 return;
             }else if parentVc == simplePomodoroVcObj{
                 self.dismiss(self)
@@ -432,6 +454,10 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
             }else if parentVc == focusEndWarningVcObj{
                 self.dismiss(self)
                 focusEndWarningVcObj?.extendFocusMode()
+                return;
+            }else if parentVc == addTaskVcObj{
+                self.dismiss(self)
+                addTaskVcObj?.extendFocusMode()
                 return;
             }else if parentVc == menuViewControllerObj{
                 customUrlHandleLastDurationForRelaxFocusMode = 0

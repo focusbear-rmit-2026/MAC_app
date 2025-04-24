@@ -1,3 +1,4 @@
+// Adapted from: https://github.com/kstenerud/KSCrash
 //
 //  SentryCrashDoctor.m
 //  SentryCrash
@@ -83,7 +84,7 @@ typedef enum { CPUFamilyUnknown, CPUFamilyArm, CPUFamilyX86, CPUFamilyX86_64 } C
                 [string appendString:param.previousClassName];
             } else if (param.className != nil) {
                 [string appendFormat:@"%@ (%@)", param.className,
-                        param.isInstance ? @"instance" : @"class"];
+                    param.isInstance ? @"instance" : @"class"];
             } else {
                 [string appendString:@"?"];
             }
@@ -116,7 +117,7 @@ typedef enum { CPUFamilyUnknown, CPUFamilyArm, CPUFamilyX86, CPUFamilyX86_64 } C
         [str appendFormat:@"Param %d:  ", i + 1];
         if (param.className != nil) {
             [str appendFormat:@"%@ (%@) ", param.className,
-                 param.isInstance ? @"instance" : @"class"];
+                param.isInstance ? @"instance" : @"class"];
         }
         if (param.value != nil) {
             [str appendFormat:@"%@ ", param.value];
@@ -350,6 +351,11 @@ typedef enum { CPUFamilyUnknown, CPUFamilyArm, CPUFamilyX86, CPUFamilyX86_64 } C
     return NO;
 }
 
+- (BOOL)wasProgramTerminationRequested:(NSDictionary *)errorReport
+{
+    return [(errorReport[@SentryCrashField_Signal][@SentryCrashField_Signal]) intValue] == SIGTERM;
+}
+
 - (SentryCrashDoctorFunctionCall *)lastFunctionCall:(NSDictionary *)report
 {
     SentryCrashDoctorFunctionCall *function = [[SentryCrashDoctorFunctionCall alloc] init];
@@ -362,9 +368,9 @@ typedef enum { CPUFamilyUnknown, CPUFamilyArm, CPUFamilyX86, CPUFamilyX86_64 } C
     CPUFamily family = [self cpuFamily:report];
     NSDictionary *registers = [self basicRegistersFromThreadReport:crashedThread];
     NSArray *regNames = [NSArray arrayWithObjects:[self registerNameForFamily:family paramIndex:0],
-                                 [self registerNameForFamily:family paramIndex:1],
-                                 [self registerNameForFamily:family paramIndex:2],
-                                 [self registerNameForFamily:family paramIndex:3], nil];
+        [self registerNameForFamily:family paramIndex:1],
+        [self registerNameForFamily:family paramIndex:2],
+        [self registerNameForFamily:family paramIndex:3], nil];
     NSMutableArray *params = [NSMutableArray arrayWithCapacity:4];
     for (NSString *regName in regNames) {
         SentryCrashDoctorParam *param = [[SentryCrashDoctorParam alloc] init];
@@ -416,13 +422,6 @@ typedef enum { CPUFamilyUnknown, CPUFamilyArm, CPUFamilyX86, CPUFamilyX86_64 } C
     return [[stack objectForKey:@SentryCrashField_Overflow] boolValue];
 }
 
-- (BOOL)isDeadlock:(NSDictionary *)report
-{
-    NSDictionary *errorReport = [self errorReport:report];
-    NSString *crashType = [errorReport objectForKey:@SentryCrashField_Type];
-    return [@SentryCrashExcType_Deadlock isEqualToString:crashType];
-}
-
 - (NSString *)diagnoseCrash:(NSDictionary *)report
 {
     @try {
@@ -430,10 +429,6 @@ typedef enum { CPUFamilyUnknown, CPUFamilyArm, CPUFamilyX86, CPUFamilyX86_64 } C
             [[self lastInAppStackEntry:report] objectForKey:@SentryCrashField_SymbolName];
         NSDictionary *crashedThreadReport = [self crashedThreadReport:report];
         NSDictionary *errorReport = [self errorReport:report];
-
-        if ([self isDeadlock:report]) {
-            return [NSString stringWithFormat:@"Main thread deadlocked in %@", lastFunctionName];
-        }
 
         if ([self isStackOverflow:crashedThreadReport]) {
             return [NSString stringWithFormat:@"Stack overflow in %@", lastFunctionName];
@@ -464,13 +459,26 @@ typedef enum { CPUFamilyUnknown, CPUFamilyArm, CPUFamilyX86, CPUFamilyX86_64 } C
         }
 
         if ([self isInvalidAddress:errorReport]) {
-            uintptr_t address = (uintptr_t)[
-                [errorReport objectForKey:@SentryCrashField_Address] unsignedLongLongValue];
+            uintptr_t address = (uintptr_t)[[errorReport objectForKey:@SentryCrashField_Address]
+                unsignedLongLongValue];
             if (address == 0) {
                 return @"Attempted to dereference null pointer.";
             }
-            return [NSString
-                stringWithFormat:@"Attempted to dereference garbage pointer %p.", (void *)address];
+
+            NSString *codeName = errorReport[@SentryCrashField_Mach][@SentryCrashField_CodeName];
+            if (codeName != nil) {
+                // Inspired by
+                // https://developer.apple.com/documentation/xcode/investigating-memory-access-crashes
+                return [NSString stringWithFormat:@"%@ at %p.", codeName, (void *)address];
+            } else {
+                return
+                    [NSString stringWithFormat:@"Attempted to dereference garbage pointer at %p.",
+                        (void *)address];
+            }
+        }
+
+        if ([self wasProgramTerminationRequested:errorReport]) {
+            return @"Graceful OS termination requested.";
         }
 
         return nil;
@@ -479,11 +487,11 @@ typedef enum { CPUFamilyUnknown, CPUFamilyArm, CPUFamilyX86, CPUFamilyX86_64 } C
         if (symbols) {
             return [NSString stringWithFormat:@"No diagnosis due to exception %@:\n%@\nPlease "
                                               @"file a bug report to the SentryCrash project.",
-                             e, symbols];
+                e, symbols];
         }
         return [NSString stringWithFormat:@"No diagnosis due to exception %@\nPlease file a "
                                           @"bug report to the SentryCrash project.",
-                         e];
+            e];
     }
 }
 

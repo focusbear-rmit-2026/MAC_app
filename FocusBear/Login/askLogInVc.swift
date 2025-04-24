@@ -57,9 +57,25 @@ class askLogInVc: NSViewController {
         if let askLogInVcInfo = configjson.value(forKey: "askLogInVcInfo") as? NSDictionary{
             lblMessage.stringValue = askLogInVcInfo.value(forKey: "descriptionText") as? String ?? lblMessage.stringValue
         }
-    }
-    @IBAction func btnInfoClicked(_ sender: Any) {
         
+        
+        //remember email address #1308   15/3/25
+        if UserDefaults.standard.object(forKey: kUserDefaultsLastUserLoginWithGoogle) != nil{
+            addLog(text:"trySignInWithGoogle:- because last user was logged in with google and it was a automatic logged out")
+            trySignInWithGoogle()
+            UserDefaults.standard.removeObject(forKey: kUserDefaultsLastUserLoginWithGoogle)
+        }else if let lastUserEmail = UserDefaults.standard.object(forKey: kUserDefaultsLastUserEmailBeforeLogout) as? String{
+            addLog(text:"showCustomLoginWindow:- because last user email found")
+            showCustomLoginWindow(isLogin: true)
+            DispatchQueue.global().async {
+                DispatchQueue.main.async {
+                    customLoginVcObj?.textFieldEmail.stringValue = lastUserEmail
+                }
+            }
+        }
+    }
+    
+    @IBAction func btnInfoClicked(_ sender: Any) {
         allApiObject.capturePosthog(event: "pre-signin-view-info-icon-clicked", metadata: [:])
         
         lblMessage.stringValue = "Sign In with a Focus Bear account to manage your time without thinking about it. Having an account helps you Set your computer use hours, create a custom morning and night routine, and customize your focus modes for different activities."
@@ -69,12 +85,14 @@ class askLogInVc: NSViewController {
         }
         btnInfo.isHidden = true
     }
+    
     @IBAction func btnSignUpClicked(_ sender: Any) {
         addLog(text:"[user-action] btnSignUpClicked")
         allApiObject.capturePosthog(event: "button-signup-with-email-clicked", metadata: [:])
         self.view.window?.close()
         showCustomLoginWindow(isLogin: false)
     }
+    
     @IBAction func btnSignInWithEmailClicked(_ sender: Any) {
         addLog(text:"[user-action] btnSignInClicked")
         allApiObject.capturePosthog(event: "button-signin-with-email-clicked", metadata: [:])
@@ -89,41 +107,45 @@ class askLogInVc: NSViewController {
         }
         return loginComingSoonMsgVcObj!
     }
+    
     @IBAction func btnSignInWithGoogleClicked(_ sender: Any) {
-
-//        Auth0
-//            .webAuth()
-//            .connection("google-oauth2") // The connection name for Google
-//            .audience("https://auth.focusbear.io/api/v2/")
-//            .scope("openid profile email offline_access")
-//            .start { result in
-//                switch result {
-//                case .success(let credentials):
-//                    print("Logged in with Google: \(credentials)")
-//                    // Handle successful login, save credentials, or transition to the next screen
-//                    print(credentials.accessToken)
-//
-//                    self.view.window?.close()
-//                    appdelegate!.statusbutton?.action = nil
-//                    appdelegate!.user = AuthUser(from: credentials.accessToken)
-//                    allApiObject.capturePosthog(event: "login-homemade", metadata: [:])
-//                    let _ = appdelegate!.credentialsManager.store(credentials: credentials)
-//                    UserDefaults.standard.set(true, forKey: kUserdefaultsIsUserLoggedIn)
-//                    appdelegate!.loadCredentialsAndDeviceId()
-//
-//
-//
-//                case .failure(let error):
-//                    print("Google login failed: \(error)")
-//                    // Handle login failure, show an error message
-//                }
-//            }
-//
-//        return; // todo
         addLog(text:"[user-action] btnSignInWithGoogleClicked")
-        allApiObject.capturePosthog(event: "button-signin-with-google-clicked", metadata: [:])
-        self.presentAsSheet(loginComingSoonMsgVcObject())
+        trySignInWithGoogle()
     }
+    
+    func trySignInWithGoogle(){
+        askLogInWcObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.normalWindow)))
+        Auth0
+            .webAuth()
+            .connection("google-oauth2") // The connection name for Google
+            .audience("https://auth.focusbear.io/api/v2/")
+            .scope("openid profile email offline_access")
+            .start { result in
+                switch result {
+                case .success(let credentials):
+                    print("Logged in with Google: \(credentials)")
+                    // Handle successful login, save credentials, or transition to the next screen
+                    print(credentials.accessToken)
+                    DispatchQueue.main.async {
+                        self.view.window?.close()
+                        appdelegate!.statusbutton?.action = nil
+                        appdelegate!.user = AuthUser(from: credentials.accessToken)
+                        allApiObject.capturePosthog(event: "login-homemade", metadata: [:])
+                        let _ = appdelegate!.credentialsManager.store(credentials: credentials)
+                        UserDefaults.standard.set(true, forKey: kUserdefaultsIsUserLoggedIn)
+                        appdelegate!.loadCredentialsAndDeviceId()
+                        UserDefaults.standard.set(true, forKey: kUserDefaultsLastUserLoginWithGoogle)
+                    }
+                case .failure(let error):
+                    print("Google login failed: \(error)")
+                    // Handle login failure, show an error message
+                    DispatchQueue.main.async {
+                        askLogInWcObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
+                    }
+                }
+            }
+    }
+    
     @IBAction func btnSignInWithAppleClicked(_ sender: Any) {
 //        Auth0
 //            .webAuth()

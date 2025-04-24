@@ -39,7 +39,7 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
     var isSnapLeft = true
     var isSnappingGoing = false
     var isMouseEntering = false
-    
+
     override func viewDidLoad() {
         super.viewDidLoad()
         self.webView.navigationDelegate = self
@@ -293,6 +293,7 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
     func handleLoadError(webView: WKWebView) {
         if webViewLoadFailedVcObj != nil{
             if webView.subviews.contains(webViewLoadFailedVcObj!.view){
+                webViewLoadFailedVcObj?.reloadData()
                 return;
             }
         }
@@ -301,6 +302,7 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
         webViewLoadFailedVcObj?.webView = webView
         webView.addSubview(webViewLoadFailedVcObj!.view)
         webView.addConstraints(subView: webViewLoadFailedVcObj!.view)
+        webViewLoadFailedVcObj?.reloadData()
     }
     
     func reloadClicked(webView:WKWebView){
@@ -385,7 +387,7 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
 
         var stringJson = "{\"access_token\": \"\(appdelegate!.credential?.accessToken ?? "")\",\"platform\":\"mac\",\"lang\":\"\(currentLanguageCode)\",\"font\":\"\(selectedFont)\",\"theme\":\"\(theme)\",\"total_duration\":\"\(totalDuration)\",\"intention\":\"\(intention)\",\"brain_dump\":\"\(brainDump)\",\"isOnboarding\":\(isFirstTime)}"
         
-        if !focusModeTaskString.isEmpty{
+        if !focusModeTaskStringIsEmpty(){
             stringJson = "{\"access_token\": \"\(appdelegate!.credential?.accessToken ?? "")\",\"platform\":\"mac\",\"lang\":\"\(currentLanguageCode)\",\"tasks\":\(focusModeTaskString),\"font\":\"\(selectedFont)\",\"theme\":\"\(theme)\",\"total_duration\":\"\(totalDuration)\",\"intention\":\"\(intention)\",\"brain_dump\":\"\(brainDump)\",\"isOnboarding\":\(isFirstTime)}"
         }
         let settingsFunc = String(format: "let waitForAppLoaded = setInterval(() => { if (window.loadMetaDataForToDoPlayer) { loadMetaDataForToDoPlayer(%@); clearInterval(waitForAppLoaded); } }, 100);", stringJson)
@@ -404,7 +406,28 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
         })
     }
     
+    func updateIntentionToPlayer(){
+        intention = whatToAchieveInFocusBlock
+//        if !self.intention.isEmpty{
+//            self.intention = self.intention.addingPercentEncoding(withAllowedCharacters: CharacterSet.urlQueryAllowed) ?? self.intention
+//        }
+        let script = "loadIntentionForToDoPlayer('\(intention)');"
+        
+        webView?.evaluateJavaScript(script,completionHandler: { (html: Any?, error: Error?) in
+            print(error)
+            print(html)
+        })
+    }
     
+    func updateBrainDumpToPlayer(){
+        let brainDump = UserDefaults.standard.object(forKey: kUserdefaultsFocusModeNotes) as? String ?? ""
+        let script = "updateBrainDumpFromDesktopApp('\(brainDump)');"
+        
+        webView?.evaluateJavaScript(script,completionHandler: { (html: Any?, error: Error?) in
+            print(error)
+            print(html)
+        })
+    }
     
     @IBAction func btnArrowLeftClicked(_ sender: Any) {// will be a samll window in left side
         self.isSnappingGoing = true

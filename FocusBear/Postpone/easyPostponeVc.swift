@@ -19,6 +19,10 @@ class easyPostponeVc: NSViewController {
     @IBOutlet weak var lblTitle: NSTextField!
     
     let enterPasswordVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("enterPasswordVc")) as? enterPasswordVc // only for cutOffTime in hardskip
+    
+    // if current routine is custom routine and postpone end notification is showing for morning routine .then we need not to confuse about for what easy postpone window is showing. there may be two options first is to postpone cusotm routine and second is to extend postpone duartion of morning routine . so we use this variable to understand without any confusion
+    var isForExtendPostponeDuringCustomRoutine = false
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
@@ -46,6 +50,7 @@ class easyPostponeVc: NSViewController {
         }
         btnPostpone.buttonColor = NSColor.white.cgColor
     }
+    
     override func viewDidAppear() {
         //Shouldn't be able to postpone during cutoff time without password after postponing once(wjem habit is about to resume) #797
         if currentState == ._POSTPON_EVENING_HABIT_ && !SettingsManagerObject.isEasySkipEnabled{
@@ -74,6 +79,7 @@ class easyPostponeVc: NSViewController {
         }
     }
     @IBAction func btnCancelClicked(_ sender: Any) {
+        addLog(text: "[user-action] easyPostponeVc:- button Cancel clicked")// log added on 14/4/25
         if currentState == ._POSTPON_MORNING_HABIT_ || currentState == ._POSTPON_EVENING_HABIT_{
             currentState = ._NOTHING_
             if mainViewControllerObj != nil{
@@ -95,12 +101,18 @@ class easyPostponeVc: NSViewController {
             self.view.window?.close()
             return;
         }
-        if currentHabitPlaying == nil && currentActivityPlaying == nil{
+        if currentAction == ._INPROGRESS_  && (currentHabitPlaying != nil || currentActivityPlaying != nil){// if background abit is going on
+            getSmallCountDownWindowObject().showWindow(self)
+        }else{
             mainWindowControllerObj?.showWindow(self)
             showBlankWindowInSecondaryMonitor()
-        }else{
-            getSmallCountDownWindowObject().showWindow(self)
         }
+//        if currentHabitPlaying == nil && currentActivityPlaying == nil{
+//            mainWindowControllerObj?.showWindow(self)
+//            showBlankWindowInSecondaryMonitor()
+//        }else{
+//            getSmallCountDownWindowObject().showWindow(self)
+//        }
         
         mainViewControllerObj?.abortCancel()
         self.view.window?.close()
@@ -129,13 +141,30 @@ class easyPostponeVc: NSViewController {
         }
         
         if lastCurrentState == ._MORNING_HABIT_{
-            self.presentAsSheet(getAskPostponeIntentionVcObject())
-            askPostponeIntentionVcObj?.resetData(minutes: Int(popupButtonMinutes.title) ?? 5, secondsToPostpone: nil, showAskFocusModeView: true, lastCurrentState: ._MORNING_HABIT_)
-            return;// return here because we do not want to close the window
+            if SettingsManagerObject.isStrictnessLevelSuperGentle(){//Ultra low friction level #1357
+                addLog(text: "easyPostponeVc:- strictness level is super gentle so don't show postpone Intention view")
+                mainViewControllerObj?.postponeMorningHabitFor(minutes: Int(popupButtonMinutes.title) ?? 5, secondsToPostpone: nil, showAskFocusModeView: true, showAskIntention: false)
+            }else{
+                self.presentAsSheet(getAskPostponeIntentionVcObject())
+                askPostponeIntentionVcObj?.resetData(minutes: Int(popupButtonMinutes.title) ?? 5, secondsToPostpone: nil, showAskFocusModeView: true, lastCurrentState: ._MORNING_HABIT_)
+                return;// return here because we do not want to close the window
+            }
+            
         }else if lastCurrentState == ._EVENING_HABIT_{
-            self.presentAsSheet(getAskPostponeIntentionVcObject())
-            askPostponeIntentionVcObj?.resetData(minutes: Int(popupButtonMinutes.title) ?? 5, secondsToPostpone: nil, showAskFocusModeView: true, lastCurrentState: ._EVENING_HABIT_)
-            return;// return here because we do not want to close the window
+            if SettingsManagerObject.isStrictnessLevelSuperGentle(){//Ultra low friction level #1357
+                addLog(text: "easyPostponeVc:- strictness level is super gentle so don't show postpone Intention view")
+                mainViewControllerObj?.postponeEveningHabitFor(minutes: Int(popupButtonMinutes.title) ?? 5, secondsToPostpone: nil, showAskFocusModeView: true, showAskIntention: false)
+            }else{
+                self.presentAsSheet(getAskPostponeIntentionVcObject())
+                askPostponeIntentionVcObj?.resetData(minutes: Int(popupButtonMinutes.title) ?? 5, secondsToPostpone: nil, showAskFocusModeView: true, lastCurrentState: ._EVENING_HABIT_)
+                return;// return here because we do not want to close the window
+            }
+        }else if lastCurrentState == ._CUSTOM_ROUTINE_{
+            if isForExtendPostponeDuringCustomRoutine && isCustomRoutineWasRunningInPostponeMorningHabit{
+                mainViewControllerObj?.postponeMorningHabitFor(minutes: Int(popupButtonMinutes.title) ?? 5, secondsToPostpone: nil, showAskFocusModeView:false, showAskIntention:false)
+            }else{
+                mainViewControllerObj?.postponeCustomRoutineFor(minutes: Int(popupButtonMinutes.title) ?? 5, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
+            }
         }else if lastCurrentState == ._ACTIVITY_{
             mainViewControllerObj?.postponeBreakActivitiesFor(minutes: Int(popupButtonMinutes.title) ?? 5, secondsToPostpone: nil)
         }else if lastCurrentState == ._POSTPON_MORNING_HABIT_{
@@ -145,7 +174,9 @@ class easyPostponeVc: NSViewController {
         }
         self.view.window?.close()
     }
+    
     @IBAction func btnDeactivateAppClicked(_ sender: Any) {
+        addLog(text: "[user-action] easyPostponeVc:- button deactivated app clicked")
         if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
             if SettingsManagerObject.isPasswordRequireInQuitApp{
                 self.presentAsSheet(enterPasswordVcObj!)
@@ -186,6 +217,8 @@ class easyPostponeVc: NSViewController {
             sequenceId = arrFilteredEveningHabits.first?.activity_sequence_id ?? ""
         }else if lastCurrentState == ._ACTIVITY_{
             allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"break_activity", "deactivate-reason":"easy postpone"])
+        }else if lastCurrentState == ._CUSTOM_ROUTINE_{
+            allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"custom_routine", "deactivate-reason":"easy postpone"])
         }else{
             addLog(text: "force Complete Current Sequence - no Sequence found to complete")
             return

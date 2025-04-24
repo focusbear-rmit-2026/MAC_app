@@ -7,6 +7,12 @@ import Cocoa
 
 class simplePomodoroVc: NSViewController {
     
+    @IBOutlet weak var btnPin: cursorButton!
+    @IBOutlet weak var boxPin: NSBox!
+    @IBOutlet weak var lblTipPermissions: NSTextField!
+    @IBOutlet weak var boxTipPermissions: NSBox!
+    @IBOutlet weak var btnError: Button!
+    @IBOutlet weak var boxError: NSBox!
     @IBOutlet weak var lblStrictnessNormal: NSTextField!
     @IBOutlet weak var lblStrictnessStrict: NSTextField!
     @IBOutlet weak var lblStrictnessSuperStrict: NSTextField!
@@ -39,6 +45,7 @@ class simplePomodoroVc: NSViewController {
 
     @IBOutlet weak var btnInfoPomodoro: cursorButton!
     
+    var intentionToShowAgain = ""
     let workRatio = 5
     let breakRatio = 1
     var isBreakDurationComesFromBreakRatio = false
@@ -65,6 +72,7 @@ class simplePomodoroVc: NSViewController {
     var isIntentionFromMorningPostpone = false
     let popoverMenuTour = NSPopover()
     var menuTourPopoverVcObj: menuTourPopoverVc?
+    var pinButtonTrackingArea: NSTrackingArea?
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -95,7 +103,6 @@ class simplePomodoroVc: NSViewController {
         lblMinutesBreakDuration.stringValue = "minutes"
         
         if let preferencesInfo = configjson.value(forKey: "preferencesInfo") as? NSDictionary{
-            lblTitleWorkDuration.stringValue = preferencesInfo.value(forKey: "pomodoroModeDurationText") as? String ?? lblTitleWorkDuration.stringValue
             lblMinutesWorkDuration.stringValue = preferencesInfo.value(forKey: "minutesText") as? String ?? lblMinutesWorkDuration.stringValue
             lblTitleBreakDuration.stringValue = preferencesInfo.value(forKey: "breakDurationText") as? String ?? lblTitleBreakDuration.stringValue
             lblMinutesBreakDuration.stringValue = preferencesInfo.value(forKey: "minutesText") as? String ?? lblMinutesBreakDuration.stringValue
@@ -160,6 +167,7 @@ class simplePomodoroVc: NSViewController {
             lblTitleBlockingStyle.stringValue = pomodoroInfo.value(forKey: "titleBlockingStyleText") as? String ?? lblTitleBlockingStyle.stringValue
             radioButtonBlockingStyleAi.title = pomodoroInfo.value(forKey: "buttonBlockingStyleAiText") as? String ?? radioButtonBlockingStyleAi.title
             radioButtonBlockingStyleDistractingSites.title = pomodoroInfo.value(forKey: "buttonBlockingStyleDistractingSitesText") as? String ?? radioButtonBlockingStyleDistractingSites.title
+            lblTitleWorkDuration.stringValue = pomodoroInfo.value(forKey: "pomodoroModeDurationText") as? String ?? lblTitleWorkDuration.stringValue
         }
         lblQuestionFirst.stringValue = questionFirstText
         
@@ -212,31 +220,123 @@ class simplePomodoroVc: NSViewController {
                 arrTourMessages[i]["buttonTitle"] = buttonNextText
             }
         }
-        if UserDefaults.standard.object(forKey: kUserdefaultsPomodoroTourShown) == nil{
-            menuTourPopoverVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("menuTourPopoverVc")) as? menuTourPopoverVc
-            popoverMenuTour.contentViewController = menuTourPopoverVcObj
-            popoverMenuTour.animates = false
-            popoverMenuTour.behavior = .applicationDefined
-            currentTourIndex = 0
-            menuTourPopoverVcObj?.delegate = self
-            menuTourPopoverVcObj?.loadView()
-            menuTourPopoverVcObj?.lblMainTitle.stringValue = titleTour
+//        if UserDefaults.standard.object(forKey: kUserdefaultsPomodoroTourShown) == nil{Onboarding feedback 1st April #1341 remove tour
+//            menuTourPopoverVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("menuTourPopoverVc")) as? menuTourPopoverVc
+//            popoverMenuTour.contentViewController = menuTourPopoverVcObj
+//            popoverMenuTour.animates = false
+//            popoverMenuTour.behavior = .applicationDefined
+//            currentTourIndex = 0
+//            menuTourPopoverVcObj?.delegate = self
+//            menuTourPopoverVcObj?.loadView()
+//            menuTourPopoverVcObj?.lblMainTitle.stringValue = titleTour
+//        }
+
+        textViewAchieve.delegate = self
+
+        btnError.title = "Fix it"
+        if let simplePomodoroVcInfo = configjson.value(forKey: "simplePomodoroVcInfo") as? NSDictionary{
+            btnError.title = simplePomodoroVcInfo.value(forKey: "buttonFixItText") as? String ?? btnError.title
+        }
+        btnError.buttonColor = NSColor.white.cgColor
+        viewDidResize()
+        
+        boxError.isHidden = true
+        boxTipPermissions.isHidden = true
+        pinButtonTrackingArea = NSTrackingArea.init(rect: btnPin.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
+        btnPin.addTrackingArea(pinButtonTrackingArea!)
+    }
+    var browserPermissionGiven = false
+    override func viewDidAppear() {
+        if SettingsManagerObject.isStrictnessLevelSuperGentle(){
+            boxPin.isHidden =  false
+            btnPin.image = #imageLiteral(resourceName: "unPin")
+            self.view.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.normalWindow)))
+        }else{
+            boxPin.isHidden = true
+            self.view.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
         }
         
-        
-        
-        textViewAchieve.delegate = self
-        viewDidResize()
+        if UserDefaults.standard.object(forKey: kUserdefaultsPomodoroTourShown) == nil{//Onboarding feedback 1st April #1341 remove tour
+//            popoverMenuTour.show(relativeTo: boxTitle.bounds, of: boxTitle, preferredEdge: NSRectEdge.minX)
+//         
+//            var currentIndexText = indexText.replacingOccurrences(of: "<CURRENTINDEX>", with: "\(currentTourIndex + 1)")
+//            currentIndexText = currentIndexText.replacingOccurrences(of: "<TOTALCOUNT>", with: "\(arrTourMessages.count)")
+//            menuTourPopoverVcObj?.showCurrentMessage(title: arrTourMessages[currentTourIndex]["title"] ?? "", description: arrTourMessages[currentTourIndex]["description"] ?? "", buttonTitle: arrTourMessages[currentTourIndex]["buttonTitle"] ?? "", indexText: currentIndexText, arrList: [], progress: currentTourIndex + 1, progressMaxValue: arrTourMessages.count)
+            UserDefaults.standard.set(true, forKey: kUserdefaultsPomodoroTourShown)
+            boxError.isHidden = true
+            browserPermissionGiven = true
+        }else{
+            boxError.isHidden = true
+            boxTipPermissions.isHidden = true
+            if UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) == nil{
+                boxError.isHidden = false
+                browserPermissionGiven = false
+                boxTipPermissions.isHidden = false
+            }else{
+                boxError.isHidden = true
+                browserPermissionGiven = false
+                boxTipPermissions.isHidden = true
+                DispatchQueue.global().async {
+                    if let arrBrowsersInfo = UserDefaults.standard.object(forKey: kUserdefaultsAllBrowsersPermissionInfo) as? [[String : Any]]{
+                        for i in 0..<arrBrowsersInfo.count{
+                            let info = arrBrowsersInfo[i]
+                            let isEnabled = info["isEnabled"] as? Bool ?? false
+                            if isEnabled{
+                                self.browserPermissionGiven = true
+                                break;
+                            }
+                        }
+                    }
+                    
+                    DispatchQueue.main.async {
+                        if !self.browserPermissionGiven{
+                            self.boxError.isHidden = false
+                            self.boxTipPermissions.isHidden = false
+                        }
+                    }
+                    
+                }
+            }
+            
+            if UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) == nil{
+                lblTipPermissions.stringValue = "Want to block distractions during this focus session? Grant Focus Bear permissions to block."
+                if let simplePomodoroVcInfo = configjson.value(forKey: "simplePomodoroVcInfo") as? NSDictionary{
+                    lblTipPermissions.stringValue = simplePomodoroVcInfo.value(forKey: "tipPermissionsFirst") as? String ?? lblTipPermissions.stringValue
+                }
+            }else if !browserPermissionGiven{
+                lblTipPermissions.stringValue = "Distraction blocking inactive: Focus Bear doesn’t have permissions for any of your browsers."
+                if let simplePomodoroVcInfo = configjson.value(forKey: "simplePomodoroVcInfo") as? NSDictionary{
+                    lblTipPermissions.stringValue = simplePomodoroVcInfo.value(forKey: "tipPermissionsSecond") as? String ?? lblTipPermissions.stringValue
+                }
+            }
+        }
     }
     
-    override func viewDidAppear() {
-        if UserDefaults.standard.object(forKey: kUserdefaultsPomodoroTourShown) == nil{
-            popoverMenuTour.show(relativeTo: boxTitle.bounds, of: boxTitle, preferredEdge: NSRectEdge.minX)
-         
-            var currentIndexText = indexText.replacingOccurrences(of: "<CURRENTINDEX>", with: "\(currentTourIndex + 1)")
-            currentIndexText = currentIndexText.replacingOccurrences(of: "<TOTALCOUNT>", with: "\(arrTourMessages.count)")
-            menuTourPopoverVcObj?.showCurrentMessage(title: arrTourMessages[currentTourIndex]["title"] ?? "", description: arrTourMessages[currentTourIndex]["description"] ?? "", buttonTitle: arrTourMessages[currentTourIndex]["buttonTitle"] ?? "", indexText: currentIndexText, arrList: [], progress: currentTourIndex + 1, progressMaxValue: arrTourMessages.count)
-            UserDefaults.standard.set(true, forKey: kUserdefaultsPomodoroTourShown)
+    override func mouseEntered(with event: NSEvent) {
+        if event.trackingArea == pinButtonTrackingArea{
+            var pinWindowText = "Click to unpin the window (disable stay-on-top)"
+            if self.view.window?.level == NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow))){
+                pinWindowText = "Click to unpin the window (disable stay-on-top)"
+                if let pomodoroInfo = configjson.value(forKey: "pomodoroInfo") as? NSDictionary{
+                    pinWindowText = pomodoroInfo.value(forKey: "unpinWindowText") as? String ?? pinWindowText
+                }
+            }else{
+                pinWindowText = "Click to pin the window (keep on top)"
+                if let pomodoroInfo = configjson.value(forKey: "pomodoroInfo") as? NSDictionary{
+                    pinWindowText = pomodoroInfo.value(forKey: "pinWindowText") as? String ?? pinWindowText
+                }
+            }
+            showTooltip(sender: btnPin, msg: pinWindowText, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
+        }
+    }
+    
+    override func mouseExited(with event: NSEvent) {
+        if event.trackingArea == pinButtonTrackingArea{
+            if popoverTooltip != nil{
+                if popoverTooltip!.isShown{
+                    popoverTooltip?.close()
+                }
+            }
         }
     }
     
@@ -332,6 +432,9 @@ class simplePomodoroVc: NSViewController {
         self.view.window?.styleMask.insert(.closable)
         
         viewDidResize()
+        if !nextFocusSessionIntention.isEmpty{
+            textViewAchieve.string = nextFocusSessionIntention
+        }
     }
     
     
@@ -446,8 +549,111 @@ class simplePomodoroVc: NSViewController {
             }
         }
         
+        if radioButtonBlockingStyleAi.state == .on{
+            if UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) == nil{
+                let alertWarning = NSAlert()
+                alertWarning.setSharingType()
+                alertWarning.messageText = "Do you want to block distractions?"
+                alertWarning.informativeText = "You will need to allow permissions to block distracting websites." 
+                var buttonBlockText = "Yeah - block them!"
+                var buttonNoText = "No thanks"
+                
+                if let simplePomodoroVcInfo = configjson.value(forKey: "simplePomodoroVcInfo") as? NSDictionary{
+                    alertWarning.messageText = simplePomodoroVcInfo.value(forKey: "alertWarningPermissionsTitle") as? String ?? alertWarning.messageText
+                    alertWarning.informativeText = simplePomodoroVcInfo.value(forKey: "alertWarningPermissionsInfo") as? String ?? alertWarning.informativeText
+                    buttonBlockText = simplePomodoroVcInfo.value(forKey: "buttonBlockText") as? String ?? buttonBlockText
+                    buttonNoText = simplePomodoroVcInfo.value(forKey: "buttonNoText") as? String ?? buttonNoText
+                }
+                alertWarning.addButton(withTitle: buttonBlockText)
+                alertWarning.addButton(withTitle: buttonNoText)
+                
+                alertWarning.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
+                    if modalResponse == .alertFirstButtonReturn{
+                        showExplainingPermissionsWindow()
+                        self.intentionToShowAgain = self.textViewAchieve.string
+                        explainingPermissionsVcObj?.showingFromPomodoro = true
+                        self.view.window?.close()
+                    }else{
+                        self.btnLetsDoItClicked(self)
+                    }
+                })
+                UserDefaults.standard.set(true, forKey: kUserdefaultsBrowsersPermissionsSetByUser)
+                return;
+            }
+        }else if radioButtonBlockingStyleDistractingSites.state == .on{
+            if UserDefaults.standard.object(forKey: kUserdefaultsIsAnyDistractionSetByUser) == nil{
+                let alertWarning = NSAlert()
+                alertWarning.setSharingType()
+                alertWarning.messageText = "Do you want to block distractions?"
+                alertWarning.informativeText = "You can block distracting websites and distracting apps. You will need to allow permissions to block distracting websites."
+                var buttonBlockText = "Yeah - block them!"
+                var buttonNoText = "No thanks"
+                if let simplePomodoroVcInfo = configjson.value(forKey: "simplePomodoroVcInfo") as? NSDictionary{
+                    alertWarning.messageText = simplePomodoroVcInfo.value(forKey: "alertWarningPermissionsTitle") as? String ?? alertWarning.messageText
+                    alertWarning.informativeText = simplePomodoroVcInfo.value(forKey: "alertWarningSetDistractionsInfo") as? String ?? alertWarning.informativeText
+                    buttonBlockText = simplePomodoroVcInfo.value(forKey: "buttonBlockText") as? String ?? buttonBlockText
+                    buttonNoText = simplePomodoroVcInfo.value(forKey: "buttonNoText") as? String ?? buttonNoText
+                }
+                alertWarning.addButton(withTitle: buttonBlockText)
+                alertWarning.addButton(withTitle: buttonNoText)
+                
+                alertWarning.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
+                    if modalResponse == .alertFirstButtonReturn{
+                        showDistractionTypesWindow()
+                        self.intentionToShowAgain = self.textViewAchieve.string
+                        self.view.window?.close()
+                    }else{
+                        self.btnLetsDoItClicked(self)
+                    }
+                })
+                UserDefaults.standard.set(true, forKey: kUserdefaultsIsAnyDistractionSetByUser)
+                return;
+            }
+        }
 
-        
+        if UserDefaults.standard.object(forKey: kUserdefaultsManageTaskFirstTime) == nil{
+            UserDefaults.standard.set(true, forKey: kUserdefaultsManageTaskFirstTime)
+       
+            addLog(text:"show alert UseToDoList first time from simple pomodoro view")
+            
+            var titleUseToDoList = "Do you want to use Focus Bear for your to do list for this focus session?"
+            var buttonTryItText = "Try it out"
+            var buttonNoThanksText = "No thanks"
+            var titleEnableToDoListFuture = "If you want to try it out in the future, enable the To Do player setting under Preferences - Settings - To Do List"
+            
+            if let toDoPlayerVcInfo = configjson.value(forKey: "toDoPlayerVcInfo") as? NSDictionary{
+                titleUseToDoList = toDoPlayerVcInfo.value(forKey: "titleUseToDoList") as? String ?? titleUseToDoList
+                buttonTryItText = toDoPlayerVcInfo.value(forKey: "buttonTryItText") as? String ?? buttonTryItText
+                buttonNoThanksText = toDoPlayerVcInfo.value(forKey: "buttonNoThanksText") as? String ?? buttonNoThanksText
+                titleEnableToDoListFuture = toDoPlayerVcInfo.value(forKey: "titleEnableToDoListFuture") as? String ?? titleEnableToDoListFuture
+            }
+
+            
+            let alertUseToDoList = NSAlert()
+            alertUseToDoList.setSharingType()
+            alertUseToDoList.messageText = titleUseToDoList
+            alertUseToDoList.informativeText = titleEnableToDoListFuture
+            alertUseToDoList.addButton(withTitle: buttonTryItText)
+            alertUseToDoList.addButton(withTitle: buttonNoThanksText)
+            
+            alertUseToDoList.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
+                if modalResponse == .alertFirstButtonReturn{
+                    if !SettingsManagerObject.showToDoPlayerAutomaticallyEnabled{
+                        SettingsManagerObject.showToDoPlayerAutomaticallyEnabled = true
+                        SettingsManagerObject.isSettingsChanged = true
+                        SettingsManagerObject.putUserLocalDeviceSettings()
+                    }
+                    self.btnLetsDoItClicked(self)
+                }else{
+                    SettingsManagerObject.isSettingsChanged = true
+                    SettingsManagerObject.showToDoPlayerAutomaticallyEnabled = false
+                    SettingsManagerObject.putUserLocalDeviceSettings()
+                    self.btnLetsDoItClicked(self)
+                }
+            })
+            return;
+        }
+
         if textFieldWorkDuration.isEnabled{
             currentPomodoroWorkDuration = textFieldWorkDuration.integerValue
         }
@@ -530,6 +736,7 @@ class simplePomodoroVc: NSViewController {
                 }
             }
         }
+        nextFocusSessionIntention = ""
         pomodoroModeStarted()
         self.view.window?.close()
         allApiObject.capturePosthog(event: "start-focus-session-popup-closed", metadata: [:])
@@ -544,10 +751,13 @@ class simplePomodoroVc: NSViewController {
         }
         if sliderStrictness.integerValue == 1{
             currentFocusModeStrictness = ._NORMAL_
+            addLog(text: "focus mode is normal mode")
         }else if sliderStrictness.integerValue == 2{
             currentFocusModeStrictness = ._STRICT_
+            addLog(text: "focus mode is strict mode")
         }else if sliderStrictness.integerValue == 3{
             currentFocusModeStrictness = ._SUPER_STRICT_
+            addLog(text: "focus mode is super strict mode")
         }
         UserDefaults.standard.set(sliderStrictness.integerValue, forKey: kUserdefaultsLastFocusModeStrictness)
         if getEndFocusModeWindowControllerObj().window!.isVisible{
@@ -577,7 +787,7 @@ class simplePomodoroVc: NSViewController {
             SettingsManagerObject.isAiCheckUrlEnabled = false
         }
         
-        minFocusAlignmentScoreToShowDistractingPopUp = 90
+        minFocusAlignmentScoreToShowDistractingPopUp = 99.9
         for i in 0..<arrFocusType.count{
             if let isDeepWorkFocus = arrFocusType[i][focusModeKey] as? Bool{//this key will only be awailable in default focus type
                 if  isDeepWorkFocus{
@@ -628,6 +838,7 @@ class simplePomodoroVc: NSViewController {
         isFocusModeStartedFromPomodoroMode = true
     
         isSkipBreakActivityDuringPomodoro = true
+        addLog(text: "SkipBreakActivityDuringPomodoro is true in simple focus session.")
         whatToAchieveInFocusBlock = textViewAchieve.string
         appdelegate!.setIntentionInBrainDumpWindow()
         appdelegate!.focusModeStartted(isStartedByPusher: false)
@@ -793,6 +1004,38 @@ class simplePomodoroVc: NSViewController {
         showTooltip(sender: btnStrictnessSuperStrict, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
     }
     
+    @IBAction func btnErrorClicked(_ sender: Any) {
+        if UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) == nil{
+            let alertWarning = NSAlert()// will not execute
+            alertWarning.setSharingType()
+            alertWarning.messageText = "Do you want to block distractions?"
+            alertWarning.informativeText = "You can block distracting websites and distracting apps. You will need to allow permissions to block distracting websites."
+            var buttonBlockText = "Yeah - block them!"
+            var buttonNoText = "No thanks"
+            if let simplePomodoroVcInfo = configjson.value(forKey: "simplePomodoroVcInfo") as? NSDictionary{
+                alertWarning.messageText = simplePomodoroVcInfo.value(forKey: "alertWarningPermissionsTitle") as? String ?? alertWarning.messageText
+                alertWarning.informativeText = simplePomodoroVcInfo.value(forKey: "alertWarningSetDistractionsInfo") as? String ?? alertWarning.informativeText
+                buttonBlockText = simplePomodoroVcInfo.value(forKey: "buttonBlockText") as? String ?? buttonBlockText
+                buttonNoText = simplePomodoroVcInfo.value(forKey: "buttonNoText") as? String ?? buttonNoText
+            }
+            alertWarning.addButton(withTitle: buttonBlockText)
+            alertWarning.addButton(withTitle: buttonNoText)
+            
+            alertWarning.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
+                
+                if modalResponse == .alertFirstButtonReturn{
+                    showDistractionTypesWindow()
+                    self.intentionToShowAgain = self.textViewAchieve.string
+                }
+                
+            })
+        }else if !browserPermissionGiven{
+            showExplainingPermissionsWindow()
+            self.intentionToShowAgain = self.textViewAchieve.string
+            explainingPermissionsVcObj?.showingFromPomodoro = true
+            self.view.window?.close()
+        }
+    }
     
     @IBAction func sliderStrictnessClicked(_ sender: Any) {
         if sliderStrictness.integerValue == 3{
@@ -806,12 +1049,17 @@ class simplePomodoroVc: NSViewController {
             showTooltip(sender: sliderStrictness, msg: strictnessSuperStrictClickedText, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
         }
     }
+    
+    @IBAction func btnPinClicked(_ sender: Any) {
+        if self.view.window?.level == NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow))){
+            self.view.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.normalWindow)))
+            btnPin.image = #imageLiteral(resourceName: "unPin")
+        }else{
+            self.view.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
+            btnPin.image = #imageLiteral(resourceName: "pin")
+        }
+    }
 }
-
-
-
-
-
 
 extension simplePomodoroVc: NSTextFieldDelegate, NSTextViewDelegate{
     func controlTextDidChange(_ obj: Notification) {

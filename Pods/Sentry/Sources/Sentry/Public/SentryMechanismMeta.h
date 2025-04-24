@@ -1,6 +1,11 @@
-#import "SentryDefines.h"
-#import "SentrySerializable.h"
 #import <Foundation/Foundation.h>
+#if __has_include(<Sentry/Sentry.h>)
+#    import <Sentry/SentryDefines.h>
+#    import <Sentry/SentrySerializable.h>
+#else
+#    import <SentryWithoutUIKit/SentryDefines.h>
+#    import <SentryWithoutUIKit/SentrySerializable.h>
+#endif
 
 @class SentryNSError;
 
@@ -9,8 +14,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  * The mechanism metadata usually carries error codes reported by the runtime or operating system,
  * along with a platform-dependent interpretation of these codes.
- *
- * See https://develop.sentry.dev/sdk/event-payloads/exception/#meta-information.
+ * @see https://develop.sentry.dev/sdk/event-payloads/exception/#meta-information.
  */
 NS_SWIFT_NAME(MechanismMeta)
 @interface SentryMechanismMeta : NSObject <SentrySerializable>
@@ -29,7 +33,7 @@ NS_SWIFT_NAME(MechanismMeta)
 @property (nullable, nonatomic, strong) NSDictionary<NSString *, id> *machException;
 
 /**
- * Sentry uses the NSErrors domain and code for grouping. Only domain and code are serialized.
+ * Sentry uses the @c NSErrors domain and code for grouping. Only domain and code are serialized.
  */
 @property (nullable, nonatomic, strong) SentryNSError *error;
 

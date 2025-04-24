@@ -86,7 +86,11 @@ class shutOffTimeVc: NSViewController {
             }
         }
         let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
-        let shutOffdate = Calendar.current.date(bySettingHour: shutOffTime!.hour, minute: shutOffTime!.minute, second: shutOffTime!.second, of: Date())!
+        var shutOffdate = Calendar.current.date(bySettingHour: shutOffTime!.hour, minute: shutOffTime!.minute, second: shutOffTime!.second, of: Date())!
+        
+        if let cutOffTime = cutOffTime{
+            shutOffdate = Calendar.current.date(bySettingHour: cutOffTime.hour, minute: cutOffTime.minute, second: cutOffTime.second, of: Date())!
+        }
         
         let startDateString = getStringFromDate(date: startDate, dateFormat: timeFormat)
         let shutOffDateString = getStringFromDate(date: shutOffdate, dateFormat: timeFormat)

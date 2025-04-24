@@ -30,6 +30,7 @@ class whySkipHabitVc: NSViewController {
         }
         btnCanNotDoIt.buttonColor = NSColor.white.cgColor
     }
+    
     override func viewWillAppear() {
         if currentState == ._ACTIVITY_{
             btnSkipCompletely.isHidden = false
@@ -37,6 +38,7 @@ class whySkipHabitVc: NSViewController {
             btnSkipCompletely.isHidden = true
         }
     }
+    
     func skipActivityAlreadyDid(){
         if rememberNextHabitVcObj != nil{
             if thirdVcObj!.view.subviews.contains(rememberNextHabitVcObj!.view){
@@ -60,8 +62,9 @@ class whySkipHabitVc: NSViewController {
         }else if currentState == ._MORNING_HABIT_{
             thirdVcObj?.morningHabitSkippedAndDoneAlready()
         }else if currentState == ._EVENING_HABIT_{
-            //thirdVcObj?.eveningHabitSkipped()
             thirdVcObj?.eveningHabitSkippedAndDoneAlready()
+        }else if currentState == ._CUSTOM_ROUTINE_{
+            thirdVcObj?.customRoutineHabitSkippedAndDoneAlready()
         }
     }
     
@@ -98,6 +101,8 @@ class whySkipHabitVc: NSViewController {
                         }
                     }
                     
+                }else if currentState == ._CUSTOM_ROUTINE_{
+                    skipActivityAlreadyDid()
                 }
             }else{
                 skipActivityAlreadyDid()
@@ -138,6 +143,8 @@ class whySkipHabitVc: NSViewController {
                             mainViewControllerObj?.showSkipHabitView()
                         }
                     }
+                }else if currentState == ._CUSTOM_ROUTINE_{
+                    mainViewControllerObj?.showSkipHabitView()
                 }
             }else{
                 mainViewControllerObj?.showSkipHabitView()

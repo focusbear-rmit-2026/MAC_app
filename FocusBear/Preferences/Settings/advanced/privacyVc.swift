@@ -15,6 +15,7 @@ class privacyVc: NSViewController {
     @IBOutlet weak var stackView: NSStackView!
     
     let surveillanceDetactionItemVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingToggleItemVc")) as? settingToggleItemVc
+    let advanceAanalyticsItemVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingToggleItemVc")) as? settingToggleItemVc
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -28,9 +29,16 @@ class privacyVc: NSViewController {
         var checkBoxSurveillanceText = "I'm under employer surveillance"
         var descriptionSurveillanceText = "Hide Focus Bear in screenshots"
         
+        var switchButtonAdvanceAanalytics = "Enable advanced analytics while using focus mode"
+        var descriptionAdvanceAanalytics = "Track the exact time you spend on each app and browser tab during focus mode. Gain deeper insights into your productivity by understanding how your attention is distributed."
+        var privacyAdvanceAanalytics = "Data is only stored on your computer and not sent to our servers."
+        
         if let preferencesInfo = configjson.value(forKey: "preferencesInfo") as? NSDictionary{
             checkBoxSurveillanceText = preferencesInfo.value(forKey: "checkBoxSurveillanceText") as? String ?? checkBoxSurveillanceText
             descriptionSurveillanceText = preferencesInfo.value(forKey: "descriptionSurveillanceText") as? String ?? descriptionSurveillanceText
+            switchButtonAdvanceAanalytics = preferencesInfo.value(forKey: "switchButtonAdvanceAanalyticsText") as? String ?? switchButtonAdvanceAanalytics
+            descriptionAdvanceAanalytics = preferencesInfo.value(forKey: "descriptionAdvanceAanalytics") as? String ?? descriptionAdvanceAanalytics
+            privacyAdvanceAanalytics = preferencesInfo.value(forKey: "privacyAdvanceAanalytics") as? String ?? privacyAdvanceAanalytics
         }
 
         var advanced_Privacy_Surveillance = "If you work on platforms like Upwork.com or Time Doctor which automatically take a screenshot of your computer every few minutes, turn this on so that Focus Bear windows won’t appear in the screenshots."
@@ -42,11 +50,32 @@ class privacyVc: NSViewController {
         surveillanceDetactionItemVcObj?.lblTitle.stringValue = checkBoxSurveillanceText
         surveillanceDetactionItemVcObj?.lblSubTitle.stringValue = descriptionSurveillanceText
         surveillanceDetactionItemVcObj?.delegate = self
-        surveillanceDetactionItemVcObj?.lineBottom.isHidden = true
         surveillanceDetactionItemVcObj?.toolTip = advanced_Privacy_Surveillance
+        
+        
+        stackView.addView(advanceAanalyticsItemVcObj!.view, in: .bottom)
+        advanceAanalyticsItemVcObj?.lblTitle.stringValue = switchButtonAdvanceAanalytics
+        advanceAanalyticsItemVcObj?.lblSubTitle.stringValue = descriptionAdvanceAanalytics
+        
+        
+        let label = NSTextField(labelWithString: privacyAdvanceAanalytics)
+        label.lineBreakMode = .byWordWrapping
+        label.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        label.setContentHuggingPriority(.defaultLow, for: .vertical)
+        label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        label.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
+        label.font = NSFont.boldSystemFont(ofSize: advanceAanalyticsItemVcObj?.lblSubTitle.font?.pointSize ?? 13)
+        advanceAanalyticsItemVcObj?.stackViewMain.addArrangedSubview(label)
+        advanceAanalyticsItemVcObj?.delegate = self
+        advanceAanalyticsItemVcObj?.lineBottom.isHidden = true
+        
         
         arrForSearchFromSettings.append(["title": checkBoxSurveillanceText, "tabId": idPrivacy, "object": surveillanceDetactionItemVcObj!.bgBox as Any])
         arrForSearchFromSettings.append(["title": descriptionSurveillanceText, "tabId": idPrivacy, "object": surveillanceDetactionItemVcObj!.bgBox as Any])
+        
+        arrForSearchFromSettings.append(["title": switchButtonAdvanceAanalytics, "tabId": idPrivacy, "object": advanceAanalyticsItemVcObj!.bgBox as Any])
+        arrForSearchFromSettings.append(["title": descriptionAdvanceAanalytics, "tabId": idPrivacy, "object": advanceAanalyticsItemVcObj!.bgBox as Any])
+        
     }
     
     override func viewWillAppear() {
@@ -57,8 +86,29 @@ class privacyVc: NSViewController {
                 surveillanceDetactionItemVcObj?.btnSwitch.state = .off
             }
         }
+        if SettingsManagerObject.isAdvancedAnalyticsInFocusModeEnabled{
+            advanceAanalyticsItemVcObj?.btnSwitch.state = .on
+        }else{
+            advanceAanalyticsItemVcObj?.btnSwitch.state = .off
+        }
     }
-    
+    func highlightAdvanceAanalyticsItemBox(){
+        if let object = advanceAanalyticsItemVcObj?.bgBox{
+            object.wantsLayer = true
+            object.layer?.cornerRadius = 3
+            object.layer?.borderWidth = 1
+            object.layer?.borderColor = NSColor.labelColor.cgColor
+            DispatchQueue.global().async {
+                sleep(2)
+                DispatchQueue.main.async {
+                    object.layer?.cornerRadius = 0
+                    object.layer?.borderWidth = 0
+                    object.layer?.borderColor = NSColor.clear.cgColor
+                    object.wantsLayer = false
+                }
+            }
+        }
+    }
     @IBAction func btnBackClicked(_ sender: Any) {
         settingsContainerVcObj?.showAdvancedView()
     }
@@ -84,6 +134,15 @@ extension privacyVc: SettingToggleItemDelegate{
                 }
                 appdelegate?.statusItem.button?.window?.sharingType = .readOnly
                 allApiObject.capturePosthog(event: "settings-changed-enable-app-screenshots", metadata: [:])//#490
+            }
+        }else if object == advanceAanalyticsItemVcObj{
+            SettingsManagerObject.isSettingsChanged = true
+            if state == .on{
+                SettingsManagerObject.isAdvancedAnalyticsInFocusModeEnabled = true
+                allApiObject.capturePosthog(event: "settings-changed-enable-advance-analytics", metadata: [:])
+            }else{
+                SettingsManagerObject.isAdvancedAnalyticsInFocusModeEnabled = false
+                allApiObject.capturePosthog(event: "settings-changed-disable-advance-analytics", metadata: [:])
             }
         }
     }

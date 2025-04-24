@@ -17,6 +17,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)setContext:(nullable NSDictionary<NSString *, id> *)context;
 
+- (void)setTraceContext:(nullable NSDictionary<NSString *, id> *)traceContext;
+
 - (void)setDist:(nullable NSString *)dist;
 
 - (void)setEnvironment:(nullable NSString *)environment;
@@ -25,11 +27,14 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)setLevel:(enum SentryLevel)level;
 
-- (void)addBreadcrumb:(SentryBreadcrumb *)crumb;
+- (void)addSerializedBreadcrumb:(NSDictionary<NSString *, id> *)crumb;
 
 - (void)clearBreadcrumbs;
 
 - (void)clear;
+
+@optional
+- (void)setCurrentScreen:(NSString *)currentScreen;
 
 @end
 

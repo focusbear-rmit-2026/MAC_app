@@ -24,4 +24,23 @@
     [self.processors addObject:newProcessor];
 }
 
+/**
+ * Only for testing
+ */
+- (void)removeAllProcessors
+{
+    [self.processors removeAllObjects];
+}
+
+- (nullable SentryEvent *)reportAll:(SentryEvent *)event
+{
+    for (SentryEventProcessor proc in self.processors) {
+        event = proc(event);
+        if (event == nil) {
+            return nil;
+        }
+    }
+    return event;
+}
+
 @end

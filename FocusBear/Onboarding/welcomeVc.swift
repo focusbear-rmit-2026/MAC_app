@@ -46,13 +46,15 @@ class welcomeVc: NSViewController {
         
         getOnboardingFocusExplainVcObject().loadView()
         getOnboardingHabitExplainVcObject().loadView()
+        
+        
+        
+        lblDescriptionSecond.isHidden = true // change onboarding 20/12/24
     }
     
     @IBAction func btnLetsDoItClicked(_ sender: Any) {
         addLog(text: "[user-action] btnLetsDoItClicked.")
-        self.view.window?.contentViewController = getOnboardingFeedbackVcObj()
-        addLog(text: "[user-action] Showing want Onboarding Feedback window.")
-        allApiObject.capturePosthog(event: "show_want_feedback_screen", metadata: [:])
+        self.view.window?.contentViewController = getOnboardingPrivacyTipVcObject()
     }
     
     @IBAction func btnAlreadyHaveAccountClicked(_ sender: Any) {

@@ -34,6 +34,14 @@ class askQuitVc: NSViewController {
     var enterPasswordVcObj: enterPasswordVc?
     
     let oneHourIndex = 3
+    let fiveMinutesIndex = 0
+    let fifteenMinutesIndex = 1
+    let thirtyMinutesIndex = 2
+    let twoHourIndex = 4
+    let fourHourIndex = 5
+    let twelveHourIndex = 6
+    let twentyFourHourIndex = 7
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
@@ -151,13 +159,7 @@ class askQuitVc: NSViewController {
             }
         }
     }
-    let fiveMinutesIndex = 0
-    let fifteenMinutesIndex = 1
-    let thirtyMinutesIndex = 2
-    let twoHourIndex = 4
-    let fourHourIndex = 5
-    let twelveHourIndex = 6
-    let twentyFourHourIndex = 7
+    
     @IBAction func popUpBtnHourClicked(_ sender: Any) {
         let index = popUpBtnHour.indexOfSelectedItem
         if index == oneHourIndex{
@@ -206,6 +208,7 @@ class askQuitVc: NSViewController {
             
         }
     }
+    
     func getMinutes()-> Int{
         let index = popUpBtnHour.indexOfSelectedItem
         var minutes = 0
@@ -239,7 +242,9 @@ class askQuitVc: NSViewController {
         }
         return minutes
     }
+    
     @IBAction func btnBreakFourHoursClicked(_ sender: Any) {
+        addLog(text: "[user-action] button BreakFourHours Clicked")
         if isPostponeInfoShowing{//
             mainViewControllerObj?.refreshLastPostponeCount()
             if SettingsManagerObject.isEasySkipEnabled{
@@ -272,18 +277,25 @@ class askQuitVc: NSViewController {
                 }
             }
         }else{
-            if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
-                if SettingsManagerObject.isPasswordRequireInQuitApp{
-                    showPasswordView()
-                    self.enterPasswordVcObj?.isShowingForDeactivatingApp = true
-                    return;
+            if SettingsManagerObject.isStrictnessLevelSuperGentle(){//Ultra low friction level #1357
+                addLog(text: "askQuitVc:- strictness level is super gentle")
+                deavtivateApp()
+            }else{
+                if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
+                    if SettingsManagerObject.isPasswordRequireInQuitApp{
+                        showPasswordView()
+                        self.enterPasswordVcObj?.isShowingForDeactivatingApp = true
+                        return;
+                    }
                 }
+                tryDeactivateApp()
             }
-            tryDeactivateApp()
+            
         }
     }
     
     func tryDeactivateApp(){
+        addLog(text: "askQuitVc:- tryDeactivateApp")
         if currentState == ._MORNING_HABIT_ || currentState == ._POSTPON_MORNING_HABIT_{
             let alert = NSAlert()
             alert.setSharingType()
@@ -325,6 +337,7 @@ class askQuitVc: NSViewController {
             deavtivateApp()
         }
     }
+    
     func deavtivateApp(){
         let minutes = getMinutes()
         let date = Date().addingTimeInterval(TimeInterval(minutes * 60))//Calendar.current.date(bySetting: .hour, value: 4, of: Date())
@@ -337,12 +350,14 @@ class askQuitVc: NSViewController {
         DispatchQueue.global().async {//waiting for posthog
             sleep(1)
             DispatchQueue.main.async {
+                self.loader.stopAnimation(self)
                 mainViewControllerObj?.disableApp()
             }
         }
     }
     
     func showPasswordView(){
+        addLog(text: "askQuitVc:- showPasswordView")
         if self.enterPasswordVcObj == nil{
             self.enterPasswordVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("enterPasswordVc")) as? enterPasswordVc
         }
@@ -352,7 +367,9 @@ class askQuitVc: NSViewController {
         self.enterPasswordVcObj?.removeConstraints()
         self.enterPasswordVcObj?.isShowingForDeactivatingApp = false
     }
+    
     func postponeHabits(){
+        addLog(text: "askQuitVc:- postponeHabits")
         let minutes = getMinutes()
         mainViewControllerObj?.stopActivityCountDownTimer()
         
@@ -413,20 +430,34 @@ class askQuitVc: NSViewController {
     
     @IBAction func btnAppQuitClicked(_ sender: Any) {
         addLog(text: "[user-action] - Turn it off completely Clicked")
-        loader.startAnimation(self)
-        allApiObject.getuserLongTermGoals(completionHandler: {arrGoals in
-            DispatchQueue.main.async {
+        
+        if SettingsManagerObject.isStrictnessLevelSuperGentle(){//Ultra low friction level #1357
+            addLog(text: "askQuitVc:- strictness level is super gentle")
+            allApiObject.capturePosthog(event: "app-quit", metadata: ["quitReason":"super gentle quit", "usageStartDate":getFirstRunDateString(), "daysSinceUserInstalledFocusBear": getDaysSinceAppInstalled(), "feedback": ""])
+            loader.startAnimation(self)
+            btnAppQuit.isEnabled = false
+            Timer.scheduledTimer(withTimeInterval: 1, repeats: false) { timer in
                 self.loader.stopAnimation(self)
-                if arrGoals != nil{
-                    if arrGoals!.count != 0{
-                        getLongTermGoalsVcObject().arrGoals = arrGoals!
-                        self.presentAsSheet(getLongTermGoalsVcObject())
-                        return;
-                    }
-                }
-                showQuittingConfirmView()
+                self.btnAppQuit.isEnabled = true
+                UserDefaults.standard.set("super gentle quit", forKey: kUserDefaultsLastQuitReason)
+                appdelegate?.quitAppForUser()
             }
-        })
+        }else{
+            loader.startAnimation(self)
+            allApiObject.getuserLongTermGoals(completionHandler: {arrGoals in
+                DispatchQueue.main.async {
+                    self.loader.stopAnimation(self)
+                    if arrGoals != nil{
+                        if arrGoals!.count != 0{
+                            getLongTermGoalsVcObject().arrGoals = arrGoals!
+                            self.presentAsSheet(getLongTermGoalsVcObject())
+                            return;
+                        }
+                    }
+                    showQuittingConfirmView()
+                }
+            })
+        }
     }
     
 }

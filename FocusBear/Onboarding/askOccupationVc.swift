@@ -288,30 +288,9 @@ class askOccupationVc: NSViewController, NSTextFieldDelegate {
                 occupationToSave = "other"
             }
         }
-        print(occupationToSave)
-        if isStudentSelected{
-            if var blockedUrls = UserDefaults.standard.object(forKey: kUserdefaultsBlockedUrlsFromOnboarding) as? [[String:Any]]{
-                for i in 0..<blockedUrls.count{
-                    if let isSelected = blockedUrls[i]["isSelected"] as? Bool {
-                        if isSelected{
-                            if let url = blockedUrls[i]["url"] as? String{
-                                if url == "youtube.com"{
-                                    blockedUrls.remove(at: i)
-                                    UserDefaults.standard.set(blockedUrls, forKey: kUserdefaultsBlockedUrlsFromOnboarding)
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        
-        print(posthogJson)
         UserDefaults.standard.set(occupationToSave, forKey: kUserDefaultsSelectedOccupationForPosthog)
         UserDefaults.standard.set(selectedIndexToSave, forKey: kUserDefaultsSelectedOccupationIndex)
         allApiObject.capturePosthog(event: "occupation-selected", metadata: posthogJson)
-//        mainViewControllerObj!.showOnboardingFocusExplainVc()
         mainViewControllerObj?.showAchieveWithFocusBearVc()
     }
     func checkContinueButtonState(){

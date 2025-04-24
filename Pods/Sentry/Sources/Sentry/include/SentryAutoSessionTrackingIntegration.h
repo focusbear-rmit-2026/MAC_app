@@ -1,12 +1,12 @@
-#import "SentryIntegrationProtocol.h"
-#import <Foundation/Foundation.h>
+#import "SentryBaseIntegration.h"
+#import "SentrySwift.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
 /**
  * Automatically tracks session start and end.
  */
-@interface SentryAutoSessionTrackingIntegration : NSObject <SentryIntegrationProtocol>
+@interface SentryAutoSessionTrackingIntegration : SentryBaseIntegration <SentryIntegrationProtocol>
 
 - (void)stop;
 

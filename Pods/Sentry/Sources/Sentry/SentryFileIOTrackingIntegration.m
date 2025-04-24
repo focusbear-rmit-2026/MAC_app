@@ -1,57 +1,45 @@
 #import "SentryFileIOTrackingIntegration.h"
-#import "SentryLog.h"
+#import "SentryDependencyContainer.h"
+#import "SentryFileIOTracker.h"
 #import "SentryNSDataSwizzling.h"
-#import "SentryOptions+Private.h"
-#import "SentryOptions.h"
+#import "SentryNSFileManagerSwizzling.h"
+#import "SentryThreadInspector.h"
+
+@interface SentryFileIOTrackingIntegration ()
+
+@property (nonatomic, strong) SentryFileIOTracker *tracker;
+
+@end
 
 @implementation SentryFileIOTrackingIntegration
 
-- (void)installWithOptions:(SentryOptions *)options
+- (BOOL)installWithOptions:(SentryOptions *)options
 {
-    if ([self shouldBeDisabled:options]) {
-        [options removeEnabledIntegration:NSStringFromClass([self class])];
-        return;
+    if (![super installWithOptions:options]) {
+        return NO;
     }
 
-    [SentryNSDataSwizzling start];
+    self.tracker = [[SentryDependencyContainer sharedInstance] fileIOTracker];
+    [self.tracker enable];
+
+    [SentryNSDataSwizzling.shared startWithOptions:options tracker:self.tracker];
+    [SentryNSFileManagerSwizzling.shared startWithOptions:options tracker:self.tracker];
+
+    return YES;
 }
 
-- (BOOL)shouldBeDisabled:(SentryOptions *)options
+- (SentryIntegrationOption)integrationOptions
 {
-    if (!options.enableSwizzling) {
-        [SentryLog logWithMessage:
-                       @"Not going to enable FileIOTracking because enableSwizzling is disabled."
-                         andLevel:kSentryLevelDebug];
-        return YES;
-    }
-
-    if (!options.isTracingEnabled) {
-        [SentryLog logWithMessage:@"Not going to enable FileIOTracking because tracing is disabled."
-                         andLevel:kSentryLevelDebug];
-        return YES;
-    }
-
-    if (!options.enableAutoPerformanceTracking) {
-        [SentryLog logWithMessage:@"Not going to enable FileIOTracking because "
-                                  @"enableAutoPerformanceTracking is disabled."
-                         andLevel:kSentryLevelDebug];
-        return YES;
-    }
-
-    if (!options.enableFileIOTracking) {
-        [SentryLog
-            logWithMessage:
-                @"Not going to enable FileIOTracking because enableFileIOTracking is disabled."
-                  andLevel:kSentryLevelDebug];
-        return YES;
-    }
-
-    return NO;
+    return kIntegrationOptionIsTracingEnabled | kIntegrationOptionEnableAutoPerformanceTracing
+        | kIntegrationOptionEnableFileIOTracing;
 }
 
 - (void)uninstall
 {
-    [SentryNSDataSwizzling stop];
+    [self.tracker disable];
+
+    [SentryNSDataSwizzling.shared stop];
+    [SentryNSFileManagerSwizzling.shared stop];
 }
 
 @end

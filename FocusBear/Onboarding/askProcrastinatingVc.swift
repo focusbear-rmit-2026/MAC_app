@@ -10,6 +10,9 @@ import Cocoa
 
 class askProcrastinatingVc: NSViewController, NSTextViewDelegate {
 
+    @IBOutlet weak var lblTitleIntention: NSTextField!
+    @IBOutlet weak var btnFourth: Button!
+    @IBOutlet weak var lblIntention: NSTextField!
     @IBOutlet weak var btnStart: Button!
     @IBOutlet weak var btnShortThird: Button!
     @IBOutlet weak var btnShortSecond: Button!
@@ -27,23 +30,33 @@ class askProcrastinatingVc: NSViewController, NSTextViewDelegate {
         btnShortFirst.buttonColor = NSColor.white.cgColor
         btnShortSecond.buttonColor = NSColor.white.cgColor
         btnShortThird.buttonColor = NSColor.white.cgColor
-        
+        btnFourth.buttonColor = NSColor.white.cgColor
         
         lblTitle.stringValue = "Time to do something difficult"
         lblSubTitle.stringValue = "What's something you've been procrastinating on? Focus Bear will help you get it done right after this."
         btnStart.title = "Let's do this!"
-        
+        btnFourth.title = "Something else"
+        lblTitleIntention.stringValue = "Intention:"
         if let dic = configjson.value(forKey: "askProcrastinatingVcInfo") as? NSDictionary{
             lblTitle.stringValue = dic.value(forKey: "title") as? String ?? lblTitle.stringValue
             lblSubTitle.stringValue = dic.value(forKey: "subTitle") as? String ?? lblSubTitle.stringValue
             btnStart.title = dic.value(forKey: "buttonStartText") as? String ?? btnStart.title
+            btnFourth.title = dic.value(forKey: "buttonSomethingElseText") as? String ?? btnFourth.title
+            lblTitleIntention.stringValue = dic.value(forKey: "titleIntention") as? String ?? lblTitleIntention.stringValue
         }
         textView.delegate = self
         btnStart.isEnabled = false
+        textView.enclosingScrollView?.isHidden = true
+        lblIntention.isHidden = true
+        lblIntention.stringValue = ""
+        textView.string = ""
+        lblTitleIntention.isHidden = true
     }
+    
     override func viewWillAppear() {
         resetData()
     }
+    
     func resetData() {
         let selectedIndex = UserDefaults.standard.object(forKey: kUserDefaultsSelectedOccupationIndex) as? Int ?? 0
         if selectedIndex == occupationStudentIndex{
@@ -264,22 +277,44 @@ class askProcrastinatingVc: NSViewController, NSTextViewDelegate {
     @IBAction func btnShortThirdClicked(_ sender: Any) {
         let (longText, _) = arrTextIntenion[2]
         textView.string = longText
+        lblIntention.stringValue = longText
         btnStart.isEnabled = true
+        textView.enclosingScrollView?.isHidden = true
+        lblIntention.isHidden = false
+        lblTitleIntention.isHidden = false
         allApiObject.capturePosthog(event: "button_choice3_clicked", metadata: [:])
     }
     
     @IBAction func btnShortSecondClicked(_ sender: Any) {
         let (longText, _) = arrTextIntenion[1]
         textView.string = longText
+        lblIntention.stringValue = longText
         btnStart.isEnabled = true
+        textView.enclosingScrollView?.isHidden = true
+        lblIntention.isHidden = false
+        lblTitleIntention.isHidden = false
         allApiObject.capturePosthog(event: "button_choice2_clicked", metadata: [:])
     }
     
     @IBAction func btnShortFirstClicked(_ sender: Any) {
         let (longText, _) = arrTextIntenion[0]
         textView.string = longText
+        lblIntention.stringValue = longText
         btnStart.isEnabled = true
+        textView.enclosingScrollView?.isHidden = true
+        lblIntention.isHidden = false
+        lblTitleIntention.isHidden = false
         allApiObject.capturePosthog(event: "button_choice1_clicked", metadata: [:])
+    }
+    
+    @IBAction func btnFourthClicked(_ sender: Any) {
+        textView.string = ""
+        btnStart.isEnabled = false
+        textView.enclosingScrollView?.isHidden = false
+        lblIntention.isHidden = true
+        textView.window?.makeFirstResponder(textView)
+        lblTitleIntention.isHidden = false
+        allApiObject.capturePosthog(event: "button_choice4_clicked", metadata: [:])
     }
     
     @IBAction func btnStartClicked(_ sender: Any) {
@@ -293,6 +328,7 @@ class askProcrastinatingVc: NSViewController, NSTextViewDelegate {
             }
         }
     }
+    
     func textDidChange(_ notification: Notification) {
         if let textView = notification.object as? NSTextView{
             if textView == self.textView{

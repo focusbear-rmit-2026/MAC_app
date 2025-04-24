@@ -1,11 +1,17 @@
 #import <Foundation/Foundation.h>
 
-#import "SentryDefines.h"
-#import "SentrySerializable.h"
+#if __has_include(<Sentry/Sentry.h>)
+#    import <Sentry/SentryDefines.h>
+#    import <Sentry/SentrySerializable.h>
+#else
+#    import <SentryWithoutUIKit/SentryDefines.h>
+#    import <SentryWithoutUIKit/SentrySerializable.h>
+#endif
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class SentryNSError, SentryMechanismMeta;
+@class SentryNSError;
+@class SentryMechanismMeta;
 
 NS_SWIFT_NAME(Mechanism)
 @interface SentryMechanism : NSObject <SentrySerializable>
@@ -31,9 +37,15 @@ SENTRY_NO_INIT
 
 /**
  * Flag indicating whether the exception has been handled by the user
- * (e.g. via ``try..catch``)
+ * (e.g. via @c try..catch )
  */
 @property (nonatomic, copy) NSNumber *_Nullable handled;
+
+/**
+ * An optional flag indicating a synthetic exception. For more info visit
+ * https://develop.sentry.dev/sdk/event-payloads/exception/#exception-mechanism.
+ */
+@property (nonatomic, copy, nullable) NSNumber *synthetic;
 
 /**
  * Fully qualified URL to an online help resource, possible

@@ -1,3 +1,4 @@
+// Adapted from: https://github.com/kstenerud/KSCrash
 //
 //  SentryCrashStackCursor_MachineContext.c
 //
@@ -29,8 +30,7 @@
 
 #include <stdlib.h>
 
-#define SentryCrashLogger_LocalLevel TRACE
-#include "SentryCrashLogger.h"
+#include "SentryAsyncSafeLog.h"
 
 /** Represents an entry in a frame list.
  * This is modeled after the various i386/x64 frame walkers in the xnu source,
@@ -57,11 +57,6 @@ typedef struct {
 static bool
 advanceCursor(SentryCrashStackCursor *cursor)
 {
-    sentrycrash_async_backtrace_t *async_caller = cursor->state.current_async_caller;
-    if (async_caller) {
-        return sentrycrashsc_advanceAsyncCursor(cursor);
-    }
-
     MachineContextCursor *context = (MachineContextCursor *)cursor->context;
     uintptr_t nextAddress = 0;
 
@@ -113,7 +108,7 @@ successfulExit:
     return true;
 
 tryAsyncChain:
-    return sentrycrashsc_tryAsyncChain(cursor, cursor->async_caller);
+    return false;
 }
 
 static void
@@ -137,7 +132,4 @@ sentrycrashsc_initWithMachineContext(SentryCrashStackCursor *cursor, int maxStac
     context->machineContext = machineContext;
     context->maxStackDepth = maxStackDepth;
     context->instructionAddress = cursor->stackEntry.address;
-
-    SentryCrashThread thread = sentrycrashmc_getThreadFromContext(machineContext);
-    cursor->async_caller = sentrycrash_get_async_caller_for_thread(thread);
 }

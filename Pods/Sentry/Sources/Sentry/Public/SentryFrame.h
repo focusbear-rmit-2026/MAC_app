@@ -1,6 +1,10 @@
 #import <Foundation/Foundation.h>
 
-#import "SentrySerializable.h"
+#if __has_include(<Sentry/Sentry.h>)
+#    import <Sentry/SentrySerializable.h>
+#else
+#    import <SentryWithoutUIKit/SentrySerializable.h>
+#endif
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -44,9 +48,14 @@ NS_SWIFT_NAME(Frame)
 @property (nonatomic, copy) NSString *_Nullable platform;
 
 /**
- * InstructionAddress of the frame
+ * InstructionAddress of the frame hex format
  */
 @property (nonatomic, copy) NSString *_Nullable instructionAddress;
+
+/**
+ * InstructionAddress of the frame
+ */
+@property (nonatomic) NSUInteger instruction;
 
 /**
  * User for react native, will be ignored for cocoa frames

@@ -1,17 +1,12 @@
-#import <Foundation/Foundation.h>
-#import <NSData+Sentry.h>
+#import "SentryLevelMapper.h"
 #import <SentryBreadcrumb.h>
 #import <SentryCrashJSONCodec.h>
 #import <SentryCrashJSONCodecObjC.h>
 #import <SentryCrashScopeObserver.h>
 #import <SentryLog.h>
+#import <SentryNSDataUtils.h>
 #import <SentryScopeSyncC.h>
 #import <SentryUser.h>
-
-@interface
-SentryCrashScopeObserver ()
-
-@end
 
 @implementation SentryCrashScopeObserver
 
@@ -51,6 +46,12 @@ SentryCrashScopeObserver ()
         syncToSentryCrash:^(const void *bytes) { sentrycrash_scopesync_setContext(bytes); }];
 }
 
+- (void)setTraceContext:(nullable NSDictionary<NSString *, id> *)traceContext
+{
+    [self syncScope:traceContext
+        syncToSentryCrash:^(const void *bytes) { sentrycrash_scopesync_setTraceContext(bytes); }];
+}
+
 - (void)setExtras:(nullable NSDictionary<NSString *, id> *)extras
 {
     [self syncScope:extras
@@ -83,16 +84,15 @@ SentryCrashScopeObserver ()
         return;
     }
 
-    NSString *levelAsString = SentryLevelNames[level];
+    NSString *levelAsString = nameForSentryLevel(level);
     NSData *json = [self toJSONEncodedCString:levelAsString];
 
     sentrycrash_scopesync_setLevel([json bytes]);
 }
 
-- (void)addBreadcrumb:(SentryBreadcrumb *)crumb
+- (void)addSerializedBreadcrumb:(NSDictionary *)crumb
 {
-    NSDictionary *serialized = [crumb serialize];
-    NSData *json = [self toJSONEncodedCString:serialized];
+    NSData *json = [self toJSONEncodedCString:crumb];
     if (json == nil) {
         return;
     }
@@ -155,14 +155,13 @@ SentryCrashScopeObserver ()
                                     options:SentryCrashJSONEncodeOptionSorted
                                       error:&error];
         if (error != nil) {
-            NSString *message = [NSString stringWithFormat:@"Could not serialize %@", error];
-            [SentryLog logWithMessage:message andLevel:kSentryLevelError];
+            SENTRY_LOG_ERROR(@"Could not serialize %@", error);
             return nil;
         }
     }
 
     // C strings need to be null terminated
-    return [json nullTerminated];
+    return sentry_nullTerminated(json);
 }
 
 @end

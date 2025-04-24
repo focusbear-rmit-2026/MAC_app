@@ -1,21 +1,24 @@
-#import "SentryDefines.h"
-#import "SentrySerializable.h"
 #import <Foundation/Foundation.h>
+#if __has_include(<Sentry/Sentry.h>)
+#    import <Sentry/SentryDefines.h>
+#    import <Sentry/SentrySerializable.h>
+#else
+#    import <SentryWithoutUIKit/SentryDefines.h>
+#    import <SentryWithoutUIKit/SentrySerializable.h>
+#endif
 
 NS_ASSUME_NONNULL_BEGIN
 
 /**
  * Carries a log message that describes an event or error. Optionally, it can carry a format string
  * and structured parameters. This can help to group similar messages into the same issue.
- *
- * For more info checkout: https://develop.sentry.dev/sdk/event-payloads/message/
+ * @see https://develop.sentry.dev/sdk/event-payloads/message/
  */
 @interface SentryMessage : NSObject <SentrySerializable>
 SENTRY_NO_INIT
 
 /**
- * Returns a SentyMessage with setting formatted.
- *
+ * Returns a @c SentryMessage with setting formatted.
  * @param formatted The fully formatted message. If missing, Sentry will try to interpolate the
  * message. It must not exceed 8192 characters. Longer messages will be truncated.
  */

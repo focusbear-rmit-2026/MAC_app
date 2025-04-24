@@ -9,11 +9,37 @@ import Cocoa
 
 class focusCompletedForActivityVc: NSViewController {
     
+    @IBOutlet weak var boxFocusAlignmentScore: NSBox!
+    
+    @IBOutlet weak var lblEnableAdvancedAnalyticsSetting: NSTextField!
+    @IBOutlet weak var lblDeepWorkTimeToday: NSTextField!
+    @IBOutlet weak var lblTitleTime: NSTextField!
+    @IBOutlet weak var lblTitleAppOrSite: NSTextField!
+    @IBOutlet weak var tblView: NSTableView!
+    @IBOutlet weak var lblAverageTimeSpentPerTab: NSTextField!
+    @IBOutlet weak var lblDeepFocusTime: NSTextField!
+    @IBOutlet weak var lblFocusAlignmentScore: NSTextField!
+    @IBOutlet weak var lblTitleAverageTimeSpentPerTab: NSTextField!
+    @IBOutlet weak var lblTitleDeepWorkTime: NSTextField!
+    @IBOutlet weak var lblTitleDeepWorkTimeToday: NSTextField!
+    
+    @IBOutlet weak var btnStarFirst: cursorButton!
+    @IBOutlet weak var btnStarSecond: cursorButton!
+    @IBOutlet weak var btnStarThird: cursorButton!
+    @IBOutlet weak var btnStarFourth: cursorButton!
+    @IBOutlet weak var btnStarFifth: cursorButton!
+    
+    @IBOutlet weak var lblTabCount: NSTextField!
+    @IBOutlet weak var lblTitleTabCount: NSTextField!
+    
+    @IBOutlet weak var lblTitleFocusAlignmentScore: NSTextField!
+    @IBOutlet weak var lblTitleStats: NSTextField!
+    
     @IBOutlet weak var boxTempForShowToolTip: NSBox!
     @IBOutlet weak var lblTitleTags: NSTextField!
     @IBOutlet weak var tokenFieldTags: NSTokenField!
     @IBOutlet weak var btnContinue: Button!
-    @IBOutlet weak var textFieldDistractions: NSTextField!
+//    @IBOutlet weak var textFieldDistractions: NSTextField!
     @IBOutlet weak var textFieldAchieve: NSTextField!
     @IBOutlet weak var lblTitle: NSTextField!
     @IBOutlet weak var lblSubTitle: NSTextField!
@@ -30,9 +56,26 @@ class focusCompletedForActivityVc: NSViewController {
     var arrAllTags = [String]()
     var defaultTokenMenu = NSMenu()
     var currentFocusModeIndex = 0
+    
+    var arrAllAppsTabsData = [[String:Any]]()
+    var allowExtend = false
+    
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
+
+        lblTitleStats.stringValue = "Stats"
+        lblTitleFocusAlignmentScore.stringValue = "Focus Alignment Score"
+        lblTitleDeepWorkTime.stringValue = "Deep work time this session"
+        lblTitleDeepWorkTimeToday.stringValue = "Total deep work time today"
+        lblTitleAverageTimeSpentPerTab.stringValue = "Average Time Spent per Tab/App"
+        lblTitleTabCount.stringValue = "Average tab count"
+        lblTitleAppOrSite.stringValue = "App or site"
+        lblTitleTime.stringValue = "Time"
+        lblEnableAdvancedAnalyticsSetting.stringValue = "Enable the Advanced analytics setting to view detailed data about app and browser tab usage during focus mode. You can turn this on in Preferences > Settings > Advanced > Privacy (Geek mode required)."
+        
+        
         tokenFieldTags.delegate = self
         lblTitleTags.stringValue = "Reporting Tags" 
         btnContinue.title = "Continue"
@@ -43,7 +86,7 @@ class focusCompletedForActivityVc: NSViewController {
         
         lblTitle.stringValue = "You did it!"
         lblQuestionFirst.stringValue = "What did you achieve during this time?"
-        lblQuestionSecond.stringValue = "Any distractions?"
+        lblQuestionSecond.stringValue = "How focused were you?"
         
         if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
             if let focusCompletedInfo = focusInfo.value(forKey: "focusCompletedInfo") as? NSDictionary{
@@ -56,13 +99,23 @@ class focusCompletedForActivityVc: NSViewController {
                 if let questionFirstText = focusCompletedInfo.value(forKey: "questionFirstText") as? String{
                     lblQuestionFirst.stringValue = questionFirstText
                 }
-                if let questionSecondText = focusCompletedInfo.value(forKey: "questionSecondText") as? String{
-                    lblQuestionSecond.stringValue = questionSecondText
+                if let titleStarRatingText = focusCompletedInfo.value(forKey: "titleStarRatingText") as? String{
+                    lblQuestionSecond.stringValue = titleStarRatingText
                 }
                 if let buttonTakeBreakText = focusCompletedInfo.value(forKey: "buttonTakeBreakText") as? String{
                     self.buttonTakeBreakText = buttonTakeBreakText
                 }
                 lblTitleTags.stringValue = focusCompletedInfo.value(forKey: "titleTags") as? String ?? lblTitleTags.stringValue
+                
+                lblTitleStats.stringValue = focusCompletedInfo.value(forKey: "titleStats") as? String ?? lblTitleStats.stringValue
+                lblTitleFocusAlignmentScore.stringValue = focusCompletedInfo.value(forKey: "titleFocusAlignmentScore") as? String ?? lblTitleFocusAlignmentScore.stringValue
+                lblTitleDeepWorkTime.stringValue = focusCompletedInfo.value(forKey: "titleDeepWorkTime") as? String ?? lblTitleDeepWorkTime.stringValue
+                lblTitleDeepWorkTimeToday.stringValue = focusCompletedInfo.value(forKey: "titleDeepWorkTimeToday") as? String ?? lblTitleDeepWorkTimeToday.stringValue
+                lblTitleAverageTimeSpentPerTab.stringValue = focusCompletedInfo.value(forKey: "titleTimeSpentPerTab") as? String ?? lblTitleAverageTimeSpentPerTab.stringValue
+                lblTitleTabCount.stringValue = focusCompletedInfo.value(forKey: "titleTabCount") as? String ?? lblTitleTabCount.stringValue
+                lblTitleAppOrSite.stringValue = focusCompletedInfo.value(forKey: "titleAppOrSite") as? String ?? lblTitleAppOrSite.stringValue
+                lblTitleTime.stringValue = focusCompletedInfo.value(forKey: "titleTime") as? String ?? lblTitleTime.stringValue
+                lblEnableAdvancedAnalyticsSetting.stringValue = focusCompletedInfo.value(forKey: "enableAdvancedAnalyticsSettingText") as? String ?? lblEnableAdvancedAnalyticsSetting.stringValue
             }
         }
     }
@@ -75,11 +128,89 @@ class focusCompletedForActivityVc: NSViewController {
             }
         }
     }
+    
     override func viewDidAppear() {
-        if !focusModeTaskString.isEmpty{
+        
+        tabMatricsObject.closeLastDomainIfStarted()
+        tabMatricsObject.closeLastAppIfStarted()
+        arrAllAppsTabsData.removeAll()
+        
+        var arrAllUrlsRecodDuringFocusMode = tabMatricsObject.arrAllUrlsRecodDuringFocusMode
+        var arrAllAppsRecodDuringFocusMode = tabMatricsObject.arrAllAppsRecodDuringFocusMode
+        
+
+        arrAllAppsRecodDuringFocusMode = tabMatricsObject.clubAllSameAppEntries(appData: arrAllAppsRecodDuringFocusMode)
+        arrAllUrlsRecodDuringFocusMode = tabMatricsObject.clubAllSameDomainEntries(appData: arrAllUrlsRecodDuringFocusMode)
+        arrAllAppsTabsData = arrAllAppsRecodDuringFocusMode
+        arrAllAppsTabsData += arrAllUrlsRecodDuringFocusMode
+        if SettingsManagerObject.isAdvancedAnalyticsInFocusModeEnabled{
+            arrAllAppsTabsData = arrAllAppsTabsData.sorted { dict1, dict2 in
+                guard let duration1 = dict1[tabMatricsObject.keyFocusDuration] as? Int,
+                      let duration2 = dict2[tabMatricsObject.keyFocusDuration] as? Int else {
+                    return false
+                }
+                return duration1 > duration2
+            }
+            
+            lblEnableAdvancedAnalyticsSetting.isHidden = true
+        }else{
+            lblEnableAdvancedAnalyticsSetting.isHidden = false
+        }
+        
+        tblView.reloadData()// need to reload always
+    
+        lblFocusAlignmentScore.stringValue = "\(currentFocusAlignmentScore)%"
+        let arrAllTabsCount = tabMatricsObject.arrAllTabsCount
+        let sumOfCount =  arrAllTabsCount.reduce(0, +)
+        if arrAllTabsCount.count > 0{
+            let average = sumOfCount / arrAllTabsCount.count
+            lblTabCount.stringValue = "\(average)"
+        }else{
+            lblTabCount.stringValue = "0"
+        }
+        
+        let duration = Double(focusModeActualDurationPerformed)
+        var finalDuration = duration
+        if SettingsManagerObject.isAiCheckUrlEnabled{
+            boxFocusAlignmentScore.isHidden = false
+            let score = currentFocusAlignmentScore
+            let deepWorkDurationForAlignmentScore = (duration * score) / 100
+            lblDeepFocusTime.stringValue = getStringTimeFromSeconds(seconds: Int(deepWorkDurationForAlignmentScore))
+            finalDuration = deepWorkDurationForAlignmentScore
+        }else{
+            boxFocusAlignmentScore.isHidden = true
+            lblDeepFocusTime.stringValue = getStringTimeFromSeconds(seconds: Int(duration))
+        }
+        
+        
+        let totalDeepFocusedTimeToday = totalDeepFocusedTime + finalDuration
+        lblDeepWorkTimeToday.stringValue = getStringTimeFromSeconds(seconds: Int(totalDeepFocusedTimeToday))
+        
+        
+        // Calculate the average duration per tab
+        var allAppsWithoutBrowsers = [[String : Any]]()//
+        //  ignore browser in average tab count
+        for item in arrAllAppsTabsData{
+            let isBrowser = item[tabMatricsObject.keyIsBrowser] as? Bool ?? false
+            if !isBrowser{
+                allAppsWithoutBrowsers.append(item)
+            }
+        }
+        
+        let totalDuration = allAppsWithoutBrowsers.reduce(0) { total, entry in
+            if let duration = entry["duration"] as? Int {
+                return total + duration
+            }
+            return total
+        }
+
+        let averageDuration = allAppsWithoutBrowsers.isEmpty ? 0 : totalDuration / allAppsWithoutBrowsers.count
+        lblAverageTimeSpentPerTab.stringValue = getStringTimeFromSeconds(seconds: averageDuration)
+        
+        if !focusModeTaskStringIsEmpty() || allowExtend{
             let obj = getAddTaskVcObject()
             obj.loadView()
-            obj.reloadData(isAddingTask: false)
+            obj.reloadData(isAddingTask: false, allowExtend: false, isHabitGoing: true)
             self.presentAsSheet(obj)
             allApiObject.capturePosthog(event: "mark-tasks-on-focus-session-end-screen-shown", metadata: [:])
         }
@@ -98,6 +229,9 @@ class focusCompletedForActivityVc: NSViewController {
 
     
     func resetData(focusModeName:String, currentFocusModeId:String, finish_time:Date, durationInSeconds:Int, quantity_logged:Double?, activity_id:String, activity_sequence_id:String, activityChoiceId:String?, log_quantity_answers: [[String : Any]], notes:String){
+        nextFocusSessionIntention = ""
+        currentRatingCount = 0
+        updateStarRatingView()
         arrAllTags.removeAll()
         for tagInfo in arrAllFocusModeTags{
             arrAllTags.append(tagInfo["text"] ?? "")
@@ -106,7 +240,7 @@ class focusCompletedForActivityVc: NSViewController {
         self.currentFocusModeId = currentFocusModeId
         self.finish_time = finish_time
         textFieldAchieve.stringValue = ""
-        textFieldDistractions.stringValue = ""
+        
         lblSubTitle.stringValue = subTitleText.replacingOccurrences(of: "<FOCUSTYPE>", with: currentFocusModeName)
 
         
@@ -188,6 +322,68 @@ class focusCompletedForActivityVc: NSViewController {
         }
         return tagsString
     }
+    
+    var currentRatingCount = 0
+    func updateStarRatingView(){
+        btnStarFirst.image = NSImage(named: "star_Gray")
+        btnStarSecond.image = NSImage(named: "star_Gray")
+        btnStarThird.image = NSImage(named: "star_Gray")
+        btnStarFourth.image = NSImage(named: "star_Gray")
+        btnStarFifth.image = NSImage(named: "star_Gray")
+        
+        if currentRatingCount == 1{
+            btnStarFirst.image = NSImage(named: "star_Golden")
+        }else if currentRatingCount == 2{
+            btnStarFirst.image = NSImage(named: "star_Golden")
+            btnStarSecond.image = NSImage(named: "star_Golden")
+        }else if currentRatingCount == 3{
+            btnStarFirst.image = NSImage(named: "star_Golden")
+            btnStarSecond.image = NSImage(named: "star_Golden")
+            btnStarThird.image = NSImage(named: "star_Golden")
+        }else if currentRatingCount == 4{
+            btnStarFirst.image = NSImage(named: "star_Golden")
+            btnStarSecond.image = NSImage(named: "star_Golden")
+            btnStarThird.image = NSImage(named: "star_Golden")
+            btnStarFourth.image = NSImage(named: "star_Golden")
+        }else if currentRatingCount == 5{
+            btnStarFirst.image = NSImage(named: "star_Golden")
+            btnStarSecond.image = NSImage(named: "star_Golden")
+            btnStarThird.image = NSImage(named: "star_Golden")
+            btnStarFourth.image = NSImage(named: "star_Golden")
+            btnStarFifth.image = NSImage(named: "star_Golden")
+        }
+    }
+    
+    
+    
+    @IBAction func btnStarFirstClicked(_ sender: Any) {
+        currentRatingCount = 1
+        updateStarRatingView()
+    }
+    
+    @IBAction func btnStarSecondClicked(_ sender: Any) {
+        currentRatingCount = 2
+        updateStarRatingView()
+    }
+    
+    @IBAction func btnStarThirdClicked(_ sender: Any) {
+        currentRatingCount = 3
+        updateStarRatingView()
+    }
+    
+    @IBAction func btnStarFourthClicked(_ sender: Any) {
+        currentRatingCount = 4
+        updateStarRatingView()
+    }
+    
+    @IBAction func btnStarFifthClicked(_ sender: Any) {
+        currentRatingCount = 5
+        updateStarRatingView()
+    }
+    
+   
+    
+    
     @IBAction func btnContinueClicked(_ sender: Any) {
         
         self.view.removeFromSuperview()
@@ -217,16 +413,112 @@ class focusCompletedForActivityVc: NSViewController {
         let timestamp = getStringFromDate(date: lastActivityPerformedTime ?? Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
         
         let achievements = textFieldAchieve.stringValue.components(separatedBy: .newlines).joined()
-        let distractionsEncountered = textFieldDistractions.stringValue.components(separatedBy: .newlines).joined()
+//        let distractionsEncountered = textFieldDistractions.stringValue.components(separatedBy: .newlines).joined()
         focusModeActualDurationPerformed = durationInSeconds
-        addEntryInStatsCsv(logType: "focus block", activity: currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: achievements, distractionsEncountered: distractionsEncountered, abortReason: "", feedback: "", tags:getTagsString())
+        addEntryInStatsCsv(logType: "focus block", activity: currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: achievements, distractionsEncountered: "", abortReason: "", feedback: "", tags:getTagsString())
 
-        allApiObject.finishFocusMode(id: currentFocusModeId, achievements: textFieldAchieve.stringValue, distractions: textFieldDistractions.stringValue, finish_time: self.finish_time ?? Date(), rating:nil, completionHandler: {newDic in
+        allApiObject.finishFocusMode(id: currentFocusModeId, achievements: textFieldAchieve.stringValue, distractions: "", finish_time: self.finish_time ?? Date(), rating:currentRatingCount, completionHandler: {newDic in
             DispatchQueue.main.async {
                 
             }
         })
 
+    }
+    func getStringTimeFromSeconds(seconds : Int)->String{
+        if seconds == 0{
+            return "0" + secondsSText
+        }
+        let (h,m,s) = secondsToHoursMinutesSeconds(seconds: seconds)
+        var stringTime: String = ""
+        if h != 0{
+            stringTime = "\(h)" + hoursHText
+        }
+        if m != 0{
+            if stringTime.isEmpty{
+                stringTime = "\(m)" + minutesMText
+            }else{
+                stringTime += " \(m)" + minutesMText
+            }
+        }
+        if s != 0{
+            if stringTime.isEmpty{
+                stringTime = "\(s)" + secondsSText
+            }else{
+                stringTime += " \(s)" + secondsSText
+            }
+        }
+        return stringTime
+    }
+    
+    @IBAction func btnInfoFocusAlignmentClicked(_ sender: NSButton) {
+        var msg = ""
+        if SettingsManagerObject.isAiCheckUrlEnabled{
+            msg = "The % of the focus session that you spent on productive sites/apps based on Focus Bear's AI."
+            if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
+                if let focusCompletedInfo = focusInfo.value(forKey: "focusCompletedInfo") as? NSDictionary{
+                    msg = focusCompletedInfo.value(forKey: "tooltipFocusAlignmentScoreAi") as? String ?? msg
+                }
+            }
+        }else{
+            msg = "The % of the focus session that you spent on productive sites/apps based on your list of blocked/allowed sites."
+            if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
+                if let focusCompletedInfo = focusInfo.value(forKey: "focusCompletedInfo") as? NSDictionary{
+                    msg = focusCompletedInfo.value(forKey: "tooltipFocusAlignmentScore") as? String ?? msg
+                }
+            }
+        }
+
+        showTooltip(sender: sender, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:340)
+    }
+    
+    @IBAction func btnInfoDeepWotkTimeThisSessionClicked(_ sender: NSButton) {
+        var msg = "We multiply the focus session duration by the focus alignment score to get your deep work time"
+        if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
+            if let focusCompletedInfo = focusInfo.value(forKey: "focusCompletedInfo") as? NSDictionary{
+                msg = focusCompletedInfo.value(forKey: "tooltipDeepWotkTimeThisSession") as? String ?? msg
+            }
+        }
+        showTooltip(sender: sender, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:340)
+    }
+    
+    @IBAction func btnInfoTotalWotkTimeTodayClicked(_ sender: NSButton) {
+        var msg = "Total deep work time accumulated from all focus sessions today, calculated using session duration and focus alignment score."
+        if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
+            if let focusCompletedInfo = focusInfo.value(forKey: "focusCompletedInfo") as? NSDictionary{
+                msg = focusCompletedInfo.value(forKey: "tooltipTotalWotkTimeToday") as? String ?? msg
+            }
+        }
+        showTooltip(sender: sender, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:340)
+    }
+    
+    @IBAction func btnInfoAverageTimePerTabClicked(_ sender: NSButton) {
+        var msg = "Focus Bear keeps track of how much time you spend in each browser tab. If you are constantly changing tabs, it indicates that you're probably multi tasking rather than sticking to one task."
+        if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
+            if let focusCompletedInfo = focusInfo.value(forKey: "focusCompletedInfo") as? NSDictionary{
+                msg = focusCompletedInfo.value(forKey: "tooltipAverageTimePerTab") as? String ?? msg
+            }
+        }
+        showTooltip(sender: sender, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:340)
+    }
+    
+    @IBAction func btnInfoAverageTabCountClicked(_ sender: NSButton) {
+        var msg = "If you have a lot of tabs open, you're likely to get distracted by half finished work. Put the tasks in your to do list instead. Use Focus Bear's tab limiter feature to help avoid tab overwhelm."
+        if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
+            if let focusCompletedInfo = focusInfo.value(forKey: "focusCompletedInfo") as? NSDictionary{
+                msg = focusCompletedInfo.value(forKey: "tooltipAverageTabCount") as? String ?? msg
+            }
+        }
+        showTooltip(sender: sender, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:340)
+    }
+    
+    @IBAction func btnInfoAppOrSiteClicked(_ sender: NSButton) {
+        var msg = "This shows your top 5 apps/sites during this focus session. Data is only stored locally on your computer."
+        if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
+            if let focusCompletedInfo = focusInfo.value(forKey: "focusCompletedInfo") as? NSDictionary{
+                msg = focusCompletedInfo.value(forKey: "tooltipAppOrSite") as? String ?? msg
+            }
+        }
+        showTooltip(sender: sender, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:340)
     }
 }
 
@@ -311,4 +603,36 @@ extension focusCompletedForActivityVc:NSTextFieldDelegate, NSTokenFieldDelegate{
         return tokens
     }
     
+}
+
+extension focusCompletedForActivityVc:NSTableViewDelegate, NSTableViewDataSource {
+    func numberOfRows(in tableView: NSTableView) -> Int {
+        if SettingsManagerObject.isAdvancedAnalyticsInFocusModeEnabled{
+            return arrAllAppsTabsData.count
+        }else{
+            return 0
+        }
+    }
+    
+    func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
+        if let cell = tableView.makeView(withIdentifier: NSUserInterfaceItemIdentifier(rawValue: "tblCellFocsedCompletedItem"), owner: nil) as? tblCellFocsedCompletedItem {
+
+            if let title = arrAllAppsTabsData[row][tabMatricsObject.keyFocusAppTitle] as? String{
+                cell.lblTitleName.stringValue = title
+            }else if let title = arrAllAppsTabsData[row][tabMatricsObject.keyFocusDomainTitle] as? String{
+                cell.lblTitleName.stringValue = title
+            }
+            if let duration = arrAllAppsTabsData[row][tabMatricsObject.keyFocusDuration] as? Int{
+                cell.lblDuration.stringValue = getStringTimeFromSeconds(seconds: duration)
+                cell.progress.maxValue = Double(focusModeActualDurationPerformed)
+                cell.progress.doubleValue = Double(duration)
+            }
+            
+            
+            return cell
+        }
+        
+        return NSTableCellView()
+    }
+
 }

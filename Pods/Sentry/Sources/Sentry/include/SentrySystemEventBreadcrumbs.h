@@ -1,17 +1,31 @@
-#import <Foundation/Foundation.h>
+#import "SentryFileManager.h"
 
-#if TARGET_OS_IOS
+#if TARGET_OS_IOS && SENTRY_HAS_UIKIT
+
 #    import <UIKit/UIKit.h>
-#endif
+
+NS_ASSUME_NONNULL_BEGIN
+
+@class SentryNSNotificationCenterWrapper;
+
+@protocol SentryBreadcrumbDelegate;
 
 @interface SentrySystemEventBreadcrumbs : NSObject
+SENTRY_NO_INIT
 
-- (void)start;
+- (instancetype)initWithFileManager:(SentryFileManager *)fileManager
+       andNotificationCenterWrapper:(SentryNSNotificationCenterWrapper *)notificationCenterWrapper;
 
-#if TARGET_OS_IOS
-- (void)start:(UIDevice *)currentDevice;
-#endif
+- (void)startWithDelegate:(id<SentryBreadcrumbDelegate>)delegate;
+
+- (void)startWithDelegate:(id<SentryBreadcrumbDelegate>)delegate
+            currentDevice:(nullable UIDevice *)currentDevice;
+- (void)timezoneEventTriggered;
 
 - (void)stop;
 
 @end
+
+NS_ASSUME_NONNULL_END
+
+#endif // TARGET_OS_IOS && SENTRY_HAS_UIKIT

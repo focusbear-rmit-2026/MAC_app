@@ -1,3 +1,4 @@
+// Adapted from: https://github.com/kstenerud/KSCrash
 //
 //  SentryCrashDynamicLinker.c
 //
@@ -32,7 +33,7 @@
 #include <mach-o/nlist.h>
 #include <string.h>
 
-#include "SentryCrashLogger.h"
+#include "SentryAsyncSafeLog.h"
 #include "SentryCrashMemory.h"
 #include "SentryCrashPlatformSpecificDefines.h"
 
@@ -302,58 +303,58 @@ getCrashInfo(const struct mach_header *header, SentryCrashBinaryImage *buffer)
         return;
     }
 
-    SentryCrashLOG_TRACE("Found crash info section in binary: %s", buffer->name);
+    SENTRY_ASYNC_SAFE_LOG_TRACE("Found crash info section in binary: %s", buffer->name);
     const unsigned int minimalSize
         = offsetof(crash_info_t, reserved); // Include message and message2
     if (size < minimalSize) {
-        SentryCrashLOG_TRACE("Skipped reading crash info: section is too small");
+        SENTRY_ASYNC_SAFE_LOG_TRACE("Skipped reading crash info: section is too small");
         return;
     }
     if (!sentrycrashmem_isMemoryReadable(crashInfo, minimalSize)) {
-        SentryCrashLOG_TRACE("Skipped reading crash info: section memory is not readable");
+        SENTRY_ASYNC_SAFE_LOG_TRACE("Skipped reading crash info: section memory is not readable");
         return;
     }
     if (crashInfo->version != 4 && crashInfo->version != 5) {
-        SentryCrashLOG_TRACE(
+        SENTRY_ASYNC_SAFE_LOG_TRACE(
             "Skipped reading crash info: invalid version '%d'", crashInfo->version);
         return;
     }
     if (crashInfo->message == NULL && crashInfo->message2 == NULL) {
-        SentryCrashLOG_TRACE("Skipped reading crash info: both messages are null");
+        SENTRY_ASYNC_SAFE_LOG_TRACE("Skipped reading crash info: both messages are null");
         return;
     }
 
     if (isValidCrashInfoMessage(crashInfo->message)) {
-        SentryCrashLOG_TRACE("Found first message: %s", crashInfo->message);
+        SENTRY_ASYNC_SAFE_LOG_TRACE("Found first message: %s", crashInfo->message);
         buffer->crashInfoMessage = crashInfo->message;
     }
     if (isValidCrashInfoMessage(crashInfo->message2)) {
-        SentryCrashLOG_TRACE("Found second message: %s", crashInfo->message2);
+        SENTRY_ASYNC_SAFE_LOG_TRACE("Found second message: %s", crashInfo->message2);
         buffer->crashInfoMessage2 = crashInfo->message2;
     }
 }
 
 int
-sentrycrashdl_imageCount()
+sentrycrashdl_imageCount(void)
 {
     return (int)_dyld_image_count();
 }
 
 bool
-sentrycrashdl_getBinaryImage(int index, SentryCrashBinaryImage *buffer)
+sentrycrashdl_getBinaryImage(int index, SentryCrashBinaryImage *buffer, bool isCrash)
 {
     const struct mach_header *header = _dyld_get_image_header((unsigned)index);
     if (header == NULL) {
         return false;
     }
 
-    return sentrycrashdl_getBinaryImageForHeader(
-        (const void *)header, _dyld_get_image_name((unsigned)index), buffer);
+    const char *imageName = _dyld_get_image_name((unsigned)index);
+    return sentrycrashdl_getBinaryImageForHeader((const void *)header, imageName, buffer, isCrash);
 }
 
 bool
-sentrycrashdl_getBinaryImageForHeader(
-    const void *const header_ptr, const char *const image_name, SentryCrashBinaryImage *buffer)
+sentrycrashdl_getBinaryImageForHeader(const void *const header_ptr, const char *const image_name,
+    SentryCrashBinaryImage *buffer, bool isCrash)
 {
     const struct mach_header *header = (const struct mach_header *)header_ptr;
     uintptr_t cmdPtr = firstCmdAfterHeader(header);
@@ -365,7 +366,6 @@ sentrycrashdl_getBinaryImageForHeader(
     // Also look for a UUID command.
     uint64_t imageSize = 0;
     uint64_t imageVmAddr = 0;
-    uint64_t version = 0;
     uint8_t *uuid = NULL;
 
     for (uint32_t iCmd = 0; iCmd < header->ncmds; iCmd++) {
@@ -392,12 +392,6 @@ sentrycrashdl_getBinaryImageForHeader(
             uuid = uuidCmd->uuid;
             break;
         }
-        case LC_ID_DYLIB: {
-
-            struct dylib_command *dc = (struct dylib_command *)cmdPtr;
-            version = dc->dylib.current_version;
-            break;
-        }
         }
         cmdPtr += loadCmd->cmdsize;
     }
@@ -409,10 +403,9 @@ sentrycrashdl_getBinaryImageForHeader(
     buffer->uuid = uuid;
     buffer->cpuType = header->cputype;
     buffer->cpuSubType = header->cpusubtype;
-    buffer->majorVersion = version >> 16;
-    buffer->minorVersion = (version >> 8) & 0xff;
-    buffer->revisionVersion = version & 0xff;
-    getCrashInfo(header, buffer);
+    if (isCrash) {
+        getCrashInfo(header, buffer);
+    }
 
     return true;
 }

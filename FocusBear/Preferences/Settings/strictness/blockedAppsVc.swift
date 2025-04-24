@@ -48,6 +48,7 @@ class blockedAppsVc: NSViewController {
             checkBoxImmediatelyBlock.state = .off
         }
     }
+    
     @IBAction func btnAddAppClicked(_ sender: Any) {
         if isExpired{
             if SettingsManagerObject.arrBlockedApps.count >= alwaysBlockedUrlsCountInExpireApp{
@@ -131,6 +132,9 @@ class blockedAppsVc: NSViewController {
             }
             SettingsManagerObject.isSettingsChanged = true
             allApiObject.capturePosthog(event: "add-always-blocked-app", metadata: [:])
+            if let tabview = preferencesWindowControllerObj?.contentViewController as? preferencesTabViewController{
+                tabview.newUrlOrAppAdded()
+            }
         }
         
     }

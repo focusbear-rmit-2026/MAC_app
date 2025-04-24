@@ -1,3 +1,4 @@
+// Adapted from: https://github.com/kstenerud/KSCrash
 //
 //  SentryCrashInstallation.m
 //
@@ -25,28 +26,17 @@
 //
 
 #import "SentryCrashInstallation.h"
-#import "NSError+SentrySimpleConstructor.h"
+#import "SentryAsyncSafeLog.h"
 #import "SentryCrash.h"
-#import "SentryCrashCString.h"
 #import "SentryCrashInstallation+Private.h"
 #import "SentryCrashJSONCodecObjC.h"
-#import "SentryCrashLogger.h"
+#import "SentryCrashNSErrorUtil.h"
 #import "SentryCrashReportFilterBasic.h"
+#import "SentryDependencyContainer.h"
 #import <objc/runtime.h>
 
 /** Max number of properties that can be defined for writing to the report */
 #define kMaxProperties 500
-
-typedef struct {
-    const char *key;
-    const char *value;
-} ReportField;
-
-typedef struct {
-    SentryCrashReportWriteCallback userCrashCallback;
-    int reportFieldsCount;
-    ReportField *reportFields[0];
-} CrashHandlerData;
 
 static CrashHandlerData *g_crashHandlerData;
 
@@ -64,92 +54,13 @@ crashCallback(const SentryCrashReportWriter *writer)
     }
 }
 
-@interface SentryCrashInstReportField : NSObject
-
-@property (nonatomic, readonly, assign) int index;
-@property (nonatomic, readonly, assign) ReportField *field;
-
-@property (nonatomic, readwrite, retain) NSString *key;
-@property (nonatomic, readwrite, retain) id value;
-
-@property (nonatomic, readwrite, retain) NSMutableData *fieldBacking;
-@property (nonatomic, readwrite, retain) SentryCrashCString *keyBacking;
-@property (nonatomic, readwrite, retain) SentryCrashCString *valueBacking;
-
-@end
-
-@implementation SentryCrashInstReportField
-
-@synthesize index = _index;
-@synthesize key = _key;
-@synthesize value = _value;
-@synthesize fieldBacking = _fieldBacking;
-@synthesize keyBacking = _keyBacking;
-@synthesize valueBacking = _valueBacking;
-
-+ (SentryCrashInstReportField *)fieldWithIndex:(int)index
-{
-    return [(SentryCrashInstReportField *)[self alloc] initWithIndex:index];
-}
-
-- (id)initWithIndex:(int)index
-{
-    if ((self = [super init])) {
-        _index = index;
-        self.fieldBacking = [NSMutableData dataWithLength:sizeof(*self.field)];
-    }
-    return self;
-}
-
-- (ReportField *)field
-{
-    return (ReportField *)self.fieldBacking.mutableBytes;
-}
-
-- (void)setKey:(NSString *)key
-{
-    _key = key;
-    if (key == nil) {
-        self.keyBacking = nil;
-    } else {
-        self.keyBacking = [SentryCrashCString stringWithString:key];
-    }
-    self.field->key = self.keyBacking.bytes;
-}
-
-- (void)setValue:(id)value
-{
-    if (value == nil) {
-        _value = nil;
-        self.valueBacking = nil;
-        return;
-    }
-
-    NSError *error = nil;
-    NSData *jsonData = [SentryCrashJSONCodec
-         encode:value
-        options:SentryCrashJSONEncodeOptionPretty | SentryCrashJSONEncodeOptionSorted
-          error:&error];
-    if (jsonData == nil) {
-        SentryCrashLOG_ERROR(@"Could not set value %@ for property %@: %@", value, self.key, error);
-    } else {
-        _value = value;
-        self.valueBacking = [SentryCrashCString stringWithData:jsonData];
-        self.field->value = self.valueBacking.bytes;
-    }
-}
-
-@end
-
-@interface
-SentryCrashInstallation ()
+@interface SentryCrashInstallation ()
 
 @property (nonatomic, readwrite, assign) int nextFieldIndex;
 @property (nonatomic, readonly, assign) CrashHandlerData *crashHandlerData;
 @property (nonatomic, readwrite, retain) NSMutableData *crashHandlerDataBacking;
 @property (nonatomic, readwrite, retain) NSMutableDictionary *fields;
 @property (nonatomic, readwrite, retain) NSArray *requiredProperties;
-@property (nonatomic, readwrite, retain) SentryCrashReportFilterPipeline *prependedFilters;
 
 @end
 
@@ -159,33 +70,30 @@ SentryCrashInstallation ()
 @synthesize crashHandlerDataBacking = _crashHandlerDataBacking;
 @synthesize fields = _fields;
 @synthesize requiredProperties = _requiredProperties;
-@synthesize prependedFilters = _prependedFilters;
 
 - (id)init
 {
     [NSException raise:NSInternalInconsistencyException
                 format:@"%@ does not support init. Subclasses must call "
                        @"initWithMaxReportFieldCount:requiredProperties:",
-                [self class]];
+        [self class]];
     return nil;
 }
 
 - (id)initWithRequiredProperties:(NSArray *)requiredProperties
 {
     if ((self = [super init])) {
-        self.crashHandlerDataBacking =
-            [NSMutableData dataWithLength:sizeof(*self.crashHandlerData)
-                           + sizeof(*self.crashHandlerData->reportFields) * kMaxProperties];
+        self.crashHandlerDataBacking = [NSMutableData dataWithLength:sizeof(*self.crashHandlerData)
+            + sizeof(*self.crashHandlerData->reportFields) * kMaxProperties];
         self.fields = [NSMutableDictionary dictionary];
         self.requiredProperties = requiredProperties;
-        self.prependedFilters = [SentryCrashReportFilterPipeline filterWithFilters:nil];
     }
     return self;
 }
 
 - (void)dealloc
 {
-    SentryCrash *handler = [SentryCrash sharedInstance];
+    SentryCrash *handler = SentryDependencyContainer.sharedInstance.crashReporter;
     @synchronized(handler) {
         if (g_crashHandlerData == self.crashHandlerData) {
             g_crashHandlerData = NULL;
@@ -199,29 +107,9 @@ SentryCrashInstallation ()
     return (CrashHandlerData *)self.crashHandlerDataBacking.mutableBytes;
 }
 
-- (SentryCrashInstReportField *)reportFieldForProperty:(NSString *)propertyName
+- (CrashHandlerData *)g_crashHandlerData
 {
-    SentryCrashInstReportField *field = [self.fields objectForKey:propertyName];
-    if (field == nil) {
-        field = [SentryCrashInstReportField fieldWithIndex:self.nextFieldIndex];
-        self.nextFieldIndex++;
-        self.crashHandlerData->reportFieldsCount = self.nextFieldIndex;
-        self.crashHandlerData->reportFields[field.index] = field.field;
-        [self.fields setObject:field forKey:propertyName];
-    }
-    return field;
-}
-
-- (void)reportFieldForProperty:(NSString *)propertyName setKey:(id)key
-{
-    SentryCrashInstReportField *field = [self reportFieldForProperty:propertyName];
-    field.key = key;
-}
-
-- (void)reportFieldForProperty:(NSString *)propertyName setValue:(id)value
-{
-    SentryCrashInstReportField *field = [self reportFieldForProperty:propertyName];
-    field.value = value;
+    return g_crashHandlerData;
 }
 
 - (NSError *)validateProperties
@@ -245,10 +133,8 @@ SentryCrashInstallation ()
         }
     }
     if ([errors length] > 0) {
-        return [NSError
-            sentryErrorWithDomain:[[self class] description]
-                             code:0
-                      description:@"Installation properties failed validation: %@", errors];
+        return sentryErrorWithDomain([[self class] description], 0,
+            @"Installation properties failed validation: %@", errors);
     }
     return nil;
 }
@@ -274,27 +160,26 @@ SentryCrashInstallation ()
     return result;
 }
 
-- (SentryCrashReportWriteCallback)onCrash
+- (void)install:(NSString *)customCacheDirectory
 {
-    @synchronized(self) {
-        return self.crashHandlerData->userCrashCallback;
-    }
-}
-
-- (void)setOnCrash:(SentryCrashReportWriteCallback)onCrash
-{
-    @synchronized(self) {
-        self.crashHandlerData->userCrashCallback = onCrash;
-    }
-}
-
-- (void)install
-{
-    SentryCrash *handler = [SentryCrash sharedInstance];
+    SentryCrash *handler = SentryDependencyContainer.sharedInstance.crashReporter;
     @synchronized(handler) {
+        handler.basePath = customCacheDirectory;
         g_crashHandlerData = self.crashHandlerData;
         handler.onCrash = crashCallback;
         [handler install];
+    }
+}
+
+- (void)uninstall
+{
+    SentryCrash *handler = SentryDependencyContainer.sharedInstance.crashReporter;
+    @synchronized(handler) {
+        if (g_crashHandlerData == self.crashHandlerData) {
+            g_crashHandlerData = NULL;
+            handler.onCrash = NULL;
+        }
+        [handler uninstall];
     }
 }
 
@@ -311,23 +196,17 @@ SentryCrashInstallation ()
     id<SentryCrashReportFilter> sink = [self sink];
     if (sink == nil) {
         onCompletion(nil, NO,
-            [NSError sentryErrorWithDomain:[[self class] description]
-                                      code:0
-                               description:@"Sink was nil (subclasses must implement "
-                                           @"method \"sink\")"]);
+            sentryErrorWithDomain([[self class] description], 0,
+                @"Sink was nil (subclasses must implement "
+                @"method \"sink\")"));
         return;
     }
 
-    sink = [SentryCrashReportFilterPipeline filterWithFilters:self.prependedFilters, sink, nil];
+    sink = [SentryCrashReportFilterPipeline filterWithFilters:sink, nil];
 
-    SentryCrash *handler = [SentryCrash sharedInstance];
+    SentryCrash *handler = SentryDependencyContainer.sharedInstance.crashReporter;
     handler.sink = sink;
     [handler sendAllReportsWithCompletion:onCompletion];
-}
-
-- (void)addPreFilter:(id<SentryCrashReportFilter>)filter
-{
-    [self.prependedFilters addFilter:filter];
 }
 
 - (id<SentryCrashReportFilter>)sink

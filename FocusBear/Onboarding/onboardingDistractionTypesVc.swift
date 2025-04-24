@@ -52,17 +52,35 @@ class onboardingDistractionTypesVc: NSViewController {
     }
     
     @IBAction func checkBoxFirstClicked(_ sender: Any) {
+        if checkBoxFirst.state == .on{
+            addLog(text: "checkBox Websites checked")
+            allApiObject.capturePosthog(event: "checkBox-websites-checked", metadata: [:])
+        }else{
+            addLog(text: "checkBox Websites unchecked")
+            allApiObject.capturePosthog(event: "checkBox-websites-unchecked", metadata: [:])
+        }
         checkContinueButtonState()
     }
     
     @IBAction func checkBoxSecondClicked(_ sender: Any) {
+        if checkBoxSecond.state == .on{
+            addLog(text: "checkBox Apps checked")
+            allApiObject.capturePosthog(event: "checkBox-apps-checked", metadata: [:])
+        }else{
+            addLog(text: "checkBox Apps unchecked")
+            allApiObject.capturePosthog(event: "checkBox-apps-unchecked", metadata: [:])
+        }
         checkContinueButtonState()
     }
     
     @IBAction func checkBoxThirdClicked(_ sender: Any) {
         if checkBoxThird.state == .on{
+            addLog(text: "checkBox My phone checked")
+            allApiObject.capturePosthog(event: "checkBox-phone-checked", metadata: [:])
             lblDescription.isHidden = false
         }else{
+            addLog(text: "checkBox My phone unchecked")
+            allApiObject.capturePosthog(event: "checkBox-phone-unchecked", metadata: [:])
             lblDescription.isHidden = true
         }
         checkContinueButtonState()
@@ -74,7 +92,20 @@ class onboardingDistractionTypesVc: NSViewController {
         }else if checkBoxSecond.state == .on{
             self.view.window?.contentViewController = getOnboardingBlockedAppsVcObject()
         }else {
-            self.view.window?.contentViewController = getOnboardingBlockingScheduleVcObject()
+            if UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) == nil{
+                self.view.window?.contentViewController = getExplainingPermissionsVcObject()
+                explainingPermissionsVcObj?.showingFromPomodoro = true
+                UserDefaults.standard.set(true, forKey: kUserdefaultsBrowsersPermissionsSetByUser)
+            }else{
+                self.view.window?.close()
+                if SettingsManagerObject.isGeekModeEnabled{
+                    appdelegate?.menuShowPomodoroModeView()
+                    pomodoroVcObj?.textViewAchieve.string = pomodoroVcObj?.intentionToShowAgain ?? ""
+                }else{
+                    appdelegate?.menuShowSimplePomodoroModeView()
+                    simplePomodoroVcObj?.textViewAchieve.string = simplePomodoroVcObj?.intentionToShowAgain ?? ""
+                }
+            }
         }
         
     }

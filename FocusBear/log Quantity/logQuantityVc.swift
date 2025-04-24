@@ -210,6 +210,8 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
             logType = "break"
         }else if lCurrentState! == ._SPECIAL_ACTIVITY_{
             logType = "special activity"
+        }else if lCurrentState! == ._CUSTOM_ROUTINE_{
+            logType = "custom routine"
         }
 
         addEntryInStatsCsv(logType: logType, activity: name, durationInSeconds: durationInSeconds, quantityQuestion: logQuantityQuestion, quantityLogged: "0.0", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "", tags:"")
@@ -223,6 +225,7 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
             let currentFocusModeId = currentRunningFocusType["id"] as? String ?? ""
             
             mainViewControllerObj!.showFocusCompletedView()
+            focusModeActualDurationPerformed = Int(durationInSeconds) ?? 0
             focusCompletedForActivityVcObj?.resetData(focusModeName: currentFocusModeName, currentFocusModeId: currentFocusModeId, finish_time: isAnyAllowedFocusModeActivityFinishTime, durationInSeconds: Int(durationInSeconds) ?? 0, quantity_logged:0.0, activity_id: activity_id, activity_sequence_id: activity_sequence_id, activityChoiceId: activityChoiceId, log_quantity_answers: [], notes: notes)
         }else{
             if lCurrentState! == ._EVENING_HABIT_{
@@ -269,6 +272,8 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
             logType = "break"
         }else if lCurrentState! == ._SPECIAL_ACTIVITY_{
             logType = "special activity"
+        }else if lCurrentState! == ._CUSTOM_ROUTINE_{
+            logType = "custom routine"
         }
 
         if !isReviseQuantity{
@@ -299,6 +304,7 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
                 let currentFocusModeId = currentRunningFocusType["id"] as? String ?? ""
                 
                 mainViewControllerObj!.showFocusCompletedView()
+                focusModeActualDurationPerformed = Int(durationInSeconds) ?? 0
                 focusCompletedForActivityVcObj?.resetData(focusModeName: currentFocusModeName, currentFocusModeId: currentFocusModeId, finish_time: isAnyAllowedFocusModeActivityFinishTime, durationInSeconds: Int(durationInSeconds) ?? 0, quantity_logged:logQuantityQuestions[0].quantity, activity_id: activity_id, activity_sequence_id: activity_sequence_id, activityChoiceId: activityChoiceId, log_quantity_answers: log_quantity_answers, notes: notes)
             }else{
                 if lCurrentState! == ._EVENING_HABIT_{

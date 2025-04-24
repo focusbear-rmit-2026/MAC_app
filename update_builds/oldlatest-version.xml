@@ -1,0 +1,15 @@
+<?xml version="1.0" standalone="yes"?>
+<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+    <channel>
+        <title>Focus Bear</title>
+        <item>
+            <title>1.17.328</title>
+            <sparkle:releaseNotesLink>
+                https://www.focusbear.io/release-notes-mac?header=0
+            </sparkle:releaseNotesLink>
+            <pubDate>Tue, 03 Dec 2024 12:33:50 +0530</pubDate>
+            <sparkle:minimumSystemVersion>10.15</sparkle:minimumSystemVersion>
+            <enclosure url="https://downloads.focusbear.io/update/mac/Focus%20Bear.zip" sparkle:version="328" sparkle:shortVersionString="1.17" length="34476360" type="application/octet-stream" sparkle:edSignature="K2Y90TlOm1Yh/tlGYPGsRfGVvOFxQ6+h8rAkLZkQHEHW0Va7nUrmua4PmLrEa1ShQa4pIPpHNaiz4a3jyndZAg=="/>
+        </item>
+    </channel>
+</rss>

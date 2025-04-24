@@ -1,19 +1,25 @@
-#import "SentryOptions.h"
+#if __has_include(<Sentry/SentryOptions.h>)
+#    import <Sentry/SentryOptions.h>
+#else
+#    import "SentryOptions.h"
+#endif
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface
-SentryOptions (Private)
+FOUNDATION_EXPORT NSString *const kSentryDefaultEnvironment;
 
-@property (nullable, nonatomic, copy, readonly) NSNumber *defaultTracesSampleRate;
+@interface SentryOptions ()
+#if SENTRY_TARGET_PROFILING_SUPPORTED
+@property (nonatomic, assign) BOOL enableProfiling_DEPRECATED_TEST_ONLY;
+- (BOOL)isContinuousProfilingEnabled;
+#endif // SENTRY_TARGET_PROFILING_SUPPORTED
 
-- (BOOL)isValidSampleRate:(NSNumber *)sampleRate;
+@property (nonatomic, readonly, class) NSArray<Class> *defaultIntegrationClasses;
 
-- (BOOL)isValidTracesSampleRate:(NSNumber *)tracesSampleRate;
+@property (nonatomic, strong, nullable)
+    SentryUserFeedbackConfiguration *userFeedbackConfiguration API_AVAILABLE(ios(13.0));
 
-@property (nonatomic, strong, readonly) NSSet<NSString *> *enabledIntegrations;
-
-- (void)removeEnabledIntegration:(NSString *)integration;
+SENTRY_EXTERN BOOL sentry_isValidSampleRate(NSNumber *sampleRate);
 
 @end
 

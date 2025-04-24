@@ -21,6 +21,7 @@ func GetMACAddressString() -> String {
    }
    return ""
 }
+
 func FindEthernetInterfaces() -> io_iterator_t? {
    
    let matchingDict = IOServiceMatching("IOEthernetInterface") as NSMutableDictionary
@@ -33,6 +34,7 @@ func FindEthernetInterfaces() -> io_iterator_t? {
    
    return matchingServices
 }
+
 func GetMACAddress(_ intfIterator : io_iterator_t) -> [UInt8]? {
    
    var macAddress : [UInt8]?

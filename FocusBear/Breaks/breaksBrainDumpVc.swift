@@ -142,7 +142,7 @@ class breaksBrainDumpVc: NSViewController {
             }
         }
     }
-    
+
     @objc func breaksScreenIdleResetBreaks(){
         mainViewControllerObj?.breaksScreenIsIdleResetBreaks()
     }
@@ -163,8 +163,9 @@ class breaksBrainDumpVc: NSViewController {
         UserDefaults.standard.set(textView.string, forKey: kUserdefaultsFocusModeNotes)
     }
     @IBAction func btnPostponeBreakClicked(_ sender: Any) {
+        addLog(text: "[user-action] breaksBrainDumpVc:- button Postpone Clicked")
         if currentState == ._ACTIVITY_{
-            mainViewControllerObj?.btnAbortClicked(self)
+            mainViewControllerObj?.abortCurrentState()
             return
         }
     }

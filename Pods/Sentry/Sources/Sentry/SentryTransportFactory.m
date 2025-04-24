@@ -1,45 +1,45 @@
-#import <Foundation/Foundation.h>
-
+#import "SentryTransportFactory.h"
 #import "SentryDefaultRateLimits.h"
 #import "SentryDispatchQueueWrapper.h"
 #import "SentryEnvelopeRateLimit.h"
 #import "SentryHttpDateParser.h"
 #import "SentryHttpTransport.h"
+#import "SentryNSURLRequestBuilder.h"
 #import "SentryOptions.h"
 #import "SentryQueueableRequestManager.h"
 #import "SentryRateLimitParser.h"
 #import "SentryRateLimits.h"
+
 #import "SentryRetryAfterHeaderParser.h"
+#import "SentrySpotlightTransport.h"
 #import "SentryTransport.h"
-#import "SentryTransportFactory.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface
-SentryTransportFactory ()
+@interface SentryTransportFactory ()
 
 @end
 
 @implementation SentryTransportFactory
 
-+ (id<SentryTransport>)initTransport:(SentryOptions *)options
-                   sentryFileManager:(SentryFileManager *)sentryFileManager
++ (NSArray<id<SentryTransport>> *)initTransports:(SentryOptions *)options
+                               sentryFileManager:(SentryFileManager *)sentryFileManager
+                                      rateLimits:(id<SentryRateLimits>)rateLimits
 {
-    NSURLSessionConfiguration *configuration =
-        [NSURLSessionConfiguration ephemeralSessionConfiguration];
-    NSURLSession *session = [NSURLSession sessionWithConfiguration:configuration
-                                                          delegate:options.urlSessionDelegate
-                                                     delegateQueue:nil];
+    NSURLSession *session;
+
+    if (options.urlSession) {
+        session = options.urlSession;
+    } else {
+        NSURLSessionConfiguration *configuration =
+            [NSURLSessionConfiguration ephemeralSessionConfiguration];
+        session = [NSURLSession sessionWithConfiguration:configuration
+                                                delegate:options.urlSessionDelegate
+                                           delegateQueue:nil];
+    }
+
     id<SentryRequestManager> requestManager =
         [[SentryQueueableRequestManager alloc] initWithSession:session];
-
-    SentryHttpDateParser *httpDateParser = [[SentryHttpDateParser alloc] init];
-    SentryRetryAfterHeaderParser *retryAfterHeaderParser =
-        [[SentryRetryAfterHeaderParser alloc] initWithHttpDateParser:httpDateParser];
-    SentryRateLimitParser *rateLimitParser = [[SentryRateLimitParser alloc] init];
-    id<SentryRateLimits> rateLimits =
-        [[SentryDefaultRateLimits alloc] initWithRetryAfterHeaderParser:retryAfterHeaderParser
-                                                     andRateLimitParser:rateLimitParser];
 
     SentryEnvelopeRateLimit *envelopeRateLimit =
         [[SentryEnvelopeRateLimit alloc] initWithRateLimits:rateLimits];
@@ -47,15 +47,31 @@ SentryTransportFactory ()
     dispatch_queue_attr_t attributes = dispatch_queue_attr_make_with_qos_class(
         DISPATCH_QUEUE_SERIAL, DISPATCH_QUEUE_PRIORITY_LOW, 0);
     SentryDispatchQueueWrapper *dispatchQueueWrapper =
-        [[SentryDispatchQueueWrapper alloc] initWithName:"sentry-http-transport"
+        [[SentryDispatchQueueWrapper alloc] initWithName:"io.sentry.http-transport"
                                               attributes:attributes];
 
-    return [[SentryHttpTransport alloc] initWithOptions:options
-                                            fileManager:sentryFileManager
-                                         requestManager:requestManager
-                                             rateLimits:rateLimits
-                                      envelopeRateLimit:envelopeRateLimit
-                                   dispatchQueueWrapper:dispatchQueueWrapper];
+    SentryNSURLRequestBuilder *requestBuilder = [[SentryNSURLRequestBuilder alloc] init];
+
+    SentryHttpTransport *httpTransport =
+        [[SentryHttpTransport alloc] initWithOptions:options
+                             cachedEnvelopeSendDelay:0.1
+                                         fileManager:sentryFileManager
+                                      requestManager:requestManager
+                                      requestBuilder:requestBuilder
+                                          rateLimits:rateLimits
+                                   envelopeRateLimit:envelopeRateLimit
+                                dispatchQueueWrapper:dispatchQueueWrapper];
+
+    if (options.enableSpotlight) {
+        SentrySpotlightTransport *spotlightTransport =
+            [[SentrySpotlightTransport alloc] initWithOptions:options
+                                               requestManager:requestManager
+                                               requestBuilder:requestBuilder
+                                         dispatchQueueWrapper:dispatchQueueWrapper];
+        return @[ httpTransport, spotlightTransport ];
+    } else {
+        return @[ httpTransport ];
+    }
 }
 
 @end

@@ -1,8 +1,13 @@
-#import "SentryDefines.h"
-#import "SentrySampleDecision.h"
-#import <Foundation/Foundation.h>
+#if __has_include(<Sentry/Sentry.h>)
+#    import <Sentry/SentryDefines.h>
+#    import <Sentry/SentrySampleDecision.h>
+#else
+#    import <SentryWithoutUIKit/SentryDefines.h>
+#    import <SentryWithoutUIKit/SentrySampleDecision.h>
+#endif
 
-@class SentryId, SentrySpanId;
+@class SentryId;
+@class SentrySpanId;
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -27,13 +32,9 @@ SENTRY_NO_INIT
 @property (nonatomic, readonly) SentrySampleDecision sampled;
 
 /**
- * Initialize a SentryTraceHeader with given trace id, span id and sample decision.
- *
  * @param traceId The trace id.
  * @param spanId The span id.
  * @param sampled The decision made to sample the trace related to this header.
- *
- * @return A SentryTraceHeader.
  */
 - (instancetype)initWithTraceId:(SentryId *)traceId
                          spanId:(SentrySpanId *)spanId

@@ -17,7 +17,6 @@ class menuTourVc: NSViewController {
     @IBOutlet weak var boxHeader: NSBox!
     @IBOutlet weak var boxMenu: NSBox!
     @IBOutlet weak var imgViewMenu: NSImageView!
-    @IBOutlet weak var leadingMenu: NSLayoutConstraint!
     @IBOutlet weak var boxPreferences: NSBox!
     @IBOutlet weak var boxSetupFocusMode: NSBox!
     
@@ -36,11 +35,6 @@ class menuTourVc: NSViewController {
         super.viewDidLoad()
         // Do view setup here.
         
-        if let frame = appdelegate?.statusbutton?.window?.frame{
-            let leading = frame.midX - (self.imgViewMenu.frame.width / 2)
-            leadingMenu.constant = leading
-        }
-
         popoverMenuTour.contentViewController = menuTourPopoverVcObj
         popoverMenuTour.animates = false
         popoverMenuTour.behavior = .applicationDefined
@@ -125,7 +119,7 @@ class menuTourVc: NSViewController {
             arrTourMessages.append(["title": tourFirstRoutine, "description": descriptionFirstRoutine])
         }else{
             imgViewMenu.image = NSImage(named: NSImage.Name("menu_HabitDisabled_ScreenShot_new"))
-            constraintsBoxPreferencesTop.constant = 166
+            constraintsBoxPreferencesTop.constant = 179
         }
         
         arrTourMessages.append(["title": tourPreferences, "description": descriptionPreferences, "arrayListItems": arrayListItemsPreferences])
@@ -185,6 +179,9 @@ class menuTourVc: NSViewController {
         allApiObject.capturePosthog(event: "menu_tour_close_clicked", metadata: [:])
 
         showAskProcrastinatingWindow()
+        if !isEmailVerified{
+            showUnverifiedEmailWindow()
+        }
     }
     
 //    func showAlertSetupComplete(){
@@ -242,8 +239,12 @@ class menuTourVc: NSViewController {
                 menuViewControllerObj?.loadView()
             }
             showAskProcrastinatingWindow()
+            if !isEmailVerified{
+                showUnverifiedEmailWindow()
+            }
         }
     }
+    
     @IBAction func btnSkipClicked(_ sender: Any) {
         popoverMenuTour.close()
         self.view.window?.close()
@@ -254,6 +255,9 @@ class menuTourVc: NSViewController {
 
         allApiObject.capturePosthog(event: "menu_tour_Skip_clicked", metadata: [:])
         showAskProcrastinatingWindow()
+        if !isEmailVerified{
+            showUnverifiedEmailWindow()
+        }
     }
     
     @IBAction func btnBgClicked(_ sender: Any) {
@@ -263,8 +267,8 @@ class menuTourVc: NSViewController {
         }
         showTooltip(sender: boxMenu, msg: thisIsDemoText, preferredEdge: .minY, maxWidthVal: 250)
     }
-    
 }
+
 extension menuTourVc: TourDelegate{
     func buttonNextClicked() {
         btnNextClickedFromPopover()

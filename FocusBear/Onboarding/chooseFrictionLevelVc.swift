@@ -8,7 +8,7 @@
 
 import Cocoa
 
-class chooseFrictionLevelVc: NSViewController {
+class chooseFrictionLevelVc: NSViewController {// not in use 
 
     @IBOutlet weak var lblSuperGentle: NSTextField!
     @IBOutlet weak var lblGentle: NSTextField!
@@ -130,7 +130,7 @@ class chooseFrictionLevelVc: NSViewController {
             SettingsManagerObject.immediatelyBlockDistractingSites = false
             SettingsManagerObject.immediatelyBlockDistractingApps = false
             showDockIcon()
-            showHowHeardWindow()
+//            showHowHeardWindow()
             break;
         case 4:
 //            allApiObject.capturePosthog(event: "choose-friction-level", metadata: ["friction-level":"gentle"])
@@ -142,9 +142,9 @@ class chooseFrictionLevelVc: NSViewController {
             SettingsManagerObject.immediatelyBlockDistractingSites = false
             SettingsManagerObject.immediatelyBlockDistractingApps = false
             showDockIcon()
-            showHowHeardWindow()
+//            showHowHeardWindow()
             break;
-        case 5:
+        case 5:// default
 //            allApiObject.capturePosthog(event: "choose-friction-level", metadata: ["friction-level":"super_gentle"])
             SettingsManagerObject.isFullScreenEnabled = false
             SettingsManagerObject.isCuddlyModeEnabled = true
@@ -154,7 +154,7 @@ class chooseFrictionLevelVc: NSViewController {
             SettingsManagerObject.immediatelyBlockDistractingSites = false
             SettingsManagerObject.immediatelyBlockDistractingApps = false
             showDockIcon()
-            showHowHeardWindow()
+//            showHowHeardWindow()
             break;
         default:
             break;
@@ -182,7 +182,7 @@ class chooseFrictionLevelVc: NSViewController {
                 switch self.slider.integerValue {
                 case 1:
                     allApiObject.capturePosthog(event: "choose-friction-level", metadata: ["friction-level":"super_strict"])
-                    showOnboardingSetPasswordWindow()
+//                    showOnboardingSetPasswordWindow()
                     SettingsManagerObject.isFullScreenEnabled = true
                     SettingsManagerObject.isCuddlyModeEnabled = false
                     SettingsManagerObject.isEasySkipEnabled = false
@@ -193,7 +193,7 @@ class chooseFrictionLevelVc: NSViewController {
                     break;
                 case 2:
                     allApiObject.capturePosthog(event: "choose-friction-level", metadata: ["friction-level":"strict"])
-                    showOnboardingSetPasswordWindow()
+//                    showOnboardingSetPasswordWindow()
                     SettingsManagerObject.isFullScreenEnabled = true
                     SettingsManagerObject.isCuddlyModeEnabled = true
                     SettingsManagerObject.isEasySkipEnabled = false

@@ -2,7 +2,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class SentryDsn, SentryEvent;
+@class SentryDsn;
+@class SentryEvent;
 
 @interface SentryNSURLRequest : NSMutableURLRequest
 
@@ -17,6 +18,11 @@ NS_ASSUME_NONNULL_BEGIN
 - (_Nullable instancetype)initEnvelopeRequestWithDsn:(SentryDsn *)dsn
                                              andData:(NSData *)data
                                     didFailWithError:(NSError *_Nullable *_Nullable)error;
+
+- (instancetype)initEnvelopeRequestWithURL:(NSURL *)url
+                                   andData:(NSData *)data
+                                authHeader:(nullable NSString *)authHeader
+                          didFailWithError:(NSError *_Nullable *_Nullable)error;
 
 @end
 

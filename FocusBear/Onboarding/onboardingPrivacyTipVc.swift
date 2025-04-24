@@ -65,11 +65,9 @@ class onboardingPrivacyTipVc: NSViewController {
         checkBoxTerms.state = .off
     }
     override func viewDidAppear() {
-        showOnboardingProgress(view: self.view, progress: 6)
         showOnboardingBellIcon(view: self.view, screen: "privacy-and-security-screen")
     }
     override func viewWillDisappear() {
-        hideOnboardingProgress(view: self.view)
         hideOnboardingBellIcon(view: self.view)
     }
     func resetState(){
@@ -95,8 +93,10 @@ class onboardingPrivacyTipVc: NSViewController {
         }
     }
     @IBAction func btnContinueClicked(_ sender: Any) {
+        UserDefaults.standard.set(true, forKey: kUserdefaultsFirstRun)
         addLog(text: "[user-action] onboardingPrivacyTipVc:- Button Continue clicked")
-        self.view.window?.contentViewController = getExplainingPermissionsVcObject()
+        self.view.window?.close()
+        showAskLoginWindow()
     }
     @IBAction func btnCheckBoxClicked(_ sender: Any) {
         resetState()

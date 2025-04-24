@@ -91,12 +91,12 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
     }
     
     func windowShouldClose(_ sender: NSWindow) -> Bool {
-        
+        addLog(text: "windowShouldClose delegate called")
         let views = mainViewControllerObj?.view.subviews ?? []
         if views.count != 1{// it means sub views are added so nothing will happen, user will need to close subviews first(logquantity view, password box)
             return false
         }
-        mainViewControllerObj?.btnAbortClicked(self)
+        mainViewControllerObj?.abortCurrentState()
         return false
     }
     
@@ -110,6 +110,7 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
             }
         }
     }
+    
     func windowWillExitFullScreen(_ notification: Notification) {
         print("windowWillExitFullScreen****")
         if !checkIsFullScreenEnabled(){

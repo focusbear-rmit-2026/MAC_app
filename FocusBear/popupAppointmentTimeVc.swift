@@ -94,6 +94,7 @@ class popupAppointmentTimeVc: NSViewController {
             self.presentAsSheet(enterPasswordVcObj!)
         }
     }
+    
     func startAppointment(){
         let duration = Calendar.current.dateComponents([.second], from: Date(), to: endTime!).second ?? 0
         if lastCurrentState == ._MORNING_HABIT_{
@@ -102,6 +103,8 @@ class popupAppointmentTimeVc: NSViewController {
             mainViewControllerObj?.postponeEveningHabitFor(minutes: 0, secondsToPostpone: duration + 160, showAskFocusModeView:false, showAskIntention:false)
         }else if lastCurrentState == ._ACTIVITY_{
             mainViewControllerObj?.postponeBreakActivitiesFor(minutes: 0, secondsToPostpone: duration + 160)
+        }else if lastCurrentState == ._CUSTOM_ROUTINE_{
+            mainViewControllerObj?.postponeCustomRoutineFor(minutes: 0, secondsToPostpone: duration + 160, showAskFocusModeView: false, showAskIntention: false)
         }
         if timer != nil{
             timer?.invalidate()
@@ -109,6 +112,7 @@ class popupAppointmentTimeVc: NSViewController {
         }
         self.view.window?.close()
     }
+    
     @IBAction func btnBackToHabitsClicked(_ sender: Any) {
         if timer != nil{
             timer?.invalidate()

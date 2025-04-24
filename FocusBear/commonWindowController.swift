@@ -23,6 +23,13 @@ class commonWindowController: NSWindowController, NSWindowDelegate {
     }
 
     func windowShouldClose(_ sender: NSWindow) -> Bool {
+        if permissionBlockDistractionWcObj != nil{
+            if self == permissionBlockDistractionWcObj{
+                allApiObject.capturePosthog(event: "permission-popup-closed", metadata: [:])
+                return true
+            }
+        }
+        
         if todoListToolVcObj != nil{
             if self.contentViewController == todoListToolVcObj{
                 allApiObject.capturePosthog(event: "todo-list-popup-closed", metadata: [:])
@@ -87,7 +94,7 @@ class commonWindowController: NSWindowController, NSWindowDelegate {
             if self == popUpOfflineWcObj{
                 addLog(text: "pop Up Offline Window close :- quit app")
                 appdelegate?.terminateFromSelf = true
-                NSApp.terminate(self)
+                quitApplicationSmoothly()
                 return true
             }
         }
@@ -143,14 +150,14 @@ class commonWindowController: NSWindowController, NSWindowDelegate {
                     allApiObject.capturePosthog(event: "login-window-closed", metadata: [:])
                     addLog(text: "Ask Login View window close:- quit app")
                     appdelegate?.terminateFromSelf = true
-                    NSApp.terminate(self)
+                    quitApplicationSmoothly()
                 }
                 
                 if self.contentViewController == getCustomLoginVcObject(){
                     allApiObject.capturePosthog(event: "login-window-closed", metadata: [:])
                     addLog(text: "custom Login View window close:- quit app")
                     appdelegate?.terminateFromSelf = true
-                    NSApp.terminate(self)
+                    quitApplicationSmoothly()
                 }
             }
         }

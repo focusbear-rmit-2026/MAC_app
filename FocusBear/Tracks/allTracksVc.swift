@@ -220,6 +220,7 @@ extension allTracksVc: NSTableViewDelegate, NSTableViewDataSource{
         }
         tblView.reloadData()
         tblView.selectRowIndexes(IndexSet(integer: sender.tag), byExtendingSelection: false)
+        menuViewControllerObj?.reloadIfNeeded()
     }
     
     @objc func btnDownloadClicked(sender:NSButton){

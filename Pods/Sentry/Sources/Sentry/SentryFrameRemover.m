@@ -1,6 +1,5 @@
 #import "SentryFrameRemover.h"
 #import "SentryFrame.h"
-#import <Foundation/Foundation.h>
 
 @implementation SentryFrameRemover
 
@@ -8,7 +7,9 @@
 {
     NSUInteger indexOfFirstNonSentryFrame = [frames indexOfObjectPassingTest:^BOOL(
         SentryFrame *_Nonnull obj, NSUInteger idx, BOOL *_Nonnull stop) {
-        return ![[obj.package lowercaseString] containsString:@"sentry"];
+        NSString *package = [obj.package lowercaseString];
+        return ![package containsString:@"/sentry.framework/"]
+            && ![package containsString:@"/sentryprivate.framework/"];
     }];
 
     if (indexOfFirstNonSentryFrame == NSNotFound) {

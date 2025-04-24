@@ -1,3 +1,4 @@
+// Adapted from: https://github.com/kstenerud/KSCrash
 //
 //  SentryCrashVarArgs.h
 //
@@ -54,7 +55,7 @@ typedef void (^SentryCrashVA_Block)(id entry);
         va_list sentrycrashva_args;                                                                \
         va_start(sentrycrashva_args, FIRST_ARG_NAME);                                              \
         for (id sentrycrashva_arg = FIRST_ARG_NAME; sentrycrashva_arg != nil;                      \
-             sentrycrashva_arg = va_arg(sentrycrashva_args, id)) {                                 \
+            sentrycrashva_arg = va_arg(sentrycrashva_args, id)) {                                  \
             sentrycrashva_block(sentrycrashva_arg);                                                \
         }                                                                                          \
         va_end(sentrycrashva_args);                                                                \
@@ -70,26 +71,3 @@ typedef void (^SentryCrashVA_Block)(id entry);
 #define sentrycrashva_list_to_nsarray(FIRST_ARG_NAME, ARRAY_NAME)                                  \
     NSMutableArray *ARRAY_NAME = [NSMutableArray array];                                           \
     sentrycrashva_iterate_list(FIRST_ARG_NAME, ^(id entry) { [ARRAY_NAME addObject:entry]; })
-
-/**
- * Convert a variable argument list into a dictionary, interpreting the vararg
- * list as object, key, object, key, ...
- * An autoreleased NSMutableDictionary will be created in the current scope with
- * the specified name.
- *
- * @param FIRST_ARG_NAME The name of the first argument in the vararg list.
- * @param DICT_NAME The name of the dictionary to create in the current scope.
- */
-#define sentrycrashva_list_to_nsdictionary(FIRST_ARG_NAME, DICT_NAME)                              \
-    NSMutableDictionary *DICT_NAME = [NSMutableDictionary dictionary];                             \
-    {                                                                                              \
-        __block id sentrycrashva_object = nil;                                                     \
-        sentrycrashva_iterate_list(FIRST_ARG_NAME, ^(id entry) {                                   \
-            if (sentrycrashva_object == nil) {                                                     \
-                sentrycrashva_object = entry;                                                      \
-            } else {                                                                               \
-                [DICT_NAME setObject:sentrycrashva_object forKey:entry];                           \
-                sentrycrashva_object = nil;                                                        \
-            }                                                                                      \
-        });                                                                                        \
-    }

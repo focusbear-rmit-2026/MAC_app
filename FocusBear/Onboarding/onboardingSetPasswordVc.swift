@@ -7,7 +7,7 @@
 
 import Cocoa
 
-class onboardingSetPasswordVc: NSViewController {
+class onboardingSetPasswordVc: NSViewController {// not in use 
 
     @IBOutlet weak var lblDescription: NSTextField!
     @IBOutlet weak var btnContinue: Button!
@@ -355,6 +355,6 @@ class onboardingSetPasswordVc: NSViewController {
     }
     
     @IBAction func btnContinueClicked(_ sender: Any) {
-        showHowHeardWindow()
+//        showHowHeardWindow()
     }
 }

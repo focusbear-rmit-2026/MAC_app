@@ -264,7 +264,7 @@ class settingsSideBarVc: NSViewController {
                 }
             }
             if id == idSuperPomodoro{
-                tblView.selectRowIndexes(IndexSet(integer: 4), byExtendingSelection: false)
+                tblView.selectRowIndexes(IndexSet(integer: pomodoroSettingsIndex), byExtendingSelection: false)
                 pomodoroSettingsVcObj?.showHardCorePomodoroSetting()
                 return;
             }

@@ -162,6 +162,9 @@ class permissionsVc: NSViewController {
                                         DispatchQueue.main.async {
                                             self.arrBrowsers[i]["isEnabled"] = true
                                             self.tblView.reloadData()
+                                            if UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) == nil{
+                                                UserDefaults.standard.set(true, forKey: kUserdefaultsBrowsersPermissionsSetByUser)
+                                            }
                                         }
                                         
                                     }
@@ -253,6 +256,9 @@ extension permissionsVc:NSTableViewDelegate, NSTableViewDataSource {
                     DispatchQueue.main.async {
                         self.arrBrowsers[sender.tag]["isEnabled"] = true
                         self.tblView.reloadData()
+                        if UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) == nil{
+                            UserDefaults.standard.set(true, forKey: kUserdefaultsBrowsersPermissionsSetByUser)
+                        }
                     }
                 }else {
                     DispatchQueue.main.async {

@@ -1,5 +1,4 @@
 #import "SentryMessage.h"
-#import <Foundation/Foundation.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -37,6 +36,11 @@ const NSUInteger MAX_STRING_LENGTH = 8192;
     [serializedData setValue:self.params forKey:@"params"];
 
     return serializedData;
+}
+
+- (NSString *)description
+{
+    return [NSString stringWithFormat:@"<%@: %p, %@>", [self class], self, [self serialize]];
 }
 
 @end

@@ -216,8 +216,13 @@ class focusSummaryVc: NSViewController {
             let arrDuration = UserDefaults.standard.object(forKey: kUserdefaultsArrayBreaksDurations) as? [Int] ?? []
             let totalDuration = arrDuration.reduce(0, +)
             
-            let timeSpentText = "Total time spent on breaks: <TIME>"
-            lblTotalBreaksTimeGeekMode.stringValue = timeSpentText.replacingOccurrences(of: "<TIME>", with: getStringTimeFromSeconds(seconds: totalDuration)) // todo text
+            var timeSpentText = "Total time spent on breaks: <TIME>"
+            if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
+                if let focusSummaryInfo = focusInfo.value(forKey: "focusSummaryInfo") as? NSDictionary{
+                    timeSpentText = focusSummaryInfo.value(forKey: "totalBreaksTimeText") as? String ?? timeSpentText
+                }
+            }
+            lblTotalBreaksTimeGeekMode.stringValue = timeSpentText.replacingOccurrences(of: "<TIME>", with: getStringTimeFromSeconds(seconds: totalDuration))
             
         }else{
             scrollViewFocusSummary.isHidden = true
@@ -233,7 +238,7 @@ class focusSummaryVc: NSViewController {
             lblTitleTimeSpentEnableApp.stringValue = "Time spent with blocking activated:"
             lblTitleTotalTimeOnBlockedSItes.stringValue = "Time spent on super distracting sites:"
             lblTitleTotalDistractingSites.stringValue = "Total distracting sites blocked:"
-            lblTitleTimeSpentOnBreaks.stringValue = "Total time spent on breaks:" // todo text
+            lblTitleTimeSpentOnBreaks.stringValue = "Total time spent on breaks:"
             
             
             if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
@@ -243,6 +248,7 @@ class focusSummaryVc: NSViewController {
                     lblTitleTimeSpentEnableApp.stringValue = focusSummaryInfo.value(forKey: "titleTimeSpentEnableApp") as? String ?? lblTitleTimeSpentEnableApp.stringValue
                     lblTitleTotalTimeOnBlockedSItes.stringValue = focusSummaryInfo.value(forKey: "titleTotalTimeOnBlockedSItes") as? String ?? lblTitleTotalTimeOnBlockedSItes.stringValue
                     lblTitleTotalDistractingSites.stringValue = focusSummaryInfo.value(forKey: "titleTotalDistractingSites") as? String ?? lblTitleTotalDistractingSites.stringValue
+                    lblTitleTimeSpentOnBreaks.stringValue = focusSummaryInfo.value(forKey: "titleTimeSpentOnBreaks") as? String ?? lblTitleTimeSpentOnBreaks.stringValue
                 }
             }
             
@@ -571,7 +577,7 @@ class focusSummaryVc: NSViewController {
             }
         }else{
             addLog(text: "[user-action] button I still need to work more Clicked from focus summary")
-            mainViewControllerObj?.btnAbortClicked(self)
+            mainViewControllerObj?.abortCurrentState()
         }
     }
     

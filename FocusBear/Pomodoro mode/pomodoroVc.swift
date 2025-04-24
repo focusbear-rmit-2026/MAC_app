@@ -9,6 +9,14 @@ import Cocoa
 
 class pomodoroVc: NSViewController {
     
+    @IBOutlet weak var btnPin: cursorButton!
+    @IBOutlet weak var boxPin: NSBox!
+    @IBOutlet weak var btnToggleBreaksSettingsInfo: hoverInfoButton!
+    @IBOutlet weak var btnToggleBreaksSettings: underLineButton!
+    @IBOutlet weak var lblTipPermissions: NSTextField!
+    @IBOutlet weak var boxTipPermissions: NSBox!
+    @IBOutlet weak var btnError: Button!
+    @IBOutlet weak var boxError: NSBox!
     @IBOutlet weak var lblPercentageSign: NSTextField!
     @IBOutlet weak var lblTitleStrictnessLevel: NSTextField!
     @IBOutlet weak var btnStrictnessNormal: hoverInfoButton!
@@ -31,7 +39,7 @@ class pomodoroVc: NSViewController {
     @IBOutlet weak var lblAdvancedMode: NSTextField!
     @IBOutlet weak var btnSwitchAdvancedMode: NSSwitch!
     @IBOutlet weak var lblTimerUnfocused: NSTextField!
-    @IBOutlet weak var checkBoxSkipMicrobreaks: NSButton!
+//    @IBOutlet weak var checkBoxSkipMicrobreaks: NSButton!
     @IBOutlet weak var lblCompletedPomodoroCount: NSTextField!
     @IBOutlet weak var lblMinutesBreakDuration: NSTextField!
     @IBOutlet weak var lblMinutesWorkDuration: NSTextField!
@@ -50,11 +58,9 @@ class pomodoroVc: NSViewController {
     @IBOutlet var textViewAchieve: NSTextView!
     @IBOutlet weak var lblHowManyPomodoro: NSTextField!
     @IBOutlet weak var popupBtnSelectPomodoroCount: NSPopUpButton!
-    
-//    @IBOutlet weak var btnFrictionLevelInfo: hoverInfoButton!
-//    @IBOutlet weak var lblFrictionLevel: NSTextField!
-//    @IBOutlet weak var lblTitleFrictionLevel: NSTextField!
     @IBOutlet weak var btnInfoPomodoro: cursorButton!
+    
+    var browserPermissionGiven = false
     
     var workRatio = 5
     var breakRatio = 1
@@ -74,10 +80,7 @@ class pomodoroVc: NSViewController {
     
     let noItemSelectedIndex = -1
     let defaultIndex = 0
-
-//    var addTaskVcObj:addTaskVc!// = getAddTaskVcObject()
-//    var frictionLevelLowText = "low"
-//    var frictionLevelHighText = "high"
+    var isSkipMicrobreaks = false
     
     var isFrictionLevelHigh = false
     var popoverTooltip:NSPopover?// = NSPopover()
@@ -92,6 +95,10 @@ class pomodoroVc: NSViewController {
     var currentTourIndex = 0
     var isIntentionFromMorningPostpone = false
     var timerMoveWindowToCenter:Timer?
+    var intentionToShowAgain = ""
+    var titleBreaksOff = "Micro-breaks off"
+    var titleBreaksOn = "Micro-breaks on"
+    var pinButtonTrackingArea: NSTrackingArea?
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -113,7 +120,7 @@ class pomodoroVc: NSViewController {
 //        lblFrictionLevel.stringValue = "low"
 //        lblTitleFrictionLevel.stringValue = "Friction level:"
 
-        checkBoxSkipMicrobreaks.title = "Skip microbreaks during work blocks?"
+//        checkBoxSkipMicrobreaks.title = "Skip microbreaks during work blocks?"
         textFieldBreakDuration.formatter = IntegerFormatter()
         textFieldWorkDuration.formatter = IntegerFormatter()
         textFieldWorkDuration.delegate = self
@@ -124,7 +131,6 @@ class pomodoroVc: NSViewController {
         lblMinutesBreakDuration.stringValue = "minutes"
         
         if let preferencesInfo = configjson.value(forKey: "preferencesInfo") as? NSDictionary{
-            lblTitleWorkDuration.stringValue = preferencesInfo.value(forKey: "pomodoroModeDurationText") as? String ?? lblTitleWorkDuration.stringValue
             lblMinutesWorkDuration.stringValue = preferencesInfo.value(forKey: "minutesText") as? String ?? lblMinutesWorkDuration.stringValue
             lblTitleBreakDuration.stringValue = preferencesInfo.value(forKey: "breakDurationText") as? String ?? lblTitleBreakDuration.stringValue
             lblMinutesBreakDuration.stringValue = preferencesInfo.value(forKey: "minutesText") as? String ?? lblMinutesBreakDuration.stringValue
@@ -156,7 +162,10 @@ class pomodoroVc: NSViewController {
             buttonFinishText = menuTourVcInfo.value(forKey: "buttonFinishText") as? String ?? buttonFinishText
             indexText = menuTourVcInfo.value(forKey: "indexText") as? String ?? indexText
         }
-        
+        btnError.title = "Fix it"
+        if let simplePomodoroVcInfo = configjson.value(forKey: "simplePomodoroVcInfo") as? NSDictionary{
+            btnError.title = simplePomodoroVcInfo.value(forKey: "buttonFixItText") as? String ?? btnError.title
+        }
         
         lblTitle.stringValue = "Pomodoro time!"
         var questionFirstText = "What do you want to achieve in this focus session?"
@@ -199,7 +208,7 @@ class pomodoroVc: NSViewController {
             if let chooseTheFocusModeText = pomodoroInfo.value(forKey: "chooseTheFocusModeText") as? String{
                 self.chooseTheFocusModeText = chooseTheFocusModeText
             }
-            checkBoxSkipMicrobreaks.title = pomodoroInfo.value(forKey: "buttonSkipMicrobreaksText") as? String ?? checkBoxSkipMicrobreaks.title
+//            checkBoxSkipMicrobreaks.title = pomodoroInfo.value(forKey: "buttonSkipMicrobreaksText") as? String ?? checkBoxSkipMicrobreaks.title
             timerText = pomodoroInfo.value(forKey: "timerText") as? String ?? timerText
             lblWhatIsPomodoro.stringValue = pomodoroInfo.value(forKey: "whatIsPomodoroText") as? String ?? lblWhatIsPomodoro.stringValue
             lblAdvancedMode.stringValue = pomodoroInfo.value(forKey: "buttonAdvancedOptionsText") as? String ?? lblAdvancedMode.stringValue
@@ -209,7 +218,9 @@ class pomodoroVc: NSViewController {
             tourIntention = pomodoroInfo.value(forKey: "tourIntention") as? String ?? tourIntention
             descriptionIntention = pomodoroInfo.value(forKey: "descriptionIntention") as? String ?? descriptionIntention
             btnEditRatio.title = pomodoroInfo.value(forKey: "buttonEditRatioText") as? String ?? btnEditRatio.title
-            
+            titleBreaksOff = pomodoroInfo.value(forKey: "titleBreaksOff") as? String ?? titleBreaksOff
+            titleBreaksOn = pomodoroInfo.value(forKey: "titleBreaksOn") as? String ?? titleBreaksOn
+            lblTitleWorkDuration.stringValue = pomodoroInfo.value(forKey: "pomodoroModeDurationText") as? String ?? lblTitleWorkDuration.stringValue
         }
         arrTourMessages.append(["title": tourSelectTasks, "description": descriptionSelectTasks])
         arrTourMessages.append(["title": tourIntention, "description": descriptionIntention])
@@ -240,8 +251,94 @@ class pomodoroVc: NSViewController {
                 arrTourMessages[i]["buttonTitle"] = buttonNextText
             }
         }
+
+        pinButtonTrackingArea = NSTrackingArea.init(rect: btnPin.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
+        btnPin.addTrackingArea(pinButtonTrackingArea!)
     }
 
+    override func viewDidAppear() {
+        if SettingsManagerObject.isStrictnessLevelSuperGentle(){
+            boxPin.isHidden =  false
+            btnPin.image = #imageLiteral(resourceName: "unPin")
+            self.view.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.normalWindow)))
+        }else{
+            boxPin.isHidden = true
+            self.view.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
+        }
+        
+        boxError.isHidden = true
+        boxTipPermissions.isHidden = true
+        if UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) == nil{
+            boxError.isHidden = false
+            browserPermissionGiven = false
+            boxTipPermissions.isHidden = false
+        }else{
+            boxError.isHidden = true
+            browserPermissionGiven = false
+            boxTipPermissions.isHidden = true
+            DispatchQueue.global().async {
+                if let arrBrowsersInfo = UserDefaults.standard.object(forKey: kUserdefaultsAllBrowsersPermissionInfo) as? [[String : Any]]{
+                    for i in 0..<arrBrowsersInfo.count{
+                        let info = arrBrowsersInfo[i]
+                        let isEnabled = info["isEnabled"] as? Bool ?? false
+                        if isEnabled{
+                            self.browserPermissionGiven = true
+                            break;
+                        }
+                    }
+                }
+                
+                DispatchQueue.main.async {
+                    if !self.browserPermissionGiven{
+                        self.boxError.isHidden = false
+                        self.boxTipPermissions.isHidden = false
+                    }
+                }
+                
+            }
+        }
+        
+        if UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) == nil{
+            lblTipPermissions.stringValue = "Want to block distractions during this focus session? Grant Focus Bear permissions to block."
+            if let simplePomodoroVcInfo = configjson.value(forKey: "simplePomodoroVcInfo") as? NSDictionary{
+                lblTipPermissions.stringValue = simplePomodoroVcInfo.value(forKey: "tipPermissionsFirst") as? String ?? lblTipPermissions.stringValue
+            }
+        }else if !browserPermissionGiven{
+            lblTipPermissions.stringValue = "Distraction blocking inactive: Focus Bear doesn’t have permissions for any of your browsers."
+            if let simplePomodoroVcInfo = configjson.value(forKey: "simplePomodoroVcInfo") as? NSDictionary{
+                lblTipPermissions.stringValue = simplePomodoroVcInfo.value(forKey: "tipPermissionsSecond") as? String ?? lblTipPermissions.stringValue
+            }
+        }
+    }
+    
+    override func mouseEntered(with event: NSEvent) {
+        if event.trackingArea == pinButtonTrackingArea{
+            var pinWindowText = "Click to unpin the window (disable stay-on-top)"
+            if self.view.window?.level == NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow))){
+                pinWindowText = "Click to unpin the window (disable stay-on-top)"
+                if let pomodoroInfo = configjson.value(forKey: "pomodoroInfo") as? NSDictionary{
+                    pinWindowText = pomodoroInfo.value(forKey: "unpinWindowText") as? String ?? pinWindowText
+                }
+                
+            }else{
+                pinWindowText = "Click to pin the window (keep on top)"
+                if let pomodoroInfo = configjson.value(forKey: "pomodoroInfo") as? NSDictionary{
+                    pinWindowText = pomodoroInfo.value(forKey: "pinWindowText") as? String ?? pinWindowText
+                }
+            }
+            showTooltip(sender: btnPin, msg: pinWindowText, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
+        }
+    }
+    
+    override func mouseExited(with event: NSEvent) {
+        if event.trackingArea == pinButtonTrackingArea{
+            if popoverTooltip != nil{
+                if popoverTooltip!.isShown{
+                    popoverTooltip?.close()
+                }
+            }
+        }
+    }
     
     func updateBreakDuration(){
         let workDuration = textFieldWorkDuration.integerValue
@@ -254,6 +351,7 @@ class pomodoroVc: NSViewController {
         isBreakDurationComesFromBreakRatio = true
         print("isBreakDurationComesFromBreakRatio true")
     }
+    
     func updateWorkBreakRatio(){
         if let ratio = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsWorkRatioInPomodoro) as? Int{
             workRatio = ratio
@@ -273,8 +371,6 @@ class pomodoroVc: NSViewController {
     }
     
     override func viewWillAppear() {
-        setTimerMoveWindowToCenter()
-
         if let index = UserDefaults.standard.object(forKey: kUserdefaultsLastFocusModeStrictness) as? Int{
             sliderStrictness.integerValue = index
         }else{
@@ -319,14 +415,17 @@ class pomodoroVc: NSViewController {
             
             if let val = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHardcorePomodoroSkipMicroBreaks) as? Bool{
                 if val{
-                    checkBoxSkipMicrobreaks.state = .on
+                    btnToggleBreaksSettings.title = titleBreaksOff
+                    isSkipMicrobreaks = true
                 }else{
-                    checkBoxSkipMicrobreaks.state = .off
+                    btnToggleBreaksSettings.title = titleBreaksOn
+                    isSkipMicrobreaks = false
                 }
             }else{
-                checkBoxSkipMicrobreaks.state = .off
+                btnToggleBreaksSettings.title = titleBreaksOn
+                isSkipMicrobreaks = false
             }
-            
+
             btnLetsDoIt.isEnabled = true
             btnCheckBoxHardcodePomodoro.state = .on
             btnCheckBoxHardcodePomodoro.isEnabled = false
@@ -337,7 +436,7 @@ class pomodoroVc: NSViewController {
             stackViewPomodoroModeTime.isHidden = false
             textFieldWorkDuration.isEnabled = false
             textFieldBreakDuration.isEnabled = false
-            checkBoxSkipMicrobreaks.isEnabled = false
+            btnToggleBreaksSettings.isEnabled = false
             popUpBtnFocusAlignmentScore.isEnabled = false
             sliderStrictness.isEnabled = false
             if let duration = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsPomodoroDurationMinutes) as? Int{
@@ -364,7 +463,7 @@ class pomodoroVc: NSViewController {
             textFieldWorkDuration.isEnabled = false
             textFieldBreakDuration.isEnabled = false
             lblCompletedPomodoroCount.isHidden = false
-            checkBoxSkipMicrobreaks.isEnabled = false
+            btnToggleBreaksSettings.isEnabled = false
             popUpBtnFocusAlignmentScore.isEnabled = false
             sliderStrictness.isEnabled = false
             let remainingPomodoroCount = totalPomodoroCountInHardCorePomodoro - completedPomodoroCountInHardcorePomodoro
@@ -384,12 +483,15 @@ class pomodoroVc: NSViewController {
         }else{
             if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsPomodoroSkipMicroBreaks) as? Bool{
                 if state{
-                    checkBoxSkipMicrobreaks.state = .on
+                    btnToggleBreaksSettings.title = titleBreaksOff
+                    isSkipMicrobreaks = true
                 }else{
-                    checkBoxSkipMicrobreaks.state = .off
+                    btnToggleBreaksSettings.title = titleBreaksOn
+                    isSkipMicrobreaks = false
                 }
             }else{
-                checkBoxSkipMicrobreaks.state = .on
+                btnToggleBreaksSettings.title = titleBreaksOff
+                isSkipMicrobreaks = true
             }
             lblTimerUnfocused.isHidden = false
             startTimer()
@@ -400,7 +502,7 @@ class pomodoroVc: NSViewController {
             btnCheckBoxHardcodePomodoro.isEnabled = true
             popUpBtnFocusType.isEnabled = true
             btnEditFocusMode.isEnabled = true
-            checkBoxSkipMicrobreaks.isEnabled = true
+            btnToggleBreaksSettings.isEnabled = true
             popUpBtnFocusAlignmentScore.isEnabled = true
             btnLetsDoIt.isEnabled = true
             popupBtnSelectPomodoroCount.isEnabled = true
@@ -462,7 +564,6 @@ class pomodoroVc: NSViewController {
 //        addTaskVcObj.reloadData(isAddingTask: true)
         
         if let boolValue = UserDefaults.standard.object(forKey: kUserdefaultsIsAdvancedPomodoroEnabled) as? Bool{
-            checkBoxSkipMicrobreaks.isHidden = !boolValue
             btnCheckBoxHardcodePomodoro.isHidden = !boolValue
             stackViewFocusAlignmentScore.isHidden = true
             if boolValue{
@@ -479,14 +580,21 @@ class pomodoroVc: NSViewController {
         }
         
         viewDidResize()
+        if !nextFocusSessionIntention.isEmpty{
+            textViewAchieve.string = nextFocusSessionIntention
+        }
     }
     //Re-center the pomodoro popup if user takes no action #1053
     func setTimerMoveWindowToCenter(){
+        removeTimerMoveWindowToCenter()
+        self.timerMoveWindowToCenter = Timer.scheduledTimer(timeInterval: 60, target: self, selector: #selector(self.moveWindowToCenter), userInfo: nil, repeats: true)
+    }
+    
+    func removeTimerMoveWindowToCenter(){
         if self.timerMoveWindowToCenter != nil{
             self.timerMoveWindowToCenter?.invalidate()
             self.timerMoveWindowToCenter = nil
         }
-        self.timerMoveWindowToCenter = Timer.scheduledTimer(timeInterval: 60, target: self, selector: #selector(self.moveWindowToCenter), userInfo: nil, repeats: true)
     }
     
     @objc func moveWindowToCenter() {
@@ -499,11 +607,9 @@ class pomodoroVc: NSViewController {
                     let newOriginY = screenFrame.midY - (windowFrame.height / 2)
                     window.setFrameOrigin(NSPoint(x: newOriginX, y: newOriginY))
                 }
-            }else{
-                self.timerMoveWindowToCenter?.invalidate()
-                self.timerMoveWindowToCenter = nil
             }
         }
+        removeTimerMoveWindowToCenter()
     }
     //-----------------------------------------------//
     
@@ -546,7 +652,7 @@ class pomodoroVc: NSViewController {
             lblMinutesBreakDuration.font =  getRegularFont(size: fontSizeTwelve)
             textFieldWorkDuration.font =  getRegularFont(size: fontSizeEleven)
             textFieldBreakDuration.font =  getRegularFont(size: fontSizeEleven)
-            checkBoxSkipMicrobreaks.font =  getRegularFont(size: fontSizeTwelve)
+            btnToggleBreaksSettings.font =  getRegularFont(size: fontSizeTwelve)
             lblFocusAlignmentScore.font =  getRegularFont(size: fontSizeTwelve)
             popUpBtnFocusAlignmentScore.font =  getRegularFont(size: fontSizeEleven)
             lblTimerUnfocused.font =  getRegularFont(size: fontSizeTwelve)
@@ -572,7 +678,7 @@ class pomodoroVc: NSViewController {
             lblMinutesBreakDuration.font =  getRegularFont(size: 14)
             textFieldWorkDuration.font =  getRegularFont(size: 13)
             textFieldBreakDuration.font =  getRegularFont(size: 13)
-            checkBoxSkipMicrobreaks.font =  getRegularFont(size: 14)
+            btnToggleBreaksSettings.font =  getRegularFont(size: 14)
             lblFocusAlignmentScore.font =  getRegularFont(size: 14)
             popUpBtnFocusAlignmentScore.font =  getRegularFont(size: 13)
             lblTimerUnfocused.font =  getRegularFont(size: 14)
@@ -620,9 +726,11 @@ class pomodoroVc: NSViewController {
         }
 
     }
+    
     @IBAction func popUpBtnFocusTypeClicked(_ sender: Any) {
         focusModeSelected()
     }
+    
     func focusModeSelected(){
         let index = popUpBtnFocusType.indexOfSelectedItem
         if let focusAlignmentScore = arrFocusTypeForPomodoro[index]["focusAlignmentScoreThreshold"] as? Int{
@@ -714,6 +822,64 @@ class pomodoroVc: NSViewController {
                 showAlert(msg: breakDurationZeroErrorText)
                 return;
             }
+        }
+        if UserDefaults.standard.object(forKey: kUserdefaultsIsAnyDistractionSetByUser) == nil{
+            let alertWarning = NSAlert()
+            alertWarning.setSharingType()
+            alertWarning.messageText = "Do you want to block distractions?"
+            alertWarning.informativeText = "You can block distracting websites and distracting apps. You will need to allow permissions to block distracting websites."
+            var buttonBlockText = "Yeah - block them!"
+            var buttonNoText = "No thanks"
+            
+            if let simplePomodoroVcInfo = configjson.value(forKey: "simplePomodoroVcInfo") as? NSDictionary{
+                alertWarning.messageText = simplePomodoroVcInfo.value(forKey: "alertWarningPermissionsTitle") as? String ?? alertWarning.messageText
+                alertWarning.informativeText = simplePomodoroVcInfo.value(forKey: "alertWarningSetDistractionsInfo") as? String ?? alertWarning.informativeText
+                buttonBlockText = simplePomodoroVcInfo.value(forKey: "buttonBlockText") as? String ?? buttonBlockText
+                buttonNoText = simplePomodoroVcInfo.value(forKey: "buttonNoText") as? String ?? buttonNoText
+            }
+            
+            alertWarning.addButton(withTitle: buttonBlockText)
+            alertWarning.addButton(withTitle: buttonNoText)
+            
+            alertWarning.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
+                if modalResponse == .alertFirstButtonReturn{
+                    showDistractionTypesWindow()
+                    self.intentionToShowAgain = self.textViewAchieve.string
+                    self.view.window?.close()
+                }else{
+                    self.btnLetsDoItClicked(self)
+                }
+            })
+            UserDefaults.standard.set(true, forKey: kUserdefaultsIsAnyDistractionSetByUser)
+            return;
+        }else if UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) == nil{
+            let alertWarning = NSAlert()
+            alertWarning.setSharingType()
+            alertWarning.messageText = "Do you want to block distractions?"
+            alertWarning.informativeText = "You will need to allow permissions to block distracting websites."
+            var buttonBlockText = "Yeah - block them!"
+            var buttonNoText = "No thanks"
+            
+            if let simplePomodoroVcInfo = configjson.value(forKey: "simplePomodoroVcInfo") as? NSDictionary{
+                alertWarning.messageText = simplePomodoroVcInfo.value(forKey: "alertWarningPermissionsTitle") as? String ?? alertWarning.messageText
+                alertWarning.informativeText = simplePomodoroVcInfo.value(forKey: "alertWarningPermissionsInfo") as? String ?? alertWarning.informativeText
+                buttonBlockText = simplePomodoroVcInfo.value(forKey: "buttonBlockText") as? String ?? buttonBlockText
+                buttonNoText = simplePomodoroVcInfo.value(forKey: "buttonNoText") as? String ?? buttonNoText
+            }
+            alertWarning.addButton(withTitle: buttonBlockText)
+            alertWarning.addButton(withTitle: buttonNoText)
+            
+            alertWarning.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
+                if modalResponse == .alertFirstButtonReturn{
+                    showExplainingPermissionsWindow()
+                    self.intentionToShowAgain = self.textViewAchieve.string
+                    self.view.window?.close()
+                }else{
+                    self.btnLetsDoItClicked(self)
+                }
+            })
+            UserDefaults.standard.set(true, forKey: kUserdefaultsBrowsersPermissionsSetByUser)
+            return;
         }
         
         if isHardCorePomodoroModeOn{
@@ -870,6 +1036,7 @@ class pomodoroVc: NSViewController {
     }
     
     func checkStateAndStartPomodoroMode(){
+        nextFocusSessionIntention = ""
         let isRelaxFocus = arrFocusTypeForPomodoro[popUpBtnFocusType.indexOfSelectedItem]["isRelaxFocus"] as? Bool ?? false
         if isRelaxFocus && shouldAskPassword() && SettingsManagerObject.isPasswordRequireInUseRelaxFocusMode{
             self.presentAsSheet(self.enterPasswordVcObj!)
@@ -888,10 +1055,13 @@ class pomodoroVc: NSViewController {
             return
         }
         if sliderStrictness.integerValue == 1{
+            addLog(text: "focus mode is normal mode")
             currentFocusModeStrictness = ._NORMAL_
         }else if sliderStrictness.integerValue == 2{
+            addLog(text: "focus mode is strict mode")
             currentFocusModeStrictness = ._STRICT_
         }else if sliderStrictness.integerValue == 3{
+            addLog(text: "focus mode is super strict mode")
             currentFocusModeStrictness = ._SUPER_STRICT_
         }
         UserDefaults.standard.set(sliderStrictness.integerValue, forKey: kUserdefaultsLastFocusModeStrictness)
@@ -994,10 +1164,12 @@ class pomodoroVc: NSViewController {
         
         appdelegate?.setFocusModeTimer(hour: nil, minute: minute)
         isFocusModeStartedFromPomodoroMode = true
-        if checkBoxSkipMicrobreaks.state == .on{
+        if isSkipMicrobreaks{
             isSkipBreakActivityDuringPomodoro = true
+            addLog(text: "checkBoxSkipMicrobreaks is on in geek mode focus session.")
         }else{
             isSkipBreakActivityDuringPomodoro = false
+            addLog(text: "checkBoxSkipMicrobreaks is off in geek mode focus session.")
         }
         whatToAchieveInFocusBlock = textViewAchieve.string
         appdelegate!.setIntentionInBrainDumpWindow()
@@ -1065,19 +1237,11 @@ class pomodoroVc: NSViewController {
         allApiObject.capturePosthog(event: "start-focus-session-popup-closed", metadata: [:])
     }
     override func viewWillDisappear() {
-        if self.timerMoveWindowToCenter != nil{
-            self.timerMoveWindowToCenter?.invalidate()
-            self.timerMoveWindowToCenter = nil
-        }
+        removeTimerMoveWindowToCenter()
         
         isIntentionFromMorningPostpone = false
         timer?.invalidate()
         timer = nil
-//        addTaskVcObj.isAddingTask = false
-//        addTaskVcObj.isWebViewUrlLodded = false
-//        if addTaskVcObj.presentingViewController == self{
-//            addTaskVcObj.dismiss(addTaskVcObj)
-//        }
         if alertExtendPostpone != nil{
             if alertExtendPostpone!.window.isVisible{
                 self.view.window!.endSheet(alertExtendPostpone!.window)
@@ -1140,6 +1304,7 @@ class pomodoroVc: NSViewController {
             self.lblTimerUnfocused.stringValue = self.timerText.replacingOccurrences(of: "<TIME>", with: "\(hour):\(minute):\(second)")//"Time spend unfocused: \(hour):\(minute):\(second)"//
         }
     }
+    
     @objc func performTimerCount() {
         if !appdelegate!.isSystemSleep && !appdelegate!.isScreenSaverStart && currentState != ._ACTIVITY_{
             currentTimer += 1
@@ -1149,7 +1314,6 @@ class pomodoroVc: NSViewController {
 
     @IBAction func btnSwitchAdvancedModeClicked(_ sender: Any) {
         if btnSwitchAdvancedMode.state == .on{
-            checkBoxSkipMicrobreaks.isHidden = false
             btnCheckBoxHardcodePomodoro.isHidden = false
             stackViewFocusAlignmentScore.isHidden = true
             if SettingsManagerObject.isCuddlyModeEnabled && SettingsManagerObject.isAiCheckUrlEnabled && sliderStrictness.integerValue != 3{
@@ -1157,7 +1321,6 @@ class pomodoroVc: NSViewController {
             }
             UserDefaults.standard.set(true, forKey: kUserdefaultsIsAdvancedPomodoroEnabled)
         }else{
-            checkBoxSkipMicrobreaks.isHidden = true
             btnCheckBoxHardcodePomodoro.isHidden = true
             stackViewFocusAlignmentScore.isHidden = true
             UserDefaults.standard.set(false, forKey: kUserdefaultsIsAdvancedPomodoroEnabled)
@@ -1207,13 +1370,7 @@ class pomodoroVc: NSViewController {
         
         popoverTooltip!.show(relativeTo: btnInfoPomodoro.bounds, of: btnInfoPomodoro, preferredEdge: NSRectEdge.maxX)
     }
-    @IBAction func checkBoxSkipMicrobreaksClicked(_ sender: Any) {
-        if checkBoxSkipMicrobreaks.state == .on{
-            UserDefaults.standard.set(true, forKey: SettingsManagerObject.kUserdefaultsPomodoroSkipMicroBreaks)
-        }else{
-            UserDefaults.standard.set(false, forKey: SettingsManagerObject.kUserdefaultsPomodoroSkipMicroBreaks)
-        }
-    }
+
     
     @IBAction func btnEditRatioClicked(_ sender: Any) {
         if SettingsManagerObject.isGeekModeEnabled{
@@ -1291,6 +1448,73 @@ class pomodoroVc: NSViewController {
             showTooltip(sender: sliderStrictness, msg: strictnessSuperStrictClickedText, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
         }
         btnSwitchAdvancedModeClicked(self)
+    }
+    
+    @IBAction func btnToggleBreaksSettingsClicked(_ sender: Any) {
+        if isSkipMicrobreaks{
+            btnToggleBreaksSettings.title = titleBreaksOn
+            UserDefaults.standard.set(false, forKey: SettingsManagerObject.kUserdefaultsPomodoroSkipMicroBreaks)
+            isSkipMicrobreaks = false
+        }else{
+            btnToggleBreaksSettings.title = titleBreaksOff
+            UserDefaults.standard.set(true, forKey: SettingsManagerObject.kUserdefaultsPomodoroSkipMicroBreaks)
+            isSkipMicrobreaks = true
+        }
+    }
+    
+    @IBAction func btnToggleBreaksSettingsInfoClicked(_ sender: Any) {
+        var msg = "Activate micro-breaks for eye health and stretch reminders during your focus session. Every <BREAK_FREQUENCY> minutes, Focus Bear will ask you to take a short break. Then at the end of your focus session, you’ll get a longer break of <BREAK_DURATION> minutes"
+        
+        if let pomodoroInfo = configjson.value(forKey: "pomodoroInfo") as? NSDictionary{
+            msg = pomodoroInfo.value(forKey: "toggleBreaksTooltip") as? String ?? msg
+        }
+        msg = msg.replacingOccurrences(of: "<BREAK_FREQUENCY>", with: "\(breakAfterMinutes)")
+        msg = msg.replacingOccurrences(of: "<BREAK_DURATION>", with: "\(textFieldBreakDuration.integerValue)")
+        
+        showTooltip(sender: btnToggleBreaksSettingsInfo, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:350)
+    }
+    
+    @IBAction func btnPinClicked(_ sender: Any) {
+        if self.view.window?.level == NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow))){
+            self.view.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.normalWindow)))
+            btnPin.image = #imageLiteral(resourceName: "unPin")
+        }else{
+            self.view.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
+            btnPin.image = #imageLiteral(resourceName: "pin")
+        }
+    }
+    
+    @IBAction func btnErrorClicked(_ sender: Any) {
+        if UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) == nil{
+            let alertWarning = NSAlert()// will not execute
+            alertWarning.setSharingType()
+            alertWarning.messageText = "Do you want to block distractions?"
+            alertWarning.informativeText = "You can block distracting websites and distracting apps. You will need to allow permissions to block distracting websites."
+            var buttonBlockText = "Yeah - block them!"
+            var buttonNoText = "No thanks"
+            if let simplePomodoroVcInfo = configjson.value(forKey: "simplePomodoroVcInfo") as? NSDictionary{
+                alertWarning.messageText = simplePomodoroVcInfo.value(forKey: "alertWarningPermissionsTitle") as? String ?? alertWarning.messageText
+                alertWarning.informativeText = simplePomodoroVcInfo.value(forKey: "alertWarningSetDistractionsInfo") as? String ?? alertWarning.informativeText
+                buttonBlockText = simplePomodoroVcInfo.value(forKey: "buttonBlockText") as? String ?? buttonBlockText
+                buttonNoText = simplePomodoroVcInfo.value(forKey: "buttonNoText") as? String ?? buttonNoText
+            }
+            alertWarning.addButton(withTitle: buttonBlockText)
+            alertWarning.addButton(withTitle: buttonNoText)
+            
+            alertWarning.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
+                
+                if modalResponse == .alertFirstButtonReturn{
+                    showDistractionTypesWindow()
+                    self.intentionToShowAgain = self.textViewAchieve.string
+                }
+                
+            })
+        }else if !browserPermissionGiven{
+            showExplainingPermissionsWindow()
+            self.intentionToShowAgain = self.textViewAchieve.string
+            explainingPermissionsVcObj?.showingFromPomodoro = true
+            self.view.window?.close()
+        }
     }
 }
 

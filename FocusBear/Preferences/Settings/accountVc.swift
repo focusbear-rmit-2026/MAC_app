@@ -7,10 +7,13 @@
 //
 
 import Cocoa
+import Auth0
 
 class accountVc: NSViewController {
 
     
+    @IBOutlet weak var loaderResetPassword: NSProgressIndicator!
+    @IBOutlet weak var btnResetPassword: Button!
     @IBOutlet weak var lblTitleMain: NSTextField!
     @IBOutlet weak var loader: NSProgressIndicator!
     @IBOutlet weak var btnRestorePurchase: Button!
@@ -37,7 +40,7 @@ class accountVc: NSViewController {
         lblTitleName.stringValue = "Name:"
         lblTitleEmailId.stringValue = "Email Id:"
         btnLogout.title = "Logout"
-        
+        btnResetPassword.title = "Reset Password"
         if let accountVcInfo = configjson.value(forKey: "accountVcInfo") as? NSDictionary{
             lblTitle.stringValue = accountVcInfo.value(forKey: "title") as? String ?? lblTitle.stringValue
             lblTitleName.stringValue = accountVcInfo.value(forKey: "titleNameText") as? String ?? lblTitleName.stringValue
@@ -46,6 +49,7 @@ class accountVc: NSViewController {
             lblTitleUserId.stringValue = accountVcInfo.value(forKey: "titleUserIdText") as? String ?? lblTitleUserId.stringValue
             restoreText = accountVcInfo.value(forKey: "restoreText") as? String ?? restoreText
             btnRestorePurchase.title = accountVcInfo.value(forKey: "buttonRestoreText") as? String ?? btnRestorePurchase.title
+            btnResetPassword.title = accountVcInfo.value(forKey: "buttonResetPasswordText") as? String ?? btnResetPassword.title
         }
         
         arrForSearchFromSettings.append(["title": lblTitle.stringValue, "tabId": idAccount, "object": lblTitle as Any])
@@ -135,7 +139,7 @@ class accountVc: NSViewController {
             if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
                 print("okclicked")
                 allApiObject.capturePosthog(event: "logout", metadata: [:])
-                appdelegate?.logout()
+                appdelegate?.logout(isAutomatic: false)
             }
         })
        
@@ -150,6 +154,108 @@ class accountVc: NSViewController {
                 self.loader.stopAnimation(self)
                 self.btnRestorePurchase.isEnabled = true
                 self.viewWillAppear()
+            }
+            
+        })
+    }
+    
+    @IBAction func btnResetPasswordClicked(_ sender: Any) {
+        addLog(text: "[user-action] accountVc:- Reset Password Clicked")
+        loaderResetPassword.startAnimation(self)
+        if !isEmailVerified{
+            btnResetPassword.isEnabled = false
+            allApiObject.getuserDetailsInfo(completionHandler: {dic in
+                DispatchQueue.main.async {
+                    self.loaderResetPassword.stopAnimation(self)
+                    self.btnResetPassword.isEnabled = true
+                    if dic != nil{
+                        isEmailVerified = dic?.value(forKey: "email_verified") as? Bool ?? false 
+                        if !isEmailVerified{
+                            if unverifiedEmailWcObj != nil{
+                                if unverifiedEmailWcObj?.window?.isVisible ?? false{
+                                    unverifiedEmailWcObj?.window?.close()
+                                }
+                            }
+                            self.presentAsSheet(getUnverifiedEmailVcObject())
+                            getUnverifiedEmailVcObject().isAWindow = false
+                        }else{
+                            self.resetPassword()
+                        }
+                    }
+                }
+            })
+        }else{
+            resetPassword()
+        }
+    }
+
+    
+    func resetPassword(){
+        addLog(text: "func resetPassword called")
+        loaderResetPassword.startAnimation(self)
+        btnResetPassword.isEnabled = false
+        DispatchQueue.global().async{
+            sleep(20) // makes it
+            DispatchQueue.main.async{
+                self.btnResetPassword.isEnabled = true
+            }
+        }
+//        Auth0.authentication().resetPassword(email: currentUserEmail, connection: "Username-Password-Authentication").start{ result in
+//            DispatchQueue.main.async {
+//                self.loaderResetPassword.stopAnimation(self)
+//                switch result {
+//                case .success():
+//                    if let window = self.view.window {
+//                        let alert = NSAlert()
+//                        alert.messageText = "Reset Link Sent" text
+//                        alert.informativeText = "We've sent a password reset link to your email. Please check your inbox."
+//                        alert.alertStyle = .informational
+//                        alert.beginSheetModal(for: window, completionHandler: nil)
+//                    }
+//                case .failure(_):
+//                    if let window = self.view.window {
+//                        let alert = NSAlert()
+//                        alert.messageText = "Unable to Send Reset Email"
+//                        alert.informativeText = "Something went wrong while sending the reset link. Please check your internet connection and try again."
+//                        alert.alertStyle = .warning
+//                        alert.beginSheetModal(for: window, completionHandler: nil)
+//                    }
+//                }
+//            }
+//        }
+        
+        
+        
+        allApiObject.resetPassword(completionHandler: {(bool, message) in
+            DispatchQueue.main.async {
+                self.loaderResetPassword.stopAnimation(self)
+                switch bool {
+                case true:
+                    if let window = self.view.window {
+                        let alert = NSAlert()
+                        alert.messageText = "Reset Link Sent"
+                        alert.informativeText = "We've sent a password reset link to your email. Please check your inbox."
+                        if let accountVcInfo = configjson.value(forKey: "accountVcInfo") as? NSDictionary{
+                            alert.messageText = accountVcInfo.value(forKey: "linkSentTitle") as? String ?? alert.messageText
+                            alert.informativeText = accountVcInfo.value(forKey: "linkSentDescription") as? String ?? alert.informativeText
+                        }
+                        
+                        alert.alertStyle = .informational
+                        alert.beginSheetModal(for: window, completionHandler: nil)
+                    }
+                case false:
+                    if let window = self.view.window {
+                        let alert = NSAlert()
+                        alert.messageText = "Unable to Send Reset Email"
+                        alert.informativeText = message ?? "Something went wrong while sending the reset link. Please check your internet connection and try again."
+                        if let accountVcInfo = configjson.value(forKey: "accountVcInfo") as? NSDictionary{
+                            alert.messageText = accountVcInfo.value(forKey: "linkSendFailedTitle") as? String ?? alert.messageText
+                            alert.informativeText = accountVcInfo.value(forKey: "linkSendFailedDescription") as? String ?? alert.informativeText
+                        }
+                        alert.alertStyle = .warning
+                        alert.beginSheetModal(for: window, completionHandler: nil)
+                    }
+                }
             }
             
         })

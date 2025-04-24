@@ -1,35 +1,34 @@
-#import <Foundation/Foundation.h>
+#import "SentryDataCategory.h"
+#import "SentryDiscardReason.h"
 
-@class SentryEnvelope, SentryEvent, SentrySession, SentryUserFeedback, SentryAttachment,
-    SentryTraceState;
+@class SentryEnvelope;
 
 NS_ASSUME_NONNULL_BEGIN
 
-// TODO: align with unified SDK api
+typedef NS_ENUM(NSInteger, SentryFlushResult) {
+    kSentryFlushResultSuccess = 0,
+    kSentryFlushResultTimedOut,
+    kSentryFlushResultAlreadyFlushing,
+};
+
 NS_SWIFT_NAME(Transport)
 @protocol SentryTransport <NSObject>
 
-- (void)sendEvent:(SentryEvent *)event
-      attachments:(NSArray<SentryAttachment *> *)attachments
-    NS_SWIFT_NAME(send(event:attachments:));
-
-- (void)sendEvent:(SentryEvent *)event
-      withSession:(SentrySession *)session
-      attachments:(NSArray<SentryAttachment *> *)attachments;
-
-- (void)sendEvent:(SentryEvent *)event
-       traceState:(nullable SentryTraceState *)traceState
-      attachments:(NSArray<SentryAttachment *> *)attachments
-    NS_SWIFT_NAME(send(event:traceState:attachments:));
-
-- (void)sendEvent:(SentryEvent *)event
-      withSession:(SentrySession *)session
-       traceState:(nullable SentryTraceState *)traceState
-      attachments:(NSArray<SentryAttachment *> *)attachments;
-
-- (void)sendUserFeedback:(SentryUserFeedback *)userFeedback NS_SWIFT_NAME(send(userFeedback:));
-
 - (void)sendEnvelope:(SentryEnvelope *)envelope NS_SWIFT_NAME(send(envelope:));
+
+- (void)storeEnvelope:(SentryEnvelope *)envelope;
+
+- (void)recordLostEvent:(SentryDataCategory)category reason:(SentryDiscardReason)reason;
+
+- (void)recordLostEvent:(SentryDataCategory)category
+                 reason:(SentryDiscardReason)reason
+               quantity:(NSUInteger)quantity;
+
+- (SentryFlushResult)flush:(NSTimeInterval)timeout;
+
+#if defined(SENTRY_TEST) || defined(SENTRY_TEST_CI) || defined(DEBUG)
+- (void)setStartFlushCallback:(void (^)(void))callback;
+#endif // defined(SENTRY_TEST) || defined(SENTRY_TEST_CI) || defined(DEBUG)
 
 @end
 

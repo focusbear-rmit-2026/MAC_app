@@ -33,7 +33,7 @@ class focusTipsVc: NSViewController {
     var nextTitle = "Next"
     
         
-    var arrCurrentDic = [["subTitle":"Tip 1: Try focus block", "description":"You can try it out now by clicking the Play icon next to your new focus mode in the list that appears on clicking the top menu icon.", "image":#imageLiteral(resourceName: "focusTip_1")],
+    var arrCurrentDic = [["subTitle":"Tip 1: Try focus block", "description":"You can try your new focus mode out now by clicking the Start Focus Session button (click the top menu icon first).", "image":#imageLiteral(resourceName: "focusTip_1")],
                          ["subTitle":"Tip 2: Teach Focus Bear what is productive", "description":"As you use this Focus Mode, Focus Bear will ask you whether each website/app is productive.", "image":#imageLiteral(resourceName: "tip_blockPopup")],
                          ["subTitle":"Tip 3: Permanently allow apps/websites", "description":"At the end of the focus block, you can permanently allow those apps/websites (or choose not to).", "image":#imageLiteral(resourceName: "tip_allowApps")],
                          ["subTitle":"Tip 4: Use keywords", "description":"You can even add keywords, e.g. \"React Native\" and any website with that keyword will be allowed.", "image":#imageLiteral(resourceName: "tip_allowKeywords")]]
@@ -60,8 +60,8 @@ class focusTipsVc: NSViewController {
             lblSubTitle.stringValue = dic.value(forKey: "controllingBrowserText") as? String ?? lblSubTitle.stringValue
             lblDescription.stringValue = dic.value(forKey: "controllingBrowserDescription") as? String ?? lblDescription.stringValue
 
-            arrCurrentDic[0]["subTitle"] = dic.value(forKey: "tip1title") as? String ?? arrCurrentDic[1]["subTitle"]
-            arrCurrentDic[0]["description"] = dic.value(forKey: "tip1Text") as? String ?? arrCurrentDic[1]["description"]
+            arrCurrentDic[0]["subTitle"] = dic.value(forKey: "tip1title") as? String ?? arrCurrentDic[0]["subTitle"]
+            arrCurrentDic[0]["description"] = dic.value(forKey: "tip1TextNew") as? String ?? arrCurrentDic[0]["description"]
             
             arrCurrentDic[1]["subTitle"] = dic.value(forKey: "tip2Newtitle") as? String ?? arrCurrentDic[1]["subTitle"]
             arrCurrentDic[1]["description"] = dic.value(forKey: "tip2NewText") as? String ?? arrCurrentDic[1]["description"]

@@ -1,23 +1,28 @@
-#import <Foundation/Foundation.h>
-
 #import "SentryDefines.h"
+#import "SentryEnvelopeRateLimit.h"
+#import "SentryFileManager.h"
 #import "SentryRateLimits.h"
 #import "SentryRequestManager.h"
 #import "SentryTransport.h"
 
-@class SentryEnvelopeRateLimit, SentryOptions, SentryFileManager, SentryDispatchQueueWrapper;
+@class SentryDispatchQueueWrapper;
+@class SentryNSURLRequestBuilder;
+@class SentryOptions;
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface SentryHttpTransport : NSObject <SentryTransport>
+@interface SentryHttpTransport
+    : NSObject <SentryTransport, SentryEnvelopeRateLimitDelegate, SentryFileManagerDelegate>
 SENTRY_NO_INIT
 
 - (id)initWithOptions:(SentryOptions *)options
-             fileManager:(SentryFileManager *)fileManager
-          requestManager:(id<SentryRequestManager>)requestManager
-              rateLimits:(id<SentryRateLimits>)rateLimits
-       envelopeRateLimit:(SentryEnvelopeRateLimit *)envelopeRateLimit
-    dispatchQueueWrapper:(SentryDispatchQueueWrapper *)dispatchQueueWrapper;
+    cachedEnvelopeSendDelay:(NSTimeInterval)cachedEnvelopeSendDelay
+                fileManager:(SentryFileManager *)fileManager
+             requestManager:(id<SentryRequestManager>)requestManager
+             requestBuilder:(SentryNSURLRequestBuilder *)requestBuilder
+                 rateLimits:(id<SentryRateLimits>)rateLimits
+          envelopeRateLimit:(SentryEnvelopeRateLimit *)envelopeRateLimit
+       dispatchQueueWrapper:(SentryDispatchQueueWrapper *)dispatchQueueWrapper;
 
 @end
 

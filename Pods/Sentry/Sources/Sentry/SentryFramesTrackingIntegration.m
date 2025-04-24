@@ -1,76 +1,48 @@
 #import "SentryFramesTrackingIntegration.h"
-#import "SentryFramesTracker.h"
-#import "SentryLog.h"
-#import "SentryOptions+Private.h"
+
+#if SENTRY_HAS_UIKIT
+
+#    import "PrivateSentrySDKOnly.h"
+#    import "SentryDependencyContainer.h"
+#    import "SentryFramesTracker.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface
-SentryFramesTrackingIntegration ()
+@interface SentryFramesTrackingIntegration ()
 
-#if SENTRY_HAS_UIKIT
 @property (nonatomic, strong) SentryFramesTracker *tracker;
-#endif
 
 @end
 
 @implementation SentryFramesTrackingIntegration
 
-- (void)installWithOptions:(SentryOptions *)options
+- (BOOL)installWithOptions:(SentryOptions *)options
 {
-#if SENTRY_HAS_UIKIT
-    if ([self shouldBeDisabled:options]) {
-        [options removeEnabledIntegration:NSStringFromClass([self class])];
-        return;
+    if (!PrivateSentrySDKOnly.framesTrackingMeasurementHybridSDKMode
+        && ![super installWithOptions:options]) {
+        return NO;
     }
 
-    self.tracker = [SentryFramesTracker sharedInstance];
+    self.tracker = SentryDependencyContainer.sharedInstance.framesTracker;
     [self.tracker start];
 
-#else
-    [SentryLog
-        logWithMessage:
-            @"NO UIKit -> SentryFramesTrackingIntegration will not track slow and frozen frames."
-              andLevel:kSentryLevelInfo];
-#endif
+    return YES;
 }
 
-#if SENTRY_HAS_UIKIT
-- (BOOL)shouldBeDisabled:(SentryOptions *)options
+- (SentryIntegrationOption)integrationOptions
 {
-    if (!options.enableAutoPerformanceTracking) {
-        [SentryLog logWithMessage:
-                       @"AutoUIPerformanceTracking disabled. Will not track slow and frozen frames."
-                         andLevel:kSentryLevelDebug];
-        return YES;
-    }
-
-    if (!options.isTracingEnabled) {
-        [SentryLog
-            logWithMessage:
-                @"No tracesSampleRate and tracesSampler set. Will not track slow and frozen frames."
-                  andLevel:kSentryLevelDebug];
-        return YES;
-    }
-
-    return NO;
+    return kIntegrationOptionEnableAutoPerformanceTracing | kIntegrationOptionIsTracingEnabled;
 }
-#endif
 
 - (void)uninstall
 {
-    [self stop];
-}
-
-- (void)stop
-{
-#if SENTRY_HAS_UIKIT
     if (nil != self.tracker) {
         [self.tracker stop];
     }
-#endif
 }
 
 @end
 
 NS_ASSUME_NONNULL_END
+
+#endif // SENTRY_HAS_UIKIT

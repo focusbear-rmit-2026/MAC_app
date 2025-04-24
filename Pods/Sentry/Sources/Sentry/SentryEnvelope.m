@@ -1,11 +1,14 @@
-#import "SentryEnvelope.h"
 #import "SentryAttachment.h"
 #import "SentryBreadcrumb.h"
+#import "SentryClientReport.h"
+#import "SentryEnvelope+Private.h"
+#import "SentryEnvelopeAttachmentHeader.h"
+#import "SentryEnvelopeItemHeader.h"
 #import "SentryEnvelopeItemType.h"
 #import "SentryEvent.h"
 #import "SentryLog.h"
 #import "SentryMessage.h"
-#import "SentryMeta.h"
+#import "SentryMsgPackSerializer.h"
 #import "SentrySdkInfo.h"
 #import "SentrySerialization.h"
 #import "SentrySession.h"
@@ -19,66 +22,34 @@ NS_ASSUME_NONNULL_BEGIN
 // id can be null if no event in the envelope or attachment related to event
 - (instancetype)initWithId:(SentryId *_Nullable)eventId
 {
-    SentrySdkInfo *sdkInfo = [[SentrySdkInfo alloc] initWithName:SentryMeta.sdkName
-                                                      andVersion:SentryMeta.versionString];
-    self = [self initWithId:eventId andSdkInfo:sdkInfo];
-
+    self = [self initWithId:eventId traceContext:nil];
     return self;
 }
 
-- (instancetype)initWithId:(SentryId *_Nullable)eventId andSdkInfo:(SentrySdkInfo *_Nullable)sdkInfo
-{
-    return [self initWithId:eventId sdkInfo:sdkInfo traceState:nil];
-}
-
 - (instancetype)initWithId:(nullable SentryId *)eventId
-                traceState:(nullable SentryTraceState *)traceState
+              traceContext:(nullable SentryTraceContext *)traceContext
 {
-    SentrySdkInfo *sdkInfo = [[SentrySdkInfo alloc] initWithName:SentryMeta.sdkName
-                                                      andVersion:SentryMeta.versionString];
-
-    self = [self initWithId:eventId sdkInfo:sdkInfo traceState:traceState];
-
+    SentrySdkInfo *sdkInfo = [SentrySdkInfo global];
+    self = [self initWithId:eventId sdkInfo:sdkInfo traceContext:traceContext];
     return self;
 }
 
 - (instancetype)initWithId:(nullable SentryId *)eventId
                    sdkInfo:(nullable SentrySdkInfo *)sdkInfo
-                traceState:(nullable SentryTraceState *)traceState
+              traceContext:(nullable SentryTraceContext *)traceContext
 {
-
     if (self = [super init]) {
         _eventId = eventId;
         _sdkInfo = sdkInfo;
-        _traceState = traceState;
+        _traceContext = traceContext;
     }
 
     return self;
 }
 
-@end
-
-@implementation SentryEnvelopeItemHeader
-
-- (instancetype)initWithType:(NSString *)type length:(NSUInteger)length
++ (instancetype)empty
 {
-    if (self = [super init]) {
-        _type = type;
-        _length = length;
-    }
-    return self;
-}
-
-- (instancetype)initWithType:(NSString *)type
-                      length:(NSUInteger)length
-                   filenname:(NSString *)filename
-                 contentType:(NSString *)contentType
-{
-    if (self = [self initWithType:type length:length]) {
-        _filename = filename;
-        _contentType = contentType;
-    }
-    return self;
+    return [[SentryEnvelopeHeader alloc] initWithId:nil traceContext:nil];
 }
 
 @end
@@ -96,59 +67,34 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (instancetype)initWithEvent:(SentryEvent *)event
 {
-    NSError *error;
-    NSData *json = [SentrySerialization dataWithJSONObject:[event serialize] error:&error];
+    NSData *json = [SentrySerialization dataWithJSONObject:[event serialize]];
 
-    if (nil != error) {
-        // It could be the user added something to the context or the sdk that can't serialized.
-        event.context = nil;
-        event.sdk = nil;
-        error = nil;
-        [SentrySerialization dataWithJSONObject:[event serialize] error:&error];
+    if (nil == json) {
+        // We don't know what caused the serialization to fail.
+        SentryEvent *errorEvent = [[SentryEvent alloc] initWithLevel:kSentryLevelWarning];
 
-        // The context or the sdk was the problem for serialization. Add a breadcrumb that we are
-        // dropping the context and the sdk.
-        if (nil == error) {
-            NSMutableArray<SentryBreadcrumb *> *breadcrumbs = [event.breadcrumbs mutableCopy];
-            if (nil == breadcrumbs) {
-                breadcrumbs = [[NSMutableArray alloc] init];
-            }
+        // Add some context to the event. We can only set simple properties otherwise we
+        // risk that the conversion fails again.
+        NSString *message = [NSString
+            stringWithFormat:@"JSON conversion error for event with message: '%@'", event.message];
 
-            SentryBreadcrumb *crumb = [[SentryBreadcrumb alloc] initWithLevel:kSentryLevelError
-                                                                     category:@"sentry.event"];
-            crumb.message = @"A value set to the context or sdk is not serializable. Dropping "
-                            @"context and sdk.";
-            crumb.type = @"error";
-            [breadcrumbs addObject:crumb];
-            event.breadcrumbs = breadcrumbs;
+        errorEvent.message = [[SentryMessage alloc] initWithFormatted:message];
+        errorEvent.releaseName = event.releaseName;
+        errorEvent.environment = event.environment;
+        errorEvent.platform = event.platform;
+        errorEvent.timestamp = event.timestamp;
 
-            json = [SentrySerialization dataWithJSONObject:[event serialize] error:nil];
-        } else {
-            // We don't know what caused the serialization to fail.
-            SentryEvent *errorEvent = [[SentryEvent alloc] initWithLevel:kSentryLevelWarning];
-
-            // Add some context to the event. We can only set simple properties otherwise we
-            // risk that the conversion fails again.
-            NSString *message =
-                [NSString stringWithFormat:@"JSON conversion error for event with message: '%@'",
-                          event.message];
-
-            errorEvent.message = [[SentryMessage alloc] initWithFormatted:message];
-            errorEvent.releaseName = event.releaseName;
-            errorEvent.environment = event.environment;
-            errorEvent.platform = event.platform;
-            errorEvent.timestamp = event.timestamp;
-
-            // We accept the risk that this simple serialization fails. Therefore we ignore the
-            // error on purpose.
-            json = [SentrySerialization dataWithJSONObject:[errorEvent serialize] error:nil];
-        }
+        // We accept the risk that this simple serialization fails. Therefore we ignore the
+        // error on purpose.
+        json = [SentrySerialization dataWithJSONObject:[errorEvent serialize]];
     }
 
     // event.type can be nil and the server infers error if there's a stack trace, otherwise
     // default. In any case in the envelope type it should be event. Except for transactions
     NSString *envelopeType = [event.type isEqualToString:SentryEnvelopeItemTypeTransaction]
         ? SentryEnvelopeItemTypeTransaction
+        : [event.type isEqualToString:SentryEnvelopeItemTypeFeedback]
+        ? SentryEnvelopeItemTypeFeedback
         : SentryEnvelopeItemTypeEvent;
 
     return [self initWithHeader:[[SentryEnvelopeItemHeader alloc] initWithType:envelopeType
@@ -158,10 +104,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (instancetype)initWithSession:(SentrySession *)session
 {
-    NSData *json = [NSJSONSerialization dataWithJSONObject:[session serialize]
-                                                   options:0
-                                                     // TODO: handle error
-                                                     error:nil];
+    NSData *json = [NSJSONSerialization dataWithJSONObject:[session serialize] options:0 error:nil];
     return [self
         initWithHeader:[[SentryEnvelopeItemHeader alloc] initWithType:SentryEnvelopeItemTypeSession
                                                                length:json.length]
@@ -176,12 +119,30 @@ NS_ASSUME_NONNULL_BEGIN
                                                      error:&error];
 
     if (nil != error) {
-        [SentryLog logWithMessage:@"Couldn't serialize user feedback." andLevel:kSentryLevelError];
+        SENTRY_LOG_ERROR(@"Couldn't serialize user feedback.");
         json = [NSData new];
     }
 
     return [self initWithHeader:[[SentryEnvelopeItemHeader alloc]
                                     initWithType:SentryEnvelopeItemTypeUserFeedback
+                                          length:json.length]
+                           data:json];
+}
+
+- (instancetype)initWithClientReport:(SentryClientReport *)clientReport
+{
+    NSError *error = nil;
+    NSData *json = [NSJSONSerialization dataWithJSONObject:[clientReport serialize]
+                                                   options:0
+                                                     error:&error];
+
+    if (nil != error) {
+        SENTRY_LOG_ERROR(@"Couldn't serialize client report.");
+        json = [NSData new];
+    }
+
+    return [self initWithHeader:[[SentryEnvelopeItemHeader alloc]
+                                    initWithType:SentryEnvelopeItemTypeClientReport
                                           length:json.length]
                            data:json];
 }
@@ -192,18 +153,25 @@ NS_ASSUME_NONNULL_BEGIN
     NSData *data = nil;
     if (nil != attachment.data) {
         if (attachment.data.length > maxAttachmentSize) {
-            NSString *message =
-                [NSString stringWithFormat:@"Dropping attachment with filename '%@', because the "
-                                           @"size of the passed data with %lu bytes is bigger than "
-                                           @"the maximum allowed attachment size of %lu bytes.",
-                          attachment.filename, (unsigned long)attachment.data.length,
-                          (unsigned long)maxAttachmentSize];
-            [SentryLog logWithMessage:message andLevel:kSentryLevelDebug];
-
+            SENTRY_LOG_DEBUG(
+                @"Dropping attachment with filename '%@', because the size of the passed data with "
+                @"%lu bytes is bigger than the maximum allowed attachment size of %lu bytes.",
+                attachment.filename, (unsigned long)attachment.data.length,
+                (unsigned long)maxAttachmentSize);
             return nil;
         }
 
+#if DEBUG || SENTRY_TEST || SENTRY_TEST_CI
+        if ([NSProcessInfo.processInfo.arguments
+                containsObject:@"--io.sentry.base64-attachment-data"]) {
+            data = [[attachment.data base64EncodedStringWithOptions:0]
+                dataUsingEncoding:NSUTF8StringEncoding];
+        } else {
+            data = attachment.data;
+        }
+#else
         data = attachment.data;
+#endif // DEBUG || SENTRY_TEST || SENTRY_TEST_CI
     } else if (nil != attachment.path) {
 
         NSError *error = nil;
@@ -212,10 +180,8 @@ NS_ASSUME_NONNULL_BEGIN
             [fileManager attributesOfItemAtPath:attachment.path error:&error];
 
         if (nil != error) {
-            NSString *message = [NSString
-                stringWithFormat:@"Couldn't check file size of attachment with path: %@. Error: %@",
-                attachment.path, error.localizedDescription];
-            [SentryLog logWithMessage:message andLevel:kSentryLevelError];
+            SENTRY_LOG_ERROR(@"Couldn't check file size of attachment with path: %@. Error: %@",
+                attachment.path, error.localizedDescription);
 
             return nil;
         }
@@ -223,30 +189,71 @@ NS_ASSUME_NONNULL_BEGIN
         unsigned long long fileSize = [attr fileSize];
 
         if (fileSize > maxAttachmentSize) {
-            NSString *message = [NSString
-                stringWithFormat:
-                    @"Dropping attachment, because the size of the it located at '%@' with %llu "
-                    @"bytes is bigger than the maximum allowed attachment size of %lu bytes.",
-                attachment.path, fileSize, (unsigned long)maxAttachmentSize];
-            [SentryLog logWithMessage:message andLevel:kSentryLevelDebug];
+            SENTRY_LOG_DEBUG(
+                @"Dropping attachment, because the size of the it located at '%@' with %llu bytes "
+                @"is bigger than the maximum allowed attachment size of %lu bytes.",
+                attachment.path, fileSize, (unsigned long)maxAttachmentSize);
             return nil;
         }
 
+#if DEBUG || SENTRY_TEST || SENTRY_TEST_CI
+        if ([NSProcessInfo.processInfo.arguments
+                containsObject:@"--io.sentry.base64-attachment-data"]) {
+            data = [[[[NSFileManager defaultManager] contentsAtPath:attachment.path]
+                base64EncodedStringWithOptions:0] dataUsingEncoding:NSUTF8StringEncoding];
+        } else {
+            data = [[NSFileManager defaultManager] contentsAtPath:attachment.path];
+        }
+#else
         data = [[NSFileManager defaultManager] contentsAtPath:attachment.path];
+#endif // DEBUG || SENTRY_TEST || SENTRY_TEST_CI
     }
 
-    if (nil == data) {
-        [SentryLog logWithMessage:@"Couldn't init Attachment." andLevel:kSentryLevelError];
+    if (data == nil) {
+        SENTRY_LOG_ERROR(@"Couldn't init Attachment.");
         return nil;
     }
 
     SentryEnvelopeItemHeader *itemHeader =
-        [[SentryEnvelopeItemHeader alloc] initWithType:SentryEnvelopeItemTypeAttachment
-                                                length:data.length
-                                             filenname:attachment.filename
-                                           contentType:attachment.contentType];
+        [[SentryEnvelopeAttachmentHeader alloc] initWithType:SentryEnvelopeItemTypeAttachment
+                                                      length:data.length
+                                                    filename:attachment.filename
+                                                 contentType:attachment.contentType
+                                              attachmentType:attachment.attachmentType];
 
     return [self initWithHeader:itemHeader data:data];
+}
+
+- (nullable instancetype)initWithReplayEvent:(SentryReplayEvent *)replayEvent
+                             replayRecording:(SentryReplayRecording *)replayRecording
+                                       video:(NSURL *)videoURL
+{
+    NSData *replayEventData = [SentrySerialization dataWithJSONObject:[replayEvent serialize]];
+    NSData *recording = [SentrySerialization dataWithReplayRecording:replayRecording];
+    NSURL *envelopeContentUrl =
+        [[videoURL URLByDeletingPathExtension] URLByAppendingPathExtension:@"dat"];
+
+    BOOL success = [SentryMsgPackSerializer serializeDictionaryToMessagePack:@{
+        @"replay_event" : replayEventData,
+        @"replay_recording" : recording,
+        @"replay_video" : videoURL
+    }
+                                                                    intoFile:envelopeContentUrl];
+    if (success == NO) {
+        SENTRY_LOG_ERROR(@"Could not create MessagePack for session replay envelope item.");
+        return nil;
+    }
+
+    NSData *envelopeItemContent = [NSData dataWithContentsOfURL:envelopeContentUrl];
+
+    NSError *error;
+    if (![NSFileManager.defaultManager removeItemAtURL:envelopeContentUrl error:&error]) {
+        SENTRY_LOG_ERROR(@"Cound not delete temporary replay content from disk: %@", error);
+    }
+    return [self initWithHeader:[[SentryEnvelopeItemHeader alloc]
+                                    initWithType:SentryEnvelopeItemTypeReplayVideo
+                                          length:envelopeItemContent.length]
+                           data:envelopeItemContent];
 }
 
 @end

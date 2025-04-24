@@ -1,3 +1,4 @@
+// Adapted from: https://github.com/kstenerud/KSCrash
 //
 //  SentryCrashThread.c
 //
@@ -27,10 +28,9 @@
 #include "SentryCrashThread.h"
 
 #include "SentryCrashMemory.h"
-#include "SentryCrashSystemCapabilities.h"
+#include "SentryInternalCDefines.h"
 
-//#define SentryCrashLogger_LocalLevel TRACE
-#include "SentryCrashLogger.h"
+#include "SentryAsyncSafeLog.h"
 
 #include <dispatch/dispatch.h>
 #include <mach/mach.h>
@@ -38,7 +38,7 @@
 #include <sys/sysctl.h>
 
 SentryCrashThread
-sentrycrashthread_self()
+sentrycrashthread_self(void)
 {
     thread_t thread_self = mach_thread_self();
     mach_port_deallocate(mach_task_self(), thread_self);

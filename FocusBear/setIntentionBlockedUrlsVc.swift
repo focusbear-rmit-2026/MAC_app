@@ -10,6 +10,10 @@ import Cocoa
 
 class setIntentionBlockedUrlsVc: NSViewController {
 
+    @IBOutlet weak var lblTimerTotalSecondsCopy: NSTextField!
+    @IBOutlet weak var boxSetIntention: NSBox!
+    @IBOutlet weak var lblTitleSetIntention: NSTextField!
+    @IBOutlet weak var btnAllow: Button!
     @IBOutlet weak var lblTimerTotalSeconds: NSTextField!
     @IBOutlet weak var btnInfo: hoverInfoButton!
     @IBOutlet weak var stackViewTotalTimeSpent: NSStackView!
@@ -26,7 +30,8 @@ class setIntentionBlockedUrlsVc: NSViewController {
     @IBOutlet weak var lblTitle: NSTextField!
     @IBOutlet weak var imgView: NSImageView!
     
-//    var isAutoBlockEnable = true
+    @IBOutlet weak var btnCancelIntention: Button!
+    //    var isAutoBlockEnable = true
     var tabUrl:String = ""
     var script = ""
     var timer:Timer?
@@ -53,7 +58,12 @@ class setIntentionBlockedUrlsVc: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        lblTitle.stringValue = "You said <SITE> is super distracting for you. What do you want to achieve during your time here?"
+        btnAllow.title = "Allow"
+        lblTitleSetIntention.stringValue = "What do you want to achieve during your time here?"
+        lblTitle.stringValue = "You said {site} is super distracting for you."
+        btnCancelIntention.title = buttonCancelText
+        
+//        lblTitle.stringValue = "You said <SITE> is super distracting for you. What do you want to achieve during your time here?"
         btnSetIntention.title = "Set Intention"
         btnBlockIt.title = "Block it"
         lblCheckBoxDoNotShowThis.stringValue = "Don't ask for intentions - block super distracting sites immediately"
@@ -69,7 +79,7 @@ class setIntentionBlockedUrlsVc: NSViewController {
         
         
         if let setIntentionBlockedUrlsVcInfo = configjson.value(forKey: "setIntentionBlockedUrlsVcInfo") as? NSDictionary{
-            lblTitle.stringValue = setIntentionBlockedUrlsVcInfo.value(forKey: "title") as? String ?? lblTitle.stringValue
+//            lblTitle.stringValue = setIntentionBlockedUrlsVcInfo.value(forKey: "title") as? String ?? lblTitle.stringValue
             btnSetIntention.title = setIntentionBlockedUrlsVcInfo.value(forKey: "buttonSetIntentionText") as? String ?? btnSetIntention.title
             btnBlockIt.title = setIntentionBlockedUrlsVcInfo.value(forKey: "buttonBlockText") as? String ?? btnBlockIt.title
             lblCheckBoxDoNotShowThis.stringValue = setIntentionBlockedUrlsVcInfo.value(forKey: "buttonDontShowAgainText") as? String ?? lblCheckBoxDoNotShowThis.stringValue
@@ -82,9 +92,11 @@ class setIntentionBlockedUrlsVc: NSViewController {
             subTitleReason = setIntentionBlockedUrlsVcInfo.value(forKey: "subTitleReason") as? String ?? subTitleReason
             subTitleDuration = setIntentionBlockedUrlsVcInfo.value(forKey: "subTitleDuration") as? String ?? subTitleDuration
             subTitleBlockIt = setIntentionBlockedUrlsVcInfo.value(forKey: "subTitleBlockIt") as? String ?? subTitleBlockIt
+            btnAllow.title = setIntentionBlockedUrlsVcInfo.value(forKey: "buttonAllowText") as? String ?? btnAllow.title
+            lblTitleSetIntention.stringValue = setIntentionBlockedUrlsVcInfo.value(forKey: "titleSetIntention") as? String ?? lblTitleSetIntention.stringValue
         }
         
-        btnSetIntention.buttonColor = NSColor.white.cgColor
+        btnCancelIntention.buttonColor = NSColor.white.cgColor
         textViewIntention.delegate = self
         
         popupButtonMinutes.removeAllItems()
@@ -122,7 +134,7 @@ class setIntentionBlockedUrlsVc: NSViewController {
                 }
             }
         }
-        
+        btnAllow.buttonColor = NSColor.white.cgColor
     }
     
     override func viewWillAppear() {
@@ -156,6 +168,7 @@ class setIntentionBlockedUrlsVc: NSViewController {
                 second = "0\(s)"
             }
             self.lblTimerTotalSeconds.stringValue = "\(minute):\(second)"
+            self.lblTimerTotalSecondsCopy.stringValue = "\(minute):\(second)"
         }
         
         self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
@@ -176,6 +189,7 @@ class setIntentionBlockedUrlsVc: NSViewController {
     
     func disableAll(){
         self.lblTimerTotalSeconds.isHidden = true
+        self.self.lblTimerTotalSecondsCopy.isHidden = true
         self.textViewIntention.isHidden = true
         self.btnBlockIt.isHidden = true
         self.checkBoxDoNotShowThis.isHidden = true
@@ -184,10 +198,12 @@ class setIntentionBlockedUrlsVc: NSViewController {
         lblCheckBoxDoNotShowThis.isHidden = true
         self.textViewIntention.enclosingScrollView?.isHidden = true
         lblSelectMinutes.isHidden = true
+        btnAllow.isHidden = true
     }
     
     func enableAll(){
         self.lblTimerTotalSeconds.isHidden = false
+        self.self.lblTimerTotalSecondsCopy.isHidden = false
         self.textViewIntention.isHidden = false
         self.btnBlockIt.isHidden = false
         self.checkBoxDoNotShowThis.isHidden = false
@@ -197,6 +213,7 @@ class setIntentionBlockedUrlsVc: NSViewController {
         self.textViewIntention.enclosingScrollView?.isHidden = false
         lblSelectMinutes.isHidden = false
         stackViewTotalTimeSpent.isHidden = true
+        btnAllow.isHidden = false
         if !isAppBlocking{
             var totalDurationaSaved = 0
             if let timeSpentInfo = UserDefaults.standard.object(forKey: kUserdefaultsTotalTimeSpentOnDistractingSites) as? [String:Any]{
@@ -220,15 +237,15 @@ class setIntentionBlockedUrlsVc: NSViewController {
     }
     
     func resetView(script: String, url:String, currentPid: pid_t?, browser: BROWSER?, allreadyCheckedIndex:Int, isAppBlocking:Bool, currentApp:NSRunningApplication?, blockedAppName:String, blockItem:String){
-        
+        boxSetIntention.isHidden = true
         if self.timerFiveSecond != nil{
             self.timerFiveSecond?.invalidate()
             self.timerFiveSecond = nil
         }
         popupButtonMinutes.selectItem(at: 0)
-        var title = "You said <SITE> is super distracting for you. What do you want to achieve during your time here?"
+        var title = "You said <SITE> is super distracting for you."
         if let setIntentionBlockedUrlsVcInfo = configjson.value(forKey: "setIntentionBlockedUrlsVcInfo") as? NSDictionary{
-            title = setIntentionBlockedUrlsVcInfo.value(forKey: "title") as? String ?? title
+            title = setIntentionBlockedUrlsVcInfo.value(forKey: "titleDistracting") as? String ?? title
         }
         self.isAppBlocking = isAppBlocking
         self.currentApp = currentApp
@@ -405,13 +422,14 @@ class setIntentionBlockedUrlsVc: NSViewController {
     override func viewWillDisappear() {
         self.timer?.invalidate()
         self.timerFiveSecond?.invalidate()
+        boxSetIntention.isHidden = true
     }
     
     @objc func performTimerCount() {
         if isUserTypingIntention{
             if let isUserTypingTime = isUserTypingTime{
                 let diffSeconds = Calendar.current.dateComponents([.second], from: isUserTypingTime, to: Date()).second ?? 0
-                if diffSeconds > 1{
+                if diffSeconds > 2{
                     isUserTypingIntention = false
                 }
             }
@@ -487,6 +505,7 @@ class setIntentionBlockedUrlsVc: NSViewController {
                 second = "0\(s)"
             }
             self.lblTimerTotalSeconds.stringValue = "\(minute):\(second)"
+            self.self.lblTimerTotalSecondsCopy.stringValue = "\(minute):\(second)"
         }
     }
     
@@ -501,6 +520,7 @@ class setIntentionBlockedUrlsVc: NSViewController {
             appdelegate?.saveIntentionForBlockedUrl(url: self.tabUrl, script: self.script, browser: self.browser, intention: textViewIntention.string, seconds: seconds, currentPid:currentPid)
         }
         closeWindow()
+        boxSetIntention.isHidden = true
     }
     @IBAction func btnBlockItClicked(_ sender: Any) {
         if isAppBlocking{
@@ -539,6 +559,16 @@ class setIntentionBlockedUrlsVc: NSViewController {
             msg = setIntentionBlockedUrlsVcInfo.value(forKey: "privacyNoteText") as? String ?? msg
         }
         showTooltip(sender: btnInfo, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
+    }
+    @IBAction func btnAllowClicked(_ sender: Any) {
+        boxSetIntention.isHidden = false
+        isUserTypingIntention = true
+        isUserTypingTime = Date()
+    }
+    
+    
+    @IBAction func btnCancelIntentionClicked(_ sender: Any) {
+        boxSetIntention.isHidden = true
     }
 }
 

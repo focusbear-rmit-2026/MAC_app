@@ -8,7 +8,7 @@
 
 import Cocoa
 
-class onboardingCardsVc: NSViewController {
+class onboardingCardsVc: NSViewController { // not in use
 
     @IBOutlet weak var btnLink: underLineButton!
     @IBOutlet weak var boxSmall_slide4: NSBox!
@@ -269,7 +269,7 @@ class onboardingCardsVc: NSViewController {
 //                self.view.window?.close()
 //                showPreloadFocusModesWindow()
 //            }
-            self.view.window?.contentViewController = getHowHeardVcObj()
+//            self.view.window?.contentViewController = getHowHeardVcObj()
         }else{
             addLog(text:"[user-action] onboardingCardsVc:- btnNextClicked")
             allApiObject.capturePosthog(event: "reviewed-onboarding-tip", metadata: [:])

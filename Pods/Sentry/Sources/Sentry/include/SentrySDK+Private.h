@@ -1,25 +1,52 @@
-#import "SentrySDK.h"
+#if __has_include(<Sentry/SentryOptions.h>)
+#    import <Sentry/SentryProfilingConditionals.h>
+#else
+#    import "SentryProfilingConditionals.h"
+#endif
 
-@class SentryId, SentryAppStartMeasurement, SentryEnvelope;
+#if __has_include(<Sentry/SentryOptions.h>)
+#    import <Sentry/SentrySDK.h>
+#else
+#    import "SentrySDK.h"
+#endif
+
+@class SentryAppStartMeasurement;
+@class SentryEnvelope;
+@class SentryFeedback;
+@class SentryHub;
+@class SentryId;
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface
-SentrySDK (Private)
+@interface SentrySDK ()
 
 + (void)captureCrashEvent:(SentryEvent *)event;
+
++ (void)captureCrashEvent:(SentryEvent *)event withScope:(SentryScope *)scope;
+
+#if SENTRY_HAS_UIKIT
++ (void)captureFatalAppHangEvent:(SentryEvent *)event;
+#endif // SENTRY_HAS_UIKIT
 
 /**
  * SDK private field to store the state if onCrashedLastRun was called.
  */
 @property (nonatomic, class) BOOL crashedLastRunCalled;
 
++ (void)setDetectedStartUpCrash:(BOOL)value;
+
 + (void)setAppStartMeasurement:(nullable SentryAppStartMeasurement *)appStartMeasurement;
 
 + (nullable SentryAppStartMeasurement *)getAppStartMeasurement;
 
+@property (nonatomic, class) NSUInteger startInvocations;
+@property (nullable, nonatomic, class) NSDate *startTimestamp;
+
 + (SentryHub *)currentHub;
 
+/**
+ * The option used to start the SDK
+ */
 @property (nonatomic, nullable, readonly, class) SentryOptions *options;
 
 /**

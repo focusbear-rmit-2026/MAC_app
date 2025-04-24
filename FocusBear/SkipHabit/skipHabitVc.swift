@@ -127,6 +127,8 @@ class skipHabitVc: NSViewController {
             thirdVcObj?.morningHabitSkipped()
         }else if currentState == ._EVENING_HABIT_{
             thirdVcObj?.eveningHabitSkipped()
+        }else if currentState == ._CUSTOM_ROUTINE_{
+            thirdVcObj?.customRoutineHabitSkipped()
         }
     }
 }
