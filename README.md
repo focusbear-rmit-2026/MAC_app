@@ -1,3 +1,138 @@
+### 📆 Steps to Build and Create a Notarized DMG for macOS App
+
+✅ 1. Build the App for Release
+
+1. In Xcode, for each target:
+   - Select Product > Scheme > Edit Scheme from the top menu.
+   - In the left sidebar, select Run > Info.
+   - Change Build Configuration to `Release`.
+   - Uncheck Debug executable.
+   - Click Close.
+
+2. From the top menu bar, select Product > Archive to start the archiving process.
+
+---
+
+📁 2. Distribute and Notarize the App
+
+1. Once the archive completes, the Archives window (Organizer) opens automatically.
+   - If not, open it via Window > Organizer.
+   - Select your app from the left dropdown if it's not auto-selected.
+
+2. Select the latest archive and click Distribute from the right panel.
+
+3. In the distribution dialog:
+   - Choose Direct Distribution.
+   - Click Distribute.
+
+> The app is now uploaded to Apple’s notarization service.
+
+4. Wait 1–2 minutes until the archive status changes from Processing to Ready to Distribute.
+   - You will receive a notification once notarization is complete.
+
+5. Once ready:
+   - Click Distribute again.
+   - Choose Direct Distribution.
+   - Click Distribute.
+   - Click Export and choose a destination folder.
+
+> The `.app` file will be saved inside the selected folder.
+
+---
+
+💠 3. Create a DMG File
+
+1. Create a folder named `DMGFolder` and include:
+   - `Focus Bear.app`
+   - Shortcut to Applications folder
+   - `fb.tif` (background image)
+   - `build.sh` (notarization script)
+
+2. Open Disk Utility.
+
+3. Go to File > New Image > Blank Image and configure:
+   - Save As: Focus Bear.dmg
+   - Where: Choose a save location
+   - Name: Focus Bear.dmg
+   - Size: 85 MB (larger than app size + buffer)
+   - Leave other fields default
+   - Click Save
+
+4. Double-click Focus Bear.dmg to open it.
+
+5. Drag the following into the opened DMG:
+   - Focus Bear.app
+   - Applications shortcut
+   - fb.tif
+
+6. Right-click inside the opened DMG and choose Show View Options:
+   - Check Always open in icon view
+   - Set Icon size to 108 x 108
+   - Set Text size to 16
+   - Select Picture under Background
+   - Drag fb.tif to the "Drag image here" area
+   - Close the window
+
+---
+
+👻 4. Hide Background Image
+
+1. Open Terminal and run:
+
+```bash
+cd /Volumes/Focus\ Bear
+mv fb.tif .fb.tif
+```
+Close terminal 
+
+2. Arrange Focus Bear.app and Applications icons inside the opened DMG.
+
+3. Close the DMG window and right-click on the desktop icon > Eject “Focus Bear”.
+
+---
+
+🔐 5. Compress and Finalize the DMG
+
+1. Reopen Disk Utility.
+
+2. Go to Images > Add Checksum...
+   - Select Focus Bear.dmg
+   - Click Checksum and then Close when done
+
+3. Go to Images > Convert...
+   - Select Focus Bear.dmg > Click Choose
+   - Choose output location (preferably DMGFolder)
+   - Click Convert
+
+4. After conversion:
+   - You will get Focus Bear converted.dmg
+   - Delete the original Focus Bear.dmg
+   - Rename Focus Bear converted.dmg to Focus Bear.dmg
+
+---
+
+✉️ 6. Notarize the Final DMG
+
+1. Open Terminal, navigate to DMGFolder, and run:
+
+```bash
+cd path/to/DMGFolder
+bash build.sh
+```
+
+2. Wait for terminal output confirming successful notarization.
+
+---
+
+📆 7. Rename DMG with Version (Optional)
+
+Rename Focus Bear.dmg to something like Focus Bear 1.23.365.dmg based on the current app version.
+
+---
+
+End of instructions.
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 ## BLOCKED PAGE PARAMETERS Details (macOS app)
 
 ### Example URL (Always-Blocked)
