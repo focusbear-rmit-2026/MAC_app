@@ -197,18 +197,20 @@ func addEntryInProductivityStatsCsv(){
     if !SettingsManagerObject.isAdvancedAnalyticsInFocusModeEnabled{
         return;
     }
-    if let lastEntryInProductivityStatsTime = lastEntryInProductivityStatsTime{
-        let diffSeconds = Calendar.current.dateComponents([.second], from: lastEntryInProductivityStatsTime, to: Date()).second ?? 0
-        if diffSeconds < 7{
-            return;
+    let currentDate = Date()
+    if let lastEntryInProductivityStatsTime = lastEntryInProductivityStatsTime {
+        let diffSeconds = currentDate.timeIntervalSince(lastEntryInProductivityStatsTime)
+        if diffSeconds < 2.6 {//Log focusProductivityStats.csv every 3 seconds instead of every 10 seconds #1378
+            return// this will always show gap of 3 seconds between each entry
         }
-        
+//        print(diffSeconds)
     }
+    let averageScoreFromLastEntry = getFocusAlignmentScoreFromLastEntry()
 
-    lastEntryInProductivityStatsTime = Date()
+    lastEntryInProductivityStatsTime = currentDate
     do {
         var csv = try String(contentsOf: focusProductivityStatsCsvURL, encoding: .utf8)
-        let date = Date()
+        let date = currentDate
         let isoFormatter = ISO8601DateFormatter()
         isoFormatter.formatOptions = [.withInternetDateTime] // Standard ISO 8601 format
 
@@ -219,7 +221,7 @@ func addEntryInProductivityStatsCsv(){
         let idleTimeValue = Int(lastEvent)
         var averageTabCount = 0
         var averageTabDuration = 0
-        
+//        var averageTabDurationInLast30Seconds = 0
         
         let arrAllTabsCount = tabMatricsObject.arrAllTabsCount
         let sumOfCount =  arrAllTabsCount.reduce(0, +)
@@ -251,14 +253,21 @@ func addEntryInProductivityStatsCsv(){
         let totalDuration = allAppsWithoutBrowsers.reduce(0) { total, entry in
             if let duration = entry["duration"] as? Int {
                 return total + duration
+            }else{
+                print("duration not found:- \(entry["appName"] as? String ?? entry["domain"] as? String ?? "")")
             }
             return total
         }
 
         averageTabDuration = allAppsWithoutBrowsers.isEmpty ? 0 : totalDuration / allAppsWithoutBrowsers.count
-//        let averageTabDurationString = getStringTimeFromSeconds(seconds: averageDuration)
+
+        // calculate averageTabDurationInLast30Seconds // date 22/5/25  // version 1.23.368
+        let last30SecondsAverageTabDuration = tabMatricsObject.getLast30SecondsAverageTabDuration()
+        let last30SecondsAverageTabDurationString = last30SecondsAverageTabDuration == nil ? "" : "\(String(describing: last30SecondsAverageTabDuration ?? 0))"
         
-        let csvString = "\(isoString),\(currentFocusAlignmentScore),\(averageTabCount),\(averageTabDuration),\(idleTimeValue)\n"
+        //
+        
+        let csvString = "\(isoString),\(currentFocusAlignmentScore),\(averageTabCount),\(averageTabDuration),\(idleTimeValue),\(averageScoreFromLastEntry),\(tabMatricsObject.currentAppTabCount),\(last30SecondsAverageTabDurationString)\n"
         csv = csv.appending(csvString)
         do {
             try csv.write(to: focusProductivityStatsCsvURL, atomically: true, encoding: .utf8)

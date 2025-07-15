@@ -490,8 +490,13 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                 isAnyAllowedFocusModeActivityRunning = true
                 isAnyAllowedFocusModeActivityWasRunningInLastActivity = true
                 
+                currentRunningAppNameForAi = ""
+                currentBrowserUrlForAi = ""
                 dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus.removeAll()
                 arrConvinceAiUrlsInCurrentFocus.removeAll()
+                arrConvinceAiAppsInCurrentFocus.removeAll()
+                lastEntryInProductivityStatsTime = Date()
+                tabMatricsObject.last30SecondsDurationRecordedStartTime = Date()
                 tabMatricsObject.resetAll()
                 getTotalFocuedTime()
                 startFocusModeTime = Date()
@@ -653,7 +658,16 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         disableSystemSleep()
         checkActivityExtraAllowedAppsAndUrls(allowedFocusMode: currentHabit.allowedFocusMode, duration: durationSeconds, habitId:currentHabit.id)
         
+        var currentTimerValue = currentTimerValue
         
+        if currentTimerValue == 0{
+            if let val = getCurrentHabitCurrentDurationDone(id: currentHabit.id){
+                currentTimerValue = val
+                if currentTimerValue > durationSeconds{
+                    currentTimerValue = 0
+                }
+            }
+        }
         
         var shouldLaunchAppAndUrl = true
         if currentTimerValue == 0{
@@ -1536,6 +1550,9 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
     }
     @objc func performTimerCount() {
         currentTimer += 1
+        if isAnyAllowedFocusModeActivityRunning{
+            addEntryInProductivityStatsCsv()
+        }
         let (h,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
         
         var hour = "\(h)"
@@ -1665,6 +1682,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                         menuItemChooseHabit.isHidden = false
                         addLog(text:"Show menu Item Select Another Habit")
                     }
+                    saveCurrentHabitCurrentDurationDone(id: arrFilteredMorningHabits[currentHabitIndex].id, duration: currentTimer)
                 }else if currentState == ._EVENING_HABIT_{
                     if currentHabitIndex == arrFilteredEveningHabits.count - 1{
                         menuItemChooseHabit.isHidden = true
@@ -1698,6 +1716,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                             addLog(text:"Show menu Item Select Another Habit")
                         }
                     }
+                    saveCurrentHabitCurrentDurationDone(id: arrFilteredEveningHabits[currentHabitIndex].id, duration: currentTimer)
                 }else if currentState == ._CUSTOM_ROUTINE_{
                     if currentHabitIndex == arrAllCustomRoutine[currentHabitIndex].arrAllFilteredHabits.count - 1{
                         menuItemChooseHabit.isHidden = true

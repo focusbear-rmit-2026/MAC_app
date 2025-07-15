@@ -198,6 +198,10 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         addLog(text: "focusPreferencesVc viewdidload end")
     }
 
+    override func viewDidLayout() {// after scrollview resize it removes title and not srawing it again so doing this here 
+        btnAdvanced.title = btnAdvanced.title
+        btnAddFocusType.title = btnAddFocusType.title
+    }
 
     @IBAction func bntColorBoxInfoClicked(_ sender: Any) {
         addLog(text: "[user-action] bntColorBoxInfoClicked")
@@ -862,6 +866,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         popoverFocusHelp!.contentSize = vc.view.frame.size
         popoverFocusHelp!.show(relativeTo: (sender as! NSButton).bounds, of: sender as! NSButton, preferredEdge: NSRectEdge.minY)
     }
+    
     @IBAction func radioBtnBlockListApprochClicked(_ sender: Any) {
         radioBtnAllowListApproch.state = .off
 

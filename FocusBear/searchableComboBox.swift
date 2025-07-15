@@ -23,6 +23,7 @@ class searchableComboBox: NSComboBox, NSComboBoxCellDataSource, NSComboBoxDataSo
         self.dataSource = self
         (self.cell as! NSComboBoxCell).dataSource = self
     }
+    
     func comboBox(_ comboBox: NSComboBox, completedString string: String) -> String? {
         print("SubString = \(string)")
         print(filterdItems.count)
@@ -53,6 +54,7 @@ class searchableComboBox: NSComboBox, NSComboBoxCellDataSource, NSComboBoxDataSo
             comboBox.reloadData()
         }
     }
+    
     func numberOfItems(in comboBox: NSComboBox) -> Int {
         return(filterdItems.count)
     }
@@ -78,10 +80,12 @@ class searchableComboBox: NSComboBox, NSComboBoxCellDataSource, NSComboBoxDataSo
             expandPopUp(comboBox: object, value: object.stringValue)
         }
     }
+    
     func controlTextDidEndEditing(_ obj: Notification) {
         print("textDidEndEditing123")
         customDelegate?.itemSelectedByUser(comboBox: self)
     }
+    
     func comboBoxWillPopUp(_ notification: Notification) {
         if menuShowByButton == false{
             menuShowByButton = true
@@ -95,6 +99,7 @@ class searchableComboBox: NSComboBox, NSComboBoxCellDataSource, NSComboBoxDataSo
             
         }
     }
+    
     func expandPopUp(comboBox:NSComboBox, value:String){
         let isValueEmpty = value.isEmpty
         let isPopUpExpanded = comboBox.isAccessibilityExpanded()

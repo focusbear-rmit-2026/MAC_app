@@ -9,6 +9,8 @@ import Cocoa
 
 class pomodoroVc: NSViewController {
     
+    @IBOutlet weak var lblSelectedStrictnessLevel: NSTextField!
+    @IBOutlet weak var btnInfoStrictnessLevel: hoverInfoButton!
     @IBOutlet weak var btnPin: cursorButton!
     @IBOutlet weak var boxPin: NSBox!
     @IBOutlet weak var btnToggleBreaksSettingsInfo: hoverInfoButton!
@@ -99,6 +101,15 @@ class pomodoroVc: NSViewController {
     var titleBreaksOff = "Micro-breaks off"
     var titleBreaksOn = "Micro-breaks on"
     var pinButtonTrackingArea: NSTrackingArea?
+    var titleNormalMode = "Chill Mode"
+    var descriptionNormalMode = "Stop focusing anytime, no questions asked."
+    var toolTipNormalMode = "Best for gentle focus days. No barriers to pausing or stopping a session."
+    var titleStrictMode = "Wait for it…"
+    var descriptionStrictMode = "15-second delay before you can stop"
+    var toolTipStrictMode = "Adds a 15s countdown before you can pause/stop. Great for catching impulsive decisions."
+    var titleSuperStrictMode = "Iron Focus"
+    var descriptionSuperStrictMode = "Once you start, you can't stop"
+    var toolTipSuperStrictMode = "Once you start, there’s no backing out. Best for deep, distraction-free sessions."
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -146,9 +157,9 @@ class pomodoroVc: NSViewController {
 //                lblTitleFrictionLevel.stringValue = startingFocusModeInfo.value(forKey: "titleFrictionLevel") as? String ?? lblTitleFrictionLevel.stringValue
 //                frictionLevelLowText = startingFocusModeInfo.value(forKey: "frictionLevelLowText") as? String ?? frictionLevelLowText
 //                frictionLevelHighText = startingFocusModeInfo.value(forKey: "frictionLevelHighText") as? String ?? frictionLevelHighText
-                lblStrictnessNormal.stringValue = startingFocusModeInfo.value(forKey: "strictnessNormalText") as? String ?? lblStrictnessNormal.stringValue
-                lblStrictnessStrict.stringValue = startingFocusModeInfo.value(forKey: "strictnessStrictText") as? String ?? lblStrictnessStrict.stringValue
-                lblStrictnessSuperStrict.stringValue = startingFocusModeInfo.value(forKey: "strictnessSuperStrictText") as? String ?? lblStrictnessSuperStrict.stringValue
+//                lblStrictnessNormal.stringValue = startingFocusModeInfo.value(forKey: "strictnessNormalText") as? String ?? lblStrictnessNormal.stringValue
+//                lblStrictnessStrict.stringValue = startingFocusModeInfo.value(forKey: "strictnessStrictText") as? String ?? lblStrictnessStrict.stringValue
+//                lblStrictnessSuperStrict.stringValue = startingFocusModeInfo.value(forKey: "strictnessSuperStrictText") as? String ?? lblStrictnessSuperStrict.stringValue
                 lblTitleStrictnessLevel.stringValue = startingFocusModeInfo.value(forKey: "titleStrictnessLevel") as? String ?? lblTitleStrictnessLevel.stringValue
             }
         }
@@ -222,6 +233,23 @@ class pomodoroVc: NSViewController {
             titleBreaksOn = pomodoroInfo.value(forKey: "titleBreaksOn") as? String ?? titleBreaksOn
             lblTitleWorkDuration.stringValue = pomodoroInfo.value(forKey: "pomodoroModeDurationText") as? String ?? lblTitleWorkDuration.stringValue
         }
+        
+        if let simplePomodoroVcInfo = configjson.value(forKey: "simplePomodoroVcInfo") as? NSDictionary{
+            titleNormalMode = simplePomodoroVcInfo.value(forKey: "titleNormalMode") as? String ?? titleNormalMode
+            descriptionNormalMode = simplePomodoroVcInfo.value(forKey: "descriptionNormalMode") as? String ?? descriptionNormalMode
+            toolTipNormalMode = simplePomodoroVcInfo.value(forKey: "toolTipNormalMode") as? String ?? toolTipNormalMode
+            titleStrictMode = simplePomodoroVcInfo.value(forKey: "titleStrictMode") as? String ?? titleStrictMode
+            descriptionStrictMode = simplePomodoroVcInfo.value(forKey: "descriptionStrictMode") as? String ?? descriptionStrictMode
+            toolTipStrictMode = simplePomodoroVcInfo.value(forKey: "toolTipStrictMode") as? String ?? toolTipStrictMode
+            titleSuperStrictMode = simplePomodoroVcInfo.value(forKey: "titleSuperStrictMode") as? String ?? titleSuperStrictMode
+            descriptionSuperStrictMode = simplePomodoroVcInfo.value(forKey: "descriptionSuperStrictMode") as? String ?? descriptionSuperStrictMode
+            toolTipSuperStrictMode = simplePomodoroVcInfo.value(forKey: "toolTipSuperStrictMode") as? String ?? toolTipSuperStrictMode
+        }
+        
+        lblStrictnessNormal.stringValue = "🟢 " + titleNormalMode
+        lblStrictnessStrict.stringValue = "🟡 " + titleStrictMode
+        lblStrictnessSuperStrict.stringValue = "🔴 " + titleSuperStrictMode
+        
         arrTourMessages.append(["title": tourSelectTasks, "description": descriptionSelectTasks])
         arrTourMessages.append(["title": tourIntention, "description": descriptionIntention])
 
@@ -254,6 +282,13 @@ class pomodoroVc: NSViewController {
 
         pinButtonTrackingArea = NSTrackingArea.init(rect: btnPin.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
         btnPin.addTrackingArea(pinButtonTrackingArea!)
+        
+        
+        btnToggleBreaksSettingsInfo.isAutoClickEnabled = false
+        btnStrictnessNormal.isAutoClickEnabled = false
+        btnStrictnessSuperStrict.isAutoClickEnabled = false
+        btnStrictnessStrict.isAutoClickEnabled = false
+        btnInfoStrictnessLevel.isAutoClickEnabled = false
     }
 
     override func viewDidAppear() {
@@ -380,6 +415,7 @@ class pomodoroVc: NSViewController {
                 sliderStrictness.integerValue = 3
             }
         }
+        showSelectedStrictnessLevel()
         
         updateWorkBreakRatio()
         getTaskPlayerVcObject().loadView()
@@ -584,6 +620,17 @@ class pomodoroVc: NSViewController {
             textViewAchieve.string = nextFocusSessionIntention
         }
     }
+    
+    func showSelectedStrictnessLevel(){
+        if sliderStrictness.integerValue == 1{
+            lblSelectedStrictnessLevel.stringValue = titleNormalMode + " (\(descriptionNormalMode))"
+        }else if sliderStrictness.integerValue == 2{
+            lblSelectedStrictnessLevel.stringValue = titleStrictMode + " (\(descriptionStrictMode))"
+        }else if sliderStrictness.integerValue == 3{
+            lblSelectedStrictnessLevel.stringValue = titleSuperStrictMode + " (\(descriptionSuperStrictMode))"
+        }
+    }
+    
     //Re-center the pomodoro popup if user takes no action #1053
     func setTimerMoveWindowToCenter(){
         removeTimerMoveWindowToCenter()
@@ -612,6 +659,10 @@ class pomodoroVc: NSViewController {
         removeTimerMoveWindowToCenter()
     }
     //-----------------------------------------------//
+    
+    override func viewDidLayout() {// after scrollview resize it removes title and not srawing it again so doing this here 
+        btnLetsDoIt.title = btnLetsDoIt.title
+    }
     
     @objc func viewDidResize(){
         print("viewDidResize")
@@ -779,14 +830,12 @@ class pomodoroVc: NSViewController {
         addLog(text: "Showing preferences from edit focus mode")
         if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
             tabview.selectedTabViewItemIndex = preferencesFocusModesIndex
-            if shouldAskPassword(){
-                if SettingsManagerObject.isPasswordRequireInChangeSettings{
-                    tabview.view.addSubview(getEnterPasswordVcObjForPreferences().view)
-                    tabview.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
-                    getEnterPasswordVcObjForPreferences().parentVc = nil
-                    enterPasswordVcObjForPreferences?.removeConstraints()
-                    addLog(text: "Showing enter password view")
-                }
+            if isPasswordRequireInOpenSettings(){
+                tabview.view.addSubview(getEnterPasswordVcObjForPreferences().view)
+                tabview.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
+                getEnterPasswordVcObjForPreferences().parentVc = nil
+                enterPasswordVcObjForPreferences?.removeConstraints()
+                addLog(text: "Showing enter password view")
             }
         }
         
@@ -895,7 +944,8 @@ class pomodoroVc: NSViewController {
                 for i in 0..<arrFocusType.count{
                     if arrFocusType[i]["id"] as? String ?? "" == focusModeId{
                         if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled{
-                            focusModeTaskString = arrFocusType[i]["lastTaskUsed"] as? String ?? ""
+//                            focusModeTaskString = arrFocusType[i]["lastTaskUsed"] as? String ?? ""
+                            updateFocusModeTask(taskString: arrFocusType[i]["lastTaskUsed"] as? String ?? "")
                         }else{
                             focusModeTaskString = ""
                         }
@@ -1018,7 +1068,7 @@ class pomodoroVc: NSViewController {
                                         if currentState == ._POSTPON_EVENING_HABIT_{
                                             mainViewControllerObj?.postponeEveningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
                                         }else if currentState == ._POSTPON_FOCUS_SUMMARY_{
-                                            mainViewControllerObj?.postponeFocusSummaryFor(minutes: totalMinutes + 2)
+                                            mainViewControllerObj?.postponeFocusSummaryFor(minutes: totalMinutes + 2, showAskIntention: false)
                                         }
                                         self.checkStateAndStartPomodoroMode()
                                     }
@@ -1090,6 +1140,8 @@ class pomodoroVc: NSViewController {
             for i in 0..<arrFocusType.count{
                 if arrFocusType[i]["id"] as? String ?? "" == focusModeId{
                     arrFocusType[i]["isOn"] = true
+                    arrFocusType[i]["lastStartedDate"] = getStringFromDate(date: Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")//
+                    arrFocusType[i]["lastScheduledEndDate"] = getStringFromDate(date: endFocusModeTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")//
                     shouldReloadTaskPlayer = true
                     if let isAutoDoNotDisturbEnabled = arrFocusType[i]["isAutoDoNotDisturbEnabled"] as? Bool{
                         if isAutoDoNotDisturbEnabled{
@@ -1145,6 +1197,9 @@ class pomodoroVc: NSViewController {
             }
         }
         minFocusAlignmentScoreToShowDistractingPopUp = Double(popUpBtnFocusAlignmentScore.title) ?? 80
+        if SettingsManagerObject.isDataCollectionModeEnabled{
+            minFocusAlignmentScoreToShowDistractingPopUp = 0
+        }
         isFocusModeRunning = true
         appdelegate!.setStatusBarButtonColorForFocusMode(color: nil, colorString:arrFocusTypeForPomodoro[popUpBtnFocusType.indexOfSelectedItem]["color"] as? String ?? "")
         appdelegate!.setStatusBarButtonTitleForFocusMode(title: textViewAchieve.string)
@@ -1176,6 +1231,12 @@ class pomodoroVc: NSViewController {
         appdelegate!.focusModeStartted(isStartedByPusher: false)
         if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled{
             showTaskPlayerWindow(totalDuration: minute, intention: textViewAchieve.string, automatically:true)
+        }else{
+            if !getTaskPlayerVcObject().isViewLoaded{
+                getTaskPlayerVcObject().loadView()
+            }
+            taskPlayerVcObj?.reloadData(totalDuration: minute, intention: textViewAchieve.string)
+            shouldReloadTaskPlayer = false
         }
         //After finishing pomodoro block, clicking start another focus block doesn't use correct focus mode #741
         startingFocusModeVcObj?.lastIntention = textViewAchieve.string
@@ -1378,17 +1439,15 @@ class pomodoroVc: NSViewController {
             preferencesWindowControllerObj?.showWindow(self)
             addLog(text: "Showing preferences")
             var passWordViewVisible = false
-            if shouldAskPassword(){
+            if isPasswordRequireInOpenSettings(){
                 if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
                     tabview.selectedTabViewItemIndex = preferencesSettingsIndex
-                    if SettingsManagerObject.isPasswordRequireInChangeSettings{
-                        tabview.view.addSubview(getEnterPasswordVcObjForPreferences().view)
-                        tabview.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
-                        getEnterPasswordVcObjForPreferences().parentVc = nil
-                        enterPasswordVcObjForPreferences?.removeConstraints()
-                        passWordViewVisible = true
-                        addLog(text: "Showing enter password view")
-                    }
+                    tabview.view.addSubview(getEnterPasswordVcObjForPreferences().view)
+                    tabview.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
+                    getEnterPasswordVcObjForPreferences().parentVc = nil
+                    enterPasswordVcObjForPreferences?.removeConstraints()
+                    passWordViewVisible = true
+                    addLog(text: "Showing enter password view")
                 }
             }else{
                 if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
@@ -1448,6 +1507,7 @@ class pomodoroVc: NSViewController {
             showTooltip(sender: sliderStrictness, msg: strictnessSuperStrictClickedText, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
         }
         btnSwitchAdvancedModeClicked(self)
+        showSelectedStrictnessLevel()
     }
     
     @IBAction func btnToggleBreaksSettingsClicked(_ sender: Any) {
@@ -1516,6 +1576,20 @@ class pomodoroVc: NSViewController {
             self.view.window?.close()
         }
     }
+    
+    @IBAction func btnInfoStrictnessLevelClicked(_ sender: Any) {
+        var msgToShow = ""
+        if sliderStrictness.integerValue == 1{
+            msgToShow = toolTipNormalMode
+        }else if sliderStrictness.integerValue == 2{
+            msgToShow = toolTipStrictMode
+        }else if sliderStrictness.integerValue == 3{
+            msgToShow = toolTipSuperStrictMode
+        }
+        
+        showTooltip(sender: btnInfoStrictnessLevel, msg: msgToShow, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
+    }
+    
 }
 
 class IntegerFormatter: NumberFormatter {

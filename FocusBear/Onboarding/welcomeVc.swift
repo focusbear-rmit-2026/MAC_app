@@ -27,7 +27,7 @@ class welcomeVc: NSViewController {
         lblDescriptionFirst.stringValue = "Focus Bear helps you avoid distractions and build healthy habits."
         lblDescriptionSecond.stringValue = "Let's start out by blocking distractions."
         btnLetsDoIt.title = "Let's do it"
-        lblAllRights.stringValue = "© 2022-2024 Focus Bear All Rights Reserved."
+        lblAllRights.stringValue = "© 2022-2025 Focus Bear All Rights Reserved."
         
         if let welcomeOnboardingVcInfo = configjson.value(forKey: "welcomeOnboardingVcInfo") as? NSDictionary{
             lblSubTitle.stringValue = welcomeOnboardingVcInfo.value(forKey: "subTitle") as? String ?? lblSubTitle.stringValue

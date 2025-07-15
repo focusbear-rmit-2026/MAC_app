@@ -22,6 +22,8 @@ class SettingsManager:NSObject{
     var isGeekModeEnabled = true
     var isMenuPopoverEnabled = false // menu is popover or a a window
     var isAdvancedAnalyticsInFocusModeEnabled = false// Advance analytics during focus mode //27/1/25 //  default  will be false
+    var isDataCollectionModeEnabled = false// equvalent of the focus alignment score cutoff being set to 0% //30/5/25 //  default  will be false
+    
     
     var isFocusVisualIndicatorEnabled = true
     
@@ -265,7 +267,7 @@ class SettingsManager:NSObject{
         kUserdefaultsOutOfOrderHabitsAllowed = kUserdefaultsOutOfOrderHabitsAllowed + (appdelegate?.user?.userId ?? "")
         kUserdefaultsRequiredIntentionInPostpone = kUserdefaultsRequiredIntentionInPostpone + (appdelegate?.user?.userId ?? "")
     }
-    //https://api.focusbear.io/api/static/index.html#/
+  
     func getUserLocalDeviceSettings(completionHandler: @escaping() -> ()){
         
         addLog(text: "get User Local Device Settings")
@@ -298,24 +300,46 @@ class SettingsManager:NSObject{
         
         var isSettingsBlank = true // agar blank ho to upload bhi kro
         allApiObject.getUserLocalDeviceSettings(completionHandler: { [self]json in
+            let kAppPassword = "kAppPassword"
             var settings: NSDictionary?
             if json != nil{
                 if let dic = json?.value(forKey: "MacOS") as? NSDictionary {
                     settings = dic
-                    
-                    // write settings in userdefaults so that we will not need to create userdefaults for new settings (useful when internet is not working and not getting settings from api) // 15/6/24
-                    
-                    UserDefaults.standard.set(dic, forKey: kUserdefaultsLocalDeviceSettings)
+                    addLog(text: "Local Device Settings json is not nil)")
                 }
             }else{
+                addLog(text: "Local Device Settings json is nil)")
                 if let dic = UserDefaults.standard.value(forKey: kUserdefaultsLocalDeviceSettings) as? NSDictionary{
                     settings = dic
                 }
             }
             
+            addLog(text: "Parse local device settings")
             
-            
-            if let settings = settings {
+            if let settings = settings{
+                
+                // write settings in userdefaults so that we will not need to create userdefaults for new settings (useful when internet is not working and not getting settings from api) // 15/6/24
+//                if settings.value(forKey: kAppPassword) == nil{
+//                    settings[kAppPassword] = ""
+//                }
+               // UserDefaults.standard.set(settings, forKey: kUserdefaultsLocalDeviceSettings)
+                
+                if let rawSettings = settings as? [String: Any] {// this will remove <null> values so saving in userdefaults will not crash app
+                    // Remove NSNull and invalid values
+                    let cleanedSettings = rawSettings.compactMapValues { value -> Any? in
+                        if value is NSNull {
+                            return nil
+                        }
+                        if JSONSerialization.isValidJSONObject([value]) == false {
+                            return nil
+                        }
+                        return value
+                    }
+
+                    // Now safe to save
+                    UserDefaults.standard.set(cleanedSettings, forKey: kUserdefaultsLocalDeviceSettings)
+                }
+                
                 print(settings)
                 if settings.allKeys.count == 0{
                     isSettingsBlank = true
@@ -372,7 +396,7 @@ class SettingsManager:NSObject{
                 let kHardcorePomodoroSkipMicroBreaks = "kHardcorePomodoroSkipMicroBreaks"
                 let kHardcorePomodoroArrDays = "kHardcorePomodoroArrDays"
                 
-                let kAppPassword = "kAppPassword"
+                
                 let kArrBlockedUrls = "kArrBlockedUrls"
                 let kArrBlockedApps = "kArrBlockedApps"
                 
@@ -391,6 +415,8 @@ class SettingsManager:NSObject{
                 let kBrainDumpCustomUrlEnabled = "kBrainDumpCustomUrlEnabled"
                 let kIsMenuPopoverEnabled = "kIsMenuPopoverEnabled"
                 let kIsAdvancedAnalyticsInFocusModeEnabled = "kIsAdvancedAnalyticsInFocusModeEnabled"
+                let kIsDataCollectionModeEnabled = "kIsDataCollectionModeEnabled"
+                
                 let kIsFocusVisualIndicatorEnabled = "kIsFocusVisualIndicatorEnabled"
                 let kBrainDumpCustomUrlValue = "kBrainDumpCustomUrlValue"
                 let kShowBrainDumpAfterMorningRoutine = "kShowBrainDumpAfterMorningRoutine"
@@ -399,7 +425,7 @@ class SettingsManager:NSObject{
                 
                 //                    let kAiAllowUrlShowAlertEnabled = "kAiAllowUrlShowAlertEnabled"
                 
-                
+                addLog(text: "Parse ReducedMotion")
                 if let val = settings.value(forKey: kIsReducedMotionEnabled) as? Bool{
                     UserDefaults.standard.set(val, forKey: self.kUserdefaultsReducedMotion)
                 }
@@ -425,7 +451,7 @@ class SettingsManager:NSObject{
                 if let val = settings.value(forKey: kIsPasswordRequireInSkipEvening) as? Bool{
                     UserDefaults.standard.set(val, forKey: self.kUserdefaultsPasswordRequireInSkipEvening)
                 }
-                
+                addLog(text: "Parse PasswordRequireInSkipEvenin")
                 if let val = settings.value(forKey: kIsPasswordRequireInSkipEveningAfterCutOff) as? Bool{
                     UserDefaults.standard.set(val, forKey: self.kUserdefaultsPasswordRequireInSkipEveningAfterCutOff)
                 }
@@ -437,7 +463,7 @@ class SettingsManager:NSObject{
                 if let val = settings.value(forKey: kIsPasswordRequireInStopPomodoro) as? Bool{
                     UserDefaults.standard.set(val, forKey: self.kUserdefaultsPasswordRequireInStopPomodoro)
                 }
-                
+                addLog(text: "Local PasswordRequireInStopPomodoro")
                 if let val = settings.value(forKey: kIsPasswordRequireInQuitApp) as? Bool{
                     UserDefaults.standard.set(val, forKey: self.kUserdefaultsPasswordRequireInQuitApp)
                 }
@@ -452,7 +478,7 @@ class SettingsManager:NSObject{
                 if let val = settings.value(forKey: kIsPasswordRequireInPreferencesAfterCutoff) as? Bool{
                     isPasswordRequireInPreferencesAfterCutoff = val
                 }
-                
+                addLog(text: "Parse PromptToRememberHabit")
                 if let val = settings.value(forKey: kIsPromptToRememberHabit) as? Bool{
                     UserDefaults.standard.set(val, forKey: self.kUserdefaultsPromptToRememberHabit)
                 }
@@ -464,7 +490,7 @@ class SettingsManager:NSObject{
                 if let val = settings.value(forKey: kIsOutOfOrderHabitsAllowed) as? Bool{
                     UserDefaults.standard.set(val, forKey: self.kUserdefaultsOutOfOrderHabitsAllowed)
                 }
-                
+                addLog(text: "Local sOutOfOrderHabitsAllowed")
                 if let val = settings.value(forKey: kIsRequiredIntentionInPostpone) as? Bool{
                     UserDefaults.standard.set(val, forKey: self.kUserdefaultsRequiredIntentionInPostpone)
                 }
@@ -482,7 +508,7 @@ class SettingsManager:NSObject{
                 if let val = settings.value(forKey: kTabLimitCount) as? Int{
                     UserDefaults.standard.set(val, forKey: self.kUserdefaultsTabLimitCount)
                 }
-                
+                addLog(text: "Local TabLimitCount")
                 if let val = settings.value(forKey: kisFullScreenEnabled) as? Int{
                     UserDefaults.standard.set(val, forKey: self.kUserdefaultsisFullScreenEnabled)
                 }
@@ -492,7 +518,7 @@ class SettingsManager:NSObject{
                 if let val = settings.value(forKey: kselectedFontIndex) as? Int{
                     UserDefaults.standard.set(val, forKey: self.kUserdefaultsselectedFontIndex)
                 }
-                
+                addLog(text: "Local CuddlyModeProgressCount")
                 if let progress = settings.value(forKey: kCuddlyModeProgressCount) as? Int{
                     UserDefaults.standard.set(progress, forKey: self.kUserdefaultsCuddlyModeProgressCount)
                 }
@@ -502,7 +528,7 @@ class SettingsManager:NSObject{
                     UserDefaults.standard.set(val, forKey: self.kUserdefaultsSelectedAppAppearanceIndex)
                 }
                 
-                
+                addLog(text: "Local OfficeModeEnabled")
                 if let val = settings.value(forKey: kIsOfficeModeEnabled) as? Bool{
                     UserDefaults.standard.set(val, forKey: self.kUserdefaultsOfficeModeEnabled)
                 }
@@ -511,7 +537,7 @@ class SettingsManager:NSObject{
                 if let val = settings.value(forKey: kHideAllWindowInScreenShots) as? Bool{
                     UserDefaults.standard.set(val, forKey: self.kUserdefaultsHideAllWindowInScreenShots)
                 }
-                
+                addLog(text: "Local PomodoroDurationMinutes")
                 if let val = settings.value(forKey: kPomodoroDurationMinutes) as? Int{
                     UserDefaults.standard.set(val, forKey: self.kUserdefaultsPomodoroDurationMinutes)
                 }
@@ -529,7 +555,7 @@ class SettingsManager:NSObject{
                 if let val = settings.value(forKey: kPomodoroModeEnabled) as? Bool{
                     UserDefaults.standard.set(val, forKey: self.kUserdefaultsPomodoroModeEnabled)
                 }
-                
+                addLog(text: "Local DoNotBlockUrlsDuringSuperPomodoroBreaks")
                 if let val = settings.value(forKey: kDoNotBlockUrlsDuringSuperPomodoroBreaks) as? Bool{
                     UserDefaults.standard.set(val, forKey: self.kUserdefaultsDoNotBlockUrlsDuringSuperPomodoroBreaks)
                 }
@@ -545,7 +571,7 @@ class SettingsManager:NSObject{
                 if let val = settings.value(forKey: kHardcorePomodoroFocusedCount) as? Int{
                     UserDefaults.standard.set(val, forKey: self.kUserdefaultsHardcorePomodoroFocusedCount)
                 }
-                
+                addLog(text: "Local HardcorePomodoroSkipMicroBreaks")
                 if let val = settings.value(forKey: kHardcorePomodoroSkipMicroBreaks) as? Bool{
                     UserDefaults.standard.set(val, forKey: self.kUserdefaultsHardcorePomodoroSkipMicroBreaks)
                 }
@@ -560,13 +586,18 @@ class SettingsManager:NSObject{
                 if let val = settings.value(forKey: kArrBlockedApps) as? [String]{
                     UserDefaults.standard.set(val, forKey: self.kUserdefaultsArrBlockedApps)
                 }
-                
+                addLog(text: "Local AppPassword")
                 if let val = settings.value(forKey: kAppPassword) as? String{
-                    UserDefaults.standard.set(val, forKey: self.kUserdefaultsAppPassword)
+                    if val.isEmpty{
+                        UserDefaults.standard.removeObject(forKey: kUserdefaultsAppPassword)
+                    }else{
+                        UserDefaults.standard.set(val, forKey: self.kUserdefaultsAppPassword)
+                    }
+                    
                 }else{
                     UserDefaults.standard.removeObject(forKey: kUserdefaultsAppPassword)
                 }
-                
+                addLog(text: "Local CuddlyModeEnabled")
                 if let val = settings.value(forKey: kCuddlyModeEnabled) as? Bool{
                     UserDefaults.standard.set(val, forKey: self.kUserdefaultsCuddlyModeEnabled)
                 }
@@ -587,7 +618,7 @@ class SettingsManager:NSObject{
                 if let val = settings.value(forKey: kStartPomodoroShortcutFlags) as? [Int]{
                     UserDefaults.standard.set(val, forKey: self.kUserdefaultsStartPomodoroShortcutFlags)
                 }
-                
+                addLog(text: "Local MotivationalMessageEnabled")
                 if let val = settings.value(forKey: kMotivationalMessageEnabled) as? Bool{
                     UserDefaults.standard.set(val, forKey: self.kUserdefaultsMotivationalMessageEnabled)
                 }
@@ -612,6 +643,10 @@ class SettingsManager:NSObject{
                 
                 if let val = settings.value(forKey: kIsAdvancedAnalyticsInFocusModeEnabled) as? Bool{
                     isAdvancedAnalyticsInFocusModeEnabled = val
+                }
+                
+                if let val = settings.value(forKey: kIsDataCollectionModeEnabled) as? Bool{
+                    isDataCollectionModeEnabled = val
                 }
                 
                 if let val = settings.value(forKey: kIsFocusVisualIndicatorEnabled) as? Bool{
@@ -650,7 +685,7 @@ class SettingsManager:NSObject{
                 }
             }
             
-            
+            addLog(text: "Parse OfficeModeEnable")
             //  ---------------------------OFFICE MODE--------------------------
             if let isEnabled = UserDefaults.standard.object(forKey: kUserdefaultsOfficeModeEnabled) as? Bool{
                 if isEnabled{
@@ -694,7 +729,7 @@ class SettingsManager:NSObject{
                 isMeetingDetectionEnabled = true
             }
             
-            
+            addLog(text: "Parse showMeetingDetectionAlert")
             
             //  ---------------------------SETTINGS Show Meeting Detection Alert--------------------------
             if let isEnabled = UserDefaults.standard.object(forKey: kUserdefaultsShowMeetingDetectionAlert) as? Bool{
@@ -719,7 +754,7 @@ class SettingsManager:NSObject{
             }else{
                 UserDefaults.standard.set(isBlockDistractingSitesDuringMeetingsEnabled, forKey: kUserdefaultsBlockDistractingSitesDuringMeetingsEnabled)
             }
-            
+            addLog(text: "Parse PasswordRequireInChangeSettings")
             //  ---------------------------SETTINGS Password Require--------------------------
             if let isEnabled = UserDefaults.standard.object(forKey: kUserdefaultsPasswordRequireInChangeSettings) as? Bool{
                 if isEnabled{
@@ -731,7 +766,7 @@ class SettingsManager:NSObject{
                 UserDefaults.standard.set(isPasswordRequireInChangeSettings, forKey: kUserdefaultsPasswordRequireInChangeSettings)
             }
             
-            
+            addLog(text: "Parse PasswordRequireInSkipMorning")
             if let isEnabled = UserDefaults.standard.object(forKey: kUserdefaultsPasswordRequireInSkipMorning) as? Bool{
                 if isEnabled{
                     isPasswordRequireInSkipMorning = true
@@ -867,7 +902,7 @@ class SettingsManager:NSObject{
             }
             
             
-            
+            addLog(text: "Parse ShowBreaksInCall")
             //  ---------------------------SETTINGS Tab Limit--------------------------
             if let isEnabled = UserDefaults.standard.object(forKey: kUserdefaultsisTabLimiterEnabled) as? Bool{
                 isTabLimiterEnabled = isEnabled
@@ -896,7 +931,7 @@ class SettingsManager:NSObject{
             }else{
                 UserDefaults.standard.set(selectedFontIndex, forKey: kUserdefaultsselectedFontIndex)
             }
-            
+            addLog(text: "Parse selectedFontIndex")
             //  ---------------------------SETTINGS Progress Count--------------------------
             if let progressCount = UserDefaults.standard.object(forKey: kUserdefaultsCuddlyModeProgressCount) as? Int{
                 cuddlyModeProgressCount = progressCount
@@ -936,7 +971,7 @@ class SettingsManager:NSObject{
             }else{
                 UserDefaults.standard.set(isGeekModeEnabled, forKey: kUserdefaultsGeekModeEnabled)
             }
-            
+            addLog(text: "Parse GeekMode")
             
             //  ---------------------------SETTINGS Immediately Block Distracting Sites--------------------------
             if let isEnabled = UserDefaults.standard.object(forKey: kUserdefaultsImmediatelyBlockDistractingSites) as? Bool{
@@ -951,7 +986,7 @@ class SettingsManager:NSObject{
             }else{
                 UserDefaults.standard.set(immediatelyBlockDistractingApps, forKey: kUserdefaultsImmediatelyBlockDistractingApps)
             }
-            
+            addLog(text: "Parse PomodoroShortcut")
             //  ---------------------------SETTINGS Pomodoro Shortcut Char--------------------------
             if let val = UserDefaults.standard.object(forKey: kUserdefaultsStartPomodoroShortcutChar) as? String{
                 startPomodoroShortcutChar =  val
@@ -967,7 +1002,7 @@ class SettingsManager:NSObject{
             }
             
             
-            
+            addLog(text: "Parse Motivational Message")
             //  ---------------------------SETTINGS Motivational Message--------------------------
             if let isEnabled = UserDefaults.standard.object(forKey: kUserdefaultsMotivationalMessageEnabled) as? Bool{
                 if isEnabled{
@@ -1035,12 +1070,12 @@ class SettingsManager:NSObject{
             }
             
             //no need to read settings from userdefaults . read from settings json direct
-            
+            addLog(text: "Parse HardcorePomodoroEnable")
             //  ---------------------------AUTO HARDCORE POMODORO MODE settings--------------------------
             if UserDefaults.standard.object(forKey: kUserdefaultsHardcorePomodoroEnabled) == nil{
                 UserDefaults.standard.set(false, forKey: kUserdefaultsHardcorePomodoroEnabled)
             }
-            
+            addLog(text: "Parse BlockedUrls")
             if let arr = UserDefaults.standard.object(forKey: kUserdefaultsArrBlockedUrls) as? [String]{
                 arrBlockedUrls = arr
             }else{
@@ -1071,7 +1106,7 @@ class SettingsManager:NSObject{
                 //                isSettingsChanged = true
                 //                self.perform(#selector(putUserLocalDeviceSettings))
             }
-            
+            addLog(text: "Parse settings completed")
             completionHandler()
             return
         }
@@ -1140,6 +1175,7 @@ class SettingsManager:NSObject{
         let kBrainDumpCustomUrlEnabled = "kBrainDumpCustomUrlEnabled"
         let kIsMenuPopoverEnabled = "kIsMenuPopoverEnabled"
         let kIsAdvancedAnalyticsInFocusModeEnabled = "kIsAdvancedAnalyticsInFocusModeEnabled"
+        let kIsDataCollectionModeEnabled = "kIsDataCollectionModeEnabled"
         let kIsFocusVisualIndicatorEnabled = "kIsFocusVisualIndicatorEnabled"
         let kBrainDumpCustomUrlValue = "kBrainDumpCustomUrlValue"
         let kShowBrainDumpAfterMorningRoutine = "kShowBrainDumpAfterMorningRoutine"
@@ -1204,6 +1240,7 @@ class SettingsManager:NSObject{
             kBrainDumpCustomUrlEnabled:brainDumpCustomUrlEnabled,
             kIsMenuPopoverEnabled: isMenuPopoverEnabled,
             kIsAdvancedAnalyticsInFocusModeEnabled:isAdvancedAnalyticsInFocusModeEnabled,
+            kIsDataCollectionModeEnabled:isDataCollectionModeEnabled,
             kIsFocusVisualIndicatorEnabled:isFocusVisualIndicatorEnabled,
             kBrainDumpCustomUrlValue:brainDumpCustomUrlValue,
             kShowBrainDumpAfterMorningRoutine:showBrainDumpAfterMorningRoutineEnabled,
@@ -1213,8 +1250,10 @@ class SettingsManager:NSObject{
             //            kAiAllowUrlShowAlertEnabled:isAiAllowUrlShowAlertEnabled,
         ]
         
-        if UserDefaults.standard.object(forKey: kUserdefaultsAppPassword) != nil{
-            json[kAppPassword] = UserDefaults.standard.object(forKey: kUserdefaultsAppPassword) as? String ?? ""
+        if let password = UserDefaults.standard.object(forKey: kUserdefaultsAppPassword) as? String{
+            if !password.isEmpty{
+                json[kAppPassword] = password
+            }
         }
         return json
     }

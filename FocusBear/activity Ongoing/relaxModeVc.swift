@@ -10,6 +10,7 @@ import Cocoa
 
 class relaxModeVc: NSViewController {
 
+    @IBOutlet weak var boxList: customBoxBg!
     @IBOutlet weak var loader: NSProgressIndicator!
     @IBOutlet weak var lblTimer: NSTextField!
     @IBOutlet weak var btnIAmDone: Button!
@@ -51,7 +52,7 @@ class relaxModeVc: NSViewController {
         loader.startAnimation(self)
         loader.isHidden = false
         tblView.reloadData()
-        
+        boxList.isHidden = true
         allApiObject.getSavedWebsite(completionHandler: {arrJson in
             
             DispatchQueue.main.async {
@@ -62,7 +63,10 @@ class relaxModeVc: NSViewController {
                         let websiteInfo = WebsiteInfo(state: false, info: info)
                         self.arrWebsitesInfo.append(websiteInfo)
                     }
-                    self.tblView.reloadData()
+                    if self.arrWebsitesInfo.count != 0{
+                        self.tblView.reloadData()
+                        self.boxList.isHidden = false
+                    }
                 }
             }
         })
@@ -153,6 +157,7 @@ class relaxModeVc: NSViewController {
         }
         tblView.reloadData()
     }
+    
     @IBAction func btnIAmDoneClicked(_ sender: Any) {
         self.timer?.invalidate()
         self.view.window?.close()

@@ -7,7 +7,7 @@
 //
 
 import Foundation
-
+var baseUrl = "https://api.focusbear.io"//https://api.aws.focusbear.io"  //https://api.focusbear.io" // todo in helper app. in pusher
 class AllApi:NSObject {
     
     func getConfigFile(fileUrl:String, completionHandler: @escaping(_ result: NSDictionary?) -> ()) {
@@ -97,9 +97,9 @@ class AllApi:NSObject {
             
             if appdelegate!.credential != nil{
                 
-                var responsePath = "https://api.focusbear.io/user-settings?device_id=\(currentDeviceId)"
+                var responsePath = "\(baseUrl)/user-settings?device_id=\(currentDeviceId)"
                 if isOnboarding{
-                    responsePath = "https://api.focusbear.io/user-settings?device_id=\(currentDeviceId)&is_onboarding=true"
+                    responsePath = "\(baseUrl)/user-settings?device_id=\(currentDeviceId)&is_onboarding=true"
                 }
                 if let responsePathUrl = NSURL(string: responsePath){
                     addLog(text: "api call isSettingsValid \(responsePathUrl)")
@@ -184,7 +184,7 @@ class AllApi:NSObject {
             
             if appdelegate!.credential != nil{
                 
-                let responsePath = "https://api.focusbear.io/device"
+                let responsePath = "\(baseUrl)/device"
                 if let responsePathUrl = NSURL(string: responsePath){
                     addLog(text: "api call getDeviceId \(responsePathUrl)")
                     let token = appdelegate!.credential!.accessToken
@@ -283,7 +283,7 @@ class AllApi:NSObject {
     func captureEventEndpoint (event:String, metadata:[String:Any]){
         addLog(text: "captureEventEndpoint event: \(event)")
         
-        let responsePath = "https://api.focusbear.io/events"
+        let responsePath = "\(baseUrl)/events"
         if let responsePathUrl = NSURL(string: responsePath){
             guard (appdelegate!.credential?.accessToken) != nil else{
                 addLog(text: "func call:- captureEventEndpoint return:- no accessToken found")
@@ -355,7 +355,7 @@ class AllApi:NSObject {
     
     func capturePosthog(event:String, metadata:[String:Any]){
         if currentUserEmail.lowercased().contains("internaltest") || isTestUser{
-            return;
+            return;  
         }
         captureEventEndpoint(event: event, metadata: metadata)
         
@@ -481,16 +481,16 @@ class AllApi:NSObject {
             
             appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
             if appdelegate!.credential != nil{
-                var responsePath = "https://api.focusbear.io/user-settings?language=\(currentLanguageCode)"
+                var responsePath = "\(baseUrl)/user-settings?language=\(currentLanguageCode)"
                 if isFirstTime{
                     if let isHabitsDisabled = UserDefaults.standard.object(forKey: kUserdefaultsIsHabitsDisabledFromOnboarding) as? Bool{
                         if isHabitsDisabled{
                             let focusOnlyPackId = "4a5872f5-a8e5-48c2-a2e3-83c3830fce58"
-                            responsePath = "https://api.focusbear.io/habit-packs/default?pack_id=\(focusOnlyPackId)"
+                            responsePath = "\(baseUrl)/habit-packs/default?pack_id=\(focusOnlyPackId)"
                         }
                     }
                     if !packId.isEmpty{
-                        responsePath = "https://api.focusbear.io/habit-packs/default?pack_id=\(packId)"
+                        responsePath = "\(baseUrl)/habit-packs/default?pack_id=\(packId)"
                     }
                 }
                 
@@ -562,7 +562,7 @@ class AllApi:NSObject {
             appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
             
             if appdelegate!.credential != nil{
-                let responsePath = "https://api.focusbear.io/user-local-device-settings"
+                let responsePath = "\(baseUrl)/user-local-device-settings"
                 if let responsePathUrl = NSURL(string: responsePath){
                     addLog(text: "api call getSettings \(responsePathUrl)")
                     let token = appdelegate!.credential!.accessToken
@@ -585,6 +585,7 @@ class AllApi:NSObject {
                                             
                                             addLog(text: "api call user-local-device-settings success")
                                             print(jsonResult)
+                                            addLog(text: "User Local Device Settings:- \(jsonResult)")
                                             completionHandler(jsonResult)
                                             return
                                         }
@@ -689,7 +690,7 @@ class AllApi:NSObject {
             
             appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
             if appdelegate!.credential != nil{
-                let responsePath = "https://api.focusbear.io/user/details/current-activity-props"//
+                let responsePath = "\(baseUrl)/user/details/current-activity-props"//
                 if let responsePathUrl = NSURL(string: responsePath){
                     addLog(text: "api call getLastActivityInfo \(responsePathUrl)")
                     let token = appdelegate!.credential!.accessToken
@@ -778,7 +779,7 @@ class AllApi:NSObject {
             appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
             
             if appdelegate!.credential != nil{
-                let responsePath = "https://api.focusbear.io/user/details"
+                let responsePath = "\(baseUrl)/user/details"
                 if let responsePathUrl = NSURL(string: responsePath){
                     addLog(text: "api call getuserDetailsInfo \(responsePathUrl)")
                     let token = appdelegate!.credential!.accessToken
@@ -868,7 +869,7 @@ class AllApi:NSObject {
             appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
             
             if appdelegate!.credential != nil{
-                let responsePath = "https://api.focusbear.io/user/long-term-goals"
+                let responsePath = "\(baseUrl)/user/long-term-goals"
                 if let responsePathUrl = NSURL(string: responsePath){
                     addLog(text: "api call getuserLongTermGoals \(responsePathUrl)")
                     let token = appdelegate!.credential!.accessToken
@@ -959,7 +960,7 @@ class AllApi:NSObject {
             appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
             
             if appdelegate!.credential != nil{
-                let responsePath = "https://api.focusbear.io/focus-mode-template?featured_for_onboarding=true&language=\(currentLanguageCode)"
+                let responsePath = "\(baseUrl)/focus-mode-template?featured_for_onboarding=true&language=\(currentLanguageCode)"
                 if let responsePathUrl = NSURL(string: responsePath){
                     addLog(text: "api call getFocusTemplateInfo \(responsePathUrl)")
                     let token = appdelegate!.credential!.accessToken
@@ -1050,7 +1051,7 @@ class AllApi:NSObject {
             appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
             
             if appdelegate!.credential != nil{
-                let responsePath = "https://api.focusbear.io/user/subscription"
+                let responsePath = "\(baseUrl)/user/subscription"
                 if let responsePathUrl = NSURL(string: responsePath){
                     addLog(text: "api call getUserSubscriptionInfo \(responsePathUrl)")
                     let token = appdelegate!.credential!.accessToken
@@ -1135,7 +1136,7 @@ class AllApi:NSObject {
     func getHabitPacksInfo(breaks_only:Bool, completionHandler: @escaping(_ result: [NSDictionary]?) -> ()) {
         addLog(text: "func call:- getHabitPacksInfo")
         
-        let responsePath = "https://api.focusbear.io/habit-packs?featured_for_onboarding=true&breaks_only=\(breaks_only)"//&language=\(currentLanguageCode)//
+        let responsePath = "\(baseUrl)/habit-packs?featured_for_onboarding=true&breaks_only=\(breaks_only)"//&language=\(currentLanguageCode)//
         if let responsePathUrl = NSURL(string: responsePath){
             addLog(text: "api call getHabitPacksInfo \(responsePathUrl)")
             
@@ -1226,7 +1227,7 @@ class AllApi:NSObject {
             
             if appdelegate!.credential != nil{
                 
-                let responsePath = "https://api.focusbear.io/user-local-device-settings"
+                let responsePath = "\(baseUrl)/user-local-device-settings"
                 if let responsePathUrl = NSURL(string: responsePath){
                     addLog(text: "api call putUserLocalDeviceSettings \(responsePathUrl)")
                     let token = appdelegate!.credential!.accessToken
@@ -1310,7 +1311,6 @@ class AllApi:NSObject {
     var completedChoiceLogId:String?
     //    var isAnyErrorFoundInActivityCompletedApi = false
     func activityCompletedApi(activity_id:String, activity_sequence_id:String, start_time:Date, quantity_logged:Double?, duration_logged:Int, choice_id:String?, is_skipped:Bool, notes:String, should_not_update_current_activity:Bool, log_quantity_answers:[[String:Any]], completionHandler: @escaping(_ result: NSDictionary?) -> ()){
-        
         if activity_id.isEmpty && activity_sequence_id.isEmpty{// custom special activity which is not in morning , evening or breaks
             completionHandler(nil);
             return;
@@ -1336,7 +1336,7 @@ class AllApi:NSObject {
             
             let finish_time_string = getStringFromDateInUtc(date: finish_time, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
             
-            let responsePath = "https://api.focusbear.io/completed-activity"
+            let responsePath = "\(baseUrl)/completed-activity"
             if let responsePathUrl = NSURL(string: responsePath){
                 addLog(text: "api call activityCompletedApi \(responsePathUrl) for activityId: \(activity_id), choice_id: \(choice_id ?? "")")
                 let token = appdelegate!.credential?.accessToken ?? ""
@@ -1532,7 +1532,7 @@ class AllApi:NSObject {
             
             let id = choice_id ?? activity_id
             
-            let responsePath = "https://api.focusbear.io/completed-activity/revise/\(id)"
+            let responsePath = "\(baseUrl)/completed-activity/revise/\(id)"
             if let responsePathUrl = NSURL(string: responsePath){
                 addLog(text: "api call activity Completed Revise Api \(responsePathUrl)")
                 let token = appdelegate!.credential?.accessToken ?? ""
@@ -1636,7 +1636,7 @@ class AllApi:NSObject {
             
             appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
             
-            let responsePath = "https://api.focusbear.io/completed-activity/skip"
+            let responsePath = "\(baseUrl)/completed-activity/skip"
             if let responsePathUrl = NSURL(string: responsePath){
                 addLog(text: "api call activitySkippedApi \(responsePathUrl)")
                 let token = appdelegate!.credential?.accessToken ?? ""
@@ -1761,7 +1761,7 @@ class AllApi:NSObject {
             appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
             
             
-            let responsePath = "https://api.focusbear.io/completed-activity/sync"
+            let responsePath = "\(baseUrl)/completed-activity/sync"
             if let responsePathUrl = NSURL(string: responsePath){
                 addLog(text: "api call activitysyncApi \(responsePathUrl)")
                 let token = appdelegate!.credential?.accessToken ?? ""
@@ -1858,7 +1858,7 @@ class AllApi:NSObject {
             
             appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
             
-            var responsePath = "https://api.focusbear.io/completed-activity-sequence/\(activity_sequence_id)/force-complete-current-sequence"
+            var responsePath = "\(baseUrl)/completed-activity-sequence/\(activity_sequence_id)/force-complete-current-sequence"
             if isForToday == true{
                 responsePath += "?cancel_habits_for_today=true"
             }
@@ -1963,7 +1963,7 @@ class AllApi:NSObject {
             appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
             if appdelegate!.credential != nil{
                 
-                let responsePath = "https://api.focusbear.io/tracks"
+                let responsePath = "\(baseUrl)/tracks"
                 if let responsePathUrl = NSURL(string: responsePath){
                     addLog(text: "api call getAllTracks \(responsePathUrl)")
                     let token = appdelegate!.credential!.accessToken
@@ -2041,7 +2041,7 @@ class AllApi:NSObject {
                 let id = activityChoiceId ?? activityId
                 
                 let zone = TimeZone.current
-                let responsePath = "https://api.focusbear.io/completed-activity/\(id)/stats?days_number=30&timezone=\(zone.identifier)"
+                let responsePath = "\(baseUrl)/completed-activity/\(id)/stats?days_number=30&timezone=\(zone.identifier)"
                 if let responsePathUrl = NSURL(string: responsePath){
                     addLog(text: "api call getActivityStats \(responsePathUrl)")
                     let token = appdelegate!.credential!.accessToken
@@ -2158,7 +2158,7 @@ class AllApi:NSObject {
                 let toTime = getStringFromDateInUtc(date: shutOffDate, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
                 
                 
-                let responsePath = "https://api.focusbear.io/completed-activity/\(id)?from_time=\(fromTime)&to_time=\(toTime)"
+                let responsePath = "\(baseUrl)/completed-activity/\(id)?from_time=\(fromTime)&to_time=\(toTime)"
                 if let responsePathUrl = NSURL(string: responsePath){
                     addLog(text: "api call getACtivityCurrentDayStats \(responsePathUrl)")
                     let token = appdelegate!.credential!.accessToken
@@ -2251,7 +2251,7 @@ class AllApi:NSObject {
             
             if appdelegate!.credential != nil{
                 
-                let id = activityChoiceId ?? activityId
+                //let id = activityChoiceId ?? activityId
                 
                 let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
                 var shutOffDate = Calendar.current.date(bySettingHour: shutOffTime!.hour, minute: shutOffTime!.minute, second: shutOffTime!.second, of: Date())!
@@ -2265,7 +2265,7 @@ class AllApi:NSObject {
                 let toTime = getStringFromDateInUtc(date: shutOffDate, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
                 
                 
-                let responsePath = "https://api.focusbear.io/completed-activity/answer-logs?from_time=\(fromTime)&to_time=\(toTime)"
+                let responsePath = "\(baseUrl)/completed-activity/answer-logs?from_time=\(fromTime)&to_time=\(toTime)"
                 if let responsePathUrl = NSURL(string: responsePath){
                     addLog(text: "api call getActivityCurrentDayQuestionsStats \(responsePathUrl)")
                     let token = appdelegate!.credential!.accessToken
@@ -2366,7 +2366,7 @@ class AllApi:NSObject {
             
             if appdelegate!.credential != nil{
                 let zone = TimeZone.current
-                let responsePath = "https://api.focusbear.io/completed-activity/day-summary?timezone=\(zone.identifier)"
+                let responsePath = "\(baseUrl)/completed-activity/day-summary?timezone=\(zone.identifier)"
                 if let responsePathUrl = NSURL(string: responsePath){
                     addLog(text: "api call getAllActivityDaySummary \(responsePathUrl)")
                     let token = appdelegate!.credential!.accessToken
@@ -2734,7 +2734,7 @@ class AllApi:NSObject {
             
             if appdelegate!.credential != nil{
                 
-                let responsePath = "https://api.focusbear.io/focus-mode"
+                let responsePath = "\(baseUrl)/focus-mode"
                 if let responsePathUrl = NSURL(string: responsePath){
                     addLog(text: "api call addFocusMode \(responsePathUrl)")
                     let token = appdelegate!.credential!.accessToken
@@ -2832,7 +2832,7 @@ class AllApi:NSObject {
             appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
             
             if appdelegate!.credential != nil{
-                let responsePath = "https://api.focusbear.io/focus-mode?id=\(id)"
+                let responsePath = "\(baseUrl)/focus-mode?id=\(id)"
                 if let responsePathUrl = NSURL(string: responsePath){
                     addLog(text: "api call deleteFocusMode \(responsePathUrl)")
                     let token = appdelegate!.credential!.accessToken
@@ -2914,7 +2914,7 @@ class AllApi:NSObject {
             
             if appdelegate!.credential != nil{
                 
-                let responsePath = "https://api.focusbear.io/focus-mode/\(focusType["id"] as? String ?? "")"
+                let responsePath = "\(baseUrl)/focus-mode/\(focusType["id"] as? String ?? "")"
                 if let responsePathUrl = NSURL(string: responsePath){
                     addLog(text: "api call editFocusMode \(responsePathUrl)")
                     let token = appdelegate!.credential!.accessToken
@@ -3030,7 +3030,7 @@ class AllApi:NSObject {
             
             if appdelegate!.credential != nil{
                 
-                let responsePath = "https://api.focusbear.io/focus-mode"
+                let responsePath = "\(baseUrl)/focus-mode"
                 if let responsePathUrl = NSURL(string: responsePath){
                     addLog(text: "api call updateAllFocusMode \(responsePathUrl)")
                     let token = appdelegate!.credential!.accessToken
@@ -3125,7 +3125,7 @@ class AllApi:NSObject {
             
             if appdelegate!.credential != nil{
                 
-                let responsePath = "https://api.focusbear.io/focus-mode/\(id)/start"
+                let responsePath = "\(baseUrl)/focus-mode/\(id)/start"
                 if let responsePathUrl = NSURL(string: responsePath){
                     addLog(text: "api call startFocusMode \(responsePathUrl)")
                     let token = appdelegate!.credential!.accessToken
@@ -3255,7 +3255,7 @@ class AllApi:NSObject {
             
             if appdelegate!.credential != nil{
                 
-                let responsePath = "https://api.focusbear.io/focus-mode/\(id)/finish"
+                let responsePath = "\(baseUrl)/focus-mode/\(id)/finish"
                 if let responsePathUrl = NSURL(string: responsePath){
                     addLog(text: "api call finishFocusMode \(responsePathUrl)")
                     let token = appdelegate!.credential!.accessToken
@@ -3570,7 +3570,7 @@ class AllApi:NSObject {
         addLog(text: "func call:- api isInternetOn")
         
         
-        let responsePath = "https://api.focusbear.io/api"
+        let responsePath = "\(baseUrl)/api"
         if let responsePathUrl = NSURL(string: responsePath){
             addLog(text: "api call isInternetOn \(responsePathUrl)")
             
@@ -3622,7 +3622,7 @@ class AllApi:NSObject {
             
             if appdelegate!.credential != nil{
                 
-                let responsePath = "https://api.focusbear.io/tab-keywords"
+                let responsePath = "\(baseUrl)/tab-keywords"
                 if let responsePathUrl = NSURL(string: responsePath){
                     addLog(text: "api call getKeyWords \(responsePathUrl)")
                     let token = appdelegate!.credential!.accessToken
@@ -3692,7 +3692,7 @@ class AllApi:NSObject {
     
     
     
-    func chatGPTIsURLSafe(url: String, tab_title: String, focus_mode: String, intention:String, currentTaskInToDoPlayer:String?, completionHandler: @escaping(_ newDic:NSDictionary?, _ url:String?, _ payload: [String: Any]?) -> ()){
+    func chatGPTIsURLSafe(url: String, tab_title: String, focus_mode: String, intention:String, currentTaskInToDoPlayer:String?, currentHabitName:String?, other_explanations_including_domains:[String], completionHandler: @escaping(_ newDic:NSDictionary?, _ url:String?, _ payload: [String: Any]?) -> ()){
         addLog(text: "func call:- chatGPTIsURLSafe")
         
         appdelegate!.credentialsManager.credentials {credentialsInfo in
@@ -3702,7 +3702,7 @@ class AllApi:NSObject {
             
             if appdelegate!.credential != nil{
                 
-                let responsePath = "https://api.focusbear.io/user/is-url-safe-to-use"
+                let responsePath = "\(baseUrl)/user/is-url-safe-to-use"
                 if let responsePathUrl = NSURL(string: responsePath){
                     addLog(text: "api call chatGPTIsURLSafe \(responsePathUrl)")
                     let token = appdelegate!.credential!.accessToken
@@ -3721,10 +3721,14 @@ class AllApi:NSObject {
                         "meta_description": "",
                         "focus_mode": focus_mode,
                         "language": language,
-                        "intention": intention
+                        "intention": intention,
+                        "lastFiveJustificationsInThisFocusSession": other_explanations_including_domains
                     ]
                     if let currentTask = currentTaskInToDoPlayer{
                         json["currentTaskInToDoPlayer"] = currentTask
+                    }
+                    if let currentHabitName = currentHabitName{
+                        json["habit_name"] = currentHabitName
                     }
                     
                     request.timeoutInterval = 15
@@ -3733,15 +3737,10 @@ class AllApi:NSObject {
                     let task = URLSession.shared.dataTask(with: request as URLRequest) {
                         data, response, error in
                         if let httpResponse = response as? HTTPURLResponse{
-                            //it means it is right
-                            self.isApiStartFocusModeErrorFound = false
                             if data != nil{
                                 do {
                                     if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
-                                        
-                                        
-                                        // if let id = jsonResult.value(forKey: "id") as? String{
-                                        
+
                                         if httpResponse.statusCode == 201{
                                             addLog(text: "api call chatGPTIsURLSafe success")
                                             completionHandler(jsonResult, url, json)
@@ -3790,8 +3789,8 @@ class AllApi:NSObject {
         }
     }
     
-    func chatGPTIsURLSafeWithNewIntention(url: String, tab_title: String, focus_mode: String, intention:String, intentionForThisSite:String, other_explanations_including_domains:[[String:String]], currentTaskInToDoPlayer:String?, completionHandler: @escaping(_ newDic:NSDictionary?, _ url:String?, _ payload: [String: Any]?) -> ()){
-        addLog(text: "func call:- chatGPTIsURLSafe")
+    func chatGPTIsURLSafeWithNewIntention(url: String, tab_title: String, focus_mode: String, intention:String, intentionForThisSite:String, other_explanations_including_domains:[String], currentTaskInToDoPlayer:String?, currentHabitName:String?, completionHandler: @escaping(_ newDic:NSDictionary?, _ url:String?, _ payload: [String: Any]?) -> ()){
+        addLog(text: "func call:- chatGPTIsURLSafeWithNewIntention")
         
         appdelegate!.credentialsManager.credentials {credentialsInfo in
             addLog(text: "get updated credentialsInfo from credentialsManager")
@@ -3800,9 +3799,9 @@ class AllApi:NSObject {
             
             if appdelegate!.credential != nil{
                 
-                let responsePath = "https://api.focusbear.io/user/is-url-safe-to-use"
+                let responsePath = "\(baseUrl)/user/is-url-safe-to-use"
                 if let responsePathUrl = NSURL(string: responsePath){
-                    addLog(text: "api call chatGPTIsURLSafe \(responsePathUrl)")
+                    addLog(text: "api call chatGPTIsURLSafeWithNewIntention \(responsePathUrl)")
                     let token = appdelegate!.credential!.accessToken
                     
                     let request = makeRequest(responsePathUrl: responsePathUrl)
@@ -3827,38 +3826,36 @@ class AllApi:NSObject {
                     if let currentTask = currentTaskInToDoPlayer{
                         json["currentTaskInToDoPlayer"] = currentTask
                     }
-                    
+                    if let currentHabitName = currentHabitName{
+                        json["habit_name"] = currentHabitName
+                    }
                     request.timeoutInterval = 22
                     let jsonData = try? JSONSerialization.data(withJSONObject: json)
                     request.httpBody = jsonData
+                    print(json)
                     let task = URLSession.shared.dataTask(with: request as URLRequest) {
                         data, response, error in
                         if let httpResponse = response as? HTTPURLResponse{
-                            //it means it is right
-                            self.isApiStartFocusModeErrorFound = false
                             if data != nil{
                                 do {
                                     if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
-                                        
-                                        
-                                        // if let id = jsonResult.value(forKey: "id") as? String{
-                                        
+
                                         if httpResponse.statusCode == 201{
-                                            addLog(text: "api call chatGPTIsURLSafe success")
+                                            addLog(text: "api call chatGPTIsURLSafeWithNewIntention success")
                                             completionHandler(jsonResult, url, json)
                                             return
                                         }else{
-                                            addLog(text: "api call chatGPTIsURLSafe Api error:- statusCode is \(httpResponse.statusCode)")
+                                            addLog(text: "api call chatGPTIsURLSafeWithNewIntention Api error:- statusCode is \(httpResponse.statusCode)")
                                             self.writeJsonInLog(data: data)
                                             addLog(text: "accessToken is:- \(token)")
-                                            completionHandler(nil, url, nil)
+                                            completionHandler(nil, url, json)
                                             return
                                         }
                                     }
                                     
                                 }catch{
-                                    addLog(text: "api call chatGPTIsURLSafe error:- \(error.localizedDescription)")
-                                    completionHandler(nil, url, nil)
+                                    addLog(text: "api call chatGPTIsURLSafeWithNewIntention error:- \(error.localizedDescription)")
+                                    completionHandler(nil, url, json)
                                     print(error)
                                     return;
                                 }
@@ -3868,12 +3865,12 @@ class AllApi:NSObject {
                         
                         
                         if error != nil {
-                            addLog(text: "api call chatGPTIsURLSafe error:- \(error!.localizedDescription)")
+                            addLog(text: "api call chatGPTIsURLSafeWithNewIntention error:- \(error!.localizedDescription)")
                             print(error?.localizedDescription)
-                            completionHandler(nil, url, nil)
+                            completionHandler(nil, url, json)
                             return;
                         }else{
-                            completionHandler(nil, url, nil)
+                            completionHandler(nil, url, json)
                             return
                         }
                     }
@@ -3892,6 +3889,193 @@ class AllApi:NSObject {
     }
     
     
+    func chatGPTIsAppSafe(appName: String, focus_mode: String, intention:String, other_explanations_including_apps:[String], currentTaskInToDoPlayer:String?, currentHabitName:String?, completionHandler: @escaping(_ newDic:NSDictionary?, _ appName:String?, _ payload: [String: Any]?) -> ()){
+        addLog(text: "func call:- chatGPTIsAppSafe")
+        
+        appdelegate!.credentialsManager.credentials {credentialsInfo in
+            addLog(text: "get updated credentialsInfo from credentialsManager")
+            
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+            
+            if appdelegate!.credential != nil{
+                
+                let responsePath = "\(baseUrl)/user/is-app-safe-to-use"
+                if let responsePathUrl = NSURL(string: responsePath){
+                    addLog(text: "api call chatGPTIsAppSafe \(responsePathUrl)")
+                    let token = appdelegate!.credential!.accessToken
+                    
+                    let request = makeRequest(responsePathUrl: responsePathUrl)
+                    request.httpMethod = "POST";
+                    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                    
+                    var language = "english"
+                    if currentLanguageCode == "es"{
+                        language = "spanish"
+                    }
+                    var json: [String: Any] = [
+                        "focusMode": focus_mode,
+                        "intention": intention,
+                        "appName": appName,
+                        "language": language,
+                        "lastFiveJustificationsInThisFocusSession": other_explanations_including_apps
+                    ]
+                    if let currentTask = currentTaskInToDoPlayer{
+                        json["currentTaskInToDoPlayer"] = currentTask
+                    }
+                    if let currentHabitName = currentHabitName{
+                        json["habit_name"] = currentHabitName
+                    }
+                    request.timeoutInterval = 15
+                    let jsonData = try? JSONSerialization.data(withJSONObject: json)
+                    request.httpBody = jsonData
+                    let task = URLSession.shared.dataTask(with: request as URLRequest) {
+                        data, response, error in
+                        if let httpResponse = response as? HTTPURLResponse{
+                            if data != nil{
+                                do {
+                                    if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
+                                        if httpResponse.statusCode == 201{
+                                            addLog(text: "api call chatGPTIsAppSafe success")
+                                            completionHandler(jsonResult, appName, json)
+                                            return
+                                        }else{
+                                            addLog(text: "api call chatGPTIsAppSafe Api error:- statusCode is \(httpResponse.statusCode)")
+                                            self.writeJsonInLog(data: data)
+                                            addLog(text: "accessToken is:- \(token)")
+                                            completionHandler(nil, appName, json)
+                                            return
+                                        }
+                                    }
+                                    
+                                }catch{
+                                    addLog(text: "api call chatGPTIsAppSafe error:- \(error.localizedDescription)")
+                                    completionHandler(nil, appName, json)
+                                    print(error)
+                                    return;
+                                }
+                            }
+                            
+                        }
+                        
+                        
+                        if error != nil {
+                            addLog(text: "api call chatGPTIsAppSafe error:- \(error!.localizedDescription)")
+                            print(error?.localizedDescription)
+                            completionHandler(nil, appName, json)
+                            return;
+                        }else{
+                            completionHandler(nil, appName, json)
+                            return
+                        }
+                    }
+                    
+                    task.resume()
+                }else{
+                    completionHandler(nil, appName, nil)
+                    return
+                }
+                
+            }else{
+                completionHandler(nil, nil, nil)
+                return
+            }
+        }
+    }
+    
+    func chatGPTIsAppSafeWithNewIntention(appName: String, focus_mode: String, intention:String, intentionForThisApp:String, other_explanations_including_apps:[String], currentTaskInToDoPlayer:String?, currentHabitName:String?, completionHandler: @escaping(_ newDic:NSDictionary?, _ appName:String?, _ payload: [String: Any]?) -> ()){
+        addLog(text: "func call:- chatGPTIsAppSafeWithNewIntention")
+        
+        appdelegate!.credentialsManager.credentials {credentialsInfo in
+            addLog(text: "get updated credentialsInfo from credentialsManager")
+            
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+            
+            if appdelegate!.credential != nil{
+                
+                let responsePath = "\(baseUrl)/user/is-app-safe-to-use"
+                if let responsePathUrl = NSURL(string: responsePath){
+                    addLog(text: "api call chatGPTIsAppSafeWithNewIntention \(responsePathUrl)")
+                    let token = appdelegate!.credential!.accessToken
+                    
+                    let request = makeRequest(responsePathUrl: responsePathUrl)
+                    request.httpMethod = "POST";
+                    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                    
+                    var language = "english"
+                    if currentLanguageCode == "es"{
+                        language = "spanish"
+                    }
+                    var json: [String: Any] = [
+                        "focusMode": focus_mode,
+                        "intention": intention,
+                        "appName": appName,
+                        "language": language,
+                        "justificationForThisSpecificApp": intentionForThisApp,
+                        "lastFiveJustificationsInThisFocusSession": other_explanations_including_apps
+                    ]
+                    if let currentTask = currentTaskInToDoPlayer{
+                        json["currentTaskInToDoPlayer"] = currentTask
+                    }
+                    if let currentHabitName = currentHabitName{
+                        json["habit_name"] = currentHabitName
+                    }
+                    request.timeoutInterval = 15
+                    let jsonData = try? JSONSerialization.data(withJSONObject: json)
+                    request.httpBody = jsonData
+                    let task = URLSession.shared.dataTask(with: request as URLRequest) {
+                        data, response, error in
+                        if let httpResponse = response as? HTTPURLResponse{
+                            if data != nil{
+                                do {
+                                    if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
+                                        if httpResponse.statusCode == 201{
+                                            addLog(text: "api call chatGPTIsAppSafeWithNewIntention success")
+                                            completionHandler(jsonResult, appName, json)
+                                            return
+                                        }else{
+                                            addLog(text: "api call chatGPTIsAppSafeWithNewIntention Api error:- statusCode is \(httpResponse.statusCode)")
+                                            self.writeJsonInLog(data: data)
+                                            addLog(text: "accessToken is:- \(token)")
+                                            completionHandler(nil, appName, json)
+                                            return
+                                        }
+                                    }
+                                    
+                                }catch{
+                                    addLog(text: "api call chatGPTIsAppSafeWithNewIntention error:- \(error.localizedDescription)")
+                                    completionHandler(nil, appName, json)
+                                    print(error)
+                                    return;
+                                }
+                            }
+                            
+                        }
+                        
+                        
+                        if error != nil {
+                            addLog(text: "api call chatGPTIsAppSafeWithNewIntention error:- \(error!.localizedDescription)")
+                            print(error?.localizedDescription)
+                            completionHandler(nil, appName, json)
+                            return;
+                        }else{
+                            completionHandler(nil, appName, json)
+                            return
+                        }
+                    }
+                    
+                    task.resume()
+                }else{
+                    completionHandler(nil, appName, nil)
+                    return
+                }
+                
+            }else{
+                completionHandler(nil, nil, nil)
+                return
+            }
+        }
+    }
+    
     
     func postTermsService(consentType:String){
         addLog(text: "func call:- postTermsService")
@@ -3903,7 +4087,7 @@ class AllApi:NSObject {
             
             if appdelegate!.credential != nil{
                 
-                let responsePath = "https://api.focusbear.io/user/consent"
+                let responsePath = "\(baseUrl)/user/consent"
                 if let responsePathUrl = NSURL(string: responsePath){
                     addLog(text: "api call postTermsService \(responsePathUrl)")
                     let token = appdelegate!.credential!.accessToken
@@ -3991,7 +4175,7 @@ class AllApi:NSObject {
             appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
             
             if appdelegate!.credential != nil{
-                let responsePath = "https://api.focusbear.io/app-logs?app_platform=mac-os&app_version=\(getAppVersionInString())&feedback_message=\(feedback)"
+                let responsePath = "\(baseUrl)/app-logs?app_platform=mac-os&app_version=\(getAppVersionInString())&feedback_message=\(feedback)"
                 if let responsePathUrl = NSURL(string: responsePath){
                     addLog(text: "api call uploadAppLogs \(responsePathUrl)")
                     let token = appdelegate!.credential!.accessToken
@@ -4116,7 +4300,7 @@ class AllApi:NSObject {
             
             appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
             if appdelegate!.credential != nil{
-                let responsePath = "https://api.focusbear.io/focus-mode/tags"//
+                let responsePath = "\(baseUrl)/focus-mode/tags"//
                 if let responsePathUrl = NSURL(string: responsePath){
                     addLog(text: "api call getFocusModeTags \(responsePathUrl)")
                     let token = appdelegate!.credential!.accessToken
@@ -4216,7 +4400,7 @@ class AllApi:NSObject {
             appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
             
             
-            let responsePath = "https://api.focusbear.io/saved-website"
+            let responsePath = "\(baseUrl)/saved-website"
             if let responsePathUrl = NSURL(string: responsePath){
                 addLog(text: "api call postSavedWebsiteApi \(responsePathUrl)")
                 let token = appdelegate!.credential?.accessToken ?? ""
@@ -4304,7 +4488,7 @@ class AllApi:NSObject {
             appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
             
             
-            let responsePath = "https://api.focusbear.io/saved-website"
+            let responsePath = "\(baseUrl)/saved-website"
             if let responsePathUrl = NSURL(string: responsePath){
                 addLog(text: "api call getSavedWebsiteApi \(responsePathUrl)")
                 let token = appdelegate!.credential?.accessToken ?? ""
@@ -4392,7 +4576,7 @@ class AllApi:NSObject {
             appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
             
             
-            let responsePath = "https://api.focusbear.io/saved-website?website_id=\(UUID)"
+            let responsePath = "\(baseUrl)/saved-website?website_id=\(UUID)"
             if let responsePathUrl = NSURL(string: responsePath){
                 addLog(text: "api call deleteSavedWebsiteApi \(responsePathUrl)")
                 let token = appdelegate!.credential?.accessToken ?? ""
@@ -4468,7 +4652,7 @@ class AllApi:NSObject {
             
             if appdelegate!.credential != nil{
                 
-                let responsePath = "https://api.focusbear.io/user/long-term-goals"
+                let responsePath = "\(baseUrl)/user/long-term-goals"
                 if let responsePathUrl = NSURL(string: responsePath){
                     addLog(text: "api call addAdditionalGoals \(responsePathUrl)")
                     
@@ -4544,7 +4728,7 @@ class AllApi:NSObject {
             
             if appdelegate!.credential != nil{
                 
-                let responsePath = "https://api.focusbear.io/pusher/user-auth"
+                let responsePath = "\(baseUrl)/pusher/user-auth"
                 if let responsePathUrl = NSURL(string: responsePath){
                     let token = appdelegate!.credential!.accessToken
                     
@@ -4596,7 +4780,7 @@ class AllApi:NSObject {
             
             if appdelegate!.credential != nil{
                 
-                let responsePath = "https://api.focusbear.io/course/sync-platform-courses"
+                let responsePath = "\(baseUrl)/course/sync-platform-courses"
                 if let responsePathUrl = NSURL(string: responsePath){
                     
                     let request = makeRequest(responsePathUrl: responsePathUrl)
@@ -4651,7 +4835,7 @@ class AllApi:NSObject {
             
             if appdelegate!.credential != nil{
                 
-                let responsePath = "https://api.focusbear.io/course/enrolled"
+                let responsePath = "\(baseUrl)/course/enrolled"
                 if let responsePathUrl = NSURL(string: responsePath){
                     
                     let request = makeRequest(responsePathUrl: responsePathUrl)
@@ -4797,7 +4981,7 @@ class AllApi:NSObject {
     }
     
     
-    func addTask(title: String, details: String, eisenhowerQuadrant:Int, dueDate:String, objective:String, tags:[[String:String]], completionHandler: @escaping(_ result:Bool) -> ()){
+    func addTask(title: String, details: String, eisenhowerQuadrant:Int, dueDate:String, objective:String, tags:[[String:String]], completionHandler: @escaping(_ result:Bool, _ jsonResult: NSDictionary?) -> ()){
         addLog(text: "func call:- addTask")
         
         appdelegate!.credentialsManager.credentials {credentialsInfo in
@@ -4807,7 +4991,7 @@ class AllApi:NSObject {
             
             if appdelegate!.credential != nil{
                 
-                let responsePath = "https://api.focusbear.io/to-do"
+                let responsePath = "\(baseUrl)/to-do"
                 if let responsePathUrl = NSURL(string: responsePath){
                     addLog(text: "api call addTask \(responsePathUrl)")
                     let token = appdelegate!.credential!.accessToken
@@ -4835,30 +5019,42 @@ class AllApi:NSObject {
                             self.isApiPostTermsServiceErrorFound = false
                             if httpResponse.statusCode == 200{
                                 addLog(text: "api call addTask success")
-                                completionHandler(true)
+                                if data != nil{
+                                    do {
+                                        if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
+                                            addLog(text: "json is:- \(jsonResult)")
+                                            completionHandler(true, jsonResult)
+                                            return;
+                                        }
+                                    }catch{
+                                        
+                                    }
+                                }
+                                
+                                completionHandler(true, nil)
                                 return;
                             }else{
                                 addLog(text: "api call addTask error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
                                 addLog(text: "accessToken is:- \(token)")
-                                completionHandler(false)
+                                completionHandler(false, nil)
                                 return;
                             }
                         }
                         
                         if error != nil {
                             addLog(text: "api call addTask error: \(error!.localizedDescription)")
-                            completionHandler(false)
+                            completionHandler(false, nil)
                             return;
                         }
                         
-                        completionHandler(false)
+                        completionHandler(false, nil)
                         return;
                     }
                     task.resume()
                 }else{
                     addLog(text: "api call addTask error:- can't create url")
-                    completionHandler(false)
+                    completionHandler(false, nil)
                     return;
                 }
                 
@@ -4877,7 +5073,7 @@ class AllApi:NSObject {
             
             if appdelegate!.credential != nil{
                 let zone = TimeZone.current
-                let responsePath = "https://api.focusbear.io/completed-activity/day-summary?timezone=\(zone.identifier)"
+                let responsePath = "\(baseUrl)/completed-activity/day-summary?timezone=\(zone.identifier)"
                 if let responsePathUrl = NSURL(string: responsePath){
                     addLog(text: "api call getProjects \(responsePathUrl)")
                     let token = appdelegate!.credential!.accessToken
@@ -4973,7 +5169,7 @@ class AllApi:NSObject {
             
             appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
             if appdelegate!.credential != nil{
-                let responsePath = "https://api.focusbear.io/app-logs/upload-logs-url?filename=Debug_Logs.txt.zip&mimetype=application/zip"
+                let responsePath = "\(baseUrl)/app-logs/upload-logs-url?filename=Debug_Logs.txt.zip&mimetype=application/zip"
                 
                 
                 if let responsePathUrl = NSURL(string: responsePath){
@@ -5095,7 +5291,7 @@ class AllApi:NSObject {
             
             if appdelegate!.credential != nil{
                 
-                let responsePath = "https://api.focusbear.io/app-logs/notify-upload-success"
+                let responsePath = "\(baseUrl)/app-logs/notify-upload-success"
                 if let responsePathUrl = NSURL(string: responsePath){
                     addLog(text: "api call notifyUploadLogsSuccess \(responsePathUrl)")
                     let token = appdelegate!.credential!.accessToken
@@ -5163,7 +5359,7 @@ class AllApi:NSObject {
             
             if appdelegate!.credential != nil{
                 
-                let responsePath = "https://api.focusbear.io/auth/email-confirmation"
+                let responsePath = "\(baseUrl)/auth/email-confirmation"
                 if let responsePathUrl = NSURL(string: responsePath){
                     addLog(text: "api call emailConfirmation \(responsePathUrl)")
                     let token = appdelegate!.credential!.accessToken
@@ -5222,7 +5418,7 @@ class AllApi:NSObject {
             
             if appdelegate!.credential != nil{
                 
-                let responsePath = "https://api.focusbear.io/auth/reset-password"
+                let responsePath = "\(baseUrl)/auth/reset-password"
                 if let responsePathUrl = NSURL(string: responsePath){
                     addLog(text: "api call resetPassword \(responsePathUrl)")
                     let token = appdelegate!.credential!.accessToken
@@ -5295,6 +5491,99 @@ class AllApi:NSObject {
         }
     }
     
+    
+    func getAllTasks(completionHandler: @escaping(_ result: [NSDictionary]?) -> ()) {
+        addLog(text: "func call:- getAllTasks")
+        
+        appdelegate!.credentialsManager.credentials {credentialsInfo in
+            addLog(text: "get updated credentialsInfo from credentialsManager")
+            
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+            if appdelegate!.credential != nil{
+                let responsePath = "\(baseUrl)/to-do"
+                if let responsePathUrl = NSURL(string: responsePath){
+                    addLog(text: "api call getAllTasks \(responsePathUrl)")
+                    let token = appdelegate!.credential!.accessToken
+                    
+                    let request = makeRequest(responsePathUrl: responsePathUrl)
+                    request.httpMethod = "GET";
+                    
+                    let task = URLSession.shared.dataTask(with: request as URLRequest) {
+                        data, response, error in
+                        
+                        if let httpResponse = response as? HTTPURLResponse {
+                            self.isApiGetFocusModeTagsErrorFound = false
+                            if httpResponse.statusCode == 200{
+                                
+                                if data != nil{
+                                    do {
+                                        if let arrJsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
+                                            
+                                            
+                                            print(arrJsonResult)
+                                            if let arrAllTasks = arrJsonResult.value(forKey: "data") as? [NSDictionary]{
+                                                addLog(text: "api call getAllTasks success")
+                                                completionHandler(arrAllTasks)
+                                                return
+                                            }else{
+                                                completionHandler(nil)
+                                                return
+                                            }
+                                        }
+                                        
+                                    }catch{
+                                        print(error)
+                                        addLog(text: "error get getAllTasks file: \(error.localizedDescription)")
+                                        completionHandler(nil)
+                                        return
+                                    }
+                                    
+                                }
+                                
+                                completionHandler(nil)
+                                return
+                            }else{
+                                addLog(text: "api call getAllTasks Api error:- statusCode is \(httpResponse.statusCode)")
+                                self.writeJsonInLog(data: data)
+                                addLog(text: "accessToken is:- \(token)")
+                                completionHandler(nil)
+                                return
+                            }
+                        }
+                        if error != nil {
+                            addLog(text: "error getAllTasks: \(error!.localizedDescription)")
+                            if (error as? NSError)?.code == self.errorCodeRequestTimeout{
+                                if self.isApiGetFocusModeTagsErrorFound{
+                                    self.isApiGetFocusModeTagsErrorFound = false
+                                    completionHandler(nil)
+                                    return
+                                }else{
+                                    self.isApiGetFocusModeTagsErrorFound = true
+                                    addLog(text: "error getAllTasks:- try second time")
+                                    self.getAllTasks(completionHandler: { json in
+                                        completionHandler(json)
+                                        return
+                                    })
+                                }
+                            }else{
+                                completionHandler(nil)
+                                return
+                            }
+                            
+                        }else{
+                            completionHandler(nil)
+                            return
+                        }
+                    }
+                    task.resume()
+                }else{
+                    completionHandler(nil)
+                }
+            }else{
+                completionHandler(nil)
+            }
+        }
+    }
 }
 
 func generateBoundaryString() -> String{

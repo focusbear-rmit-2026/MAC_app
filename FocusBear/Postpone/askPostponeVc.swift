@@ -368,10 +368,10 @@ class askPostponeVc: NSViewController {
                     mainViewControllerObj?.showPasswordView()
                     enterPasswordVcObj?.parentVc = self
                 }else{
-                    mainViewControllerObj?.postponeFocusSummaryFor(minutes: postponeTime)
+                    mainViewControllerObj?.postponeFocusSummaryFor(minutes: postponeTime, showAskIntention: true)
                 }
             }else{
-                mainViewControllerObj?.postponeFocusSummaryFor(minutes: postponeTime)
+                mainViewControllerObj?.postponeFocusSummaryFor(minutes: postponeTime, showAskIntention: true)
             }
         }
 

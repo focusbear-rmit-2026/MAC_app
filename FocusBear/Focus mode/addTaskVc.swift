@@ -10,6 +10,9 @@ import Cocoa
 import WebKit
 class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate {
 
+    @IBOutlet weak var boxAverageTabCount: NSBox!
+    @IBOutlet weak var boxAverageTimeSpent: NSBox!
+    @IBOutlet weak var btnMoreOptions: cursorButton!
     @IBOutlet weak var lblEnableAdvancedAnalyticsSetting: NSTextField!
     @IBOutlet weak var lblTitleDeepWorkTimeToday: NSTextField!
     @IBOutlet weak var boxFocusAlignmentScore: NSBox!
@@ -60,7 +63,7 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
         webView.configuration.userContentController.add(handler, name: "close_todo_focus_end_ui")
         
         btnEnableAdvancedAnalytics.titleColor = NSColor.systemBlue
-
+        btnMoreOptions.title = "More Stats"
         lblTitleStats.stringValue = "Stats"
         lblTitleFocusAlignmentScore.stringValue = "Focus Alignment Score"
         lblTitleDeepWorkTime.stringValue = "Deep work time this session"
@@ -108,6 +111,7 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
                 lblTitleExtendFocus.stringValue = focusCompletedInfo.value(forKey: "askExtendFocusText") as? String ?? lblTitleExtendFocus.stringValue
                 lblIntention.stringValue = focusCompletedInfo.value(forKey: "intentionText") as? String ?? lblIntention.stringValue
                 lblTitle.stringValue = focusCompletedInfo.value(forKey: "titleExtendFocusMode") as? String ?? lblTitle.stringValue
+                btnMoreOptions.title = focusCompletedInfo.value(forKey: "buttonMoreOptionsText") as? String ?? btnMoreOptions.title
             }
         }
         
@@ -240,7 +244,7 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
         }else{
             hideTaskTabViewItem()
         }
-            
+        reloadMoreOptionsState()
     }
     
     // Hide a tab item
@@ -449,7 +453,7 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
                                         if currentState == ._EVENING_HABIT_{
                                             mainViewControllerObj?.postponeEveningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
                                         }else if currentState == ._POSTPON_FOCUS_SUMMARY_{
-                                            mainViewControllerObj?.postponeFocusSummaryFor(minutes: totalMinutes + 2)
+                                            mainViewControllerObj?.postponeFocusSummaryFor(minutes: totalMinutes + 2, showAskIntention: false)
                                         }
                                         self.extendFocusMode()
                                     }
@@ -491,7 +495,7 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
        
         endFocusModeTime = calendar.date(byAdding: .minute, value: minutesToExtend, to: Date())
         arrFocusType[currentFocusModeIndex]["isOn"] = true
-
+        arrFocusType[currentFocusModeIndex]["lastScheduledEndDate"] = getStringFromDate(date: endFocusModeTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")//
         if let isAutoDoNotDisturbEnabled = arrFocusType[currentFocusModeIndex]["isAutoDoNotDisturbEnabled"] as? Bool{
             if isAutoDoNotDisturbEnabled{
                 if isAccessibilityEnabled(isPrompt: true){
@@ -564,14 +568,12 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
                     settingsContainerVcObj?.showPrivacyView()
                     getPrivacyVcObject().highlightAdvanceAanalyticsItemBox()
                 }
-                if shouldAskPassword(){
-                    if SettingsManagerObject.isPasswordRequireInChangeSettings{
-                        tabview.view.addSubview(getEnterPasswordVcObjForPreferences().view)
-                        tabview.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
-                        getEnterPasswordVcObjForPreferences().parentVc = nil
-                        enterPasswordVcObjForPreferences?.removeConstraints()
-                        addLog(text: "Showing enter password view")
-                    }
+                if isPasswordRequireInOpenSettings(){
+                    tabview.view.addSubview(getEnterPasswordVcObjForPreferences().view)
+                    tabview.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
+                    getEnterPasswordVcObjForPreferences().parentVc = nil
+                    enterPasswordVcObjForPreferences?.removeConstraints()
+                    addLog(text: "Showing enter password view")
                 }
             }
             
@@ -691,7 +693,50 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
         }
         showTooltip(sender: sender, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:340)
     }
-}
+    
+    
+    @IBAction func btnMoreOptionsClicked(_ sender: Any) {
+        if boxAverageTimeSpent.isHidden{
+            expandMoreOptions()
+            UserDefaults.standard.set(true, forKey: kUserdefaultsFocusStatsExpanded)
+        }else{
+            collapseMoreOptions()
+            UserDefaults.standard.set(false, forKey: kUserdefaultsFocusStatsExpanded)
+        }
+    }
+    
+    func reloadMoreOptionsState(){
+        if let val = UserDefaults.standard.object(forKey: kUserdefaultsFocusStatsExpanded) as? Bool{
+            if val{
+                expandMoreOptions()
+            }else{
+                collapseMoreOptions()
+            }
+        }else{
+            collapseMoreOptions()
+            UserDefaults.standard.set(false, forKey: kUserdefaultsFocusStatsExpanded)
+        }
+    }
+    
+    func expandMoreOptions(){
+        boxAverageTimeSpent.isHidden = false
+        boxAverageTabCount.isHidden = false
+        if SettingsManagerObject.isAiCheckUrlEnabled{
+            boxFocusAlignmentScore.isHidden = false
+        }else{
+            boxFocusAlignmentScore.isHidden = true
+        }
+        btnMoreOptions.image = NSImage(named: NSImage.touchBarGoDownTemplateName)
+    }
+    
+    func collapseMoreOptions(){
+        boxFocusAlignmentScore.isHidden = true
+        boxAverageTimeSpent.isHidden = true
+        boxAverageTabCount.isHidden = true
+        btnMoreOptions.image = NSImage(named: NSImage.touchBarGoForwardTemplateName)
+    }
+    
+}//NSTouchBarGoForwardTemplate
 
 
 extension addTaskVc:NSTableViewDelegate, NSTableViewDataSource {
@@ -708,8 +753,10 @@ extension addTaskVc:NSTableViewDelegate, NSTableViewDataSource {
 
             if let title = arrAllAppsTabsData[row][tabMatricsObject.keyFocusAppTitle] as? String{
                 cell.lblTitleName.stringValue = title
+                cell.lblTitleName.toolTip = title
             }else if let title = arrAllAppsTabsData[row][tabMatricsObject.keyFocusDomainTitle] as? String{
                 cell.lblTitleName.stringValue = title
+                cell.lblTitleName.toolTip = title
             }
             if let duration = arrAllAppsTabsData[row][tabMatricsObject.keyFocusDuration] as? Int{
                 cell.lblDuration.stringValue = getStringTimeFromSeconds(seconds: duration)

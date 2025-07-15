@@ -136,7 +136,18 @@ class breaksBrainDumpVc: NSViewController {
                 }else{
                     lastWorkText = lastWorkText.replacingOccurrences(of: "<WORK>", with: name)
                 }
+                let formatter = DateFormatter()
+                formatter.dateStyle = .medium
+                formatter.timeStyle = .short
+                formatter.doesRelativeDateFormatting = false
+
+                // Custom format for "2 Dec at 11:20 am"
+                formatter.dateFormat = "d MMM 'at' h:mm a"
+
+                // Get the formatted string
+                let dateString = formatter.string(from: Date())
                 
+                lastWorkText = dateString + ": " + lastWorkText
                 let notes = textView.string
                 textView.string = lastWorkText + "\n" + notes
             }

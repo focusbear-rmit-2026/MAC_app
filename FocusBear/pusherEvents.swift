@@ -42,6 +42,9 @@ class pusherEvents:NSObject, PusherDelegate {
                         do {
                             if let dictionary = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]{
                                 print(dictionary)
+                                if dictionary["device_id"] as? String == currentDeviceId{
+                                    return;
+                                }
                                 let startTimeString = dictionary["start_time"] as? String ?? ""
                                 let finishTimeString = dictionary["scheduled_finish_time"] as? String ?? ""
                                 let focusModeId = dictionary["focus_mode_id"] as? String ?? ""
@@ -75,6 +78,8 @@ class pusherEvents:NSObject, PusherDelegate {
                                         currentFocusModeStrictness = ._NORMAL_
                                         addLog(text: "focus mode is normal mode")
                                         arrFocusType[currentFocusModeIndex]["isOn"] = true
+                                        arrFocusType[currentFocusModeIndex]["lastStartedDate"] = getStringFromDate(date: startFocusModeTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")//
+                                        arrFocusType[currentFocusModeIndex]["lastScheduledEndDate"] = getStringFromDate(date: endFocusModeTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")//
                                         shouldReloadTaskPlayer = true
                                         if let isAutoDoNotDisturbEnabled = arrFocusType[currentFocusModeIndex]["isAutoDoNotDisturbEnabled"] as? Bool{
                                             if isAutoDoNotDisturbEnabled{
@@ -115,7 +120,7 @@ class pusherEvents:NSObject, PusherDelegate {
                                         }
                                         isFocusTimeType = ._HOUR_
                                         appdelegate?.setFocusModeTimer(hour: nil, minute: diffMinutes)
-                                        isFocusModeStartedFromPomodoroMode = false
+                                       // isFocusModeStartedFromPomodoroMode = false
                                         closePomodoroWindowIOfVisible()
                                         if startingFocusWindowControllerObj != nil{
                                             if startingFocusWindowControllerObj!.window!.isVisible{
@@ -140,6 +145,18 @@ class pusherEvents:NSObject, PusherDelegate {
         _ = channel.bind(eventName: "focus-mode-finished", eventCallback: { (event: PusherEvent) in
             if let data = event.data {
                 print(data)
+                if let data = data.data(using: .utf8) {
+                    do {
+                        if let dictionary = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]{
+                            print(dictionary)
+                            if dictionary["device_id"] as? String == currentDeviceId{
+                                return;
+                            }
+                        }
+                    }catch{
+                        
+                    }
+                }
                 if isFocusModeOnOrPaused() == false{
                     return;
                 }
@@ -179,7 +196,6 @@ class pusherEvents:NSObject, PusherDelegate {
                 if brainDumpWcObj != nil{
                     if brainDumpWcObj?.window != nil{
                         if brainDumpWcObj!.window!.isVisible{
-                            brainDumpVcObj?.focusModeFinished()
                             brainDumpWcObj?.window?.close()
                         }
                     }
@@ -341,7 +357,7 @@ class pusherEvents:NSObject, PusherDelegate {
 
 class AuthRequestBuilder: AuthRequestBuilderProtocol {
     func requestFor(socketID: String, channelName: String) -> URLRequest? {
-        let responsePath = "https://api.focusbear.io/pusher/user-auth"
+        let responsePath = "\(baseUrl)/pusher/user-auth"//https://api.focusbear.io/pusher/user-auth"
         if let responsePathUrl = NSURL(string: responsePath){
             var request = URLRequest(url:responsePathUrl as URL);
             request.httpMethod = "POST"

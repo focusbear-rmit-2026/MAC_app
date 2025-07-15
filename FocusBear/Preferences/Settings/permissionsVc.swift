@@ -37,7 +37,7 @@ class permissionsVc: NSViewController {
             lblTitle.stringValue = settingsNew.value(forKey: "permissionsSettingTitle") as? String ?? lblTitle.stringValue
             lblDescription.stringValue = settingsNew.value(forKey: "descriptionPermissions") as? String ?? lblDescription.stringValue
         }
-
+        
     }
     
     override func viewWillAppear() {
@@ -48,7 +48,7 @@ class permissionsVc: NSViewController {
             let fileIcon = NSWorkspace.shared.icon(forFile: "/Applications/Safari.app")
             arrBrowsers.append(["name": "Safari", "image": fileIcon, "isEnabled": false, "browser":BROWSER._SAFARI_])
         }
-
+        
         if filemanager.fileExists(atPath: "/Applications/Google Chrome.app"){
             let fileIcon = NSWorkspace.shared.icon(forFile: "/Applications/Google Chrome.app")
             arrBrowsers.append(["name": "Google Chrome", "image": fileIcon, "isEnabled": false, "browser":BROWSER._GOOGLE_CHROME_])
@@ -82,7 +82,7 @@ class permissionsVc: NSViewController {
             let fileIcon = NSWorkspace.shared.icon(forFile: "/Applications/Microsoft Edge.app")
             arrBrowsers.append(["name": "Microsoft Edge", "image": fileIcon, "isEnabled": false, "browser":BROWSER._MICROSOFT_EDGE_])
         }
-
+        
         if filemanager.fileExists(atPath: "/Applications/Firefox.app"){
             let fileIcon = NSWorkspace.shared.icon(forFile: "/Applications/Firefox.app")
             arrBrowsers.append(["name": "Firefox", "image": fileIcon, "isEnabled": false, "browser":BROWSER._FIREFOX_])
@@ -91,6 +91,15 @@ class permissionsVc: NSViewController {
             let fileIcon = NSWorkspace.shared.icon(forFile: "/Applications/Arc.app")
             arrBrowsers.append(["name": "Arc", "image": fileIcon, "isEnabled": false, "browser":BROWSER._ARC_])
         }
+        
+        if filemanager.fileExists(atPath: "/Applications/SigmaOS.app"){
+            let fileIcon = NSWorkspace.shared.icon(forFile: "/Applications/SigmaOS.app")
+            arrBrowsers.append(["name": "SigmaOS", "image": fileIcon, "isEnabled": false, "browser":BROWSER._SIGMA_OS_])
+        }else if filemanager.fileExists(atPath: "/Applications/SigmaOS_latest.app"){
+            let fileIcon = NSWorkspace.shared.icon(forFile: "/Applications/SigmaOS_latest.app")
+            arrBrowsers.append(["name": "SigmaOS", "image": fileIcon, "isEnabled": false, "browser":BROWSER._SIGMA_OS_])
+        }
+        
         let height = CGFloat((60 * arrBrowsers.count) + 2)
         if heightScrollView.constant != height{
             heightScrollView.constant = height
@@ -112,7 +121,7 @@ class permissionsVc: NSViewController {
             }
             
         }
-        if self.lastBrowserClicked == ._FIREFOX_{
+        if self.lastBrowserClicked == ._FIREFOX_ || self.lastBrowserClicked == ._SIGMA_OS_{
             startTimerCheckPermission()
         }
         tblView.reloadData()
@@ -147,7 +156,11 @@ class permissionsVc: NSViewController {
         guard let lastBrowserClicked = lastBrowserClicked else {
             return;
         }
-        
+        if lastBrowserClicked == ._SIGMA_OS_{
+            if !isAccessibilityEnabled(isPrompt: false){
+                return;
+            }
+        }
         let runningApps = NSWorkspace.shared.runningApplications
         for runningApp in runningApps{
             if let name = runningApp.localizedName{
@@ -183,19 +196,19 @@ class permissionsVc: NSViewController {
             }
         }
     }
-
+    
 }
 
 extension permissionsVc:NSTableViewDelegate, NSTableViewDataSource {
     func numberOfRows(in tableView: NSTableView) -> Int {
         return arrBrowsers.count
     }
-
+    
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
         if let cell = tableView.makeView(withIdentifier: NSUserInterfaceItemIdentifier(rawValue: "tblCellBrowsers"), owner: nil) as? tblCellBrowsers {
             
             cell.lblTitle.stringValue = arrBrowsers[row]["name"] as? String ?? ""
-//            cell.lblDescription.stringValue = arrBrowsers[row]["description"] as? String ?? ""
+            //            cell.lblDescription.stringValue = arrBrowsers[row]["description"] as? String ?? ""
             cell.imgView.image = arrBrowsers[row]["image"] as? NSImage
             cell.lblFirefoxPermission.isHidden = true
             let state = arrBrowsers[row]["isEnabled"] as? Bool ?? false
@@ -240,12 +253,38 @@ extension permissionsVc:NSTableViewDelegate, NSTableViewDataSource {
     }
     
     @objc func btnRequestClicked(sender:NSButton){
-        if let browser = arrBrowsers[sender.tag]["browser"] as? BROWSER{
+        requestPermission(row:sender.tag)
+    }
+    
+    func requestSigmaOSBrowser(){
+        for i in 0..<arrBrowsers.count{
+            if arrBrowsers[i]["browser"] as? BROWSER == ._SIGMA_OS_{
+                let state = arrBrowsers[i]["isEnabled"] as? Bool ?? false
+                if !state{
+                    requestPermission(row: i)
+                }
+                
+                break;
+            }
+        }
+    }
+    
+    func requestPermission(row:Int){
+        if let browser = arrBrowsers[row]["browser"] as? BROWSER{
             lastBrowserClicked = browser
             if browser == ._FIREFOX_{
-                showFirefoxPermissionWindow(showingFromOnboarding: false)
+                showFirefoxPermissionWindow(showingFromOnboarding: false, currentBrowser: browser)
                 self.view.window?.close()
             }else{
+                
+                if browser == ._SIGMA_OS_{
+                    if !isAccessibilityEnabled(isPrompt: false){
+                        showFirefoxPermissionWindow(showingFromOnboarding: false, currentBrowser: browser)
+                        self.view.window?.close()
+                        return;
+                    }
+                }
+                
                 let appName = getCurrentBrowserNameFrom(browser: browser) ?? ""
                 NSWorkspace.shared.open(URL(fileURLWithPath: "/Applications/\(appName).app"))
                 var shouldShowPermissionBox = true
@@ -254,7 +293,7 @@ extension permissionsVc:NSTableViewDelegate, NSTableViewDataSource {
                 }
                 if getActiveTabUrlOf(browser: browser) != nil{
                     DispatchQueue.main.async {
-                        self.arrBrowsers[sender.tag]["isEnabled"] = true
+                        self.arrBrowsers[row]["isEnabled"] = true
                         self.tblView.reloadData()
                         if UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) == nil{
                             UserDefaults.standard.set(true, forKey: kUserdefaultsBrowsersPermissionsSetByUser)
@@ -307,7 +346,6 @@ extension permissionsVc:NSTableViewDelegate, NSTableViewDataSource {
                 }
             }
         }
-        
     }
 }
 

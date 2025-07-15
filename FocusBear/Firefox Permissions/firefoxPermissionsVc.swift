@@ -11,6 +11,19 @@ import AVKit
 
 class firefoxPermissionsVc: NSViewController {
     
+    @IBOutlet weak var lblPoint1_config: NSTextField!
+    @IBOutlet weak var lblPoint2_config: NSTextField!
+    @IBOutlet weak var lblPoint3_config: NSTextField!
+    @IBOutlet weak var lblPoint4_config: NSTextField!
+    
+    @IBOutlet weak var lblStep1_config: NSTextField!
+    @IBOutlet weak var lblStep2_config: NSTextField!
+    @IBOutlet weak var lblStep3_config: NSTextField!
+    @IBOutlet weak var lblStep4_config: NSTextField!
+    @IBOutlet weak var btnClickToCopySearchTeram: underLineButton!
+    
+    
+    
     @IBOutlet weak var avPlayerView: AVPlayerView!
     @IBOutlet weak var lblStep1: NSTextField!
     @IBOutlet weak var lblStep2: NSTextField!
@@ -22,17 +35,15 @@ class firefoxPermissionsVc: NSViewController {
     @IBOutlet weak var topSpaceTitleStep: NSLayoutConstraint!
     @IBOutlet weak var btnCancel: cursorButton!
     @IBOutlet weak var lblTitleStep: NSTextField!
-    @IBOutlet weak var lblBtnClickHere: NSTextField!
     @IBOutlet weak var stackViewSecond: NSStackView!
     @IBOutlet weak var stackViewFirst: NSStackView!
     @IBOutlet weak var btnActivateFirefox: Button!
-    @IBOutlet weak var btnClickhere: cursorButton!
     @IBOutlet weak var btnContinue: cursorButton!
     @IBOutlet weak var lblPoint1: NSTextField!
     @IBOutlet weak var lblPoint2: NSTextField!
     @IBOutlet weak var lblPoint3: NSTextField!
     @IBOutlet weak var lblPoint4: NSTextField!
-    @IBOutlet weak var lblPoint5: NSTextField!
+    
     @IBOutlet weak var collectionview: NSCollectionView!
     @IBOutlet weak var lblSubTitle: NSTextField!
     @IBOutlet weak var lbltitle: NSTextField!
@@ -40,6 +51,7 @@ class firefoxPermissionsVc: NSViewController {
     @IBOutlet weak var btnpreferences: NSButton!
     
     var showingFromOnboarding = true
+    var currentBrowser:BROWSER = ._FIREFOX_
     var currentIndex = 1
     
     var indexPathsOfItemsBeingDragged: Set<IndexPath> = []
@@ -49,8 +61,15 @@ class firefoxPermissionsVc: NSViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        
+        lblPoint1_config.stringValue = "Click \"Open/Activate Firefox\" to open about:config"
+        lblPoint2_config.stringValue = "Click \"Accept the Risk and Continue\" button on Firefox browser page (about:config page should automatically open)"
+        lblPoint3_config.stringValue = "Search for accessibility.force_disabled in the \"Search preference name\" bar of Firefox page"
+        lblPoint4_config.stringValue = "Double-click the setting and change its value to -1"
+        btnClickToCopySearchTeram.title = "Click to copy search term"
+        
         btnCancel.title = buttonCancelText
-        lblBtnClickHere.stringValue = "Click here to watch a video to learn how to edit the setting."
         lbltitle.stringValue = "Grant required permissions to Focus Bear to allow blocking in Firefox"
         lblSubTitle.stringValue = "In order to allow blocking within Firefox, you need to grant specific permissions to Focus Bear."
         
@@ -59,7 +78,7 @@ class firefoxPermissionsVc: NSViewController {
         lblPoint2.stringValue = "Select the lock icon in the bottom left corner and enter your password to unlock."
         lblPoint3.stringValue = "Click on the icon and then drag it into the allowed apps list under Accessibility."
         lblPoint4.stringValue = "If Focus Bear is already in the list and checked, please remove Focus Bear by clicking the - button at the bottom and add it again."
-        lblPoint5.stringValue = "Edit setting - \"accessibility.force_disabled\" in Firefox to be able to block distractions."
+//        lblPoint5.stringValue = "Edit setting - \"accessibility.force_disabled\" in Firefox to be able to block distractions."
         
         btnActivateFirefox.title = "Open/Activate Firefox"
 //        btnClickhere.title = "Click here to watch a video to learn how to edit the setting in Firefox."
@@ -74,23 +93,19 @@ class firefoxPermissionsVc: NSViewController {
             lblPoint2.stringValue = firefoxPermissionsVcInfo.value(forKey: "pointSecondText") as? String ?? lblPoint2.stringValue
             lblPoint3.stringValue = firefoxPermissionsVcInfo.value(forKey: "pointThirdText") as? String ?? lblPoint3.stringValue
             lblPoint4.stringValue = firefoxPermissionsVcInfo.value(forKey: "pointFourthText") as? String ?? lblPoint4.stringValue
-            lblPoint5.stringValue = firefoxPermissionsVcInfo.value(forKey: "pointFifthText") as? String ?? lblPoint5.stringValue
+//            lblPoint5.stringValue = firefoxPermissionsVcInfo.value(forKey: "pointFifthText") as? String ?? lblPoint5.stringValue
             btnActivateFirefox.title = firefoxPermissionsVcInfo.value(forKey: "buttonActivateFirefoxText") as? String ?? btnActivateFirefox.title
-            lblBtnClickHere.stringValue = firefoxPermissionsVcInfo.value(forKey: "buttonClickHereText") as? String ?? lblBtnClickHere.stringValue
+
             btnpreferences.title = firefoxPermissionsVcInfo.value(forKey: "buttonOpenAccessibilityPermissionsText") as? String ?? btnpreferences.title
             btnContinue.title = firefoxPermissionsVcInfo.value(forKey: "buttonContinueText") as? String ?? btnContinue.title
-
+            
+            lblPoint1_config.stringValue = firefoxPermissionsVcInfo.value(forKey: "point1_configText") as? String ?? lblPoint1_config.stringValue
+            lblPoint2_config.stringValue = firefoxPermissionsVcInfo.value(forKey: "point2_configText") as? String ?? lblPoint2_config.stringValue
+            lblPoint3_config.stringValue = firefoxPermissionsVcInfo.value(forKey: "point3_configText") as? String ?? lblPoint3_config.stringValue
+            lblPoint4_config.stringValue = firefoxPermissionsVcInfo.value(forKey: "point4_configText") as? String ?? lblPoint4_config.stringValue
+            btnClickToCopySearchTeram.title = firefoxPermissionsVcInfo.value(forKey: "buttonClickToCopySearchTermText") as? String ?? btnClickToCopySearchTeram.title
         }
-        
-        let paragraph = NSMutableParagraphStyle()
-        paragraph.alignment = lblBtnClickHere.alignment
-        paragraph.lineBreakMode = .byWordWrapping
-        let attrs = [NSAttributedString.Key.foregroundColor: NSColor.labelColor, NSAttributedString.Key.paragraphStyle: paragraph, NSAttributedString.Key.underlineStyle: NSUnderlineStyle.single.rawValue] as [NSAttributedString.Key : Any]
-        let attrString: NSAttributedString = NSAttributedString(string: lblBtnClickHere.stringValue, attributes: attrs)
-        lblBtnClickHere.attributedStringValue = attrString
-        
-        
-        
+
         collectionview.setDraggingSourceOperationMask(NSDragOperation.every, forLocal: false)//.move, forLocal: true)
         // 1
         var ptype: NSPasteboard.PasteboardType?
@@ -106,8 +121,6 @@ class firefoxPermissionsVc: NSViewController {
         
         
         collectionview.setDraggingSourceOperationMask(NSDragOperation.every, forLocal: true)
-    
-        
     }
 
     
@@ -140,6 +153,17 @@ class firefoxPermissionsVc: NSViewController {
     
     
     func resetView(){
+        lbltitle.stringValue = "Grant required permissions to Focus Bear to allow blocking in Firefox"
+        lblSubTitle.stringValue = "In order to allow blocking within Firefox, you need to grant specific permissions to Focus Bear."
+        if let firefoxPermissionsVcInfo = configjson.value(forKey: "firefoxPermissionsVcInfo") as? NSDictionary{
+            lbltitle.stringValue = firefoxPermissionsVcInfo.value(forKey: "title") as? String ?? lbltitle.stringValue
+            lblSubTitle.stringValue = firefoxPermissionsVcInfo.value(forKey: "description") as? String ?? lblSubTitle.stringValue
+        }
+        if currentBrowser == ._SIGMA_OS_{
+            lbltitle.stringValue = lbltitle.stringValue.replacingOccurrences(of: "Firefox", with: "SigmaOS")
+            lblSubTitle.stringValue = lblSubTitle.stringValue.replacingOccurrences(of: "Firefox", with: "SigmaOS")
+        }
+        
         btnContinue.isEnabled = true
         if currentIndex == 1{
             boxPlay.isHidden = true
@@ -243,7 +267,7 @@ class firefoxPermissionsVc: NSViewController {
     @IBAction func btnCancelClicked(_ sender: Any) {
         timerCheck?.invalidate()
         if showingFromOnboarding{
-            welcomeOnboardingWcObj?.showWindow(self)
+            permissionBlockDistractionWcObj?.showWindow(self)
         }else{
             preferencesWindowControllerObj?.showWindow(self)
         }
@@ -262,6 +286,20 @@ class firefoxPermissionsVc: NSViewController {
             btnpreferences.isEnabled = false
             btnContinue.isEnabled = true
             currentIndex = 2
+            
+            if currentBrowser == ._SIGMA_OS_{
+                if showingFromOnboarding{
+                    permissionBlockDistractionWcObj?.showWindow(self)
+                    onboardingControllingBrowserVcObj?.requestSigmaOSBrowser()
+                }else{
+                    preferencesWindowControllerObj?.showWindow(self)
+                    permissionsVcObj?.requestSigmaOSBrowser()
+                }
+                self.view.window?.close()
+                return;
+            }
+            
+            
             resetView()
         }
     }
@@ -279,6 +317,18 @@ class firefoxPermissionsVc: NSViewController {
 
     
     @IBAction func btnContinueClicked(_ sender: Any) {
+        if currentBrowser == ._SIGMA_OS_{
+            if showingFromOnboarding{
+                permissionBlockDistractionWcObj?.showWindow(self)
+                onboardingControllingBrowserVcObj?.requestSigmaOSBrowser()
+            }else{
+                preferencesWindowControllerObj?.showWindow(self)
+                permissionsVcObj?.requestSigmaOSBrowser()
+            }
+            self.view.window?.close()
+            return;
+        }
+        
         if currentIndex == 1{
             currentIndex = 2
             resetView()
@@ -286,7 +336,7 @@ class firefoxPermissionsVc: NSViewController {
         }
         timerCheck?.invalidate()
         if showingFromOnboarding{
-            welcomeOnboardingWcObj?.showWindow(self)
+            permissionBlockDistractionWcObj?.showWindow(self)
         }else{
             preferencesWindowControllerObj?.showWindow(self)
         }
@@ -307,16 +357,30 @@ class firefoxPermissionsVc: NSViewController {
         executeScript(script: script)
     }
     @IBAction func btnPlayClicked(_ sender: Any) {
-        btnClickHereClicked(self)
-    }
-    @IBAction func btnClickHereClicked(_ sender: Any) {
-//        showFirefoxPermissionVideoWindow()
-//        boxRightSide.isHidden = false
         imgview.isHidden = true
         avPlayerView.isHidden = true
         boxRightSide.addSubview(getFirefoxPermissionVideoVcObject().view)
         boxRightSide.addConstraints(subView: getFirefoxPermissionVideoVcObject().view)
         boxPlay.isHidden = true
+    }
+    
+    @IBAction func btnClickToCopySearchTeramClicked(_ sender: Any) {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString("accessibility.force_disabled", forType: .string)
+        
+
+        
+        var msg = "Copied"
+        if let upgradeNowVcInfo = configjson.value(forKey: "upgradeNowVcInfo") as? NSDictionary{
+            msg = upgradeNowVcInfo.value(forKey: "toolTipCopied") as? String ?? msg
+        }
+        showTooltip(sender: btnClickToCopySearchTeram, msg: msg, preferredEdge: NSRectEdge.minY, maxWidthVal:230)
+        DispatchQueue.global().async {
+            sleep(2)
+            DispatchQueue.main.async {
+                popoverTooltip?.close()
+            }
+        }
     }
 }
 
@@ -334,8 +398,7 @@ extension firefoxPermissionsVc: NSCollectionViewDelegate, NSCollectionViewDataSo
     }
     
     func collectionView(_ collectionView: NSCollectionView, didSelectItemsAt indexPaths: Set<IndexPath>) {
-        var indexpath = indexPaths.first as! IndexPath
-        
+ 
     }
     
     func collectionView(_ collectionView: NSCollectionView, canDragItemsAt indexPaths: Set<IndexPath>, with event: NSEvent) -> Bool {///retuen yes or no

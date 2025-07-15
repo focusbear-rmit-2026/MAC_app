@@ -78,12 +78,13 @@ class todoListToolVc: NSViewController, WKNavigationDelegate, webViewLoadFailedD
         reloadData()
     }
     
-    func setAccessTokenToWebView(){// todo font add kro 
+    func setAccessTokenToWebView(){
+        let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex].webFontName
         let intention = whatToAchieveInFocusBlock
-        var stringJson = "{\"access_token\": \"\(appdelegate!.credential?.accessToken ?? "")\",\"platform\":\"mac\",\"lang\":\"\(currentLanguageCode)\"}"
+        var stringJson = "{\"access_token\": \"\(appdelegate!.credential?.accessToken ?? "")\",\"platform\":\"mac\",\"font\":\"\(selectedFont)\",\"lang\":\"\(currentLanguageCode)\"}"
         
         if !intention.isEmpty{
-            stringJson = "{\"access_token\": \"\(appdelegate!.credential?.accessToken ?? "")\",\"platform\":\"mac\",\"lang\":\"\(currentLanguageCode)\",\"intention\":\"\(intention)\"}"
+            stringJson = "{\"access_token\": \"\(appdelegate!.credential?.accessToken ?? "")\",\"platform\":\"mac\",\"font\":\"\(selectedFont)\",\"lang\":\"\(currentLanguageCode)\",\"intention\":\"\(intention)\"}"
         }
         let settingsFunc = String(format: "let waitForAppLoaded = setInterval(() => { if (window.loadAccessTokenForToDo) { loadAccessTokenForToDo(%@); clearInterval(waitForAppLoaded); } }, 100);", stringJson)
         

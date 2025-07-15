@@ -208,20 +208,14 @@ class preferencesTabViewController: NSTabViewController {
         print("tab view selection change")
         print(self.selectedTabViewItemIndex)
         let id = tabViewItem?.identifier as? String ?? ""
-        if id == idEditHabits && cutOffTime != nil && (currentState == ._EVENING_HABIT_ || currentState == ._FOCUS_SUMMARY_) && UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil {
-            //            if shouldAskPassword(){
-            if SettingsManagerObject.isPasswordRequireInPreferencesAfterCutoff{
-                let cutOffDate = Calendar.current.date(bySettingHour: cutOffTime!.hour, minute: cutOffTime!.minute, second: cutOffTime!.second, of: Date())!
-                let currentDate = Date()
-                if currentDate > cutOffDate{
-                    self.view.addSubview(getEnterPasswordVcObjForPreferences().view)
-                    self.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
-                    getEnterPasswordVcObjForPreferences().parentVc = nil
-                    enterPasswordVcObjForPreferences?.removeConstraints()
-                    addLog(text: "Showing enter password view inside edit habits")
-                }
+        if id != idHelp && id != idStats{
+            if isPasswordRequireInOpenSettings(){
+                self.view.addSubview(getEnterPasswordVcObjForPreferences().view)
+                self.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
+                getEnterPasswordVcObjForPreferences().parentVc = nil
+                enterPasswordVcObjForPreferences?.removeConstraints()
+                addLog(text: "Showing enter password view inside edit habits")
             }
-            //            }
         }
     }
     
@@ -236,12 +230,6 @@ class preferencesTabViewController: NSTabViewController {
                 return false
             }
         }
-//        if isPurchased == false && daysLeft <= 0{// 
-//            let id = tabViewItem?.identifier as? String ?? ""
-//            if id != "Settings"{
-//                return false
-//            }
-//        }
         return true
     }
 }

@@ -26,6 +26,7 @@ var idMicroBreaks = "microbreaks"
 var idAddOns = "addons"
 var idPermissions = "permissions"
 var idToDoList = "todolist"
+var idResearch = "research"
 
 import Cocoa
 
@@ -326,7 +327,11 @@ class settingsSideBarVc: NSViewController {
                 settingsContainerVcObj?.showTodoListSettingView()
                 return;
             }
-            
+            if id == idResearch{
+                tblView.selectRowIndexes(IndexSet(integer: advancedSettingsIndex), byExtendingSelection: false)
+                settingsContainerVcObj?.showResearchSettingView()
+                return;
+            }
         }
         searchField.stringValue = ""
     }

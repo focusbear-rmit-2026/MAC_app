@@ -1938,13 +1938,13 @@
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
                             <box boxType="custom" borderWidth="0.0" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="z1N-gu-4w2" customClass="customBoxBg" customModule="Focus_Bear" customModuleProvider="target">
-                                <rect key="frame" x="0.0" y="0.0" width="944" height="700"/>
+                                <rect key="frame" x="0.0" y="0.0" width="944" height="600"/>
                                 <view key="contentView" id="8sV-31-UBs">
-                                    <rect key="frame" x="0.0" y="0.0" width="944" height="700"/>
+                                    <rect key="frame" x="0.0" y="0.0" width="944" height="600"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
                                         <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="I67-Rb-zVO">
-                                            <rect key="frame" x="170" y="578" width="604" height="42"/>
+                                            <rect key="frame" x="170" y="478" width="604" height="42"/>
                                             <constraints>
                                                 <constraint firstAttribute="width" constant="600" id="GQO-HC-ovg"/>
                                             </constraints>
@@ -1955,7 +1955,7 @@
                                             </textFieldCell>
                                         </textField>
                                         <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="IDy-0E-6I3">
-                                            <rect key="frame" x="365" y="543" width="214" height="20"/>
+                                            <rect key="frame" x="365" y="443" width="214" height="20"/>
                                             <textFieldCell key="cell" alignment="center" title="xxCreate an account" id="SLz-VR-6gc">
                                                 <font key="font" size="18" name="CourierNewPSMT"/>
                                                 <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -1963,7 +1963,7 @@
                                             </textFieldCell>
                                         </textField>
                                         <stackView distribution="fill" orientation="vertical" alignment="leading" spacing="10" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="bHj-H0-RaF">
-                                            <rect key="frame" x="317" y="77" width="310" height="416"/>
+                                            <rect key="frame" x="317" y="-23" width="310" height="416"/>
                                             <subviews>
                                                 <box boxType="custom" borderWidth="0.0" cornerRadius="4" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="V12-DH-Oec">
                                                     <rect key="frame" x="0.0" y="357" width="310" height="59"/>
@@ -2203,13 +2203,13 @@
                                                             </view>
                                                         </box>
                                                         <box hidden="YES" boxType="custom" borderWidth="0.0" cornerRadius="4" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="HRn-0e-gk0">
-                                                            <rect key="frame" x="0.0" y="79" width="310" height="41"/>
+                                                            <rect key="frame" x="0.0" y="84" width="310" height="36"/>
                                                             <view key="contentView" id="Fh1-MI-HA4">
-                                                                <rect key="frame" x="0.0" y="0.0" width="310" height="41"/>
+                                                                <rect key="frame" x="0.0" y="0.0" width="310" height="36"/>
                                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                 <subviews>
                                                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="e4a-WK-2Q7">
-                                                                        <rect key="frame" x="11" y="3" width="277" height="35"/>
+                                                                        <rect key="frame" x="11" y="3" width="277" height="30"/>
                                                                         <constraints>
                                                                             <constraint firstAttribute="height" relation="lessThanOrEqual" constant="35" id="VXO-8z-hAC"/>
                                                                         </constraints>
@@ -2220,7 +2220,7 @@
                                                                         </textFieldCell>
                                                                     </textField>
                                                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="fjG-P5-eWl">
-                                                                        <rect key="frame" x="-2" y="23" width="12" height="15"/>
+                                                                        <rect key="frame" x="-2" y="18" width="12" height="15"/>
                                                                         <textFieldCell key="cell" title="*" id="p96-g8-h21">
                                                                             <font key="font" size="13" name="CourierNewPSMT"/>
                                                                             <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -2228,7 +2228,7 @@
                                                                         </textFieldCell>
                                                                     </textField>
                                                                     <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="W6C-Hf-1LJ">
-                                                                        <rect key="frame" x="295" y="23" width="15" height="15"/>
+                                                                        <rect key="frame" x="295" y="18" width="15" height="15"/>
                                                                         <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyDown" image="validIcon" id="lkx-Oz-GKx"/>
                                                                     </imageView>
                                                                 </subviews>
@@ -2497,7 +2497,7 @@
                                             </customSpacing>
                                         </stackView>
                                         <stackView distribution="fill" orientation="vertical" alignment="centerX" spacing="48" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Tyc-S4-kM1">
-                                            <rect key="frame" x="317" y="-202" width="310" height="239"/>
+                                            <rect key="frame" x="317" y="-302" width="310" height="239"/>
                                             <subviews>
                                                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="gCI-OH-2Nf">
                                                     <rect key="frame" x="-2" y="222" width="312" height="18"/>
@@ -2567,7 +2567,7 @@
                                             </customSpacing>
                                         </stackView>
                                         <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="958-Dh-pfy" customClass="cursorButton" customModule="Focus_Bear" customModuleProvider="target">
-                                            <rect key="frame" x="13" y="325" width="50" height="50"/>
+                                            <rect key="frame" x="13" y="275" width="50" height="50"/>
                                             <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="Back" imagePosition="only" alignment="center" imageScaling="proportionallyDown" inset="2" id="RLY-xd-2uc">
                                                 <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                 <font key="font" metaFont="system"/>
@@ -2581,13 +2581,13 @@
                                             </connections>
                                         </button>
                                         <progressIndicator maxValue="100" displayedWhenStopped="NO" indeterminate="YES" style="bar" translatesAutoresizingMaskIntoConstraints="NO" id="oj9-yj-3Yp">
-                                            <rect key="frame" x="408" y="-163" width="128" height="20"/>
+                                            <rect key="frame" x="408" y="-263" width="128" height="20"/>
                                             <constraints>
                                                 <constraint firstAttribute="width" constant="128" id="ezI-Of-En3"/>
                                             </constraints>
                                         </progressIndicator>
                                         <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="6m6-TG-AJ6">
-                                            <rect key="frame" x="635" y="362" width="48" height="48"/>
+                                            <rect key="frame" x="635" y="262" width="48" height="48"/>
                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                             <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" imagePosition="only" alignment="center" imageScaling="proportionallyUpOrDown" inset="2" id="IPN-3x-TSv">
                                                 <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
@@ -2595,7 +2595,7 @@
                                             </buttonCell>
                                         </button>
                                         <stackView distribution="fill" orientation="horizontal" alignment="top" spacing="10" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="HhL-Pf-QZ1">
-                                            <rect key="frame" x="637" y="312" width="80" height="20"/>
+                                            <rect key="frame" x="637" y="212" width="80" height="20"/>
                                             <subviews>
                                                 <button translatesAutoresizingMaskIntoConstraints="NO" id="BlM-jD-Ypg" customClass="cursorButton" customModule="Focus_Bear" customModuleProvider="target">
                                                     <rect key="frame" x="0.0" y="0.0" width="20" height="20"/>
@@ -2646,7 +2646,7 @@
                                             </customSpacing>
                                         </stackView>
                                         <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="9zw-cm-Jhh">
-                                            <rect key="frame" x="637" y="243" width="20" height="20"/>
+                                            <rect key="frame" x="637" y="143" width="20" height="20"/>
                                             <constraints>
                                                 <constraint firstAttribute="height" constant="20" id="B1c-4o-7kr"/>
                                                 <constraint firstAttribute="width" constant="20" id="yiP-PK-XY7"/>
@@ -2654,7 +2654,7 @@
                                             <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyDown" image="validIcon" id="TpJ-t1-wWI"/>
                                         </imageView>
                                         <button translatesAutoresizingMaskIntoConstraints="NO" id="gxP-4K-pRm" customClass="cursorButton" customModule="Focus_Bear" customModuleProvider="target">
-                                            <rect key="frame" x="665" y="243" width="20" height="20"/>
+                                            <rect key="frame" x="665" y="143" width="20" height="20"/>
                                             <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="eye Icon" imagePosition="only" alignment="center" imageScaling="proportionallyUpOrDown" inset="2" id="F5X-X9-vmq">
                                                 <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                 <font key="font" metaFont="system"/>
@@ -2668,7 +2668,7 @@
                                             </connections>
                                         </button>
                                         <button translatesAutoresizingMaskIntoConstraints="NO" id="yX5-ke-W1X" customClass="Button" customModule="Focus_Bear" customModuleProvider="target">
-                                            <rect key="frame" x="578" y="281" width="49" height="20"/>
+                                            <rect key="frame" x="578" y="181" width="49" height="20"/>
                                             <buttonCell key="cell" type="square" title="xxCopy" bezelStyle="shadowlessSquare" alignment="center" imageScaling="proportionallyUpOrDown" inset="2" id="ZB3-QK-a2i">
                                                 <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                 <font key="font" metaFont="system"/>
@@ -2681,7 +2681,7 @@
                                             </connections>
                                         </button>
                                         <box boxType="custom" borderWidth="0.0" cornerRadius="4" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="6lZ-yy-Fmb">
-                                            <rect key="frame" x="637" y="312" width="80" height="20"/>
+                                            <rect key="frame" x="637" y="212" width="80" height="20"/>
                                             <view key="contentView" id="sAx-DR-g4V">
                                                 <rect key="frame" x="0.0" y="0.0" width="80" height="20"/>
                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -2719,7 +2719,7 @@
                                 </view>
                                 <constraints>
                                     <constraint firstAttribute="width" constant="944" id="OHP-QJ-jqA"/>
-                                    <constraint firstAttribute="height" constant="700" id="xiQ-g1-Bhv"/>
+                                    <constraint firstAttribute="height" constant="600" id="xiQ-g1-Bhv"/>
                                 </constraints>
                             </box>
                         </subviews>
@@ -8221,10 +8221,6 @@ Would you like to try out the habit features?</string>
                         <subviews>
                             <avPlayerView controlsStyle="floating" showsFrameSteppingButtons="YES" translatesAutoresizingMaskIntoConstraints="NO" id="BUe-gG-xbA">
                                 <rect key="frame" x="0.0" y="0.0" width="785" height="553"/>
-                                <constraints>
-                                    <constraint firstAttribute="height" relation="greaterThanOrEqual" constant="400" id="PHm-ia-xtR"/>
-                                    <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="600" id="qJJ-GW-wFb"/>
-                                </constraints>
                             </avPlayerView>
                         </subviews>
                         <constraints>
@@ -8324,41 +8320,6 @@ Would you like to try out the habit features?</string>
                                             </constraints>
                                             <color key="fillColor" red="0.92549019610000005" green="0.92549019610000005" blue="0.92549019610000005" alpha="0.0" colorSpace="custom" customColorSpace="sRGB"/>
                                         </box>
-                                        <imageView hidden="YES" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="MYG-bP-DYK">
-                                            <rect key="frame" x="10" y="628" width="12" height="12"/>
-                                            <constraints>
-                                                <constraint firstAttribute="height" relation="greaterThanOrEqual" constant="12" id="3Tr-RP-s2J"/>
-                                                <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="12" id="fm2-t8-HNv"/>
-                                                <constraint firstAttribute="width" constant="12" id="s8k-cq-MpS"/>
-                                                <constraint firstAttribute="height" constant="12" id="zl7-QC-5So"/>
-                                            </constraints>
-                                            <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyDown" image="cancel" id="nO7-o2-Up8"/>
-                                        </imageView>
-                                        <button hidden="YES" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="8ew-MS-vBB" customClass="SYFlatButton">
-                                            <rect key="frame" x="10" y="628" width="12" height="12"/>
-                                            <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="S9Z-OR-yQX">
-                                                <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                                                <font key="font" metaFont="system"/>
-                                            </buttonCell>
-                                            <userDefinedRuntimeAttributes>
-                                                <userDefinedRuntimeAttribute type="boolean" keyPath="momentary" value="YES"/>
-                                                <userDefinedRuntimeAttribute type="color" keyPath="backgroundNormalColor">
-                                                    <color key="value" red="0.23137254900000001" green="0.23921568630000001" blue="0.2470588235" alpha="0.0" colorSpace="custom" customColorSpace="sRGB"/>
-                                                </userDefinedRuntimeAttribute>
-                                                <userDefinedRuntimeAttribute type="color" keyPath="_NormalColor">
-                                                    <color key="value" red="0.23137254900000001" green="0.23921568630000001" blue="0.2470588235" alpha="0.0" colorSpace="custom" customColorSpace="sRGB"/>
-                                                </userDefinedRuntimeAttribute>
-                                                <userDefinedRuntimeAttribute type="color" keyPath="_HoverColor">
-                                                    <color key="value" red="0.23137254900000001" green="0.23921568630000001" blue="0.2470588235" alpha="0.0" colorSpace="custom" customColorSpace="sRGB"/>
-                                                </userDefinedRuntimeAttribute>
-                                                <userDefinedRuntimeAttribute type="color" keyPath="_DownColor">
-                                                    <color key="value" red="0.0" green="0.0" blue="0.0" alpha="0.2056734626" colorSpace="custom" customColorSpace="sRGB"/>
-                                                </userDefinedRuntimeAttribute>
-                                                <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
-                                                    <real key="value" value="6"/>
-                                                </userDefinedRuntimeAttribute>
-                                            </userDefinedRuntimeAttributes>
-                                        </button>
                                         <box boxType="custom" borderWidth="0.0" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="p0q-Bd-es4">
                                             <rect key="frame" x="0.0" y="0.0" width="745" height="68"/>
                                             <view key="contentView" id="SW0-Ws-cEi">
@@ -8637,15 +8598,23 @@ DQ
                                                         <real value="3.4028234663852886e+38"/>
                                                     </customSpacing>
                                                 </stackView>
-                                                <stackView hidden="YES" distribution="fillEqually" orientation="vertical" alignment="leading" spacing="13" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="1000" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="V6B-wQ-bKZ">
-                                                    <rect key="frame" x="0.0" y="225" width="330" height="113"/>
+                                                <stackView hidden="YES" distribution="fill" orientation="vertical" alignment="leading" spacing="13" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="1000" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="V6B-wQ-bKZ">
+                                                    <rect key="frame" x="0.0" y="100" width="330" height="238"/>
                                                     <subviews>
-                                                        <stackView distribution="fillEqually" orientation="horizontal" alignment="top" spacing="4" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="oFs-Ra-2gO">
-                                                            <rect key="frame" x="0.0" y="63" width="330" height="50"/>
+                                                        <stackView distribution="fillEqually" orientation="horizontal" alignment="top" spacing="4" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="250" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="oFs-Ra-2gO">
+                                                            <rect key="frame" x="0.0" y="222" width="312" height="16"/>
                                                             <subviews>
+                                                                <textField focusRingType="none" horizontalHuggingPriority="1000" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="z7n-d7-UyX">
+                                                                    <rect key="frame" x="-2" y="0.0" width="14" height="16"/>
+                                                                    <textFieldCell key="cell" lineBreakMode="clipping" title="1." id="eHh-eb-wgE">
+                                                                        <font key="font" metaFont="system"/>
+                                                                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                                                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                                                    </textFieldCell>
+                                                                </textField>
                                                                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="0mv-PZ-Wwp">
-                                                                    <rect key="frame" x="-2" y="20" width="334" height="30"/>
-                                                                    <textFieldCell key="cell" title="xx5: Edit specific setting in Friefox to be able to block distractions" id="jon-8E-AzU">
+                                                                    <rect key="frame" x="12" y="1" width="302" height="15"/>
+                                                                    <textFieldCell key="cell" title="xxClick &quot;Open/Activate Firefox&quot; to open about:config" id="jon-8E-AzU">
                                                                         <font key="font" metaFont="cellTitle"/>
                                                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                                                         <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -8654,56 +8623,21 @@ DQ
                                                             </subviews>
                                                             <visibilityPriorities>
                                                                 <integer value="1000"/>
+                                                                <integer value="1000"/>
                                                             </visibilityPriorities>
                                                             <customSpacing>
                                                                 <real value="3.4028234663852886e+38"/>
+                                                                <real value="3.4028234663852886e+38"/>
                                                             </customSpacing>
                                                         </stackView>
-                                                        <box hidden="YES" horizontalHuggingPriority="750" verticalHuggingPriority="1000" verticalCompressionResistancePriority="1000" boxType="custom" borderType="line" borderWidth="0.0" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="AEH-od-w3p">
-                                                            <rect key="frame" x="0.0" y="81" width="330" height="32"/>
-                                                            <view key="contentView" id="COK-sr-3yR">
-                                                                <rect key="frame" x="0.0" y="0.0" width="330" height="32"/>
-                                                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                                                                <subviews>
-                                                                    <textField focusRingType="none" horizontalHuggingPriority="1000" verticalHuggingPriority="1000" horizontalCompressionResistancePriority="1000" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="Hfs-fN-aW4">
-                                                                        <rect key="frame" x="-2" y="0.0" width="334" height="32"/>
-                                                                        <textFieldCell key="cell" title="xxClick here to watcha video to learn how to edit the setting in Firefox." id="Luu-yP-PTh">
-                                                                            <font key="font" metaFont="system"/>
-                                                                            <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
-                                                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
-                                                                        </textFieldCell>
-                                                                    </textField>
-                                                                    <button horizontalHuggingPriority="1" verticalHuggingPriority="1" horizontalCompressionResistancePriority="1" verticalCompressionResistancePriority="1" translatesAutoresizingMaskIntoConstraints="NO" id="6Fk-Nd-6IK" customClass="cursorButton" customModule="Focus_Bear" customModuleProvider="target">
-                                                                        <rect key="frame" x="0.0" y="0.0" width="330" height="32"/>
-                                                                        <buttonCell key="cell" type="bevel" bezelStyle="rounded" alignment="center" imageScaling="proportionallyDown" inset="2" id="mk1-G8-cjo">
-                                                                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                                                                            <font key="font" metaFont="system"/>
-                                                                        </buttonCell>
-                                                                        <connections>
-                                                                            <action selector="btnClickHereClicked:" target="bSQ-5D-gsf" id="gYc-ip-1IP"/>
-                                                                        </connections>
-                                                                    </button>
-                                                                </subviews>
-                                                                <constraints>
-                                                                    <constraint firstAttribute="bottom" secondItem="Hfs-fN-aW4" secondAttribute="bottom" id="2L4-uc-DqQ"/>
-                                                                    <constraint firstItem="Hfs-fN-aW4" firstAttribute="leading" secondItem="COK-sr-3yR" secondAttribute="leading" id="5Bl-Pj-yUC"/>
-                                                                    <constraint firstItem="6Fk-Nd-6IK" firstAttribute="leading" secondItem="COK-sr-3yR" secondAttribute="leading" id="Clq-L4-E3O"/>
-                                                                    <constraint firstAttribute="trailing" secondItem="6Fk-Nd-6IK" secondAttribute="trailing" id="HPl-VQ-8qg"/>
-                                                                    <constraint firstAttribute="trailing" secondItem="Hfs-fN-aW4" secondAttribute="trailing" id="KkX-8i-WIh"/>
-                                                                    <constraint firstItem="Hfs-fN-aW4" firstAttribute="top" secondItem="COK-sr-3yR" secondAttribute="top" id="iK4-e9-WHg"/>
-                                                                    <constraint firstAttribute="bottom" secondItem="6Fk-Nd-6IK" secondAttribute="bottom" id="pgN-Qu-gKR"/>
-                                                                    <constraint firstItem="6Fk-Nd-6IK" firstAttribute="top" secondItem="COK-sr-3yR" secondAttribute="top" id="r1z-bR-ief"/>
-                                                                </constraints>
-                                                            </view>
-                                                        </box>
                                                         <box boxType="custom" borderType="line" borderWidth="0.0" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="CBg-fJ-6rX">
-                                                            <rect key="frame" x="0.0" y="0.0" width="320" height="50"/>
+                                                            <rect key="frame" x="14" y="159" width="316" height="50"/>
                                                             <view key="contentView" id="0SY-OY-LmK">
-                                                                <rect key="frame" x="0.0" y="0.0" width="320" height="50"/>
+                                                                <rect key="frame" x="0.0" y="0.0" width="316" height="50"/>
                                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                 <subviews>
                                                                     <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="fS6-Q6-gfK" customClass="Button" customModule="Focus_Bear" customModuleProvider="target">
-                                                                        <rect key="frame" x="0.0" y="10" width="320" height="30"/>
+                                                                        <rect key="frame" x="0.0" y="10" width="316" height="30"/>
                                                                         <buttonCell key="cell" type="bevel" title="xxOpen System Preferences" bezelStyle="rounded" alignment="center" controlSize="large" imageScaling="proportionallyDown" inset="2" id="68P-l6-Pnw">
                                                                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                                             <font key="font" metaFont="system"/>
@@ -8728,20 +8662,121 @@ DQ
                                                                 </constraints>
                                                             </view>
                                                         </box>
+                                                        <stackView distribution="fillEqually" orientation="horizontal" alignment="top" spacing="4" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="250" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="yFr-jY-m4S">
+                                                            <rect key="frame" x="0.0" y="101" width="330" height="45"/>
+                                                            <subviews>
+                                                                <textField focusRingType="none" horizontalHuggingPriority="1000" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ys9-g8-Iee">
+                                                                    <rect key="frame" x="-2" y="29" width="16" height="16"/>
+                                                                    <textFieldCell key="cell" lineBreakMode="clipping" title="2." id="BFH-ni-Vki">
+                                                                        <font key="font" metaFont="system"/>
+                                                                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                                                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                                                    </textFieldCell>
+                                                                </textField>
+                                                                <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="VTV-6q-auV">
+                                                                    <rect key="frame" x="14" y="0.0" width="318" height="45"/>
+                                                                    <textFieldCell key="cell" title="xxClick &quot;Accept the Risk and Continue&quot; button on Firefox browser page.(about:config page should automatically open)" id="U77-o5-BUX">
+                                                                        <font key="font" metaFont="cellTitle"/>
+                                                                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                                                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                                                    </textFieldCell>
+                                                                </textField>
+                                                            </subviews>
+                                                            <visibilityPriorities>
+                                                                <integer value="1000"/>
+                                                                <integer value="1000"/>
+                                                            </visibilityPriorities>
+                                                            <customSpacing>
+                                                                <real value="3.4028234663852886e+38"/>
+                                                                <real value="3.4028234663852886e+38"/>
+                                                            </customSpacing>
+                                                        </stackView>
+                                                        <stackView distribution="fillEqually" orientation="horizontal" alignment="top" spacing="4" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="250" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Mve-OD-cx7">
+                                                            <rect key="frame" x="0.0" y="58" width="330" height="30"/>
+                                                            <subviews>
+                                                                <textField focusRingType="none" horizontalHuggingPriority="1000" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="R6n-v5-5ut">
+                                                                    <rect key="frame" x="-2" y="14" width="16" height="16"/>
+                                                                    <textFieldCell key="cell" lineBreakMode="clipping" title="3." id="0AP-8p-AkU">
+                                                                        <font key="font" metaFont="system"/>
+                                                                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                                                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                                                    </textFieldCell>
+                                                                </textField>
+                                                                <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="TsJ-Y1-mEd">
+                                                                    <rect key="frame" x="14" y="0.0" width="318" height="30"/>
+                                                                    <textFieldCell key="cell" title="xxSearch for accessibility.force_disabled in the &quot;Search preference name&quot; bar of firefox page" id="NGf-8J-LRS">
+                                                                        <font key="font" metaFont="cellTitle"/>
+                                                                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                                                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                                                    </textFieldCell>
+                                                                </textField>
+                                                            </subviews>
+                                                            <visibilityPriorities>
+                                                                <integer value="1000"/>
+                                                                <integer value="1000"/>
+                                                            </visibilityPriorities>
+                                                            <customSpacing>
+                                                                <real value="3.4028234663852886e+38"/>
+                                                                <real value="3.4028234663852886e+38"/>
+                                                            </customSpacing>
+                                                        </stackView>
+                                                        <button translatesAutoresizingMaskIntoConstraints="NO" id="wlg-am-rOJ" customClass="underLineButton" customModule="Focus_Bear" customModuleProvider="target">
+                                                            <rect key="frame" x="16" y="29" width="168" height="16"/>
+                                                            <buttonCell key="cell" type="square" title="xxClick to copy seach term" bezelStyle="shadowlessSquare" alignment="center" imageScaling="proportionallyDown" inset="2" id="82i-BF-bjc">
+                                                                <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                                                <font key="font" metaFont="system"/>
+                                                            </buttonCell>
+                                                            <connections>
+                                                                <action selector="btnClickToCopySearchTeramClicked:" target="bSQ-5D-gsf" id="0aT-3U-BsC"/>
+                                                            </connections>
+                                                        </button>
+                                                        <stackView distribution="fillEqually" orientation="horizontal" alignment="top" spacing="4" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="250" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="4eF-hV-cGG">
+                                                            <rect key="frame" x="0.0" y="0.0" width="314" height="16"/>
+                                                            <subviews>
+                                                                <textField focusRingType="none" horizontalHuggingPriority="1000" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Cid-1a-Ix6">
+                                                                    <rect key="frame" x="-2" y="0.0" width="16" height="16"/>
+                                                                    <textFieldCell key="cell" lineBreakMode="clipping" title="4." id="VqF-cJ-a98">
+                                                                        <font key="font" metaFont="system"/>
+                                                                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                                                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                                                    </textFieldCell>
+                                                                </textField>
+                                                                <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="2BT-LA-HHF">
+                                                                    <rect key="frame" x="14" y="1" width="302" height="15"/>
+                                                                    <textFieldCell key="cell" title="xxDouble-click the setting and change its value to -1" id="ZWj-w6-XL9">
+                                                                        <font key="font" metaFont="cellTitle"/>
+                                                                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                                                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                                                    </textFieldCell>
+                                                                </textField>
+                                                            </subviews>
+                                                            <visibilityPriorities>
+                                                                <integer value="1000"/>
+                                                                <integer value="1000"/>
+                                                            </visibilityPriorities>
+                                                            <customSpacing>
+                                                                <real value="3.4028234663852886e+38"/>
+                                                                <real value="3.4028234663852886e+38"/>
+                                                            </customSpacing>
+                                                        </stackView>
                                                     </subviews>
                                                     <constraints>
-                                                        <constraint firstItem="AEH-od-w3p" firstAttribute="leading" secondItem="V6B-wQ-bKZ" secondAttribute="leading" id="4Q8-Lh-Xpi"/>
-                                                        <constraint firstItem="oFs-Ra-2gO" firstAttribute="leading" secondItem="V6B-wQ-bKZ" secondAttribute="leading" id="DWa-OF-5R7"/>
+                                                        <constraint firstItem="CBg-fJ-6rX" firstAttribute="leading" secondItem="0mv-PZ-Wwp" secondAttribute="leading" id="0xQ-h7-RXw"/>
+                                                        <constraint firstItem="wlg-am-rOJ" firstAttribute="leading" secondItem="TsJ-Y1-mEd" secondAttribute="leading" id="PlS-h1-YnW"/>
                                                         <constraint firstAttribute="width" constant="330" id="fa6-nL-gch"/>
-                                                        <constraint firstAttribute="trailing" secondItem="oFs-Ra-2gO" secondAttribute="trailing" id="jyC-s5-bi6"/>
-                                                        <constraint firstAttribute="trailing" secondItem="AEH-od-w3p" secondAttribute="trailing" id="kOi-2R-W6x"/>
                                                     </constraints>
                                                     <visibilityPriorities>
                                                         <integer value="1000"/>
                                                         <integer value="1000"/>
                                                         <integer value="1000"/>
+                                                        <integer value="1000"/>
+                                                        <integer value="1000"/>
+                                                        <integer value="1000"/>
                                                     </visibilityPriorities>
                                                     <customSpacing>
+                                                        <real value="3.4028234663852886e+38"/>
+                                                        <real value="3.4028234663852886e+38"/>
+                                                        <real value="3.4028234663852886e+38"/>
                                                         <real value="3.4028234663852886e+38"/>
                                                         <real value="3.4028234663852886e+38"/>
                                                         <real value="3.4028234663852886e+38"/>
@@ -8862,23 +8897,15 @@ Edit setting -"search" in Firefox</string>
                                     <constraints>
                                         <constraint firstItem="kZd-kW-heY" firstAttribute="top" secondItem="MFH-VP-uug" secondAttribute="top" id="27A-nU-LNA"/>
                                         <constraint firstItem="n9u-x7-w6J" firstAttribute="leading" secondItem="MFH-VP-uug" secondAttribute="leading" constant="50" id="2MY-CU-DGj"/>
-                                        <constraint firstItem="8ew-MS-vBB" firstAttribute="top" secondItem="MYG-bP-DYK" secondAttribute="top" id="7vT-Ug-a22"/>
-                                        <constraint firstItem="8ew-MS-vBB" firstAttribute="leading" secondItem="MYG-bP-DYK" secondAttribute="leading" id="AsK-bc-Cr5"/>
                                         <constraint firstItem="n9u-x7-w6J" firstAttribute="top" secondItem="hik-uj-cvK" secondAttribute="bottom" constant="18" id="Bmr-Ut-g7I"/>
                                         <constraint firstItem="p0q-Bd-es4" firstAttribute="leading" secondItem="MFH-VP-uug" secondAttribute="leading" id="CxI-OL-ord"/>
-                                        <constraint firstItem="MYG-bP-DYK" firstAttribute="leading" secondItem="MFH-VP-uug" secondAttribute="leading" constant="10" id="HYd-wC-Cgv"/>
-                                        <constraint firstItem="8ew-MS-vBB" firstAttribute="bottom" secondItem="MYG-bP-DYK" secondAttribute="bottom" id="N0U-Z5-isq"/>
                                         <constraint firstItem="kZd-kW-heY" firstAttribute="leading" secondItem="MFH-VP-uug" secondAttribute="leading" id="ONe-Gk-YhL"/>
-                                        <constraint firstItem="MYG-bP-DYK" firstAttribute="top" secondItem="MFH-VP-uug" secondAttribute="top" constant="10" id="OXS-cl-Jm4"/>
-                                        <constraint firstItem="8ew-MS-vBB" firstAttribute="width" secondItem="MYG-bP-DYK" secondAttribute="width" id="VMd-mC-pTm"/>
                                         <constraint firstItem="hik-uj-cvK" firstAttribute="top" secondItem="kZd-kW-heY" secondAttribute="bottom" constant="10" id="Vr6-Io-2lJ"/>
                                         <constraint firstItem="hik-uj-cvK" firstAttribute="width" secondItem="n9u-x7-w6J" secondAttribute="width" id="ZIP-D2-KCN"/>
-                                        <constraint firstItem="8ew-MS-vBB" firstAttribute="height" secondItem="MYG-bP-DYK" secondAttribute="height" id="a3b-hI-B7o"/>
                                         <constraint firstAttribute="trailing" secondItem="Pth-zD-5i0" secondAttribute="trailing" constant="25" id="aRw-U1-MU6"/>
                                         <constraint firstItem="Pth-zD-5i0" firstAttribute="top" secondItem="kZd-kW-heY" secondAttribute="bottom" constant="15" id="bPj-O6-AwC"/>
                                         <constraint firstAttribute="trailing" secondItem="p0q-Bd-es4" secondAttribute="trailing" id="bvL-Y5-F4q"/>
                                         <constraint firstAttribute="bottom" secondItem="p0q-Bd-es4" secondAttribute="bottom" id="dMP-kF-TVh"/>
-                                        <constraint firstItem="8ew-MS-vBB" firstAttribute="trailing" secondItem="MYG-bP-DYK" secondAttribute="trailing" id="iZx-jF-2JD"/>
                                         <constraint firstItem="hik-uj-cvK" firstAttribute="leading" secondItem="n9u-x7-w6J" secondAttribute="leading" id="lvk-EL-dp9"/>
                                         <constraint firstItem="Dok-wj-B06" firstAttribute="leading" secondItem="hik-uj-cvK" secondAttribute="leading" id="r63-WU-Hg6"/>
                                         <constraint firstAttribute="trailing" secondItem="kZd-kW-heY" secondAttribute="trailing" id="ruY-le-lcQ"/>
@@ -8903,22 +8930,28 @@ Edit setting -"search" in Firefox</string>
                         <outlet property="boxRightSide" destination="sq6-kX-cb0" id="ri9-Vl-CCO"/>
                         <outlet property="btnActivateFirefox" destination="fS6-Q6-gfK" id="plr-sa-hyE"/>
                         <outlet property="btnCancel" destination="Dok-wj-B06" id="8x6-wX-qyf"/>
-                        <outlet property="btnClickhere" destination="6Fk-Nd-6IK" id="br3-Xf-ybS"/>
+                        <outlet property="btnClickToCopySearchTeram" destination="wlg-am-rOJ" id="pFp-hD-ljx"/>
                         <outlet property="btnContinue" destination="Hjl-pN-AgJ" id="QeP-AK-f75"/>
                         <outlet property="btnPlay" destination="He7-TP-tga" id="fET-i3-vNT"/>
                         <outlet property="btnpreferences" destination="qq6-ga-4qC" id="9bX-Rl-FfR"/>
                         <outlet property="collectionview" destination="qN9-Sc-pij" id="Ebz-vd-9zI"/>
                         <outlet property="imgview" destination="pXw-pX-Ppz" id="NZZ-mj-gLs"/>
-                        <outlet property="lblBtnClickHere" destination="Hfs-fN-aW4" id="vDE-Z6-Wpp"/>
                         <outlet property="lblPoint1" destination="LYP-qA-j5m" id="I0a-Do-I9b"/>
+                        <outlet property="lblPoint1_config" destination="0mv-PZ-Wwp" id="VKB-6K-hZL"/>
                         <outlet property="lblPoint2" destination="YGD-3z-uXu" id="K12-1O-LtO"/>
+                        <outlet property="lblPoint2_config" destination="VTV-6q-auV" id="C10-SP-f25"/>
                         <outlet property="lblPoint3" destination="wVW-ek-YGP" id="ltV-BK-eb3"/>
+                        <outlet property="lblPoint3_config" destination="TsJ-Y1-mEd" id="Zfw-jX-Xyg"/>
                         <outlet property="lblPoint4" destination="GYJ-Om-e7l" id="3fT-4i-qMD"/>
-                        <outlet property="lblPoint5" destination="0mv-PZ-Wwp" id="FLN-sj-1OV"/>
+                        <outlet property="lblPoint4_config" destination="2BT-LA-HHF" id="ceG-CX-Bp7"/>
                         <outlet property="lblStep1" destination="nn6-hU-oaE" id="jE2-Mv-a3U"/>
+                        <outlet property="lblStep1_config" destination="z7n-d7-UyX" id="Yxq-sw-eQd"/>
                         <outlet property="lblStep2" destination="Ay5-hy-N2X" id="u64-7x-DMa"/>
+                        <outlet property="lblStep2_config" destination="ys9-g8-Iee" id="MKw-i5-uLM"/>
                         <outlet property="lblStep3" destination="q55-Aa-PfX" id="FJa-xD-C6h"/>
+                        <outlet property="lblStep3_config" destination="R6n-v5-5ut" id="ZYt-YG-cd3"/>
                         <outlet property="lblStep4" destination="Dj2-JK-Zez" id="yeZ-5J-o8X"/>
+                        <outlet property="lblStep4_config" destination="Cid-1a-Ix6" id="H2S-0Q-3UV"/>
                         <outlet property="lblSubTitle" destination="Xl4-SN-9h0" id="nF0-wU-NDJ"/>
                         <outlet property="lblTitleStep" destination="hik-uj-cvK" id="s86-j6-fvg"/>
                         <outlet property="lbltitle" destination="TX6-H4-t3j" id="Y0v-UJ-iKf"/>
@@ -8946,7 +8979,7 @@ Edit setting -"search" in Firefox</string>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
                                         <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="aEd-ko-wWz">
-                                            <rect key="frame" x="98" y="668" width="1015" height="32"/>
+                                            <rect key="frame" x="98" y="679" width="1015" height="32"/>
                                             <textFieldCell key="cell" alignment="center" title="xxConfirm your evening routine" id="J6L-sk-GTh">
                                                 <font key="font" metaFont="system" size="27"/>
                                                 <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -8997,10 +9030,9 @@ Edit setting -"search" in Firefox</string>
                                             </customSpacing>
                                         </stackView>
                                         <imageView horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="RD5-u0-HIA">
-                                            <rect key="frame" x="526" y="705" width="160" height="160"/>
+                                            <rect key="frame" x="531" y="716" width="149" height="149"/>
                                             <constraints>
-                                                <constraint firstAttribute="height" constant="160" id="TTa-NU-nm0"/>
-                                                <constraint firstAttribute="width" constant="160" id="xrs-x3-lfM"/>
+                                                <constraint firstAttribute="width" secondItem="RD5-u0-HIA" secondAttribute="height" multiplier="1:1" id="BYs-Ke-zHD"/>
                                             </constraints>
                                             <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyDown" image="NSApplicationIcon" id="koS-R1-X93"/>
                                         </imageView>
@@ -9157,6 +9189,7 @@ Edit setting -"search" in Firefox</string>
                                         <constraint firstItem="JYb-mb-yzF" firstAttribute="centerX" secondItem="MNC-Ai-Spk" secondAttribute="centerX" id="9Ba-Zf-lBv"/>
                                         <constraint firstItem="mg2-Z6-JGs" firstAttribute="top" relation="greaterThanOrEqual" secondItem="JYb-mb-yzF" secondAttribute="bottom" constant="20" id="AIW-wE-aLY"/>
                                         <constraint firstItem="JYb-mb-yzF" firstAttribute="centerY" secondItem="MNC-Ai-Spk" secondAttribute="centerY" multiplier="1.07" id="Ka5-lB-baA"/>
+                                        <constraint firstItem="RD5-u0-HIA" firstAttribute="height" secondItem="MNC-Ai-Spk" secondAttribute="height" multiplier="0.165" id="Kce-rm-cZ0"/>
                                         <constraint firstItem="mg2-Z6-JGs" firstAttribute="centerX" secondItem="MNC-Ai-Spk" secondAttribute="centerX" id="LrV-9h-Pws"/>
                                         <constraint firstAttribute="trailing" secondItem="aEd-ko-wWz" secondAttribute="trailing" constant="100" id="P9m-9Z-Z9H"/>
                                         <constraint firstItem="aEd-ko-wWz" firstAttribute="centerX" secondItem="MNC-Ai-Spk" secondAttribute="centerX" id="TgQ-ah-Wvh"/>
@@ -9209,7 +9242,7 @@ Edit setting -"search" in Firefox</string>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
                                         <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="whS-VL-1c8">
-                                            <rect key="frame" x="98" y="668" width="1015" height="32"/>
+                                            <rect key="frame" x="98" y="671" width="1015" height="32"/>
                                             <textFieldCell key="cell" alignment="center" title="xxConfirm your morning routine" id="RTP-IM-6HI">
                                                 <font key="font" metaFont="system" size="27"/>
                                                 <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -9260,10 +9293,9 @@ Edit setting -"search" in Firefox</string>
                                             </customSpacing>
                                         </stackView>
                                         <imageView horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="TVQ-T4-Nhw">
-                                            <rect key="frame" x="526" y="705" width="160" height="160"/>
+                                            <rect key="frame" x="527" y="708" width="157" height="157"/>
                                             <constraints>
-                                                <constraint firstAttribute="height" constant="160" id="GGA-Ei-uTl"/>
-                                                <constraint firstAttribute="width" constant="160" id="ihr-lS-jVE"/>
+                                                <constraint firstAttribute="width" secondItem="TVQ-T4-Nhw" secondAttribute="height" multiplier="1:1" id="QZa-Ne-cVL"/>
                                             </constraints>
                                             <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyDown" image="NSApplicationIcon" id="Njr-nz-xw7"/>
                                         </imageView>
@@ -9365,6 +9397,7 @@ Edit setting -"search" in Firefox</string>
                                         <constraint firstAttribute="bottom" secondItem="Nt6-T3-Mqt" secondAttribute="bottom" constant="63" id="B9e-7n-JAM"/>
                                         <constraint firstItem="A90-XT-BEe" firstAttribute="centerX" secondItem="dra-Lc-FLv" secondAttribute="centerX" id="CQb-Ij-gVl"/>
                                         <constraint firstItem="Nt6-T3-Mqt" firstAttribute="top" relation="greaterThanOrEqual" secondItem="A90-XT-BEe" secondAttribute="bottom" constant="20" id="Edz-xb-IdT"/>
+                                        <constraint firstItem="TVQ-T4-Nhw" firstAttribute="height" secondItem="dra-Lc-FLv" secondAttribute="height" multiplier="0.175" id="R1X-EH-apf"/>
                                         <constraint firstAttribute="trailing" secondItem="whS-VL-1c8" secondAttribute="trailing" constant="100" id="RzS-OD-iHe"/>
                                         <constraint firstItem="whS-VL-1c8" firstAttribute="leading" secondItem="dra-Lc-FLv" secondAttribute="leading" constant="100" id="b8l-Kv-E25"/>
                                         <constraint firstItem="Nt6-T3-Mqt" firstAttribute="centerX" secondItem="dra-Lc-FLv" secondAttribute="centerX" id="tXA-Sv-IAV"/>
@@ -9866,21 +9899,21 @@ Edit setting -"search" in Firefox</string>
             <objects>
                 <viewController storyboardIdentifier="askLogInVc" id="ILN-ce-GbC" customClass="askLogInVc" customModule="Focus_Bear" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" id="Bcw-KI-DE2">
-                        <rect key="frame" x="0.0" y="0.0" width="944" height="700"/>
+                        <rect key="frame" x="0.0" y="0.0" width="944" height="600"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
                             <box boxType="custom" borderWidth="0.0" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="geD-EF-m1J" customClass="customBoxBg" customModule="Focus_Bear" customModuleProvider="target">
-                                <rect key="frame" x="0.0" y="0.0" width="944" height="700"/>
+                                <rect key="frame" x="0.0" y="0.0" width="944" height="600"/>
                                 <view key="contentView" id="RvZ-d5-q1G">
-                                    <rect key="frame" x="0.0" y="0.0" width="944" height="700"/>
+                                    <rect key="frame" x="0.0" y="0.0" width="944" height="600"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
                                         <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="acG-Db-of5">
-                                            <rect key="frame" x="0.0" y="0.0" width="944" height="700"/>
+                                            <rect key="frame" x="0.0" y="0.0" width="944" height="600"/>
                                             <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="axesIndependently" id="eeP-r3-Gxd"/>
                                         </imageView>
                                         <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="v17-Gg-tzp">
-                                            <rect key="frame" x="407" y="510" width="130" height="130"/>
+                                            <rect key="frame" x="407" y="410" width="130" height="130"/>
                                             <constraints>
                                                 <constraint firstAttribute="height" relation="greaterThanOrEqual" constant="130" id="C1Y-sY-z40"/>
                                                 <constraint firstAttribute="width" constant="130" id="Pcd-dS-voW"/>
@@ -9890,7 +9923,7 @@ Edit setting -"search" in Firefox</string>
                                             <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyUpOrDown" image="NSApplicationIcon" id="CVK-MM-a1H"/>
                                         </imageView>
                                         <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="EAS-Nb-PtN">
-                                            <rect key="frame" x="38" y="416" width="868" height="74"/>
+                                            <rect key="frame" x="38" y="340" width="868" height="50"/>
                                             <constraints>
                                                 <constraint firstAttribute="height" relation="lessThanOrEqual" constant="120" id="0dk-x3-yAM"/>
                                             </constraints>
@@ -9901,7 +9934,7 @@ Edit setting -"search" in Firefox</string>
                                             </textFieldCell>
                                         </textField>
                                         <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="Asi-Ms-ZEi">
-                                            <rect key="frame" x="38" y="306" width="868" height="90"/>
+                                            <rect key="frame" x="38" y="230" width="868" height="90"/>
                                             <constraints>
                                                 <constraint firstAttribute="height" constant="90" id="wRa-dS-0Q2"/>
                                             </constraints>
@@ -9927,7 +9960,7 @@ Edit setting -"search" in Firefox</string>
                                             </connections>
                                         </button>
                                         <button translatesAutoresizingMaskIntoConstraints="NO" id="KhU-w4-Sqs" customClass="cursorButton" customModule="Focus_Bear" customModuleProvider="target">
-                                            <rect key="frame" x="908" y="373" width="23" height="23"/>
+                                            <rect key="frame" x="908" y="297" width="23" height="23"/>
                                             <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="NSInfo" imagePosition="only" alignment="center" imageScaling="proportionallyUpOrDown" inset="2" id="zif-YG-asf">
                                                 <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                 <font key="font" metaFont="system"/>
@@ -10059,7 +10092,7 @@ Edit setting -"search" in Firefox</string>
                                 </view>
                                 <constraints>
                                     <constraint firstAttribute="width" constant="944" id="5Ua-e1-iaj"/>
-                                    <constraint firstAttribute="height" constant="700" id="MIi-Zg-ecB"/>
+                                    <constraint firstAttribute="height" constant="600" id="MIi-Zg-ecB"/>
                                 </constraints>
                             </box>
                         </subviews>
@@ -10516,8 +10549,8 @@ Edit setting -"search" in Firefox</string>
                                                                 </constraints>
                                                                 <datePickerCell key="cell" borderStyle="bezel" alignment="left" useCurrentDate="YES" id="qTO-Vt-QZ6">
                                                                     <font key="font" metaFont="system"/>
-                                                                    <date key="date" timeIntervalSinceReferenceDate="766920358.07700098">
-                                                                        <!--2025-04-21 09:25:58 +0000-->
+                                                                    <date key="date" timeIntervalSinceReferenceDate="774255528.32110798">
+                                                                        <!--2025-07-15 06:58:48 +0000-->
                                                                     </date>
                                                                     <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
                                                                     <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -10562,8 +10595,8 @@ Edit setting -"search" in Firefox</string>
                                                                 </constraints>
                                                                 <datePickerCell key="cell" borderStyle="bezel" alignment="left" useCurrentDate="YES" id="6wt-Mf-qOs">
                                                                     <font key="font" metaFont="system"/>
-                                                                    <date key="date" timeIntervalSinceReferenceDate="766920358.07991505">
-                                                                        <!--2025-04-21 09:25:58 +0000-->
+                                                                    <date key="date" timeIntervalSinceReferenceDate="774255528.32416105">
+                                                                        <!--2025-07-15 06:58:48 +0000-->
                                                                     </date>
                                                                     <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
                                                                     <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -10608,8 +10641,8 @@ Edit setting -"search" in Firefox</string>
                                                                 </constraints>
                                                                 <datePickerCell key="cell" borderStyle="bezel" alignment="left" useCurrentDate="YES" id="GwN-p0-Ywu">
                                                                     <font key="font" metaFont="system"/>
-                                                                    <date key="date" timeIntervalSinceReferenceDate="766920358.08277905">
-                                                                        <!--2025-04-21 09:25:58 +0000-->
+                                                                    <date key="date" timeIntervalSinceReferenceDate="774255528.32709396">
+                                                                        <!--2025-07-15 06:58:48 +0000-->
                                                                     </date>
                                                                     <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
                                                                     <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -10654,8 +10687,8 @@ Edit setting -"search" in Firefox</string>
                                                                 </constraints>
                                                                 <datePickerCell key="cell" borderStyle="bezel" alignment="left" useCurrentDate="YES" id="2xy-0S-D4T">
                                                                     <font key="font" metaFont="system"/>
-                                                                    <date key="date" timeIntervalSinceReferenceDate="766920358.08564699">
-                                                                        <!--2025-04-21 09:25:58 +0000-->
+                                                                    <date key="date" timeIntervalSinceReferenceDate="774255528.33002806">
+                                                                        <!--2025-07-15 06:58:48 +0000-->
                                                                     </date>
                                                                     <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
                                                                     <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -11436,7 +11469,6 @@ Edit setting -"search" in Firefox</string>
         <image name="applelogo" catalog="system" width="13" height="15"/>
         <image name="brainBreaks_card" width="700" height="446"/>
         <image name="bulb_small" width="31" height="32"/>
-        <image name="cancel" width="12" height="12"/>
         <image name="close" width="25" height="25"/>
         <image name="envelope.circle.fill" catalog="system" width="15" height="15"/>
         <image name="eye Icon" width="28" height="25"/>

@@ -6,6 +6,9 @@
 //  Copyright © 2025 Focus Bear. All rights reserved.
 //
 
+var isCustomRoutineWasRunningInPostponeMorningHabit = false
+var isCustomRoutineWasRunningInPostponeEveningHabit = false
+
 var isBreakActivityExecuteFromMorningHabit = false
 var isBreakActivityExecuteFromEveningHabit = false
 
@@ -31,6 +34,9 @@ var lastActivityPerformedTime:Date?
 var postponeBreaksFromBreaksWarningCount = 0
 
 var isPromptToRememberHabitShowedInLastHabit = false///   reason:-Make sure it doesn't happen twice in a row though.
+
+var eveningRoutineLastPostponeTime:Date?
+var focusSummaryLastPostponeTime:Date?
 
 
 var arrAllCustomRoutine = [routine]()
@@ -129,63 +135,7 @@ enum CHOICETYPE:Int{
     case _NONE_ = 11, _COMPETENCY_, _RANDOM_, _CHECKLIST_// start state sirf first activity ki start mi hi hoti h fir  second activity ki start mai "end state hoti hai "
 }
 
-var breakAfterMinutes = 0
-var arrAllbreakActivities = [breakActivity]()
-var arrFinalBreakActivities = [breakActivityFilter]()
-struct breakActivityFilter{
-    var activity:breakActivity!
-    var randomChoice:activityChoice?
-}
 
-struct breakActivity {
-    var id:String!
-    var name:String!
-    var durationSeconds:Int!
-    var IncludeInEveryBreak:Bool!
-    var urlsArray:[String]
-    var logQuantity:Bool!
-    var choiceType:CHOICETYPE!
-    var choices:[activityChoice]
-    var logQuantityQuestion:String?
-    var openSpecificApps:Bool!
-    var allowUrls:[String]!
-    var allowApps:[String]!
-    var isOfficeFriendly:Bool!
-    var allowedFocusMode:String!
-    var logQuantityType:String!
-    var activity_sequence_id:String!
-    var take_notes:String!
-    var text_instructions = ""
-    var imgUrls = [String]()
-    var completion_requirements = ""
-    var useTimer:Bool = true
-    var logQuantityQuestions = [quantityQuestion]()
-    var checkList = [String]()
-    init(id:String, name:String, durationSeconds:Int, IncludeInEveryBreak:Bool, urlsArray:[String], logQuantity:Bool,choiceType:CHOICETYPE,choices:[activityChoice],logQuantityQuestion:String?, openSpecificApps:Bool,allowUrls:[String],allowApps:[String],isOfficeFriendly:Bool,allowedFocusMode:String,logQuantityType:String,activity_sequence_id:String,take_notes:String, text_instructions:String, imgUrls:[String], completion_requirements:String, useTimer:Bool, checkList:[String]) {
-        self.id = id
-        self.name = name
-        self.durationSeconds = durationSeconds
-        self.IncludeInEveryBreak = IncludeInEveryBreak
-        self.urlsArray = urlsArray
-        self.logQuantity = logQuantity
-        self.choiceType = choiceType
-        self.choices = choices
-        self.logQuantityQuestion = logQuantityQuestion
-        self.openSpecificApps = openSpecificApps
-        self.allowUrls = allowUrls
-        self.allowApps = allowApps
-        self.isOfficeFriendly = isOfficeFriendly
-        self.allowedFocusMode = allowedFocusMode
-        self.logQuantityType = logQuantityType
-        self.activity_sequence_id = activity_sequence_id
-        self.take_notes = take_notes
-        self.text_instructions = text_instructions
-        self.imgUrls = imgUrls
-        self.completion_requirements = completion_requirements
-        self.useTimer = useTimer
-        self.checkList = checkList
-    }
-}
 
 
 struct quantityQuestion{
@@ -228,6 +178,17 @@ struct activityChoice {
 
 var currentRoutineIndex = 0
 func startCustomRoutine(index:Int, isOnDemand:Bool){
+    if currentState == ._POSTPON_MORNING_HABIT_{
+        isCustomRoutineWasRunningInPostponeMorningHabit = true
+        isCustomRoutineWasRunningInPostponeEveningHabit = false
+    }else if currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_{
+        isCustomRoutineWasRunningInPostponeEveningHabit = true
+        isCustomRoutineWasRunningInPostponeMorningHabit = false
+    }else if currentState != ._CUSTOM_ROUTINE_{
+        isCustomRoutineWasRunningInPostponeMorningHabit = false
+        isCustomRoutineWasRunningInPostponeEveningHabit = false
+    }
+    
     currentRoutineIndex = index
     if isFocusModeOnOrPaused(){//53fd08d9-90f6-41db-b920-aa1fd017146e, 3dd1f268-96f4-492c-b098-89dea60a013a
         addLog(text: "isFocusModeOnOrPaused True: focusModeFinished.")
@@ -272,83 +233,44 @@ func startCustomRoutine(index:Int, isOnDemand:Bool){
             if Date().compare(morningStartDate) == .orderedAscending {// current date < start date(current date is 1 am and start date is 10 am )
                 morningStartDate = Calendar.current.date(byAdding: .day, value: -1, to: morningStartDate) ?? morningStartDate
             }
-            print(json)
-            //            if isMainWindowLoaded{// if main window is visible show loader
-            //                if mainWindowControllerObj?.window?.isVisible ?? false{
-            //                    mainViewControllerObj?.removeSubViews()
-            //                }
-            //            }
+
             if json != nil{
 
-                if let current_activity_assigned_at = json?.value(forKey: "current_activity_assigned_at") as? String{
-                    if let activityAssignedDate = getDateFromStringInUtc(date: current_activity_assigned_at, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'") {
-                        if let currentActivitySequence = json?.value(forKey: "current_activity_sequence") as? NSDictionary{
-                            
-                            if let currentActivity = json?.value(forKey: "current_activity") as? NSDictionary{
-                                if let sequenceId = currentActivitySequence.value(forKey: "id") as? String, let activityId = currentActivity.value(forKey: "id") as? String{
-                                    
-                                    
-                                    
-                                    let habitSequenceID = arrAllCustomRoutine[currentRoutineIndex].sequenceId
-                                    
-                                    
-                                    
-                                    if activityAssignedDate.compare(morningStartDate) == .orderedDescending{//if activityAssignedDate > startDate
-                                        // morning activity start hui thi lekin puri nahi hui hai
-                                        if habitSequenceID == sequenceId{
-                                            //                print("current_activity_sequence is pending")
-                                            addLog(text: "custom habit sequnce is pending. start from current pending habit")
-                                            //                                                self.isProcessingHabitRoutine = false
-                                            var skippedActivities = [String]()
-                                            if let activities = json?.value(forKey: "current_sequence_skipped_activities") as? [String]{
-                                                skippedActivities = activities
-                                            }//current_sequence_completed_activities
-                                            
-                                            var completedActivities = [String]()
-                                            if let activities = json?.value(forKey: "current_sequence_completed_activities") as? [String]{
-                                                completedActivities = activities
-                                            }
-                                            //                                                self.startHabitsCall(activityId: activityId, skippedActivities:skippedActivities, completedActivities: completedActivities)
-                                            
-                                            startCustomRoutmieHabitsCall(routineIndex:currentRoutineIndex, activityId: activityId, skippedActivities:skippedActivities, completedActivities: completedActivities)
-                                            
-                                        }else{//it means current activity is not from current sequence
-                                            
-                                            startCustomRoutmieHabitsCall(routineIndex:currentRoutineIndex, activityId: nil, skippedActivities:[], completedActivities: [])
-                                            
-                                        }
-                                    }
-                                    else{
-                                        //                print("pending routin is not from current day clean all running sequence")
-                                        addLog(text: "pending routin is not from current day clean all running sequence")
-                                        //                                            forceCompleteCurrentSequence no need
+                if let todayRoutineProgress = json?.value(forKey: "today_routine_progress") as? NSDictionary{
+                    if let customRoutines = todayRoutineProgress.value(forKey: "custom_routines") as? [NSDictionary]{
+                        let sequenceID = arrAllCustomRoutine[currentRoutineIndex].sequenceId
+                        for routine in customRoutines {
+                            if let todaySequenceId = routine.value(forKey: "sequence_id") as? String, let status = routine.value(forKey: "status") as? String{
+                                if todaySequenceId == sequenceID{
+                                    let statusLowerCased = status.lowercased()
+                                    if (status.lowercased() == "in_progress" || status.lowercased() == "postponed"){
                                         
-                                        startCustomRoutmieHabitsCall(routineIndex:currentRoutineIndex, activityId: nil, skippedActivities:[], completedActivities: [])
+                                        addLog(text: "custom habit sequnce is pending. start from current pending habit")
+                                        //                                                self.isProcessingHabitRoutine = false
+                                        var skippedActivities = [String]()
+                                        if let activities = routine.value(forKey: "skipped_habit_ids") as? [String]{
+                                            skippedActivities = activities
+                                        }//current_sequence_completed_activities
+                                        
+                                        var completedActivities = [String]()
+                                        if let activities = routine.value(forKey: "completed_habit_ids") as? [String]{
+                                            completedActivities = activities
+                                        }
+                                        //                                                self.startHabitsCall(activityId: activityId, skippedActivities:skippedActivities, completedActivities: completedActivities)
+                                        
+                                        startCustomRoutmieHabitsCall(routineIndex:currentRoutineIndex, activityId: nil, skippedActivities:skippedActivities, completedActivities: completedActivities, needToCreateActivityId: true)
+                                        
+                                        return;
                                     }
-                                    
-                                    
-                                }else{
-                                    addLog(text: "start new routine sequence:- current sequence Id or current activity Id not found")
-                                    startCustomRoutmieHabitsCall(routineIndex:currentRoutineIndex, activityId: nil, skippedActivities:[], completedActivities: [])
                                 }
-                            }else{
-                                addLog(text: "start new routine sequence:- current_activity not found as dictionary")// ktyaa krna chahiye yha
-                                
-                                startCustomRoutmieHabitsCall(routineIndex:currentRoutineIndex, activityId: nil, skippedActivities:[], completedActivities: [])
                             }
-                        }else{
-                            addLog(text: "start new routine sequence:- current_activity_sequence not found as dictionary")
-                            startCustomRoutmieHabitsCall(routineIndex:currentRoutineIndex, activityId: nil, skippedActivities:[], completedActivities: [])
                         }
-                    }else{
-                        addLog(text: "start new routine sequence:- can't create Date object from current_activity_assigned_at")
-                        startCustomRoutmieHabitsCall(routineIndex:currentRoutineIndex, activityId: nil, skippedActivities:[], completedActivities: [])
+                        
                     }
-                }else{
-                    addLog(text: "start new routine sequence :- current_activity_assigned_at not found :- \(json!)")
-                    
-                    startCustomRoutmieHabitsCall(routineIndex:currentRoutineIndex, activityId: nil, skippedActivities:[], completedActivities: [])
                 }
+                
+                
+                
             }else{
                 addLog(text: "func backgrounThread:- Last Activity Info is nil, search is there any habit done info found in local userdefauts")
                 // check local
@@ -462,10 +384,15 @@ func checkCustomRoutineTime(){
                 
                 if isRoutineTime{
                     arrAllCustomRoutine[i].nextSheduledTime = nil
-                    isCustomRoutineWasRunningInPostponeMorningHabit = false
-                    isCustomRoutineWasRunningInPostponeEveningHabit = false
                     if currentState == ._POSTPON_MORNING_HABIT_{
                         isCustomRoutineWasRunningInPostponeMorningHabit = true
+                        isCustomRoutineWasRunningInPostponeEveningHabit = false
+                    }else if currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_{
+                        isCustomRoutineWasRunningInPostponeEveningHabit = true
+                        isCustomRoutineWasRunningInPostponeMorningHabit = false
+                    }else{
+                        isCustomRoutineWasRunningInPostponeMorningHabit = false
+                        isCustomRoutineWasRunningInPostponeEveningHabit = false
                     }
                     
                     currentRoutineIndex = i
@@ -474,12 +401,6 @@ func checkCustomRoutineTime(){
 
                     allApiObject.getLastActivityInfo(completionHandler: { json in
                         DispatchQueue.main.async {
-//                            var morningStartDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
-//                            
-//                            if Date().compare(morningStartDate) == .orderedAscending {// current date < start date(current date is 1 am and start date is 10 am )
-//                                morningStartDate = Calendar.current.date(byAdding: .day, value: -1, to: morningStartDate) ?? morningStartDate
-//                            }
-                            print(json)
                             if json != nil{
                                 
                                 if let todayRoutineProgress = json?.value(forKey: "today_routine_progress") as? NSDictionary{
@@ -499,27 +420,7 @@ func checkCustomRoutineTime(){
                                         
                                     }
                                 }
-                                if let lastCompletedSequence = json?.value(forKey: "last_completed_sequence") as? NSDictionary{
-                                    if let lastCompletedSequenceId = lastCompletedSequence.value(forKey: "id") as? String{
-                                        let sequenceID = arrAllCustomRoutine[currentRoutineIndex].sequenceId
-                                        if lastCompletedSequenceId == sequenceID{
-                                            if let lastCompletedSequenceStartedAt = json?.value(forKey: "last_completed_sequence_started_at") as? String{
-                                                if let activityStartDate = getDateFromStringInUtc(date: lastCompletedSequenceStartedAt, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'") {
-                                                    
-                                                    if activityStartDate.compare(startDate) == .orderedDescending{ // custom routine done already
-                                                        isProcessingCustomRoutine = false
-                                                        arrAllCustomRoutine[i].lastCompletedSequence = Date()
-                                                        return;
-                                                    }
-                                                    
-                                                }
-                                            }
-                                            
-                                            
-                                        }
-                                        
-                                    }
-                                }
+
                             }
                             currentState = ._CUSTOM_ROUTINE_
                             isProcessingCustomRoutine = false
@@ -543,18 +444,20 @@ func checkCustomRoutineTime(){
 }
 
 //skipped activities will always there in completed activities
-func startCustomRoutmieHabitsCall(routineIndex:Int, activityId:String?, skippedActivities:[String], completedActivities:[String]){
+func startCustomRoutmieHabitsCall(routineIndex:Int, activityId:String?, skippedActivities:[String], completedActivities:[String], needToCreateActivityId:Bool = false){
     addLog(text: "Initiating Custom Routmie habits.")
     additionalHabitTotalCompletedSeconds = 0
     habitTotalCompletedSeconds = 0
-    //    if isUserOnMeeting{ // 
-    //        addLog(text: "isUserOnMeeting True: Morning Habits skipped for some time.")
-    //        return
-    //    }
     appdelegate!.abortAllProcess()
-    if activityId == nil{
-        
-        
+    var activityId = activityId
+    
+    var needToCreateActivityId = needToCreateActivityId
+    
+    if completedActivities.count == 0 && skippedActivities.count == 0{
+        needToCreateActivityId = false
+    }
+    
+    if activityId == nil && !needToCreateActivityId{
         mainWindowControllerObj?.showWindow(appdelegate)
         showBlankWindowInSecondaryMonitor()
         mainViewControllerObj!.startDirectIncompleteCustomRoutineHabitAtIndex(index: 0, isLastActivitySkipped:false)
@@ -563,26 +466,6 @@ func startCustomRoutmieHabitsCall(routineIndex:Int, activityId:String?, skippedA
         //  arrFilteredMorningHabits.removeAll()
         
         var isActivityFound = false
-        //            for i in 0..<arrTempFilteredMorningHabits.count{
-        //
-        //                if arrTempFilteredMorningHabits[i].id == activityId!{
-        //                    arrFilteredMorningHabits.append(arrTempFilteredMorningHabits[i])
-        //                    isActivityFound = true
-        //                }else if isActivityFound{
-        //                    if !completedActivities.contains(arrTempFilteredMorningHabits[i].id){
-        //                        arrFilteredMorningHabits.append(arrTempFilteredMorningHabits[i])
-        //                    }else{
-        //                        if !skippedActivities.contains(arrTempFilteredMorningHabits[i].id){
-        //                            if arrTempFilteredMorningHabits[i].useTimer{
-        //                                additionalHabitTotalCompletedSeconds += arrTempFilteredMorningHabits[i].durationSeconds
-        //                            }
-        //                        }
-        //                    }
-        //                }else{
-        //                    arrFilteredMorningHabits.append(arrTempFilteredMorningHabits[i])
-        //                }
-        //
-        //            }
         
         for id in skippedActivities{
             for i in 0..<arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits.count{
@@ -590,6 +473,7 @@ func startCustomRoutmieHabitsCall(routineIndex:Int, activityId:String?, skippedA
                     let habit = arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits[i]
                     arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits.remove(at: i)
                     arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits.insert(habit, at: 0)
+                    break;
                 }
                 
             }
@@ -601,47 +485,30 @@ func startCustomRoutmieHabitsCall(routineIndex:Int, activityId:String?, skippedA
                     let habit = arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits[i]
                     arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits.remove(at: i)
                     arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits.insert(habit, at: 0)
+                    break;
                 }
                 
             }
         }
         
+        if needToCreateActivityId && activityId == nil{
+            if skippedActivities.count != 0 || completedActivities.count != 0{
+                
+                var isActivityFound = false
+                for i in 0..<arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits.count{
+                    if !completedActivities.contains(arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits[i].id){
+                        activityId = arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits[i].id
+                        isActivityFound = true
+                    }
+                    if isActivityFound{
+                        break;
+                    }
+                }
+            }
+        }
         
-        
-        //            arrPreFilteredMorningHabits = arrFilteredMorningHabits
         //  //Let user temporarily customise routine before starting#938
         let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
-        //            if let infoDic = UserDefaults.standard.object(forKey: kUserdefaultsLastSequenceSelectHabitsInfo) as? [String:Any]{
-        //                if let lastSavedSequenceId =  infoDic["sequenceId"] as? String, let arrHabitIds =  infoDic["arrHabitIds"] as? [String], let date =  infoDic["date"] as? Date{
-        //                    if lastSavedSequenceId == arrFilteredMorningHabits[0].activity_sequence_id && date.compare(startDate) == .orderedDescending{
-        //                        if arrHabitIds.count != 0{
-        //                            arrFilteredMorningHabits.removeAll()
-        //                            var isActivityFound = false
-        //                            for habit in arrPreFilteredMorningHabits{
-        //                                if habit.id == activityId!{
-        //                                    if arrHabitIds.contains(habit.id){
-        //                                        arrFilteredMorningHabits.append(habit)
-        //                                    }
-        //                                    isActivityFound = true
-        //                                }else if isActivityFound{
-        //                                    if arrHabitIds.contains(habit.id){
-        //                                        arrFilteredMorningHabits.append(habit)
-        //                                    }
-        //                                }else{
-        //                                    arrFilteredMorningHabits.append(habit)
-        //                                }
-        //                            }
-        //                            if arrFilteredMorningHabits.count == 0{
-        //                                arrFilteredMorningHabits = arrPreFilteredMorningHabits
-        //                            }
-        //                        }else{
-        //                            UserDefaults.standard.removeObject(forKey: kUserdefaultsLastSequencePostponeInfo)
-        //                        }
-        //                    }
-        //                }
-        //            }
-        //
-        
         
         additionalHabitTotalCompletedSeconds = 0
         mainWindowControllerObj?.showWindow(appdelegate!)
@@ -740,6 +607,50 @@ func settingsChangedDuringHabitsCurrentActivityProps(){
     appdelegate!.quitAndRestartApp()
     print("settings changed")
 }
+
+
+
+var kUserdefaultsHabitsDurationDoneToday = "kUserdefaultsHabitsDurationDoneToday"
+
+func saveCurrentHabitCurrentDurationDone(id:String, duration:Int){
+    var allHabitsCurrentDurationData = [String:[String:Any]]()
+    if let oldData = UserDefaults.standard.object(forKey: kUserdefaultsHabitsDurationDoneToday) as? [String:[String:Any]]{
+        allHabitsCurrentDurationData = oldData
+    }
+    allHabitsCurrentDurationData[id] = ["date": Date(), "duration":duration]
+    
+    UserDefaults.standard.set(allHabitsCurrentDurationData, forKey: kUserdefaultsHabitsDurationDoneToday)
+}
+
+
+func getCurrentHabitCurrentDurationDone(id:String)->Int?{
+    var allHabitsCurrentDurationData = [String:[String:Any]]()
+    if let oldData = UserDefaults.standard.object(forKey: kUserdefaultsHabitsDurationDoneToday) as? [String:[String:Any]]{
+        allHabitsCurrentDurationData = oldData
+    }
+
+    if let currentHabitData = allHabitsCurrentDurationData[id]{
+        if let habitDate = currentHabitData["date"] as? Date, let duration = currentHabitData["duration"] as? Int{
+            if currentState == ._MORNING_HABIT_{
+                let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
+                if habitDate.compare(startDate) == .orderedDescending{
+                    return duration
+                }
+            }else if currentState == ._EVENING_HABIT_{
+                var shutOffdate = Calendar.current.date(bySettingHour: shutOffTime!.hour, minute: shutOffTime!.minute, second: shutOffTime!.second, of: Date())!
+                if Date().compare(shutOffdate) == .orderedAscending{// iska matlab 20-24 k bich
+                    shutOffdate = Calendar.current.date(byAdding: .day, value: -1, to: shutOffdate) ?? shutOffdate
+                }
+                if habitDate.compare(shutOffdate) == .orderedDescending{
+                    return duration
+                }
+            }
+        }
+    }
+    return nil
+}
+
+
 
 
 /*

@@ -7,6 +7,21 @@ import Cocoa
 
 class simplePomodoroVc: NSViewController {
     
+    
+    @IBOutlet weak var stackViewStrictnessLevel: NSStackView!
+    @IBOutlet weak var stackViewIntention: NSStackView!
+    @IBOutlet weak var boxBlockingStyle: NSBox!
+    @IBOutlet weak var boxBreakDuration: NSBox!
+    @IBOutlet weak var imgViewAccordionMoreOptions: NSImageView!
+    @IBOutlet weak var lblAccordionMoreOptions: NSTextField!
+    @IBOutlet weak var boxAccordionMoreOptions: NSBox!
+    
+    @IBOutlet weak var lblSelectedStrictnessLevel: NSTextField!
+    @IBOutlet weak var btnInfoWorkDuration: hoverInfoButton!
+    @IBOutlet weak var btnInfoBreakDuration: hoverInfoButton!
+    @IBOutlet weak var btnInfoIntention: hoverInfoButton!
+    @IBOutlet weak var btnInfoStrictnessLevel: hoverInfoButton!
+    
     @IBOutlet weak var btnPin: cursorButton!
     @IBOutlet weak var boxPin: NSBox!
     @IBOutlet weak var lblTipPermissions: NSTextField!
@@ -74,6 +89,17 @@ class simplePomodoroVc: NSViewController {
     var menuTourPopoverVcObj: menuTourPopoverVc?
     var pinButtonTrackingArea: NSTrackingArea?
     
+    var titleNormalMode = "Chill Mode"
+    var descriptionNormalMode = "Stop focusing anytime, no questions asked."
+    var toolTipNormalMode = "Best for gentle focus days. No barriers to pausing or stopping a session."
+    var titleStrictMode = "Wait for it…"
+    var descriptionStrictMode = "15-second delay before you can stop"
+    var toolTipStrictMode = "Adds a 15s countdown before you can pause/stop. Great for catching impulsive decisions."
+    var titleSuperStrictMode = "Iron Focus"
+    var descriptionSuperStrictMode = "Once you start, you can't stop"
+    var toolTipSuperStrictMode = "Once you start, there’s no backing out. Best for deep, distraction-free sessions."
+    
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
@@ -116,9 +142,6 @@ class simplePomodoroVc: NSViewController {
         
         if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
             if let startingFocusModeInfo = focusInfo.value(forKey: "startingFocusModeInfo") as? NSDictionary{
-                lblStrictnessNormal.stringValue = startingFocusModeInfo.value(forKey: "strictnessNormalText") as? String ?? lblStrictnessNormal.stringValue
-                lblStrictnessStrict.stringValue = startingFocusModeInfo.value(forKey: "strictnessStrictText") as? String ?? lblStrictnessStrict.stringValue
-                lblStrictnessSuperStrict.stringValue = startingFocusModeInfo.value(forKey: "strictnessSuperStrictText") as? String ?? lblStrictnessSuperStrict.stringValue
                 lblTitleStrictnessLevel.stringValue = startingFocusModeInfo.value(forKey: "titleStrictnessLevel") as? String ?? lblTitleStrictnessLevel.stringValue
             }
         }
@@ -201,7 +224,23 @@ class simplePomodoroVc: NSViewController {
             subTitleIntention = simplePomodoroVcInfo.value(forKey: "subTitleIntention") as? String ?? subTitleIntention
             titleStrictnessLevel = simplePomodoroVcInfo.value(forKey: "titleStrictnessLevel") as? String ?? titleStrictnessLevel
             subTitleStrictnessLevel = simplePomodoroVcInfo.value(forKey: "subTitleStrictnessLevel") as? String ?? subTitleStrictnessLevel
+            
+            
+            
+            titleNormalMode = simplePomodoroVcInfo.value(forKey: "titleNormalMode") as? String ?? titleNormalMode
+            descriptionNormalMode = simplePomodoroVcInfo.value(forKey: "descriptionNormalMode") as? String ?? descriptionNormalMode
+            toolTipNormalMode = simplePomodoroVcInfo.value(forKey: "toolTipNormalMode") as? String ?? toolTipNormalMode
+            titleStrictMode = simplePomodoroVcInfo.value(forKey: "titleStrictMode") as? String ?? titleStrictMode
+            descriptionStrictMode = simplePomodoroVcInfo.value(forKey: "descriptionStrictMode") as? String ?? descriptionStrictMode
+            toolTipStrictMode = simplePomodoroVcInfo.value(forKey: "toolTipStrictMode") as? String ?? toolTipStrictMode
+            titleSuperStrictMode = simplePomodoroVcInfo.value(forKey: "titleSuperStrictMode") as? String ?? titleSuperStrictMode
+            descriptionSuperStrictMode = simplePomodoroVcInfo.value(forKey: "descriptionSuperStrictMode") as? String ?? descriptionSuperStrictMode
+            toolTipSuperStrictMode = simplePomodoroVcInfo.value(forKey: "toolTipSuperStrictMode") as? String ?? toolTipSuperStrictMode
         }
+        
+        lblStrictnessNormal.stringValue = "🟢 " + titleNormalMode
+        lblStrictnessStrict.stringValue = "🟡 " + titleStrictMode
+        lblStrictnessSuperStrict.stringValue = "🔴 " + titleSuperStrictMode
         
         arrTourMessages = [
             ["title": titlePomodoroTime, "description": subTitlePomodoroTime],
@@ -244,7 +283,24 @@ class simplePomodoroVc: NSViewController {
         boxTipPermissions.isHidden = true
         pinButtonTrackingArea = NSTrackingArea.init(rect: btnPin.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
         btnPin.addTrackingArea(pinButtonTrackingArea!)
+        
+        btnInfoAiBlocking.isAutoClickEnabled = false
+        btnStrictnessNormal.isAutoClickEnabled = false
+        btnStrictnessSuperStrict.isAutoClickEnabled = false
+        btnStrictnessStrict.isAutoClickEnabled = false
+        btnInfoWorkDuration.isAutoClickEnabled = false
+        btnInfoBreakDuration.isAutoClickEnabled = false
+        btnInfoIntention.isAutoClickEnabled = false
+        btnInfoStrictnessLevel.isAutoClickEnabled = false
+        
+        
+        stackViewStrictnessLevel.isHidden = true
+        stackViewIntention.isHidden = true
+        boxBlockingStyle.isHidden = true
+        boxBreakDuration.isHidden = true
+        imgViewAccordionMoreOptions.image = NSImage(named: NSImage.goForwardTemplateName)
     }
+    
     var browserPermissionGiven = false
     override func viewDidAppear() {
         if SettingsManagerObject.isStrictnessLevelSuperGentle(){
@@ -370,12 +426,13 @@ class simplePomodoroVc: NSViewController {
                 }
             }
         }
-        if textViewAchieve.string.isEmpty{
-            btnLetsDoIt.isEnabled = false
-        }else{
-            btnLetsDoIt.isEnabled = true
-        }
+//        if textViewAchieve.string.isEmpty{
+//            btnLetsDoIt.isEnabled = false
+//        }else{
+//            btnLetsDoIt.isEnabled = true
+//        }
     }
+    
     override func viewWillAppear() {
         getTaskPlayerVcObject().loadView()
         getTaskPlayerVcObject().loadRequest()
@@ -389,7 +446,7 @@ class simplePomodoroVc: NSViewController {
                 sliderStrictness.integerValue = 3
             }
         }
-        
+        showSelectedStrictnessLevel()
         
         if isExpired{
             radioButtonBlockingStyleAi.state = .off
@@ -437,7 +494,15 @@ class simplePomodoroVc: NSViewController {
         }
     }
     
-    
+    func showSelectedStrictnessLevel(){
+        if sliderStrictness.integerValue == 1{
+            lblSelectedStrictnessLevel.stringValue = titleNormalMode + " (\(descriptionNormalMode))"
+        }else if sliderStrictness.integerValue == 2{
+            lblSelectedStrictnessLevel.stringValue = titleStrictMode + " (\(descriptionStrictMode))"
+        }else if sliderStrictness.integerValue == 3{
+            lblSelectedStrictnessLevel.stringValue = titleSuperStrictMode + " (\(descriptionSuperStrictMode))"
+        }
+    }
 
     @objc func viewDidResize(){
         print("viewDidResize")
@@ -466,11 +531,11 @@ class simplePomodoroVc: NSViewController {
 
             lblQuestionFirst.font = getRegularFont(size: fontSizeTwelve)
 
-            lblTitleWorkDuration.font =  getRegularFont(size: fontSizeTwelve)
+            lblTitleWorkDuration.font =  getRegularFont(size: 15)
             lblTitleBreakDuration.font =  getRegularFont(size: fontSizeTwelve)
-            lblMinutesWorkDuration.font =  getRegularFont(size: fontSizeTwelve)
+            lblMinutesWorkDuration.font =  getRegularFont(size: 15)
             lblMinutesBreakDuration.font =  getRegularFont(size: fontSizeTwelve)
-            textFieldWorkDuration.font =  getRegularFont(size: fontSizeEleven)
+            textFieldWorkDuration.font =  getRegularFont(size: 14)
             textFieldBreakDuration.font =  getRegularFont(size: fontSizeEleven)
 
 
@@ -480,11 +545,11 @@ class simplePomodoroVc: NSViewController {
         }else{
             lblTitle.font =  getRegularFont(size: 25)
             lblQuestionFirst.font =  getRegularFont(size: 14)
-            lblTitleWorkDuration.font =  getRegularFont(size: 14)
+            lblTitleWorkDuration.font =  getRegularFont(size: 17)
             lblTitleBreakDuration.font =  getRegularFont(size: 14)
-            lblMinutesWorkDuration.font =  getRegularFont(size: 14)
+            lblMinutesWorkDuration.font =  getRegularFont(size: 17)
             lblMinutesBreakDuration.font =  getRegularFont(size: 14)
-            textFieldWorkDuration.font =  getRegularFont(size: 13)
+            textFieldWorkDuration.font =  getRegularFont(size: 16)
             textFieldBreakDuration.font =  getRegularFont(size: 13)
 
             lblTimerUnfocused.font =  getRegularFont(size: 14)
@@ -497,6 +562,7 @@ class simplePomodoroVc: NSViewController {
     
     
     @IBAction func radioButtonBlockingStyleAiClicked(_ sender: Any) {
+        addLog(text:"[user-action] simplePomodoroVc:- radioButtonBlockingStyleAiClicked")
         if isExpired{
             radioButtonBlockingStyleAi.state = .off
             var titleNoAiBlocking = "AI blocking is only supported in Pro edition."
@@ -722,7 +788,7 @@ class simplePomodoroVc: NSViewController {
                                         }
                                     }
                                 }else if currentState == ._POSTPON_FOCUS_SUMMARY_{
-                                    mainViewControllerObj?.postponeFocusSummaryFor(minutes: totalMinutes + 2)
+                                    mainViewControllerObj?.postponeFocusSummaryFor(minutes: totalMinutes + 2, showAskIntention: false)
                                     self.pomodoroModeStarted()
                                 }
                             }else if modalResponse == .alertSecondButtonReturn{
@@ -788,10 +854,15 @@ class simplePomodoroVc: NSViewController {
         }
         
         minFocusAlignmentScoreToShowDistractingPopUp = 99.9
+        if SettingsManagerObject.isDataCollectionModeEnabled{
+            minFocusAlignmentScoreToShowDistractingPopUp = 0
+        }
         for i in 0..<arrFocusType.count{
             if let isDeepWorkFocus = arrFocusType[i][focusModeKey] as? Bool{//this key will only be awailable in default focus type
                 if  isDeepWorkFocus{
                     arrFocusType[i]["isOn"] = true
+                    arrFocusType[i]["lastStartedDate"] = getStringFromDate(date: Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")//
+                    arrFocusType[i]["lastScheduledEndDate"] = getStringFromDate(date: endFocusModeTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")//
                     shouldReloadTaskPlayer = true
                     if isAccessibilityEnabled(isPrompt: true){
                         enableDND()
@@ -845,6 +916,12 @@ class simplePomodoroVc: NSViewController {
         
         if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled{
             showTaskPlayerWindow(totalDuration: minute, intention: textViewAchieve.string, automatically:true)
+        }else{
+            if !getTaskPlayerVcObject().isViewLoaded{
+                getTaskPlayerVcObject().loadView()
+            }
+            taskPlayerVcObj?.reloadData(totalDuration: minute, intention: textViewAchieve.string)
+            shouldReloadTaskPlayer = false
         }
         //After finishing pomodoro block, clicking start another focus block doesn't use correct focus mode #741
         startingFocusModeVcObj?.lastIntention = textViewAchieve.string
@@ -1048,6 +1125,7 @@ class simplePomodoroVc: NSViewController {
             
             showTooltip(sender: sliderStrictness, msg: strictnessSuperStrictClickedText, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
         }
+        showSelectedStrictnessLevel()
     }
     
     @IBAction func btnPinClicked(_ sender: Any) {
@@ -1057,6 +1135,52 @@ class simplePomodoroVc: NSViewController {
         }else{
             self.view.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
             btnPin.image = #imageLiteral(resourceName: "pin")
+        }
+    }
+
+    @IBAction func btnInfoWorkDurationClicked(_ sender: Any) {
+        showTooltip(sender: btnInfoWorkDuration, msg: arrTourMessages[2]["description"] ?? "", preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
+    }
+    
+    @IBAction func btnInfoBreakDurationClicked(_ sender: Any) {
+        showTooltip(sender: btnInfoBreakDuration, msg: arrTourMessages[3]["description"] ?? "", preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
+    }
+    
+    @IBAction func btnInfoIntentionClicked(_ sender: Any) {
+        showTooltip(sender: btnInfoIntention, msg: arrTourMessages[4]["description"] ?? "", preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
+    }
+    
+    @IBAction func btnInfoStrictnessLevelClicked(_ sender: Any) {
+        var msgToShow = ""
+        if sliderStrictness.integerValue == 1{
+            msgToShow = toolTipNormalMode
+        }else if sliderStrictness.integerValue == 2{
+            msgToShow = toolTipStrictMode
+        }else if sliderStrictness.integerValue == 3{
+            msgToShow = toolTipSuperStrictMode
+        }
+        
+        showTooltip(sender: btnInfoStrictnessLevel, msg: msgToShow, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
+    }
+    
+    @IBAction func btnViewAccordionMoreOptionsClicked(_ sender: Any) {
+        if stackViewStrictnessLevel.isHidden{
+            stackViewStrictnessLevel.isHidden = false
+            stackViewIntention.isHidden = false
+            boxBlockingStyle.isHidden = false
+            boxBreakDuration.isHidden = false
+            imgViewAccordionMoreOptions.image = NSImage(named: NSImage.touchBarGoDownTemplateName)
+        }else{
+            stackViewStrictnessLevel.isHidden = true
+            stackViewIntention.isHidden = true
+            boxBlockingStyle.isHidden = true
+            boxBreakDuration.isHidden = true
+            imgViewAccordionMoreOptions.image = NSImage(named: NSImage.goForwardTemplateName)
+            if let window = self.view.window {
+                if window.styleMask.contains(.fullScreen) {
+                    window.toggleFullScreen(nil)
+                }
+            }
         }
     }
 }
@@ -1078,11 +1202,11 @@ extension simplePomodoroVc: NSTextFieldDelegate, NSTextViewDelegate{
             return
         }
         if textView == textViewAchieve{
-            if textView.string.isEmpty{
-                btnLetsDoIt.isEnabled = false
-            }else{
-                btnLetsDoIt.isEnabled = true
-            }
+//            if textView.string.isEmpty{
+//                btnLetsDoIt.isEnabled = false
+//            }else{
+//                btnLetsDoIt.isEnabled = true
+//            }
         }
     }
 }

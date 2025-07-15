@@ -51,6 +51,7 @@ class blockedUrlsVc: NSViewController {
     }
 
     @IBAction func btnAddUrlClicked(_ sender: Any) {
+        addLog(text:"[user-action] blockedUrlsVc:- btnAddUrlClicked")
         if isExpired{
             if SettingsManagerObject.arrBlockedUrls.count >= alwaysBlockedUrlsCountInExpireApp{
                 var titleLimitedBlockUrls = "Max 3 blocked urls can be added in Basic version."

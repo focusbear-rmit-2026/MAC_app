@@ -10,6 +10,12 @@ import Cocoa
 
 class popUpBlockConfirmVc: NSViewController {
 
+    @IBOutlet weak var btnCloseAskIntentionBox: cursorButton!
+    @IBOutlet weak var btnInfoTemporaryAllow: hoverInfoButton!
+    @IBOutlet weak var lblTitleAskIntention: NSTextField!
+    @IBOutlet weak var lblBtnConfirmReportBadAi: NSTextField!
+    @IBOutlet weak var lblBtnReportBadAi: NSTextField!
+    @IBOutlet weak var btnConvinceAgain: underLineButton!
     @IBOutlet weak var boxBellIconIntentionBox: NSBox!
     @IBOutlet weak var btnBelIconIntentionBox: cursorButton!
     @IBOutlet weak var btnBelIcon: cursorButton!
@@ -57,7 +63,7 @@ class popUpBlockConfirmVc: NSViewController {
     var lastBlockReasonFromAi = ""
     let maxProgressCount = 50
     var isAiWaiting = false
-    var isUrlBlockByAi:Bool = false
+    var isBlockByAi:Bool = false
     
     var isUserTypingIntention = false
     var isUserTypingTime:Date?
@@ -70,17 +76,22 @@ class popUpBlockConfirmVc: NSViewController {
     var domain = ""
     var payload:[String:Any]?
     var isFailedToGetResponse = false
+    var isBrowser = false
+    var aiReasonTrackingArea:NSTrackingArea?
+    var isItemCheckedByConvinceAi = false
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
+        btnConvinceAgain.title = "Let me convince the AI again" // tod text
         btnAllow.title = "Yes - just this time"
         btnBlock.title = "No - I was getting distracted"
         btnEditSettings.title = "Edit Settings"
         btnBlockAndAddToRelaxMode.title = "Block and save for Relax mode"
         btnBelIcon.toolTip = "Report bad AI blocking decision"
         btnBelIconIntentionBox.toolTip = "Report bad AI blocking decision"
-        
-        
+        lblBtnReportBadAi.stringValue = "Report Bad AI decision"
+        lblBtnConfirmReportBadAi.stringValue = "Report Bad AI decision"
+        lblTitleAskIntention.stringValue = "What do you want to do while you're here?"
         if let reportBadAIResponseVcInfo = configjson.value(forKey: "reportBadAIResponseVcInfo") as? NSDictionary{
             btnBelIcon.toolTip = reportBadAIResponseVcInfo.value(forKey: "title") as? String ?? btnBelIcon.toolTip
         }
@@ -93,7 +104,10 @@ class popUpBlockConfirmVc: NSViewController {
             btnEditSettings.title = popUpBlockConfirmVcInfo.value(forKey: "buttonEditSettingsText") as? String ?? btnEditSettings.title
             intentionText = popUpBlockConfirmVcInfo.value(forKey: "intentionText") as? String ?? intentionText
             btnBlockAndAddToRelaxMode.title = popUpBlockConfirmVcInfo.value(forKey: "buttonBlockAndAddToRelaxModeText") as? String ?? btnBlockAndAddToRelaxMode.title
+            lblBtnReportBadAi.stringValue = popUpBlockConfirmVcInfo.value(forKey: "reportBadAiTooltip") as? String ?? lblBtnReportBadAi.stringValue
+            lblTitleAskIntention.stringValue = popUpBlockConfirmVcInfo.value(forKey: "titleAskIntentionText") as? String ?? lblTitleAskIntention.stringValue
         }
+        lblBtnConfirmReportBadAi.stringValue = lblBtnReportBadAi.stringValue
         lblTitle.stringValue = titleText
         
         btnAllow.buttonColor = NSColor.white.cgColor
@@ -105,17 +119,44 @@ class popUpBlockConfirmVc: NSViewController {
         
         textViewIntension.delegate = self
         btnBelIcon.wantsLayer = true
+        btnConvinceAgain.isHidden = true
     }
     
 
+    func updateTrackingAreaIfNeeded() {
+        // Remove the old tracking area if it exists
+        if let trackingArea = self.aiReasonTrackingArea {
+            lblAi.removeTrackingArea(trackingArea)
+        }
+        // Recreate the tracking area with the updated bounds
+        createTrackingArea()
+    }
     
-    func resetView(blockedAppName:String, currentApp:NSRunningApplication?, url:String, script:String, isBlockApp:Bool, browser:BROWSER?,currentPid: pid_t?, tabTitle:String?, fullUrl:String, aiUrlBlockReason:String?, isTimeOut:Bool, isUrlBlockByAi:Bool, scoreForThisSiteApp: Double?, payload:[String:Any]?){
+    func createTrackingArea(){
+        aiReasonTrackingArea = NSTrackingArea.init(rect: lblAi.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
+        lblAi.addTrackingArea(aiReasonTrackingArea!)
+    }
+    
+    override func viewDidLayout() {
+        DispatchQueue.global().async {
+            DispatchQueue.main.async {
+                self.updateTrackingAreaIfNeeded()
+            }
+        }
+    }
+    func resetView(blockedAppName:String, currentApp:NSRunningApplication?, url:String, script:String, isBlockApp:Bool, browser:BROWSER?,currentPid: pid_t?, tabTitle:String?, fullUrl:String, aiBlockReason:String?, isTimeOut:Bool, isBlockByAi:Bool, scoreForThisSiteApp: Double?, payload:[String:Any]?, isBrowser:Bool){
         self.scoreForThisSiteApp = scoreForThisSiteApp
         if self.currentApp != nil{
             if self.currentApp == currentApp{
                 return;
             }
         }
+        btnCloseAskIntentionBox.isHidden = true
+        isItemCheckedByConvinceAi = false
+        btnInfoTemporaryAllow.isHidden = true
+        lblTitleAskIntention.isHidden = true
+        btnConvinceAgain.isHidden = true
+        self.isBrowser = isBrowser
         self.payload = nil
         checkBoxAllowDomain.state = .off
         isAiWaiting = false
@@ -131,7 +172,7 @@ class popUpBlockConfirmVc: NSViewController {
         boxAskIntention.isHidden = true
         isAskingConvinceAiIntention = false
         isShowingUseDistractingUrlFlow = false
-        
+        self.isBlockByAi = isBlockByAi
         if SettingsManagerObject.cuddlyModeProgressCount >= maxProgressCount{
             stackViewProgress.isHidden = true
         }else{
@@ -153,7 +194,6 @@ class popUpBlockConfirmVc: NSViewController {
         domain = ""
         
         if isAppBlocking{
-            boxBellIcon.isHidden = true
             boxAllowDomain.isHidden = true
             var blockTitle = titleText.replacingOccurrences(of: "<URL>", with: blockedAppName)
             blockTitle = blockTitle.replacingOccurrences(of: "<FOCUSTYPE>", with: currentRunningFocusModeName)
@@ -163,22 +203,84 @@ class popUpBlockConfirmVc: NSViewController {
             }else{
                 lblIntention.isHidden = true
             }
+            
+            if let currentTaskInToDoPlayer = getCurrentTaskInFocusMode(){
+                
+                var currentTaskText = "Current task is \"<TASK>\""
+                if let popUpBlockConfirmVcInfo = configjson.value(forKey: "popUpBlockConfirmVcInfo") as? NSDictionary{
+                    currentTaskText = popUpBlockConfirmVcInfo.value(forKey: "currentTaskText") as? String ?? currentTaskText
+                }
+                currentTaskText = currentTaskText.replacingOccurrences(of: "<TASK>", with: currentTaskInToDoPlayer)
+                if lblIntention.isHidden{
+                    lblIntention.stringValue = currentTaskText
+                    lblIntention.isHidden = false
+                }else{
+                    lblIntention.stringValue = lblIntention.stringValue + "\n\n" + currentTaskText
+                }
+            }
+
             lblTitle.stringValue = blockTitle
             lblAi.isHidden = true
             btnBlockAndAddToRelaxMode.isHidden = true
             
-            if SettingsManagerObject.isAiCheckUrlEnabled && !isBlockSuperDistractingFocusModeOn(){
+            if SettingsManagerObject.isAiCheckUrlEnabled && !isBlockSuperDistractingFocusModeOn() && !isBrowser{
+                boxBellIcon.isHidden = false
+                self.payload = payload
                 lblFocusAlignmentScore.isHidden = false
-                var focusAlignmentScoreText = "Your Focus alignment score is <SCORE>%"
-                if let popUpBlockConfirmVcInfo = configjson.value(forKey: "popUpBlockConfirmVcInfo") as? NSDictionary{
-                    focusAlignmentScoreText = popUpBlockConfirmVcInfo.value(forKey: "focusAlignmentScoreText") as? String ?? focusAlignmentScoreText
+                var focusAlignmentScoreText = ""
+                if let score = scoreForThisSiteApp{
+                    focusAlignmentScoreText = "AI relevance score for this app: <SCORE>%"
+                    if let popUpBlockConfirmVcInfo = configjson.value(forKey: "popUpBlockConfirmVcInfo") as? NSDictionary{
+                        focusAlignmentScoreText = popUpBlockConfirmVcInfo.value(forKey: "aiRelevanceScoreAppText") as? String ?? focusAlignmentScoreText
+                    }
+                    let aiScore = (score*100).rounded()
+                    focusAlignmentScoreText = focusAlignmentScoreText.replacingOccurrences(of: "<SCORE>", with: "\(aiScore)")
+                }else{
+                    focusAlignmentScoreText = "Your Focus alignment score is <SCORE>%"
+                    if let popUpBlockConfirmVcInfo = configjson.value(forKey: "popUpBlockConfirmVcInfo") as? NSDictionary{
+                        focusAlignmentScoreText = popUpBlockConfirmVcInfo.value(forKey: "focusAlignmentScoreText") as? String ?? focusAlignmentScoreText
+                    }
+                    focusAlignmentScoreText = focusAlignmentScoreText.replacingOccurrences(of: "<SCORE>", with: "\(currentFocusAlignmentScore)")
                 }
-                
-                focusAlignmentScoreText = focusAlignmentScoreText.replacingOccurrences(of: "<SCORE>", with: "\(currentFocusAlignmentScore)")
                 lblFocusAlignmentScore.stringValue = focusAlignmentScoreText
             }else{
+                boxBellIcon.isHidden = true
                 lblFocusAlignmentScore.isHidden = true
             }
+            
+            if SettingsManagerObject.isAiCheckUrlEnabled && !isBlockSuperDistractingFocusModeOn() && !isBrowser{
+                boxBellIcon.isHidden = false
+                lblAi.isHidden = false
+                if let aiBlockReason = aiBlockReason{
+                    isFailedToGetResponse = false
+                    lastBlockReasonFromAi = aiBlockReason
+                    self.lblAi.stringValue = aiBlockReason
+                }else{
+                    isFailedToGetResponse = true
+                    boxBellIcon.isHidden = true
+                    if isTimeOut{
+                        isAiWaiting = true
+                        var waitingAiText = "Waiting for AI decision..."
+                        if let popUpBlockConfirmVcInfo = configjson.value(forKey: "popUpBlockConfirmVcInfo") as? NSDictionary{
+                            waitingAiText = popUpBlockConfirmVcInfo.value(forKey: "waitingAiText") as? String ?? waitingAiText
+                        }
+                        self.lblAi.stringValue = waitingAiText
+                    }else{
+                        var urlNotVerifiedText = "The status of this app could not be verified."
+                        if let popUpBlockConfirmVcInfo = configjson.value(forKey: "popUpBlockConfirmVcInfo") as? NSDictionary{
+                            urlNotVerifiedText = popUpBlockConfirmVcInfo.value(forKey: "appNotVerifiedText") as? String ?? urlNotVerifiedText
+                        }
+                        self.lblAi.stringValue = urlNotVerifiedText
+                    }
+                    
+                }
+            }else{
+                lblAi.isHidden = true
+                boxBellIcon.isHidden = true
+            }
+            
+            
+            
         }else{
             domain = getDomainFromUrl(url: fullUrl)
             boxAllowDomain.isHidden = true 
@@ -209,32 +311,7 @@ class popUpBlockConfirmVc: NSViewController {
                 boxBellIcon.isHidden = true
                 lblFocusAlignmentScore.isHidden = true
             }
-            
-            
-            
-            
-            
-         // allow domain check box work
-//            let domain = getDomainFromUrl(url: fullUrl).lowercased()
-//            for oldUrl in arrAllowedUrlsInCuddlyModeCurrentFocus{
-//                var oldUrl = oldUrl
-//                if !oldUrl.lowercased().contains("http://") && !oldUrl.lowercased().contains("https://"){
-//                    oldUrl = "https://"+oldUrl
-//                }
-//                let oldDomain = getDomainFromUrl(url: oldUrl).lowercased()
-//                if domain == oldDomain{
-//                    boxAllowDomain.isHidden = false
-//                    var buttonAllowDomainText = "Allow all URLs from <DOMAIN> for this focus session"
-//                    if let popUpBlockConfirmVcInfo = configjson.value(forKey: "popUpBlockConfirmVcInfo") as? NSDictionary{
-//                        buttonAllowDomainText = popUpBlockConfirmVcInfo.value(forKey: "buttonAllowDomainText") as? String ?? buttonAllowDomainText
-//                    }
-//
-//                    lblCheckBoxAllowDomain.stringValue = buttonAllowDomainText.replacingOccurrences(of: "<DOMAIN>", with: domain)
-//                    break;
-//                }
-//            }
 
-            
             btnBlockAndAddToRelaxMode.isHidden = true
             
             
@@ -254,15 +331,29 @@ class popUpBlockConfirmVc: NSViewController {
                 lblIntention.isHidden = true
             }
 
+            if let currentTaskInToDoPlayer = getCurrentTaskInFocusMode(){
+                
+                var currentTaskText = "Current task is \"<TASK>\""
+                if let popUpBlockConfirmVcInfo = configjson.value(forKey: "popUpBlockConfirmVcInfo") as? NSDictionary{
+                    currentTaskText = popUpBlockConfirmVcInfo.value(forKey: "currentTaskText") as? String ?? currentTaskText
+                }
+                currentTaskText = currentTaskText.replacingOccurrences(of: "<TASK>", with: currentTaskInToDoPlayer)
+                if lblIntention.isHidden{
+                    lblIntention.stringValue = currentTaskText
+                    lblIntention.isHidden = false
+                }else{
+                    lblIntention.stringValue = lblIntention.stringValue + "\n\n" + currentTaskText
+                }
+            }
+            
             lblTitle.stringValue = blockTitle
-            self.isUrlBlockByAi = isUrlBlockByAi
             if SettingsManagerObject.isAiCheckUrlEnabled && !isBlockSuperDistractingFocusModeOn(){
                 boxBellIcon.isHidden = false
                 lblAi.isHidden = false
-                if let aiUrlBlockReason = aiUrlBlockReason{
+                if let aiBlockReason = aiBlockReason{
                     isFailedToGetResponse = false
-                    lastBlockReasonFromAi = aiUrlBlockReason
-                    self.lblAi.stringValue = aiUrlBlockReason
+                    lastBlockReasonFromAi = aiBlockReason
+                    self.lblAi.stringValue = aiBlockReason
                 }else{
                     isFailedToGetResponse = true
                     boxBellIcon.isHidden = true
@@ -291,45 +382,81 @@ class popUpBlockConfirmVc: NSViewController {
         
         self.currentApp = currentApp
         currentAppName = blockedAppName
-        startTimer(durationSeconds: 15)
-        
-        
-        
-        
-        if let dictionaryAllowedUrlsWithIntention = dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus[domain]{
-            if let alllowUrlEndTime = dictionaryAllowedUrlsWithIntention["endTime"] as? Date{
-                if Date().compare(alllowUrlEndTime) == .orderedDescending{//>
-                    // showBoxAgain
-                    showConvincedAiPopUpBox(allowedByConvinceAiAlready: true)
-                }
+        updateTrackingAreaIfNeeded()
+        startTimer(durationSeconds: 30)
+        hidePopUpFocusGoalConfirmationView()
+        hidePopUpAddNewFocusGoalView()
+        hidePopUpSaveThisTaskForLaterView()
+    }
+    
+    func hidePopUpFocusGoalConfirmationView(){
+        if popUpFocusGoalConfirmationVcObj != nil{
+            if self.view.subviews.contains(popUpFocusGoalConfirmationVcObj!.view){
+                popUpFocusGoalConfirmationVcObj!.view.removeFromSuperview()
             }
         }
     }
     
-    func gotResponseFromUrlSuccessfullyAfterPopupShown(reason:String?){
-        if SettingsManagerObject.isAiCheckUrlEnabled && !isBlockSuperDistractingFocusModeOn(){
-            boxBellIcon.isHidden = false
-            lblAi.isHidden = false
-            if let reason = reason{
-                isFailedToGetResponse = false
-                self.lblAi.stringValue = reason
-            }else{
-                isFailedToGetResponse = true
-                boxBellIcon.isHidden = true
-                var urlNotVerifiedText = "The status of this url could not be verified."
-                if let popUpBlockConfirmVcInfo = configjson.value(forKey: "popUpBlockConfirmVcInfo") as? NSDictionary{
-                    urlNotVerifiedText = popUpBlockConfirmVcInfo.value(forKey: "urlNotVerifiedText") as? String ?? urlNotVerifiedText
-                }
-                self.lblAi.stringValue = urlNotVerifiedText
+    func hidePopUpAddNewFocusGoalView(){
+        if popUpAddNewFocusGoalVcObj != nil{
+            if self.view.subviews.contains(popUpAddNewFocusGoalVcObj!.view){
+                popUpAddNewFocusGoalVcObj!.view.removeFromSuperview()
             }
-        }else{
-            lblAi.isHidden = true
-            boxBellIcon.isHidden = true
         }
     }
     
-    func showConvincedAiPopUpBox(allowedByConvinceAiAlready:Bool){
-        startTimer(durationSeconds: 15)
+    func hidePopUpSaveThisTaskForLaterView(){
+        if popUpSaveThisTaskForLaterVcObj != nil{
+            if self.view.subviews.contains(popUpSaveThisTaskForLaterVcObj!.view){
+                popUpSaveThisTaskForLaterVcObj!.view.removeFromSuperview()
+            }
+        }
+    }
+    
+    override func mouseEntered(with event: NSEvent) {
+        if event.trackingArea == aiReasonTrackingArea{
+            if boxAskIntention.isHidden == false{
+                return;
+            }
+            if popUpFocusGoalConfirmationVcObj != nil{
+                if self.view.subviews.contains(popUpFocusGoalConfirmationVcObj!.view){
+                    return;
+                }
+            }
+            if popUpAddNewFocusGoalVcObj != nil{
+                if self.view.subviews.contains(popUpAddNewFocusGoalVcObj!.view){
+                    return;
+                }
+            }
+            if popUpSaveThisTaskForLaterVcObj != nil{
+                if self.view.subviews.contains(popUpSaveThisTaskForLaterVcObj!.view){
+                    return;
+                }
+            }
+            showTooltip(sender: lblAi, msg: lblAi.stringValue, preferredEdge: .minX, maxWidthVal: 250)
+        }
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        if event.trackingArea == aiReasonTrackingArea{
+            closePopoverTooltipIfVisible()
+        }
+    }
+    
+    override func viewWillDisappear() {
+        closePopoverTooltipIfVisible()
+        hidePopUpFocusGoalConfirmationView()
+        hidePopUpAddNewFocusGoalView()
+        hidePopUpSaveThisTaskForLaterView()
+    }
+    
+    func showConvincedAiPopUpBox(allowedByConvinceAiAlready:Bool, reason:String){
+        startTimer(durationSeconds: 30)
+        btnCloseAskIntentionBox.isHidden = true
+        isUserTypingIntention = true
+        isUserTypingTime = Date()
+        lblTitleAskIntention.isHidden = true
+        btnInfoTemporaryAllow.isHidden = true
         if allowedByConvinceAiAlready{
             boxAskIntention.isHidden = false
             stackViewSetDurationToUse.isHidden = true
@@ -339,32 +466,83 @@ class popUpBlockConfirmVc: NSViewController {
             isShowingUseDistractingUrlFlow = false
             textViewIntension.enclosingScrollView?.isHidden = true
             boxBellIconIntentionBox.isHidden = false
-            var focusAlignmentScoreText = "AI relevance score for this site: <SCORE>%"
-            var stillDistractingTitle = "AI still thinks this site is distracting"
-            var stillDistractingDescription = "Focus Bear's AI still thinks <URL> isn't relevant for what you're trying to achieve. Are you sure you need it?"
-            if let popUpBlockConfirmVcInfo = configjson.value(forKey: "popUpBlockConfirmVcInfo") as? NSDictionary{
-                focusAlignmentScoreText = popUpBlockConfirmVcInfo.value(forKey: "aiRelevanceScoreText") as? String ?? focusAlignmentScoreText
-                stillDistractingTitle = popUpBlockConfirmVcInfo.value(forKey: "stillDistractingTitle") as? String ?? stillDistractingTitle
-                stillDistractingDescription = popUpBlockConfirmVcInfo.value(forKey: "stillDistractingDescription") as? String ?? stillDistractingDescription
+            isItemCheckedByConvinceAi = allowedByConvinceAiAlready
+            if isAppBlocking{
+                addLog(text: "[user-action] popUpBlockConfirmVc:- AIStillThinksAppDistracting")
+                var focusAlignmentScoreText = "AI relevance score for this app: <SCORE>%"
+                var stillDistractingTitle = "AI still thinks this app is distracting"
+                var stillDistractingDescription = "Focus Bear's AI still thinks <URL> isn't relevant for what you're trying to achieve. Are you sure you need it?"
+                var distractingForCurrentTaskDescription = "Focus Bear's AI still thinks <URL> isn't relevant for your current task \"<TASK>\". Are you sure you need it?"
+                if let popUpBlockConfirmVcInfo = configjson.value(forKey: "popUpBlockConfirmVcInfo") as? NSDictionary{
+                    stillDistractingDescription = popUpBlockConfirmVcInfo.value(forKey: "stillDistractingDescription") as? String ?? stillDistractingDescription
+                    focusAlignmentScoreText = popUpBlockConfirmVcInfo.value(forKey: "aiRelevanceScoreAppText") as? String ?? focusAlignmentScoreText
+                    stillDistractingTitle = popUpBlockConfirmVcInfo.value(forKey: "appStillDistractingTitle") as? String ?? stillDistractingTitle
+                    distractingForCurrentTaskDescription = popUpBlockConfirmVcInfo.value(forKey: "distractingForCurrentTaskDescription") as? String ?? distractingForCurrentTaskDescription
+                }
+                let score = scoreForThisSiteApp ?? 0
+                let aiScore = (score*100).rounded()
+                focusAlignmentScoreText = focusAlignmentScoreText.replacingOccurrences(of: "<SCORE>", with: "\(aiScore)")
+                
+                if reason.isEmpty{
+                    lblTitleIntention.stringValue = stillDistractingTitle + " \n\n" + focusAlignmentScoreText
+                }else{
+                    lblTitleIntention.stringValue = stillDistractingTitle + " \n\n" + reason + " \n\n" + focusAlignmentScoreText
+                }
+                
+                
+                if let currentTaskInToDoPlayer = getCurrentTaskInFocusMode(){
+                    distractingForCurrentTaskDescription = distractingForCurrentTaskDescription.replacingOccurrences(of: "<URL>", with: self.currentAppName)
+                    distractingForCurrentTaskDescription = distractingForCurrentTaskDescription.replacingOccurrences(of: "<TASK>", with: currentTaskInToDoPlayer)
+                    lblSubTitleIntention.stringValue = distractingForCurrentTaskDescription
+                }else{
+                    stillDistractingDescription = stillDistractingDescription.replacingOccurrences(of: "<URL>", with: self.currentAppName)
+                    lblSubTitleIntention.stringValue = stillDistractingDescription
+                }
+                
+            }else{
+                addLog(text: "[user-action] popUpBlockConfirmVc:- AIStillThinkSiteDistracting")
+                var focusAlignmentScoreText = "AI relevance score for this site: <SCORE>%"
+                var stillDistractingTitle = "AI still thinks this site is distracting"
+                var stillDistractingDescription = "Focus Bear's AI still thinks <URL> isn't relevant for what you're trying to achieve. Are you sure you need it?"
+                var distractingForCurrentTaskDescription = "Focus Bear's AI still thinks <URL> isn't relevant for your current task \"<TASK>\". Are you sure you need it?"
+                if let popUpBlockConfirmVcInfo = configjson.value(forKey: "popUpBlockConfirmVcInfo") as? NSDictionary{
+                    focusAlignmentScoreText = popUpBlockConfirmVcInfo.value(forKey: "aiRelevanceScoreText") as? String ?? focusAlignmentScoreText
+                    stillDistractingTitle = popUpBlockConfirmVcInfo.value(forKey: "stillDistractingTitle") as? String ?? stillDistractingTitle
+                    stillDistractingDescription = popUpBlockConfirmVcInfo.value(forKey: "stillDistractingDescription") as? String ?? stillDistractingDescription
+                    distractingForCurrentTaskDescription = popUpBlockConfirmVcInfo.value(forKey: "distractingForCurrentTaskDescription") as? String ?? distractingForCurrentTaskDescription
+                }
+                
+                let score = scoreForThisSiteApp ?? 0
+                let aiScore = (score*100).rounded()
+                focusAlignmentScoreText = focusAlignmentScoreText.replacingOccurrences(of: "<SCORE>", with: "\(aiScore)")
+                
+                if reason.isEmpty{
+                    lblTitleIntention.stringValue = stillDistractingTitle + " \n\n" + focusAlignmentScoreText
+                }else{
+                    lblTitleIntention.stringValue = stillDistractingTitle + " \n\n" + reason + " \n\n" + focusAlignmentScoreText
+                }
+                
+               
+                
+                if let currentTaskInToDoPlayer = getCurrentTaskInFocusMode(){
+                    distractingForCurrentTaskDescription = distractingForCurrentTaskDescription.replacingOccurrences(of: "<URL>", with: self.url)
+                    distractingForCurrentTaskDescription = distractingForCurrentTaskDescription.replacingOccurrences(of: "<TASK>", with: currentTaskInToDoPlayer)
+                    lblSubTitleIntention.stringValue = distractingForCurrentTaskDescription
+                }else{
+                    stillDistractingDescription = stillDistractingDescription.replacingOccurrences(of: "<URL>", with: self.url)
+                    lblSubTitleIntention.stringValue = stillDistractingDescription
+                }
+                
             }
-            let score = scoreForThisSiteApp ?? 0
-            let aiScore = (score*100).rounded()
-            focusAlignmentScoreText = focusAlignmentScoreText.replacingOccurrences(of: "<SCORE>", with: "\(aiScore)")
-            
-        
-            
-            lblTitleIntention.stringValue = stillDistractingTitle + " \n\n" + focusAlignmentScoreText
-            stillDistractingDescription = stillDistractingDescription.replacingOccurrences(of: "<URL>", with: self.url)
-            
-            lblSubTitleIntention.stringValue = stillDistractingDescription
-            
             btnConvince.title = buttonYesText
             btnCancel.title = buttonNoText
             btnConvince.buttonColor = buttonBgColor.cgColor
             btnCancel.buttonColor = NSColor.white.cgColor
             textViewIntension.string = ""
             textViewIntension.window?.makeFirstResponder(textViewIntension)
+            btnConvinceAgain.isHidden = false
         }else{
+            addLog(text: "[user-action] popUpBlockConfirmVc:- ConvinceAiwhyNecessary")
             boxAskIntention.isHidden = false
             stackViewSetDurationToUse.isHidden = true
             lblSubTitleIntention.isHidden = false
@@ -376,11 +554,16 @@ class popUpBlockConfirmVc: NSViewController {
             lblTitleIntention.stringValue = "Convince the AI why it's necessary"
             lblSubTitleIntention.stringValue = "Give more info to the AI to explain why you need to use this site"
             btnConvince.title = "Convince the AI"
-            
+            if isAppBlocking{
+                lblSubTitleIntention.stringValue = "Give more info to the AI to explain why you need to use this app"
+            }
             if let popUpBlockConfirmVcInfo = configjson.value(forKey: "popUpBlockConfirmVcInfo") as? NSDictionary{
                 lblTitleIntention.stringValue = popUpBlockConfirmVcInfo.value(forKey: "convinceAiTitle") as? String ?? lblTitleIntention.stringValue
                 lblSubTitleIntention.stringValue = popUpBlockConfirmVcInfo.value(forKey: "convinceAiDescription") as? String ?? lblSubTitleIntention.stringValue
                 btnConvince.title = popUpBlockConfirmVcInfo.value(forKey: "buttonConvinceText") as? String ?? btnConvince.title
+                if isAppBlocking{
+                    lblSubTitleIntention.stringValue = popUpBlockConfirmVcInfo.value(forKey: "appConvinceAiDescription") as? String ?? lblSubTitleIntention.stringValue
+                }
             }
             
             
@@ -390,14 +573,19 @@ class popUpBlockConfirmVc: NSViewController {
             
             textViewIntension.string = ""
             textViewIntension.window?.makeFirstResponder(textViewIntension)
+            btnConvinceAgain.isHidden = true
         }
     }
     
     
  
-    
+    var isSetIntentionFirstTime = false
     func showUseDistractingUrlFlow(isSetIntentionFirstTime:Bool){
-        startTimer(durationSeconds: 15)
+        addLog(text: "[user-action] popUpBlockConfirmVc:- showUseDistractingUrlFlow")
+        startTimer(durationSeconds: 30)
+        self.isSetIntentionFirstTime = isSetIntentionFirstTime
+        btnCloseAskIntentionBox.isHidden = false
+        lblTitleAskIntention.isHidden = false
         boxAskIntention.isHidden = false
         stackViewSetDurationToUse.isHidden = false
         lblSubTitleIntention.isHidden = false
@@ -407,42 +595,69 @@ class popUpBlockConfirmVc: NSViewController {
         textViewIntension.enclosingScrollView?.isHidden = false
         popupButtonMinutes.selectItem(at: 0)
         boxBellIconIntentionBox.isHidden = true
-        if isSetIntentionFirstTime{
-            textViewIntension.string = dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus[domain]?["convinceAiIntention"] as? String ?? ""
-            lblSubTitleIntention.isHidden = true
-        }else{
-            textViewIntension.string = ""
-            lblSubTitleIntention.isHidden = false
-            
-            let totalDurationSpent = dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus[domain]?["totalDurationSpent"] as? Int ?? 0
-            let time = getStringTimeFromSeconds(seconds:totalDurationSpent)
-            var timeSpentText = "Total time spent: <TIME>"
-            if let setIntentionBlockedUrlsVcInfo = configjson.value(forKey: "setIntentionBlockedUrlsVcInfo") as? NSDictionary{
-                timeSpentText = setIntentionBlockedUrlsVcInfo.value(forKey: "timeSpentText") as? String ?? timeSpentText
+        btnInfoTemporaryAllow.isHidden = false
+        if isAppBlocking && currentApp != nil{
+            let appNameLowercased = currentAppName.lowercased()
+            if isSetIntentionFirstTime{
+                textViewIntension.string = dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus[appNameLowercased]?["convinceAiIntention"] as? String ?? ""
+                lblSubTitleIntention.isHidden = true
+            }else{
+                textViewIntension.string = ""
+                lblSubTitleIntention.isHidden = false
+                
+                let totalDurationSpent = dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus[appNameLowercased]?["totalDurationSpent"] as? Int ?? 0
+                let time = getStringTimeFromSeconds(seconds:totalDurationSpent)
+                var timeSpentText = "Total time spent: <TIME>"
+                if let setIntentionBlockedUrlsVcInfo = configjson.value(forKey: "setIntentionBlockedUrlsVcInfo") as? NSDictionary{
+                    timeSpentText = setIntentionBlockedUrlsVcInfo.value(forKey: "timeSpentText") as? String ?? timeSpentText
+                }
+                timeSpentText = timeSpentText.replacingOccurrences(of: "<TIME>", with: "\(time)")
+                lblSubTitleIntention.stringValue = timeSpentText
             }
-            timeSpentText = timeSpentText.replacingOccurrences(of: "<TIME>", with: "\(time)")
-            lblSubTitleIntention.stringValue = timeSpentText
+            btnCancel.title = "Block this app"
+            if let popUpBlockConfirmVcInfo = configjson.value(forKey: "popUpBlockConfirmVcInfo") as? NSDictionary{
+                btnCancel.title = popUpBlockConfirmVcInfo.value(forKey: "buttonBlockAppText") as? String ?? btnCancel.title
+            }
+        }else{
+            if isSetIntentionFirstTime{
+                textViewIntension.string = dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus[domain]?["convinceAiIntention"] as? String ?? ""
+                lblSubTitleIntention.isHidden = true
+            }else{
+                textViewIntension.string = ""
+                lblSubTitleIntention.isHidden = false
+                
+                let totalDurationSpent = dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus[domain]?["totalDurationSpent"] as? Int ?? 0
+                let time = getStringTimeFromSeconds(seconds:totalDurationSpent)
+                var timeSpentText = "Total time spent: <TIME>"
+                if let setIntentionBlockedUrlsVcInfo = configjson.value(forKey: "setIntentionBlockedUrlsVcInfo") as? NSDictionary{
+                    timeSpentText = setIntentionBlockedUrlsVcInfo.value(forKey: "timeSpentText") as? String ?? timeSpentText
+                }
+                timeSpentText = timeSpentText.replacingOccurrences(of: "<TIME>", with: "\(time)")
+                lblSubTitleIntention.stringValue = timeSpentText
+            }
+            btnCancel.title = "Block this page"
+            if let popUpBlockConfirmVcInfo = configjson.value(forKey: "popUpBlockConfirmVcInfo") as? NSDictionary{
+                btnCancel.title = popUpBlockConfirmVcInfo.value(forKey: "buttonBlockUrlText") as? String ?? btnCancel.title
+            }
+            
         }
+        lblSelectMinutes.stringValue = "How long do you need?"
+        lblTitleIntention.stringValue = "Temporarily unlock"
+        btnConvince.title = "Temporary access"
         
-        lblSelectMinutes.stringValue = "Select minutes to use this site"
-        if let setIntentionBlockedUrlsVcInfo = configjson.value(forKey: "setIntentionBlockedUrlsVcInfo") as? NSDictionary{
-            lblSelectMinutes.stringValue = setIntentionBlockedUrlsVcInfo.value(forKey: "selectMinutesText") as? String ?? lblSelectMinutes.stringValue
-        }
-        
-        lblTitleIntention.stringValue = "What do you want to achieve during your time here?"
-        btnConvince.title = "Set Intention"
         
         if let popUpBlockConfirmVcInfo = configjson.value(forKey: "popUpBlockConfirmVcInfo") as? NSDictionary{
             lblTitleIntention.stringValue = popUpBlockConfirmVcInfo.value(forKey: "setIntentionText") as? String ?? lblTitleIntention.stringValue
             btnConvince.title = popUpBlockConfirmVcInfo.value(forKey: "buttonSetIntentionText") as? String ?? btnConvince.title
+            lblSelectMinutes.stringValue = popUpBlockConfirmVcInfo.value(forKey: "titleSelectMinutesToUse") as? String ?? lblSelectMinutes.stringValue
         }
         
-        btnCancel.title = buttonCancelText
+        
         btnConvince.buttonColor = buttonBgColor.cgColor
         btnCancel.buttonColor = NSColor.white.cgColor
         textViewIntension.string = ""
         textViewIntension.window?.makeFirstResponder(textViewIntension)
-        
+        btnConvinceAgain.isHidden = true
     }
     
     
@@ -542,34 +757,20 @@ class popUpBlockConfirmVc: NSViewController {
                     }
                 }
             }
-//            let blurWindowFrame = blurWcObj?.window?.frame
-//            var midX = blurWindowFrame?.midX ?? 0
-//            var midY = blurWindowFrame?.midY ?? 0
-//            let width = self.view.frame.width
-//            let height = self.view.frame.height
-//            
-//            if !(blurWcObj?.window?.isVisible ?? false){
-//                let screenFrame = NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 1920, height: 1080)
-//                midX = screenFrame.width / 2
-//                midY = screenFrame.height / 2
-//            }
-//            self.view.window?.setFrame(NSRect(x: (midX-(width/2)), y: (midY-(height/2)), width: width, height: height), display: true)
-            
-            
-//            self.view.window?.setFrameOrigin(NSPoint(x: (midX-(width/2)), y: (midY-(height/2))))
+
             if self.totalDuration <= self.currentTimer {
-                addLog(text: "popUpBlockConfirmVc:- 15 seconds counter completed")
+                addLog(text: "popUpBlockConfirmVc:- 30 seconds counter completed")
                 self.timer?.invalidate()
                 self.view.window?.close()
                 blurWcObj?.window?.close()
                 if self.currentApp != nil && self.isAppBlocking{
-                    appdelegate?.focusBlockUnwantedApp(runningApp: self.currentApp!, appName: self.currentAppName, showNotification: false)
+                    appdelegate?.focusBlockUnwantedApp(runningApp: self.currentApp!, appName: self.currentAppName, showNotification: false, isAppBlockByAi: self.isBlockByAi)
                     self.currentApp = nil
                 }else{
                     if SettingsManagerObject.isAiCheckUrlEnabled{
-                        appdelegate?.focusBlockUnwantedUrl(script: self.script, url: self.url, lastBlockReasonFromAi: self.lastBlockReasonFromAi, browser: self.browser, isUrlBlockByAi: self.isUrlBlockByAi, blockReason:"")
+                        appdelegate?.focusBlockUnwantedUrl(script: self.script, url: self.url, lastBlockReasonFromAi: self.lastBlockReasonFromAi, browser: self.browser, isUrlBlockByAi: self.isBlockByAi, blockReason:"")
                     }else{
-                        appdelegate?.focusBlockUnwantedUrl(script: self.script, url: self.url, lastBlockReasonFromAi: nil, browser: self.browser, isUrlBlockByAi: self.isUrlBlockByAi, blockReason:"")
+                        appdelegate?.focusBlockUnwantedUrl(script: self.script, url: self.url, lastBlockReasonFromAi: nil, browser: self.browser, isUrlBlockByAi: self.isBlockByAi, blockReason:"")
                     }
                     
                 }
@@ -578,6 +779,24 @@ class popUpBlockConfirmVc: NSViewController {
     }
     
     @objc func performTimerCount() {
+        if popUpFocusGoalConfirmationVcObj != nil{
+            if self.view.subviews.contains(popUpFocusGoalConfirmationVcObj!.view){
+                return;
+            }
+        }
+        
+        if popUpAddNewFocusGoalVcObj != nil{
+            if self.view.subviews.contains(popUpAddNewFocusGoalVcObj!.view){
+                return;
+            }
+        }
+        
+        if popUpSaveThisTaskForLaterVcObj != nil{
+            if self.view.subviews.contains(popUpSaveThisTaskForLaterVcObj!.view){
+                return;
+            }
+        }
+        
         if isUserTypingIntention{
             if let isUserTypingTime = isUserTypingTime{
                 let diffSeconds = Calendar.current.dateComponents([.second], from: isUserTypingTime, to: Date()).second ?? 0
@@ -634,7 +853,7 @@ class popUpBlockConfirmVc: NSViewController {
         addLog(text: "Showing preferences")
         if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
             tabview.selectedTabViewItemIndex = preferencesFocusModesIndex 
-            if shouldAskPassword() && shouldShowPassword{
+            if isPasswordRequireInOpenSettings() && shouldShowPassword{
                 tabview.view.addSubview(getEnterPasswordVcObjForPreferences().view)
                 tabview.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
                 getEnterPasswordVcObjForPreferences().parentVc = nil
@@ -655,37 +874,78 @@ class popUpBlockConfirmVc: NSViewController {
     @IBAction func btnBlockAppClicked(_ sender: Any) {
         addLog(text: "[user-action] popUpBlockConfirmVc:- btnBlockAppClicked")
         allApiObject.capturePosthog(event: "block-popup-no-i-was-getting-distracted-clicked", metadata: [:])
-        blockClicked()
+        showPopUpSaveThisTaskForLaterView()
     }
     
-   
+    func showPopUpFocusGoalConfirmationView(){
+        addLog(text: "[user-action] popUpBlockConfirmVc:- showPopUpFocusGoalConfirmationView")
+        self.view.addSubview(getPopUpFocusGoalConfirmationVcObject().view)
+        self.view.addConstraints(subView: getPopUpFocusGoalConfirmationVcObject().view)
+        let currentTaskInToDoPlayer = getCurrentTaskInFocusMode()
+        getPopUpFocusGoalConfirmationVcObject().resetData(goal: whatToAchieveInFocusBlock, task: currentTaskInToDoPlayer, isApp: isAppBlocking)
+    }
+    
+    func showoPopUpAddNewFocusGoalView(){
+        addLog(text: "[user-action] popUpBlockConfirmVc:- showoPopUpAddNewFocusGoalView")
+        self.view.addSubview(getPopUpAddNewFocusGoalVcObject().view)
+        self.view.addConstraints(subView: getPopUpAddNewFocusGoalVcObject().view)
+        let currentTaskInToDoPlayer = getCurrentTaskInFocusMode()
+        getPopUpAddNewFocusGoalVcObject().resetData(intention: whatToAchieveInFocusBlock, task: currentTaskInToDoPlayer)
+    }
+    
+    func showPopUpSaveThisTaskForLaterView(){
+        addLog(text: "[user-action] popUpBlockConfirmVc:- showPopUpSaveThisTaskForLaterView")
+        self.view.addSubview(getPopUpSaveThisTaskForLaterVcObject().view)
+        self.view.addConstraints(subView: getPopUpSaveThisTaskForLaterVcObject().view)
+        var itemToShowasTask = ""
+        if isAppBlocking{
+            itemToShowasTask = self.currentAppName
+        }else{
+            itemToShowasTask = self.fullUrl
+        }
+        getPopUpSaveThisTaskForLaterVcObject().resetData(url: itemToShowasTask)
+    }
+    
     @IBAction func btnAllowAppClicked(_ sender: Any) {
         addLog(text: "[user-action] popUpBlockConfirmVc:- btnAllowAppClicked")
         if self.currentApp != nil && isAppBlocking{
-            arrAllowedAppsInCuddlyModeCurrentFocus.append(currentApp!)
-            allApiObject.capturePosthog(event: "block-popup-yes-just-this-time-clicked", metadata: [:])
-            if let browser = self.browser{
-                if let title = getActiveTabTitleOf(browser: browser)?.lowercased(){
-                    arrAllowedTabTitlesInCuddlyModeCurrentFocus.append(title)
+            
+            if SettingsManagerObject.isAiCheckUrlEnabled && !isBlockSuperDistractingFocusModeOn() && !isFailedToGetResponse && !isBrowser{
+//                showConvincedAiPopUpBox(allowedByConvinceAiAlready:false, reason: "")
+//                isUserTypingIntention = true
+//                isUserTypingTime = Date()
+                
+
+                showPopUpFocusGoalConfirmationView()
+                
+                
+            }else{
+                arrAllowedAppsInCuddlyModeCurrentFocus.append(currentApp!)
+                allApiObject.capturePosthog(event: "block-popup-yes-just-this-time-clicked", metadata: [:])
+                if let browser = self.browser{
+                    if let title = getActiveTabTitleOf(browser: browser)?.lowercased(){
+                        arrAllowedTabTitlesInCuddlyModeCurrentFocus.append(title)
+                    }
                 }
+                
+                self.timer?.invalidate()
+                self.view.window?.close()
+                blurWcObj?.window?.close()
+                
+                if stackViewProgress.isHidden == false{
+                    SettingsManagerObject.isSettingsChanged = true
+                    SettingsManagerObject.cuddlyModeProgressCount = SettingsManagerObject.cuddlyModeProgressCount + 1
+                    SettingsManagerObject.putUserLocalDeviceSettings()
+                }
+                activateCurrentAppAgain()
             }
-            
-            self.timer?.invalidate()
-            self.view.window?.close()
-            blurWcObj?.window?.close()
-            
-            if stackViewProgress.isHidden == false{
-                SettingsManagerObject.isSettingsChanged = true
-                SettingsManagerObject.cuddlyModeProgressCount = SettingsManagerObject.cuddlyModeProgressCount + 1
-                SettingsManagerObject.putUserLocalDeviceSettings()
-            }
-            
             
         }else{
             if SettingsManagerObject.isAiCheckUrlEnabled && !isBlockSuperDistractingFocusModeOn() && !isFailedToGetResponse{
-                showConvincedAiPopUpBox(allowedByConvinceAiAlready:false)
-                isUserTypingIntention = true
-                isUserTypingTime = Date()
+//                showConvincedAiPopUpBox(allowedByConvinceAiAlready:false, reason: "")
+//                isUserTypingIntention = true
+//                isUserTypingTime = Date()
+                showPopUpFocusGoalConfirmationView()
             }else{
                 arrAllowedUrlsInCuddlyModeCurrentFocus.append(url)
                 if checkBoxAllowDomain.state == .on{
@@ -703,23 +963,11 @@ class popUpBlockConfirmVc: NSViewController {
                     SettingsManagerObject.cuddlyModeProgressCount = SettingsManagerObject.cuddlyModeProgressCount + 1
                     SettingsManagerObject.putUserLocalDeviceSettings()
                 }
+                activateCurrentAppAgain()
             }
             
         }
 
-        //
-        //        if UserDefaults.standard.object(forKey: kUserdefaultsAlertShownFirstTempAllow)  == nil{
-        //            UserDefaults.standard.set(true, forKey: kUserdefaultsAlertShownFirstTempAllow)
-        //            let alert = NSAlert()
-        //            alert.setSharingType()
-        //            alert.messageText = "Allowed! Heads up: it might be a little annoying at first to have to keep allowing sites/apps but within a few days, you'll have taught Focus Bear what apps and websites are productive."
-        //            if let popUpBlockConfirmVcInfo = configjson.value(forKey: "popUpBlockConfirmVcInfo") as? NSDictionary{
-        //                alert.messageText = popUpBlockConfirmVcInfo.value(forKey: "firstTempItemAllowText") as? String ?? alert.messageText
-        //            }
-        //
-        //            alert.addButton(withTitle: buttonOkText)
-        //            alert.runModal()
-        //        }
     }
     
     func closeWindow(){
@@ -727,6 +975,32 @@ class popUpBlockConfirmVc: NSViewController {
         self.timer?.invalidate()
         self.view.window?.close()
         blurWcObj?.window?.close()
+    }
+    
+    func closeWindowNeedToCheckAppUrlAgain(){
+//        let gg = dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus[domain]
+        if isItemCheckedByConvinceAi{
+            print("checked")
+            // if convince ai is checked once then . check url from ai not call again because convince ai data locally stored in dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus and this prevent it to check url from ai again untill user convince ai again. so doing this to check it again from ai 
+            if isAppBlocking{
+                let key = currentAppName.lowercased()
+                dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus.removeValue(forKey: key)
+            }else{
+                let key = domain.lowercased()
+                dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus.removeValue(forKey: domain)
+            }
+            
+        }
+        
+        self.timer?.invalidate()
+        self.view.window?.close()
+        blurWcObj?.window?.close()
+        
+        setFocusBearIconToNormal()
+        focusModeCloseCurrentAppForAlignmentScore()
+        appdelegate!.timerAllowUrlForActivity?.invalidate()
+        appdelegate!.timerAllowUrl?.invalidate()
+        currentBrowserUrlForAi = ""
     }
     
     @IBAction func btnInfoProgressClicked(_ sender: Any) {
@@ -739,13 +1013,13 @@ class popUpBlockConfirmVc: NSViewController {
     
     func blockClicked(){
         if self.currentApp != nil && isAppBlocking{
-            appdelegate?.focusBlockUnwantedApp(runningApp: self.currentApp!, appName: self.currentAppName, showNotification: false)
+            appdelegate?.focusBlockUnwantedApp(runningApp: self.currentApp!, appName: self.currentAppName, showNotification: false, isAppBlockByAi: self.isBlockByAi)
             self.currentApp = nil
         }else{
             if SettingsManagerObject.isAiCheckUrlEnabled{
-                appdelegate?.focusBlockUnwantedUrl(script: self.script, url: self.url, lastBlockReasonFromAi: self.lastBlockReasonFromAi, browser: browser, isUrlBlockByAi: self.isUrlBlockByAi, blockReason:"")
+                appdelegate?.focusBlockUnwantedUrl(script: self.script, url: self.url, lastBlockReasonFromAi: self.lastBlockReasonFromAi, browser: browser, isUrlBlockByAi: self.isBlockByAi, blockReason:"")
             }else{
-                appdelegate?.focusBlockUnwantedUrl(script: self.script, url: self.url, lastBlockReasonFromAi: nil, browser: browser, isUrlBlockByAi: self.isUrlBlockByAi, blockReason:"")
+                appdelegate?.focusBlockUnwantedUrl(script: self.script, url: self.url, lastBlockReasonFromAi: nil, browser: browser, isUrlBlockByAi: self.isBlockByAi, blockReason:"")
             }
 
         }
@@ -770,44 +1044,117 @@ class popUpBlockConfirmVc: NSViewController {
     }
     
     @IBAction func btnConvinceClicked(_ sender: Any) {
-        if isAskingConvinceAiIntention{
-            checkUrlFromAiWithNewIntention(url: url, domain:domain, tab_title: tabTitle ?? "", intentionForThisSite: textViewIntension.string, currentRunningFocusModeName: currentRunningFocusModeName, shouldChangeCuddlyModeProgressCount: !stackViewProgress.isHidden, fullUrl:fullUrl)
-            self.timer?.invalidate()
-            self.view.window?.close()
-            blurWcObj?.window?.close()
-            boxAskIntention.isHidden = true
-        }else if !isShowingUseDistractingUrlFlow{
-            showUseDistractingUrlFlow(isSetIntentionFirstTime: true)
-        }else{
-            // set intention work (use distracting site for duration work)
-            let seconds = arrSeconds[popupButtonMinutes.indexOfSelectedItem]
-            let endTime = Calendar.current.date(byAdding: .second, value: seconds, to: Date()) ?? Date()
-            var totalSeconds = dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus[domain]?["totalDurationSpent"] as? Int ?? 0
-            totalSeconds += seconds
-            
-            dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus[domain]?["totalDurationSpent"] = totalSeconds
-            dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus[domain]?["userSetIntention"] = textViewIntension.string
-            dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus[domain]?["endTime"] = endTime
-            self.timer?.invalidate()
-            self.view.window?.close()
-            blurWcObj?.window?.close()
-            boxAskIntention.isHidden = true
-            
-            
-            if stackViewProgress.isHidden == false{
-                SettingsManagerObject.isSettingsChanged = true
-                SettingsManagerObject.cuddlyModeProgressCount = SettingsManagerObject.cuddlyModeProgressCount + 1
-                SettingsManagerObject.putUserLocalDeviceSettings()
+        if isAppBlocking && currentApp != nil{
+            let appNameLowercased = currentAppName.lowercased()
+            if isAskingConvinceAiIntention{
+                let currentRunningFocusModeName = currentRunningFocusType["name"] as? String ?? ""
+                var currentHabitName:String?
+                if isAnyAllowedFocusModeActivityRunning{
+                    if currentHabitPlaying != nil{
+                        currentHabitName = currentHabitPlaying?.name
+                    }else if currentActivityPlaying != nil{
+                        currentHabitName = currentActivityPlaying?.name
+                    }
+                }
+                checkAppFromAiWithNewIntention(appName: currentAppName, intentionForThisApp: textViewIntension.string, currentRunningFocusModeName: currentRunningFocusModeName, shouldChangeCuddlyModeProgressCount: !stackViewProgress.isHidden, runningApp: currentApp!, currentHabitName: currentHabitName)
+                self.timer?.invalidate()
+                self.view.window?.close()
+                blurWcObj?.window?.close()
+                boxAskIntention.isHidden = true
+                activateCurrentAppAgain()
+                
+            }else if !isShowingUseDistractingUrlFlow{
+                showUseDistractingUrlFlow(isSetIntentionFirstTime: true)
+            }else{
+                // set intention work (use distracting site for duration work)
+                let seconds = arrSeconds[popupButtonMinutes.indexOfSelectedItem]
+                let endTime = Calendar.current.date(byAdding: .second, value: seconds, to: Date()) ?? Date()
+                var totalSeconds = dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus[appNameLowercased]?["totalDurationSpent"] as? Int ?? 0
+                totalSeconds += seconds
+                
+                dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus[appNameLowercased]?["totalDurationSpent"] = totalSeconds
+                dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus[appNameLowercased]?["userSetIntention"] = textViewIntension.string
+                dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus[appNameLowercased]?["endTime"] = endTime
+                self.timer?.invalidate()
+                self.view.window?.close()
+                blurWcObj?.window?.close()
+                boxAskIntention.isHidden = true
+
+                if stackViewProgress.isHidden == false{
+                    SettingsManagerObject.isSettingsChanged = true
+                    SettingsManagerObject.cuddlyModeProgressCount = SettingsManagerObject.cuddlyModeProgressCount + 1
+                    SettingsManagerObject.putUserLocalDeviceSettings()
+                }
+                activateCurrentAppAgain()
             }
-            
+        }else{
+            if isAskingConvinceAiIntention{
+                let currentRunningFocusModeName = currentRunningFocusType["name"] as? String ?? ""
+                var currentHabitName:String?
+                if isAnyAllowedFocusModeActivityRunning{
+                    if currentHabitPlaying != nil{
+                        currentHabitName = currentHabitPlaying?.name
+                    }else if currentActivityPlaying != nil{
+                        currentHabitName = currentActivityPlaying?.name
+                    }
+                }
+                checkUrlFromAiWithNewIntention(url: url, domain:domain, tab_title: tabTitle ?? "", intentionForThisSite: textViewIntension.string, currentRunningFocusModeName: currentRunningFocusModeName, shouldChangeCuddlyModeProgressCount: !stackViewProgress.isHidden, fullUrl:fullUrl, currentHabitName: currentHabitName)
+                self.timer?.invalidate()
+                self.view.window?.close()
+                blurWcObj?.window?.close()
+                boxAskIntention.isHidden = true
+                activateCurrentAppAgain()
+            }else if !isShowingUseDistractingUrlFlow{
+                showUseDistractingUrlFlow(isSetIntentionFirstTime: true)
+            }else{
+                // set intention work (use distracting site for duration work)
+                let seconds = arrSeconds[popupButtonMinutes.indexOfSelectedItem]
+                let endTime = Calendar.current.date(byAdding: .second, value: seconds, to: Date()) ?? Date()
+                var totalSeconds = dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus[domain]?["totalDurationSpent"] as? Int ?? 0
+                totalSeconds += seconds
+                
+                dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus[domain]?["totalDurationSpent"] = totalSeconds
+                dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus[domain]?["userSetIntention"] = textViewIntension.string
+                dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus[domain]?["endTime"] = endTime
+                self.timer?.invalidate()
+                self.view.window?.close()
+                blurWcObj?.window?.close()
+                boxAskIntention.isHidden = true
+
+                if stackViewProgress.isHidden == false{
+                    SettingsManagerObject.isSettingsChanged = true
+                    SettingsManagerObject.cuddlyModeProgressCount = SettingsManagerObject.cuddlyModeProgressCount + 1
+                    SettingsManagerObject.putUserLocalDeviceSettings()
+                }
+                activateCurrentAppAgain()
+            }
+        }
+    }
+    
+    func activateCurrentAppAgain(){
+        DispatchQueue.global().async{
+            DispatchQueue.main.async {
+                NSApplication.shared.deactivate()
+                if let lastApp = self.currentApp {
+                    lastApp.activate(options: [.activateAllWindows, .activateIgnoringOtherApps])
+                }else if let lastApp = lastFrontMostApplication{
+                    lastApp.activate(options: [.activateAllWindows, .activateIgnoringOtherApps])
+                }
+            }
         }
     }
     
     @IBAction func btnCancelClicked(_ sender: Any) {
+        addLog(text: "[user-action] btnCancelClicked")
         if isAskingConvinceAiIntention{
             boxAskIntention.isHidden = true
         }else{
-            blockClicked()
+            if !isShowingUseDistractingUrlFlow{
+                allApiObject.capturePosthog(event: "block-no-clicked", metadata: [:])
+                showPopUpSaveThisTaskForLaterView()
+            }else{
+                blockClicked()
+            }
         }
     }
     
@@ -827,11 +1174,38 @@ class popUpBlockConfirmVc: NSViewController {
         focusModeCloseCurrentAppForAlignmentScore()
         appdelegate!.timerAllowUrlForActivity?.invalidate()
         appdelegate!.timerAllowUrl?.invalidate()
-        appdelegate!.currentBrowserUrlForAi = ""
-//        appdelegate!.timerForCheckUrlFromAiTimeOut?.invalidate()
-        
-        
-        showReportBadAIResponseWindow(url: fullUrl, payload: payload)
+        currentBrowserUrlForAi = ""
+        if isAppBlocking && currentApp != nil{
+            showReportBadAIResponseWindow(url: nil, app: currentAppName, payload: payload)
+        }else{
+            showReportBadAIResponseWindow(url: fullUrl, app: nil, payload: payload)
+        }
+    
+    }
+    
+    @IBAction func btnConvinceAgainClicked(_ sender: Any) {
+//        showConvincedAiPopUpBox(allowedByConvinceAiAlready: false, reason: "")
+        addLog(text: "[user-action] btnConvinceAgainClicked")
+        showPopUpFocusGoalConfirmationView()
+    }
+    
+    
+    @IBAction func btnInfoTemporaryAllowClicked(_ sender: Any) {
+        var msg = "This site’s been flagged as a distraction 🧠❗You can unlock it for now — just know it’ll be logged as non-productive time in your report."
+        if let popUpBlockConfirmVcInfo = configjson.value(forKey: "popUpBlockConfirmVcInfo") as? NSDictionary{
+            msg = popUpBlockConfirmVcInfo.value(forKey: "infoTemporaryAllow") as? String ?? msg
+        }
+        showTooltip(sender: btnInfoTemporaryAllow, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
+    }
+    
+    @IBAction func btnCloseAskIntentionBoxClicked(_ sender: Any) {
+        addLog(text: "[user-action] btnCloseAskIntentionBoxClicked")
+        btnCloseAskIntentionBox.isHidden = true
+        if self.isSetIntentionFirstTime{
+            showConvincedAiPopUpBox(allowedByConvinceAiAlready: true, reason: lastBlockReasonFromAi)
+        }else{
+            btnCancelClicked(self)
+        }
     }
 }
 

@@ -18,6 +18,11 @@ class focusBearModeVc: NSViewController {
     @IBOutlet weak var lblDescriptionCuddlyBear: NSTextField!
     @IBOutlet weak var radioBtnCuddlyBear: NSButton!
     @IBOutlet weak var lblTitleAppMode: NSTextField!
+    
+    
+    let relaxAfterFocusModeItemVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingToggleItemVc")) as? settingToggleItemVc
+    
+//    Allow relaxing at the end of a focus session"
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
@@ -40,6 +45,20 @@ class focusBearModeVc: NSViewController {
             radioBtnGrizzlyBear.title = preferencesInfo.value(forKey: "checkBoxGrizzlyBearText") as? String ?? radioBtnGrizzlyBear.title
             lblDescriptionGrizzlyBear.stringValue = preferencesInfo.value(forKey: "descriptionGrizzlyBearText") as? String ?? lblDescriptionGrizzlyBear.stringValue
         }
+        
+//        
+//        stackView.addView(relaxAfterFocusModeItemVcObj!.view, in: .bottom)
+//        relaxAfterFocusModeItemVcObj?.lblTitle.stringValue = checkBoxShowDockIconText
+//        relaxAfterFocusModeItemVcObj?.lblSubTitle.isHidden = true
+//        relaxAfterFocusModeItemVcObj?.delegate = self
+//        relaxAfterFocusModeItemVcObj?.toolTip = ui_ShowDockIcon
+//
+        
+        
+        
+        
+        
+        
         
         arrForSearchFromSettings.append(["title": lblTitleAppMode.stringValue, "tabId": idFocusBearMode, "object": bgBox as Any])
         arrForSearchFromSettings.append(["title": radioBtnCuddlyBear.title, "tabId": idFocusBearMode, "object": bgBox as Any])

@@ -3,7 +3,7 @@
 //  Focus Bear
 //
 //  Created by Prashant Sawnani on 03/07/24.
-//  Copyright © 2024 Focus Bear. All rights reserved.
+//  Copyright © 2025 Focus Bear. All rights reserved.
 //
 
 
@@ -40,6 +40,8 @@ var kUserdefaultsBeginMorningHabitClickedDate = "kUserdefaultsBeginMorningHabitC
 var kUserdefaultsBeginEveningHabitClickedDate = "kUserdefaultsBeginEveningHabitClickedDate"
 
 var kUserdefaultsFirefoxPermissionShown = "kUserdefaultsFirefoxPermissionShown"
+var kUserdefaultsSigmaOSPermissionShown = "kUserdefaultsSigmaOSPermissionShown"
+
 var kUserdefaultsAllBrowsersPermissionInfo = "kUserdefaultsAllBrowsersPermissionInfo"
 
 var kUserdefaultsBrowsersPermissionsSetByUser = "kUserdefaultsBrowsersPermissionsSetByUser"
@@ -175,7 +177,7 @@ var kUserdefaultsDontShowConfirmGeekModeAlert = "kUserdefaultsDontShowConfirmGee
 var kUserDefaultsOpenTodoPlayerFirstTime = "kUserDefaultsOpenTodoPlayerFirstTime"
 
 var kUserDefaultsHideAppModeOption = "kUserDefaultsHideAppModeOption"
-var kUserDefaultsHideShowBrainDumpOption = "kUserDefaultsHideShowBrainDumpOption"
+//var kUserDefaultsHideShowBrainDumpOption = "kUserDefaultsHideShowBrainDumpOption"
 
 
 var kUserDefaultsBlockPageTourShowed = "kUserDefaultsBlockPageTourShowed"
@@ -199,7 +201,13 @@ var kUserDefaultsSelectedOccupationForPosthogKey = "kUserDefaultsSelectedOccupat
 var kUserDefaultsCareFactorHabitsForPosthogKey = "kUserDefaultsCareFactorHabits"
 
 
-let kUserDefaultsLastNudgeScoreWindowXPoisition = "nudgeScoreWindowXPoisition"
+//let kUserDefaultsLastNudgeScoreWindowXPoisition = "nudgeScoreWindowXPoisition"
 
 let kUserDefaultsLastUserEmailBeforeLogout = "kUserDefaultsLastUserEmailBeforeLogout"
 let kUserDefaultsLastUserLoginWithGoogle = "kUserDefaultsLastUserLoginWithGoogle"
+let kUserDefaultsAppRestartedNormally = "kUserDefaultsAppRestartedNormally"
+
+var kUserdefaultsLastShutdownAbortedDate = "kUserdefaultsLastShutdownAbortedDate"
+
+var kUserdefaultsFocusStatsExpanded = "kUserdefaultsFocusStatsExpanded"
+var kUserdefaultsFocusAllThingsExpanded = "kUserdefaultsFocusAllThingsExpanded"

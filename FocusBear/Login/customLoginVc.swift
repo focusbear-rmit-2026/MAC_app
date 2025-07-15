@@ -249,7 +249,7 @@ class customLoginVc: NSViewController {
             btnSignIn.keyEquivalent = "\r"
             btnCreateAccount.isEnabled = true
             btnForgotPassword.isHidden = false
-            topSpaceLblTitle.constant = 130
+            topSpaceLblTitle.constant = 80
             lblTitle.stringValue = "Sign In"
             lblSubtitle.stringValue = "Welcome back"
             boxConfirmPassword.isHidden = true

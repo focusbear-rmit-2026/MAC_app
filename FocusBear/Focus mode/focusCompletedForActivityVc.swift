@@ -9,6 +9,16 @@ import Cocoa
 
 class focusCompletedForActivityVc: NSViewController {
     
+    @IBOutlet weak var heightScrollView: NSLayoutConstraint!
+    @IBOutlet weak var stackviewAchieve: NSStackView!
+    @IBOutlet weak var stackViewStarRating: NSStackView!
+    @IBOutlet weak var boxAverageTabCount: NSBox!
+    @IBOutlet weak var boxAverageTimeSpent: NSBox!
+    @IBOutlet weak var btnMoreOptions: cursorButton!
+    @IBOutlet weak var imgViewAccordinMoreOptions: NSImageView!
+    @IBOutlet weak var lblAccordinMoreOptions: NSTextField!
+    @IBOutlet weak var boxAccordinMoreOptions: NSBox!
+    @IBOutlet weak var stackViewTags: NSStackView!
     @IBOutlet weak var boxFocusAlignmentScore: NSBox!
     
     @IBOutlet weak var lblEnableAdvancedAnalyticsSetting: NSTextField!
@@ -59,12 +69,13 @@ class focusCompletedForActivityVc: NSViewController {
     
     var arrAllAppsTabsData = [[String:Any]]()
     var allowExtend = false
-    
+    var isViewVisible = false
     
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
-
+        btnMoreOptions.title = "More Stats"
+        lblAccordinMoreOptions.stringValue = "Reflect on the session"
         lblTitleStats.stringValue = "Stats"
         lblTitleFocusAlignmentScore.stringValue = "Focus Alignment Score"
         lblTitleDeepWorkTime.stringValue = "Deep work time this session"
@@ -116,11 +127,14 @@ class focusCompletedForActivityVc: NSViewController {
                 lblTitleAppOrSite.stringValue = focusCompletedInfo.value(forKey: "titleAppOrSite") as? String ?? lblTitleAppOrSite.stringValue
                 lblTitleTime.stringValue = focusCompletedInfo.value(forKey: "titleTime") as? String ?? lblTitleTime.stringValue
                 lblEnableAdvancedAnalyticsSetting.stringValue = focusCompletedInfo.value(forKey: "enableAdvancedAnalyticsSettingText") as? String ?? lblEnableAdvancedAnalyticsSetting.stringValue
+                btnMoreOptions.title = focusCompletedInfo.value(forKey: "buttonMoreOptionsText") as? String ?? btnMoreOptions.title
+                lblAccordinMoreOptions.stringValue = focusCompletedInfo.value(forKey: "buttonAccordionMoreOptionsText") as? String ?? lblAccordinMoreOptions.stringValue
             }
         }
     }
     
     override func viewWillDisappear() {
+        isViewVisible = false
         if addTaskVcObj != nil{
             if addTaskVcObj!.presentingViewController == self{
                 addTaskVcObj!.dismiss(addTaskVcObj!)
@@ -130,7 +144,7 @@ class focusCompletedForActivityVc: NSViewController {
     }
     
     override func viewDidAppear() {
-        
+        isViewVisible = true
         tabMatricsObject.closeLastDomainIfStarted()
         tabMatricsObject.closeLastAppIfStarted()
         arrAllAppsTabsData.removeAll()
@@ -182,7 +196,7 @@ class focusCompletedForActivityVc: NSViewController {
             lblDeepFocusTime.stringValue = getStringTimeFromSeconds(seconds: Int(duration))
         }
         
-        
+        boxFocusAlignmentScore.isHidden = true// accordion
         let totalDeepFocusedTimeToday = totalDeepFocusedTime + finalDuration
         lblDeepWorkTimeToday.stringValue = getStringTimeFromSeconds(seconds: Int(totalDeepFocusedTimeToday))
         
@@ -214,8 +228,26 @@ class focusCompletedForActivityVc: NSViewController {
             self.presentAsSheet(obj)
             allApiObject.capturePosthog(event: "mark-tasks-on-focus-session-end-screen-shown", metadata: [:])
         }
+        setViewHeight()
+        reloadMoreOptionsState()
+    }
+    
+    override func viewDidLayout() {
+        if isViewVisible{
+            setViewHeight()
+        }
     }
 
+    func setViewHeight(){
+        if self.view.frame.height < 700{
+            heightScrollView.constant = 500
+        }else if self.view.frame.height < 800{
+            heightScrollView.constant = 700
+        }else {
+            heightScrollView.constant = 750
+        }
+    }
+    
     var is_skipped = false
     var durationInSeconds = 0
     var logQuantityQuestion = ""
@@ -265,6 +297,11 @@ class focusCompletedForActivityVc: NSViewController {
         self.quantity_logged = quantity_logged
         self.log_quantity_answers = log_quantity_answers
         self.notes = notes
+        
+        
+        
+        reloadMoreOptionsState()
+        reloadMoreQuestionsState()
     }
 
     @objc private func menuItemClicked(_ menuItem: NSMenuItem) {
@@ -520,6 +557,87 @@ class focusCompletedForActivityVc: NSViewController {
         }
         showTooltip(sender: sender, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:340)
     }
+    
+    @IBAction func btnMoreOptionsClicked(_ sender: Any) {
+        if boxAverageTimeSpent.isHidden{
+            expandMoreOptions()
+            UserDefaults.standard.set(true, forKey: kUserdefaultsFocusStatsExpanded)
+        }else{
+            collapseMoreOptions()
+            UserDefaults.standard.set(false, forKey: kUserdefaultsFocusStatsExpanded)
+        }
+    }
+    
+    func reloadMoreOptionsState(){
+        if let val = UserDefaults.standard.object(forKey: kUserdefaultsFocusStatsExpanded) as? Bool{
+            if val{
+                expandMoreOptions()
+            }else{
+                collapseMoreOptions()
+            }
+        }else{
+            collapseMoreOptions()
+            UserDefaults.standard.set(false, forKey: kUserdefaultsFocusStatsExpanded)
+        }
+    }
+    
+    func expandMoreOptions(){
+        boxAverageTimeSpent.isHidden = false
+        boxAverageTabCount.isHidden = false
+        if SettingsManagerObject.isAiCheckUrlEnabled{
+            boxFocusAlignmentScore.isHidden = false
+        }else{
+            boxFocusAlignmentScore.isHidden = true
+        }
+        btnMoreOptions.image = NSImage(named: NSImage.touchBarGoDownTemplateName)
+    }
+    
+    func collapseMoreOptions(){
+        boxFocusAlignmentScore.isHidden = true
+        boxAverageTimeSpent.isHidden = true
+        boxAverageTabCount.isHidden = true
+        btnMoreOptions.image = NSImage(named: NSImage.touchBarGoForwardTemplateName)
+    }
+    
+    @IBAction func btnViewAccordinMoreOptionsClicked(_ sender: Any) {
+        if stackviewAchieve.isHidden{
+            expandMoreQuestions()
+            UserDefaults.standard.set(true, forKey: kUserdefaultsFocusAllThingsExpanded)
+        }else{
+            collapseMoreQuestions()
+            UserDefaults.standard.set(false, forKey: kUserdefaultsFocusAllThingsExpanded)
+        }
+    }
+    func collapseMoreQuestions(){
+        stackviewAchieve.isHidden = true
+        stackViewStarRating.isHidden = true
+        stackViewTags.isHidden = true
+        imgViewAccordinMoreOptions.image = NSImage(named: NSImage.goForwardTemplateName)
+    }
+    
+    func expandMoreQuestions(){
+        stackviewAchieve.isHidden = false
+        stackViewStarRating.isHidden = false
+        if FileManager.default.fileExists(atPath: "/Applications/Focus Bear Time Tracker.app") && UserDefaults.standard.object(forKey: kUserdefaultsScreenTimeEnabled) as? Bool == true{// show tags box if time tracker is enabled
+            stackViewTags.isHidden = false
+        }else{
+            stackViewTags.isHidden = true
+        }
+        imgViewAccordinMoreOptions.image = NSImage(named: NSImage.touchBarGoDownTemplateName)
+    }
+    
+    func reloadMoreQuestionsState(){
+        if let val = UserDefaults.standard.object(forKey: kUserdefaultsFocusAllThingsExpanded) as? Bool{
+            if val{
+                expandMoreQuestions()
+            }else{
+                collapseMoreQuestions()
+            }
+        }else{
+            collapseMoreQuestions()
+            UserDefaults.standard.set(false, forKey: kUserdefaultsFocusAllThingsExpanded)
+        }
+    }
 }
 
 
@@ -619,8 +737,10 @@ extension focusCompletedForActivityVc:NSTableViewDelegate, NSTableViewDataSource
 
             if let title = arrAllAppsTabsData[row][tabMatricsObject.keyFocusAppTitle] as? String{
                 cell.lblTitleName.stringValue = title
+                cell.lblTitleName.toolTip = title
             }else if let title = arrAllAppsTabsData[row][tabMatricsObject.keyFocusDomainTitle] as? String{
                 cell.lblTitleName.stringValue = title
+                cell.lblTitleName.toolTip = title
             }
             if let duration = arrAllAppsTabsData[row][tabMatricsObject.keyFocusDuration] as? Int{
                 cell.lblDuration.stringValue = getStringTimeFromSeconds(seconds: duration)

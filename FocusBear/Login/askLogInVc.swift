@@ -7,7 +7,7 @@
 //
 
 import Cocoa
-import Auth0 // todo
+import Auth0
 
 class askLogInVc: NSViewController {
     
@@ -95,8 +95,8 @@ class askLogInVc: NSViewController {
     
     @IBAction func btnSignInWithEmailClicked(_ sender: Any) {
         addLog(text:"[user-action] btnSignInClicked")
-        allApiObject.capturePosthog(event: "button-signin-with-email-clicked", metadata: [:])
-        self.view.window?.close()
+        allApiObject.capturePosthog(event: "button-signin-with-google-clicked", metadata: [:])
+//        self.view.window?.close()
         showCustomLoginWindow(isLogin: true) 
     }
     
@@ -109,6 +109,7 @@ class askLogInVc: NSViewController {
     }
     
     @IBAction func btnSignInWithGoogleClicked(_ sender: Any) {
+        allApiObject.capturePosthog(event: "button-signin-with-email-clicked", metadata: [:])
         addLog(text:"[user-action] btnSignInWithGoogleClicked")
         trySignInWithGoogle()
     }

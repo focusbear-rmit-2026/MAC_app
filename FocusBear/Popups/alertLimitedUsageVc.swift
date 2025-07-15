@@ -3,7 +3,7 @@
 //  Focus Bear
 //
 //  Created by Prashant Sawnani on 16/07/24.
-//  Copyright © 2024 Focus Bear. All rights reserved.
+//  Copyright © 2025 Focus Bear. All rights reserved.
 //
 
 import Cocoa
@@ -42,6 +42,7 @@ class alertLimitedUsageVc: NSViewController {
     }
     
     @IBAction func btnUpgradeNowClicked(_ sender: Any) {
+        addLog(text:"[user-action] alertLimitedUsageVc:- btnUpgradeNowClicked")
         allApiObject.capturePosthog(event: "alert-limited-usage-button-upgrade-clicked", metadata: [:])
         self.dismiss(self)
         // doNot CurrentState Here
@@ -57,6 +58,7 @@ class alertLimitedUsageVc: NSViewController {
     }
     
     @IBAction func btnContinueClicked(_ sender: Any) {
+        addLog(text:"[user-action] alertLimitedUsageVc:- btnContinueClicked")
         allApiObject.capturePosthog(event: "alert-limited-usage-button-continue-clicked", metadata: [:])
         self.dismiss(self)
         firstViewControllerObj?.showConfirmRoutineDurationViewIfNeeded()

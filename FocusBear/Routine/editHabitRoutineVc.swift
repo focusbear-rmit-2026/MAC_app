@@ -228,7 +228,7 @@ class editHabitRoutineVc: NSViewController, WKNavigationDelegate, webViewLoadFai
         alert.setSharingType()
         alert.alertStyle = .informational
         
-        var schemaError = "Your settings cannot be validated."
+        var schemaError = "Your settings could not be validated. The app needs to be restarted."
         var buttonOkText = "OK"
         if let settings = configjson.value(forKey: "settings") as? NSDictionary{
             schemaError = settings.value(forKey: "schemaError") as? String ?? schemaError

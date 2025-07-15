@@ -91,7 +91,7 @@ class smallCountDownVc: NSViewController {
             mainViewControllerObj?.timerGiveOneMoreMinut?.invalidate()
             mainViewControllerObj?.timerGiveOneMoreMinut = nil
             mainViewControllerObj?.showFocusSummaryView()
-        }else if currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_MORNING_HABIT_ || (currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeMorningHabit){
+        }else if currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_MORNING_HABIT_ || (currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeMorningHabit) || (currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeEveningHabit){
             addLog(text:"[user-action] button Extend postpone time Clicked")
             lastCurrentState = currentState 
             closeTimerBox()
@@ -104,7 +104,7 @@ class smallCountDownVc: NSViewController {
         addLog(text:"[user-action] smallCountDownVc:- btnCloseClicked")
         if isFocusBreak{
             closeTimerBox()
-        }else{
+        }else{  
             self.view.window?.alphaValue = 0
             if (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._ACTIVITY_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_) && !(mainWindowControllerObj?.window?.isVisible ?? false){
                 if currentHabitPlaying != nil || currentActivityPlaying != nil{
@@ -185,7 +185,7 @@ class smallCountDownVc: NSViewController {
                 btnPostpone.title = common.value(forKey: "buttonBackToMyHabitsText") as? String ?? btnPostpone.title
             }
             btnSkip.isHidden = true
-        }else if (currentState == ._POSTPON_MORNING_HABIT_ || currentState == ._POSTPON_EVENING_HABIT_ || (currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeMorningHabit)) && !msg.isEmpty{
+        }else if (currentState == ._POSTPON_MORNING_HABIT_ || currentState == ._POSTPON_EVENING_HABIT_ || (currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeMorningHabit) || (currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeEveningHabit)) && !msg.isEmpty{
             
             if SettingsManagerObject.selectedFontIndex == intelOneMonoFontIndex || SettingsManagerObject.selectedFontIndex == openDyslexicFontIndex{
                 lblTimerTopSpaceConstraint.constant = lblTopSpaceInBigFont

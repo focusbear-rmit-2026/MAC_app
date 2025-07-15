@@ -101,3 +101,5 @@ blockpage params
 
 
 // old supublicedkey  tdVYiEz/MSjLl07DnhYNXOqHrNS7Tf/j5aCtwR/Tt6s=
+
+//                Application is agent (UIElement)// added on info plist because without it launch agent making problems (not allowing to remove app icon by this:- NSApp.setActivationPolicy(NSApplication.ActivationPolicy.accessory) with launc agent so adding this info plist) 28/5/25

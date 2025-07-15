@@ -2919,27 +2919,53 @@ class ViewController: NSViewController {
         }
     }
     
-    func postponeFocusSummaryFor(minutes:Int){
+    func postponeFocusSummaryFor(minutes:Int, showAskIntention:Bool){
         addLog(text: "postpone Focus Summary Done:- \(minutes) minutes")
-        hideCloseButtons()
-        removeSubViews()
-        currentState = ._POSTPON_FOCUS_SUMMARY_
-        mainWindowControllerObj?.window?.close()
-        hideBlankWindowInSecondaryMonitor()
-     
-        DispatchQueue.global().sync{//async {
-            if self.postponeTimer != nil{
-                self.postponeTimer?.invalidate()
-                self.postponeTimer = nil
+        
+        var showAskIntention = showAskIntention
+        
+        if SettingsManagerObject.isStrictnessLevelSuperGentle(){
+            addLog(text: "postponeFocusSummaryFor:- strictness level is super gentle so don't show postpone Intention view")
+            showAskIntention = false
+        }
+        if showAskIntention{
+            self.presentAsSheet(getAskPostponeIntentionVcObject())
+            askPostponeIntentionVcObj?.resetData(minutes: minutes, secondsToPostpone: nil, showAskFocusModeView: false, lastCurrentState: ._FOCUS_SUMMARY_)
+        }else{
+            hideCloseButtons()
+            removeSubViews()
+            currentState = ._POSTPON_FOCUS_SUMMARY_
+            mainWindowControllerObj?.window?.close()
+            hideBlankWindowInSecondaryMonitor()
+            DispatchQueue.global().sync{//async {
+                if self.postponeTimer != nil{
+                    self.postponeTimer?.invalidate()
+                    self.postponeTimer = nil
+                }
+                focusSummaryLastPostponeTime = Date()
+                self.postponeTimer = Timer.scheduledTimer(timeInterval: TimeInterval(minutes*60), target: self, selector: #selector(self.resumeFocusSummary), userInfo: nil, repeats: false)//  minutes*60 kroTimeInterval(minutes*60)
+                RunLoop.main.add((postponeTimer!), forMode: RunLoop.Mode.common)
+                
+                if minutes > 2{
+                    setPostponeNotificationTimer(duration: ((minutes*60) - 120))
+                }
             }
-            self.postponeTimer = Timer.scheduledTimer(timeInterval: TimeInterval(minutes*60), target: self, selector: #selector(self.resumeFocusSummary), userInfo: nil, repeats: false)//  minutes*60 kroTimeInterval(minutes*60)
-            RunLoop.main.add((postponeTimer!), forMode: RunLoop.Mode.common)
-            
-            if minutes > 2{
-                setPostponeNotificationTimer(duration: ((minutes*60) - 120))
+            if SettingsManagerObject.IsShowBreaksInPostponeEnabled{
+                if breakTimer == nil{
+                    setActivityTimer()
+                }
+            }
+            menuViewControllerObj?.reloadIfNeeded()
+            if SettingsManagerObject.isGeekModeEnabled{
+                appdelegate?.menuShowPomodoroModeView()
+                if pomodoroWindowControllerObj != nil{
+                    if pomodoroWindowControllerObj?.window?.isVisible ?? false{
+                        pomodoroVcObj!.textFieldWorkDuration.integerValue = minutes - 1
+                        pomodoroVcObj!.updateBreakDuration()
+                    }
+                }
             }
         }
-        menuViewControllerObj?.reloadIfNeeded()
     }
     
     func setPostponeNotificationTimer(duration:Int){
@@ -2953,7 +2979,7 @@ class ViewController: NSViewController {
     }
     
     @objc func showPostponeEndNotification(){
-        if currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_ || currentState == ._POSTPON_MORNING_HABIT_ || (currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeMorningHabit){
+        if currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_ || currentState == ._POSTPON_MORNING_HABIT_ || (currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeMorningHabit) || (currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeEveningHabit){
             var msg = "Habit resumes in"
             if let common = configjson.value(forKey: "common") as? NSDictionary{
                 msg = common.value(forKey: "postponeEndsText") as? String ?? msg
@@ -3035,13 +3061,47 @@ class ViewController: NSViewController {
             currentState = ._NOTHING_
             closePupUpBlockIfVisible()
             currentActivityPlaying = nil
+        }else if currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeEveningHabit{
+            stopActivityCountDownTimer()
+            if currentActivityPlaying != nil{
+                if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
+                    if smallCountDownWcObj?.window != nil{
+                        if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
+                            getSmallCountDownWindowObject().window?.close()
+                        }
+                    }
+                }
+            }
+            mainWindowControllerObj?.window?.close()
+            hideBlankWindowInSecondaryMonitor()
+            closePupUpBlockIfVisible()
+            currentHabitPlaying = nil
+            isCustomRoutineWasRunningInPostponeEveningHabit = false
+            currentState = ._NOTHING_
         }
     }
     
     @objc func resumeFocusSummary(){// func name "backgrounThread" will do work for showing morning routing again we just need to false this (isMorningRoutinePostpone) variable
         addLog(text: "Focus Summary postpone finished")
+        if currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeEveningHabit{
+            stopActivityCountDownTimer()
+            if currentActivityPlaying != nil{
+                if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
+                    if smallCountDownWcObj?.window != nil{
+                        if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
+                            getSmallCountDownWindowObject().window?.close()
+                        }
+                    }
+                }
+            }
+            mainWindowControllerObj?.window?.close()
+            hideBlankWindowInSecondaryMonitor()
+            closePupUpBlockIfVisible()
+            currentHabitPlaying = nil
+            isCustomRoutineWasRunningInPostponeEveningHabit = false
+            currentState = ._NOTHING_
+        }
         currentState = ._NOTHING_
-//        showFocusSummaryView()// nahi hai jarurat iski
     }
 
     func activityFinishedUnlockMachine() {
@@ -3174,6 +3234,75 @@ class ViewController: NSViewController {
                 }
             }
             
+            if currentState == ._SHUTOFFMAC_{
+                addLog(text: "App is in shutoff state, Break Activities cancelled.")
+                return;
+            }
+            if currentState == ._ABORT_{
+                addLog(text: "App state is abort, Break Activities cancelled.")
+                return;
+            }
+            
+//            if isShutOffTimeGoing(){
+//                if currentState != ._EVENING_HABIT_ && currentState != ._POSTPON_EVENING_HABIT_{
+//                    addLog(text: "not working hours, Break Activities cancelled.")
+//                    return;//agar kisi ne shutdown abort bhi kr diya to bhi kuch ni hoga// iise focus summary  k time per bhi rreturn ho jayga
+//                }
+//            }
+            
+            if isShutOffTimeGoing(){
+                if currentState == ._POSTPON_FOCUS_SUMMARY_ || currentState == ._POSTPON_EVENING_HABIT_{
+                    if !SettingsManagerObject.IsShowBreaksInPostponeEnabled{
+                        addLog(text: "Routine is postponed. Show breaks in Postpone not enabled, Break Activities cancelled.")
+                        return;//agar kisi ne shutdown abort bhi kr diya to bhi kuch ni hoga// iise focus summary  k time per bhi rreturn ho jayga
+                    }
+                }else if currentState != ._EVENING_HABIT_ {
+                    addLog(text: "not working hours, Break Activities cancelled.")
+                    return;//agar kisi ne shutdown abort bhi kr diya to bhi kuch ni hoga// iise focus summary  k time per bhi rreturn ho jayga
+                }
+            }
+            
+            
+            //
+            if currentState == ._CUSTOM_ROUTINE_{
+                self.setActivityTimer()
+                addLog(text: "Custom routine is running :- Break Activities cancelled.")
+                return;
+            }
+            
+            if arrAllbreakActivities.count == 0 {
+                self.setActivityTimer()
+                addLog(text: "Break Activities count is 0 :- Break Activities cancelled.")
+                return;
+            }
+            if currentState == ._SPECIAL_ACTIVITY_{
+                self.setActivityTimer()
+                addLog(text: "Special activity is running :- Break Activities cancelled.")
+                return;
+            }
+            
+            if popupAppointmentTimeWcObj != nil{
+                if popupAppointmentTimeWcObj?.window?.isVisible ?? false{
+                    addLog(text: "Appointment popup is visible :- Break Activities cancelled.")
+                    return;
+                }
+            }
+            
+            let isFocusModeOnOrPaused = isFocusModeOnOrPaused()
+            if isFocusModeOnOrPaused && isFocusModeStartedFromPomodoroMode && isSkipBreakActivityDuringPomodoro{
+                self.setActivityTimer()
+                addLog(text: "Pomodoro mode is On and Skip Break Activity During Focus is enabled: Break Activities cancelled.")
+                return;
+            }else if isHardCorePomodoroModeOn && isSkipBreakActivityDuringPomodoro{
+                self.setActivityTimer()
+                addLog(text: "Super Pomodoro mode is On and Skip Break Activity During Focus is enabled: Break Activities cancelled.")
+                return;
+            }else if isFocusModeOnOrPaused && isSkipBreakActivityDuringFocus{
+                self.setActivityTimer()
+                addLog(text: "Focus mode is On and Skip Break Activity During Focus is enabled: Break Activities cancelled.")
+                return;
+            }
+            
             
             //show the break as soon as there are 5 seconds of inactivity
             var lastEvent:CFTimeInterval = 0
@@ -3223,30 +3352,7 @@ class ViewController: NSViewController {
                 setFocusBearIconToNormal()
             }
             
-            //
-            if currentState == ._CUSTOM_ROUTINE_{
-                self.setActivityTimer()
-                addLog(text: "Custom routine is running :- Break Activities cancelled.")
-                return;
-            }
             
-            if arrAllbreakActivities.count == 0 {
-                self.setActivityTimer()
-                addLog(text: "Break Activities count is 0 :- Break Activities cancelled.")
-                return;
-            }
-            if currentState == ._SPECIAL_ACTIVITY_{
-                self.setActivityTimer()
-                addLog(text: "Special activity is running :- Break Activities cancelled.")
-                return;
-            }
-            
-            if popupAppointmentTimeWcObj != nil{
-                if popupAppointmentTimeWcObj?.window?.isVisible ?? false{
-                    addLog(text: "Appointment popup is visible :- Break Activities cancelled.")
-                    return;
-                }
-            }
             
             isBreakActivityExecuteFromPostponeMorningHabit = false
             isBreakActivityExecuteFromPostponeEveningHabit = false
@@ -3255,20 +3361,7 @@ class ViewController: NSViewController {
             isBreakActivityExecuteFromEveningHabit = false
             checkLogFileRotation()
 
-            let isFocusModeOnOrPaused = isFocusModeOnOrPaused()
-            if isFocusModeOnOrPaused && isFocusModeStartedFromPomodoroMode && isSkipBreakActivityDuringPomodoro{
-                self.setActivityTimer()
-                addLog(text: "Pomodoro mode is On and Skip Break Activity During Focus is enabled: Break Activities cancelled.")
-                return
-            }else if isHardCorePomodoroModeOn && isSkipBreakActivityDuringPomodoro{
-                self.setActivityTimer()
-                addLog(text: "Super Pomodoro mode is On and Skip Break Activity During Focus is enabled: Break Activities cancelled.")
-                return
-            }else if isFocusModeOnOrPaused && isSkipBreakActivityDuringFocus{
-                self.setActivityTimer()
-                addLog(text: "Focus mode is On and Skip Break Activity During Focus is enabled: Break Activities cancelled.")
-                return
-            }
+           
             isBreakActivityShowingWhileMeeting = false
             if appdelegate!.isUserOnMeeting{
                 if !SettingsManagerObject.IsShowBreaksInCallEnabled{
@@ -3425,25 +3518,6 @@ class ViewController: NSViewController {
                 
             }
             
-            
-            
-            
-            if currentState == ._SHUTOFFMAC_{
-                addLog(text: "App is in shutoff state, Break Activities cancelled.")
-                return;
-            }
-            if currentState == ._ABORT_{
-                addLog(text: "App state is abort, Break Activities cancelled.")
-                return;
-            }
-            
-            if isShutOffTimeGoing(){
-                if currentState != ._EVENING_HABIT_ && currentState != ._POSTPON_EVENING_HABIT_{
-                    addLog(text: "not working hours, Break Activities cancelled.")
-                    return;//agar kisi ne shutdown abort bhi kr diya to bhi kuch ni hoga// iise focus summary  k time per bhi rreturn ho jayga
-                }
-            }
-            
             self.reFillBreakActivitiesArray()
             if arrFinalBreakActivities.count == 0{
                 addLog(text: "filterd arrActivitiesExcludeInEveryBreak and arrActivitiesIncludeInEveryBreak is zero .")
@@ -3466,7 +3540,15 @@ class ViewController: NSViewController {
                     return;
                 }
             }
-
+            
+            if currentState == ._POSTPON_FOCUS_SUMMARY_{// ⚠️ do not change current state inside this block
+                if SettingsManagerObject.IsShowBreaksInPostponeEnabled{
+                    isBreakActivityExecuteFromPostponeEveningHabit = true
+                }else{
+                    return;
+                }
+            }
+            
             self.removeSubViews()
             
             showBreakWarningWindow()
@@ -3687,32 +3769,7 @@ class ViewController: NSViewController {
         containerView.addConstraints(subView: firstViewControllerObj!.view)
         firstViewControllerObj?.tblViewHabits.reloadData()
     }
-    
-    func emergencyStartDone(){
-        addLog(text: "emergencyStartDone")
-        hideCloseButtons()
-        removeSubViews()
-        currentState = ._NOTHING_
-        mainWindowControllerObj?.window?.close()
-        hideBlankWindowInSecondaryMonitor()
-        
-        if startTime == nil || shutOffTime == nil{
-            return;
-        }
-        let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
-        let shutOffdate = Calendar.current.date(bySettingHour: shutOffTime!.hour, minute: shutOffTime!.minute, second: shutOffTime!.second, of: Date())!
-        
-        let curreentDate = Date()
-        if curreentDate > shutOffdate{// iska matlab 20-24 k bich
-            let tomorrowDate = Calendar.current.date(byAdding: .day, value: 1, to: Date())!
-            let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: tomorrowDate)
-            UserDefaults.standard.set(startDate, forKey: kUserdefaultsShutdownAborted)
-        }else if curreentDate < startDate{ //  iska mtlb 1 se 10 k bich ka time
-            UserDefaults.standard.set(startDate, forKey: kUserdefaultsShutdownAborted)
-        }
-        
-    }
-    
+
     @IBAction func btnHiddenClicked(_ sender: Any) {
         //mainWindowControllerObj?.window?.close()
     }

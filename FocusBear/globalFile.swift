@@ -105,7 +105,16 @@ struct Time{
     var minute = 0
     var second = 0
 }
-
+extension NSScrollView{
+    func scrollToLast(){
+        if let documentView = documentView {
+            let newOrigin = NSPoint(x: 0, y: 0)
+            documentView.scroll(newOrigin)
+        }
+    }
+}
+    
+    
 extension NSView{
     func addConstraints(subView:NSView) {
         subView.translatesAutoresizingMaskIntoConstraints = false
@@ -390,7 +399,7 @@ func attechIconWithString(text:String)->NSMutableAttributedString{
     }
     
 }
-var eveningRoutineLastPostponeTime:Date?
+
 
 enum ACTION:Int{
     case _START_ = 11, _INPROGRESS_, _END_, _VISUALIZE_, _BRAIN_DUMP_// start state sirf first activity ki start mi hi hoti h fir  second activity ki start mai "end state hoti hai "
@@ -422,8 +431,7 @@ var currentState:CURRENTSTATE = ._NOTHING_{
         lastCurrentStateSaved = currentState
     }
 }
-var isCustomRoutineWasRunningInPostponeMorningHabit = false
-var isCustomRoutineWasRunningInPostponeEveningHabit = false
+
 
 var currentAction:ACTION = ACTION._START_
 
@@ -875,6 +883,8 @@ var isGettingSchema = false
 let allApiObject = AllApi()
 let pusherEventsObject = pusherEvents()
 
+var applicationSupportURL: URL?
+var localFlaskServerFolderURL:URL!
 var trackFilesFolderURL:URL!
 var DebugLogsFolderURL:URL!
 var DebugLogsURL:URL!
@@ -1157,6 +1167,7 @@ class customBox: NSBox {
     }
     
     func focusModeClicked(index:Int){
+        addLog(text:"[user-action] focusModeClicked")
         if isPurchased == false && daysLeft <= 0{//if UserDefaults.standard.object(forKey: "trialExpired") != nil{
             if trialExpiredNagWcObj != nil{
                 if trialExpiredNagWcObj?.window?.isVisible ?? false{
@@ -1392,7 +1403,7 @@ var selfAppName = Bundle.main.infoDictionary!["CFBundleName"] as! String
 
 
 
-var whatToAchieveInFocusBlock = ""
+
 var lastFrontMostApplication:NSRunningApplication?
 
 
@@ -1423,58 +1434,7 @@ func intFromHexString(hexStr: String) -> UInt32 {
     return hexInt
 }
 
-var timerForFocusMode:Timer?
-var timerForFocusModeEndNotification:Timer?
 
-var isFocusTimeType:FocusModeTimeType = ._NONE_
-var endFocusModeTime:Date?// this is focusMode end time wich we calculate at the begning of focus mode
-var startFocusModeTime:Date?
-var startFocusModeTimeForPauseAndResume:Date?
-var focusModeActualDurationPerformed:Int = 0// this will be useful to save in csv and showing focus summary
-var focusModeMinutesToPerform = 0
-var focusModeSecondsToPerform = 0 //useful in pause resume focus mode
-var unfocusedTime = 0
-enum FocusModeTimeType:Int{
-    case _HOUR_ = 11, _TILL_SHUTOFF_, _NONE_
-}
-
-var isFocusModeRunning = false
-
-func isFocusModeOn()->Bool{
-    for dic in arrFocusType{
-        if dic["isOn"] as? Bool == true{
-            return true
-        }
-    }
-    return false
-}
-func isFocusModePaused()->Bool{
-    for dic in arrFocusType{
-        if dic["isPaused"] as? Bool == true{
-            return true
-        }
-    }
-    return false
-}
-func isFocusModeOnOrPaused()->Bool{
-    for dic in arrFocusType{
-        if dic["isOn"] as? Bool == true{
-            return true
-        }else if dic["isPaused"] as? Bool == true{
-            return true
-        }
-    }
-    return false
-}
-
-func getRunningFocusModeId()->String{
-    for dic in arrFocusType{
-        if dic["isOn"] as? Bool == true{
-            return dic["id"] as? String ?? ""
-        }
-    }
-    return ""
-}
 
 func isBlockSuperDistractingFocusModeOn()->Bool{
     if currentRunningFocusType["isDefault"] as? Bool == true {
@@ -1683,6 +1643,7 @@ func getDomainFromUrl(url:String) -> String{
     }
     return domain
 }
+
 func getPathFromUrl(url:String) -> String{
     let domain = getDomainFromUrl(url: url)
     
@@ -1701,6 +1662,7 @@ func getPathFromUrl(url:String) -> String{
     }
     return path
 }
+
 func getPathFromUrl(url:String, domain:String) -> String{
     var path = url.replacingOccurrences(of: "http://", with: "")
     path = path.replacingOccurrences(of: "https://", with: "")
@@ -1885,6 +1847,7 @@ var lastShownRandomChoiceDic = [String:activityChoice]()
 
 let mainAppBundelId = Bundle.main.bundleIdentifier ?? ""
 func createLaunchAgent(){
+    addLog(text: "func:- createLaunchAgent")
     //Background process "open" modified when Focus Bear opened?  #409 It shouldn't appear every time the app is restarted
     let path = Bundle.main.bundlePath
     if let userLA = AHLaunchCtl.allJobsFromFiles(in: AHLaunchDomain.userLaunchAgent) as? [AHLaunchJob] {
@@ -1892,21 +1855,17 @@ func createLaunchAgent(){
             if uLA.isCurrentlyLoaded{
                 if let arguments = uLA.programArguments as? [String]{
                     if arguments.contains(where: {$0.caseInsensitiveCompare(path) == .orderedSame}) {
+                        addLog(text: "LaunchAgent already created return")
                         return;
                     }
                 }
             }
-            
-            
         }
     }
     //
     
-    
-    
     let destination = "/Users/\(NSUserName())/Library/LaunchAgents/"
     if !FileManager.default.fileExists(atPath: destination) {
-        
         do {
             try FileManager.default.createDirectory(at: URL(fileURLWithPath: destination), withIntermediateDirectories: true, attributes: nil)
         } catch {}
@@ -1926,6 +1885,7 @@ func createLaunchAgent(){
         print("unable to create the file")
     }
     shell(launchPath: "/bin/launchctl", arguments: ["load","-w","\("/Users/")\(NSUserName())\("/Library/LaunchAgents/\(mainAppBundelId).plist")"])
+    addLog(text: "createLaunchAgent done")
 }
 
 var helperUrl: URL = {
@@ -1980,7 +1940,7 @@ func createLaunchAgentForHelperApp(){
 }
 
 func deleteLaunchAgent(){
-    
+    addLog(text: "func:- deleteLaunchAgent")
     //Background process "open" modified when Focus Bear opened?  #409 It shouldn't appear every time the app is restarted
     let path = Bundle.main.bundlePath
     if let userLA = AHLaunchCtl.allJobsFromFiles(in: AHLaunchDomain.userLaunchAgent) as? [AHLaunchJob] {
@@ -1989,6 +1949,7 @@ func deleteLaunchAgent(){
                 if let arguments = uLA.programArguments as? [String]{
                     if arguments.contains(where: {$0.caseInsensitiveCompare(path) == .orderedSame}) {
                         shell(launchPath: "/bin/launchctl", arguments: ["unload","-w","\("/Users/")\(NSUserName())\("/Library/LaunchAgents/\(mainAppBundelId).plist")"])
+                        addLog(text: "deleteLaunchAgent done")
                         return;
                     }
                 }
@@ -2004,7 +1965,7 @@ func deleteLaunchAgent(){
 
 
 func shell(launchPath: String, arguments: [String] = [])  {
-    
+    addLog(text: "func shell")
     let task = Process()
     task.launchPath = launchPath
     task.arguments = arguments
@@ -2015,8 +1976,6 @@ func shell(launchPath: String, arguments: [String] = [])  {
     
     let data = pipe.fileHandleForReading.readDataToEndOfFile()
     let output = NSString(data: data, encoding: String.Encoding.utf8.rawValue)
-    
-    
 }
 
 
@@ -2133,6 +2092,8 @@ func getBlurFrameForBrowser(x:Int, y:Int, width:Int, height:Int, browser:BROWSER
         return NSRect(x: x + 213, y: y + 40, width: width - 213, height: height - 40)
     case ._FIREFOX_:
         return NSRect(x: x, y: y + 81, width: width, height: height - 81)
+    case ._SIGMA_OS_:
+        return NSRect(x: x + 288, y: y + 48, width: width - 288, height: height - 48)
     }
 }
 
@@ -2726,42 +2687,6 @@ extension NSLayoutConstraint {
     }
 }
 
-
-func finishOldFocusModeIfRunning(startNewFocusId:String?,intention:String, start_time:Date?, finish_time:Date?){
-    addLog(text: "func finish Old FocusMode If Running")
-    allApiObject.getLastActivityInfo(completionHandler: { json in
-        
-        if json != nil{
-            print(json!)
-            
-            if let currentFocusMode = json?.value(forKey: "current_focus_mode") as? NSDictionary{//current_focus_mode_finish_time
-                if let currentFocusModeId = currentFocusMode.value(forKey: "id") as? String{
-                    print(currentFocusModeId)
-                    //arrFocusType
-                    addLog(text: "old focus mode is running- finish it")
-                    var finishFocusMoedTime = Date()
-                    if let currentFocusModeFinishTime = json?.value(forKey: "current_focus_mode_finish_time") as? String{
-                        finishFocusMoedTime = getDateFromStringInUtc(date: currentFocusModeFinishTime, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'") ?? finishFocusMoedTime
-                    }
-                    allApiObject.finishFocusMode(id: currentFocusModeId, achievements: "", distractions: "", finish_time: finishFocusMoedTime, rating:nil, completionHandler: {newDic in
-                        DispatchQueue.main.async {
-                            if startNewFocusId != nil{
-                                addLog(text: "start focus mode after finish old")
-                                allApiObject.startFocusMode(id: startNewFocusId!, intention: intention, start_time: start_time!, finish_time: finish_time!, completionHandler: {newDic in
-                                    
-                                })
-                            }
-                            
-                        }
-                    })
-                }
-            }
-        }
-        
-    })
-}
-
-
 var backgroundColor = NSColor(named: "backgroundColor") ?? NSColor.windowBackgroundColor
 class customBoxBg:NSBox{
     //    override func draw(_ dirtyRect: NSRect) {
@@ -2999,7 +2924,7 @@ func getBoldFont(size: CGFloat)->NSFont{
 extension NSTextField {//CourierNewPSMT // CourierNewPS-BoldMT
     open override func awakeFromNib() {
         super.awakeFromNib()
-        
+
         if self.font?.fontName == "CourierNewPS-BoldMT"{
             font = getBoldFont(size: self.font?.pointSize ?? 24)
         }else if self.font?.fontName == "CourierNewPSMT"{
@@ -3010,6 +2935,8 @@ extension NSTextField {//CourierNewPSMT // CourierNewPS-BoldMT
             font = getRegularFont(size: self.font?.pointSize ?? 24)
         }else if self.font?.fontName == ".SF NS Regular"{
             font = getRegularFont(size: self.font?.pointSize ?? 24)
+        }else if self.font?.fontName == ".SFNS-Bold"{
+            font = getBoldFont(size: self.font?.pointSize ?? 24)
         }else{
             font = getRegularFont(size: self.font?.pointSize ?? 24)
         }
@@ -3531,17 +3458,7 @@ func zipTextFile(inputFilePath: String, outputZipPath: String) throws {
     }
 }
 
-var isAnyAllowedFocusModeActivityRunning = false// whenever allowed focus activity started set true this variable
-var isAnyAllowedFocusModeActivityWasRunningInLastActivity = false
-var isAnyAllowedFocusModeActivityFinishTime = Date()
 
-func reSetCurrentFocusMode(focusType:[String:Any]){
-    if isFocusModeOn() || isAnyAllowedFocusModeActivityRunning{
-        if focusType["id"] as? String ?? ""  == currentRunningFocusType["id"] as? String ?? ""{
-            currentRunningFocusType = focusType
-        }
-    }
-}
 
 
 
@@ -3869,79 +3786,6 @@ extension NSView {
 }
 
 
-
-func getFocusModeTaskString()->String{
-    if !focusModeTaskStringIsEmpty(){
-        if let data = focusModeTaskString.data(using: String.Encoding.utf8) {
-            do {
-                let jsonResult:[[String: Any]] = try (JSONSerialization.jsonObject(with: data, options: []) as? [[String: Any]] ?? [])
-                print(jsonResult)
-                var taskString = ""
-                for i in 0..<jsonResult.count{
-                    let task = jsonResult[i]
-                    let title = task["title"] as? String ?? ""
-                    if i == 0{
-                        taskString += title
-                    }else{
-                        taskString += "\n" + title
-                    }
-                }
-                return taskString
-            }catch{
-                print(error)
-            }
-        }
-    }
-    return ""
-}
-
-func getStatusTextForTask(status:String)-> String{
-    var completedText = "Completed"
-    var inProgressText = "In Progress"
-    var notStartedText = "Not Started"
-    
-    if let common = configjson.value(forKey: "common") as? NSDictionary{
-        completedText = common.value(forKey: "completedText") as? String ?? completedText
-        inProgressText = common.value(forKey: "inProgressText") as? String ?? inProgressText
-        notStartedText = common.value(forKey: "notStartedText") as? String ?? notStartedText
-    }
-
-    if(status == "COMPLETED"){
-        return completedText;
-    }else if(status == "IN_PROGRESS"){
-        return inProgressText;
-    }else if (status == "NOT_STARTED"){
-        return notStartedText;
-    }
-    return "";
-}
-
-
-
-func getCurrentTaskInFocusMode()-> String?{
-    if !focusModeTaskStringIsEmpty(){
-        if let data = focusModeTaskString.data(using: String.Encoding.utf8) {
-            do {
-                let jsonResult:[[String: Any]] = try (JSONSerialization.jsonObject(with: data, options: []) as? [[String: Any]] ?? [])
-                print(jsonResult)
-                for i in 0..<jsonResult.count{
-                    let task = jsonResult[i]//isPlaying
-                    if let isPlaying = task["isPlaying"] as? Bool, let title = task["title"] as? String{
-                        if isPlaying{
-                            return title
-                        }
-                    }
-                }
-                
-            }catch{
-                print(error)
-            }
-        }
-        
-    }
-    return nil
-}
-
 func writeStringToHabitInfo(isFinishTime:Bool, activityName:String){
     var outString = ""
     if isFinishTime{
@@ -3963,7 +3807,15 @@ func writeSettingForScreeenTime(habitInfo:String){
     var isScreenTimeEnabled = false
     isScreenTimeEnabled = UserDefaults.standard.object(forKey: kUserdefaultsScreenTimeEnabled) as? Bool ?? isScreenTimeEnabled
      
-    let dicContent = ["language":language, "isScreenTimeEnabled":isScreenTimeEnabled, "habitInfo":habitInfo, "userID":appdelegate!.user?.userId ?? "", "isPurchased":isPurchased, "startup_time":startTimeString, "shutdown_time":shutOffTimeString, "cutoff_time":cutOffTimeString] as [String : Any]
+    var dicContent = ["language":language, "isScreenTimeEnabled":isScreenTimeEnabled, "habitInfo":habitInfo, "userID":appdelegate!.user?.userId ?? "", "isPurchased":isPurchased, "startup_time":startTimeString, "shutdown_time":shutOffTimeString, "cutoff_time":cutOffTimeString, "isUserOnMeeting":appdelegate!.isUserOnMeeting] as [String : Any]
+    
+    if appdelegate?.isUserOnMeeting ?? false{
+        if let meetingStartTime = appdelegate?.meetingStartTime{
+            let time = getStringFromDate(date: meetingStartTime, dateFormat:"yyyy-MM-dd HH-mm-ss")
+            dicContent["meetingStartTime"] = time
+        }
+    }
+    
     let plistContent = NSDictionary(dictionary: dicContent)
     let _ = plistContent.write(toFile: settingForScreeenTimeFileURL!.path, atomically: true)
 }
@@ -4018,6 +3870,43 @@ func shouldAskPassword()->Bool{
                 return false
             }
         }else{
+            return true
+        }
+    }
+    return false
+}
+
+func isPasswordRequireInOpenSettings() -> Bool{
+    if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
+        if let lastAppUnlockTime = lastAppUnlockTime{
+            let diffSeconds = Calendar.current.dateComponents([.second], from: lastAppUnlockTime, to: Date()).second ?? 0
+            if diffSeconds > 120{
+                return isPasswordRequireInOpenSettingsEnabled()
+            }else{
+                return false
+            }
+        }else{
+            return isPasswordRequireInOpenSettingsEnabled()
+        }
+    }
+    return false
+}
+
+func isPasswordRequireInOpenSettingsEnabled() -> Bool{
+    //Super strict focus sessions should block changing settings #1423
+    if isFocusModeOn(){
+        if !isCuddlyModeEnabled(){
+            return true
+        }
+    }
+    //
+    
+    if isCutOffTimeGoing(){
+        if SettingsManagerObject.isPasswordRequireInPreferencesAfterCutoff{
+            return true
+        }
+    }else{
+        if SettingsManagerObject.isPasswordRequireInChangeSettings{
             return true
         }
     }
@@ -4230,231 +4119,7 @@ func setFocusBearIconToNormal(){
         appdelegate?.statusbutton?.image = NSImage(named: NSImage.Name("Bear-Small"))
     }
 }
-func focusModeCloseCurrentUrlForAlignmentScore(){
-    let keys = dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus.keys
-    for key in keys{
-        if var dictionary = dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[key]{
-            if dictionary["isVisibleUrl"] as? Bool == true{
-                dictionary["isVisibleUrl"] = false
-                let startTime = dictionary["startedTime"] as? Date ?? Date()
-                let endTime = Date()
-                let secondsBetween = endTime.timeIntervalSince(startTime)
-                var seconds = dictionary["totalSeconds"] as? Int ?? 0
-                seconds += Int(secondsBetween)
-                dictionary["totalSeconds"] = seconds
-                dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[key] = dictionary
-                break;
-            }
-        }
-    }
-}
 
-
-
-
-func focusModeCloseCurrentAppForAlignmentScore(){
-    print("////////focusModeCloseCurrentAppForAlignmentScore//////////////---------------")
-    let keys = dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus.keys
-    for key in keys{
-        if var dictionary = dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[key]{
-            if dictionary["isVisibleApp"] as? Bool == true{
-                dictionary["isVisibleApp"] = false
-                let startTime = dictionary["startedTime"] as? Date ?? Date()
-                let endTime = Date()
-                let secondsBetween = endTime.timeIntervalSince(startTime)
-                var seconds = dictionary["totalSeconds"] as? Int ?? 0
-                seconds += Int(secondsBetween)
-                dictionary["totalSeconds"] = seconds
-                dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[key] = dictionary
-                break;
-            }
-        }
-    }
-}
-
-func focusModeOpenCurrentUrlForAlignmentScore(domain:String){
-    if isCuddlyModeEnabled() && SettingsManagerObject.isAiCheckUrlEnabled && !isBlockSuperDistractingFocusModeOn(){
-        //check url opening for second time
-        if var info = dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[domain]{
-            if let isVisibleUrl = info["isVisibleUrl"] as? Bool{
-                if !isVisibleUrl{
-                    focusModeCloseCurrentUrlForAlignmentScore()
-                    info["isVisibleUrl"] = true
-                    info["startedTime"] = Date()
-                    boxForStatusBarForTooltip?.customToolTip = info["reason"] as? String ?? ""
-                    dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[domain] = info
-                }
-            }
-            let probability = info["probability"] as? Double ?? 0
-            setAppIconForFocusModeScore(probability: probability)
-        }else{
-            // check and close all url if any of them is visible
-            setFocusBearIconToNormal()
-            focusModeCloseCurrentUrlForAlignmentScore()
-        }
-    }
-}
-
-func focusModeOpenCurrentAppForAlignmentScore(appNameLowercased:String, focusModeName:String, probability:Double, isAppAllowedByAllowedAppList:Bool, appName:String){
-    print("////////focusModeOpenCurrentAppForAlignmentScore//////////// \(appName)")
-    boxForStatusBarForTooltip?.customToolTip = ""
-    print("customToolTip blank set hui")
-    if isCuddlyModeEnabled() && SettingsManagerObject.isAiCheckUrlEnabled && !isBlockSuperDistractingFocusModeOn(){
-        if var info = dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[appNameLowercased]{
-            if let isVisibleApp = info["isVisibleApp"] as? Bool{
-                if !isVisibleApp{
-                    focusModeCloseCurrentAppForAlignmentScore()
-                    info["isVisibleApp"] = true
-                    info["startedTime"] = Date()
-                    dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[appNameLowercased] = info
-                }
-            }
-            if isAppAllowedByAllowedAppList{ //it means app is added in focus mode(focus mode preferences) while running focus mode so update probability
-                dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[appNameLowercased]!["probability"] = probability
-            }
-            let probability = info["probability"] as? Double ?? 0
-            if probability >= 0.70{
-                var reason = appAllowedInFocusModeText.replacingOccurrences(of: "<APP>", with: appName)
-                reason = reason.replacingOccurrences(of: "<FOCUSMODE>", with: focusModeName)
-                boxForStatusBarForTooltip?.customToolTip = reason
-            }else{
-                var reason = appNotAllowedInFocusModeText.replacingOccurrences(of: "<APP>", with: appName)
-                reason = reason.replacingOccurrences(of: "<FOCUSMODE>", with: focusModeName)
-                boxForStatusBarForTooltip?.customToolTip = reason
-            }
-            setAppIconForFocusModeScore(probability: probability)
-        }else{
-            focusModeCloseCurrentAppForAlignmentScore()
-            if !arrBrowsersLowerCasedNames.contains(appNameLowercased){// exclude browsers from Alignment Score
-                addEntryInfocusAlignmentScoreCsv(url: appNameLowercased, tabTitle: "", focusMode: focusModeName, intention: whatToAchieveInFocusBlock, aiReason: "", allowedProbability: "\(probability)", totalScore: "")
-                dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[appNameLowercased] = ["probability":probability, "isVisibleApp":true, "totalSeconds":0, "startedTime":Date()]
-                if probability >= 0.70{
-                    var reason = appAllowedInFocusModeText.replacingOccurrences(of: "<APP>", with: appName)
-                    reason = reason.replacingOccurrences(of: "<FOCUSMODE>", with: focusModeName)
-                    boxForStatusBarForTooltip?.customToolTip = reason
-                }else{
-                    var reason = appNotAllowedInFocusModeText.replacingOccurrences(of: "<APP>", with: appName)
-                    reason = reason.replacingOccurrences(of: "<FOCUSMODE>", with: focusModeName)
-                    boxForStatusBarForTooltip?.customToolTip = reason
-                }
-                setAppIconForFocusModeScore(probability: probability)
-            }
-        }
-    }
-}
-
-
-var defaultFocusAlignmentScoreToShowDistractingPopUp:Int = 80
-var minFocusAlignmentScoreToShowDistractingPopUp:Double = 80
-var currentFocusAlignmentScore:Double = 0
-var lastFocusAlignmentScore:Double = 0
-var lastFocusAlignmentShownScore:Double = 0
-func calculateFocusAlignmentScore(){
-    var totalAlignmentScore:Double = 0
-    var totalSeconds = 0
-    let keys = dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus.keys
-    for key in keys{
-        if let dictionary = dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[key]{
-            var seconds = dictionary["totalSeconds"] as? Int ?? 0
-            
-            var shouldCalculateSecondsOFCurrentUrl = false
-            
-            if let isVisibleApp = dictionary["isVisibleApp"] as? Bool{
-                if isVisibleApp{
-                    shouldCalculateSecondsOFCurrentUrl = true
-                }
-            }
-            
-            if let isVisibleUrl = dictionary["isVisibleUrl"] as? Bool{
-                if isVisibleUrl{
-                    shouldCalculateSecondsOFCurrentUrl = true
-                }
-            }
-            if shouldCalculateSecondsOFCurrentUrl{
-                let startTime = dictionary["startedTime"] as? Date ?? Date()
-                let endTime = Date()
-                let secondsBetween = endTime.timeIntervalSince(startTime)
-                seconds += Int(secondsBetween)
-            }
-            
-            let probability = dictionary["probability"] as? Double ?? 0
-            let score = ((Double(seconds) * probability))
-            totalSeconds += seconds
-            totalAlignmentScore += score
-        }
-    }
-    if totalAlignmentScore != 0{
-        totalAlignmentScore = (totalAlignmentScore / Double(totalSeconds)) * 100
-    }
-    if totalAlignmentScore > 100{
-        totalAlignmentScore = 100
-    }
-    totalAlignmentScore = (totalAlignmentScore*100).rounded()/100
-    if SettingsManagerObject.isFocusVisualIndicatorEnabled{
-        if totalAlignmentScore < minFocusAlignmentScoreToShowDistractingPopUp{
-            if lastFocusAlignmentShownScore - totalAlignmentScore > 5{//if decrease by >10 then show
-                if let startFocusModeTime = startFocusModeTime{
-                    let diffSeconds = Calendar.current.dateComponents([.second], from: startFocusModeTime, to: Date()).second ?? 0
-                    if diffSeconds > 15{
-                        showNudgeFocusAlignmentScoreWindow(score: totalAlignmentScore)
-                    }
-                }
-            }
-        }else{
-            lastFocusAlignmentShownScore = totalAlignmentScore// refresh lastFocusAlignmentShownScore
-        }
-    }
-    currentFocusAlignmentScore = totalAlignmentScore
-    lastFocusAlignmentScore = totalAlignmentScore
-    
-    
-    if SettingsManagerObject.isFocusVisualIndicatorEnabled{
-        if nudgeFocusAlignmentScoreDippingWcObject != nil{
-            if nudgeFocusAlignmentScoreDippingWcObject?.window?.isVisible ?? false{
-                if (nudgeFocusAlignmentScoreDippingWcObject?.isNudgeVisible ??  false){
-                    lastFocusAlignmentShownScore = totalAlignmentScore
-                    print("***************nudgeFocusAlignmentScoreDippingVc window visible****************e")
-                    print("************reload data because window visible*****************e")
-                    getNudgeFocusAlignmentScoreDippingVcObject().reloadData(score: totalAlignmentScore, isNudgeVisible: true)
-                }
-            }
-        }
-    }
-}
-
-
-
-func updateAllFocusModes(){
-    var arrJson = [[String: Any]]()
-    for focusType in arrFocusType{
-        var json: [String: Any] = [
-            "id":focusType["id"] as? String ?? "",
-            "allowed_urls":focusType["allowed_urls"] as? [String] ?? [],
-            "allowed_apps":focusType["allowed_apps"] as? [String] ?? [],
-            "name":focusType["name"] as? String ?? "",
-            "metadata": [:]
-        ]
-        var tagsDic = [[String:Any]]()
-        if let tags = focusType["tags"] as? [String]{
-            for tag in tags{
-                tagsDic.append(["id": getIdForTag(tag: tag), "text": tag])
-            }
-        }
-        json["tags"] = tagsDic
-        
-        var dic = focusType
-        dic.removeValue(forKey: "name")
-        dic.removeValue(forKey: "id")
-        dic.removeValue(forKey: "allowed_urls")
-        dic.removeValue(forKey: "allowed_apps")
-        dic.removeValue(forKey: "tags")
-        json["metadata"] = dic
-        arrJson.append(json)
-    }
-    allApiObject.updateAllFocusMode(focusModes: arrJson, completionHandler: {json in
-        
-    })
-}
 
 
 
@@ -4741,7 +4406,7 @@ class GeekModeSegmentedControl: NSSegmentedControl {
         //--------------------------------------------------------------------//
         //Support freemium#1066
         //only simple mode allowed
-        
+        addLog(text:"func changeAppModeTo geekMode \(geekMode)")
         if isExpired && geekMode{
             var titleNoGeekMode = "Geek mode is only supported in Pro edition."
             if let upgradeToProNagVcInfo = configjson.value(forKey: "upgradeToProNagVcInfo") as? NSDictionary{
@@ -4902,7 +4567,6 @@ class GeekModeSegmentedControl: NSSegmentedControl {
 func exitFullScreen(runningApp:NSRunningApplication){
     var script: String = ""
     let appName = runningApp.localizedName ?? ""
-    print("exitFullScreen:- \(appName)")
     script =
         """
         tell application "System Events" to tell process "\(appName)"
@@ -4968,47 +4632,7 @@ extension NSTextField {
     }
 }
 
-func sortFocusModes(){
-    var isDefaultContain = false
-    var islockedFocusContain = false
-    var defaultFocus: [String : Any]?
-    var lockedFocus: [String : Any]?
-    
-    var index = 0
-    var count = arrFocusType.count
-    while index < count{
-        if let isDefault = arrFocusType[index]["isDefault"] as? Bool{
-            if  isDefault{
-                isDefaultContain = isDefault
-                defaultFocus = arrFocusType[index]
-                arrFocusType.remove(at: index)
-                count -= 1
-                continue;
-            }
-        }
-        if let isLockedFocus = arrFocusType[index]["isLockedFocus"] as? Bool{
-            if  isLockedFocus{
-                islockedFocusContain = isLockedFocus
-                lockedFocus = arrFocusType[index]
-                arrFocusType.remove(at: index)
-                count -= 1
-                continue;
-            }
-        }
-        index += 1
-    }
 
-    arrFocusType = arrFocusType.sorted{
-        return $0["name"] as? String ?? "" < $1["name"] as? String ?? ""
-    }
-    
-    if isDefaultContain{
-        arrFocusType.insert(defaultFocus!, at: 0)
-    }
-    if islockedFocusContain{
-        arrFocusType.append(lockedFocus!)
-    }
-}
 
 
 class DashedView:NSView {
@@ -5108,18 +4732,6 @@ func checkAutomationPermissionWithAppleScript() -> Bool {
     }
 }
 
-enum FOCUSMODESTRICTNESS:Int{
-    case _NORMAL_ = 45, _STRICT_, _SUPER_STRICT_
-}
-
-var currentFocusModeStrictness = FOCUSMODESTRICTNESS._NORMAL_
-
-func isCuddlyModeEnabled()->Bool{
-    if currentFocusModeStrictness == ._SUPER_STRICT_{
-        return false
-    }
-    return true
-}
 
 
 
@@ -5172,8 +4784,17 @@ func extractSubstring(from text: String, start: String, end: String) -> String? 
 }
 
 
-
-
+func extractValue(from query: String, key:String) -> String? {
+    let components = query.components(separatedBy: "&")
+    for component in components {
+        let pair = component.components(separatedBy: "=")
+        if pair.count == 2, pair[0] == key {
+            let value = pair[1].replacingOccurrences(of: "+", with: " ")
+            return value.removingPercentEncoding
+        }
+    }
+    return nil
+}
 
 //------------------------------------------------------------------//
 //if the user has non timer based habits, add an estimate based on how long they spent on the habits the last few times
@@ -5375,13 +4996,7 @@ func loadMenuWindow(){
 }
 
 
-func focusModeTaskStringIsEmpty()->Bool{
-    if focusModeTaskString.isEmpty || focusModeTaskString == "[]"{
-        return true
-    }else{
-        return false
-    }
-}
+
 
 
 protocol NudgeWindowDelegate {
@@ -5397,23 +5012,25 @@ class DraggableHorizontallyNudgeWindow: NSWindow {
     }
 
     override func mouseDragged(with event: NSEvent) {
-        guard let screen = screen else { return }
-        
-        // Get current window frame
-        var windowFrame = frame
-
-        // Calculate new X position while keeping Y position fixed
-        let newX = windowFrame.origin.x + (event.locationInWindow.x - initialLocation.x)
-
-        // Ensure the window remains within screen bounds
-        let maxX = screen.visibleFrame.maxX - windowFrame.width
-        let minX = screen.visibleFrame.minX
-
-        windowFrame.origin.x = min(maxX, max(minX, newX))  // Clamp X position
-
-        // Apply new frame
-        setFrame(windowFrame, display: true, animate: false)
-        nudgeWindowDelegate?.nudgeDragged()
+        super.mouseDragged(with: event)
+//        guard let screen = screen else { return }
+//        
+//        // Get current window frame
+//        var windowFrame = frame
+//
+//        // Calculate new X position while keeping Y position fixed
+//        let newX = windowFrame.origin.x + (event.locationInWindow.x - initialLocation.x)
+//
+//        // Ensure the window remains within screen bounds
+//        let maxX = screen.visibleFrame.maxX - windowFrame.width
+//        let minX = screen.visibleFrame.minX
+//
+//        windowFrame.origin.x = min(maxX, max(minX, newX))  // Clamp X position
+//
+//        // Apply new frame
+//        setFrame(windowFrame, display: true, animate: false)
+//        nudgeWindowDelegate?.nudgeDragged()
+        isNudgeDraggedInCurrentFocusSession = true
     }
 }
 
@@ -5445,108 +5062,7 @@ class StageManager:NSObject {
 
 
 
-//
-
-func checkUrlFromAiWithNewIntention(url:String, domain:String, tab_title:String, intentionForThisSite:String, currentRunningFocusModeName:String, shouldChangeCuddlyModeProgressCount:Bool,fullUrl:String){// new work
-    let durationAllowedByConviceAi = 90
-    let endTime = Calendar.current.date(byAdding: .second, value: durationAllowedByConviceAi, to: Date()) ?? Date()
-    dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus[domain] = ["totalDurationSpent":durationAllowedByConviceAi, "convinceAiIntention":intentionForThisSite, "isAllowedByConvinceAi": true, "endTime": endTime, "url": url]
-    
-    
-    var arrayOfLast5Domain = [[String:String]]()
-    
-    let lastFiveElements = arrConvinceAiUrlsInCurrentFocus.suffix(5)
-    for info in lastFiveElements{
-        let url = info["url"] ?? ""
-        let intentionForSite = info["intentionForSite"] ?? ""
-        let pageTitle = info["pageTitle"] ?? ""
-        
-        let json: [String: String] = [
-            "url": url,
-            "justification": intentionForSite,
-            "pageTitle": pageTitle
-        ]
-        arrayOfLast5Domain.append(json)
-    }
-    
-    
-    arrConvinceAiUrlsInCurrentFocus.append(["url":url, "intentionForSite":intentionForThisSite, "pageTitle":tab_title])
-    let currentTaskInToDoPlayer = getCurrentTaskInFocusMode()
-    allApiObject.chatGPTIsURLSafeWithNewIntention(url: url, tab_title: tab_title, focus_mode: currentRunningFocusModeName, intention: whatToAchieveInFocusBlock, intentionForThisSite: intentionForThisSite, other_explanations_including_domains: arrayOfLast5Domain, currentTaskInToDoPlayer: currentTaskInToDoPlayer, completionHandler: {dic, checkedUrl, payload  in
-        if dic != nil{
-            DispatchQueue.main.async{
-                setFocusBearIconToNormal()
-                let reason = dic?.value(forKey: "reason") as? String ?? ""
-                if let dProbability = dic?.value(forKey: "allowed_probability") as? Double{
-                    
-                    
-                    addEntryInfocusAlignmentScoreCsv(url: url, tabTitle: tab_title, focusMode: currentRunningFocusModeName, intention: whatToAchieveInFocusBlock, aiReason: reason, allowedProbability: "\(dProbability)", totalScore: "")
-                    
-                    let currentTaskName = currentTaskInToDoPlayer ?? ""
-                    addEntryInFocusAIDecisionsCsv(url: url, domain: domain, tabTitle: tab_title, score: "\(dProbability)", intention: whatToAchieveInFocusBlock, aiReason: reason, currentTaskName: currentTaskName, additionalUserJustification: intentionForThisSite)
-                    
-                    if var oldData = dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[url]{
-                        let isVisible = oldData["isVisibleUrl"] as? Bool ?? true
-                        if isVisible{
-                            boxForStatusBarForTooltip?.customToolTip = reason
-                        }
-                        oldData["probability"] = dProbability
-                        dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[url] = oldData
-                    }else{
-                        dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[url] = ["probability":dProbability, "isVisibleUrl":true, "totalSeconds":0, "startedTime":Date(), "reason":reason]
-                    }
-                    dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus[domain]?["reason"] = reason
-                    dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus[domain]?["payload"] = payload
-                    calculateFocusAlignmentScore()
-                    if(dProbability >= 0.60){
-                        // Safe URL
-                        addLog(text: "url is safe according to chat gpt")
-                        allApiObject.capturePosthog(event: "allow-automatically-convince-ai", metadata: [:])
-                        
-                        arrAllowedUrlsInCuddlyModeCurrentFocus.append(url)
-                        arrAllowedTabTitlesInCuddlyModeCurrentFocus.append(tab_title)
-                        dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus[domain]?["probability"] = dProbability
-                        dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus[domain]?["isAllowedByAi"] = true
-                        
-                        if shouldChangeCuddlyModeProgressCount{
-                            SettingsManagerObject.isSettingsChanged = true
-                            SettingsManagerObject.cuddlyModeProgressCount = SettingsManagerObject.cuddlyModeProgressCount + 1
-                            SettingsManagerObject.putUserLocalDeviceSettings()
-                        }
-                        
-                        // update score
-                    }else if currentFocusAlignmentScore < minFocusAlignmentScoreToShowDistractingPopUp{
-                        //Unsafe url
-                        // do not touch cuddlyModeProgressCount here ... after 90 seconds if user use it by setting intention then we will set it
-                        dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus[domain]?["probability"] = dProbability
-                    }
-                }
-            }
-        }else{
-            if let oldData = dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[url]{
-                let probability = oldData["probability"] as? Double ?? 0.0
-                dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus[domain]?["probability"] = probability
-            }
-            // do not touch cuddlyModeProgressCount here ... after 90 seconds if user use it by setting intention then we will set it
-        }
-    })
-    
-}
-
-
-func refreshFocusModeData(){
-    arrBlockedAppsInCuddlyModeCurrentFocus.removeAll()
-    arrAllowedAppsInCuddlyModeCurrentFocus.removeAll()
-    arrAllowedUrlsInCuddlyModeCurrentFocus.removeAll()
-    arrBlockedUrlsInCuddlyModeCurrentFocus.removeAll()
-    dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus.removeAll()
-    arrAllowedDomianInCuddlyModeCurrentFocus.removeAll()
-}
 var habitPlayingBeforeMacSleepId = ""//Focus alignment score drops to 0% after resuming from sleep #1321
-
-
-
-
 
 
 func quitApplicationSmoothly() {
@@ -5559,6 +5075,7 @@ func quitApplicationSmoothly() {
         NSApp.terminate(nil)
     }
 }
+
 func disableAllAlertsBeforeQuit(){
     addLog(text: "func :-disableAllAlertsBeforeQuit")
     for window in NSApp.windows {
@@ -5576,3 +5093,91 @@ func disableAllAlertsBeforeQuit(){
 }
 
 
+
+
+//func setupLocalCrashReporter() {
+//    let config = PLCrashReporterConfig(signalHandlerType: .BSD, symbolicationStrategy: .all)
+//    let reporter = PLCrashReporter(configuration: config)
+//
+//    if reporter.hasPendingCrashReport() {
+//        do {
+//            let data = try reporter.loadPendingCrashReportDataAndReturnError()
+//            let crashReport = try PLCrashReport(data: data)
+//            let text = PLCrashReportTextFormatter.stringValue(for: crashReport, with: .full)
+//
+//            // Save to disk
+//            let url = FileManager.default.homeDirectoryForCurrentUser
+//                .appendingPathComponent("Library/Logs/MyApp/crash_\(Date().timeIntervalSince1970).log")
+//            try text.write(to: url, atomically: true, encoding: .utf8)
+//
+//            // Purge the crash so it's not handled again
+//            reporter.purgePendingCrashReport()
+//        } catch {
+//            print("Failed to process crash report: \(error)")
+//        }
+//    }
+//
+//    do {
+//        try reporter.enableAndReturnError()
+//    } catch {
+//        print("Failed to enable crash reporter: \(error)")
+//    }
+//}
+
+
+func isCutOffTimeGoing()->Bool{
+    if cutOffTime != nil{
+        let cutOffDate = Calendar.current.date(bySettingHour: cutOffTime!.hour, minute: cutOffTime!.minute, second: cutOffTime!.second, of: Date())!
+        let currentDate = Date()
+        if currentDate > cutOffDate{
+            return true
+        }
+    }
+    return false
+}
+
+
+func getTimeSinceLastBreak()->String?{
+    var breaksStartTime = UserDefaults.standard.object(forKey: kUserdefaultsLastBreaksStartTime) as? Date
+    if breaksStartTime == nil{
+        var startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
+        if Date().compare(startDate) == .orderedAscending {// current date < start date(current date is 1 am and start date is 10 am )
+            startDate = Calendar.current.date(byAdding: .day, value: -1, to: startDate) ?? startDate
+        }
+        breaksStartTime = startDate
+    }else{
+        var startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
+        if Date().compare(startDate) == .orderedAscending {// current date < start date(current date is 1 am and start date is 10 am )
+            startDate = Calendar.current.date(byAdding: .day, value: -1, to: startDate) ?? startDate
+        }
+        
+        if breaksStartTime!.compare(startDate) == .orderedAscending {//breaksStartTime < start date
+            breaksStartTime = startDate
+        }
+    }
+    if let breaksStartTime = breaksStartTime{
+        let currentDate = Date()
+        let diffSeconds = Calendar.current.dateComponents([.second], from: breaksStartTime, to: currentDate).second ?? 0
+        if diffSeconds > 0{
+            let time = getStringTimeFromSecondsWithoutSeconds(seconds: Int(diffSeconds))
+            var lastBreakTimeText = "Time since last break: <TIME>"
+            if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
+                lastBreakTimeText = menuInfo.value(forKey: "lastBreakTimeText") as? String ?? lastBreakTimeText
+            }
+            lastBreakTimeText = lastBreakTimeText.replacingOccurrences(of: "<TIME>", with: time)
+            return lastBreakTimeText
+        }
+    }
+    return nil
+}
+
+
+// in macos 26 user was able to click on superview through subview in enterPasswordVc view (a button to prevent this already there but in macos 26 button was not stoppoint clickin on superview) to prevent this made this view 14/7/25 1.26.390
+class BlockingView: NSView {
+    override func mouseDown(with event: NSEvent) {
+       // super.mouseDown(with: event)
+    }
+    override func mouseUp(with event: NSEvent) {
+       // super.mouseDown(with: event)
+    }
+}

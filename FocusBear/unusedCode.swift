@@ -75,569 +75,612 @@
 
 
 
-//** AUTH0 LOGIN**//
 
-//    var sessionStart = false
-//    func login(isLogin:Bool) {
-//        addLog(text: "show Login window")
-//        print("*****login call")
+
+//focus-block.html // python3 -m http.server 8000//http://localhost:8000
+
+
+
+
+//import Network
 //
-////        sessionStart = true
+//class localHost:NSObject{
+//    // Define the port for the server
+//    let port: UInt16 = 8000
 //
-//        var parameters = [String:String]()
-//        if isLogin{
-//            parameters = ["prompt": "login"]
-//        }else{
-//            parameters = ["screen_hint":"signup"]
+//    func start(){
+//        // Create a listener for incoming TCP connections
+//        //        guard let listener = try? NWListener(using: .tcp, on: NWEndpoint.Port(rawValue: port)!) else{
+//        //            return;
+//        //        }
+//        //        print("Server running on port \(port)...")
+//        //
+//        //        listener.newConnectionHandler = { connection in
+//        //            connection.start(queue: .main)
+//        //
+//        //            connection.receiveMessage { (data, context, isComplete, error) in
+//        //                guard let data = data, !data.isEmpty else {
+//        //                    print("No data received.")
+//        //                    return
+//        //                }
+//        //
+//        //                // Parse HTTP request
+//        //                if let request = String(data: data, encoding: .utf8) {
+//        //                    print("Received request:\n\(request)")
+//        //                }
+//        //
+//        //                // Prepare an HTTP response
+//        //                let responseBody = "<html><body><h1>Welcome to Swift HTTP Server!</h1></body></html>"
+//        //                let httpResponse =
+//        //                """
+//        //                HTTP/1.1 200 OK
+//        //                Content-Type: text/html
+//        //                Content-Length: \(responseBody.utf8.count)
+//        //
+//        //                \(responseBody)
+//        //                """
+//        //
+//        //                // Send response
+//        //                connection.send(content: httpResponse.data(using: .utf8), completion: .contentProcessed({ error in
+//        //                    if let error = error {
+//        //                        print("Failed to send response: \(error)")
+//        //                    } else {
+//        //                        print("Response sent successfully.")
+//        //                    }
+//        //                }))
+//        //            }
+//        //        }
+//        //
+//        //        // Start the listener
+//        //        listener.start(queue: .main)
+//        //
+//        //        // Keep the server running
+//        //        RunLoop.main.run()
+//        //    }
+//
+//
+//        do {
+//            // Convert port to NWEndpoint.Port
+//            guard let nwPort = NWEndpoint.Port(rawValue: port) else {
+//                print("Invalid port number: \(port)")
+//                exit(1)//
+//            }
+//
+//            // Create the NWListener
+//            let listener = try NWListener(using: .tcp, on: nwPort)
+//            print("Server attempting to start on port \(port)...")
+//
+//            listener.stateUpdateHandler = { state in
+//                switch state {
+//                case .ready:
+//                    print("Server is ready and listening on port \(self.port).")
+//                case .failed(let error):
+//                    print("Listener failed with error: \(error.localizedDescription)")
+//                case .waiting(let error):
+//                    print("Listener is waiting with error: \(error.localizedDescription)")
+//                case .cancelled:
+//                    print("Listener has been cancelled.")
+//                default:
+//                    break
+//                }
+//            }
+//
+//            // Handle new connections
+//            listener.newConnectionHandler = { connection in
+//                print("New connection received!")
+////                connection.start(queue: .main)
+//                connection.start(queue: DispatchQueue.global(qos: .background))
+//                connection.receive(minimumIncompleteLength: 1, maximumLength: 4096) { (data, context, isComplete, error) in
+//                    if let error = error {
+//                        print("Error receiving message: \(error.localizedDescription)")
+//                        return
+//                    }
+//
+//                    guard let data = data, let request = String(data: data, encoding: .utf8) else {
+//                        print("No valid data received.")
+//                        return
+//                    }
+//
+//                    self.handleRequest(request, connection: connection)
+//
+//
+//                }
+//
+//                connection.receive(minimumIncompleteLength: 1, maximumLength: 4096) { data, _, isComplete, error in
+//                    if let error = error {
+//                        print("Error receiving message: \(error.localizedDescription)")
+//                        return
+//                    }
+//
+//                    guard let data = data, !data.isEmpty else {
+//                        print("No data received.")
+//                        return
+//                    }
+//
+//                    // Process received data
+//                    if let request = String(data: data, encoding: .utf8) {
+//                        print("Received request:\n\(request)")
+//                    }
+//                }
+//            }
+//
+//            // Start the listener
+////            listener.start(queue: .main)
+//
+//
+//
+//            let backgroundQueue = DispatchQueue.global(qos: .background)
+//            listener.start(queue: backgroundQueue)
+//            print("Listener started on background queue, awaiting connections...")
+//
+//
+//
+//
+//
+//
+//
+//            // Keep the server running
+//           // RunLoop.main.run()
+//
+//        } catch {
+//            print("Failed to start the server: \(error.localizedDescription)")
+//            exit(1)// 
 //        }
 //
-//        Auth0
-//            .webAuth()
-//            .useEphemeralSession()
-//            .parameters(parameters)// Ignore the cookie (if present) and show the login page
-//            .scope("offline_access")
-//            .audience("https://auth.focusbear.io/api/v2/")
-//            .start { [self] result in
-////                if !sessionStart{
-////                    addLog(text: "session already closed")
-////                    return;
-////                }
-////                sessionStart = false
-//                DispatchQueue.main.async {
-//                    if loginHelpWcObj != nil{
-//                        if loginHelpWcObj?.window?.isVisible ?? false{
-//                            loginHelpWcObj?.window?.close()
-//                        }
-//                    }
-//                }
-//                switch result {
-//                case .success(let credentials):// baad mai check krna iske ander main thred hota h kya automatically hi
-//                    addLog(text: "Login success")
-//                    DispatchQueue.main.async {
-//                        self.statusbutton?.action = nil
-//                        self.user = User(from: credentials.accessToken)
-//                        let _ = self.credentialsManager.store(credentials: credentials)
-//                        self.loadCredentialsAndDeviceId()
-//                        if UserDefaults.standard.object(forKey: kUserdefaultsVideoShown) == nil{
-////                            showOnboardingCardWindow()
-//                        }
-//                    }
-//                case .failure(let error):
-//                    print("Failed with: \(error)")
-//                    print("Failed with: \(error)")
-//                    DispatchQueue.main.async {
-//                        showAskLoginWindow()
-//                    }
+//    }//file:///Users/manish/Library/Application%20Support/com.App.EarnYourScreentime/focus-block.html?old_url=https%3A%2F%2Fwww.facebook.com%2F&block_type=always-blocked&block_mode=cuddly&encouraging_info=%7B%0A%20%20%22focused_time%22%20%3A%202367.366,%0A%20%20%22long_term_goals%22%20%3A%20%5B%0A%20%20%20%20%22Meditate%20consistently%22%0A%20%20%5D%0A%7D&version=1.21.354
 //
-////                    addLog(text: "login failed - app quit")
-////                    DispatchQueue.main.async {
-////                        shell(launchPath: "/bin/launchctl", arguments: ["unload","-w","\("/Users/")\(NSUserName())\("/Library/LaunchAgents/\(mainAppBundelId).plist")"])
-////                        self.terminateFromSelf = true
-////                        NSApp.terminate(self)
-////                    }
-//                }
-//            }
+//
+//    //http://localhost:8000/open?file=/Users/manish/Library/Application%20Support/com.App.EarnYourScreentime/focus-block.html?old_url=https%3A%2F%2Fwww.facebook.com%2F&block_type=always-blocked&block_mode=cuddly&encouraging_info=%7B%0A%20%20%22focused_time%22%20%3A%202367.366,%0A%20%20%22long_term_goals%22%20%3A%20%5B%0A%20%20%20%20%22Meditate%20consistently%22%0A%20%20%5D%0A%7D&version=1.21.354
+//
+////    private func handleRequest(_ request: String, connection: NWConnection) {
+////            print("Received request:\n\(request)")
+////
+////            // Extract requested file path from HTTP request
+//////            let lines = request.split(separator: "\n")
+//////            guard let firstLine = lines.first else { return }
+//////            let components = firstLine.split(separator: " ")
+//////
+//////            guard components.count > 1, components[0] == "GET" else {
+//////                send404Response(connection)
+//////                return
+//////            }
+//////
+//////            let urlPath = String(components[1]).removingPercentEncoding ?? "/"
+//////
+//////            // Check if the request is for a local file
+//////            if urlPath.hasPrefix("/open?file=") {
+//////                let filePath = urlPath.replacingOccurrences(of: "/open?file=", with: "")
+//////                serveFile(at: filePath, connection: connection)
+//////            } else {
+//////                send404Response(connection)
+//////            }
+////
+////        guard let firstLine = request.components(separatedBy: "\n").first,
+////                  firstLine.starts(with: "GET ") else {
+////                send404Response(connection)
+////                return
+////            }
+////
+////            // Extract the full URL path (e.g., /Users/you/Desktop/file.html?abc=123)
+////            let pathWithParams = firstLine.components(separatedBy: " ")[1]
+////
+////            // Split the path and query
+////            let split = pathWithParams.components(separatedBy: "?")
+////            let encodedPath = split[0]
+////
+////            // Decode percent encoding to get actual file path
+////            guard let decodedPath = encodedPath.removingPercentEncoding else {
+////                send404Response(connection)
+////                return
+////            }
+////
+////            // Serve the file
+////            serveFile(at: decodedPath, connection: connection)
+////
+////        }
+//
+//
+//    private func handleRequest(_ request: String, connection: NWConnection) {
+//        guard let firstLine = request.components(separatedBy: "\n").first,
+//              firstLine.starts(with: "GET ") else {
+//            send404Response(connection)
+//            return
+//        }
+//
+//        let pathWithParams = firstLine.components(separatedBy: " ")[1]
+//        let split = pathWithParams.components(separatedBy: "?")
+//        let encodedPath = split[0]
+//
+//        guard let decodedPath = encodedPath.removingPercentEncoding else {
+//            send404Response(connection)
+//            return
+//        }
+//
+//        serveFile(at: decodedPath, connection: connection)
 //    }
-
-//**AUTH0 LOGOUT//**
-
-//        login()// agar loin ko call krna hi h to alag se code likho or app close krna jyada sahi rhega automatially lgin view aayga
-//        Auth0.webAuth()
-//            .useEphemeralSession()
-//            .parameters(["prompt": "login"]) // Ignore the cookie (if present) and show the login page
-//            .start { result in
-//                switch result {
-//                case .success:
-//                    self.user = nil
-//                    //            let _ = self.credentialsManager.clear()
-//                case .failure(let error):
-//                    print("Failed with: \(error)")
-//                }
 //
+//    private func getContentType(for pathExtension: String) -> String {
+//        switch pathExtension.lowercased() {
+//            case "html": return "text/html"
+//            case "css": return "text/css"
+//            case "js": return "application/javascript"
+//            case "json": return "application/json"
+//            case "png": return "image/png"
+//            case "jpg", "jpeg": return "image/jpeg"
+//            case "gif": return "image/gif"
+//            case "svg": return "image/svg+xml"
+//            default: return "application/octet-stream"
+//        }
+//    }
+//
+////    private func serveFile(at filePath: String, connection: NWConnection) {
+////           let fileURL = URL(fileURLWithPath: filePath)
+////
+////           if FileManager.default.fileExists(atPath: fileURL.path) {
+////               do {
+////                   let fileData = try Data(contentsOf: fileURL)
+////                   let contentType = getContentType(for: fileURL.pathExtension)
+////
+////                   let httpResponse =
+////                   """
+////                   HTTP/1.1 200 OK
+////                   Content-Type: \(contentType)
+////                   Content-Length: \(fileData.count)
+////
+////                   """.data(using: .utf8)! + fileData
+////
+//////                   connection.send(content: httpResponse, completion: .contentProcessed({ _ in
+//////                       connection.cancel()
+//////                   }))
+////                   // Send response
+////                   connection.send(content: httpResponse, completion: .contentProcessed({ error in
+////                       if let error = error {
+////                           print("Failed to send response: \(error)")
+////                       } else {
+////                           print("Response sent successfully.")
+////                           connection.cancel()
+////                       }
+////                   }))
+////
+//////                   connection.receive(minimumIncompleteLength: 1, maximumLength: 1024) { data, _, isComplete, error in
+//////                       if let error = error {
+//////                           print("Error receiving message: \(error.localizedDescription)")
+//////                           return
+//////                       }
+//////
+//////                       guard let data = data, !data.isEmpty else {
+//////                           print("No data received.")
+//////                           return
+//////                       }
+//////
+//////                       // Process received data
+//////                       if let request = String(data: data, encoding: .utf8) {
+//////                           print("Received request:\n\(request)")
+//////                       }
+//////                   }
+////               } catch {
+////                   print("Error reading file: \(error.localizedDescription)")
+////                   send404Response(connection)
+////               }
+////           } else {
+////               send404Response(connection)
+////           }
+////       }
+//
+//    private func serveFile(at filePath: String, connection: NWConnection) {
+//        let fileURL = URL(fileURLWithPath: filePath)
+//        print(filePath)
+//
+//        if FileManager.default.fileExists(atPath: fileURL.path) {
+//            do {
+//                let fileData = try Data(contentsOf: fileURL)
+//                let contentType = getContentType(for: fileURL.pathExtension)
+//
+//                let httpResponse =
+//                """
+//                HTTP/1.1 200 OK
+//                Content-Type: \(contentType)
+//                Content-Length: \(fileData.count)
+//
+//                """.data(using: .utf8)! + fileData
+//
+//                connection.send(content: httpResponse, completion: .contentProcessed({ error in
+//                    if let error = error {
+//                        print("Failed to send response: \(error)")
+//                    } else {
+//                        print("Response sent successfully for file: \(fileURL.lastPathComponent)")
+//                    }
+//                    connection.cancel()
+//                }))
+//            } catch {
+//                print("Error reading file: \(error)")
+//                send404Response(connection)
 //            }
-//        return;
-//        Auth0
-//            .webAuth()
-//            .clearSession { result in
-//                switch result {
-//                case .success:
-//                    self.user = nil
-//                    let _ = self.credentialsManager.clear()
-//                case .failure(let error):
-//                    print("Failed with: \(error)")
-//                }
-//            }
+//        } else {
+//            print("File not found: \(filePath)")
+//            send404Response(connection)
+//        }
+//    }
+//
+//       private func send404Response(_ connection: NWConnection) {
+//           let response =
+//           """
+//           HTTP/1.1 404 Not Found
+//           Content-Type: text/html
+//
+//           <html><body><h1>404 Not Found</h1></body></html>
+//           """.data(using: .utf8)
+//
+//           connection.send(content: response, completion: .contentProcessed({ _ in
+//               connection.cancel()
+//           }))
+//       }
+//
+////       private func getContentType(for fileExtension: String) -> String {
+////           switch fileExtension.lowercased() {
+////           case "html": return "text/html"
+////           case "css": return "text/css"
+////           case "js": return "application/javascript"
+////           case "png": return "image/png"
+////           case "jpg", "jpeg": return "image/jpeg"
+////           case "gif": return "image/gif"
+////           case "json": return "application/json"
+////           case "txt": return "text/plain"
+////           default: return "application/octet-stream"
+////           }
+////       }
+//}
 
 
 
 
+//old morning habit check work
 
-//        ***************** needed in testing only *********************
+//                                            //
+//                                            if let current_activity_assigned_at = json?.value(forKey: "current_activity_assigned_at") as? String{
+//                                                if let activityAssignedDate = getDateFromStringInUtc(date: current_activity_assigned_at, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'") {
+//                                                    if let currentActivitySequence = json?.value(forKey: "current_activity_sequence") as? NSDictionary{
 //
+//                                                        if let currentActivity = json?.value(forKey: "current_activity") as? NSDictionary{
+//                                                            if let sequenceId = currentActivitySequence.value(forKey: "id") as? String, let activityId = currentActivity.value(forKey: "id") as? String{
 //
-//                                shutoff window
-//                                mainWindowControllerObj?.showWindow(self)
-//                                mainViewControllerObj?.shutOffMac()
-//
-//                                show evening habits
-//                                mainWindowControllerObj?.showWindow(self)
-//                                mainViewControllerObj?.showAllEveningHabits()
-//                                showBlankWindowInSecondaryMonitor()
-//                                self.perform(#selector(showMorningHabitAfterTimer), with: nil, afterDelay: 80)
+//                                                                if let habitSequenceID = arrFilteredMorningHabits.first?.activity_sequence_id{
 //
 //
 //
+//                                                                    if activityAssignedDate.compare(startDate) == .orderedDescending{//if activityAssignedDate > startDate
+//                                                                        // morning activity start hui thi lekin puri nahi hui hai
+//                                                                        if habitSequenceID == sequenceId{
+//                                                                            //                print("current_activity_sequence is pending")
+//                                                                            addLog(text: "morning habit sequnce is pending. start from current pending habit")
+//                                                                            self.isProcessingHabitRoutine = false
+//                                                                            var skippedActivities = [String]()
+//                                                                            if let activities = json?.value(forKey: "current_sequence_skipped_activities") as? [String]{
+//                                                                                skippedActivities = activities
+//                                                                            }//current_sequence_completed_activities
 //
-//                                show brain dump window
-//                                showBrainDumpWindow()
-//                                showAskLoginWindow()//
+//                                                                            var completedActivities = [String]()
+//                                                                            if let activities = json?.value(forKey: "current_sequence_completed_activities") as? [String]{
+//                                                                                completedActivities = activities
+//                                                                            }
+//                                                                            self.startHabitsCall(activityId: activityId, skippedActivities:skippedActivities, completedActivities: completedActivities)
+//                                                                        }else{//it means current activity is not morning habit and morning habit done for today
+//                                                                            addLog(text: "current activity is not morning habit and it means morning habit done for today")//
+//                                                                            UserDefaults.standard.set(Date(), forKey: kUserdefaultsLastHabitShowDate)
+//
+//                                                                            UserDefaults.standard.removeObject(forKey: kUserdefaultsArrayBreaksDurations)
+//
+//                                                                            isHabitAlreadyShowed = true
+//                                                                            self.isProcessingHabitRoutine = false
+//                                                                            if mainWindowControllerObj?.window?.isVisible ?? false{//if shutoff or focus summary is showing then
+//                                                                                self.abortAllProcess()
+//                                                                                mainWindowControllerObj?.window?.close()
+//                                                                                hideBlankWindowInSecondaryMonitor()
+//                                                                            }
+//                                                                            currentState = ._NOTHING_
+//                                                                            mainWindowControllerObj?.loadWindow()
+//                                                                            mainViewControllerObj?.setActivityTimer()
+//
+//                                                                            allApiObject.forceCompleteCurrentSequence(activity_sequence_id: sequenceId, isForToday: true, completionHandler: {json in
 //
 //
-//                                use this to show abort done view
-//                                mainWindowControllerObj?.showWindow(self)
-//                                mainViewControllerObj!.showAbortConfirmationView()
-//                                showBlankWindowInSecondaryMonitor()
-//                                showWelcomeOnboardingWindow()//
-//                                showOnboardingVideoWindow()
-//                                showOnboardingCardWindow(isLogin: true)
-//                                showBreakWarningWindow()
-//                                showEasyPostponeWindow()
-//                                showPreloadFocusModesWindow()
-//                                preloadFocusModesWindowControllerObj!.contentViewController = getHowHeardVcObj()
-//                                showPopUpOfflineWindow()
-//                                showExtraNagsAfterInactivity()
-//                                showTrialExpiredWindow()
+//                                                                                DispatchQueue.main.async {
 //
-//                                mainWindowControllerObj?.loadWindow()
-//                                isHabitAlreadyShowed = true
+//                                                                                }
+//                                                                            })
+//
+//                                                                        }
+//                                                                    }
+//                                                                    else{//
+//                                                                        //                print("pending routin is not from current day clean all running sequence")
+//                                                                        addLog(text: "pending routin is not from current day clean all running sequence")
+//                                                                        allApiObject.forceCompleteCurrentSequence(activity_sequence_id: sequenceId, isForToday: false, completionHandler: {json in
+//
+//
+//                                                                            DispatchQueue.main.async {
+//                                                                                addLog(text: "start new morning routine sequence")
+//                                                                                self.startHabitsCall(activityId: nil, skippedActivities:[], completedActivities: [])
+//                                                                                self.isProcessingHabitRoutine = false
+//                                                                            }
+//                                                                        })
+//                                                                    }
+//
+//                                                                }
+//                                                            }else{
+//                                                                addLog(text: "start new morning routine sequence:- current sequence Id or current activity Id not found")
+//                                                                self.startHabitsCall(activityId: nil, skippedActivities:[], completedActivities: [])
+//                                                                self.isProcessingHabitRoutine = false
+//                                                            }
+//                                                        }else{
+//                                                            addLog(text: "start new morning routine sequence:- current_activity not found as dictionary")// ktyaa krna chahiye yha
+//                                                            //
+//                                                            var isForToday = false
+//                                                            if activityAssignedDate.compare(startDate) == .orderedDescending{
+//                                                                isForToday = true
+//                                                            }
+//                                                            if let sequenceId = currentActivitySequence.value(forKey: "id") as? String{
+//                                                                addLog(text: "pending routin is not for use clean all running sequence")
+//                                                                allApiObject.forceCompleteCurrentSequence(activity_sequence_id: sequenceId, isForToday: isForToday, completionHandler: {json in
+//
+//
+//                                                                    DispatchQueue.main.async {
+//                                                                        addLog(text: "start new morning routine sequence")
+//                                                                        self.startHabitsCall(activityId: nil, skippedActivities:[], completedActivities: [])
+//                                                                        self.isProcessingHabitRoutine = false
+//                                                                    }
+//                                                                })
+//                                                            }else{
+//                                                                addLog(text: "start new morning routine sequence")
+//                                                                self.startHabitsCall(activityId: nil, skippedActivities:[], completedActivities: [])
+//                                                                self.isProcessingHabitRoutine = false
+//                                                            }
+//                                                        }
+//                                                    }else{
+//                                                        addLog(text: "start new morning routine sequence:- current_activity_sequence not found as dictionary")
+//                                                        self.startHabitsCall(activityId: nil, skippedActivities:[], completedActivities: [])
+//                                                        self.isProcessingHabitRoutine = false
+//                                                    }
+//                                                }else{
+//                                                    addLog(text: "start new morning routine sequence:- can't create Date object from current_activity_assigned_at")
+//                                                    self.startHabitsCall(activityId: nil, skippedActivities:[], completedActivities: [])
+//                                                    self.isProcessingHabitRoutine = false
+//                                                }
+//                                            }else{
+//                                                addLog(text: "start new morning routine sequence :- current_activity_assigned_at not found :- \(json!)")
+//                                                self.startHabitsCall(activityId: nil, skippedActivities:[], completedActivities: [])
+//                                                self.isProcessingHabitRoutine = false
+//                                            }
+//
+//                                            self.startHabitsCall(activityId: nil, skippedActivities:[], completedActivities: [])//
+//                                            self.isProcessingHabitRoutine = false
 
-//                                UserDefaults.standard.set(Date().dayBefore, forKey: kUserdefaultsEveningHabitsShowedTillDate)
-//                                arrKeywordsToAllowInFocus = ["111", "222", "333"]//
-//                                lastFocusModeTempInfo = lastFocusTempInfo(id: "currentFocusModeId", arrAllowedAppsInCuddlyModeCurrentFocus: [], arrAllowedUrlsInCuddlyModeCurrentFocus: ["google.com", "facebook.com"])
-//                                showaddFocusTempUrlsOrAppsWindow()//
-//
-//                                showFocusEndWarningWindow()
-//
-//                                getPreloadFocusModesWindowControllerObj()
-//                                preloadFocusModesWindowControllerObj!.contentViewController = getFocusTipsVcObjObj()
-//                                preloadFocusModesWindowControllerObj!.showWindow(self)
-//
-//                                showWelcomeWindow()
-//                                showHowHeardWindow()
-//                                showAskLoginWindow()
-//                                showChooseFrictionLevelWindow()
-//
-//                                showNaturalBreakDetectionWindow()
-//                                showChooseFrictionLevelWindow()
-//                                showCustomLoginWindow(isLogin: false)
-//                                return;//
-//        ®
-//        *******************************************************************
 
 
-//func getSchemsFile(completionHandler: @escaping(_ result: NSDictionary?) -> ()) {//
-//    if let myUrl = NSURL(string: "https://focus-bear.github.io/assets/config/settings-schema.json"){
+
+// old evening habit check work
+
 //
-//        let request = NSMutableURLRequest(url:myUrl as URL);
-//        request.httpMethod = "GET";
+//                        if let current_activity_assigned_at = json?.value(forKey: "current_activity_assigned_at") as? String{
+//                            if let activityAssignedDate = getDateFromStringInUtc(date: current_activity_assigned_at, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'") {
+//                                if let currentActivitySequence = json?.value(forKey: "current_activity_sequence") as? NSDictionary{
 //
-//        let task = URLSession.shared.dataTask(with: request as URLRequest) {
-//            data, response, error in
+//                                    if let currentActivity = json?.value(forKey: "current_activity") as? NSDictionary{
+//                                        if let sequenceId = currentActivitySequence.value(forKey: "id") as? String, let activityId = currentActivity.value(forKey: "id") as? String{
 //
-//            if let httpResponse = response as? HTTPURLResponse {
-//                if httpResponse.statusCode == 200{
 //
-//                    if data != nil{
 //
-//                        do {
-//                            if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
+//                                            addLog(text: "processEveningHabit - pending sequence id - \(sequenceId)")
+//                                            if let habitSequenceID = arrFilteredEveningHabits.first?.activity_sequence_id{
 //
-//                                print(jsonResult)
-//                                completionHandler(jsonResult)
-//                                return
+//
+//                                                if activityAssignedDate.compare(shutoffDate) == .orderedDescending && habitSequenceID == sequenceId{//if activityAssignedDate > shutoffDate
+//                                                    // evening activity started but not completed
+//
+//                                                    if habitSequenceID == sequenceId{
+//                                                        //                print("current evening routine sequence is pending")
+//                                                        addLog(text: "current evening routine sequence is pending")
+//                                                        self.isProcessingHabitRoutine = false
+//                                                        var skippedActivities = [String]()
+//                                                        if let activities = json?.value(forKey: "current_sequence_skipped_activities") as? [String]{
+//                                                            skippedActivities = activities
+//                                                        }
+//                                                        var completedActivities = [String]()
+//                                                        if let activities = json?.value(forKey: "current_sequence_completed_activities") as? [String]{
+//                                                            completedActivities = activities
+//                                                        }
+//                                                        self.showEveningHabit(activityId: activityId, skippedActivities: skippedActivities, completedActivities: completedActivities)
+//                                                    }else{
+//
+//                                                        addLog(text: "pending routine is not evening routine - \(sequenceId)")
+//                                                        allApiObject.forceCompleteCurrentSequence(activity_sequence_id: sequenceId, isForToday: true, completionHandler: {json in
+//                                                            // and strt break activity
+//                                                            DispatchQueue.main.async {
+//                                                                addLog(text: "start new evening routine sequence")
+//                                                                self.showEveningHabit(activityId: nil, skippedActivities: [], completedActivities: [])
+//                                                                self.isProcessingHabitRoutine = false
+//                                                            }
+//                                                        })
+//                                                    }
+//
+//                                                }else{
+//                                                    //                print("processEveningHabit - pending  routine is not from current day clean all running sequence or pending sequence is not evening routine - \(sequenceId)")
+//                                                    addLog(text: "processEveningHabit - pending  routine is not from current day clean all running sequence or pending sequence is not evening routine - \(sequenceId)")
+//
+//                                                    var isForToday = false
+//                                                    if activityAssignedDate.compare(shutoffDate) == .orderedDescending{
+//                                                        isForToday = true
+//                                                    }
+//
+//                                                    allApiObject.forceCompleteCurrentSequence(activity_sequence_id: sequenceId, isForToday: isForToday, completionHandler: {json in
+//                                                        // and strt break activity
+//                                                        DispatchQueue.main.async {
+//                                                            addLog(text: "start new evening routine sequence")
+//                                                            self.showEveningHabit(activityId: nil, skippedActivities: [], completedActivities: [])
+//                                                            self.isProcessingHabitRoutine = false
+//                                                        }
+//                                                    })
+//                                                }
+//                                            }
+//
+//                                        }else{
+//                                            addLog(text: "start new evening routine sequence:- current sequence Id or current activity Id not found")
+//                                            self.showEveningHabit(activityId: nil, skippedActivities: [], completedActivities: [])
+//                                            self.isProcessingHabitRoutine = false
+//                                        }
+//                                    }else{
+//                                        addLog(text: "start new evening routine sequense:- current_activity not found as dictionary")
+//
+//                                        if let sequenceId = currentActivitySequence.value(forKey: "id") as? String{
+//                                            addLog(text: "pending routin is not for use clean all running sequence")
+//
+//                                            var isForToday = false
+//                                            if activityAssignedDate.compare(shutoffDate) == .orderedDescending{
+//                                                isForToday = true
+//                                            }
+//
+//
+//                                            allApiObject.forceCompleteCurrentSequence(activity_sequence_id: sequenceId, isForToday: isForToday, completionHandler: {json in
+//                                                // and strt break activity
+//                                                DispatchQueue.main.async {
+//                                                    addLog(text: "start new evening routine sequence")
+//                                                    self.showEveningHabit(activityId: nil, skippedActivities: [], completedActivities: [])
+//                                                    self.isProcessingHabitRoutine = false
+//                                                }
+//                                            })
+//
+//                                        }else{
+//                                            addLog(text: "start new evening routine sequence")
+//                                            self.showEveningHabit(activityId: nil, skippedActivities: [], completedActivities: [])
+//                                            self.isProcessingHabitRoutine = false
+//                                        }
+//                                    }
+//                                }else{
+//                                    addLog(text: "start new evening routine sequense:- current_activity_sequence not found as dictionary")
+//                                    self.showEveningHabit(activityId: nil, skippedActivities: [], completedActivities: [])
+//                                    self.isProcessingHabitRoutine = false
+//                                }
+//                            }else{
+//                                addLog(text: "start new evening routine sequence:- can't create Date object from current_activity_assigned_at")
+//                                self.showEveningHabit(activityId: nil, skippedActivities: [], completedActivities: [])
+//                                self.isProcessingHabitRoutine = false
 //                            }
-//
-//                        }catch{
-//                            print(error)
+//                        }else{
+//                            addLog(text: "start new evening routine sequence :- current_activity_assigned_at not found :- \(json!)")
+//                            self.showEveningHabit(activityId: nil, skippedActivities: [], completedActivities: [])
+//                            self.isProcessingHabitRoutine = false
 //                        }
-//
-//                    }
-//                    completionHandler(nil)
-//                    return
-//                }else{
-//                    completionHandler(nil)
-//                    return
-//                }
-//            }
-//            if error != nil {
-//                completionHandler(nil)
-//                return
-//            }
-//            completionHandler(nil)
-//        }
-//        task.resume()
-//    }else{
-//        completionHandler(nil)
-//    }
-//}
 
-
-
-
-
-// done 28/7/23
-// short cut key in search
-// hide text box in set intention
-// rearrange code
-// bug solved focus end screen
-
-
-//aisettingsvc
-
-
-
-//if event.keyCode == 122{//f1
-//    char = "f1"
-//}else if event.keyCode == 120 {//f2
-//    char = "f2"
-//}else if event.keyCode == 99 {//f3
-//    char = "f3"
-//}else if event.keyCode == 118 {//f4
-//    char = "f4"
-//}else if event.keyCode == 96 {//f5
-//    char = "f5"
-//}else if event.keyCode == 97 {//f6
-//    char = "f6"
-//}else if event.keyCode == 98 {//f7
-//    char = "f7"
-//}else if event.keyCode == 100 {//f8
-//    char = "f8"
-//}else if event.keyCode == 101 {//f9
-//    char = "f9"
-//}else if event.keyCode == 109 {//f10
-//    char = "f10"
-//}else if event.keyCode == 103 {//f11
-//    char = "f11"
-//}else if event.keyCode == 111 {//f12
-//    char = "f12"
-//}
-//We're going to request permissions to control Chrome / Safari / Other browsers / System Events. This is needed to block distracting websites when you start a focus mode or to hide/unhide the dock.
-
-//extension menuViewController: NSTableViewDelegate, NSTableViewDataSource{
-//
-//    func numberOfRows(in tableView: NSTableView) -> Int {
-//        addLog(text: "menuViewController tableview:- numberOfRows")
-//        var isFocusModeOn = false
-//        var isFocusModePaused = false
-//        for dic in arrFocusType{
-//            if dic["isOn"] as? Bool == true{
-//                isFocusModeOn = true
-//            }else if dic["isPaused"] as? Bool == true{
-//                isFocusModePaused = true
-//            }
-//        }
-//        if isFocusModeOn || isFocusModePaused{
-//            lblOn.isHidden = false
-//            if isFocusModeOn{
-//                setRemainingTime()
-//            }else {
-//                let secondsBetween = appdelegate!.remainingFocusModeSecondsAfterPaused
-//
-//                var titleTimeRemainingText = "Time remaining:"
-//
-//                if let brainDumpVcInfo = configjson.value(forKey: "brainDumpVcInfo") as? NSDictionary{
-//                    titleTimeRemainingText = brainDumpVcInfo.value(forKey: "titleTimeRemainingText") as? String ?? titleTimeRemainingText
-//                }
-//
-//                titleTimeRemainingText = titleTimeRemainingText + " " + getStringTimeFromSeconds(seconds: Int(secondsBetween))
-//                lblOn.stringValue = titleTimeRemainingText
-//            }
-//            return 1
-//        }else{
-//            lblOn.isHidden = true
-//        }
-//
-//        if UserDefaults.standard.object(forKey: kUserdefaultsFocusTipsShown) == nil{
-//            return 2
-//        }
-//
-//        if isHardCorePomodoroModeOn{
-//            lblTitleFocus.stringValue = itemHardcorePomodoroTitle
-//            return 1
-//        }
-//        lblTitleFocus.stringValue = itemFocusTitle
-//
-//        return arrFocusType.count
-//    }
-//
-//    func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
-//        if let cell = tableView.makeView(withIdentifier: NSUserInterfaceItemIdentifier(rawValue: "tblCellFocus"), owner: nil) as? tblCellFocus {
-//            cell.rowHeight.constant = CGFloat(rowHeight)
-//            cell.boxtitle.isTableView = true
-//            addLog(text: "menuViewController tableview:- viewFor tableColumn")
-//            var cRow = row
-//            if isHardCorePomodoroModeOn{
-//                for i in 0..<arrFocusType.count{
-//                    if arrFocusType[i]["name"] as? String == hardcodePmodoroFocusModeName{
-//                        cRow = i
-//                        break;
-//                    }
-//                }
-//            }
-//            for i in 0..<arrFocusType.count{
-//                let dic = arrFocusType[i]
-//                if dic["isOn"] as? Bool == true{
-//                    cRow = i
-//                    break;
-//                }else if dic["isPaused"] as? Bool == true{
-//                    cRow = i
-//                    break;
-//                }
-//            }
-//            if UserDefaults.standard.object(forKey: kUserdefaultsFocusTipsShown) == nil{//Don’t ask them to set up focus modes upfront
-//                if row == 0{
-//                    for i in 0..<arrFocusType.count{
-//                        if arrFocusType[i]["isDefault"] as? Bool == true{
-//                            cRow = i
-//                            break;
-//                        }
-//                    }
-//                }else if row == 1{
-//                    for i in 0..<arrFocusType.count{
-//                        if arrFocusType[i]["isRelaxFocus"] as? Bool == true{
-//                            cRow = i
-//                            break;
-//                        }
-//                    }
-//                }
-//            }
-//
-//            cell.boxtitle.tagValue = cRow
-//
-//
-//            if let name = arrFocusType[cRow]["name"] as? String{
-//                cell.lblTitle.stringValue = name
-//            }else{
-//                cell.lblTitle.stringValue = ""
-//            }
-//            cell.imgViewAppIcon.isHidden = false
-//            if arrFocusType[cRow]["isOn"] as? Bool == true{
-//                cell.imgViewAppIcon.image = NSImage(named: NSImage.touchBarPauseTemplateName)
-//                if SettingsManagerObject.selectedFontIndex == intelOneMonoIndex{
-//                    cell.lblTitle.font = getBoldFont(size: 12)
-//                    cell.lblIntension.font = getRegularFont(size: 11)
-//                }else if SettingsManagerObject.selectedFontIndex == openDyslexicIndex{
-//                    cell.lblTitle.font = getBoldFont(size: 10)
-//                    cell.lblIntension.font = getRegularFont(size: 10)
-//                }else{
-//                    cell.lblTitle.font = getBoldFont(size: cell.lblTitle.font?.pointSize ?? 12)
-//                    cell.lblIntension.font = getRegularFont(size: 11)
-//                }
-//
-//                cell.lblTitle.textColor = buttonTitleColor
-//                if let color = arrFocusType[cRow]["color"] as? String{
-//                    cell.boxColor.fillColor = HexToColor(hexString: color)
-//                }
-//                cell.backgroundcolor = NSColor.black.withAlphaComponent(0.1)
-//                if whatToAchieveInFocusBlock.isEmpty{
-//                    cell.lblIntension.isHidden = true
-//                }else{
-//                    cell.lblIntension.isHidden = false
-//                    cell.lblIntension.stringValue = whatToAchieveInFocusBlock
-//                }
-//            }else if arrFocusType[cRow]["isPaused"] as? Bool == true{
-//                cell.boxColor.fillColor = .tertiaryLabelColor
-//                cell.imgViewAppIcon.image = NSImage(named: NSImage.touchBarPlayPauseTemplateName)
-//                cell.lblIntension.isHidden = true
-//                cell.lblTitle.font = getRegularFont(size: cell.lblTitle.font?.pointSize ?? 12)
-//                cell.lblTitle.textColor = NSColor.black
-//                cell.backgroundcolor = NSColor.black.withAlphaComponent(0.1)
-//            }else{//on NSTouchBarPlayTemplate
-//                cell.boxColor.fillColor = .tertiaryLabelColor
-//                cell.imgViewAppIcon.image = NSImage(named: NSImage.Name("NSTouchBarPlayTemplate"))
-//                cell.lblIntension.isHidden = true
-//                cell.lblTitle.font = getRegularFont(size: cell.lblTitle.font?.pointSize ?? 12)
-//                cell.lblTitle.textColor = NSColor.black
-//                cell.backgroundcolor = NSColor.clear
-//            }
-//
-//            cell.btnEditFocusMode.isHidden = true
-//            cell.btnEditFocusMode.target = self
-//            cell.btnEditFocusMode.tag = cRow
-//            cell.btnEditFocusMode.action = #selector(btnEditFocusModeClicked(sender:))
-//
-//            cell.btnInfoIcon.isHidden = true
-//            cell.btnInfoIcon.target = self
-//            cell.btnInfoIcon.tag = cRow
-//            cell.btnInfoIcon.action = #selector(btnEditFocusModeClicked(sender:))
-//
-//
-//            if arrFocusType[cRow]["isLockedFocus"] as? Bool == true{
-//                cell.isInfoIconVisible = true
-//            }else{
-//                cell.isInfoIconVisible = false
-//            }
-//
-//            cell.boxtitle.fillColor = .clear
-//            return cell
-//        }
-//
-//        return NSTableCellView()
-//    }
-//
-//    @objc func btnEditFocusModeClicked(sender:NSButton){
-//        addLog(text: "btn Edit FocusMode Clicked from menu")
-//
-//        if isPurchased == false && daysLeft <= 0{// if UserDefaults.standard.object(forKey: "trialExpired") != nil{
-//            if trialExpiredNagWcObj != nil{
-//                if trialExpiredNagWcObj?.window?.isVisible ?? false{
-//                    return;
-//                }
-//            }
-//            showUpgradeNowWindow()
-//            return;
-//        }
-//
-//        if arrFocusType[sender.tag]["isLockedFocus"] as? Bool == true{
-//
-//            var msg = "Use this if you want to focus on using one app/reading one article. We'll detect the current app + site you have open and block everything else."
-//            if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
-//                msg = menuInfo.value(forKey: "toolTipLockedFocus") as? String ?? msg
-//            }
-//
-//            showTooltip(sender: sender, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
-//            return;
-//        }
-//
-//        var shouldShowPassword = true
-//        if preferencesWindowControllerObj?.window?.isVisible ?? false{
-//            if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-//                tabview.selectedTabViewItemIndex = preferencesFocusModesIndex
-//                addLog(text: "")
-//            }
-//            shouldShowPassword = false
-//        }else{
-//            preferencesWindowControllerObj?.showWindow(self)
-//        }
-//        addLog(text: "Showing preferences")
-//        if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-//            tabview.selectedTabViewItemIndex = preferencesFocusModesIndex
-//            if shouldAskPassword() && shouldShowPassword{
-//                tabview.view.addSubview(getEnterPasswordVcObjForPreferences().view)
-//                tabview.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
-//                getEnterPasswordVcObjForPreferences().parentVc = nil
-//                enterPasswordVcObjForPreferences?.removeConstraints()
-//                addLog(text: "Showing enter password view")
-//            }
-//        }
-//
-//        DispatchQueue.global().async {
-//            DispatchQueue.main.async {
-//                focusPreferencesVcObj?.tblViewFocusType.selectRowIndexes(IndexSet(integer: sender.tag), byExtendingSelection: false)
-//                focusPreferencesVcObj?.tblViewFocusType.scrollRowToVisible(sender.tag)
-//            }
-//        }
-//    }
-//
-//    func tableView(_ tableView: NSTableView, heightOfRow row: Int) -> CGFloat {
-//        return CGFloat(rowHeight)
-//    }
-//    func tableViewSelectionDidChange(_ notification: Notification) {
-//        print("tableViewSelectionDidChange")
-//
-//    }
-//    func tableView(_ tableView: NSTableView, shouldSelectRow row: Int) -> Bool {
-//        return false
-//    }
-//}
-
-
-//    var timer:Timer?
-//    func startFocusRemainingTimer() {
-//        if timer != nil{
-//            timer?.invalidate()
-//            timer = nil
-//        }
-//        setRemainingTime()
-//        DispatchQueue.main.async {
-//            self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
-//            RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
-//        }
-//    }
-    
-//    @objc func performTimerCount() {
-//        if !isFocusModeOn(){
-//            if !isFocusModePaused(){
-//                lblOn.isHidden = true
-//            }else{
-//                let secondsBetween = appdelegate!.remainingFocusModeSecondsAfterPaused
-//
-//                var titleTimeRemainingText = "Time remaining:"
-//
-//                if let brainDumpVcInfo = configjson.value(forKey: "brainDumpVcInfo") as? NSDictionary{
-//                    titleTimeRemainingText = brainDumpVcInfo.value(forKey: "titleTimeRemainingText") as? String ?? titleTimeRemainingText
-//                }
-//
-//                titleTimeRemainingText = titleTimeRemainingText + " " + getStringTimeFromSeconds(seconds: Int(secondsBetween))
-//                lblOn.stringValue = titleTimeRemainingText
-//            }
-//            timer?.invalidate()
-//            return;
-//        }
-//        DispatchQueue.main.async {
-//            self.setRemainingTime()
-//        }
-//    }
-
-
-//    var rowHeight = 32
-//    func resetViewHeight(){
-//        addLog(text: "menuViewController resetViewHeight start")
-//        var height = 34
-//        if SettingsManagerObject.selectedFontIndex == openDyslexicIndex{
-//            rowHeight = 40
-//        }
-//        if SettingsManagerObject.selectedFontIndex == poppinsIndex{
-//            rowHeight = 36
-//        }
-//        let isFocusModeOnOrPaused = isFocusModeOnOrPaused()
-//        if isHardCorePomodoroModeOn || isFocusModeOnOrPaused{
-//            if SettingsManagerObject.selectedFontIndex == openDyslexicIndex{
-//                height = 58
-//            }
-//            if SettingsManagerObject.selectedFontIndex == poppinsIndex{
-//                height = 45
-//            }
-//            if SettingsManagerObject.selectedFontIndex == intelOneMonoIndex{
-//                height = 43
-//            }
-//            height += rowHeight // only one focus mode will be visible which is on for hardcore pomodoro mode
-//        }else if UserDefaults.standard.object(forKey: kUserdefaultsFocusTipsShown) == nil{
-//            height += (rowHeight * 2)// only two focus mode will be visible
-//        }else{
-//            if arrFocusType.count > 6{
-//                height += (6*rowHeight)
-//            }else{
-//                height += (arrFocusType.count * rowHeight)
-//            }
-//
-//        }
-//
-//        if isFocusModeOnOrPaused{
-//            height += 19 //on label space
-//        }
-//        if UserDefaults.standard.object(forKey: kUserdefaultsFocusTipsShown) == nil{
-//            height += 34 //set focus mode button space
-//        }
-//        if !boxStartPomodoroMode.isHidden{
-//            height += 34 //set Pomodoro button space
-//        }
-//        if !boxStopHardcorePomodoroMode.isHidden{
-//            height += 34 //set Stop Hardcore Pomodoro button space
-//        }
-//        let cgFlotHeight = CGFloat(height)
-//        if focusModeBoxHeight.constant != cgFlotHeight{
-//            focusModeBoxHeight.constant = cgFlotHeight
-//        }
-//        addLog(text: "menuViewController resetViewHeight end")
-//    }
+/*
+ 
+ //        let args = CommandLine.arguments
+ //        print("Command-line arguments: \(args)")
+ //        for param in args{
+ //            if param.contains("baseUrl="){
+ //                baseUrl = param.replacingOccurrences(of: "baseUrl=", with: "")
+ //                let alert = NSAlert()
+ //                alert.messageText = baseUrl
+ //                alert.runModal()
+ //                break;
+ //            }
+ //        }
+ */

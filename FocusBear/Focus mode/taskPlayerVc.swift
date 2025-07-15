@@ -3,7 +3,7 @@
 //  Focus Bear
 //
 //  Created by Prashant Sawnani on 07/05/24.
-//  Copyright © 2024 Focus Bear. All rights reserved.
+//  Copyright © 2025 Focus Bear. All rights reserved.
 //
 
 import Cocoa
@@ -11,6 +11,10 @@ import WebKit
 
 class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate {
 
+    @IBOutlet weak var lblFocusAlignmentScore: NSTextField!
+    @IBOutlet weak var btnStartFocusMusic: cursorButton!
+    @IBOutlet weak var btnEndFocusSession: cursorButton!
+    @IBOutlet weak var boxExtraOptions: NSBox!
     @IBOutlet weak var boxForHoverEffect: NSBox!
     @IBOutlet weak var boxBg: NSBox!
     //    @IBOutlet weak var constraintWidthTitleBar: NSLayoutConstraint!
@@ -35,6 +39,10 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
     var totalDuration = 0
     var intention = ""
     var trackingAreaWebView: NSTrackingArea?
+    
+    var trackingAreaStopFocusMode: NSTrackingArea?
+    var trackingAreaPlayFocusMusic: NSTrackingArea?
+    
     var lastWindowFrame:NSRect = NSRect(x: 50, y: 50, width: 500, height: 500)
     var isSnapLeft = true
     var isSnappingGoing = false
@@ -56,6 +64,7 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
         
         createTrackingArea()
         
+        
         btnArrowLeft.toolTip = "Snap to left"
         btnArrowRight.toolTip = "Snap to right"
         
@@ -67,16 +76,30 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
         btnArrowLeft.isHidden = true
         btnArrowRight.isHidden = true
         boxBackToOriginalPosition.isHidden = true
+        
+        
+        trackingAreaStopFocusMode = NSTrackingArea.init(rect: self.btnEndFocusSession.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
+        self.btnEndFocusSession.addTrackingArea(trackingAreaStopFocusMode!)
+        
+        trackingAreaPlayFocusMusic = NSTrackingArea.init(rect: self.btnStartFocusMusic.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
+        self.btnStartFocusMusic.addTrackingArea(trackingAreaPlayFocusMusic!)
+        
     }
     
     override func viewWillAppear() {
-        
+        if isAnyAllowedFocusModeActivityRunning{
+            btnEndFocusSession.isHidden = true
+        }else{
+            btnEndFocusSession.isHidden = false
+        }
     }
     
     
     override func viewWillDisappear() {
-        if stackViewTopButtons.isHidden{
-            stackViewTopButtons.isHidden = false
+        if boxClose.isHidden{
+            boxClose.isHidden = false
+            boxMinimize.isHidden = false
+            boxExtraOptions.isHidden = false
             self.view.window!.setFrame(lastWindowFrame, display: true)
             boxBackToOriginalPosition.isHidden = true
             taskPlayerWcObj?.window?.styleMask.insert(.resizable)
@@ -94,13 +117,30 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
     
     override func viewDidAppear() {
         updateTrackingAreaIfNeeded()
+        if isCuddlyModeEnabled() && SettingsManagerObject.isAiCheckUrlEnabled && !isBlockSuperDistractingFocusModeOn(){
+            lblFocusAlignmentScore.isHidden = false
+        }else{
+            lblFocusAlignmentScore.isHidden = true
+        }
     }
+    
+    func setFocusAlignmentScore(){
+        if lblFocusAlignmentScore.isHidden{
+            return;
+        }
+        let totalAlignmentScore:Double = currentFocusAlignmentScore//(totalAlignmentScore*100).rounded()/100
+        var focusAlignmentScoreText = "Focus alignment score = <SCORE>"
+        if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
+            focusAlignmentScoreText = menuInfo.value(forKey: "focusAlignmentScoreText") as? String ?? focusAlignmentScoreText
+        }
+        lblFocusAlignmentScore.stringValue = focusAlignmentScoreText.replacingOccurrences(of: "<SCORE>", with: "\(totalAlignmentScore)%")
+    }
+    
     func updateTrackingAreaIfNeeded() {
         // Remove the old tracking area if it exists
         if let trackingArea = self.trackingAreaWebView {
             webView.removeTrackingArea(trackingArea)
         }
-        
         // Recreate the tracking area with the updated bounds
         createTrackingArea()
     }
@@ -109,13 +149,17 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
         trackingAreaWebView = NSTrackingArea.init(rect: self.boxBg.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
         self.boxBg.addTrackingArea(trackingAreaWebView!)
     }
+    
     func windowDragged(){
         if !boxBackToOriginalPosition.isHidden{
-            let midXPoint = (self.view.window?.screen?.frame.midX ?? 0) - 10
+            let midXPoint = (self.view.window?.screen?.frame.midX ?? 0) - 1
             if (self.view.window?.frame.midX)! > midXPoint{
                 isSnapLeft = false
             }else{
                 isSnapLeft = true
+            }
+            if stageManagerObject.isStageManagerEnabled{
+                isSnapLeft = false
             }
             mouseActiveSetSmallWindowFrame()
         }
@@ -126,7 +170,7 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
         if isSnappingGoing{
             return;
         }
-        if event.trackingArea == topButtonsTrackingArea && !stackViewTopButtons.isHidden{
+        if event.trackingArea == topButtonsTrackingArea{
             imgViewClose.isHidden = false
             imgViewMaximize.isHidden = false
             imgViewMinimize.isHidden = false
@@ -141,17 +185,29 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
                     }
                 }
             }
+        }else if event.trackingArea == trackingAreaPlayFocusMusic{
+            var playFocusMusicTooltip = "Play focus music"
+            if let taskPlayerVcInfo = configjson.value(forKey: "taskPlayerVcInfo") as? NSDictionary{
+                playFocusMusicTooltip = taskPlayerVcInfo.value(forKey: "playFocusMusicTooltip") as? String ?? playFocusMusicTooltip
+            }
+            showTooltip(sender: btnStartFocusMusic, msg: playFocusMusicTooltip, preferredEdge: .minX, maxWidthVal: 250)
+        }else if event.trackingArea == trackingAreaStopFocusMode{
+            var endFocusSessionTooltip = "End focus session"
+            if let taskPlayerVcInfo = configjson.value(forKey: "taskPlayerVcInfo") as? NSDictionary{
+                endFocusSessionTooltip = taskPlayerVcInfo.value(forKey: "endFocusSessionTooltip") as? String ?? endFocusSessionTooltip
+            }
+            showTooltip(sender: btnEndFocusSession, msg: endFocusSessionTooltip, preferredEdge: .minX, maxWidthVal: 250)
         }
     }
     
     func mouseActiveSetSmallWindowFrame(){
         if !boxBackToOriginalPosition.isHidden{
             if isSnapLeft{
-                let xPoint = (self.view.window?.screen?.frame.minX ?? 0) - 10
+                let xPoint = (self.view.window?.screen?.frame.minX ?? 0) - 1
                 animateWindowFrameChange(window: self.view.window!, newFrame: NSRect(x: xPoint , y: self.view.window!.frame.minY, width: 180, height: self.view.window!.frame.height), duration: 0)
                 imgViewAppIcon.isHidden = true
             }else{
-                let maxXPoint = (self.view.window?.screen?.frame.maxX ?? 0) + 10
+                let maxXPoint = (self.view.window?.screen?.frame.maxX ?? 0) + 1
                 let width:CGFloat = 180
                 let xPoint = maxXPoint - width
                 
@@ -170,7 +226,7 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
         if isMouseEntering{
             return;
         }
-        if event.trackingArea == topButtonsTrackingArea && !stackViewTopButtons.isHidden{
+        if event.trackingArea == topButtonsTrackingArea{
             imgViewClose.isHidden = true
             imgViewMaximize.isHidden = true
             imgViewMinimize.isHidden = true
@@ -178,11 +234,11 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
             btnBackToOriginalPosition.isHidden = true
             if !boxBackToOriginalPosition.isHidden{
                 if isSnapLeft{
-                    let xPoint = (self.view.window?.screen?.frame.minX ?? 0) - 10
+                    let xPoint = (self.view.window?.screen?.frame.minX ?? 0) - 1
                     animateWindowFrameChange(window: self.view.window!, newFrame: NSRect(x: xPoint , y: self.view.window!.frame.minY, width: 60, height: self.view.window!.frame.height), duration: 0)
                     imgViewAppIcon.isHidden = false
                 }else{
-                    let maxXPoint = (self.view.window?.screen?.frame.maxX ?? 0) + 10
+                    let maxXPoint = (self.view.window?.screen?.frame.maxX ?? 0) + 1
                     let width:CGFloat = 60
                     let xPoint = maxXPoint - width
                     animateWindowFrameChange(window: self.view.window!, newFrame: NSRect(x: xPoint , y: self.view.window!.frame.minY, width: width, height: self.view.window!.frame.height), duration: 0)
@@ -190,6 +246,8 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
                 }
                 
             }
+        }else if event.trackingArea == trackingAreaStopFocusMode || event.trackingArea == trackingAreaPlayFocusMusic{
+            closePopoverTooltipIfVisible()
         }
     }
     var isAnimationGoing = false
@@ -226,7 +284,9 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
         imgViewMinimize.isHidden = true
         imgViewAppIcon.isHidden = true
         boxBackToOriginalPosition.isHidden = true
-        stackViewTopButtons.isHidden = false
+        boxClose.isHidden = false
+        boxMinimize.isHidden = false
+        boxExtraOptions.isHidden = false
         btnBackToOriginalPosition.isHidden = true
         
         self.totalDuration = totalDuration
@@ -249,7 +309,9 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
         imgViewMinimize.isHidden = true
         imgViewAppIcon.isHidden = true
         boxBackToOriginalPosition.isHidden = true
-        stackViewTopButtons.isHidden = false
+        boxClose.isHidden = false
+        boxMinimize.isHidden = false
+        boxExtraOptions.isHidden = false
         btnBackToOriginalPosition.isHidden = true
     }
     func loadRequest(){
@@ -267,6 +329,10 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
                 if taskPlayerWcObj != nil{
                     if taskPlayerWcObj?.window?.isVisible ?? false{
                         self.setAccessTokenToWebView()
+                    }else{
+                        if !SettingsManagerObject.showToDoPlayerAutomaticallyEnabled{
+                            self.setAccessTokenToWebView()
+                        }
                     }
                 }
             }
@@ -348,18 +414,14 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
         imgViewClose.isHidden = true
         imgViewMaximize.isHidden = true
         imgViewMinimize.isHidden = true
-        if isSnapLeft{
-            btnArrowLeftClicked(self)
-        }else{
+        if stageManagerObject.isStageManagerEnabled{
             btnArrowRightClicked(self)
-        }
-        return;
-        let windowHeight = self.view.window?.frame.height ?? 1000
-        if windowHeight > 280{
-            let newWindowHeight:CGFloat = 250
-            let changeInY = windowHeight - newWindowHeight
-            
-            self.view.window!.setFrame(NSRect(x: self.view.window!.frame.minX , y: self.view.window!.frame.minY + changeInY, width: 600, height: newWindowHeight), display: true)
+        }else{
+            if isSnapLeft{
+                btnArrowLeftClicked(self)
+            }else{
+                btnArrowRightClicked(self)
+            }
         }
     }
     
@@ -429,17 +491,173 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
         })
     }
     
+//    func addTaskInCurrentList(taskName:String){
+//        
+//        var brainDump = UserDefaults.standard.object(forKey: kUserdefaultsFocusModeNotes) as? String ?? ""
+//        brainDump = brainDump.addingPercentEncoding(withAllowedCharacters: CharacterSet.urlQueryAllowed) ?? brainDump
+//        var intention = whatToAchieveInFocusBlock
+//        self.intention = intention.addingPercentEncoding(withAllowedCharacters: CharacterSet.urlQueryAllowed) ?? intention
+//        
+//        var theme = "LIGHT"
+//        if preferencesWindowControllerObj != nil{
+//            if preferencesWindowControllerObj!.window!.hasDarkAppearance{
+//                theme = "DARK"
+//            }else {
+//                theme = "LIGHT"
+//            }
+//        }
+//        var newTask = [taskName]
+//        var selectedTask = taskName
+//        var taskJson = "{\"selectedTask\":\"\(selectedTask)\",\"newTasks\":\(newTask)}"
+//        
+//        var stringJson = "{\"brainDump\":\"\(brainDump)\",\"todoPlayer\":\(taskJson),\"totalDuration\":\"\(totalDuration)\",\"theme\":\"\(theme)\",\"intention\":\"\(self.intention)\"}"
+//        
+////        if !focusModeTaskStringIsEmpty(){
+////            stringJson = "{\"access_token\": \"\(appdelegate!.credential?.accessToken ?? "")\",\"platform\":\"mac\",\"lang\":\"\(currentLanguageCode)\",\"tasks\":\(focusModeTaskString),\"font\":\"\(selectedFont)\",\"theme\":\"\(theme)\",\"total_duration\":\"\(totalDuration)\",\"intention\":\"\(intention)\",\"brain_dump\":\"\(brainDump)\",\"isOnboarding\":\(isFirstTime)}"
+////        }
+//        let settingsFunc = String(format: "let waitForAppLoaded = setInterval(() => { if (window.syncWithDevices) { syncWithDevices(%@); clearInterval(waitForAppLoaded); } }, 100);", stringJson)
+//        
+//        webView.evaluateJavaScript(settingsFunc,completionHandler: { (html: Any?, error: Error?) in
+//            print(error as Any)
+//            print("****error")
+//            print(html as Any)
+//        })
+//    }
+    func addAndPlayTaskInCurrentList(taskName: String, id:String, duration:Int, shouldCompleteCurrentTask:Bool) {
+        let taskDic:[String:Any] = [
+            "id": id,
+            "title": taskName,
+            "duration": duration
+        ]
+        var selectedTaskDic = taskDic
+        selectedTaskDic["isPlaying"] = true
+        if shouldCompleteCurrentTask{
+            selectedTaskDic["markCurrentTaskAsComplete"] = true
+        }
+        let taskData: [String: Any] = [
+            "selectedTask": selectedTaskDic//,// id name duration
+//            "newTasks": [taskDic]
+        ]
+        
+       // . Create main payload
+        let payload: [String: Any] = [
+            "todoPlayer": taskData
+        ]
+
+        do {
+            let jsonData = try JSONSerialization.data(withJSONObject: payload, options: [])
+            guard let jsonString = String(data: jsonData, encoding: .utf8) else {
+                print("Failed to convert JSON data to string")
+                return
+            }
+            
+            // 5. Create JavaScript with proper variable handling
+            let jsFunction = """
+            (function() {
+                if (window.__taskInterval) {
+                    clearInterval(window.__taskInterval);
+                }
+                
+                window.__taskInterval = setInterval(() => {
+                    if (window.syncWithDevices) {
+                        try {
+                            const data = \(jsonString);
+                            syncWithDevices(data);
+                            clearInterval(window.__taskInterval);
+                            delete window.__taskInterval;
+                        } catch (error) {
+                            console.error('JS Error:', error);
+                            clearInterval(window.__taskInterval);
+                            delete window.__taskInterval;
+                        }
+                    }
+                }, 100);
+            })();
+            """
+            
+            // Execute JavaScript
+            webView.evaluateJavaScript(jsFunction) { result, error in
+                if let error = error {
+                    print("JavaScript evaluation error: \(error)")
+                }
+            }
+        } catch {
+            print("JSON serialization error: \(error)")
+        }
+    }
+    
+    
+    func addTaskInCurrentList(taskName: String, id:String, duration:Int) {
+        let taskDic:[String:Any] = [
+            "id": id,
+            "title": taskName,
+            "duration": duration
+        ]
+        let taskData: [String: Any] = [
+            "newTasks": [taskDic]
+        ]
+        let payload: [String: Any] = [
+            "todoPlayer": taskData
+        ]
+
+        do {
+            let jsonData = try JSONSerialization.data(withJSONObject: payload, options: [])
+            guard let jsonString = String(data: jsonData, encoding: .utf8) else {
+                print("Failed to convert JSON data to string")
+                return
+            }
+            
+            // 5. Create JavaScript with proper variable handling
+            let jsFunction = """
+            (function() {
+                if (window.__taskInterval) {
+                    clearInterval(window.__taskInterval);
+                }
+                
+                window.__taskInterval = setInterval(() => {
+                    if (window.syncWithDevices) {
+                        try {
+                            const data = \(jsonString);
+                            syncWithDevices(data);
+                            clearInterval(window.__taskInterval);
+                            delete window.__taskInterval;
+                        } catch (error) {
+                            console.error('JS Error:', error);
+                            clearInterval(window.__taskInterval);
+                            delete window.__taskInterval;
+                        }
+                    }
+                }, 100);
+            })();
+            """
+            
+            // Execute JavaScript
+            webView.evaluateJavaScript(jsFunction) { result, error in
+                if let error = error {
+                    print("JavaScript evaluation error: \(error)")
+                }
+            }
+        } catch {
+            print("JSON serialization error: \(error)")
+        }
+    }
+    
+    
+    
+    
     @IBAction func btnArrowLeftClicked(_ sender: Any) {// will be a samll window in left side
         self.isSnappingGoing = true
         lastWindowFrame = self.view.window?.frame ?? lastWindowFrame
-        let xPoint = (self.view.window?.screen?.frame.minX ?? 0) - 10
+        let xPoint = (self.view.window?.screen?.frame.minX ?? 0) - 1
         self.view.window!.setFrame(NSRect(x: xPoint , y: self.view.window!.frame.midY, width: 60, height: 180), display: true)
         boxBackToOriginalPosition.isHidden = false
         imgViewAppIcon.isHidden = false
         taskPlayerWcObj?.window?.styleMask.remove(.resizable)
         btnBackToOriginalPosition.isHidden = true
         isSnapLeft = true
-        stackViewTopButtons.isHidden = true
+        boxClose.isHidden = true
+        boxMinimize.isHidden = true
+        boxExtraOptions.isHidden = true
         DispatchQueue.global().async {
             DispatchQueue.main.async {
                 self.updateTrackingAreaIfNeeded()
@@ -451,7 +669,7 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
     @IBAction func btnArrowRightClicked(_ sender: Any) {// will be a samll window in right side
         isSnappingGoing = true
         lastWindowFrame = self.view.window?.frame ?? lastWindowFrame
-        let maxXPoint = (self.view.window?.screen?.frame.maxX ?? 0) + 10
+        let maxXPoint = (self.view.window?.screen?.frame.maxX ?? 0) + 1
         let width:CGFloat = 60
         let xPoint = maxXPoint - width
         self.view.window!.setFrame(NSRect(x: xPoint , y: self.view.window!.frame.midY, width: width, height: 180), display: true)
@@ -460,7 +678,9 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
         taskPlayerWcObj?.window?.styleMask.remove(.resizable)
         btnBackToOriginalPosition.isHidden = true
         isSnapLeft = false
-        stackViewTopButtons.isHidden = true
+        boxClose.isHidden = true
+        boxMinimize.isHidden = true
+        boxExtraOptions.isHidden = true
         DispatchQueue.global().async {
             DispatchQueue.main.async {
                 self.updateTrackingAreaIfNeeded()
@@ -468,12 +688,32 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
             }
         }
     }
+    
     @IBAction func btnBackToOriginalPositionClicked(_ sender: Any) {
-        stackViewTopButtons.isHidden = false
+        boxClose.isHidden = false
+        boxMinimize.isHidden = false
+        boxExtraOptions.isHidden = false
         self.view.window!.setFrame(lastWindowFrame, display: true)
         boxBackToOriginalPosition.isHidden = true
         taskPlayerWcObj?.window?.styleMask.insert(.resizable)
         btnBackToOriginalPosition.isHidden = true
         imgViewAppIcon.isHidden = true
+    }
+    
+    @IBAction func btnEndFocusSessionClicked(_ sender: Any) {
+        if currentFocusModeStrictness == ._SUPER_STRICT_{
+            addLog(text: "can't stop focus mode in super strict focus mode :- return")
+            var cantStopFocusModeText = "Super strict mode activated: You cannot stop this focus session until it ends."
+            if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
+                cantStopFocusModeText = menuInfo.value(forKey: "cantStopFocusModeText") as? String ?? cantStopFocusModeText
+            }
+            showTooltip(sender: btnEndFocusSession, msg: cantStopFocusModeText, preferredEdge: .minX, maxWidthVal: 250)
+            return;
+        }
+        menuViewControllerObj?.stopFocusMode()
+    }
+    
+    @IBAction func btnStartFocusMusicClicked(_ sender: Any) {
+        showAllTracksWindow()
     }
 }

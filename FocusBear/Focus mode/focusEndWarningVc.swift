@@ -9,16 +9,15 @@
 import Cocoa
 
 class focusEndWarningVc: NSViewController {
-    
-    
+
+    @IBOutlet weak var btnEndFocusSession: Button!
     @IBOutlet weak var btnExtend: Button!
-    @IBOutlet weak var btnCancel: Button!
     @IBOutlet weak var popUpBtn: NSPopUpButton!
     @IBOutlet weak var lblSelectMinutes: NSTextField!
     @IBOutlet weak var lblQuestion: NSTextField!
     @IBOutlet weak var lblTimer: NSTextField!
     @IBOutlet weak var lblTitle: NSTextField!
-    
+    // i am done, end focus session
     var timer:Timer?
     var currentTimer = 0
     var totalDuration = 0
@@ -30,20 +29,19 @@ class focusEndWarningVc: NSViewController {
         lblQuestion.stringValue = "Still in the flow? Extend the session"
         lblSelectMinutes.stringValue = "Select minutes to extend:"
         btnExtend.title = "Extend"
-        
+        btnEndFocusSession.title = "I'm done, End focus session"
         if let common = configjson.value(forKey: "common") as? NSDictionary{
             lblTitle.stringValue = common.value(forKey: "focusEndsText") as? String ?? lblTitle.stringValue
             lblQuestion.stringValue = common.value(forKey: "askExtendFocusText") as? String ?? lblQuestion.stringValue
             lblSelectMinutes.stringValue = common.value(forKey: "extendFocusMinutesText") as? String ?? lblSelectMinutes.stringValue
             btnExtend.title = common.value(forKey: "buttonExtendText") as? String ?? btnExtend.title
-            
+            btnEndFocusSession.title = common.value(forKey: "buttonEndFocusSessionText") as? String ?? btnEndFocusSession.title
         }
-        btnCancel.title = buttonCancelText
         popUpBtn.removeAllItems()
         popUpBtn.addItems(withTitles: ["5", "10", "15", "20", "25", "30", "45", "90"])
     }
     override func viewWillAppear() {
-        startTimer(durationSeconds: 120)
+        startTimer(durationSeconds: warningShowSecondsBeforeFocusModeEndTime)
     }
     override func viewWillDisappear() {
         if timer != nil{
@@ -204,7 +202,7 @@ class focusEndWarningVc: NSViewController {
                                         if currentState == ._EVENING_HABIT_{
                                             mainViewControllerObj?.postponeEveningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
                                         }else if currentState == ._POSTPON_FOCUS_SUMMARY_{
-                                            mainViewControllerObj?.postponeFocusSummaryFor(minutes: totalMinutes + 2)
+                                            mainViewControllerObj?.postponeFocusSummaryFor(minutes: totalMinutes + 2, showAskIntention: false)
                                         }
                                         self.extendFocusMode()
                                     }
@@ -230,7 +228,12 @@ class focusEndWarningVc: NSViewController {
         appdelegate?.extendFocusModeFor(minutes: Int(popUpBtn.title) ?? 0)
         self.view.window?.close()
     }
-    @IBAction func btnCancelClicked(_ sender: Any) {
+    
+    @IBAction func btnEndFocusSessionClicked(_ sender: Any) {
+        allApiObject.capturePosthog(event: "end-focus-session-clciked-from-warning", metadata: [:])
+        isHardCorePomodoroModeOn = false
+        appdelegate?.tryFocusModeFinished(isSilent: false, isShutOffTime: false, isMorningRoutineTime: false, allowExtend:false, isCustomRoutineTime:false)
         self.view.window?.close()
     }
+    
 }

@@ -236,7 +236,7 @@ extension strictnessVc: SettingListItemDelegate{
             settingsContainerVcObj?.showPasswordView()
             if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
                 if shouldAskPassword(){
-                    if !SettingsManagerObject.isPasswordRequireInChangeSettings{
+                    if !isPasswordRequireInOpenSettingsEnabled(){
                         tabview.view.addSubview(getEnterPasswordVcObjForPreferences().view)
                         tabview.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
                         getEnterPasswordVcObjForPreferences().parentVc = nil

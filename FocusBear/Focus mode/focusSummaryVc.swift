@@ -9,6 +9,7 @@ import Cocoa
 
 class focusSummaryVc: NSViewController {
     
+    @IBOutlet weak var widthScrollViewFocusSummary: NSLayoutConstraint!
     @IBOutlet weak var lblTotalBreaksTimeGeekMode: NSTextField!
     @IBOutlet weak var lblTitleTimeSpentOnBreaks: NSTextField!
     @IBOutlet weak var lblTimeSpentOnBreaks: NSTextField!
@@ -129,7 +130,7 @@ class focusSummaryVc: NSViewController {
     }
     
     override func viewWillAppear() {
-        
+        setScrollViewFocusSummaryWidth()
     }
     
     func reloadData(){
@@ -319,9 +320,24 @@ class focusSummaryVc: NSViewController {
         }
         
     }
+    
     override func viewDidAppear() {
         
     }
+    
+    override func viewDidLayout() {
+        setScrollViewFocusSummaryWidth()
+    }
+    
+    func setScrollViewFocusSummaryWidth(){
+        if self.view.frame.width < 1100{
+            widthScrollViewFocusSummary.constant = 900
+        }else{
+            widthScrollViewFocusSummary.constant = 1000
+        }
+    }
+    
+    
     func getStringTimeFromSeconds(seconds : Int)->String{
         let (h,m,s) = secondsToHoursMinutesSeconds(seconds: seconds)
         var stringTime: String = ""

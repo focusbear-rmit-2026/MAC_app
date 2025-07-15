@@ -29,6 +29,11 @@ class naturalBreaksDetectionVc: NSViewController {
             widthBox.constant = 261
         }
     }
+    
+    override func viewWillDisappear() {
+        addLog(text: "natural Breaks Detection window closed")
+    }
+    
     func resetView(duration:Int){
         showBoxTime = Date()
         self.duration = duration
@@ -47,6 +52,7 @@ class naturalBreaksDetectionVc: NSViewController {
     }
     @IBAction func btnFirstClicked(_ sender: Any) {
         if isNormalState{
+            addLog(text: "[user-action] naturalBreaksDetectionVc - btnThanksClicked")
             allApiObject.capturePosthog(event: "natural-break-detected-correct", metadata: [:])
             self.view.window?.close()
             
@@ -64,10 +70,12 @@ class naturalBreaksDetectionVc: NSViewController {
                     }
                 }
             }
-
+            if mainViewControllerObj?.breakTimer != nil{
+                mainViewControllerObj?.setActivityTimer()
+            }
         }else{
+            addLog(text: "[user-action] naturalBreaksDetectionVc - btnYupINeedBreak Clicked")
             self.view.window?.close()
-//            if currentState
             if currentState == ._POSTPON_MORNING_HABIT_{
                 isBreakActivityExecuteFromPostponeMorningHabit = true
             }else if currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_{
@@ -82,19 +90,30 @@ class naturalBreaksDetectionVc: NSViewController {
     
     @IBAction func btnSecondClicked(_ sender: Any) {
         if isNormalState{
-            allApiObject.capturePosthog(event: "wrong-decision-i-wasnt-on-break", metadata: [:])
-            lblTitle.stringValue = "Ok do you want to take a break now 😅?"
-            btnFirst.title = "Yup I need a break now"
-            btnSecond.title = "No - I'll take later"
-            isNormalState = false
-            
-            if let naturalBreaksDetectionVcInfo = configjson.value(forKey: "naturalBreaksDetectionVcInfo") as? NSDictionary{
-                lblTitle.stringValue = naturalBreaksDetectionVcInfo.value(forKey: "titleTakeBreak") as? String ?? lblTitle.stringValue
-                btnFirst.title = naturalBreaksDetectionVcInfo.value(forKey: "buttonStartBreakText") as? String ?? btnFirst.title
-                btnSecond.title = naturalBreaksDetectionVcInfo.value(forKey: "buttonTakeBreakLaterText") as? String ?? btnSecond.title
+            if currentState != ._MORNING_HABIT_ && currentState != ._ACTIVITY_ && (isHabitAlreadyShowed || currentState == ._POSTPON_MORNING_HABIT_) && arrAllbreakActivities.count != 0 && !appdelegate!.isUserOnMeeting && currentState != ._BREATHING_ && currentState != ._EVENING_HABIT_ && currentState != ._FOCUS_SUMMARY_{
+                addLog(text: "show AskTakeBreakView")
+                showAskTakeBreakView()
+            }else{
+                addLog(text: "Don't need to show Take Break View")
             }
         }else{
+            addLog(text: "[user-action] naturalBreaksDetectionVc - btnNoIWillTakeLater Clicked")
             self.view.window?.close()
+        }
+    }
+    
+    func showAskTakeBreakView(){
+        addLog(text: "[user-action] naturalBreaksDetectionVc - btnWrongIWasntOnBreakClicked")
+        allApiObject.capturePosthog(event: "wrong-decision-i-wasnt-on-break", metadata: [:])
+        lblTitle.stringValue = "Ok do you want to take a break now 😅?"
+        btnFirst.title = "Yup I need a break now"
+        btnSecond.title = "No - I'll take later"
+        isNormalState = false
+        
+        if let naturalBreaksDetectionVcInfo = configjson.value(forKey: "naturalBreaksDetectionVcInfo") as? NSDictionary{
+            lblTitle.stringValue = naturalBreaksDetectionVcInfo.value(forKey: "titleTakeBreak") as? String ?? lblTitle.stringValue
+            btnFirst.title = naturalBreaksDetectionVcInfo.value(forKey: "buttonStartBreakText") as? String ?? btnFirst.title
+            btnSecond.title = naturalBreaksDetectionVcInfo.value(forKey: "buttonTakeBreakLaterText") as? String ?? btnSecond.title
         }
     }
     

@@ -98,7 +98,7 @@ class createTaskVc: NSViewController {
             tags = [["id": id, "text": tag]]
         }
         
-        allApiObject.addTask(title: title, details: details, eisenhowerQuadrant: (popUpBtnElsenhowerQuadrant.indexOfSelectedItem + 1), dueDate: dateString, objective:objective, tags: tags, completionHandler: { result in
+        allApiObject.addTask(title: title, details: details, eisenhowerQuadrant: (popUpBtnElsenhowerQuadrant.indexOfSelectedItem + 1), dueDate: dateString, objective:objective, tags: tags, completionHandler: { result,json  in
             
             DispatchQueue.main.async {
                 self.btnCreate.isEnabled = true

@@ -9,6 +9,15 @@ import Cocoa
 
 class focusCompletedVc: NSViewController {
     
+    @IBOutlet weak var scrollView: NSScrollView!
+    @IBOutlet weak var imgViewAccordinMoreOptions: NSImageView!
+    @IBOutlet weak var lblAccordinMoreOptions: NSTextField!
+    @IBOutlet weak var boxAccordinMoreOptions: NSBox!
+    @IBOutlet weak var stackViewMoreQuestions: NSStackView!
+    @IBOutlet weak var boxAverageTabCount: NSBox!
+    @IBOutlet weak var boxAverageTimeSpent: NSBox!
+    @IBOutlet weak var btnMoreOptions: cursorButton!
+    
     @IBOutlet weak var textFieldNextSessionIntention: shadowTextField!
     @IBOutlet weak var lblTitleNextSessionIntention: NSTextField!
     @IBOutlet weak var boxNextSessionIntention: NSBox!
@@ -52,7 +61,7 @@ class focusCompletedVc: NSViewController {
     @IBOutlet weak var lblTitleTags: NSTextField!
     @IBOutlet weak var tokenFieldTags: NSTokenField!
     @IBOutlet weak var loader: NSProgressIndicator!
-    @IBOutlet weak var textFieldDistractions: NSTextField!
+    @IBOutlet weak var textFieldDistractions: NSTextField!// hidden
     @IBOutlet weak var textFieldAchieve: NSTextField!
     @IBOutlet weak var btnStartAnotherFocusBlock: Button!
     @IBOutlet weak var lblTitle: NSTextField!
@@ -63,6 +72,7 @@ class focusCompletedVc: NSViewController {
     @IBOutlet weak var btnTakeBreak: underLineButton!
     @IBOutlet weak var lblIntentionWas: NSTextField!
     @IBOutlet var textViewIntention: NSTextView!
+    @IBOutlet weak var boxBlankSpaceInsideMoreQuestions: NSBox!
     
     var currentFocusModeName = ""
     var subTitleText = "You have successfully completed the focus block - <FOCUSTYPE>"
@@ -85,7 +95,7 @@ class focusCompletedVc: NSViewController {
     var allowExtend = false
     
     var indexText = "<CURRENTINDEX> of <TOTALCOUNT>"
-    var arrTourMessages = [["title": "Intention", "description": "See what intentions have you set when starting the focus block.", "buttonTitle": "Next"],
+    var arrTourMessages:[[String:Any]] = [["title": "Intention", "description": "See what intentions have you set when starting the focus block.", "buttonTitle": "Next"],
                            ["title": "Achivements", "description": "Write a summary of what did you achieved during this focus block.", "buttonTitle": "Next"],
                            ["title": "Reporting Tags", "description": "Add reporting tags to help analyse your time logs. For example, you could add a \"billable\" tag if you're a freelancer or add tags for certain clients.", "buttonTitle": "Next"],
                            ["title": "Distractions", "description": "Did you faced any distractions? Write a summary of distractions faced.", "buttonTitle": "Finish"]]
@@ -97,6 +107,8 @@ class focusCompletedVc: NSViewController {
         btnPin.image = #imageLiteral(resourceName: "pin")
         tokenFieldTags.delegate = self
         btnEnableAdvancedAnalytics.titleColor = NSColor.systemBlue
+        btnMoreOptions.title = "More Stats"
+        lblAccordinMoreOptions.stringValue = "Reflect on the session"
         lblEnableTimeTracker.stringValue = "Want to get even deeper analytics?"
         btnActivateTimeTracker.title = "Activate Focus Bear Time Tracker"
         lblTitleNextSessionIntention.stringValue = "What do you plan to do next?"
@@ -119,6 +131,12 @@ class focusCompletedVc: NSViewController {
         lblQuestionFirst.stringValue = "What did you achieve during this time?"
         lblQuestionSecond.stringValue = "How focused were you?"
         lblIntentionWas.stringValue = "Your intention was"
+        
+        
+        var tourTitleStarRating = "Rate Your session"
+        var tourSubTitleStarRating = "Stored in your focus session log so you can look back at what you achieved."
+        var tourTitleNextGoal = "Next session goal"
+        var tourSubTitleNextGoal = "Set your focus goal for your next session"
         
         var titleTourBox = "Focus Complete Block"
         if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
@@ -160,6 +178,12 @@ class focusCompletedVc: NSViewController {
                 lblEnableTimeTracker.stringValue = focusCompletedInfo.value(forKey: "askEnableTimeTrackerText") as? String ?? lblEnableTimeTracker.stringValue
                 btnActivateTimeTracker.title = focusCompletedInfo.value(forKey: "buttonActivateTimeTrackerText") as? String ?? btnActivateTimeTracker.title
                 lblTitleNextSessionIntention.stringValue = focusCompletedInfo.value(forKey: "titleNextSessionIntention") as? String ?? lblTitleNextSessionIntention.stringValue
+                btnMoreOptions.title = focusCompletedInfo.value(forKey: "buttonMoreOptionsText") as? String ?? btnMoreOptions.title
+                lblAccordinMoreOptions.stringValue = focusCompletedInfo.value(forKey: "buttonAccordionMoreOptionsText") as? String ?? lblAccordinMoreOptions.stringValue
+                tourTitleStarRating = focusCompletedInfo.value(forKey: "tourTitleStarRating") as? String ?? tourTitleStarRating
+                tourSubTitleStarRating = focusCompletedInfo.value(forKey: "tourSubTitleStarRating") as? String ?? tourSubTitleStarRating
+                tourTitleNextGoal = focusCompletedInfo.value(forKey: "tourTitleNextGoal") as? String ?? tourTitleNextGoal
+                tourSubTitleNextGoal = focusCompletedInfo.value(forKey: "tourSubTitleNextGoal") as? String ?? tourSubTitleNextGoal
             }
         }
         
@@ -176,13 +200,31 @@ class focusCompletedVc: NSViewController {
         }
         
         arrTourMessages.remove(at: 3) //remove distractions
+        arrTourMessages.append(["title": tourTitleStarRating,
+                                "description": tourSubTitleStarRating])
+        arrTourMessages.append(["title": tourTitleNextGoal,
+                                "description": tourSubTitleNextGoal])
+        
         for i in 0..<arrTourMessages.count{
             if i == arrTourMessages.count - 1{
                 arrTourMessages[i]["buttonTitle"] = buttonFinishText
             }else{
                 arrTourMessages[i]["buttonTitle"] = buttonNextText
             }
+            
+            if i == 0{
+                arrTourMessages[i]["view"] = lblIntentionWas
+            }else if i == 1{
+                arrTourMessages[i]["view"] = textFieldAchieve
+            }else if i == 2{
+                arrTourMessages[i]["view"] = tokenFieldTags
+            }else if i == 3{
+                arrTourMessages[i]["view"] = lblQuestionSecond
+            }else if i == 4{
+                arrTourMessages[i]["view"] = textFieldNextSessionIntention
+            }
         }
+        
 
         if UserDefaults.standard.object(forKey: kUserdefaultsFocusCompletedTourShown) == nil{
             menuTourPopoverVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("menuTourPopoverVc")) as? menuTourPopoverVc
@@ -229,32 +271,7 @@ class focusCompletedVc: NSViewController {
     }
     
     override func viewDidAppear() {
-        if UserDefaults.standard.object(forKey: kUserdefaultsFocusCompletedTourShown) == nil{
-            
-            if boxTags.isHidden && arrTourMessages.count == 3{
-                arrTourMessages.remove(at: 2)
-            }
-            var buttonNextText = "Next >"
-            var buttonFinishText = "Finish"
-
-            if let menuTourVcInfo = configjson.value(forKey: "menuTourVcInfo") as? NSDictionary{
-                buttonNextText = menuTourVcInfo.value(forKey: "buttonNextText") as? String ?? buttonNextText
-                buttonFinishText = menuTourVcInfo.value(forKey: "buttonFinishText") as? String ?? buttonFinishText
-            }
-            for i in 0..<arrTourMessages.count{
-                if i == arrTourMessages.count - 1{
-                    arrTourMessages[i]["buttonTitle"] = buttonFinishText
-                }else{
-                    arrTourMessages[i]["buttonTitle"] = buttonNextText
-                }
-            }
-            
-            popoverMenuTour.show(relativeTo: lblIntentionWas.bounds, of: lblIntentionWas, preferredEdge: NSRectEdge.minX)
-            var currentIndexText = indexText.replacingOccurrences(of: "<CURRENTINDEX>", with: "\(currentIndex + 1)")
-            currentIndexText = currentIndexText.replacingOccurrences(of: "<TOTALCOUNT>", with: "\(arrTourMessages.count)")
-            menuTourPopoverVcObj?.showCurrentMessage(title: arrTourMessages[currentIndex]["title"] ?? "", description: arrTourMessages[currentIndex]["description"] ?? "", buttonTitle: arrTourMessages[currentIndex]["buttonTitle"] ?? "", indexText: currentIndexText, arrList: [], progress: currentIndex + 1, progressMaxValue: arrTourMessages.count)
-            UserDefaults.standard.set(true, forKey: kUserdefaultsFocusCompletedTourShown)
-        }
+        
         
         tabMatricsObject.closeLastDomainIfStarted()
         tabMatricsObject.closeLastAppIfStarted()
@@ -369,6 +386,7 @@ class focusCompletedVc: NSViewController {
                 }
             }
         }
+        reloadMoreOptionsState()
     }
     
     var currentRatingCount = 0
@@ -433,6 +451,11 @@ class focusCompletedVc: NSViewController {
         removeTimerMoveWindowToCenter()
     }
     
+    override func viewDidLayout() {// after scrollview resize it removes title and not srawing it again so doing this here 
+        btnStartAnotherFocusBlock.title = btnStartAnotherFocusBlock.title
+        btnDoBreakActivity.title = btnDoBreakActivity.title
+    }
+    
     func resetData(focusModeName:String, currentFocusModeId:String, finish_time:Date, isShutOffTime:Bool){
         nextFocusSessionIntention = ""
         textFieldNextSessionIntention.stringValue = ""
@@ -462,11 +485,11 @@ class focusCompletedVc: NSViewController {
         }
         
         lblSubTitle.stringValue = subTitleText.replacingOccurrences(of: "<FOCUSTYPE>", with: currentFocusModeName)//"You have successfully completed the focus block - \(currentFocusModeName)"
-        textViewIntention.string = whatToAchieveInFocusBlock
+        textViewIntention.string = whatToAchieveInFocusBlock.removingPercentEncoding ?? whatToAchieveInFocusBlock
         if !focusModeTaskStringIsEmpty(){
             let focusModeTaskString = getFocusModeTaskString()
             if !whatToAchieveInFocusBlock.isEmpty{
-                textViewIntention.string = focusModeTaskString + "\n" + whatToAchieveInFocusBlock
+                textViewIntention.string = focusModeTaskString + "\n" + (whatToAchieveInFocusBlock.removingPercentEncoding ?? "")
             }else{
                 textViewIntention.string = focusModeTaskString
             }
@@ -498,11 +521,7 @@ class focusCompletedVc: NSViewController {
             if isHardCorePomodoroModeOn{
                 btnStartAnotherFocusBlock.isHidden = true
             }else{
-                if SettingsManagerObject.isGeekModeEnabled{
-                    btnStartAnotherFocusBlock.isHidden = false
-                }else{
-                    btnStartAnotherFocusBlock.isHidden = true
-                }
+                btnStartAnotherFocusBlock.isHidden = false
             }
             
             breakMinute = currentPomodoroBreakDuration
@@ -567,6 +586,9 @@ class focusCompletedVc: NSViewController {
         }else{
             btnDoBreakActivity.isHidden = true
         }
+        
+        reloadMoreOptionsState()
+        reloadMoreQuestionsState()
     }
     
     func setTimerMoveWindowToCenter(){
@@ -646,7 +668,13 @@ class focusCompletedVc: NSViewController {
             addLog(text: "focusCompletedVc - Start Another Focus Mode cancelled reason:- (sutofftime or morning routine time")//
             return;
         }
-        appdelegate?.menuShowPomodoroModeView()
+        
+        
+        if !SettingsManagerObject.isGeekModeEnabled{
+            appdelegate?.menuShowSimplePomodoroModeView()
+        }else{
+            appdelegate?.menuShowPomodoroModeView()
+        }
     }
     
     func workDone(){
@@ -757,17 +785,73 @@ class focusCompletedVc: NSViewController {
         shouldShowPomodoroAfterBreak = true
         shouldEndPomodoroBreakAtTime = Date().addingTimeInterval(TimeInterval(60*self.breakMinute))
     }
+    
+    func closeWindowForcefully(){
+        whatToAchieveInFocusBlock = ""
+        if brainDumpWcObj != nil{
+            if brainDumpWcObj!.window?.isVisible ?? false{
+                brainDumpWcObj?.window?.close()
+            }
+        }
+        
+        
+        let timestamp = getStringFromDate(date: startFocusModeTime ?? Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
+        
+        let achievements = textFieldAchieve.stringValue.components(separatedBy: .newlines).joined()
+        let distractionsEncountered = textFieldDistractions.stringValue.components(separatedBy: .newlines).joined()
+        
+        updateAllFocusModeTags()
+        addEntryInStatsCsv(logType: "focus block", activity: currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: achievements, distractionsEncountered: distractionsEncountered, abortReason: "", feedback: "", tags:getTagsString())
+
+        allApiObject.finishFocusMode(id: currentFocusModeId, achievements: textFieldAchieve.stringValue, distractions: textFieldDistractions.stringValue, finish_time: self.finish_time ?? Date(), rating:currentRatingCount, completionHandler: {newDic in
+            DispatchQueue.main.async {
+
+            }
+        })
+        appdelegate?.focusModeFinishedResetAllData()
+        nextFocusSessionIntention = textFieldNextSessionIntention.stringValue
+        completedPomodoroCountInHardcorePomodoro += 1
+        totalMinutesRemainingForHardcodePomodoro = 0
+        isHardCorePomodoroModeOn = false
+        
+        if isFocusModeStartedFromPomodoroMode && isSkipBreakActivityDuringPomodoro{
+            if mainViewControllerObj?.breakTimer != nil{
+                mainViewControllerObj?.setActivityTimer()
+            }
+        }else if isHardCorePomodoroModeOn && isSkipBreakActivityDuringPomodoro{
+            if mainViewControllerObj?.breakTimer != nil{
+                mainViewControllerObj?.setActivityTimer()
+            }
+        }else if startingFocusModeVcObj?.lastSkipMicroBreakState ?? false{
+            if mainViewControllerObj?.breakTimer != nil{
+                mainViewControllerObj?.setActivityTimer()
+            }
+        }
+        self.view.window?.close()
+    }
+    
     @IBAction func btnTakeBreakClicked(_ sender: Any) {
-        addLog(text: "[user-action] focusCompletedVc - btnRelaxClicked")//
+        takeBreakClicked(isCloseWindowClicked: false)
+    }
+    
+    func takeBreakClicked(isCloseWindowClicked:Bool){
+        if isCloseWindowClicked{
+            addLog(text: "[user-action] focusCompletedVc - closeWindowClicked")
+        }else{
+            addLog(text: "[user-action] focusCompletedVc - btnRelaxClicked")
+        }
+        
         workDone()
         
         if currentState != ._MORNING_HABIT_ && currentState != ._ACTIVITY_ && currentState != ._EVENING_HABIT_ && currentState != ._CUSTOM_ROUTINE_ && (isHabitAlreadyShowed || currentState == ._POSTPON_MORNING_HABIT_) && arrAllbreakActivities.count != 0 && !isShutOffTimeGoing() && !isHardCorePomodoroModeOn{
-            
-            appdelegate?.setTimerForPomodoroMode(delay: TimeInterval(60*self.breakMinute))
-            if isAppEnable{
-                isFocusBreakOn = true
+            if !isCloseWindowClicked{
+                appdelegate?.setTimerForPomodoroMode(delay: TimeInterval(60*self.breakMinute))
+                if isAppEnable{
+                    isFocusBreakOn = true
+                }
+                
+                showSmallTimerWindow(durationSeconds: 60*self.breakMinute, msg: "", isFocusBreak: true, currentTimerValue:0)
             }
-            showSmallTimerWindow(durationSeconds: 60*self.breakMinute, msg: "", isFocusBreak: true, currentTimerValue:0)
             self.view.window?.close()
             if lastFocusModeTempInfo != nil{
                 showaddFocusTempUrlsOrAppsWindow()
@@ -814,15 +898,15 @@ class focusCompletedVc: NSViewController {
                         UserDefaults.standard.set(false, forKey: SettingsManagerObject.kUserdefaultsDoNotBlockUrlsDuringSuperPomodoroBreaks)
                         SettingsManagerObject.putUserLocalDeviceSettings()
                     }
-                    windowClose()
+                    windowClose(isCloseWindowClicked: isCloseWindowClicked)
                 })
                 
             }else{
-                windowClose()
+                windowClose(isCloseWindowClicked: isCloseWindowClicked)
             }
             
             
-            func windowClose(){
+            func windowClose(isCloseWindowClicked:Bool){
                 if currentState == ._MORNING_HABIT_{
                     if self == focusCompletedVcObj{//normal case
                         self.view.window?.close()// focus end screen was showing before starting  a routine
@@ -860,15 +944,22 @@ class focusCompletedVc: NSViewController {
                         self.view.window?.close()
                     }else{
                         if isFocusModeStartedFromPomodoroMode{
-                            appdelegate?.setTimerForPomodoroMode(delay: TimeInterval(60*breakMinute))
-                            if isAppEnable{
-                                isFocusBreakOn = true
+                            if !isCloseWindowClicked || isHardCorePomodoroModeOn{
+                                appdelegate?.setTimerForPomodoroMode(delay: TimeInterval(60*breakMinute))
+                                if isAppEnable{
+                                    isFocusBreakOn = true
+                                }
                             }
                         }
+                        
+                        if !isCloseWindowClicked || isHardCorePomodoroModeOn{
+                            showSmallTimerWindow(durationSeconds: 60*breakMinute, msg: "", isFocusBreak: true, currentTimerValue:0)
+                        }
+                        
                         if isHardCorePomodoroModeOn && UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsDoNotBlockUrlsDuringSuperPomodoroBreaks) as? Bool == true{
                             showSavedSitesForLaterWindowForBreaks()
                         }
-                        showSmallTimerWindow(durationSeconds: 60*breakMinute, msg: "", isFocusBreak: true, currentTimerValue:0)
+                        
                         self.view.window?.close()
                         if lastFocusModeTempInfo != nil{
                             showaddFocusTempUrlsOrAppsWindow()
@@ -944,14 +1035,12 @@ class focusCompletedVc: NSViewController {
                     settingsContainerVcObj?.showPrivacyView()
                     getPrivacyVcObject().highlightAdvanceAanalyticsItemBox()
                 }
-                if shouldAskPassword(){
-                    if SettingsManagerObject.isPasswordRequireInChangeSettings{
-                        tabview.view.addSubview(getEnterPasswordVcObjForPreferences().view)
-                        tabview.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
-                        getEnterPasswordVcObjForPreferences().parentVc = nil
-                        enterPasswordVcObjForPreferences?.removeConstraints()
-                        addLog(text: "Showing enter password view")
-                    }
+                if isPasswordRequireInOpenSettings(){
+                    tabview.view.addSubview(getEnterPasswordVcObjForPreferences().view)
+                    tabview.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
+                    getEnterPasswordVcObjForPreferences().parentVc = nil
+                    enterPasswordVcObjForPreferences?.removeConstraints()
+                    addLog(text: "Showing enter password view")
                 }
             }
             
@@ -1058,14 +1147,12 @@ class focusCompletedVc: NSViewController {
                 settingsContainerVcObj?.showAddOnsView()
                 getAddOnsVcObject().highlightAdvanceAanalyticsItemBox()
             }
-            if shouldAskPassword(){
-                if SettingsManagerObject.isPasswordRequireInChangeSettings{
-                    tabview.view.addSubview(getEnterPasswordVcObjForPreferences().view)
-                    tabview.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
-                    getEnterPasswordVcObjForPreferences().parentVc = nil
-                    enterPasswordVcObjForPreferences?.removeConstraints()
-                    addLog(text: "Showing enter password view")
-                }
+            if isPasswordRequireInOpenSettings(){
+                tabview.view.addSubview(getEnterPasswordVcObjForPreferences().view)
+                tabview.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
+                getEnterPasswordVcObjForPreferences().parentVc = nil
+                enterPasswordVcObjForPreferences?.removeConstraints()
+                addLog(text: "Showing enter password view")
             }
         }
         
@@ -1082,6 +1169,123 @@ class focusCompletedVc: NSViewController {
         showTooltip(sender: sender, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:340)
     }
     
+    @IBAction func btnMoreOptionsClicked(_ sender: Any) {
+        if boxAverageTimeSpent.isHidden{
+            expandMoreOptions()
+            UserDefaults.standard.set(true, forKey: kUserdefaultsFocusStatsExpanded)
+        }else{
+            collapseMoreOptions()
+            UserDefaults.standard.set(false, forKey: kUserdefaultsFocusStatsExpanded)
+        }
+    }
+    
+    func reloadMoreOptionsState(){
+        if let val = UserDefaults.standard.object(forKey: kUserdefaultsFocusStatsExpanded) as? Bool{
+            if val{
+                expandMoreOptions()
+            }else{
+                collapseMoreOptions()
+            }
+        }else{
+            collapseMoreOptions()
+            UserDefaults.standard.set(false, forKey: kUserdefaultsFocusStatsExpanded)
+        }
+    }
+    
+    func expandMoreOptions(){
+        boxAverageTimeSpent.isHidden = false
+        boxAverageTabCount.isHidden = false
+        if SettingsManagerObject.isAiCheckUrlEnabled{
+            boxFocusAlignmentScore.isHidden = false
+        }else{
+            boxFocusAlignmentScore.isHidden = true
+        }
+        btnMoreOptions.image = NSImage(named: NSImage.touchBarGoDownTemplateName)
+    }
+    
+    func collapseMoreOptions(){
+        boxFocusAlignmentScore.isHidden = true
+        boxAverageTimeSpent.isHidden = true
+        boxAverageTabCount.isHidden = true
+        btnMoreOptions.image = NSImage(named: NSImage.touchBarGoForwardTemplateName)
+    }
+    
+    @IBAction func btnViewAccordinMoreOptionsClicked(_ sender: Any) {
+        if stackViewMoreQuestions.isHidden{
+            expandMoreQuestions()
+            UserDefaults.standard.set(true, forKey: kUserdefaultsFocusAllThingsExpanded)
+            DispatchQueue.global().async {
+                usleep(50000)
+                DispatchQueue.main.async {
+                    self.scrollView.scrollToLast()
+                }
+                usleep(50000)
+                DispatchQueue.main.async { [self] in
+                    if UserDefaults.standard.object(forKey: kUserdefaultsFocusCompletedTourShown) == nil{
+                        
+                        if boxTags.isHidden && arrTourMessages.count > 2{
+                            arrTourMessages.remove(at: 2)// remove tags tour
+                        }
+                        var buttonNextText = "Next >"
+                        var buttonFinishText = "Finish"
+
+                        if let menuTourVcInfo = configjson.value(forKey: "menuTourVcInfo") as? NSDictionary{
+                            buttonNextText = menuTourVcInfo.value(forKey: "buttonNextText") as? String ?? buttonNextText
+                            buttonFinishText = menuTourVcInfo.value(forKey: "buttonFinishText") as? String ?? buttonFinishText
+                        }
+                        for i in 0..<arrTourMessages.count{
+                            if i == arrTourMessages.count - 1{
+                                arrTourMessages[i]["buttonTitle"] = buttonFinishText
+                            }else{
+                                arrTourMessages[i]["buttonTitle"] = buttonNextText
+                            }
+                        }
+                        
+                        let tour = arrTourMessages[currentIndex]
+                        if let view = tour["view"] as? NSView{
+                            popoverMenuTour.show(relativeTo: view.bounds, of: view, preferredEdge: NSRectEdge.minX)
+                            var currentIndexText = indexText.replacingOccurrences(of: "<CURRENTINDEX>", with: "\(currentIndex + 1)")
+                            currentIndexText = currentIndexText.replacingOccurrences(of: "<TOTALCOUNT>", with: "\(arrTourMessages.count)")
+                            menuTourPopoverVcObj?.showCurrentMessage(title: tour["title"] as? String ?? "", description: tour["description"] as? String ?? "", buttonTitle: tour["buttonTitle"] as? String ?? "", indexText: currentIndexText, arrList: [], progress: currentIndex + 1, progressMaxValue: arrTourMessages.count)
+                        }
+                        
+                        
+                        UserDefaults.standard.set(true, forKey: kUserdefaultsFocusCompletedTourShown)
+                    }
+                }
+            }
+        }else{
+            collapseMoreQuestions()
+            UserDefaults.standard.set(false, forKey: kUserdefaultsFocusAllThingsExpanded)
+        }
+    }
+    
+    
+    func collapseMoreQuestions(){
+        stackViewMoreQuestions.isHidden = true
+        imgViewAccordinMoreOptions.image = NSImage(named: NSImage.goForwardTemplateName)
+        boxBlankSpaceInsideMoreQuestions.isHidden = false
+        boxBlankSpaceInsideMoreQuestions.setFrameSize(NSSize(width: boxBlankSpaceInsideMoreQuestions.frame.width, height: 20))
+    }
+    
+    func expandMoreQuestions(){
+        stackViewMoreQuestions.isHidden = false
+        imgViewAccordinMoreOptions.image = NSImage(named: NSImage.touchBarGoDownTemplateName)
+        boxBlankSpaceInsideMoreQuestions.isHidden = true
+    }
+    
+    func reloadMoreQuestionsState(){
+        if let val = UserDefaults.standard.object(forKey: kUserdefaultsFocusAllThingsExpanded) as? Bool{
+            if val{
+                expandMoreQuestions()
+            }else{
+                collapseMoreQuestions()
+            }
+        }else{
+            collapseMoreQuestions()
+            UserDefaults.standard.set(false, forKey: kUserdefaultsFocusAllThingsExpanded)
+        }
+    }
 }
 
 
@@ -1171,22 +1375,16 @@ extension focusCompletedVc:NSTextFieldDelegate, NSTokenFieldDelegate{
 extension focusCompletedVc: TourDelegate{
     func buttonNextClicked() {
         currentIndex += 1
-        if currentIndex == 1{
-            popoverMenuTour.show(relativeTo: textFieldAchieve.bounds, of: textFieldAchieve, preferredEdge: NSRectEdge.minX)
-        }else if currentIndex == 2{
-            if boxTags.isHidden{
-                popoverMenuTour.show(relativeTo: textFieldDistractions.bounds, of: textFieldDistractions, preferredEdge: NSRectEdge.minX)
-            }else{
-                popoverMenuTour.show(relativeTo: tokenFieldTags.bounds, of: tokenFieldTags, preferredEdge: NSRectEdge.minX)
-            }
-            
-        }else if currentIndex == 3{
-            popoverMenuTour.show(relativeTo: textFieldDistractions.bounds, of: textFieldDistractions, preferredEdge: NSRectEdge.minX)
-        }
         if currentIndex < arrTourMessages.count{
-            var currentIndexText = indexText.replacingOccurrences(of: "<CURRENTINDEX>", with: "\(currentIndex + 1)")
-            currentIndexText = currentIndexText.replacingOccurrences(of: "<TOTALCOUNT>", with: "\(arrTourMessages.count)")
-            menuTourPopoverVcObj?.showCurrentMessage(title: arrTourMessages[currentIndex]["title"] ?? "", description: arrTourMessages[currentIndex]["description"] ?? "", buttonTitle: arrTourMessages[currentIndex]["buttonTitle"] ?? "", indexText: currentIndexText, arrList: [], progress: currentIndex + 1, progressMaxValue: arrTourMessages.count)
+            let tour = arrTourMessages[currentIndex]
+            if let view = tour["view"] as? NSView{
+                popoverMenuTour.show(relativeTo: view.bounds, of: view, preferredEdge: NSRectEdge.minX)
+                var currentIndexText = indexText.replacingOccurrences(of: "<CURRENTINDEX>", with: "\(currentIndex + 1)")
+                currentIndexText = currentIndexText.replacingOccurrences(of: "<TOTALCOUNT>", with: "\(arrTourMessages.count)")
+                menuTourPopoverVcObj?.showCurrentMessage(title: tour["title"] as? String ?? "", description: tour["description"] as? String ?? "", buttonTitle: tour["buttonTitle"] as? String ?? "", indexText: currentIndexText, arrList: [], progress: currentIndex + 1, progressMaxValue: arrTourMessages.count)
+            }else{
+                popoverMenuTour.close()
+            }
         }else{
             popoverMenuTour.close()
         }
@@ -1237,8 +1435,10 @@ extension focusCompletedVc:NSTableViewDelegate, NSTableViewDataSource {
 
             if let title = arrAllAppsTabsData[row][tabMatricsObject.keyFocusAppTitle] as? String{
                 cell.lblTitleName.stringValue = title
+                cell.lblTitleName.toolTip = title
             }else if let title = arrAllAppsTabsData[row][tabMatricsObject.keyFocusDomainTitle] as? String{
                 cell.lblTitleName.stringValue = title
+                cell.lblTitleName.toolTip = title
             }
             if let duration = arrAllAppsTabsData[row][tabMatricsObject.keyFocusDuration] as? Int{
                 cell.lblDuration.stringValue = getStringTimeFromSeconds(seconds: duration)

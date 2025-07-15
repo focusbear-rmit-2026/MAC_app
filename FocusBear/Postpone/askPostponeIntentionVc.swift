@@ -3,7 +3,7 @@
 //  Focus Bear
 //
 //  Created by Prashant Sawnani on 06/01/24.
-//  Copyright © 2024 Focus Bear. All rights reserved.
+//  Copyright © 2025 Focus Bear. All rights reserved.
 //
 
 import Cocoa
@@ -76,6 +76,19 @@ class askPostponeIntentionVc: NSViewController, NSTextViewDelegate {
                 easyPostponeWcObj?.window?.close()
             }
             if showAskFocusModeView && SettingsManagerObject.isGeekModeEnabled && !textView.string.isEmpty{
+                if pomodoroWindowControllerObj != nil{
+                    if pomodoroWindowControllerObj?.window?.isVisible ?? false{
+                        pomodoroVcObj?.isIntentionFromMorningPostpone = true
+                        pomodoroVcObj?.textViewAchieve.string = textView.string
+                    }
+                }
+            }
+        }else if lastCurrentState == ._FOCUS_SUMMARY_{
+            mainViewControllerObj?.postponeFocusSummaryFor(minutes: minutes, showAskIntention: false)
+            if easyPostponeWcObj?.window?.isVisible ?? false{
+                easyPostponeWcObj?.window?.close()
+            }
+            if SettingsManagerObject.isGeekModeEnabled && !textView.string.isEmpty{
                 if pomodoroWindowControllerObj != nil{
                     if pomodoroWindowControllerObj?.window?.isVisible ?? false{
                         pomodoroVcObj?.isIntentionFromMorningPostpone = true

@@ -19,7 +19,7 @@ class advancedVc: NSViewController {
     let privacyListItemVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingListItemVc")) as? settingListItemVc
 //    let breaksListItemVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingListItemVc")) as? settingListItemVc
     let addOnsItemVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingListItemVc")) as? settingListItemVc
-//    let toDoListItemVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingListItemVc")) as? settingListItemVc
+    let researchItemVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingListItemVc")) as? settingListItemVc
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -28,30 +28,29 @@ class advancedVc: NSViewController {
         var meetingsSettingTitle = "Meetings"
         var privacySettingTitle = "Privacy"
         var addOnsSettingTitle = "Add Ons"
+        var researchSettingTitle = "Research"
         
         var iconPrivacy:NSImage?
         var iconMeetings:NSImage?
-//        var iconBreaks:NSImage?
         var iconAddOns:NSImage?
-//        var iconToDoList:NSImage?
+        var iconResearch:NSImage?
+        
         if #available(macOS 11.0, *) {
             iconPrivacy = NSImage(systemSymbolName: "eye", accessibilityDescription: nil)
             iconMeetings = NSImage(systemSymbolName: "headphones.circle", accessibilityDescription: nil)
-//            iconBreaks = NSImage(systemSymbolName: "clock.arrow.2.circlepath", accessibilityDescription: nil)
             iconAddOns = NSImage(systemSymbolName: "plus.diamond", accessibilityDescription: nil)
-//            iconToDoList = NSImage(systemSymbolName: "checkmark.circle", accessibilityDescription: nil)
+            iconResearch = NSImage(systemSymbolName: "doc.text.magnifyingglass", accessibilityDescription: nil)
         } else {
             iconPrivacy = NSImage(named: NSImage.touchBarHistoryTemplateName)
             iconMeetings = NSImage(named: NSImage.everyoneName)
-//            iconBreaks = NSImage(named: NSImage.touchBarAlarmTemplateName)
             iconAddOns = NSImage(named: NSImage.touchBarAddDetailTemplateName)
-//            iconToDoList = NSImage(named: NSImage.menuOnStateTemplateName)
+            iconResearch = NSImage(named: NSImage.touchBarSearchTemplateName)
         }
         if let settingsNew = configjson.value(forKey: "settingsNew") as? NSDictionary{
             meetingsSettingTitle = settingsNew.value(forKey: "meetingsSettingTitle") as? String ?? meetingsSettingTitle
             privacySettingTitle = settingsNew.value(forKey: "privacySettingTitle") as? String ?? privacySettingTitle
-//            breaksSettingTitle = settingsNew.value(forKey: "breaksSettingTitle") as? String ?? breaksSettingTitle
             addOnsSettingTitle = settingsNew.value(forKey: "addOnsTitle") as? String ?? addOnsSettingTitle
+            researchSettingTitle = settingsNew.value(forKey: "researchSettingTitle") as? String ?? researchSettingTitle
         }
         
         var advanced_Meetings = "Change settings related to meetings"
@@ -86,16 +85,21 @@ class advancedVc: NSViewController {
         addOnsItemVcObj?.lblDescription.isHidden = true
         addOnsItemVcObj?.delegate = self
         addOnsItemVcObj?.toolTip = advanced_AddOns
-        addOnsItemVcObj?.lineBottom.isHidden = true
 
 
+        stackView.addView(researchItemVcObj!.view, in: .bottom)
+        researchItemVcObj?.lblTitle.stringValue = researchSettingTitle
+        researchItemVcObj?.imgViewIcon.image = iconResearch
+        researchItemVcObj?.lblDescription.isHidden = true
+        researchItemVcObj?.delegate = self
+        researchItemVcObj?.lineBottom.isHidden = true
         
         
         arrForSearchFromSettings.append(["title": meetingsListItemVcObj!.lblTitle.stringValue, "tabId": idAdvanced, "object": meetingsListItemVcObj!.bgBox as Any])
         arrForSearchFromSettings.append(["title": privacyListItemVcObj!.lblTitle.stringValue, "tabId": idAdvanced, "object": privacyListItemVcObj!.bgBox as Any])
 //        arrForSearchFromSettings.append(["title": breaksListItemVcObj!.lblTitle.stringValue, "tabId": idAdvanced, "object": breaksListItemVcObj!.bgBox as Any])
         arrForSearchFromSettings.append(["title": addOnsItemVcObj!.lblTitle.stringValue, "tabId": idAdvanced, "object": addOnsItemVcObj!.bgBox as Any])
-//        arrForSearchFromSettings.append(["title": toDoListItemVcObj!.lblTitle.stringValue, "tabId": idAdvanced, "object": toDoListItemVcObj!.bgBox as Any])
+        arrForSearchFromSettings.append(["title": researchItemVcObj!.lblTitle.stringValue, "tabId": idAdvanced, "object": researchItemVcObj!.bgBox as Any])
         
     }
     override func viewWillAppear() {
@@ -116,15 +120,10 @@ extension advancedVc: SettingListItemDelegate{
             settingsContainerVcObj?.showMeetingDetactionView()
         }else if object == privacyListItemVcObj{
             settingsContainerVcObj?.showPrivacyView()
-        }
-//        else if object == breaksListItemVcObj{
-//            settingsContainerVcObj?.showMicroBreaksView()
-//        }
-        else if object == addOnsItemVcObj{
+        }else if object == addOnsItemVcObj{
             settingsContainerVcObj?.showAddOnsView()
+        }else if object == researchItemVcObj{
+            settingsContainerVcObj?.showResearchSettingView()
         }
-//        else if object == toDoListItemVcObj{
-//            settingsContainerVcObj?.showTodoListSettingView()
-//        }
     }
 }

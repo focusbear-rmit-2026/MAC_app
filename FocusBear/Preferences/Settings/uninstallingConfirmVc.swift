@@ -216,7 +216,7 @@ class uninstallingConfirmVc: NSViewController, NSTextViewDelegate {
     
     func clearAllData(){
         let properties = [URLResourceKey.localizedNameKey, URLResourceKey.creationDateKey, URLResourceKey.contentModificationDateKey, URLResourceKey.localizedTypeDescriptionKey,URLResourceKey.nameKey]
-        let array = try? FileManager.default.contentsOfDirectory(at: appdelegate!.applicationSupportURL!, includingPropertiesForKeys: properties, options: .skipsHiddenFiles)
+        let array = try? FileManager.default.contentsOfDirectory(at: applicationSupportURL!, includingPropertiesForKeys: properties, options: .skipsHiddenFiles)
         if array != nil{
             for url in array!{
                 

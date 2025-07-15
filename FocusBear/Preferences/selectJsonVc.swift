@@ -22,7 +22,7 @@ class selectJsonVc: NSViewController, NSTextViewDelegate, WKNavigationDelegate, 
     
     
     let viewWidthDefault = 1000
-    let viewHeightDefault = 600
+    let viewHeightDefault = 500
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -264,10 +264,10 @@ class selectJsonVc: NSViewController, NSTextViewDelegate, WKNavigationDelegate, 
         alert.setSharingType()
         alert.alertStyle = .informational
         
-        var schemaError = "Your settings cannot be validated."
+        var schemaError = "Session Expired! Please login again."
         var buttonOkText = "OK"
         if let settings = configjson.value(forKey: "settings") as? NSDictionary{
-            schemaError = settings.value(forKey: "schemaError") as? String ?? schemaError
+            schemaError = settings.value(forKey: "tokenErrorText") as? String ?? schemaError
             buttonOkText = settings.value(forKey: "buttonOkText") as? String ?? buttonOkText
         }
         alert.messageText = schemaError
@@ -275,9 +275,8 @@ class selectJsonVc: NSViewController, NSTextViewDelegate, WKNavigationDelegate, 
         
         alert.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
             if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
+                appdelegate?.logout(isAutomatic: true)
             }
-            
-            
         })
     }
     
@@ -486,7 +485,8 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
             addTaskVcObj!.dismiss(addTaskVcObj)
         }else if message.name == "send_new_task_added_to_todo_player"{
             print(message.body)
-            focusModeTaskString = message.body as? String ?? ""
+//            focusModeTaskString = message.body as? String ?? ""
+            updateFocusModeTask(taskString: message.body as? String ?? "")
             var currentFocusModeIndex = 0
             if (isFocusModeRunning || isAnyAllowedFocusModeActivityRunning){
                 if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._CUSTOM_ROUTINE_{
@@ -511,7 +511,7 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
         }else if message.name == "send_intention"{
             print(message.body)
             let intention = message.body as? String ?? ""
-            whatToAchieveInFocusBlock = intention
+            updateFocusModeIntention(intention: intention)
             appdelegate!.setIntentionInBrainDumpWindow()
         }else if message.name == "send_brain_dump_content"{
             print(message.body) 

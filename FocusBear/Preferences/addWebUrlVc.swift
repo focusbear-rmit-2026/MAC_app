@@ -51,7 +51,7 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
 //        textField.placeholderString = "google.com"
         lblInvalidDomain.stringValue = "Please enter a valid domain."
         
-        lblEnterUrl.stringValue = "Enter single or multiple urls(one in each line)"
+        lblEnterUrl.stringValue = "Enter one or more URLs, placing each on a new line"
         
         if let focusPreferencesInfo = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
             buttonCancelText = focusPreferencesInfo.value(forKey: "buttonCancelText") as? String ??  buttonCancelText

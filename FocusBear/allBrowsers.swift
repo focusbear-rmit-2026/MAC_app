@@ -3,7 +3,7 @@
 //  Focus Bear
 //
 //  Created by Prashant Sawnani on 21/10/24.
-//  Copyright © 2024 Focus Bear. All rights reserved.
+//  Copyright © 2025 Focus Bear. All rights reserved.
 //
 
 import Foundation
@@ -11,10 +11,10 @@ import Foundation
 //*****************all browsers Active Tab Url and Titlle*********************//
 
 enum BROWSER:Int{
-    case _GOOGLE_CHROME_ = 152, _SAFARI_, _BRAVE_BROWSER_, _SIDEKICK_, _MICROSOFT_EDGE_, _ARC_, _FIREFOX_, _OPERA_, _VIVALDI_, _OPERA_GX_// start state sirf first activity ki start mi hi hoti h fir  second activity ki start mai "end state hoti hai "
+    case _GOOGLE_CHROME_ = 152, _SAFARI_, _BRAVE_BROWSER_, _SIDEKICK_, _MICROSOFT_EDGE_, _ARC_, _FIREFOX_, _OPERA_, _VIVALDI_, _OPERA_GX_, _SIGMA_OS_// start state sirf first activity ki start mi hi hoti h fir  second activity ki start mai "end state hoti hai "
 }
-
-var arrBrowsersLowerCasedNames = ["safari", "google chrome", "sidekick", "brave browser", "microsoft edge", "arc", "firefox", "opera", "vivaldi", "opera gx"]//if any change in this array, should also change in browsers list in onboardingcontrollingbrowservc
+var sigmaOsBrowserName = "SigmaOS" // SigmaOS_latest
+var arrBrowsersLowerCasedNames = ["safari", "google chrome", "sidekick", "brave browser", "microsoft edge", "arc", "firefox", "opera", "vivaldi", "opera gx", "sigmaos", "sigmaos_latest"]//if any change in this array, should also change in browsers list in onboardingcontrollingbrowservc
 
 func getBrowserAllTabUrl(browser:BROWSER)->[String]?{
     if UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) == nil{
@@ -42,6 +42,10 @@ func getBrowserAllTabUrl(browser:BROWSER)->[String]?{
         browserName = "Arc"
     }else if browser == ._FIREFOX_{
         if let url = getFirefoxActiveTabUrl(){
+            return [url]
+        }
+    }else if browser == ._SIGMA_OS_{
+        if let url = getSigmaOSBrowserActiveTabUrl(){
             return [url]
         }
     }
@@ -115,6 +119,8 @@ func getActiveTabUrlOf(browser:BROWSER)->String?{
         url = getArcBrowserActiveTabUrl()
     }else if browser == ._FIREFOX_{
         url = getFirefoxActiveTabUrl()
+    }else if browser == ._SIGMA_OS_{
+        url = getSigmaOSBrowserActiveTabUrl()
     }
     //****************Blocking Issue #1249*****************//
     //detect if the user has not set up permissions for a browser and show a warning//
@@ -179,6 +185,11 @@ func getActiveTabUrlOf(browser:BROWSER)->String?{
             UserDefaults.standard.set(arrBrowsersInfo, forKey: kUserdefaultsAllBrowsersPermissionInfo)
         }
     }
+    if let url = url{
+        if url.isEmpty{
+            return nil;  //is blank then return nil so we will not read this // 26/4/25
+        }
+    }
     return url
 }
 
@@ -206,6 +217,8 @@ func getActiveTabTitleOf(browser:BROWSER)->String?{
         return getArcBrowserActiveTabTitle()
     }else if browser == ._FIREFOX_{
         return getFirefoxActiveTabTitle()
+    }else if browser == ._SIGMA_OS_{
+        return getSigmaOSBrowserActiveTabTitle()
     }
     return nil
 }
@@ -489,6 +502,10 @@ func getCurrentBrowserFrom(browserName:String)->BROWSER?{
         return ._ARC_
     }else if browserName == "firefox"{
         return ._FIREFOX_
+    }else if browserName == "sigmaos"{
+        return ._SIGMA_OS_
+    }else if browserName == "sigmaos_latest"{
+        return ._SIGMA_OS_
     }else{
         return nil
     }
@@ -514,6 +531,8 @@ func getCurrentBrowserNameFrom(browser:BROWSER)->String?{
         return "Arc"
     }else if browser == ._FIREFOX_{
         return "Firefox"
+    }else if browser == ._SIGMA_OS_{
+        return sigmaOsBrowserName
     }else{
         return nil
     }
@@ -547,6 +566,8 @@ func setUrlToBrowser(browser:BROWSER, url:String){
         browserName = "Arc"
     case ._FIREFOX_:
         browserName = "Firefox"
+    case ._SIGMA_OS_:
+        browserName = sigmaOsBrowserName
     }
     
     
@@ -583,6 +604,27 @@ func setUrlToBrowser(browser:BROWSER, url:String){
                     """
         }
         
+    }else if browser == ._SIGMA_OS_{
+        script = """
+                tell application "\(sigmaOsBrowserName)" to activate
+                 delay 0.2
+                 tell application "System Events"
+                     key code 53 -- press Escape to dismiss any popover
+                     keystroke "l" using {command down} -- focus the address bar
+                     delay 0.2
+                     tell application process "SigmaOS"
+                         -- Focus the URL text field
+                         set urlField to text field 1 of group 1 of window 1
+                         tell urlField
+                             -- perform action "AXPress"
+                             set value to "\(url)"
+                         end tell
+                         
+                         -- Simulate pressing Return to load the URL
+                         keystroke return
+                     end tell
+                 end tell
+                """
     }else{
         script = """
     tell application "\(browserName)"
@@ -732,6 +774,63 @@ func getFirefoxActiveTabTitle()->String?{
     
     return executeScriptAndReturnString(script: script)
 }
+
+
+
+
+func getZenActiveTabUrl()->String?{// not in use delete this after some time
+    
+    var script =
+        """
+        tell application "System Events"
+        set frontApp to name of first application process whose frontmost is true
+        if frontApp is not "Zen" then return "Zen Browser not in front"
+            
+        tell process "Zen"
+        try
+        set theURL to value of attribute "AXDocument" of front window
+        return theURL
+        on error
+        return "Could not retrieve URL"
+        end try
+        end tell
+        end tell
+        """
+    
+    if let appleScript = NSAppleScript(source: script) {
+        var errors : NSDictionary? = nil
+        let desc = appleScript.executeAndReturnError(&errors)
+        if errors != nil {
+            print(errors!)
+            if let errorCode = errors?.value(forKey: "NSAppleScriptErrorNumber") as? Int{
+                if let browser = getCurrentBrowserFrom(browserName: "firefox"){
+                    if errorCode == -1743{
+                        if var arrBrowsersInfo = UserDefaults.standard.object(forKey: kUserdefaultsAllBrowsersPermissionInfo) as? [[String : Any]]{
+                            for i in 0..<arrBrowsersInfo.count{
+                                let info = arrBrowsersInfo[i]
+                                let browserRawValue = info["browser"] as? Int ?? 0
+                                if browser.rawValue == browserRawValue{
+                                    arrBrowsersInfo[i]["isEnabled"] = false
+                                    break;
+                                }
+                            }
+                            UserDefaults.standard.set(arrBrowsersInfo, forKey: kUserdefaultsAllBrowsersPermissionInfo)
+                        }
+                    }else if desc.stringValue == nil{
+                        return ""
+                    }
+                }
+            }
+        }
+        return desc.stringValue?.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)
+    }
+    return nil
+}
+
+
+
+
+
 
 func getGoogleChromeActiveTabUrl()->String?{
     var script: String = ""
@@ -969,6 +1068,34 @@ func getArcBrowserActiveTabTitle()->String?{
     return executeScriptAndReturnString(script: script)
 }
 
+func getSigmaOSBrowserActiveTabUrl()->String?{
+    var script: String = ""
+    
+    script =
+    """
+    tell application "\(sigmaOsBrowserName)"
+    get URL of active tab of front window
+    end tell
+    """
+    
+    return executeScriptAndReturnString(script: script)
+}
+
+func getSigmaOSBrowserActiveTabTitle()->String?{
+    var script: String = ""
+    
+    script =
+    """
+    tell application "\(sigmaOsBrowserName)"
+    get name of active tab of front window
+    end tell
+    """
+    
+    return executeScriptAndReturnString(script: script)
+}
+
+
+
 func getFirefoxBlockScript(url:String)->String{
     let params = "<PARAMS>"
     let newPageParam = "<NEWPAGE>"
@@ -993,6 +1120,32 @@ func getFirefoxBlockScript(url:String)->String{
     }
 }
 
+func getSigmaOsBrowserBlockScript(url:String)->String{
+    let params = "<PARAMS>"
+    let newPageParam = "<NEWPAGE>"
+    
+    
+    return """
+                 tell application "\(sigmaOsBrowserName)" to activate
+                 delay 0.2
+                 tell application "System Events"
+                     key code 53 -- press Escape to dismiss any popover
+                     keystroke "l" using {command down} -- focus the address bar
+                     delay 0.2
+                     tell application process "SigmaOS"
+                         -- Focus the URL text field
+                         set urlField to text field 1 of group 1 of window 1
+                         tell urlField
+                             -- perform action "AXPress"
+                             set value to "\(blockWebUrlString)?old_url=" & "\(url)" & "\(params)" & "&encouraging_info=\(getGoalsAndFocusdJsonForBlockedScript())" & "&version=\(appVersion)" & "\(newPageParam)"
+                         end tell
+                         
+                         -- Simulate pressing Return to load the URL
+                         keystroke return
+                     end tell
+                 end tell
+                """
+}
 
 func getSafariBlockScript(url:String)->String{//"&confirm_ai_distracting_url=true"
     let params = "<PARAMS>"
@@ -1118,4 +1271,211 @@ func isBrowserRunning(browserName: String) -> Bool {
         }
         return false
     }
+}
+
+
+func findURLFromSigmaOS() -> String? {
+    // Find SigmaOS by bundle ID
+    guard let app = NSRunningApplication.runningApplications(withBundleIdentifier: "app.zen-browser.zen").first else {
+        print("SigmaOS not running")
+        return nil//"com.sigmaos.sigmaos.macos"
+    }
+
+    // Create accessibility reference to the app
+    let appElement = AXUIElementCreateApplication(app.processIdentifier)
+
+    // Get the app windows
+    var value: CFTypeRef?
+    let result = AXUIElementCopyAttributeValue(appElement, kAXWindowsAttribute as CFString, &value)
+    guard result == .success,
+          let windowList = value as? [AXUIElement],
+          let firstWindow = windowList.first else {
+        print("No windows found")
+        return nil
+    }
+
+    // Recursively search the first window
+    return findURLInElement(firstWindow)
+}
+
+func findURLInElement(_ element: AXUIElement) -> String? {
+    var childrenValue: CFTypeRef?
+    if AXUIElementCopyAttributeValue(element, kAXChildrenAttribute as CFString, &childrenValue) == .success,
+       let children = childrenValue as? [AXUIElement] {
+        for child in children {
+            // Get the role of the child
+            var roleValue: CFTypeRef?
+            if AXUIElementCopyAttributeValue(child, kAXRoleAttribute as CFString, &roleValue) == .success,
+               let role = roleValue as? String {
+
+                // Check for text-containing roles
+//                if role == kAXTextFieldRole as String || role == kAXStaticTextRole as String {
+                    var urlValue: CFTypeRef?
+                    if AXUIElementCopyAttributeValue(child, kAXValueAttribute as CFString, &urlValue) == .success,
+                       let urlString = urlValue as? String{
+                        print(urlString)
+                        if urlString.starts(with: "http") {
+                            return urlString
+                        }
+                    }
+//                }
+
+                // Recurse deeper
+                if let found = findURLInElement(child) {
+                    return found
+                }
+            }
+        }
+    }
+
+    return nil
+}
+
+//
+//func findURLFromSigmaOS() -> String? {
+//    // Find SigmaOS by bundle ID
+//    guard let app = NSRunningApplication.runningApplications(withBundleIdentifier: "com.sigmaos.sigmaos.macos").first else {
+//        print("SigmaOS not running")
+//        return nil
+//    }
+//
+//    // Create accessibility reference to the app
+//    let appElement = AXUIElementCreateApplication(app.processIdentifier)
+//
+//    // Get the app windows
+//    var value: CFTypeRef?
+//    let result = AXUIElementCopyAttributeValue(appElement, kAXWindowsAttribute as CFString, &value)
+//    guard result == .success,
+//          let windowList = value as? [AXUIElement],
+//          let firstWindow = windowList.first else {
+//        print("No windows found")
+//        return nil
+//    }
+//
+//    // Recursively search the first window
+//    return findURLInElement2(firstWindow)
+//}
+//
+//func findURLInElement2(_ element: AXUIElement) -> String? {
+//    var childrenValue: CFTypeRef?
+//    if AXUIElementCopyAttributeValue(element, kAXChildrenAttribute as CFString, &childrenValue) == .success,
+//       let children = childrenValue as? [AXUIElement] {
+//        for child in children {
+//            // Get the role of the child
+//            var roleValue: CFTypeRef?
+//            if AXUIElementCopyAttributeValue(child, kAXRoleAttribute as CFString, &roleValue) == .success,
+//               let role = roleValue as? String {
+//
+//                // Check for text-containing roles
+//                if role == kAXTextFieldRole as String || role == kAXStaticTextRole as String {
+//                    var urlValue: CFTypeRef?
+//                    if AXUIElementCopyAttributeValue(child, kAXValueAttribute as CFString, &urlValue) == .success,
+//                       let urlString = urlValue as? String,
+//                       urlString.starts(with: "http") {
+//                        return urlString
+//                    }
+//                }
+//
+//                // Recurse deeper
+//                if let found = findURLInElement2(child) {
+//                    return found
+//                }
+//            }
+//        }
+//    }
+//
+//    return nil
+//}
+
+
+
+
+// useful script
+
+//tell application "System Events"
+//    tell application process "SigmaOS"
+//        get entire contents of front window
+//    end tell
+//end tell
+
+
+/*
+ tell application "SigmaOS_latest" to activate
+ delay 0.2
+ tell application "System Events"
+     key code 53 -- press Escape to dismiss any popover
+     keystroke "l" using {command down} -- focus the address bar
+     delay 0.2
+     tell application process "SigmaOS"
+         -- Focus the URL text field
+         set urlField to text field 1 of group 1 of window 1
+         tell urlField
+             -- perform action "AXPress"
+             set value to "https://www.facebook.com"
+         end tell
+         
+         -- Simulate pressing Return to load the URL
+         keystroke return
+     end tell
+ end tell
+ */
+
+
+
+
+
+func getZenBrowserURL() -> String? {// not in use delete this after some time
+    guard let zenApp = NSRunningApplication.runningApplications(withBundleIdentifier: "app.zen-browser.zen").first else {
+        print("Zen Browser not running")
+        return nil
+    }
+
+    let appElement = AXUIElementCreateApplication(zenApp.processIdentifier)
+
+    var value: AnyObject?
+    guard AXUIElementCopyAttributeValue(appElement, kAXWindowsAttribute as CFString, &value) == .success,
+          let windowList = value as? [AXUIElement],
+          let firstWindow = windowList.first else {
+        print("Could not get Zen window")
+        return nil
+    }
+
+    // Try to extract from window title
+    var titleValue: AnyObject?
+    if AXUIElementCopyAttributeValue(firstWindow, kAXTitleAttribute as CFString, &titleValue) == .success,
+       let title = titleValue as? String {
+        // Attempt to extract URL from title with regex
+        if let urlMatch = title.range(of: #"https?://\S+"#, options: .regularExpression) {
+            return String(title[urlMatch])
+        }
+    }
+
+    // Fallback: Deep search for any URL-looking value
+    if let url = deepSearchForURL(from: firstWindow) {
+        return url
+    }
+
+    return nil
+}
+
+func deepSearchForURL(from element: AXUIElement) -> String? {
+    var children: AnyObject?
+    if AXUIElementCopyAttributeValue(element, kAXChildrenAttribute as CFString, &children) == .success,
+       let childArray = children as? [AXUIElement] {
+        for child in childArray {
+            var value: AnyObject?
+            if AXUIElementCopyAttributeValue(child, kAXValueAttribute as CFString, &value) == .success,
+               let stringValue = value as? String{
+                print(stringValue)
+                if stringValue.starts(with: "http"){
+                    return stringValue
+                }
+            }
+
+            if let found = deepSearchForURL(from: child) {
+                return found
+            }
+        }
+    }
+    return nil
 }

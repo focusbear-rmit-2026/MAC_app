@@ -38,6 +38,7 @@ class settingsContainerVc: NSViewController {
         getPrivacyVcObject().loadView()
         getMicroBreaksSettingsVcObject().loadView()
         getAddOnsVcObject().loadView()
+        getResearchVcObject().loadView()
         
         getAccountVcObject().loadView()
         getUninstallVcObject().loadView()
@@ -69,7 +70,7 @@ class settingsContainerVc: NSViewController {
             if passwordVcObj != nil{
                 if containerView.subviews.contains(passwordVcObj!.view){
                     if shouldAskPassword(){
-                        if !SettingsManagerObject.isPasswordRequireInChangeSettings{
+                        if !isPasswordRequireInOpenSettingsEnabled(){
                             tabview.view.addSubview(getEnterPasswordVcObjForPreferences().view)
                             tabview.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
                             getEnterPasswordVcObjForPreferences().parentVc = nil
@@ -213,5 +214,11 @@ class settingsContainerVc: NSViewController {
         removeSubViews()
         self.containerView.addSubview(getToDoListSettingsVcObject().view)
         self.containerView.addConstraints(subView: getToDoListSettingsVcObject().view)
+    }
+    
+    func showResearchSettingView(){
+        removeSubViews()
+        self.containerView.addSubview(getResearchVcObject().view)
+        self.containerView.addConstraints(subView: getResearchVcObject().view)
     }
 }

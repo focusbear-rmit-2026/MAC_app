@@ -3,7 +3,7 @@
 //  Focus Bear
 //
 //  Created by Prashant Sawnani on 03/07/24.
-//  Copyright © 2024 Focus Bear. All rights reserved.
+//  Copyright © 2025 Focus Bear. All rights reserved.
 //
 
 import Foundation
@@ -18,7 +18,7 @@ let nagsStoryboard = NSStoryboard(name: NSStoryboard.Name("Nags"), bundle: nil)
 let onboardingStoryboard = NSStoryboard(name: NSStoryboard.Name("Onboarding"), bundle: nil)
 
 
-let mainWindowControllerObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("mainWindowController")) as? mainWindowController
+var mainWindowControllerObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("mainWindowController")) as? mainWindowController
 let mainViewControllerObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("ViewController")) as? ViewController
 let firstViewControllerObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("firstViewController")) as? firstViewController
 
@@ -176,10 +176,10 @@ func getBrainDumpVcObject()->brainDumpVc{
     return brainDumpVcObj!
 }
 
-var askLogInWcObj:commonWindowController?
-func getAskLogInWindowObject()->commonWindowController{
+var askLogInWcObj:loginWc?
+func getAskLogInWindowObject()->loginWc{
     if askLogInWcObj == nil{
-        askLogInWcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
+        askLogInWcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("loginWc")) as? loginWc
         askLogInWcObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
     }
     return askLogInWcObj!
@@ -532,6 +532,14 @@ func getPrivacyVcObject()->privacyVc{
     return privacyVcObj!
 }
 
+//researchVc
+var researchVcObj:researchVc?
+func getResearchVcObject()->researchVc{
+    if researchVcObj == nil{
+        researchVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("researchVc")) as? researchVc
+    }
+    return researchVcObj!
+}
 
 
 //microBreaksSettingsVcObj
@@ -1786,10 +1794,11 @@ var enterPasswordVcObjForPreferences:enterPasswordVc?
 func getEnterPasswordVcObjForPreferences()->enterPasswordVc{
     if enterPasswordVcObjForPreferences == nil{
         enterPasswordVcObjForPreferences = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("enterPasswordVc")) as? enterPasswordVc
+        enterPasswordVcObjForPreferences?.loadView()
+        enterPasswordVcObjForPreferences?.blockingView.isHidden = false
     }
     return enterPasswordVcObjForPreferences!
 }
-
 
 
 
@@ -2032,13 +2041,10 @@ func getMenuWindowObject()->commonWindowController{
         menuWcObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
         menuWcObj?.window?.standardWindowButton(.zoomButton)?.isHidden = true
         menuWcObj?.window?.standardWindowButton(.miniaturizeButton)?.isHidden = true
+        menuWcObj?.window?.collectionBehavior = .stationary // make it visible even if stage manager is on // 19/6/25
     }
     return menuWcObj!
 }
-
-
-
-
 
 var nudgeFocusAlignmentScoreDippingVcObj:nudgeFocusAlignmentScoreDippingVc?
 func getNudgeFocusAlignmentScoreDippingVcObject()->nudgeFocusAlignmentScoreDippingVc{
@@ -2138,3 +2144,79 @@ func getSuperGentleQuitVcObject()->superGentleQuitVc{
     }
     return superGentleQuitVcObj!
 }
+
+
+
+// loading window object
+var splashWcObj:commonWindowController?
+func getSplashWindowObject()->commonWindowController{
+    if splashWcObj == nil{
+        splashWcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
+        splashWcObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.numberOfWindowLevelKeys)))
+
+//        splashWcObj?.window?.collectionBehavior = NSWindow.CollectionBehavior.canJoinAllSpaces
+//        splashWcObj?.window?.canHide = false
+//        splashWcObj?.window?.isExcludedFromWindowsMenu = true
+//        splashWcObj?.window?.hidesOnDeactivate = false
+//        splashWcObj?.window?.isRestorable = false
+//        splashWcObj?.window?.animationBehavior = .none
+//        splashWcObj?.window?.styleMask = .borderless
+//        splashWcObj?.window?.backingType = .buffered
+//        splashWcObj?.window?.minSize = NSSize(width: 900, height: 500)
+        splashWcObj?.window?.title = ""
+        
+        
+        splashWcObj?.window?.styleMask.insert(.fullSizeContentView)
+        splashWcObj?.window?.titlebarAppearsTransparent = true
+        splashWcObj?.window?.standardWindowButton(.zoomButton)?.isHidden = true
+        splashWcObj?.window?.standardWindowButton(.closeButton)?.isHidden = true
+        splashWcObj?.window?.standardWindowButton(.miniaturizeButton)?.isHidden = true
+        
+        
+        splashWcObj?.window?.center()
+    }
+    return splashWcObj!
+}
+
+
+// splash vc object
+var splashVcObj:splashVc?
+func getSplashVcObject()->splashVc{
+    if splashVcObj == nil{
+        splashVcObj = newStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("splashVc")) as? splashVc
+    }
+    return splashVcObj!
+}
+
+
+
+
+// popUpFocusGoalConfirmationVc object
+var popUpFocusGoalConfirmationVcObj:popUpFocusGoalConfirmationVc?
+func getPopUpFocusGoalConfirmationVcObject()->popUpFocusGoalConfirmationVc{
+    if popUpFocusGoalConfirmationVcObj == nil{
+        popUpFocusGoalConfirmationVcObj = nagsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("popUpFocusGoalConfirmationVc")) as? popUpFocusGoalConfirmationVc
+    }
+    return popUpFocusGoalConfirmationVcObj!
+}
+
+
+// popUpAddNewFocusGoalVc object
+var popUpAddNewFocusGoalVcObj:popUpAddNewFocusGoalVc?
+func getPopUpAddNewFocusGoalVcObject()->popUpAddNewFocusGoalVc{
+    if popUpAddNewFocusGoalVcObj == nil{
+        popUpAddNewFocusGoalVcObj = nagsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("popUpAddNewFocusGoalVc")) as? popUpAddNewFocusGoalVc
+    }
+    return popUpAddNewFocusGoalVcObj!
+}
+
+// popUpSaveThisTaskForLaterVc object
+var popUpSaveThisTaskForLaterVcObj:popUpSaveThisTaskForLaterVc?
+func getPopUpSaveThisTaskForLaterVcObject()->popUpSaveThisTaskForLaterVc{
+    if popUpSaveThisTaskForLaterVcObj == nil{
+        popUpSaveThisTaskForLaterVcObj = nagsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("popUpSaveThisTaskForLaterVc")) as? popUpSaveThisTaskForLaterVc
+    }
+    return popUpSaveThisTaskForLaterVcObj!
+}
+
+

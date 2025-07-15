@@ -3,7 +3,7 @@
 //  Focus Bear
 //
 //  Created by Prashant Sawnani on 17/02/24.
-//  Copyright © 2024 Focus Bear. All rights reserved.
+//  Copyright © 2025 Focus Bear. All rights reserved.
 //
 
 import Cocoa
@@ -320,11 +320,11 @@ class chooseHabitsVC: NSViewController {
         let shutOffdate = Calendar.current.date(bySettingHour: shutOffTime!.hour, minute: shutOffTime!.minute, second: shutOffTime!.second, of: Date())!
 
         var sequenceId = ""
-        if lastCurrentState == ._MORNING_HABIT_{// no need to force complete in morning routine
+        if currentState == ._MORNING_HABIT_{// no need to force complete in morning routine
             sequenceId = arrFilteredMorningHabits.first?.activity_sequence_id ?? ""
             UserDefaults.standard.set(startDate, forKey: kUserdefaultsLastHabitShowDate)
             allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"morning_routine", "deactivate-from":"chooseHabits"])
-        }else if lastCurrentState == ._FOCUS_SUMMARY_ || lastCurrentState == ._EVENING_HABIT_{
+        }else if currentState == ._FOCUS_SUMMARY_ || currentState == ._EVENING_HABIT_{
             let curreentDate = Date()
             if curreentDate > shutOffdate{// iska matlab 20-24 k bich
                 let tomorrowDate = Calendar.current.date(byAdding: .day, value: 1, to: Date())!

@@ -50,6 +50,7 @@ class blockedAppsVc: NSViewController {
     }
     
     @IBAction func btnAddAppClicked(_ sender: Any) {
+        addLog(text:"[user-action] blockedAppsVc:- btnAddAppClicked")
         if isExpired{
             if SettingsManagerObject.arrBlockedApps.count >= alwaysBlockedUrlsCountInExpireApp{
                 var titleLimitedBlockApps = "Max 3 blocked apps can be added in Basic version."

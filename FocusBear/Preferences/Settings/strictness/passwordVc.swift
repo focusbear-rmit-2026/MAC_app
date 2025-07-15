@@ -8,7 +8,6 @@
 import Cocoa
 
 class passwordVc: NSViewController {
-
     @IBOutlet weak var lblTitleMain: NSTextField!
     @IBOutlet weak var checkBoxSkipEveningHabitAfterCutOff: NSButton!
     @IBOutlet weak var checkBoxQuitApp: NSButton!
@@ -141,6 +140,11 @@ class passwordVc: NSViewController {
         resetView()
     }//your password has been disabled.
     //
+    
+    override func viewDidLayout() {// after scrollview resize it removes title and not srawing it again so doing this here 
+        btnChangePassword.title = btnChangePassword.title
+    }
+    
     func resetView(){
         textFieldNewPassword.stringValue = ""
         textFieldConfirmPassword.stringValue = ""

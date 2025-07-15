@@ -12,6 +12,8 @@ import TrueTime
 
 class focusPreferencesAdvancedVc: NSViewController {
     
+    @IBOutlet weak var boxBg: NSBox!
+    @IBOutlet weak var scrollView: NSScrollView!
     @IBOutlet weak var popUpBtnFocusAlignmentScore: NSPopUpButton!
     @IBOutlet weak var lblFocusAlignmentScore: NSTextField!
     @IBOutlet weak var tblViewApps: NSTableView!
@@ -345,6 +347,16 @@ class focusPreferencesAdvancedVc: NSViewController {
         
     }
     
+    func showFullScrollView(){
+        DispatchQueue.global().async {
+            usleep(50000)
+            DispatchQueue.main.async {
+//                self.view.setFrameSize(self.boxBg.frame.size)
+                self.view.window?.setFrame(NSRect(x: 0, y: 0, width: self.view.frame.width, height: self.boxBg.frame.height), display: true)
+            }
+        }
+    }
+    
     @IBAction func checkBoxRunScriptAfterFocusClicked(_ sender: Any) {
         let row = focusPreferencesVcObj?.tblViewFocusType.selectedRow ?? 0
         if checkBoxRunScriptAfterFocus.state == .on{
@@ -542,6 +554,7 @@ class focusPreferencesAdvancedVc: NSViewController {
         if stackViewUrlsAndApps.isHidden{
             btnShowBlockedUrlsAndApps.image = NSImage(named: "NSTouchBarGoDownTemplate")
             stackViewUrlsAndApps.isHidden = false
+            showFullScrollView()
         }else{
             btnShowBlockedUrlsAndApps.image = NSImage(named: "NSTouchBarGoForwardTemplate")
             stackViewUrlsAndApps.isHidden = true
@@ -555,6 +568,7 @@ class focusPreferencesAdvancedVc: NSViewController {
             boxShellScriptAfter.isHidden = false
             boxShellScriptBefore.isHidden = false
             lineSepraterScripts.isHidden = false
+            showFullScrollView()
         }else{
             btnShowScripts.image = NSImage(named: "NSTouchBarGoForwardTemplate")
             boxAppleScriptAfter.isHidden = true

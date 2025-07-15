@@ -17,7 +17,6 @@ class thirdVc: NSViewController {
     @IBOutlet weak var lblCreateAccount: NSTextField!
     @IBOutlet weak var btnNextGraph: cursorButton!
     @IBOutlet weak var btnPreviousGraph: cursorButton!
-    @IBOutlet weak var webViewForVideo: WKWebView!
     @IBOutlet weak var btnReviseQuantity: Button!
     @IBOutlet weak var customViewContainer: NSView!
     @IBOutlet weak var lblTimer: NSTextField!
@@ -27,7 +26,7 @@ class thirdVc: NSViewController {
     @IBOutlet weak var webViewGraph2: WKWebView!
     @IBOutlet weak var boxBg: NSBox!
     @IBOutlet weak var lblSubTitle: NSTextField!
-    @IBOutlet weak var boxBreathingFinished: NSBox!
+    @IBOutlet weak var boxBreathingFinished: NSBox!// not in use
     @IBOutlet weak var btnMain: NSButton!
     @IBOutlet weak var lblTitle: NSTextField!
     @IBOutlet weak var imgViewGif: NSImageView!
@@ -53,7 +52,7 @@ class thirdVc: NSViewController {
         super.viewDidLoad()
         // Do view setup here.
         btnSkipHabit.isHidden = true
-        webViewForVideo.isHidden = true
+        
         btnReviseQuantity.isHidden = true
         lblTimer.isHidden = true
         boxNewBadge.isHidden = true
@@ -112,13 +111,10 @@ class thirdVc: NSViewController {
             imgViewGif.image = NSImage(named: "Smile _Small")
             imgViewGif.animates = true
         }
+        setTitleFont()
     }
     
-    func loadWebView(){
-        
-        
-    }
-    
+
     @IBAction func btnNextGraphClicked(_ sender: Any) {
         currentGraphIndex += 1
         loadGraph(activityId: lastActivityIdForGraph, activityName: lastActivityNameForGraph, logQuantity: lastLogQuantityForGraph, logQuantityType: lastLogQuantityTypeForGraph, activityChoiceId: lastActivityChoiceIdForGraph, activityStartTime: lastActivityStartTimeForGraph, duration: lastActivityDurationForGraph, quantity: lastActivityQuantityForGraph)
@@ -602,7 +598,7 @@ class thirdVc: NSViewController {
         webViewGraph1.isHidden = false
         webViewGraph2.isHidden = true
         btnMainCenterY.constant = 100
-        webViewForVideo.isHidden = true
+        
         if let graphDayspath = Bundle.main.path(forResource: "GraphDays", ofType: "html"), let graphDaysDurationpath = Bundle.main.path(forResource: "GraphDaysDuration", ofType: "html"){
             
             firstGraphJavaScript = ""
@@ -792,7 +788,7 @@ class thirdVc: NSViewController {
         stackViewGraph.isHidden = false
         
         btnMainCenterY.constant = 100
-        webViewForVideo.isHidden = true
+        
         if let graphTimepath = Bundle.main.path(forResource: "GraphTime", ofType: "html"), let graphGraphTimeDurationpath = Bundle.main.path(forResource: "GraphTimeDuration", ofType: "html"){
             
             firstGraphJavaScript = ""
@@ -910,7 +906,7 @@ class thirdVc: NSViewController {
         stackViewGraph.isHidden = false
         
         btnMainCenterY.constant = 100
-        webViewForVideo.isHidden = true
+        
         if let graphDayspath = Bundle.main.path(forResource: "GraphDays", ofType: "html"), let graphTimepath = Bundle.main.path(forResource: "GraphTime", ofType: "html"), let graphGraphTimeDurationpath = Bundle.main.path(forResource: "GraphTimeDuration", ofType: "html"), let graphDaysDurationpath = Bundle.main.path(forResource: "GraphDaysDuration", ofType: "html"){
             
             secondGraphJavaScript = ""
@@ -1279,6 +1275,21 @@ class thirdVc: NSViewController {
         hideOnboardingProgress(view: self.view)
         hideOnboardingBellIcon(view: self.view)
     }
+    
+    override func viewDidLayout() {
+        setTitleFont()
+    }
+    
+    func setTitleFont(){
+        if self.view.frame.size.height < 700{
+            lblTitle.font = NSFont.systemFont(ofSize: 30)
+        }else if self.view.frame.size.height < 760{
+            lblTitle.font = NSFont.systemFont(ofSize: 35)
+        }else{
+            lblTitle.font = NSFont.systemFont(ofSize: 40)
+        }
+    }
+    
     func breathingFinished(isSKipped:Bool) {
         showOnboardingProgress(view: self.view, progress: 13)
         showOnboardingBellIcon(view: self.view, screen: "onboarding-activity-finished-screen")
@@ -1288,7 +1299,7 @@ class thirdVc: NSViewController {
         btnReviseQuantity.isHidden = true
         lblTimer.isHidden = true
         stackViewGraph.isHidden = true
-        btnMainCenterY.constant = 170
+        btnMainCenterY.constant = 100
         lblProgress.isHidden = true
         imgViewGif.isHidden = true
         btnMain.title = "Continue"
@@ -1296,7 +1307,7 @@ class thirdVc: NSViewController {
             btnMain.title = preloadFocusModesViewInfo.value(forKey: "buttonContinueText") as? String ?? btnMain.title
         }
         mainViewControllerObj?.hideCloseButtons()
-        webViewForVideo.isHidden = true
+        
         boxBreathingFinished.isHidden = true
         customViewContainer.isHidden = false
         btnMain.isHidden = false
@@ -1334,88 +1345,6 @@ class thirdVc: NSViewController {
         }
     }
     
-    func startOnboardingVideo(){
-        addLog(text:"start onboarding video")
-        btnSkipHabit.isHidden = true
-        btnReviseQuantity.isHidden = true
-        lblTimer.isHidden = true
-        stackViewGraph.isHidden = true
-        btnMainCenterY.constant = 170
-        lblProgress.isHidden = true
-        imgViewGif.isHidden = true
-        lblCreateAccount.isHidden = true
-        lblDescriptionHabits.isHidden = true
-        
-        btnMain.title = "Continue"
-        if let preloadFocusModesViewInfo = configjson.value(forKey: "preloadFocusModesViewInfo") as? NSDictionary{
-            btnMain.title = preloadFocusModesViewInfo.value(forKey: "buttonContinueText") as? String ?? btnMain.title
-        }
-        
-        boxBreathingFinished.isHidden = false
-        customViewContainer.isHidden = true
-        btnMain.isHidden = false
-        lblTitle.stringValue = ""
-        webViewForVideo.isHidden = false
-        var videoUrl = "https://www.youtube.com/watch?v=TvfNJ1AaT9M"
-        
-        if let welcomeInfo = configjson.value(forKey: "welcomeInfo") as? NSDictionary{
-            videoUrl = welcomeInfo.value(forKey: "welcomeVideoUrl") as? String ?? videoUrl
-        }
-        if videoUrl.lowercased().contains("watch?v="){
-            videoUrl = videoUrl.replacingOccurrences(of: "watch?v=", with: "embed/")
-        }else{
-            
-            if videoUrl.lowercased().contains("https://youtu.be/"){
-                //https://www.youtube.com/watch?v=lExuhKRS8vo
-                if let lastItem =  videoUrl.components(separatedBy: "/").last{
-                    videoUrl = "https://www.youtube.com/embed/" + lastItem
-                }
-                
-            }
-        }
-
-        let link = URL(string:videoUrl)!
-        let request = URLRequest(url: link)
-        self.webViewForVideo.load(request)
-    }
-    
-    func btnFocesModesLodded(){
-        lblCreateAccount.isHidden = true
-        lblDescriptionHabits.isHidden = true
-        btnSkipHabit.isHidden = true
-        boxBreathingFinished.isHidden = false
-        customViewContainer.isHidden = true
-        btnMain.isHidden = false
-        btnMainClicked(self)//new work 26/9/22
-        
-        return;//old work
-        lblTitle.stringValue = ""
-        webViewForVideo.isHidden = false
-        
-        var videoUrl = "https://www.youtube.com/watch?v=GAeP2pKxako"
-        if videoUrl.lowercased().contains("watch?v="){
-            videoUrl = videoUrl.replacingOccurrences(of: "watch?v=", with: "embed/")
-        }else{
-            
-            if videoUrl.lowercased().contains("https://youtu.be/"){
-                //https://www.youtube.com/watch?v=lExuhKRS8vo
-                if let lastItem =  videoUrl.components(separatedBy: "/").last{
-                    videoUrl = "https://www.youtube.com/embed/" + lastItem
-                }
-                
-            }
-        }
-        if videoUrl.contains("?"){
-            videoUrl = videoUrl + "&autoplay=1"
-        }else{
-            videoUrl = videoUrl + "?autoplay=1"
-        }
-        let link = URL(string:videoUrl)!
-        let request = URLRequest(url: link)
-        self.webViewForVideo.load(request)
-        
-    }
-    
     func customRoutineHabitFinished(index:Int) {
         addLog(text:"customRoutineHabitFinished")
         btnSkipHabit.title = buttonMoreActionsText
@@ -1435,7 +1364,7 @@ class thirdVc: NSViewController {
         btnReviseQuantity.isHidden = true
         customViewContainer.isHidden = true
         lblTimer.isHidden = true
-        webViewForVideo.isHidden = true
+        
         boxBg.isHidden = false
         if rememberNextHabitVcObj != nil{
             if self.view.subviews.contains(rememberNextHabitVcObj!.view){
@@ -1537,7 +1466,12 @@ class thirdVc: NSViewController {
         }else {
             isSequenceFinished = true
             allApiObject.capturePosthog(event: "complete-custom-routine", metadata: ["routine-type":"custom_routine"])
-            imgViewGif.isHidden = false
+            
+            if SettingsManagerObject.kIsReducedMotion{
+                imgViewGif.isHidden = true
+            }else{
+                imgViewGif.isHidden = false
+            }
             lblTitle.stringValue = getActivityFinishedText(isLast: true, activityName: lastHabit!)
             btnMain.title = unlockMachineButtonText
             mainViewControllerObj?.hideCloseButtons()
@@ -1575,7 +1509,7 @@ class thirdVc: NSViewController {
         btnReviseQuantity.isHidden = true
         customViewContainer.isHidden = true
         lblTimer.isHidden = true
-        webViewForVideo.isHidden = true
+        
         boxBg.isHidden = false
         if rememberNextHabitVcObj != nil{
             if self.view.subviews.contains(rememberNextHabitVcObj!.view){
@@ -1617,7 +1551,11 @@ class thirdVc: NSViewController {
             btnMain.toolTip = btnMain.title
             btnSkipHabit.isHidden = false
         }else {
-            imgViewGif.isHidden = false
+            if SettingsManagerObject.kIsReducedMotion{
+                imgViewGif.isHidden = true
+            }else{
+                imgViewGif.isHidden = false
+            }
             isSequenceFinished = true
             if !isLastActivitySkipped{
                 addLog(text:"\(lastHabit!) Finished")
@@ -1658,7 +1596,7 @@ class thirdVc: NSViewController {
         btnReviseQuantity.isHidden = true
         customViewContainer.isHidden = true
         lblTimer.isHidden = true
-        webViewForVideo.isHidden = true
+        
         boxBg.isHidden = false
         if rememberNextHabitVcObj != nil{
             if self.view.subviews.contains(rememberNextHabitVcObj!.view){
@@ -1692,7 +1630,11 @@ class thirdVc: NSViewController {
             btnSkipHabit.isHidden = false
             nextActivityName = arrHabits[lastHabitIndex+1].name!
         }else {
-            imgViewGif.isHidden = false
+            if SettingsManagerObject.kIsReducedMotion{
+                imgViewGif.isHidden = true
+            }else{
+                imgViewGif.isHidden = false
+            }
             isSequenceFinished = true
             lblTitle.stringValue = getActivitySkippedText(isLast: true, activityName: lastHabit!)
             btnMain.title = unlockMachineButtonText
@@ -1722,7 +1664,7 @@ class thirdVc: NSViewController {
         btnReviseQuantity.isHidden = true
         customViewContainer.isHidden = true
         lblTimer.isHidden = true
-        webViewForVideo.isHidden = true
+        
         boxBg.isHidden = false
         if rememberNextHabitVcObj != nil{
             if self.view.subviews.contains(rememberNextHabitVcObj!.view){
@@ -1799,7 +1741,11 @@ class thirdVc: NSViewController {
         }else {
             isSequenceFinished = true
             allApiObject.capturePosthog(event: "complete-custom-routine", metadata: ["routine-type":"custom_routine"])
-            imgViewGif.isHidden = false
+            if SettingsManagerObject.kIsReducedMotion{
+                imgViewGif.isHidden = true
+            }else{
+                imgViewGif.isHidden = false
+            }
             lblTitle.stringValue = getActivityFinishedText(isLast: true, activityName: lastHabit!)
             btnMain.title = unlockMachineButtonText
             mainViewControllerObj?.hideCloseButtons()
@@ -1840,7 +1786,7 @@ class thirdVc: NSViewController {
         btnReviseQuantity.isHidden = true
         customViewContainer.isHidden = true
         lblTimer.isHidden = true
-        webViewForVideo.isHidden = true
+        
         boxBg.isHidden = false
         if rememberNextHabitVcObj != nil{
             if self.view.subviews.contains(rememberNextHabitVcObj!.view){
@@ -1981,7 +1927,11 @@ class thirdVc: NSViewController {
         }else {
             isSequenceFinished = true
             allApiObject.capturePosthog(event: "complete-morning-routine", metadata: ["routine-type":"morning_routine"])
-            imgViewGif.isHidden = false
+            if SettingsManagerObject.kIsReducedMotion{
+                imgViewGif.isHidden = true
+            }else{
+                imgViewGif.isHidden = false
+            }
             lblTitle.stringValue = getActivityFinishedText(isLast: true, activityName: lastHabit!)
             btnMain.title = unlockMachineButtonText
             mainViewControllerObj?.hideCloseButtons()
@@ -2037,7 +1987,7 @@ class thirdVc: NSViewController {
         btnReviseQuantity.isHidden = true
         customViewContainer.isHidden = true
         lblTimer.isHidden = true
-        webViewForVideo.isHidden = true
+        
         boxBg.isHidden = false
         if rememberNextHabitVcObj != nil{
             if self.view.subviews.contains(rememberNextHabitVcObj!.view){
@@ -2143,7 +2093,11 @@ class thirdVc: NSViewController {
         }else {
             isSequenceFinished = true
             allApiObject.capturePosthog(event: "complete-morning-routine", metadata: ["routine-type":"morning_routine"])
-            imgViewGif.isHidden = false
+            if SettingsManagerObject.kIsReducedMotion{
+                imgViewGif.isHidden = true
+            }else{
+                imgViewGif.isHidden = false
+            }
             lblTitle.stringValue = getActivityFinishedText(isLast: true, activityName: lastHabit!)
             btnMain.title = unlockMachineButtonText
             mainViewControllerObj?.hideCloseButtons()
@@ -2241,7 +2195,7 @@ class thirdVc: NSViewController {
         btnReviseQuantity.isHidden = true
         customViewContainer.isHidden = true
         lblTimer.isHidden = true
-        webViewForVideo.isHidden = true
+        
         boxBg.isHidden = false
         if rememberNextHabitVcObj != nil{
             if self.view.subviews.contains(rememberNextHabitVcObj!.view){
@@ -2280,7 +2234,11 @@ class thirdVc: NSViewController {
             btnMain.toolTip = btnMain.title
             btnSkipHabit.isHidden = false
         }else {
-            imgViewGif.isHidden = false
+            if SettingsManagerObject.kIsReducedMotion{
+                imgViewGif.isHidden = true
+            }else{
+                imgViewGif.isHidden = false
+            }
             isSequenceFinished = true
             if !isLastActivitySkipped{
                 addLog(text:"\(lastHabit!) Finished")
@@ -2339,7 +2297,7 @@ class thirdVc: NSViewController {
         btnReviseQuantity.isHidden = true
         customViewContainer.isHidden = true
         lblTimer.isHidden = true
-        webViewForVideo.isHidden = true
+        
         boxBg.isHidden = false
         if rememberNextHabitVcObj != nil{
             if self.view.subviews.contains(rememberNextHabitVcObj!.view){
@@ -2377,7 +2335,11 @@ class thirdVc: NSViewController {
             btnSkipHabit.isHidden = false
             nextActivityName = arrFilteredMorningHabits[lastHabitIndex+1].name!
         }else {
-            imgViewGif.isHidden = false
+            if SettingsManagerObject.kIsReducedMotion{
+                imgViewGif.isHidden = true
+            }else{
+                imgViewGif.isHidden = false
+            }
             isSequenceFinished = true
             lblTitle.stringValue = getActivitySkippedText(isLast: true, activityName: lastHabit!)
             btnMain.title = unlockMachineButtonText
@@ -2415,7 +2377,7 @@ class thirdVc: NSViewController {
         randomIntToRememberNextHabit = 0
         btnReviseQuantity.isHidden = true
         customViewContainer.isHidden = true
-        webViewForVideo.isHidden = true
+        
         lblTimer.isHidden = true
         boxBg.isHidden = false
         if rememberNextHabitVcObj != nil{
@@ -2581,7 +2543,11 @@ class thirdVc: NSViewController {
             }else{
                 startTimer(duration: 30)
             }
-            imgViewGif.isHidden = false
+            if SettingsManagerObject.kIsReducedMotion{
+                imgViewGif.isHidden = true
+            }else{
+                imgViewGif.isHidden = false
+            }
             lblTitle.stringValue = getActivityFinishedText(isLast: true, activityName: lastHabit!)
             btnMain.title = "Let's wrap up for the day"
             if let common = configjson.value(forKey: "common") as? NSDictionary{
@@ -2654,7 +2620,7 @@ class thirdVc: NSViewController {
         randomIntToRememberNextHabit = 0
         btnReviseQuantity.isHidden = true
         customViewContainer.isHidden = true
-        webViewForVideo.isHidden = true
+        
         lblTimer.isHidden = true
         boxBg.isHidden = false
         if rememberNextHabitVcObj != nil{
@@ -2797,7 +2763,11 @@ class thirdVc: NSViewController {
             }else{
                 startTimer(duration: 30)
             }
-            imgViewGif.isHidden = false
+            if SettingsManagerObject.kIsReducedMotion{
+                imgViewGif.isHidden = true
+            }else{
+                imgViewGif.isHidden = false
+            }
             lblTitle.stringValue = getActivityFinishedText(isLast: true, activityName: lastHabit!)
             btnMain.title = "Let's wrap up for the day"
             if let common = configjson.value(forKey: "common") as? NSDictionary{
@@ -2844,7 +2814,7 @@ class thirdVc: NSViewController {
         randomIntToRememberNextHabit = 0
         btnReviseQuantity.isHidden = true
         customViewContainer.isHidden = true
-        webViewForVideo.isHidden = true
+        
         lblTimer.isHidden = true
         boxBg.isHidden = false
         if rememberNextHabitVcObj != nil{
@@ -2931,7 +2901,11 @@ class thirdVc: NSViewController {
                 startTimer(duration: 30)
             }
             
-            imgViewGif.isHidden = false
+            if SettingsManagerObject.kIsReducedMotion{
+                imgViewGif.isHidden = true
+            }else{
+                imgViewGif.isHidden = false
+            }
             if !isLastActivitySkipped{
                 addLog(text:"\(lastHabit!) Finished")
                 lblTitle.stringValue = getActivityFinishedText(isLast: true, activityName: lastHabit!)
@@ -3005,7 +2979,7 @@ class thirdVc: NSViewController {
         randomIntToRememberNextHabit = 0
         btnReviseQuantity.isHidden = true
         customViewContainer.isHidden = true
-        webViewForVideo.isHidden = true
+        
         lblTimer.isHidden = true
         boxBg.isHidden = false
         if rememberNextHabitVcObj != nil{
@@ -3087,7 +3061,11 @@ class thirdVc: NSViewController {
                 startTimer(duration: 30)
             }
             
-            imgViewGif.isHidden = false
+            if SettingsManagerObject.kIsReducedMotion{
+                imgViewGif.isHidden = true
+            }else{
+                imgViewGif.isHidden = false
+            }
             lblTitle.stringValue = getActivitySkippedText(isLast: true, activityName: lastHabit!)
             btnMain.title = "Let's wrap up for the day"
             if let common = configjson.value(forKey: "common") as? NSDictionary{
@@ -3191,7 +3169,7 @@ class thirdVc: NSViewController {
         
         btnReviseQuantity.isHidden = true
         customViewContainer.isHidden = true
-        webViewForVideo.isHidden = true
+        
         lblTimer.isHidden = true
         boxBg.isHidden = false
         if rememberNextHabitVcObj != nil{
@@ -3281,7 +3259,11 @@ class thirdVc: NSViewController {
             btnMain.title = unlockMachineButtonText
             mainViewControllerObj?.hideCloseButtons()
             btnMain.toolTip = btnMain.title
-            imgViewGif.isHidden = false
+            if SettingsManagerObject.kIsReducedMotion{
+                imgViewGif.isHidden = true
+            }else{
+                imgViewGif.isHidden = false
+            }
             allApiObject.capturePosthog(event: "complete-all-break-activity", metadata: ["routine-type":"break_activity"])
             btnSkipHabit.isHidden = true
         }
@@ -3326,7 +3308,7 @@ class thirdVc: NSViewController {
         lastActivityPerformedTime = Date()
         btnReviseQuantity.isHidden = true
         customViewContainer.isHidden = true
-        webViewForVideo.isHidden = true
+        
         lblTimer.isHidden = true
         boxBg.isHidden = false
         if rememberNextHabitVcObj != nil{
@@ -3420,7 +3402,11 @@ class thirdVc: NSViewController {
             btnMain.title = unlockMachineButtonText
             mainViewControllerObj?.hideCloseButtons()
             btnMain.toolTip = btnMain.title
-            imgViewGif.isHidden = false
+            if SettingsManagerObject.kIsReducedMotion{
+                imgViewGif.isHidden = true
+            }else{
+                imgViewGif.isHidden = false
+            }
             allApiObject.capturePosthog(event: "complete-all-break-activity", metadata: ["routine-type":"break_activity"])
             btnSkipHabit.isHidden = true
         }
@@ -3465,7 +3451,7 @@ class thirdVc: NSViewController {
 
         btnReviseQuantity.isHidden = true
         customViewContainer.isHidden = true
-        webViewForVideo.isHidden = true
+        
         lblTimer.isHidden = true
         boxBg.isHidden = false
         if rememberNextHabitVcObj != nil{
@@ -3507,7 +3493,11 @@ class thirdVc: NSViewController {
             btnMain.title = unlockMachineButtonText
             mainViewControllerObj?.hideCloseButtons()
             btnMain.toolTip = btnMain.title
-            imgViewGif.isHidden = false
+            if SettingsManagerObject.kIsReducedMotion{
+                imgViewGif.isHidden = true
+            }else{
+                imgViewGif.isHidden = false
+            }
             btnSkipHabit.isHidden = true
         }
 
@@ -3547,7 +3537,7 @@ class thirdVc: NSViewController {
         btnSkipHabit.isHidden = true
         btnReviseQuantity.isHidden = true
         customViewContainer.isHidden = true
-        webViewForVideo.isHidden = true
+        
         lblTimer.isHidden = true
         boxBg.isHidden = false
         if rememberNextHabitVcObj != nil{
@@ -3641,7 +3631,11 @@ class thirdVc: NSViewController {
         
         lblTitle.stringValue = getActivityFinishedText(isLast: true, activityName: lastActivity)//"\(lastActivity) finished!✅ You’ve earned your screen time. 💪"
         btnMain.title = unlockMachineButtonText
-        imgViewGif.isHidden = false
+        if SettingsManagerObject.kIsReducedMotion{
+                imgViewGif.isHidden = true
+            }else{
+                imgViewGif.isHidden = false
+            }
         mainViewControllerObj?.hideCloseButtons()
         allApiObject.capturePosthog(event: "complete-late-no-more-activity", metadata: [:])
         
@@ -3683,7 +3677,7 @@ class thirdVc: NSViewController {
         lblTimer.isHidden = true
         stackViewGraph.isHidden = true
         btnMainCenterY.constant = 0
-        webViewForVideo.isHidden = true
+        
         boxBg.isHidden = false
         if rememberNextHabitVcObj != nil{
             if self.view.subviews.contains(rememberNextHabitVcObj!.view){
@@ -3730,24 +3724,8 @@ class thirdVc: NSViewController {
         }
     }
     
-    func loadBlankUrl(){
-        let link = URL(string:"about:blank")!
-        let request = URLRequest(url: link)
-        self.webViewForVideo.load(request)
-    }
+
     @IBAction func btnMainClicked(_ sender: Any) {
-        if webViewForVideo.isHidden == false{ // onboarding view is lodded // not in use 
-            addLog(text:"[user-action] onboarding video - btn Continue clicked")
-            loadBlankUrl()
-            self.view.window?.close()
-            appdelegate!.loadCredentialsAndDeviceId()
-            let secondsBetween = Date().timeIntervalSince(onboardingVideoStartTime ?? Date())
-            allApiObject.capturePosthog(event: "onboarding-video-watched", metadata: ["watched_duration_seconds":Int(secondsBetween)])
-            showMenuTourWindow()
-            appdelegate!.statusbutton?.action = nil
-            return;
-        }
-        
         lblCreateAccount.isHidden = true
         lblDescriptionHabits.isHidden = true
         addLog(text:"[user-action]thirdvc-btnMainClicked :- \(btnMain.title)")
@@ -3765,7 +3743,7 @@ class thirdVc: NSViewController {
         imgViewGif.isHidden = true
         stackViewGraph.isHidden = true
         btnMainCenterY.constant = 0
-        webViewForVideo.isHidden = true
+        
         boxBreathingFinished.isHidden = true
         
         

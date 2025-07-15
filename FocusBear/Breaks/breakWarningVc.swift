@@ -9,7 +9,8 @@
 import Cocoa
 
 class breakWarningVc: NSViewController {
-
+    
+    @IBOutlet weak var lblTimeSinceLastBreak: NSTextField!
     @IBOutlet weak var btnSkip: Button!
     @IBOutlet weak var btnStartMicroBreak: Button!
     @IBOutlet weak var boxWidth: NSLayoutConstraint!
@@ -164,6 +165,16 @@ class breakWarningVc: NSViewController {
             transparentWcObj?.window?.close()
         }
     }
+    
+    func reloadTimeSinceLastBreak(){
+        if let lastBreakTimeText = getTimeSinceLastBreak(){
+            lblTimeSinceLastBreak.stringValue = lastBreakTimeText
+            lblTimeSinceLastBreak.isHidden = false
+        }else{
+            lblTimeSinceLastBreak.isHidden = true
+        }
+    }
+    
     func resetView(){
         var totalDuration = 0
         for activity in arrFinalBreakActivities{
@@ -171,6 +182,8 @@ class breakWarningVc: NSViewController {
                 totalDuration += activity.activity.durationSeconds
             }
         }
+        reloadTimeSinceLastBreak()
+        
         popupButtonMinutes.selectItem(at: defaultSelectedIndex)
         progressBar.isHidden = false
         isPostponing = false

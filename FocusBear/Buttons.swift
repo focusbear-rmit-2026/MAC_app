@@ -3,7 +3,7 @@
 //  Focus Bear
 //
 //  Created by Prashant Sawnani on 26/06/24.
-//  Copyright © 2024 Focus Bear. All rights reserved.
+//  Copyright © 2025 Focus Bear. All rights reserved.
 //
 
 import Cocoa
@@ -65,6 +65,7 @@ class mouseDownMoveWindowButton: NSButton {
 }
 class hoverInfoButton: NSButton {
     
+    var isAutoClickEnabled = true
     override func awakeFromNib() {
         super.awakeFromNib()
         addTrackingArea(NSTrackingArea(rect: bounds, options: [.activeAlways, .inVisibleRect, .mouseEnteredAndExited], owner: self, userInfo: nil))
@@ -72,7 +73,10 @@ class hoverInfoButton: NSButton {
     
     override func mouseEntered(with event: NSEvent) {
         NSCursor.pointingHand.set()
-        self.performClick(self)
+        if isAutoClickEnabled{
+            self.performClick(self)
+        }
+            
     }
     
     override func mouseExited(with event: NSEvent) {

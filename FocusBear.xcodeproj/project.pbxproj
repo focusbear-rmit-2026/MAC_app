@@ -7,15 +7,25 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		13188D722DEED55900E67A44 /* server in Resources */ = {isa = PBXBuildFile; fileRef = 13188D712DEED55800E67A44 /* server */; };
+		13188D742DEEE30300E67A44 /* flaskServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13188D732DEEE30300E67A44 /* flaskServer.swift */; };
+		13188D762DEF162D00E67A44 /* serverIntel in Resources */ = {isa = PBXBuildFile; fileRef = 13188D752DEF162D00E67A44 /* serverIntel */; };
+		1338D3792E1E35B8002A1BFC /* loginWc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1338D3782E1E35B8002A1BFC /* loginWc.swift */; };
 		13395D412DB900440094F019 /* focusModeData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13395D402DB900380094F019 /* focusModeData.swift */; };
+		135ABEFD2E013254007ED73A /* breaksData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 135ABEFC2E01324D007ED73A /* breaksData.swift */; };
 		135CBDAF2D967009003BA438 /* routine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 135CBDAE2D967005003BA438 /* routine.swift */; };
 		1361E6E52DB76A1900E6DE3F /* unverifiedEmailVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1361E6E42DB76A1900E6DE3F /* unverifiedEmailVc.swift */; };
+		1364364B2DE1FA7400B90724 /* splashVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1364364A2DE1FA7400B90724 /* splashVc.swift */; };
+		137A3D802E0A69CB008E3CF0 /* popUpFocusGoalConfirmationVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 137A3D7F2E0A69CB008E3CF0 /* popUpFocusGoalConfirmationVc.swift */; };
+		137A3D822E0A6C97008E3CF0 /* popUpAddNewFocusGoalVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 137A3D812E0A6C97008E3CF0 /* popUpAddNewFocusGoalVc.swift */; };
+		137A3D842E0ABBC5008E3CF0 /* popUpSaveThisTaskForLaterVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 137A3D832E0ABBC5008E3CF0 /* popUpSaveThisTaskForLaterVc.swift */; };
 		137CD6032D9D4ACC00A8385A /* Sparkle.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 137CD6022D9D4ACC00A8385A /* Sparkle.framework */; };
 		137CD6042D9D4ACC00A8385A /* Sparkle.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 137CD6022D9D4ACC00A8385A /* Sparkle.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		13A45A2E2DB3DB12009ECF81 /* superGentleQuitVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13A45A2D2DB3DB12009ECF81 /* superGentleQuitVc.swift */; };
 		13AAC9DC2D97CC76000AD619 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8F7DCC022796E8D200EE3282 /* WebKit.framework */; };
 		13AAC9E12D9819F7000AD619 /* customRoutineTimeVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13AAC9E02D9819F7000AD619 /* customRoutineTimeVc.swift */; };
 		13EC6E022DB26FBE0031303D /* nudgeStartAnotherFocusSessionVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13EC6E012DB26FBE0031303D /* nudgeStartAnotherFocusSessionVc.swift */; };
+		13FB9DFE2DE9D9DF00C11AA2 /* researchVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13FB9DFD2DE9D9DF00C11AA2 /* researchVc.swift */; };
 		274C9A91289A8C910066F883 /* accountVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 274C9A90289A8C900066F883 /* accountVc.swift */; };
 		274C9A93289BF8D70066F883 /* SettingsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 274C9A92289BF8D40066F883 /* SettingsManager.swift */; };
 		274E0F472890291D000234A3 /* Auth0 in Frameworks */ = {isa = PBXBuildFile; productRef = 274E0F462890291D000234A3 /* Auth0 */; };
@@ -361,13 +371,23 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		13188D712DEED55800E67A44 /* server */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; path = server; sourceTree = "<group>"; };
+		13188D732DEEE30300E67A44 /* flaskServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = flaskServer.swift; sourceTree = "<group>"; };
+		13188D752DEF162D00E67A44 /* serverIntel */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; path = serverIntel; sourceTree = "<group>"; };
+		1338D3782E1E35B8002A1BFC /* loginWc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = loginWc.swift; sourceTree = "<group>"; };
 		13395D402DB900380094F019 /* focusModeData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = focusModeData.swift; sourceTree = "<group>"; };
+		135ABEFC2E01324D007ED73A /* breaksData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = breaksData.swift; sourceTree = "<group>"; };
 		135CBDAE2D967005003BA438 /* routine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = routine.swift; sourceTree = "<group>"; };
 		1361E6E42DB76A1900E6DE3F /* unverifiedEmailVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = unverifiedEmailVc.swift; sourceTree = "<group>"; };
+		1364364A2DE1FA7400B90724 /* splashVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = splashVc.swift; sourceTree = "<group>"; };
+		137A3D7F2E0A69CB008E3CF0 /* popUpFocusGoalConfirmationVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = popUpFocusGoalConfirmationVc.swift; sourceTree = "<group>"; };
+		137A3D812E0A6C97008E3CF0 /* popUpAddNewFocusGoalVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = popUpAddNewFocusGoalVc.swift; sourceTree = "<group>"; };
+		137A3D832E0ABBC5008E3CF0 /* popUpSaveThisTaskForLaterVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = popUpSaveThisTaskForLaterVc.swift; sourceTree = "<group>"; };
 		137CD6022D9D4ACC00A8385A /* Sparkle.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Sparkle.framework; sourceTree = "<group>"; };
 		13A45A2D2DB3DB12009ECF81 /* superGentleQuitVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = superGentleQuitVc.swift; sourceTree = "<group>"; };
 		13AAC9E02D9819F7000AD619 /* customRoutineTimeVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = customRoutineTimeVc.swift; sourceTree = "<group>"; };
 		13EC6E012DB26FBE0031303D /* nudgeStartAnotherFocusSessionVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = nudgeStartAnotherFocusSessionVc.swift; sourceTree = "<group>"; };
+		13FB9DFD2DE9D9DF00C11AA2 /* researchVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = researchVc.swift; sourceTree = "<group>"; };
 		274C9A90289A8C900066F883 /* accountVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = accountVc.swift; sourceTree = "<group>"; };
 		274C9A92289BF8D40066F883 /* SettingsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsManager.swift; sourceTree = "<group>"; };
 		274E0F4828902CF1000234A3 /* User.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
@@ -844,6 +864,7 @@
 				8F1FBAE529F2A46000AA1979 /* naturalBreaksDetectionVc.swift */,
 				8F3A28982C22A46F002AD2E3 /* deactivateBreaksVc.swift */,
 				8F0419432C353B9C00481ACD /* breakSurveyVc.swift */,
+				135ABEFC2E01324D007ED73A /* breaksData.swift */,
 			);
 			path = Breaks;
 			sourceTree = "<group>";
@@ -947,6 +968,7 @@
 		8F7819D828E588F500FB1F63 /* Login */ = {
 			isa = PBXGroup;
 			children = (
+				1338D3782E1E35B8002A1BFC /* loginWc.swift */,
 				8F639C0C28D1C9AA006C41C4 /* askLogInVc.swift */,
 				8F7819D928E5891D00FB1F63 /* customLoginVc.swift */,
 				8F7819DB28E5CBE100FB1F63 /* loginHelpVc.swift */,
@@ -984,6 +1006,7 @@
 				8F8C3FD72A8CD865005CAF96 /* meetingDetactionVc.swift */,
 				8F8C3FDB2A8CF079005CAF96 /* privacyVc.swift */,
 				8F2E99392B31CC51001AF655 /* addOnsVc.swift */,
+				13FB9DFD2DE9D9DF00C11AA2 /* researchVc.swift */,
 			);
 			path = advanced;
 			sourceTree = "<group>";
@@ -1024,6 +1047,9 @@
 				8F64E48C2A419A5500B11643 /* focusCompletedForActivityVc.swift */,
 				8F93BE5C27CC92CE004FA0BE /* focusSummaryVc.swift */,
 				8FF8E0FE291686EF002938B8 /* popUpBlockConfirmVc.swift */,
+				137A3D7F2E0A69CB008E3CF0 /* popUpFocusGoalConfirmationVc.swift */,
+				137A3D812E0A6C97008E3CF0 /* popUpAddNewFocusGoalVc.swift */,
+				137A3D832E0ABBC5008E3CF0 /* popUpSaveThisTaskForLaterVc.swift */,
 				8F2C03AE29C895F60035E8F1 /* blockBlurVc.swift */,
 				8FC31BFD28C757B400E2DD4C /* brainDumpVc.swift */,
 				8F36D516297AB32700A7E4AD /* addFocusTempUrlsOrAppsVc.swift */,
@@ -1036,6 +1062,10 @@
 				8FA692FC2B90B31600FF4862 /* confirmRunScriptVc.swift */,
 				8FD0F7F52D437BC100ED3496 /* tblCellFocsedCompletedItem.swift */,
 				13EC6E012DB26FBE0031303D /* nudgeStartAnotherFocusSessionVc.swift */,
+				8FF591312D70406E0068E17C /* reportBadAIResponseVc.swift */,
+				13395D402DB900380094F019 /* focusModeData.swift */,
+				8F5937502D49FA2800442292 /* nudgeFocusAlignmentScoreDippingWc.swift */,
+				8F59374E2D49F6CD00442292 /* nudgeFocusAlignmentScoreDippingVc.swift */,
 				8FBBD19D2968283200C4C8B7 /* toolBox */,
 			);
 			path = "Focus mode";
@@ -1144,10 +1174,14 @@
 		8FAC6C8527805F6D008A4180 /* FocusBear */ = {
 			isa = PBXGroup;
 			children = (
+				13188D712DEED55800E67A44 /* server */,
+				13188D752DEF162D00E67A44 /* serverIntel */,
 				8FAC6C8627805F6D008A4180 /* AppDelegate.swift */,
 				8FAC6C962780612B008A4180 /* mainWindowController.swift */,
 				8FAC6C8827805F6E008A4180 /* ViewController.swift */,
+				1364364A2DE1FA7400B90724 /* splashVc.swift */,
 				135CBDAD2D966CCC003BA438 /* Routine */,
+				8F3A28972C22A429002AD2E3 /* Breaks */,
 				8F9BB8B82787307D00BB25D4 /* shutOffTimeVc.swift */,
 				8FFBCE8928549EB1004B77D9 /* PopoverViewController.swift */,
 				8FFBCE8828549EB1004B77D9 /* PopoverViewController.xib */,
@@ -1172,7 +1206,6 @@
 				8F45E5002B7C995F0063088E /* savedSitesForLaterVc.swift */,
 				8FA428572C6CA1DE00849938 /* customAlertVc.swift */,
 				8FE5E5B82C46A58C00420717 /* Popups */,
-				8F3A28972C22A429002AD2E3 /* Breaks */,
 				8FB222142BA865DB00F3DA68 /* Create task */,
 				8F8073832B3D5C51004935B5 /* Firefox Permissions */,
 				8F0994B82A0CB9D000F4C65E /* activity Ongoing */,
@@ -1198,7 +1231,7 @@
 				8F050A0B278467B000F3CE17 /* FocusBear-Bridging-Header.h */,
 				8F8869CB2AE38CBB0089E109 /* searchableComboBox.swift */,
 				8FAC6C982780671E008A4180 /* globalFile.swift */,
-				13395D402DB900380094F019 /* focusModeData.swift */,
+				13188D732DEEE30300E67A44 /* flaskServer.swift */,
 				8F0419452C353D4100481ACD /* getViewControllersObject.swift */,
 				8F3567202D3A71B200F62403 /* showHideWindows.swift */,
 				8F250F532CC63E460058DC85 /* allBrowsers.swift */,
@@ -1357,9 +1390,6 @@
 				8F8E9AA52AAB021900F7CD32 /* surveyVc.swift */,
 				8FE5587D2CEC703300C44387 /* bellVc.swift */,
 				8FE5587F2CEC7E1F00C44387 /* bellSuggestionsVc.swift */,
-				8F5937502D49FA2800442292 /* nudgeFocusAlignmentScoreDippingWc.swift */,
-				8F59374E2D49F6CD00442292 /* nudgeFocusAlignmentScoreDippingVc.swift */,
-				8FF591312D70406E0068E17C /* reportBadAIResponseVc.swift */,
 				1361E6E42DB76A1900E6DE3F /* unverifiedEmailVc.swift */,
 			);
 			path = Popups;
@@ -1552,7 +1582,9 @@
 				8FB84AEE284B82AA0075180B /* GraphTime.html in Resources */,
 				8FB84AED284B82AA0075180B /* GraphDays.html in Resources */,
 				8F461B2B28C0EE490082B0A2 /* Starting the MorningEvening Routine_4.wav in Resources */,
+				13188D722DEED55900E67A44 /* server in Resources */,
 				8F8073812B3D3F2E004935B5 /* CollectionViewItem.xib in Resources */,
+				13188D762DEF162D00E67A44 /* serverIntel in Resources */,
 				8F9B0FA429816F9800415247 /* logo.svg in Resources */,
 				8F4A3B21290D256F00DCBE39 /* collectionCellToolBox.xib in Resources */,
 				8F1333932A443EF3004EDE65 /* intelone-mono-font-family-regular.ttf in Resources */,
@@ -1731,6 +1763,7 @@
 				8F371A6429E3F96C0043D7B3 /* askBuildHabitsVc.swift in Sources */,
 				8F70A56629E699170071A0BE /* askOnboardingVideoVc.swift in Sources */,
 				8F0994B72A0CB5F400F4C65E /* tblCellLogQuantity.swift in Sources */,
+				1338D3792E1E35B8002A1BFC /* loginWc.swift in Sources */,
 				8F0E69DC290279500042FAF4 /* customTooltipVc.swift in Sources */,
 				8F9E5A112B69298C004814D1 /* onboardingProgressVc.swift in Sources */,
 				8F5B03282CD8F62900F261D3 /* onboardingBlockingScheduleVc.swift in Sources */,
@@ -1738,9 +1771,11 @@
 				8FABDDD327DA2ED600F6A58C /* enterPasswordVc.swift in Sources */,
 				8FABDDD527DA367100F6A58C /* passwordVc.swift in Sources */,
 				8F9A5A9627885A6D009121E3 /* abortingCountDownVc.swift in Sources */,
+				137A3D822E0A6C97008E3CF0 /* popUpAddNewFocusGoalVc.swift in Sources */,
 				8F889EA12C215062000CA3B6 /* toDoListSettingsVc.swift in Sources */,
 				8F1DC4A72BC13A1900A51383 /* collectionViewItemOccupation.swift in Sources */,
 				8F9A5A98278863B9009121E3 /* abortingConfirmVc.swift in Sources */,
+				13FB9DFE2DE9D9DF00C11AA2 /* researchVc.swift in Sources */,
 				8F752CC92B4960AB00B21914 /* askPostponeIntentionVc.swift in Sources */,
 				8FD180312944791C009062E1 /* preloadFocusModeAppsVc.swift in Sources */,
 				8F371A6829E434770043D7B3 /* tblCellBrowsers.swift in Sources */,
@@ -1754,6 +1789,7 @@
 				8F5937512D49FA2900442292 /* nudgeFocusAlignmentScoreDippingWc.swift in Sources */,
 				8F396D152C2A997E00C8896A /* installHabitPacksVc.swift in Sources */,
 				8FB222182BA865F400F3DA68 /* blankLayerVc.swift in Sources */,
+				1364364B2DE1FA7400B90724 /* splashVc.swift in Sources */,
 				8F371A6229E3E1080043D7B3 /* tryBlockUrlVc.swift in Sources */,
 				8F5596B42805B49E0044DF28 /* quitCountDownVc.swift in Sources */,
 				8FA7D36929F3FB94007AD2C1 /* AISettingVc.swift in Sources */,
@@ -1765,6 +1801,7 @@
 				8F107D22278C4A1E00280B37 /* abortingCantHandleVc.swift in Sources */,
 				274E0F4928902CF1000234A3 /* User.swift in Sources */,
 				8F212FE829DAFF02006620DF /* helpVc.swift in Sources */,
+				13188D742DEEE30300E67A44 /* flaskServer.swift in Sources */,
 				8FB222172BA865F400F3DA68 /* blankLayerWc.swift in Sources */,
 				8F889EA52C219CE1000CA3B6 /* takeBreaksInfoVc.swift in Sources */,
 				8F1E18A028EAF3FF00367413 /* macInfo.swift in Sources */,
@@ -1806,6 +1843,7 @@
 				8FE049D027B77F5F00ABD521 /* logQuantityVc.swift in Sources */,
 				8F8C3FDA2A8CDB8F005CAF96 /* settingToggleItemVc.swift in Sources */,
 				8FD91CAA2A0E1A51001606FE /* popUpCheckListVc.swift in Sources */,
+				135ABEFD2E013254007ED73A /* breaksData.swift in Sources */,
 				8F40880A2977DD3600A70130 /* takeActivityNotesVc.swift in Sources */,
 				8F54E92E2785662A00CC4E7B /* selectJsonVc.swift in Sources */,
 				8FBE37A82A8F62060018402A /* settingsSplitViewController.swift in Sources */,
@@ -1824,6 +1862,8 @@
 				8F64E48D2A419A5500B11643 /* focusCompletedForActivityVc.swift in Sources */,
 				8FAC6C8927805F6E008A4180 /* ViewController.swift in Sources */,
 				8F4BD8C627883FBE00ABAEF5 /* Key.swift in Sources */,
+				137A3D842E0ABBC5008E3CF0 /* popUpSaveThisTaskForLaterVc.swift in Sources */,
+				137A3D802E0A69CB008E3CF0 /* popUpFocusGoalConfirmationVc.swift in Sources */,
 				8F0A18522A8E291200AFA623 /* strictnessVc.swift in Sources */,
 				8F9C8F9A29C2E7FE00E8040B /* selectHabitPacksVc.swift in Sources */,
 				8F0B63B6290FEC8700DE7EF8 /* askAppWorkVc.swift in Sources */,
@@ -2012,7 +2052,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = FBHelper/Info.plist;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2022-2024 Focus Bear Pty Ltd, All rights reserved";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2022-2025 Focus Bear Pty Ltd, All rights reserved";
 				INFOPLIST_KEY_NSMainStoryboardFile = Main;
 				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -2049,7 +2089,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = FBHelper/Info.plist;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2022-2024 Focus Bear Pty Ltd, All rights reserved";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2022-2025 Focus Bear Pty Ltd, All rights reserved";
 				INFOPLIST_KEY_NSMainStoryboardFile = Main;
 				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -2196,7 +2236,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application: Focus Bear Pty Ltd (TCUD568B3U)";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 361;
+				CURRENT_PROJECT_VERSION = 391;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = TCUD568B3U;
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = TCUD568B3U;
@@ -2211,7 +2251,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
-				MARKETING_VERSION = 1.22;
+				MARKETING_VERSION = 1.26;
 				PRODUCT_BUNDLE_IDENTIFIER = com.App.EarnYourScreentime;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = FocusBearMainAppProfile;
@@ -2233,7 +2273,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application: Focus Bear Pty Ltd (TCUD568B3U)";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 361;
+				CURRENT_PROJECT_VERSION = 391;
 				DEVELOPMENT_TEAM = TCUD568B3U;
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = TCUD568B3U;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -2248,7 +2288,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
-				MARKETING_VERSION = 1.22;
+				MARKETING_VERSION = 1.26;
 				PRODUCT_BUNDLE_IDENTIFIER = com.App.EarnYourScreentime;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = FocusBearMainAppProfile;

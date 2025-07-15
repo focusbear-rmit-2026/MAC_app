@@ -10,6 +10,10 @@ import Cocoa
 
 class shutOffTimeVc: NSViewController {
     
+    @IBOutlet weak var bottomSpaceLblAlreadyUnlocked: NSLayoutConstraint!
+    @IBOutlet weak var lblAlreadyUnlocked: NSTextField!
+    @IBOutlet weak var lblSelectMinutesToUSe: NSTextField!
+    @IBOutlet weak var popUpBtnDuration: NSPopUpButton!
     @IBOutlet weak var stackViewShutDown: NSStackView!
     @IBOutlet weak var btnSleep: Button!
     @IBOutlet weak var btnShutDownMac: Button!
@@ -37,16 +41,19 @@ class shutOffTimeVc: NSViewController {
         case _ABORT_SHUTOFF_ = 11, _START_EVENING_ROUTINE_, _WORK_EMERGENCY_
     }
     var showPasswordReason = passwordReason._ABORT_SHUTOFF_
+    var arrDurationSeconds = [Int]()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
+        lblSelectMinutesToUSe.stringValue = "Select duration for unlock:"
         btnShutDownMac.title = "Shut Down"
         btnSleep.title = "Sleep Mac"
         btnCompleteEveningRoutine.title = "Complete your evening routine"
         lblTitleUpEarly.stringValue = "Up early?"
         btnStartMorningRoutine.title = "Start morning routine"
         btnWorkEmergency.title = "Work emergency - start focusing"
-        
+        lblAlreadyUnlocked.stringValue = "You already unlocked for <DURATION> minutes"
         if let shutOffTimeInfo = configjson.value(forKey: "shutOffTimeInfo") as? NSDictionary{
             lblTitleUpEarly.stringValue = shutOffTimeInfo.value(forKey: "titleUpEarly") as? String ?? lblTitleUpEarly.stringValue
             btnStartMorningRoutine.title = shutOffTimeInfo.value(forKey: "buttonStartMorningRoutineText") as? String ?? btnStartMorningRoutine.title
@@ -54,9 +61,16 @@ class shutOffTimeVc: NSViewController {
             btnCompleteEveningRoutine.title = shutOffTimeInfo.value(forKey: "buttonCompleteEveningRoutineText") as? String ?? btnCompleteEveningRoutine.title
             btnShutDownMac.title = shutOffTimeInfo.value(forKey: "buttonShutDownText") as? String ?? btnShutDownMac.title
             btnSleep.title = shutOffTimeInfo.value(forKey: "buttonSleepText") as? String ?? btnSleep.title
+            lblSelectMinutesToUSe.stringValue = shutOffTimeInfo.value(forKey: "selectUnlockMinutesText") as? String ?? lblSelectMinutesToUSe.stringValue
+            lblAlreadyUnlocked.stringValue = shutOffTimeInfo.value(forKey: "alreadyUnlockedText") as? String ?? lblAlreadyUnlocked.stringValue
         }
         
+        lblAlreadyUnlocked.stringValue = lblAlreadyUnlocked.stringValue.replacingOccurrences(of: "<DURATION>", with: "30")
+        
         btnShutDownMac.buttonColor = NSColor.white.cgColor
+        popUpBtnDuration.removeAllItems()
+        popUpBtnDuration.addItems(withTitles: ["15 \(minutesText)", "30 \(minutesText)", "1 \(hourText)", "2 \(hoursText)", "4 \(hoursText)", "8 \(hoursText)"])
+        arrDurationSeconds = [900, 1800, 3600, 7200, 14400, 28800]
     }
     
     override func viewWillAppear() {
@@ -64,6 +78,17 @@ class shutOffTimeVc: NSViewController {
     }
     
     func resetView(){
+        bottomSpaceLblAlreadyUnlocked.constant = 30
+        lblAlreadyUnlocked.isHidden = true
+        if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) == nil && isCutOffTimeGoing(){
+            // if user has not unlocked today
+            if let date = UserDefaults.standard.object(forKey: kUserdefaultsLastShutdownAbortedDate) as? Date{
+                if Date().compare(date) == .orderedAscending {
+                    lblAlreadyUnlocked.isHidden = false
+                }
+            }
+        }
+        
         titleCenter.constant = 80
         UserDefaults.standard.removeObject(forKey: kUserdefaultsShutOffCancelledForEveningRoutine)
         if SettingsManagerObject.kIsReducedMotion{
@@ -124,7 +149,8 @@ class shutOffTimeVc: NSViewController {
         step = 0
         checkUpEarlyTime()
         
-        
+        popUpBtnDuration.isHidden = true
+        lblSelectMinutesToUSe.isHidden = true
         
         btnCompleteEveningRoutine.isHidden = true
         if arrAllDaysEveningHabits.count != 0{//} && !iseveningHabitAlreadyShowed {
@@ -150,6 +176,7 @@ class shutOffTimeVc: NSViewController {
         UserDefaults.standard.set(true, forKey: kUserdefaultsShutOffCancelledForEveningRoutine)
         appdelegate?.backgroundThread()
     }
+    
     func checkUpEarlyTime(){
         let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
         let shutOffdate = Calendar.current.date(bySettingHour: shutOffTime!.hour, minute: shutOffTime!.minute, second: shutOffTime!.second, of: Date())!
@@ -163,10 +190,59 @@ class shutOffTimeVc: NSViewController {
         }
         if Date() > fourHourBeforeStartTime{
             boxUpEarly.isHidden = false
+            bottomSpaceLblAlreadyUnlocked.constant = 10
         }
     }
     @IBAction func btnGetAccessNowClicked(_ sender: Any) {
         addLog(text:"[user-action] btnGetAccessNowClicked")
+        
+        if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) == nil && isCutOffTimeGoing(){
+            // if user has not unlocked today
+            var shouldAbortShutDownInOneClick = true
+            if let date = UserDefaults.standard.object(forKey: kUserdefaultsLastShutdownAbortedDate) as? Date{
+                if Date().compare(date) == .orderedAscending {
+                    shouldAbortShutDownInOneClick = false
+                }
+            }
+            if shouldAbortShutDownInOneClick{
+                addLog(text: "emergency Start Done for 30 minutes for first time today")
+                
+                let alert = NSAlert()
+                alert.setSharingType()
+                alert.messageText = "Unlocking for 30 minutes."
+                if let shutOffTimeInfo = configjson.value(forKey: "shutOffTimeInfo") as? NSDictionary{
+                    alert.messageText = shutOffTimeInfo.value(forKey: "unlockingFirstTimeText") as? String ?? alert.messageText
+                }
+                
+                alert.addButton(withTitle: buttonOkText)
+                NSApplication.shared.activate(ignoringOtherApps: true)
+                alert.beginSheetModal(for: self.view.window!, completionHandler: { result in
+                    mainViewControllerObj?.hideCloseButtons()
+                    mainViewControllerObj?.removeSubViews()
+                    currentState = ._NOTHING_
+                    mainWindowControllerObj?.window?.close()
+                    hideBlankWindowInSecondaryMonitor()
+                    
+
+                    let shutdownAbortedTillTime = Calendar.current.date(byAdding: .second, value: 1800, to: Date())! // 30 minutes
+                    UserDefaults.standard.set(shutdownAbortedTillTime, forKey: kUserdefaultsShutdownAborted)
+                    
+                    let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
+                    let shutOffdate = Calendar.current.date(bySettingHour: shutOffTime!.hour, minute: shutOffTime!.minute, second: shutOffTime!.second, of: Date())!
+                    
+                    let curreentDate = Date()
+                    if curreentDate > shutOffdate{// iska matlab 20-24 k bich
+                        let tomorrowDate = Calendar.current.date(byAdding: .day, value: 1, to: Date())!
+                        let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: tomorrowDate)
+                        UserDefaults.standard.set(startDate, forKey: kUserdefaultsLastShutdownAbortedDate)
+                    }else if curreentDate < startDate{ //  iska mtlb 1 se 10 k bich ka time
+                        UserDefaults.standard.set(startDate, forKey: kUserdefaultsLastShutdownAbortedDate)
+                    }
+                })
+                return;
+            }
+        }
+        
         if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
             if SettingsManagerObject.isPasswordRequireInAbortShutoff{
                 showPasswordReason = passwordReason._ABORT_SHUTOFF_
@@ -178,6 +254,7 @@ class shutOffTimeVc: NSViewController {
             getAccessNowClicked()
         }
     }
+    
     func passwordEnteredSuccessfully(){
         if showPasswordReason == ._ABORT_SHUTOFF_{
             getAccessNowClicked()
@@ -189,8 +266,10 @@ class shutOffTimeVc: NSViewController {
     }
     
     func getAccessNowClicked(){
+        btnCompleteEveningRoutine.isHidden = true
         titleCenter.constant = 0
         btnGetAccessNow.isHidden = true
+        lblAlreadyUnlocked.isHidden = true
         stackViewShutDown.isHidden = true
         boxUpEarly.isHidden = true
         scrollView.isHidden = false
@@ -234,7 +313,8 @@ class shutOffTimeVc: NSViewController {
             timer?.invalidate()
         }else if step == 2{
             titleCenter.constant = 0
-            
+            self.popUpBtnDuration.isHidden = true
+            self.lblSelectMinutesToUSe.isHidden = true
             var startTimeHour = "\(startTime?.hour ?? 0)"
             if startTimeHour.count == 1{
                 startTimeHour = "0\(startTimeHour)"
@@ -259,6 +339,7 @@ class shutOffTimeVc: NSViewController {
             }
             
             lbl2.stringValue = ""
+            mainWindowControllerObj!.window!.styleMask.remove(.resizable)// bcos user can togle resize at close time and that can make problems
             startTimer(duration: 5)
             self.btnUnlock.isHidden = true
             scrollView.isHidden = true
@@ -269,6 +350,8 @@ class shutOffTimeVc: NSViewController {
     
     func startTimer(duration:Int) {
         lbltimer.isHidden = false
+        popUpBtnDuration.isHidden = true
+        lblSelectMinutesToUSe.isHidden = true
         currentTimer = 0
         totalDuration = duration
         let (_,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
@@ -317,6 +400,13 @@ class shutOffTimeVc: NSViewController {
                                     self.btnUnlock.title = buttonUnlockText
                                 }
                             }
+                            if isCutOffTimeGoing(){
+                                self.popUpBtnDuration.isHidden = false
+                                self.lblSelectMinutesToUSe.isHidden = false
+                            }else{
+                                self.popUpBtnDuration.isHidden = true
+                                self.lblSelectMinutesToUSe.isHidden = true
+                            }
 
                         }
                         self.lbltimer.isHidden = true
@@ -326,7 +416,13 @@ class shutOffTimeVc: NSViewController {
                 self.timer?.invalidate()
                 self.step = 3
                 DispatchQueue.main.async {
-                    mainViewControllerObj?.emergencyStartDone()
+                    if isCutOffTimeGoing(){
+                        allApiObject.capturePosthog(event: "shutoff-aborted", metadata: ["intention":self.textView.string, "duration": self.arrDurationSeconds[self.popUpBtnDuration.indexOfSelectedItem]])
+                    }else{
+                        allApiObject.capturePosthog(event: "shutoff-aborted", metadata: ["intention":self.textView.string])
+                    }
+                    
+                    self.emergencyStartDone()
                 }
             }
         }
@@ -334,12 +430,13 @@ class shutOffTimeVc: NSViewController {
     
     func workEmergencyClicked(){
         if SettingsManagerObject.isGeekModeEnabled{
-            mainViewControllerObj?.emergencyStartDone()
+            emergencyStartDone()
             appdelegate?.menuShowPomodoroModeView()
         }else{
             btnGetAccessNowClicked(self)
         }
     }
+    
     func startMorningRoutineClicked(){
         var jsonResult = NSDictionary()
         if let stringDic = UserDefaults.standard.object(forKey: kUserdefaultsSelectedJson) as? String {
@@ -420,6 +517,7 @@ class shutOffTimeVc: NSViewController {
             workEmergencyClicked()
         }
     }
+    
     @IBAction func btnStartMorningRoutineClicked(_ sender: Any) {
         addLog(text: "[user-action] btnStartMorningRoutineClicked")
         if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
@@ -448,9 +546,42 @@ class shutOffTimeVc: NSViewController {
             currentState = ._NOTHING_
         }
     }
+    
     @IBAction func btnSleepClicked(_ sender: Any) {
         addLog(text: "[user-action] btnSleepClicked")
         sleepMac()
     }
     
+    @IBAction func popUpBtnDurationClicked(_ sender: Any) {
+    }
+    
+    func emergencyStartDone(){
+        addLog(text: "emergencyStartDone")
+        mainViewControllerObj?.hideCloseButtons()
+        mainViewControllerObj?.removeSubViews()
+        currentState = ._NOTHING_
+        mainWindowControllerObj?.window?.close()
+        hideBlankWindowInSecondaryMonitor()
+        
+
+        if !isCutOffTimeGoing(){
+            if startTime == nil || shutOffTime == nil{
+                return;
+            }
+            let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
+            let shutOffdate = Calendar.current.date(bySettingHour: shutOffTime!.hour, minute: shutOffTime!.minute, second: shutOffTime!.second, of: Date())!
+            
+            let curreentDate = Date()
+            if curreentDate > shutOffdate{// iska matlab 20-24 k bich
+                let tomorrowDate = Calendar.current.date(byAdding: .day, value: 1, to: Date())!
+                let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: tomorrowDate)
+                UserDefaults.standard.set(startDate, forKey: kUserdefaultsShutdownAborted)
+            }else if curreentDate < startDate{ //  iska mtlb 1 se 10 k bich ka time
+                UserDefaults.standard.set(startDate, forKey: kUserdefaultsShutdownAborted)
+            }
+        }else{
+            let shutdownAbortedTillTime = Calendar.current.date(byAdding: .second, value: arrDurationSeconds[popUpBtnDuration.indexOfSelectedItem], to: Date())!
+            UserDefaults.standard.set(shutdownAbortedTillTime, forKey: kUserdefaultsShutdownAborted)
+        }
+    }
 }

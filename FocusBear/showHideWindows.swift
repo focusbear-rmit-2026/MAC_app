@@ -8,7 +8,6 @@
 
 import Foundation
 
-
 func showStartingFocusMode(focusModeIndex: Int, focusType: String){
     addLog(text: "Showing Starting Focus Mode view")
     startingFocusWindowControllerObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
@@ -172,7 +171,7 @@ func showBrainDumpWindow(){
 
 
 
-func showPopupBlockConfirmWindow(blockedAppName:String, currentApp:NSRunningApplication?, url:String, script:String, isBlockApp:Bool, browser:BROWSER?, tabTitle:String?, fullUrl:String, aiUrlBlockReason:String?, isTimeOut:Bool, isUrlBlockByAi:Bool, scoreForThisSiteApp: Double?, payload: [String : Any]?){
+func showPopupBlockConfirmWindow(blockedAppName:String, currentApp:NSRunningApplication?, url:String, script:String, isBlockApp:Bool, browser:BROWSER?, tabTitle:String?, fullUrl:String, aiBlockReason:String?, isTimeOut:Bool, isBlockByAi:Bool, scoreForThisSiteApp: Double?, payload: [String : Any]?, isBrowser:Bool){
     addLog(text: "func:- PopupBlockConfirmWindow")
     var currentPid: pid_t?
     if let runningApp = NSWorkspace.shared.frontmostApplication{
@@ -227,7 +226,7 @@ func showPopupBlockConfirmWindow(blockedAppName:String, currentApp:NSRunningAppl
         midY = screenFrame.height / 2
     }
     
-    popUpBlockConfirmVcObj?.resetView(blockedAppName: blockedAppName, currentApp:currentApp, url:url, script:script, isBlockApp:isBlockApp, browser:browser, currentPid: currentPid, tabTitle: tabTitle, fullUrl: fullUrl, aiUrlBlockReason:aiUrlBlockReason, isTimeOut:isTimeOut, isUrlBlockByAi: isUrlBlockByAi, scoreForThisSiteApp: scoreForThisSiteApp, payload: payload)
+    popUpBlockConfirmVcObj?.resetView(blockedAppName: blockedAppName, currentApp:currentApp, url:url, script:script, isBlockApp:isBlockApp, browser:browser, currentPid: currentPid, tabTitle: tabTitle, fullUrl: fullUrl, aiBlockReason:aiBlockReason, isTimeOut:isTimeOut, isBlockByAi: isBlockByAi, scoreForThisSiteApp: scoreForThisSiteApp, payload: payload, isBrowser:isBrowser)
     popUpBlockConfirmWcObj?.window?.setFrame(NSRect(x: (midX-(width/2)), y: (midY-(height/2)), width: width, height: height), display: true)
     
     DispatchQueue.global().async {
@@ -497,7 +496,7 @@ func showBlurWindow(frame:NSRect, browser:BROWSER?){
 func showAllTracksWindow(){
     addLog(text:"showAllTracksWindow")
     getAllTracksWindowControllerObj().contentViewController = getAllTracksVcObj()
-    
+    getAllTracksWindowControllerObj().window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
     allTracksWindowControllerObj?.window?.center()
     
     allTracksWindowControllerObj?.window?.title = "Focus Music"
@@ -901,14 +900,20 @@ func showAskProcrastinatingWindow(){
 }
 
 
-func showFirefoxPermissionWindow(showingFromOnboarding:Bool){
+func showFirefoxPermissionWindow(showingFromOnboarding:Bool, currentBrowser:BROWSER){
     addLog(text:"showFirefoxPermissionWindow")
     getFirefoxPermissionsWindowObject().contentViewController = getFirefoxPermissionsVcObject()
     firefoxPermissionsWcObj!.window?.styleMask.remove(.closable)
     firefoxPermissionsWcObj!.showWindow(nil)
     firefoxPermissionsWcObj?.window?.center()
     firefoxPermissionsVcObj?.showingFromOnboarding = showingFromOnboarding
-    UserDefaults.standard.set(true, forKey: kUserdefaultsFirefoxPermissionShown)
+    firefoxPermissionsVcObj?.currentBrowser = currentBrowser
+    firefoxPermissionsVcObj?.resetView()
+    if currentBrowser == ._FIREFOX_{
+        UserDefaults.standard.set(true, forKey: kUserdefaultsFirefoxPermissionShown)
+    }else if currentBrowser == ._SIGMA_OS_{
+        UserDefaults.standard.set(true, forKey: kUserdefaultsSigmaOSPermissionShown)
+    }
 }
 
 func showFirefoxPermissionVideoWindow(){
@@ -1192,7 +1197,13 @@ func showTooltip(sender:NSView, msg:String, preferredEdge: NSRectEdge, maxWidthV
 
 
 
-
+func closePopoverTooltipIfVisible(){
+    if popoverTooltip != nil{
+        if popoverTooltip!.isShown{
+            popoverTooltip?.close()
+        }
+    }
+}
 
 
 
@@ -1231,7 +1242,7 @@ func closePupUpBlockIfVisible(){
 }
 
 func closePopupBlockWindowIfRunningForUrl(){
-    appdelegate?.currentBrowserUrlForAi = ""
+    currentBrowserUrlForAi = ""
 //    appdelegate?.timerForCheckUrlFromAiTimeOut?.invalidate()
     if popUpBlockConfirmWcObj != nil{
         if popUpBlockConfirmWcObj!.window?.isVisible ?? false{
@@ -1296,12 +1307,15 @@ func showNudgeFocusAlignmentScoreWindow(score:Double){
     let screenFrame = NSScreen.main?.frame ?? NSRect.zero
     let viewFrame = getNudgeFocusAlignmentScoreDippingVcObject().view.frame
     
-    var xPoint = screenFrame.width - (viewFrame.width + 50)
-    if let savedXPoint = UserDefaults.standard.object(forKey: kUserDefaultsLastNudgeScoreWindowXPoisition) as? CGFloat{
-        xPoint = savedXPoint
+    let xPoint = screenFrame.width - (viewFrame.width + 50)
+//    if let savedXPoint = UserDefaults.standard.object(forKey: kUserDefaultsLastNudgeScoreWindowXPoisition) as? CGFloat{
+//        xPoint = savedXPoint
+//    }
+    if !isNudgeDraggedInCurrentFocusSession{
+        let frame = NSRect(x: xPoint, y: 0 - viewFrame.height, width: viewFrame.width, height: viewFrame.height)
+        nudgeFocusAlignmentScoreDippingWcObject?.window?.setFrameOrigin(frame.origin)
     }
-    let frame = NSRect(x: xPoint, y: 0 - viewFrame.height, width: viewFrame.width, height: viewFrame.height)
-    nudgeFocusAlignmentScoreDippingWcObject?.window?.setFrameOrigin(frame.origin)
+    
     nudgeFocusAlignmentScoreDippingWcObject?.isNudgeVisible = false
     
     if !(nudgeFocusAlignmentScoreDippingWcObject?.isNudgeVisible ??  false){
@@ -1312,14 +1326,14 @@ func showNudgeFocusAlignmentScoreWindow(score:Double){
     getNudgeFocusAlignmentScoreDippingVcObject().setTimerStopAniumation()
 }
 
-func hideNudgeFocusAlignmentScoreWindow(){
-    if nudgeFocusAlignmentScoreDippingWcObject != nil{
-        if (nudgeFocusAlignmentScoreDippingWcObject?.isNudgeVisible ??  false){
-            nudgeFocusAlignmentScoreDippingWcObject?.toggleMenu()
-            nudgeFocusAlignmentScoreDippingWcObject?.isNudgeVisible = false
-        }
-    }
-}
+//func hideNudgeFocusAlignmentScoreWindow(){
+//    if nudgeFocusAlignmentScoreDippingWcObject != nil{
+//        if (nudgeFocusAlignmentScoreDippingWcObject?.isNudgeVisible ??  false){
+//            nudgeFocusAlignmentScoreDippingWcObject?.toggleMenu()
+//            nudgeFocusAlignmentScoreDippingWcObject?.isNudgeVisible = false
+//        }
+//    }
+//}
 
 func closeNudgeFocusAlignmentScoreWindow(){
     if nudgeFocusAlignmentScoreDippingWcObject != nil{
@@ -1332,11 +1346,11 @@ func closeNudgeFocusAlignmentScoreWindow(){
 
 
 
-func showReportBadAIResponseWindow(url: String, payload: [String : Any]?){
+func showReportBadAIResponseWindow(url:String?, app:String?, payload:[String:Any]?){
     getReportBadAIResponseWindowObject().contentViewController = getReportBadAIResponseVcObject()
     getReportBadAIResponseWindowObject().window?.center()
     getReportBadAIResponseWindowObject().showWindow(nil)
-    getReportBadAIResponseVcObject().resetData(url: url, payload: payload)
+    getReportBadAIResponseVcObject().resetData(url: url, app: app, payload: payload)
 }
 
 
@@ -1404,6 +1418,19 @@ func hideNudgeStartAnotherFocusSessionWindow(){
         if nudgeStartAnotherFocusSessionWcObj?.window?.isVisible ?? false{
             addLog(text:"hideNudgeStartAnotherFocusSessionWindow")
             nudgeStartAnotherFocusSessionWcObj?.window?.close()
+        }
+    }
+}
+
+
+func showSplashWindow(){
+    getSplashWindowObject().contentViewController = getSplashVcObject()
+    getSplashWindowObject().showWindow(nil)
+}
+func closeSplashWindow(){
+    if splashWcObj != nil{
+        if splashWcObj?.window?.isVisible ?? false{
+            getSplashWindowObject().window?.close()
         }
     }
 }

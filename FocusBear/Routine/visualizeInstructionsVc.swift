@@ -140,8 +140,9 @@ class visualizeInstructionsVc: NSViewController, WKNavigationDelegate, webViewLo
                 theme = "LIGHT"
             }
         }
+        let flags = "[\"migrate-stats-to-motivational-summary\"]"
         let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex].webFontName
-        let stringJson = "{access_token: \"\(appdelegate!.credential?.accessToken ?? "")\",\"font\":\"\(selectedFont)\",\"lang\":\"\(currentLanguageCode)\",\"theme\":\"\(theme)\",\"motivation_type\":\"desktop\"}"
+        let stringJson = "{access_token: \"\(appdelegate!.credential?.accessToken ?? "")\",\"font\":\"\(selectedFont)\",\"lang\":\"\(currentLanguageCode)\",\"theme\":\"\(theme)\",\"motivation_type\":\"desktop\",\"flags\":\(flags)}"
         
 //        let javascript = "loadAccessTokenForInspirationPage(\(stringJson));"
         let settingsFunc = String(format: "let waitForAppLoaded = setInterval(() => { if (window.loadAccessTokenForInspirationPage) { loadAccessTokenForInspirationPage(%@); clearInterval(waitForAppLoaded); } }, 100);", stringJson)
@@ -152,6 +153,7 @@ class visualizeInstructionsVc: NSViewController, WKNavigationDelegate, webViewLo
             print(html)
         })
     }
+
     var currentRatingCount = 0
     func updateStarRatingView(){
         btnStarFirst.image = NSImage(named: "star_Gray")

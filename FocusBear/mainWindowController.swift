@@ -10,8 +10,8 @@ import Cocoa
 
 class mainWindowController: NSWindowController, NSWindowDelegate {
     
-    let smallWindowMinWidth = 1360
-    let smallWindowMinHeight = 660
+    let smallWindowMinWidth = 1008
+    let smallWindowMinHeight = 600
     
     override func windowDidLoad() {
         super.windowDidLoad()

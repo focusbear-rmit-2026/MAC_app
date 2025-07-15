@@ -98,6 +98,15 @@ class onboardingControllingBrowserVc: NSViewController {
             let fileIcon = NSWorkspace.shared.icon(forFile: "/Applications/Arc.app")
             arrBrowsers.append(["name": "Arc", "image": fileIcon, "isEnabled": false, "browser":BROWSER._ARC_])
         }
+        
+        if filemanager.fileExists(atPath: "/Applications/SigmaOS.app"){
+            let fileIcon = NSWorkspace.shared.icon(forFile: "/Applications/SigmaOS.app")
+            arrBrowsers.append(["name": "SigmaOS", "image": fileIcon, "isEnabled": false, "browser":BROWSER._SIGMA_OS_])
+        }else if filemanager.fileExists(atPath: "/Applications/SigmaOS_latest.app"){
+            let fileIcon = NSWorkspace.shared.icon(forFile: "/Applications/SigmaOS_latest.app")
+            arrBrowsers.append(["name": "SigmaOS", "image": fileIcon, "isEnabled": false, "browser":BROWSER._SIGMA_OS_])
+        }
+        
         if arrBrowsers.count > 5{
             heightScrollView.constant = 362
         }else{
@@ -123,7 +132,7 @@ class onboardingControllingBrowserVc: NSViewController {
     override func viewWillAppear() {
         UserDefaults.standard.set(true, forKey: kUserdefaultsControllingBrowserVcShown)
         tblView.reloadData()
-        if self.lastBrowserClicked == ._FIREFOX_{
+        if self.lastBrowserClicked == ._FIREFOX_ || self.lastBrowserClicked == ._SIGMA_OS_{
             startTimerCheckPermission()
         }
     }
@@ -139,13 +148,18 @@ class onboardingControllingBrowserVc: NSViewController {
             RunLoop.main.add((checkPermissionTimer!), forMode: RunLoop.Mode.common)
         }
     }
+    
     var lastBrowserClicked:BROWSER?
     @objc func checkPermission(){
         let runningApps = NSWorkspace.shared.runningApplications
         guard let lastBrowserClicked = lastBrowserClicked else {
             return;
         }
-        
+        if lastBrowserClicked == ._SIGMA_OS_{
+            if !isAccessibilityEnabled(isPrompt: false){
+                return;
+            }
+        }
         for runningApp in runningApps{
             if let name = runningApp.localizedName{
                 let nameLowercased = name.lowercased()
@@ -182,6 +196,8 @@ class onboardingControllingBrowserVc: NSViewController {
                                                 browserNameForPosthog = "arc"
                                             }else if browser == ._FIREFOX_{
                                                 browserNameForPosthog = "firefox"
+                                            }else if browser == ._SIGMA_OS_{
+                                                browserNameForPosthog = "sigmaos"
                                             }
                                             allApiObject.capturePosthog(event: "onboarding-granted-permission-\(browserNameForPosthog)", metadata: [:])
                                             self.checkPermissionTimer?.invalidate()
@@ -279,7 +295,24 @@ extension onboardingControllingBrowserVc:NSTableViewDelegate, NSTableViewDataSou
     }
     
     @objc func btnRequestClicked(sender:NSButton){
-        if let browser = arrBrowsers[sender.tag]["browser"] as? BROWSER{
+        requestPermission(row: sender.tag)
+    }
+    
+    func requestSigmaOSBrowser(){
+        for i in 0..<arrBrowsers.count{
+            if arrBrowsers[i]["browser"] as? BROWSER == ._SIGMA_OS_{
+                let state = arrBrowsers[i]["isEnabled"] as? Bool ?? false
+                if !state{
+                    requestPermission(row: i)
+                }
+                
+                break;
+            }
+        }
+    }
+    
+    func requestPermission(row:Int){
+        if let browser = arrBrowsers[row]["browser"] as? BROWSER{
             var browserNameForPosthog = ""
             if browser == ._SAFARI_{
                 browserNameForPosthog =  "safari"
@@ -301,19 +334,29 @@ extension onboardingControllingBrowserVc:NSTableViewDelegate, NSTableViewDataSou
                 browserNameForPosthog = "arc"
             }else if browser == ._FIREFOX_{
                 browserNameForPosthog = "firefox"
+            }else if browser == ._SIGMA_OS_{
+                browserNameForPosthog = "SigmaOS"
             }
             allApiObject.capturePosthog(event: "onboarding-request-permission-\(browserNameForPosthog)", metadata: [:])
             lastBrowserClicked = browser
             if browser == ._FIREFOX_{
-                showFirefoxPermissionWindow(showingFromOnboarding: true)
+                showFirefoxPermissionWindow(showingFromOnboarding: true, currentBrowser: browser)
                 self.view.window?.close()
             }else{
+                
+                if browser == ._SIGMA_OS_{
+                    if !isAccessibilityEnabled(isPrompt: false){
+                        showFirefoxPermissionWindow(showingFromOnboarding: true, currentBrowser: browser)
+                        self.view.window?.close()
+                        return;
+                    }
+                }
                 let appName = getCurrentBrowserNameFrom(browser: browser) ?? ""
                 NSWorkspace.shared.open(URL(fileURLWithPath: "/Applications/\(appName).app"))
                 if getActiveTabUrlOf(browser: browser) != nil{
                     DispatchQueue.main.async {
 //                        self.btnContinue.isEnabled = true
-                        self.arrBrowsers[sender.tag]["isEnabled"] = true
+                        self.arrBrowsers[row]["isEnabled"] = true
                         self.tblView.reloadData()
                         allApiObject.capturePosthog(event: "onboarding-granted-permission-\(browserNameForPosthog)", metadata: [:])
                     }

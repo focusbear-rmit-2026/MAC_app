@@ -503,7 +503,9 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
         
         workBeforeFocusBegin(index: focusIndex)
         minFocusAlignmentScoreToShowDistractingPopUp = Double(popUpBtnFocusAlignmentScore.title) ?? 80
-        
+        if SettingsManagerObject.isDataCollectionModeEnabled{
+            minFocusAlignmentScoreToShowDistractingPopUp = 0
+        }
         appdelegate!.setStatusBarButtonColorForFocusMode(color: nil, colorString:arrFocusType[focusIndex]["color"] as? String ?? "")
         appdelegate!.setStatusBarButtonTitleForFocusMode(title: textViewQuestion.string)
         appdelegate!.statusbutton?.imagePosition = .imageLeft
@@ -614,7 +616,7 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
                                             if currentState == ._EVENING_HABIT_{
                                                 mainViewControllerObj?.postponeEveningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
                                             }else if currentState == ._POSTPON_FOCUS_SUMMARY_{
-                                                mainViewControllerObj?.postponeFocusSummaryFor(minutes: totalMinutes + 2)
+                                                mainViewControllerObj?.postponeFocusSummaryFor(minutes: totalMinutes + 2, showAskIntention: false)
                                             }
                                             self.checkTotalMinutesAndStart()
                                         }
@@ -717,6 +719,8 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
                             defaultPageOfBrowser = "favorites:"
                         }else if browser == ._MICROSOFT_EDGE_{
                             defaultPageOfBrowser = "edge://newtab"
+                        }else if browser == ._SIGMA_OS_{
+                            defaultPageOfBrowser = "sigma://newpage"
                         }else{
                             defaultPageOfBrowser = "chrome:"
                         }
@@ -897,6 +901,8 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
                             defaultPageOfBrowser = "favorites:"
                         }else if browser == ._MICROSOFT_EDGE_{
                             defaultPageOfBrowser = "edge://newtab"
+                        }else if browser == ._SIGMA_OS_{
+                            defaultPageOfBrowser = "sigma://newpage"
                         }else{
                             defaultPageOfBrowser = "chrome:"
                         }

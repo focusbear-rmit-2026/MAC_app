@@ -10,6 +10,8 @@ import Cocoa
 
 class firstViewController: NSViewController {
     
+    @IBOutlet weak var boxSegmentControlOfficeMode: NSBox!
+    @IBOutlet weak var segmentControlOfficeMode: NSSegmentedControl!
     @IBOutlet weak var boxNewBadge: customNewBadgeBox!
     @IBOutlet weak var btnSelectHabitsToDo: underLineButton!
     @IBOutlet weak var lblSelectHabits: NSTextField!
@@ -45,10 +47,15 @@ class firstViewController: NSViewController {
     var isTimerGoingOn = false
     var totalDuration = 0
     var chooseHabitsVCObj: chooseHabitsVC?
+    var segmentOfficeModeTrackingArea: NSTrackingArea?
+    var segmentWfhModeTrackingArea: NSTrackingArea?
+    var toolTipOfficeMode = "When you're working from the office, I will only give you appropriate break activities (e.g. chair stretches rather than pushups)."
+    var toolTipWfhMode = "No-one's around! You can do break activities that are a bit more fun, e.g. Dance like no-one's watching"
     
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
+        
         btnStartFirstHabit.cell?.wraps = true
         btnSelectHabitsToDo.title = "I don't have time for all these habits"
         lblSelectHabits.stringValue = "Select the habit you want to do first and click \"Begin Habits\""
@@ -56,7 +63,8 @@ class firstViewController: NSViewController {
             lblSelectHabits.stringValue = activityInfo.value(forKey: "selectHabitText") as? String ?? lblSelectHabits.stringValue
             btnSelectHabitsToDo.title = activityInfo.value(forKey: "buttonSelectHabitsText") as? String ?? btnSelectHabitsToDo.title
         }
-        
+        var titleOfficeMode = "Office Mode"
+        var titleWFHMode = "WFH Mode"
         btnEditHabits.title = "Customise my habits first"
         lblTitleSelectActivity.stringValue = "What 30 seconds of activity do you want to do?"
         lblTitleEnterActivityName.stringValue = "Enter name of activity"
@@ -71,6 +79,28 @@ class firstViewController: NSViewController {
         btnEditHabits.buttonColor = NSColor.white.cgColor
         lblSelectHabits.isHidden = true
         boxNewBadge.isHidden = true
+        
+        if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
+            titleOfficeMode = menuInfo.value(forKey: "segmentOfficeModeText") as? String ?? titleOfficeMode
+            titleWFHMode = menuInfo.value(forKey: "segmentWfhModeText") as? String ?? titleWFHMode
+            toolTipOfficeMode = menuInfo.value(forKey: "toolTipOfficeMode") as? String ?? toolTipOfficeMode
+            toolTipWfhMode = menuInfo.value(forKey: "toolTipWfhMode") as? String ?? toolTipWfhMode
+        }
+        
+        segmentControlOfficeMode.selectedSegmentBezelColor = NSColor.systemBlue
+        segmentControlOfficeMode.setLabel(titleOfficeMode, forSegment: 0)
+        segmentControlOfficeMode.setLabel(titleWFHMode, forSegment: 1)
+        
+        
+        
+        let boundsOfficeMode = NSRect(x: segmentControlOfficeMode.frame.minX, y: (segmentControlOfficeMode.frame.minY - 9), width: (segmentControlOfficeMode.frame.width/2) - 5, height: segmentControlOfficeMode.frame.height)
+        let boundsWfhMode = NSRect(x: (segmentControlOfficeMode.frame.midX + 5), y: (segmentControlOfficeMode.frame.minY - 9), width: (segmentControlOfficeMode.frame.width/2) - 5, height: segmentControlOfficeMode.frame.height)// keep y to  egmentControlOfficeMode.frame.midY  do not change
+        
+        segmentOfficeModeTrackingArea = NSTrackingArea.init(rect: boundsOfficeMode, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
+        segmentControlOfficeMode.addTrackingArea(segmentOfficeModeTrackingArea!)
+        
+        segmentWfhModeTrackingArea = NSTrackingArea.init(rect: boundsWfhMode, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
+        segmentControlOfficeMode.addTrackingArea(segmentWfhModeTrackingArea!)
     }
     
     @IBAction func btnInfoClicked(_ sender: Any) {
@@ -89,7 +119,24 @@ class firstViewController: NSViewController {
         }
     }
     
+    override func mouseEntered(with event: NSEvent) {
+        if event.trackingArea == segmentOfficeModeTrackingArea{
+            showTooltip(sender: segmentControlOfficeMode, msg: toolTipOfficeMode, preferredEdge: NSRectEdge.minX, maxWidthVal:230)
+        }else if event.trackingArea == segmentWfhModeTrackingArea{
+            showTooltip(sender: segmentControlOfficeMode, msg: toolTipWfhMode, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
+        }
+    }
+    
+    override func mouseExited(with event: NSEvent) {
+        if event.trackingArea == segmentOfficeModeTrackingArea{
+            closePopoverTooltipIfVisible()
+        }else if event.trackingArea == segmentWfhModeTrackingArea{
+            closePopoverTooltipIfVisible()
+        }
+    }
+    
     override func viewWillAppear() {
+        boxSegmentControlOfficeMode.isHidden = true
         boxSelectActivities.isHidden = true
         lbltimer.isHidden = true
         btnStartFirstHabit.isEnabled = true
@@ -109,7 +156,7 @@ class firstViewController: NSViewController {
             lblProgress.isHidden = true
             imgView.image = NSImage(named: "icon 130")//
             imgViewHeight.constant = 160
-            imgViewTopSpace.constant = 35
+            imgViewTopSpace.constant = 10
             imgViewBottomSpace.constant = 5
             lblSubTitle.isHidden = false
             tblViewHabits.isHidden = true
@@ -237,6 +284,7 @@ class firstViewController: NSViewController {
                 }
                 getvisualizeInstructionsObject().tryPreLoadMotivationalMessage()
             }else if currentState == ._ACTIVITY_{
+                boxSegmentControlOfficeMode.isHidden = false
                 btnSelectHabitsToDo.isHidden = true
                 btnEditHabits.isHidden = true
                 btnPostponeBreak.isHidden = false
@@ -253,7 +301,7 @@ class firstViewController: NSViewController {
                 
                 lblProgress.stringValue = thirdVcObj?.lblProgress.stringValue ?? ""
                                 
-                btnTopSpace.constant = 134
+                btnTopSpace.constant = 60
                 btnBottomSpace.constant = 100
                 imgView.image = nil
                 imgViewHeight.constant = 40
@@ -263,7 +311,13 @@ class firstViewController: NSViewController {
 
                 tblViewHabits.isHidden = false
                 scrollViewHabits.isHidden = false
+                tblViewHabits.reloadData()
                 lblSubTitle.isHidden = true
+                if SettingsManagerObject.isOfficeModeEnabled{
+                    segmentControlOfficeMode.setSelected(true, forSegment: 0)
+                }else{
+                    segmentControlOfficeMode.setSelected(true, forSegment: 1)
+                }
             }else if currentState == ._CUSTOM_ROUTINE_{
                 if arrAllCustomRoutine[currentRoutineIndex].arrAllHabits.count == 1{
                     btnSelectHabitsToDo.isHidden = true
@@ -359,6 +413,12 @@ class firstViewController: NSViewController {
         
     }
  
+    override func viewDidLayout() {// after scrollview resize it removes title and not srawing it again so doing this here
+        if imgView.image != nil{
+            imgViewHeight.constant = self.view.frame.height / 7
+        }
+    }
+    
     func showLimitedUsgaeViewIfNeeded(){// after 7 trial days
         if isExpired && isActivitiesReducedInExpiredApp{
             if alertLimitedUsageVcObj != nil{
@@ -372,7 +432,7 @@ class firstViewController: NSViewController {
             }
         }
     }
-    
+     
     //Handle user opening habits well after routine start time #920
     func checkMorningHabitDelayTime(){
         if impactMeasurementVcObj != nil{
@@ -654,6 +714,86 @@ class firstViewController: NSViewController {
         }
         chooseHabitsVCObj!.currentHabitIndex = currentHabitIndex
         self.presentAsSheet(chooseHabitsVCObj!)
+    }
+    
+    @IBAction func segmentControlOfficeModeClicked(_ sender: Any) {
+        addLog(text:"[user-action] firstViewController:- btnEnableOfficeModeClicked")
+
+        if SettingsManagerObject.isOfficeModeEnabled{
+            SettingsManagerObject.isOfficeModeEnabled = false
+            NSApplication.shared.applicationIconImage = nil
+            allApiObject.capturePosthog(event: "disable-office-mode", metadata: [:])
+            SettingsManagerObject.isSettingsChanged = true
+            SettingsManagerObject.putUserLocalDeviceSettings()
+            appdelegate?.statusbutton?.image = NSImage(named: NSImage.Name("Bear-Small"))
+            segmentControlOfficeMode.setSelected(true, forSegment: 1)
+            mainViewControllerObj?.reFillBreakActivitiesArray()
+            tblViewHabits.reloadData()
+        }else{
+            let filterArr = arrAllbreakActivities.filter { $0.isOfficeFriendly == true}
+            if filterArr.count == 0{// no activity found with isOfficeFriendly //
+                let alert = NSAlert()
+                alert.setSharingType()
+                var noOfficeFriendlyActivityAlertText = "You don't have any office friendly break activities. Do you want me to add one for you to stand up and stretch for 20 seconds?"
+                var noOfficeFriendlyActivityButtonFirstText = "Yeah sounds good"
+                var noOfficeFriendlyActivityButtonSecondText = "No I'm a machine! I don't need breaks"
+                if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
+                    noOfficeFriendlyActivityAlertText = menuInfo.value(forKey: "noOfficeFriendlyActivityAlertText") as? String ?? noOfficeFriendlyActivityAlertText
+                    noOfficeFriendlyActivityButtonFirstText = menuInfo.value(forKey: "noOfficeFriendlyActivityButtonFirstText") as? String ?? noOfficeFriendlyActivityButtonFirstText
+                    noOfficeFriendlyActivityButtonSecondText = menuInfo.value(forKey: "noOfficeFriendlyActivityButtonSecondText") as? String ?? noOfficeFriendlyActivityButtonSecondText
+                }
+                alert.messageText = noOfficeFriendlyActivityAlertText//
+                alert.addButton(withTitle: noOfficeFriendlyActivityButtonFirstText)
+                alert.addButton(withTitle: noOfficeFriendlyActivityButtonSecondText)
+                NSApplication.shared.activate(ignoringOtherApps: true)
+                alert.beginSheetModal(for: self.view.window!,completionHandler: {result in
+                    if result == .alertFirstButtonReturn{
+                        print("first button")
+                        menuViewControllerObj?.addOfficeFriendlyActivityInSettings()
+                        self.enableOfficeMode()
+                    }else{
+                        print("second button")
+                        if SettingsManagerObject.isOfficeModeEnabled{
+                            self.segmentControlOfficeMode.setSelected(true, forSegment: 0)
+                        }else{
+                            self.segmentControlOfficeMode.setSelected(true, forSegment: 1)
+                        }
+                    }
+                })
+            }else{
+                enableOfficeMode()
+                
+            }
+            
+        }
+        
+    }
+    func enableOfficeMode(){
+        addLog(text: "enableOfficeMode")
+        if UserDefaults.standard.object(forKey: "officeModeEnabledSuccessAlertShown") == nil{
+            let alert = NSAlert()
+            alert.setSharingType()
+            var officeModeEnabledSuccessfullyText = "Ok! I'll just prompt you to do activities that won't weird other people out (doing handstand pushups in the office might raise a few eyebrows)."
+            if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
+                officeModeEnabledSuccessfullyText = menuInfo.value(forKey: "officeModeEnabledSuccessfullyText") as? String ?? officeModeEnabledSuccessfullyText
+            }
+            alert.messageText = officeModeEnabledSuccessfullyText
+            alert.addButton(withTitle: buttonOkText)
+            NSApplication.shared.activate(ignoringOtherApps: true)
+            alert.beginSheetModal(for: self.view.window!, completionHandler: nil)
+            UserDefaults.standard.set(true, forKey: "officeModeEnabledSuccessAlertShown")
+        }
+        
+        
+        SettingsManagerObject.isOfficeModeEnabled = true
+        allApiObject.capturePosthog(event: "enable-office-mode", metadata: [:])
+        SettingsManagerObject.isSettingsChanged = true
+        SettingsManagerObject.putUserLocalDeviceSettings()
+        appdelegate?.statusbutton?.image = NSImage(named: NSImage.Name("Bear-Office-Small"))
+        segmentControlOfficeMode.setSelected(true, forSegment: 0)
+        NSApplication.shared.applicationIconImage = NSImage(named: NSImage.Name("Bear-Office-icon"))
+        mainViewControllerObj?.reFillBreakActivitiesArray()
+        tblViewHabits.reloadData()
     }
     
 }

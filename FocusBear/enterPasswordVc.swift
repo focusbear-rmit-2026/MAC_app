@@ -11,6 +11,8 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
    
     @IBOutlet weak var mainView: NSView!
     
+    @IBOutlet weak var blockingView: BlockingView!
+    @IBOutlet weak var bgButton: NSButton!
     @IBOutlet weak var topBox: NSLayoutConstraint!
     @IBOutlet weak var bottombox: NSLayoutConstraint!
     @IBOutlet weak var leadingBox: NSLayoutConstraint!
@@ -206,7 +208,7 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
                 }else if currentState == ._POSTPON_EVENING_HABIT_{
                     mainViewControllerObj?.postponeEveningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
                 }else if currentState == ._POSTPON_FOCUS_SUMMARY_{
-                    mainViewControllerObj?.postponeFocusSummaryFor(minutes: totalMinutes + 2)
+                    mainViewControllerObj?.postponeFocusSummaryFor(minutes: totalMinutes + 2, showAskIntention: false)
                 }
                 startingFocusModeVcObj!.checkTotalMinutesAndStart()
                 return;
@@ -220,7 +222,7 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
                     mainViewControllerObj?.postponeEveningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
                     pomodoroVcObj!.checkStateAndStartPomodoroMode()
                 }else if currentState == ._POSTPON_FOCUS_SUMMARY_ && !isShowingForRelaxFocusMode{
-                    mainViewControllerObj?.postponeFocusSummaryFor(minutes: totalMinutes + 2)
+                    mainViewControllerObj?.postponeFocusSummaryFor(minutes: totalMinutes + 2, showAskIntention: false)
                     pomodoroVcObj!.checkStateAndStartPomodoroMode()
                 }else if isShowingForRelaxFocusMode{
                     pomodoroVcObj!.pomodoroModeStarted()
@@ -236,7 +238,7 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
                 }else if currentState == ._POSTPON_EVENING_HABIT_{
                     mainViewControllerObj?.postponeEveningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
                 }else if currentState == ._POSTPON_FOCUS_SUMMARY_{
-                    mainViewControllerObj?.postponeFocusSummaryFor(minutes: totalMinutes + 2)
+                    mainViewControllerObj?.postponeFocusSummaryFor(minutes: totalMinutes + 2, showAskIntention: false)
                 }
                 focusEndWarningVcObj!.extendFocusMode()
                 return;
@@ -248,7 +250,7 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
                 }else if currentState == ._POSTPON_EVENING_HABIT_{
                     mainViewControllerObj?.postponeEveningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
                 }else if currentState == ._POSTPON_FOCUS_SUMMARY_{
-                    mainViewControllerObj?.postponeFocusSummaryFor(minutes: totalMinutes + 2)
+                    mainViewControllerObj?.postponeFocusSummaryFor(minutes: totalMinutes + 2, showAskIntention: false)
                 }
                 addTaskVcObj?.extendFocusMode()
                 return;
@@ -314,12 +316,12 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
 
                     if askPostponeVcObj != nil{
                         if askPostponeVcObj!.popUpButtonSelectMinutes != nil{
-                            mainViewControllerObj?.postponeFocusSummaryFor(minutes: Int(askPostponeVcObj!.popUpButtonSelectMinutes.title) ?? 15)
+                            mainViewControllerObj?.postponeFocusSummaryFor(minutes: Int(askPostponeVcObj!.popUpButtonSelectMinutes.title) ?? 15, showAskIntention: true)
                         }else{
-                            mainViewControllerObj?.postponeFocusSummaryFor(minutes: 15)
+                            mainViewControllerObj?.postponeFocusSummaryFor(minutes: 15, showAskIntention: true)
                         }
                     }else{
-                        mainViewControllerObj?.postponeFocusSummaryFor(minutes: 15)
+                        mainViewControllerObj?.postponeFocusSummaryFor(minutes: 15, showAskIntention: true)
                     }
                     return;
                 }
@@ -525,11 +527,11 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
                 
                 if selectJsonVcObj != nil{
                     if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-                        if tabview.selectedTabViewItemIndex == preferencesEditHabitsIndex{
-                            self.view.removeFromSuperview()
-                            tabview.selectedTabViewItemIndex = 0
-                            return;
-                        }
+                        //if tabview.selectedTabViewItemIndex == preferencesEditHabitsIndex{
+                        self.view.removeFromSuperview()
+                        tabview.selectedTabViewItemIndex = 0
+                        return;
+                        //}
                     }
                 }
                 
@@ -663,6 +665,7 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
         UserDefaults.standard.removeObject(forKey: SettingsManagerObject.kUserdefaultsAppPassword)
         addLog(text: "password is cleard after 24 hours")
     }
+    
     func controlTextDidChange(_ obj: Notification) {
         guard let textField = obj.object as? NSTextField else {
             return

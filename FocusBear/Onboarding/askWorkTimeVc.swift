@@ -139,7 +139,26 @@ class askWorkTimeVc: NSViewController {
     }
     @objc func viewDidResize(){
         print("viewDidResize")
-        if self.view.frame.height < 725{
+        if self.view.frame.height < 675{
+            stackViewFirst.spacing = 4
+            stackViewSecond.spacing = 6
+            let fontSize:CGFloat = 11
+            lblQuestionWakeUpTime.font = NSFont.systemFont(ofSize: fontSize)
+            lblQuestionSleepTime.font = NSFont.systemFont(ofSize: fontSize)
+            lblQuestionStartWorkTime.font = NSFont.systemFont(ofSize: fontSize)
+            lblQuestionFinishWorkTime.font = NSFont.systemFont(ofSize: fontSize)
+            lblWakeUpTime.font = NSFont.systemFont(ofSize: fontSize)
+            lblMorningRoutineTime.font = NSFont.systemFont(ofSize: fontSize)
+            lblEveningRoutineTime.font = NSFont.systemFont(ofSize: fontSize)
+            lblWorkTime.font = NSFont.boldSystemFont(ofSize: fontSize)
+            lblRelaxTime.font = NSFont.systemFont(ofSize: fontSize)
+            lblLockSystemTime.font = NSFont.systemFont(ofSize: fontSize)
+            lblPrepareToWorkTime.font = NSFont.systemFont(ofSize: fontSize)
+            lblExplanation.font = NSFont.systemFont(ofSize: fontSize)
+            centerYStackViewFirst.constant = -70
+            topSpaceStackViewSecond.constant = 14
+            lblQuestion.font = NSFont.systemFont(ofSize: 18)
+        }else if self.view.frame.height < 725{
             stackViewFirst.spacing = 8
             stackViewSecond.spacing = 12
             let fontSize:CGFloat = 14
@@ -155,7 +174,7 @@ class askWorkTimeVc: NSViewController {
             lblLockSystemTime.font = NSFont.systemFont(ofSize: fontSize)
             lblPrepareToWorkTime.font = NSFont.systemFont(ofSize: fontSize)
             lblExplanation.font = NSFont.systemFont(ofSize: fontSize)
-            centerYStackViewFirst.constant = -70
+            centerYStackViewFirst.constant = -50
             topSpaceStackViewSecond.constant = 20
             lblQuestion.font = NSFont.systemFont(ofSize: 22)
         }else if self.view.frame.height < 920{
