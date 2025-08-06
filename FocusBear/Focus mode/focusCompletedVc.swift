@@ -599,7 +599,8 @@ class focusCompletedVc: NSViewController {
         if self.view.window?.windowController == endingFocusWindowControllerObj{
             if self.view.window?.isVisible ?? false{
                 self.view.window?.center()
-                NSApp.activate(ignoringOtherApps: true)
+//                NSApp.activate(ignoringOtherApps: true)
+                NSRunningApplication.current.activate(options: [.activateIgnoringOtherApps])
             }
         }
         removeTimerMoveWindowToCenter()
@@ -648,6 +649,12 @@ class focusCompletedVc: NSViewController {
         
         let achievements = textFieldAchieve.stringValue.components(separatedBy: .newlines).joined()
         let distractionsEncountered = textFieldDistractions.stringValue.components(separatedBy: .newlines).joined()
+        
+        for i in 0..<arrFocusType.count{// clear datat after focus completed
+            arrFocusType[i]["lastStartedDate"] = nil
+            arrFocusType[i]["lastScheduledEndDate"] = nil
+        }
+        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
         
         updateAllFocusModeTags()
        
@@ -711,6 +718,12 @@ class focusCompletedVc: NSViewController {
         let achievements = textFieldAchieve.stringValue.components(separatedBy: .newlines).joined()
         let distractionsEncountered = textFieldDistractions.stringValue.components(separatedBy: .newlines).joined()
         
+        for i in 0..<arrFocusType.count{// clear datat after focus completed
+            arrFocusType[i]["lastStartedDate"] = nil
+            arrFocusType[i]["lastScheduledEndDate"] = nil
+        }
+        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+        
         updateAllFocusModeTags()
         addEntryInStatsCsv(logType: "focus block", activity: currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: achievements, distractionsEncountered: distractionsEncountered, abortReason: "", feedback: "", tags:getTagsString())
 
@@ -751,19 +764,20 @@ class focusCompletedVc: NSViewController {
         }
         
         if isFocusModeStartedFromPomodoroMode && isSkipBreakActivityDuringPomodoro{
-            if mainViewControllerObj?.breakTimer != nil{
-                mainViewControllerObj?.setActivityTimer()
+            if getHabitsVcObject().breakTimer != nil{
+                getHabitsVcObject().setActivityTimer()
             }
         }else if isHardCorePomodoroModeOn && isSkipBreakActivityDuringPomodoro{
-            if mainViewControllerObj?.breakTimer != nil{
-                mainViewControllerObj?.setActivityTimer()
+            if getHabitsVcObject().breakTimer != nil{
+                getHabitsVcObject().setActivityTimer()
             }
         }else if startingFocusModeVcObj?.lastSkipMicroBreakState ?? false{
-            if mainViewControllerObj?.breakTimer != nil{
-                mainViewControllerObj?.setActivityTimer()
+            if getHabitsVcObject().breakTimer != nil{
+                getHabitsVcObject().setActivityTimer()
             }
         }
     }
+    
     @IBAction func btnDoBreakActivityClicked(_ sender: Any) {
         addLog(text: "[user-action] focusCompletedVc - btnDoBreakActivityClicked")
         workDone()
@@ -781,7 +795,7 @@ class focusCompletedVc: NSViewController {
         if !isMainWindowLoaded{
             mainWindowControllerObj?.loadWindow()
         }
-        mainViewControllerObj?.executeBreakActivities()
+        getHabitsVcObject().executeBreakActivities()
         shouldShowPomodoroAfterBreak = true
         shouldEndPomodoroBreakAtTime = Date().addingTimeInterval(TimeInterval(60*self.breakMinute))
     }
@@ -800,6 +814,12 @@ class focusCompletedVc: NSViewController {
         let achievements = textFieldAchieve.stringValue.components(separatedBy: .newlines).joined()
         let distractionsEncountered = textFieldDistractions.stringValue.components(separatedBy: .newlines).joined()
         
+        for i in 0..<arrFocusType.count{// clear datat after focus completed
+            arrFocusType[i]["lastStartedDate"] = nil
+            arrFocusType[i]["lastScheduledEndDate"] = nil
+        }
+        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+        
         updateAllFocusModeTags()
         addEntryInStatsCsv(logType: "focus block", activity: currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: achievements, distractionsEncountered: distractionsEncountered, abortReason: "", feedback: "", tags:getTagsString())
 
@@ -815,16 +835,16 @@ class focusCompletedVc: NSViewController {
         isHardCorePomodoroModeOn = false
         
         if isFocusModeStartedFromPomodoroMode && isSkipBreakActivityDuringPomodoro{
-            if mainViewControllerObj?.breakTimer != nil{
-                mainViewControllerObj?.setActivityTimer()
+            if getHabitsVcObject().breakTimer != nil{
+                getHabitsVcObject().setActivityTimer()
             }
         }else if isHardCorePomodoroModeOn && isSkipBreakActivityDuringPomodoro{
-            if mainViewControllerObj?.breakTimer != nil{
-                mainViewControllerObj?.setActivityTimer()
+            if getHabitsVcObject().breakTimer != nil{
+                getHabitsVcObject().setActivityTimer()
             }
         }else if startingFocusModeVcObj?.lastSkipMicroBreakState ?? false{
-            if mainViewControllerObj?.breakTimer != nil{
-                mainViewControllerObj?.setActivityTimer()
+            if getHabitsVcObject().breakTimer != nil{
+                getHabitsVcObject().setActivityTimer()
             }
         }
         self.view.window?.close()

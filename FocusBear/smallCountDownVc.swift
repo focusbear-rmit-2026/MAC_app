@@ -78,7 +78,7 @@ class smallCountDownVc: NSViewController {
             addLog(text:"[user-action] smallCountDownVc:- button Postpone Clicked")
             mainWindowControllerObj?.window?.setIsVisible(true)
             showBlankWindowInSecondaryMonitor()
-            mainViewControllerObj?.abortCurrentState()
+            getHabitsVcObject().abortCurrentState()
             if quittingWcObj != nil{
                 if quittingWcObj?.window?.isVisible ?? false{
                     quittingWcObj?.window?.close()
@@ -88,9 +88,9 @@ class smallCountDownVc: NSViewController {
         }else if currentState == ._FOCUS_SUMMARY_{
             addLog(text:"button Back To My Habits")
             closeTimerBox()
-            mainViewControllerObj?.timerGiveOneMoreMinut?.invalidate()
-            mainViewControllerObj?.timerGiveOneMoreMinut = nil
-            mainViewControllerObj?.showFocusSummaryView()
+            getHabitsVcObject().timerGiveOneMoreMinut?.invalidate()
+            getHabitsVcObject().timerGiveOneMoreMinut = nil
+            getHabitsVcObject().showFocusSummaryView()
         }else if currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_MORNING_HABIT_ || (currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeMorningHabit) || (currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeEveningHabit){
             addLog(text:"[user-action] button Extend postpone time Clicked")
             lastCurrentState = currentState 

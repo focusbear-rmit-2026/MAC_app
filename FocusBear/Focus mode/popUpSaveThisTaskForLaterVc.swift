@@ -49,14 +49,9 @@ class popUpSaveThisTaskForLaterVc: NSViewController {
         allApiObject.addTask(title: textView.string, details: "", eisenhowerQuadrant: 1, dueDate: dateString, objective: "", tags: [], completionHandler: { result,json in
             if result{
                 DispatchQueue.main.async { [self] in
-                    if taskPlayerWcObj != nil{
-                        if taskPlayerWcObj?.window?.isVisible ?? false{
-                            if let json = json{
-                                if let id = json.value(forKey: "id") as? String{
-                                    taskPlayerVcObj?.addTaskInCurrentList(taskName: textView.string, id: id, duration: 600)
-                                }
-                            }
-                            
+                    if let json = json{
+                        if let id = json.value(forKey: "id") as? String{
+                            taskPlayerVcObj?.addTaskInCurrentList(taskName: textView.string, id: id, duration: 600)
                         }
                     }
                 }

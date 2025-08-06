@@ -416,11 +416,11 @@ var lastCurrentStateSaved:CURRENTSTATE = ._NOTHING_
 var currentState:CURRENTSTATE = ._NOTHING_{
     didSet{
         if currentState == ._NOTHING_ && lastCurrentStateSaved == ._CUSTOM_ROUTINE_{// if currest state was custom routine and custom routine was started during postpone morning/evening routine state then after complete or abort custom routine set postpone state again
-            if isCustomRoutineWasRunningInPostponeEveningHabit{
+            if isCustomRoutineWasRunningInPostponeEveningHabit && !isCustomRoutineWasRunningBetweenEveningHabit{
                 currentState = ._POSTPON_EVENING_HABIT_
             }
             
-            if isCustomRoutineWasRunningInPostponeMorningHabit{
+            if isCustomRoutineWasRunningInPostponeMorningHabit && !isCustomRoutineWasRunningBetweenMorningHabit{
                 currentState = ._POSTPON_MORNING_HABIT_
             }
         }
@@ -429,6 +429,16 @@ var currentState:CURRENTSTATE = ._NOTHING_{
             isCustomRoutineWasRunningInPostponeEveningHabit = false
         }
         lastCurrentStateSaved = currentState
+        
+        if currentState == ._MORNING_HABIT_{
+            if oldValue != ._MORNING_HABIT_{
+                leftMenuVcObj?.habitStarted()
+            }
+        }else if currentState == ._EVENING_HABIT_{
+            if oldValue != ._EVENING_HABIT_{
+                leftMenuVcObj?.habitStarted()
+            }
+        }
     }
 }
 
@@ -2061,8 +2071,8 @@ func showCustomNotificationView(msg: String){
     if mainWindowControllerObj?.window?.isVisible ?? false{
         addLog(text:"show Custom Notification View")
         let _ = getCustomNotificationVcObject()
-        mainViewControllerObj?.view.addSubview(customNotificationVcObj!.view)
-        mainViewControllerObj?.view.addTopRightConstraints(subView: customNotificationVcObj!.view)
+        getHabitsVcObject().view.addSubview(customNotificationVcObj!.view)
+        getHabitsVcObject().view.addTopRightConstraints(subView: customNotificationVcObj!.view)
         customNotificationVcObj!.resetView(msg: msg)
     }
     
@@ -2653,7 +2663,15 @@ func checkDocBarState()->String?{
     end tell
     """
     
-    return executeScriptAndReturnString(script: script)
+    if let appleScript = NSAppleScript(source: script) {
+        var errors : NSDictionary? = nil
+        let desc = appleScript.executeAndReturnError(&errors)
+        if errors != nil {
+            print(errors!)
+        }
+        return desc.stringValue
+    }
+    return nil
 }
 
 
@@ -5138,26 +5156,26 @@ func isCutOffTimeGoing()->Bool{
 
 
 func getTimeSinceLastBreak()->String?{
-    var breaksStartTime = UserDefaults.standard.object(forKey: kUserdefaultsLastBreaksStartTime) as? Date
-    if breaksStartTime == nil{
+    var breaksEndTime = UserDefaults.standard.object(forKey: kUserdefaultsLastBreakEndTime) as? Date
+    if breaksEndTime == nil{
         var startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
         if Date().compare(startDate) == .orderedAscending {// current date < start date(current date is 1 am and start date is 10 am )
             startDate = Calendar.current.date(byAdding: .day, value: -1, to: startDate) ?? startDate
         }
-        breaksStartTime = startDate
+        breaksEndTime = startDate
     }else{
         var startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
         if Date().compare(startDate) == .orderedAscending {// current date < start date(current date is 1 am and start date is 10 am )
             startDate = Calendar.current.date(byAdding: .day, value: -1, to: startDate) ?? startDate
         }
         
-        if breaksStartTime!.compare(startDate) == .orderedAscending {//breaksStartTime < start date
-            breaksStartTime = startDate
+        if breaksEndTime!.compare(startDate) == .orderedAscending {//breaksStartTime < start date
+            breaksEndTime = startDate
         }
     }
-    if let breaksStartTime = breaksStartTime{
+    if let breaksEndTime = breaksEndTime{
         let currentDate = Date()
-        let diffSeconds = Calendar.current.dateComponents([.second], from: breaksStartTime, to: currentDate).second ?? 0
+        let diffSeconds = Calendar.current.dateComponents([.second], from: breaksEndTime, to: currentDate).second ?? 0
         if diffSeconds > 0{
             let time = getStringTimeFromSecondsWithoutSeconds(seconds: Int(diffSeconds))
             var lastBreakTimeText = "Time since last break: <TIME>"
@@ -5181,3 +5199,90 @@ class BlockingView: NSView {
        // super.mouseDown(with: event)
     }
 }
+
+
+//func checkStatusItemVisibility() -> Bool {
+//    guard let button = appdelegate!.statusItem.button else { return false }
+//    
+//    // Check if the button is actually visible on screen
+//    guard let window = button.window else { return false }
+//    
+//    let screenRect = NSScreen.main?.frame ?? .zero
+//    let buttonRect = window.frame
+//    
+//    // Check if the button frame intersects with the screen's visible area
+//    return screenRect.intersects(buttonRect)
+//}
+
+
+
+class BlinkingNSBox: NSBox {// 22/7/25  v 1.26.393
+    private var blinkTimer: Timer?
+    private let colors: [NSColor] = [NSColor(named: "dark_OrangeColor") ?? NSColor.blue, NSColor(red: 249/255, green: 233/255, blue: 142/255, alpha: 1)]
+    private var currentColorIndex = 0
+    private let blinkInterval: TimeInterval = 0.5
+    private var windowObserver: NSKeyValueObservation?
+    private var blinkCount = 0
+    
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        commonInit()
+    }
+    
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        commonInit()
+    }
+    
+    private func commonInit() {
+        self.borderWidth = 2.0
+        self.borderColor = colors.first!
+    }
+    
+    override var isHidden: Bool {
+        didSet {
+            if isHidden {
+                stopBlinking()
+            }
+        }
+    }
+    
+    func startBlinking() {
+        guard !isHidden, blinkTimer == nil else { return }
+        self.borderColor = self.colors.last!
+        blinkCount = 0
+        currentColorIndex = 0
+        blinkTimer = Timer.scheduledTimer(withTimeInterval: blinkInterval, repeats: true) { [weak self] _ in
+            guard let self = self else { return }
+            if blinkCount > 9{
+                stopBlinking()
+                return;
+            }
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = self.blinkInterval / 2
+                self.currentColorIndex = (self.currentColorIndex + 1) % self.colors.count
+                self.animator().borderColor = self.colors[self.currentColorIndex]
+                self.blinkCount += 1
+            }
+        }
+    }
+    
+    func stopBlinking() {
+        guard blinkTimer != nil else { return }
+        blinkTimer?.invalidate()
+        blinkTimer = nil
+        currentColorIndex = 0
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = blinkInterval / 2
+            self.animator().borderColor = self.colors.last!
+        }
+    }
+    
+    deinit {
+        stopBlinking()
+    }
+}
+
+var isExplainingPermissionsWindowShowingFromPomodoro = false
+
+

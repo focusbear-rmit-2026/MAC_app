@@ -473,7 +473,7 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
 //                            mainViewControllerObj?.showAbortDoneView()
 //                        }
 //                    })
-                    mainViewControllerObj?.showAbortDoneView()
+                    getHabitsVcObject().showAbortDoneView()
                 }
             })
             
@@ -493,7 +493,7 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
 //                    mainViewControllerObj?.showAbortDoneView()
 //                }
 //            })
-            mainViewControllerObj?.showAbortDoneView()
+            getHabitsVcObject().showAbortDoneView()
         }
         
     }
@@ -635,11 +635,11 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
             }
         })
         
-        mainViewControllerObj?.showAbortStartSmallVc(isAnyHabitRemoved:isAnyHabitRemoved)
+        getHabitsVcObject().showAbortStartSmallVc(isAnyHabitRemoved:isAnyHabitRemoved)
     }
     @IBAction func btnDontWantRoutine_boxHabitClicked(_ sender: Any) {
         addLog(text: "[user-action] btnDontWantRoutine_boxHabitClicked")//
-        mainViewControllerObj?.showAbortDisableMorningRoutineVc()
+        getHabitsVcObject().showAbortDisableMorningRoutineVc()
     }
     @IBAction func btnDeactivate_boxSomethingElseClicked(_ sender: Any) {
        addLog(text: "[user-action] btnDeactivate_boxSomethingElseClicked")//
@@ -662,7 +662,7 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
         
         addEntryInStatsCsv(logType: logType, activity: activity, durationInSeconds: "", quantityQuestion: "", quantityLogged: "", startTime: "", workAchieved: "", distractionsEncountered: "", abortReason: "Something else", feedback: textViewSomethingElse.string, tags:"")
             
-        mainViewControllerObj?.showAbortDoneView()
+        getHabitsVcObject().showAbortDoneView()
     }
 }
 

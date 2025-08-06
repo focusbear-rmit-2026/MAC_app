@@ -155,8 +155,7 @@ class preferencesTabViewController: NSTabViewController {
             alertWarning.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
                 
                 if modalResponse == .alertFirstButtonReturn{
-                    showExplainingPermissionsWindow()
-                    explainingPermissionsVcObj?.showingFromPomodoro = false
+                    showExplainingPermissionsWindow(showingFromPomodoro: false)
                     self.view.window?.close()
                 }
                 

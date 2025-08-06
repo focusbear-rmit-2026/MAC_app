@@ -16,6 +16,7 @@ var focusProductivityStatsCsvURL:URL!
 
 //stast CSV new entry
 func addEntryInofflineActivitiesCsv(activity_id:String, duration_logged:String, device_id:String, activity_sequence_id:String, start_time:String, finish_time:String, skipped_did_complete:String, choice_id:String, quantity_logged:String, skipped_did_not_complete:String, note_logged:String ){
+    addLog(text: "addEntryInofflineActivitiesCsv activity_id:- \(activity_id)")
     do {
         var csv = try String(contentsOf: offlineActivitiesCsvURL, encoding: .utf8)
         

@@ -41,6 +41,17 @@ class permissionsVc: NSViewController {
     }
     
     override func viewWillAppear() {
+        settingsContainerVcObj?.isPermissionsViewVisible = true
+        reloadData()
+    }
+    
+    override func viewWillDisappear() {
+        settingsContainerVcObj?.isPermissionsViewVisible = false
+        saveBrowsersPermissionInfo()
+        checkPermissionTimer?.invalidate()
+    }
+    
+    func reloadData(){
         arrBrowsers.removeAll()
         let filemanager = FileManager.default
         
@@ -127,6 +138,7 @@ class permissionsVc: NSViewController {
         tblView.reloadData()
     }
     
+    
     func startTimerCheckPermission(){
         DispatchQueue.global().sync {
             if self.checkPermissionTimer != nil{
@@ -138,8 +150,8 @@ class permissionsVc: NSViewController {
             RunLoop.main.add((checkPermissionTimer!), forMode: RunLoop.Mode.common)
         }
     }
-    
-    override func viewWillDisappear() {
+
+    func saveBrowsersPermissionInfo(){
         var arrBrowsersInfo: [[String : Any]] = []
         for browserInfo in arrBrowsers{
             if let browser = browserInfo["browser"] as? BROWSER{
@@ -147,7 +159,6 @@ class permissionsVc: NSViewController {
             }
         }
         UserDefaults.standard.set(arrBrowsersInfo, forKey: kUserdefaultsAllBrowsersPermissionInfo)
-        checkPermissionTimer?.invalidate()
     }
     
     var lastBrowserClicked:BROWSER?
@@ -179,7 +190,11 @@ class permissionsVc: NSViewController {
                                                 UserDefaults.standard.set(true, forKey: kUserdefaultsBrowsersPermissionsSetByUser)
                                             }
                                         }
+                                        saveBrowsersPermissionInfo()
                                         
+                                        DispatchQueue.main.async {
+                                            self.permissionGivenFromBrowser()
+                                        }
                                     }
                                 }else{
                                     self.checkPermissionTimer?.invalidate()
@@ -197,6 +212,15 @@ class permissionsVc: NSViewController {
         }
     }
     
+    func permissionGivenFromBrowser(){// added on 23/7/25 version 1.26.393
+        if permissionBlockDistractionWcObj != nil && onboardingControllingBrowserVcObj != nil{
+            if permissionBlockDistractionWcObj?.window?.isVisible ?? false{
+                if permissionBlockDistractionWcObj?.contentViewController == onboardingControllingBrowserVcObj{
+                    onboardingControllingBrowserVcObj?.reloadData()
+                }
+            }
+        }
+    }
 }
 
 extension permissionsVc:NSTableViewDelegate, NSTableViewDataSource {
@@ -298,6 +322,8 @@ extension permissionsVc:NSTableViewDelegate, NSTableViewDataSource {
                         if UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) == nil{
                             UserDefaults.standard.set(true, forKey: kUserdefaultsBrowsersPermissionsSetByUser)
                         }
+                        self.saveBrowsersPermissionInfo()
+                        self.permissionGivenFromBrowser()
                     }
                 }else {
                     DispatchQueue.main.async {

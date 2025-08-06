@@ -656,7 +656,7 @@ func showTaskPlayerWindow(totalDuration:Int, intention:String, automatically:Boo
         taskPlayerWcObj?.window?.standardWindowButton(.miniaturizeButton)?.isHidden = true
     }
     
-    getTaskPlayerWindowObject().window?.center()
+//    getTaskPlayerWindowObject().window?.setFrameOrigin(.)
     var taskPlayerWindowTitle = "Focus Bear - To Do Player"
     if let common = configjson.value(forKey: "common") as? NSDictionary{
         taskPlayerWindowTitle = common.value(forKey: "taskPlayerWindowTitle") as? String ?? taskPlayerWindowTitle
@@ -762,16 +762,20 @@ func showPreloadFocusModesWindow(){
 func showEasyPostponeWindow(){
     addLog(text:"showEasyPostponeWindow")
     allApiObject.capturePosthog(event: "easy-postpone-window-shown", metadata: [:])
-    getEasyPostponeWindowObject().contentViewController = getEasyPostponeVcObject()
     
-    let screenFrame = NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 1920, height: 1080)
-    easyPostponeWcObj!.window?.setFrameOrigin(NSPoint(x: screenFrame.width - (easyPostponeVcObj?.view.frame.width)!, y: screenFrame.height - (easyPostponeVcObj?.view.frame.height)! - 22)) //  22 status bar heigh
-    
-    easyPostponeWcObj!.window?.styleMask.remove(.closable)
-    easyPostponeWcObj?.window?.title = appName
-    easyPostponeWcObj!.showWindow(nil)
+    if mainWindowControllerObj?.window?.isVisible ?? false{// todo 
+        mainViewControllerObj?.presentAsSheet(getEasyPostponeVcObject())
+    }else{
+        getEasyPostponeWindowObject().contentViewController = getEasyPostponeVcObject()
+        
+        let screenFrame = NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 1920, height: 1080)
+        easyPostponeWcObj!.window?.setFrameOrigin(NSPoint(x: screenFrame.width - (easyPostponeVcObj?.view.frame.width)!, y: screenFrame.height - (easyPostponeVcObj?.view.frame.height)! - 22)) //  22 status bar heigh
+        
+        easyPostponeWcObj!.window?.styleMask.remove(.closable)
+        easyPostponeWcObj?.window?.title = appName
+        easyPostponeWcObj!.showWindow(nil)
+    }
     easyPostponeVcObj?.isForExtendPostponeDuringCustomRoutine = false
-    //    breakWarningVcObj!.resetView()
     NSApplication.shared.activate(ignoringOtherApps: true)
 }
 //-------------------------------------------------//
@@ -980,19 +984,22 @@ func showSetFocusWindow(){
 
 
 //***********Show Distraction Types Window***************//
-func showDistractionTypesWindow(){
+func showDistractionTypesWindow(showingFromPomodoro:Bool){
     addLog(text:"showSetFocusWindow")
+    isExplainingPermissionsWindowShowingFromPomodoro = showingFromPomodoro
     getPermissionBlockDistractionWindowObject().contentViewController = getOnboardingDistractionTypesVcObject()
     getPermissionBlockDistractionWindowObject().window?.center()
     //    onboardingCardsWcObj!.window?.styleMask.remove(.closable)
     getPermissionBlockDistractionWindowObject().showWindow(nil)
     getPermissionBlockDistractionWindowObject().window?.center()
+    UserDefaults.standard.set(true, forKey: kUserdefaultsIsAnyDistractionSetByUser) // line added on 23/7/25 version 1.26.393
 }
 
 
 //***********Show Explaining Permissions Window***************//
-func showExplainingPermissionsWindow(){
+func showExplainingPermissionsWindow(showingFromPomodoro:Bool){
     addLog(text:"showSetFocusWindow")
+    isExplainingPermissionsWindowShowingFromPomodoro = showingFromPomodoro
     getPermissionBlockDistractionWindowObject().contentViewController = getExplainingPermissionsVcObject()
     getPermissionBlockDistractionWindowObject().window?.center()
     //    onboardingCardsWcObj!.window?.styleMask.remove(.closable)
@@ -1427,6 +1434,7 @@ func showSplashWindow(){
     getSplashWindowObject().contentViewController = getSplashVcObject()
     getSplashWindowObject().showWindow(nil)
 }
+
 func closeSplashWindow(){
     if splashWcObj != nil{
         if splashWcObj?.window?.isVisible ?? false{

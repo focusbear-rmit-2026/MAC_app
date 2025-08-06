@@ -7,13 +7,17 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		130CE9A82E40C131004A6F04 /* mainWindowListBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 130CE9A72E40C131004A6F04 /* mainWindowListBox.swift */; };
 		13188D722DEED55900E67A44 /* server in Resources */ = {isa = PBXBuildFile; fileRef = 13188D712DEED55800E67A44 /* server */; };
 		13188D742DEEE30300E67A44 /* flaskServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13188D732DEEE30300E67A44 /* flaskServer.swift */; };
 		13188D762DEF162D00E67A44 /* serverIntel in Resources */ = {isa = PBXBuildFile; fileRef = 13188D752DEF162D00E67A44 /* serverIntel */; };
 		1338D3792E1E35B8002A1BFC /* loginWc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1338D3782E1E35B8002A1BFC /* loginWc.swift */; };
 		13395D412DB900440094F019 /* focusModeData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13395D402DB900380094F019 /* focusModeData.swift */; };
+		134D1DEC2E41E52300328E84 /* leftMenuVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 134D1DEB2E41E52300328E84 /* leftMenuVc.swift */; };
+		134D1DEE2E42144F00328E84 /* accordionBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 134D1DED2E42144F00328E84 /* accordionBox.swift */; };
+		134D1DF02E42378B00328E84 /* habitsVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 134D1DEF2E42378B00328E84 /* habitsVc.swift */; };
 		135ABEFD2E013254007ED73A /* breaksData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 135ABEFC2E01324D007ED73A /* breaksData.swift */; };
-		135CBDAF2D967009003BA438 /* routine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 135CBDAE2D967005003BA438 /* routine.swift */; };
+		135CBDAF2D967009003BA438 /* routineData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 135CBDAE2D967005003BA438 /* routineData.swift */; };
 		1361E6E52DB76A1900E6DE3F /* unverifiedEmailVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1361E6E42DB76A1900E6DE3F /* unverifiedEmailVc.swift */; };
 		1364364B2DE1FA7400B90724 /* splashVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1364364A2DE1FA7400B90724 /* splashVc.swift */; };
 		137A3D802E0A69CB008E3CF0 /* popUpFocusGoalConfirmationVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 137A3D7F2E0A69CB008E3CF0 /* popUpFocusGoalConfirmationVc.swift */; };
@@ -371,13 +375,17 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		130CE9A72E40C131004A6F04 /* mainWindowListBox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = mainWindowListBox.swift; sourceTree = "<group>"; };
 		13188D712DEED55800E67A44 /* server */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; path = server; sourceTree = "<group>"; };
 		13188D732DEEE30300E67A44 /* flaskServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = flaskServer.swift; sourceTree = "<group>"; };
 		13188D752DEF162D00E67A44 /* serverIntel */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; path = serverIntel; sourceTree = "<group>"; };
 		1338D3782E1E35B8002A1BFC /* loginWc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = loginWc.swift; sourceTree = "<group>"; };
 		13395D402DB900380094F019 /* focusModeData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = focusModeData.swift; sourceTree = "<group>"; };
+		134D1DEB2E41E52300328E84 /* leftMenuVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = leftMenuVc.swift; sourceTree = "<group>"; };
+		134D1DED2E42144F00328E84 /* accordionBox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = accordionBox.swift; sourceTree = "<group>"; };
+		134D1DEF2E42378B00328E84 /* habitsVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = habitsVc.swift; sourceTree = "<group>"; };
 		135ABEFC2E01324D007ED73A /* breaksData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = breaksData.swift; sourceTree = "<group>"; };
-		135CBDAE2D967005003BA438 /* routine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = routine.swift; sourceTree = "<group>"; };
+		135CBDAE2D967005003BA438 /* routineData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = routineData.swift; sourceTree = "<group>"; };
 		1361E6E42DB76A1900E6DE3F /* unverifiedEmailVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = unverifiedEmailVc.swift; sourceTree = "<group>"; };
 		1364364A2DE1FA7400B90724 /* splashVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = splashVc.swift; sourceTree = "<group>"; };
 		137A3D7F2E0A69CB008E3CF0 /* popUpFocusGoalConfirmationVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = popUpFocusGoalConfirmationVc.swift; sourceTree = "<group>"; };
@@ -749,9 +757,9 @@
 		135CBDAD2D966CCC003BA438 /* Routine */ = {
 			isa = PBXGroup;
 			children = (
-				8F6138B528B7698300A45B1A /* visualizeInstructionsVc.swift */,
 				8FAC6C9C27806DCB008A4180 /* firstViewController.swift */,
 				8F99C8D52A13AE1D00FD2403 /* editHabitRoutineVc.swift */,
+				8F6138B528B7698300A45B1A /* visualizeInstructionsVc.swift */,
 				8FAC6CA027808125008A4180 /* timerViewcontroller.swift */,
 				8F050A0827842B8400F3CE17 /* thirdVc.swift */,
 				13AAC9E02D9819F7000AD619 /* customRoutineTimeVc.swift */,
@@ -759,7 +767,8 @@
 				8F94EF882836094400355E66 /* rememberNextHabitVc.swift */,
 				8F1E3F752B2ADC24005CE096 /* startAnotherHabitVc.swift */,
 				8F779DF92B80DD600011E1BE /* chooseHabitsVC.swift */,
-				135CBDAE2D967005003BA438 /* routine.swift */,
+				135CBDAE2D967005003BA438 /* routineData.swift */,
+				134D1DEF2E42378B00328E84 /* habitsVc.swift */,
 			);
 			path = Routine;
 			sourceTree = "<group>";
@@ -1180,6 +1189,7 @@
 				8FAC6C962780612B008A4180 /* mainWindowController.swift */,
 				8FAC6C8827805F6E008A4180 /* ViewController.swift */,
 				1364364A2DE1FA7400B90724 /* splashVc.swift */,
+				134D1DEB2E41E52300328E84 /* leftMenuVc.swift */,
 				135CBDAD2D966CCC003BA438 /* Routine */,
 				8F3A28972C22A429002AD2E3 /* Breaks */,
 				8F9BB8B82787307D00BB25D4 /* shutOffTimeVc.swift */,
@@ -1231,6 +1241,8 @@
 				8F050A0B278467B000F3CE17 /* FocusBear-Bridging-Header.h */,
 				8F8869CB2AE38CBB0089E109 /* searchableComboBox.swift */,
 				8FAC6C982780671E008A4180 /* globalFile.swift */,
+				130CE9A72E40C131004A6F04 /* mainWindowListBox.swift */,
+				134D1DED2E42144F00328E84 /* accordionBox.swift */,
 				13188D732DEEE30300E67A44 /* flaskServer.swift */,
 				8F0419452C353D4100481ACD /* getViewControllersObject.swift */,
 				8F3567202D3A71B200F62403 /* showHideWindows.swift */,
@@ -1238,8 +1250,8 @@
 				8F0419472C353DCA00481ACD /* allUserdefaults.swift */,
 				8FCD13AF2C2BD8AA005EEA63 /* Buttons.swift */,
 				274C9A92289BF8D40066F883 /* SettingsManager.swift */,
-				274E671528951DDC0030163F /* AllApi.swift */,
 				8F1456BB2D40B32600130B21 /* TabMatrics.swift */,
+				274E671528951DDC0030163F /* AllApi.swift */,
 				8F344A032D882532003D82A4 /* allCsvFilesData.swift */,
 				8F7DA75D2B1B412000B2E1CC /* pusherEvents.swift */,
 				8FD86E1B2A54303A004F6761 /* unusedCode.swift */,
@@ -1706,6 +1718,7 @@
 			files = (
 				8F8C3FD82A8CD865005CAF96 /* meetingDetactionVc.swift in Sources */,
 				8F2E993A2B31CC52001AF655 /* addOnsVc.swift in Sources */,
+				134D1DEC2E41E52300328E84 /* leftMenuVc.swift in Sources */,
 				8FA2A8962846262100675DFF /* smallCountDownVc.swift in Sources */,
 				8F6C10F427BD37F00013972F /* menuViewController.swift in Sources */,
 				8FBB72172A56E107004F52EA /* menuTourVc.swift in Sources */,
@@ -1743,10 +1756,12 @@
 				8FB50EFD27BE6AD100A7175B /* focusPreferencesVc.swift in Sources */,
 				8FD86E1E2A54376C004F6761 /* todoNotes.swift in Sources */,
 				8F861DBA2CB8F36A000BCF72 /* webViewLoadFailedVc.swift in Sources */,
+				134D1DEE2E42144F00328E84 /* accordionBox.swift in Sources */,
 				8FF1CD9B2A57D7340092AB9B /* menuTourPopoverVc.swift in Sources */,
 				8F378E262976701A00A43C06 /* shareFeedbackVc.swift in Sources */,
 				8FAB113B2B42ABDA006D1261 /* longTermGoalsVc.swift in Sources */,
 				8F37FD9B2C6F83A600440939 /* achieveWithFocusBearVc.swift in Sources */,
+				130CE9A82E40C131004A6F04 /* mainWindowListBox.swift in Sources */,
 				8F0A18572A8E4B9A00AFA623 /* focusBearModeVc.swift in Sources */,
 				8FAD22DB27CA526200CDC866 /* startingFocusModeVc.swift in Sources */,
 				8F8C3FD42A8CB297005CAF96 /* settingListItemVc.swift in Sources */,
@@ -1802,6 +1817,7 @@
 				274E0F4928902CF1000234A3 /* User.swift in Sources */,
 				8F212FE829DAFF02006620DF /* helpVc.swift in Sources */,
 				13188D742DEEE30300E67A44 /* flaskServer.swift in Sources */,
+				134D1DF02E42378B00328E84 /* habitsVc.swift in Sources */,
 				8FB222172BA865F400F3DA68 /* blankLayerWc.swift in Sources */,
 				8F889EA52C219CE1000CA3B6 /* takeBreaksInfoVc.swift in Sources */,
 				8F1E18A028EAF3FF00367413 /* macInfo.swift in Sources */,
@@ -1934,7 +1950,7 @@
 				8FF889722CA3DEBC00BD69E8 /* askProcrastinatingVc.swift in Sources */,
 				8F51EFB727E0741700EFF0A8 /* blockedUrlsVc.swift in Sources */,
 				8F07346B2C526AA1002FACE8 /* informationPopoverVc.swift in Sources */,
-				135CBDAF2D967009003BA438 /* routine.swift in Sources */,
+				135CBDAF2D967009003BA438 /* routineData.swift in Sources */,
 				8F4E34BD29BC52FB00E161F4 /* focusEndWarningVc.swift in Sources */,
 				8F09ACBF29703C1B00A0F1D0 /* allTracksVc.swift in Sources */,
 				8FAC6C972780612B008A4180 /* mainWindowController.swift in Sources */,
@@ -2236,7 +2252,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application: Focus Bear Pty Ltd (TCUD568B3U)";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 391;
+				CURRENT_PROJECT_VERSION = 395;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = TCUD568B3U;
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = TCUD568B3U;
@@ -2273,7 +2289,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application: Focus Bear Pty Ltd (TCUD568B3U)";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 391;
+				CURRENT_PROJECT_VERSION = 395;
 				DEVELOPMENT_TEAM = TCUD568B3U;
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = TCUD568B3U;
 				ENABLE_HARDENED_RUNTIME = YES;

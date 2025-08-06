@@ -92,7 +92,7 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
     
     func windowShouldClose(_ sender: NSWindow) -> Bool {
         addLog(text: "windowShouldClose delegate called")
-        let views = mainViewControllerObj?.view.subviews ?? []
+        let views = getHabitsVcObject().view.subviews ?? []
         if views.count != 1{// it means sub views are added so nothing will happen, user will need to close subviews first(logquantity view, password box)
             return false
         }

@@ -112,13 +112,13 @@ class skipHabitVc: NSViewController {
             }
         }
         if currentAction == ._VISUALIZE_{
-            mainViewControllerObj?.showThirdVc()
+            getHabitsVcObject().showThirdVc()
         }
         if currentAction == ._INPROGRESS_{
-            mainViewControllerObj?.showThirdVc()
+            getHabitsVcObject().showThirdVc()
         }
         if currentAction == ._START_{// break activity case
-            mainViewControllerObj?.showThirdVc()
+            getHabitsVcObject().showThirdVc()
         }
         
         if currentState == ._ACTIVITY_{

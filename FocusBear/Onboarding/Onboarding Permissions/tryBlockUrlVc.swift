@@ -108,7 +108,7 @@ class tryBlockUrlVc: NSViewController {
     
     override func viewWillDisappear() {
         hideOnboardingBellIcon(view: self.view)
-        self.view.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
+        self.view.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.assistiveTechHighWindow)))
     }
 
     @IBAction func btnLeftClicked(_ sender: Any) {
@@ -146,7 +146,7 @@ class tryBlockUrlVc: NSViewController {
             allApiObject.capturePosthog(event: "button-just-tried-those-browsers-clicked", metadata: [:])
         }
         self.view.window?.close()
-        if explainingPermissionsVcObj?.showingFromPomodoro ?? true{
+        if isExplainingPermissionsWindowShowingFromPomodoro{
             if SettingsManagerObject.isGeekModeEnabled{
                 appdelegate?.menuShowPomodoroModeView()
                 pomodoroVcObj?.textViewAchieve.string = pomodoroVcObj?.intentionToShowAgain ?? ""

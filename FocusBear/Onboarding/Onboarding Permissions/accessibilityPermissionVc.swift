@@ -204,6 +204,7 @@ class accessibilityPermissionVc: NSViewController {
             btnContinue.isHidden = false
             self.timer?.invalidate()
             btnContinueClicked(self)
+            menuViewControllerObj?.accessibilityPermissionGiven = true
             return;
         }
         if currentTimer >= totalDuration{
@@ -245,7 +246,7 @@ class accessibilityPermissionVc: NSViewController {
         if videoPlayer != nil{
             videoPlayer?.pause()
         }
-        self.view.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
+        self.view.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.assistiveTechHighWindow)))
     }
     
     @IBAction func btnContinueClicked(_ sender: Any) {

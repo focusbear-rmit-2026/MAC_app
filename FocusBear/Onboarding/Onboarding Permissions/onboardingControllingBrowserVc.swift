@@ -19,12 +19,15 @@ class onboardingControllingBrowserVc: NSViewController {
     
     var checkPermissionTimer:Timer?
     var arrBrowsers = [[String:Any]]()
+    var lastBrowserClicked:BROWSER?
+    var anyBrowserPermissionSet = false
     
     var buttonRequestPermissionText = "Request Permission"
     var enabledText = "✅  Enabled!"
     var accessibilityPermissionText = "(Accessibility permission given)"
     var allPermissionText = "(All needed permissions given)"
     var settingsFirefoxText = "Awaiting settings update in Firefox"
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.//
@@ -48,6 +51,13 @@ class onboardingControllingBrowserVc: NSViewController {
         }
         
 
+        allApiObject.capturePosthog(event: "permission-to-block-distractions-shown", metadata: [:])
+        addLog(text: "[user-action] permission-to-block-distractions-shown")
+        btnDidNotWork.buttonColor = NSColor.white.cgColor
+    }
+    
+    func reloadData(){
+        arrBrowsers.removeAll()
         let filemanager = FileManager.default
         
         if filemanager.fileExists(atPath: "/Applications/Safari.app"){
@@ -113,25 +123,41 @@ class onboardingControllingBrowserVc: NSViewController {
             heightScrollView.constant = 302
         }
         
-//        checkPermission()
-        
-        allApiObject.capturePosthog(event: "permission-to-block-distractions-shown", metadata: [:])
-        addLog(text: "[user-action] permission-to-block-distractions-shown")
-        btnDidNotWork.buttonColor = NSColor.white.cgColor
+        if let arrBrowsersInfo = UserDefaults.standard.object(forKey: kUserdefaultsAllBrowsersPermissionInfo) as? [[String : Any]]{
+            for info in arrBrowsersInfo{
+                let browserRawValue = info["browser"] as? Int ?? 0
+                let browserState = info["isEnabled"] as? Bool ?? false
+                for i in 0..<arrBrowsers.count{
+                    let browser = arrBrowsers[i]
+                    let rawValue = (browser["browser"] as? BROWSER)?.rawValue ?? 0
+                    if rawValue == browserRawValue{
+                        arrBrowsers[i]["isEnabled"] = browserState
+                        if browserState{
+                            self.anyBrowserPermissionSet = true
+                        }
+                        break;
+                    }
+                }
+            }
+            
+        }
+        tblView.reloadData()
     }
     
     override func viewDidAppear() {
         showOnboardingBellIcon(view: self.view, screen: "permission-to-block-distractions-screen")
         self.view.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.normalWindow)))
     }
+    
     override func viewWillDisappear() {
         checkPermissionTimer?.invalidate()
         hideOnboardingBellIcon(view: self.view)
-        self.view.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
+        self.view.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.assistiveTechHighWindow)))
     }
+    
     override func viewWillAppear() {
         UserDefaults.standard.set(true, forKey: kUserdefaultsControllingBrowserVcShown)
-        tblView.reloadData()
+        reloadData()
         if self.lastBrowserClicked == ._FIREFOX_ || self.lastBrowserClicked == ._SIGMA_OS_{
             startTimerCheckPermission()
         }
@@ -149,7 +175,7 @@ class onboardingControllingBrowserVc: NSViewController {
         }
     }
     
-    var lastBrowserClicked:BROWSER?
+    
     @objc func checkPermission(){
         let runningApps = NSWorkspace.shared.runningApplications
         guard let lastBrowserClicked = lastBrowserClicked else {
@@ -173,7 +199,9 @@ class onboardingControllingBrowserVc: NSViewController {
                                         DispatchQueue.main.async {
 //                                            self.btnContinue.isEnabled = true
                                             self.arrBrowsers[i]["isEnabled"] = true
-                                            
+                                            if UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) == nil{
+                                                UserDefaults.standard.set(true, forKey: kUserdefaultsBrowsersPermissionsSetByUser)
+                                            }
                                             
                                             var browserNameForPosthog = ""
                                             if browser == ._SAFARI_{
@@ -203,6 +231,10 @@ class onboardingControllingBrowserVc: NSViewController {
                                             self.checkPermissionTimer?.invalidate()
                                             self.lastBrowserClicked = nil
                                             self.tblView.reloadData()
+                                            self.saveBrowsersPermissionInfo()
+                                            
+                                            self.permissionGivenFromBrowser()
+                                            self.anyBrowserPermissionSet = true
                                         }
                                         
                                     }
@@ -222,7 +254,57 @@ class onboardingControllingBrowserVc: NSViewController {
         }
     }
     
+    func permissionGivenFromBrowser(){// added on 23/7/25 version 1.26.393
+        if preferencesWindowControllerObj != nil && permissionsVcObj != nil && settingsContainerVcObj != nil{
+            if preferencesWindowControllerObj?.window?.isVisible ?? false{
+                if let tabview = preferencesWindowControllerObj?.contentViewController as? preferencesTabViewController{
+                    if tabview.tabView.selectedTabViewItem?.identifier as? String == idSettings{
+                        if settingsContainerVcObj?.isPermissionsViewVisible ?? false{
+                            permissionsVcObj?.reloadData()
+                        }
+                    }
+                }
+            }
+        }
+        menuViewControllerObj?.browserPermissionGiven = true
+        menuViewControllerObj?.reloadPermission()
+    }
+    
     @IBAction func btnContinueClicked(_ sender: Any) {
+        addLog(text: "[user-action] btnContinueClicked")
+        if !self.anyBrowserPermissionSet{
+            addLog(text: "Haven’t granted permission to any browser: show alert")
+            let alert = NSAlert()// added on 23/7/25 version 1.26.393
+            alert.setSharingType()
+            alert.alertStyle = .informational
+            alert.messageText = "You haven’t granted permission to any browser, which could cause blocking issues. Do you want to proceed without giving permission?"
+            if let dic = configjson.value(forKey: "onboardingControllingBrowserVcInfo") as? NSDictionary{
+                alert.messageText = dic.value(forKey: "permissionNotGrantedText") as? String ?? alert.messageText
+            }
+            alert.addButton(withTitle: buttonCancelText)
+            alert.addButton(withTitle: buttonYesText)
+            
+            alert.buttons[0].isHighlighted = true
+            alert.buttons[0].keyEquivalent = "\r" // Enter key
+            
+
+            alert.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
+                if modalResponse == .alertSecondButtonReturn{
+                    self.closeView()
+                }
+            })
+        }else{
+            closeView()
+        }
+    }
+   
+    func closeView(){
+        addLog(text: "closeView")
+        saveBrowsersPermissionInfo()
+        self.view.window?.contentViewController = getTryBlockUrlVcObject()
+    }
+    
+    func saveBrowsersPermissionInfo(){
         var arrBrowsersInfo: [[String : Any]] = []
         for browserInfo in arrBrowsers{
             if let browser = browserInfo["browser"] as? BROWSER{
@@ -230,8 +312,8 @@ class onboardingControllingBrowserVc: NSViewController {
             }
         }
         UserDefaults.standard.set(arrBrowsersInfo, forKey: kUserdefaultsAllBrowsersPermissionInfo)
-        self.view.window?.contentViewController = getTryBlockUrlVcObject()
     }
+    
     @IBAction func btnDidNotWorkClicked(_ sender: Any) {
         allApiObject.capturePosthog(event: "onboarding-browser-permission-did-not-work", metadata: [:])
         self.view.window?.contentViewController = getTryBlockUrlVcObject()
@@ -359,6 +441,9 @@ extension onboardingControllingBrowserVc:NSTableViewDelegate, NSTableViewDataSou
                         self.arrBrowsers[row]["isEnabled"] = true
                         self.tblView.reloadData()
                         allApiObject.capturePosthog(event: "onboarding-granted-permission-\(browserNameForPosthog)", metadata: [:])
+                        self.saveBrowsersPermissionInfo()
+                        self.permissionGivenFromBrowser()
+                        self.anyBrowserPermissionSet = true
                     }
                 }else{
                     DispatchQueue.main.async {

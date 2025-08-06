@@ -246,7 +246,7 @@ class askQuitVc: NSViewController {
     @IBAction func btnBreakFourHoursClicked(_ sender: Any) {
         addLog(text: "[user-action] button BreakFourHours Clicked")
         if isPostponeInfoShowing{//
-            mainViewControllerObj?.refreshLastPostponeCount()
+            getHabitsVcObject().refreshLastPostponeCount()
             if SettingsManagerObject.isEasySkipEnabled{
                 postponeHabits()
             }else{
@@ -371,7 +371,7 @@ class askQuitVc: NSViewController {
     func postponeHabits(){
         addLog(text: "askQuitVc:- postponeHabits")
         let minutes = getMinutes()
-        mainViewControllerObj?.stopActivityCountDownTimer()
+        getHabitsVcObject().stopActivityCountDownTimer()
         
         setDocBarTo(isHide: false)
         if currentHabitPlaying != nil{
@@ -383,14 +383,14 @@ class askQuitVc: NSViewController {
                 }
             }
         }
-        mainViewControllerObj?.stopActivityTimer()
+        getHabitsVcObject().stopActivityTimer()
         if currentHabitPlaying != nil{
             closePupUpBlockIfVisible()
         }
         if currentState == ._MORNING_HABIT_{
-            mainViewControllerObj?.postponeMorningHabitFor(minutes: minutes, secondsToPostpone: nil, showAskFocusModeView: true, showAskIntention: true)
+            getHabitsVcObject().postponeMorningHabitFor(minutes: minutes, secondsToPostpone: nil, showAskFocusModeView: true, showAskIntention: true)
         }else if currentState == ._EVENING_HABIT_{
-            mainViewControllerObj?.postponeEveningHabitFor(minutes: minutes, secondsToPostpone: nil, showAskFocusModeView: true, showAskIntention: true)
+            getHabitsVcObject().postponeEveningHabitFor(minutes: minutes, secondsToPostpone: nil, showAskFocusModeView: true, showAskIntention: true)
         }
         
         if relaxModeWcObj != nil{

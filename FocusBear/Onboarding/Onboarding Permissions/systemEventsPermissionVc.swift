@@ -51,14 +51,17 @@ class systemEventsPermissionVc: NSViewController {
         btnContinue.isHidden = true
         lblDescription.isHidden = true
     }
+    
     override func viewDidAppear() {
         showOnboardingBellIcon(view: self.view, screen: "system-events-permission-screen")
         self.view.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.normalWindow)))
     }
+    
     override func viewWillDisappear() {
         hideOnboardingBellIcon(view: self.view)
-        self.view.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
+        self.view.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.assistiveTechHighWindow)))
     }
+    
     @IBAction func btnContinueClicked(_ sender: Any) {
         addLog(text: "[user-action] systemEventsPermissionVc:- Button can't grant System Events Permissions clicked")
         var titlePermissionsNotGranted = "Got it! We'll look into this for you."
@@ -85,6 +88,7 @@ class systemEventsPermissionVc: NSViewController {
         DispatchQueue.main.async {
             if checkAutomationPermissionWithAppleScript() {
                 self.timer?.invalidate()
+                menuViewControllerObj?.systemEventsPermissionGiven = true
                 var titlePermissionsGranted = "Great, you just allowed System Events permissions."
                 if let systemEventsPermissionVcInfo = configjson.value(forKey: "systemEventsPermissionVcInfo") as? NSDictionary{
                     titlePermissionsGranted = systemEventsPermissionVcInfo.value(forKey: "titlePermissionsGranted") as? String ?? titlePermissionsGranted

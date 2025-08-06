@@ -136,7 +136,7 @@ class addOnsVc: NSViewController {
         }
     }
     @IBAction func btnGetLateNoMoreClicked(_ sender: Any) {
-        if let url = URL(string: "https://www.focusbear.io/en/late-no-more"){
+        if let url = URL(string: "https://www.focusbear.io/late-no-more"){
             NSWorkspace.shared.open(url)
         }
     }

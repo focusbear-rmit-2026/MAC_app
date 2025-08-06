@@ -17,6 +17,7 @@ class microBreaksSettingsVc: NSViewController {
     let showBreaksInPostponeItemVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingToggleItemVc")) as? settingToggleItemVc
     let enableBreaksItemVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingToggleItemVc")) as? settingToggleItemVc
     let doNotBlockUrlsInPomodoroVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingToggleItemVc")) as? settingToggleItemVc
+    let detectNatualBreakEnabledVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingToggleItemVc")) as? settingToggleItemVc
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -28,6 +29,9 @@ class microBreaksSettingsVc: NSViewController {
         }
         stackView.subviews.removeAll()
 
+        var titleNaturalBreaks = "Detect natual breaks"
+        var descriptionNaturalBreaks = "Notifies you when a natural break is detected after being idle for more than 10 minutes, helping you maintain focus and productivity."
+        
         var titleDoNotBlockSuperDistractingUrls = "Do not block \"Super Distracting Sites\" during breaks"
         
         var checkBoxShowBreaksInCallText = "Show breaks while in call"
@@ -42,6 +46,7 @@ class microBreaksSettingsVc: NSViewController {
         if let microBreaksSettingsVcInfo = configjson.value(forKey: "microBreaksSettingsVcInfo") as? NSDictionary{
             enableBreaksText = microBreaksSettingsVcInfo.value(forKey: "enableBreaksText") as? String ?? enableBreaksText
             titleDoNotBlockSuperDistractingUrls = microBreaksSettingsVcInfo.value(forKey: "titleDoNotBlockSuperDistractingUrls") as? String ?? titleDoNotBlockSuperDistractingUrls
+            titleNaturalBreaks = microBreaksSettingsVcInfo.value(forKey: "titleNaturalBreaks") as? String ?? titleNaturalBreaks
         }
         var advanced_MicroBreak_ShowBreaksInPostpone = "When you postpone your morning/evening routine, you can choose to keep getting break reminders while you’re using your computer. This is helpful because often when you postpone, it’s because something bad has happened (otherwise you would’ve done your habits) and short breaks can help reduce stress."
         var advanced_MicroBreak_ShowBreaksInCall = "In large meetings where you’re not actively participating, it can be helpful to still have break reminders. We’ll choose office friendly break activities (e.g. chair stretches) and won’t play sound effects."
@@ -52,6 +57,7 @@ class microBreaksSettingsVc: NSViewController {
             advanced_MicroBreak_ShowBreaksInCall = tooltips.value(forKey: "advanced_MicroBreak_ShowBreaksInCall") as? String ?? advanced_MicroBreak_ShowBreaksInCall
             breaks_EnableBreaks = tooltips.value(forKey: "breaks_EnableBreaks") as? String ?? breaks_EnableBreaks
             pomodoro_DoNotBlockDistractingSites = tooltips.value(forKey: "pomodoro_DoNotBlockDistractingSites") as? String ?? pomodoro_DoNotBlockDistractingSites
+            descriptionNaturalBreaks = tooltips.value(forKey: "breaks_NaturalBreaks") as? String ?? descriptionNaturalBreaks
         }
         
         
@@ -77,18 +83,27 @@ class microBreaksSettingsVc: NSViewController {
         doNotBlockUrlsInPomodoroVcObj?.lblTitle.stringValue = titleDoNotBlockSuperDistractingUrls
         doNotBlockUrlsInPomodoroVcObj?.lblSubTitle.isHidden = true
         doNotBlockUrlsInPomodoroVcObj?.delegate = self
-        doNotBlockUrlsInPomodoroVcObj?.lineBottom.isHidden = true
         doNotBlockUrlsInPomodoroVcObj?.toolTip = pomodoro_DoNotBlockDistractingSites
+        
+        stackView.addView(detectNatualBreakEnabledVcObj!.view, in: .bottom)
+        detectNatualBreakEnabledVcObj?.lblTitle.stringValue = titleNaturalBreaks
+        detectNatualBreakEnabledVcObj?.lblSubTitle.isHidden = true
+        detectNatualBreakEnabledVcObj?.delegate = self
+        detectNatualBreakEnabledVcObj?.lineBottom.isHidden = true
+        detectNatualBreakEnabledVcObj?.toolTip = descriptionNaturalBreaks
+        
         
         arrForSearchFromSettings.append(["title": checkBoxShowBreaksInPostponeText, "tabId": idMicroBreaks, "object": showBreaksInPostponeItemVcObj!.bgBox as Any])
         arrForSearchFromSettings.append(["title": checkBoxShowBreaksInCallText, "tabId": idMicroBreaks, "object": showBreaksInCallItemVcObj!.bgBox as Any])
         arrForSearchFromSettings.append(["title": enableBreaksText, "tabId": idMicroBreaks, "object": enableBreaksItemVcObj!.bgBox as Any])
         arrForSearchFromSettings.append(["title": titleDoNotBlockSuperDistractingUrls, "tabId": idMicroBreaks, "object": doNotBlockUrlsInPomodoroVcObj?.bgBox as Any])
+        arrForSearchFromSettings.append(["title": titleNaturalBreaks, "tabId": idMicroBreaks, "object": detectNatualBreakEnabledVcObj?.bgBox as Any])
         
         arrForSearchFromSimpleModeSettings.append(["title": checkBoxShowBreaksInPostponeText, "tabId": idMicroBreaks, "object": showBreaksInPostponeItemVcObj!.bgBox as Any])
         arrForSearchFromSimpleModeSettings.append(["title": checkBoxShowBreaksInCallText, "tabId": idMicroBreaks, "object": showBreaksInCallItemVcObj!.bgBox as Any])
         arrForSearchFromSimpleModeSettings.append(["title": enableBreaksText, "tabId": idMicroBreaks, "object": enableBreaksItemVcObj!.bgBox as Any])
         arrForSearchFromSimpleModeSettings.append(["title": titleDoNotBlockSuperDistractingUrls, "tabId": idMicroBreaks, "object": doNotBlockUrlsInPomodoroVcObj?.bgBox as Any])
+        arrForSearchFromSimpleModeSettings.append(["title": titleNaturalBreaks, "tabId": idMicroBreaks, "object": detectNatualBreakEnabledVcObj?.bgBox as Any])
     }
     
     override func viewWillAppear() {
@@ -114,6 +129,12 @@ class microBreaksSettingsVc: NSViewController {
                 doNotBlockUrlsInPomodoroVcObj?.btnSwitch.state = .off
             }
         }
+        if SettingsManagerObject.isDetectNatualBreaksEnabled{
+            detectNatualBreakEnabledVcObj?.btnSwitch.state = .on
+        }else{
+            detectNatualBreakEnabledVcObj?.btnSwitch.state = .off
+        }
+        
     }
 
     @IBAction func btnBackClicked(_ sender: Any) {
@@ -155,6 +176,15 @@ extension microBreaksSettingsVc: SettingToggleItemDelegate{
                 UserDefaults.standard.set(true, forKey: SettingsManagerObject.kUserdefaultsDoNotBlockUrlsDuringSuperPomodoroBreaks)
             }else{
                 UserDefaults.standard.set(false, forKey: SettingsManagerObject.kUserdefaultsDoNotBlockUrlsDuringSuperPomodoroBreaks)
+            }
+        }else if object == detectNatualBreakEnabledVcObj{
+            SettingsManagerObject.isSettingsChanged = true
+            if state == .on{
+                SettingsManagerObject.isDetectNatualBreaksEnabled = true
+                allApiObject.capturePosthog(event: "settings-changed-enable-natual-breaks", metadata: [:])
+            }else{
+                SettingsManagerObject.isDetectNatualBreaksEnabled = false
+                allApiObject.capturePosthog(event: "settings-changed-disable-natual-breaks", metadata: [:])
             }
         }
     }

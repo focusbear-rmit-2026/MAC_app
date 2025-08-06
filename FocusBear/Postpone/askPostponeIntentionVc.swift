@@ -57,7 +57,7 @@ class askPostponeIntentionVc: NSViewController, NSTextViewDelegate {
         self.dismiss(self)
         allApiObject.capturePosthog(event: "postpone-intention", metadata: ["number-of-characters":"\(textView.string.count)"])
         if lastCurrentState == ._MORNING_HABIT_{
-            mainViewControllerObj?.postponeMorningHabitFor(minutes: minutes, secondsToPostpone: secondsToPostpone, showAskFocusModeView: showAskFocusModeView, showAskIntention: false)
+            getHabitsVcObject().postponeMorningHabitFor(minutes: minutes, secondsToPostpone: secondsToPostpone, showAskFocusModeView: showAskFocusModeView, showAskIntention: false)
             if easyPostponeWcObj?.window?.isVisible ?? false{
                 easyPostponeWcObj?.window?.close()
             }
@@ -71,7 +71,7 @@ class askPostponeIntentionVc: NSViewController, NSTextViewDelegate {
             }
             
         }else if lastCurrentState == ._EVENING_HABIT_{
-            mainViewControllerObj?.postponeEveningHabitFor(minutes: minutes, secondsToPostpone: secondsToPostpone, showAskFocusModeView: showAskFocusModeView, showAskIntention: false)
+            getHabitsVcObject().postponeEveningHabitFor(minutes: minutes, secondsToPostpone: secondsToPostpone, showAskFocusModeView: showAskFocusModeView, showAskIntention: false)
             if easyPostponeWcObj?.window?.isVisible ?? false{
                 easyPostponeWcObj?.window?.close()
             }
@@ -84,7 +84,7 @@ class askPostponeIntentionVc: NSViewController, NSTextViewDelegate {
                 }
             }
         }else if lastCurrentState == ._FOCUS_SUMMARY_{
-            mainViewControllerObj?.postponeFocusSummaryFor(minutes: minutes, showAskIntention: false)
+            getHabitsVcObject().postponeFocusSummaryFor(minutes: minutes, showAskIntention: false)
             if easyPostponeWcObj?.window?.isVisible ?? false{
                 easyPostponeWcObj?.window?.close()
             }

@@ -10,6 +10,28 @@ import Cocoa
 
 class ViewController: NSViewController {
     
+  
+    @IBOutlet weak var splitViewItemRightView: NSView!
+    @IBOutlet weak var splitViewItemLeftView: NSView!
+//    @IBOutlet weak var boxHelpAndSupport: mainWindowListBox!
+//    @IBOutlet weak var boxMotivation: mainWindowListBox!
+//    @IBOutlet weak var boxEditHabits: mainWindowListBox!
+//    @IBOutlet weak var boxSettings: mainWindowListBox!
+//    @IBOutlet weak var boxBlocks: mainWindowListBox!
+//    @IBOutlet weak var boxFocusModeSettings: mainWindowListBox!
+//    @IBOutlet weak var lblPreferencesItems: NSTextField!
+//    @IBOutlet weak var boxPreferences: NSBox!
+//    @IBOutlet weak var boxFocusMusic: mainWindowListBox!
+//    @IBOutlet weak var boxBrainDump: mainWindowListBox!
+//    @IBOutlet weak var boxTodoPlayer: mainWindowListBox!
+//    @IBOutlet weak var lblToolsItems: NSTextField!
+//    @IBOutlet weak var boxTools: NSBox!
+//    @IBOutlet weak var lblMainItems: NSTextField!
+//    @IBOutlet weak var boxMain: NSBox!
+//    @IBOutlet weak var boxMicroBreaks: mainWindowListBox!
+//    @IBOutlet weak var boxFocusSession: mainWindowListBox!
+//    @IBOutlet weak var boxDashboard: mainWindowListBox!
+//    @IBOutlet weak var boxHabits: mainWindowListBox!// todo remove
     @IBOutlet weak var boxTopButtons: NSBox!
     @IBOutlet weak var lblCurrentDateTime: NSTextField!
     @IBOutlet weak var boxMinimize: NSBox!
@@ -53,7 +75,79 @@ class ViewController: NSViewController {
             boxTopButtons.isHidden = true
         }
         
-
+//        // todo remove
+//        lblMainItems.stringValue = "MAIN"
+//        lblToolsItems.stringValue = "TOOLS"
+//        lblPreferencesItems.stringValue = "PREFERENCES"
+//        
+//        boxDashboard.imageIcon = NSImage(named: "brainDump")
+//        boxDashboard.title = "Dashboard"
+//        
+//        boxHabits.imageIcon = NSImage(named: NSImage.folderName)
+//        boxHabits.title = "Habits"
+//        
+//        
+//        boxFocusSession.imageIcon = NSImage(named: "start-pomodoro")
+//        boxFocusSession.title = "Start Focus Session"
+//        
+//        
+//        if #available(macOS 11.0, *) {
+//            boxMicroBreaks.imageIcon = NSImage(systemSymbolName: "figure.walk.circle.fill", accessibilityDescription: nil)
+//        } else {
+////            boxMicroBreaks.imageIcon = NSImage(systemSymbolName: "figure.walk.circle.fill", accessibilityDescription: nil) // todo menu mai bhi
+//        }
+//        
+//        boxMicroBreaks.title = "Start Micro Break"
+//        
+//        boxTodoPlayer.imageIcon = NSImage(named: "validIcon")
+//        boxTodoPlayer.title = "Todo Player / Todo List"
+//        
+//        boxBrainDump.imageIcon = NSImage(named: "brainDump")
+//        boxBrainDump.title = "Brain Dump"
+//        
+//        boxFocusMusic.imageIcon = NSImage(named: "music_albums_fill")
+//        boxFocusMusic.title = "Focus Music"
+//        
+//        boxFocusModeSettings.imageIcon = NSImage(named: "NSTouchBarQuickLookTemplate")
+//        boxFocusModeSettings.title = "Focus"
+//    
+//        if #available(macOS 11.0, *) {
+//            boxBlocks.imageIcon = NSImage(systemSymbolName: "bolt.circle", accessibilityDescription: nil)
+//        } else {
+//            boxBlocks.imageIcon = NSImage(named: NSImage.stopProgressTemplateName)
+//        }
+//        boxBlocks.title = "Blocks"
+//        
+//        
+//        if #available(macOS 11.0, *) {
+//            boxSettings.imageIcon = NSImage(systemSymbolName: "gearshape", accessibilityDescription: nil)
+//        } else {
+//            boxSettings.imageIcon = NSImage(named: "NSSmartBadgeTemplate")
+//        }
+//        boxSettings.title = "Settings"
+//
+//        
+//        if #available(macOS 11.0, *) {
+//            boxEditHabits.imageIcon = NSImage(systemSymbolName: "checkmark.rectangle", accessibilityDescription: nil)
+//        } else {
+//            boxEditHabits.imageIcon = NSImage(named: "checkmark")
+//        }
+//        boxEditHabits.title = "Edit Habits"
+//        
+//        
+//        if #available(macOS 11.0, *) {
+//            boxMotivation.imageIcon = NSImage(systemSymbolName: "person", accessibilityDescription: nil)
+//        } else {
+//            boxMotivation.imageIcon = NSImage(named: "NSTouchBarUserTemplate")
+//        }
+//        boxMotivation.title = "Motivation"
+//        
+//        boxHelpAndSupport.imageIcon = NSImage(named: NSImage.infoName)
+//        boxHelpAndSupport.title = "Help & Support"
+        
+        splitViewItemLeftView.subviews.removeAll()
+        splitViewItemLeftView.addSubview(getLeftMenuVcObject().view)
+        splitViewItemLeftView.addConstraints(subView: getLeftMenuVcObject().view)
     }
     
     var dateTimeTimer:Timer?
@@ -70,6 +164,7 @@ class ViewController: NSViewController {
             RunLoop.main.add((self.dateTimeTimer!), forMode: RunLoop.Mode.common)
         }
     }
+    
     @objc func setDateTime(){
         if let dict = UserDefaults.standard.persistentDomain(forName: "com.apple.menuextra.clock") {
             print(dict)
@@ -78,6 +173,7 @@ class ViewController: NSViewController {
             lblCurrentDateTime.stringValue = getStringFromDate(date: Date(), dateFormat: "EEE d MMM h:mm:ss")
         }
     }
+    
     override func viewWillAppear() {
         if checkIsFullScreenEnabled(){
             mainWindowControllerObj?.showFullSizeWindow()
@@ -132,11 +228,13 @@ class ViewController: NSViewController {
             boxMinimize.isHidden = false
         }
     }
+    
     override func mouseExited(with event: NSEvent) {
         if event.trackingArea == topButtonsTrackingArea{
             boxMinimize.isHidden = true
         }
     }
+    
     @IBAction func btnMinimizeClicked(_ sender: Any) {
         addLog(text: "[user-action] button Minimize Clicked")// added on 10/4/25 in 1.21.356
         abortCurrentState()
@@ -149,6 +247,7 @@ class ViewController: NSViewController {
             self.view.window?.styleMask.remove(.closable)
         }
     }
+    
     func showCloseButtons(){
         self.btnAbort.isHidden = false
         self.stackViewTopButtons.isHidden = false
@@ -156,6 +255,7 @@ class ViewController: NSViewController {
             self.view.window?.styleMask.insert(.closable)
         }
     }
+    
     @objc func showFocusSummaryView(){
         appdelegate!.checkSystemTimeAndShowWindow()
         if startTime == nil || shutOffTime == nil{
@@ -211,6 +311,7 @@ class ViewController: NSViewController {
         
         
     }
+    
     @objc func showDayEndFocusCompletedView(){
         currentState = ._FOCUS_SUMMARY_
         if !(mainWindowControllerObj?.window!.isVisible)! {
@@ -224,6 +325,7 @@ class ViewController: NSViewController {
         self.containerView.addSubview(focusCompletedFullScreenVcObj!.view)
         self.containerView.addConstraints(subView: focusCompletedFullScreenVcObj!.view)
     }
+    
     @objc func showMorningRoutineFocusCompletedView(){
         currentState = ._MORNING_HABIT_
         if !(mainWindowControllerObj?.window!.isVisible)! {
@@ -504,8 +606,8 @@ class ViewController: NSViewController {
                         }
                     }
                 }
-                mainWindowControllerObj?.window?.close()
-                hideBlankWindowInSecondaryMonitor()
+                //                mainWindowControllerObj?.window?.close() // todo
+                //                hideBlankWindowInSecondaryMonitor() // todo
                 
                 showEasyPostponeWindow()
                 stopActivityTimer()
@@ -548,8 +650,10 @@ class ViewController: NSViewController {
                         }
                     }
                 }
-                mainWindowControllerObj?.window?.close()
-                hideBlankWindowInSecondaryMonitor()
+                
+//                mainWindowControllerObj?.window?.close() // todo
+//                hideBlankWindowInSecondaryMonitor() // todo 
+                
                 showEasyPostponeWindow()
                 stopActivityTimer()
 
@@ -635,7 +739,7 @@ class ViewController: NSViewController {
                         closePupUpBlockIfVisible()
                     }
                 }else{
-                    postponeBreakActivitiesFor(minutes: breakAfterMinutes, secondsToPostpone: nil)
+                    postponeBreakActivitiesFor(minutes: breakAfterMinutes, secondsToPostpone: nil, isFromBreakWarningWindow:false)
                 }
             }else{
                 if currentAction == ._START_{// start state sirf first activity ki start mi hi hoti h fir  second activity ki start mai "end state hoti hai "
@@ -965,6 +1069,7 @@ class ViewController: NSViewController {
         currentAction = ._START_
         NSApplication.shared.activate(ignoringOtherApps: true)
     }
+    
     func showAskAppWorkVc(){
         addLog(text: "Showing Ask App Work view.")
         self.showCloseButtons()
@@ -976,6 +1081,7 @@ class ViewController: NSViewController {
         currentAction = ._START_
         NSApplication.shared.activate(ignoringOtherApps: true)
     }
+    
     func showAchieveWithFocusBearVc(){
         addLog(text: "Showing Achieve With Focus Bear view.")
         allApiObject.capturePosthog(event: "what-to-achieve-with-focus-bear-screen-shown", metadata: [:])
@@ -1500,7 +1606,7 @@ class ViewController: NSViewController {
     
     func morningHabitOver() {
         addLog(text:"current morning Habit Over called")
-        mainViewControllerObj?.stopActivityTimer()
+        getHabitsVcObject().stopActivityTimer()
         if mainWindowControllerObj?.window?.isVisible == false{
             mainWindowControllerObj?.window?.setIsVisible(true)
             showBlankWindowInSecondaryMonitor()
@@ -1828,7 +1934,7 @@ class ViewController: NSViewController {
     func eveningHabitOver() {// current evening habit over
         addLog(text:"current evening Habit Over called")
         UserDefaults.standard.removeObject(forKey: kUserdefaultsShutOffCancelledForEveningRoutine)
-        mainViewControllerObj?.stopActivityTimer()
+        getHabitsVcObject().stopActivityTimer()
         if mainWindowControllerObj?.window?.isVisible == false{
             mainWindowControllerObj?.window?.setIsVisible(true)
             showBlankWindowInSecondaryMonitor()
@@ -2038,6 +2144,7 @@ class ViewController: NSViewController {
         UserDefaults.standard.removeObject(forKey: kUserdefaultsShutOffCancelledForEveningRoutine)
         UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
         UserDefaults.standard.removeObject(forKey: kUserdefaultsLastCustomRoutineHabitSavedNotes)
+        leftMenuVcObj?.habitOver()
         shutOffMac()
         currentHabitIndex = -1
     }
@@ -2114,7 +2221,7 @@ class ViewController: NSViewController {
     
     func customRoutineHabitOver() {
         addLog(text:"current custom routine Habit Over called")
-        mainViewControllerObj?.stopActivityTimer()
+        getHabitsVcObject().stopActivityTimer()
         if mainWindowControllerObj?.window?.isVisible == false{
             mainWindowControllerObj?.window?.setIsVisible(true)
             showBlankWindowInSecondaryMonitor()
@@ -2279,9 +2386,6 @@ class ViewController: NSViewController {
     
     func changeActivity() {//start another break activity
         addLog(text:"current change Activity called")
-        if UserDefaults.standard.object(forKey: kUserdefaultsLastBreaksStartTime) == nil{// if first activity was not started by user
-            UserDefaults.standard.set(Date(), forKey: kUserdefaultsLastBreaksStartTime)
-        }
         self.showCloseButtons()
         removeSubViews()
         containerView.addSubview(timerViewcontrollerObj!.view)
@@ -2354,6 +2458,7 @@ class ViewController: NSViewController {
                 showLateNoMoreWindow()
             }
         }
+        leftMenuVcObj?.habitOver()
     }
     
     @objc func unlockMachine() {
@@ -2424,7 +2529,7 @@ class ViewController: NSViewController {
         }
     }
     var isBreakActivityPostponeInsideAllowedHabit = false// using this beacuse we dont want reset activity timer again (in resuming habit) if user has postponed activity inside allow app habit 
-    func postponeBreakActivitiesFor(minutes:Int, secondsToPostpone:Int?){
+    func postponeBreakActivitiesFor(minutes:Int, secondsToPostpone:Int?, isFromBreakWarningWindow:Bool){
         var seconds = 0
         if secondsToPostpone != nil{
             seconds = secondsToPostpone!
@@ -2440,7 +2545,8 @@ class ViewController: NSViewController {
         let infoDic:[String:Any] = ["postponeCount":activityPostponeCount, "date":Date()]
         UserDefaults.standard.set(infoDic, forKey: kUserdefaultsLastBreakActivityPostponeInfo)
 
-        if currentAction != ._START_ && currentAction != ._BRAIN_DUMP_{
+        // isFromBreakWarningWindow added on 24/7/25 v 1.26.394
+        if currentAction != ._START_ && currentAction != ._BRAIN_DUMP_ && !isFromBreakWarningWindow{
             if let startTime = UserDefaults.standard.object(forKey: kUserdefaultsLastBreaksStartTime) as? Date{
                 let currentDate = Date()
                 let diffSeconds = Calendar.current.dateComponents([.second], from: startTime, to: currentDate).second ?? 0
@@ -2449,6 +2555,7 @@ class ViewController: NSViewController {
                     arrDuration.append(diffSeconds)
                     UserDefaults.standard.set(arrDuration, forKey: kUserdefaultsArrayBreaksDurations)
                 }
+                UserDefaults.standard.set(currentDate, forKey: kUserdefaultsLastBreakEndTime)
             }
         }
 
@@ -2636,8 +2743,8 @@ class ViewController: NSViewController {
                     isLastActivityStoppedInRunningState = false
                     lastActivityRunningId = ""
                 }
-                hideCloseButtons()
-                removeSubViews()
+//                hideCloseButtons() // todo
+//                removeSubViews() // todo
                 
                 //Extend postpone time not working for 2 minute warning popup#923
                 if smallCountDownWcObj != nil && currentState == ._POSTPON_MORNING_HABIT_{
@@ -2648,11 +2755,12 @@ class ViewController: NSViewController {
                     }
                 }
                 
-                
-                closeTaskPlayerWindowIfVisible()
+                if !isFocusModeOn(){
+                    closeTaskPlayerWindowIfVisible()
+                }
                 currentState = ._POSTPON_MORNING_HABIT_
-                mainWindowControllerObj?.window?.close()
-                hideBlankWindowInSecondaryMonitor()
+//                mainWindowControllerObj?.window?.close() // todo
+//                hideBlankWindowInSecondaryMonitor() // todo
             }
             
             if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
@@ -2728,6 +2836,7 @@ class ViewController: NSViewController {
             writeStringToHabitInfo(isFinishTime: true, activityName: "")
             
             menuViewControllerObj?.reloadIfNeeded()
+            leftMenuVcObj?.habitOver()
         }
     }
     
@@ -2748,8 +2857,9 @@ class ViewController: NSViewController {
         hideCloseButtons()
         removeSubViews()
 
-        
-        closeTaskPlayerWindowIfVisible()
+        if !isFocusModeOn(){
+            closeTaskPlayerWindowIfVisible()
+        }
         mainWindowControllerObj?.window?.close()
         hideBlankWindowInSecondaryMonitor()
         currentState = ._NOTHING_
@@ -2797,6 +2907,8 @@ class ViewController: NSViewController {
         }
         
         menuViewControllerObj?.reloadIfNeeded()
+        isCustomRoutineWasRunningBetweenMorningHabit = false
+        isCustomRoutineWasRunningBetweenEveningHabit = false
     }
     
     
@@ -2844,10 +2956,12 @@ class ViewController: NSViewController {
                 }
             }
             //
-            closeTaskPlayerWindowIfVisible()
+            if !isFocusModeOn(){
+                closeTaskPlayerWindowIfVisible()
+            }
             currentState = ._POSTPON_EVENING_HABIT_
-            mainWindowControllerObj?.window?.close()
-            hideBlankWindowInSecondaryMonitor()
+//            mainWindowControllerObj?.window?.close() // todo
+//            hideBlankWindowInSecondaryMonitor() // todo
             if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
                 if smallCountDownWcObj?.window != nil{
                     if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
@@ -2979,7 +3093,7 @@ class ViewController: NSViewController {
     }
     
     @objc func showPostponeEndNotification(){
-        if currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_ || currentState == ._POSTPON_MORNING_HABIT_ || (currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeMorningHabit) || (currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeEveningHabit){
+        if currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_ || currentState == ._POSTPON_MORNING_HABIT_ || (currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeMorningHabit && !isCustomRoutineWasRunningBetweenMorningHabit) || (currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeEveningHabit && !isCustomRoutineWasRunningBetweenEveningHabit){
             var msg = "Habit resumes in"
             if let common = configjson.value(forKey: "common") as? NSDictionary{
                 msg = common.value(forKey: "postponeEndsText") as? String ?? msg
@@ -3014,7 +3128,7 @@ class ViewController: NSViewController {
             currentState = ._NOTHING_
             closePupUpBlockIfVisible()
             currentActivityPlaying = nil
-        }else if currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeMorningHabit{
+        }else if currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeMorningHabit && !isCustomRoutineWasRunningBetweenMorningHabit{
             stopActivityCountDownTimer()
             if currentActivityPlaying != nil{
                 if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
@@ -3061,7 +3175,7 @@ class ViewController: NSViewController {
             currentState = ._NOTHING_
             closePupUpBlockIfVisible()
             currentActivityPlaying = nil
-        }else if currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeEveningHabit{
+        }else if currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeEveningHabit && !isCustomRoutineWasRunningBetweenEveningHabit{
             stopActivityCountDownTimer()
             if currentActivityPlaying != nil{
                 if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
@@ -3121,6 +3235,7 @@ class ViewController: NSViewController {
                 arrDuration.append(diffSeconds)
                 UserDefaults.standard.set(arrDuration, forKey: kUserdefaultsArrayBreaksDurations)
             }
+            UserDefaults.standard.set(currentDate, forKey: kUserdefaultsLastBreakEndTime)
         }
         
         currentActivityIndex = -1
@@ -3181,6 +3296,8 @@ class ViewController: NSViewController {
        
         unlockMachine()
         currentState = ._NOTHING_
+        isCustomRoutineWasRunningBetweenMorningHabit = false
+        isCustomRoutineWasRunningBetweenEveningHabit = false
     }
     
     func breathingFinishedUnlockMachine(){
@@ -3553,6 +3670,7 @@ class ViewController: NSViewController {
             
             showBreakWarningWindow()
             currentState = ._ACTIVITY_
+            currentAction = ._START_// added on 24/7/25 v 1.26.394
             shouldShowPomodoroAfterBreak = false
         }
     }

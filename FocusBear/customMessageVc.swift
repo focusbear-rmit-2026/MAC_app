@@ -21,6 +21,6 @@ class customMessageVc: NSViewController {
     
     @IBAction func btnOkClicked(_ sender: Any) {
         self.view.removeFromSuperview()
-        mainViewControllerObj?.okClickedFromCustomMessage()
+        getHabitsVcObject().okClickedFromCustomMessage()
     }
 }

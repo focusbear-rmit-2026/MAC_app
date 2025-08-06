@@ -5714,17 +5714,17 @@ DQ
             <objects>
                 <viewController storyboardIdentifier="naturalBreaksDetectionVc" id="VKK-dx-fU7" customClass="naturalBreaksDetectionVc" customModule="Focus_Bear" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" id="NVn-2W-bfG">
-                        <rect key="frame" x="0.0" y="0.0" width="261" height="285"/>
+                        <rect key="frame" x="0.0" y="0.0" width="261" height="247"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
                             <box boxType="custom" borderWidth="0.0" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="vVP-3D-acL" customClass="customBoxBg" customModule="Focus_Bear" customModuleProvider="target">
-                                <rect key="frame" x="0.0" y="0.0" width="261" height="285"/>
+                                <rect key="frame" x="0.0" y="0.0" width="261" height="247"/>
                                 <view key="contentView" id="Ldu-A9-E6u">
-                                    <rect key="frame" x="0.0" y="0.0" width="261" height="285"/>
+                                    <rect key="frame" x="0.0" y="0.0" width="261" height="247"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
                                         <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="zHI-tk-f6m">
-                                            <rect key="frame" x="96" y="200" width="70" height="70"/>
+                                            <rect key="frame" x="96" y="162" width="70" height="70"/>
                                             <constraints>
                                                 <constraint firstAttribute="width" constant="70" id="3r0-7T-GIw"/>
                                                 <constraint firstAttribute="height" constant="70" id="yDT-0s-aoq"/>
@@ -5732,18 +5732,18 @@ DQ
                                             <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyUpOrDown" image="NSApplicationIcon" id="lCj-EI-f4x"/>
                                         </imageView>
                                         <stackView distribution="fill" orientation="vertical" alignment="leading" spacing="10" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Z81-vK-6sv">
-                                            <rect key="frame" x="20" y="99" width="221" height="86"/>
+                                            <rect key="frame" x="20" y="99" width="221" height="48"/>
                                             <subviews>
                                                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ooX-cv-FjW">
-                                                    <rect key="frame" x="-2" y="38" width="225" height="48"/>
+                                                    <rect key="frame" x="-2" y="0.0" width="225" height="48"/>
                                                     <textFieldCell key="cell" alignment="center" title="xxIt looks like you're on a break. Well done on taking care of yourself." id="0J6-mk-iyB">
                                                         <font key="font" metaFont="systemBold"/>
                                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                                         <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                                     </textFieldCell>
                                                 </textField>
-                                                <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Yvs-La-ptF">
-                                                    <rect key="frame" x="-2" y="0.0" width="223" height="28"/>
+                                                <textField hidden="YES" focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Yvs-La-ptF">
+                                                    <rect key="frame" x="-2" y="20" width="223" height="28"/>
                                                     <textFieldCell key="cell" alignment="center" id="UwW-0c-2OY">
                                                         <font key="font" metaFont="smallSystem"/>
                                                         <string key="title">xxReason: Google is a search engine and
@@ -5791,10 +5791,37 @@ DQ
                                                         <action selector="btnSecondClicked:" target="VKK-dx-fU7" id="Ht0-aX-JYS"/>
                                                     </connections>
                                                 </button>
+                                                <box hidden="YES" boxType="custom" borderType="line" borderWidth="0.0" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="Qud-il-Wax">
+                                                    <rect key="frame" x="0.0" y="41" width="229" height="26"/>
+                                                    <view key="contentView" id="RQo-wi-ZeN">
+                                                        <rect key="frame" x="0.0" y="0.0" width="229" height="26"/>
+                                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                                        <subviews>
+                                                            <button verticalHuggingPriority="751" translatesAutoresizingMaskIntoConstraints="NO" id="XAd-ie-M9L">
+                                                                <rect key="frame" x="-2" y="-1" width="231" height="18"/>
+                                                                <buttonCell key="cell" type="check" title="xxDon't show this again" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="EjL-t6-8cA">
+                                                                    <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                                    <font key="font" metaFont="system"/>
+                                                                </buttonCell>
+                                                                <connections>
+                                                                    <action selector="checkBoxDontShowAgainClicked:" target="VKK-dx-fU7" id="kHN-gh-3Ha"/>
+                                                                </connections>
+                                                            </button>
+                                                        </subviews>
+                                                        <constraints>
+                                                            <constraint firstItem="XAd-ie-M9L" firstAttribute="leading" secondItem="RQo-wi-ZeN" secondAttribute="leading" id="0jj-X7-agN"/>
+                                                            <constraint firstAttribute="bottom" secondItem="XAd-ie-M9L" secondAttribute="bottom" id="2AU-sn-CIh"/>
+                                                            <constraint firstItem="XAd-ie-M9L" firstAttribute="top" secondItem="RQo-wi-ZeN" secondAttribute="top" constant="10" id="BhD-py-YTJ"/>
+                                                            <constraint firstAttribute="trailing" secondItem="XAd-ie-M9L" secondAttribute="trailing" id="qlK-z0-8pT"/>
+                                                        </constraints>
+                                                    </view>
+                                                </box>
                                             </subviews>
                                             <constraints>
                                                 <constraint firstItem="i6u-WZ-DGw" firstAttribute="height" secondItem="Q2p-ed-hFa" secondAttribute="height" id="0p2-CP-A3r"/>
+                                                <constraint firstAttribute="trailing" secondItem="Qud-il-Wax" secondAttribute="trailing" id="DpO-BB-cCJ"/>
                                                 <constraint firstAttribute="trailing" secondItem="Q2p-ed-hFa" secondAttribute="trailing" id="JOj-E6-hud"/>
+                                                <constraint firstItem="Qud-il-Wax" firstAttribute="leading" secondItem="Ra6-5N-yBl" secondAttribute="leading" id="XPf-k5-zZM"/>
                                                 <constraint firstItem="i6u-WZ-DGw" firstAttribute="leading" secondItem="Ra6-5N-yBl" secondAttribute="leading" id="ihJ-tb-jpa"/>
                                                 <constraint firstAttribute="trailing" secondItem="i6u-WZ-DGw" secondAttribute="trailing" id="jFz-tp-NAb"/>
                                                 <constraint firstItem="Q2p-ed-hFa" firstAttribute="leading" secondItem="Ra6-5N-yBl" secondAttribute="leading" id="mQb-Xk-3DD"/>
@@ -5802,8 +5829,10 @@ DQ
                                             <visibilityPriorities>
                                                 <integer value="1000"/>
                                                 <integer value="1000"/>
+                                                <integer value="1000"/>
                                             </visibilityPriorities>
                                             <customSpacing>
+                                                <real value="3.4028234663852886e+38"/>
                                                 <real value="3.4028234663852886e+38"/>
                                                 <real value="3.4028234663852886e+38"/>
                                             </customSpacing>
@@ -5834,8 +5863,10 @@ DQ
                         </constraints>
                     </view>
                     <connections>
+                        <outlet property="boxDontShowAgain" destination="Qud-il-Wax" id="fuC-xg-PqH"/>
                         <outlet property="btnFirst" destination="Q2p-ed-hFa" id="a70-zO-HiR"/>
                         <outlet property="btnSecond" destination="i6u-WZ-DGw" id="dv5-33-5Ih"/>
+                        <outlet property="checkBoxDontShowAgain" destination="XAd-ie-M9L" id="dGP-HT-SYg"/>
                         <outlet property="lblSubTitle" destination="Yvs-La-ptF" id="9YR-n0-Odh"/>
                         <outlet property="lblTitle" destination="ooX-cv-FjW" id="zrP-23-2qq"/>
                         <outlet property="widthBox" destination="B0e-rA-Sqm" id="TtG-vl-wMV"/>
@@ -6232,7 +6263,7 @@ DQ
                 </viewController>
                 <customObject id="KVy-i5-Zti" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-813" y="2881"/>
+            <point key="canvasLocation" x="-819" y="2909"/>
         </scene>
         <!--Alert Max Tab Limit Vc-->
         <scene sceneID="lgY-bw-ZZH">
@@ -12468,8 +12499,8 @@ DQ
                                                             <rect key="frame" x="79" y="2" width="354" height="28"/>
                                                             <datePickerCell key="cell" borderStyle="bezel" alignment="left" useCurrentDate="YES" id="IJY-cs-LOX">
                                                                 <font key="font" metaFont="system"/>
-                                                                <date key="date" timeIntervalSinceReferenceDate="774255508.52052295">
-                                                                    <!--2025-07-15 06:58:28 +0000-->
+                                                                <date key="date" timeIntervalSinceReferenceDate="776003048.17345595">
+                                                                    <!--2025-08-04 12:24:08 +0000-->
                                                                 </date>
                                                                 <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
                                                                 <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -13155,8 +13186,8 @@ Gw
                 <windowController storyboardIdentifier="taskPlayerWc" id="5Cy-js-u7e" customClass="taskPlayerWc" customModule="Focus_Bear" customModuleProvider="target" sceneMemberID="viewController">
                     <window key="window" title="Focus Bear " allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" releasedWhenClosed="NO" visibleAtLaunch="NO" frameAutosaveName="" animationBehavior="default" id="hO6-eB-3ZB">
                         <windowStyleMask key="styleMask" titled="YES" closable="YES"/>
-                        <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
-                        <rect key="contentRect" x="294" y="277" width="480" height="306"/>
+                        <windowPositionMask key="initialPositionMask" leftStrut="YES"/>
+                        <rect key="contentRect" x="0.0" y="357" width="480" height="306"/>
                         <rect key="screenRect" x="0.0" y="0.0" width="1920" height="1055"/>
                         <view key="contentView" id="vhO-9j-EAm">
                             <rect key="frame" x="0.0" y="0.0" width="480" height="306"/>

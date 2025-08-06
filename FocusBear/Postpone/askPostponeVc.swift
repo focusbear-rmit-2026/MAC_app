@@ -50,17 +50,17 @@ class askPostponeVc: NSViewController {
             lblTimer.isHidden = true
             self.view.removeFromSuperview()
             if currentAction == ._INPROGRESS_{
-                mainViewControllerObj?.abortCancel()
+                getHabitsVcObject().abortCancel()
             }else if currentAction == ._START_{
-                mainViewControllerObj?.showCloseButtons()
+                getHabitsVcObject().showCloseButtons()
             }else if currentAction == ._END_{
-                mainViewControllerObj?.showCloseButtons()
+                getHabitsVcObject().showCloseButtons()
             }else if currentAction == ._BRAIN_DUMP_{
-                mainViewControllerObj?.showCloseButtons()
+                getHabitsVcObject().showCloseButtons()
             }
         }else{
             self.view.removeFromSuperview()
-            mainViewControllerObj?.abortCancel()
+            getHabitsVcObject().abortCancel()
             self.timer?.invalidate()
             self.timer = nil
         }
@@ -285,19 +285,19 @@ class askPostponeVc: NSViewController {
                 
                 if shouldAskPassword() && SettingsManagerObject.isPasswordRequireInSkipMorning{
                     self.view.removeFromSuperview()
-                    mainViewControllerObj?.showPasswordView()
+                    getHabitsVcObject().showPasswordView()
                     enterPasswordVcObj?.parentVc = self
                     
                 }else{
                     activityPostponeCount += 1
                     self.view.removeFromSuperview()
-                    mainViewControllerObj?.postponeMorningHabitFor(minutes: postponeTime, secondsToPostpone: nil, showAskFocusModeView: true, showAskIntention: true)
+                    getHabitsVcObject().postponeMorningHabitFor(minutes: postponeTime, secondsToPostpone: nil, showAskFocusModeView: true, showAskIntention: true)
                 }
                 
             }else{
                 activityPostponeCount += 1
                 self.view.removeFromSuperview()
-                mainViewControllerObj?.postponeMorningHabitFor(minutes: postponeTime, secondsToPostpone: nil, showAskFocusModeView: true, showAskIntention: true)
+                getHabitsVcObject().postponeMorningHabitFor(minutes: postponeTime, secondsToPostpone: nil, showAskFocusModeView: true, showAskIntention: true)
             }
             
         }else if currentState == ._EVENING_HABIT_{
@@ -307,29 +307,29 @@ class askPostponeVc: NSViewController {
                     if isHighPrioritySequenceGoing{// allready asked password if high Priority Sequence is Going
                         self.view.removeFromSuperview()
                         activityPostponeCount += 1
-                        mainViewControllerObj?.postponeEveningHabitFor(minutes: postponeTime, secondsToPostpone: nil, showAskFocusModeView: true, showAskIntention: true)
+                        getHabitsVcObject().postponeEveningHabitFor(minutes: postponeTime, secondsToPostpone: nil, showAskFocusModeView: true, showAskIntention: true)
                         
                     }else{
                         if SettingsManagerObject.isPasswordRequireInSkipEvening{
                             self.view.removeFromSuperview()
-                            mainViewControllerObj?.showPasswordView()
+                            getHabitsVcObject().showPasswordView()
                             enterPasswordVcObj?.parentVc = self
                         }else{
                             activityPostponeCount += 1
                             self.view.removeFromSuperview()
-                            mainViewControllerObj?.postponeEveningHabitFor(minutes: postponeTime, secondsToPostpone: nil, showAskFocusModeView: true, showAskIntention: true)
+                            getHabitsVcObject().postponeEveningHabitFor(minutes: postponeTime, secondsToPostpone: nil, showAskFocusModeView: true, showAskIntention: true)
                         }
                     }
                 }else{
                     activityPostponeCount += 1
                     self.view.removeFromSuperview()
-                    mainViewControllerObj?.postponeEveningHabitFor(minutes: postponeTime, secondsToPostpone: nil, showAskFocusModeView: true, showAskIntention: true)
+                    getHabitsVcObject().postponeEveningHabitFor(minutes: postponeTime, secondsToPostpone: nil, showAskFocusModeView: true, showAskIntention: true)
                 }
                 
             }else{
                 self.view.removeFromSuperview()
                 activityPostponeCount += 1
-                mainViewControllerObj?.postponeEveningHabitFor(minutes: postponeTime, secondsToPostpone: nil, showAskFocusModeView: true, showAskIntention: true)
+                getHabitsVcObject().postponeEveningHabitFor(minutes: postponeTime, secondsToPostpone: nil, showAskFocusModeView: true, showAskIntention: true)
             }
             
         }else if currentState == ._ACTIVITY_{
@@ -340,7 +340,7 @@ class askPostponeVc: NSViewController {
                 addLog(text: "Ask postpone view - Postpone Break Activitie")
                 activityPostponeCount += 1
                 self.view.removeFromSuperview()
-                mainViewControllerObj?.postponeBreakActivitiesFor(minutes: postponeTime, secondsToPostpone: nil)
+                getHabitsVcObject().postponeBreakActivitiesFor(minutes: postponeTime, secondsToPostpone: nil, isFromBreakWarningWindow: false)
             }
         }else if currentState == ._FOCUS_SUMMARY_{
             self.view.removeFromSuperview()
@@ -365,13 +365,13 @@ class askPostponeVc: NSViewController {
                     }
                 }
                 if shouldShowPasswordView{
-                    mainViewControllerObj?.showPasswordView()
+                    getHabitsVcObject().showPasswordView()
                     enterPasswordVcObj?.parentVc = self
                 }else{
-                    mainViewControllerObj?.postponeFocusSummaryFor(minutes: postponeTime, showAskIntention: true)
+                    getHabitsVcObject().postponeFocusSummaryFor(minutes: postponeTime, showAskIntention: true)
                 }
             }else{
-                mainViewControllerObj?.postponeFocusSummaryFor(minutes: postponeTime, showAskIntention: true)
+                getHabitsVcObject().postponeFocusSummaryFor(minutes: postponeTime, showAskIntention: true)
             }
         }
 
@@ -398,12 +398,12 @@ class askPostponeVc: NSViewController {
                 
                 addLog(text: "[user-action] Ask postpone view - Skip Break Activitie Clicked")
                 self.view.removeFromSuperview()
-                mainViewControllerObj?.postponeBreakActivitiesFor(minutes: breakAfterMinutes, secondsToPostpone: nil)// we will use "postponeBreakActivitiesFor" function to skip break activity beacuse in "setActivitytimer" func there is no code to start morning habit again if break activity started from morning or evening routine(allowed app habit)
+                getHabitsVcObject().postponeBreakActivitiesFor(minutes: breakAfterMinutes, secondsToPostpone: nil, isFromBreakWarningWindow: false)// we will use "postponeBreakActivitiesFor" function to skip break activity beacuse in "setActivitytimer" func there is no code to start morning habit again if break activity started from morning or evening routine(allowed app habit)
             }
         }else{
             addLog(text: "[user-action] Ask postpone view - button Abort Clicked")
             self.view.removeFromSuperview()
-            mainViewControllerObj?.processAborting()
+            getHabitsVcObject().processAborting()
         }
         
     }
@@ -499,10 +499,10 @@ class askPostponeVc: NSViewController {
             self.timer = nil
             lblTimer.isHidden = true
             self.view.removeFromSuperview()
-            mainViewControllerObj?.showCloseButtons()
+            getHabitsVcObject().showCloseButtons()
         }else{
             self.view.removeFromSuperview()
-            mainViewControllerObj?.abortCancel()
+            getHabitsVcObject().abortCancel()
             self.timer?.invalidate()
             self.timer = nil
         }

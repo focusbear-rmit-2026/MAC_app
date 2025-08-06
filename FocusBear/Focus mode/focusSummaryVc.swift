@@ -593,12 +593,12 @@ class focusSummaryVc: NSViewController {
             }
         }else{
             addLog(text: "[user-action] button I still need to work more Clicked from focus summary")
-            mainViewControllerObj?.abortCurrentState()
+            getHabitsVcObject().abortCurrentState()
         }
     }
     
     func postponeFocusSummaryForOneMinute(){
-        mainViewControllerObj?.giveOneMoreMinuteBeforeShutOffMac()
+        getHabitsVcObject().giveOneMoreMinuteBeforeShutOffMac()
         viewVisibleCount += 1
     }
 }

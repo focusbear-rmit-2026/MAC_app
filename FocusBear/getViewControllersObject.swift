@@ -343,7 +343,7 @@ var permissionBlockDistractionWcObj:commonWindowController?
 func getPermissionBlockDistractionWindowObject()->commonWindowController{
     if permissionBlockDistractionWcObj == nil{
         permissionBlockDistractionWcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
-        permissionBlockDistractionWcObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
+        permissionBlockDistractionWcObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.assistiveTechHighWindow)))
         permissionBlockDistractionWcObj?.window?.title = appName
     }
     return permissionBlockDistractionWcObj!
@@ -2220,3 +2220,22 @@ func getPopUpSaveThisTaskForLaterVcObject()->popUpSaveThisTaskForLaterVc{
 }
 
 
+//leftMenuVc
+var leftMenuVcObj:leftMenuVc?
+func getLeftMenuVcObject()->leftMenuVc{
+    if leftMenuVcObj == nil{
+        leftMenuVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("leftMenuVc")) as? leftMenuVc
+    }
+    return leftMenuVcObj!
+}
+
+
+
+//habitsVc
+var habitsVcObj:habitsVc?
+func getHabitsVcObject()->habitsVc{
+    if habitsVcObj == nil{
+        habitsVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("habitsVc")) as? habitsVc
+    }
+    return habitsVcObj!
+}

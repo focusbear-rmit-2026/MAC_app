@@ -83,7 +83,6 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
         
         trackingAreaPlayFocusMusic = NSTrackingArea.init(rect: self.btnStartFocusMusic.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
         self.btnStartFocusMusic.addTrackingArea(trackingAreaPlayFocusMusic!)
-        
     }
     
     override func viewWillAppear() {

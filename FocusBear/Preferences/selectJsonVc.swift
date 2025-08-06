@@ -595,9 +595,9 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
                                 }
                                 
                                 if currentAction == ._END_ && (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._CUSTOM_ROUTINE_){
-                                    if (mainViewControllerObj?.containerView.subviews.contains(thirdVcObj!.view))!{
+                                    if (getHabitsVcObject().containerView.subviews.contains(thirdVcObj!.view))!{
                                         if focusCompletedForActivityVcObj != nil{
-                                            if (mainViewControllerObj?.view.subviews.contains((focusCompletedForActivityVcObj!.view)))!{
+                                            if (getHabitsVcObject().view.subviews.contains((focusCompletedForActivityVcObj!.view))){
                                                 focusCompletedForActivityVcObj?.textFieldAchieve.stringValue = taskString
                                                 focusCompletedForActivityVcObj?.textFieldAchieve.setFocus()
                                                 currentFocusModeIndex = focusCompletedForActivityVcObj?.currentFocusModeIndex ?? 0
@@ -684,7 +684,7 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
                 }else{
                     if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_{
                         if (mainWindowControllerObj?.window?.isVisible ?? false) && editHabitRoutineVcObj != nil{
-                            editHabitRoutineVcObj?.alertSettingsNotValid()
+                            editHabitRoutineVcObj?.alertSettingsNotValid()//
                         }
                     }
                     if blockingScheduleVcObj != nil{
@@ -716,7 +716,7 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
                         }
                     }
                     catch{
-                        
+                        print(error.localizedDescription)
                     }
                 }
             }

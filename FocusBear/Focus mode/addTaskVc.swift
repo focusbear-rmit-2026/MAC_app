@@ -51,6 +51,10 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
     var hiddenTaskTabViewItem: NSTabViewItem?
     var alertExtendPostpone: NSAlert?
     let enterPasswordVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("enterPasswordVc")) as? enterPasswordVc
+    var focusModeFocusedTitles = [String]()
+    var focusModeDecentTitles = [String]()
+    var focusModeDistractedTitles = [String]()
+    var titleExtendFocusMode = "You are doing well!"
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -63,6 +67,14 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
         webView.configuration.userContentController.add(handler, name: "close_todo_focus_end_ui")
         
         btnEnableAdvancedAnalytics.titleColor = NSColor.systemBlue
+        
+        focusModeFocusedTitles = ["You crushed it!", "You were in the zone!", "Deep work accomplished!"]
+        focusModeDecentTitles = ["Not bad", "Decent session"]
+        focusModeDistractedTitles = ["A few distractions crept in", "Lock in your focus for the next one"]
+        
+        
+        
+        
         btnMoreOptions.title = "More Stats"
         lblTitleStats.stringValue = "Stats"
         lblTitleFocusAlignmentScore.stringValue = "Focus Alignment Score"
@@ -83,9 +95,7 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
         lblSelectMinutesToExtend.stringValue = "Select minutes to extend:"
         lblTitleExtendFocus.stringValue = "Still in the flow? Extend the session"
         lblIntention.stringValue = "Your intention for this focus mode was:- \"<INTENTION>\""
-        lblTitle.stringValue = "You are doing well!"
-        
-        
+        lblTitle.stringValue = titleExtendFocusMode
         
         
         if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
@@ -110,13 +120,15 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
                 lblSelectMinutesToExtend.stringValue = focusCompletedInfo.value(forKey: "extendFocusMinutesText") as? String ?? lblSelectMinutesToExtend.stringValue
                 lblTitleExtendFocus.stringValue = focusCompletedInfo.value(forKey: "askExtendFocusText") as? String ?? lblTitleExtendFocus.stringValue
                 lblIntention.stringValue = focusCompletedInfo.value(forKey: "intentionText") as? String ?? lblIntention.stringValue
-                lblTitle.stringValue = focusCompletedInfo.value(forKey: "titleExtendFocusMode") as? String ?? lblTitle.stringValue
+                titleExtendFocusMode = focusCompletedInfo.value(forKey: "titleExtendFocusMode") as? String ?? titleExtendFocusMode
                 btnMoreOptions.title = focusCompletedInfo.value(forKey: "buttonMoreOptionsText") as? String ?? btnMoreOptions.title
+                focusModeFocusedTitles = focusCompletedInfo.value(forKey: "focusModeFocusedTitles") as? [String] ?? focusModeFocusedTitles
+                focusModeDecentTitles = focusCompletedInfo.value(forKey: "focusModeDecentTitles") as? [String] ?? focusModeDecentTitles
+                focusModeDistractedTitles = focusCompletedInfo.value(forKey: "focusModeDistractedTitles") as? [String] ?? focusModeDistractedTitles
+                
             }
         }
-        
-        
-        
+        lblTitle.stringValue = titleExtendFocusMode
         btnContinueHabit.title = buttonContinueText
         
         popUpBtnSelectMinutes.removeAllItems()
@@ -176,7 +188,28 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
             let deepWorkDurationForAlignmentScore = (duration * score) / 100
             lblDeepFocusTime.stringValue = getStringTimeFromSeconds(seconds: Int(deepWorkDurationForAlignmentScore))
             finalDuration = deepWorkDurationForAlignmentScore
+            
+            if currentFocusAlignmentScore > 90 {
+                lblTitle.stringValue = focusModeFocusedTitles.randomElement() ?? ""
+            }else if currentFocusAlignmentScore > 70{
+                lblTitle.stringValue = focusModeDecentTitles.randomElement() ?? ""
+            }else{
+                lblTitle.stringValue = focusModeDistractedTitles.randomElement() ?? ""
+            }
+            for i in 0..<arrFocusType.count{
+                if arrFocusType[i]["id"] as? String  == focusCompletedVcObj?.currentFocusModeId ?? ""{
+                    if let isDefault = arrFocusType[i]["isDefault"] as? Bool{
+                        if  isDefault{
+                            lblTitle.stringValue = titleExtendFocusMode
+                        }
+                    }
+                    break;
+                }
+            }
+            
         }else{
+            lblTitle.stringValue = titleExtendFocusMode
+            
             boxFocusAlignmentScore.isHidden = true
             lblDeepFocusTime.stringValue = getStringTimeFromSeconds(seconds: Int(duration))
         }
@@ -190,7 +223,7 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
         }else{
 
             if mainWindowControllerObj?.window?.isVisible ?? false{
-                if mainViewControllerObj?.containerView.subviews.first == focusCompletedFullScreenVcObj?.view{
+                if getHabitsVcObject().containerView.subviews.first == focusCompletedFullScreenVcObj?.view{
                     lblAverageTimeSpentPerTab.stringValue = focusCompletedFullScreenVcObj?.lblAverageTimeSpentPerTab.stringValue ?? ""
                 }else{
                     if focusCompletedVcObj?.lblAverageTimeSpentPerTab != nil{
@@ -385,7 +418,7 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
     @IBAction func btnExtendSessionClicked(_ sender: Any) {
         let totalMinutes = Int(popUpBtnSelectMinutes.title) ?? 0
         if currentState == ._POSTPON_MORNING_HABIT_ || currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_{
-            if mainViewControllerObj?.postponeTimer != nil {
+            if getHabitsVcObject().postponeTimer != nil {
                 if mainViewControllerObj!.postponeTimer!.isValid{
                     let currentTime = Date()
                     let breakTime = mainViewControllerObj!.postponeTimer!.fireDate
@@ -412,14 +445,14 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
                             if modalResponse == .alertFirstButtonReturn{
                                 if currentState == ._POSTPON_MORNING_HABIT_{
                                     if SettingsManagerObject.isEasySkipEnabled{
-                                        mainViewControllerObj?.postponeMorningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
+                                        getHabitsVcObject().postponeMorningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
                                         self.extendFocusMode()
                                     }else{
                                         if SettingsManagerObject.isPasswordRequireInSkipMorning && shouldAskPassword(){
                                             self.presentAsSheet(self.enterPasswordVcObj!)
                                             self.enterPasswordVcObj?.parentVc = self
                                         }else{
-                                            mainViewControllerObj?.postponeMorningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
+                                            getHabitsVcObject().postponeMorningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
                                             self.extendFocusMode()
                                         }
                                     }
@@ -451,9 +484,9 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
                                         self.enterPasswordVcObj?.parentVc = self
                                     }else{
                                         if currentState == ._EVENING_HABIT_{
-                                            mainViewControllerObj?.postponeEveningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
+                                            getHabitsVcObject().postponeEveningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
                                         }else if currentState == ._POSTPON_FOCUS_SUMMARY_{
-                                            mainViewControllerObj?.postponeFocusSummaryFor(minutes: totalMinutes + 2, showAskIntention: false)
+                                            getHabitsVcObject().postponeFocusSummaryFor(minutes: totalMinutes + 2, showAskIntention: false)
                                         }
                                         self.extendFocusMode()
                                     }
@@ -530,6 +563,7 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
         appdelegate?.setFocusModeTimerForExtendAfterComplete(hour: nil, minute: minutesToExtend)
         closePomodoroWindowIOfVisible()
         appdelegate!.setIntentionInBrainDumpWindow()
+        showTaskPlayerWindow(totalDuration: focusModeMinutesToPerform, intention: whatToAchieveInFocusBlock, automatically:false)
     }
     
     @IBAction func popUpBtnSelectMinutesClicked(_ sender: Any) {

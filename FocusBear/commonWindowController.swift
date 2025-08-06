@@ -98,7 +98,7 @@ class commonWindowController: NSWindowController, NSWindowDelegate {
         if self == breakWarningWcObj{
             breakWarningVcObj?.timer?.invalidate()
             activityPostponeCount += 1
-            mainViewControllerObj?.postponeBreakActivitiesFor(minutes: 5, secondsToPostpone: nil)
+            getHabitsVcObject().postponeBreakActivitiesFor(minutes: 5, secondsToPostpone: nil, isFromBreakWarningWindow: true)
             return true
         }
         

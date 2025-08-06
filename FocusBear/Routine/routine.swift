@@ -9,6 +9,9 @@
 var isCustomRoutineWasRunningInPostponeMorningHabit = false
 var isCustomRoutineWasRunningInPostponeEveningHabit = false
 
+var isCustomRoutineWasRunningBetweenMorningHabit = false
+var isCustomRoutineWasRunningBetweenEveningHabit = false
+
 var isBreakActivityExecuteFromMorningHabit = false
 var isBreakActivityExecuteFromEveningHabit = false
 
@@ -178,6 +181,8 @@ struct activityChoice {
 
 var currentRoutineIndex = 0
 func startCustomRoutine(index:Int, isOnDemand:Bool){
+    isCustomRoutineWasRunningBetweenMorningHabit = false
+    isCustomRoutineWasRunningBetweenEveningHabit = false
     if currentState == ._POSTPON_MORNING_HABIT_{
         isCustomRoutineWasRunningInPostponeMorningHabit = true
         isCustomRoutineWasRunningInPostponeEveningHabit = false
@@ -287,7 +292,7 @@ func checkCustomRoutineTime(){
     // will not excute during morning routine and shutoff time
     
     if isPurchased == false && daysLeft <= 0{//
-        // will not execute custom rouine if app if subscription is active
+        // will execute custom rouine if app subscription is active
         return;
     }
     
@@ -442,6 +447,193 @@ func checkCustomRoutineTime(){
         }
     }
 }
+
+func getListCustomRoutineTime()->[routine]{
+    var arrCustomRoutineTimeHabit = [routine]()
+    if isPurchased == false && daysLeft <= 0{//
+        // will  execute custom rouine if app subscription is active
+        return [];
+    }
+    
+    for i in 0..<arrAllCustomRoutine.count{
+        
+        if !arrAllCustomRoutine[i].triggerOnDemand{
+            
+            if let skipDate = arrAllCustomRoutine[i].skipForDate{
+                if Calendar.current.isDateInToday(skipDate){
+                    continue;
+                }
+            }
+            
+            let currentDate = Date()
+            var startDate = currentDate
+            var endDate = currentDate
+            
+            let startTimeRoutine = arrAllCustomRoutine[i].startTime
+            let endTimeRoutine = arrAllCustomRoutine[i].endTime
+            let nextSheduledTimeRoutine = arrAllCustomRoutine[i].nextSheduledTime
+            
+            
+            if startTimeRoutine != nil{
+                startDate = Calendar.current.date(bySettingHour: startTimeRoutine!.hour, minute: startTimeRoutine!.minute, second: startTimeRoutine!.second, of: currentDate)!// start time objectfrom start time var
+                endDate = Calendar.current.date(bySettingHour: endTimeRoutine!.hour, minute: endTimeRoutine!.minute, second: endTimeRoutine!.second, of: currentDate)!// end time objectfrom from end time var
+                if let lastCompletedSequence = arrAllCustomRoutine[i].lastCompletedSequence{
+                    if lastCompletedSequence.compare(startDate) == .orderedDescending{
+                        continue;
+                    }
+                }
+            }
+            
+            // check is current routine is allowd for today or not
+            
+            let currentWeekDay = Date().dayOfWeek()
+            var isAllowedCurrentRoutine = false
+            
+            if arrAllCustomRoutine[i].days_of_week.contains(where: {$0.compare("all", options: .caseInsensitive) == .orderedSame}) {
+                isAllowedCurrentRoutine = true
+            }else if arrAllCustomRoutine[i].days_of_week.contains(where: {$0.compare("weekdays", options: .caseInsensitive) == .orderedSame}) {
+                if !currentWeekDay.localizedCaseInsensitiveContains("sat") && !currentWeekDay.localizedCaseInsensitiveContains("sat"){
+                    isAllowedCurrentRoutine = true
+                }
+            }else if arrAllCustomRoutine[i].days_of_week.contains(where: {$0.compare("weekend", options: .caseInsensitive) == .orderedSame}) {
+                if currentWeekDay.localizedCaseInsensitiveContains("sat") || currentWeekDay.localizedCaseInsensitiveContains("sat"){
+                    isAllowedCurrentRoutine = true
+                }
+            }else if arrAllCustomRoutine[i].days_of_week.contains(where: {$0.compare(currentWeekDay, options: .caseInsensitive) == .orderedSame}) {
+                isAllowedCurrentRoutine = true
+            }
+            
+            
+            if !isAllowedCurrentRoutine{
+                continue;
+            }
+            
+            
+            var isRoutineTime = false
+            
+            if endDate.compare(startDate) == .orderedDescending{// end date is greater then start date. normal case
+                if currentDate.compare(endDate) == .orderedAscending  && currentDate.compare(startDate) == .orderedDescending{
+                    isRoutineTime = true
+                }
+                
+            }else if currentDate.compare(endDate) == .orderedAscending  || currentDate.compare(startDate) == .orderedDescending{// startdate is 10 pm and end date is 2 am // end date is lower then start date
+                isRoutineTime = true
+            }
+            
+            
+            
+            if let nextSheduledTimeRoutine = nextSheduledTimeRoutine{ // is postpone state
+                if isRoutineTime{
+                    let startDate = nextSheduledTimeRoutine.addingTimeInterval(-5)
+                    let endDate = nextSheduledTimeRoutine.addingTimeInterval(10)
+                    
+                    
+                    isRoutineTime = false
+                    if endDate.compare(startDate) == .orderedDescending{// end date is greater then start date. normal case
+                        if currentDate.compare(endDate) == .orderedAscending  && currentDate.compare(startDate) == .orderedDescending{
+                            isRoutineTime = true
+                        }
+                        
+                    }else if currentDate.compare(endDate) == .orderedAscending  || currentDate.compare(startDate) == .orderedDescending{
+                        isRoutineTime = true// end date is lower then start date
+                    }
+                    
+                }else{
+                    arrAllCustomRoutine[i].nextSheduledTime = nil// if no routine time then make it nil. beacuse this is not useful now. its time has gone now reset it
+                }
+            }
+
+            if isRoutineTime{
+                arrAllCustomRoutine[i].nextSheduledTime = nil
+                arrCustomRoutineTimeHabit.append(arrAllCustomRoutine[i])
+            }else{
+                // if no routine time and nextSheduledTimeRoutine is passed then make it nil. beacuse this is not useful now. its time has gone now reset it
+                
+                if let nextSheduledTime = arrAllCustomRoutine[i].nextSheduledTime{
+                    if currentDate.compare(nextSheduledTime) == .orderedDescending{//>
+                        arrAllCustomRoutine[i].nextSheduledTime = nil
+                    }
+                }
+            }
+        }
+    }
+    return arrCustomRoutineTimeHabit
+}
+
+
+func isCustomRoutineTime(id:String, completion: @escaping (Bool,Int,Int) -> Void){
+    if isProcessingCustomRoutine {
+        completion(false, 0, 0)
+        return;
+    }
+    let list = getListCustomRoutineTime()
+    if list.count == 0{
+        completion(false, 0, 0)
+        return;
+    }
+    var isRoutineFound = false
+    for routine in list{
+        if routine.sequenceId == id{
+            
+            for i in 0..<arrAllCustomRoutine.count{
+                if arrAllCustomRoutine[i].sequenceId == id{
+                    isRoutineFound = true
+                    currentRoutineIndex = i
+                    isProcessingCustomRoutine = true
+                    
+                    allApiObject.getLastActivityInfo(completionHandler: { json in
+                        DispatchQueue.main.async {
+                            if json != nil{
+                                
+                                if let todayRoutineProgress = json?.value(forKey: "today_routine_progress") as? NSDictionary{
+                                    if let customRoutines = todayRoutineProgress.value(forKey: "custom_routines") as? [NSDictionary]{
+                                        let sequenceID = arrAllCustomRoutine[currentRoutineIndex].sequenceId
+                                        for routine in customRoutines {
+                                            if let todaySequenceId = routine.value(forKey: "sequence_id") as? String, let status = routine.value(forKey: "status") as? String{
+                                                if todaySequenceId == sequenceID{
+                                                    if status.lowercased() == "completed"{
+                                                        isProcessingCustomRoutine = false
+                                                        arrAllCustomRoutine[i].lastCompletedSequence = Date()
+                                                        completion(false, 0, 0)
+                                                        return;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            isProcessingCustomRoutine = false
+                            var totalSecondsRoutine = 0
+                            for habit in arrAllCustomRoutine[i].arrAllHabits{
+                                if habit.useTimer{
+                                    totalSecondsRoutine += habit.durationSeconds
+                                }else{
+                                    totalSecondsRoutine += 5 * 60
+                                }
+                                
+                            }
+                            
+                            
+                            completion(true, currentRoutineIndex, totalSecondsRoutine)
+                            return;
+                        }
+                    })
+                    break;
+                }
+            }
+            break
+        }
+    }
+    if !isRoutineFound{
+        completion(false, 0, 0)
+        return;
+    }
+}
+
+
+
 
 //skipped activities will always there in completed activities
 func startCustomRoutmieHabitsCall(routineIndex:Int, activityId:String?, skippedActivities:[String], completedActivities:[String], needToCreateActivityId:Bool = false){

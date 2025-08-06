@@ -446,6 +446,7 @@ class customLoginVc: NSViewController {
         self.view.window?.close()
         UserDefaults.standard.removeObject(forKey: kUserdefaultsLastBreaksStartTime)
         UserDefaults.standard.removeObject(forKey: kUserdefaultsArrayBreaksDurations)
+        UserDefaults.standard.removeObject(forKey: kUserdefaultsLastBreakEndTime)
         appdelegate!.statusbutton?.action = nil
         appdelegate!.user = AuthUser(from: credentials.accessToken)
         allApiObject.capturePosthog(event: "login-homemade", metadata: [:])

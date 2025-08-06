@@ -71,6 +71,8 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
     var menuItemSkipHabit: NSMenuItem!
     var menuItemChooseHabit: NSMenuItem!
     var menuItemChooseVideo: NSMenuItem!
+    var arrStartCustomRoutineMenu = [NSMenuItem]()
+    var isActivityPaused = false
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -148,11 +150,14 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         btnTabCheckList.isHidden = true
         boxTutorial.isHidden = true
     }
+
+    
     override func viewWillAppear() {
         self.timerHideBearAnimation?.invalidate()
         self.timerHideBearAnimation = nil
         btnSkipHabit.isHidden = true
     }
+    
     override func viewWillDisappear() {
         self.timerHideBearAnimation?.invalidate()
         self.timerHideBearAnimation = nil
@@ -264,6 +269,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             setAccessTokenToTutorialWebView()
         }
     }
+    
     func setAccessTokenToTutorialWebView(){
         var theme = "LIGHT"
         if preferencesWindowControllerObj != nil{
@@ -284,13 +290,14 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             print(html)
         })
     }
+    
     var isVideoLoding = false{
         didSet{
             if isVideoLoding{
-                mainViewControllerObj?.btnAbort.isEnabled = false
+                getHabitsVcObject().btnAbort.isEnabled = false
                 btnPause.isEnabled = false
             }else{
-                mainViewControllerObj?.btnAbort.isEnabled = true
+                getHabitsVcObject().btnAbort.isEnabled = true
                 btnPause.isEnabled = true
                 currentTimer = startTimerValue
                 startTimerValue = 0
@@ -343,27 +350,44 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             isVideoLodded = true
             tabCount += 1
             btnTabVideo.isHidden = false
+            var videoID: String?
+            
             if videoUrl.lowercased().contains("watch?v="){
                 if videoUrl.contains("&"){// removing additional param
                     if let firstItem =  videoUrl.components(separatedBy: "&").first{
                         videoUrl = firstItem
                     }
                 }
+                videoID = videoUrl.components(separatedBy: "watch?v=").last
+                
                 videoUrl = videoUrl.replacingOccurrences(of: "watch?v=", with: "embed/")
             }else{
                 // doing this beacuse if video is embedded than it will not play
                 if videoUrl.lowercased().contains("https://youtu.be/"){
                     if let lastItem =  videoUrl.components(separatedBy: "/").last{
-                       videoUrl = "https://www.youtube.com/embed/" + lastItem
+                        videoID = lastItem
+                        videoUrl = "https://www.youtube.com/embed/" + lastItem
                     }
                     
+                }else if videoUrl.lowercased().contains("embed/") {
+                    videoID = videoUrl.components(separatedBy: "/").last
                 }
             }
+            
+            let videoIDUnwrapped = videoID ?? ""
+            
             if !SettingsManagerObject.isOfficeModeEnabled || currentState == ._BREATHING_{
                 if videoUrl.contains("?"){
                     videoUrl = videoUrl + "&autoplay=1"
                 }else{
                     videoUrl = videoUrl + "?autoplay=1"
+                }
+                
+                //If a video finishes before the end of a habit, automatically restart it #1476 28/7/25 v 1.26.395
+                if videoUrl.contains("?"){
+                    videoUrl = videoUrl + "&loop=1&playlist=\(videoIDUnwrapped)"
+                }else{
+                    videoUrl = videoUrl + "?loop=1&playlist=\(videoIDUnwrapped)"
                 }
             }
             
@@ -376,6 +400,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                 // Fallback on earlier versions
             }
             self.webView.load(request)
+
             allApiObject.capturePosthog(event: "play-youtube-video-in-activity", metadata: [:])
             
             if Reachability.isConnectedToNetwork() == false {
@@ -629,8 +654,8 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         }
         
         isAnyAllowedFocusModeActivityRunning = false
-        if !(mainViewControllerObj?.isBreakActivityPostponeInsideAllowedHabit ?? false){
-            mainViewControllerObj?.stopActivityTimer()
+        if !(getHabitsVcObject().isBreakActivityPostponeInsideAllowedHabit ?? false){
+            getHabitsVcObject().stopActivityTimer()
         }
         if isFocusModeOnOrPaused(){
             addLog(text: "Activity start:- Focus Mode Finished")
@@ -1595,27 +1620,33 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                 DispatchQueue.main.async {
                     self.loadBlankUrl()
                     if currentState == ._BREATHING_{
-                        mainViewControllerObj?.breathingOver(isSKipped: false)
+                        getHabitsVcObject().breathingOver(isSKipped: false)
                     }else if currentState == ._MORNING_HABIT_ {
-                        mainViewControllerObj?.morningHabitOver()
+                        getHabitsVcObject().morningHabitOver()
                     }else if currentState == ._EVENING_HABIT_ {
-                        mainViewControllerObj?.eveningHabitOver()
+                        getHabitsVcObject().eveningHabitOver()
                     }else if currentState == ._ACTIVITY_{
-                        mainViewControllerObj?.activityOver()
+                        getHabitsVcObject().activityOver()
                     }else if currentState == ._SPECIAL_ACTIVITY_{
-                        mainViewControllerObj?.specialActivityOver()
+                        getHabitsVcObject().specialActivityOver()
                     }else if currentState == ._CUSTOM_ROUTINE_{
-                        mainViewControllerObj?.customRoutineHabitOver()
+                        getHabitsVcObject().customRoutineHabitOver()
                     }
                 }
             }
         }
     }
-    var isActivityPaused = false
+    
+    
     @IBAction func btnPauseClicked(_ sender: Any) {
         if boxButtonTabViews.isHidden == false && isVideoLodded{
             btnTabVideoClicked(self)
         }
+
+        for menu in arrStartCustomRoutineMenu{// remove all custom routine menu items
+            moreActionsMenu.removeItem(menu)
+        }
+        arrStartCustomRoutineMenu.removeAll()
         
         if isActivityPaused{
             addLog(text:"[user-action]Ongoing activity:-btn Resume Clicked")
@@ -1683,6 +1714,9 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                         addLog(text:"Show menu Item Select Another Habit")
                     }
                     saveCurrentHabitCurrentDurationDone(id: arrFilteredMorningHabits[currentHabitIndex].id, duration: currentTimer)
+                    
+                    enableMenuForStartCustomRoutine()
+                    
                 }else if currentState == ._EVENING_HABIT_{
                     if currentHabitIndex == arrFilteredEveningHabits.count - 1{
                         menuItemChooseHabit.isHidden = true
@@ -1715,8 +1749,10 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                             menuItemChooseHabit.isHidden = false
                             addLog(text:"Show menu Item Select Another Habit")
                         }
+                        
                     }
                     saveCurrentHabitCurrentDurationDone(id: arrFilteredEveningHabits[currentHabitIndex].id, duration: currentTimer)
+                    enableMenuForStartCustomRoutine()
                 }else if currentState == ._CUSTOM_ROUTINE_{
                     if currentHabitIndex == arrAllCustomRoutine[currentHabitIndex].arrAllFilteredHabits.count - 1{
                         menuItemChooseHabit.isHidden = true
@@ -1752,7 +1788,26 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                 btnSkipHabit.title = buttonMoreActionsText
             }
         }
-        
+    }
+    
+    func enableMenuForStartCustomRoutine(){
+        arrStartCustomRoutineMenu.removeAll()
+        let arrCustomRoutine = getListCustomRoutineTime()
+        if arrCustomRoutine.count != 0{
+            var menuItemCustomRoutineText = "Change to another routine - <ROUTINE>"
+            if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
+                menuItemCustomRoutineText = activityInfo.value(forKey: "menuItemCustomRoutineText") as? String ?? menuItemCustomRoutineText
+            }
+            
+            for routine in arrCustomRoutine{
+                let menuItemCustomRoutineTitle = menuItemCustomRoutineText.replacingOccurrences(of: "<ROUTINE>", with: routine.title)
+                let menuItemCustomRoutine = NSMenuItem(title: menuItemCustomRoutineTitle, action: #selector(menuItemStartCustomRoutineClicked), keyEquivalent: "")
+                menuItemCustomRoutine.target = self
+                menuItemCustomRoutine.identifier = NSUserInterfaceItemIdentifier(routine.sequenceId)
+                moreActionsMenu.addItem(menuItemCustomRoutine)
+                arrStartCustomRoutineMenu.append(menuItemCustomRoutine)
+            }
+        }
     }
     
     @IBAction func btnIAmDoneClicked(_ sender: Any) {
@@ -1768,17 +1823,17 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             DispatchQueue.main.async {
                 self.loadBlankUrl()
                 if currentState == ._BREATHING_{
-                    mainViewControllerObj?.breathingOver(isSKipped: false)
+                    getHabitsVcObject().breathingOver(isSKipped: false)
                 }else if currentState == ._MORNING_HABIT_ {
-                    mainViewControllerObj?.morningHabitOver()
+                    getHabitsVcObject().morningHabitOver()
                 }else if currentState == ._EVENING_HABIT_ {
-                    mainViewControllerObj?.eveningHabitOver()
+                    getHabitsVcObject().eveningHabitOver()
                 }else if currentState == ._ACTIVITY_{
-                    mainViewControllerObj?.activityOver()
+                    getHabitsVcObject().activityOver()
                 }else if currentState == ._SPECIAL_ACTIVITY_{
-                    mainViewControllerObj?.specialActivityOver()
+                    getHabitsVcObject().specialActivityOver()
                 }else if currentState == ._CUSTOM_ROUTINE_{
-                    mainViewControllerObj?.customRoutineHabitOver()
+                    getHabitsVcObject().customRoutineHabitOver()
                 }
             }
         }
@@ -1788,7 +1843,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             if !isActivityPaused{
                 btnPauseClicked(self)
             }
-            mainViewControllerObj?.breathingOver(isSKipped: true)
+            getHabitsVcObject().breathingOver(isSKipped: true)
         }else{
             addLog(text:"Show more Actions menu")
             let p = NSPoint(x: (sender as AnyObject).frame.origin.x, y: (sender as AnyObject).frame.origin.y - 8 )
@@ -1797,7 +1852,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
     }
     
     @objc func menuItemSkipHabitClicked(){
-        mainViewControllerObj?.showWhySkipHabitView()
+        getHabitsVcObject().showWhySkipHabitView()
     }
     
     @objc func menuItemChooseAnotherHabitClicked(){
@@ -1807,6 +1862,69 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
     @objc func menuItemChooseAnotherVideoClicked(){
         btnChooseDifferentVideoClicked(self)
     }
+    
+    @objc func menuItemStartCustomRoutineClicked(menuItem:NSMenuItem){
+        addLog(text:"[user-action]ongoing activity:-menuItemStartCustomRoutineClicked")
+        if let id = menuItem.identifier?.rawValue{
+            print(id)
+            getHabitsVcObject().showLoaderView()
+            isCustomRoutineTime(id: id) { isCustom,currentRoutineIndex,duration   in
+                print(isCustom)
+                getHabitsVcObject().hideLoaderView()
+                if !isCustom{ // show alert
+                    addLog(text:"Can't perform this routine right now")
+                    let alert = NSAlert()
+                    alert.setSharingType()
+                    var canNotDoRoutine = "You can't perform this routine right now because either it's not the scheduled time or you've already completed it."
+                    if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
+                        canNotDoRoutine = activityInfo.value(forKey: "canNotDoCustomRoutineText") as? String ?? canNotDoRoutine
+                    }
+                    alert.messageText = canNotDoRoutine
+                    alert.addButton(withTitle: buttonOkText)
+                    NSApplication.shared.activate(ignoringOtherApps: true)
+                    alert.beginSheetModal(for: self.view.window!, completionHandler: nil)
+                    
+        
+                    self.moreActionsMenu.removeItem(menuItem)
+                    for i in 0..<self.arrStartCustomRoutineMenu.count{
+                        let menuItemStartCustomRoutine = self.arrStartCustomRoutineMenu[i]
+                        if menuItemStartCustomRoutine == menuItem{
+                            self.arrStartCustomRoutineMenu.remove(at: i)
+                            break;
+                        }
+                    }
+                    
+                    
+                }else{
+                    isCustomRoutineWasRunningInPostponeMorningHabit = false
+                    isCustomRoutineWasRunningInPostponeEveningHabit = false
+                    let lastCurrentState = currentState
+                    if currentState == ._MORNING_HABIT_{
+                        addLog(text:"Perform custom routine- \(id) from morning routine")
+                        mainWindowControllerObj?.window?.close()
+                        hideBlankWindowInSecondaryMonitor()
+                        getHabitsVcObject().postponeMorningHabitFor(minutes: 0, secondsToPostpone: duration, showAskFocusModeView: false, showAskIntention: false)
+                        isCustomRoutineWasRunningInPostponeMorningHabit = true
+                    }else if currentState == ._EVENING_HABIT_{
+                        addLog(text:"Perform custom routine- \(id) from evening routine")
+                        mainWindowControllerObj?.window?.close()
+                        hideBlankWindowInSecondaryMonitor()
+                        getHabitsVcObject().postponeEveningHabitFor(minutes: 0, secondsToPostpone: duration, showAskFocusModeView: false, showAskIntention: false)
+                        isCustomRoutineWasRunningInPostponeEveningHabit = true
+                    }
+                    currentState = ._CUSTOM_ROUTINE_
+                    startCustomRoutine(index: currentRoutineIndex, isOnDemand:false)
+                    
+                    if lastCurrentState == ._MORNING_HABIT_{
+                        isCustomRoutineWasRunningBetweenMorningHabit = true
+                    }else if lastCurrentState == ._EVENING_HABIT_{
+                        isCustomRoutineWasRunningBetweenEveningHabit = true
+                    }
+                }
+            }
+        }
+    }
+    
     
     @IBAction func btnChooseDifferentVideoClicked(_ sender: Any) {
         if boxButtonTabViews.isHidden == false && isVideoLodded{
@@ -1953,3 +2071,30 @@ extension timerViewcontroller:NSTableViewDelegate, NSTableViewDataSource {
 
 
 
+
+
+//func loadWebViewTo(url:String?){
+//    if var videoUrl = url{
+//        if videoUrl.lowercased().contains("watch?v="){
+//            if videoUrl.contains("&"){// removing additional param
+//                if let firstItem =  videoUrl.components(separatedBy: "&").first{
+//                    videoUrl = firstItem
+//                }
+//            }
+//            videoUrl = videoUrl.replacingOccurrences(of: "watch?v=", with: "embed/")
+//        }else{
+//            if videoUrl.lowercased().contains("https://youtu.be/"){
+//                if let lastItem =  videoUrl.components(separatedBy: "/").last{
+//                   videoUrl = "https://www.youtube.com/embed/" + lastItem
+//                }
+//                
+//            }
+//        }
+//        videoUrl = videoUrl + "&autoplay=1"
+//
+//        let link = URL(string:videoUrl)!
+//        let request = URLRequest(url: link)
+//        self.webView.load(request)
+//
+//    }
+//}

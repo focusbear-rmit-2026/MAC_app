@@ -1314,13 +1314,16 @@ func checkIsAnyOldFoucsModeRemaining(){
                 if let currentFocusModeId = currentFocusMode.value(forKey: "id") as? String{
                     print(currentFocusModeId)
                     //arrFocusType
-                    addLog(text: "old focus mode is running- finish it")
+                    let name = currentFocusMode.value(forKey: "name") as? String ?? ""
+                    addLog(text: "old focus mode with id: \(currentFocusModeId) and name: \(name) is running- finish it")
                     var finishFocusMoedTime = Date()
                     if let currentFocusModeFinishTime = json?.value(forKey: "current_focus_mode_finish_time") as? String{
                         finishFocusMoedTime = getDateFromStringInUtc(date: currentFocusModeFinishTime, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'") ?? finishFocusMoedTime
+                        addLog(text: "current_focus_mode_finish_time is \(currentFocusModeFinishTime)")
+                    }else{
+                        addLog(text: "current_focus_mode_finish_time is nil")
                     }
                     
-
                     
                     var diffSeconds = Calendar.current.dateComponents([.second], from: Date(), to: finishFocusMoedTime).second ?? 0
                     appdelegate!.remainingFocusModeSecondsAfterPaused = diffSeconds
@@ -1328,15 +1331,18 @@ func checkIsAnyOldFoucsModeRemaining(){
                         let focusMode = arrFocusType[i]
                         if focusMode["id"] as? String == currentFocusModeId{
                             
-                            
+                            addLog(text: "A focus mode with the same ID was found in the focus mode list. Now checking if there are any locally saved start or finish times for this focus mode.")
                             if let startDateString = focusMode["lastStartedDate"] as? String, let endDateString = focusMode["lastScheduledEndDate"] as? String{
                                 let startDate = getDateFromString(date: startDateString, dateFormat: "yyyy-MM-dd HH:mm:ss") ?? Date()
                                 startFocusModeTime = startDate
                                 let endDate = getDateFromString(date: endDateString, dateFormat: "yyyy-MM-dd HH:mm:ss") ?? finishFocusMoedTime
+                                
+                                addLog(text: "Retrieved startDateString: \(startDateString) and endDateString: \(endDateString) from local")
+                                
                                 if Date().compare(endDate) == .orderedDescending {
-                                    addLog(text: "focus mode finished reason:- current time is greater then focus mode end time ")
-                                    focusModeActualDurationPerformed = Calendar.current.dateComponents([.second], from: startDate, to: Date()).second ?? diffSeconds
-                                    allApiObject.finishFocusMode(id: currentFocusModeId, achievements: "", distractions: "", finish_time: finishFocusMoedTime, rating:nil, completionHandler: {newDic in
+                                    focusModeActualDurationPerformed = Calendar.current.dateComponents([.second], from: startDate, to: endDate).second ?? diffSeconds
+                                    addLog(text: "focus mode finished with duration seconds: \(focusModeActualDurationPerformed) reason:- current time is greater then focus mode end time ")
+                                    allApiObject.finishFocusMode(id: currentFocusModeId, achievements: "", distractions: "", finish_time: endDate, rating:nil, completionHandler: {newDic in
                                         DispatchQueue.main.async {
                                             
                                             
@@ -1361,6 +1367,8 @@ func checkIsAnyOldFoucsModeRemaining(){
                                 }
                                 
                             }else{
+                                
+                                addLog(text: "There is no locally saved start or finish times for this focus mode. now beleive on current_focus_mode_finish_time retrives from api")
                                 if Date().compare(finishFocusMoedTime) == .orderedDescending{
                                     addLog(text: "focus mode finished reason:- current time is greater then focus mode end time ")
                                     allApiObject.finishFocusMode(id: currentFocusModeId, achievements: "", distractions: "", finish_time: finishFocusMoedTime, rating:nil, completionHandler: {newDic in
@@ -1371,7 +1379,6 @@ func checkIsAnyOldFoucsModeRemaining(){
                                     })
                                 }else{
                                     DispatchQueue.main.async {
-                                        addLog(text: "resumeFocusModeAfterAppStartted")
                                         resumeFocusModeAfterAppStartted(diffSeconds: diffSeconds, focusMode: focusMode, finishFocusMoedTime: finishFocusMoedTime, index: i)
                                         if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled{
                                             getTaskPlayerVcObject().loadView()

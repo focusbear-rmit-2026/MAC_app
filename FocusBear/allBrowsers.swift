@@ -95,7 +95,10 @@ func getBrowserAllTabUrl(browser:BROWSER)->[String]?{
 
 var permissionAlertShownInfoDic = [BROWSER]()
 func getActiveTabUrlOf(browser:BROWSER)->String?{
+    addLog(text:"func call:- getActiveTabUrl")
+    
     if UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) == nil{
+        addLog(text:"Browsers Permissions is not Set By User return;")
         return nil
     }
     var url:String?
@@ -187,6 +190,7 @@ func getActiveTabUrlOf(browser:BROWSER)->String?{
     }
     if let url = url{
         if url.isEmpty{
+            addLog(text:"url is empty return;")
             return nil;  //is blank then return nil so we will not read this // 26/4/25
         }
     }

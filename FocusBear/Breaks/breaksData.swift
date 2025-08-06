@@ -65,51 +65,59 @@ struct breakActivity {
 }
 
 
+func checkNaturalBreakFromIdleTimeAfterScreenUnlocked(){
+    addLog(text: "func checkNaturalBreakFromIdleTimeAfterScreenUnlocked")
+    
+    if !SettingsManagerObject.isDetectNatualBreaksEnabled{
+        addLog(text: "Detect Natual Breaks is not enabled")
+        return;
+    }
+    
+    if macGoesInSleepTime != nil{
+        let idleTimeValue = Calendar.current.dateComponents([.second], from: macGoesInSleepTime!, to: Date()).second ?? 0
+        addLog(text: "idleTimeValue is :- \(idleTimeValue)")
+        if arrAllbreakActivities.count != 0 && currentState != ._BREATHING_{
+            addLog(text: "checkIsNaturalBreakWindowNeedToShow")
+            checkIsNaturalBreakWindowNeedToShow(idleTimeValue: idleTimeValue)
+        }else{
+            addLog(text: "Don't need to check natural break reason:- habit window is visible")
+        }
+    }else{
+        addLog(text: "macGoesInSleepTime is nil")
+    }
+}
+
 var idleTimeValueForNaturalBreak = 600
 func detectNatualBreaks(){
+    if !SettingsManagerObject.isDetectNatualBreaksEnabled{
+        return;
+    }
     var lastEvent:CFTimeInterval = 0
     lastEvent = CGEventSource.secondsSinceLastEventType(CGEventSourceStateID.hidSystemState, eventType: CGEventType(rawValue: ~0)!)
     
     let idleTimeValue = Int(lastEvent)
     if currentState != ._MORNING_HABIT_ && currentState != ._ACTIVITY_ && (isHabitAlreadyShowed || currentState == ._POSTPON_MORNING_HABIT_) && arrAllbreakActivities.count != 0 && !appdelegate!.isUserOnMeeting{
         checkIsNaturalBreakWindowNeedToShow(idleTimeValue: idleTimeValue)
-    }else{
-        if naturalBreaksDetectionWcObj != nil{
-            if naturalBreaksDetectionWcObj?.window?.isVisible ?? false{
-                naturalBreaksDetectionVcObj?.btnFirstClicked(appdelegate!)
-                if breakWarningWcObj != nil{
-                    if breakWarningWcObj?.window?.isVisible ?? false{
-                        getBreakWarningVcObject().reloadTimeSinceLastBreak()
-                    }
-                }
-                naturalBreaksDetectionWcObj?.window?.close()
-            }
-        }
     }
 }
 
 func checkIsNaturalBreakWindowNeedToShow(idleTimeValue:Int){
     if idleTimeValue > idleTimeValueForNaturalBreak{// 600 kro
-        // if !appdelegate!.isScreenLocked && !appdelegate!.isSystemSleep && !appdelegate!.isScreenSaverStart{ // 
         var shouldShowAlert = true
-        if naturalBreaksDetectionWcObj != nil{
-            if naturalBreaksDetectionWcObj?.window?.isVisible ?? false{
-                shouldShowAlert = false
-            }
-        }
-        if currentState == ._POSTPON_MORNING_HABIT_{
+        if currentState == ._POSTPON_MORNING_HABIT_ || currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_{
             if !SettingsManagerObject.IsShowBreaksInPostponeEnabled{
+                addLog(text: "The current state is 'Postpone' and 'Show Breaks in Postpone' is disabled, so the natural break detection window will not be shown.")// logs addded in v 1.26.395 on 30/7/25
                 shouldShowAlert = false
             }
         }
         if shouldShowAlert{
             if appdelegate!.checkIsAnyVideoWebsiteIsRunning(){
+                addLog(text: "Since a video website is currently open in the browser, the natural break detection window won't be shown.")
                 shouldShowAlert = false
             }
         }
         if shouldShowAlert{
             showNaturalBreakDetectionWindow(duration:idleTimeValue)
         }
-        //}
     }
 }

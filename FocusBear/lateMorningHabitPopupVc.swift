@@ -53,7 +53,7 @@ class lateMorningHabitPopupVc: NSViewController {
         mainWindowControllerObj?.window?.close()
         hideBlankWindowInSecondaryMonitor()
         currentState = ._NOTHING_
-        mainViewControllerObj?.setActivityTimer()
+        getHabitsVcObject().setActivityTimer()
         addLog(text: "morning habit skipped by user")
     }
     

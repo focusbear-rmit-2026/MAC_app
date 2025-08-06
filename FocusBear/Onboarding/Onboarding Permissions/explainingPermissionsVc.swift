@@ -22,8 +22,6 @@ class explainingPermissionsVc: NSViewController {
     @IBOutlet weak var lblTitle: NSTextField!
     @IBOutlet weak var btnContinue: Button!
     
-    var showingFromPomodoro = true
-    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.

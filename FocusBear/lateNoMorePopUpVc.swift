@@ -47,7 +47,7 @@ class lateNoMorePopUpVc: NSViewController {
         
     }
     @IBAction func btnEnableClicked(_ sender: Any) {
-        if let url = URL(string: "https://www.focusbear.io/en/late-no-more"){
+        if let url = URL(string: "https://www.focusbear.io/late-no-more"){
             NSWorkspace.shared.open(url)
         }
         self.view.window?.close()

@@ -1,0 +1,215 @@
+//
+//  SelectableListBox.swift
+//  FocusBear
+//
+//  Created by Manish Jain on 04/08/25.
+//  Copyright © 2025 Focus Bear. All rights reserved.
+//
+
+
+import Cocoa
+
+class mainWindowListBox: NSBox {
+    // MARK: - Properties
+    
+    let kBorderColor = NSColor(red: 232/255, green: 136/255, blue: 0/255, alpha: 1)
+    private var hovered = false
+    var isEnabled = true
+    weak var delegate: mainWindowListBoxDelegate?
+    
+    var isSelected: Bool = false {
+        didSet {
+            // Only update appearance if value changed
+            if oldValue != isSelected {
+                updateAppearance()
+                if isSelected {
+                    notifySelectionChange()
+                    delegate?.selectableListBoxDidChangeSelection(self)
+                }
+            }
+        }
+    }
+    
+    var imageIcon: NSImage? {
+        didSet {
+            imageView?.image = imageIcon
+        }
+    }
+    
+    override var title: String{
+        didSet {
+            label?.stringValue = title
+        }
+    }
+    
+    var imageView: NSImageView?
+    private weak var label: NSTextField?
+    
+    // MARK: - Initialization
+    override init(frame: NSRect) {
+        super.init(frame: frame)
+        commonInit()
+    }
+    
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        commonInit()
+    }
+    
+    private func commonInit() {
+        self.boxType = .custom
+        self.borderWidth = 1.0
+        self.cornerRadius = 4.0
+        self.titlePosition = .noTitle
+        
+        setupContentView()
+        updateAppearance()
+        
+        // Tracking area for hover effects
+        let trackingArea = NSTrackingArea(
+            rect: bounds,
+            options: [.activeAlways, .mouseEnteredAndExited],
+            owner: self,
+            userInfo: nil
+        )
+        addTrackingArea(trackingArea)
+    }
+    
+    // MARK: - View Setup
+    private func setupContentView() {
+        let contentView = NSView()
+        self.contentView = contentView
+        
+        // Image view
+        let imageView = NSImageView()
+        imageView.imageScaling = .scaleProportionallyUpOrDown
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(imageView)
+        
+        // Label
+        let label = NSTextField(labelWithString: "")
+        label.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(label)
+        
+        // Layout
+        NSLayoutConstraint.activate([
+            imageView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 8),
+            imageView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+            imageView.widthAnchor.constraint(equalToConstant: 19),
+            imageView.heightAnchor.constraint(equalToConstant: 19),
+            
+            label.leadingAnchor.constraint(equalTo: imageView.trailingAnchor, constant: 10),
+            label.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -10),
+            label.centerYAnchor.constraint(equalTo: contentView.centerYAnchor)
+        ])
+        
+        // Set content hugging and compression resistance priorities
+        label.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        
+        self.imageView = imageView
+        self.label = label
+    }
+    
+    func showSelectedUi(){
+        self.fillColor = buttonBgColor
+        self.borderColor = kBorderColor
+        label?.textColor = NSColor.selectedControlTextColor
+        self.borderWidth = 1
+    }
+    
+    func showHoveredUi(){
+        self.fillColor = buttonBgColor.withAlphaComponent(0.3)
+        self.borderColor = kBorderColor
+        label?.textColor = NSColor.labelColor
+        self.borderWidth = 1
+    }
+    
+    func showNormalUi(){
+        self.fillColor = NSColor.controlBackgroundColor
+        self.borderColor = .clear
+        label?.textColor = NSColor.labelColor
+        self.borderWidth = 1
+    }
+    
+    // MARK: - Appearance Updates
+    private func updateAppearance() {
+        if isSelected {
+            showSelectedUi()
+        } else if hovered {
+            showHoveredUi()
+        } else {
+            showNormalUi()
+        }
+    }
+    
+    // MARK: - Mouse Events
+    override func mouseEntered(with event: NSEvent) {
+        super.mouseEntered(with: event)
+        if isEnabled{
+            hovered = true
+            updateAppearance()
+            DispatchQueue.global().async {
+                DispatchQueue.main.async {
+                    NSCursor.pointingHand.set()
+                }
+            }
+            if let superview = self.superview {
+                for subview in superview.subviews {
+                    if let box = subview as? mainWindowListBox, box != self {
+                        box.hovered = false
+                        if !box.isSelected{
+                            box.showNormalUi()
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    override func mouseExited(with event: NSEvent) {
+        super.mouseExited(with: event)
+        if isEnabled{
+            hovered = false
+            updateAppearance()
+            NSCursor.arrow.set()
+        }
+    }
+    
+    override func mouseDown(with event: NSEvent) {
+        super.mouseDown(with: event)
+        if isEnabled && !isSelected{
+            isSelected = true
+        }
+    }
+    
+    // MARK: - Selection Management
+    private func notifySelectionChange() {
+        if let superview = self.superview {
+            for subview in superview.subviews {
+                if let box = subview as? mainWindowListBox, box != self {
+                    box.isSelected = false
+                }
+            }
+        }
+    }
+    
+    // MARK: - updateTrackingAreas
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        for area in trackingAreas {
+            removeTrackingArea(area)
+        }
+        let trackingArea = NSTrackingArea(
+            rect: bounds,
+            options: [.activeAlways, .mouseEnteredAndExited],
+            owner: self,
+            userInfo: nil
+        )
+        addTrackingArea(trackingArea)
+    }
+}
+
+protocol mainWindowListBoxDelegate: AnyObject {
+    func selectableListBoxDidChangeSelection(_ box: mainWindowListBox)
+}

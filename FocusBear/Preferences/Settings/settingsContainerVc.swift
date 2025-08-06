@@ -12,6 +12,7 @@ class settingsContainerVc: NSViewController {
 
     @IBOutlet weak var segmentControlGeekMode: GeekModeSegmentedControl!
     @IBOutlet weak var containerView: NSView!
+    var isPermissionsViewVisible = false
     override func viewDidLoad() {
         super.viewDidLoad()
         addLog(text: "settingsContainerVc viewdidload start")        

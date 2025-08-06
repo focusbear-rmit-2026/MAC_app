@@ -94,7 +94,7 @@ class popUpOfflineVc: NSViewController {
                             showBlankWindowInSecondaryMonitor()
                             if currentAction == ._INPROGRESS_{
                                 currentHabitIndex -= 1
-                                mainViewControllerObj?.changeMorningHabit()
+                                getHabitsVcObject().changeMorningHabit()
                             }
                             
                         }else if currentState == ._EVENING_HABIT_{
@@ -103,12 +103,12 @@ class popUpOfflineVc: NSViewController {
                             showBlankWindowInSecondaryMonitor()
                             if currentAction == ._INPROGRESS_{
                                 currentHabitIndex -= 1
-                                mainViewControllerObj?.changeEveningHabit()
+                                getHabitsVcObject().changeEveningHabit()
                             }
                             
                             
                         }else if currentState == ._ACTIVITY_{//is case mai abort all process krke sctivity timer set krenge
-                            mainViewControllerObj?.setActivityTimer()
+                            getHabitsVcObject().setActivityTimer()
                         }
 
                     }

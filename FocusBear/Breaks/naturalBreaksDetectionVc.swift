@@ -10,6 +10,9 @@ import Cocoa
 
 class naturalBreaksDetectionVc: NSViewController {
 
+ 
+    @IBOutlet weak var boxDontShowAgain: NSBox!
+    @IBOutlet weak var checkBoxDontShowAgain: NSButton!
     @IBOutlet weak var widthBox: NSLayoutConstraint!
     @IBOutlet weak var btnSecond: Button!
     @IBOutlet weak var btnFirst: Button!
@@ -23,10 +26,17 @@ class naturalBreaksDetectionVc: NSViewController {
         super.viewDidLoad()
         // Do view setup here.
         
+        checkBoxDontShowAgain.title = "Don't show this again"
         if SettingsManagerObject.selectedFontIndex == intelOneMonoFontIndex || SettingsManagerObject.selectedFontIndex == openDyslexicFontIndex{
             widthBox.constant = 350
         }else{
             widthBox.constant = 261
+        }
+        
+        checkBoxDontShowAgain.title = "Don't show this again"
+        
+        if let confirmRunScriptVcInfo = configjson.value(forKey: "confirmRunScriptVcInfo") as? NSDictionary{
+            checkBoxDontShowAgain.title = confirmRunScriptVcInfo.value(forKey: "buttonDontShowAgainText") as? String ?? checkBoxDontShowAgain.title
         }
     }
     
@@ -35,6 +45,9 @@ class naturalBreaksDetectionVc: NSViewController {
     }
     
     func resetView(duration:Int){
+        boxDontShowAgain.isHidden = false
+        checkBoxDontShowAgain.isHidden = false
+        checkBoxDontShowAgain.state = .off
         showBoxTime = Date()
         self.duration = duration
         lblTitle.stringValue = "It looks like you're on a break. Well done on taking care of yourself."
@@ -50,6 +63,7 @@ class naturalBreaksDetectionVc: NSViewController {
             btnSecond.title = naturalBreaksDetectionVcInfo.value(forKey: "buttonWrongDetectionText") as? String ?? btnSecond.title
         }
     }
+    
     @IBAction func btnFirstClicked(_ sender: Any) {
         if isNormalState{
             addLog(text: "[user-action] naturalBreaksDetectionVc - btnThanksClicked")
@@ -68,10 +82,18 @@ class naturalBreaksDetectionVc: NSViewController {
                         arrDuration.append(diffSeconds)
                         UserDefaults.standard.set(arrDuration, forKey: kUserdefaultsArrayBreaksDurations)
                     }
+                    UserDefaults.standard.set(currentDate, forKey: kUserdefaultsLastBreakEndTime)
+                    let df = DateFormatter()
+                    df.dateFormat = "yyyy-MM-dd HH:mm:ss"
+                    let now = df.string(from: currentDate)
+                    addLog(text: "Last break recorded at \(now). It will be shown in the menu.")
                 }
+            }else{
+                addLog(text: "Break start time is undefined or not initialized")
             }
-            if mainViewControllerObj?.breakTimer != nil{
-                mainViewControllerObj?.setActivityTimer()
+            
+            if getHabitsVcObject().breakTimer != nil{
+                getHabitsVcObject().setActivityTimer()
             }
         }else{
             addLog(text: "[user-action] naturalBreaksDetectionVc - btnYupINeedBreak Clicked")
@@ -84,7 +106,7 @@ class naturalBreaksDetectionVc: NSViewController {
             if !isMainWindowLoaded{
                 mainWindowControllerObj?.loadWindow()
             }
-            mainViewControllerObj?.executeBreakActivities()
+            getHabitsVcObject().executeBreakActivities()
         }
     }
     
@@ -109,7 +131,8 @@ class naturalBreaksDetectionVc: NSViewController {
         btnFirst.title = "Yup I need a break now"
         btnSecond.title = "No - I'll take later"
         isNormalState = false
-        
+        boxDontShowAgain.isHidden = true
+        checkBoxDontShowAgain.isHidden = true
         if let naturalBreaksDetectionVcInfo = configjson.value(forKey: "naturalBreaksDetectionVcInfo") as? NSDictionary{
             lblTitle.stringValue = naturalBreaksDetectionVcInfo.value(forKey: "titleTakeBreak") as? String ?? lblTitle.stringValue
             btnFirst.title = naturalBreaksDetectionVcInfo.value(forKey: "buttonStartBreakText") as? String ?? btnFirst.title
@@ -117,4 +140,16 @@ class naturalBreaksDetectionVc: NSViewController {
         }
     }
     
+    @IBAction func checkBoxDontShowAgainClicked(_ sender: Any) {
+        addLog(text: "[user-action] naturalBreaksDetectionVc - checkBoxDontShowAgainClicked Clicked")
+        SettingsManagerObject.isSettingsChanged = true
+        if checkBoxDontShowAgain.state == .off{
+            SettingsManagerObject.isDetectNatualBreaksEnabled = true
+            allApiObject.capturePosthog(event: "settings-changed-enable-natual-breaks", metadata: [:])
+        }else{
+            SettingsManagerObject.isDetectNatualBreaksEnabled = false
+            allApiObject.capturePosthog(event: "settings-changed-disable-natual-breaks", metadata: [:])
+        }
+        SettingsManagerObject.putUserLocalDeviceSettings()
+    }
 }

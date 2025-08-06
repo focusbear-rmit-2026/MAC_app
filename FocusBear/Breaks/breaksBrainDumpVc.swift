@@ -155,7 +155,7 @@ class breaksBrainDumpVc: NSViewController {
     }
 
     @objc func breaksScreenIdleResetBreaks(){
-        mainViewControllerObj?.breaksScreenIsIdleResetBreaks()
+        getHabitsVcObject().breaksScreenIsIdleResetBreaks()
     }
     
     @IBAction func btnInfoClicked(_ sender: Any) {
@@ -176,14 +176,14 @@ class breaksBrainDumpVc: NSViewController {
     @IBAction func btnPostponeBreakClicked(_ sender: Any) {
         addLog(text: "[user-action] breaksBrainDumpVc:- button Postpone Clicked")
         if currentState == ._ACTIVITY_{
-            mainViewControllerObj?.abortCurrentState()
+            getHabitsVcObject().abortCurrentState()
             return
         }
     }
     
     @IBAction func btnMainClicked(_ sender: Any) {
         addLog(text: "[user-action] breaksBrainDumpVc:- btnMainClicked")
-        mainViewControllerObj?.showBreakActivityListView()
+        getHabitsVcObject().showBreakActivityListView()
     }
 
 }

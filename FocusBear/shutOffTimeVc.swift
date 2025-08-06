@@ -217,8 +217,8 @@ class shutOffTimeVc: NSViewController {
                 alert.addButton(withTitle: buttonOkText)
                 NSApplication.shared.activate(ignoringOtherApps: true)
                 alert.beginSheetModal(for: self.view.window!, completionHandler: { result in
-                    mainViewControllerObj?.hideCloseButtons()
-                    mainViewControllerObj?.removeSubViews()
+                    getHabitsVcObject().hideCloseButtons()
+                    getHabitsVcObject().removeSubViews()
                     currentState = ._NOTHING_
                     mainWindowControllerObj?.window?.close()
                     hideBlankWindowInSecondaryMonitor()
@@ -309,7 +309,7 @@ class shutOffTimeVc: NSViewController {
         if step == 1{
             //cancel aborting shutoff process
             currentState = ._NOTHING_//need to set nothing here because in shutOffMac() func if already shutoff state is set then return from fuction
-            mainViewControllerObj?.shutOffMac()
+            getHabitsVcObject().shutOffMac()
             timer?.invalidate()
         }else if step == 2{
             titleCenter.constant = 0
@@ -553,12 +553,13 @@ class shutOffTimeVc: NSViewController {
     }
     
     @IBAction func popUpBtnDurationClicked(_ sender: Any) {
+        
     }
     
     func emergencyStartDone(){
         addLog(text: "emergencyStartDone")
-        mainViewControllerObj?.hideCloseButtons()
-        mainViewControllerObj?.removeSubViews()
+        getHabitsVcObject().hideCloseButtons()
+        getHabitsVcObject().removeSubViews()
         currentState = ._NOTHING_
         mainWindowControllerObj?.window?.close()
         hideBlankWindowInSecondaryMonitor()

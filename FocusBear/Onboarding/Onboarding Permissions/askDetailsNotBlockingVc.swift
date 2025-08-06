@@ -36,7 +36,7 @@ class askDetailsNotBlockingVc: NSViewController {
         self.dismiss(self)
         allApiObject.capturePosthog(event: "feedback-blocking-not-working", metadata: ["feedback":textField.stringValue])
         getWelcomeOnboardingWindowObject().close()
-        if explainingPermissionsVcObj?.showingFromPomodoro ?? true{
+        if isExplainingPermissionsWindowShowingFromPomodoro{
             if SettingsManagerObject.isGeekModeEnabled{
                 appdelegate?.menuShowPomodoroModeView()
                 pomodoroVcObj?.textViewAchieve.string = pomodoroVcObj?.intentionToShowAgain ?? ""

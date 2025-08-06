@@ -103,6 +103,9 @@ class brainDumpVc: NSViewController, NSTextViewDelegate{
     }
     
     func checkCurrentUrl(){
+        if boxBrainDumpWebView.isHidden{
+            return;
+        }
         if let url = webView.url{
             let urlString = url.absoluteString
             for turl in appdelegate!.defaultAllowedUrl{
@@ -110,15 +113,27 @@ class brainDumpVc: NSViewController, NSTextViewDelegate{
                     return;
                 }
             }
-            let arrBlockedUrls = getBlockedUrlsToBlock()
-            for turl in arrBlockedUrls{
-                //Change all suggested blocked apps in onboarding to start with https:// #1233
-                let bool = appdelegate!.validation.isUrlAlwaysBlocked(urlToCheck: urlString, blockedUrl: turl)
-                if bool{
-                    blockCurrentUrl(isAlwaysBlock:true, oldUrl: urlString)
-                    return;
+            
+            var shouldCheckBlockedUrls = false
+            if SettingsManagerObject.blockingSchedule == ._UNTIL_I_FINISH_WORK_{
+                shouldCheckBlockedUrls = true
+            }else{
+                if isFocusModeRunning || isAnyAllowedFocusModeActivityRunning{
+                    shouldCheckBlockedUrls = true
                 }
             }
+            if shouldCheckBlockedUrls{
+                let arrBlockedUrls = getBlockedUrlsToBlock()
+                for turl in arrBlockedUrls{
+                    //Change all suggested blocked apps in onboarding to start with https:// #1233
+                    let bool = appdelegate!.validation.isUrlAlwaysBlocked(urlToCheck: urlString, blockedUrl: turl)
+                    if bool{
+                        blockCurrentUrl(isAlwaysBlock:true, oldUrl: urlString)
+                        return;
+                    }
+                }
+            }
+            
             
             if isFocusModeRunning || isAnyAllowedFocusModeActivityRunning{
                 let arrBlockedUrlsForFocus = currentRunningFocusType["blockUrlsArray"] as? [String] ?? []
@@ -129,9 +144,26 @@ class brainDumpVc: NSViewController, NSTextViewDelegate{
                         return;
                     }
                 }
+                
+                let isAllowedListApproachInFocus = currentRunningFocusType["isAllowedListApproach"] as? Bool ?? false
+                if isAllowedListApproachInFocus{
+                    let arrAllowedUrlsForFocus = currentRunningFocusType["allowed_urls"] as? [String] ?? []
+                    var isAllowed = false
+                    for turl in arrAllowedUrlsForFocus{
+                        isAllowed = appdelegate!.validation.isUrlValid(urlToCheck: urlString, allowUrl: turl)
+                        if isAllowed{
+                            break;
+                        }
+                    }
+                    if !isAllowed{
+                        blockCurrentUrl(isAlwaysBlock:false, oldUrl: urlString)
+                        return;
+                    }
+                }
             }
         }
     }
+    
 //    \(blockWebUrlString)?old_url=https%3A%2F%2Fwww.facebook.com&block_type=always-blocked
     func blockCurrentUrl(isAlwaysBlock:Bool, oldUrl:String){
         let oldUrl = oldUrl.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) ?? oldUrl

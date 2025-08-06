@@ -635,9 +635,8 @@ class simplePomodoroVc: NSViewController {
                 
                 alertWarning.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
                     if modalResponse == .alertFirstButtonReturn{
-                        showExplainingPermissionsWindow()
+                        showExplainingPermissionsWindow(showingFromPomodoro: true)
                         self.intentionToShowAgain = self.textViewAchieve.string
-                        explainingPermissionsVcObj?.showingFromPomodoro = true
                         self.view.window?.close()
                     }else{
                         self.btnLetsDoItClicked(self)
@@ -665,7 +664,7 @@ class simplePomodoroVc: NSViewController {
                 
                 alertWarning.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
                     if modalResponse == .alertFirstButtonReturn{
-                        showDistractionTypesWindow()
+                        showDistractionTypesWindow(showingFromPomodoro: true)
                         self.intentionToShowAgain = self.textViewAchieve.string
                         self.view.window?.close()
                     }else{
@@ -733,7 +732,7 @@ class simplePomodoroVc: NSViewController {
         let totalMinutes = textFieldWorkDuration.integerValue
         
         if currentState == ._POSTPON_MORNING_HABIT_ || currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_{
-            if mainViewControllerObj?.postponeTimer != nil {
+            if getHabitsVcObject().postponeTimer != nil {
                 if mainViewControllerObj!.postponeTimer!.isValid{
                     let currentTime = Date()
                     let breakTime = mainViewControllerObj!.postponeTimer!.fireDate
@@ -762,11 +761,11 @@ class simplePomodoroVc: NSViewController {
                         alertExtendPostpone!.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
                             if modalResponse == .alertFirstButtonReturn{
                                 if currentState == ._POSTPON_MORNING_HABIT_{
-                                    mainViewControllerObj?.postponeMorningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
+                                    getHabitsVcObject().postponeMorningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
                                     self.pomodoroModeStarted()
                                 }else if currentState == ._POSTPON_EVENING_HABIT_{
                                     if SettingsManagerObject.isEasySkipEnabled{
-                                        mainViewControllerObj?.postponeEveningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
+                                        getHabitsVcObject().postponeEveningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
                                         self.pomodoroModeStarted()
                                     }else{
                                         var shouldAskPasswordForEvening = false
@@ -783,12 +782,12 @@ class simplePomodoroVc: NSViewController {
                                             self.enterPasswordVcObj?.parentVc = self
                                             return;
                                         }else{
-                                            mainViewControllerObj?.postponeEveningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
+                                            getHabitsVcObject().postponeEveningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
                                             self.pomodoroModeStarted()
                                         }
                                     }
                                 }else if currentState == ._POSTPON_FOCUS_SUMMARY_{
-                                    mainViewControllerObj?.postponeFocusSummaryFor(minutes: totalMinutes + 2, showAskIntention: false)
+                                    getHabitsVcObject().postponeFocusSummaryFor(minutes: totalMinutes + 2, showAskIntention: false)
                                     self.pomodoroModeStarted()
                                 }
                             }else if modalResponse == .alertSecondButtonReturn{
@@ -826,6 +825,18 @@ class simplePomodoroVc: NSViewController {
             addLog(text: "focus mode is super strict mode")
         }
         UserDefaults.standard.set(sliderStrictness.integerValue, forKey: kUserdefaultsLastFocusModeStrictness)
+        
+        //App should remember the last focus session + break duration. If you change it to 40 minutes, it should remember that for next time.
+        // 29/7/25 v 1.26.395
+        let count = textFieldWorkDuration.integerValue
+        if let oldCount = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsPomodoroDurationMinutes) as? Int{
+            if count != oldCount{
+                SettingsManagerObject.isSettingsChanged = true
+                UserDefaults.standard.set(count, forKey: SettingsManagerObject.kUserdefaultsPomodoroDurationMinutes)
+                SettingsManagerObject.putUserLocalDeviceSettings()
+            }
+        }
+
         if getEndFocusModeWindowControllerObj().window!.isVisible{
             let timestamp = getStringFromDate(date: startFocusModeTime ?? Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
             addEntryInStatsCsv(logType: "focus block", activity: focusCompletedVcObj!.currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: "\(focusModeMinutesToPerform) of \(focusCompletedVcObj!.currentFocusModeName)", distractionsEncountered: "", abortReason: "", feedback: "", tags:"")
@@ -873,11 +884,12 @@ class simplePomodoroVc: NSViewController {
                     }else{
                         arrFocusType[i]["lastIntentionUsed"] = ""
                     }
-                    if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled{
-                        focusModeTaskString = arrFocusType[i]["lastTaskUsed"] as? String ?? ""
-                    }else{
-                        focusModeTaskString = ""
-                    }
+//                    if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled{
+//                        focusModeTaskString = arrFocusType[i]["lastTaskUsed"] as? String ?? ""
+//                    }else{
+//                        focusModeTaskString = ""
+//                    }
+                    focusModeTaskString = arrFocusType[i]["lastTaskUsed"] as? String ?? ""
                     UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
                     updateAllFocusModes()
                     
@@ -1101,15 +1113,14 @@ class simplePomodoroVc: NSViewController {
             alertWarning.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
                 
                 if modalResponse == .alertFirstButtonReturn{
-                    showDistractionTypesWindow()
+                    showDistractionTypesWindow(showingFromPomodoro: true)
                     self.intentionToShowAgain = self.textViewAchieve.string
                 }
                 
             })
         }else if !browserPermissionGiven{
-            showExplainingPermissionsWindow()
+            showExplainingPermissionsWindow(showingFromPomodoro: true)
             self.intentionToShowAgain = self.textViewAchieve.string
-            explainingPermissionsVcObj?.showingFromPomodoro = true
             self.view.window?.close()
         }
     }

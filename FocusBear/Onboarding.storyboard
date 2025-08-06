@@ -7027,16 +7027,16 @@ Would you like to try out the habit features?</string>
                                                         </connections>
                                                     </button>
                                                     <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="Y7f-Jj-2vV">
-                                                        <rect key="frame" x="765" y="106" width="412" height="600"/>
+                                                        <rect key="frame" x="787" y="106" width="368" height="600"/>
                                                         <constraints>
                                                             <constraint firstAttribute="height" constant="600" id="Zey-Pa-0yS"/>
                                                         </constraints>
-                                                        <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageAlignment="top" imageScaling="proportionallyDown" image="menu_ScreenShot_MorningRoutine_new" id="QhB-Lt-oGY"/>
+                                                        <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageAlignment="top" imageScaling="proportionallyDown" image="menu_HabitDisabled_ScreenShot_new" id="QhB-Lt-oGY"/>
                                                     </imageView>
                                                     <box boxType="custom" borderWidth="0.0" cornerRadius="4" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="DDe-lA-FVQ">
-                                                        <rect key="frame" x="821" y="459" width="321" height="29"/>
+                                                        <rect key="frame" x="822" y="613" width="298" height="29"/>
                                                         <view key="contentView" id="bUf-8p-aqY">
-                                                            <rect key="frame" x="0.0" y="0.0" width="321" height="29"/>
+                                                            <rect key="frame" x="0.0" y="0.0" width="298" height="29"/>
                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                         </view>
                                                         <constraints>
@@ -7044,19 +7044,29 @@ Would you like to try out the habit features?</string>
                                                         </constraints>
                                                     </box>
                                                     <box boxType="custom" borderWidth="0.0" cornerRadius="4" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="Ngv-bS-4Yr">
-                                                        <rect key="frame" x="821" y="387" width="321" height="29"/>
+                                                        <rect key="frame" x="822" y="479" width="298" height="45"/>
                                                         <view key="contentView" id="vE6-mr-Eie">
-                                                            <rect key="frame" x="0.0" y="0.0" width="321" height="29"/>
+                                                            <rect key="frame" x="0.0" y="0.0" width="298" height="45"/>
                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                         </view>
                                                         <constraints>
-                                                            <constraint firstAttribute="height" constant="29" id="hBR-RK-yrz"/>
+                                                            <constraint firstAttribute="height" constant="45" id="hBR-RK-yrz"/>
+                                                        </constraints>
+                                                    </box>
+                                                    <box boxType="custom" borderWidth="0.0" cornerRadius="4" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="Fhw-nH-8Qu">
+                                                        <rect key="frame" x="822" y="407" width="298" height="59"/>
+                                                        <view key="contentView" id="mH4-Uh-Woi">
+                                                            <rect key="frame" x="0.0" y="0.0" width="298" height="59"/>
+                                                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                                        </view>
+                                                        <constraints>
+                                                            <constraint firstAttribute="height" constant="59" id="fvk-2S-ke9"/>
                                                         </constraints>
                                                     </box>
                                                     <box boxType="custom" borderWidth="0.0" cornerRadius="4" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="z0B-gR-OME">
-                                                        <rect key="frame" x="821" y="499" width="321" height="29"/>
+                                                        <rect key="frame" x="822" y="573" width="298" height="29"/>
                                                         <view key="contentView" id="pel-Zn-Uu0">
-                                                            <rect key="frame" x="0.0" y="0.0" width="321" height="29"/>
+                                                            <rect key="frame" x="0.0" y="0.0" width="298" height="29"/>
                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                         </view>
                                                         <constraints>
@@ -7064,9 +7074,9 @@ Would you like to try out the habit features?</string>
                                                         </constraints>
                                                     </box>
                                                     <box boxType="custom" borderWidth="0.0" cornerRadius="4" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="vPS-GY-nGr">
-                                                        <rect key="frame" x="821" y="604" width="321" height="29"/>
+                                                        <rect key="frame" x="822" y="604" width="298" height="29"/>
                                                         <view key="contentView" id="snT-0f-c11">
-                                                            <rect key="frame" x="0.0" y="0.0" width="321" height="29"/>
+                                                            <rect key="frame" x="0.0" y="0.0" width="298" height="29"/>
                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                         </view>
                                                         <constraints>
@@ -7074,9 +7084,9 @@ Would you like to try out the habit features?</string>
                                                         </constraints>
                                                     </box>
                                                     <box boxType="custom" borderWidth="0.0" cornerRadius="4" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="RzS-Y4-uJK">
-                                                        <rect key="frame" x="821" y="284" width="321" height="29"/>
+                                                        <rect key="frame" x="822" y="284" width="298" height="29"/>
                                                         <view key="contentView" id="Qhv-dy-8Uv">
-                                                            <rect key="frame" x="0.0" y="0.0" width="321" height="29"/>
+                                                            <rect key="frame" x="0.0" y="0.0" width="298" height="29"/>
                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                         </view>
                                                         <constraints>
@@ -7084,13 +7094,13 @@ Would you like to try out the habit features?</string>
                                                         </constraints>
                                                     </box>
                                                     <box boxType="custom" borderWidth="0.0" cornerRadius="4" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="5Jh-5G-be0">
-                                                        <rect key="frame" x="800" y="145" width="342" height="561"/>
+                                                        <rect key="frame" x="822" y="145" width="298" height="561"/>
                                                         <view key="contentView" id="cvk-zZ-rTc">
-                                                            <rect key="frame" x="0.0" y="0.0" width="342" height="561"/>
+                                                            <rect key="frame" x="0.0" y="0.0" width="298" height="561"/>
                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                             <subviews>
                                                                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="p3w-FX-0iA">
-                                                                    <rect key="frame" x="0.0" y="0.0" width="342" height="561"/>
+                                                                    <rect key="frame" x="0.0" y="0.0" width="298" height="561"/>
                                                                     <buttonCell key="cell" type="bevel" bezelStyle="rounded" alignment="center" imageScaling="proportionallyDown" inset="2" id="kSN-dT-mjM">
                                                                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                                         <font key="font" metaFont="system"/>
@@ -7100,7 +7110,7 @@ Would you like to try out the habit features?</string>
                                                                     </connections>
                                                                 </button>
                                                                 <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="J8M-4u-8pF">
-                                                                    <rect key="frame" x="152" y="539" width="38" height="22"/>
+                                                                    <rect key="frame" x="130" y="539" width="38" height="22"/>
                                                                     <constraints>
                                                                         <constraint firstAttribute="width" constant="38" id="aaL-SC-I4c"/>
                                                                         <constraint firstAttribute="height" constant="22" id="ySa-03-xT3"/>
@@ -7120,12 +7130,12 @@ Would you like to try out the habit features?</string>
                                                     </box>
                                                 </subviews>
                                                 <constraints>
-                                                    <constraint firstItem="Ngv-bS-4Yr" firstAttribute="top" secondItem="DDe-lA-FVQ" secondAttribute="bottom" constant="43" id="002-5h-JKR"/>
+                                                    <constraint firstItem="Ngv-bS-4Yr" firstAttribute="top" secondItem="DDe-lA-FVQ" secondAttribute="bottom" constant="89" id="002-5h-JKR"/>
                                                     <constraint firstItem="z0B-gR-OME" firstAttribute="leading" secondItem="DDe-lA-FVQ" secondAttribute="leading" id="0ZQ-nl-BWQ"/>
                                                     <constraint firstItem="vPS-GY-nGr" firstAttribute="trailing" secondItem="DDe-lA-FVQ" secondAttribute="trailing" id="7Ap-Vp-h0L"/>
                                                     <constraint firstItem="5Jh-5G-be0" firstAttribute="leading" secondItem="Y7f-Jj-2vV" secondAttribute="leading" constant="35" id="Dhe-x8-KfA"/>
                                                     <constraint firstItem="z0B-gR-OME" firstAttribute="trailing" secondItem="DDe-lA-FVQ" secondAttribute="trailing" id="EI0-4J-cI8"/>
-                                                    <constraint firstItem="DDe-lA-FVQ" firstAttribute="top" secondItem="Y7f-Jj-2vV" secondAttribute="top" constant="218" id="Fgb-Vn-9tf"/>
+                                                    <constraint firstItem="DDe-lA-FVQ" firstAttribute="top" secondItem="Y7f-Jj-2vV" secondAttribute="top" constant="64" id="Fgb-Vn-9tf"/>
                                                     <constraint firstItem="5Jh-5G-be0" firstAttribute="trailing" secondItem="Y7f-Jj-2vV" secondAttribute="trailing" constant="-35" id="IaS-zg-5ee"/>
                                                     <constraint firstItem="bfd-yY-wFU" firstAttribute="leading" secondItem="7f0-Df-6DT" secondAttribute="leading" id="Jsc-V7-Wyu"/>
                                                     <constraint firstItem="RzS-Y4-uJK" firstAttribute="top" secondItem="Y7f-Jj-2vV" secondAttribute="top" constant="393" id="K7d-kH-x9b"/>
@@ -7136,17 +7146,20 @@ Would you like to try out the habit features?</string>
                                                     <constraint firstItem="RzS-Y4-uJK" firstAttribute="trailing" secondItem="DDe-lA-FVQ" secondAttribute="trailing" id="WLP-Gh-z4w"/>
                                                     <constraint firstItem="6pv-A9-9Mx" firstAttribute="top" secondItem="7f0-Df-6DT" secondAttribute="top" constant="40" id="YDM-xg-3qE"/>
                                                     <constraint firstItem="5Jh-5G-be0" firstAttribute="top" secondItem="Y7f-Jj-2vV" secondAttribute="top" id="YVu-IV-44K"/>
+                                                    <constraint firstItem="Fhw-nH-8Qu" firstAttribute="trailing" secondItem="Ngv-bS-4Yr" secondAttribute="trailing" id="Yo8-co-sR5"/>
                                                     <constraint firstItem="vPS-GY-nGr" firstAttribute="leading" secondItem="DDe-lA-FVQ" secondAttribute="leading" id="gTD-v3-0pl"/>
-                                                    <constraint firstItem="DDe-lA-FVQ" firstAttribute="leading" secondItem="Y7f-Jj-2vV" secondAttribute="leading" constant="56" id="jhb-4p-JGB"/>
+                                                    <constraint firstItem="DDe-lA-FVQ" firstAttribute="leading" secondItem="Y7f-Jj-2vV" secondAttribute="leading" constant="35" id="jhb-4p-JGB"/>
                                                     <constraint firstAttribute="trailing" secondItem="bfd-yY-wFU" secondAttribute="trailing" id="lxx-oA-1Qg"/>
                                                     <constraint firstItem="Ngv-bS-4Yr" firstAttribute="leading" secondItem="DDe-lA-FVQ" secondAttribute="leading" id="phX-cv-R58"/>
                                                     <constraint firstItem="bfd-yY-wFU" firstAttribute="top" secondItem="7f0-Df-6DT" secondAttribute="top" id="poW-dP-2Ot"/>
+                                                    <constraint firstItem="Fhw-nH-8Qu" firstAttribute="top" secondItem="Ngv-bS-4Yr" secondAttribute="bottom" constant="13" id="r0M-v3-F4s"/>
                                                     <constraint firstItem="z0B-gR-OME" firstAttribute="height" secondItem="DDe-lA-FVQ" secondAttribute="height" id="tB4-Tb-60R"/>
                                                     <constraint firstItem="RzS-Y4-uJK" firstAttribute="leading" secondItem="DDe-lA-FVQ" secondAttribute="leading" id="tDa-cz-XCO"/>
                                                     <constraint firstItem="5Jh-5G-be0" firstAttribute="bottom" secondItem="Y7f-Jj-2vV" secondAttribute="bottom" constant="-39" id="u0O-zs-4N6"/>
                                                     <constraint firstItem="Y7f-Jj-2vV" firstAttribute="top" secondItem="7f0-Df-6DT" secondAttribute="top" constant="1" id="vr5-P4-R4i"/>
                                                     <constraint firstItem="Y7f-Jj-2vV" firstAttribute="centerX" secondItem="7f0-Df-6DT" secondAttribute="centerX" multiplier="1.5" id="wE9-wt-tjA"/>
-                                                    <constraint firstItem="z0B-gR-OME" firstAttribute="top" secondItem="Y7f-Jj-2vV" secondAttribute="top" constant="178" id="x2Y-GL-oth"/>
+                                                    <constraint firstItem="z0B-gR-OME" firstAttribute="top" secondItem="Y7f-Jj-2vV" secondAttribute="top" constant="104" id="x2Y-GL-oth"/>
+                                                    <constraint firstItem="Fhw-nH-8Qu" firstAttribute="leading" secondItem="Ngv-bS-4Yr" secondAttribute="leading" id="zMU-OE-ABJ"/>
                                                 </constraints>
                                             </view>
                                             <color key="fillColor" white="0.0" alpha="0.5" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
@@ -7175,9 +7188,11 @@ Would you like to try out the habit features?</string>
                         <outlet property="boxSetupFocusMode" destination="RzS-Y4-uJK" id="YUZ-IT-qUl"/>
                         <outlet property="boxStartPomodoro" destination="Ngv-bS-4Yr" id="86d-16-PAt"/>
                         <outlet property="boxStartRoutine" destination="z0B-gR-OME" id="lu4-zz-5uX"/>
+                        <outlet property="boxTools" destination="Fhw-nH-8Qu" id="uX0-wl-mpB"/>
                         <outlet property="btnSkip" destination="6pv-A9-9Mx" id="Jxv-pH-Tji"/>
                         <outlet property="constraintsBoxPreferencesTop" destination="Fgb-Vn-9tf" id="XcO-e0-MAf"/>
                         <outlet property="imgViewMenu" destination="Y7f-Jj-2vV" id="wYM-Wp-tXW"/>
+                        <outlet property="topSpaceBoxStartFocus" destination="002-5h-JKR" id="HPb-3x-kNc"/>
                     </connections>
                 </viewController>
                 <customObject id="uOU-Tj-hm0" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
@@ -10549,8 +10564,8 @@ Edit setting -"search" in Firefox</string>
                                                                 </constraints>
                                                                 <datePickerCell key="cell" borderStyle="bezel" alignment="left" useCurrentDate="YES" id="qTO-Vt-QZ6">
                                                                     <font key="font" metaFont="system"/>
-                                                                    <date key="date" timeIntervalSinceReferenceDate="774255528.32110798">
-                                                                        <!--2025-07-15 06:58:48 +0000-->
+                                                                    <date key="date" timeIntervalSinceReferenceDate="775121239.63823998">
+                                                                        <!--2025-07-25 07:27:19 +0000-->
                                                                     </date>
                                                                     <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
                                                                     <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -10595,8 +10610,8 @@ Edit setting -"search" in Firefox</string>
                                                                 </constraints>
                                                                 <datePickerCell key="cell" borderStyle="bezel" alignment="left" useCurrentDate="YES" id="6wt-Mf-qOs">
                                                                     <font key="font" metaFont="system"/>
-                                                                    <date key="date" timeIntervalSinceReferenceDate="774255528.32416105">
-                                                                        <!--2025-07-15 06:58:48 +0000-->
+                                                                    <date key="date" timeIntervalSinceReferenceDate="775121239.64144194">
+                                                                        <!--2025-07-25 07:27:19 +0000-->
                                                                     </date>
                                                                     <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
                                                                     <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -10641,8 +10656,8 @@ Edit setting -"search" in Firefox</string>
                                                                 </constraints>
                                                                 <datePickerCell key="cell" borderStyle="bezel" alignment="left" useCurrentDate="YES" id="GwN-p0-Ywu">
                                                                     <font key="font" metaFont="system"/>
-                                                                    <date key="date" timeIntervalSinceReferenceDate="774255528.32709396">
-                                                                        <!--2025-07-15 06:58:48 +0000-->
+                                                                    <date key="date" timeIntervalSinceReferenceDate="775121239.64446104">
+                                                                        <!--2025-07-25 07:27:19 +0000-->
                                                                     </date>
                                                                     <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
                                                                     <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -10687,8 +10702,8 @@ Edit setting -"search" in Firefox</string>
                                                                 </constraints>
                                                                 <datePickerCell key="cell" borderStyle="bezel" alignment="left" useCurrentDate="YES" id="2xy-0S-D4T">
                                                                     <font key="font" metaFont="system"/>
-                                                                    <date key="date" timeIntervalSinceReferenceDate="774255528.33002806">
-                                                                        <!--2025-07-15 06:58:48 +0000-->
+                                                                    <date key="date" timeIntervalSinceReferenceDate="775121239.647457">
+                                                                        <!--2025-07-25 07:27:19 +0000-->
                                                                     </date>
                                                                     <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
                                                                     <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -11478,7 +11493,7 @@ Edit setting -"search" in Firefox</string>
         <image name="img_browsers" width="650" height="325"/>
         <image name="img_popUpBlockUrl" width="376" height="514"/>
         <image name="img_videoScreenshot" width="886" height="553"/>
-        <image name="menu_ScreenShot_MorningRoutine_new" width="412" height="501"/>
+        <image name="menu_HabitDisabled_ScreenShot_new" width="368" height="448"/>
         <image name="minus" catalog="system" width="15" height="4"/>
         <image name="settings" width="1112" height="792"/>
         <image name="systemEvents" width="372" height="407"/>

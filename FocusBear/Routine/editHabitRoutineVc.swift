@@ -29,22 +29,22 @@ class editHabitRoutineVc: NSViewController, WKNavigationDelegate, webViewLoadFai
     override func viewWillAppear() {
         allApiObject.capturePosthog(event: "edit-habits", metadata: [:])
         self.setSettingsToWebView()
-        mainViewControllerObj?.btnAbort.title = "Back to my habits"
+        getHabitsVcObject().btnAbort.title = "Back to my habits"
         if let common = configjson.value(forKey: "common") as? NSDictionary{
-            mainViewControllerObj?.btnAbort.title = common.value(forKey: "buttonBackToMyHabitsText") as? String ?? "Back to my habits"
+            getHabitsVcObject().btnAbort.title = common.value(forKey: "buttonBackToMyHabitsText") as? String ?? "Back to my habits"
         }
     }
     
     override func viewWillDisappear() {
         if checkIsFullScreenEnabled(){
-            mainViewControllerObj?.btnAbort.title = "Exit Fullscreen"
+            getHabitsVcObject().btnAbort.title = "Exit Fullscreen"
             if let common = configjson.value(forKey: "common") as? NSDictionary{
-                mainViewControllerObj?.btnAbort.title = common.value(forKey: "buttonAbortText") as? String ?? "Exit Fullscreen"
+                getHabitsVcObject().btnAbort.title = common.value(forKey: "buttonAbortText") as? String ?? "Exit Fullscreen"
             }
         }else{
             let btnTitle = "Postpone"
             if let common = configjson.value(forKey: "common") as? NSDictionary{
-                mainViewControllerObj?.btnAbort.title = common.value(forKey: "buttonPostponeText") as? String ?? btnTitle
+                getHabitsVcObject().btnAbort.title = common.value(forKey: "buttonPostponeText") as? String ?? btnTitle
             }
         }
     }

@@ -296,7 +296,7 @@ class breakWarningVc: NSViewController {
                 self.view.window?.close()
                 transparentWcObj?.window?.close()
                 if self.isPostponing{
-                    mainViewControllerObj?.postponeBreakActivitiesFor(minutes: Int(self.popupButtonMinutes.title) ?? 5, secondsToPostpone: nil)
+                    getHabitsVcObject().postponeBreakActivitiesFor(minutes: Int(self.popupButtonMinutes.title) ?? 5, secondsToPostpone: nil, isFromBreakWarningWindow: true)
                     postponeBreaksFromBreaksWarningCount += 1
                     if postponeBreaksFromBreaksWarningCount >= 2{
                         postponeBreaksFromBreaksWarningCount = 0
@@ -305,7 +305,7 @@ class breakWarningVc: NSViewController {
                 }else{
                     if currentState == ._ACTIVITY_{// whenever show waring then make current state _ACTIVITY_ beacuse if any thing will happen during waring curent state will change (ex. app can bhi in shutoff state when warning is about to over in this case we will not execute break activity)
                         allApiObject.capturePosthog(event: "break-warning-started-after-30-seconds-delay", metadata: [:])
-                        mainViewControllerObj?.performBreakActivities()
+                        getHabitsVcObject().performBreakActivities()
                     }
                 }
             }
@@ -331,7 +331,7 @@ class breakWarningVc: NSViewController {
         transparentWcObj?.window?.close()
         if currentState == ._ACTIVITY_{// whenever show waring then make current state _ACTIVITY_ beacuse if any thing will happen during waring curent state will change (ex. app can bhi in shutoff state when warning is about to over in this case we will not execute break activity)
             allApiObject.capturePosthog(event: "break-warning-user-started-early", metadata: [:])
-            mainViewControllerObj?.performBreakActivities()
+            getHabitsVcObject().performBreakActivities()
         }
     }
     
@@ -340,7 +340,7 @@ class breakWarningVc: NSViewController {
         allApiObject.capturePosthog(event: "skip-breaks-from-warning", metadata: [:])
         self.timer?.invalidate()
         self.view.window?.close()
-        mainViewControllerObj?.postponeBreakActivitiesFor(minutes: breakAfterMinutes, secondsToPostpone: nil)
+        getHabitsVcObject().postponeBreakActivitiesFor(minutes: breakAfterMinutes, secondsToPostpone: nil, isFromBreakWarningWindow: true)
     }
     @IBAction func btnPostponeClicked(_ sender: Any) {
         if isPostponing{
@@ -348,7 +348,7 @@ class breakWarningVc: NSViewController {
             self.timer?.invalidate()
             self.view.window?.close()
             if currentState == ._ACTIVITY_{// whenever show waring then make current state _ACTIVITY_ beacuse if any thing will happen during waring curent state will change (ex. app can bhi in shutoff state when warning is about to over in this case we will not execute break activity)
-                mainViewControllerObj?.performBreakActivities()
+                getHabitsVcObject().performBreakActivities()
             }
             
         }else{
@@ -373,7 +373,7 @@ class breakWarningVc: NSViewController {
                 self.timer?.invalidate()
                 self.view.window?.close()
                 activityPostponeCount += 1
-                mainViewControllerObj?.postponeBreakActivitiesFor(minutes: Int(popupButtonMinutes.title) ?? 5, secondsToPostpone: nil)
+                getHabitsVcObject().postponeBreakActivitiesFor(minutes: Int(popupButtonMinutes.title) ?? 5, secondsToPostpone: nil, isFromBreakWarningWindow: true)
                 postponeBreaksFromBreaksWarningCount += 1
                 if postponeBreaksFromBreaksWarningCount >= 2{
                     postponeBreaksFromBreaksWarningCount = 0

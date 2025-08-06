@@ -570,7 +570,7 @@ class firstViewController: NSViewController {
     @IBAction func btnPostponeClicked(_ sender: Any) {
         addLog(text: "[user-action] firstViewController:- button Postpone Clicked")
         if currentState == ._BREATHING_{
-            mainViewControllerObj?.abortCurrentState()
+            getHabitsVcObject().abortCurrentState()
             return;
         }
         thirdVcObj?.btnSkipHabitClicked(self)//for breakActivity only
@@ -580,7 +580,7 @@ class firstViewController: NSViewController {
     @IBAction func btnEditHabitsClicked(_ sender: Any) {
         if shouldAskPassword(){
             if SettingsManagerObject.isPasswordRequireInChangeSettings{
-                mainViewControllerObj?.showPasswordView()
+                getHabitsVcObject().showPasswordView()
                 enterPasswordVcObj?.parentVc = self
             }else{
                 showEditHabitsView()
@@ -630,7 +630,7 @@ class firstViewController: NSViewController {
             }
         }
         if isFirstTime{
-            mainViewControllerObj?.startBreathing()
+            getHabitsVcObject().startBreathing()
         }else{
             if currentState == ._MORNING_HABIT_{
                 if tblViewHabits.selectedRow != 0 && tblViewHabits.selectedRow != -1{
@@ -642,7 +642,7 @@ class firstViewController: NSViewController {
                         arrFilteredMorningHabits.append(item)
                     }
                 }
-                mainViewControllerObj?.showVisualizeInstructionsVc()
+                getHabitsVcObject().showVisualizeInstructionsVc()
                 visualizeInstructionsVcObj?.startTimer()
                 allApiObject.capturePosthog(event: "visualize-morning-routine", metadata: ["routine-type":"morning_routine"])
                 UserDefaults.standard.set(Date(), forKey: kUserdefaultsBeginMorningHabitClickedDate)
@@ -680,7 +680,7 @@ class firstViewController: NSViewController {
                 }
                 
                 
-                mainViewControllerObj?.showVisualizeInstructionsVc()
+                getHabitsVcObject().showVisualizeInstructionsVc()
                 visualizeInstructionsVcObj?.startTimer()
                 allApiObject.capturePosthog(event: "visualize-evening-routine", metadata: ["routine-type":"evening_routine"])
                 UserDefaults.standard.set(Date(), forKey: kUserdefaultsBeginEveningHabitClickedDate)
@@ -696,7 +696,7 @@ class firstViewController: NSViewController {
                         arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits.append(item)
                     }
                 }
-                mainViewControllerObj?.showVisualizeInstructionsVc()
+                getHabitsVcObject().showVisualizeInstructionsVc()
                 visualizeInstructionsVcObj?.startTimer()
                 allApiObject.capturePosthog(event: "visualize-morning-routine", metadata: ["routine-type":"custom_routine"])
             }
@@ -727,7 +727,7 @@ class firstViewController: NSViewController {
             SettingsManagerObject.putUserLocalDeviceSettings()
             appdelegate?.statusbutton?.image = NSImage(named: NSImage.Name("Bear-Small"))
             segmentControlOfficeMode.setSelected(true, forSegment: 1)
-            mainViewControllerObj?.reFillBreakActivitiesArray()
+            getHabitsVcObject().reFillBreakActivitiesArray()
             tblViewHabits.reloadData()
         }else{
             let filterArr = arrAllbreakActivities.filter { $0.isOfficeFriendly == true}
@@ -792,7 +792,7 @@ class firstViewController: NSViewController {
         appdelegate?.statusbutton?.image = NSImage(named: NSImage.Name("Bear-Office-Small"))
         segmentControlOfficeMode.setSelected(true, forSegment: 0)
         NSApplication.shared.applicationIconImage = NSImage(named: NSImage.Name("Bear-Office-icon"))
-        mainViewControllerObj?.reFillBreakActivitiesArray()
+        getHabitsVcObject().reFillBreakActivitiesArray()
         tblViewHabits.reloadData()
     }
     

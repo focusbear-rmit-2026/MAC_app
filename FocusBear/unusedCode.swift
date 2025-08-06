@@ -479,7 +479,7 @@
 //                                                                            }
 //                                                                            currentState = ._NOTHING_
 //                                                                            mainWindowControllerObj?.loadWindow()
-//                                                                            mainViewControllerObj?.setActivityTimer()
+//                                                                            getHabitsVcObject().setActivityTimer()
 //
 //                                                                            allApiObject.forceCompleteCurrentSequence(activity_sequence_id: sequenceId, isForToday: true, completionHandler: {json in
 //

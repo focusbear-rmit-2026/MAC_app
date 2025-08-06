@@ -151,8 +151,7 @@ extension browserTabLimiterVc: SettingToggleItemDelegate{
                     
                     alertWarning.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
                         if modalResponse == .alertFirstButtonReturn{
-                            showExplainingPermissionsWindow()
-                            explainingPermissionsVcObj?.showingFromPomodoro = false
+                            showExplainingPermissionsWindow(showingFromPomodoro: false)
                             UserDefaults.standard.set(true, forKey: kUserdefaultsBrowsersPermissionsSetByUser) // if ok clicked then then only save here
                             self.view.window?.close()
                         }

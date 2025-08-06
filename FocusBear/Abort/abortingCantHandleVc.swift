@@ -197,7 +197,7 @@ class abortingCantHandleVc: NSViewController, NSTextViewDelegate {
             
             addEntryInStatsCsv(logType: logType, activity: activity, durationInSeconds: "", quantityQuestion: "", quantityLogged: "", startTime: "", workAchieved: "", distractionsEncountered: "", abortReason: "Deactivate routine + breaks", feedback: textViewFeedback.string, tags:"")
             
-            mainViewControllerObj?.showAbortDoneView()
+            getHabitsVcObject().showAbortDoneView()
 //            getAbortJsonToUpload(emailAddress: textFieldEmail.stringValue, feedback: textViewFeedback.string, abortReason: "Deactivate routine + breaks", completionHandler: {dic in
 //                DispatchQueue.main.async {
 //                    mainViewControllerObj?.showAbortDoneView()

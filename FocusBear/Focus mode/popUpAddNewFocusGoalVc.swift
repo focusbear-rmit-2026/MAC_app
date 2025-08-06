@@ -139,28 +139,18 @@ class popUpAddNewFocusGoalVc: NSViewController {
                         lblGettingTasks.isHidden = true
                         loader.stopAnimation(self)
                         closeView()
-                        if taskPlayerWcObj != nil{
-                            if taskPlayerWcObj?.window?.isVisible ?? false{
-                                if let json = json{
-                                    if let id = json.value(forKey: "id") as? String{
-                                        taskPlayerVcObj?.addAndPlayTaskInCurrentList(taskName: taskName, id: id, duration: 600, shouldCompleteCurrentTask: checkBoxMarkCurrentTaskAsCompleted.state == .on)
-                                    }
-                                }
-                                
+                        if let json = json{
+                            if let id = json.value(forKey: "id") as? String{
+                                taskPlayerVcObj?.addAndPlayTaskInCurrentList(taskName: taskName, id: id, duration: 600, shouldCompleteCurrentTask: checkBoxMarkCurrentTaskAsCompleted.state == .on)
                             }
                         }
                     }
                 })
             }else{
                 closeView()
-                if taskPlayerWcObj != nil{
-                    if taskPlayerWcObj?.window?.isVisible ?? false{
-                        let task = arrAllTasks[taskAddedIndex]
-                        if let id = task.value(forKey: "id") as? String, let taskTitle = task.value(forKey: "title") as? String{
-                            taskPlayerVcObj?.addAndPlayTaskInCurrentList(taskName: taskTitle, id: id, duration: 600, shouldCompleteCurrentTask: checkBoxMarkCurrentTaskAsCompleted.state == .on)
-                        }
-                        
-                    }
+                let task = arrAllTasks[taskAddedIndex]
+                if let id = task.value(forKey: "id") as? String, let taskTitle = task.value(forKey: "title") as? String{
+                    taskPlayerVcObj?.addAndPlayTaskInCurrentList(taskName: taskTitle, id: id, duration: 600, shouldCompleteCurrentTask: checkBoxMarkCurrentTaskAsCompleted.state == .on)
                 }
             }
         }else{

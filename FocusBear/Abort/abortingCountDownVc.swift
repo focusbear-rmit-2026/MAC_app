@@ -123,6 +123,6 @@ class abortingCountDownVc: NSViewController {
     @IBAction func btnCancelAbortClicked(_ sender: Any) {
         self.timer?.invalidate()
         self.timer = nil
-        mainViewControllerObj?.abortCancel()
+        getHabitsVcObject().abortCancel()
     }
 }
