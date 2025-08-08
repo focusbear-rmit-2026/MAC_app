@@ -464,7 +464,7 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
 //                                    mainViewControllerObj?.showAbortDoneView()
 //                                }
 //                            })
-                            mainViewControllerObj?.showAbortDoneView()
+                            getHabitsVcObject().showAbortDoneView()
                         }
                     })
                 }else{

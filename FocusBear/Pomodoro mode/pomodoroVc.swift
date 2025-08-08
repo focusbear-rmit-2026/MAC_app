@@ -999,9 +999,9 @@ class pomodoroVc: NSViewController {
         
         if currentState == ._POSTPON_MORNING_HABIT_ || currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_{
             if getHabitsVcObject().postponeTimer != nil {
-                if mainViewControllerObj!.postponeTimer!.isValid{
+                if getHabitsVcObject().postponeTimer!.isValid{
                     let currentTime = Date()
-                    let breakTime = mainViewControllerObj!.postponeTimer!.fireDate
+                    let breakTime = getHabitsVcObject().postponeTimer!.fireDate
                     let diffMinute = Calendar.current.dateComponents([.minute], from: currentTime, to: breakTime).minute ?? 0
                     if diffMinute < totalMinutes{
                         alertExtendPostpone = NSAlert()

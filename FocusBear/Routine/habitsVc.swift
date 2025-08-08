@@ -13,6 +13,7 @@ class habitsVc: NSViewController {
     @IBOutlet weak var habitsView: NSView!
     @IBOutlet weak var lblMessage: NSTextField!
     @IBOutlet weak var btnAbort: Button!
+    @IBOutlet weak var lblCurrentDateTime: NSTextField!
     
     var breakTimer: Timer?
     var postponeTimer: Timer?
@@ -23,12 +24,47 @@ class habitsVc: NSViewController {
         
         lblMessage.stringValue = "OK - Stay focused throughout the day!"
         lblMessage.isHidden = true
+        btnAbort.title = "Please spare me"
+        btnAbort.borderWidth = 2
         if let common = configjson.value(forKey: "common") as? NSDictionary{
             lblMessage.stringValue = common.value(forKey: "stayFocusedText") as? String ?? lblMessage.stringValue
+            btnAbort.title = common.value(forKey: "buttonAbortText") as? String ?? btnAbort.title
         }
-
+        isMainWindowLoaded = true
+        
+        
+        btnAbort.buttonColor = NSColor(red: 255/255, green: 244/255, blue: 233/255, alpha: 1).cgColor
     }
 
+    
+    var dateTimeTimer:Timer?
+    func startDateTimer() {
+        lblCurrentDateTime.isHidden = false
+        if dateTimeTimer != nil{
+            dateTimeTimer?.invalidate()
+            dateTimeTimer = nil
+            setDateTime()
+        }
+        setDateTime()
+        DispatchQueue.main.async {
+            self.dateTimeTimer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.setDateTime), userInfo: nil, repeats: true)
+            RunLoop.main.add((self.dateTimeTimer!), forMode: RunLoop.Mode.common)
+        }
+    }
+    
+    @objc func setDateTime(){
+        if let dict = UserDefaults.standard.persistentDomain(forName: "com.apple.menuextra.clock") {
+            print(dict)
+            lblCurrentDateTime.stringValue = getStringFromDate(date: Date(), dateFormat: dict["DateFormat"] as? String ?? "EEE d MMM h:mm:ss")
+        }else{
+            lblCurrentDateTime.stringValue = getStringFromDate(date: Date(), dateFormat: "EEE d MMM h:mm:ss")
+        }
+    }
+    
+    override func viewWillDisappear() {
+        lblCurrentDateTime.isHidden = true
+        dateTimeTimer?.invalidate()
+    }
     
     override func viewWillAppear() {
 //        if checkIsFullScreenEnabled(){
@@ -193,18 +229,11 @@ class habitsVc: NSViewController {
     }
     
     @objc func showLoaderView(){
-        addLog(text: "Showing Loader")
-        self.view.addSubview(getLoaderVcObj().view)
-        self.view.addConstraints(subView: getLoaderVcObj().view)
+        mainViewControllerObj?.showLoaderView()
     }
     
     @objc func hideLoaderView(){
-        addLog(text: "Hide Loader")
-        if loaderVcPbj != nil{
-            if self.view.subviews.contains(loaderVcPbj!.view){
-                loaderVcPbj?.view.removeFromSuperview()
-            }
-        }
+        mainViewControllerObj?.hideLoaderView()
     }
     
     var timerGiveOneMoreMinut:Timer?
@@ -570,8 +599,8 @@ class habitsVc: NSViewController {
                             }
                         }
                     }
-                    mainWindowControllerObj?.window?.close()
-                    hideBlankWindowInSecondaryMonitor()
+                   // mainWindowControllerObj?.window?.close() // todo
+                   // hideBlankWindowInSecondaryMonitor() // todo
                     showEasyPostponeWindow()
                     if currentActivityPlaying != nil{
                         closePupUpBlockIfVisible()
@@ -601,8 +630,8 @@ class habitsVc: NSViewController {
                     }
                 }
             }
-            mainWindowControllerObj?.window?.close()
-            hideBlankWindowInSecondaryMonitor()
+            //mainWindowControllerObj?.window?.close() // todo
+           // hideBlankWindowInSecondaryMonitor() // todo
             
             showEasyPostponeWindow()
 
@@ -2598,7 +2627,7 @@ class habitsVc: NSViewController {
                 }
                 currentState = ._POSTPON_MORNING_HABIT_
 //                mainWindowControllerObj?.window?.close() // todo
-//                hideBlankWindowInSecondaryMonitor() // todo
+//                hideBlankWindowInSecondaryMonitor() // todo secendory window to close hogi hi q ki morning habit nahi hai ab
             }
             
             if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
@@ -3713,6 +3742,7 @@ class habitsVc: NSViewController {
             showBreaksBrainDump()
         }
         shouldShowPomodoroAfterBreak = false
+        leftMenuVcObj?.microBreaksStarted()
         NSApplication.shared.activate(ignoringOtherApps: true)
     }
     
@@ -3728,6 +3758,13 @@ class habitsVc: NSViewController {
 
     @IBAction func btnHiddenClicked(_ sender: Any) {
         //mainWindowControllerObj?.window?.close()
+    }
+    
+    func showHabitState(){
+        addLog(text: "showHabitState")
+        self.removeSubViews()
+        habitsView.addSubview(getHabitsStateVcObject().view)
+        habitsView.addConstraints(subView: getHabitsStateVcObject().view)
     }
 }
 

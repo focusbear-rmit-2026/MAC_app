@@ -107,7 +107,7 @@ class breaksBrainDumpVc: NSViewController {
 
     }
     
-    override func viewDidAppear() {
+    override func viewDidAppear() {// todo calling two time shoukd have a function
         textView.window?.makeFirstResponder(textView)
         
         let runningApp = lastFrontMostApplication

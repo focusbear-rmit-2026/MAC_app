@@ -223,7 +223,7 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
         }else{
 
             if mainWindowControllerObj?.window?.isVisible ?? false{
-                if getHabitsVcObject().containerView.subviews.first == focusCompletedFullScreenVcObj?.view{
+                if getHabitsVcObject().habitsView.subviews.first == focusCompletedFullScreenVcObj?.view{
                     lblAverageTimeSpentPerTab.stringValue = focusCompletedFullScreenVcObj?.lblAverageTimeSpentPerTab.stringValue ?? ""
                 }else{
                     if focusCompletedVcObj?.lblAverageTimeSpentPerTab != nil{
@@ -419,9 +419,9 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
         let totalMinutes = Int(popUpBtnSelectMinutes.title) ?? 0
         if currentState == ._POSTPON_MORNING_HABIT_ || currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_{
             if getHabitsVcObject().postponeTimer != nil {
-                if mainViewControllerObj!.postponeTimer!.isValid{
+                if getHabitsVcObject().postponeTimer!.isValid{
                     let currentTime = Date()
-                    let breakTime = mainViewControllerObj!.postponeTimer!.fireDate
+                    let breakTime = getHabitsVcObject().postponeTimer!.fireDate
                     let diffMinute = Calendar.current.dateComponents([.minute], from: currentTime, to: breakTime).minute ?? 0
                     if diffMinute < totalMinutes{
                         alertExtendPostpone = NSAlert()
@@ -509,7 +509,7 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
         allApiObject.capturePosthog(event: "extend-focus-session-from-popup", metadata: [:])
         self.dismiss(self)
         let minutesToExtend = Int(popUpBtnSelectMinutes.title) ?? 0
-        focusCompletedVcObj?.view.window?.close()
+        //focusCompletedVcObj?.view.window?.close() // todo 
 
         var currentFocusModeIndex = -1
         for i in 0..<arrFocusType.count{

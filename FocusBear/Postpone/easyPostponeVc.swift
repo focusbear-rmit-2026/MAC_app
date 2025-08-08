@@ -98,7 +98,12 @@ class easyPostponeVc: NSViewController {
                 }
             }
             appdelegate?.backgroundThread()
-            self.view.window?.close()
+//            self.view.window?.close() // todo
+            if self.presentingViewController == mainViewControllerObj{
+                self.dismiss(self)
+            }else{
+                self.view.window?.close()
+            }
             return;
         }
         if currentAction == ._INPROGRESS_  && (currentHabitPlaying != nil || currentActivityPlaying != nil){// if background abit is going on
@@ -109,7 +114,11 @@ class easyPostponeVc: NSViewController {
         }
         
         getHabitsVcObject().abortCancel()
-        self.view.window?.close()
+        if self.presentingViewController == mainViewControllerObj{
+            self.dismiss(self)
+        }else{
+            self.view.window?.close()
+        }
     }
     
     @IBAction func btnPostponeClicked(_ sender: Any) {
@@ -169,7 +178,7 @@ class easyPostponeVc: NSViewController {
         }else if lastCurrentState == ._POSTPON_EVENING_HABIT_{
             getHabitsVcObject().postponeEveningHabitFor(minutes: Int(popupButtonMinutes.title) ?? 5, secondsToPostpone: nil, showAskFocusModeView:false, showAskIntention:false)
         }
-        if (mainWindowControllerObj?.window?.isVisible ?? false) && self.presentingViewController == mainViewControllerObj{
+        if self.presentingViewController == mainViewControllerObj{
             self.dismiss(self)
         }else{
             self.view.window?.close()

@@ -171,25 +171,77 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         boxHabits.delegate = self
         boxDashboard.delegate = self
 
+        boxDashboard.isSelected = true
     }
+    
+    func reloadHabitStatus(){
+//        if currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_MORNING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_{
+//            boxHabits.title = "Resume Habits" // todo text
+//        }else if currentState == ._ACTIVITY_ && isBreakActivityExecuteFromPostponeMorningHabit{
+//            boxHabits.title = "Resume Habits" // todo text
+//        }else if currentState == ._ACTIVITY_ && isBreakActivityExecuteFromPostponeEveningHabit{
+//            boxHabits.title = "Resume Habits" // todo text
+//        }else if currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeMorningHabit{
+//            boxHabits.title = "Resume Habits" // todo text
+//        }else if currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeEveningHabit{
+//            boxHabits.title = "Resume Habits" // todo text
+//        }else{
+//            boxHabits.title = "Habits"// todo text
+//        }
+    }
+    
     
     func selectableListBoxDidChangeSelection(_ box: mainWindowListBox) {
         switch box{
             
         case boxDashboard:
-            break;
+            mainViewControllerObj?.showDashboardView()
         case boxHabits:
+            mainViewControllerObj?.showHabitsView()
+            if currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_MORNING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_{
+                habitsVcObj?.showHabitState()
+            }else if currentState == ._ACTIVITY_ && isBreakActivityExecuteFromPostponeMorningHabit{
+                habitsVcObj?.showHabitState()
+            }else if currentState == ._ACTIVITY_ && isBreakActivityExecuteFromPostponeEveningHabit{
+                habitsVcObj?.showHabitState()
+            }else if currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeMorningHabit{
+                habitsVcObj?.showHabitState()
+            }else if currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeEveningHabit{
+                habitsVcObj?.showHabitState()
+            }else{
+                if isHabitAlreadyShowed && !isShutOffTimeGoing(){
+                    habitsVcObj?.showHabitState()
+                }
+            }
+            
             break;
         case boxFocusSession:
+            if isFocusModeRunning {
+                menuViewControllerObj?.stopFocusMode()
+            }else{
+                if SettingsManagerObject.isGeekModeEnabled{
+                    appdelegate?.menuShowPomodoroModeView()
+                }else{
+                    appdelegate?.menuShowSimplePomodoroModeView()
+                }
+            }
+            enableAllItems()
             break;
         case boxMicroBreaks:
+            if currentState == ._ACTIVITY_{
+                mainViewControllerObj?.showHabitsView()
+            }else{
+                menuViewControllerObj?.btnStartBreakClicked(self)
+            }
+            
             break;
         case boxTodoPlayer:
-            break;
+            mainViewControllerObj?.showTaskView()
+            enableAllItems()
         case boxBrainDump:
-            break;
+            mainViewControllerObj?.showBrainDumpView()
         case boxFocusMusic:
-            break;
+            mainViewControllerObj?.showAllTracksView()
         case boxFocusModeSettings:
             break;
         case boxBlocks:
@@ -223,7 +275,10 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         boxFocusSession.isEnabled = false
         boxHabits.isEnabled = true
         boxDashboard.isEnabled = false
+        
         boxHabits.isSelected = true
+        mainViewControllerObj?.showHabitsView()
+        reloadHabitStatus()
     }
     
     
@@ -243,5 +298,76 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         boxFocusSession.isEnabled = true
         boxHabits.isEnabled = true
         boxDashboard.isEnabled = true
+        reloadHabitStatus()
     }
+    
+    func microBreaksStarted(){
+        boxHelpAndSupport.isEnabled = true
+        boxMotivation.isEnabled = true
+        boxEditHabits.isEnabled = true
+        boxSettings.isEnabled = true
+        boxBlocks.isEnabled = true
+        boxFocusModeSettings.isEnabled = true
+        
+        boxFocusMusic.isEnabled = false
+        boxBrainDump.isEnabled = false
+        boxTodoPlayer.isEnabled = false
+
+        boxMicroBreaks.isEnabled = true
+        boxFocusSession.isEnabled = false
+        boxHabits.isEnabled = false
+        boxDashboard.isEnabled = false
+        
+        boxMicroBreaks.isSelected = true
+        mainViewControllerObj?.showHabitsView()
+    }
+
+    func enableAllItems(){
+        boxHelpAndSupport.isEnabled = true
+        boxMotivation.isEnabled = true
+        boxEditHabits.isEnabled = true
+        boxSettings.isEnabled = true
+        boxBlocks.isEnabled = true
+        boxFocusModeSettings.isEnabled = true
+        
+        boxFocusMusic.isEnabled = true
+        boxBrainDump.isEnabled = true
+        boxTodoPlayer.isEnabled = true
+
+        boxMicroBreaks.isEnabled = true
+        boxFocusSession.isEnabled = true
+        boxHabits.isEnabled = true
+        boxDashboard.isEnabled = true
+    }
+    func showPomodoro(pomodoroVcObj:NSView){
+        boxFocusSession.isSelected = true
+        mainViewControllerObj?.showFocusSessionView(pomodoroView: pomodoroVcObj)
+        enableAllItems()
+    }
+    
+    
+    func showBrainDump(){
+        boxBrainDump.isSelected = true
+        mainViewControllerObj?.showBrainDumpView()
+        enableAllItems()
+    }
+    
+    func showAllTracks(){// todo in sab per is enabled ka check bhi lgana chahiye
+        boxFocusMusic.isSelected = true
+        mainViewControllerObj?.showAllTracksView()
+        enableAllItems()
+    }
+    
+    func showTaskPlayer(){
+        boxTodoPlayer.isSelected = true
+        mainViewControllerObj?.showTaskView()
+        enableAllItems()
+    }
+    
+    func showFocusCompletedView(){
+        boxFocusSession.isSelected = true
+        mainViewControllerObj?.showFocusCompletedView()
+        enableAllItems()
+    }
+    
 }

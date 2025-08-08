@@ -387,12 +387,12 @@ class askPostponeVc: NSViewController {
                     addLog(text: "Ask postpone view - Create Office Activity And Enable Office Mode")
                     addOfficeFriendlyActivityInSettings()
                     self.view.removeFromSuperview()
-                    mainViewControllerObj!.enableOfficeModeAndRestartBreakActivities()
+                    getHabitsVcObject().enableOfficeModeAndRestartBreakActivities()
                     
                 }else{
                     addLog(text: "Ask postpone view - Enabled Office Mode")
                     self.view.removeFromSuperview()
-                    mainViewControllerObj!.enableOfficeModeAndRestartBreakActivities()
+                    getHabitsVcObject().enableOfficeModeAndRestartBreakActivities()
                 }
             }else{
                 

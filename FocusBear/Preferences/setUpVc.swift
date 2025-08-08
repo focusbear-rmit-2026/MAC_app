@@ -11,6 +11,7 @@ import WebKit
 
 class setUpVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate {
 
+    @IBOutlet weak var widthConstraint: NSLayoutConstraint!
     @IBOutlet weak var webView: WKWebView!
     @IBOutlet weak var imgViewCustomiseFocusMode: NSImageView!
     @IBOutlet weak var imgViewCustomiseHabit: NSImageView!

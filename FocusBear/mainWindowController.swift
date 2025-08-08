@@ -47,13 +47,13 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
         
         if isMainWindowLoaded{
             mainViewControllerObj!.boxTopButtons.isHidden = false
-            mainViewControllerObj!.startDateTimer()
+            habitsVcObj?.startDateTimer()
             if self.window?.isVisible ?? false{
-                mainViewControllerObj?.setframe()
+                mainViewControllerObj?.setframe() // todo
             }
             let btnTitle = "Please spare me"
             if let common = configjson.value(forKey: "common") as? NSDictionary{
-                mainViewControllerObj?.btnAbort.title = common.value(forKey: "buttonAbortText") as? String ?? btnTitle
+                habitsVcObj?.btnAbort.title = common.value(forKey: "buttonAbortText") as? String ?? btnTitle // todo
             }
         }
     }
@@ -69,22 +69,22 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
         
         if isMainWindowLoaded{
             mainViewControllerObj!.boxTopButtons.isHidden = true
-            mainViewControllerObj!.dateTimeTimer?.invalidate()
-            mainViewControllerObj!.lblCurrentDateTime.isHidden = true
-            if mainViewControllerObj?.btnAbort.isHidden ?? false{
+            habitsVcObj?.dateTimeTimer?.invalidate()
+            habitsVcObj?.lblCurrentDateTime.isHidden = true
+            if habitsVcObj?.btnAbort.isHidden ?? false{
                 self.window?.styleMask.remove(.closable)
             }else{
                 self.window?.styleMask.insert(.closable)
             }
-            
+            // todo 
             let btnTitle = "Postpone"
             if let common = configjson.value(forKey: "common") as? NSDictionary{
-                mainViewControllerObj?.btnAbort.title = common.value(forKey: "buttonPostponeText") as? String ?? btnTitle
+                habitsVcObj?.btnAbort.title = common.value(forKey: "buttonPostponeText") as? String ?? btnTitle
             }
             if currentState == ._ASK_APP_WORK_{
                 let btnTitle = "Skip"
                 if let dic = configjson.value(forKey: "welcomeInfo") as? NSDictionary{
-                    mainViewControllerObj?.btnAbort.title = dic.value(forKey: "buttonSkipText") as? String ?? btnTitle
+                    habitsVcObj?.btnAbort.title = dic.value(forKey: "buttonSkipText") as? String ?? btnTitle
                 }
             }
         }
@@ -96,7 +96,7 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
         if views.count != 1{// it means sub views are added so nothing will happen, user will need to close subviews first(logquantity view, password box)
             return false
         }
-        mainViewControllerObj?.abortCurrentState()
+        getHabitsVcObject().abortCurrentState() // todo selected left item check krna hoga yha 
         return false
     }
     

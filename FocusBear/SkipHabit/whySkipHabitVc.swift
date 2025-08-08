@@ -116,7 +116,7 @@ class whySkipHabitVc: NSViewController {
         self.view.removeFromSuperview()
         
         if currentState == ._ACTIVITY_{
-            mainViewControllerObj?.showSkipHabitView()
+            getHabitsVcObject().showSkipHabitView()
         }else{
             if shouldAskPassword(){
                 if currentState == ._MORNING_HABIT_{

@@ -72,6 +72,9 @@ func showToolboxWindow(){
 //***********SHOW ToDoList window***************//
 func showToDoListWindow(){
     addLog(text:"show To Do List Window")
+    leftMenuVcObj?.showTaskPlayer()
+    return;
+    
     getToDoListWcObject().contentViewController = getTodoListToolVcObject()
     getToDoListWcObject().window?.title = "Focus Bear - To Do List"
     if let common = configjson.value(forKey: "common") as? NSDictionary{
@@ -151,6 +154,10 @@ func showAskAppWorkWindow(){
 
 func showBrainDumpWindow(){
     addLog(text: "func:- showBrainDumpWindow")
+    mainWindowControllerObj?.showWindow(nil)
+    leftMenuVcObj?.showBrainDump()
+    
+    return;// todo
     if brainDumpWcObj == nil{
         getBrainDumpWindowObject().contentViewController = getBrainDumpVcObject()
         brainDumpWcObj?.window?.styleMask.insert(.resizable)
@@ -495,6 +502,11 @@ func showBlurWindow(frame:NSRect, browser:BROWSER?){
 
 func showAllTracksWindow(){
     addLog(text:"showAllTracksWindow")
+    
+    mainWindowControllerObj?.showWindow(nil)
+    leftMenuVcObj?.showAllTracks()
+    return; // todo
+    
     getAllTracksWindowControllerObj().contentViewController = getAllTracksVcObj()
     getAllTracksWindowControllerObj().window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
     allTracksWindowControllerObj?.window?.center()
@@ -604,6 +616,9 @@ var shouldReloadTaskPlayer = true
 //***********showTaskPlayerWindow***************//
 func showTaskPlayerWindow(totalDuration:Int, intention:String, automatically:Bool){
     addLog(text:"func call:- showTaskPlayerWindow")
+    leftMenuVcObj?.showTaskPlayer()
+    return;
+    
     if UserDefaults.standard.object(forKey: kUserdefaultsManageTaskFirstTime) == nil && automatically{
         UserDefaults.standard.set(true, forKey: kUserdefaultsManageTaskFirstTime)
    

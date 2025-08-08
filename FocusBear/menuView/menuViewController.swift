@@ -888,10 +888,10 @@ class menuViewController: NSViewController {
                 }
                 
                 if getHabitsVcObject().breakTimer != nil && isBreakEnabled{
-                    if mainViewControllerObj!.breakTimer!.isValid{
+                    if getHabitsVcObject().breakTimer!.isValid{
                         boxNextBreak.isHidden = false
                         let currentTime = Date()
-                        let breakTime = mainViewControllerObj!.breakTimer!.fireDate
+                        let breakTime = getHabitsVcObject().breakTimer!.fireDate
                         let diffMinute = Calendar.current.dateComponents([.minute], from: currentTime, to: breakTime).minute ?? 0
                         var timeText = "\(diffMinute) \(minutesText)"
                         if diffMinute < 1{

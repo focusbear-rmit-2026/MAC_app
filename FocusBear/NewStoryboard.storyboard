@@ -3392,7 +3392,7 @@
                                                         <color key="backgroundColor" red="0.98799997569999998" green="0.97299999000000004" blue="0.94099998470000001" alpha="0.0" colorSpace="custom" customColorSpace="sRGB"/>
                                                         <color key="gridColor" name="gridColor" catalog="System" colorSpace="catalog"/>
                                                         <tableColumns>
-                                                            <tableColumn width="487" minWidth="40" maxWidth="1000" id="XSj-QT-vVg">
+                                                            <tableColumn width="487" minWidth="40" maxWidth="2000" id="XSj-QT-vVg">
                                                                 <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border">
                                                                     <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
                                                                     <color key="backgroundColor" name="headerColor" catalog="System" colorSpace="catalog"/>
@@ -3561,10 +3561,6 @@
                                                     </tableView>
                                                 </subviews>
                                             </clipView>
-                                            <constraints>
-                                                <constraint firstAttribute="height" constant="360" id="LgS-JK-Pw8"/>
-                                                <constraint firstAttribute="width" constant="490" id="zop-aQ-UzJ"/>
-                                            </constraints>
                                             <scroller key="horizontalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" horizontal="YES" id="zwb-dg-FV2">
                                                 <rect key="frame" x="1" y="119" width="223" height="15"/>
                                                 <autoresizingMask key="autoresizingMask"/>
@@ -3580,7 +3576,7 @@
                                                 <rect key="frame" x="0.0" y="0.0" width="490" height="94"/>
                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                 <subviews>
-                                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="vc0-wd-wr8">
+                                                    <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="vc0-wd-wr8">
                                                         <rect key="frame" x="13" y="15" width="464" height="64"/>
                                                         <textFieldCell key="cell" id="uAt-Gs-gEX">
                                                             <font key="font" usesAppearanceFont="YES"/>
@@ -10694,10 +10690,6 @@ DQ
                         <subviews>
                             <wkWebView wantsLayer="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Uuo-Yw-gtH">
                                 <rect key="frame" x="0.0" y="0.0" width="690" height="500"/>
-                                <constraints>
-                                    <constraint firstAttribute="height" constant="500" id="Dlm-7b-GDv"/>
-                                    <constraint firstAttribute="width" constant="690" id="wlm-29-LdW"/>
-                                </constraints>
                                 <wkWebViewConfiguration key="configuration">
                                     <audiovisualMediaTypes key="mediaTypesRequiringUserActionForPlayback" none="YES"/>
                                     <wkPreferences key="preferences"/>
@@ -12499,8 +12491,8 @@ DQ
                                                             <rect key="frame" x="79" y="2" width="354" height="28"/>
                                                             <datePickerCell key="cell" borderStyle="bezel" alignment="left" useCurrentDate="YES" id="IJY-cs-LOX">
                                                                 <font key="font" metaFont="system"/>
-                                                                <date key="date" timeIntervalSinceReferenceDate="776003048.17345595">
-                                                                    <!--2025-08-04 12:24:08 +0000-->
+                                                                <date key="date" timeIntervalSinceReferenceDate="776236491.026981">
+                                                                    <!--2025-08-07 05:14:51 +0000-->
                                                                 </date>
                                                                 <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
                                                                 <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>

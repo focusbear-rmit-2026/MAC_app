@@ -14,7 +14,21 @@ class mainWindowListBox: NSBox {
     
     let kBorderColor = NSColor(red: 232/255, green: 136/255, blue: 0/255, alpha: 1)
     private var hovered = false
-    var isEnabled = true
+    var isEnabled: Bool = true{
+        didSet {
+            if oldValue != isEnabled {
+                if isEnabled{
+                    if !isSelected{
+                        label?.textColor = NSColor.labelColor
+                    }else{
+                        label?.textColor = NSColor.black
+                    }
+                }else{
+                    label?.textColor = NSColor.gray
+                }
+            }
+        }
+    }
     weak var delegate: mainWindowListBoxDelegate?
     
     var isSelected: Bool = false {
@@ -24,7 +38,6 @@ class mainWindowListBox: NSBox {
                 updateAppearance()
                 if isSelected {
                     notifySelectionChange()
-                    delegate?.selectableListBoxDidChangeSelection(self)
                 }
             }
         }
@@ -114,7 +127,7 @@ class mainWindowListBox: NSBox {
     func showSelectedUi(){
         self.fillColor = buttonBgColor
         self.borderColor = kBorderColor
-        label?.textColor = NSColor.selectedControlTextColor
+        label?.textColor = NSColor.black
         self.borderWidth = 1
     }
     
@@ -128,7 +141,11 @@ class mainWindowListBox: NSBox {
     func showNormalUi(){
         self.fillColor = NSColor.controlBackgroundColor
         self.borderColor = .clear
-        label?.textColor = NSColor.labelColor
+        if isEnabled{
+            label?.textColor = NSColor.labelColor
+        }else{
+            label?.textColor = NSColor.gray
+        }
         self.borderWidth = 1
     }
     
@@ -180,6 +197,7 @@ class mainWindowListBox: NSBox {
         super.mouseDown(with: event)
         if isEnabled && !isSelected{
             isSelected = true
+            delegate?.selectableListBoxDidChangeSelection(self)
         }
     }
     

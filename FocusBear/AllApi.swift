@@ -1316,6 +1316,8 @@ class AllApi:NSObject {
             completionHandler(nil);
             return;
         }
+        completionHandler(nil)// todo remove this line
+        return;// todo remove
         
         addLog(text: "func call:- activityCompletedApi completed-activity")
         appdelegate!.credentialsManager.credentials {credentialsInfo in

@@ -102,7 +102,7 @@ class askPostponeIntentionVc: NSViewController, NSTextViewDelegate {
     @IBAction func btnCancelClicked(_ sender: Any) {
         self.dismiss(self)
         if mainWindowControllerObj?.window?.isVisible ?? false{
-            mainViewControllerObj?.abortCancel()
+            getHabitsVcObject().abortCancel()
         }
     }
     

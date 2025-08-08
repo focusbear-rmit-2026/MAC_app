@@ -2239,3 +2239,24 @@ func getHabitsVcObject()->habitsVc{
     }
     return habitsVcObj!
 }
+
+
+
+//setUpVc
+var setUpVcObj:setUpVc?
+func getSetUpVcObject()->setUpVc{
+    if setUpVcObj == nil{
+        setUpVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("setUpVc")) as? setUpVc
+    }
+    return setUpVcObj!
+}
+
+
+//habitsStateVc
+var habitsStateVcObj:habitsStateVc?
+func getHabitsStateVcObject()->habitsStateVc{
+    if habitsStateVcObj == nil{
+        habitsStateVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("habitsStateVc")) as? habitsStateVc
+    }
+    return habitsStateVcObj!
+}

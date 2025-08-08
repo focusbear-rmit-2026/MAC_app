@@ -5284,5 +5284,3 @@ class BlinkingNSBox: NSBox {// 22/7/25  v 1.26.393
 }
 
 var isExplainingPermissionsWindowShowingFromPomodoro = false
-
-

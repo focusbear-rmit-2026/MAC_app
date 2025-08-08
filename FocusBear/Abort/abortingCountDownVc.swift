@@ -111,7 +111,7 @@ class abortingCountDownVc: NSViewController {
             forceCompleteIfAnyHabitGoing()
             DispatchQueue.global().async {
                 DispatchQueue.main.async {
-                    mainViewControllerObj!.showAbortConfirmationView()
+                    getHabitsVcObject().showAbortConfirmationView()
                 }
             }
         }
@@ -120,6 +120,7 @@ class abortingCountDownVc: NSViewController {
     
     @IBAction func btnEmaiClicked(_ sender: Any) {
     }
+    
     @IBAction func btnCancelAbortClicked(_ sender: Any) {
         self.timer?.invalidate()
         self.timer = nil

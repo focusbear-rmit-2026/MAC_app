@@ -37,7 +37,7 @@ class selectHabitsLaterInfoVc: NSViewController {
         hideOnboardingBellIcon(view: self.view)
     }
     @IBAction func btnContinueClicked(_ sender: Any) {
-        mainViewControllerObj!.abortOboardingWorkTime()
+        getHabitsVcObject().abortOboardingWorkTime()
     }
     
 }

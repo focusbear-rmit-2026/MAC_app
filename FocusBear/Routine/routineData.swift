@@ -220,7 +220,7 @@ func startCustomRoutine(index:Int, isOnDemand:Bool){
         appdelegate!.abortAllProcess()
         mainWindowControllerObj?.showWindow(appdelegate)
         showBlankWindowInSecondaryMonitor()
-        mainViewControllerObj!.showRoutineAllHabits(routineIndex: index)
+        getHabitsVcObject().showRoutineAllHabits(routineIndex: index)
     }
     
     getHabitsVcObject().showLoaderView()
@@ -652,7 +652,7 @@ func startCustomRoutmieHabitsCall(routineIndex:Int, activityId:String?, skippedA
     if activityId == nil && !needToCreateActivityId{
         mainWindowControllerObj?.showWindow(appdelegate)
         showBlankWindowInSecondaryMonitor()
-        mainViewControllerObj!.startDirectIncompleteCustomRoutineHabitAtIndex(index: 0, isLastActivitySkipped:false)
+        getHabitsVcObject().startDirectIncompleteCustomRoutineHabitAtIndex(index: 0, isLastActivitySkipped:false)
     }else{
         // let arrTempFilteredMorningHabits = arrAllCustomRoutine[routineIndex].arrAllFilteredHabits
         //  arrFilteredMorningHabits.removeAll()
@@ -711,7 +711,7 @@ func startCustomRoutmieHabitsCall(routineIndex:Int, activityId:String?, skippedA
             if arrHabits[i].id == activityId!{
                 isActivityFound = true
                 if i == 0{
-                    mainViewControllerObj!.startDirectIncompleteCustomRoutineHabitAtIndex(index: i, isLastActivitySkipped:false)
+                    getHabitsVcObject().startDirectIncompleteCustomRoutineHabitAtIndex(index: i, isLastActivitySkipped:false)
                 }else {
                     if skippedActivities.count == 0{
                         habitTotalCompletedSeconds = 0
@@ -720,7 +720,7 @@ func startCustomRoutmieHabitsCall(routineIndex:Int, activityId:String?, skippedA
                                 habitTotalCompletedSeconds += arrHabits[j].durationSeconds!
                             }
                         }
-                        mainViewControllerObj!.startDirectIncompleteCustomRoutineHabitAtIndex(index: i, isLastActivitySkipped:false)
+                        getHabitsVcObject().startDirectIncompleteCustomRoutineHabitAtIndex(index: i, isLastActivitySkipped:false)
                     }else{
                         var isLastActivitySkipped = false
                         if let lastActivityId = arrHabits[i-1].id{
@@ -742,7 +742,7 @@ func startCustomRoutmieHabitsCall(routineIndex:Int, activityId:String?, skippedA
                                 
                             }
                         }
-                        mainViewControllerObj!.startDirectIncompleteCustomRoutineHabitAtIndex(index: i, isLastActivitySkipped:isLastActivitySkipped)
+                        getHabitsVcObject().startDirectIncompleteCustomRoutineHabitAtIndex(index: i, isLastActivitySkipped:isLastActivitySkipped)
                         
                     }
                     
@@ -768,9 +768,9 @@ func startCustomRoutmieHabitsCall(routineIndex:Int, activityId:String?, skippedA
                 }
             }
             if lastActivityFoundIndex == -1{
-                //                    mainViewControllerObj!.showal //  no need to do any thing
+                //                    getHabitsVcObject().showal //  no need to do any thing
             }else{
-                mainViewControllerObj!.startDirectIncompleteCustomRoutineHabitAtIndex(index: lastActivityFoundIndex, isLastActivitySkipped:isLastActivitySkipped)
+                getHabitsVcObject().startDirectIncompleteCustomRoutineHabitAtIndex(index: lastActivityFoundIndex, isLastActivitySkipped:isLastActivitySkipped)
             }
             
         }
@@ -956,3 +956,87 @@ func getCurrentHabitCurrentDurationDone(id:String)->Int?{
      );
  };
  */
+
+func getNextRoutineTime()->Date{
+    var nextRoutineTime:Date = Date()
+    var shutOffdate = Calendar.current.date(bySettingHour: shutOffTime!.hour, minute: shutOffTime!.minute, second: shutOffTime!.second, of: Date())!
+    let calendar = Calendar.current
+    // Get today's 11:59 PM
+    var components = calendar.dateComponents([.year, .month, .day], from: Date())
+    components.hour = 23
+    components.minute = 59
+    components.second = 59
+    let elevenFiftyNinePM = calendar.date(from: components) ?? Date()
+    
+    if shutOffdate > elevenFiftyNinePM{//>
+        shutOffdate = Calendar.current.date(byAdding: .day, value: 1, to: shutOffdate) ?? shutOffdate
+    }
+    nextRoutineTime = shutOffdate
+
+
+    for i in 0..<arrAllCustomRoutine.count{
+
+        if !arrAllCustomRoutine[i].triggerOnDemand{
+
+            if let skipDate = arrAllCustomRoutine[i].skipForDate{
+                if Calendar.current.isDateInToday(skipDate){
+                    continue;
+                }
+            }
+            
+            let currentDate = Date()
+            var startDate = currentDate
+
+            let startTimeRoutine = arrAllCustomRoutine[i].startTime
+            let endTimeRoutine = arrAllCustomRoutine[i].endTime
+            let nextSheduledTimeRoutine = arrAllCustomRoutine[i].nextSheduledTime
+            
+
+            if startTimeRoutine != nil{
+                startDate = Calendar.current.date(bySettingHour: startTimeRoutine!.hour, minute: startTimeRoutine!.minute, second: startTimeRoutine!.second, of: currentDate)!// start time objectfrom start time var
+                if let lastCompletedSequence = arrAllCustomRoutine[i].lastCompletedSequence{
+                    if lastCompletedSequence.compare(startDate) == .orderedDescending{
+                        continue;
+                    }
+                }
+            }
+            
+            // check is current routine is allowd for today or not
+             
+            let currentWeekDay = Date().dayOfWeek()
+            var isAllowedCurrentRoutine = false
+            
+            if arrAllCustomRoutine[i].days_of_week.contains(where: {$0.compare("all", options: .caseInsensitive) == .orderedSame}) {
+                isAllowedCurrentRoutine = true
+            }else if arrAllCustomRoutine[i].days_of_week.contains(where: {$0.compare("weekdays", options: .caseInsensitive) == .orderedSame}) {
+                if !currentWeekDay.localizedCaseInsensitiveContains("sat") && !currentWeekDay.localizedCaseInsensitiveContains("sat"){
+                    isAllowedCurrentRoutine = true
+                }
+            }else if arrAllCustomRoutine[i].days_of_week.contains(where: {$0.compare("weekend", options: .caseInsensitive) == .orderedSame}) {
+                if currentWeekDay.localizedCaseInsensitiveContains("sat") || currentWeekDay.localizedCaseInsensitiveContains("sat"){
+                    isAllowedCurrentRoutine = true
+                }
+            }else if arrAllCustomRoutine[i].days_of_week.contains(where: {$0.compare(currentWeekDay, options: .caseInsensitive) == .orderedSame}) {
+                isAllowedCurrentRoutine = true
+            }
+             
+             
+            if !isAllowedCurrentRoutine{
+                continue;
+            }
+            
+            if let nextSheduledTimeRoutine = nextSheduledTimeRoutine{ // is postpone state
+                if nextSheduledTimeRoutine < nextRoutineTime{
+                    nextRoutineTime = nextSheduledTimeRoutine
+                }
+            }else{
+                if startDate < nextRoutineTime{
+                    nextRoutineTime = startDate
+                }
+            }
+        }
+
+    }
+
+    return nextRoutineTime
+}

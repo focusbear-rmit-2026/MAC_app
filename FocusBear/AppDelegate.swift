@@ -2841,7 +2841,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                     if (getHabitsVcObject().view.subviews.contains((logQuantityVcObj!.view))){
                                         if currentState == ._ACTIVITY_ || currentState == ._BREATHING_ || currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_{
                                             if logQuantityVcObj!.tabClickedSelectNextTextField(){
-                                                return nil
+                                                //return nil // todo uncomment
                                             }
                                         }
                                     }
@@ -2876,27 +2876,27 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                             }
                                             if (getHabitsVcObject().view.subviews.contains((logQuantityVcObj!.view))){
                                                 logQuantityVcObj?.btnOkClicked(self)
-                                                return nil
+//                                                return nil // todo uncomment this
                                             }else{
                                                 if thirdVcObj?.boxBg.isHidden == true{// it means remember next habit is added
                                                     if rememberNextHabitVcObj != nil{
                                                         if thirdVcObj?.view.subviews.contains(rememberNextHabitVcObj!.view) ?? false{
                                                             if rememberNextHabitVcObj?.btnStartNextHabit.isHidden == false{
                                                                 rememberNextHabitVcObj?.btnStartNextHabitClicked(self)
-                                                                return nil
+//                                                                return nil// todo uncomment this
                                                             }
                                                         }
                                                     }
                                                 }else{
                                                     thirdVcObj?.btnMainClicked(self)
-                                                    return nil
+//                                                    return nil// todo uncomment this
                                                 }
                                             }
                                         }
                                         
                                     }else if currentAction == ._INPROGRESS_{
                                         if timerViewcontrollerObj != nil{
-                                            if (getHabitsVcObject().containerView.subviews.contains(timerViewcontrollerObj!.view)){
+                                            if (getHabitsVcObject().habitsView.subviews.contains(timerViewcontrollerObj!.view)){
                                                 if timerViewcontrollerObj?.boxTimer.isHidden == true{
                                                     timerViewcontrollerObj?.btnIAmDoneClicked(self)
                                                     return nil
@@ -2923,7 +2923,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                                     }
                                                 }
                                             }else if (getHabitsVcObject().habitsView.subviews.contains(thirdVcObj!.view)){
-                                                if (getHabitsVcObject().view.subviews.contains((logQuantityVcObj!.view)))!{
+                                                if (getHabitsVcObject().view.subviews.contains((logQuantityVcObj!.view))){
                                                     logQuantityVcObj?.btnOkClicked(self)
                                                     return nil
                                                 }else{
@@ -3268,8 +3268,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         
         pomodoroVcObj?.isShowingMorningHardcorePomodoro = false
         allApiObject.capturePosthog(event: "start-focus-session-popup-opened", metadata: [:])
-        getPomodoroWindowControllerObj().contentViewController = pomodoroVcObj
-        getPomodoroWindowControllerObj().showWindow(self)
+        
+        mainWindowControllerObj?.showWindow(self)
+        if mainWindowControllerObj?.window?.isVisible ?? false{
+            leftMenuVcObj?.showPomodoro(pomodoroVcObj: pomodoroVcObj!.view)
+        }else{
+            getPomodoroWindowControllerObj().contentViewController = pomodoroVcObj
+            getPomodoroWindowControllerObj().showWindow(self)
+        }
+        
         pomodoroVcObj?.isShowingPomodoroManually = false
         pomodoroVcObj?.isShowingMorningPomodoro = false
         NSApplication.shared.activate(ignoringOtherApps: true)
@@ -3322,8 +3329,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             }
         }
         allApiObject.capturePosthog(event: "start-focus-session-popup-opened", metadata: [:])
-        getPomodoroWindowControllerObj().contentViewController = pomodoroVcObj
-        getPomodoroWindowControllerObj().showWindow(self)
+        
+        mainWindowControllerObj?.showWindow(self)
+        if mainWindowControllerObj?.window?.isVisible ?? false{
+            leftMenuVcObj?.showPomodoro(pomodoroVcObj: pomodoroVcObj!.view)
+        }else{
+            getPomodoroWindowControllerObj().contentViewController = pomodoroVcObj
+            getPomodoroWindowControllerObj().showWindow(self)
+        }
+        
         pomodoroVcObj?.isShowingPomodoroManually = false
         pomodoroVcObj?.isShowingMorningPomodoro = true
         NSApplication.shared.activate(ignoringOtherApps: true)
@@ -3367,8 +3381,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         }
         pomodoroVcObj?.isShowingMorningHardcorePomodoro = false
         allApiObject.capturePosthog(event: "start-focus-session-popup-opened", metadata: [:])
-        getPomodoroWindowControllerObj().contentViewController = pomodoroVcObj
-        getPomodoroWindowControllerObj().showWindow(self)
+        
+        mainWindowControllerObj?.showWindow(self)
+        if mainWindowControllerObj?.window?.isVisible ?? false{
+            leftMenuVcObj?.showPomodoro(pomodoroVcObj: pomodoroVcObj!.view)
+        }else{
+            getPomodoroWindowControllerObj().contentViewController = pomodoroVcObj
+            getPomodoroWindowControllerObj().showWindow(self)
+        }
+        
+        
         pomodoroVcObj?.isShowingPomodoroManually = true
         pomodoroVcObj?.isShowingMorningPomodoro = false
         NSApplication.shared.activate(ignoringOtherApps: true)
@@ -3411,12 +3433,26 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             }
         }
         allApiObject.capturePosthog(event: "start-focus-session-popup-opened", metadata: [:])
-        getPomodoroWindowControllerObj().contentViewController = getSimplePomodoroVcObj()
-        getPomodoroWindowControllerObj().showWindow(self)
+        
+        mainWindowControllerObj?.showWindow(self)
+        if mainWindowControllerObj?.window?.isVisible ?? false{
+            leftMenuVcObj?.showPomodoro(pomodoroVcObj: getSimplePomodoroVcObj().view)
+        }else{
+            getPomodoroWindowControllerObj().contentViewController = getSimplePomodoroVcObj()
+            getPomodoroWindowControllerObj().showWindow(self)
+        }
+        
         NSApplication.shared.activate(ignoringOtherApps: true)
     }
 
     @objc func checkWindowState(){
+        getHabitsVcObject().loadView() // todo 
+        mainViewControllerObj?.loadView() // todo
+        
+        
+//        UserDefaults.standard.set(Date(), forKey: kUserdefaultsLastHabitShowDate) // todo remove
+        UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitShowDate) // todo remove
+        
         loadMenuWindow()
         isFirstRun = false
         
@@ -4750,7 +4786,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         
                         //Late No More disrupts saving achievements at end of activity with focus mode#919
                         if currentAction == ._END_ && thirdVcObj != nil{
-                            if (getHabitsVcObject().containerView.subviews.contains(thirdVcObj!.view))!{
+                            if (getHabitsVcObject().habitsView.subviews.contains(thirdVcObj!.view)){
                                 if logQuantityVcObj != nil{// log quanity
                                     if (getHabitsVcObject().view.subviews.contains((logQuantityVcObj!.view))){
                                         logQuantityVcObj?.btnOkClicked(self)
@@ -5580,7 +5616,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         mainWindowControllerObj?.showWindow(self)
                         showBlankWindowInSecondaryMonitor()
                     }
-                    mainViewControllerObj!.shutOffMac()
+                    getHabitsVcObject().shutOffMac()
                     return;
                 }
             }
@@ -5675,7 +5711,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             if !(mainWindowControllerObj?.isWindowLoaded ?? false){
                 mainWindowControllerObj?.loadWindow()
             }
-            mainViewControllerObj!.showFocusSummaryView()
+            getHabitsVcObject().showFocusSummaryView()
             return;
         }else{
             if let date = UserDefaults.standard.object(forKey: kUserdefaultsFocusSummaryShowedTillDate) as? Date{
@@ -5684,7 +5720,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     if !(mainWindowControllerObj?.isWindowLoaded ?? false){
                         mainWindowControllerObj?.loadWindow()
                     }
-                    mainViewControllerObj!.showFocusSummaryView()
+                    getHabitsVcObject().showFocusSummaryView()
                     return;
                 }else{
                     addLog(text: "Focus Summary already shown for today - skipping.")
@@ -5716,7 +5752,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             mainWindowControllerObj?.showWindow(self)
         }
         showBlankWindowInSecondaryMonitor()
-        mainViewControllerObj!.shutOffMac()
+        getHabitsVcObject().shutOffMac()
     }
     func showEveningHabit(activityId: String?, skippedActivities:[String], completedActivities:[String], needToCreateActivityId:Bool = false){
         additionalHabitTotalCompletedSeconds = 0
@@ -5820,7 +5856,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         mainWindowControllerObj?.showWindow(self)
                     }
                     showBlankWindowInSecondaryMonitor()
-                    mainViewControllerObj!.shutOffMac()
+                    getHabitsVcObject().shutOffMac()
                     return;
                 }
                 
@@ -5861,7 +5897,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             }
             //
             
-            mainViewControllerObj!.showAllEveningHabits()
+            getHabitsVcObject().showAllEveningHabits()
         }else{
             
             arrPreFilteredEveningHabits = arrFilteredEveningHabits
@@ -5907,7 +5943,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 if arrFilteredEveningHabits[i].id == activityId!{
                     isActivityFound = true
                     if i == 0{
-                        mainViewControllerObj!.startDirectIncompleteEveningHabitAtIndex(index: i, isLastActivitySkipped: false, skippedActivities:skippedActivities, completedActivities:completedActivities)
+                        getHabitsVcObject().startDirectIncompleteEveningHabitAtIndex(index: i, isLastActivitySkipped: false, skippedActivities:skippedActivities, completedActivities:completedActivities)
                     }else{
                         if skippedActivities.count == 0{
                             habitTotalCompletedSeconds = 0
@@ -5926,7 +5962,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                 UserDefaults.standard.set(arrFilteredEveningHabits[i-1].id, forKey: kUserdefaultsLastHabitID)
                             }
                             
-                            mainViewControllerObj!.startDirectIncompleteEveningHabitAtIndex(index: i, isLastActivitySkipped: false, skippedActivities:skippedActivities, completedActivities:completedActivities)
+                            getHabitsVcObject().startDirectIncompleteEveningHabitAtIndex(index: i, isLastActivitySkipped: false, skippedActivities:skippedActivities, completedActivities:completedActivities)
                         }else{
                             var isLastActivitySkipped = false
                             if let lastActivityId = arrFilteredEveningHabits[i-1].id{
@@ -5956,7 +5992,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                     UserDefaults.standard.set(arrFilteredEveningHabits[i-1].id, forKey: kUserdefaultsLastHabitID)
                                 }
                             }
-                            mainViewControllerObj!.startDirectIncompleteEveningHabitAtIndex(index: i, isLastActivitySkipped: isLastActivitySkipped, skippedActivities:skippedActivities, completedActivities:completedActivities)
+                            getHabitsVcObject().startDirectIncompleteEveningHabitAtIndex(index: i, isLastActivitySkipped: isLastActivitySkipped, skippedActivities:skippedActivities, completedActivities:completedActivities)
                         }
                     }
                     break;
@@ -5979,9 +6015,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     }
                 }
                 if lastActivityFoundIndex == -1{
-                    mainViewControllerObj!.showAllEveningHabits()
+                    getHabitsVcObject().showAllEveningHabits()
                 }else{
-                    mainViewControllerObj!.startDirectIncompleteEveningHabitAtIndex(index: lastActivityFoundIndex, isLastActivitySkipped:isLastActivitySkipped, skippedActivities:skippedActivities, completedActivities:completedActivities)
+                    getHabitsVcObject().startDirectIncompleteEveningHabitAtIndex(index: lastActivityFoundIndex, isLastActivitySkipped:isLastActivitySkipped, skippedActivities:skippedActivities, completedActivities:completedActivities)
                 }
                 
                 
@@ -6106,7 +6142,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                             mainWindowControllerObj?.showWindow(self)
                         }
                         showBlankWindowInSecondaryMonitor()
-                        mainViewControllerObj!.shutOffMac()
+                        getHabitsVcObject().shutOffMac()
                         return;
                     }
 
@@ -6465,7 +6501,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 //
                 mainWindowControllerObj?.showWindow(self)
                 showBlankWindowInSecondaryMonitor()
-                mainViewControllerObj!.showAllMorningHabits()
+                getHabitsVcObject().showAllMorningHabits()
             }else{
                 let arrTempFilteredMorningHabits = arrFilteredMorningHabits
                 arrFilteredMorningHabits.removeAll()
@@ -6535,7 +6571,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     if arrFilteredMorningHabits[i].id == activityId!{
                         isActivityFound = true
                         if i == 0{
-                            mainViewControllerObj!.startDirectIncompleteMorningHabitAtIndex(index: i, isLastActivitySkipped:false)
+                            getHabitsVcObject().startDirectIncompleteMorningHabitAtIndex(index: i, isLastActivitySkipped:false)
                         }else {
                             if skippedActivities.count == 0{
                                 habitTotalCompletedSeconds = 0
@@ -6549,7 +6585,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                 }
                                 
                                 
-                                mainViewControllerObj!.startDirectIncompleteMorningHabitAtIndex(index: i, isLastActivitySkipped:false)
+                                getHabitsVcObject().startDirectIncompleteMorningHabitAtIndex(index: i, isLastActivitySkipped:false)
                             }else{
                                 var isLastActivitySkipped = false
                                 if let lastActivityId = arrFilteredMorningHabits[i-1].id{
@@ -6576,7 +6612,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                 }
                                 
                                 
-                                mainViewControllerObj!.startDirectIncompleteMorningHabitAtIndex(index: i, isLastActivitySkipped:isLastActivitySkipped)
+                                getHabitsVcObject().startDirectIncompleteMorningHabitAtIndex(index: i, isLastActivitySkipped:isLastActivitySkipped)
                                 
                             }
                             
@@ -6602,9 +6638,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         }
                     }
                     if lastActivityFoundIndex == -1{
-                        mainViewControllerObj!.showAllMorningHabits()
+                        getHabitsVcObject().showAllMorningHabits()
                     }else{
-                        mainViewControllerObj!.startDirectIncompleteMorningHabitAtIndex(index: lastActivityFoundIndex, isLastActivitySkipped:isLastActivitySkipped)
+                        getHabitsVcObject().startDirectIncompleteMorningHabitAtIndex(index: lastActivityFoundIndex, isLastActivitySkipped:isLastActivitySkipped)
                     }
                     
                 }
@@ -7459,7 +7495,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     }
                     focusCompletedFullScreenVcObj?.allowExtend = allowExtend
                     
-                    mainViewControllerObj!.showDayEndFocusCompletedView()
+                    getHabitsVcObject().showDayEndFocusCompletedView()
                     focusCompletedFullScreenVcObj?.resetData(focusModeName: currentFocusModeName, currentFocusModeId: currentFocusModeId, finish_time: Date(), isShutOffTime: isShutOffTime)
                 }
             }else if isMorningRoutineTime || isCustomRoutineTime{
@@ -7475,9 +7511,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     focusCompletedFullScreenVcObj?.allowExtend = allowExtend
                     
                     if isMorningRoutineTime{
-                        mainViewControllerObj!.showMorningRoutineFocusCompletedView()
+                        getHabitsVcObject().showMorningRoutineFocusCompletedView()
                     }else{
-                        mainViewControllerObj!.showCustomRoutineFocusCompletedView()
+                        getHabitsVcObject().showCustomRoutineFocusCompletedView()
                     }
                     focusCompletedFullScreenVcObj?.resetData(focusModeName: currentFocusModeName, currentFocusModeId: currentFocusModeId, finish_time: Date(), isShutOffTime: isShutOffTime)
                 }
@@ -7537,6 +7573,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     
     func showFocusCompletedView(){
         addLog(text: "show Focus Completed View")
+        leftMenuVcObj!.showFocusCompletedView()
+        return; // todo
+        
         getEndFocusModeWindowControllerObj().contentViewController = focusCompletedVcObj
         getEndFocusModeWindowControllerObj().showWindow(self)
     }
@@ -11806,3 +11845,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 
 
 
+// todo micro break aatr hi thodi der tak chalu ni krte to khud hi micro break window hide ho jata hai use natural break mano. latka kr dikhao nataul break ko micro break per hi 
+
+
+// break warning aate hi morning state vala view hide ho gya w ki main view controller ka remove all sub view call hua kahi se 

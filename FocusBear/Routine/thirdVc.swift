@@ -1394,7 +1394,7 @@ class thirdVc: NSViewController {
         if arrHabits[lastHabitIndex].logQuantity{
             webViewGraph1.isHidden = true
             webViewGraph2.isHidden = true
-            mainViewControllerObj!.showLogQuantityView()
+            getHabitsVcObject().showLogQuantityView()
             logQuantityVcObj?.isReviseQuantity = false
             
             var notes = ""
@@ -1414,7 +1414,7 @@ class thirdVc: NSViewController {
             
             if arrHabits[lastHabitIndex].take_notes == END_OF_ACTIVITY{
                 
-                mainViewControllerObj!.showTakeNotesView()
+                getHabitsVcObject().showTakeNotesView()
                 takeActivityNotesVcObj?.resetData(durationInSeconds: duration, quantity_logged:nil, activity_id: arrHabits[lastHabitIndex].id, activity_sequence_id: arrHabits[lastHabitIndex].activity_sequence_id, activityChoiceId: nil, log_quantity_answers: [])
                 addLog(text:"showTakeNotesView passed")
             }else if isAnyAllowedFocusModeActivityWasRunningInLastActivity{
@@ -1425,7 +1425,7 @@ class thirdVc: NSViewController {
                 if arrHabits[lastHabitIndex].take_notes == DURING_ACTIVITY{
                     notes = UserDefaults.standard.object(forKey: kUserdefaultsLastCustomRoutineHabitSavedNotes) as? String ?? ""
                 }
-                mainViewControllerObj!.showFocusCompletedView()
+                getHabitsVcObject().showFocusCompletedView()
                 focusModeActualDurationPerformed = duration
                 focusCompletedForActivityVcObj?.resetData(focusModeName: currentFocusModeName, currentFocusModeId: currentFocusModeId, finish_time: isAnyAllowedFocusModeActivityFinishTime, durationInSeconds: duration, quantity_logged:nil, activity_id: arrHabits[lastHabitIndex].id, activity_sequence_id: arrHabits[lastHabitIndex].activity_sequence_id, activityChoiceId: nil, log_quantity_answers: [], notes: notes)
                 addLog(text:"showFocusCompletedView passed")
@@ -1691,7 +1691,7 @@ class thirdVc: NSViewController {
         if arrHabits[lastHabitIndex].logQuantity{
             webViewGraph1.isHidden = true
             webViewGraph2.isHidden = true
-            mainViewControllerObj!.showLogQuantityView()
+            getHabitsVcObject().showLogQuantityView()
             logQuantityVcObj?.isReviseQuantity = false
             
             logQuantityVcObj?.resetData(name: lastHabit!, durationInSeconds: "\(duration)", logQuantityQuestion: arrHabits[lastHabitIndex].logQuantityQuestion, currentState: ._CUSTOM_ROUTINE_, logQuantityType: "", activity_id: arrHabits[lastHabitIndex].id, activity_sequence_id: arrHabits[lastHabitIndex].activity_sequence_id, activityChoiceId: nil, take_notes: arrHabits[lastHabitIndex].take_notes, notes: "", logQuantityQuestions: arrHabits[lastHabitIndex].logQuantityQuestions)
@@ -1704,7 +1704,7 @@ class thirdVc: NSViewController {
             
             if arrHabits[lastHabitIndex].take_notes == END_OF_ACTIVITY{
                 
-                mainViewControllerObj!.showTakeNotesView()
+                getHabitsVcObject().showTakeNotesView()
                 takeActivityNotesVcObj?.resetData(durationInSeconds: duration, quantity_logged:nil, activity_id: arrHabits[lastHabitIndex].id, activity_sequence_id: arrHabits[lastHabitIndex].activity_sequence_id, activityChoiceId: nil, log_quantity_answers: [])
                 
             }else{
@@ -1811,7 +1811,7 @@ class thirdVc: NSViewController {
         if arrFilteredMorningHabits[lastHabitIndex].logQuantity{
             webViewGraph1.isHidden = true
             webViewGraph2.isHidden = true
-            mainViewControllerObj!.showLogQuantityView()
+            getHabitsVcObject().showLogQuantityView()
             logQuantityVcObj?.isReviseQuantity = false
             
             var notes = ""
@@ -1831,7 +1831,7 @@ class thirdVc: NSViewController {
             
             if arrFilteredMorningHabits[lastHabitIndex].take_notes == END_OF_ACTIVITY{
                 
-                mainViewControllerObj!.showTakeNotesView()
+                getHabitsVcObject().showTakeNotesView()
                 takeActivityNotesVcObj?.resetData(durationInSeconds: duration, quantity_logged:nil, activity_id: arrFilteredMorningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredMorningHabits[lastHabitIndex].activity_sequence_id, activityChoiceId: nil, log_quantity_answers: [])
                 addLog(text:"showTakeNotesView passed")
             }else if isAnyAllowedFocusModeActivityWasRunningInLastActivity{
@@ -1842,7 +1842,7 @@ class thirdVc: NSViewController {
                 if arrFilteredMorningHabits[lastHabitIndex].take_notes == DURING_ACTIVITY{
                     notes = UserDefaults.standard.object(forKey: kUserdefaultsLastHabitSavedNotes) as? String ?? ""
                 }
-                mainViewControllerObj!.showFocusCompletedView()
+                getHabitsVcObject().showFocusCompletedView()
                 focusModeActualDurationPerformed = duration
                 focusCompletedForActivityVcObj?.resetData(focusModeName: currentFocusModeName, currentFocusModeId: currentFocusModeId, finish_time: isAnyAllowedFocusModeActivityFinishTime, durationInSeconds: duration, quantity_logged:nil, activity_id: arrFilteredMorningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredMorningHabits[lastHabitIndex].activity_sequence_id, activityChoiceId: nil, log_quantity_answers: [], notes: notes)
                 addLog(text:"showFocusCompletedView passed")
@@ -2010,7 +2010,7 @@ class thirdVc: NSViewController {
         if arrFilteredMorningHabits[lastHabitIndex].logQuantity{
             webViewGraph1.isHidden = true
             webViewGraph2.isHidden = true
-            mainViewControllerObj!.showLogQuantityView()
+            getHabitsVcObject().showLogQuantityView()
             logQuantityVcObj?.isReviseQuantity = false
             
             logQuantityVcObj?.resetData(name: lastHabit!, durationInSeconds: "\(duration)", logQuantityQuestion: arrFilteredMorningHabits[lastHabitIndex].logQuantityQuestion, currentState: ._MORNING_HABIT_, logQuantityType: "", activity_id: arrFilteredMorningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredMorningHabits[lastHabitIndex].activity_sequence_id, activityChoiceId: nil, take_notes: arrFilteredMorningHabits[lastHabitIndex].take_notes, notes: "", logQuantityQuestions: arrFilteredMorningHabits[lastHabitIndex].logQuantityQuestions)
@@ -2023,7 +2023,7 @@ class thirdVc: NSViewController {
             
             if arrFilteredMorningHabits[lastHabitIndex].take_notes == END_OF_ACTIVITY{
                 
-                mainViewControllerObj!.showTakeNotesView()
+                getHabitsVcObject().showTakeNotesView()
                 takeActivityNotesVcObj?.resetData(durationInSeconds: duration, quantity_logged:nil, activity_id: arrFilteredMorningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredMorningHabits[lastHabitIndex].activity_sequence_id, activityChoiceId: nil, log_quantity_answers: [])
                 
             }else{
@@ -2400,7 +2400,7 @@ class thirdVc: NSViewController {
         if arrFilteredEveningHabits[lastHabitIndex].logQuantity{
             webViewGraph1.isHidden = true
             webViewGraph2.isHidden = true
-            mainViewControllerObj!.showLogQuantityView()
+            getHabitsVcObject().showLogQuantityView()
             logQuantityVcObj?.isReviseQuantity = false
             
             var notes = ""
@@ -2417,7 +2417,7 @@ class thirdVc: NSViewController {
             self.loadGraph(activityId: arrFilteredEveningHabits[self.lastHabitIndex].id, activityName: lastHabit ?? "", logQuantity: false, logQuantityType: "", activityChoiceId: nil,activityStartTime: lastActivityPerformedTime!, duration: "\(duration)", quantity: "")
             
             if arrFilteredEveningHabits[lastHabitIndex].take_notes == END_OF_ACTIVITY{
-                mainViewControllerObj!.showTakeNotesView()
+                getHabitsVcObject().showTakeNotesView()
                 takeActivityNotesVcObj?.resetData(durationInSeconds: duration, quantity_logged:nil, activity_id: arrFilteredEveningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredEveningHabits[lastHabitIndex].activity_sequence_id, activityChoiceId: nil, log_quantity_answers: [])
             }else if isAnyAllowedFocusModeActivityWasRunningInLastActivity{
                 let currentFocusModeName = currentRunningFocusType["name"] as? String ?? ""
@@ -2427,7 +2427,7 @@ class thirdVc: NSViewController {
                 if arrFilteredEveningHabits[lastHabitIndex].take_notes == DURING_ACTIVITY{
                     notes = UserDefaults.standard.object(forKey: kUserdefaultsLastHabitSavedNotes) as? String ?? ""
                 }
-                mainViewControllerObj!.showFocusCompletedView()
+                getHabitsVcObject().showFocusCompletedView()
                 focusModeActualDurationPerformed = duration
                 focusCompletedForActivityVcObj?.resetData(focusModeName: currentFocusModeName, currentFocusModeId: currentFocusModeId, finish_time: isAnyAllowedFocusModeActivityFinishTime, durationInSeconds: duration, quantity_logged:nil, activity_id: arrFilteredEveningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredEveningHabits[lastHabitIndex].activity_sequence_id, activityChoiceId: nil, log_quantity_answers: [], notes: notes)
             }else{
@@ -2642,7 +2642,7 @@ class thirdVc: NSViewController {
         if arrFilteredEveningHabits[lastHabitIndex].logQuantity{
             webViewGraph1.isHidden = true
             webViewGraph2.isHidden = true
-            mainViewControllerObj!.showLogQuantityView()
+            getHabitsVcObject().showLogQuantityView()
             logQuantityVcObj?.isReviseQuantity = false
             logQuantityVcObj?.resetData(name: lastHabit!, durationInSeconds: "\(duration)", logQuantityQuestion: arrFilteredEveningHabits[lastHabitIndex].logQuantityQuestion, currentState: ._EVENING_HABIT_, logQuantityType: "", activity_id: arrFilteredEveningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredEveningHabits[lastHabitIndex].activity_sequence_id, activityChoiceId: nil, take_notes: arrFilteredEveningHabits[lastHabitIndex].take_notes, notes: "", logQuantityQuestions: arrFilteredEveningHabits[lastHabitIndex].logQuantityQuestions)
             logQuantityVcObj?.is_skipped = true
@@ -2654,7 +2654,7 @@ class thirdVc: NSViewController {
             
             
             if arrFilteredEveningHabits[lastHabitIndex].take_notes == END_OF_ACTIVITY{
-                mainViewControllerObj!.showTakeNotesView()
+                getHabitsVcObject().showTakeNotesView()
                 takeActivityNotesVcObj?.resetData(durationInSeconds: duration, quantity_logged:nil, activity_id: arrFilteredEveningHabits[lastHabitIndex].id, activity_sequence_id: arrFilteredEveningHabits[lastHabitIndex].activity_sequence_id, activityChoiceId: nil, log_quantity_answers: [])
             }else{
                 
@@ -3202,7 +3202,7 @@ class thirdVc: NSViewController {
         if logQuantity{
             webViewGraph1.isHidden = true
             webViewGraph2.isHidden = true
-            mainViewControllerObj!.showLogQuantityView()
+            getHabitsVcObject().showLogQuantityView()
             logQuantityVcObj?.isReviseQuantity = false
             
             var notes = ""
@@ -3219,7 +3219,7 @@ class thirdVc: NSViewController {
             self.loadGraph(activityId: activity_id, activityName: lastActivity, logQuantity: logQuantity, logQuantityType: "", activityChoiceId: activityChoiceId,activityStartTime: lastActivityPerformedTime!, duration: "\(durationInSeconds)", quantity: "")
             
             if take_notes == END_OF_ACTIVITY{
-                mainViewControllerObj!.showTakeNotesView()
+                getHabitsVcObject().showTakeNotesView()
                 takeActivityNotesVcObj?.resetData(durationInSeconds: durationInSeconds, quantity_logged:nil, activity_id: activity_id, activity_sequence_id: activity_sequence_id, activityChoiceId: activityChoiceId, log_quantity_answers: [])
             }else{
                 
@@ -3349,7 +3349,7 @@ class thirdVc: NSViewController {
         if logQuantity{
             webViewGraph1.isHidden = true
             webViewGraph2.isHidden = true
-            mainViewControllerObj!.showLogQuantityView()
+            getHabitsVcObject().showLogQuantityView()
             logQuantityVcObj?.isReviseQuantity = false
 
             var notes = ""
@@ -3366,7 +3366,7 @@ class thirdVc: NSViewController {
             self.loadGraph(activityId: activity_id, activityName: lastActivity, logQuantity: logQuantity, logQuantityType: "", activityChoiceId: activityChoiceId,activityStartTime: lastActivityPerformedTime!, duration: "\(durationInSeconds)", quantity: "")
 
             if take_notes == END_OF_ACTIVITY{
-                mainViewControllerObj!.showTakeNotesView()
+                getHabitsVcObject().showTakeNotesView()
                 takeActivityNotesVcObj?.resetData(durationInSeconds: durationInSeconds, quantity_logged:nil, activity_id: activity_id, activity_sequence_id: activity_sequence_id, activityChoiceId: activityChoiceId, log_quantity_answers: [])
             }else{
 
@@ -3590,7 +3590,7 @@ class thirdVc: NSViewController {
         if logQuantity{
             webViewGraph1.isHidden = true
             webViewGraph2.isHidden = true
-            mainViewControllerObj!.showLogQuantityView()
+            getHabitsVcObject().showLogQuantityView()
             logQuantityVcObj?.isReviseQuantity = false
             
             var notes = ""
@@ -3607,7 +3607,7 @@ class thirdVc: NSViewController {
             self.loadGraph(activityId: activity_id, activityName: lastActivity, logQuantity: logQuantity, logQuantityType: "", activityChoiceId: activityChoiceId,activityStartTime: lastActivityPerformedTime!, duration: "\(durationInSeconds)", quantity: "")
             
             if take_notes == END_OF_ACTIVITY{
-                mainViewControllerObj!.showTakeNotesView()
+                getHabitsVcObject().showTakeNotesView()
                 takeActivityNotesVcObj?.resetData(durationInSeconds: durationInSeconds, quantity_logged:nil, activity_id: activity_id, activity_sequence_id: activity_sequence_id, activityChoiceId: activityChoiceId, log_quantity_answers: [])
             }else{
                 
@@ -3712,7 +3712,7 @@ class thirdVc: NSViewController {
     @IBAction func btnReviseQuantityClicked(_ sender: Any) {
         addLog(text:"[user-action] thirdvc-btnReviseQuantityClicked")
         btnReviseQuantity.isHidden = true
-        mainViewControllerObj!.showLogQuantityView()
+        getHabitsVcObject().showLogQuantityView()
         logQuantityVcObj?.isReviseQuantity = true
         // logQuantityVcObj?.textFieldCount.stringValue = ""
         //   logQuantityVcObj?.textFieldCount.selectText(self)
@@ -3732,7 +3732,7 @@ class thirdVc: NSViewController {
         btnReviseQuantity.isHidden = true
         if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{//qki enter per ye button handle hai  or jha se handle h vha condition lganase accha yahi lagadi (enterv  password per bhi default enter key code h button per )
             if enterPasswordVcObj != nil{
-                if mainViewControllerObj!.view.subviews.contains(enterPasswordVcObj!.view){
+                if getHabitsVcObject().view.subviews.contains(enterPasswordVcObj!.view){
                     addLog(text:"[user-action]thirdvc-return:- password view is visible")
                     return;
                 }

@@ -18,6 +18,7 @@
 		134D1DF02E42378B00328E84 /* habitsVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 134D1DEF2E42378B00328E84 /* habitsVc.swift */; };
 		135ABEFD2E013254007ED73A /* breaksData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 135ABEFC2E01324D007ED73A /* breaksData.swift */; };
 		135CBDAF2D967009003BA438 /* routineData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 135CBDAE2D967005003BA438 /* routineData.swift */; };
+		1361D61F2E446DAD00601AB1 /* habitsStateVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1361D61E2E446DAD00601AB1 /* habitsStateVc.swift */; };
 		1361E6E52DB76A1900E6DE3F /* unverifiedEmailVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1361E6E42DB76A1900E6DE3F /* unverifiedEmailVc.swift */; };
 		1364364B2DE1FA7400B90724 /* splashVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1364364A2DE1FA7400B90724 /* splashVc.swift */; };
 		137A3D802E0A69CB008E3CF0 /* popUpFocusGoalConfirmationVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 137A3D7F2E0A69CB008E3CF0 /* popUpFocusGoalConfirmationVc.swift */; };
@@ -386,6 +387,7 @@
 		134D1DEF2E42378B00328E84 /* habitsVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = habitsVc.swift; sourceTree = "<group>"; };
 		135ABEFC2E01324D007ED73A /* breaksData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = breaksData.swift; sourceTree = "<group>"; };
 		135CBDAE2D967005003BA438 /* routineData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = routineData.swift; sourceTree = "<group>"; };
+		1361D61E2E446DAD00601AB1 /* habitsStateVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = habitsStateVc.swift; sourceTree = "<group>"; };
 		1361E6E42DB76A1900E6DE3F /* unverifiedEmailVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = unverifiedEmailVc.swift; sourceTree = "<group>"; };
 		1364364A2DE1FA7400B90724 /* splashVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = splashVc.swift; sourceTree = "<group>"; };
 		137A3D7F2E0A69CB008E3CF0 /* popUpFocusGoalConfirmationVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = popUpFocusGoalConfirmationVc.swift; sourceTree = "<group>"; };
@@ -757,6 +759,7 @@
 		135CBDAD2D966CCC003BA438 /* Routine */ = {
 			isa = PBXGroup;
 			children = (
+				134D1DEF2E42378B00328E84 /* habitsVc.swift */,
 				8FAC6C9C27806DCB008A4180 /* firstViewController.swift */,
 				8F99C8D52A13AE1D00FD2403 /* editHabitRoutineVc.swift */,
 				8F6138B528B7698300A45B1A /* visualizeInstructionsVc.swift */,
@@ -768,7 +771,7 @@
 				8F1E3F752B2ADC24005CE096 /* startAnotherHabitVc.swift */,
 				8F779DF92B80DD600011E1BE /* chooseHabitsVC.swift */,
 				135CBDAE2D967005003BA438 /* routineData.swift */,
-				134D1DEF2E42378B00328E84 /* habitsVc.swift */,
+				1361D61E2E446DAD00601AB1 /* habitsStateVc.swift */,
 			);
 			path = Routine;
 			sourceTree = "<group>";
@@ -1215,12 +1218,12 @@
 				8FBD6DFD2B6A760000CC9430 /* lateMorningHabitPopupVc.swift */,
 				8F45E5002B7C995F0063088E /* savedSitesForLaterVc.swift */,
 				8FA428572C6CA1DE00849938 /* customAlertVc.swift */,
+				8FB50EF727BE12CB00A7175B /* menuView */,
 				8FE5E5B82C46A58C00420717 /* Popups */,
 				8FB222142BA865DB00F3DA68 /* Create task */,
 				8F8073832B3D5C51004935B5 /* Firefox Permissions */,
 				8F0994B82A0CB9D000F4C65E /* activity Ongoing */,
 				8F0994B52A0CB35500F4C65E /* log Quantity */,
-				8FB50EF727BE12CB00A7175B /* menuView */,
 				8F09ACBD29703BF900A0F1D0 /* Tracks */,
 				8FBBD19C2968185100C4C8B7 /* Postpone */,
 				8F19BCA6293F361600F70544 /* SkipHabit */,
@@ -1765,6 +1768,7 @@
 				8F0A18572A8E4B9A00AFA623 /* focusBearModeVc.swift in Sources */,
 				8FAD22DB27CA526200CDC866 /* startingFocusModeVc.swift in Sources */,
 				8F8C3FD42A8CB297005CAF96 /* settingListItemVc.swift in Sources */,
+				1361D61F2E446DAD00601AB1 /* habitsStateVc.swift in Sources */,
 				8FD86E1C2A54303A004F6761 /* unusedCode.swift in Sources */,
 				8F779DFA2B80DD600011E1BE /* chooseHabitsVC.swift in Sources */,
 				8F4BD8C527883FBE00ABAEF5 /* KeyCombo.swift in Sources */,
