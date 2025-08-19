@@ -50,7 +50,7 @@ struct lastFocusTempInfo {
 
 var arrFocusTypeForPomodoro = [[String:Any]]()
 
-var focusModeStartWindowLodded = false
+//var focusModeStartWindowLodded = false
 var isFocusModeStartedAutomatically = false
 var isMeetingsFocusStartedAutomatically = false
 

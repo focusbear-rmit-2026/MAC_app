@@ -136,8 +136,8 @@ class selectJsonVc: NSViewController, NSTextViewDelegate, WKNavigationDelegate, 
     
     func setSettingsToWebView(){
         var theme = "LIGHT"
-        if preferencesWindowControllerObj != nil{
-            if preferencesWindowControllerObj!.window!.hasDarkAppearance{
+        if mainWindowControllerObj != nil{
+            if mainWindowControllerObj!.window!.hasDarkAppearance{
                 theme = "DARK"
             }else {
                 theme = "LIGHT"
@@ -253,7 +253,7 @@ class selectJsonVc: NSViewController, NSTextViewDelegate, WKNavigationDelegate, 
     
     override func viewWillAppear() {
         self.setSettingsToWebView()
-        preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: viewWidthDefault, height: viewHeightDefault))
+//        preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: viewWidthDefault, height: viewHeightDefault)) // todo check this
         allApiObject.capturePosthog(event: "edit-habits", metadata: [:])
     }
 
@@ -473,11 +473,11 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
                 focusModeTaskString = message.body as? String ?? ""
             }
             addTaskVcObj!.dismiss(addTaskVcObj)
-            if startingFocusWindowControllerObj?.window?.isVisible ?? false{
+           // if startingFocusWindowControllerObj?.window?.isVisible ?? false{
 //                startingFocusModeVcObj?.taskAdded()
-            }else if pomodoroWindowControllerObj?.window?.isVisible ?? false{
+           // }else if pomodoroWindowControllerObj?.window?.isVisible ?? false{
 //                pomodoroVcObj?.taskAdded()
-            }
+            //}
             return;
         }else if message.name == "close_todo_focus_end_ui"{
             print(message.body)
@@ -547,11 +547,11 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
                 if addTaskVcObj?.handler == self{
                     focusModeTaskString = message.body as? String ?? ""
                     addTaskVcObj!.dismiss(addTaskVcObj)
-                    if startingFocusWindowControllerObj?.window?.isVisible ?? false{
+                  //  if startingFocusWindowControllerObj?.window?.isVisible ?? false{
 //                        startingFocusModeVcObj?.taskAdded()
-                    }else if pomodoroWindowControllerObj?.window?.isVisible ?? false{
+                   // }else if pomodoroWindowControllerObj?.window?.isVisible ?? false{
 //                        pomodoroVcObj?.taskAdded()
-                    }
+                   // }
                     return;
                 }
             }
@@ -752,7 +752,7 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
             alert.messageText = downloadReportText
             alert.addButton(withTitle: buttonClickText)
             alert.addButton(withTitle: buttonCancelText)
-            alert.beginSheetModal(for: preferencesWindowControllerObj!.window!, completionHandler: { (modalResponse) in
+            alert.beginSheetModal(for: mainWindowControllerObj!.window!, completionHandler: { (modalResponse) in//preferencesWindowControllerObj
                 if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
                     
                     NSWorkspace.shared.open(URL(string: "https://dashboard.focusbear.io/stats")!)

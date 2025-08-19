@@ -104,7 +104,7 @@ class helpVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate 
     }
     
     override func viewWillAppear() {
-        preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: 676, height: 570))
+//        preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: 676, height: 570)) // need to test 
     }
     
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
@@ -182,8 +182,8 @@ class helpVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate 
     
     func setAccessTokenToWebViewGetSupport(){
         var theme = "LIGHT"
-        if preferencesWindowControllerObj != nil{
-            if preferencesWindowControllerObj!.window!.hasDarkAppearance{
+        if mainWindowControllerObj != nil{
+            if mainWindowControllerObj!.window!.hasDarkAppearance{
                 theme = "DARK"
             }else {
                 theme = "LIGHT"
@@ -199,30 +199,12 @@ class helpVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate 
             print(html)
         })
     }
-//    func setAccessTokenToWebView(){
-//        var theme = "LIGHT"
-//        if preferencesWindowControllerObj != nil{
-//            if preferencesWindowControllerObj!.window!.hasDarkAppearance{
-//                theme = "DARK"
-//            }else {
-//                theme = "LIGHT"
-//            }
-//        }
-//        let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex].webFontName
-//        let stringJson = "{access_token: \"\(appdelegate!.credential?.accessToken ?? "")\",\"font\":\"\(selectedFont)\",\"theme\":\"\(theme)\",\"lang\":\"\(currentLanguageCode)\"}"
-//        let settingsFunc = String(format: "let waitForAppLoaded = setInterval(() => { if (window.loadAccessTokenForChat) { loadAccessTokenForChat(%@); clearInterval(waitForAppLoaded); } }, 100);", stringJson)
-//
-//        webView.evaluateJavaScript(settingsFunc,completionHandler: { (html: Any?, error: Error?) in
-//            print(error)
-//            print("****error")
-//            print(html)
-//        })
-//    }
+
     
     func setAccessTokenToWebViewCourses(){
         var theme = "LIGHT"
-        if preferencesWindowControllerObj != nil{
-            if preferencesWindowControllerObj!.window!.hasDarkAppearance{
+        if mainWindowControllerObj != nil{
+            if mainWindowControllerObj!.window!.hasDarkAppearance{
                 theme = "DARK"
             }else {
                 theme = "LIGHT"

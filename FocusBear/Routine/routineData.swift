@@ -220,11 +220,12 @@ func startCustomRoutine(index:Int, isOnDemand:Bool){
         appdelegate!.abortAllProcess()
         mainWindowControllerObj?.showWindow(appdelegate)
         showBlankWindowInSecondaryMonitor()
+        leftMenuVcObj?.showCustomRoutineView()
         getHabitsVcObject().showRoutineAllHabits(routineIndex: index)
     }
     
     getHabitsVcObject().showLoaderView()
-
+    leftMenuVcObj?.customRoutineStarted()
     
     allApiObject.getLastActivityInfo(completionHandler: { json in
         DispatchQueue.main.async {
@@ -652,6 +653,7 @@ func startCustomRoutmieHabitsCall(routineIndex:Int, activityId:String?, skippedA
     if activityId == nil && !needToCreateActivityId{
         mainWindowControllerObj?.showWindow(appdelegate)
         showBlankWindowInSecondaryMonitor()
+        leftMenuVcObj?.showCustomRoutineView()
         getHabitsVcObject().startDirectIncompleteCustomRoutineHabitAtIndex(index: 0, isLastActivitySkipped:false)
     }else{
         // let arrTempFilteredMorningHabits = arrAllCustomRoutine[routineIndex].arrAllFilteredHabits
@@ -705,6 +707,7 @@ func startCustomRoutmieHabitsCall(routineIndex:Int, activityId:String?, skippedA
         additionalHabitTotalCompletedSeconds = 0
         mainWindowControllerObj?.showWindow(appdelegate!)
         showBlankWindowInSecondaryMonitor()
+        leftMenuVcObj?.showCustomRoutineView()
         isActivityFound = false
         let arrHabits = arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits
         for i in 0..<arrHabits.count{
@@ -957,8 +960,9 @@ func getCurrentHabitCurrentDurationDone(id:String)->Int?{
  };
  */
 
-func getNextRoutineTime()->Date{
+func getNextRoutineInfo()->(Date, String){
     var nextRoutineTime:Date = Date()
+    var nextRoutineName = "Evening Routine" // todo text
     var shutOffdate = Calendar.current.date(bySettingHour: shutOffTime!.hour, minute: shutOffTime!.minute, second: shutOffTime!.second, of: Date())!
     let calendar = Calendar.current
     // Get today's 11:59 PM
@@ -1028,15 +1032,17 @@ func getNextRoutineTime()->Date{
             if let nextSheduledTimeRoutine = nextSheduledTimeRoutine{ // is postpone state
                 if nextSheduledTimeRoutine < nextRoutineTime{
                     nextRoutineTime = nextSheduledTimeRoutine
+                    nextRoutineName = arrAllCustomRoutine[i].title
                 }
             }else{
                 if startDate < nextRoutineTime{
                     nextRoutineTime = startDate
+                    nextRoutineName = arrAllCustomRoutine[i].title
                 }
             }
         }
 
     }
 
-    return nextRoutineTime
+    return (nextRoutineTime, nextRoutineName)
 }

@@ -59,43 +59,72 @@ class askPostponeIntentionVc: NSViewController, NSTextViewDelegate {
         if lastCurrentState == ._MORNING_HABIT_{
             getHabitsVcObject().postponeMorningHabitFor(minutes: minutes, secondsToPostpone: secondsToPostpone, showAskFocusModeView: showAskFocusModeView, showAskIntention: false)
             if easyPostponeWcObj?.window?.isVisible ?? false{
-                easyPostponeWcObj?.window?.close()
+//                easyPostponeWcObj?.window?.close()
             }
-            if showAskFocusModeView && SettingsManagerObject.isGeekModeEnabled && !textView.string.isEmpty{
-                if pomodoroWindowControllerObj != nil{
-                    if pomodoroWindowControllerObj?.window?.isVisible ?? false{
-                        pomodoroVcObj?.isIntentionFromMorningPostpone = true
-                        pomodoroVcObj?.textViewAchieve.string = textView.string
-                    }
+            if let easyPostponeVcObj = easyPostponeVcObj{
+                if easyPostponeVcObj.presentingViewController == mainViewControllerObj{
+                    easyPostponeVcObj.dismiss(easyPostponeVcObj)
+                }else{
+                    easyPostponeVcObj.view.window?.close()
                 }
             }
+            
+            if showAskFocusModeView && SettingsManagerObject.isGeekModeEnabled && !textView.string.isEmpty{
+               // if pomodoroWindowControllerObj != nil{
+                   // if pomodoroWindowControllerObj?.window?.isVisible ?? false{
+                        pomodoroVcObj?.isIntentionFromMorningPostpone = true
+                        pomodoroVcObj?.textViewAchieve.string = textView.string
+                   // }
+                //}
+                pomodoroVcObj!.lblTitle.stringValue = pomodoroVcObj!.titleAfterPostpone
+            }
+           
             
         }else if lastCurrentState == ._EVENING_HABIT_{
             getHabitsVcObject().postponeEveningHabitFor(minutes: minutes, secondsToPostpone: secondsToPostpone, showAskFocusModeView: showAskFocusModeView, showAskIntention: false)
             if easyPostponeWcObj?.window?.isVisible ?? false{
-                easyPostponeWcObj?.window?.close()
+//                easyPostponeWcObj?.window?.close()
+            }
+            if let easyPostponeVcObj = easyPostponeVcObj{
+                if easyPostponeVcObj.presentingViewController == mainViewControllerObj{
+                    easyPostponeVcObj.dismiss(easyPostponeVcObj)
+                }else{
+                    easyPostponeVcObj.view.window?.close()
+                }
             }
             if showAskFocusModeView && SettingsManagerObject.isGeekModeEnabled && !textView.string.isEmpty{
-                if pomodoroWindowControllerObj != nil{
-                    if pomodoroWindowControllerObj?.window?.isVisible ?? false{
+               // if pomodoroWindowControllerObj != nil{
+                //    if pomodoroWindowControllerObj?.window?.isVisible ?? false{
                         pomodoroVcObj?.isIntentionFromMorningPostpone = true
                         pomodoroVcObj?.textViewAchieve.string = textView.string
-                    }
-                }
+                 //   }
+                //}
+                pomodoroVcObj!.lblTitle.stringValue = pomodoroVcObj!.titleAfterPostpone
             }
+            
         }else if lastCurrentState == ._FOCUS_SUMMARY_{
             getHabitsVcObject().postponeFocusSummaryFor(minutes: minutes, showAskIntention: false)
-            if easyPostponeWcObj?.window?.isVisible ?? false{
-                easyPostponeWcObj?.window?.close()
-            }
-            if SettingsManagerObject.isGeekModeEnabled && !textView.string.isEmpty{
-                if pomodoroWindowControllerObj != nil{
-                    if pomodoroWindowControllerObj?.window?.isVisible ?? false{
-                        pomodoroVcObj?.isIntentionFromMorningPostpone = true
-                        pomodoroVcObj?.textViewAchieve.string = textView.string
-                    }
+//            if easyPostponeWcObj?.window?.isVisible ?? false{
+//                easyPostponeWcObj?.window?.close()
+//            }
+            if let easyPostponeVcObj = easyPostponeVcObj{
+                if easyPostponeVcObj.presentingViewController == mainViewControllerObj{
+                    easyPostponeVcObj.dismiss(easyPostponeVcObj)
+                }else{
+                    easyPostponeVcObj.view.window?.close()
                 }
             }
+            
+            if SettingsManagerObject.isGeekModeEnabled && !textView.string.isEmpty{
+               // if pomodoroWindowControllerObj != nil{
+                //    if pomodoroWindowControllerObj?.window?.isVisible ?? false{
+                        pomodoroVcObj?.isIntentionFromMorningPostpone = true
+                        pomodoroVcObj?.textViewAchieve.string = textView.string
+                   // }
+               // }
+                pomodoroVcObj!.lblTitle.stringValue = pomodoroVcObj!.titleAfterPostpone
+            }
+            
         }
     }
     

@@ -1432,7 +1432,7 @@ func getMenuTourVcObject()->menuTourVc{
 let thirdVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("thirdVc")) as? thirdVc
 
 //let selectJsonWindowControllerObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("selectJsonWindowController")) as? selectJsonWindowController
-var selectJsonVcObj:selectJsonVc?// = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("selectJsonVc")) as? selectJsonVc
+//var selectJsonVcObj:selectJsonVc?// = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("selectJsonVc")) as? selectJsonVc
 let shutOffTimeVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("shutOffTimeVc")) as? shutOffTimeVc
 
 let abortingCountDownVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("abortingCountDownVc")) as? abortingCountDownVc
@@ -1445,12 +1445,12 @@ let abortDoneVcObj = mainStoryboard.instantiateController(withIdentifier: NSStor
 let abortingCantHandleVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("abortingCantHandleVc")) as? abortingCantHandleVc
 let logQuantityVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("logQuantityVc")) as? logQuantityVc
 
-let preferencesWindowControllerObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("preferencesWindowController")) as? preferencesWindowController
+//let preferencesWindowControllerObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("preferencesWindowController")) as? preferencesWindowController
 
 var menuViewControllerObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("menuViewController")) as? menuViewController
 
 
-var focusPreferencesVcObj:focusPreferencesVc?
+//var focusPreferencesVcObj:focusPreferencesVc?
 
 
 let addWebUrlVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("addWebUrlVc")) as? addWebUrlVc
@@ -1479,7 +1479,7 @@ let focusCompletedVcObj = mainStoryboard.instantiateController(withIdentifier: N
 
 let focusCompletedFullScreenVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("focusCompletedVc")) as? focusCompletedVc
 
-let startingFocusWindowControllerObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
+//let startingFocusWindowControllerObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
 
 
 var endingFocusWindowControllerObj: commonWindowController?
@@ -1780,7 +1780,7 @@ func getChangeFrictionLevelVcObj()->changeFrictionLevelVc{
 //    return onboardingSetPasswordVcObj!
 //}
 
-let startingFocusModeVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("startingFocusModeVc")) as? startingFocusModeVc
+//let startingFocusModeVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("startingFocusModeVc")) as? startingFocusModeVc
 let abortingFocusModeVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("abortingFocusModeVc")) as? abortingFocusModeVc
 
 let focusSummaryVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("focusSummaryVc")) as? focusSummaryVc
@@ -2259,4 +2259,73 @@ func getHabitsStateVcObject()->habitsStateVc{
         habitsStateVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("habitsStateVc")) as? habitsStateVc
     }
     return habitsStateVcObj!
+}
+
+
+
+//customRoutineStateVc
+var customRoutineStateVcObj:customRoutineStateVc?
+func getCustomRoutineStateVcObject()->customRoutineStateVc{
+    if customRoutineStateVcObj == nil{
+        customRoutineStateVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("customRoutineStateVc")) as? customRoutineStateVc
+    }
+    return customRoutineStateVcObj!
+}
+
+
+
+var focusPreferencesVcObj:focusPreferencesVc?
+func getFocusPreferencesVcObject()->focusPreferencesVc{
+    if focusPreferencesVcObj == nil{
+        focusPreferencesVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("focusPreferencesVc")) as? focusPreferencesVc
+    }
+    return focusPreferencesVcObj!
+}
+//getTabStrictnessContainerVcObject  getFocusPreferencesVcObject getSettingsSplitViewControllerObject getSelectJsonVcObject
+
+//settingsSplitViewController
+var settingsSplitViewControllerObj:settingsSplitViewController?
+func getSettingsSplitViewControllerObject()->settingsSplitViewController{
+    if settingsSplitViewControllerObj == nil{
+        settingsSplitViewControllerObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingsSplitViewController")) as? settingsSplitViewController
+    }
+    return settingsSplitViewControllerObj!
+}
+
+var selectJsonVcObj:selectJsonVc?// = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("selectJsonVc")) as? selectJsonVc
+func getSelectJsonVcObject()->selectJsonVc{
+    if selectJsonVcObj == nil{
+        selectJsonVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("selectJsonVc")) as? selectJsonVc
+    }
+    return selectJsonVcObj!
+}
+
+
+//breaksStateVc
+var breaksStateVcObj:breaksStateVc?
+func getBreaksStateVcObject()->breaksStateVc{
+    if breaksStateVcObj == nil{
+        breaksStateVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("breaksStateVc")) as? breaksStateVc
+    }
+    return breaksStateVcObj!
+}
+
+
+//helpVc
+var helpVcObj:helpVc?
+func getHelpVcObject()->helpVc{
+    if helpVcObj == nil{
+        helpVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("helpVc")) as? helpVc
+    }
+    return helpVcObj!
+}
+
+
+//focusModeStateVc
+var focusModeStateVcObj:focusModeStateVc?
+func getFocusModeStateVcObject()->focusModeStateVc{
+    if focusModeStateVcObj == nil{
+        focusModeStateVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("focusModeStateVc")) as? focusModeStateVc
+    }
+    return focusModeStateVcObj!
 }

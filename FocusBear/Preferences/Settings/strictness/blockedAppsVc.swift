@@ -133,9 +133,11 @@ class blockedAppsVc: NSViewController {
             }
             SettingsManagerObject.isSettingsChanged = true
             allApiObject.capturePosthog(event: "add-always-blocked-app", metadata: [:])
-            if let tabview = preferencesWindowControllerObj?.contentViewController as? preferencesTabViewController{
-                tabview.newUrlOrAppAdded()
-            }
+//            if let tabview = preferencesWindowControllerObj?.contentViewController as? preferencesTabViewController{
+//                tabview.newUrlOrAppAdded()
+//            }
+            
+            mainViewControllerObj?.newUrlOrAppAdded()
         }
         
     }

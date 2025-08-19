@@ -1388,6 +1388,7 @@ class thirdVc: NSViewController {
         }
         if isAnyAllowedFocusModeActivityWasRunningInLastActivity{
             isAnyAllowedFocusModeActivityFinishTime = Date()
+            leftMenuVcObj?.boxTodoPlayer.isEnabled = false
         }
         
         addLog(text:"getLastHabitDoneDuration passed")
@@ -1806,6 +1807,7 @@ class thirdVc: NSViewController {
         }
         if isAnyAllowedFocusModeActivityWasRunningInLastActivity{
             isAnyAllowedFocusModeActivityFinishTime = Date()
+            leftMenuVcObj?.boxTodoPlayer.isEnabled = false
         }
         addLog(text:"getLastHabitDoneDuration passed")
         if arrFilteredMorningHabits[lastHabitIndex].logQuantity{
@@ -1970,7 +1972,7 @@ class thirdVc: NSViewController {
             }
         }
         refreshFocusModeData()
-        
+        leftMenuVcObj?.focusModeOrFocusModeHabitFinished()
         
         UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
         UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitRunningInfo)
@@ -2274,6 +2276,7 @@ class thirdVc: NSViewController {
             }
         }
         refreshFocusModeData()
+        leftMenuVcObj?.focusModeOrFocusModeHabitFinished()
         
         btnSkipHabit.title = buttonMoreActionsText
         UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
@@ -2395,6 +2398,7 @@ class thirdVc: NSViewController {
         }
         if isAnyAllowedFocusModeActivityWasRunningInLastActivity{
             isAnyAllowedFocusModeActivityFinishTime = Date()
+            leftMenuVcObj?.boxTodoPlayer.isEnabled = false
         }
         
         if arrFilteredEveningHabits[lastHabitIndex].logQuantity{
@@ -2601,7 +2605,7 @@ class thirdVc: NSViewController {
             }
         }
         refreshFocusModeData()
-        
+        leftMenuVcObj?.focusModeOrFocusModeHabitFinished()
         btnSkipHabit.title = buttonMoreActionsText
         
         lblCreateAccount.isHidden = true
@@ -2955,7 +2959,7 @@ class thirdVc: NSViewController {
             }
         }
         refreshFocusModeData()
-        
+        leftMenuVcObj?.focusModeOrFocusModeHabitFinished()
         btnSkipHabit.title = buttonMoreActionsText
         
         lblCreateAccount.isHidden = true

@@ -469,11 +469,11 @@ class simplePomodoroVc: NSViewController {
         loadLastIntentionOfFocusMode()
         
         
-        if startingFocusWindowControllerObj?.window?.isVisible ?? false{
-            if startingFocusWindowControllerObj?.contentViewController == startingFocusModeVcObj{
-                startingFocusWindowControllerObj?.close()
-            }
-        }
+//        if startingFocusWindowControllerObj?.window?.isVisible ?? false{
+//            if startingFocusWindowControllerObj?.contentViewController == startingFocusModeVcObj{
+//                startingFocusWindowControllerObj?.close()
+//            }
+//        }
         lblTimerUnfocused.isHidden = false
         startTimer()
         textFieldWorkDuration.isEnabled = true
@@ -854,7 +854,7 @@ class simplePomodoroVc: NSViewController {
         
         getTotalFocuedTime()
         //After finishing pomodoro block, clicking start another focus block doesn't use correct focus mode #741
-        startingFocusModeVcObj?.loadView()
+//        startingFocusModeVcObj?.loadView()
         //
         if radioButtonBlockingStyleAi.state == .on{
             UserDefaults.standard.set(true, forKey: kUserdefaultsSimplePomodoroAiBlockingSelected)
@@ -936,10 +936,10 @@ class simplePomodoroVc: NSViewController {
             shouldReloadTaskPlayer = false
         }
         //After finishing pomodoro block, clicking start another focus block doesn't use correct focus mode #741
-        startingFocusModeVcObj?.lastIntention = textViewAchieve.string
-        startingFocusModeVcObj?.lastHourValue = 0
-        startingFocusModeVcObj?.lastMinuteValue = textFieldWorkDuration.integerValue
-        startingFocusModeVcObj?.lastSkipMicroBreakState = isSkipBreakActivityDuringPomodoro
+//        startingFocusModeVcObj?.lastIntention = textViewAchieve.string
+//        startingFocusModeVcObj?.lastHourValue = 0
+//        startingFocusModeVcObj?.lastMinuteValue = textFieldWorkDuration.integerValue
+//        startingFocusModeVcObj?.lastSkipMicroBreakState = isSkipBreakActivityDuringPomodoro
         //
         allApiObject.capturePosthog(event: "start-focus-session-manually", metadata: ["type":"simple-focus", "focusDuration":currentPomodoroWorkDuration, "breakDuration":currentPomodoroBreakDuration])
  

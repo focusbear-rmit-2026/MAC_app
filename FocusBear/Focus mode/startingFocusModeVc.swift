@@ -7,7 +7,7 @@
 
 import Cocoa
 
-class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
+class startingFocusModeVc: NSViewController, NSTextFieldDelegate { // not in use
 
     @IBOutlet weak var lblTitleStrictnessLevel: NSTextField!
     @IBOutlet weak var btnStrictnessNormal: hoverInfoButton!
@@ -81,7 +81,7 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
-        focusModeStartWindowLodded = true
+//        focusModeStartWindowLodded = true
 
         arrTourMessages.removeAll()
         lblTitleStrictnessLevel.stringValue = "Strictness level:"
@@ -875,7 +875,7 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
                     }
                 }
                 
-                showTooltip(sender: lblTitle, msg: warningDefaultFocusMode, preferredEdge: .minX, maxWidthVal: 250)
+                showTooltip(sender: lblTitle, msg: warningDefaultFocusMode, preferredEdge: .minX, maxWidthVal: 250) 
             }
         }
         

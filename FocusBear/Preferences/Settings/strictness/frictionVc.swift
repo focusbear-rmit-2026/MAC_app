@@ -164,13 +164,15 @@ extension frictionVc: SettingToggleItemDelegate{
                 allApiObject.capturePosthog(event: "settings-changed-enable-reload-after-force-quit", metadata: [:])
             }else{
                 if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil && SettingsManagerObject.isPasswordRequireInCircumventingBlocks{
-                    if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-                        tabview.view.addSubview(getEnterPasswordVcObjForPreferences().view)
-                        tabview.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
-                        getEnterPasswordVcObjForPreferences().parentVc = nil
-                        enterPasswordVcObjForPreferences?.removeConstraints()
-                        addLog(text: "Showing enter password view inside preferences:- frictionVc")
-                    }
+//                    if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
+//                        tabview.view.addSubview(getEnterPasswordVcObjForPreferences().view)
+//                        tabview.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
+//                        getEnterPasswordVcObjForPreferences().parentVc = nil
+//                        enterPasswordVcObjForPreferences?.removeConstraints()
+//                        addLog(text: "Showing enter password view inside preferences:- frictionVc")
+//                    }
+                    mainViewControllerObj?.askPasswordForSettingsIfNeeded() // todo need to check 
+                    
                 }else{
                     turnOffReloadAfterForceQuit()
                 }

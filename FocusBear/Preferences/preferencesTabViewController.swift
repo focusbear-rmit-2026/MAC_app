@@ -117,7 +117,7 @@ class preferencesTabViewController: NSTabViewController {
             }
             
             tabViewItemStrictnesss!.label = tabBlockedListText
-            arrForSearchFromSimpleModeSettings.append(["title": tabBlockedListText, "tabId": idTabStrictness])
+            arrForSearchFromSimpleModeSettings.append(["title": tabBlockedListText, "tabId": idTabStrictness])// todo in main window
             if #available(macOS 11.0, *) {
                 tabViewItemStrictnesss!.image = NSImage(systemSymbolName: "bolt.circle", accessibilityDescription: nil)
             } else {
@@ -220,7 +220,7 @@ class preferencesTabViewController: NSTabViewController {
     
     override func tabView(_ tabView: NSTabView, shouldSelect tabViewItem: NSTabViewItem?) -> Bool {
         if areSettingsEdited{
-            preferencesWindowControllerObj!.showAlertSettingsEdited()
+            //preferencesWindowControllerObj!.showAlertSettingsEdited()
             areSettingsEdited = false
             return false
         }

@@ -644,36 +644,36 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {/
                 }
             }
         }
-        if !id.isEmpty{
-            if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-                let tabviewItems = tabview.tabViewItems
-                for i in 0..<tabviewItems.count{
-                    let item = tabviewItems[i]
-                    if item.identifier as? String == id{
-                        tabview.selectedTabViewItemIndex = i
-                        return;
-                    }
-                }
-                
-            }
-            for i in 0..<self.tabView.tabViewItems.count{
-                let item = self.tabView.tabViewItems[i]
-                if item.identifier as? String == id{
-                    self.tabView.selectTabViewItem(at: i)
-                    break;
-                }
-            }
-            if id == "isSuperPomodoro"{
-                self.tabView.selectTabViewItem(at: 1)
-                btnAdvancedPmodoroModeClicked(self)
-            }
-            if id == "focusAdvanced"{
-                if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-                    tabview.selectedTabViewItemIndex = preferencesFocusModesIndex
-                    focusPreferencesVcObj?.btnAdvancedClicked(self)
-                }
-            }
-        }
+//        if !id.isEmpty{
+//            if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
+//                let tabviewItems = tabview.tabViewItems
+//                for i in 0..<tabviewItems.count{
+//                    let item = tabviewItems[i]
+//                    if item.identifier as? String == id{
+//                        tabview.selectedTabViewItemIndex = i
+//                        return;
+//                    }
+//                }
+//                
+//            }
+//            for i in 0..<self.tabView.tabViewItems.count{
+//                let item = self.tabView.tabViewItems[i]
+//                if item.identifier as? String == id{
+//                    self.tabView.selectTabViewItem(at: i)
+//                    break;
+//                }
+//            }
+//            if id == "isSuperPomodoro"{
+//                self.tabView.selectTabViewItem(at: 1)
+//                btnAdvancedPmodoroModeClicked(self)
+//            }
+//            if id == "focusAdvanced"{
+//                if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
+//                    tabview.selectedTabViewItemIndex = preferencesFocusModesIndex
+//                    focusPreferencesVcObj?.btnAdvancedClicked(self)
+//                }
+//            }
+//        }
         searchField.stringValue = ""
     }
     
@@ -832,25 +832,25 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {/
         
         
         
-        if self.tabView.selectedTabViewItem == tabViewItemGeneral{
-            if SettingsManagerObject.selectedFontIndex == intelOneMonoFontIndex || SettingsManagerObject.selectedFontIndex == openDyslexicFontIndex{
-                preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: (preferencesWindowControllerObj?.settingsTabDefaultWidthForBigFonts ?? 0) + (preferencesWindowControllerObj?.extraSpaceWidthInSettingsTab ?? 0), height: viewGeneralHeightDefault + (preferencesWindowControllerObj?.extraSpaceHeightInSettingsTab ?? 0)))
-            }else{
-                preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: (preferencesWindowControllerObj?.settingsTabDefaultWidth ?? 0) + (preferencesWindowControllerObj?.extraSpaceWidthInSettingsTab ?? 0), height: viewGeneralHeightDefault + (preferencesWindowControllerObj?.extraSpaceHeightInSettingsTab ?? 0)))
-            }
-        }else if self.tabView.selectedTabViewItem == tabViewItemPomodoro{
-            if SettingsManagerObject.selectedFontIndex == intelOneMonoFontIndex || SettingsManagerObject.selectedFontIndex == openDyslexicFontIndex{
-                preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: (preferencesWindowControllerObj?.settingsTabDefaultWidthForBigFonts ?? 0) + (preferencesWindowControllerObj?.extraSpaceWidthInSettingsTab ?? 0), height: viewPomodoroHeightDefault + (preferencesWindowControllerObj?.extraSpaceHeightInSettingsTab ?? 0)))
-            }else{
-                preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: (preferencesWindowControllerObj?.settingsTabDefaultWidth ?? 0) + (preferencesWindowControllerObj?.extraSpaceWidthInSettingsTab ?? 0), height: viewPomodoroHeightDefault + (preferencesWindowControllerObj?.extraSpaceHeightInSettingsTab ?? 0)))
-            }
-        }else if self.tabView.selectedTabViewItem == tabViewItemAdvanced{
-            if SettingsManagerObject.selectedFontIndex == intelOneMonoFontIndex || SettingsManagerObject.selectedFontIndex == openDyslexicFontIndex{
-                preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: (preferencesWindowControllerObj?.settingsTabDefaultWidthForBigFonts ?? 0) + (preferencesWindowControllerObj?.extraSpaceWidthInSettingsTab ?? 0), height: viewAdvancedHeightDefault + (preferencesWindowControllerObj?.extraSpaceHeightInSettingsTab ?? 0)))
-            }else{
-                preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: (preferencesWindowControllerObj?.settingsTabDefaultWidth ?? 0) + (preferencesWindowControllerObj?.extraSpaceWidthInSettingsTab ?? 0), height: viewAdvancedHeightDefault + (preferencesWindowControllerObj?.extraSpaceHeightInSettingsTab ?? 0)))
-            }
-        }
+//        if self.tabView.selectedTabViewItem == tabViewItemGeneral{
+//            if SettingsManagerObject.selectedFontIndex == intelOneMonoFontIndex || SettingsManagerObject.selectedFontIndex == openDyslexicFontIndex{
+//                preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: (preferencesWindowControllerObj?.settingsTabDefaultWidthForBigFonts ?? 0) + (preferencesWindowControllerObj?.extraSpaceWidthInSettingsTab ?? 0), height: viewGeneralHeightDefault + (preferencesWindowControllerObj?.extraSpaceHeightInSettingsTab ?? 0)))
+//            }else{
+//                preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: (preferencesWindowControllerObj?.settingsTabDefaultWidth ?? 0) + (preferencesWindowControllerObj?.extraSpaceWidthInSettingsTab ?? 0), height: viewGeneralHeightDefault + (preferencesWindowControllerObj?.extraSpaceHeightInSettingsTab ?? 0)))
+//            }
+//        }else if self.tabView.selectedTabViewItem == tabViewItemPomodoro{
+//            if SettingsManagerObject.selectedFontIndex == intelOneMonoFontIndex || SettingsManagerObject.selectedFontIndex == openDyslexicFontIndex{
+//                preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: (preferencesWindowControllerObj?.settingsTabDefaultWidthForBigFonts ?? 0) + (preferencesWindowControllerObj?.extraSpaceWidthInSettingsTab ?? 0), height: viewPomodoroHeightDefault + (preferencesWindowControllerObj?.extraSpaceHeightInSettingsTab ?? 0)))
+//            }else{
+//                preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: (preferencesWindowControllerObj?.settingsTabDefaultWidth ?? 0) + (preferencesWindowControllerObj?.extraSpaceWidthInSettingsTab ?? 0), height: viewPomodoroHeightDefault + (preferencesWindowControllerObj?.extraSpaceHeightInSettingsTab ?? 0)))
+//            }
+//        }else if self.tabView.selectedTabViewItem == tabViewItemAdvanced{
+//            if SettingsManagerObject.selectedFontIndex == intelOneMonoFontIndex || SettingsManagerObject.selectedFontIndex == openDyslexicFontIndex{
+//                preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: (preferencesWindowControllerObj?.settingsTabDefaultWidthForBigFonts ?? 0) + (preferencesWindowControllerObj?.extraSpaceWidthInSettingsTab ?? 0), height: viewAdvancedHeightDefault + (preferencesWindowControllerObj?.extraSpaceHeightInSettingsTab ?? 0)))
+//            }else{
+//                preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: (preferencesWindowControllerObj?.settingsTabDefaultWidth ?? 0) + (preferencesWindowControllerObj?.extraSpaceWidthInSettingsTab ?? 0), height: viewAdvancedHeightDefault + (preferencesWindowControllerObj?.extraSpaceHeightInSettingsTab ?? 0)))
+//            }
+//        }
     }
     
     
@@ -877,19 +877,19 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {/
             
         }
         
-        if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-            if self.tabView.selectedTabViewItem == tabViewItemPassword{
-                if shouldAskPassword(){
-                    if !SettingsManagerObject.isPasswordRequireInChangeSettings{
-                        tabview.view.addSubview(getEnterPasswordVcObjForPreferences().view)
-                        tabview.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
-                        getEnterPasswordVcObjForPreferences().parentVc = nil
-                        enterPasswordVcObjForPreferences?.removeConstraints()
-                        addLog(text: "Showing enter password view inside preferences")
-                    }
-                }
-            }
-        }
+//        if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
+//            if self.tabView.selectedTabViewItem == tabViewItemPassword{
+//                if shouldAskPassword(){
+//                    if !SettingsManagerObject.isPasswordRequireInChangeSettings{
+//                        tabview.view.addSubview(getEnterPasswordVcObjForPreferences().view)
+//                        tabview.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
+//                        getEnterPasswordVcObjForPreferences().parentVc = nil
+//                        enterPasswordVcObjForPreferences?.removeConstraints()
+//                        addLog(text: "Showing enter password view inside preferences")
+//                    }
+//                }
+//            }
+//        }
         
     }
     
@@ -1005,9 +1005,9 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {/
                 
                 if textFieldPomodoroDuration.stringValue.isEmpty{
                     showAlert(msg: workDurationEmptyErrorText, completionHandler: {_ in
-                        if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-                            tabview.selectedTabViewItemIndex = preferencesEditHabitsIndex
-                        }
+                   //     if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
+                   //         tabview.selectedTabViewItemIndex = preferencesEditHabitsIndex
+                    //    }
                         self.tabView.selectTabViewItem(self.tabViewItemPomodoro)
                         if let duration = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsPomodoroDurationMinutes) as? Int{
                             self.textFieldPomodoroDuration.stringValue = "\(duration)"
@@ -1018,9 +1018,9 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {/
                 }
                 if textFieldPomodoroDuration.integerValue < 1{
                     showAlert(msg: workDurationZeroErrorText, completionHandler: {_ in
-                        if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-                            tabview.selectedTabViewItemIndex = preferencesEditHabitsIndex
-                        }
+                       // if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
+                      //      tabview.selectedTabViewItemIndex = preferencesEditHabitsIndex
+                     //   }
                         self.tabView.selectTabViewItem(self.tabViewItemPomodoro)
                         if let duration = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsPomodoroDurationMinutes) as? Int{
                             self.textFieldPomodoroDuration.stringValue = "\(duration)"
@@ -1041,9 +1041,9 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {/
             }else if textfield == textFieldBreakDuration{
                 if textFieldBreakDuration.stringValue.isEmpty{
                     showAlert(msg: breakDurationEmptyErrorText, completionHandler: {_ in
-                        if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-                            tabview.selectedTabViewItemIndex = preferencesEditHabitsIndex
-                        }
+                       // if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
+                       //     tabview.selectedTabViewItemIndex = preferencesEditHabitsIndex
+                       // }
                         self.tabView.selectTabViewItem(self.tabViewItemPomodoro)
                         if let duration = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsBreakDurationMinutes) as? Int{
                             self.textFieldBreakDuration.stringValue = "\(duration)"
@@ -1054,9 +1054,9 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {/
                 }
                 if textFieldBreakDuration.integerValue < 1{
                     showAlert(msg: breakDurationZeroErrorText, completionHandler: {_ in
-                        if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-                            tabview.selectedTabViewItemIndex = preferencesEditHabitsIndex
-                        }
+                       // if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
+                          //  tabview.selectedTabViewItemIndex = preferencesEditHabitsIndex
+                      //  }
                         self.tabView.selectTabViewItem(self.tabViewItemPomodoro)
                         if let duration = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsBreakDurationMinutes) as? Int{
                             self.textFieldBreakDuration.stringValue = "\(duration)"
@@ -1085,9 +1085,9 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {/
                         msg = preferencesInfo.value(forKey: "alertTabCountText") as? String ?? msg
                     }
                     showAlert(msg: msg, completionHandler: {_ in
-                        if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-                            tabview.selectedTabViewItemIndex = preferencesEditHabitsIndex
-                        }
+                        //if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
+                        //    tabview.selectedTabViewItemIndex = preferencesEditHabitsIndex
+                       // }
                         self.tabView.selectTabViewItem(self.tabViewItemAdvanced)
                         self.textFieldTabLimitCount.integerValue = SettingsManagerObject.maxTabLimitCount
                         textfield.setFocus()
@@ -1567,7 +1567,7 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {/
     @IBAction func btnCheckForUpdatesClicked(_ sender: Any) {
         addLog(text: "[user-action] btnCheckForUpdatesClicked")//
         appdelegate!.updater?.checkForUpdates(self) 
-        preferencesWindowControllerObj?.window?.miniaturize(self)
+       // preferencesWindowControllerObj?.window?.miniaturize(self)
         allApiObject.capturePosthog(event: "check-for-updates-manually", metadata: [:])
     }
     @IBAction func btnBlackLayerClicked(_ sender: Any) {
@@ -1611,13 +1611,13 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {/
             SettingsManagerObject.isFullScreenEnabled = true
             allApiObject.capturePosthog(event: "settings-changed-enable-full-screen", metadata: [:])
             if isMainWindowLoaded{
-                mainWindowControllerObj?.showFullSizeWindow()
+//                mainWindowControllerObj?.showFullSizeWindow()
             }
         }else{
             SettingsManagerObject.isFullScreenEnabled = false
             allApiObject.capturePosthog(event: "settings-changed-disable-full-screen", metadata: [:])
             if isMainWindowLoaded{
-                mainWindowControllerObj?.showSmallSizeWindow()
+//                mainWindowControllerObj?.showSmallSizeWindow()
             }
         }
     }
@@ -1681,37 +1681,37 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {/
 extension generalVc:NSTabViewDelegate{
     func tabView(_ tabView: NSTabView, didSelect tabViewItem: NSTabViewItem?) {
         print("tab view selection change")
-        if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-            if tabViewItem == tabViewItemPassword{
-                if shouldAskPassword(){
-                    if !SettingsManagerObject.isPasswordRequireInChangeSettings{
-                        tabview.view.addSubview(getEnterPasswordVcObjForPreferences().view)
-                        tabview.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
-                        getEnterPasswordVcObjForPreferences().parentVc = nil
-                        enterPasswordVcObjForPreferences?.removeConstraints()
-                        addLog(text: "Showing enter password view inside preferences")
-                    }
-                }
-            }else if self.tabView.selectedTabViewItem == tabViewItemGeneral{
-                if SettingsManagerObject.selectedFontIndex == intelOneMonoFontIndex || SettingsManagerObject.selectedFontIndex == openDyslexicFontIndex{
-                    preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: (preferencesWindowControllerObj?.settingsTabDefaultWidthForBigFonts ?? 0) + (preferencesWindowControllerObj?.extraSpaceWidthInSettingsTab ?? 0), height: viewGeneralHeightDefault + (preferencesWindowControllerObj?.extraSpaceHeightInSettingsTab ?? 0)))
-                }else{
-                    preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: (preferencesWindowControllerObj?.settingsTabDefaultWidth ?? 0) + (preferencesWindowControllerObj?.extraSpaceWidthInSettingsTab ?? 0), height: viewGeneralHeightDefault + (preferencesWindowControllerObj?.extraSpaceHeightInSettingsTab ?? 0)))
-                }
-            }else if self.tabView.selectedTabViewItem == tabViewItemPomodoro{
-                if SettingsManagerObject.selectedFontIndex == intelOneMonoFontIndex || SettingsManagerObject.selectedFontIndex == openDyslexicFontIndex{
-                    preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: (preferencesWindowControllerObj?.settingsTabDefaultWidthForBigFonts ?? 0) + (preferencesWindowControllerObj?.extraSpaceWidthInSettingsTab ?? 0), height: viewPomodoroHeightDefault + (preferencesWindowControllerObj?.extraSpaceHeightInSettingsTab ?? 0)))
-                }else{
-                    preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: (preferencesWindowControllerObj?.settingsTabDefaultWidth ?? 0) + (preferencesWindowControllerObj?.extraSpaceWidthInSettingsTab ?? 0), height: viewPomodoroHeightDefault + (preferencesWindowControllerObj?.extraSpaceHeightInSettingsTab ?? 0)))
-                }
-            }else if self.tabView.selectedTabViewItem == tabViewItemAdvanced{
-                if SettingsManagerObject.selectedFontIndex == intelOneMonoFontIndex || SettingsManagerObject.selectedFontIndex == openDyslexicFontIndex{
-                    preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: (preferencesWindowControllerObj?.settingsTabDefaultWidthForBigFonts ?? 0) + (preferencesWindowControllerObj?.extraSpaceWidthInSettingsTab ?? 0), height: viewAdvancedHeightDefault + (preferencesWindowControllerObj?.extraSpaceHeightInSettingsTab ?? 0)))
-                }else{
-                    preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: (preferencesWindowControllerObj?.settingsTabDefaultWidth ?? 0) + (preferencesWindowControllerObj?.extraSpaceWidthInSettingsTab ?? 0), height: viewAdvancedHeightDefault + (preferencesWindowControllerObj?.extraSpaceHeightInSettingsTab ?? 0)))
-                }
-            }
-        }
+//        if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
+//            if tabViewItem == tabViewItemPassword{
+//                if shouldAskPassword(){
+//                    if !SettingsManagerObject.isPasswordRequireInChangeSettings{
+//                        tabview.view.addSubview(getEnterPasswordVcObjForPreferences().view)
+//                        tabview.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
+//                        getEnterPasswordVcObjForPreferences().parentVc = nil
+//                        enterPasswordVcObjForPreferences?.removeConstraints()
+//                        addLog(text: "Showing enter password view inside preferences")
+//                    }
+//                }
+//            }else if self.tabView.selectedTabViewItem == tabViewItemGeneral{
+//                if SettingsManagerObject.selectedFontIndex == intelOneMonoFontIndex || SettingsManagerObject.selectedFontIndex == openDyslexicFontIndex{
+//                    preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: (preferencesWindowControllerObj?.settingsTabDefaultWidthForBigFonts ?? 0) + (preferencesWindowControllerObj?.extraSpaceWidthInSettingsTab ?? 0), height: viewGeneralHeightDefault + (preferencesWindowControllerObj?.extraSpaceHeightInSettingsTab ?? 0)))
+//                }else{
+//                    preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: (preferencesWindowControllerObj?.settingsTabDefaultWidth ?? 0) + (preferencesWindowControllerObj?.extraSpaceWidthInSettingsTab ?? 0), height: viewGeneralHeightDefault + (preferencesWindowControllerObj?.extraSpaceHeightInSettingsTab ?? 0)))
+//                }
+//            }else if self.tabView.selectedTabViewItem == tabViewItemPomodoro{
+//                if SettingsManagerObject.selectedFontIndex == intelOneMonoFontIndex || SettingsManagerObject.selectedFontIndex == openDyslexicFontIndex{
+//                    preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: (preferencesWindowControllerObj?.settingsTabDefaultWidthForBigFonts ?? 0) + (preferencesWindowControllerObj?.extraSpaceWidthInSettingsTab ?? 0), height: viewPomodoroHeightDefault + (preferencesWindowControllerObj?.extraSpaceHeightInSettingsTab ?? 0)))
+//                }else{
+//                    preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: (preferencesWindowControllerObj?.settingsTabDefaultWidth ?? 0) + (preferencesWindowControllerObj?.extraSpaceWidthInSettingsTab ?? 0), height: viewPomodoroHeightDefault + (preferencesWindowControllerObj?.extraSpaceHeightInSettingsTab ?? 0)))
+//                }
+//            }else if self.tabView.selectedTabViewItem == tabViewItemAdvanced{
+//                if SettingsManagerObject.selectedFontIndex == intelOneMonoFontIndex || SettingsManagerObject.selectedFontIndex == openDyslexicFontIndex{
+//                    preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: (preferencesWindowControllerObj?.settingsTabDefaultWidthForBigFonts ?? 0) + (preferencesWindowControllerObj?.extraSpaceWidthInSettingsTab ?? 0), height: viewAdvancedHeightDefault + (preferencesWindowControllerObj?.extraSpaceHeightInSettingsTab ?? 0)))
+//                }else{
+//                    preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: (preferencesWindowControllerObj?.settingsTabDefaultWidth ?? 0) + (preferencesWindowControllerObj?.extraSpaceWidthInSettingsTab ?? 0), height: viewAdvancedHeightDefault + (preferencesWindowControllerObj?.extraSpaceHeightInSettingsTab ?? 0)))
+//                }
+//            }
+//        }
     }
 
     func tabView(_ tabView: NSTabView, shouldSelect tabViewItem: NSTabViewItem?) -> Bool {

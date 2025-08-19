@@ -118,7 +118,7 @@ class setUpVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate
     }
     
     override func viewWillAppear() {
-        preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: viewWidthDefault, height: viewHeightDefault))
+//        preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: viewWidthDefault, height: viewHeightDefault)) // todo need to check
     }
     override func viewDidAppear() {
         setAccessTokenToWebView()
@@ -126,8 +126,8 @@ class setUpVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate
 
     func setAccessTokenToWebView(){
         var theme = "LIGHT"
-        if preferencesWindowControllerObj != nil{
-            if preferencesWindowControllerObj!.window!.hasDarkAppearance{
+        if mainWindowControllerObj != nil{
+            if mainWindowControllerObj!.window!.hasDarkAppearance{
                 theme = "DARK"
             }else {
                 theme = "LIGHT"

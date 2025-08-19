@@ -272,8 +272,8 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
     
     func setAccessTokenToTutorialWebView(){
         var theme = "LIGHT"
-        if preferencesWindowControllerObj != nil{
-            if preferencesWindowControllerObj!.window!.hasDarkAppearance{
+        if mainWindowControllerObj != nil{// preferencesWindowControllerObj
+            if mainWindowControllerObj!.window!.hasDarkAppearance{
                 theme = "DARK"
             }else {
                 theme = "LIGHT"
@@ -542,7 +542,13 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                             minutes = duration / 60
                         }
                         shouldReloadTaskPlayer = true
+                       // if checkIsFullScreenEnabled(){
+                        //    mainViewControllerObj?.showSmallScreen()
+                     //   }
                         showTaskPlayerWindow(totalDuration: minutes, intention: whatToAchieveInFocusBlock, automatically:true)
+                        if leftMenuVcObj != nil{
+                            leftMenuVcObj?.focusModeOrFocusModeHabitStarted()
+                        }
                     }else{
                         focusModeTaskString = ""
                     }
@@ -705,6 +711,9 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         if currentHabit.showSavedDistractingWebsites{
             currentRelaxHabitPlaying = currentHabit
             showRelaxModeWindow(durationSeconds: durationSeconds, currentTimerValue: currentTimerValue)
+           // if checkIsFullScreenEnabled(){
+                //mainViewControllerObj?.showSmallScreen()
+          //  }
             mainWindowControllerObj?.window?.close()
             hideBlankWindowInSecondaryMonitor()
         }else if currentHabit.openSpecificApps{
@@ -714,6 +723,9 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             }else{
                 showcompletionRequirementsWindow(title: currentHabit.completion_requirements)
             }
+            //if checkIsFullScreenEnabled(){
+                //mainViewControllerObj?.showSmallScreen()
+            //}
             mainWindowControllerObj?.window?.close()
             appdelegate?.startTimerActivitiesAllowedApp(shouldLaunchAppAndUrl: shouldLaunchAppAndUrl)
             hideBlankWindowInSecondaryMonitor()
@@ -725,7 +737,13 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                 }else{
                     showcompletionRequirementsWindow(title: currentHabit.completion_requirements)
                 }
-                mainWindowControllerObj?.window?.close()
+               //
+                if !SettingsManagerObject.showToDoPlayerAutomaticallyEnabled{
+                    mainWindowControllerObj?.window?.close()
+                }
+                //if checkIsFullScreenEnabled(){
+                 //   mainViewControllerObj?.showSmallScreen()
+                //}
                 appdelegate?.startTimerActivitiesAllowedApp(shouldLaunchAppAndUrl: shouldLaunchAppAndUrl)
                 hideBlankWindowInSecondaryMonitor()
                 
@@ -1574,7 +1592,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         self.webView.load(request)
     }
     @objc func performTimerCount() {
-        currentTimer += 1
+        currentTimer += 1 
         if isAnyAllowedFocusModeActivityRunning{
             addEntryInProductivityStatsCsv()
         }

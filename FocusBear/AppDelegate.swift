@@ -258,7 +258,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     }
 
     func applicationWillFinishLaunching(_ notification: Notification) {
-        
+//        UserDefaults.standard.set(true, forKey: "NSConstraintBasedLayoutVisualizeMutuallyExclusiveConstraints")// todo remove
         SentrySDK.start { options in
             options.dsn = "https://85574080eb088006a0f2b0f5d326d6ff@o4509122919006208.ingest.us.sentry.io/4509122992275456"
             options.debug = true // Enabled debug when first installing is always helpful
@@ -631,7 +631,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     func showAskOccupation(){
         currentState = ._ASK_APP_WORK_
         mainWindowControllerObj?.showWindow(self)
-        showBlankWindowInSecondaryMonitor()
         mainViewControllerObj!.showAskOccupationVc()
     }
     func showOnbardingHabit(){
@@ -640,14 +639,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         if mainWindowControllerObj != nil{
             if !mainWindowControllerObj!.window!.isVisible{
                 mainWindowControllerObj?.showWindow(self)
-                showBlankWindowInSecondaryMonitor()
             }
         }else{
             mainWindowControllerObj?.showWindow(self)
-            showBlankWindowInSecondaryMonitor()
         }
 //        mainViewControllerObj!.showFirstTimeVc()
-        getHabitsVcObject().showFirstTimeVc()
+        getHabitsVcObject().showFirstTimeVc() // todo
         isFirstRun = true
         
         
@@ -1989,9 +1986,18 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             arrFocusType[index]["isPaused"] = true
             arrFocusType[index]["isOn"] = false
             closeTaskPlayerWindowIfVisible()
+            isFocusModeRunning = false
             if focusEndWarningWcObj != nil{
                 if focusEndWarningWcObj?.window?.isVisible ?? false{
                     focusEndWarningWcObj?.window?.close()
+                }
+            }
+            leftMenuVcObj?.resetFocusModeTitle()
+            if leftMenuVcObj?.boxFocusSession.isSelected ?? false{
+                if focusModeStateVcObj != nil{
+                    if focusModeStateVcObj!.isViewVisible{
+                        focusModeStateVcObj?.reloadData()
+                    }
                 }
             }
         }
@@ -2006,6 +2012,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         setStatusBarButtonColorForFocusMode(color: nil, colorString: arrFocusType[index]["color"] as? String ?? "")
         setStatusBarButtonTitleForFocusMode(title: whatToAchieveInFocusBlock)
         appdelegate!.statusbutton?.imagePosition = .imageLeft
+        isFocusModeRunning = true
         DispatchQueue.global().sync {
             print("resume seconds \(self.remainingFocusModeSecondsAfterPaused)")
             print(getStringFromDate(date: endFocusModeTime!, dateFormat: "HH:mm:ss"))
@@ -2030,6 +2037,17 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     if brainDumpWcObj?.window != nil{
                         if brainDumpWcObj!.window!.isVisible{
                             brainDumpVcObj?.focusModeStarted()
+                        }
+                    }
+                }
+                if leftMenuVcObj != nil{
+                    leftMenuVcObj?.focusModeOrFocusModeHabitStarted()
+                    leftMenuVcObj?.resetFocusModeTitle()
+                    if leftMenuVcObj?.boxFocusSession.isSelected ?? false{
+                        if focusModeStateVcObj != nil{
+                            if focusModeStateVcObj!.isViewVisible{
+                                focusModeStateVcObj?.reloadData()
+                            }
                         }
                     }
                 }
@@ -2836,18 +2854,18 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                 hideBlankWindowInSecondaryMonitor()
                             }
                         }else if event.keyCode == 48{// tab
-                            if mainWindowControllerObj?.window?.isVisible ?? false{ // todo make sure habits view nil na rhe kabhi bhi
-                                if (getHabitsVcObject().habitsView.subviews.contains(thirdVcObj!.view)){// todo selected list item ka check
+                            if mainWindowControllerObj?.window?.isVisible ?? false{
+                                if (getHabitsVcObject().habitsView.subviews.contains(thirdVcObj!.view)){
                                     if (getHabitsVcObject().view.subviews.contains((logQuantityVcObj!.view))){
                                         if currentState == ._ACTIVITY_ || currentState == ._BREATHING_ || currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_{
                                             if logQuantityVcObj!.tabClickedSelectNextTextField(){
-                                                //return nil // todo uncomment
+                                                return nil
                                             }
                                         }
                                     }
                                 }
                             }
-                        }else if event.keyCode == 36 || event.keyCode == 76{//todo if any change in activity or habits change here
+                        }else if event.keyCode == 36 || event.keyCode == 76{
                             if mainWindowControllerObj?.window?.isVisible ?? false{
                                 if currentState == ._ACTIVITY_ || currentState == ._BREATHING_ || currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_{
                                     if askPostponeVcObj != nil{
@@ -2876,20 +2894,20 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                             }
                                             if (getHabitsVcObject().view.subviews.contains((logQuantityVcObj!.view))){
                                                 logQuantityVcObj?.btnOkClicked(self)
-//                                                return nil // todo uncomment this
+                                                return nil
                                             }else{
                                                 if thirdVcObj?.boxBg.isHidden == true{// it means remember next habit is added
                                                     if rememberNextHabitVcObj != nil{
                                                         if thirdVcObj?.view.subviews.contains(rememberNextHabitVcObj!.view) ?? false{
                                                             if rememberNextHabitVcObj?.btnStartNextHabit.isHidden == false{
                                                                 rememberNextHabitVcObj?.btnStartNextHabitClicked(self)
-//                                                                return nil// todo uncomment this
+                                                                return nil
                                                             }
                                                         }
                                                     }
                                                 }else{
                                                     thirdVcObj?.btnMainClicked(self)
-//                                                    return nil// todo uncomment this
+                                                    return nil
                                                 }
                                             }
                                         }
@@ -3254,12 +3272,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 return
             }
         }
-        if focusModeStartWindowLodded{
-            if startingFocusWindowControllerObj?.window?.isVisible ?? false{
-                addLog(text: "focusModeStartWindowLodded .Auto Pomodoro Mode View cancelled")
-                return
-            }
-        }
+//        if focusModeStartWindowLodded{
+//            if startingFocusWindowControllerObj?.window?.isVisible ?? false{
+//                addLog(text: "focusModeStartWindowLodded .Auto Pomodoro Mode View cancelled")
+//                return
+//            }
+//        }
         
         if currentState == ._SHUTOFFMAC_{
             addLog(text: "This is Shut Off time. Auto Pomodoro Mode View cancelled")
@@ -3353,7 +3371,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         if endingFocusWindowControllerObj != nil{
             if (endingFocusWindowControllerObj?.window?.isVisible ?? false) && endingFocusWindowControllerObj?.contentViewController == focusCompletedVcObj{
                 addLog(text: "Focus mode completed Window is visible:- close Window Forcefully")
-                focusCompletedVcObj!.closeWindowForcefully()
+                focusCompletedVcObj!.closeWindowForcefully()// todo 
             }
         }
         
@@ -3361,12 +3379,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             addLog(text: "Focus Mode Is On/Paused.")
             return
         }
-        if focusModeStartWindowLodded{
-            if startingFocusWindowControllerObj?.window?.isVisible ?? false{
-                addLog(text: "focusModeStartWindowLodded. Pomodoro Mode View cancelled")
-                return
-            }
-        }
+//        if focusModeStartWindowLodded{
+//            if startingFocusWindowControllerObj?.window?.isVisible ?? false{
+//                addLog(text: "focusModeStartWindowLodded. Pomodoro Mode View cancelled")
+//                return
+//            }
+//        }
         if self.timerPomodoroMode != nil{
             self.timerPomodoroMode?.invalidate()
             self.timerPomodoroMode = nil
@@ -3414,12 +3432,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             addLog(text: "Focus Mode Is On/Paused.")
             return
         }
-        if focusModeStartWindowLodded{
-            if startingFocusWindowControllerObj?.window?.isVisible ?? false{
-                addLog(text: "focusModeStartWindowLodded. Pomodoro Mode View cancelled")
-                return
-            }
-        }
+//        if focusModeStartWindowLodded{
+//            if startingFocusWindowControllerObj?.window?.isVisible ?? false{
+//                addLog(text: "focusModeStartWindowLodded. Pomodoro Mode View cancelled")
+//                return
+//            }
+//        }
         if self.timerPomodoroMode != nil{
             self.timerPomodoroMode?.invalidate()
             self.timerPomodoroMode = nil
@@ -3446,13 +3464,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     }
 
     @objc func checkWindowState(){
-        getHabitsVcObject().loadView() // todo 
-        mainViewControllerObj?.loadView() // todo
+        if !getHabitsVcObject().isViewLoaded{
+            getHabitsVcObject().loadView()
+        }
         
-        
-//        UserDefaults.standard.set(Date(), forKey: kUserdefaultsLastHabitShowDate) // todo remove
-        UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitShowDate) // todo remove
-        
+        if !(mainViewControllerObj?.isViewLoaded ?? false){
+            mainViewControllerObj?.loadView()
+        }
+
         loadMenuWindow()
         isFirstRun = false
         
@@ -4138,12 +4157,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     isMeetingsFocusStartedAutomatically = true
                     isFocusModeStartedAutomatically = false
                     closePomodoroWindowIOfVisible()
-                    if focusModeStartWindowLodded{
-                        if startingFocusWindowControllerObj?.window?.isVisible ?? false{
-                            startingFocusWindowControllerObj?.window?.close()
-                            return
-                        }
-                    }
+//                    if focusModeStartWindowLodded{
+//                        if startingFocusWindowControllerObj?.window?.isVisible ?? false{
+//                            startingFocusWindowControllerObj?.window?.close()
+//                            return
+//                        }
+//                    }
                     alertSuggestFocusMode = nil
                     isAutoMeetingsModeStarted = true
                 }
@@ -4492,7 +4511,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     
                     if !isActivityFound{
                         let durationInSeconds = Int(activityDuration) ?? 0
-                        if durationInSeconds >= 60 {
+                        if durationInSeconds >= 60 && SettingsManagerObject.isGeekModeEnabled{
                             for i in 0..<arrFocusType.count{
                                 var isFocusModeFound = false
                                 let id = arrFocusType[i]["id"] as? String ?? ""
@@ -4553,10 +4572,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                             if result == .alertSecondButtonReturn{
                                                 addLog(text: "Stop current focus from alert and show start focus view")
                                                 tryFocusModeFinished(isSilent: true, isShutOffTime: false, isMorningRoutineTime: false, allowExtend:false, isCustomRoutineTime:false)
-                                                showStartingFocusMode(focusModeIndex: i, focusType: arrFocusType[i]["name"] as? String ?? "")
+//                                                showStartingFocusMode(focusModeIndex: i, focusType: arrFocusType[i]["name"] as? String ?? "")
+//                                                
+//                                                startingFocusModeVcObj?.textFieldHourValue.integerValue = 0
+//                                                startingFocusModeVcObj?.textFieldMinutesValue.integerValue = durationInSeconds/60
                                                 
-                                                startingFocusModeVcObj?.textFieldHourValue.integerValue = 0
-                                                startingFocusModeVcObj?.textFieldMinutesValue.integerValue = durationInSeconds/60
+                                                appdelegate?.menuShowPomodoroModeView()
+                                                if !(pomodoroVcObj?.isViewLoaded ?? false){
+                                                    pomodoroVcObj?.loadView()
+                                                }
+                                                pomodoroVcObj!.selectFocusModeWithId(id: arrFocusType[i]["id"] as? String ?? "", duration: durationInSeconds)
                                             }
                                             return;
                                         }
@@ -4573,19 +4598,37 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                                 menuViewControllerObj?.isShowingPasswordForRelaxFocusMode = true
                                                 customUrlHandleLastDurationForRelaxFocusMode = durationInSeconds
                                             }else{
-                                                showStartingFocusMode(focusModeIndex: i, focusType: arrFocusType[i]["name"] as? String ?? "")
-                                                startingFocusModeVcObj?.textFieldHourValue.integerValue = 0
-                                                startingFocusModeVcObj?.textFieldMinutesValue.integerValue = durationInSeconds/60
+//                                                showStartingFocusMode(focusModeIndex: i, focusType: arrFocusType[i]["name"] as? String ?? "")
+//                                                startingFocusModeVcObj?.textFieldHourValue.integerValue = 0
+//                                                startingFocusModeVcObj?.textFieldMinutesValue.integerValue = durationInSeconds/60
+                                                
+                                                appdelegate?.menuShowPomodoroModeView()
+                                                if !(pomodoroVcObj?.isViewLoaded ?? false){
+                                                    pomodoroVcObj?.loadView()
+                                                }
+                                                pomodoroVcObj!.selectFocusModeWithId(id: arrFocusType[i]["id"] as? String ?? "", duration: durationInSeconds)
                                             }
                                         }else{
-                                            showStartingFocusMode(focusModeIndex: i, focusType: arrFocusType[i]["name"] as? String ?? "")
-                                            startingFocusModeVcObj?.textFieldHourValue.integerValue = 0
-                                            startingFocusModeVcObj?.textFieldMinutesValue.integerValue = durationInSeconds/60
+//                                            showStartingFocusMode(focusModeIndex: i, focusType: arrFocusType[i]["name"] as? String ?? "")
+//                                            startingFocusModeVcObj?.textFieldHourValue.integerValue = 0
+//                                            startingFocusModeVcObj?.textFieldMinutesValue.integerValue = durationInSeconds/60
+                                            
+                                            appdelegate?.menuShowPomodoroModeView()
+                                            if !(pomodoroVcObj?.isViewLoaded ?? false){
+                                                pomodoroVcObj?.loadView()
+                                            }
+                                            pomodoroVcObj!.selectFocusModeWithId(id: arrFocusType[i]["id"] as? String ?? "", duration: durationInSeconds)
                                         }
                                     }else{
-                                        showStartingFocusMode(focusModeIndex: i, focusType: arrFocusType[i]["name"] as? String ?? "")
-                                        startingFocusModeVcObj?.textFieldHourValue.integerValue = 0
-                                        startingFocusModeVcObj?.textFieldMinutesValue.integerValue = durationInSeconds/60
+//                                        showStartingFocusMode(focusModeIndex: i, focusType: arrFocusType[i]["name"] as? String ?? "")
+//                                        startingFocusModeVcObj?.textFieldHourValue.integerValue = 0
+//                                        startingFocusModeVcObj?.textFieldMinutesValue.integerValue = durationInSeconds/60
+                                        
+                                        appdelegate?.menuShowPomodoroModeView()
+                                        if !(pomodoroVcObj?.isViewLoaded ?? false){
+                                            pomodoroVcObj?.loadView()
+                                        }
+                                        pomodoroVcObj!.selectFocusModeWithId(id: arrFocusType[i]["id"] as? String ?? "", duration: durationInSeconds)
                                     }
                                     
                                     return;
@@ -4644,7 +4687,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                 getHabitsVcObject().stopActivityTimer()
                                 getHabitsVcObject().postponeEveningHabitFor(minutes: 0, secondsToPostpone: durationInSeconds, showAskFocusModeView:false, showAskIntention:false)
                             }else if currentState == ._CUSTOM_ROUTINE_{
-                                getHabitsVcObject().postponeCustomRoutineFor(minutes: 0, secondsToPostpone: durationInSeconds, showAskFocusModeView:false, showAskIntention:false)
+                                getHabitsVcObject().postponeCustomRoutineFor(minutes: 0, secondsToPostpone: durationInSeconds, showAskFocusModeView:false, showAskIntention:false, fromRoutineWarning:false)
                             }else if currentState == ._ACTIVITY_{
                                 if breakWarningWcObj != nil{
                                     if breakWarningWcObj?.window?.isVisible ?? false{
@@ -6694,19 +6737,24 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     }
     @objc func menuItem_Preferences() {
         
-        if preferencesWindowControllerObj?.window?.isVisible ?? false{
-            NSApplication.shared.activate(ignoringOtherApps: true)
-            preferencesWindowControllerObj?.showWindow(self)// make it focused window again because now preferences window can be at lower level when strictness level is super gentle
-            addLog(text: "Showing preferences:- make it focused window again. widow was not in focus")
-            return;
-        }
+//        if preferencesWindowControllerObj?.window?.isVisible ?? false{
+//            NSApplication.shared.activate(ignoringOtherApps: true)
+//            preferencesWindowControllerObj?.showWindow(self)// make it focused window again because now preferences window can be at lower level when strictness level is super gentle
+//            addLog(text: "Showing preferences:- make it focused window again. widow was not in focus")
+//            return;
+//        }
         allApiObject.capturePosthog(event: "open-preferences", metadata: [:])
-        if preferencesWindowControllerObj?.window?.isMiniaturized ?? false{
-            preferencesWindowControllerObj?.showWindow(self)
-            addLog(text: "Showing preferences:- was minimize")
-            return;
+//        if preferencesWindowControllerObj?.window?.isMiniaturized ?? false{
+//            preferencesWindowControllerObj?.showWindow(self)
+//            addLog(text: "Showing preferences:- was minimize")
+//            return;
+//        }
+//        preferencesWindowControllerObj?.showWindow(self)
+        if mainWindowControllerObj?.window?.isVisible ?? false{
+            mainWindowControllerObj?.showWindow(self)
         }
-        preferencesWindowControllerObj?.showWindow(self)
+        leftMenuVcObj?.showSettingsView() // tdo test
+        
         addLog(text: "Showing preferences")
         
 //        if shouldAskPassword(){
@@ -6726,9 +6774,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 //                tabview.selectedTabViewItemIndex = 0
 //            }
 //        }
-        if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-            tabview.selectedTabViewItemIndex = 0
-        }
+//        if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
+//            tabview.selectedTabViewItemIndex = 0
+//        }
         NSRunningApplication.current.activate(options: [.activateIgnoringOtherApps])
     }
     
@@ -7558,6 +7606,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             closePupUpBlockIfVisible()
             menuViewControllerObj?.reloadIfNeeded()
             closeNudgeFocusAlignmentScoreWindow()
+            
+            leftMenuVcObj?.focusModeOrFocusModeHabitFinished()
+            leftMenuVcObj?.resetFocusModeTitle()
         }
         DispatchQueue.main.async {
             stageManagerObject.isStageManagerEnabled = stageManagerObject.checkIsStageManagerEnabled()
@@ -7573,8 +7624,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     
     func showFocusCompletedView(){
         addLog(text: "show Focus Completed View")
+        mainWindowControllerObj?.showWindow(self)
         leftMenuVcObj!.showFocusCompletedView()
-        return; // todo
+        return; // todo 
         
         getEndFocusModeWindowControllerObj().contentViewController = focusCompletedVcObj
         getEndFocusModeWindowControllerObj().showWindow(self)
@@ -7702,6 +7754,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         arrKeywordsToAllowInFocus.removeAll()
         arrAllowedTabTitlesInCuddlyModeCurrentFocus.removeAll()
         menuViewControllerObj?.reloadIfNeeded()
+        if leftMenuVcObj != nil{
+            leftMenuVcObj?.focusModeOrFocusModeHabitStarted()
+            leftMenuVcObj?.resetFocusModeTitle()
+        }
     }
     
     
@@ -11848,4 +11904,87 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 // todo micro break aatr hi thodi der tak chalu ni krte to khud hi micro break window hide ho jata hai use natural break mano. latka kr dikhao nataul break ko micro break per hi 
 
 
-// break warning aate hi morning state vala view hide ho gya w ki main view controller ka remove all sub view call hua kahi se 
+// break warning aate hi morning state vala view hide ho gya w ki main view controller ka remove all sub view call hua kahi se
+
+
+//  full screen vali chioje handle krni hai
+
+
+
+//  change in simople pomodoro 
+// title simple pomodoro mai bhi checnage kro 
+
+
+
+// app kis time per full sreen hogi
+
+
+//  check shutoff and focus summary
+
+// all password screens on habit // password laga k check rkna
+// shut off
+//
+
+//  blankwindow 
+
+
+// unlock dhutoff k baad staer focus session tab 
+// niche se nudge aayga usme task k bare mai information
+// left menu disable satte ko or sahi kro
+// task player sahi kro
+// adhi habit chalu kro background vali 
+
+
+
+// showBlankWindowInSecondaryMonitor
+
+// full screen se postpone per crash and  small window after full wiindow is so much full window
+
+// sare window object marne pdenge uski vjh se problem hogi
+// mail vala kaam
+
+
+// task player task not mathing check        mathing hai
+
+// habits or break k time sab disable kro
+// motivation ko tools mai lejao
+
+
+//or bugs mili thi solve hui 
+
+ 
+
+
+
+// search preferencesTabViewController  and remove 
+
+
+// minimise button not working   done
+// this is disbaled becasue you are doing your morning routine  // tooltip done
+// task oplayer focus start hone k baad chota hi ayga  done
+// custom routin ki warning or break ki warning aate hi habit tab auto selct ho tha h  sahi kro done
+
+// extand morning evenin g postpoine if custom routine is running after postpome morning evening
+// todo custom rouinmes ni h to tab hide hoga
+//
+// floating top bar
+// onboarding
+
+
+
+
+
+
+// custom routine waringi se postpone krne per window band ho rahi hai
+//focus end window duri view ya close per puranma close event fire hoga
+
+// what if mormning routine aa jay or focus completed view pda ho.. abhi tak solve ni hua ye issue . lekin user khud click kre band kare to solve hi
+
+
+
+
+
+// according to sir :- full screen habit per help bhi fulll screen per ayga.    done
+// dashboard hatoa.  done
+// todo focus habit khatm hote hi task player vaps disbale karna hai   done 
+// todo check custom routine with warning 

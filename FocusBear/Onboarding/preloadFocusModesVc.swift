@@ -161,15 +161,24 @@ class preloadFocusModesVc: NSViewController, NSTextFieldDelegate {
             UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
             allApiObject.addFocusMode(focusType: dic)
             
-            if preferencesWindowControllerObj != nil{
-                if preferencesWindowControllerObj?.window?.isVisible ?? false{
-                    if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-                        if tabview.selectedTabViewItemIndex == preferencesFocusModesIndex{
-                            focusPreferencesVcObj?.reloadData()
-                        }
+//            if preferencesWindowControllerObj != nil{
+//                if preferencesWindowControllerObj?.window?.isVisible ?? false{
+//                    if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
+//                        if tabview.selectedTabViewItemIndex == preferencesFocusModesIndex{
+//                            focusPreferencesVcObj?.reloadData()
+//                        }
+//                    }
+//                }
+//            }
+            
+            if mainWindowControllerObj != nil{
+                if mainWindowControllerObj?.window?.isVisible ?? false{
+                    if leftMenuVcObj?.boxFocusModeSettings.isSelected ?? false{ // todo test 
+                        focusPreferencesVcObj?.reloadData()
                     }
                 }
             }
+            
             UserDefaults.standard.set(true, forKey: kUserdefaultsFocusTipsShown)
             
             addLog(text: "[user-action] show Ai Permission Vc")

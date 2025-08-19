@@ -55,6 +55,17 @@ class smallCountDownVc: NSViewController {
             showBlankWindowInSecondaryMonitor()
             timerViewcontrollerObj?.btnPauseClicked(self)
             timerViewcontrollerObj?.menuItemSkipHabitClicked()
+
+            if currentState == ._CUSTOM_ROUTINE_{
+                leftMenuVcObj?.showCustomRoutineView()
+                leftMenuVcObj?.disbaleAllExceptCustomRoutineTab()
+            }else{
+                leftMenuVcObj?.showHabitsView()
+                leftMenuVcObj?.disbaleAllExceptHabitTab()
+            }
+          //  if checkIsFullScreenEnabled(){
+              //  mainViewControllerObj?.checkIsFullScreenNeeded()
+           // }
             if smallCountDownWcObj != nil{
                 if smallCountDownWcObj!.window?.isVisible ?? false{
                     getsmallCountDownVcObject().closeTimerBox()
@@ -78,6 +89,16 @@ class smallCountDownVc: NSViewController {
             addLog(text:"[user-action] smallCountDownVc:- button Postpone Clicked")
             mainWindowControllerObj?.window?.setIsVisible(true)
             showBlankWindowInSecondaryMonitor()
+            if currentState == ._CUSTOM_ROUTINE_{
+                leftMenuVcObj?.showCustomRoutineView()
+                leftMenuVcObj?.disbaleAllExceptCustomRoutineTab()
+            }else{
+                leftMenuVcObj?.showHabitsView()
+                leftMenuVcObj?.disbaleAllExceptHabitTab()
+            }
+          //  if checkIsFullScreenEnabled(){
+             //   mainViewControllerObj?.checkIsFullScreenNeeded()
+           // }
             getHabitsVcObject().abortCurrentState()
             if quittingWcObj != nil{
                 if quittingWcObj?.window?.isVisible ?? false{

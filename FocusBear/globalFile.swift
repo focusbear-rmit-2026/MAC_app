@@ -431,14 +431,27 @@ var currentState:CURRENTSTATE = ._NOTHING_{
         lastCurrentStateSaved = currentState
         
         if currentState == ._MORNING_HABIT_{
-            if oldValue != ._MORNING_HABIT_{
+            if oldValue != currentState{
                 leftMenuVcObj?.habitStarted()
             }
         }else if currentState == ._EVENING_HABIT_{
-            if oldValue != ._EVENING_HABIT_{
+            if oldValue != currentState{
+                leftMenuVcObj?.habitStarted()
+            }
+        }else if currentState == ._FOCUS_SUMMARY_{
+            if oldValue != currentState{
+                leftMenuVcObj?.habitStarted()
+            }
+        }else if currentState == ._SHUTOFFMAC_{
+            if oldValue != currentState{
                 leftMenuVcObj?.habitStarted()
             }
         }
+//        else if currentState == ._CUSTOM_ROUTINE_{
+//            if oldValue != currentState{
+//                leftMenuVcObj?.customRoutineStarted()
+//            }
+//        }
     }
 }
 
@@ -1131,272 +1144,272 @@ let daysFreeTrial  = 31
 //}
 
 
-class customBox: NSBox {
-    var mouseDown = false
-    var tagValue = 0
-    var isTableView = false
-    override func awakeFromNib() {
-        super.awakeFromNib()
-        addTrackingArea(NSTrackingArea(rect: bounds, options: [.activeAlways, .inVisibleRect, .mouseEnteredAndExited], owner: self, userInfo: nil))
-        
-    }
-    
-    override func mouseEntered(with event: NSEvent) {
-        super.mouseEntered(with: event)
-        NSCursor.pointingHand.set()
-    }
-    
-    override func mouseDown(with event: NSEvent) {
-        // super.mouseDown(with: event)
-        print("mouse down")
-        if isTableView{
-            mouseDown = true
-            self.layer?.backgroundColor = NSColor(red: 0/255, green: 0/255, blue: 0/255, alpha: 0.2).cgColor
-            NSCursor.pointingHand.set()
-        }else{
-            super.mouseDown(with: event)
-        }
-    }
-    
-    override func mouseUp(with event: NSEvent) {
-        super.mouseUp(with: event)
-        print("mouse up")
-        if mouseDown {
-            mouseDown = false
-            
-            NSCursor.pointingHand.set()
-            self.layer?.backgroundColor = NSColor(red: 0/255, green: 0/255, blue: 0/255, alpha: 0).cgColor
-        }else{
-            return;
-        }
-        
-        
-        if isTableView{
-            focusModeClicked(index: tagValue)
-        }
-    }
-    
-    func focusModeClicked(index:Int){
-        addLog(text:"[user-action] focusModeClicked")
-        if isPurchased == false && daysLeft <= 0{//if UserDefaults.standard.object(forKey: "trialExpired") != nil{
-            if trialExpiredNagWcObj != nil{
-                if trialExpiredNagWcObj?.window?.isVisible ?? false{
-                    return;
-                }
-            }
-            showUpgradeNowWindow()
-            return;
-        }
-        
-        if endingFocusWindowControllerObj != nil{
-            if (endingFocusWindowControllerObj?.window?.isVisible ?? false) && endingFocusWindowControllerObj?.contentViewController == focusCompletedVcObj{
-                addLog(text: "focus mode clicked:- focus mode completed Window is visible:- return")
-                return;
-            }
-        }
-//        if endingFocusWindowControllerObj != nil{
-//            if (endingFocusWindowControllerObj?.window?.isVisible ?? false) && endingFocusWindowControllerObj?.contentViewController == focusCompletedVcObj{
-//                if addTaskVcObj != nil{
-//                    if addTaskVcObj!.presentingViewController == focusCompletedVcObj{
-//                        return;
-//                    }
+//class customBox: NSBox { not in use 
+//    var mouseDown = false
+//    var tagValue = 0
+//    var isTableView = false
+//    override func awakeFromNib() {
+//        super.awakeFromNib()
+//        addTrackingArea(NSTrackingArea(rect: bounds, options: [.activeAlways, .inVisibleRect, .mouseEnteredAndExited], owner: self, userInfo: nil))
+//        
+//    }
+//    
+//    override func mouseEntered(with event: NSEvent) {
+//        super.mouseEntered(with: event)
+//        NSCursor.pointingHand.set()
+//    }
+//    
+//    override func mouseDown(with event: NSEvent) {
+//        // super.mouseDown(with: event)
+//        print("mouse down")
+//        if isTableView{
+//            mouseDown = true
+//            self.layer?.backgroundColor = NSColor(red: 0/255, green: 0/255, blue: 0/255, alpha: 0.2).cgColor
+//            NSCursor.pointingHand.set()
+//        }else{
+//            super.mouseDown(with: event)
+//        }
+//    }
+//    
+//    override func mouseUp(with event: NSEvent) {
+//        super.mouseUp(with: event)
+//        print("mouse up")
+//        if mouseDown {
+//            mouseDown = false
+//            
+//            NSCursor.pointingHand.set()
+//            self.layer?.backgroundColor = NSColor(red: 0/255, green: 0/255, blue: 0/255, alpha: 0).cgColor
+//        }else{
+//            return;
+//        }
+//        
+//        
+//        if isTableView{
+//            focusModeClicked(index: tagValue)
+//        }
+//    }
+//    
+//    func focusModeClicked(index:Int){
+//        addLog(text:"[user-action] focusModeClicked")
+//        if isPurchased == false && daysLeft <= 0{//if UserDefaults.standard.object(forKey: "trialExpired") != nil{
+//            if trialExpiredNagWcObj != nil{
+//                if trialExpiredNagWcObj?.window?.isVisible ?? false{
+//                    return;
 //                }
 //            }
+//            showUpgradeNowWindow()
+//            return;
 //        }
-        if arrFocusType[index]["isOn"] as? Bool == true || arrFocusType[index]["isPaused"] as? Bool == true{
-            //abort focus mode
-            // new work 13/3/22
-            
-            if arrFocusType[index]["isOn"] as? Bool == true{
-                if currentFocusModeStrictness == ._SUPER_STRICT_{
-                    addLog(text: "can't stop focus mode in super strict focus mode :- return")
-                    var cantStopFocusModeText = "Super strict mode activated: You cannot stop this focus session until it ends."
-                    if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
-                        cantStopFocusModeText = menuInfo.value(forKey: "cantStopFocusModeText") as? String ?? cantStopFocusModeText
-                    }
-                    showTooltip(sender: self, msg: cantStopFocusModeText, preferredEdge: .minX, maxWidthVal: 250)
-                    return;
-                }
-                var menuItemPauseFocusModeTitle = "Pause this focus mode"
-                var menuItemStopFocusModeTitle = "Stop this focus mode"
-                
-                if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
-                    menuItemPauseFocusModeTitle = menuInfo.value(forKey: "menuItemPauseFocusModeTitle") as? String ?? menuItemPauseFocusModeTitle
-                    menuItemStopFocusModeTitle = menuInfo.value(forKey: "menuItemStopFocusModeTitle") as? String ?? menuItemStopFocusModeTitle
-                }
-                
-                let menu = NSMenu()
-                if timerForFocusMode != nil{
-                    let menuItemPause = NSMenuItem(title: menuItemPauseFocusModeTitle, action: #selector(pauseFocusMode), keyEquivalent: "")
-                    menuItemPause.image = NSImage(named: NSImage.touchBarPauseTemplateName)
-                    menuItemPause.target = self
-                    menu.addItem(menuItemPause)
-                }
-                
-                let menuItemStop = NSMenuItem(title: menuItemStopFocusModeTitle, action: #selector(stopFocusMode), keyEquivalent: "")
-                menuItemStop.image = NSImage(named: NSImage.Name("NSTouchBarRecordStopTemplate"))
-                menuItemStop.target = self
-                menu.addItem(menuItemStop)
-                menu.minimumWidth = self.frame.width
-                let p = NSPoint(x: self.frame.origin.x, y: self.frame.origin.y )
-                menu.popUp(positioning: nil, at: p, in: self.superview)
-                return;
-            }else if arrFocusType[index]["isPaused"] as? Bool == true{
-                var menuItemStopFocusModeTitle = "Stop this focus mode"
-                var menuItemResumeFocusModeTitle = "Resume this focus mode"
-                if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
-                    menuItemStopFocusModeTitle = menuInfo.value(forKey: "menuItemStopFocusModeTitle") as? String ?? menuItemStopFocusModeTitle
-                    menuItemResumeFocusModeTitle = menuInfo.value(forKey: "menuItemResumeFocusModeTitle") as? String ?? menuItemResumeFocusModeTitle
-                }
-                
-                let menu = NSMenu()
-                let menuItemResume = NSMenuItem(title: menuItemResumeFocusModeTitle, action: #selector(resumeFocusMode), keyEquivalent: "")
-                menuItemResume.image = NSImage(named: NSImage.touchBarPlayTemplateName)
-                menuItemResume.target = self
-                menu.addItem(menuItemResume)
-                
-                let menuItemStop = NSMenuItem(title: menuItemStopFocusModeTitle, action: #selector(stopFocusMode), keyEquivalent: "")
-                menuItemStop.image = NSImage(named: NSImage.Name("NSTouchBarRecordStopTemplate"))
-                menuItemStop.target = self
-                menu.addItem(menuItemStop)
-                
-                
-                menu.minimumWidth = self.frame.width
-                let p = NSPoint(x: self.frame.origin.x, y: self.frame.origin.y )
-                menu.popUp(positioning: nil, at: p, in: self.superview)
-                return;
-            }
-        }else{
-            if isHardCorePomodoroModeOn{
-                
-                return;
-            }
-            for i in 0..<arrFocusType.count{
-                if arrFocusType[i]["isOn"] as? Bool == true || arrFocusType[i]["isPaused"] as? Bool == true{
-                    let alert = NSAlert()
-                    alert.setSharingType()
-                    alert.messageText = "A focus mode is already running. Please abort the running focus mode to start a new one."
-                    var buttonStopFocusText = "Stop current focus mode and start this one"
-                    
-                    if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
-                        if let focusAlreadyRunningText = focusInfo.value(forKey: "focusAlreadyRunningText") as? String{
-                            alert.messageText = focusAlreadyRunningText
-                        }
-                    }
-                    
-                    if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
-                        if let startingFocusModeInfo = focusInfo.value(forKey: "startingFocusModeInfo") as? NSDictionary{
-                            buttonStopFocusText = startingFocusModeInfo.value(forKey: "buttonStopFocusText") as? String ?? buttonStopFocusText
-                        }
-                    }
-                    
-                    alert.addButton(withTitle: buttonOkText)
-                    alert.addButton(withTitle: buttonStopFocusText)
-                    NSApplication.shared.activate(ignoringOtherApps: true)
-                    let result = alert.runModal()
-                    if result == .alertSecondButtonReturn{
-                        addLog(text: "Stop current focus from alert and show start focus view")
-                        appdelegate?.tryFocusModeFinished(isSilent: true, isShutOffTime: false, isMorningRoutineTime: false, allowExtend:false, isCustomRoutineTime:false)
-                        
-                        let isRelaxFocus = arrFocusType[index]["isRelaxFocus"] as? Bool ?? false
-                        if isRelaxFocus{
-                            if shouldAskPassword(){
-                                if SettingsManagerObject.isPasswordRequireInUseRelaxFocusMode{
-                                    menuViewControllerObj?.showPasswordWindow()
-                                    menuViewControllerObj?.isShowingPasswordForRelaxFocusMode = true
-                                }else{
-                                    showStartingFocusMode(focusModeIndex: index, focusType: arrFocusType[index]["name"] as? String ?? "")
-                                }
-                            }else{
-                                showStartingFocusMode(focusModeIndex: index, focusType: arrFocusType[index]["name"] as? String ?? "")
-                            }
-                        }else{
-                            showStartingFocusMode(focusModeIndex: index, focusType: arrFocusType[index]["name"] as? String ?? "")
-                        }
-                    }
-                    return;
-                }
-            }
-            
-            // //prvent user from start a focus mode while runnning a activity
-            
-            if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._ACTIVITY_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_{
-                addLog(text: "Activity is running: Can not start a focus mode")
-                let alert = NSAlert()
-                alert.setSharingType()
-                alert.messageText = "You can not start a focus mode while an activity is running."
-                
-                if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
-                    if let startingFocusModeInfo = focusInfo.value(forKey: "startingFocusModeInfo") as? NSDictionary{
-                        alert.messageText = startingFocusModeInfo.value(forKey: "activityRunningCantStartFocusText") as? String ?? alert.messageText
-                    }
-                }
-                NSApplication.shared.activate(ignoringOtherApps: true)
-                alert.runModal()
-                return;
-            }
-            
-            
-            
-            
-            let isRelaxFocus = arrFocusType[index]["isRelaxFocus"] as? Bool ?? false
-            if isRelaxFocus{
-                if shouldAskPassword(){
-                    if SettingsManagerObject.isPasswordRequireInUseRelaxFocusMode{
-                        menuViewControllerObj?.showPasswordWindow()
-                        menuViewControllerObj?.isShowingPasswordForRelaxFocusMode = true
-                    }else{
-                        showStartingFocusMode(focusModeIndex: index, focusType: arrFocusType[index]["name"] as? String ?? "")
-                    }
-                }else{
-                    showStartingFocusMode(focusModeIndex: index, focusType: arrFocusType[index]["name"] as? String ?? "")
-                }
-            }else{
-                showStartingFocusMode(focusModeIndex: index, focusType: arrFocusType[index]["name"] as? String ?? "")
-            }
-            
-            return;
-            
-        }
-    }
-    @objc func pauseFocusMode(){
-        if currentFocusModeStrictness == ._STRICT_{
-            showAbortingFocusModeVc(forPause: true)
-        }else{
-            appdelegate?.pauseFocusMode(index: tagValue)
-//            menuViewControllerObj?.tblViewFocusMode.reloadData()
-        }
-    }
-    
-    @objc func stopFocusMode(){
-        if isHardCorePomodoroModeOn{
-            if shouldAskPassword(){
-                if SettingsManagerObject.isPasswordRequireInStopPomodoro{
-                    menuViewControllerObj?.showPasswordWindow()
-                    addLog(text: "Showing enter password view from hardcore pomodoro stop from focus stop menu")
-                }else{
-                    showAbortingFocusModeVc(forPause: false)
-                }
-            }else{
-                showAbortingFocusModeVc(forPause: false)
-            }
-        }else{
-            showAbortingFocusModeVc(forPause: false)
-        }
-    }
-    
-    @objc func resumeFocusMode(){
-        appdelegate?.resumeFocusMode(index: tagValue)
-//        menuViewControllerObj?.tblViewFocusMode.reloadData()
-//        menuViewControllerObj?.startFocusRemainingTimer()
-    }
-    override func mouseExited(with event: NSEvent) {
-        super.mouseExited(with: event)
-        mouseDown = false
-        NSCursor.arrow.set()
-        self.layer?.backgroundColor = NSColor(red: 0/255, green: 0/255, blue: 0/255, alpha: 0).cgColor
-    }
-}
+//        
+//        if endingFocusWindowControllerObj != nil{
+//            if (endingFocusWindowControllerObj?.window?.isVisible ?? false) && endingFocusWindowControllerObj?.contentViewController == focusCompletedVcObj{
+//                addLog(text: "focus mode clicked:- focus mode completed Window is visible:- return")
+//                return;
+//            }
+//        }
+////        if endingFocusWindowControllerObj != nil{
+////            if (endingFocusWindowControllerObj?.window?.isVisible ?? false) && endingFocusWindowControllerObj?.contentViewController == focusCompletedVcObj{
+////                if addTaskVcObj != nil{
+////                    if addTaskVcObj!.presentingViewController == focusCompletedVcObj{
+////                        return;
+////                    }
+////                }
+////            }
+////        }
+//        if arrFocusType[index]["isOn"] as? Bool == true || arrFocusType[index]["isPaused"] as? Bool == true{
+//            //abort focus mode
+//            // new work 13/3/22
+//            
+//            if arrFocusType[index]["isOn"] as? Bool == true{
+//                if currentFocusModeStrictness == ._SUPER_STRICT_{
+//                    addLog(text: "can't stop focus mode in super strict focus mode :- return")
+//                    var cantStopFocusModeText = "Super strict mode activated: You cannot stop this focus session until it ends."
+//                    if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
+//                        cantStopFocusModeText = menuInfo.value(forKey: "cantStopFocusModeText") as? String ?? cantStopFocusModeText
+//                    }
+//                    showTooltip(sender: self, msg: cantStopFocusModeText, preferredEdge: .minX, maxWidthVal: 250)
+//                    return;
+//                }
+//                var menuItemPauseFocusModeTitle = "Pause this focus mode"
+//                var menuItemStopFocusModeTitle = "Stop this focus mode"
+//                
+//                if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
+//                    menuItemPauseFocusModeTitle = menuInfo.value(forKey: "menuItemPauseFocusModeTitle") as? String ?? menuItemPauseFocusModeTitle
+//                    menuItemStopFocusModeTitle = menuInfo.value(forKey: "menuItemStopFocusModeTitle") as? String ?? menuItemStopFocusModeTitle
+//                }
+//                
+//                let menu = NSMenu()
+//                if timerForFocusMode != nil{
+//                    let menuItemPause = NSMenuItem(title: menuItemPauseFocusModeTitle, action: #selector(pauseFocusMode), keyEquivalent: "")
+//                    menuItemPause.image = NSImage(named: NSImage.touchBarPauseTemplateName)
+//                    menuItemPause.target = self
+//                    menu.addItem(menuItemPause)
+//                }
+//                
+//                let menuItemStop = NSMenuItem(title: menuItemStopFocusModeTitle, action: #selector(stopFocusMode), keyEquivalent: "")
+//                menuItemStop.image = NSImage(named: NSImage.Name("NSTouchBarRecordStopTemplate"))
+//                menuItemStop.target = self
+//                menu.addItem(menuItemStop)
+//                menu.minimumWidth = self.frame.width
+//                let p = NSPoint(x: self.frame.origin.x, y: self.frame.origin.y )
+//                menu.popUp(positioning: nil, at: p, in: self.superview)
+//                return;
+//            }else if arrFocusType[index]["isPaused"] as? Bool == true{
+//                var menuItemStopFocusModeTitle = "Stop this focus mode"
+//                var menuItemResumeFocusModeTitle = "Resume this focus mode"
+//                if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
+//                    menuItemStopFocusModeTitle = menuInfo.value(forKey: "menuItemStopFocusModeTitle") as? String ?? menuItemStopFocusModeTitle
+//                    menuItemResumeFocusModeTitle = menuInfo.value(forKey: "menuItemResumeFocusModeTitle") as? String ?? menuItemResumeFocusModeTitle
+//                }
+//                
+//                let menu = NSMenu()
+//                let menuItemResume = NSMenuItem(title: menuItemResumeFocusModeTitle, action: #selector(resumeFocusMode), keyEquivalent: "")
+//                menuItemResume.image = NSImage(named: NSImage.touchBarPlayTemplateName)
+//                menuItemResume.target = self
+//                menu.addItem(menuItemResume)
+//                
+//                let menuItemStop = NSMenuItem(title: menuItemStopFocusModeTitle, action: #selector(stopFocusMode), keyEquivalent: "")
+//                menuItemStop.image = NSImage(named: NSImage.Name("NSTouchBarRecordStopTemplate"))
+//                menuItemStop.target = self
+//                menu.addItem(menuItemStop)
+//                
+//                
+//                menu.minimumWidth = self.frame.width
+//                let p = NSPoint(x: self.frame.origin.x, y: self.frame.origin.y )
+//                menu.popUp(positioning: nil, at: p, in: self.superview)
+//                return;
+//            }
+//        }else{
+//            if isHardCorePomodoroModeOn{
+//                
+//                return;
+//            }
+//            for i in 0..<arrFocusType.count{
+//                if arrFocusType[i]["isOn"] as? Bool == true || arrFocusType[i]["isPaused"] as? Bool == true{
+//                    let alert = NSAlert()
+//                    alert.setSharingType()
+//                    alert.messageText = "A focus mode is already running. Please abort the running focus mode to start a new one."
+//                    var buttonStopFocusText = "Stop current focus mode and start this one"
+//                    
+//                    if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
+//                        if let focusAlreadyRunningText = focusInfo.value(forKey: "focusAlreadyRunningText") as? String{
+//                            alert.messageText = focusAlreadyRunningText
+//                        }
+//                    }
+//                    
+//                    if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
+//                        if let startingFocusModeInfo = focusInfo.value(forKey: "startingFocusModeInfo") as? NSDictionary{
+//                            buttonStopFocusText = startingFocusModeInfo.value(forKey: "buttonStopFocusText") as? String ?? buttonStopFocusText
+//                        }
+//                    }
+//                    
+//                    alert.addButton(withTitle: buttonOkText)
+//                    alert.addButton(withTitle: buttonStopFocusText)
+//                    NSApplication.shared.activate(ignoringOtherApps: true)
+//                    let result = alert.runModal()
+//                    if result == .alertSecondButtonReturn{
+//                        addLog(text: "Stop current focus from alert and show start focus view")
+//                        appdelegate?.tryFocusModeFinished(isSilent: true, isShutOffTime: false, isMorningRoutineTime: false, allowExtend:false, isCustomRoutineTime:false)
+//                        
+//                        let isRelaxFocus = arrFocusType[index]["isRelaxFocus"] as? Bool ?? false
+//                        if isRelaxFocus{
+//                            if shouldAskPassword(){
+//                                if SettingsManagerObject.isPasswordRequireInUseRelaxFocusMode{
+//                                    menuViewControllerObj?.showPasswordWindow()
+//                                    menuViewControllerObj?.isShowingPasswordForRelaxFocusMode = true
+//                                }else{
+//                                    showStartingFocusMode(focusModeIndex: index, focusType: arrFocusType[index]["name"] as? String ?? "")
+//                                }
+//                            }else{
+//                                showStartingFocusMode(focusModeIndex: index, focusType: arrFocusType[index]["name"] as? String ?? "")
+//                            }
+//                        }else{
+//                            showStartingFocusMode(focusModeIndex: index, focusType: arrFocusType[index]["name"] as? String ?? "")
+//                        }
+//                    }
+//                    return;
+//                }
+//            }
+//            
+//            // //prvent user from start a focus mode while runnning a activity
+//            
+//            if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._ACTIVITY_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_{
+//                addLog(text: "Activity is running: Can not start a focus mode")
+//                let alert = NSAlert()
+//                alert.setSharingType()
+//                alert.messageText = "You can not start a focus mode while an activity is running."
+//                
+//                if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
+//                    if let startingFocusModeInfo = focusInfo.value(forKey: "startingFocusModeInfo") as? NSDictionary{
+//                        alert.messageText = startingFocusModeInfo.value(forKey: "activityRunningCantStartFocusText") as? String ?? alert.messageText
+//                    }
+//                }
+//                NSApplication.shared.activate(ignoringOtherApps: true)
+//                alert.runModal()
+//                return;
+//            }
+//            
+//            
+//            
+//            
+//            let isRelaxFocus = arrFocusType[index]["isRelaxFocus"] as? Bool ?? false
+//            if isRelaxFocus{
+//                if shouldAskPassword(){
+//                    if SettingsManagerObject.isPasswordRequireInUseRelaxFocusMode{
+//                        menuViewControllerObj?.showPasswordWindow()
+//                        menuViewControllerObj?.isShowingPasswordForRelaxFocusMode = true
+//                    }else{
+//                        showStartingFocusMode(focusModeIndex: index, focusType: arrFocusType[index]["name"] as? String ?? "")
+//                    }
+//                }else{
+//                    showStartingFocusMode(focusModeIndex: index, focusType: arrFocusType[index]["name"] as? String ?? "")
+//                }
+//            }else{
+//                showStartingFocusMode(focusModeIndex: index, focusType: arrFocusType[index]["name"] as? String ?? "")
+//            }
+//            
+//            return;
+//            
+//        }
+//    }
+//    @objc func pauseFocusMode(){
+//        if currentFocusModeStrictness == ._STRICT_{
+//            showAbortingFocusModeVc(forPause: true)
+//        }else{
+//            appdelegate?.pauseFocusMode(index: tagValue)
+////            menuViewControllerObj?.tblViewFocusMode.reloadData()
+//        }
+//    }
+//    
+//    @objc func stopFocusMode(){
+//        if isHardCorePomodoroModeOn{
+//            if shouldAskPassword(){
+//                if SettingsManagerObject.isPasswordRequireInStopPomodoro{
+//                    menuViewControllerObj?.showPasswordWindow()
+//                    addLog(text: "Showing enter password view from hardcore pomodoro stop from focus stop menu")
+//                }else{
+//                    showAbortingFocusModeVc(forPause: false)
+//                }
+//            }else{
+//                showAbortingFocusModeVc(forPause: false)
+//            }
+//        }else{
+//            showAbortingFocusModeVc(forPause: false)
+//        }
+//    }
+//    
+//    @objc func resumeFocusMode(){
+//        appdelegate?.resumeFocusMode(index: tagValue)
+////        menuViewControllerObj?.tblViewFocusMode.reloadData()
+////        menuViewControllerObj?.startFocusRemainingTimer()
+//    }
+//    override func mouseExited(with event: NSEvent) {
+//        super.mouseExited(with: event)
+//        mouseDown = false
+//        NSCursor.arrow.set()
+//        self.layer?.backgroundColor = NSColor(red: 0/255, green: 0/255, blue: 0/255, alpha: 0).cgColor
+//    }
+//}
 
 
 
@@ -1486,10 +1499,10 @@ func disableSystemSleep(){
 func enableSystemSleep(){
     IOPMAssertionRelease(assertionIDDisableSleep);
 }
-var isFocusMusicPausedAutomatically = false
 
-func showBlankWindowInSecondaryMonitor(){
-    addLog(text: "func:- showBlankWindowInSecondaryMonitor")
+
+var isFocusMusicPausedAutomatically = false
+func pauseAutomaticallyIfAnyFocusMusicPlaying(){
     if allTracksVcObj != nil{
         for i in 0..<arrAllTracks.count{
             if arrAllTracks[i]["isPlaying"] as? Bool == true{
@@ -1508,34 +1521,8 @@ func showBlankWindowInSecondaryMonitor(){
             }
         }
     }
-    
-    // Luisa App broken bug fix 28/6/22
-    let windows = NSApp.windows
-    for win in windows{
-        print(win)
-        if win.isModalPanel{
-            NSApp.stopModal()
-            break;
-        }
-    }
-    //  /////////////////////////////////
-    if !checkIsFullScreenEnabled(){//Blank Window In Secondary Monitor is not required if full screen is not enabled
-        return;
-    }
-    appdelegate?.showExtraWindows()
 }
-func checkIsFullScreenEnabled()-> Bool{
-    if currentState == ._ACTIVITY_{
-        if isBreakActivityShowingWhileMeeting{
-            return false
-        }
-    }
-    
-    return SettingsManagerObject.isFullScreenEnabled
-}
-
-func hideBlankWindowInSecondaryMonitor(){
-    addLog(text: "func:- hideBlankWindowInSecondaryMonitor")
+func resumeIfAnyFocusMusicStoppedAutomatically(){
     if isFocusMusicPausedAutomatically{
         isFocusMusicPausedAutomatically = false
         if allTracksVcObj != nil{
@@ -1554,69 +1541,20 @@ func hideBlankWindowInSecondaryMonitor(){
             }
         }
     }
-    
-    
-    for i in 0..<arrWindows.count{
-        let window = arrWindows[i]
-        //        if let vc = window.contentViewController as? ViewController{
-        //            vc.customView.cbox?.isHidden = true
-        //            vc.customView.setNeedsDisplay(vc.customView.frame)
-        //            vc.customView.cRect = NSRect(x: 0, y: 0, width: 0, height: 0)
-        //            vc.customView.mouseDownPoint = NSPoint.zero
-        //        }
-        window.orderOut(nil)
-        arrWindows[i].windowController?.window=nil
-    }
-    arrWindows.removeAll()
-}
-var arrWindows = [NSWindow]()
-
-
-func resetWin(_ win: NSWindow) -> NSWindow {
-    win.collectionBehavior = NSWindow.CollectionBehavior.canJoinAllSpaces          // we want these windows to follow Spaces around
-    //use .desktopWindow for window below icons   //hack? this makes mission control and expose ignore these windows
-    //        if toggleButtonHideDesktopIcons.isOn{
-    //            win.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.backstopMenu)))
-    //        }else{
-    win.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.maximumWindow)))
-    //        }
-    // rest is to make the windows dumb
-    win.canHide = false
-    win.isExcludedFromWindowsMenu = true
-    win.hidesOnDeactivate = false
-    win.discardCursorRects()
-    win.discardEvents(matching: NSEvent.EventTypeMask.any, before: nil)
-    //win.ignoresMouseEvents = true
-    win.orderBack(nil)
-    win.isRestorable = false
-    win.animationBehavior = .none
-    win.backgroundColor = NSColor.clear
-    return win
 }
 
-class blankController: NSViewController {
-    @IBOutlet weak var lblTitle: NSTextField!
-    override func viewDidLoad() {
-        lblTitle.stringValue = appName//"Focus Bear"
-    }
-}
 
-class logsUploadingVc: NSViewController {
-    @IBOutlet weak var lblTitle: NSTextField!
-    @IBOutlet weak var loader: NSProgressIndicator!
-    override func viewDidLoad() {
-        lblTitle.stringValue = "Uploading..."
-        
-        if let common = configjson.value(forKey: "common") as? NSDictionary{
-            lblTitle.stringValue = common.value(forKey: "uploadingText") as? String ?? lblTitle.stringValue
+func checkIsFullScreenEnabled()-> Bool{
+    if currentState == ._ACTIVITY_{
+        if isBreakActivityShowingWhileMeeting{
+            return false
         }
     }
-    override func viewWillAppear() {
-        loader.startAnimation(self)
-    }
+    
+    return SettingsManagerObject.isFullScreenEnabled
 }
 
-//4b3eb33632184640b82aa3e3f50fe11b2cdd8b0e82ce48a8bfd1cbe26edc32f5
+
 
 var newGifsNamesArray = ["Glasses-Bear-250-px_V3", "cheer_250px_trans_centered", "Finger-and-Sign-Bear-250px", "Weight-bear-250-px_V2", "Whistle-bear-250-px"]
 
@@ -4513,53 +4451,91 @@ class GeekModeSegmentedControl: NSSegmentedControl {
             preferencesSettingsIndex = 3
             preferencesEditHabitsIndex = 4
             preferencesBlocksIndex = 2
+            leftMenuVcObj?.boxFocusModeSettings.isHidden = false
         }else{
             preferencesSettingsIndex = 2
             preferencesEditHabitsIndex = 3
             preferencesBlocksIndex = 1
+            leftMenuVcObj?.boxFocusModeSettings.isHidden = true
         }
-        if preferencesWindowControllerObj?.window?.isVisible ?? false{
-            if let tabview = preferencesWindowControllerObj?.contentViewController as? preferencesTabViewController{
-                tabview.reloadDataForAppMode()
-                let tabViewItem = tabview.tabViewItems[tabview.selectedTabViewItemIndex]
-                if tabViewItem.identifier as? String == idSettings{
-                    settingsSideBarVcObj?.reloadDataForAppMode()
-                    if geekMode{
-                        settingsContainerVcObj?.segmentControlGeekMode.setSelected(true, forSegment: geekModeIndex)
-                    }else{
-                        settingsContainerVcObj?.segmentControlGeekMode.setSelected(true, forSegment: simpleModeIndex)
-                    }
-                    
-                    let selectedRow = settingsSideBarVcObj?.tblView.selectedRow ?? 0
-                    let arrSettingsList = settingsSideBarVcObj?.arrSettingsList ?? []
-                    let id = arrSettingsList[selectedRow]["id"] as? String ?? ""
-                    
-                    switch id {
-                    case idUi:
-                        uIVcObj?.reloadDataForAppMode()
-                    case idAccesibility:
-                        break;
-                    case idAi:
-                        break;
-                    case idPomodoro:
-                        break;
-                    case idStrictness:
-                        strictnessVcObj?.reloadDataForAppMode()
-                    case idAdvanced:
-                        break;
-                    case idAccount:
-                        break;
-                    case idUninstall:
-                        break;
-                    case idPermissions:
-                        break;
-                    default:
-                        break;
-                    }
-                }
-                
+//        if preferencesWindowControllerObj?.window?.isVisible ?? false{ //  rmeove this block 
+//            if let tabview = preferencesWindowControllerObj?.contentViewController as? preferencesTabViewController{
+//                tabview.reloadDataForAppMode()
+//                let tabViewItem = tabview.tabViewItems[tabview.selectedTabViewItemIndex]
+//                if tabViewItem.identifier as? String == idSettings{
+//                    settingsSideBarVcObj?.reloadDataForAppMode()
+//                    if geekMode{
+//                        settingsContainerVcObj?.segmentControlGeekMode.setSelected(true, forSegment: geekModeIndex)
+//                    }else{
+//                        settingsContainerVcObj?.segmentControlGeekMode.setSelected(true, forSegment: simpleModeIndex)
+//                    }
+//                    
+//                    let selectedRow = settingsSideBarVcObj?.tblView.selectedRow ?? 0
+//                    let arrSettingsList = settingsSideBarVcObj?.arrSettingsList ?? []
+//                    let id = arrSettingsList[selectedRow]["id"] as? String ?? ""
+//                    
+//                    switch id {
+//                    case idUi:
+//                        uIVcObj?.reloadDataForAppMode()
+//                    case idAccesibility:
+//                        break;
+//                    case idAi:
+//                        break;
+//                    case idPomodoro:
+//                        break;
+//                    case idStrictness:
+//                        strictnessVcObj?.reloadDataForAppMode()
+//                    case idAdvanced:
+//                        break;
+//                    case idAccount:
+//                        break;
+//                    case idUninstall:
+//                        break;
+//                    case idPermissions:
+//                        break;
+//                    default:
+//                        break;
+//                    }
+//                }
+//                
+//            }
+//        }
+        if leftMenuVcObj?.boxSettings.isSelected ?? false{
+            settingsSideBarVcObj?.reloadDataForAppMode()
+            if geekMode{
+                settingsContainerVcObj?.segmentControlGeekMode.setSelected(true, forSegment: geekModeIndex)
+            }else{
+                settingsContainerVcObj?.segmentControlGeekMode.setSelected(true, forSegment: simpleModeIndex)
+            }
+            
+            let selectedRow = settingsSideBarVcObj?.tblView.selectedRow ?? 0
+            let arrSettingsList = settingsSideBarVcObj?.arrSettingsList ?? []
+            let id = arrSettingsList[selectedRow]["id"] as? String ?? ""
+            
+            switch id {
+            case idUi:
+                uIVcObj?.reloadDataForAppMode()
+            case idAccesibility:
+                break;
+            case idAi:
+                break;
+            case idPomodoro:
+                break;
+            case idStrictness:
+                strictnessVcObj?.reloadDataForAppMode()
+            case idAdvanced:
+                break;
+            case idAccount:
+                break;
+            case idUninstall:
+                break;
+            case idPermissions:
+                break;
+            default:
+                break;
             }
         }
+        
         if SettingsManagerObject.isGeekModeEnabled{
             allApiObject.capturePosthog(event: "switch-to-geek-mode", metadata: [:])
         }else{

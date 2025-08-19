@@ -340,7 +340,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         for tagInfo in arrAllFocusModeTags{
             focusPreferencesAdvancedVcObj?.arrAllTags.append(tagInfo["text"] ?? "")
         }
-        preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: viewWidthDefault, height: viewHeightDefault))
+        //preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: viewWidthDefault, height: viewHeightDefault)) todo check this 
         reloadData()
         if Reachability.isConnectedToNetwork() == false {
             
@@ -583,11 +583,11 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
                     self.checkState()
                     UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
                     resetPomodoroVcFocusListIfNeeded()
-                    if startingFocusWindowControllerObj?.window?.isVisible ?? false{
-                        if startingFocusWindowControllerObj?.contentViewController == startingFocusModeVcObj{
-                            startingFocusWindowControllerObj?.close()
-                        }
-                    }
+//                    if startingFocusWindowControllerObj?.window?.isVisible ?? false{
+//                        if startingFocusWindowControllerObj?.contentViewController == startingFocusModeVcObj{
+//                            startingFocusWindowControllerObj?.close()
+//                        }
+//                    }
                     
                     
                     allApiObject.deleteFocusMode(id: id, completionHandler: {isDeleted in

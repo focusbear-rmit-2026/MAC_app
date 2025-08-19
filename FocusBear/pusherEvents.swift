@@ -122,11 +122,11 @@ class pusherEvents:NSObject, PusherDelegate {
                                         appdelegate?.setFocusModeTimer(hour: nil, minute: diffMinutes)
                                        // isFocusModeStartedFromPomodoroMode = false
                                         closePomodoroWindowIOfVisible()
-                                        if startingFocusWindowControllerObj != nil{
-                                            if startingFocusWindowControllerObj!.window!.isVisible{
-                                                startingFocusWindowControllerObj?.window?.close()
-                                            }
-                                        }
+//                                        if startingFocusWindowControllerObj != nil{
+//                                            if startingFocusWindowControllerObj!.window!.isVisible{
+//                                                startingFocusWindowControllerObj?.window?.close()
+//                                            }
+//                                        }
                                         whatToAchieveInFocusBlock = intention
                                         
                                         appdelegate!.focusModeStartted(isStartedByPusher: true)

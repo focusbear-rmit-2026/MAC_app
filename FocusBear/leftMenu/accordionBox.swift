@@ -27,7 +27,7 @@ class accordionBox: NSBox {
     
     var onStateChanged: ((Bool) -> Void)?
     
-    private let titleLabel: NSTextField = {
+    let titleLabel: NSTextField = {
         let label = NSTextField(labelWithString: "")
         label.font = NSFont.systemFont(ofSize: 13, weight: .medium)
         label.textColor = .labelColor

@@ -253,7 +253,11 @@ class focusCompletedVc: NSViewController {
         }
         
         hideNudgeStartAnotherFocusSessionWindow()
+        
+//        if isFocusModeRunning == false hoo  to khud karo api call yha . bas baki sb jagah se hatao  // todo  this will be best 
+        
     }
+    
     override func viewWillAppear() {
         loader.isHidden = true
         if isHardCorePomodoroModeOn{
@@ -370,7 +374,9 @@ class focusCompletedVc: NSViewController {
             let obj = getAddTaskVcObject()
             obj.loadView()
             obj.reloadData(isAddingTask: false, allowExtend: allowExtend, isHabitGoing: false)
-            self.presentAsSheet(obj)
+            if self.view.window != nil{
+                self.presentAsSheet(obj) /// todo yha crash hui app abort vie per tha mai
+            }
             allApiObject.capturePosthog(event: "mark-tasks-on-focus-session-end-screen-shown", metadata: [:])
         }
         
@@ -771,11 +777,12 @@ class focusCompletedVc: NSViewController {
             if getHabitsVcObject().breakTimer != nil{
                 getHabitsVcObject().setActivityTimer()
             }
-        }else if startingFocusModeVcObj?.lastSkipMicroBreakState ?? false{
-            if getHabitsVcObject().breakTimer != nil{
-                getHabitsVcObject().setActivityTimer()
-            }
         }
+//        else if startingFocusModeVcObj?.lastSkipMicroBreakState ?? false{
+//            if getHabitsVcObject().breakTimer != nil{
+//                getHabitsVcObject().setActivityTimer()
+//            }
+//        }
     }
     
     @IBAction func btnDoBreakActivityClicked(_ sender: Any) {
@@ -842,11 +849,13 @@ class focusCompletedVc: NSViewController {
             if getHabitsVcObject().breakTimer != nil{
                 getHabitsVcObject().setActivityTimer()
             }
-        }else if startingFocusModeVcObj?.lastSkipMicroBreakState ?? false{
-            if getHabitsVcObject().breakTimer != nil{
-                getHabitsVcObject().setActivityTimer()
-            }
         }
+        
+//        else if startingFocusModeVcObj?.lastSkipMicroBreakState ?? false{
+//            if getHabitsVcObject().breakTimer != nil{
+//                getHabitsVcObject().setActivityTimer()
+//            }
+//        }
         self.view.window?.close()
     }
     
@@ -1033,36 +1042,36 @@ class focusCompletedVc: NSViewController {
     @IBAction func btnEnableAdvancedAnalyticsClicked(_ sender: Any){
         if SettingsManagerObject.isGeekModeEnabled{
             
-            addLog(text: "[user-action] btnEnableAdvancedAnalyticsClicked")
-            if preferencesWindowControllerObj?.window?.isVisible ?? false{
-                if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-                    tabview.selectedTabViewItemIndex = preferencesSettingsIndex
-                    if settingsSideBarVcObj != nil{
-                        settingsSideBarVcObj!.tblView.selectRowIndexes(IndexSet(arrayLiteral: settingsSideBarVcObj!.advancedSettingsIndex), byExtendingSelection: false)
-                        settingsContainerVcObj?.showPrivacyView()
-                        getPrivacyVcObject().highlightAdvanceAanalyticsItemBox()
-                    }
-                }
-                return;
-            }
-            allApiObject.capturePosthog(event: "open-preferences", metadata: [:])
-            preferencesWindowControllerObj?.showWindow(self)
-            addLog(text: "Showing preferences from edit focus mode")
-            if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-                tabview.selectedTabViewItemIndex = preferencesSettingsIndex
-                if settingsSideBarVcObj != nil{
-                    settingsSideBarVcObj!.tblView.selectRowIndexes(IndexSet(arrayLiteral: settingsSideBarVcObj!.advancedSettingsIndex), byExtendingSelection: false)
-                    settingsContainerVcObj?.showPrivacyView()
-                    getPrivacyVcObject().highlightAdvanceAanalyticsItemBox()
-                }
-                if isPasswordRequireInOpenSettings(){
-                    tabview.view.addSubview(getEnterPasswordVcObjForPreferences().view)
-                    tabview.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
-                    getEnterPasswordVcObjForPreferences().parentVc = nil
-                    enterPasswordVcObjForPreferences?.removeConstraints()
-                    addLog(text: "Showing enter password view")
-                }
-            }
+            addLog(text: "[user-action] btnEnableAdvancedAnalyticsClicked")// todo keise kre ye ask sir 
+//            if preferencesWindowControllerObj?.window?.isVisible ?? false{
+//                if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
+//                    tabview.selectedTabViewItemIndex = preferencesSettingsIndex
+//                    if settingsSideBarVcObj != nil{
+//                        settingsSideBarVcObj!.tblView.selectRowIndexes(IndexSet(arrayLiteral: settingsSideBarVcObj!.advancedSettingsIndex), byExtendingSelection: false)
+//                        settingsContainerVcObj?.showPrivacyView()
+//                        getPrivacyVcObject().highlightAdvanceAanalyticsItemBox()
+//                    }
+//                }
+//                return;
+//            }
+//            allApiObject.capturePosthog(event: "open-preferences", metadata: [:])
+//            preferencesWindowControllerObj?.showWindow(self)
+//            addLog(text: "Showing preferences from edit focus mode")
+//            if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
+//                tabview.selectedTabViewItemIndex = preferencesSettingsIndex
+//                if settingsSideBarVcObj != nil{
+//                    settingsSideBarVcObj!.tblView.selectRowIndexes(IndexSet(arrayLiteral: settingsSideBarVcObj!.advancedSettingsIndex), byExtendingSelection: false)
+//                    settingsContainerVcObj?.showPrivacyView()
+//                    getPrivacyVcObject().highlightAdvanceAanalyticsItemBox()
+//                }
+//                if isPasswordRequireInOpenSettings(){
+//                    tabview.view.addSubview(getEnterPasswordVcObjForPreferences().view)
+//                    tabview.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
+//                    getEnterPasswordVcObjForPreferences().parentVc = nil
+//                    enterPasswordVcObjForPreferences?.removeConstraints()
+//                    addLog(text: "Showing enter password view")
+//                }
+//            }
             
             NSApplication.shared.activate(ignoringOtherApps: true)
         }else{
@@ -1146,35 +1155,37 @@ class focusCompletedVc: NSViewController {
     
     @IBAction func btnActivateTimeTrackerClicked(_ sender: Any) {
         addLog(text: "[user-action] btnActivateTimeTrackerClicked")
-        if preferencesWindowControllerObj?.window?.isVisible ?? false{
-            if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-                tabview.selectedTabViewItemIndex = preferencesSettingsIndex
-                if settingsSideBarVcObj != nil{
-                    settingsSideBarVcObj!.tblView.selectRowIndexes(IndexSet(arrayLiteral: settingsSideBarVcObj!.advancedSettingsIndex), byExtendingSelection: false)
-                    settingsContainerVcObj?.showAddOnsView()
-                    getAddOnsVcObject().highlightAdvanceAanalyticsItemBox()
-                }
-            }
-            return;
-        }
-        allApiObject.capturePosthog(event: "open-preferences", metadata: [:])
-        preferencesWindowControllerObj?.showWindow(self)
-        addLog(text: "Showing preferences from edit focus mode")
-        if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-            tabview.selectedTabViewItemIndex = preferencesSettingsIndex
-            if settingsSideBarVcObj != nil{
-                settingsSideBarVcObj!.tblView.selectRowIndexes(IndexSet(arrayLiteral: settingsSideBarVcObj!.advancedSettingsIndex), byExtendingSelection: false)
-                settingsContainerVcObj?.showAddOnsView()
-                getAddOnsVcObject().highlightAdvanceAanalyticsItemBox()
-            }
-            if isPasswordRequireInOpenSettings(){
-                tabview.view.addSubview(getEnterPasswordVcObjForPreferences().view)
-                tabview.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
-                getEnterPasswordVcObjForPreferences().parentVc = nil
-                enterPasswordVcObjForPreferences?.removeConstraints()
-                addLog(text: "Showing enter password view")
-            }
-        }
+        
+        // todo keise kare ye  ask sir
+//        if preferencesWindowControllerObj?.window?.isVisible ?? false{
+//            if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
+//                tabview.selectedTabViewItemIndex = preferencesSettingsIndex
+//                if settingsSideBarVcObj != nil{
+//                    settingsSideBarVcObj!.tblView.selectRowIndexes(IndexSet(arrayLiteral: settingsSideBarVcObj!.advancedSettingsIndex), byExtendingSelection: false)
+//                    settingsContainerVcObj?.showAddOnsView()
+//                    getAddOnsVcObject().highlightAdvanceAanalyticsItemBox()
+//                }
+//            }
+//            return;
+//        }
+//        allApiObject.capturePosthog(event: "open-preferences", metadata: [:])
+//        preferencesWindowControllerObj?.showWindow(self)
+//        addLog(text: "Showing preferences from edit focus mode")
+//        if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
+//            tabview.selectedTabViewItemIndex = preferencesSettingsIndex
+//            if settingsSideBarVcObj != nil{
+//                settingsSideBarVcObj!.tblView.selectRowIndexes(IndexSet(arrayLiteral: settingsSideBarVcObj!.advancedSettingsIndex), byExtendingSelection: false)
+//                settingsContainerVcObj?.showAddOnsView()
+//                getAddOnsVcObject().highlightAdvanceAanalyticsItemBox()
+//            }
+//            if isPasswordRequireInOpenSettings(){
+//                tabview.view.addSubview(getEnterPasswordVcObjForPreferences().view)
+//                tabview.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
+//                getEnterPasswordVcObjForPreferences().parentVc = nil
+//                enterPasswordVcObjForPreferences?.removeConstraints()
+//                addLog(text: "Showing enter password view")
+//            }
+//        }
         
         NSApplication.shared.activate(ignoringOtherApps: true)
     }

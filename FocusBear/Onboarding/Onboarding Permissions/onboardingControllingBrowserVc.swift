@@ -255,17 +255,28 @@ class onboardingControllingBrowserVc: NSViewController {
     }
     
     func permissionGivenFromBrowser(){// added on 23/7/25 version 1.26.393
-        if preferencesWindowControllerObj != nil && permissionsVcObj != nil && settingsContainerVcObj != nil{
-            if preferencesWindowControllerObj?.window?.isVisible ?? false{
-                if let tabview = preferencesWindowControllerObj?.contentViewController as? preferencesTabViewController{
-                    if tabview.tabView.selectedTabViewItem?.identifier as? String == idSettings{
-                        if settingsContainerVcObj?.isPermissionsViewVisible ?? false{
-                            permissionsVcObj?.reloadData()
-                        }
+//        if preferencesWindowControllerObj != nil && permissionsVcObj != nil && settingsContainerVcObj != nil{// need to remvoe this block
+//            if preferencesWindowControllerObj?.window?.isVisible ?? false{
+//                if let tabview = preferencesWindowControllerObj?.contentViewController as? preferencesTabViewController{
+//                    if tabview.tabView.selectedTabViewItem?.identifier as? String == idSettings{
+//                        if settingsContainerVcObj?.isPermissionsViewVisible ?? false{
+//                            permissionsVcObj?.reloadData()
+//                        }
+//                    }
+//                }
+//            }
+//        }
+        
+        if mainWindowControllerObj != nil && permissionsVcObj != nil && settingsContainerVcObj != nil{//working
+            if mainWindowControllerObj?.window?.isVisible ?? false{
+                if leftMenuVcObj?.boxSettings.isSelected ?? false{
+                    if settingsContainerVcObj?.isPermissionsViewVisible ?? false{
+                        permissionsVcObj?.reloadData()
                     }
                 }
             }
         }
+        
         menuViewControllerObj?.browserPermissionGiven = true
         menuViewControllerObj?.reloadPermission()
     }

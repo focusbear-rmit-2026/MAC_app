@@ -104,7 +104,7 @@ class popupAppointmentTimeVc: NSViewController {
         }else if lastCurrentState == ._ACTIVITY_{
             getHabitsVcObject().postponeBreakActivitiesFor(minutes: 0, secondsToPostpone: duration + 160, isFromBreakWarningWindow: false)
         }else if lastCurrentState == ._CUSTOM_ROUTINE_{
-            getHabitsVcObject().postponeCustomRoutineFor(minutes: 0, secondsToPostpone: duration + 160, showAskFocusModeView: false, showAskIntention: false)
+            getHabitsVcObject().postponeCustomRoutineFor(minutes: 0, secondsToPostpone: duration + 160, showAskFocusModeView: false, showAskIntention: false, fromRoutineWarning:false)
         }
         if timer != nil{
             timer?.invalidate()

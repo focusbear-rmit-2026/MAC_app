@@ -115,7 +115,7 @@ class habitsVc: NSViewController {
 
 
     func hideCloseButtons(){
-//        self.btnAbort.isHidden = true
+        self.btnAbort.isHidden = true
 //        self.stackViewTopButtons.isHidden = true
 //        if !checkIsFullScreenEnabled(){
 //            self.view.window?.styleMask.remove(.closable)
@@ -123,7 +123,7 @@ class habitsVc: NSViewController {
     }
     
     func showCloseButtons(){
-//        self.btnAbort.isHidden = false
+        self.btnAbort.isHidden = false
 //        self.stackViewTopButtons.isHidden = false
 //        if !checkIsFullScreenEnabled(){
 //            self.view.window?.styleMask.insert(.closable)
@@ -474,7 +474,7 @@ class habitsVc: NSViewController {
                     }
                 }
                 //                mainWindowControllerObj?.window?.close() // todo
-                //                hideBlankWindowInSecondaryMonitor() // todo
+                 //               hideBlankWindowInSecondaryMonitor()
                 
                 showEasyPostponeWindow()
                 stopActivityTimer()
@@ -519,7 +519,7 @@ class habitsVc: NSViewController {
                 }
                 
 //                mainWindowControllerObj?.window?.close() // todo
-//                hideBlankWindowInSecondaryMonitor() // todo
+      //          hideBlankWindowInSecondaryMonitor()
                 
                 showEasyPostponeWindow()
                 stopActivityTimer()
@@ -600,7 +600,7 @@ class habitsVc: NSViewController {
                         }
                     }
                    // mainWindowControllerObj?.window?.close() // todo
-                   // hideBlankWindowInSecondaryMonitor() // todo
+            //        hideBlankWindowInSecondaryMonitor()
                     showEasyPostponeWindow()
                     if currentActivityPlaying != nil{
                         closePupUpBlockIfVisible()
@@ -631,7 +631,7 @@ class habitsVc: NSViewController {
                 }
             }
             //mainWindowControllerObj?.window?.close() // todo
-           // hideBlankWindowInSecondaryMonitor() // todo
+          //  hideBlankWindowInSecondaryMonitor()
             
             showEasyPostponeWindow()
 
@@ -882,13 +882,13 @@ class habitsVc: NSViewController {
         abortDoneVcObj?.startTimer()
         currentState = ._ABORT_
     }
-    func disableApp(){//todo remove 
-        addLog(text: "App Deactivated by user (Aborted)")
-        UserDefaults.standard.set(false, forKey: kUserdefaultsIsAppEnabled)
-        SettingsManagerObject.disableAppWriteSettings()
-        UserDefaults.standard.set(Date(), forKey: kUserdefaultsLastAppAbortedDate)
-        appdelegate?.quitAndRestartApp()
-    }
+//    func disableApp(){
+//        addLog(text: "App Deactivated by user (Aborted)")
+//        UserDefaults.standard.set(false, forKey: kUserdefaultsIsAppEnabled)
+//        SettingsManagerObject.disableAppWriteSettings()
+//        UserDefaults.standard.set(Date(), forKey: kUserdefaultsLastAppAbortedDate)
+//        appdelegate?.quitAndRestartApp()
+//    }
     override var representedObject: Any? {
         didSet {
             // Update the view, if already loaded.
@@ -1116,6 +1116,7 @@ class habitsVc: NSViewController {
         habitsView.addSubview(getBreaksBrainDumpVcObject().view)
         habitsView.addConstraints(subView: getBreaksBrainDumpVcObject().view)
         NSApplication.shared.activate(ignoringOtherApps: true)
+        breaksBrainDumpVcObj?.resetBrainDump()
     }
     
     
@@ -1478,6 +1479,13 @@ class habitsVc: NSViewController {
             mainWindowControllerObj?.window?.setIsVisible(true)
             showBlankWindowInSecondaryMonitor()
             setDocBarTo(isHide: false)
+            //mainViewControllerObj?.checkIsFullScreenNeeded()
+            leftMenuVcObj?.showHabitsView()
+        }else{
+            showBlankWindowInSecondaryMonitor()
+            setDocBarTo(isHide: false)
+           // mainViewControllerObj?.checkIsFullScreenNeeded()
+            leftMenuVcObj?.showHabitsView()
         }
         addLog(text:"setDocBarTo passed")
         if isAnyAllowedFocusModeActivityRunning{
@@ -1498,6 +1506,7 @@ class habitsVc: NSViewController {
                 allApiObject.capturePosthog(event: "todo-player-popup-closed", metadata: [:])
             }
         }
+        leftMenuVcObj?.focusModeOrFocusModeHabitFinished()
         addLog(text:"toolBoxWinow close passed")
         refreshFocusModeData()
         setAppIconForFocusModeScore(probability: nil)
@@ -1806,6 +1815,13 @@ class habitsVc: NSViewController {
             mainWindowControllerObj?.window?.setIsVisible(true)
             showBlankWindowInSecondaryMonitor()
             setDocBarTo(isHide: false)
+           // mainViewControllerObj?.checkIsFullScreenNeeded()
+            leftMenuVcObj?.showHabitsView()
+        }else{
+            showBlankWindowInSecondaryMonitor()
+            setDocBarTo(isHide: false)
+           // mainViewControllerObj?.checkIsFullScreenNeeded()
+            leftMenuVcObj?.showHabitsView()
         }
         if isAnyAllowedFocusModeActivityRunning{
             closeNudgeFocusAlignmentScoreWindow()
@@ -1825,6 +1841,7 @@ class habitsVc: NSViewController {
                 allApiObject.capturePosthog(event: "todo-player-popup-closed", metadata: [:])
             }
         }
+        leftMenuVcObj?.focusModeOrFocusModeHabitFinished()
         refreshFocusModeData()
         setAppIconForFocusModeScore(probability: nil)
         
@@ -2032,6 +2049,13 @@ class habitsVc: NSViewController {
             mainWindowControllerObj?.window?.setIsVisible(true)
             showBlankWindowInSecondaryMonitor()
             setDocBarTo(isHide: false)
+            //mainViewControllerObj?.checkIsFullScreenNeeded()
+            leftMenuVcObj?.showBreaksView()
+        }else{
+            showBlankWindowInSecondaryMonitor()
+            setDocBarTo(isHide: false)
+           // mainViewControllerObj?.checkIsFullScreenNeeded()
+            leftMenuVcObj?.showBreaksView()
         }
         if isAnyAllowedFocusModeActivityRunning{
             closeNudgeFocusAlignmentScoreWindow()
@@ -2058,6 +2082,13 @@ class habitsVc: NSViewController {
             mainWindowControllerObj?.window?.setIsVisible(true)
             showBlankWindowInSecondaryMonitor()
             setDocBarTo(isHide: false)
+          //  mainViewControllerObj?.checkIsFullScreenNeeded()
+            leftMenuVcObj?.showHabitsView()
+        }else{
+            showBlankWindowInSecondaryMonitor()
+            setDocBarTo(isHide: false)
+          //  mainViewControllerObj?.checkIsFullScreenNeeded()
+            leftMenuVcObj?.showHabitsView()
         }
         if isAnyAllowedFocusModeActivityRunning{
             closeNudgeFocusAlignmentScoreWindow()
@@ -2093,7 +2124,15 @@ class habitsVc: NSViewController {
             mainWindowControllerObj?.window?.setIsVisible(true)
             showBlankWindowInSecondaryMonitor()
             setDocBarTo(isHide: false)
+           // mainViewControllerObj?.checkIsFullScreenNeeded()
+            leftMenuVcObj?.showCustomRoutineView()
+        }else{
+            showBlankWindowInSecondaryMonitor()
+            setDocBarTo(isHide: false)
+          //  mainViewControllerObj?.checkIsFullScreenNeeded()
+            leftMenuVcObj?.showCustomRoutineView()
         }
+        
         if isAnyAllowedFocusModeActivityRunning{
             closeNudgeFocusAlignmentScoreWindow()
         }
@@ -2112,6 +2151,7 @@ class habitsVc: NSViewController {
                 allApiObject.capturePosthog(event: "todo-player-popup-closed", metadata: [:])
             }
         }
+        leftMenuVcObj?.focusModeOrFocusModeHabitFinished()
         refreshFocusModeData()
         setAppIconForFocusModeScore(probability: nil)
         
@@ -2285,18 +2325,23 @@ class habitsVc: NSViewController {
         }
         currentHabitIndex = -1
        
-        self.perform(#selector(unlockMachine), with: nil, afterDelay: 3)
+        
         unfocusedTime = 0
-        if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsPomodoroModeEnabled) as? Bool{
-            if state{
-                appdelegate?.showMorningPomodoroModeView()
-            }
+        let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsPomodoroModeEnabled) as? Bool ?? false
+        if state && SettingsManagerObject.isGeekModeEnabled{
+            appdelegate?.showMorningPomodoroModeView()
+            unlockMachineWork()
+        }else if SettingsManagerObject.showBrainDumpAfterMorningRoutineEnabled{
+            showBrainDumpWindow()
+            unlockMachineWork()
+        }else{
+            self.perform(#selector(unlockMachine), with: nil, afterDelay: 3)
         }
+        
+        
         currentState = ._NOTHING_
         
-        if SettingsManagerObject.showBrainDumpAfterMorningRoutineEnabled{
-            showBrainDumpWindow()
-        }
+        
         
         let currentDate = Date()
         let firstRunDate = UserDefaults.standard.object(forKey: kUserdefaultsFirstRunDate) as? Date ?? currentDate
@@ -2328,12 +2373,17 @@ class habitsVc: NSViewController {
         leftMenuVcObj?.habitOver()
     }
     
+    
     @objc func unlockMachine() {
         addLog(text:"current unlockMachine called")
-
-        lblMessage.isHidden = true
         mainWindowControllerObj?.window?.close()
         hideBlankWindowInSecondaryMonitor()
+        unlockMachineWork()
+    }
+    
+    func unlockMachineWork(){
+        lblMessage.isHidden = true
+        
         activityPostponeCount = 0
         activitySkipCount = 0
         if isFirstRun{//welcome routine k baad set krenge (when first time)
@@ -2367,7 +2417,6 @@ class habitsVc: NSViewController {
             }
         }
     }
-    
     func stopActivityTimer(){
         if breakTimer != nil{
             breakTimer?.invalidate()
@@ -2428,6 +2477,7 @@ class habitsVc: NSViewController {
 
         removeSubViews()
         currentState = ._NOTHING_
+        leftMenuVcObj?.microBreaksOver()
         mainWindowControllerObj?.window?.close()
         hideBlankWindowInSecondaryMonitor()
         if arrAllbreakActivities.count != 0 {
@@ -2624,10 +2674,11 @@ class habitsVc: NSViewController {
                 
                 if !isFocusModeOn(){
                     closeTaskPlayerWindowIfVisible()
+                    leftMenuVcObj?.focusModeOrFocusModeHabitFinished()
                 }
                 currentState = ._POSTPON_MORNING_HABIT_
-//                mainWindowControllerObj?.window?.close() // todo
-//                hideBlankWindowInSecondaryMonitor() // todo secendory window to close hogi hi q ki morning habit nahi hai ab
+//                mainWindowControllerObj?.window?.close()
+                hideBlankWindowInSecondaryMonitor()
             }
             
             if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
@@ -2692,12 +2743,21 @@ class habitsVc: NSViewController {
             if currentState != ._CUSTOM_ROUTINE_{
                 if showAskFocusModeView && SettingsManagerObject.isGeekModeEnabled{
                     appdelegate?.menuShowPomodoroModeView()
-                    if pomodoroWindowControllerObj != nil{
-                        if pomodoroWindowControllerObj?.window?.isVisible ?? false{
-                            pomodoroVcObj!.textFieldWorkDuration.integerValue = minutes - 1
-                            pomodoroVcObj!.updateBreakDuration()
-                        }
+//                    if pomodoroWindowControllerObj != nil{
+//                        if pomodoroWindowControllerObj?.window?.isVisible ?? false{
+//                            pomodoroVcObj!.textFieldWorkDuration.integerValue = minutes - 1
+//                            pomodoroVcObj!.updateBreakDuration()
+//                        }
+//                    }
+                    if !(pomodoroVcObj?.isViewLoaded ?? false){
+                        pomodoroVcObj?.loadView()
                     }
+                    pomodoroVcObj!.textFieldWorkDuration.integerValue = minutes - 1
+                    pomodoroVcObj!.updateBreakDuration()
+                    pomodoroVcObj!.lblTitle.stringValue = pomodoroVcObj!.titleAfterPostpone
+                    
+                }else{
+                    self.view.window?.close()
                 }
             }
             writeStringToHabitInfo(isFinishTime: true, activityName: "")
@@ -2707,7 +2767,7 @@ class habitsVc: NSViewController {
         }
     }
     
-    func postponeCustomRoutineFor(minutes:Int, secondsToPostpone:Int?, showAskFocusModeView:Bool, showAskIntention:Bool){
+    func postponeCustomRoutineFor(minutes:Int, secondsToPostpone:Int?, showAskFocusModeView:Bool, showAskIntention:Bool, fromRoutineWarning:Bool){
         
         var seconds = 0
         if secondsToPostpone != nil{
@@ -2726,9 +2786,14 @@ class habitsVc: NSViewController {
 
         if !isFocusModeOn(){
             closeTaskPlayerWindowIfVisible()
+            leftMenuVcObj?.focusModeOrFocusModeHabitFinished()
         }
-        mainWindowControllerObj?.window?.close()
-        hideBlankWindowInSecondaryMonitor()
+        
+        
+        if !fromRoutineWarning{
+            mainWindowControllerObj?.window?.close()
+            hideBlankWindowInSecondaryMonitor()
+        }
         currentState = ._NOTHING_
         
         if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
@@ -2776,6 +2841,7 @@ class habitsVc: NSViewController {
         menuViewControllerObj?.reloadIfNeeded()
         isCustomRoutineWasRunningBetweenMorningHabit = false
         isCustomRoutineWasRunningBetweenEveningHabit = false
+        leftMenuVcObj?.habitOver()
     }
     
     
@@ -2813,7 +2879,7 @@ class habitsVc: NSViewController {
             }
             
             hideCloseButtons()
-            removeSubViews()
+//            removeSubViews()
             //Extend postpone time not working for 2 minute warning popup#923
             if smallCountDownWcObj != nil && currentState == ._POSTPON_EVENING_HABIT_{
                 if smallCountDownWcObj?.window != nil{
@@ -2825,10 +2891,11 @@ class habitsVc: NSViewController {
             //
             if !isFocusModeOn(){
                 closeTaskPlayerWindowIfVisible()
+                leftMenuVcObj?.focusModeOrFocusModeHabitFinished()
             }
             currentState = ._POSTPON_EVENING_HABIT_
-//            mainWindowControllerObj?.window?.close() // todo
-//            hideBlankWindowInSecondaryMonitor() // todo
+//            mainWindowControllerObj?.window?.close()
+            hideBlankWindowInSecondaryMonitor()
             if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
                 if smallCountDownWcObj?.window != nil{
                     if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
@@ -2887,16 +2954,25 @@ class habitsVc: NSViewController {
             }
             if showAskFocusModeView && SettingsManagerObject.isGeekModeEnabled{
                 appdelegate?.menuShowPomodoroModeView()
-                if pomodoroWindowControllerObj != nil{
-                    if pomodoroWindowControllerObj?.window?.isVisible ?? false{
-                        pomodoroVcObj!.textFieldWorkDuration.integerValue = minutes - 1
-                        pomodoroVcObj!.updateBreakDuration()
-                    }
+//                if pomodoroWindowControllerObj != nil{
+//                    if pomodoroWindowControllerObj?.window?.isVisible ?? false{
+//                        pomodoroVcObj!.textFieldWorkDuration.integerValue = minutes - 1
+//                        pomodoroVcObj!.updateBreakDuration()
+//                    }
+//                }
+                
+                if !(pomodoroVcObj?.isViewLoaded ?? false){
+                    pomodoroVcObj?.loadView()
                 }
+                pomodoroVcObj!.textFieldWorkDuration.integerValue = minutes - 1
+                pomodoroVcObj!.updateBreakDuration()
+                pomodoroVcObj!.lblTitle.stringValue = pomodoroVcObj!.titleAfterPostpone
+                
             }
             writeStringToHabitInfo(isFinishTime: true, activityName: "")
             
             menuViewControllerObj?.reloadIfNeeded()
+            leftMenuVcObj?.habitOver()
         }
     }
     
@@ -2916,7 +2992,7 @@ class habitsVc: NSViewController {
             hideCloseButtons()
             removeSubViews()
             currentState = ._POSTPON_FOCUS_SUMMARY_
-            mainWindowControllerObj?.window?.close()
+//            mainWindowControllerObj?.window?.close()
             hideBlankWindowInSecondaryMonitor()
             DispatchQueue.global().sync{//async {
                 if self.postponeTimer != nil{
@@ -2937,14 +3013,23 @@ class habitsVc: NSViewController {
                 }
             }
             menuViewControllerObj?.reloadIfNeeded()
+            leftMenuVcObj?.habitOver()
             if SettingsManagerObject.isGeekModeEnabled{
                 appdelegate?.menuShowPomodoroModeView()
-                if pomodoroWindowControllerObj != nil{
-                    if pomodoroWindowControllerObj?.window?.isVisible ?? false{
-                        pomodoroVcObj!.textFieldWorkDuration.integerValue = minutes - 1
-                        pomodoroVcObj!.updateBreakDuration()
-                    }
+//                if pomodoroWindowControllerObj != nil{
+//                    if pomodoroWindowControllerObj?.window?.isVisible ?? false{
+//                        pomodoroVcObj!.textFieldWorkDuration.integerValue = minutes - 1
+//                        pomodoroVcObj!.updateBreakDuration()
+//                    }
+//                }
+                
+                if !(pomodoroVcObj?.isViewLoaded ?? false){
+                    pomodoroVcObj?.loadView()
                 }
+                pomodoroVcObj!.textFieldWorkDuration.integerValue = minutes - 1
+                pomodoroVcObj!.updateBreakDuration()
+                pomodoroVcObj!.lblTitle.stringValue = pomodoroVcObj!.titleAfterPostpone
+                
             }
         }
     }
@@ -3108,6 +3193,7 @@ class habitsVc: NSViewController {
         currentActivityIndex = -1
         unlockMachine()
         currentState = ._NOTHING_
+        leftMenuVcObj?.microBreaksOver()
         if shouldShowPomodoroAfterBreak{
             shouldShowPomodoroAfterBreak = false
             if SettingsManagerObject.isGeekModeEnabled{
@@ -3766,6 +3852,22 @@ class habitsVc: NSViewController {
         habitsView.addSubview(getHabitsStateVcObject().view)
         habitsView.addConstraints(subView: getHabitsStateVcObject().view)
     }
+    
+    func showCustomRoutineState(){
+        addLog(text: "showCustomRoutineState")
+        self.removeSubViews()
+        habitsView.addSubview(getCustomRoutineStateVcObject().view)
+        habitsView.addConstraints(subView: getCustomRoutineStateVcObject().view)
+    }
+    
+    func showBreakState(){
+        addLog(text: "showBreakState")
+        self.removeSubViews()
+        habitsView.addSubview(getBreaksStateVcObject().view)
+        habitsView.addConstraints(subView: getBreaksStateVcObject().view)
+    }
+    
+   
 }
 
 

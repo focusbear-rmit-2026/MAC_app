@@ -2430,6 +2430,21 @@
         "titleTask": "Task title:",
         "taskNameString": "To work on: <URL>"
     },
+    "habitsStateVcInfo":{
+        "morningRoutinePostponedText": "Morning routine postponed. Resume it now by clicking 'Resume Habit'.",
+        "eveningRoutinePostponedText": "Evening routine postponed. Resume it now by clicking 'Resume Habit'.",
+        "buttonResumeHabits": "Resume Habits",
+        "shutoffAbortedText": "Shutoff aborted. Your computer is now accessible again.",
+        "nextRoutineText": "Great job staying on track! Your next scheduled routine (<ROUTINE>) is set for <TIME>. Be ready to jump back in and continue building those healthy habits. You've got this!",
+        "buttonBeginCustomRoutine": "Begin On-Demand Routine"
+    },
+    "breakStateVcInfo":{
+        "buttonEnableBreaks": "Enable Breaks",
+        "buttonStartBreak": "Start Break",
+        "titleEnableBreaks": "Breaks are currently disabled. Enable taking breaks at regular intervals to boost your productivity, energy levels, and focus.",
+        "pausedBreaksText": "You’ve paused breaks for today. They’ll be back tomorrow to help you recharge and focus.",
+        "shutoffTimeText": "App is in shutoff state"
+    },
     "discordUrl": "https://discord.gg/VZdv3ZjhSq",
     "whatsAppUrl": "https://chat.whatsapp.com/FV0oTbCUWpILBYif7CP6UD",
     "WindowsSpecific": {

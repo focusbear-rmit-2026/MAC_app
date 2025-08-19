@@ -358,10 +358,10 @@ class menuViewController: NSViewController {
         }
         addLog(text: "Set Focus Mode Names from config file")
         // load preferences window// // beacuse some times webview dose not load at first time in settings so here we are loading window to load webview before opening it
-        if !(preferencesWindowControllerObj?.isWindowLoaded ?? false){
-            preferencesWindowControllerObj?.loadWindow()
-        }
-        addLog(text: "preferencesWindowControllerObj load window end")
+//        if !(preferencesWindowControllerObj?.isWindowLoaded ?? false){
+//            preferencesWindowControllerObj?.loadWindow()
+//        }
+//        addLog(text: "preferencesWindowControllerObj load window end")
         let boundsOfficeMode = NSRect(x: segmentControlOfficeMode.frame.minX, y: (segmentControlOfficeMode.frame.minY - 9), width: (segmentControlOfficeMode.frame.width/2) - 5, height: segmentControlOfficeMode.frame.height)
         let boundsWfhMode = NSRect(x: (segmentControlOfficeMode.frame.midX + 5), y: (segmentControlOfficeMode.frame.minY - 9), width: (segmentControlOfficeMode.frame.width/2) - 5, height: segmentControlOfficeMode.frame.height)// keep y to  egmentControlOfficeMode.frame.midY  do not change
         
@@ -1181,7 +1181,9 @@ class menuViewController: NSViewController {
         if (isFocusModeRunning || isAnyAllowedFocusModeActivityRunning){
             if let date = endFocusModeTime{
                 let secondsBetween = date.timeIntervalSince(Date())
-                
+                if secondsBetween < 0{
+                    stopFocusModeCountDownTimer()
+                }
                 var (h,m,s) = secondsToHoursMinutesSeconds(seconds: Int(secondsBetween))
                 var hour = "\(h)"
                 var minute = "\(m)"
@@ -1275,6 +1277,33 @@ class menuViewController: NSViewController {
         addLog(text: "[user-action] button Start Break Clicked")
         if !isMainWindowLoaded{
             mainWindowControllerObj?.loadWindow()
+        }
+        isBreakActivityExecuteFromPostponeMorningHabit = false
+        isBreakActivityExecuteFromPostponeEveningHabit = false
+        isBreakActivityExecuteFromPostponeEveningHabit = false
+        if currentState == ._POSTPON_MORNING_HABIT_{// ⚠️ do not change current state inside this block
+            // new work // 20/04/23
+           // if SettingsManagerObject.IsShowBreaksInPostponeEnabled{
+                isBreakActivityExecuteFromPostponeMorningHabit = true// morning habit postpone over hua to activity timer bhi band hoga or agar activity chal rhi hui to vo bhi band hokar uska timer band hoga
+          //  }else{
+           //     return;
+           // }
+        }
+        
+        if currentState == ._POSTPON_EVENING_HABIT_{// ⚠️ do not change current state inside this block
+          //  if SettingsManagerObject.IsShowBreaksInPostponeEnabled{
+                isBreakActivityExecuteFromPostponeEveningHabit = true
+           // }else{
+            //    return;
+           //// }
+        }
+        
+        if currentState == ._POSTPON_FOCUS_SUMMARY_{// ⚠️ do not change current state inside this block
+           // if SettingsManagerObject.IsShowBreaksInPostponeEnabled{
+                isBreakActivityExecuteFromPostponeEveningHabit = true
+            //}//else{
+              //  return;
+           // }
         }
         getHabitsVcObject().executeBreakActivities()
     }
@@ -1383,16 +1412,18 @@ class menuViewController: NSViewController {
         enterPasswordWcObj?.showWindow(self)
         
     }
+    
     func passwordIsCorrect(){
         if isShowingPasswordForRelaxFocusMode{
             for i in 0..<arrFocusType.count{
                 if let isRelaxFocus = arrFocusType[i]["isRelaxFocus"] as? Bool{
                     if  isRelaxFocus{
-                        showStartingFocusMode(focusModeIndex: i, focusType: arrFocusType[i]["name"] as? String ?? "")
-                        if customUrlHandleLastDurationForRelaxFocusMode != 0{
-                            startingFocusModeVcObj?.textFieldHourValue.integerValue = 0
-                            startingFocusModeVcObj?.textFieldMinutesValue.integerValue = customUrlHandleLastDurationForRelaxFocusMode/60
+                        appdelegate?.menuShowPomodoroModeView()
+                        if !(pomodoroVcObj?.isViewLoaded ?? false){
+                            pomodoroVcObj?.loadView()
                         }
+                        pomodoroVcObj!.selectFocusModeWithId(id: arrFocusType[i]["id"] as? String ?? "", duration: customUrlHandleLastDurationForRelaxFocusMode)
+                        break;
                     }
                 }
             }
@@ -1401,6 +1432,16 @@ class menuViewController: NSViewController {
                 showAbortingFocusModeVc(forPause: false)
             }else{
                 isHardCorePomodoroModeOn = false
+                if mainWindowControllerObj?.window?.isVisible ?? false{
+                    if leftMenuVcObj?.boxFocusSession.isSelected ?? false{
+                        if SettingsManagerObject.isGeekModeEnabled{
+                            appdelegate?.menuShowPomodoroModeView()
+                        }else{
+                            appdelegate?.menuShowSimplePomodoroModeView()
+                        }
+                    }
+                }
+                reloadData()
             }
         }
     }
@@ -1750,14 +1791,14 @@ class menuViewController: NSViewController {
         
     }
     
-    @IBAction func btnLockCurrentFocusClicked(_ sender: Any) {
-        for i in 0..<arrFocusType.count{
-            if arrFocusType[i]["isLockedFocus"] as? Bool == true{
-                showStartingFocusMode(focusModeIndex: i, focusType: arrFocusType[i]["name"] as? String ?? "")
-                break;
-            }
-        }
-    }
+//    @IBAction func btnLockCurrentFocusClicked(_ sender: Any) {
+//        for i in 0..<arrFocusType.count{
+//            if arrFocusType[i]["isLockedFocus"] as? Bool == true{
+//                showStartingFocusMode(focusModeIndex: i, focusType: arrFocusType[i]["name"] as? String ?? "")
+//                break;
+//            }
+//        }
+//    }
 
     
     @IBAction func btnOpenCheckListsClicked(_ sender: Any) {
@@ -1998,27 +2039,35 @@ class menuViewController: NSViewController {
         NSApplication.shared.activate(ignoringOtherApps: true)
         let result = alert.runModal()
         if result == .alertFirstButtonReturn{
-            var shouldShowPassword = true
-            if preferencesWindowControllerObj?.window?.isVisible ?? false{
-                if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-                    tabview.selectedTabViewItemIndex = preferencesEditHabitsIndex
-                    addLog(text: "")
-                }
-                shouldShowPassword = false
+//            var shouldShowPassword = true
+//            if preferencesWindowControllerObj?.window?.isVisible ?? false{
+//                if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
+//                    tabview.selectedTabViewItemIndex = preferencesEditHabitsIndex
+//                    addLog(text: "")
+//                }
+//                shouldShowPassword = false
+//            }else{
+//                preferencesWindowControllerObj?.showWindow(self)
+//            }
+//            addLog(text: "Showing preferences")
+//            if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
+//                tabview.selectedTabViewItemIndex = preferencesEditHabitsIndex
+//                if isPasswordRequireInOpenSettings() && shouldShowPassword{
+//                    tabview.view.addSubview(getEnterPasswordVcObjForPreferences().view)
+//                    tabview.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
+//                    getEnterPasswordVcObjForPreferences().parentVc = nil
+//                    enterPasswordVcObjForPreferences?.removeConstraints()
+//                    addLog(text: "Showing enter password view")
+//                }
+//            }
+
+            if mainWindowControllerObj?.window?.isVisible ?? false{
+                leftMenuVcObj?.showEditHabitsView()
             }else{
-                preferencesWindowControllerObj?.showWindow(self)
+                mainWindowControllerObj?.showWindow(self)
+                leftMenuVcObj?.showEditHabitsView() // todo check with password
             }
             addLog(text: "Showing preferences")
-            if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-                tabview.selectedTabViewItemIndex = preferencesEditHabitsIndex
-                if isPasswordRequireInOpenSettings() && shouldShowPassword{
-                    tabview.view.addSubview(getEnterPasswordVcObjForPreferences().view)
-                    tabview.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
-                    getEnterPasswordVcObjForPreferences().parentVc = nil
-                    enterPasswordVcObjForPreferences?.removeConstraints()
-                    addLog(text: "Showing enter password view")
-                }
-            }
         }
     }
     
@@ -2052,27 +2101,36 @@ class menuViewController: NSViewController {
             return;
         }
         
-        var shouldShowPassword = true
-        if preferencesWindowControllerObj?.window?.isVisible ?? false{
-            if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-                tabview.selectedTabViewItemIndex = preferencesBlocksIndex
-                addLog(text: "")
-            }
-            shouldShowPassword = false
+//        var shouldShowPassword = true
+//        if preferencesWindowControllerObj?.window?.isVisible ?? false{
+//            if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
+//                tabview.selectedTabViewItemIndex = preferencesBlocksIndex
+//                addLog(text: "")
+//            }
+//            shouldShowPassword = false
+//        }else{
+//            preferencesWindowControllerObj?.showWindow(self)
+//        }
+//        addLog(text: "Showing preferences")
+//        if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
+//            tabview.selectedTabViewItemIndex = preferencesBlocksIndex
+//            if isPasswordRequireInOpenSettings() && shouldShowPassword{
+//                tabview.view.addSubview(getEnterPasswordVcObjForPreferences().view)
+//                tabview.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
+//                getEnterPasswordVcObjForPreferences().parentVc = nil
+//                enterPasswordVcObjForPreferences?.removeConstraints()
+//                addLog(text: "Showing enter password view")
+//            }
+//        }
+        
+        
+        if mainWindowControllerObj?.window?.isVisible ?? false{
+            leftMenuVcObj?.showBlocksView()
         }else{
-            preferencesWindowControllerObj?.showWindow(self)
+            mainWindowControllerObj?.showWindow(self)
+            leftMenuVcObj?.showBlocksView() // todo check with password
         }
         addLog(text: "Showing preferences")
-        if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-            tabview.selectedTabViewItemIndex = preferencesBlocksIndex
-            if isPasswordRequireInOpenSettings() && shouldShowPassword{
-                tabview.view.addSubview(getEnterPasswordVcObjForPreferences().view)
-                tabview.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
-                getEnterPasswordVcObjForPreferences().parentVc = nil
-                enterPasswordVcObjForPreferences?.removeConstraints()
-                addLog(text: "Showing enter password view")
-            }
-        }
         tabStrictnessContainerVcObj?.showBlockingScheduleView()
     }
     

@@ -44,7 +44,7 @@ class flaskServer:NSObject {
     }
 }
 /*
- todo write steps here
+  write steps here
  make  a folder  FlaskAppBuild(name could be anything)
         |_server.py
         |_static(folder)

@@ -110,7 +110,7 @@ class pomodoroVc: NSViewController {
     var titleSuperStrictMode = "Iron Focus"
     var descriptionSuperStrictMode = "Once you start, you can't stop"
     var toolTipSuperStrictMode = "Once you start, there’s no backing out. Best for deep, distraction-free sessions."
-    
+    var titleAfterPostpone = "What do you want to do instead of your habits?" // todo text
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
@@ -179,6 +179,7 @@ class pomodoroVc: NSViewController {
         }
         
         lblTitle.stringValue = "Pomodoro time!"
+        //What do you want to do instead of your habits?
         var questionFirstText = "What do you want to achieve in this focus session?"
         
         btnEditFocusMode.title = "Edit focus modes"
@@ -192,9 +193,8 @@ class pomodoroVc: NSViewController {
         var descriptionIntention = "If you don't want to bother creating tasks, you can write a quick intention for what you'll do during this focus session"
         
         if let pomodoroInfo = configjson.value(forKey: "pomodoroInfo") as? NSDictionary{
-            if let title = pomodoroInfo.value(forKey: "title") as? String{
-                lblTitle.stringValue = title
-            }
+            lblTitle.stringValue = pomodoroInfo.value(forKey: "title") as? String ?? lblTitle.stringValue
+            
             if let questionFirst = pomodoroInfo.value(forKey: "questionFirstText") as? String{
                 questionFirstText = questionFirst
             }
@@ -295,10 +295,10 @@ class pomodoroVc: NSViewController {
         if SettingsManagerObject.isStrictnessLevelSuperGentle(){
             boxPin.isHidden =  false
             btnPin.image = #imageLiteral(resourceName: "unPin")
-            self.view.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.normalWindow)))
+//            self.view.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.normalWindow)))
         }else{
             boxPin.isHidden = true
-            self.view.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
+//            self.view.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow))) // recheck all these window level code  todo 
         }
         
         boxError.isHidden = true
@@ -387,6 +387,25 @@ class pomodoroVc: NSViewController {
         print("isBreakDurationComesFromBreakRatio true")
     }
     
+    func selectFocusModeWithId(id:String, duration:Int){
+        var focusFoundWithId = false
+        for i in 0..<arrFocusTypeForPomodoro.count{
+            let focusMode = arrFocusTypeForPomodoro[i]
+            if let idFocusTypeForPomodoro = focusMode["id"] as? String{
+                if idFocusTypeForPomodoro == id{
+                    popUpBtnFocusType.selectItem(at: i)
+                    textFieldWorkDuration.integerValue = duration/60
+                    updateBreakDuration()
+                    focusFoundWithId = true
+                    break;
+                }
+            }
+        }
+        if !focusFoundWithId{
+            showAlert(msg: "Focus mode not found.")
+        }
+    }
+    
     func updateWorkBreakRatio(){
         if let ratio = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsWorkRatioInPomodoro) as? Int{
             workRatio = ratio
@@ -421,11 +440,11 @@ class pomodoroVc: NSViewController {
         getTaskPlayerVcObject().loadView()
         getTaskPlayerVcObject().loadRequest()
         reFillFocusTypeList()
-        if startingFocusWindowControllerObj?.window?.isVisible ?? false{
-            if startingFocusWindowControllerObj?.contentViewController == startingFocusModeVcObj{
-                startingFocusWindowControllerObj?.close()
-            }
-        }
+//        if startingFocusWindowControllerObj?.window?.isVisible ?? false{
+//            if startingFocusWindowControllerObj?.contentViewController == startingFocusModeVcObj{
+//                startingFocusWindowControllerObj?.close()
+//            }
+//        }
         isFrictionLevelHigh = false
         
         
@@ -800,8 +819,9 @@ class pomodoroVc: NSViewController {
                                 warningDefaultFocusMode = startingFocusModeInfo.value(forKey: "warningDefaultFocusMode") as? String ?? warningDefaultFocusMode
                             }
                         }
-                        
-                        showTooltip(sender: self.popUpBtnFocusType, msg: warningDefaultFocusMode, preferredEdge: .minX, maxWidthVal: 250)
+                        if self.view.window != nil{
+                            showTooltip(sender: self.popUpBtnFocusType, msg: warningDefaultFocusMode, preferredEdge: .minX, maxWidthVal: 250)
+                        }
                     }
                 }
             }
@@ -819,25 +839,35 @@ class pomodoroVc: NSViewController {
     
     @IBAction func btnEditFocusModeClicked(_ sender: Any) {
         addLog(text: "[user-action] btnEditFocusModeClicked")
-        if preferencesWindowControllerObj?.window?.isVisible ?? false{
-            if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-                tabview.selectedTabViewItemIndex = preferencesFocusModesIndex
-            }
+//        if preferencesWindowControllerObj?.window?.isVisible ?? false{
+//            if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
+//                tabview.selectedTabViewItemIndex = preferencesFocusModesIndex
+//            }
+//            return;
+//        }
+//        allApiObject.capturePosthog(event: "open-preferences", metadata: [:])
+//        preferencesWindowControllerObj?.showWindow(self)
+//        addLog(text: "Showing preferences from edit focus mode")
+//        if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
+//            tabview.selectedTabViewItemIndex = preferencesFocusModesIndex
+//            if isPasswordRequireInOpenSettings(){
+//                tabview.view.addSubview(getEnterPasswordVcObjForPreferences().view)
+//                tabview.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
+//                getEnterPasswordVcObjForPreferences().parentVc = nil
+//                enterPasswordVcObjForPreferences?.removeConstraints()
+//                addLog(text: "Showing enter password view")
+//            }
+//        }
+        
+        
+        if mainWindowControllerObj?.window?.isVisible ?? false{
+            leftMenuVcObj?.showFocusModeSettingsView()
             return;
         }
         allApiObject.capturePosthog(event: "open-preferences", metadata: [:])
-        preferencesWindowControllerObj?.showWindow(self)
+        mainWindowControllerObj?.showWindow(self)
         addLog(text: "Showing preferences from edit focus mode")
-        if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-            tabview.selectedTabViewItemIndex = preferencesFocusModesIndex
-            if isPasswordRequireInOpenSettings(){
-                tabview.view.addSubview(getEnterPasswordVcObjForPreferences().view)
-                tabview.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
-                getEnterPasswordVcObjForPreferences().parentVc = nil
-                enterPasswordVcObjForPreferences?.removeConstraints()
-                addLog(text: "Showing enter password view")
-            }
-        }
+        leftMenuVcObj?.showFocusModeSettingsView()// todo test with password 
         
         NSApplication.shared.activate(ignoringOtherApps: true)
     }
@@ -1152,7 +1182,7 @@ class pomodoroVc: NSViewController {
         
         getTotalFocuedTime()
         //After finishing pomodoro block, clicking start another focus block doesn't use correct focus mode #741
-        startingFocusModeVcObj?.loadView()
+//        startingFocusModeVcObj?.loadView()
         //
         
         if let focusModeId = arrFocusTypeForPomodoro[popUpBtnFocusType.indexOfSelectedItem]["id"] as? String{
@@ -1189,7 +1219,7 @@ class pomodoroVc: NSViewController {
                     workBeforeFocusBegin(index: i)
                     
                     //After finishing pomodoro block, clicking start another focus block doesn't use correct focus mode #741
-                    startingFocusModeVcObj?.lastFocusModeId = focusModeId
+//                    startingFocusModeVcObj?.lastFocusModeId = focusModeId
                     //
                     
                     let oldFocusAlignmentScoreThreshold = arrFocusType[i]["focusAlignmentScoreThreshold"] as? Int ?? -1
@@ -1259,10 +1289,10 @@ class pomodoroVc: NSViewController {
             shouldReloadTaskPlayer = false
         }
         //After finishing pomodoro block, clicking start another focus block doesn't use correct focus mode #741
-        startingFocusModeVcObj?.lastIntention = textViewAchieve.string
-        startingFocusModeVcObj?.lastHourValue = 0
-        startingFocusModeVcObj?.lastMinuteValue = textFieldWorkDuration.integerValue
-        startingFocusModeVcObj?.lastSkipMicroBreakState = isSkipBreakActivityDuringPomodoro
+//        startingFocusModeVcObj?.lastIntention = textViewAchieve.string
+//        startingFocusModeVcObj?.lastHourValue = 0
+//        startingFocusModeVcObj?.lastMinuteValue = textFieldWorkDuration.integerValue
+//        startingFocusModeVcObj?.lastSkipMicroBreakState = isSkipBreakActivityDuringPomodoro
         //
         
         if isShowingPomodoroManually{
@@ -1332,6 +1362,12 @@ class pomodoroVc: NSViewController {
             if self == enterPasswordVcObj!.presentingViewController{
                 enterPasswordVcObj!.dismiss(enterPasswordVcObj!)
             }
+        }
+        
+        //Proposed focus session title text adjustment emphasizes user choices post-habit postponement, enhancing clarity. Title - What do you want to do instead of your habits?
+        // setting normal title again
+        if let pomodoroInfo = configjson.value(forKey: "pomodoroInfo") as? NSDictionary{
+            lblTitle.stringValue = pomodoroInfo.value(forKey: "title") as? String ?? lblTitle.stringValue
         }
     }
     var timer:Timer?
@@ -1454,33 +1490,47 @@ class pomodoroVc: NSViewController {
 
     
     @IBAction func btnEditRatioClicked(_ sender: Any) {
+//        if SettingsManagerObject.isGeekModeEnabled{
+//            allApiObject.capturePosthog(event: "open-preferences", metadata: [:])
+//            preferencesWindowControllerObj?.showWindow(self)
+//            addLog(text: "Showing preferences")
+//            var passWordViewVisible = false
+//            if isPasswordRequireInOpenSettings(){
+//                if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
+//                    tabview.selectedTabViewItemIndex = preferencesSettingsIndex
+//                    tabview.view.addSubview(getEnterPasswordVcObjForPreferences().view)
+//                    tabview.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
+//                    getEnterPasswordVcObjForPreferences().parentVc = nil
+//                    enterPasswordVcObjForPreferences?.removeConstraints()
+//                    passWordViewVisible = true
+//                    addLog(text: "Showing enter password view")
+//                }
+//            }else{
+//                if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
+//                    tabview.selectedTabViewItemIndex = preferencesSettingsIndex
+//                }
+//            }
+//            if settingsSideBarVcObj != nil{
+//                settingsSideBarVcObj!.tblView.selectRowIndexes(IndexSet(arrayLiteral: settingsSideBarVcObj!.pomodoroSettingsIndex), byExtendingSelection: false)
+//                if !passWordViewVisible{
+//                    pomodoroSettingsVcObj?.textFieldWorkRatio.setFocus()
+//                }
+//            }
+//        }
+        
         if SettingsManagerObject.isGeekModeEnabled{
             allApiObject.capturePosthog(event: "open-preferences", metadata: [:])
-            preferencesWindowControllerObj?.showWindow(self)
+            mainWindowControllerObj?.showWindow(self)
             addLog(text: "Showing preferences")
-            var passWordViewVisible = false
-            if isPasswordRequireInOpenSettings(){
-                if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-                    tabview.selectedTabViewItemIndex = preferencesSettingsIndex
-                    tabview.view.addSubview(getEnterPasswordVcObjForPreferences().view)
-                    tabview.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
-                    getEnterPasswordVcObjForPreferences().parentVc = nil
-                    enterPasswordVcObjForPreferences?.removeConstraints()
-                    passWordViewVisible = true
-                    addLog(text: "Showing enter password view")
-                }
-            }else{
-                if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-                    tabview.selectedTabViewItemIndex = preferencesSettingsIndex
-                }
-            }
+            leftMenuVcObj?.showSettingsView()// todo test wiith password
             if settingsSideBarVcObj != nil{
                 settingsSideBarVcObj!.tblView.selectRowIndexes(IndexSet(arrayLiteral: settingsSideBarVcObj!.pomodoroSettingsIndex), byExtendingSelection: false)
-                if !passWordViewVisible{
+                if !(mainViewControllerObj?.isEnterPasswordForPreferencesViewVisible() ?? false){ // todo check
                     pomodoroSettingsVcObj?.textFieldWorkRatio.setFocus()
                 }
             }
         }
+        
     }
     @IBAction func btnStrictnessNormalClicked(_ sender: Any) {
         var msg = "can pause/stop focus session at any time"

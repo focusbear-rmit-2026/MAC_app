@@ -169,7 +169,7 @@ class easyPostponeVc: NSViewController {
             }else if isForExtendPostponeDuringCustomRoutine && isCustomRoutineWasRunningInPostponeEveningHabit{
                 getHabitsVcObject().postponeMorningHabitFor(minutes: Int(popupButtonMinutes.title) ?? 5, secondsToPostpone: nil, showAskFocusModeView:false, showAskIntention:false)
             }else{
-                getHabitsVcObject().postponeCustomRoutineFor(minutes: Int(popupButtonMinutes.title) ?? 5, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
+                getHabitsVcObject().postponeCustomRoutineFor(minutes: Int(popupButtonMinutes.title) ?? 5, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false, fromRoutineWarning:false)
             }
         }else if lastCurrentState == ._ACTIVITY_{
             getHabitsVcObject().postponeBreakActivitiesFor(minutes: Int(popupButtonMinutes.title) ?? 5, secondsToPostpone: nil, isFromBreakWarningWindow: false)

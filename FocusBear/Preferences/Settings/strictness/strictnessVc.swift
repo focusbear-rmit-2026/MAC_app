@@ -202,9 +202,23 @@ class strictnessVc: NSViewController {
             focusModeItemVcObj?.view.isHidden = true
         }
         
-        if let tabview = preferencesWindowControllerObj?.contentViewController as? preferencesTabViewController{
-            let selectedTabViewItem = tabview.tabViewItems[tabview.selectedTabViewItemIndex]
-            if selectedTabViewItem.identifier as? String == idTabStrictness && tabview.tabViewItemStrictnesss != nil{
+
+        
+//        if self.view.window?.windowController == preferencesWindowControllerObj{
+//            if let tabview = preferencesWindowControllerObj?.contentViewController as? preferencesTabViewController{
+//                let selectedTabViewItem = tabview.tabViewItems[tabview.selectedTabViewItemIndex]
+//                if selectedTabViewItem.identifier as? String == idTabStrictness && tabview.tabViewItemStrictnesss != nil{
+//                    boxStrictnessLevel.isHidden = true
+//                    frictionItemVcObj?.view.isHidden = true
+//                    passwordItemVcObj?.view.isHidden = true
+//                    focusModeItemVcObj?.view.isHidden = true
+//                    blockingScheduleVcObj?.view.isHidden = false
+//                }else{
+//                    blockingScheduleVcObj?.view.isHidden = true
+//                }
+//            }
+//        }else{
+            if leftMenuVcObj?.boxBlocks.isSelected ?? false{
                 boxStrictnessLevel.isHidden = true
                 frictionItemVcObj?.view.isHidden = true
                 passwordItemVcObj?.view.isHidden = true
@@ -213,8 +227,7 @@ class strictnessVc: NSViewController {
             }else{
                 blockingScheduleVcObj?.view.isHidden = true
             }
-        }
-        
+//        }
     }
     
     func reloadStrictnessLevelState(){
@@ -234,17 +247,20 @@ extension strictnessVc: SettingListItemDelegate{
     func buttonClicked(object:settingListItemVc) {
         if object == passwordItemVcObj{
             settingsContainerVcObj?.showPasswordView()
-            if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
+            //if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
                 if shouldAskPassword(){
                     if !isPasswordRequireInOpenSettingsEnabled(){
-                        tabview.view.addSubview(getEnterPasswordVcObjForPreferences().view)
-                        tabview.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
-                        getEnterPasswordVcObjForPreferences().parentVc = nil
-                        enterPasswordVcObjForPreferences?.removeConstraints()
+//                        tabview.view.addSubview(getEnterPasswordVcObjForPreferences().view)
+//                        tabview.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
+//                        getEnterPasswordVcObjForPreferences().parentVc = nil
+//                        enterPasswordVcObjForPreferences?.removeConstraints()
+                        
+                        mainViewControllerObj?.askPasswordForSettingsIfNeeded() // todo test this
+                        
                         addLog(text: "Showing enter password view inside preferences")
                     }
                 }
-            }
+            //}
         }else if object == frictionItemVcObj{
             settingsContainerVcObj?.showFrictionView()
         }else if object == focusModeItemVcObj{
@@ -252,39 +268,65 @@ extension strictnessVc: SettingListItemDelegate{
         }else if object == browserTabLimiterItemVcObj{
             // for simple mode if strictness tab is selected
 //            if !SettingsManagerObject.isGeekModeEnabled{
-                if let tabview = preferencesWindowControllerObj?.contentViewController as? preferencesTabViewController{
-                    let selectedTabViewItem = tabview.tabViewItems[tabview.selectedTabViewItemIndex]
-                    if selectedTabViewItem.identifier as? String == idTabStrictness && tabview.tabViewItemStrictnesss != nil{
-                        tabStrictnessContainerVcObj?.showBrowserTabLimiterView()
-                        return;
-                    }
+                
+            
+//            if self.view.window?.windowController == preferencesWindowControllerObj{
+//                if let tabview = preferencesWindowControllerObj?.contentViewController as? preferencesTabViewController{
+//                    let selectedTabViewItem = tabview.tabViewItems[tabview.selectedTabViewItemIndex]
+//                    if selectedTabViewItem.identifier as? String == idTabStrictness && tabview.tabViewItemStrictnesss != nil{
+//                        tabStrictnessContainerVcObj?.showBrowserTabLimiterView()
+//                        return;
+//                    }
+//                }
+//            }else{
+                if leftMenuVcObj?.boxBlocks.isSelected ?? false{
+                    tabStrictnessContainerVcObj?.showBrowserTabLimiterView()
+                    return;
                 }
+//            }
+            
+            
 //            }
             //----------------------------------------------------//
             settingsContainerVcObj?.showBrowserTabLimiterView()
         }else if object == blockedURLsItemVcObj{
             // for simple mode if strictness tab is selected
 //            if !SettingsManagerObject.isGeekModeEnabled{
-                if let tabview = preferencesWindowControllerObj?.contentViewController as? preferencesTabViewController{
-                    let selectedTabViewItem = tabview.tabViewItems[tabview.selectedTabViewItemIndex]
-                    if selectedTabViewItem.identifier as? String == idTabStrictness && tabview.tabViewItemStrictnesss != nil{
-                        tabStrictnessContainerVcObj?.showBlockedUrlsView()
-                        return;
-                    }
+                
+//            if self.view.window?.windowController == preferencesWindowControllerObj{
+//                if let tabview = preferencesWindowControllerObj?.contentViewController as? preferencesTabViewController{
+//                    let selectedTabViewItem = tabview.tabViewItems[tabview.selectedTabViewItemIndex]
+//                    if selectedTabViewItem.identifier as? String == idTabStrictness && tabview.tabViewItemStrictnesss != nil{
+//                        tabStrictnessContainerVcObj?.showBlockedUrlsView()
+//                        return;
+//                    }
+//                }
+//            }else{
+                if leftMenuVcObj?.boxBlocks.isSelected ?? false{
+                    tabStrictnessContainerVcObj?.showBlockedUrlsView()
+                    return;
                 }
+//            }
 //            }
             //----------------------------------------------------//
             settingsContainerVcObj?.showBlockedUrlsView()
         }else if object == blockedAppsItemVcObj{
             // for simple mode if strictness tab is selected
-//            if !SettingsManagerObject.isGeekModeEnabled{
-                if let tabview = preferencesWindowControllerObj?.contentViewController as? preferencesTabViewController{
-                    let selectedTabViewItem = tabview.tabViewItems[tabview.selectedTabViewItemIndex]
-                    if selectedTabViewItem.identifier as? String == idTabStrictness && tabview.tabViewItemStrictnesss != nil{
-                        tabStrictnessContainerVcObj?.showBlockedAppsView()
-                        return;
-                    }
+    
+//            if self.view.window?.windowController == preferencesWindowControllerObj{
+//                if let tabview = preferencesWindowControllerObj?.contentViewController as? preferencesTabViewController{
+//                    let selectedTabViewItem = tabview.tabViewItems[tabview.selectedTabViewItemIndex]
+//                    if selectedTabViewItem.identifier as? String == idTabStrictness && tabview.tabViewItemStrictnesss != nil{
+//                        tabStrictnessContainerVcObj?.showBlockedAppsView()
+//                        return;
+//                    }
+//                }
+//            }else{
+                if leftMenuVcObj?.boxBlocks.isSelected ?? false{
+                    tabStrictnessContainerVcObj?.showBlockedAppsView()
+                    return;
                 }
+//            }
 //            }
             //----------------------------------------------------//
             settingsContainerVcObj?.showBlockedAppsView()

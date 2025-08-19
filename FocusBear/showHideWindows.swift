@@ -8,19 +8,22 @@
 
 import Foundation
 
-func showStartingFocusMode(focusModeIndex: Int, focusType: String){
-    addLog(text: "Showing Starting Focus Mode view")
-    startingFocusWindowControllerObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
-    startingFocusWindowControllerObj?.contentViewController = startingFocusModeVcObj
-    startingFocusWindowControllerObj?.showWindow(nil)
-    startingFocusModeVcObj?.ResetData(focusModeIndex: focusModeIndex, focusType: focusType)
-    NSApplication.shared.activate(ignoringOtherApps: true)
-}
+//func showStartingFocusMode(focusModeIndex: Int, focusType: String){
+//    addLog(text: "Showing Starting Focus Mode view")
+//    startingFocusWindowControllerObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
+//    startingFocusWindowControllerObj?.contentViewController = startingFocusModeVcObj
+//    startingFocusWindowControllerObj?.showWindow(nil)
+//    startingFocusModeVcObj?.ResetData(focusModeIndex: focusModeIndex, focusType: focusType)
+//    NSApplication.shared.activate(ignoringOtherApps: true)
+//}
 func showAbortingFocusModeVc(forPause:Bool){// abortview for pause only in strict mode
     addLog(text: "Showing Abort focus mode view")
     if currentFocusModeStrictness == ._STRICT_{
-        startingFocusWindowControllerObj?.contentViewController = abortingFocusModeVcObj
-        startingFocusWindowControllerObj?.showWindow(nil)
+//        startingFocusWindowControllerObj?.contentViewController = abortingFocusModeVcObj
+//        startingFocusWindowControllerObj?.showWindow(nil)
+        
+        mainWindowControllerObj?.showWindow(nil)
+        leftMenuVcObj!.showFocusAbortedView()
         abortingFocusModeVcObj?.ResetData(forPause: forPause)
         NSApplication.shared.activate(ignoringOtherApps: true)
     }else{
@@ -72,6 +75,9 @@ func showToolboxWindow(){
 //***********SHOW ToDoList window***************//
 func showToDoListWindow(){
     addLog(text:"show To Do List Window")
+    if !(mainWindowControllerObj?.window?.isVisible ?? false){
+        mainWindowControllerObj?.showWindow(nil)
+    }
     leftMenuVcObj?.showTaskPlayer()
     return;
     
@@ -616,6 +622,17 @@ var shouldReloadTaskPlayer = true
 //***********showTaskPlayerWindow***************//
 func showTaskPlayerWindow(totalDuration:Int, intention:String, automatically:Bool){
     addLog(text:"func call:- showTaskPlayerWindow")
+    if !getHabitsVcObject().isViewLoaded{
+        getHabitsVcObject().loadView()
+    }
+    
+    if !(mainViewControllerObj?.isViewLoaded ?? false){
+        mainViewControllerObj?.loadView()
+    }
+    if !(mainWindowControllerObj?.window?.isVisible ?? false){
+        mainWindowControllerObj?.showWindow(nil)
+    }
+   // mainViewControllerObj?.showSmallScreen()
     leftMenuVcObj?.showTaskPlayer()
     return;
     
@@ -778,7 +795,7 @@ func showEasyPostponeWindow(){
     addLog(text:"showEasyPostponeWindow")
     allApiObject.capturePosthog(event: "easy-postpone-window-shown", metadata: [:])
     
-    if mainWindowControllerObj?.window?.isVisible ?? false{// todo 
+    if mainWindowControllerObj?.window?.isVisible ?? false{ 
         mainViewControllerObj?.presentAsSheet(getEasyPostponeVcObject())
     }else{
         getEasyPostponeWindowObject().contentViewController = getEasyPostponeVcObject()
@@ -1292,22 +1309,22 @@ func showNudgeFocusAlignmentScoreWindow(score:Double){
     }
     
     //  dont showe popup if active app is focus bear for time tracker
-    if let runningApp = NSWorkspace.shared.frontmostApplication{
-        if let appUrl = runningApp.bundleURL{
-            let name = appUrl.deletingPathExtension().lastPathComponent
-            let nameLowercased = name.lowercased()
-            if nameLowercased == selfAppName.lowercased() || nameLowercased == focusBearTimeTrackerAppName{
-                
-                if (nudgeFocusAlignmentScoreDippingWcObject?.isNudgeVisible ??  false){
-                    getNudgeFocusAlignmentScoreDippingVcObject().reloadData(score: score, isNudgeVisible: true)
-                    lastFocusAlignmentShownScore = score
-                    return;
-                }
-                
-                return;
-            }
-        }
-    }
+//    if let runningApp = NSWorkspace.shared.frontmostApplication{
+//        if let appUrl = runningApp.bundleURL{
+//            let name = appUrl.deletingPathExtension().lastPathComponent
+//            let nameLowercased = name.lowercased()
+//            if nameLowercased == selfAppName.lowercased() || nameLowercased == focusBearTimeTrackerAppName{
+//                
+//                if (nudgeFocusAlignmentScoreDippingWcObject?.isNudgeVisible ??  false){
+//                    getNudgeFocusAlignmentScoreDippingVcObject().reloadData(score: score, isNudgeVisible: true)
+//                    lastFocusAlignmentShownScore = score
+//                    return;
+//                }
+//                
+//                return;
+//            }
+//        }
+//    }
     //.
     
     if nudgeFocusAlignmentScoreDippingWcObject == nil{
@@ -1456,4 +1473,59 @@ func closeSplashWindow(){
             getSplashWindowObject().window?.close()
         }
     }
+}
+
+
+var arrWindows = [NSWindow]()
+func showBlankWindowInSecondaryMonitor(){
+    addLog(text: "func:- showBlankWindowInSecondaryMonitor")
+    
+    // Luisa App broken bug fix 28/6/22
+    let windows = NSApp.windows
+    for win in windows{
+        print(win)
+        if win.isModalPanel{
+            NSApp.stopModal()
+            break;
+        }
+    }
+    //  /////////////////////////////////
+    if !checkIsFullScreenEnabled(){//Blank Window In Secondary Monitor is not required if full screen is not enabled
+        return;
+    }
+    appdelegate?.showExtraWindows()
+}
+
+
+
+func hideBlankWindowInSecondaryMonitor(){
+    addLog(text: "func:- hideBlankWindowInSecondaryMonitor")
+    for i in 0..<arrWindows.count{
+        let window = arrWindows[i]
+        window.orderOut(nil)
+        arrWindows[i].windowController?.window=nil
+    }
+    arrWindows.removeAll()
+}
+
+func resetWin(_ win: NSWindow) -> NSWindow {
+    win.collectionBehavior = NSWindow.CollectionBehavior.canJoinAllSpaces          // we want these windows to follow Spaces around
+    //use .desktopWindow for window below icons   //hack? this makes mission control and expose ignore these windows
+    //        if toggleButtonHideDesktopIcons.isOn{
+    //            win.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.backstopMenu)))
+    //        }else{
+    win.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.maximumWindow)))
+    //        }
+    // rest is to make the windows dumb
+    win.canHide = false
+    win.isExcludedFromWindowsMenu = true
+    win.hidesOnDeactivate = false
+    win.discardCursorRects()
+    win.discardEvents(matching: NSEvent.EventTypeMask.any, before: nil)
+    //win.ignoresMouseEvents = true
+    win.orderBack(nil)
+    win.isRestorable = false
+    win.animationBehavior = .none
+    win.backgroundColor = NSColor.clear
+    return win
 }

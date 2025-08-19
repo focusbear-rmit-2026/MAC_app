@@ -193,11 +193,11 @@ class addFocusTypeVc: NSViewController, NSTextFieldDelegate  {
         UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
         resetPomodoroVcFocusListIfNeeded()
         
-        if startingFocusWindowControllerObj?.window?.isVisible ?? false{
-            if startingFocusWindowControllerObj?.contentViewController == startingFocusModeVcObj{
-                startingFocusWindowControllerObj?.close()
-            }
-        }
+//        if startingFocusWindowControllerObj?.window?.isVisible ?? false{
+//            if startingFocusWindowControllerObj?.contentViewController == startingFocusModeVcObj{
+//                startingFocusWindowControllerObj?.close()
+//            }
+//        }
         
         allApiObject.addFocusMode(focusType: dic)
         allApiObject.capturePosthog(event: "add-new-focus-mode", metadata: [:])

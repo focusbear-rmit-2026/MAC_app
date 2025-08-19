@@ -237,24 +237,37 @@ class settingsSideBarVc: NSViewController {
             }
         }
         if !id.isEmpty{
-            if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-                let tabviewItems = tabview.tabViewItems
-                for i in 0..<tabviewItems.count{
-                    let item = tabviewItems[i]
-                    if item.identifier as? String == id{
-                        tabview.selectedTabViewItemIndex = i
-                        return;
-                    }
-                }
+//            if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
+//                let tabviewItems = tabview.tabViewItems
+//                for i in 0..<tabviewItems.count{
+//                    let item = tabviewItems[i]
+//                    if item.identifier as? String == id{
+//                        tabview.selectedTabViewItemIndex = i
+//                        return;
+//                    }
+//                }
+//                
+//            }
+            
+
+            if id == idSettings{
                 
+            }else if id == idFocus{
+                leftMenuVcObj?.showFocusModeSettingsView()
+            }else if id == idEditHabits{
+                leftMenuVcObj?.showEditHabitsView()
+            }else if id == idTabStrictness{
+                leftMenuVcObj?.showBlocksView()
             }
             
             if id == "focusAdvanced"{
-                if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-                    tabview.selectedTabViewItemIndex = preferencesFocusModesIndex
-                    focusPreferencesVcObj?.btnAdvancedClicked(self)
-                    return;
-                }
+//                if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
+//                    tabview.selectedTabViewItemIndex = preferencesFocusModesIndex
+//                    focusPreferencesVcObj?.btnAdvancedClicked(self)
+//                    return;
+//                }
+                leftMenuVcObj?.showFocusModeSettingsView()
+                focusPreferencesVcObj?.btnAdvancedClicked(self) //constraints bigad rhe h todo
             }
             
             for i in 0..<self.arrSettingsList.count{

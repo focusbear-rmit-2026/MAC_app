@@ -271,6 +271,6 @@ class abortingFocusModeVc: NSViewController {
             }
         }
 
-        self.view.window?.close()
+//        self.view.window?.close()
     }
 }

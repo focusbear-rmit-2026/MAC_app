@@ -23,12 +23,16 @@ class mainWindowListBox: NSBox {
                     }else{
                         label?.textColor = NSColor.black
                     }
+                    imageView?.alphaValue = 1
+                    disableReason = ""
                 }else{
                     label?.textColor = NSColor.gray
+                    imageView?.alphaValue = 0.5
                 }
             }
         }
     }
+    var disableReason = ""
     weak var delegate: mainWindowListBoxDelegate?
     
     var isSelected: Bool = false {
@@ -39,6 +43,9 @@ class mainWindowListBox: NSBox {
                 if isSelected {
                     notifySelectionChange()
                 }
+            }
+            if isSelected {// needed beacuse some time box is already selected and we need to show window again setting it selected again so that screen frame will updated
+                delegate?.selectableListBoxSelectionDidChange(self)
             }
         }
     }
@@ -69,6 +76,10 @@ class mainWindowListBox: NSBox {
         commonInit()
     }
     
+    func setDisableWithRaason(reason:String){
+        isEnabled = false
+        disableReason = reason
+    }
     private func commonInit() {
         self.boxType = .custom
         self.borderWidth = 1.0
@@ -181,6 +192,10 @@ class mainWindowListBox: NSBox {
                     }
                 }
             }
+        }else{
+            if !disableReason.isEmpty{
+                showTooltip(sender: self, msg: disableReason, preferredEdge: .maxX, maxWidthVal: 250)
+            }
         }
     }
     
@@ -190,14 +205,18 @@ class mainWindowListBox: NSBox {
             hovered = false
             updateAppearance()
             NSCursor.arrow.set()
+        }else{
+            closePopoverTooltipIfVisible()
         }
     }
     
     override func mouseDown(with event: NSEvent) {
         super.mouseDown(with: event)
         if isEnabled && !isSelected{
-            isSelected = true
-            delegate?.selectableListBoxDidChangeSelection(self)
+            if delegate?.selectableListBoxShouldChangeSelection(self) ?? true{
+                isSelected = true
+                delegate?.selectableListBoxDidChangeSelectionByUser(self)
+            }
         }
     }
     
@@ -207,6 +226,7 @@ class mainWindowListBox: NSBox {
             for subview in superview.subviews {
                 if let box = subview as? mainWindowListBox, box != self {
                     box.isSelected = false
+                    box.hovered = false
                 }
             }
         }
@@ -229,5 +249,11 @@ class mainWindowListBox: NSBox {
 }
 
 protocol mainWindowListBoxDelegate: AnyObject {
-    func selectableListBoxDidChangeSelection(_ box: mainWindowListBox)
+    /// Called when the selection changes due to user interaction (click/tap)
+    func selectableListBoxDidChangeSelectionByUser(_ box: mainWindowListBox)
+    
+    func selectableListBoxShouldChangeSelection(_ box: mainWindowListBox) -> Bool
+    
+    /// Called when the selection changes for any reason (user or programmatic)
+    func selectableListBoxSelectionDidChange(_ box: mainWindowListBox)
 }

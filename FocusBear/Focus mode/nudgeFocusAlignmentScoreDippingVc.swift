@@ -10,13 +10,16 @@ import Cocoa
 
 class nudgeFocusAlignmentScoreDippingVc: NSViewController {
 
+    @IBOutlet weak var btnExpandTaskPlayer: NSButton!
     @IBOutlet weak var lblDescriptionText: NSTextField!
     @IBOutlet weak var boxButton: NSBox!
     @IBOutlet weak var btnClose: NSButton!
     @IBOutlet weak var lblFocusAlignmentScore: NSTextField!
     @IBOutlet weak var imgView: NSImageView!
+    @IBOutlet weak var lblCurrentTask: NSTextField!
     
     var trackingArea: NSTrackingArea?
+    var trackingAreaExpandButton: NSTrackingArea?
     var timerStopAniumation:Timer?
     var isScoreLow = true
     var lastScoreShown:Double = -1
@@ -53,6 +56,8 @@ class nudgeFocusAlignmentScoreDippingVc: NSViewController {
         trackingArea = NSTrackingArea.init(rect: self.view.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
         self.view.addTrackingArea(trackingArea!)
         
+        trackingAreaExpandButton = NSTrackingArea.init(rect: self.btnExpandTaskPlayer.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
+        self.btnExpandTaskPlayer.addTrackingArea(trackingAreaExpandButton!)
         
         if let info = configjson.value(forKey: "nudgeFocusAlignmentScoreDippingVcInfo") as? NSDictionary{
             arrAlignmentScoreDown = info.value(forKey: "arrayAlignmentScoreDown") as? [String] ?? arrAlignmentScoreDown
@@ -73,12 +78,16 @@ class nudgeFocusAlignmentScoreDippingVc: NSViewController {
     override func mouseEntered(with event: NSEvent) {
         if event.trackingArea == self.trackingArea{
             boxButton.isHidden = false
+        }else if event.trackingArea == self.trackingAreaExpandButton{
+            showTooltip(sender: btnExpandTaskPlayer, msg: "Show To Do Player", preferredEdge: .maxY, maxWidthVal: 200) // todo text
         }
     }
     
     override func mouseExited(with event: NSEvent) {
         if event.trackingArea == self.trackingArea{
             boxButton.isHidden = true
+        }else if event.trackingArea == self.trackingAreaExpandButton{
+            closePopoverTooltipIfVisible()
         }
     }
     
@@ -125,6 +134,12 @@ class nudgeFocusAlignmentScoreDippingVc: NSViewController {
         }
         
         lastScoreShown = score
+        var currentTaskText = "Current task is \"<TASK>\"" // todo text
+        if let currentTaskInToDoPlayer = getCurrentTaskInFocusMode(){
+            lblCurrentTask.stringValue = currentTaskText.replacingOccurrences(of: "<TASK>", with: currentTaskInToDoPlayer)
+        }else{
+            lblCurrentTask.stringValue = "No Current Task"
+        }
     }
     
     func setTimerStopAniumation(){
@@ -138,5 +153,8 @@ class nudgeFocusAlignmentScoreDippingVc: NSViewController {
     
     @IBAction func btnClicked(_ sender: Any) {
         nudgeFocusAlignmentScoreDippingWcObject?.toggleMenu()
+    }
+    @IBAction func btnExpandTaskPlayerClicked(_ sender: Any) {
+        menuViewControllerObj?.openToDoListClicked()
     }
 }

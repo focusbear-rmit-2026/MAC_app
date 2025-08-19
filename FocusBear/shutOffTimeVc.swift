@@ -561,10 +561,13 @@ class shutOffTimeVc: NSViewController {
         getHabitsVcObject().hideCloseButtons()
         getHabitsVcObject().removeSubViews()
         currentState = ._NOTHING_
-        mainWindowControllerObj?.window?.close()
+//        mainWindowControllerObj?.window?.close()
         hideBlankWindowInSecondaryMonitor()
+        leftMenuVcObj?.habitOver()
         
-
+        if SettingsManagerObject.isGeekModeEnabled{
+            appdelegate?.menuShowPomodoroModeView()
+        }
         if !isCutOffTimeGoing(){
             if startTime == nil || shutOffTime == nil{
                 return;

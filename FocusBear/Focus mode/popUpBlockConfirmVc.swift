@@ -840,28 +840,43 @@ class popUpBlockConfirmVc: NSViewController {
         }
         
         
+//        var shouldShowPassword = true
+//        if preferencesWindowControllerObj?.window?.isVisible ?? false{
+//            if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
+//                tabview.selectedTabViewItemIndex = preferencesFocusModesIndex
+//                addLog(text: "")
+//            }
+//            shouldShowPassword = false
+//        }else{
+//            preferencesWindowControllerObj?.showWindow(self)
+//        }
+//        addLog(text: "Showing preferences")
+//        if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
+//            tabview.selectedTabViewItemIndex = preferencesFocusModesIndex 
+//            if isPasswordRequireInOpenSettings() && shouldShowPassword{
+//                tabview.view.addSubview(getEnterPasswordVcObjForPreferences().view)
+//                tabview.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
+//                getEnterPasswordVcObjForPreferences().parentVc = nil
+//                enterPasswordVcObjForPreferences?.removeConstraints()
+//                addLog(text: "Showing enter password view")
+//            }
+//        }
+        
+        
         var shouldShowPassword = true
-        if preferencesWindowControllerObj?.window?.isVisible ?? false{
-            if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-                tabview.selectedTabViewItemIndex = preferencesFocusModesIndex
-                addLog(text: "")
-            }
+        if mainWindowControllerObj?.window?.isVisible ?? false{
+            leftMenuVcObj?.showFocusModeSettingsView()
             shouldShowPassword = false
         }else{
-            preferencesWindowControllerObj?.showWindow(self)
+            mainWindowControllerObj?.showWindow(self)
+            leftMenuVcObj?.showFocusModeSettingsView()
         }
-        addLog(text: "Showing preferences")
-        if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-            tabview.selectedTabViewItemIndex = preferencesFocusModesIndex 
-            if isPasswordRequireInOpenSettings() && shouldShowPassword{
-                tabview.view.addSubview(getEnterPasswordVcObjForPreferences().view)
-                tabview.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
-                getEnterPasswordVcObjForPreferences().parentVc = nil
-                enterPasswordVcObjForPreferences?.removeConstraints()
-                addLog(text: "Showing enter password view")
-            }
+        addLog(text: "Showing preferences")// todo test
+        if isPasswordRequireInOpenSettings() && shouldShowPassword{
+            mainViewControllerObj?.askPasswordForSettingsIfNeeded()
+            addLog(text: "Showing enter password view")
         }
-        
+
         DispatchQueue.global().async {
             DispatchQueue.main.async {
                 focusPreferencesVcObj?.tblViewFocusType.selectRowIndexes(IndexSet(integer: focusModeIndex), byExtendingSelection: false)

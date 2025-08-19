@@ -13,11 +13,18 @@ class habitsStateVc: NSViewController {
     @IBOutlet weak var btnResumeHabits: Button!
     @IBOutlet weak var lblTitle: NSTextField!
     
-    var morningRoutinePostponedText = "Morning routine postponed. Resume it now by clicking 'Resume Habit'." // todo text
-    var eveningRoutinePostponedText = "Evening routine postponed. Resume it now by clicking 'Resume Habit'." // todo text
+    var morningRoutinePostponedText = "Morning routine postponed. Resume it now by clicking 'Resume Habit'."
+    var eveningRoutinePostponedText = "Evening routine postponed. Resume it now by clicking 'Resume Habit'."
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
+        btnResumeHabits.title = "Resume Habits"
+        
+        if let habitsStateVcInfo = configjson.value(forKey: "habitsStateVcInfo") as? NSDictionary{
+            morningRoutinePostponedText = habitsStateVcInfo.value(forKey: "morningRoutinePostponedText") as? String ?? morningRoutinePostponedText
+            eveningRoutinePostponedText = habitsStateVcInfo.value(forKey: "eveningRoutinePostponedText") as? String ?? eveningRoutinePostponedText
+            btnResumeHabits.title = habitsStateVcInfo.value(forKey: "buttonResumeHabits") as? String ?? btnResumeHabits.title
+        }
     }
     
     override func viewWillAppear() {
@@ -48,7 +55,7 @@ class habitsStateVc: NSViewController {
         }else{
             btnResumeHabits.isHidden = true
             if isHabitAlreadyShowed && !isShutOffTimeGoing(){
-                let nextRoutine = getNextRoutineTime()
+                let (nextRoutine, nextRoutineName) = getNextRoutineInfo()
                 
                 var timeFormat = "h:mm a"
                 if let dict = UserDefaults.standard.persistentDomain(forName: "com.apple.menuextra.clock") {
@@ -59,9 +66,26 @@ class habitsStateVc: NSViewController {
                         }
                     }
                 }
-                let dateString = getStringFromDate(date: nextRoutine, dateFormat: timeFormat)
+                let (dateString) = getStringFromDate(date: nextRoutine, dateFormat: timeFormat)
+                var nextRoutineText = "Great job staying on track! Your next scheduled routine (<ROUTINE>) is set for <TIME>. Be ready to jump back in and continue building those healthy habits. You've got this!"
+                if let habitsStateVcInfo = configjson.value(forKey: "habitsStateVcInfo") as? NSDictionary{
+                    nextRoutineText = habitsStateVcInfo.value(forKey: "nextRoutineText") as? String ?? nextRoutineText
+                }
+                nextRoutineText = nextRoutineText.replacingOccurrences(of: "<ROUTINE>", with: nextRoutineName)
+                nextRoutineText = nextRoutineText.replacingOccurrences(of: "<TIME>", with: dateString)
+                lblTitle.stringValue = nextRoutineText
                 
-                lblTitle.stringValue = "Great job staying on track! Your next scheduled routine is set for \(dateString). Be ready to jump back in and continue building those healthy habits. You've got this!" // todo text
+                
+                
+            }else{
+                if let date = UserDefaults.standard.object(forKey: kUserdefaultsShutdownAborted) as? Date{
+                    if Date().compare(date) == .orderedAscending {
+                        lblTitle.stringValue = "Shutoff aborted. Your computer is now accessible again."
+                        if let habitsStateVcInfo = configjson.value(forKey: "habitsStateVcInfo") as? NSDictionary{
+                            lblTitle.stringValue = habitsStateVcInfo.value(forKey: "shutoffAbortedText") as? String ?? lblTitle.stringValue
+                        }
+                    }
+                }
             }
         }
     }

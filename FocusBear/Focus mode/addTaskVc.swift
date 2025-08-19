@@ -367,13 +367,22 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
     
     func setAccessTokenToWebView(){
         var theme = "LIGHT"
-        if preferencesWindowControllerObj != nil{
-            if preferencesWindowControllerObj!.window!.hasDarkAppearance{
+//        if preferencesWindowControllerObj != nil{
+//            if preferencesWindowControllerObj!.window!.hasDarkAppearance{
+//                theme = "DARK"
+//            }else {
+//                theme = "LIGHT"
+//            }
+//        }
+        
+        if mainWindowControllerObj != nil{
+            if mainWindowControllerObj!.window!.hasDarkAppearance{ // need to make a function for this todo
                 theme = "DARK"
             }else {
                 theme = "LIGHT"
             }
         }
+        
         let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex].webFontName
         let stringJson = "{\"access_token\": \"\(appdelegate!.credential?.accessToken ?? "")\",\"platform\":\"mac\",\"lang\":\"\(currentLanguageCode)\",\"font\":\"\(selectedFont)\",\"theme\":\"\(theme)\"}"
         let settingsFunc = String(format: "let waitForAppLoaded = setInterval(() => { if (window.loadAccessTokenForToDo) { loadAccessTokenForToDo(%@); clearInterval(waitForAppLoaded); } }, 100);", stringJson)
@@ -387,13 +396,21 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
 
     func setAccessTokenAndTaksToWebView(){
         var theme = "LIGHT"
-        if preferencesWindowControllerObj != nil{
-            if preferencesWindowControllerObj!.window!.hasDarkAppearance{
+//        if preferencesWindowControllerObj != nil{
+//            if preferencesWindowControllerObj!.window!.hasDarkAppearance{
+//                theme = "DARK"
+//            }else {
+//                theme = "LIGHT"
+//            }
+//        }
+        if mainWindowControllerObj != nil{
+            if mainWindowControllerObj!.window!.hasDarkAppearance{ // need to make a function for this todo
                 theme = "DARK"
             }else {
                 theme = "LIGHT"
             }
         }
+        
         let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex].webFontName
         
         let totalDuration = focusModeActualDurationPerformed / 60
@@ -509,8 +526,6 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
         allApiObject.capturePosthog(event: "extend-focus-session-from-popup", metadata: [:])
         self.dismiss(self)
         let minutesToExtend = Int(popUpBtnSelectMinutes.title) ?? 0
-        //focusCompletedVcObj?.view.window?.close() // todo 
-
         var currentFocusModeIndex = -1
         for i in 0..<arrFocusType.count{
             if arrFocusType[i]["id"] as? String  == focusCompletedVcObj?.currentFocusModeId ?? ""{
@@ -563,7 +578,9 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
         appdelegate?.setFocusModeTimerForExtendAfterComplete(hour: nil, minute: minutesToExtend)
         closePomodoroWindowIOfVisible()
         appdelegate!.setIntentionInBrainDumpWindow()
-        showTaskPlayerWindow(totalDuration: focusModeMinutesToPerform, intention: whatToAchieveInFocusBlock, automatically:false)
+        showTaskPlayerWindow(totalDuration: focusModeMinutesToPerform, intention: whatToAchieveInFocusBlock, automatically:false) // todo bina setting check kre show kr skte hai kyta or ni karte h show to kya hoga
+        leftMenuVcObj?.focusModeOrFocusModeHabitStarted()
+        leftMenuVcObj?.resetFocusModeTitle()
     }
     
     @IBAction func popUpBtnSelectMinutesClicked(_ sender: Any) {
@@ -581,35 +598,39 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
         if SettingsManagerObject.isGeekModeEnabled{
             
             addLog(text: "[user-action] btnEnableAdvancedAnalyticsClicked")
-            if preferencesWindowControllerObj?.window?.isVisible ?? false{
-                if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-                    tabview.selectedTabViewItemIndex = preferencesSettingsIndex
-                    if settingsSideBarVcObj != nil{
-                        settingsSideBarVcObj!.tblView.selectRowIndexes(IndexSet(arrayLiteral: settingsSideBarVcObj!.advancedSettingsIndex), byExtendingSelection: false)
-                        settingsContainerVcObj?.showPrivacyView()
-                        getPrivacyVcObject().highlightAdvanceAanalyticsItemBox()
-                    }
-                }
-                return;
-            }
-            allApiObject.capturePosthog(event: "open-preferences", metadata: [:])
-            preferencesWindowControllerObj?.showWindow(self)
-            addLog(text: "Showing preferences from edit focus mode")
-            if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-                tabview.selectedTabViewItemIndex = preferencesSettingsIndex
-                if settingsSideBarVcObj != nil{
-                    settingsSideBarVcObj!.tblView.selectRowIndexes(IndexSet(arrayLiteral: settingsSideBarVcObj!.advancedSettingsIndex), byExtendingSelection: false)
-                    settingsContainerVcObj?.showPrivacyView()
-                    getPrivacyVcObject().highlightAdvanceAanalyticsItemBox()
-                }
-                if isPasswordRequireInOpenSettings(){
-                    tabview.view.addSubview(getEnterPasswordVcObjForPreferences().view)
-                    tabview.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
-                    getEnterPasswordVcObjForPreferences().parentVc = nil
-                    enterPasswordVcObjForPreferences?.removeConstraints()
-                    addLog(text: "Showing enter password view")
-                }
-            }
+            
+            // need to ask sir what to do in this case
+//            if preferencesWindowControllerObj?.window?.isVisible ?? false{
+//                if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
+//                    tabview.selectedTabViewItemIndex = preferencesSettingsIndex
+//                    if settingsSideBarVcObj != nil{
+//                        settingsSideBarVcObj!.tblView.selectRowIndexes(IndexSet(arrayLiteral: settingsSideBarVcObj!.advancedSettingsIndex), byExtendingSelection: false)
+//                        settingsContainerVcObj?.showPrivacyView()
+//                        getPrivacyVcObject().highlightAdvanceAanalyticsItemBox()
+//                    }
+//                }
+//                return;
+//            }
+//            allApiObject.capturePosthog(event: "open-preferences", metadata: [:])
+//            preferencesWindowControllerObj?.showWindow(self)
+//            addLog(text: "Showing preferences from edit focus mode")
+//            if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
+//                tabview.selectedTabViewItemIndex = preferencesSettingsIndex
+//                if settingsSideBarVcObj != nil{
+//                    settingsSideBarVcObj!.tblView.selectRowIndexes(IndexSet(arrayLiteral: settingsSideBarVcObj!.advancedSettingsIndex), byExtendingSelection: false)
+//                    settingsContainerVcObj?.showPrivacyView()
+//                    getPrivacyVcObject().highlightAdvanceAanalyticsItemBox()
+//                }
+//                if isPasswordRequireInOpenSettings(){
+//                    tabview.view.addSubview(getEnterPasswordVcObjForPreferences().view)
+//                    tabview.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
+//                    getEnterPasswordVcObjForPreferences().parentVc = nil
+//                    enterPasswordVcObjForPreferences?.removeConstraints()
+//                    addLog(text: "Showing enter password view")
+//                }
+//            }
+            
+            
             
             NSApplication.shared.activate(ignoringOtherApps: true)
         }else{

@@ -1312,13 +1312,13 @@ class AllApi:NSObject {
     //    var isAnyErrorFoundInActivityCompletedApi = false
     func activityCompletedApi(activity_id:String, activity_sequence_id:String, start_time:Date, quantity_logged:Double?, duration_logged:Int, choice_id:String?, is_skipped:Bool, notes:String, should_not_update_current_activity:Bool, log_quantity_answers:[[String:Any]], completionHandler: @escaping(_ result: NSDictionary?) -> ()){
         
+//        completionHandler(nil); // todo rmeove
+//        return;// todo remove
+        
         if activity_id.isEmpty && activity_sequence_id.isEmpty{// custom special activity which is not in morning , evening or breaks
             completionHandler(nil);
             return;
         }
-        completionHandler(nil)// todo remove this line
-        return;// todo remove
-        
         addLog(text: "func call:- activityCompletedApi completed-activity")
         appdelegate!.credentialsManager.credentials {credentialsInfo in
             addLog(text: "get updated credentialsInfo from credentialsManager")

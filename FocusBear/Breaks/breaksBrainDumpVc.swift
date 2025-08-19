@@ -58,37 +58,10 @@ class breaksBrainDumpVc: NSViewController {
     override func viewWillAppear() {
         btnInfo.isHidden = false
         lblSubtitle.stringValue = "You're going to feel great after this break. Write down what you were just working on so you don't forget."
-        var arrPlaceHolders = ["Building an AI-powered coffee mug that can detect when you need a refill",
-                               "Optimizing a website for users browsing on a Game Boy Color",
-                               "Creating a machine learning algorithm that predicts which coworker will bring donuts to the office next",
-                               "Writing a script that generates random passwords that only consist of emojis",
-                               "Designing a user interface for a self-driving unicycle"]
         
-        
-        if let breaksBrainDumpVcInfo = configjson.value(forKey: "breaksBrainDumpVcInfo") as? NSDictionary{
-            if isBreakActivityShowingWhileMeeting && currentState == ._ACTIVITY_{
-                lblSubtitle.stringValue = "You're going to focus better on the meeting after this break. Write down any quick thoughts you don't forget."
-                lblSubtitle.stringValue = breaksBrainDumpVcInfo.value(forKey: "subTitleMeetings") as? String ?? lblSubtitle.stringValue
-            }else{
-                lblSubtitle.stringValue = breaksBrainDumpVcInfo.value(forKey: "subTitle") as? String ?? lblSubtitle.stringValue
-            }
-            arrPlaceHolders = breaksBrainDumpVcInfo.value(forKey: "placeholders") as? [String] ?? arrPlaceHolders
-        }
         
         lblProgress.stringValue = thirdVcObj?.lblProgress.stringValue ?? ""
-        
-        if let notes = UserDefaults.standard.object(forKey: kUserdefaultsFocusModeNotes) as? String {
-            textView.string = notes
-        }else{
-            textView.string = ""
-        }
-        
-        
-        
-        textView.placeHolderTitleString = NSAttributedString(string: arrPlaceHolders.randomElement() ?? "", attributes: [NSAttributedString.Key.foregroundColor : NSColor.secondaryLabelColor, NSAttributedString.Key.font : NSFont.systemFont(ofSize: 22)])
-        
-        
-        
+
         var totalDuration = 0
         for activity in arrFinalBreakActivities{
             if activity.activity.useTimer{
@@ -107,7 +80,37 @@ class breaksBrainDumpVc: NSViewController {
 
     }
     
-    override func viewDidAppear() {// todo calling two time shoukd have a function
+    override func viewDidAppear() {
+        
+    }
+
+    func resetBrainDump(){
+        
+        if let notes = UserDefaults.standard.object(forKey: kUserdefaultsFocusModeNotes) as? String {
+            textView.string = notes
+        }else{
+            textView.string = ""
+        }
+        
+        var arrPlaceHolders = ["Building an AI-powered coffee mug that can detect when you need a refill",
+                               "Optimizing a website for users browsing on a Game Boy Color",
+                               "Creating a machine learning algorithm that predicts which coworker will bring donuts to the office next",
+                               "Writing a script that generates random passwords that only consist of emojis",
+                               "Designing a user interface for a self-driving unicycle"]
+        
+        
+        if let breaksBrainDumpVcInfo = configjson.value(forKey: "breaksBrainDumpVcInfo") as? NSDictionary{
+            if isBreakActivityShowingWhileMeeting && currentState == ._ACTIVITY_{
+                lblSubtitle.stringValue = "You're going to focus better on the meeting after this break. Write down any quick thoughts you don't forget."
+                lblSubtitle.stringValue = breaksBrainDumpVcInfo.value(forKey: "subTitleMeetings") as? String ?? lblSubtitle.stringValue
+            }else{
+                lblSubtitle.stringValue = breaksBrainDumpVcInfo.value(forKey: "subTitle") as? String ?? lblSubtitle.stringValue
+            }
+            arrPlaceHolders = breaksBrainDumpVcInfo.value(forKey: "placeholders") as? [String] ?? arrPlaceHolders
+        }
+        
+        textView.placeHolderTitleString = NSAttributedString(string: arrPlaceHolders.randomElement() ?? "", attributes: [NSAttributedString.Key.foregroundColor : NSColor.secondaryLabelColor, NSAttributedString.Key.font : NSFont.systemFont(ofSize: 22)])
+        
         textView.window?.makeFirstResponder(textView)
         
         let runningApp = lastFrontMostApplication
@@ -153,7 +156,7 @@ class breaksBrainDumpVc: NSViewController {
             }
         }
     }
-
+    
     @objc func breaksScreenIdleResetBreaks(){
         getHabitsVcObject().breaksScreenIsIdleResetBreaks()
     }

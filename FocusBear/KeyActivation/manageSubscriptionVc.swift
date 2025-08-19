@@ -79,8 +79,8 @@ class manageSubscriptionVc: NSViewController, WKNavigationDelegate, webViewLoadF
 
     func setAccessTokenToWebView(){
         var theme = "LIGHT"
-        if preferencesWindowControllerObj != nil{
-            if preferencesWindowControllerObj!.window!.hasDarkAppearance{
+        if mainWindowControllerObj != nil{
+            if mainWindowControllerObj!.window!.hasDarkAppearance{
                 theme = "DARK"
             }else {
                 theme = "LIGHT"

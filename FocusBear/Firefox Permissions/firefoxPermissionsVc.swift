@@ -269,7 +269,7 @@ class firefoxPermissionsVc: NSViewController {
         if showingFromOnboarding{
             permissionBlockDistractionWcObj?.showWindow(self)
         }else{
-            preferencesWindowControllerObj?.showWindow(self)
+            mainWindowControllerObj?.showWindow(self)//preferencesWindowControllerObj
         }
         self.view.window?.close()
     }
@@ -292,7 +292,7 @@ class firefoxPermissionsVc: NSViewController {
                     permissionBlockDistractionWcObj?.showWindow(self)
                     onboardingControllingBrowserVcObj?.requestSigmaOSBrowser()
                 }else{
-                    preferencesWindowControllerObj?.showWindow(self)
+                    mainWindowControllerObj?.showWindow(self)//preferencesWindowControllerObj
                     permissionsVcObj?.requestSigmaOSBrowser()
                 }
                 self.view.window?.close()
@@ -322,7 +322,7 @@ class firefoxPermissionsVc: NSViewController {
                 permissionBlockDistractionWcObj?.showWindow(self)
                 onboardingControllingBrowserVcObj?.requestSigmaOSBrowser()
             }else{
-                preferencesWindowControllerObj?.showWindow(self)
+                mainWindowControllerObj?.showWindow(self)//preferencesWindowControllerObj
                 permissionsVcObj?.requestSigmaOSBrowser()
             }
             self.view.window?.close()
@@ -338,7 +338,7 @@ class firefoxPermissionsVc: NSViewController {
         if showingFromOnboarding{
             permissionBlockDistractionWcObj?.showWindow(self)
         }else{
-            preferencesWindowControllerObj?.showWindow(self)
+            mainWindowControllerObj?.showWindow(self)//preferencesWindowControllerObj
         }
         self.view.window?.close()
     }

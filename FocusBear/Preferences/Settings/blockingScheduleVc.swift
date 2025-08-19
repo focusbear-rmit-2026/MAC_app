@@ -165,13 +165,22 @@ class blockingScheduleVc: NSViewController, WKNavigationDelegate, webViewLoadFai
     
     func setSettingsToWebView(){
         var theme = "LIGHT"
-        if preferencesWindowControllerObj != nil{
-            if preferencesWindowControllerObj!.window!.hasDarkAppearance{
+//        if preferencesWindowControllerObj != nil{
+//            if preferencesWindowControllerObj!.window!.hasDarkAppearance{
+//                theme = "DARK"
+//            }else {
+//                theme = "LIGHT"
+//            }
+//        }
+        
+        if mainWindowControllerObj != nil{ // todo make fnction
+            if mainWindowControllerObj!.window!.hasDarkAppearance{
                 theme = "DARK"
             }else {
                 theme = "LIGHT"
             }
         }
+        
         let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex].webFontName
         var flags = "[\"settings-updated\"]"
         if SettingsManagerObject.isGeekModeEnabled{
@@ -473,12 +482,19 @@ class blockingScheduleVc: NSViewController, WKNavigationDelegate, webViewLoadFai
     }
     
     @IBAction func btnBackClicked(_ sender: Any) {
-        if let tabview = preferencesWindowControllerObj?.contentViewController as? preferencesTabViewController{
-            let selectedTabViewItem = tabview.tabViewItems[tabview.selectedTabViewItemIndex]
-            if selectedTabViewItem.identifier as? String == idTabStrictness && tabview.tabViewItemStrictnesss != nil{
+//        if self.view.window?.windowController == preferencesWindowControllerObj{
+//            if let tabview = preferencesWindowControllerObj?.contentViewController as? preferencesTabViewController{
+//                let selectedTabViewItem = tabview.tabViewItems[tabview.selectedTabViewItemIndex]
+//                if selectedTabViewItem.identifier as? String == idTabStrictness && tabview.tabViewItemStrictnesss != nil{
+//                    tabStrictnessContainerVcObj?.showStrictnessView()
+//                    return;
+//                }
+//            }
+//        }else{
+            if leftMenuVcObj?.boxBlocks.isSelected ?? false{
                 tabStrictnessContainerVcObj?.showStrictnessView()
-                return;
             }
-        }
+//        }
+        
     }
 }

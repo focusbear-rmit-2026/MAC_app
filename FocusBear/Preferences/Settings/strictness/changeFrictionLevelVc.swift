@@ -124,7 +124,7 @@ class changeFrictionLevelVc: NSViewController {
             if !SettingsManagerObject.isFullScreenEnabled{
                 SettingsManagerObject.isFullScreenEnabled = true
                 if isMainWindowLoaded{
-                    mainWindowControllerObj?.showFullSizeWindow()
+//                    mainWindowControllerObj?.showFullSizeWindow()
                 }
             }
             SettingsManagerObject.isCuddlyModeEnabled = false
@@ -136,7 +136,7 @@ class changeFrictionLevelVc: NSViewController {
             hideDockIcon()
             SettingsManagerObject.immediatelyBlockDistractingSites = true
             SettingsManagerObject.immediatelyBlockDistractingApps = true
-            preferencesWindowControllerObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))// because here we cant find same window in self.view.window (reason this view is a sheet)
+//            preferencesWindowControllerObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))// because here we cant find same window in self.view.window (reason this view is a sheet)
             if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) == nil{
                 alertSetPasswordConfirm()
             }else{
@@ -149,7 +149,7 @@ class changeFrictionLevelVc: NSViewController {
             if !SettingsManagerObject.isFullScreenEnabled{
                 SettingsManagerObject.isFullScreenEnabled = true
                 if isMainWindowLoaded{
-                    mainWindowControllerObj?.showFullSizeWindow()
+//                    mainWindowControllerObj?.showFullSizeWindow()
                 }
             }
             SettingsManagerObject.isCuddlyModeEnabled = true
@@ -162,7 +162,7 @@ class changeFrictionLevelVc: NSViewController {
             SettingsManagerObject.immediatelyBlockDistractingSites = false
             SettingsManagerObject.immediatelyBlockDistractingApps = false
             SettingsManagerObject.isSettingsChanged = true
-            preferencesWindowControllerObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
+//            preferencesWindowControllerObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
             if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) == nil{
                 alertSetPasswordConfirm()
             }else{
@@ -175,7 +175,7 @@ class changeFrictionLevelVc: NSViewController {
             if !SettingsManagerObject.isFullScreenEnabled{
                 SettingsManagerObject.isFullScreenEnabled = true
                 if isMainWindowLoaded{
-                    mainWindowControllerObj?.showFullSizeWindow()
+//                    mainWindowControllerObj?.showFullSizeWindow()
                 }
             }
             SettingsManagerObject.isCuddlyModeEnabled = true
@@ -189,7 +189,7 @@ class changeFrictionLevelVc: NSViewController {
             SettingsManagerObject.immediatelyBlockDistractingApps = false
             SettingsManagerObject.isSettingsChanged = true
             strictnessVcObj?.reloadStrictnessLevelState()
-            preferencesWindowControllerObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
+//            preferencesWindowControllerObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
             self.dismiss(self)
             break;
         case 2:
@@ -197,7 +197,7 @@ class changeFrictionLevelVc: NSViewController {
             if !SettingsManagerObject.isFullScreenEnabled{
                 SettingsManagerObject.isFullScreenEnabled = true
                 if isMainWindowLoaded{
-                    mainWindowControllerObj?.showFullSizeWindow()
+//                    mainWindowControllerObj?.showFullSizeWindow()
                 }
             }
             SettingsManagerObject.isCuddlyModeEnabled = true
@@ -212,7 +212,7 @@ class changeFrictionLevelVc: NSViewController {
             SettingsManagerObject.immediatelyBlockDistractingApps = false
             SettingsManagerObject.isSettingsChanged = true
             strictnessVcObj?.reloadStrictnessLevelState()
-            preferencesWindowControllerObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
+//            preferencesWindowControllerObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
             self.dismiss(self)
             break;
         case 1:
@@ -220,7 +220,7 @@ class changeFrictionLevelVc: NSViewController {
             if SettingsManagerObject.isFullScreenEnabled{
                 SettingsManagerObject.isFullScreenEnabled = false
                 if isMainWindowLoaded{
-                    mainWindowControllerObj?.showSmallSizeWindow()
+//                    mainWindowControllerObj?.showSmallSizeWindow()
                 }
             }
             SettingsManagerObject.isCuddlyModeEnabled = true
@@ -235,7 +235,7 @@ class changeFrictionLevelVc: NSViewController {
             SettingsManagerObject.immediatelyBlockDistractingApps = false
             SettingsManagerObject.isSettingsChanged = true
             strictnessVcObj?.reloadStrictnessLevelState()
-            preferencesWindowControllerObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.normalWindow)))
+//            preferencesWindowControllerObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.normalWindow)))
             self.dismiss(self)
             break;
         default:

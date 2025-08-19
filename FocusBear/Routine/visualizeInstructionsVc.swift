@@ -133,8 +133,8 @@ class visualizeInstructionsVc: NSViewController, WKNavigationDelegate, webViewLo
     
     func setAccessTokenToWebView(){
         var theme = "LIGHT"
-        if preferencesWindowControllerObj != nil{
-            if preferencesWindowControllerObj!.window!.hasDarkAppearance{
+        if mainWindowControllerObj != nil{// preferencesWindowControllerObj
+            if mainWindowControllerObj!.window!.hasDarkAppearance{
                 theme = "DARK"
             }else {
                 theme = "LIGHT"

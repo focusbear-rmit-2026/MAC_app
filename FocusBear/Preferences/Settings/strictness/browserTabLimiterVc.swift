@@ -92,9 +92,9 @@ extension browserTabLimiterVc: NSTextFieldDelegate{
                         msg = preferencesInfo.value(forKey: "alertTabCountText") as? String ?? msg
                     }
                     showAlert(msg: msg, completionHandler: {_ in
-                        if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-                            tabview.selectedTabViewItemIndex = preferencesSettingsIndex
-                        }
+                        //if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{ // todo need to cechk 
+                         //   tabview.selectedTabViewItemIndex = preferencesSettingsIndex
+                        //}
                         if settingsSideBarVcObj != nil{
                             settingsSideBarVcObj?.tblView.selectRowIndexes(IndexSet(integer: settingsSideBarVcObj!.strictnessSettingsIndex), byExtendingSelection: false)
                         }

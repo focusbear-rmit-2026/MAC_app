@@ -429,13 +429,22 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
     }
     func setAccessTokenToWebView(){
         var theme = "LIGHT"
-        if preferencesWindowControllerObj != nil{
-            if preferencesWindowControllerObj!.window!.hasDarkAppearance{
+//        if preferencesWindowControllerObj != nil{
+//            if preferencesWindowControllerObj!.window!.hasDarkAppearance{
+//                theme = "DARK"
+//            }else {
+//                theme = "LIGHT"
+//            }
+//        }
+        
+        if mainWindowControllerObj != nil{
+            if mainWindowControllerObj!.window!.hasDarkAppearance{
                 theme = "DARK"
             }else {
                 theme = "LIGHT"
             }
         }
+        
         let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex].webFontName
         var brainDump = UserDefaults.standard.object(forKey: kUserdefaultsFocusModeNotes) as? String ?? ""
         brainDump = brainDump.addingPercentEncoding(withAllowedCharacters: CharacterSet.urlQueryAllowed) ?? brainDump

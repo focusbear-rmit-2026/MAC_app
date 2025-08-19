@@ -2430,6 +2430,21 @@
         "titleTask": "Título de la tarea:",
         "taskNameString": "Para trabajar en: <URL>"
     },
+    "habitsStateVcInfo":{
+        "morningRoutinePostponedText": "Rutina matutina pospuesta. Reanúdala ahora haciendo clic en 'Reanudar hábito'.",
+        "eveningRoutinePostponedText": "Rutina nocturna pospuesta. Reanúdala ahora haciendo clic en 'Reanudar hábito'.",
+        "buttonResumeHabits": "Reanudar hábitos",
+        "shutoffAbortedText": "Apagado cancelado. Tu computadora vuelve a estar accesible.",
+        "nextRoutineText": "¡Buen trabajo manteniéndote en camino! Tu próxima rutina programada (<ROUTINE>) está fijada para <TIME>. Prepárate para retomarla y seguir construyendo esos hábitos saludables. ¡Tú puedes!",
+        "buttonBeginCustomRoutine": "Iniciar rutina bajo demanda"
+    },
+    "breakStateVcInfo":{
+        "buttonEnableBreaks": "Activar descansos",
+        "buttonStartBreak": "Iniciar descanso",
+        "titleEnableBreaks": "Los descansos están desactivados. Activa los descansos a intervalos regulares para aumentar tu productividad, energía y enfoque.",
+        "pausedBreaksText": "Has pausado los descansos por hoy. Mañana volverán para ayudarte a recargar energías y mantener el enfoque.",
+        "shutoffTimeText": "La app está en estado de apagado"
+    },
     "discordUrl": "https://discord.gg/VZdv3ZjhSq",
     "whatsAppUrl": "https://chat.whatsapp.com/FV0oTbCUWpILBYif7CP6UD",
     "WindowsSpecific": {
