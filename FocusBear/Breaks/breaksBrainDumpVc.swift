@@ -100,7 +100,7 @@ class breaksBrainDumpVc: NSViewController {
         
         
         if let breaksBrainDumpVcInfo = configjson.value(forKey: "breaksBrainDumpVcInfo") as? NSDictionary{
-            if isBreakActivityShowingWhileMeeting && currentState == ._ACTIVITY_{
+            if isBreakActivityShowingWhileMeeting && currentState == ._MICRO_BREAK_{
                 lblSubtitle.stringValue = "You're going to focus better on the meeting after this break. Write down any quick thoughts you don't forget."
                 lblSubtitle.stringValue = breaksBrainDumpVcInfo.value(forKey: "subTitleMeetings") as? String ?? lblSubtitle.stringValue
             }else{
@@ -178,7 +178,7 @@ class breaksBrainDumpVc: NSViewController {
     }
     @IBAction func btnPostponeBreakClicked(_ sender: Any) {
         addLog(text: "[user-action] breaksBrainDumpVc:- button Postpone Clicked")
-        if currentState == ._ACTIVITY_{
+        if currentState == ._MICRO_BREAK_{
             getHabitsVcObject().abortCurrentState()
             return
         }

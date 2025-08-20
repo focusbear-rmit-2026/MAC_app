@@ -206,7 +206,7 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
             logType = "morning routine"
         }else if lCurrentState! == ._EVENING_HABIT_{
             logType = "evening routine"
-        }else if lCurrentState! == ._ACTIVITY_{
+        }else if lCurrentState! == ._MICRO_BREAK_{
             logType = "break"
         }else if lCurrentState! == ._SPECIAL_ACTIVITY_{
             logType = "special activity"
@@ -268,7 +268,7 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
             logType = "morning routine"
         }else if lCurrentState! == ._EVENING_HABIT_{
             logType = "evening routine"
-        }else if lCurrentState! == ._ACTIVITY_{
+        }else if lCurrentState! == ._MICRO_BREAK_{
             logType = "break"
         }else if lCurrentState! == ._SPECIAL_ACTIVITY_{
             logType = "special activity"

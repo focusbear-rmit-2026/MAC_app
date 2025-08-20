@@ -167,7 +167,7 @@ class upgradeNowVc: NSViewController {
         if !isAppInitialLodded{
             appdelegate?.initialWork()
         }
-        if (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._ACTIVITY_) && vcShownFromExpireUsageAlert{
+        if (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_) && vcShownFromExpireUsageAlert{
             mainWindowControllerObj?.showWindow(self)
             showBlankWindowInSecondaryMonitor()
             if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_{

@@ -834,7 +834,6 @@ class pomodoroVc: NSViewController {
 
         textViewAchieve.string = ""
         textViewAchieve.string = lastIntentionUsed
-        appdelegate!.setIntentionInBrainDumpWindow()
     }
     
     @IBAction func btnEditFocusModeClicked(_ sender: Any) {
@@ -963,7 +962,6 @@ class pomodoroVc: NSViewController {
         
         if isHardCorePomodoroModeOn{
             whatToAchieveInFocusBlock = textViewAchieve.string
-            appdelegate!.setIntentionInBrainDumpWindow()
             appdelegate!.setStatusBarButtonTitleForFocusMode(title: whatToAchieveInFocusBlock)
             if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled{
                 let minute = textFieldWorkDuration.integerValue
@@ -1131,7 +1129,7 @@ class pomodoroVc: NSViewController {
             self.enterPasswordVcObj?.isShowingForRelaxFocusMode = true
         }else{
             pomodoroModeStarted()
-            self.view.window?.close()
+            self.view.window?.close()//  will not work if view has changed (task player is viisble now). because if main view is changes then window is nil.no need to change anything
             allApiObject.capturePosthog(event: "start-focus-session-popup-closed", metadata: [:])
         }
     }
@@ -1277,7 +1275,6 @@ class pomodoroVc: NSViewController {
             addLog(text: "checkBoxSkipMicrobreaks is off in geek mode focus session.")
         }
         whatToAchieveInFocusBlock = textViewAchieve.string
-        appdelegate!.setIntentionInBrainDumpWindow()
         appdelegate!.focusModeStartted(isStartedByPusher: false)
         if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled{
             showTaskPlayerWindow(totalDuration: minute, intention: textViewAchieve.string, automatically:true)
@@ -1423,7 +1420,7 @@ class pomodoroVc: NSViewController {
     }
     
     @objc func performTimerCount() {
-        if !appdelegate!.isSystemSleep && !appdelegate!.isScreenSaverStart && currentState != ._ACTIVITY_{
+        if !appdelegate!.isSystemSleep && !appdelegate!.isScreenSaverStart && currentState != ._MICRO_BREAK_{
             currentTimer += 1
         }
         setProgres()

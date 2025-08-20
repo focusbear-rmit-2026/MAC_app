@@ -78,9 +78,39 @@ class easyPostponeVc: NSViewController {
         }
     }
     
-    @IBAction func btnCancelClicked(_ sender: Any) {
+    @IBAction func btnCancelClicked(_ sender: Any) {// resume habit
         addLog(text: "[user-action] easyPostponeVc:- button Cancel clicked")// log added on 14/4/25
-        if currentState == ._POSTPON_MORNING_HABIT_ || currentState == ._POSTPON_EVENING_HABIT_{
+        
+        // if custom rouine is ongoing and morning/evening routine is postponed and user click postpone on morning/evening routine postpone end warning and then cliking on resume habit button on easypostponevc then it will start morning evening routine
+        
+        var isViewForMorningEveningRoutineExtendPostponed = false
+        
+        if currentState == ._CUSTOM_ROUTINE_{
+            if isForExtendPostponeDuringCustomRoutine && isCustomRoutineWasRunningInPostponeMorningHabit{
+                isViewForMorningEveningRoutineExtendPostponed = true
+            }else if isForExtendPostponeDuringCustomRoutine && isCustomRoutineWasRunningInPostponeEveningHabit{
+                isViewForMorningEveningRoutineExtendPostponed = true
+            }
+        }
+        
+        if currentState == ._POSTPON_MORNING_HABIT_ || currentState == ._POSTPON_EVENING_HABIT_ || isViewForMorningEveningRoutineExtendPostponed{
+
+            if (currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeMorningHabit) || (currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeEveningHabit){
+                habitsVcObj?.stopActivityCountDownTimer()
+                if currentActivityPlaying != nil{
+                    if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
+                        if smallCountDownWcObj?.window != nil{
+                            if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
+                                getSmallCountDownWindowObject().window?.close()
+                            }
+                        }
+                    }
+                }
+                currentHabitPlaying = nil
+                isCustomRoutineWasRunningInPostponeMorningHabit = false
+                isCustomRoutineWasRunningInPostponeEveningHabit = false
+            }
+            
             currentState = ._NOTHING_
             if mainViewControllerObj != nil{
                 if getHabitsVcObject().postponeTimer != nil{
@@ -97,8 +127,10 @@ class easyPostponeVc: NSViewController {
                     getHabitsVcObject().postponeNotificationTimer = nil
                 }
             }
+            
+            
+            
             appdelegate?.backgroundThread()
-//            self.view.window?.close() // todo
             if self.presentingViewController == mainViewControllerObj{
                 self.dismiss(self)
             }else{
@@ -106,6 +138,9 @@ class easyPostponeVc: NSViewController {
             }
             return;
         }
+        
+       
+        
         if currentAction == ._INPROGRESS_  && (currentHabitPlaying != nil || currentActivityPlaying != nil){// if background abit is going on
             getSmallCountDownWindowObject().showWindow(self)
         }else{
@@ -171,7 +206,7 @@ class easyPostponeVc: NSViewController {
             }else{
                 getHabitsVcObject().postponeCustomRoutineFor(minutes: Int(popupButtonMinutes.title) ?? 5, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false, fromRoutineWarning:false)
             }
-        }else if lastCurrentState == ._ACTIVITY_{
+        }else if lastCurrentState == ._MICRO_BREAK_{
             getHabitsVcObject().postponeBreakActivitiesFor(minutes: Int(popupButtonMinutes.title) ?? 5, secondsToPostpone: nil, isFromBreakWarningWindow: false)
         }else if lastCurrentState == ._POSTPON_MORNING_HABIT_{
             getHabitsVcObject().postponeMorningHabitFor(minutes: Int(popupButtonMinutes.title) ?? 5, secondsToPostpone: nil, showAskFocusModeView:false, showAskIntention:false)
@@ -225,7 +260,7 @@ class easyPostponeVc: NSViewController {
             }
             allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"evening_routine", "deactivate-reason":"easy postpone"])
             sequenceId = arrFilteredEveningHabits.first?.activity_sequence_id ?? ""
-        }else if lastCurrentState == ._ACTIVITY_{
+        }else if lastCurrentState == ._MICRO_BREAK_{
             allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"break_activity", "deactivate-reason":"easy postpone"])
         }else if lastCurrentState == ._CUSTOM_ROUTINE_{
             allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"custom_routine", "deactivate-reason":"easy postpone"])

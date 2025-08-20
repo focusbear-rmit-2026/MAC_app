@@ -303,7 +303,7 @@ class breakWarningVc: NSViewController {
                         showDeactivateBreaksWindow()
                     }
                 }else{
-                    if currentState == ._ACTIVITY_{// whenever show waring then make current state _ACTIVITY_ beacuse if any thing will happen during waring curent state will change (ex. app can bhi in shutoff state when warning is about to over in this case we will not execute break activity)
+                    if currentState == ._MICRO_BREAK_{// whenever show waring then make current state _MICRO_BREAK_ beacuse if any thing will happen during waring curent state will change (ex. app can bhi in shutoff state when warning is about to over in this case we will not execute break activity)
                         allApiObject.capturePosthog(event: "break-warning-started-after-30-seconds-delay", metadata: [:])
                         getHabitsVcObject().performBreakActivities()
                     }
@@ -329,7 +329,7 @@ class breakWarningVc: NSViewController {
         self.timer?.invalidate()
         self.view.window?.close()
         transparentWcObj?.window?.close()
-        if currentState == ._ACTIVITY_{// whenever show waring then make current state _ACTIVITY_ beacuse if any thing will happen during waring curent state will change (ex. app can bhi in shutoff state when warning is about to over in this case we will not execute break activity)
+        if currentState == ._MICRO_BREAK_{// whenever show waring then make current state _MICRO_BREAK_ beacuse if any thing will happen during waring curent state will change (ex. app can bhi in shutoff state when warning is about to over in this case we will not execute break activity)
             allApiObject.capturePosthog(event: "break-warning-user-started-early", metadata: [:])
             getHabitsVcObject().performBreakActivities()
         }
@@ -347,7 +347,7 @@ class breakWarningVc: NSViewController {
             addLog(text: "[user-action]breakWarningVc:- btn take break clicked")
             self.timer?.invalidate()
             self.view.window?.close()
-            if currentState == ._ACTIVITY_{// whenever show waring then make current state _ACTIVITY_ beacuse if any thing will happen during waring curent state will change (ex. app can bhi in shutoff state when warning is about to over in this case we will not execute break activity)
+            if currentState == ._MICRO_BREAK_{// whenever show waring then make current state _MICRO_BREAK_ beacuse if any thing will happen during waring curent state will change (ex. app can bhi in shutoff state when warning is about to over in this case we will not execute break activity)
                 getHabitsVcObject().performBreakActivities()
             }
             

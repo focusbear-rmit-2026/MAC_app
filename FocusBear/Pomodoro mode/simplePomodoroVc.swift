@@ -923,7 +923,6 @@ class simplePomodoroVc: NSViewController {
         isSkipBreakActivityDuringPomodoro = true
         addLog(text: "SkipBreakActivityDuringPomodoro is true in simple focus session.")
         whatToAchieveInFocusBlock = textViewAchieve.string
-        appdelegate!.setIntentionInBrainDumpWindow()
         appdelegate!.focusModeStartted(isStartedByPusher: false)
         
         if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled{
@@ -1019,7 +1018,7 @@ class simplePomodoroVc: NSViewController {
         }
     }
     @objc func performTimerCount() {
-        if !appdelegate!.isSystemSleep && !appdelegate!.isScreenSaverStart && currentState != ._ACTIVITY_{
+        if !appdelegate!.isSystemSleep && !appdelegate!.isScreenSaverStart && currentState != ._MICRO_BREAK_{
             currentTimer += 1
         }
         setProgres()

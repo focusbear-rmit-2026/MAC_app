@@ -312,7 +312,7 @@ class thirdVc: NSViewController {
                 
             }
             
-        }else if currentState == ._ACTIVITY_ || isSpecialActivityGoing{
+        }else if currentState == ._MICRO_BREAK_ || isSpecialActivityGoing{
             
             //print(graphOneDayData)
            // print("*****result****")
@@ -3215,7 +3215,7 @@ class thirdVc: NSViewController {
                 notes = UserDefaults.standard.object(forKey: kUserdefaultsLastActivitySavedNotes) as? String ?? ""
             }
             
-            logQuantityVcObj?.resetData(name: lastActivity, durationInSeconds: "\(durationInSeconds)", logQuantityQuestion: nil, currentState: ._ACTIVITY_, logQuantityType: logQuantityType ?? "", activity_id: activity_id, activity_sequence_id: activity_sequence_id,activityChoiceId:activityChoiceId, take_notes:take_notes, notes:notes, logQuantityQuestions: logQuantityQuestions)
+            logQuantityVcObj?.resetData(name: lastActivity, durationInSeconds: "\(durationInSeconds)", logQuantityQuestion: nil, currentState: ._MICRO_BREAK_, logQuantityType: logQuantityType ?? "", activity_id: activity_id, activity_sequence_id: activity_sequence_id,activityChoiceId:activityChoiceId, take_notes:take_notes, notes:notes, logQuantityQuestions: logQuantityQuestions)
         }else{
             let startTime = getStringFromDate(date: lastActivityPerformedTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")
             addEntryInStatsCsv(logType: "break", activity: lastActivity, durationInSeconds: "\(durationInSeconds)", quantityQuestion: "", quantityLogged: "", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "", tags:"")
@@ -3362,7 +3362,7 @@ class thirdVc: NSViewController {
                 notes = UserDefaults.standard.object(forKey: kUserdefaultsLastActivitySavedNotes) as? String ?? ""
             }
 
-            logQuantityVcObj?.resetData(name: lastActivity, durationInSeconds: "\(durationInSeconds)", logQuantityQuestion: nil, currentState: ._ACTIVITY_, logQuantityType: logQuantityType ?? "", activity_id: activity_id, activity_sequence_id: activity_sequence_id,activityChoiceId:activityChoiceId, take_notes:take_notes, notes:notes, logQuantityQuestions: logQuantityQuestions)
+            logQuantityVcObj?.resetData(name: lastActivity, durationInSeconds: "\(durationInSeconds)", logQuantityQuestion: nil, currentState: ._MICRO_BREAK_, logQuantityType: logQuantityType ?? "", activity_id: activity_id, activity_sequence_id: activity_sequence_id,activityChoiceId:activityChoiceId, take_notes:take_notes, notes:notes, logQuantityQuestions: logQuantityQuestions)
         }else{
             let startTime = getStringFromDate(date: lastActivityPerformedTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")
             addEntryInStatsCsv(logType: "break", activity: lastActivity, durationInSeconds: "\(durationInSeconds)", quantityQuestion: "", quantityLogged: "", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "", tags:"")
@@ -3754,7 +3754,7 @@ class thirdVc: NSViewController {
         if currentState == ._BREATHING_{
             boxBreathingFinished.isHidden = true
             getHabitsVcObject().breathingFinishedUnlockMachine()
-        }else if currentState == ._ACTIVITY_ {
+        }else if currentState == ._MICRO_BREAK_ {
             if lastActivityIndex == -1 {
                 getHabitsVcObject().startCurrentActivity()
             }else{
@@ -3823,7 +3823,7 @@ class thirdVc: NSViewController {
             addLog(text:"currentState is morning")
         }else if currentState == ._EVENING_HABIT_{
             addLog(text:"currentState is evening")
-        }else if currentState == ._ACTIVITY_{
+        }else if currentState == ._MICRO_BREAK_{
             let currentActivity = arrFinalBreakActivities[currentActivityIndex + 1].activity
             let currentActivityId = currentActivity?.id ?? ""
             let randomChoice = arrFinalBreakActivities[currentActivityIndex + 1].randomChoice
@@ -3854,7 +3854,7 @@ class thirdVc: NSViewController {
         }
         
         
-        if currentState == ._ACTIVITY_{
+        if currentState == ._MICRO_BREAK_{
             getHabitsVcObject().showWhySkipHabitView()
         }else{// show menu
             if currentState == ._MORNING_HABIT_{

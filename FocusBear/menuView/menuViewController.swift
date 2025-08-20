@@ -620,7 +620,7 @@ class menuViewController: NSViewController {
         if customRoutinesMenu.items.count == 0{
             boxCustomRoutine.isHidden = true
         }else{
-            if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_ || currentState == ._FOCUS_SUMMARY_ || currentState == ._SHUTOFFMAC_{
+            if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._CUSTOM_ROUTINE_ || currentState == ._FOCUS_SUMMARY_ || currentState == ._SHUTOFFMAC_{
                 boxCustomRoutine.isHidden = true
             }else{
                 if isPurchased == false && daysLeft <= 0{//
@@ -772,7 +772,7 @@ class menuViewController: NSViewController {
                 menuItemStartBreak.isHidden = true
             }else{
                 if isHabitAlreadyShowed{
-                    if currentState == ._MORNING_HABIT_ || currentState == ._ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_ || arrAllbreakActivities.count == 0 || currentState == ._SPECIAL_ACTIVITY_{
+                    if currentState == ._MORNING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._CUSTOM_ROUTINE_ || arrAllbreakActivities.count == 0 || currentState == ._SPECIAL_ACTIVITY_{
                         menuItemStartBreak.isHidden = true
                         boxStartBreak.isHidden = true
                     }else{
@@ -853,7 +853,7 @@ class menuViewController: NSViewController {
         if SettingsManagerObject.isGeekModeEnabled{
             boxTimeSinceLastBreak.isHidden = true
             
-            if currentState != ._ACTIVITY_ && currentState != ._SHUTOFFMAC_{
+            if currentState != ._MICRO_BREAK_ && currentState != ._SHUTOFFMAC_{
                 if let lastBreakTimeText = getTimeSinceLastBreak(){
                     lblTimeSinceLastBreak.stringValue = lastBreakTimeText
                     boxTimeSinceLastBreak.isHidden = false
@@ -983,7 +983,7 @@ class menuViewController: NSViewController {
                     }
                     boxStartPomodoroMode.isHidden = true
                 }else{
-                    if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._ACTIVITY_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_{
+                    if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_{
                         boxStartPomodoroMode.isHidden = true
                     }else{
                         boxStartPomodoroMode.isHidden = false
@@ -1042,7 +1042,7 @@ class menuViewController: NSViewController {
                 boxStartSimplePomodoroMode.borderWidth = 2
                 widthImageIconSimplePomodoro.constant = 28
                 lblTitleStartSimplePomodoroMode.font = NSFont.boldSystemFont(ofSize: 16)
-                if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._ACTIVITY_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_{
+                if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_{
                     boxStartSimplePomodoroMode.isHidden = true
                 }else{
                     boxStartSimplePomodoroMode.isHidden = false
@@ -1056,9 +1056,9 @@ class menuViewController: NSViewController {
         
         if currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_MORNING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_{
             boxResumeHabits.isHidden = false
-        }else if currentState == ._ACTIVITY_ && isBreakActivityExecuteFromPostponeMorningHabit{
+        }else if currentState == ._MICRO_BREAK_ && isBreakActivityExecuteFromPostponeMorningHabit{
             boxResumeHabits.isHidden = false
-        }else if currentState == ._ACTIVITY_ && isBreakActivityExecuteFromPostponeEveningHabit{
+        }else if currentState == ._MICRO_BREAK_ && isBreakActivityExecuteFromPostponeEveningHabit{
             boxResumeHabits.isHidden = false
         }else if currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeMorningHabit{
             boxResumeHabits.isHidden = false
@@ -1090,7 +1090,7 @@ class menuViewController: NSViewController {
 
         
         boxOpenCheckLists.isHidden = true
-        if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_{
+        if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._CUSTOM_ROUTINE_{
             if currentAction == ._INPROGRESS_{
                 if isMainWindowLoaded{
                     if !(mainWindowControllerObj?.window?.isVisible ?? false){
@@ -1869,7 +1869,7 @@ class menuViewController: NSViewController {
     }
     
     @IBAction func btnResumeHabitsClicked(_ sender: Any) {
-        if currentState == ._ACTIVITY_ && isBreakActivityExecuteFromPostponeMorningHabit{
+        if currentState == ._MICRO_BREAK_ && isBreakActivityExecuteFromPostponeMorningHabit{
             getHabitsVcObject().stopActivityCountDownTimer()
             if currentActivityPlaying != nil{
                 if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
@@ -1887,7 +1887,7 @@ class menuViewController: NSViewController {
             currentState = ._NOTHING_
             closePupUpBlockIfVisible()
             currentActivityPlaying = nil
-        }else if currentState == ._ACTIVITY_ && isBreakActivityExecuteFromPostponeEveningHabit{
+        }else if currentState == ._MICRO_BREAK_ && isBreakActivityExecuteFromPostponeEveningHabit{
             getHabitsVcObject().stopActivityCountDownTimer()
             if currentActivityPlaying != nil{
                 if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
@@ -2065,7 +2065,7 @@ class menuViewController: NSViewController {
                 leftMenuVcObj?.showEditHabitsView()
             }else{
                 mainWindowControllerObj?.showWindow(self)
-                leftMenuVcObj?.showEditHabitsView() // todo check with password
+                leftMenuVcObj?.showEditHabitsView()
             }
             addLog(text: "Showing preferences")
         }

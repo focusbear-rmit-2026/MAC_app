@@ -11,7 +11,7 @@ import WebKit
 
 class brainDumpVc: NSViewController, NSTextViewDelegate{
     
-    @IBOutlet weak var lblTimeSinceLastBreak: NSTextField!
+//    @IBOutlet weak var lblTimeSinceLastBreak: NSTextField!
     @IBOutlet weak var btnOpenUrl: Button!
     @IBOutlet weak var textFieldOpenUrl: NSTextField!
     @IBOutlet weak var lblTitleOpenUrl: NSTextField!
@@ -193,7 +193,7 @@ class brainDumpVc: NSViewController, NSTextViewDelegate{
                 }
             }else{
                 var blockType = ""
-                if currentState == ._ACTIVITY_{
+                if currentState == ._MICRO_BREAK_{
                     if currentActivityPlaying != nil{
                       //  activityAllowUrls = currentActivityPlaying!.allowUrls
                     }

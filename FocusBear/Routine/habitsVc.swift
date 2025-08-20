@@ -77,7 +77,7 @@ class habitsVc: NSViewController {
 //            setframe()
 //        }else{
 //            if self.view.window != nil{
-//                if isBreakActivityShowingWhileMeeting && currentState == ._ACTIVITY_{
+//                if isBreakActivityShowingWhileMeeting && currentState == ._MICRO_BREAK_{
 //                    let screenList = NSScreen.screens
 //                    for screen in screenList {
 //                        let screenHeight = screen.frame.height
@@ -396,7 +396,7 @@ class habitsVc: NSViewController {
 //    }
     func stopActivityCountDownTimer(){
         if currentAction == ._INPROGRESS_{
-            if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._ACTIVITY_ || currentState == ._BREATHING_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_{
+            if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._BREATHING_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_{
                 if timerViewcontrollerObj != nil {
                     if timerViewcontrollerObj?.timer != nil {
                         timerViewcontrollerObj?.timer?.invalidate()
@@ -568,7 +568,7 @@ class habitsVc: NSViewController {
                     }
                 }
             }
-        }else if currentState == ._ACTIVITY_{
+        }else if currentState == ._MICRO_BREAK_{
             var lastSavedPostponeTime = Date()
             activityPostponeCount = 0
             var lastSavedPostponeCount = activityPostponeCount
@@ -698,12 +698,12 @@ class habitsVc: NSViewController {
     func abortCancel(){
         addLog(text: "abortCancel")
         
-        if lastCurrentState == ._ACTIVITY_{
+        if lastCurrentState == ._MICRO_BREAK_{
             self.showCloseButtons()
             removeSubViews()
             switch lastCurrentAction {
             case ._START_:
-                currentState = ._ACTIVITY_
+                currentState = ._MICRO_BREAK_
                 currentAction = ._START_
                 thirdVcObj?.startBreakActivity()
                 firstViewControllerObj?.isFirstTime = false
@@ -717,7 +717,7 @@ class habitsVc: NSViewController {
                 habitsView.addConstraints(subView: timerViewcontrollerObj!.view)
                 
                 timerViewcontrollerObj?.resumeTimerActivity(durationInSeconds: timerViewcontrollerObj?.currentDurationInSeconds ?? 0, name: timerViewcontrollerObj?.currentActicityTitle ?? "", url: timerViewcontrollerObj?.currentUrl, useTimer:timerViewcontrollerObj?.currentActivityUseTimer ?? true)
-                currentState = ._ACTIVITY_
+                currentState = ._MICRO_BREAK_
                 currentAction = ._INPROGRESS_
                 break
             case ._END_:
@@ -725,13 +725,13 @@ class habitsVc: NSViewController {
                 removeSubViews()
                 habitsView.addSubview(thirdVcObj!.view)
                 habitsView.addConstraints(subView: thirdVcObj!.view)
-                currentState = ._ACTIVITY_
+                currentState = ._MICRO_BREAK_
                 currentAction = ._END_
                 break
             case ._VISUALIZE_:
                 break
             case ._BRAIN_DUMP_:
-                currentState = ._ACTIVITY_
+                currentState = ._MICRO_BREAK_
                 currentAction = ._BRAIN_DUMP_
                 
                 thirdVcObj?.startBreakActivity()
@@ -2072,7 +2072,7 @@ class habitsVc: NSViewController {
         habitsView.addSubview(thirdVcObj!.view)
         habitsView.addConstraints(subView: thirdVcObj!.view)
         thirdVcObj!.activityFinished(index: currentActivityIndex)
-        currentState = ._ACTIVITY_
+        currentState = ._MICRO_BREAK_
         currentAction = ._END_
     }
     
@@ -2286,7 +2286,7 @@ class habitsVc: NSViewController {
             timerViewcontrollerObj?.startTimerActivity(durationInSeconds: currentActivity.durationSeconds, name: currentActivity.name!, urlsArray: currentActivity.urlsArray, logQuantityQuestion: currentActivity.logQuantityQuestions, currentActivity: currentActivity, currentChoice: nil, logQuantity: currentActivity.logQuantity, logQuantityType: currentActivity.logQuantityType)
         }
 
-        currentState = ._ACTIVITY_
+        currentState = ._MICRO_BREAK_
         currentAction = ._INPROGRESS_
     }
     
@@ -2308,7 +2308,7 @@ class habitsVc: NSViewController {
             timerViewcontrollerObj?.startTimerActivity(durationInSeconds: currentActivity.durationSeconds, name: currentActivity.name!, urlsArray: currentActivity.urlsArray, logQuantityQuestion: currentActivity.logQuantityQuestions, currentActivity: currentActivity, currentChoice: nil, logQuantity: currentActivity.logQuantity, logQuantityType: currentActivity.logQuantityType)
         }
         
-        currentState = ._ACTIVITY_
+        currentState = ._MICRO_BREAK_
         currentAction = ._INPROGRESS_
     }
     
@@ -2477,9 +2477,13 @@ class habitsVc: NSViewController {
 
         removeSubViews()
         currentState = ._NOTHING_
-        leftMenuVcObj?.microBreaksOver()
-        mainWindowControllerObj?.window?.close()
-        hideBlankWindowInSecondaryMonitor()
+        
+        if !isFromBreakWarningWindow{
+            leftMenuVcObj?.microBreaksOver()
+            mainWindowControllerObj?.window?.close()
+            hideBlankWindowInSecondaryMonitor()
+        }
+        
         if arrAllbreakActivities.count != 0 {
             DispatchQueue.global().sync {//async {
                 print("breakAfterMinutesxxxx")
@@ -3054,6 +3058,7 @@ class habitsVc: NSViewController {
             showSmallTimerWindow(durationSeconds: 120, msg: msg, isFocusBreak: true, currentTimerValue: 0)
         }
     }
+    
     @objc func resumeMorningHabit(){// func name "backgrounThread" will do work for showing morning routing again we just need to false this (currentState) variable
         addLog(text: "Morning habits postpone finished")
         if currentState == ._POSTPON_MORNING_HABIT_{
@@ -3062,7 +3067,7 @@ class habitsVc: NSViewController {
             if appdelegate!.isActivityTimerPaused{// if habit is postponed and system goes to sleep then  it stops break activity timer and while system is in sleep mode at that time postpone  time finish so it need to change isActivityTimerPaused to false otherwise when system wakes up it will again set activity timer
                 appdelegate!.isActivityTimerPaused = false
             }
-        }else if currentState == ._ACTIVITY_ && isBreakActivityExecuteFromPostponeMorningHabit{
+        }else if currentState == ._MICRO_BREAK_ && isBreakActivityExecuteFromPostponeMorningHabit{
             stopActivityCountDownTimer()
             if currentActivityPlaying != nil{
                 if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
@@ -3109,7 +3114,7 @@ class habitsVc: NSViewController {
             if appdelegate!.isActivityTimerPaused{// if habit is postponed and system goes to sleep then  it stops break activity timer and while system is in sleep mode at that time postpone  time finish so it need to change isActivityTimerPaused to false otherwise when system wakes up it will again set activity timer
                 appdelegate!.isActivityTimerPaused = false
             }
-        }else if currentState == ._ACTIVITY_ && isBreakActivityExecuteFromPostponeEveningHabit{
+        }else if currentState == ._MICRO_BREAK_ && isBreakActivityExecuteFromPostponeEveningHabit{
             stopActivityCountDownTimer()
             if currentActivityPlaying != nil{
                 if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
@@ -3357,7 +3362,7 @@ class habitsVc: NSViewController {
                     return;
                 }
             }
-            
+           
             let isFocusModeOnOrPaused = isFocusModeOnOrPaused()
             if isFocusModeOnOrPaused && isFocusModeStartedFromPomodoroMode && isSkipBreakActivityDuringPomodoro{
                 self.setActivityTimer()
@@ -3422,8 +3427,6 @@ class habitsVc: NSViewController {
                 setFocusBearIconToNormal()
             }
             
-            
-            
             isBreakActivityExecuteFromPostponeMorningHabit = false
             isBreakActivityExecuteFromPostponeEveningHabit = false
             
@@ -3431,7 +3434,6 @@ class habitsVc: NSViewController {
             isBreakActivityExecuteFromEveningHabit = false
             checkLogFileRotation()
 
-           
             isBreakActivityShowingWhileMeeting = false
             if appdelegate!.isUserOnMeeting{
                 if !SettingsManagerObject.IsShowBreaksInCallEnabled{
@@ -3618,11 +3620,13 @@ class habitsVc: NSViewController {
                     return;
                 }
             }
-            
-            self.removeSubViews()
+           
+            if !(leftMenuVcObj?.boxHabits.isSelected ?? false) && !(leftMenuVcObj?.boxCustomRoutine.isSelected ?? false) && !(leftMenuVcObj?.boxMicroBreaks.isSelected ?? false){
+                self.removeSubViews() // so that if firstviewcontroller or thirdvc or any view lodded we will remvoe them but if user already inside habitsvc then don't touch
+            }
             
             showBreakWarningWindow()
-            currentState = ._ACTIVITY_
+            currentState = ._MICRO_BREAK_
             currentAction = ._START_// added on 24/7/25 v 1.26.394
             shouldShowPomodoroAfterBreak = false
         }
@@ -3753,7 +3757,7 @@ class habitsVc: NSViewController {
             }
 
             self.removeSubViews()
-            currentState = ._ACTIVITY_
+            currentState = ._MICRO_BREAK_
             
         
             self.performBreakActivities()
@@ -3791,7 +3795,7 @@ class habitsVc: NSViewController {
         
         reFillBreakActivitiesArray()
         self.removeSubViews()
-        currentState = ._ACTIVITY_
+        currentState = ._MICRO_BREAK_
         
         if currentAction == ._BRAIN_DUMP_{
             addLog(text: "ok Clicked From Custom Message:- performBreakActivities break activity ")

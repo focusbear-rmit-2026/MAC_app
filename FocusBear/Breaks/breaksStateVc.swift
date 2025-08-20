@@ -128,6 +128,17 @@ class breaksStateVc: NSViewController {
                 if let breakStateVcInfo = configjson.value(forKey: "breakStateVcInfo") as? NSDictionary{
                     lblEnableBreaks.stringValue = breakStateVcInfo.value(forKey: "shutoffTimeText") as? String ?? lblEnableBreaks.stringValue
                 }
+            }else if currentState == ._MICRO_BREAK_{ // if by any chance user is on this view (for example break warning is visible beacuse during warning state is micro break)
+                lblNextBreakTime.stringValue = "It's time for a break. Waiting for a good moment"
+                if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
+                    lblNextBreakTime.stringValue = menuInfo.value(forKey: "waitingBreakTimeText") as? String ?? lblNextBreakTime.stringValue
+                }
+                
+                
+                lblEnableBreaks.isHidden = true
+                btnEnableMicroBreaks.isHidden = true
+                lblNextBreakTime.isHidden = false
+                btnStartMicroBreaks.isHidden = false
             }
         }
     }

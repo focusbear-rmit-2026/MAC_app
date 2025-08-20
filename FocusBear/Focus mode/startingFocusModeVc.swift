@@ -406,7 +406,7 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate { // not in use
         }
     }
     @objc func performTimerCount() {
-        if !appdelegate!.isSystemSleep && !appdelegate!.isScreenSaverStart && currentState != ._ACTIVITY_{
+        if !appdelegate!.isSystemSleep && !appdelegate!.isScreenSaverStart && currentState != ._MICRO_BREAK_{
             currentTimer += 1
         }
         setProgres()
@@ -534,7 +534,6 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate { // not in use
         lastSkipMicroBreakState = isSkipBreakActivityDuringFocus
         
         allApiObject.capturePosthog(event: "start-focus-mode-manually", metadata: [:])
-        appdelegate!.setIntentionInBrainDumpWindow()
         
 
         

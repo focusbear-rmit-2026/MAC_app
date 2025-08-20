@@ -283,7 +283,7 @@ class firstViewController: NSViewController {
                     getvisualizeInstructionsObject().loadView()
                 }
                 getvisualizeInstructionsObject().tryPreLoadMotivationalMessage()
-            }else if currentState == ._ACTIVITY_{
+            }else if currentState == ._MICRO_BREAK_{
                 boxSegmentControlOfficeMode.isHidden = false
                 btnSelectHabitsToDo.isHidden = true
                 btnEditHabits.isHidden = true
@@ -684,7 +684,7 @@ class firstViewController: NSViewController {
                 visualizeInstructionsVcObj?.startTimer()
                 allApiObject.capturePosthog(event: "visualize-evening-routine", metadata: ["routine-type":"evening_routine"])
                 UserDefaults.standard.set(Date(), forKey: kUserdefaultsBeginEveningHabitClickedDate)
-            }else if currentState == ._ACTIVITY_{
+            }else if currentState == ._MICRO_BREAK_{
                 thirdVcObj?.btnMainClicked(self)
             }else if currentState == ._CUSTOM_ROUTINE_{
                 if tblViewHabits.selectedRow != 0 && tblViewHabits.selectedRow != -1{
@@ -804,7 +804,7 @@ extension firstViewController:NSTableViewDelegate, NSTableViewDataSource {
             return  arrFilteredMorningHabits.count
         }else if currentState == ._EVENING_HABIT_{
             return  arrFilteredEveningHabits.count
-        }else if currentState == ._ACTIVITY_{
+        }else if currentState == ._MICRO_BREAK_{
             return  arrFinalBreakActivities.count
         }else if currentState == ._CUSTOM_ROUTINE_{
             return  arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits.count
@@ -835,7 +835,7 @@ extension firstViewController:NSTableViewDelegate, NSTableViewDataSource {
                     cell.boxBg.fillColor = NSColor.systemBlue
                     cell.lblTitle.textColor = NSColor.white
                 }
-            }else if currentState == ._ACTIVITY_{
+            }else if currentState == ._MICRO_BREAK_{
                 cell.boxBg.borderColor = NSColor.clear
                 cell.lblTitle.tag = -1
                 var activityName = ""

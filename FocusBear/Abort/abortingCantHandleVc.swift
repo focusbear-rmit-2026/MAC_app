@@ -165,7 +165,7 @@ class abortingCantHandleVc: NSViewController, NSTextViewDelegate {
             }else if lastCurrentState == ._EVENING_HABIT_{
                 logType = "evening routine abort"
                 activity = "evening routine"
-            }else if lastCurrentState == ._ACTIVITY_{
+            }else if lastCurrentState == ._MICRO_BREAK_{
                 logType = "break abort"
                 activity = "break"
             }
@@ -189,7 +189,7 @@ class abortingCantHandleVc: NSViewController, NSTextViewDelegate {
                 logType = "evening routine abort"
                 activity = "evening routine"
                 allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"evening_routine", "deactivate-reason":"Deactivate routine + breaks", "detailed-reason":textViewFeedback.string])
-            }else if lastCurrentState == ._ACTIVITY_{
+            }else if lastCurrentState == ._MICRO_BREAK_{
                 logType = "break abort"
                 activity = "break"
                 allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"break_activity", "deactivate-reason":"Deactivate routine + breaks", "detailed-reason":textViewFeedback.string])

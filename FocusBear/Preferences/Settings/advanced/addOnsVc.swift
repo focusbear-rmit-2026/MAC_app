@@ -141,7 +141,7 @@ class addOnsVc: NSViewController {
         }
     }
     
-    func highlightAdvanceAanalyticsItemBox(){
+    func highlightTimeTrackerEnableItemBox(){
         if let object = timeTrackerEnabledItemVcObj?.bgBox{
             object.wantsLayer = true
             object.layer?.cornerRadius = 3

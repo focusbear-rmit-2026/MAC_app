@@ -16,7 +16,7 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
     @IBOutlet weak var lblEnableAdvancedAnalyticsSetting: NSTextField!
     @IBOutlet weak var lblTitleDeepWorkTimeToday: NSTextField!
     @IBOutlet weak var boxFocusAlignmentScore: NSBox!
-    @IBOutlet weak var btnEnableAdvancedAnalytics: underLineButton!
+    @IBOutlet weak var btnEnableAdvancedAnalytics: underLineButton! // not in use
     @IBOutlet weak var lblDeepWorkTimeToday: NSTextField!
     @IBOutlet weak var tabView: NSTabView!
     @IBOutlet weak var btnContinueHabit: Button!
@@ -160,13 +160,15 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
             lblEnableAdvancedAnalyticsSetting.isHidden = true
         }else{
             arrAllAppsTabsData.removeAll()
-            if isHabitGoing{
-                btnEnableAdvancedAnalytics.isHidden = true
-                lblEnableAdvancedAnalyticsSetting.isHidden = false
-            }else{
-                btnEnableAdvancedAnalytics.isHidden = false
-                lblEnableAdvancedAnalyticsSetting.isHidden = true
-            }
+//            if isHabitGoing{
+//                btnEnableAdvancedAnalytics.isHidden = true
+//                lblEnableAdvancedAnalyticsSetting.isHidden = false
+//            }else{
+//                btnEnableAdvancedAnalytics.isHbtnEnableAdvancedAnalytics.isHidden = false
+//                lblEnableAdvancedAnalyticsSetting.isHidden = true
+//            }
+            btnEnableAdvancedAnalytics.isHidden = true
+            lblEnableAdvancedAnalyticsSetting.isHidden = false
         }
         
         tblView.reloadData()
@@ -537,8 +539,7 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
         if currentFocusModeIndex == -1{
             return;
         }
-    
-        
+
         let calendar = Calendar.current
        
         endFocusModeTime = calendar.date(byAdding: .minute, value: minutesToExtend, to: Date())
@@ -577,12 +578,20 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
         
         appdelegate?.setFocusModeTimerForExtendAfterComplete(hour: nil, minute: minutesToExtend)
         closePomodoroWindowIOfVisible()
-        appdelegate!.setIntentionInBrainDumpWindow()
-        showTaskPlayerWindow(totalDuration: focusModeMinutesToPerform, intention: whatToAchieveInFocusBlock, automatically:false) // todo bina setting check kre show kr skte hai kyta or ni karte h show to kya hoga
-        leftMenuVcObj?.focusModeOrFocusModeHabitStarted()
-        leftMenuVcObj?.resetFocusModeTitle()
+        if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled{
+            showTaskPlayerWindow(totalDuration: focusModeMinutesToPerform, intention: whatToAchieveInFocusBlock, automatically:false)
+            leftMenuVcObj?.focusModeOrFocusModeHabitStarted()
+            leftMenuVcObj?.resetFocusModeTitle()
+        }else{
+            leftMenuVcObj?.focusModeOrFocusModeHabitStarted()
+            leftMenuVcObj?.resetFocusModeTitle()
+            mainWindowControllerObj?.window?.close()
+        }
+        
+        
+        
     }
-    
+    //self.view.window?.close()
     @IBAction func popUpBtnSelectMinutesClicked(_ sender: Any) {
     }
     
@@ -594,7 +603,7 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
         self.dismiss(self)
     }
     
-    @IBAction func btnEnableAdvancedAnalyticsClicked(_ sender: Any){
+    @IBAction func btnEnableAdvancedAnalyticsClicked(_ sender: Any){ // not in use
         if SettingsManagerObject.isGeekModeEnabled{
             
             addLog(text: "[user-action] btnEnableAdvancedAnalyticsClicked")

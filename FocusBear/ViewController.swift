@@ -118,7 +118,7 @@ class ViewController: NSViewController {
             setframe()
         }else{
             if self.view.window != nil{
-                if isBreakActivityShowingWhileMeeting && currentState == ._ACTIVITY_{
+                if isBreakActivityShowingWhileMeeting && currentState == ._MICRO_BREAK_{
                     let screenList = NSScreen.screens
                     for screen in screenList {
                         let screenHeight = screen.frame.height
@@ -167,7 +167,7 @@ class ViewController: NSViewController {
     @objc func setframe() {
         let screenList = NSScreen.screens
         for screen in screenList {
-            self.view.window?.setFrame(NSMakeRect(0, 0, NSWidth(screen.frame), NSHeight(screen.frame)), display: true) // todo uncomment this line
+            self.view.window?.setFrame(NSMakeRect(0, 0, NSWidth(screen.frame), NSHeight(screen.frame)), display: true) //  uncomment this line
 //            self.view.window?.setFrame(NSMakeRect(100, 100, NSWidth(screen.frame) - 200, NSHeight(screen.frame) - 200) , display: true)//  comment this // todo
             
             break;
@@ -531,7 +531,7 @@ class ViewController: NSViewController {
     //    }
     //    func stopActivityCountDownTimer(){
     //        if currentAction == ._INPROGRESS_{
-    //            if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._ACTIVITY_ || currentState == ._BREATHING_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_{
+    //            if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._BREATHING_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_{
     //                if timerViewcontrollerObj != nil {
     //                    if timerViewcontrollerObj?.timer != nil {
     //                        timerViewcontrollerObj?.timer?.invalidate()
@@ -703,7 +703,7 @@ class ViewController: NSViewController {
     //                    }
     //                }
     //            }
-    //        }else if currentState == ._ACTIVITY_{
+    //        }else if currentState == ._MICRO_BREAK_{
     //            var lastSavedPostponeTime = Date()
     //            activityPostponeCount = 0
     //            var lastSavedPostponeCount = activityPostponeCount
@@ -833,12 +833,12 @@ class ViewController: NSViewController {
     //    func abortCancel(){
     //        addLog(text: "abortCancel")
     //
-    //        if lastCurrentState == ._ACTIVITY_{
+    //        if lastCurrentState == ._MICRO_BREAK_{
     //            self.showCloseButtons()
     //            removeSubViews()
     //            switch lastCurrentAction {
     //            case ._START_:
-    //                currentState = ._ACTIVITY_
+    //                currentState = ._MICRO_BREAK_
     //                currentAction = ._START_
     //                thirdVcObj?.startBreakActivity()
     //                firstViewControllerObj?.isFirstTime = false
@@ -852,7 +852,7 @@ class ViewController: NSViewController {
     //                containerView.addConstraints(subView: timerViewcontrollerObj!.view)
     //
     //                timerViewcontrollerObj?.resumeTimerActivity(durationInSeconds: timerViewcontrollerObj?.currentDurationInSeconds ?? 0, name: timerViewcontrollerObj?.currentActicityTitle ?? "", url: timerViewcontrollerObj?.currentUrl, useTimer:timerViewcontrollerObj?.currentActivityUseTimer ?? true)
-    //                currentState = ._ACTIVITY_
+    //                currentState = ._MICRO_BREAK_
     //                currentAction = ._INPROGRESS_
     //                break
     //            case ._END_:
@@ -860,13 +860,13 @@ class ViewController: NSViewController {
     //                removeSubViews()
     //                containerView.addSubview(thirdVcObj!.view)
     //                containerView.addConstraints(subView: thirdVcObj!.view)
-    //                currentState = ._ACTIVITY_
+    //                currentState = ._MICRO_BREAK_
     //                currentAction = ._END_
     //                break
     //            case ._VISUALIZE_:
     //                break
     //            case ._BRAIN_DUMP_:
-    //                currentState = ._ACTIVITY_
+    //                currentState = ._MICRO_BREAK_
     //                currentAction = ._BRAIN_DUMP_
     //
     //                thirdVcObj?.startBreakActivity()
@@ -2183,7 +2183,7 @@ class ViewController: NSViewController {
     //        containerView.addSubview(thirdVcObj!.view)
     //        containerView.addConstraints(subView: thirdVcObj!.view)
     //        thirdVcObj!.activityFinished(index: currentActivityIndex)
-    //        currentState = ._ACTIVITY_
+    //        currentState = ._MICRO_BREAK_
     //        currentAction = ._END_
     //    }
     //
@@ -2381,7 +2381,7 @@ class ViewController: NSViewController {
     //            timerViewcontrollerObj?.startTimerActivity(durationInSeconds: currentActivity.durationSeconds, name: currentActivity.name!, urlsArray: currentActivity.urlsArray, logQuantityQuestion: currentActivity.logQuantityQuestions, currentActivity: currentActivity, currentChoice: nil, logQuantity: currentActivity.logQuantity, logQuantityType: currentActivity.logQuantityType)
     //        }
     //
-    //        currentState = ._ACTIVITY_
+    //        currentState = ._MICRO_BREAK_
     //        currentAction = ._INPROGRESS_
     //    }
     //
@@ -2403,7 +2403,7 @@ class ViewController: NSViewController {
     //            timerViewcontrollerObj?.startTimerActivity(durationInSeconds: currentActivity.durationSeconds, name: currentActivity.name!, urlsArray: currentActivity.urlsArray, logQuantityQuestion: currentActivity.logQuantityQuestions, currentActivity: currentActivity, currentChoice: nil, logQuantity: currentActivity.logQuantity, logQuantityType: currentActivity.logQuantityType)
     //        }
     //
-    //        currentState = ._ACTIVITY_
+    //        currentState = ._MICRO_BREAK_
     //        currentAction = ._INPROGRESS_
     //    }
     //
@@ -3112,7 +3112,7 @@ class ViewController: NSViewController {
     //            if appdelegate!.isActivityTimerPaused{// if habit is postponed and system goes to sleep then  it stops break activity timer and while system is in sleep mode at that time postpone  time finish so it need to change isActivityTimerPaused to false otherwise when system wakes up it will again set activity timer
     //                appdelegate!.isActivityTimerPaused = false
     //            }
-    //        }else if currentState == ._ACTIVITY_ && isBreakActivityExecuteFromPostponeMorningHabit{
+    //        }else if currentState == ._MICRO_BREAK_ && isBreakActivityExecuteFromPostponeMorningHabit{
     //            stopActivityCountDownTimer()
     //            if currentActivityPlaying != nil{
     //                if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
@@ -3159,7 +3159,7 @@ class ViewController: NSViewController {
     //            if appdelegate!.isActivityTimerPaused{// if habit is postponed and system goes to sleep then  it stops break activity timer and while system is in sleep mode at that time postpone  time finish so it need to change isActivityTimerPaused to false otherwise when system wakes up it will again set activity timer
     //                appdelegate!.isActivityTimerPaused = false
     //            }
-    //        }else if currentState == ._ACTIVITY_ && isBreakActivityExecuteFromPostponeEveningHabit{
+    //        }else if currentState == ._MICRO_BREAK_ && isBreakActivityExecuteFromPostponeEveningHabit{
     //            stopActivityCountDownTimer()
     //            if currentActivityPlaying != nil{
     //                if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
@@ -3671,7 +3671,7 @@ class ViewController: NSViewController {
     //            self.removeSubViews()
     //
     //            showBreakWarningWindow()
-    //            currentState = ._ACTIVITY_
+    //            currentState = ._MICRO_BREAK_
     //            currentAction = ._START_// added on 24/7/25 v 1.26.394
     //            shouldShowPomodoroAfterBreak = false
     //        }
@@ -3802,7 +3802,7 @@ class ViewController: NSViewController {
     //            }
     //
     //            self.removeSubViews()
-    //            currentState = ._ACTIVITY_
+    //            currentState = ._MICRO_BREAK_
     //
     //
     //            self.performBreakActivities()
@@ -3840,7 +3840,7 @@ class ViewController: NSViewController {
     //
     //        reFillBreakActivitiesArray()
     //        self.removeSubViews()
-    //        currentState = ._ACTIVITY_
+    //        currentState = ._MICRO_BREAK_
     //
     //        if currentAction == ._BRAIN_DUMP_{
     //            addLog(text: "ok Clicked From Custom Message:- performBreakActivities break activity ")

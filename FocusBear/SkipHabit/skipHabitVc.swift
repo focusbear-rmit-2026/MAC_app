@@ -121,7 +121,7 @@ class skipHabitVc: NSViewController {
             getHabitsVcObject().showThirdVc()
         }
         
-        if currentState == ._ACTIVITY_{
+        if currentState == ._MICRO_BREAK_{
             thirdVcObj?.activitySkipped()
         }else if currentState == ._MORNING_HABIT_{
             thirdVcObj?.morningHabitSkipped()

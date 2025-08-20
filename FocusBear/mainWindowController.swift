@@ -46,7 +46,7 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
         window!.backingType = .buffered
         self.window?.minSize = NSSize(width: 900, height: 500)// unused
         self.window?.title = ""
-        self.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.numberOfWindowLevelKeys))) // todo numberOfWindowLevelKeys kro
+        self.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.numberOfWindowLevelKeys))) //  numberOfWindowLevelKeys kro
         
         if isMainWindowLoaded{
             mainViewControllerObj!.boxTopButtons.isHidden = false
@@ -95,7 +95,7 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
     
     func windowShouldClose(_ sender: NSWindow) -> Bool {
         addLog(text: "windowShouldClose delegate called")
-        if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._ACTIVITY_ || currentState == ._FOCUS_SUMMARY_{
+        if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._FOCUS_SUMMARY_{
             if isAnyAllowedFocusModeActivityRunning && !(leftMenuVcObj?.boxHabits.isSelected ?? false){ // allowed focus mode habit will be running in background
                 if currentAction == ._INPROGRESS_{
                     if timerViewcontrollerObj?.isActivityPaused ?? false{
@@ -106,14 +106,33 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
                 }
                 return true
             }
+            if currentState == ._MICRO_BREAK_ {// if break warning is visble then close window is allowed to user. after end of warning window will be visible again
+                if breakWarningWcObj != nil{
+                    if breakWarningWcObj?.window?.isVisible ?? false{
+                        return true
+                    }
+                }
+            }
             
             let views = getHabitsVcObject().view.subviews
             if views.count != 1{// it means sub views are added so nothing will happen, user will need to close subviews first(logquantity view, password box)
-                if !(leftMenuVcObj?.boxHabits.isSelected ?? false){
-                    leftMenuVcObj?.showHabitsView()
+                if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._FOCUS_SUMMARY_ || currentState == ._SHUTOFFMAC_{
+                    if !(leftMenuVcObj?.boxHabits.isSelected ?? false){
+                        leftMenuVcObj?.showHabitsView()
+                    }
+                }else if currentState == ._CUSTOM_ROUTINE_{
+                    if !(leftMenuVcObj?.boxCustomRoutine.isSelected ?? false){
+                        leftMenuVcObj?.showCustomRoutineView()
+                    }
+                }else if currentState == ._MICRO_BREAK_{
+                    if !(leftMenuVcObj?.boxMicroBreaks.isSelected ?? false){
+                        leftMenuVcObj?.showBreaksView()
+                    }
                 }
+                
                 return false
             }
+            
             
             if habitsVcObj?.btnAbort.isHidden ?? false{
                 return false

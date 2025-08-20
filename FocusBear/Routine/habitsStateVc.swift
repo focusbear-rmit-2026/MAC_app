@@ -40,10 +40,10 @@ class habitsStateVc: NSViewController {
                 lblTitle.stringValue = eveningRoutinePostponedText
             }
             
-        }else if currentState == ._ACTIVITY_ && isBreakActivityExecuteFromPostponeMorningHabit{
+        }else if currentState == ._MICRO_BREAK_ && isBreakActivityExecuteFromPostponeMorningHabit{
             btnResumeHabits.isHidden = false
             lblTitle.stringValue = morningRoutinePostponedText
-        }else if currentState == ._ACTIVITY_ && isBreakActivityExecuteFromPostponeEveningHabit{
+        }else if currentState == ._MICRO_BREAK_ && isBreakActivityExecuteFromPostponeEveningHabit{
             btnResumeHabits.isHidden = false
             lblTitle.stringValue = eveningRoutinePostponedText
         }else if currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeMorningHabit{

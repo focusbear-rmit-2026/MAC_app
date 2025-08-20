@@ -803,6 +803,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                             
                         }
                     }
+            }else{
+                renewCredentialsProcessing = false
             }
         }
     }
@@ -1690,7 +1692,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 return;
             }
         }
-        if  currentState == ._ACTIVITY_ || currentState == ._BREATHING_ ||  currentState == ._ABORT_{// no need to check morning or evening habit beacuse now morning evening habits can show breaks
+        if  currentState == ._MICRO_BREAK_ || currentState == ._BREATHING_ ||  currentState == ._ABORT_{// no need to check morning or evening habit beacuse now morning evening habits can show breaks
             addLog(text: "return - no need to pause:- \(currentState)")
             return
         }
@@ -1715,7 +1717,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             return;
         }
         
-        if  currentState == ._ACTIVITY_ || currentState == ._BREATHING_ ||  currentState == ._ABORT_{
+        if  currentState == ._MICRO_BREAK_ || currentState == ._BREATHING_ ||  currentState == ._ABORT_{
             addLog(text: "return - no need to resume:- \(currentState)")
             return
         }
@@ -2857,7 +2859,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                             if mainWindowControllerObj?.window?.isVisible ?? false{
                                 if (getHabitsVcObject().habitsView.subviews.contains(thirdVcObj!.view)){
                                     if (getHabitsVcObject().view.subviews.contains((logQuantityVcObj!.view))){
-                                        if currentState == ._ACTIVITY_ || currentState == ._BREATHING_ || currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_{
+                                        if currentState == ._MICRO_BREAK_ || currentState == ._BREATHING_ || currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_{
                                             if logQuantityVcObj!.tabClickedSelectNextTextField(){
                                                 return nil
                                             }
@@ -2867,7 +2869,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                             }
                         }else if event.keyCode == 36 || event.keyCode == 76{
                             if mainWindowControllerObj?.window?.isVisible ?? false{
-                                if currentState == ._ACTIVITY_ || currentState == ._BREATHING_ || currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_{
+                                if currentState == ._MICRO_BREAK_ || currentState == ._BREATHING_ || currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_{
                                     if askPostponeVcObj != nil{
                                         if (getHabitsVcObject().view.subviews.contains((getAskPostponeVcObject().view))){
                                             return event
@@ -2932,7 +2934,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                                     }
                                                 }
                                             }
-                                        }else if currentState == ._ACTIVITY_{
+                                        }else if currentState == ._MICRO_BREAK_{
                                             if (getHabitsVcObject().habitsView.subviews.contains(firstViewControllerObj!.view)){
                                                 if !firstViewControllerObj!.isTimerGoingOn{
                                                     if firstViewControllerObj!.btnStartFirstHabit.isEnabled{
@@ -2950,7 +2952,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                                 }
                                             }
                                         }
-                                    }else if currentAction == ._BRAIN_DUMP_ && breaksBrainDumpVcObj != nil && currentState == ._ACTIVITY_{
+                                    }else if currentAction == ._BRAIN_DUMP_ && breaksBrainDumpVcObj != nil && currentState == ._MICRO_BREAK_{
                                         if (getHabitsVcObject().habitsView.subviews.contains(breaksBrainDumpVcObj!.view)){
                                             if breaksBrainDumpVcObj!.btnMain.isEnabled{
                                                 breaksBrainDumpVcObj?.btnMainClicked(self)
@@ -3022,7 +3024,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         } else
         {
             addLog(text: "popover is not visible")
-            if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_{
+            if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._CUSTOM_ROUTINE_{
                 if currentAction == ._INPROGRESS_{
                     if currentHabitPlaying != nil{
                         if !currentHabitPlaying!.useTimer{
@@ -3041,7 +3043,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             }
             showPopover(sender: sender)
             
-            if (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._ACTIVITY_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_) && !(mainWindowControllerObj?.window?.isVisible ?? false){
+            if (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_) && !(mainWindowControllerObj?.window?.isVisible ?? false){
                 addLog(text: "try to show samll window")
                 if currentHabitPlaying != nil || currentActivityPlaying != nil{// it means background activity
                     if smallCountDownWcObj != nil{
@@ -3261,7 +3263,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             addLog(text: "Focus Mode Is On/Paused: Pomodoro Mode View cancelled")
             return
         }
-        if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._ACTIVITY_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._FOCUS_SUMMARY_ || currentState == ._CUSTOM_ROUTINE_{
+        if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._FOCUS_SUMMARY_ || currentState == ._CUSTOM_ROUTINE_{
             addLog(text: "Activity is running: Pomodoro Mode View cancelled")
             return;
         }
@@ -3471,7 +3473,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         if !(mainViewControllerObj?.isViewLoaded ?? false){
             mainViewControllerObj?.loadView()
         }
-
+        if arrAllCustomRoutine.count == 0{
+            leftMenuVcObj?.boxCustomRoutine.isHidden = true
+        }else{
+            leftMenuVcObj?.boxCustomRoutine.isHidden = false
+        }
+        
         loadMenuWindow()
         isFirstRun = false
         
@@ -3877,7 +3884,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         timerMeetingStartAlert?.invalidate()
         timerMeetingStartAlert = nil
         addLog(text: "showMeetingSuggestionAlert")
-        //        if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._ACTIVITY_ || currentState == ._BREATHING_ || currentState == ._SHUTOFFMAC_ || currentState == .
+        //        if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._BREATHING_ || currentState == ._SHUTOFFMAC_ || currentState == .
         
         // Luisa App broken bug fix 28/6/22
         if mainWindowControllerObj?.window?.isVisible ?? false{
@@ -3885,7 +3892,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             return
         }
         
-        if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._ACTIVITY_ || currentState == ._SHUTOFFMAC_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_{
+        if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._SHUTOFFMAC_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_{
             addLog(text: "Meeting suggestion aborted due to activity.")
             return
         }
@@ -4150,7 +4157,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     focusModeSecondsToPerform = 300
                     isFocusModeStartedFromPomodoroMode = false
                     whatToAchieveInFocusBlock = ""
-                    setIntentionInBrainDumpWindow()
+               
                     focusModeStartted(isStartedByPusher: false)
                     allApiObject.capturePosthog(event: "start-meetings-focus-mode", metadata: [:])
                     UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
@@ -4195,11 +4202,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             }
         }
         
-        if currentState == ._ACTIVITY_ || currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_ || currentState == ._POSTPON_MORNING_HABIT_ || !isAppEnable || currentState == ._ABORT_ || currentState == ._SPECIAL_ACTIVITY_{
+        if currentState == ._MICRO_BREAK_ || currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_ || currentState == ._POSTPON_MORNING_HABIT_ || !isAppEnable || currentState == ._ABORT_ || currentState == ._SPECIAL_ACTIVITY_{
             addLog(text: "func:- returnFromSystemSleepCheckAppStateAgain   return:- currentState is activity/postpone/abort/specialActivity")
             
             
-            if currentState == ._ACTIVITY_{// if user was doing break before system sleep and after sysytem wakes up if idle time is more then 5 minutes then stop activity and set timer again
+            if currentState == ._MICRO_BREAK_{// if user was doing break before system sleep and after sysytem wakes up if idle time is more then 5 minutes then stop activity and set timer again
                 if macGoesInSleepTime != nil{
                     let passedSeconds = Calendar.current.dateComponents([.second], from: macGoesInSleepTime!, to: Date()).second ?? 0
                     if passedSeconds > 300{
@@ -4525,7 +4532,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                     if isHardCorePomodoroModeOn{
                                         return;
                                     }
-                                    if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._ACTIVITY_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_{
+                                    if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_{
                                         addLog(text: "Activity is running: Can not start a focus mode")
                                         let alert = NSAlert()
                                         alert.setSharingType()
@@ -4646,7 +4653,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                             }
                             
                             if currentAction == ._INPROGRESS_{
-                                if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._ACTIVITY_ || currentState == ._BREATHING_ || currentState == ._CUSTOM_ROUTINE_{
+                                if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._BREATHING_ || currentState == ._CUSTOM_ROUTINE_{
                                     if timerViewcontrollerObj != nil {
                                         if timerViewcontrollerObj?.timer != nil {
                                             timerViewcontrollerObj?.timer?.invalidate()
@@ -4688,7 +4695,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                 getHabitsVcObject().postponeEveningHabitFor(minutes: 0, secondsToPostpone: durationInSeconds, showAskFocusModeView:false, showAskIntention:false)
                             }else if currentState == ._CUSTOM_ROUTINE_{
                                 getHabitsVcObject().postponeCustomRoutineFor(minutes: 0, secondsToPostpone: durationInSeconds, showAskFocusModeView:false, showAskIntention:false, fromRoutineWarning:false)
-                            }else if currentState == ._ACTIVITY_{
+                            }else if currentState == ._MICRO_BREAK_{
                                 if breakWarningWcObj != nil{
                                     if breakWarningWcObj?.window?.isVisible ?? false{
                                         breakWarningVcObj?.timer?.invalidate()
@@ -4764,7 +4771,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 }
                 if eventEndTime != nil{
                     addLog(text: "event-about-to-start:- got end time")
-                    if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._ACTIVITY_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_{
+                    if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_{
                         
                         lastCurrentState = currentState
                         lastCurrentAction = currentAction
@@ -4793,7 +4800,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                             if currentHabitPlaying != nil{
                                 closePupUpBlockIfVisible()
                             }
-                        }else if currentState == ._ACTIVITY_{
+                        }else if currentState == ._MICRO_BREAK_{
                             
                             
                             var lastSavedPostponeTime = Date()
@@ -4922,7 +4929,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 return;
             }
             
-            if (currentState == ._ACTIVITY_ || currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_) && currentAction == ._INPROGRESS_ && (currentActivityPlaying != nil || currentHabitPlaying != nil){
+            if (currentState == ._MICRO_BREAK_ || currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_) && currentAction == ._INPROGRESS_ && (currentActivityPlaying != nil || currentHabitPlaying != nil){
                 
             }else if isAppEnable && SettingsManagerObject.blockingSchedule == ._UNTIL_I_FINISH_WORK_{
                 if !isFocusModeOn(){
@@ -5109,7 +5116,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             //  ////////////////
             
             
-            if !self.isSystemSleep && !self.isScreenSaverStart && currentState != ._ACTIVITY_{//same condition in pomodoro view
+            if !self.isSystemSleep && !self.isScreenSaverStart && currentState != ._MICRO_BREAK_{//same condition in pomodoro view
                 unfocusedTime += 5
             }
             
@@ -5150,11 +5157,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         return;
                     }
                     
-                    if currentState == ._ACTIVITY_ && isBreakActivityExecuteFromEveningHabit{// new work  24/12/22
+                    if currentState == ._MICRO_BREAK_ && isBreakActivityExecuteFromEveningHabit{// new work  24/12/22
                         return;
                     }
                     
-                    if currentState == ._ACTIVITY_ && isBreakActivityExecuteFromPostponeEveningHabit{
+                    if currentState == ._MICRO_BREAK_ && isBreakActivityExecuteFromPostponeEveningHabit{
                         return;
                     }
                     isBreakActivityExecuteFromMorningHabit = false
@@ -5267,10 +5274,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     detectNatualBreaks()
                     //
                     
-                    if currentState == ._ACTIVITY_ && isBreakActivityExecuteFromMorningHabit{// new work  24/12/22
+                    if currentState == ._MICRO_BREAK_ && isBreakActivityExecuteFromMorningHabit{// new work  24/12/22
                         return;
                     }
-                    if currentState == ._ACTIVITY_ && isBreakActivityExecuteFromPostponeMorningHabit{ //  new work - micro break start after postponing morning habit
+                    if currentState == ._MICRO_BREAK_ && isBreakActivityExecuteFromPostponeMorningHabit{ //  new work - micro break start after postponing morning habit
                         return;
                     }
                     isBreakActivityExecuteFromEveningHabit = false
@@ -6404,7 +6411,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         addLog(text: "call abort all process.")
         //        if (mainWindowControllerObj?.window!.isVisible)! {// jaruri ni h ki window dikh hi rhi ho
         if currentAction == ._INPROGRESS_{
-            if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._ACTIVITY_ || currentState == ._BREATHING_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_{
+            if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._BREATHING_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_{
                 if timerViewcontrollerObj != nil {
                     if timerViewcontrollerObj?.timer != nil {
                         timerViewcontrollerObj?.timer?.invalidate()
@@ -6925,7 +6932,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         }
         
         if !isFocusBearMenuVisible(){// window is visible but alpha is 0
-            if (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._ACTIVITY_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_) && !(mainWindowControllerObj?.window?.isVisible ?? false){
+            if (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_) && !(mainWindowControllerObj?.window?.isVisible ?? false){
                 if currentHabitPlaying != nil || currentActivityPlaying != nil{// it means background activity
                     if smallCountDownWcObj != nil{
                         if smallCountDownWcObj?.window?.alphaValue == 0{
@@ -6983,7 +6990,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             }
         }
 
-        if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_{
+        if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._CUSTOM_ROUTINE_{
             if mainWindowControllerObj?.window?.isVisible ?? false{
                 if !SettingsManagerObject.isFullScreenEnabled{
                     setTimerMoveWindowToCenter()
@@ -7019,7 +7026,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     
     
     @objc func moveWindowToCenter() {
-        if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_{
+        if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._CUSTOM_ROUTINE_{
             if !SettingsManagerObject.isFullScreenEnabled{
                 if mainWindowControllerObj?.window?.isVisible ?? false{
                     mainWindowControllerObj?.window?.center()
@@ -7633,22 +7640,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     }
     
     
-    func setIntentionInBrainDumpWindow(){
-        if brainDumpWcObj != nil{
-            if brainDumpWcObj?.window != nil{
-               // brainDumpVcObj?.textViewIntention.isEditable = true
-                if brainDumpWcObj!.window!.isVisible{
-                    ///brainDumpVcObj?.textViewIntention.string = whatToAchieveInFocusBlock
-                    if whatToAchieveInFocusBlock.isEmpty{
-                        if !focusModeTaskStringIsEmpty(){
-                            //brainDumpVcObj?.textViewIntention.string = getFocusModeTaskString()
-                            //brainDumpVcObj?.textViewIntention.isEditable = false
-                        }
-                    }
-                }
-            }
-        }
-    }
+
     
     
     func focusModeStarttedResetAllData(){
@@ -7883,7 +7875,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             }
         }
         
-        if (currentState == ._ACTIVITY_ || currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_) && currentAction == ._INPROGRESS_ && (currentActivityPlaying != nil || currentHabitPlaying != nil){
+        if (currentState == ._MICRO_BREAK_ || currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_) && currentAction == ._INPROGRESS_ && (currentActivityPlaying != nil || currentHabitPlaying != nil){
             if let runningApp = NSWorkspace.shared.frontmostApplication{
                 if let appUrl = runningApp.bundleURL{
                     let name = appUrl.deletingPathExtension().lastPathComponent
@@ -8295,7 +8287,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         }
                     }
                 }
-                if currentState == ._ACTIVITY_{
+                if currentState == ._MICRO_BREAK_{
                     if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsDoNotBlockUrlsDuringSuperPomodoroBreaks) as? Bool{
                         if state{
                             return;
@@ -9276,7 +9268,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     }
                     if isAnyAllowedFocusModeActivityRunning == true{
                         var blockType = ""
-                        if currentState == ._ACTIVITY_{
+                        if currentState == ._MICRO_BREAK_{
                             blockType = "break-activity"
                         }else if currentState == ._MORNING_HABIT_{
                             blockType = "morning-habit"
@@ -10097,7 +10089,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 }
             }
             
-            if currentState == ._ACTIVITY_ || isSpecialActivityGoing{
+            if currentState == ._MICRO_BREAK_ || isSpecialActivityGoing{
                 showPopUpCheckListWindow(title: currentActivityPlaying?.name ?? "", list: currentActivityPlaying?.checkList ?? [])
                 if let apps = currentActivityPlaying?.allowApps{
                     if apps.count != 0{
@@ -10156,7 +10148,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     }
     
     @objc func checkActivityAllowedApp(){
-        if (currentState == ._ACTIVITY_ || currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_) && currentAction == ._INPROGRESS_ && (currentActivityPlaying != nil || currentHabitPlaying != nil){
+        if (currentState == ._MICRO_BREAK_ || currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_) && currentAction == ._INPROGRESS_ && (currentActivityPlaying != nil || currentHabitPlaying != nil){
             if let runningApp = NSWorkspace.shared.frontmostApplication{
                 if let appUrl = runningApp.bundleURL{
                     let name = appUrl.deletingPathExtension().lastPathComponent.lowercased()//runningApp.localizedName?.lowercased(){
@@ -11264,7 +11256,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                             
                             
                             var blockType = ""
-                            if currentState == ._ACTIVITY_{
+                            if currentState == ._MICRO_BREAK_{
                                 if currentActivityPlaying != nil{
                                     activityAllowUrls = currentActivityPlaying!.allowUrls
                                 }
@@ -11868,7 +11860,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         addLog(text: "HardCore Pomodoro Mode is On:- return")
                         return;
                     }else{
-                        if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._ACTIVITY_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_{
+                        if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_{
                             
                             addLog(text: "Activity is running:- return")
                             return;
@@ -11901,7 +11893,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 
 
 
-// todo micro break aatr hi thodi der tak chalu ni krte to khud hi micro break window hide ho jata hai use natural break mano. latka kr dikhao nataul break ko micro break per hi 
+ 
 
 
 // break warning aate hi morning state vala view hide ho gya w ki main view controller ka remove all sub view call hua kahi se
@@ -11935,56 +11927,57 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 // adhi habit chalu kro background vali 
 
 
-
-// showBlankWindowInSecondaryMonitor
-
-// full screen se postpone per crash and  small window after full wiindow is so much full window
-
 // sare window object marne pdenge uski vjh se problem hogi
 // mail vala kaam
 
 
-// task player task not mathing check        mathing hai
+// task player task not mathing check        matching hai
 
-// habits or break k time sab disable kro
-// motivation ko tools mai lejao
-
-
-//or bugs mili thi solve hui 
-
- 
+// habits or break k time sab disable kro    done
+// motivation ko tools mai lejao       done
 
 
+//or bugs mili thi solve hui  done
 
-// search preferencesTabViewController  and remove 
-
-
-// minimise button not working   done
 // this is disbaled becasue you are doing your morning routine  // tooltip done
 // task oplayer focus start hone k baad chota hi ayga  done
 // custom routin ki warning or break ki warning aate hi habit tab auto selct ho tha h  sahi kro done
 
-// extand morning evenin g postpoine if custom routine is running after postpome morning evening
-// todo custom rouinmes ni h to tab hide hoga
-//
-// floating top bar
-// onboarding
 
-
-
-
-
-
-// custom routine waringi se postpone krne per window band ho rahi hai
+// minimise button not working   done
+// custom routine waringi se postpone krne per window band ho rahi hai done
 //focus end window duri view ya close per puranma close event fire hoga
 
 // what if mormning routine aa jay or focus completed view pda ho.. abhi tak solve ni hua ye issue . lekin user khud click kre band kare to solve hi
 
 
 
-
-
 // according to sir :- full screen habit per help bhi fulll screen per ayga.    done
 // dashboard hatoa.  done
-// todo focus habit khatm hote hi task player vaps disbale karna hai   done 
-// todo check custom routine with warning 
+//  focus habit khatm hote hi task player vaps disbale karna hai   done
+
+
+//  check custom routine with warning  done
+
+
+//  break warning aaate hi break per tha phle se hi to remove  ho ya view superview se    done
+// or vaps break par aaya to full scrren ho gya jabki warning pedi hui thi                      done
+
+
+//break warning postpone krne per window bhi band ho rhi haio   done
+// hover bug                                                    done
+
+// check setting save honrhi h kya put local device setting kha h 
+// extand morning evenin g postpoine if custom routine is running after postpome morning evening  done
+// custom rouinmes ni h to tab hide hoga   done
+
+
+//
+
+//  micro break aatr hi thodi der tak chalu ni krte to khud hi micro break window hide ho jata hai use natural break mano. latka kr dikhao nataul break ko micro break per hi
+// if taks task player enabled then after start focvs mode window will close itself 
+// enable advance analytics   done 
+
+// floating top bar
+// onboarding
+// upfrade now button on left side and checlk nag again 

@@ -32,7 +32,7 @@ class whySkipHabitVc: NSViewController {
     }
     
     override func viewWillAppear() {
-        if currentState == ._ACTIVITY_{
+        if currentState == ._MICRO_BREAK_{
             btnSkipCompletely.isHidden = false
         }else{
             btnSkipCompletely.isHidden = true
@@ -57,7 +57,7 @@ class whySkipHabitVc: NSViewController {
             getHabitsVcObject().showThirdVc()
         }
         
-        if currentState == ._ACTIVITY_{
+        if currentState == ._MICRO_BREAK_{
             thirdVcObj?.activitySkippedAndDoneAlready()
         }else if currentState == ._MORNING_HABIT_{
             thirdVcObj?.morningHabitSkippedAndDoneAlready()
@@ -72,7 +72,7 @@ class whySkipHabitVc: NSViewController {
         addLog(text: "[user-action] whySkipHabitVc:- button AlreadyDidItClicked")
         self.view.removeFromSuperview()
         
-        if currentState == ._ACTIVITY_{
+        if currentState == ._MICRO_BREAK_{
             skipActivityAlreadyDid()
         }else{
             if shouldAskPassword(){
@@ -115,7 +115,7 @@ class whySkipHabitVc: NSViewController {
         addLog(text: "[user-action] whySkipHabitVc:- button CanNotDoItClicked")
         self.view.removeFromSuperview()
         
-        if currentState == ._ACTIVITY_{
+        if currentState == ._MICRO_BREAK_{
             getHabitsVcObject().showSkipHabitView()
         }else{
             if shouldAskPassword(){

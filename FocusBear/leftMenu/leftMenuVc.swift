@@ -132,7 +132,11 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
                 self.boxFocusSession.isHidden = false
                 self.boxHabits.isHidden = false
                 //self.boxDashboard.isHidden = false
-                self.boxCustomRoutine.isHidden = false
+                if arrAllCustomRoutine.count == 0{
+                    self.boxCustomRoutine.isHidden = true
+                }else{
+                    self.boxCustomRoutine.isHidden = false
+                }
             }else{
                 self.boxMicroBreaks.isHidden = true
                 self.boxFocusSession.isHidden = true
@@ -234,9 +238,9 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
             mainViewControllerObj?.showHabitsView()
             if currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_MORNING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_{
                 habitsVcObj?.showHabitState()
-            }else if currentState == ._ACTIVITY_ && isBreakActivityExecuteFromPostponeMorningHabit{
+            }else if currentState == ._MICRO_BREAK_ && isBreakActivityExecuteFromPostponeMorningHabit{
                 habitsVcObj?.showHabitState()
-            }else if currentState == ._ACTIVITY_ && isBreakActivityExecuteFromPostponeEveningHabit{
+            }else if currentState == ._MICRO_BREAK_ && isBreakActivityExecuteFromPostponeEveningHabit{
                 habitsVcObj?.showHabitState()
             }else if currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeMorningHabit{
                 habitsVcObj?.showHabitState()
@@ -274,8 +278,20 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
             }
             //enableAllItems()
         case boxMicroBreaks:
-            if currentState == ._ACTIVITY_{
-                mainViewControllerObj?.showHabitsView()
+            if currentState == ._MICRO_BREAK_{
+                var isBreakWarningVisible = false
+                if breakWarningWcObj != nil{
+                    if breakWarningWcObj?.window?.isVisible ?? false{
+                        isBreakWarningVisible = true// will not happened now beacuse changing selection will start break if warning is visible
+                    }
+                }
+                
+                if isBreakWarningVisible{
+                    mainViewControllerObj?.showHabitsView()
+                    habitsVcObj?.showBreakState()
+                }else{
+                    mainViewControllerObj?.showHabitsView()
+                }
             }else{
                 mainViewControllerObj?.showHabitsView()
                 if let date = UserDefaults.standard.object(forKey: kUserdefaultsShutdownAborted) as? Date{ 
@@ -353,8 +369,19 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         case boxFocusSession:
             mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
         case boxMicroBreaks:
-            if currentState == ._ACTIVITY_{
-                mainViewControllerObj?.checkIsFullScreenNeeded()
+            if currentState == ._MICRO_BREAK_{
+                var isBreakWarningVisible = false
+                if breakWarningWcObj != nil{
+                    if breakWarningWcObj?.window?.isVisible ?? false{
+                        isBreakWarningVisible = true // will not happened now beacuse changing selection will start break if warning is visible
+                    }
+                }
+                
+                if isBreakWarningVisible{
+                    mainViewControllerObj?.showSmallScreen()
+                }else{
+                    mainViewControllerObj?.checkIsFullScreenNeeded()
+                }
             }else{
                 mainViewControllerObj?.showSmallScreen()
             }
@@ -397,7 +424,7 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         case boxMotivation:
             mainViewControllerObj?.showSmallScreen()
         case boxHelpAndSupport:
-            if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._FOCUS_SUMMARY_ || currentState == ._SHUTOFFMAC_ || currentState == ._CUSTOM_ROUTINE_ || currentState == ._ACTIVITY_{
+            if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._FOCUS_SUMMARY_ || currentState == ._SHUTOFFMAC_ || currentState == ._CUSTOM_ROUTINE_ || currentState == ._MICRO_BREAK_{
                 
                 if !isAnyAllowedFocusModeActivityRunning && checkIsFullScreenEnabled(){
                     mainViewControllerObj?.checkIsFullScreenNeeded()
@@ -419,15 +446,27 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
             areSettingsEdited = false
             return false
         }
-        if boxFocusSession.isSelected && focusCompletedVcObj != nil{
-            if focusCompletedVcObj!.isViewLoaded{
-                if mainViewControllerObj!.containerView.subviews.contains(focusCompletedVcObj!.view){
-                    addLog(text: "focus mode completed Window auto close")
-                    focusCompletedVcObj!.takeBreakClicked(isCloseWindowClicked: true)
-                    return true
+        
+        if box == boxMicroBreaks{
+            if currentState == ._MICRO_BREAK_{ // if currentstate is microbreak and break warning is visible thne if user click on this tab. start break immediately
+                if breakWarningWcObj != nil{
+                    if breakWarningWcObj?.window?.isVisible ?? false{
+                        breakWarningVcObj?.btnStartMicroBreakClicked(self)
+                        return false
+                    }
                 }
             }
         }
+        
+//        if boxFocusSession.isSelected && focusCompletedVcObj != nil{
+//            if focusCompletedVcObj!.isViewLoaded{
+//                if mainViewControllerObj!.containerView.subviews.contains(focusCompletedVcObj!.view){
+//                    addLog(text: "focus mode completed Window auto close")
+//                    focusCompletedVcObj!.takeBreakClicked(isCloseWindowClicked: true)
+//                    return true
+//                }
+//            }
+//        }
         
         if mainViewControllerObj?.isEnterPasswordForPreferencesViewVisible() ?? false{
             return false

@@ -18,7 +18,7 @@ class preferencesWindowController: NSWindowController, NSWindowDelegate  {
     let escKeyCode:uint16 = 53
     override func windowDidLoad() {
         super.windowDidLoad()
-        self.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow))) // todo 
+        self.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow))) 
         
         if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
             if state{

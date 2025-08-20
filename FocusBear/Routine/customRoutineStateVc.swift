@@ -41,6 +41,12 @@ class customRoutineStateVc: NSViewController {
             }
         }
         
+        if customRoutinesMenu.items.count == 0{
+            btnStartCustomRoutine.isHidden = true
+        }else{
+            btnStartCustomRoutine.isHidden = false
+        }
+        
         if !isShutOffTimeGoing(){
             let (nextRoutine, nextRoutineName) = getNextRoutineInfo()
             

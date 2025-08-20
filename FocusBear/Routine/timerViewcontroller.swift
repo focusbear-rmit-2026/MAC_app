@@ -244,7 +244,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             if isVideoLoding{
                 isVideoLoding = false
             }
-            if currentState == ._ACTIVITY_ && appdelegate!.isUserOnMeeting{//Mute video volume during in meeting breaks #796
+            if currentState == ._MICRO_BREAK_ && appdelegate!.isUserOnMeeting{//Mute video volume during in meeting breaks #796
                 if #available(macOS 12.0, *) {
                     self.webView.pauseAllMediaPlayback()
                 } else {
@@ -1643,7 +1643,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                         getHabitsVcObject().morningHabitOver()
                     }else if currentState == ._EVENING_HABIT_ {
                         getHabitsVcObject().eveningHabitOver()
-                    }else if currentState == ._ACTIVITY_{
+                    }else if currentState == ._MICRO_BREAK_{
                         getHabitsVcObject().activityOver()
                     }else if currentState == ._SPECIAL_ACTIVITY_{
                         getHabitsVcObject().specialActivityOver()
@@ -1799,7 +1799,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                 if let dic = configjson.value(forKey: "welcomeInfo") as? NSDictionary{
                     btnSkipHabit.title = dic.value(forKey: "buttonSkipText") as? String ?? btnSkipHabit.title
                 }
-            }else if currentState == ._ACTIVITY_{
+            }else if currentState == ._MICRO_BREAK_{
                 btnSkipHabit.isHidden = false
                 menuItemChooseHabit.isHidden = true
                 menuItemChooseVideo.isHidden = true
@@ -1846,7 +1846,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                     getHabitsVcObject().morningHabitOver()
                 }else if currentState == ._EVENING_HABIT_ {
                     getHabitsVcObject().eveningHabitOver()
-                }else if currentState == ._ACTIVITY_{
+                }else if currentState == ._MICRO_BREAK_{
                     getHabitsVcObject().activityOver()
                 }else if currentState == ._SPECIAL_ACTIVITY_{
                     getHabitsVcObject().specialActivityOver()
@@ -1972,7 +1972,7 @@ extension timerViewcontroller:NSTextViewDelegate{
         if textView == self.textViewNotes{
             if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_{
                 UserDefaults.standard.set(textViewNotes.string, forKey: kUserdefaultsLastHabitSavedNotes)
-            }else if currentState == ._ACTIVITY_{
+            }else if currentState == ._MICRO_BREAK_{
                 UserDefaults.standard.set(textViewNotes.string, forKey: kUserdefaultsLastActivitySavedNotes)
             }else if currentState == ._SPECIAL_ACTIVITY_{
                 UserDefaults.standard.set(textViewNotes.string, forKey: kUserdefaultsLastSpecaialActivitySavedNotes)

@@ -93,6 +93,7 @@ class focusCompletedVc: NSViewController {
     var breakMinute: Int = 5
     var arrAllAppsTabsData = [[String:Any]]()
     var allowExtend = false
+    var isFinishFocusModeApiCalled = false
     
     var indexText = "<CURRENTINDEX> of <TOTALCOUNT>"
     var arrTourMessages:[[String:Any]] = [["title": "Intention", "description": "See what intentions have you set when starting the focus block.", "buttonTitle": "Next"],
@@ -256,9 +257,55 @@ class focusCompletedVc: NSViewController {
         
 //        if isFocusModeRunning == false hoo  to khud karo api call yha . bas baki sb jagah se hatao  // todo  this will be best 
         
+        if !isFocusModeRunning{
+            if !isFinishFocusModeApiCalled{
+                whatToAchieveInFocusBlock = ""
+
+                let timestamp = getStringFromDate(date: startFocusModeTime ?? Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
+                
+                let achievements = textFieldAchieve.stringValue.components(separatedBy: .newlines).joined()
+                let distractionsEncountered = textFieldDistractions.stringValue.components(separatedBy: .newlines).joined()
+                
+                for i in 0..<arrFocusType.count{// clear datat after focus completed
+                    arrFocusType[i]["lastStartedDate"] = nil
+                    arrFocusType[i]["lastScheduledEndDate"] = nil
+                }
+                UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+                
+                updateAllFocusModeTags()
+                addEntryInStatsCsv(logType: "focus block", activity: currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: achievements, distractionsEncountered: distractionsEncountered, abortReason: "", feedback: "", tags:getTagsString())
+
+                isFinishFocusModeApiCalled = true
+                allApiObject.finishFocusMode(id: currentFocusModeId, achievements: textFieldAchieve.stringValue, distractions: textFieldDistractions.stringValue, finish_time: self.finish_time ?? Date(), rating:currentRatingCount, completionHandler: {newDic in
+                    DispatchQueue.main.async {
+                        if self.isShutOffTime{
+                            currentState = ._NOTHING_
+                            appdelegate?.shutOffMac()
+                        }
+                    }
+                })
+                appdelegate?.focusModeFinishedResetAllData()
+                nextFocusSessionIntention = textFieldNextSessionIntention.stringValue
+                completedPomodoroCountInHardcorePomodoro += 1
+                totalMinutesRemainingForHardcodePomodoro = 0
+                isHardCorePomodoroModeOn = false
+                
+                if isFocusModeStartedFromPomodoroMode && isSkipBreakActivityDuringPomodoro{
+                    if getHabitsVcObject().breakTimer != nil{
+                        getHabitsVcObject().setActivityTimer()
+                    }
+                }else if isHardCorePomodoroModeOn && isSkipBreakActivityDuringPomodoro{
+                    if getHabitsVcObject().breakTimer != nil{
+                        getHabitsVcObject().setActivityTimer()
+                    }
+                }
+            }
+            
+        }
     }
     
     override func viewWillAppear() {
+        isFinishFocusModeApiCalled = false
         loader.isHidden = true
         if isHardCorePomodoroModeOn{
             btnStartAnotherFocusBlock.isHidden = true
@@ -375,7 +422,7 @@ class focusCompletedVc: NSViewController {
             obj.loadView()
             obj.reloadData(isAddingTask: false, allowExtend: allowExtend, isHabitGoing: false)
             if self.view.window != nil{
-                self.presentAsSheet(obj) /// todo yha crash hui app abort vie per tha mai
+                self.presentAsSheet(obj)
             }
             allApiObject.capturePosthog(event: "mark-tasks-on-focus-session-end-screen-shown", metadata: [:])
         }
@@ -587,7 +634,7 @@ class focusCompletedVc: NSViewController {
             
         }
         
-        if currentState != ._MORNING_HABIT_ && currentState != ._ACTIVITY_ && currentState != ._EVENING_HABIT_ && currentState != ._CUSTOM_ROUTINE_ && (isHabitAlreadyShowed || currentState == ._POSTPON_MORNING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_ || currentState == ._POSTPON_EVENING_HABIT_) && arrAllbreakActivities.count != 0 && (!isShutOffTimeGoing() || currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_) && !isHardCorePomodoroModeOn{
+        if currentState != ._MORNING_HABIT_ && currentState != ._MICRO_BREAK_ && currentState != ._EVENING_HABIT_ && currentState != ._CUSTOM_ROUTINE_ && (isHabitAlreadyShowed || currentState == ._POSTPON_MORNING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_ || currentState == ._POSTPON_EVENING_HABIT_) && arrAllbreakActivities.count != 0 && (!isShutOffTimeGoing() || currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_) && !isHardCorePomodoroModeOn{
             btnDoBreakActivity.isHidden = false
         }else{
             btnDoBreakActivity.isHidden = true
@@ -649,8 +696,8 @@ class focusCompletedVc: NSViewController {
     
     @IBAction func btnStartAnotherFocusBlockClicked(_ sender: Any) {
         addLog(text: "[user-action] focusCompletedVc - btnStartAnotherFocusBlockClicked")//
+        isFinishFocusModeApiCalled = true
         whatToAchieveInFocusBlock = ""
-        appdelegate!.setIntentionInBrainDumpWindow()
         let timestamp = getStringFromDate(date: startFocusModeTime ?? Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
         
         let achievements = textFieldAchieve.stringValue.components(separatedBy: .newlines).joined()
@@ -667,6 +714,7 @@ class focusCompletedVc: NSViewController {
 
         addEntryInStatsCsv(logType: "focus block", activity: currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: achievements, distractionsEncountered: distractionsEncountered, abortReason: "", feedback: "", tags:getTagsString())
 
+        
         allApiObject.finishFocusMode(id: currentFocusModeId, achievements: textFieldAchieve.stringValue, distractions: textFieldDistractions.stringValue, finish_time: self.finish_time ?? Date(), rating:currentRatingCount, completionHandler: {newDic in
             DispatchQueue.main.async {
                 
@@ -691,18 +739,13 @@ class focusCompletedVc: NSViewController {
     }
     
     func workDone(){
+        isFinishFocusModeApiCalled = true// perfect place this will ensure that api will called 100%
         whatToAchieveInFocusBlock = ""
         if !isShutOffTime{
             if currentState != ._MORNING_HABIT_ && currentState != ._CUSTOM_ROUTINE_{
-                appdelegate!.setIntentionInBrainDumpWindow()
                 if let notes = UserDefaults.standard.object(forKey: kUserdefaultsFocusModeNotes) as? String {
                     if !notes.isEmpty{
                         showBrainDumpWindow()
-                    }
-                }
-                if brainDumpWcObj != nil{
-                    if brainDumpWcObj!.window?.isVisible ?? false{
-                        brainDumpVcObj?.breakStarted()
                     }
                 }
             }
@@ -733,6 +776,7 @@ class focusCompletedVc: NSViewController {
         updateAllFocusModeTags()
         addEntryInStatsCsv(logType: "focus block", activity: currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: achievements, distractionsEncountered: distractionsEncountered, abortReason: "", feedback: "", tags:getTagsString())
 
+        
         allApiObject.finishFocusMode(id: currentFocusModeId, achievements: textFieldAchieve.stringValue, distractions: textFieldDistractions.stringValue, finish_time: self.finish_time ?? Date(), rating:currentRatingCount, completionHandler: {newDic in
             DispatchQueue.main.async {
                 if self.isShutOffTime{
@@ -808,6 +852,7 @@ class focusCompletedVc: NSViewController {
     }
     
     func closeWindowForcefully(){
+        isFinishFocusModeApiCalled = true
         whatToAchieveInFocusBlock = ""
         if brainDumpWcObj != nil{
             if brainDumpWcObj!.window?.isVisible ?? false{
@@ -872,7 +917,7 @@ class focusCompletedVc: NSViewController {
         
         workDone()
         
-        if currentState != ._MORNING_HABIT_ && currentState != ._ACTIVITY_ && currentState != ._EVENING_HABIT_ && currentState != ._CUSTOM_ROUTINE_ && (isHabitAlreadyShowed || currentState == ._POSTPON_MORNING_HABIT_) && arrAllbreakActivities.count != 0 && !isShutOffTimeGoing() && !isHardCorePomodoroModeOn{
+        if currentState != ._MORNING_HABIT_ && currentState != ._MICRO_BREAK_ && currentState != ._EVENING_HABIT_ && currentState != ._CUSTOM_ROUTINE_ && (isHabitAlreadyShowed || currentState == ._POSTPON_MORNING_HABIT_) && arrAllbreakActivities.count != 0 && !isShutOffTimeGoing() && !isHardCorePomodoroModeOn{
             if !isCloseWindowClicked{
                 appdelegate?.setTimerForPomodoroMode(delay: TimeInterval(60*self.breakMinute))
                 if isAppEnable{
@@ -1042,7 +1087,14 @@ class focusCompletedVc: NSViewController {
     @IBAction func btnEnableAdvancedAnalyticsClicked(_ sender: Any){
         if SettingsManagerObject.isGeekModeEnabled{
             
-            addLog(text: "[user-action] btnEnableAdvancedAnalyticsClicked")// todo keise kre ye ask sir 
+            addLog(text: "[user-action] btnEnableAdvancedAnalyticsClicked")
+            leftMenuVcObj?.showSettingsView()
+            if settingsSideBarVcObj != nil{
+                settingsSideBarVcObj!.tblView.selectRowIndexes(IndexSet(arrayLiteral: settingsSideBarVcObj!.advancedSettingsIndex), byExtendingSelection: false)
+                settingsContainerVcObj?.showPrivacyView()
+                getPrivacyVcObject().highlightAdvanceAanalyticsItemBox()
+            }
+            
 //            if preferencesWindowControllerObj?.window?.isVisible ?? false{
 //                if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
 //                    tabview.selectedTabViewItemIndex = preferencesSettingsIndex
@@ -1155,8 +1207,17 @@ class focusCompletedVc: NSViewController {
     
     @IBAction func btnActivateTimeTrackerClicked(_ sender: Any) {
         addLog(text: "[user-action] btnActivateTimeTrackerClicked")
+
         
-        // todo keise kare ye  ask sir
+        leftMenuVcObj?.showSettingsView()
+        allApiObject.capturePosthog(event: "open-preferences", metadata: [:])
+        
+        if settingsSideBarVcObj != nil{
+            settingsSideBarVcObj!.tblView.selectRowIndexes(IndexSet(arrayLiteral: settingsSideBarVcObj!.advancedSettingsIndex), byExtendingSelection: false)
+            settingsContainerVcObj?.showAddOnsView()
+            getAddOnsVcObject().highlightTimeTrackerEnableItemBox()
+        }
+        
 //        if preferencesWindowControllerObj?.window?.isVisible ?? false{
 //            if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
 //                tabview.selectedTabViewItemIndex = preferencesSettingsIndex

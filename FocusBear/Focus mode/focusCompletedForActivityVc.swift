@@ -443,7 +443,6 @@ class focusCompletedForActivityVc: NSViewController {
         })
 
         whatToAchieveInFocusBlock = ""
-        appdelegate!.setIntentionInBrainDumpWindow()
 
         
         

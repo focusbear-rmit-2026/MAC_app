@@ -1429,7 +1429,6 @@ func resumeFocusModeAfterAppStartted(diffSeconds: Int, focusMode: [String : Any]
     isSkipBreakActivityDuringPomodoro = true
     focusModeTaskString = focusMode["lastTaskUsed"] as? String ?? ""
     whatToAchieveInFocusBlock = focusMode["lastIntentionUsed"] as? String ?? ""
-    appdelegate!.setIntentionInBrainDumpWindow()
     appdelegate!.focusModeStarttedResetAllData()
     appdelegate?.resumeFocusMode(index: index)
     endFocusModeTime = finishFocusMoedTime

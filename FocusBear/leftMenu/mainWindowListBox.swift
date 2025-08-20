@@ -46,6 +46,7 @@ class mainWindowListBox: NSBox {
             }
             if isSelected {// needed beacuse some time box is already selected and we need to show window again setting it selected again so that screen frame will updated
                 delegate?.selectableListBoxSelectionDidChange(self)
+                hovered = false
             }
         }
     }

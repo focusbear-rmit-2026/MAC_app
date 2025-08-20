@@ -512,7 +512,6 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
             print(message.body)
             let intention = message.body as? String ?? ""
             updateFocusModeIntention(intention: intention)
-            appdelegate!.setIntentionInBrainDumpWindow()
         }else if message.name == "send_brain_dump_content"{
             print(message.body) 
             let brainDump = message.body as? String ?? ""

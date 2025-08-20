@@ -408,7 +408,7 @@ enum ACTION:Int{
 var applastSettingsGetTime:Date?
 
 enum CURRENTSTATE:Int{
-    case _NOTHING_ = 111, _MORNING_HABIT_, _EVENING_HABIT_, _ACTIVITY_, _SHUTOFFMAC_, _BREATHING_, _ABORT_, _FOCUS_SUMMARY_, _POSTPON_MORNING_HABIT_, _POSTPON_EVENING_HABIT_, _POSTPON_FOCUS_SUMMARY_, _POSTPON_ONBOARDING_HABIT_, _ASK_APP_WORK_, _SPECIAL_ACTIVITY_, _CUSTOM_ROUTINE_//_POSTPON_BREAK_ACTIVITY_
+    case _NOTHING_ = 111, _MORNING_HABIT_, _EVENING_HABIT_, _MICRO_BREAK_, _SHUTOFFMAC_, _BREATHING_, _ABORT_, _FOCUS_SUMMARY_, _POSTPON_MORNING_HABIT_, _POSTPON_EVENING_HABIT_, _POSTPON_FOCUS_SUMMARY_, _POSTPON_ONBOARDING_HABIT_, _ASK_APP_WORK_, _SPECIAL_ACTIVITY_, _CUSTOM_ROUTINE_//_POSTPON_BREAK_ACTIVITY_
 }//_POSTPON_BREAK_ACTIVITY_ iski need nahi h qki normal timer utne hi time baad ka laga dete hai
 
 var lastCurrentStateSaved:CURRENTSTATE = ._NOTHING_
@@ -1333,7 +1333,7 @@ let daysFreeTrial  = 31
 //            
 //            // //prvent user from start a focus mode while runnning a activity
 //            
-//            if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._ACTIVITY_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_{
+//            if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_{
 //                addLog(text: "Activity is running: Can not start a focus mode")
 //                let alert = NSAlert()
 //                alert.setSharingType()
@@ -1545,7 +1545,7 @@ func resumeIfAnyFocusMusicStoppedAutomatically(){
 
 
 func checkIsFullScreenEnabled()-> Bool{
-    if currentState == ._ACTIVITY_{
+    if currentState == ._MICRO_BREAK_{
         if isBreakActivityShowingWhileMeeting{
             return false
         }

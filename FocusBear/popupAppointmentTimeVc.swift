@@ -43,7 +43,7 @@ class popupAppointmentTimeVc: NSViewController {
     var shouldAskPassword = false
     func resetView(title:String, endTime:Date){
         self.endTime = endTime
-        if currentState == ._ACTIVITY_ || currentState == ._SPECIAL_ACTIVITY_{
+        if currentState == ._MICRO_BREAK_ || currentState == ._SPECIAL_ACTIVITY_{
             btnBackToHabits.isHidden = true
         }else{
             btnBackToHabits.isHidden = false
@@ -101,7 +101,7 @@ class popupAppointmentTimeVc: NSViewController {
             getHabitsVcObject().postponeMorningHabitFor(minutes: 0, secondsToPostpone: duration + 160, showAskFocusModeView:false, showAskIntention:false)
         }else if lastCurrentState == ._EVENING_HABIT_{
             getHabitsVcObject().postponeEveningHabitFor(minutes: 0, secondsToPostpone: duration + 160, showAskFocusModeView:false, showAskIntention:false)
-        }else if lastCurrentState == ._ACTIVITY_{
+        }else if lastCurrentState == ._MICRO_BREAK_{
             getHabitsVcObject().postponeBreakActivitiesFor(minutes: 0, secondsToPostpone: duration + 160, isFromBreakWarningWindow: false)
         }else if lastCurrentState == ._CUSTOM_ROUTINE_{
             getHabitsVcObject().postponeCustomRoutineFor(minutes: 0, secondsToPostpone: duration + 160, showAskFocusModeView: false, showAskIntention: false, fromRoutineWarning:false)

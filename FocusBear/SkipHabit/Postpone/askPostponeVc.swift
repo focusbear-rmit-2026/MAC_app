@@ -44,7 +44,7 @@ class askPostponeVc: NSViewController {
         
     }
     @IBAction func btnCancelPostponeClicked(_ sender: Any) {
-        if currentState == ._ACTIVITY_{
+        if currentState == ._MICRO_BREAK_{
             self.timer?.invalidate()
             self.timer = nil
             lblTimer.isHidden = true
@@ -100,7 +100,7 @@ class askPostponeVc: NSViewController {
             
             
             
-        }else if currentState == ._ACTIVITY_{
+        }else if currentState == ._MICRO_BREAK_{
        
             /*
             popUpButtonSelectMinutes.isHidden = true
@@ -332,7 +332,7 @@ class askPostponeVc: NSViewController {
                 getHabitsVcObject().postponeEveningHabitFor(minutes: postponeTime, secondsToPostpone: nil, showAskFocusModeView: true, showAskIntention: true)
             }
             
-        }else if currentState == ._ACTIVITY_{
+        }else if currentState == ._MICRO_BREAK_{
             if isShowingAskOfficeModeView{
                 addLog(text: "Ask postpone view - Show Activity postpone View")
                 showActivityostponeView()
@@ -378,7 +378,7 @@ class askPostponeVc: NSViewController {
         
     }
     @IBAction func btnAbortBreakClicked(_ sender: Any) {
-        if currentState == ._ACTIVITY_{
+        if currentState == ._MICRO_BREAK_{
             if isShowingAskOfficeModeView{//enableOffcieMode
                 addLog(text: "[user-action] Ask postpone view - Enabled Office Mode clicked")
                 let filterArr = arrAllbreakActivities.filter { $0.isOfficeFriendly == true}
@@ -494,7 +494,7 @@ class askPostponeVc: NSViewController {
     @IBAction func btnOkIWillDoBreakClicked(_ sender: Any) {
         addLog(text: "[user-action] Ask postpone view - button Ok I Will Do activity Clicked")
 
-        if currentState == ._ACTIVITY_{
+        if currentState == ._MICRO_BREAK_{
             self.timer?.invalidate()
             self.timer = nil
             lblTimer.isHidden = true
@@ -552,7 +552,7 @@ class askPostponeVc: NSViewController {
 
                 self.lblTimer.isHidden = true
                 
-                if currentState == ._ACTIVITY_{
+                if currentState == ._MICRO_BREAK_{
                     if SettingsManagerObject.isOfficeModeEnabled{
                         self.showActivityostponeView()
                     }else{
