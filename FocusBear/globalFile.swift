@@ -4934,7 +4934,7 @@ func enableMenuPopover(){
     appdelegate?.popover.animates = false
     appdelegate?.popover.behavior = .transient
     allApiObject.capturePosthog(event: "settings-changed-menu-as-popover-enabled", metadata: [:])
-    appdelegate?.showPopover(sender: nil)
+    appdelegate?.showPopover()
     menuViewControllerObj?.view.window?.makeKey()
 //    appdelegate?.popover.becomeFirstResponder()
 }
@@ -4967,7 +4967,7 @@ func disableMenuPopover(){
     
     
     allApiObject.capturePosthog(event: "settings-changed-menu-as-popover-disabled", metadata: [:])
-    appdelegate?.showPopover(sender: nil)
+    appdelegate?.showPopover()
 }
 
 
@@ -5260,3 +5260,5 @@ class BlinkingNSBox: NSBox {// 22/7/25  v 1.26.393
 }
 
 var isExplainingPermissionsWindowShowingFromPomodoro = false
+
+var isCustomBarIsInFocus = false// when app is not in focus and user try to click close icon of custom bar . then applicationDidBecomeActive func called instead of close action because app become active and because app become active it shows menu (from inside applicationDidBecomeActive func) instead of  closing custom bar. to prevent this we are using isCustomBarIsInFocus variable. so that if user's cursor is on custom bar then menu will not show.

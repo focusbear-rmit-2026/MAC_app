@@ -421,11 +421,11 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate { // not in use
             currentFocusModeStrictness = ._SUPER_STRICT_
         }
         UserDefaults.standard.set(sliderStrictness.integerValue, forKey: kUserdefaultsLastFocusModeStrictness)
-        if getEndFocusModeWindowControllerObj().window!.isVisible{
-            let timestamp = getStringFromDate(date: startFocusModeTime ?? Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
-            addEntryInStatsCsv(logType: "focus block", activity: focusCompletedVcObj!.currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: "\(focusModeMinutesToPerform) of \(focusCompletedVcObj!.currentFocusModeName)", distractionsEncountered: "", abortReason: "", feedback: "", tags:"")
-            getEndFocusModeWindowControllerObj().window?.close()
-        }
+//        if getEndFocusModeWindowControllerObj().window!.isVisible{
+//            let timestamp = getStringFromDate(date: startFocusModeTime ?? Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
+//            addEntryInStatsCsv(logType: "focus block", activity: focusCompletedVcObj!.currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: "\(focusModeMinutesToPerform) of \(focusCompletedVcObj!.currentFocusModeName)", distractionsEncountered: "", abortReason: "", feedback: "", tags:"")
+//            getEndFocusModeWindowControllerObj().window?.close()
+//        }
         
         if checkBoxSkipMicrobreaks.state == .on{
             isSkipBreakActivityDuringFocus = true

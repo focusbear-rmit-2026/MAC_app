@@ -119,10 +119,10 @@ class focusModeStateVc: NSViewController {
     }
     
     @IBAction func btnStopFocusModeClicked(_ sender: Any) {
-        if (endingFocusWindowControllerObj?.window?.isVisible ?? false) && endingFocusWindowControllerObj?.contentViewController == focusCompletedVcObj{
-            addLog(text: "focus mode clicked:- focus mode completed Window is visible:- return")
-            return;
-        }
+//        if (endingFocusWindowControllerObj?.window?.isVisible ?? false) && endingFocusWindowControllerObj?.contentViewController == focusCompletedVcObj{
+//            addLog(text: "focus mode clicked:- focus mode completed Window is visible:- return")
+//            return;
+//        }
 
         var isFocusModeOn = false
         
@@ -187,7 +187,7 @@ class focusModeStateVc: NSViewController {
             if isHardCorePomodoroModeOn{
                 if shouldAskPassword(){
                     if SettingsManagerObject.isPasswordRequireInStopPomodoro{
-                        menuViewControllerObj?.showPasswordWindow() // todo need to test this 
+                        menuViewControllerObj?.showPasswordWindow()
                         addLog(text: "Showing enter password view from hardcodre pomodoro stop from menu")
                     }else{
                         isHardCorePomodoroModeOn = false

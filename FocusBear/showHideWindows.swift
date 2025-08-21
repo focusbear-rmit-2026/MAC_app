@@ -1043,11 +1043,19 @@ func showExplainingPermissionsWindow(showingFromPomodoro:Bool){
 func showUpgradeNowWindow(){
     addLog(text:"showUpgradeNowWindow")
     allApiObject.capturePosthog(event: "upgrade-nag-shown", metadata: [:])
-    if upgradeNowWcObj == nil{
+    if upgradeNowVcObj != nil{
+        if upgradeNowVcObj?.isViewVisible ?? false{
+            upgradeNowVcObj?.closeView()
+        }
+    }
+    upgradeNowVcObj = nil// always cath a fresh object
+    if mainWindowControllerObj?.window?.isVisible ?? false{
+        mainViewControllerObj?.presentAsSheet(getUpgradeNowVcObject())
+    }else{
         getUpgradeNowWindowObject().contentViewController = getUpgradeNowVcObject()
         upgradeNowWcObj?.window?.title = appName
+        upgradeNowWcObj!.showWindow(nil)
     }
-    upgradeNowWcObj!.showWindow(nil)
 }
 //-------------------------------------------------//
 
@@ -1528,4 +1536,40 @@ func resetWin(_ win: NSWindow) -> NSWindow {
     win.animationBehavior = .none
     win.backgroundColor = NSColor.clear
     return win
+}
+
+
+
+func isFocusCompletedViewVisibled()->Bool{
+    if mainWindowControllerObj?.window?.isVisible ?? false{
+        if (leftMenuVcObj?.boxFocusSession.isSelected ?? false) && focusCompletedVcObj != nil{
+            if focusCompletedVcObj!.isViewLoaded{
+                if mainViewControllerObj!.containerView.subviews.contains(focusCompletedVcObj!.view){
+                    return true
+                }
+            }
+        }
+    }
+    return false
+}
+
+
+func showFloatingTopBarWindow(windowTopMidPoint:NSPoint){
+    if floatingTopBarWcObj == nil{
+        getFloatingTopBarWObject().contentViewController = getFloatingTopBarVObject()
+        getFloatingTopBarWObject().window?.level = .statusBar
+        getFloatingTopBarWObject().window?.isMovable = true
+        getFloatingTopBarWObject().window?.isMovableByWindowBackground = true
+        getFloatingTopBarWObject().window?.isOpaque = false
+        getFloatingTopBarWObject().window?.hasShadow = false
+        getFloatingTopBarWObject().window?.backgroundColor = NSColor.clear
+        getFloatingTopBarWObject().window?.styleMask = .borderless
+    }
+    getFloatingTopBarWObject().showWindow(nil)
+    var origin = NSPoint(x: windowTopMidPoint.x - (getFloatingTopBarVObject().view.frame.width / 2), y: windowTopMidPoint.y - getFloatingTopBarVObject().view.frame.height + getFloatingTopBarVObject().topSpaceMainBox.constant)
+    if SettingsManagerObject.isMenuPopoverEnabled{
+        origin = NSPoint(x: windowTopMidPoint.x - (getFloatingTopBarVObject().view.frame.width / 2), y: windowTopMidPoint.y - getFloatingTopBarVObject().view.frame.height - 13 + getFloatingTopBarVObject().topSpaceMainBox.constant)
+    }
+    getFloatingTopBarWObject().window?.setFrameOrigin(origin)
+    getFloatingTopBarVObject().boxMain.isHidden = false
 }

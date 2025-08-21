@@ -171,8 +171,13 @@ extension frictionVc: SettingToggleItemDelegate{
 //                        enterPasswordVcObjForPreferences?.removeConstraints()
 //                        addLog(text: "Showing enter password view inside preferences:- frictionVc")
 //                    }
-                    mainViewControllerObj?.askPasswordForSettingsIfNeeded() // todo need to check 
+                     
                     
+                    if isPasswordRequireInOpenSettings(){
+                        mainViewControllerObj?.askPasswordForSettingsIfNeeded()
+                    }else{
+                        turnOffReloadAfterForceQuit()
+                    }
                 }else{
                     turnOffReloadAfterForceQuit()
                 }

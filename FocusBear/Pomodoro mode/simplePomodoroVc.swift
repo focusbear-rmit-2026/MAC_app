@@ -837,11 +837,11 @@ class simplePomodoroVc: NSViewController {
             }
         }
 
-        if getEndFocusModeWindowControllerObj().window!.isVisible{
-            let timestamp = getStringFromDate(date: startFocusModeTime ?? Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
-            addEntryInStatsCsv(logType: "focus block", activity: focusCompletedVcObj!.currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: "\(focusModeMinutesToPerform) of \(focusCompletedVcObj!.currentFocusModeName)", distractionsEncountered: "", abortReason: "", feedback: "", tags:"")
-            getEndFocusModeWindowControllerObj().window?.close()
-        }
+//        if getEndFocusModeWindowControllerObj().window!.isVisible{
+//            let timestamp = getStringFromDate(date: startFocusModeTime ?? Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
+//            addEntryInStatsCsv(logType: "focus block", activity: focusCompletedVcObj!.currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: "\(focusModeMinutesToPerform) of \(focusCompletedVcObj!.currentFocusModeName)", distractionsEncountered: "", abortReason: "", feedback: "", tags:"")
+//            getEndFocusModeWindowControllerObj().window?.close()
+//        }
         let minute = textFieldWorkDuration.integerValue
         let calendar = Calendar.current
         endFocusModeTime = calendar.date(byAdding: .minute, value: minute, to: Date())

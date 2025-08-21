@@ -9,8 +9,8 @@
 import Cocoa
 
 class menuViewController: NSViewController {
-    
-    
+
+    @IBOutlet weak var imgViewIconStartBreak: NSImageView!
     @IBOutlet weak var boxForPermissionToolTip: NSBox!
     @IBOutlet weak var stackViewFirst: NSStackView!
     @IBOutlet weak var lblTitleFocusModeTime: NSTextField!
@@ -415,6 +415,12 @@ class menuViewController: NSViewController {
             preferencesBlocksIndex = 1
         }
         boxTipPermissions.isHidden = true
+        
+        if #available(macOS 11.0, *) {
+            imgViewIconStartBreak.image = NSImage(systemSymbolName: "figure.walk.circle.fill", accessibilityDescription: nil)
+        } else {
+            imgViewIconStartBreak.image = NSImage(named: NSImage.touchBarUserTemplateName)
+        }
     }
 
     override func viewDidAppear() {
@@ -558,9 +564,19 @@ class menuViewController: NSViewController {
         if !boxTipPermissions.isHidden{
             boxTipPermissions.stopBlinking()
         }
+        if let frame = self.view.window?.frame{
+            let windowTopLeftPoint = NSPoint(x: frame.midX, y: frame.maxY)
+            showFloatingTopBarWindow(windowTopMidPoint: windowTopLeftPoint)
+        }
     }
     
+    
     override func viewWillAppear() {//will not call if view is inside nsmenu but noe using popover so view will appear will work
+        if floatingTopBarWcObj != nil{
+            if getFloatingTopBarWObject().window?.isVisible ?? false{
+                getFloatingTopBarVObject().boxMain.isHidden = true
+            }
+        }
         if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
             if state{
                 self.view.window?.sharingType = .none
@@ -588,9 +604,9 @@ class menuViewController: NSViewController {
             }
             boxEnterLicenseKey.isHidden = false
         }else{
-            if upgradeNowWcObj != nil{
-                if upgradeNowWcObj!.window?.isVisible ?? false{
-                    upgradeNowWcObj!.window?.close()
+            if upgradeNowVcObj != nil{
+                if upgradeNowVcObj?.isViewVisible ?? false{
+                    upgradeNowVcObj?.closeView()
                 }
             }
             boxEnterLicenseKey.isHidden = true
@@ -1447,11 +1463,16 @@ class menuViewController: NSViewController {
     }
     
     @IBAction func btnStopHardcorePomodoroModeClicked(_ sender: Any) {
-        if (endingFocusWindowControllerObj?.window?.isVisible ?? false) && endingFocusWindowControllerObj?.contentViewController == focusCompletedVcObj{
+//        if (endingFocusWindowControllerObj?.window?.isVisible ?? false) && endingFocusWindowControllerObj?.contentViewController == focusCompletedVcObj{
+//            addLog(text: "focus mode clicked:- focus mode completed Window is visible:- return")
+//            return;
+//        }
+        
+        if isFocusCompletedViewVisibled(){
             addLog(text: "focus mode clicked:- focus mode completed Window is visible:- return")
             return;
         }
-
+        
         var isFocusModeOn = false
         
         for index in 0..<arrFocusType.count{

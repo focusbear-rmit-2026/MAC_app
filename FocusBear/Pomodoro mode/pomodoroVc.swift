@@ -651,32 +651,32 @@ class pomodoroVc: NSViewController {
     }
     
     //Re-center the pomodoro popup if user takes no action #1053
-    func setTimerMoveWindowToCenter(){
-        removeTimerMoveWindowToCenter()
-        self.timerMoveWindowToCenter = Timer.scheduledTimer(timeInterval: 60, target: self, selector: #selector(self.moveWindowToCenter), userInfo: nil, repeats: true)
-    }
+//    func setTimerMoveWindowToCenter(){
+//        removeTimerMoveWindowToCenter()
+//        self.timerMoveWindowToCenter = Timer.scheduledTimer(timeInterval: 60, target: self, selector: #selector(self.moveWindowToCenter), userInfo: nil, repeats: true)
+//    }
     
-    func removeTimerMoveWindowToCenter(){
-        if self.timerMoveWindowToCenter != nil{
-            self.timerMoveWindowToCenter?.invalidate()
-            self.timerMoveWindowToCenter = nil
-        }
-    }
+//    func removeTimerMoveWindowToCenter(){
+//        if self.timerMoveWindowToCenter != nil{
+//            self.timerMoveWindowToCenter?.invalidate()
+//            self.timerMoveWindowToCenter = nil
+//        }
+//    }
     
-    @objc func moveWindowToCenter() {
-        if let window = self.view.window{
-            if window.isVisible{
-                if let screen = NSScreen.screens.first {
-                    let screenFrame = screen.frame
-                    let windowFrame = window.frame
-                    let newOriginX = screenFrame.midX - (windowFrame.width / 2)
-                    let newOriginY = screenFrame.midY - (windowFrame.height / 2)
-                    window.setFrameOrigin(NSPoint(x: newOriginX, y: newOriginY))
-                }
-            }
-        }
-        removeTimerMoveWindowToCenter()
-    }
+//    @objc func moveWindowToCenter() {
+//        if let window = self.view.window{
+//            if window.isVisible{
+//                if let screen = NSScreen.screens.first {
+//                    let screenFrame = screen.frame
+//                    let windowFrame = window.frame
+//                    let newOriginX = screenFrame.midX - (windowFrame.width / 2)
+//                    let newOriginY = screenFrame.midY - (windowFrame.height / 2)
+//                    window.setFrameOrigin(NSPoint(x: newOriginX, y: newOriginY))
+//                }
+//            }
+//        }
+//        removeTimerMoveWindowToCenter()
+//    }
     //-----------------------------------------------//
     
     override func viewDidLayout() {// after scrollview resize it removes title and not srawing it again so doing this here 
@@ -1163,11 +1163,11 @@ class pomodoroVc: NSViewController {
             }
         }
 
-        if getEndFocusModeWindowControllerObj().window!.isVisible{
-            let timestamp = getStringFromDate(date: startFocusModeTime ?? Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
-            addEntryInStatsCsv(logType: "focus block", activity: focusCompletedVcObj!.currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: "\(focusModeMinutesToPerform) of \(focusCompletedVcObj!.currentFocusModeName)", distractionsEncountered: "", abortReason: "", feedback: "", tags:"")
-            getEndFocusModeWindowControllerObj().window?.close()
-        }
+//        if getEndFocusModeWindowControllerObj().window!.isVisible{
+//            let timestamp = getStringFromDate(date: startFocusModeTime ?? Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
+//            addEntryInStatsCsv(logType: "focus block", activity: focusCompletedVcObj!.currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: "\(focusModeMinutesToPerform) of \(focusCompletedVcObj!.currentFocusModeName)", distractionsEncountered: "", abortReason: "", feedback: "", tags:"")
+//            getEndFocusModeWindowControllerObj().window?.close()
+//        }
         let minute = textFieldWorkDuration.integerValue
         let calendar = Calendar.current
         endFocusModeTime = calendar.date(byAdding: .minute, value: minute, to: Date())
@@ -1345,7 +1345,7 @@ class pomodoroVc: NSViewController {
         allApiObject.capturePosthog(event: "start-focus-session-popup-closed", metadata: [:])
     }
     override func viewWillDisappear() {
-        removeTimerMoveWindowToCenter()
+//        removeTimerMoveWindowToCenter()
         
         isIntentionFromMorningPostpone = false
         timer?.invalidate()

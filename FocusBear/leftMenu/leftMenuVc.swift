@@ -11,6 +11,7 @@ import Cocoa
 class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
 
     
+    @IBOutlet weak var boxUpgradeNow: mainWindowListBox!
     @IBOutlet weak var btnExpandLeftMenu: cursorButton!
     @IBOutlet weak var boxHelpAndSupport: mainWindowListBox!
     @IBOutlet weak var boxMotivation: mainWindowListBox!
@@ -65,8 +66,9 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         if #available(macOS 11.0, *) {
             boxMicroBreaks.imageIcon = NSImage(systemSymbolName: "figure.walk.circle.fill", accessibilityDescription: nil)
         } else {
-//            boxMicroBreaks.imageIcon = NSImage(systemSymbolName: "figure.walk.circle.fill", accessibilityDescription: nil) // todo menu mai bhi
+            boxMicroBreaks.imageIcon = NSImage(named: NSImage.touchBarUserTemplateName)
         }
+
         boxMicroBreaks.imageView?.contentTintColor = NSColor(named: "dark_OrangeColor") ?? NSColor.blue
         boxMicroBreaks.title = "Start Micro Break"
         
@@ -123,6 +125,9 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         boxHelpAndSupport.imageIcon = NSImage(named: NSImage.infoName)
         boxHelpAndSupport.title = "Help & Support"
         boxHelpAndSupport.imageView?.contentTintColor = NSColor(named: "dark_OrangeColor") ?? NSColor.blue
+        
+        boxUpgradeNow.title = "Upgrade Now"
+        boxUpgradeNow.imageIcon = NSImage(named: "upgrade")
         
         boxMainItems.setExpanded(true)
         boxMainItems.onStateChanged = { isExpanded in
@@ -195,16 +200,40 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         boxHabits.delegate = self
         //boxDashboard.delegate = self
         boxCustomRoutine.delegate = self
-        
+        boxUpgradeNow.delegate = self
        // boxDashboard.isSelected = true
+        
+        
+        
+        arrForSearchFromSettings.append(["title": boxSettings.title, "tabId": idSettings])
+        arrForSearchFromSimpleModeSettings.append(["title": boxSettings.title, "tabId": idSettings])
+        
+        arrForSearchFromSettings.append(["title": boxEditHabits.title, "tabId": idEditHabits])
+        arrForSearchFromSimpleModeSettings.append(["title": boxEditHabits.title, "tabId": idEditHabits])
+        
+        arrForSearchFromSettings.append(["title": boxBlocks.title, "tabId": idTabStrictness])
+        arrForSearchFromSimpleModeSettings.append(["title": boxBlocks.title, "tabId": idTabStrictness])
+        
+        arrForSearchFromSettings.append(["title": boxFocusModeSettings.title, "tabId": idFocus])
+        arrForSearchFromSimpleModeSettings.append(["title": boxFocusModeSettings.title, "tabId": idFocus])
     }
     
     override func viewWillAppear() {
         resetFocusModeTitle()
+        checkPurchaseState()
     }
     
     func reloadHabitStatus(){
 
+    }
+    
+    
+    func checkPurchaseState(){
+        if !isPurchased{
+            boxUpgradeNow.isHidden = false
+        }else{
+            boxUpgradeNow.isHidden = true
+        }
     }
     
     func resetFocusModeTitle(){
@@ -457,16 +486,11 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
                 }
             }
         }
-        
-//        if boxFocusSession.isSelected && focusCompletedVcObj != nil{
-//            if focusCompletedVcObj!.isViewLoaded{
-//                if mainViewControllerObj!.containerView.subviews.contains(focusCompletedVcObj!.view){
-//                    addLog(text: "focus mode completed Window auto close")
-//                    focusCompletedVcObj!.takeBreakClicked(isCloseWindowClicked: true)
-//                    return true
-//                }
-//            }
-//        }
+        if box == boxUpgradeNow{
+            addLog(text:"[user-action] leftMenuVc:- btnUpgradeNowClicked")
+            showUpgradeNowWindow()
+            return false
+        }
         
         if mainViewControllerObj?.isEnterPasswordForPreferencesViewVisible() ?? false{
             return false

@@ -30,6 +30,7 @@
 		137A3D842E0ABBC5008E3CF0 /* popUpSaveThisTaskForLaterVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 137A3D832E0ABBC5008E3CF0 /* popUpSaveThisTaskForLaterVc.swift */; };
 		137CD6032D9D4ACC00A8385A /* Sparkle.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 137CD6022D9D4ACC00A8385A /* Sparkle.framework */; };
 		137CD6042D9D4ACC00A8385A /* Sparkle.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 137CD6022D9D4ACC00A8385A /* Sparkle.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		138FE1262E5701B0002A2C4C /* floatingTopBarVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 138FE1252E5701B0002A2C4C /* floatingTopBarVc.swift */; };
 		13A45A2E2DB3DB12009ECF81 /* superGentleQuitVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13A45A2D2DB3DB12009ECF81 /* superGentleQuitVc.swift */; };
 		13AAC9DC2D97CC76000AD619 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8F7DCC022796E8D200EE3282 /* WebKit.framework */; };
 		13AAC9E12D9819F7000AD619 /* customRoutineTimeVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13AAC9E02D9819F7000AD619 /* customRoutineTimeVc.swift */; };
@@ -403,6 +404,7 @@
 		137A3D812E0A6C97008E3CF0 /* popUpAddNewFocusGoalVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = popUpAddNewFocusGoalVc.swift; sourceTree = "<group>"; };
 		137A3D832E0ABBC5008E3CF0 /* popUpSaveThisTaskForLaterVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = popUpSaveThisTaskForLaterVc.swift; sourceTree = "<group>"; };
 		137CD6022D9D4ACC00A8385A /* Sparkle.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Sparkle.framework; sourceTree = "<group>"; };
+		138FE1252E5701B0002A2C4C /* floatingTopBarVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = floatingTopBarVc.swift; sourceTree = "<group>"; };
 		13A45A2D2DB3DB12009ECF81 /* superGentleQuitVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = superGentleQuitVc.swift; sourceTree = "<group>"; };
 		13AAC9E02D9819F7000AD619 /* customRoutineTimeVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = customRoutineTimeVc.swift; sourceTree = "<group>"; };
 		13D8220C2E508F1B0055E580 /* customRoutineStateVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = customRoutineStateVc.swift; sourceTree = "<group>"; };
@@ -1224,6 +1226,7 @@
 				8FAC6C962780612B008A4180 /* mainWindowController.swift */,
 				8FAC6C8827805F6E008A4180 /* ViewController.swift */,
 				1364364A2DE1FA7400B90724 /* splashVc.swift */,
+				138FE1252E5701B0002A2C4C /* floatingTopBarVc.swift */,
 				132EFCA82E5437FE00189428 /* leftMenu */,
 				135CBDAD2D966CCC003BA438 /* Routine */,
 				8F3A28972C22A429002AD2E3 /* Breaks */,
@@ -1828,6 +1831,7 @@
 				8FABDDD327DA2ED600F6A58C /* enterPasswordVc.swift in Sources */,
 				8FABDDD527DA367100F6A58C /* passwordVc.swift in Sources */,
 				8F9A5A9627885A6D009121E3 /* abortingCountDownVc.swift in Sources */,
+				138FE1262E5701B0002A2C4C /* floatingTopBarVc.swift in Sources */,
 				137A3D822E0A6C97008E3CF0 /* popUpAddNewFocusGoalVc.swift in Sources */,
 				8F889EA12C215062000CA3B6 /* toDoListSettingsVc.swift in Sources */,
 				8F1DC4A72BC13A1900A51383 /* collectionViewItemOccupation.swift in Sources */,
@@ -2297,7 +2301,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application: Focus Bear Pty Ltd (TCUD568B3U)";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 402;
+				CURRENT_PROJECT_VERSION = 403;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = TCUD568B3U;
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = TCUD568B3U;
@@ -2334,7 +2338,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application: Focus Bear Pty Ltd (TCUD568B3U)";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 402;
+				CURRENT_PROJECT_VERSION = 403;
 				DEVELOPMENT_TEAM = TCUD568B3U;
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = TCUD568B3U;
 				ENABLE_HARDENED_RUNTIME = YES;

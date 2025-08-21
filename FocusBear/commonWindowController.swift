@@ -149,13 +149,13 @@ class commonWindowController: NSWindowController, NSWindowDelegate {
             }
         }
         
-        if endingFocusWindowControllerObj != nil{
-            if self == endingFocusWindowControllerObj{
-                addLog(text: "focus mode completed Window close")
-                focusCompletedVcObj!.takeBreakClicked(isCloseWindowClicked: true)
-                return false
-            }
-        }
+//        if endingFocusWindowControllerObj != nil{
+//            if self == endingFocusWindowControllerObj{
+//                addLog(text: "focus mode completed Window close")
+//                focusCompletedVcObj!.takeBreakClicked(isCloseWindowClicked: true)
+//                return false
+//            }
+//        }
         if appdelegate!.user == nil && askLogInWcObj != nil{
             if self == askLogInWcObj{
                 if self.contentViewController == getAskLogInVcObject(){

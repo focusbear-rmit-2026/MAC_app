@@ -85,7 +85,7 @@ class focusCompletedVc: NSViewController {
     var currentFocusModeIndex = 0
     
     let popoverMenuTour = NSPopover()
-    var timerMoveWindowToCenter:Timer?
+//    var timerMoveWindowToCenter:Timer?
     
     var menuTourPopoverVcObj: menuTourPopoverVc?
     var currentIndex = 0
@@ -255,7 +255,6 @@ class focusCompletedVc: NSViewController {
         
         hideNudgeStartAnotherFocusSessionWindow()
         
-//        if isFocusModeRunning == false hoo  to khud karo api call yha . bas baki sb jagah se hatao  // todo  this will be best 
         
         if !isFocusModeRunning{
             if !isFinishFocusModeApiCalled{
@@ -426,19 +425,19 @@ class focusCompletedVc: NSViewController {
             }
             allApiObject.capturePosthog(event: "mark-tasks-on-focus-session-end-screen-shown", metadata: [:])
         }
-        
-        if self.view.window?.windowController != endingFocusWindowControllerObj{
-            btnPin.isHidden = true
-        }else{
-            btnPin.isHidden = false
-            if let state = UserDefaults.standard.object(forKey: kUserdefaultsIsCompletedFocusWindowOnTop) as? Bool{
-                if state{
-                    btnPin.image = #imageLiteral(resourceName: "pin")
-                }else{
-                    btnPin.image = #imageLiteral(resourceName: "unPin")
-                }
-            }
-        }
+        btnPin.isHidden = true
+//        if self.view.window?.windowController != endingFocusWindowControllerObj{
+//            btnPin.isHidden = true
+//        }else{
+//            btnPin.isHidden = false
+//            if let state = UserDefaults.standard.object(forKey: kUserdefaultsIsCompletedFocusWindowOnTop) as? Bool{
+//                if state{
+//                    btnPin.image = #imageLiteral(resourceName: "pin")
+//                }else{
+//                    btnPin.image = #imageLiteral(resourceName: "unPin")
+//                }
+//            }
+//        }
         reloadMoreOptionsState()
     }
     
@@ -500,9 +499,9 @@ class focusCompletedVc: NSViewController {
         }
     }
     
-    override func viewDidDisappear() {
-        removeTimerMoveWindowToCenter()
-    }
+//    override func viewDidDisappear() {
+//        removeTimerMoveWindowToCenter()
+//    }
     
     override func viewDidLayout() {// after scrollview resize it removes title and not srawing it again so doing this here 
         btnStartAnotherFocusBlock.title = btnStartAnotherFocusBlock.title
@@ -644,26 +643,26 @@ class focusCompletedVc: NSViewController {
         reloadMoreQuestionsState()
     }
     
-    func setTimerMoveWindowToCenter(){
-        removeTimerMoveWindowToCenter()
-        self.timerMoveWindowToCenter = Timer.scheduledTimer(timeInterval: 60, target: self, selector: #selector(self.moveWindowToCenter), userInfo: nil, repeats: false)
-    }
-    @objc func moveWindowToCenter() {
-        if self.view.window?.windowController == endingFocusWindowControllerObj{
-            if self.view.window?.isVisible ?? false{
-                self.view.window?.center()
-//                NSApp.activate(ignoringOtherApps: true)
-                NSRunningApplication.current.activate(options: [.activateIgnoringOtherApps])
-            }
-        }
-        removeTimerMoveWindowToCenter()
-    }
-    func removeTimerMoveWindowToCenter(){
-        if self.timerMoveWindowToCenter != nil{
-            self.timerMoveWindowToCenter?.invalidate()
-            self.timerMoveWindowToCenter = nil
-        }
-    }
+//    func setTimerMoveWindowToCenter(){
+//        removeTimerMoveWindowToCenter()
+//        self.timerMoveWindowToCenter = Timer.scheduledTimer(timeInterval: 60, target: self, selector: #selector(self.moveWindowToCenter), userInfo: nil, repeats: false)
+//    }
+//    @objc func moveWindowToCenter() {
+//        if self.view.window?.windowController == endingFocusWindowControllerObj{
+//            if self.view.window?.isVisible ?? false{
+//                self.view.window?.center()
+////                NSApp.activate(ignoringOtherApps: true)
+//                NSRunningApplication.current.activate(options: [.activateIgnoringOtherApps])
+//            }
+//        }
+//        removeTimerMoveWindowToCenter()
+//    }
+//    func removeTimerMoveWindowToCenter(){
+//        if self.timerMoveWindowToCenter != nil{
+//            self.timerMoveWindowToCenter?.invalidate()
+//            self.timerMoveWindowToCenter = nil
+//        }
+//    }
     
     @objc private func menuItemClicked(_ menuItem: NSMenuItem) {
         if let fieldEditor = tokenFieldTags?.currentEditor() {

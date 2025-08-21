@@ -351,8 +351,12 @@ extension uIVc: SettingToggleItemDelegate, SettingPopUpButtonItemDelegate{
 //                        enterPasswordVcObjForPreferences?.removeConstraints()
 //                        addLog(text: "Showing enter password view inside preferences:- uivc")
 //                    }
-                    
-                    mainViewControllerObj?.askPasswordForSettingsIfNeeded()
+                    if isPasswordRequireInOpenSettings(){
+                        mainViewControllerObj?.askPasswordForSettingsIfNeeded()
+                    }else{
+                        settingsChangegShowDockIcon()
+                    }
+                   
                     addLog(text: "Showing enter password view inside preferences:- uivc")
                 }else{
                     settingsChangegShowDockIcon()

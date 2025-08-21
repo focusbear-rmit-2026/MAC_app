@@ -741,12 +741,18 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             self.credential = newCredential
             addLog(text: "successfully fetch cedential from credentialsManager in app launch")
             needToRefreshUser = true
+            let expireDate = newCredential!.expiresIn
+            let expireDateString = getStringFromDate(date: expireDate, dateFormat: "yyyy-MM-dd HH:mm:ss")
+            addLog(text: "Credential expires in: \(expireDateString)")
         }else{
             if self.credential?.accessToken != newCredential?.accessToken{
                 addLog(text: "accessToken changed:- update cedential in credentialsManager")
                 self.credential = newCredential
                 let _ = credentialsManager.store(credentials: self.credential!)
                 needToRefreshUser = true
+                let expireDate = newCredential!.expiresIn
+                let expireDateString = getStringFromDate(date: expireDate, dateFormat: "yyyy-MM-dd HH:mm:ss")
+                addLog(text: "Credential expires in \(expireDateString)")
             }
         }
         
@@ -2869,7 +2875,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                             }
                         }else if event.keyCode == 36 || event.keyCode == 76{
                             if mainWindowControllerObj?.window?.isVisible ?? false{
-                                if currentState == ._MICRO_BREAK_ || currentState == ._BREATHING_ || currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_{
+                                if currentState == ._MICRO_BREAK_ || currentState == ._BREATHING_ || currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_{// todo left menu selected tab ka check bhi lahao
                                     if askPostponeVcObj != nil{
                                         if (getHabitsVcObject().view.subviews.contains((getAskPostponeVcObject().view))){
                                             return event
@@ -2987,7 +2993,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         addLog(text: "setTopMenu")
         if let button = statusItem.button
         {
-            button.action = #selector(togglePopover(_:))
+            button.action = #selector(togglePopoverFromButton(_:))
 
             if SettingsManagerObject.isMenuPopoverEnabled{
                 popover.contentViewController = menuViewControllerObj
@@ -3002,7 +3008,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         }
     }
     
-    @objc func togglePopover(_ sender: Any?) {
+    @objc func togglePopoverFromButton(_ sender: Any?) {
+        togglePopover(true) // or true, depending on case
+        isCustomBarIsInFocus = false
+    }
+    
+    @objc func togglePopover(_ isDefaultButton:Bool = true) {
         addLog(text: "togglePopover start")
         
         if let runningApp = NSWorkspace.shared.frontmostApplication{
@@ -3018,11 +3029,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         }
 
         addLog(text: "[user-action] Top bar focus bear button clicked")
-        if isFocusBearMenuVisible()
-        {
-            closePopover(sender: sender)
-        } else
-        {
+        if isFocusBearMenuVisible(){
+            closePopover()
+        } else{
             addLog(text: "popover is not visible")
             if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._CUSTOM_ROUTINE_{
                 if currentAction == ._INPROGRESS_{
@@ -3041,7 +3050,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     }
                 }
             }
-            showPopover(sender: sender)
+            showPopover(isDefaultButton: isDefaultButton)
             
             if (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_) && !(mainWindowControllerObj?.window?.isVisible ?? false){
                 addLog(text: "try to show samll window")
@@ -3065,23 +3074,46 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             addLog(text: "togglePopover end")
         }  
     }
-    func showPopover(sender: Any?) {
+    
+    func showPopover(isDefaultButton:Bool = true) {
         addLog(text: "showPopover")
-        if let button = statusItem.button{
-            if SettingsManagerObject.isMenuPopoverEnabled{
-                popover.show(relativeTo: button.bounds, of: button, preferredEdge: NSRectEdge.minY)
-            }else{
-                getMenuWindowObject().showWindow(self)
+        
+        if isDefaultButton{
+            if let button = statusItem.button{
+                if SettingsManagerObject.isMenuPopoverEnabled{
+                    popover.show(relativeTo: button.bounds, of: button, preferredEdge: NSRectEdge.minY)
+                }else{
+                    getMenuWindowObject().showWindow(self)
+                }
+                NSApplication.shared.activate(ignoringOtherApps: true)
+                addLog(text: "showPopover End")
             }
-            NSApplication.shared.activate(ignoringOtherApps: true)
-            addLog(text: "showPopover End")
+        }else{
+            if let button = floatingTopBarVcObj?.boxFakeView{
+                if SettingsManagerObject.isMenuPopoverEnabled{
+                    popover.show(relativeTo: button.bounds, of: button, preferredEdge: NSRectEdge.minY)
+                    menuViewControllerObj?.view.window?.makeKey()
+                }else{
+                    getMenuWindowObject().showWindow(self)
+                    if let barMidxPoint = floatingTopBarWcObj?.window?.frame.midX, let barMidBottomYPoint = floatingTopBarWcObj?.window?.frame.minY{
+                        
+                        let minXPoint = barMidxPoint - ((menuViewControllerObj?.view.frame.width ?? 300) / 2)
+                        let minYPoint = barMidBottomYPoint - (menuViewControllerObj?.view.frame.height ?? 300)
+                        getMenuWindowObject().window?.setFrameOrigin(NSPoint(x: minXPoint, y: minYPoint))
+                        
+                    }
+                    
+                }
+                NSApplication.shared.activate(ignoringOtherApps: true)
+                addLog(text: "showPopover End")
+            }
         }
     }
     
-    func closePopover(sender: Any?) {
+    func closePopover() {
         addLog(text: "closePopover")
         if SettingsManagerObject.isMenuPopoverEnabled{
-            popover.performClose(sender)
+            popover.performClose(nil)
         }else{
             getMenuWindowObject().window?.close()
         }
@@ -3248,11 +3280,17 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 savedSitesForLaterWcObj!.close()
             }
         }
-        if endingFocusWindowControllerObj != nil{
-            if (endingFocusWindowControllerObj?.window?.isVisible ?? false) && endingFocusWindowControllerObj?.contentViewController == focusCompletedVcObj{
-                addLog(text: "Focus mode completed Window is visible:- return")
-                return;
-            }
+//        if endingFocusWindowControllerObj != nil{
+//            if (endingFocusWindowControllerObj?.window?.isVisible ?? false) && endingFocusWindowControllerObj?.contentViewController == focusCompletedVcObj{
+//                addLog(text: "Focus mode completed Window is visible:- return")
+//                return;
+//            }
+//        }
+//
+        
+        if isFocusCompletedViewVisibled(){
+            addLog(text: "Focus mode completed view is visible:- return")
+            return;
         }
         
         if !isAppEnable{
@@ -3308,12 +3346,18 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             addLog(text: "Simple Mode is enabled:- return.")
             return;
         }
-        if endingFocusWindowControllerObj != nil{
-            if (endingFocusWindowControllerObj?.window?.isVisible ?? false) && endingFocusWindowControllerObj?.contentViewController == focusCompletedVcObj{
-                addLog(text: "Focus mode completed Window is visible:- return")
-                return;
-            }
+//        if endingFocusWindowControllerObj != nil{
+//            if (endingFocusWindowControllerObj?.window?.isVisible ?? false) && endingFocusWindowControllerObj?.contentViewController == focusCompletedVcObj{
+//                addLog(text: "Focus mode completed Window is visible:- return")
+//                return;
+//            }
+//        }
+        
+        if isFocusCompletedViewVisibled(){
+            addLog(text: "Focus mode completed view is visible:- return")
+            return;
         }
+        
         
         if isFocusModeOnOrPaused(){
             addLog(text: "Focus Mode Is On/Paused: Pomodoro Mode View cancelled")
@@ -3370,11 +3414,17 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             addLog(text: "Simple Mode is enabled:- return.")
             return;
         }
-        if endingFocusWindowControllerObj != nil{
-            if (endingFocusWindowControllerObj?.window?.isVisible ?? false) && endingFocusWindowControllerObj?.contentViewController == focusCompletedVcObj{
-                addLog(text: "Focus mode completed Window is visible:- close Window Forcefully")
-                focusCompletedVcObj!.closeWindowForcefully()// todo 
-            }
+//        if endingFocusWindowControllerObj != nil{
+//            if (endingFocusWindowControllerObj?.window?.isVisible ?? false) && endingFocusWindowControllerObj?.contentViewController == focusCompletedVcObj{
+//                addLog(text: "Focus mode completed Window is visible:- close Window Forcefully")
+//                focusCompletedVcObj!.closeWindowForcefully()//
+//            }
+//        }
+//
+        
+        if isFocusCompletedViewVisibled(){
+            addLog(text: "Focus mode completed Window is visible:- close Window Forcefully")
+            focusCompletedVcObj!.closeWindowForcefully()
         }
         
         if isFocusModeOnOrPaused(){
@@ -3423,11 +3473,17 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             addLog(text: "Geek Mode is enabled:- return.")
             return;
         }
-        if endingFocusWindowControllerObj != nil{
-            if (endingFocusWindowControllerObj?.window?.isVisible ?? false) && endingFocusWindowControllerObj?.contentViewController == focusCompletedVcObj{
-                addLog(text: "Focus mode completed Window is visible:- close Window Forcefully")
-                focusCompletedVcObj!.closeWindowForcefully()
-            }
+//        if endingFocusWindowControllerObj != nil{
+//            if (endingFocusWindowControllerObj?.window?.isVisible ?? false) && endingFocusWindowControllerObj?.contentViewController == focusCompletedVcObj{
+//                addLog(text: "Focus mode completed Window is visible:- close Window Forcefully")
+//                focusCompletedVcObj!.closeWindowForcefully()
+//            }
+//        }
+        
+        
+        if isFocusCompletedViewVisibled(){
+            addLog(text: "Focus mode completed Window is visible:- close Window Forcefully")
+            focusCompletedVcObj!.closeWindowForcefully()
         }
         
         if isFocusModeOnOrPaused(){
@@ -4120,11 +4176,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             let focus = arrFocusType[i]
             if let state = focus["isMeetings"] as? Bool{
                 if  state{
-                    if getEndFocusModeWindowControllerObj().window!.isVisible{
-                        let timestamp = getStringFromDate(date: startFocusModeTime ?? Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
-                        addEntryInStatsCsv(logType: "focus block", activity: focusCompletedVcObj!.currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: "\(focusModeMinutesToPerform) of \(focusCompletedVcObj!.currentFocusModeName)", distractionsEncountered: "", abortReason: "", feedback: "", tags:"")
-                        getEndFocusModeWindowControllerObj().window?.close()
-                    }
+//                    if getEndFocusModeWindowControllerObj().window!.isVisible{
+//                        let timestamp = getStringFromDate(date: startFocusModeTime ?? Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
+//                        addEntryInStatsCsv(logType: "focus block", activity: focusCompletedVcObj!.currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: "\(focusModeMinutesToPerform) of \(focusCompletedVcObj!.currentFocusModeName)", distractionsEncountered: "", abortReason: "", feedback: "", tags:"")
+//                        getEndFocusModeWindowControllerObj().window?.close()
+//                    }
                     let calendar = Calendar.current
                     endFocusModeTime = calendar.date(byAdding: .minute, value: 5, to: Date())
                     startFocusModeTime = Date()
@@ -4872,7 +4928,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         if getHabitsVcObject().breakTimer != nil{
                             getHabitsVcObject().setActivityTimer()
                         }
-                        closePopover(sender: self)// popover was showing automatically reason: app activate so close popover here without checking any rhing
+                        closePopover()// popover was showing automatically reason: app activate so close popover here without checking any rhing
                     }
                 }else{
                     addLog(text: "event-about-to-start:- end time is nil")
@@ -6858,6 +6914,19 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         print("applicationShouldHandleReopen")
+        
+        if let event = NSApp.currentEvent {
+            if event.type == .applicationDefined {
+                // This usually indicates a Dock icon click
+                print("Reopen triggered by Dock icon click")
+            } else {
+                // Other cases (system relaunch, LaunchAgent, resume)
+                print("Reopen triggered by system")
+            }
+        } else {
+            // No event at all -> system-triggered
+            print("Reopen triggered by system (no event)")
+        }
         return false
     }
     
@@ -6895,19 +6964,19 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             self.timerMoveWindowToCenter?.invalidate()
             self.timerMoveWindowToCenter = nil
         }
-        if endingFocusWindowControllerObj != nil{
-            if (endingFocusWindowControllerObj?.window?.isVisible ?? false) && endingFocusWindowControllerObj?.contentViewController == focusCompletedVcObj{
-                focusCompletedVcObj?.removeTimerMoveWindowToCenter()
-            }
-        }
+//        if endingFocusWindowControllerObj != nil{
+//            if (endingFocusWindowControllerObj?.window?.isVisible ?? false) && endingFocusWindowControllerObj?.contentViewController == focusCompletedVcObj{
+//                focusCompletedVcObj?.removeTimerMoveWindowToCenter()
+//            }
+//        }
 
-        if pomodoroWindowControllerObj != nil{
-            if pomodoroWindowControllerObj?.window?.isVisible ?? false{
-                if pomodoroWindowControllerObj?.contentViewController == pomodoroVcObj{
-                    pomodoroVcObj?.removeTimerMoveWindowToCenter()
-                }
-            }
-        }
+//        if pomodoroWindowControllerObj != nil{
+//            if pomodoroWindowControllerObj?.window?.isVisible ?? false{
+//                if pomodoroWindowControllerObj?.contentViewController == pomodoroVcObj{
+//                    pomodoroVcObj?.removeTimerMoveWindowToCenter()
+//                }
+//            }
+//        }
         
         if blankLayerWcObj != nil{
             if blankLayerWcObj?.window != nil{
@@ -6953,7 +7022,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         }
         
         if !isFocusBearMenuVisible() && !isAnyStanderdWindowVisible{
-            statusbutton?.performClick(self)
+            if !isCustomBarIsInFocus{
+                statusbutton?.performClick(self)
+            }
         }
         addLog(text: "applicationDidBecomeActive")
         print("applicationDidBecomeActive")
@@ -6964,31 +7035,31 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         
         makeAllAlertWindowToTopLevelWindow()
         
-        if !SettingsManagerObject.isStrictnessLevelSuperGentle(){
-            if endingFocusWindowControllerObj != nil{
-                if (endingFocusWindowControllerObj?.window?.isVisible ?? false) && endingFocusWindowControllerObj?.contentViewController == focusCompletedVcObj{
-                    focusCompletedVcObj?.setTimerMoveWindowToCenter()
-                }
-            }
+//        if !SettingsManagerObject.isStrictnessLevelSuperGentle(){
+//            if endingFocusWindowControllerObj != nil{
+//                if (endingFocusWindowControllerObj?.window?.isVisible ?? false) && endingFocusWindowControllerObj?.contentViewController == focusCompletedVcObj{
+//                    focusCompletedVcObj?.setTimerMoveWindowToCenter()
+//                }
+//            }
             
-            if pomodoroWindowControllerObj != nil{
-                if pomodoroWindowControllerObj?.window?.isVisible ?? false{
-                    if pomodoroWindowControllerObj?.contentViewController == pomodoroVcObj{
-                        pomodoroVcObj?.setTimerMoveWindowToCenter()
-                    }
-                }
-            }
-        }else{
-            if endingFocusWindowControllerObj != nil{//Ultra low friction level #1357
-                if (endingFocusWindowControllerObj?.window?.isVisible ?? false) && endingFocusWindowControllerObj?.contentViewController == focusCompletedVcObj{
-                    if endingFocusWindowControllerObj?.window?.level != NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow))){
-                        if !focusCompletedVcObj!.btnStartAnotherFocusBlock.isHidden{
-                            showNudgeStartAnotherFocusSessionWindow()
-                        }
-                    }
-                }
-            }
-        }
+//            if pomodoroWindowControllerObj != nil{
+//                if pomodoroWindowControllerObj?.window?.isVisible ?? false{
+//                    if pomodoroWindowControllerObj?.contentViewController == pomodoroVcObj{
+//                        pomodoroVcObj?.setTimerMoveWindowToCenter()
+//                    }
+//                }
+//            }
+//        }else{
+//            if endingFocusWindowControllerObj != nil{//Ultra low friction level #1357
+//                if (endingFocusWindowControllerObj?.window?.isVisible ?? false) && endingFocusWindowControllerObj?.contentViewController == focusCompletedVcObj{
+//                    if endingFocusWindowControllerObj?.window?.level != NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow))){
+//                        if !focusCompletedVcObj!.btnStartAnotherFocusBlock.isHidden{
+//                            showNudgeStartAnotherFocusSessionWindow()
+//                        }
+//                    }
+//                }
+//            }
+//        }
 
         if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._CUSTOM_ROUTINE_{
             if mainWindowControllerObj?.window?.isVisible ?? false{
@@ -7011,6 +7082,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 setTimerMoveWindowToCenter()
             }
         }
+        
         
     }
     
@@ -7633,10 +7705,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         addLog(text: "show Focus Completed View")
         mainWindowControllerObj?.showWindow(self)
         leftMenuVcObj!.showFocusCompletedView()
-        return; // todo 
         
-        getEndFocusModeWindowControllerObj().contentViewController = focusCompletedVcObj
-        getEndFocusModeWindowControllerObj().showWindow(self)
+//        getEndFocusModeWindowControllerObj().contentViewController = focusCompletedVcObj
+//        getEndFocusModeWindowControllerObj().showWindow(self)
     }
     
     
@@ -11974,10 +12045,25 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 
 //
 
-//  micro break aatr hi thodi der tak chalu ni krte to khud hi micro break window hide ho jata hai use natural break mano. latka kr dikhao nataul break ko micro break per hi
-// if taks task player enabled then after start focvs mode window will close itself 
-// enable advance analytics   done 
 
-// floating top bar
+// if taks task player enabled then after start focvs mode window will close itself  done
+// enable advance analytics   done
+
+
+
+
 // onboarding
 // upfrade now button on left side and checlk nag again 
+// show focus bear
+//  micro break aate hi thodi der tak chalu ni krte to khud hi micro break window hide ho jata hai use natural break mano. latka kr dikhao nataul break ko micro break per hi
+
+
+
+//21/8/25
+/// phle se focus mode end window pdi ho user start focus mper click kre to use handle kiya . ab vo complete mark hokar naya aa jayga
+/// bug solved in search  in settingsw 
+// upfrade now button on left side and checlk nag again   done and  now if main window is vivible then nag will be presented on main window and if main window is not vivisble then nag will be shows on seprate window
+//
+// todo jab app chalu ho to expire date lkhvao token ki done
+// settings bug solved  done
+// floating top bar    done

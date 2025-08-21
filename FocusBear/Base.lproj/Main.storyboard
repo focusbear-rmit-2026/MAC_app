@@ -1886,13 +1886,13 @@
                                                             <color key="borderColor" name="separatorColor" catalog="System" colorSpace="catalog"/>
                                                         </box>
                                                         <box boxType="custom" borderType="line" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="RBM-ww-eoK">
-                                                            <rect key="frame" x="1291" y="463" width="247" height="79"/>
+                                                            <rect key="frame" x="1291" y="464" width="247" height="77"/>
                                                             <view key="contentView" id="FSl-QV-9pN">
-                                                                <rect key="frame" x="1" y="1" width="245" height="77"/>
+                                                                <rect key="frame" x="1" y="1" width="245" height="75"/>
                                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                 <subviews>
                                                                     <box boxType="custom" borderType="line" borderWidth="0.0" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="vcm-4q-hdK">
-                                                                        <rect key="frame" x="0.0" y="27" width="245" height="50"/>
+                                                                        <rect key="frame" x="0.0" y="25" width="245" height="50"/>
                                                                         <view key="contentView" id="UWt-4W-6gw">
                                                                             <rect key="frame" x="0.0" y="0.0" width="245" height="50"/>
                                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -1925,9 +1925,9 @@
                                                                         <color key="fillColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
                                                                     </box>
                                                                     <scrollView horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="250" borderType="none" autohidesScrollers="YES" horizontalLineScroll="40" horizontalPageScroll="10" verticalLineScroll="40" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="BmC-FB-q29">
-                                                                        <rect key="frame" x="0.0" y="0.0" width="245" height="27"/>
+                                                                        <rect key="frame" x="0.0" y="0.0" width="245" height="25"/>
                                                                         <clipView key="contentView" id="xse-cV-tNZ">
-                                                                            <rect key="frame" x="0.0" y="0.0" width="245" height="27"/>
+                                                                            <rect key="frame" x="0.0" y="0.0" width="245" height="25"/>
                                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                             <subviews>
                                                                                 <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="fullWidth" selectionHighlightStyle="none" multipleSelection="NO" autosaveColumns="NO" rowHeight="40" rowSizeStyle="automatic" viewBased="YES" id="vNa-fU-S7L">
@@ -3265,16 +3265,16 @@ Feel free to write an explanation here:</string>
                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                             <subviews>
                                                                 <box boxType="custom" borderType="line" borderWidth="0.0" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="gC2-Lm-K9b">
-                                                                    <rect key="frame" x="0.0" y="-48" width="215" height="720"/>
+                                                                    <rect key="frame" x="0.0" y="-88" width="215" height="760"/>
                                                                     <view key="contentView" id="jrA-ij-d1E">
-                                                                        <rect key="frame" x="0.0" y="0.0" width="215" height="720"/>
+                                                                        <rect key="frame" x="0.0" y="0.0" width="215" height="760"/>
                                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                         <subviews>
                                                                             <stackView distribution="fill" orientation="vertical" alignment="leading" horizontalStackHuggingPriority="250.99998474121094" verticalStackHuggingPriority="251" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="kCE-Ge-goF">
-                                                                                <rect key="frame" x="15" y="0.0" width="185" height="720"/>
+                                                                                <rect key="frame" x="15" y="0.0" width="185" height="760"/>
                                                                                 <subviews>
                                                                                     <box boxType="custom" borderWidth="0.0" cornerRadius="4" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="YPF-uH-SfH" customClass="accordionBox" customModule="Focus_Bear" customModuleProvider="target">
-                                                                                        <rect key="frame" x="0.0" y="695" width="185" height="25"/>
+                                                                                        <rect key="frame" x="0.0" y="735" width="185" height="25"/>
                                                                                         <view key="contentView" id="XtC-0j-wWi">
                                                                                             <rect key="frame" x="0.0" y="0.0" width="185" height="25"/>
                                                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -3284,14 +3284,14 @@ Feel free to write an explanation here:</string>
                                                                                         </constraints>
                                                                                     </box>
                                                                                     <box boxType="custom" borderWidth="0.0" cornerRadius="4" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="sNN-Kc-gT3" customClass="mainWindowListBox" customModule="Focus_Bear" customModuleProvider="target">
-                                                                                        <rect key="frame" x="0.0" y="655" width="185" height="32"/>
+                                                                                        <rect key="frame" x="0.0" y="695" width="185" height="32"/>
                                                                                         <view key="contentView" id="yDA-4I-BMb">
                                                                                             <rect key="frame" x="0.0" y="0.0" width="185" height="32"/>
                                                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                         </view>
                                                                                     </box>
                                                                                     <box boxType="custom" borderWidth="0.0" cornerRadius="4" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="qCc-gh-YQs" customClass="mainWindowListBox" customModule="Focus_Bear" customModuleProvider="target">
-                                                                                        <rect key="frame" x="0.0" y="615" width="185" height="32"/>
+                                                                                        <rect key="frame" x="0.0" y="655" width="185" height="32"/>
                                                                                         <view key="contentView" id="d6H-mw-gsw">
                                                                                             <rect key="frame" x="0.0" y="0.0" width="185" height="32"/>
                                                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -3301,28 +3301,28 @@ Feel free to write an explanation here:</string>
                                                                                         </constraints>
                                                                                     </box>
                                                                                     <box boxType="custom" borderWidth="0.0" cornerRadius="4" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="Bzr-BY-hyF" customClass="mainWindowListBox" customModule="Focus_Bear" customModuleProvider="target">
-                                                                                        <rect key="frame" x="0.0" y="575" width="185" height="32"/>
+                                                                                        <rect key="frame" x="0.0" y="615" width="185" height="32"/>
                                                                                         <view key="contentView" id="3Is-4C-BKT">
                                                                                             <rect key="frame" x="0.0" y="0.0" width="185" height="32"/>
                                                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                         </view>
                                                                                     </box>
                                                                                     <box boxType="custom" borderWidth="0.0" cornerRadius="4" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="cZn-5R-lJ1" customClass="mainWindowListBox" customModule="Focus_Bear" customModuleProvider="target">
-                                                                                        <rect key="frame" x="0.0" y="535" width="185" height="32"/>
+                                                                                        <rect key="frame" x="0.0" y="575" width="185" height="32"/>
                                                                                         <view key="contentView" id="htx-b5-YJj">
                                                                                             <rect key="frame" x="0.0" y="0.0" width="185" height="32"/>
                                                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                         </view>
                                                                                     </box>
                                                                                     <box boxType="custom" borderWidth="0.0" cornerRadius="4" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="g8l-i4-H92" customClass="mainWindowListBox" customModule="Focus_Bear" customModuleProvider="target">
-                                                                                        <rect key="frame" x="0.0" y="495" width="185" height="32"/>
+                                                                                        <rect key="frame" x="0.0" y="535" width="185" height="32"/>
                                                                                         <view key="contentView" id="dMf-Cf-GMI">
                                                                                             <rect key="frame" x="0.0" y="0.0" width="185" height="32"/>
                                                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                         </view>
                                                                                     </box>
                                                                                     <box boxType="custom" borderType="line" borderWidth="0.0" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="DT7-ch-z5f">
-                                                                                        <rect key="frame" x="0.0" y="476" width="185" height="11"/>
+                                                                                        <rect key="frame" x="0.0" y="516" width="185" height="11"/>
                                                                                         <view key="contentView" id="xpa-IX-jcg">
                                                                                             <rect key="frame" x="0.0" y="0.0" width="185" height="11"/>
                                                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -3340,7 +3340,7 @@ Feel free to write an explanation here:</string>
                                                                                         </view>
                                                                                     </box>
                                                                                     <box boxType="custom" borderWidth="0.0" cornerRadius="4" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="uPQ-A1-TsT" customClass="accordionBox" customModule="Focus_Bear" customModuleProvider="target">
-                                                                                        <rect key="frame" x="0.0" y="443" width="185" height="25"/>
+                                                                                        <rect key="frame" x="0.0" y="483" width="185" height="25"/>
                                                                                         <view key="contentView" id="EXI-47-XEu">
                                                                                             <rect key="frame" x="0.0" y="0.0" width="185" height="25"/>
                                                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -3350,35 +3350,35 @@ Feel free to write an explanation here:</string>
                                                                                         </constraints>
                                                                                     </box>
                                                                                     <box boxType="custom" borderWidth="0.0" cornerRadius="4" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="NWh-g3-TSm" customClass="mainWindowListBox" customModule="Focus_Bear" customModuleProvider="target">
-                                                                                        <rect key="frame" x="0.0" y="403" width="185" height="32"/>
+                                                                                        <rect key="frame" x="0.0" y="443" width="185" height="32"/>
                                                                                         <view key="contentView" id="ljM-VQ-Yia">
                                                                                             <rect key="frame" x="0.0" y="0.0" width="185" height="32"/>
                                                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                         </view>
                                                                                     </box>
                                                                                     <box boxType="custom" borderWidth="0.0" cornerRadius="4" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="GEG-rB-Ef5" customClass="mainWindowListBox" customModule="Focus_Bear" customModuleProvider="target">
-                                                                                        <rect key="frame" x="0.0" y="363" width="185" height="32"/>
+                                                                                        <rect key="frame" x="0.0" y="403" width="185" height="32"/>
                                                                                         <view key="contentView" id="w1S-lD-jZR">
                                                                                             <rect key="frame" x="0.0" y="0.0" width="185" height="32"/>
                                                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                         </view>
                                                                                     </box>
                                                                                     <box boxType="custom" borderWidth="0.0" cornerRadius="4" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="yOS-vf-des" customClass="mainWindowListBox" customModule="Focus_Bear" customModuleProvider="target">
-                                                                                        <rect key="frame" x="0.0" y="323" width="185" height="32"/>
+                                                                                        <rect key="frame" x="0.0" y="363" width="185" height="32"/>
                                                                                         <view key="contentView" id="obO-RN-GDP">
                                                                                             <rect key="frame" x="0.0" y="0.0" width="185" height="32"/>
                                                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                         </view>
                                                                                     </box>
                                                                                     <box boxType="custom" borderWidth="0.0" cornerRadius="4" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="6AM-3N-Ccb" customClass="mainWindowListBox" customModule="Focus_Bear" customModuleProvider="target">
-                                                                                        <rect key="frame" x="0.0" y="283" width="185" height="32"/>
+                                                                                        <rect key="frame" x="0.0" y="323" width="185" height="32"/>
                                                                                         <view key="contentView" id="cKx-lQ-i3i">
                                                                                             <rect key="frame" x="0.0" y="0.0" width="185" height="32"/>
                                                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                         </view>
                                                                                     </box>
                                                                                     <box boxType="custom" borderType="line" borderWidth="0.0" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="IdY-ba-Okc">
-                                                                                        <rect key="frame" x="0.0" y="264" width="185" height="11"/>
+                                                                                        <rect key="frame" x="0.0" y="304" width="185" height="11"/>
                                                                                         <view key="contentView" id="7vF-gP-qZt">
                                                                                             <rect key="frame" x="0.0" y="0.0" width="185" height="11"/>
                                                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -3396,7 +3396,7 @@ Feel free to write an explanation here:</string>
                                                                                         </view>
                                                                                     </box>
                                                                                     <box boxType="custom" borderWidth="0.0" cornerRadius="4" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="qhW-GY-zGZ" customClass="accordionBox" customModule="Focus_Bear" customModuleProvider="target">
-                                                                                        <rect key="frame" x="0.0" y="231" width="185" height="25"/>
+                                                                                        <rect key="frame" x="0.0" y="271" width="185" height="25"/>
                                                                                         <view key="contentView" id="AMh-zd-eTh">
                                                                                             <rect key="frame" x="0.0" y="0.0" width="185" height="25"/>
                                                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -3406,42 +3406,42 @@ Feel free to write an explanation here:</string>
                                                                                         </constraints>
                                                                                     </box>
                                                                                     <box boxType="custom" borderWidth="0.0" cornerRadius="4" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="YcD-9J-vfc" customClass="mainWindowListBox" customModule="Focus_Bear" customModuleProvider="target">
-                                                                                        <rect key="frame" x="0.0" y="191" width="185" height="32"/>
+                                                                                        <rect key="frame" x="0.0" y="231" width="185" height="32"/>
                                                                                         <view key="contentView" id="BOb-dp-GbL">
                                                                                             <rect key="frame" x="0.0" y="0.0" width="185" height="32"/>
                                                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                         </view>
                                                                                     </box>
                                                                                     <box boxType="custom" borderWidth="0.0" cornerRadius="4" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="yNe-DD-qg2" customClass="mainWindowListBox" customModule="Focus_Bear" customModuleProvider="target">
-                                                                                        <rect key="frame" x="0.0" y="151" width="185" height="32"/>
+                                                                                        <rect key="frame" x="0.0" y="191" width="185" height="32"/>
                                                                                         <view key="contentView" id="t1Y-EU-A87">
                                                                                             <rect key="frame" x="0.0" y="0.0" width="185" height="32"/>
                                                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                         </view>
                                                                                     </box>
                                                                                     <box boxType="custom" borderWidth="0.0" cornerRadius="4" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="Qq2-sK-ye4" customClass="mainWindowListBox" customModule="Focus_Bear" customModuleProvider="target">
-                                                                                        <rect key="frame" x="0.0" y="111" width="185" height="32"/>
+                                                                                        <rect key="frame" x="0.0" y="151" width="185" height="32"/>
                                                                                         <view key="contentView" id="TA7-xI-PmH">
                                                                                             <rect key="frame" x="0.0" y="0.0" width="185" height="32"/>
                                                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                         </view>
                                                                                     </box>
                                                                                     <box boxType="custom" borderWidth="0.0" cornerRadius="4" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="wEU-gj-Wbs" customClass="mainWindowListBox" customModule="Focus_Bear" customModuleProvider="target">
-                                                                                        <rect key="frame" x="0.0" y="71" width="185" height="32"/>
+                                                                                        <rect key="frame" x="0.0" y="111" width="185" height="32"/>
                                                                                         <view key="contentView" id="Zao-0F-UuG">
                                                                                             <rect key="frame" x="0.0" y="0.0" width="185" height="32"/>
                                                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                         </view>
                                                                                     </box>
                                                                                     <box boxType="custom" borderWidth="0.0" cornerRadius="4" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="fop-xC-29M">
-                                                                                        <rect key="frame" x="0.0" y="59" width="185" height="4"/>
+                                                                                        <rect key="frame" x="0.0" y="99" width="185" height="4"/>
                                                                                         <view key="contentView" id="l5i-vt-fKX">
                                                                                             <rect key="frame" x="0.0" y="0.0" width="185" height="4"/>
                                                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                         </view>
                                                                                     </box>
                                                                                     <box boxType="custom" borderType="line" borderWidth="0.0" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="QxF-bN-gPj">
-                                                                                        <rect key="frame" x="0.0" y="40" width="185" height="11"/>
+                                                                                        <rect key="frame" x="0.0" y="80" width="185" height="11"/>
                                                                                         <view key="contentView" id="HGv-gI-gK4">
                                                                                             <rect key="frame" x="0.0" y="0.0" width="185" height="11"/>
                                                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -3459,8 +3459,15 @@ Feel free to write an explanation here:</string>
                                                                                         </view>
                                                                                     </box>
                                                                                     <box boxType="custom" borderWidth="0.0" cornerRadius="4" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="O3Q-cH-2F8" customClass="mainWindowListBox" customModule="Focus_Bear" customModuleProvider="target">
-                                                                                        <rect key="frame" x="0.0" y="0.0" width="185" height="32"/>
+                                                                                        <rect key="frame" x="0.0" y="40" width="185" height="32"/>
                                                                                         <view key="contentView" id="68P-y5-Ig0">
+                                                                                            <rect key="frame" x="0.0" y="0.0" width="185" height="32"/>
+                                                                                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                                                                        </view>
+                                                                                    </box>
+                                                                                    <box boxType="custom" borderWidth="0.0" cornerRadius="4" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="2vP-UL-Ba0" customClass="mainWindowListBox" customModule="Focus_Bear" customModuleProvider="target">
+                                                                                        <rect key="frame" x="0.0" y="0.0" width="185" height="32"/>
+                                                                                        <view key="contentView" id="Kny-Xd-q0i">
                                                                                             <rect key="frame" x="0.0" y="0.0" width="185" height="32"/>
                                                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                         </view>
@@ -3468,7 +3475,7 @@ Feel free to write an explanation here:</string>
                                                                                 </subviews>
                                                                                 <constraints>
                                                                                     <constraint firstItem="O3Q-cH-2F8" firstAttribute="height" secondItem="6AM-3N-Ccb" secondAttribute="height" id="7ih-wB-Tl9"/>
-                                                                                    <constraint firstAttribute="height" constant="720" placeholder="YES" id="AaZ-43-1uT"/>
+                                                                                    <constraint firstAttribute="height" constant="760" placeholder="YES" id="AaZ-43-1uT"/>
                                                                                     <constraint firstItem="YcD-9J-vfc" firstAttribute="height" secondItem="qCc-gh-YQs" secondAttribute="height" id="EfI-gO-EH4"/>
                                                                                     <constraint firstItem="yNe-DD-qg2" firstAttribute="height" secondItem="qCc-gh-YQs" secondAttribute="height" id="OCk-aA-ywS"/>
                                                                                     <constraint firstItem="wEU-gj-Wbs" firstAttribute="height" secondItem="qCc-gh-YQs" secondAttribute="height" id="QfJ-hy-uMd"/>
@@ -3480,6 +3487,7 @@ Feel free to write an explanation here:</string>
                                                                                     <constraint firstItem="NWh-g3-TSm" firstAttribute="height" secondItem="qCc-gh-YQs" secondAttribute="height" id="kVi-zV-duc"/>
                                                                                     <constraint firstItem="Qq2-sK-ye4" firstAttribute="height" secondItem="qCc-gh-YQs" secondAttribute="height" id="mcU-qo-pZg"/>
                                                                                     <constraint firstItem="cZn-5R-lJ1" firstAttribute="height" secondItem="qCc-gh-YQs" secondAttribute="height" id="q1p-be-jwU"/>
+                                                                                    <constraint firstItem="2vP-UL-Ba0" firstAttribute="height" secondItem="O3Q-cH-2F8" secondAttribute="height" id="y9H-lZ-sKE"/>
                                                                                     <constraint firstItem="yOS-vf-des" firstAttribute="height" secondItem="qCc-gh-YQs" secondAttribute="height" id="yJI-c6-oUx"/>
                                                                                 </constraints>
                                                                                 <visibilityPriorities>
@@ -3504,8 +3512,10 @@ Feel free to write an explanation here:</string>
                                                                                     <integer value="1000"/>
                                                                                     <integer value="1000"/>
                                                                                     <integer value="1000"/>
+                                                                                    <integer value="1000"/>
                                                                                 </visibilityPriorities>
                                                                                 <customSpacing>
+                                                                                    <real value="3.4028234663852886e+38"/>
                                                                                     <real value="3.4028234663852886e+38"/>
                                                                                     <real value="3.4028234663852886e+38"/>
                                                                                     <real value="3.4028234663852886e+38"/>
@@ -3615,6 +3625,7 @@ Feel free to write an explanation here:</string>
                         <outlet property="boxSettings" destination="Qq2-sK-ye4" id="trl-rN-hkA"/>
                         <outlet property="boxTodoPlayer" destination="NWh-g3-TSm" id="T7W-hM-hw3"/>
                         <outlet property="boxToolsItems" destination="uPQ-A1-TsT" id="G2l-sD-nQm"/>
+                        <outlet property="boxUpgradeNow" destination="2vP-UL-Ba0" id="FmL-Vo-VZp"/>
                         <outlet property="btnExpandLeftMenu" destination="vb6-k1-sua" id="SLw-DM-iUE"/>
                     </connections>
                 </viewController>
@@ -5225,13 +5236,13 @@ Gw
                                                             <color key="fillColor" red="1" green="0.89411085840000004" blue="0.77648192640000002" alpha="0.0" colorSpace="custom" customColorSpace="sRGB"/>
                                                         </box>
                                                         <box boxType="custom" borderWidth="0.0" cornerRadius="4" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="0vy-bk-3Yc">
-                                                            <rect key="frame" x="0.0" y="501" width="270" height="50"/>
+                                                            <rect key="frame" x="0.0" y="505" width="270" height="46"/>
                                                             <view key="contentView" id="7aH-Rk-1ll">
-                                                                <rect key="frame" x="0.0" y="0.0" width="270" height="50"/>
+                                                                <rect key="frame" x="0.0" y="0.0" width="270" height="46"/>
                                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                 <subviews>
                                                                     <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="Gki-Hu-Wy9">
-                                                                        <rect key="frame" x="8" y="15" width="234" height="34"/>
+                                                                        <rect key="frame" x="8" y="15" width="234" height="30"/>
                                                                         <textFieldCell key="cell" lineBreakMode="clipping" title="xxMeeting active - breaks off" id="oKZ-mF-y0H">
                                                                             <font key="font" metaFont="systemBold"/>
                                                                             <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -5239,7 +5250,7 @@ Gw
                                                                         </textFieldCell>
                                                                     </textField>
                                                                     <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Rdf-aG-EpN" customClass="hoverInfoButton" customModule="Focus_Bear" customModuleProvider="target">
-                                                                        <rect key="frame" x="245" y="22" width="20" height="20"/>
+                                                                        <rect key="frame" x="245" y="20" width="20" height="20"/>
                                                                         <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="NSInfo" imagePosition="only" alignment="center" imageScaling="proportionallyDown" inset="2" id="wC4-24-JNc">
                                                                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                                             <font key="font" metaFont="system"/>
@@ -5278,7 +5289,7 @@ Gw
                                                             <color key="fillColor" red="1" green="0.89411085840000004" blue="0.77648192640000002" alpha="0.0" colorSpace="custom" customColorSpace="sRGB"/>
                                                         </box>
                                                         <box boxType="custom" borderWidth="0.0" cornerRadius="4" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="H5N-4f-Y2m">
-                                                            <rect key="frame" x="0.0" y="447" width="270" height="42"/>
+                                                            <rect key="frame" x="0.0" y="451" width="270" height="42"/>
                                                             <view key="contentView" id="qKR-0A-1as">
                                                                 <rect key="frame" x="0.0" y="0.0" width="270" height="42"/>
                                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -5347,13 +5358,13 @@ Gw
                                                             <color key="fillColor" red="1" green="0.89411085840000004" blue="0.77648192640000002" alpha="0.0" colorSpace="custom" customColorSpace="sRGB"/>
                                                         </box>
                                                         <box boxType="custom" borderWidth="2" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="dpO-6o-l1E" customClass="BlinkingNSBox" customModule="Focus_Bear" customModuleProvider="target">
-                                                            <rect key="frame" x="0.0" y="389" width="270" height="46"/>
+                                                            <rect key="frame" x="0.0" y="389" width="270" height="50"/>
                                                             <view key="contentView" id="T8T-cU-irs">
-                                                                <rect key="frame" x="2" y="2" width="266" height="42"/>
+                                                                <rect key="frame" x="2" y="2" width="266" height="46"/>
                                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                 <subviews>
                                                                     <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="qXY-dW-oZS">
-                                                                        <rect key="frame" x="8" y="9" width="23" height="25"/>
+                                                                        <rect key="frame" x="8" y="11" width="23" height="25"/>
                                                                         <constraints>
                                                                             <constraint firstAttribute="height" constant="25" id="H3Y-3s-Qie"/>
                                                                             <constraint firstAttribute="width" secondItem="qXY-dW-oZS" secondAttribute="height" multiplier="31:33" id="N9A-Oo-5HF"/>
@@ -5361,7 +5372,7 @@ Gw
                                                                         <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyUpOrDown" image="NSCaution" id="8Ka-p2-B1I"/>
                                                                     </imageView>
                                                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="H9y-z6-M0Q">
-                                                                        <rect key="frame" x="39" y="6" width="156" height="30"/>
+                                                                        <rect key="frame" x="39" y="6" width="156" height="34"/>
                                                                         <textFieldCell key="cell" title="xxGrant Focus Bear permissions to block." id="asm-Rq-AMO">
                                                                             <font key="font" metaFont="cellTitle"/>
                                                                             <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -5369,7 +5380,7 @@ Gw
                                                                         </textFieldCell>
                                                                     </textField>
                                                                     <box boxType="custom" borderType="line" borderWidth="0.0" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="Bjf-no-mB2">
-                                                                        <rect key="frame" x="203" y="9" width="53" height="24"/>
+                                                                        <rect key="frame" x="203" y="11" width="53" height="24"/>
                                                                         <view key="contentView" id="KEB-UL-CPe">
                                                                             <rect key="frame" x="0.0" y="0.0" width="53" height="24"/>
                                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -5397,16 +5408,16 @@ Gw
                                                                         </constraints>
                                                                     </box>
                                                                     <box boxType="custom" borderWidth="0.0" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="agP-cW-4De">
-                                                                        <rect key="frame" x="0.0" y="0.0" width="266" height="42"/>
+                                                                        <rect key="frame" x="0.0" y="0.0" width="266" height="46"/>
                                                                         <view key="contentView" id="x49-I8-WdI">
-                                                                            <rect key="frame" x="0.0" y="0.0" width="266" height="42"/>
+                                                                            <rect key="frame" x="0.0" y="0.0" width="266" height="46"/>
                                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                         </view>
                                                                     </box>
                                                                     <box boxType="custom" borderWidth="0.0" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="atB-dO-I81">
-                                                                        <rect key="frame" x="0.0" y="0.0" width="266" height="42"/>
+                                                                        <rect key="frame" x="0.0" y="0.0" width="266" height="46"/>
                                                                         <view key="contentView" id="Pl8-yM-G0H">
-                                                                            <rect key="frame" x="0.0" y="0.0" width="266" height="42"/>
+                                                                            <rect key="frame" x="0.0" y="0.0" width="266" height="46"/>
                                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                         </view>
                                                                     </box>
@@ -6961,6 +6972,7 @@ EFRyaWFsIHZlcnNpb24gLSA3IG9mIDcgdHJpYWwgZGF5cyByZW1haW5pbmc
                         <outlet property="btnTodoPlayer" destination="2Zt-90-YYK" id="rbH-tC-mYU"/>
                         <outlet property="heightButtonSimplePomodoro" destination="4t5-lO-rd1" id="lvM-zp-1Fc"/>
                         <outlet property="imgViewCurrentTrackState" destination="a7V-XO-nWJ" id="EGB-Ni-03a"/>
+                        <outlet property="imgViewIconStartBreak" destination="YC0-Gr-tcd" id="REN-Zj-JL6"/>
                         <outlet property="imgViewStartSimpleFocusSession" destination="Xyo-EL-y5X" id="9Il-Xi-ePZ"/>
                         <outlet property="imgViewStopSuperFocusSession" destination="6eh-PU-7Fa" id="aqf-pW-5Ns"/>
                         <outlet property="lblBlockingDisabled" destination="uO7-wB-25Z" id="OqJ-lP-VIG"/>

@@ -584,13 +584,20 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
                                 
                                 
                                 
-                                if endingFocusWindowControllerObj != nil{
-                                    if (endingFocusWindowControllerObj?.window?.isVisible ?? false) && endingFocusWindowControllerObj?.contentViewController == focusCompletedVcObj{
-                                        focusCompletedVcObj?.textFieldAchieve.stringValue = taskString
-                                        focusCompletedVcObj?.textFieldAchieve.setFocus()
-                                        
-                                        currentFocusModeIndex = focusCompletedVcObj?.currentFocusModeIndex ?? 0
-                                    }
+//                                if endingFocusWindowControllerObj != nil{
+//                                    if (endingFocusWindowControllerObj?.window?.isVisible ?? false) && endingFocusWindowControllerObj?.contentViewController == focusCompletedVcObj{
+//                                        focusCompletedVcObj?.textFieldAchieve.stringValue = taskString
+//                                        focusCompletedVcObj?.textFieldAchieve.setFocus()
+//                                        
+//                                        currentFocusModeIndex = focusCompletedVcObj?.currentFocusModeIndex ?? 0
+//                                    }
+//                                }
+
+                                if isFocusCompletedViewVisibled(){
+                                    focusCompletedVcObj?.textFieldAchieve.stringValue = taskString
+                                    focusCompletedVcObj?.textFieldAchieve.setFocus()
+                                    
+                                    currentFocusModeIndex = focusCompletedVcObj?.currentFocusModeIndex ?? 0
                                 }
                                 
                                 if currentAction == ._END_ && (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._CUSTOM_ROUTINE_){

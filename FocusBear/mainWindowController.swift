@@ -46,7 +46,7 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
         window!.backingType = .buffered
         self.window?.minSize = NSSize(width: 900, height: 500)// unused
         self.window?.title = ""
-        self.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.numberOfWindowLevelKeys))) //  numberOfWindowLevelKeys kro
+        self.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.numberOfWindowLevelKeys))) //  numberOfWindowLevelKeys kro //    numberOfWindowLevelKeys
         
         if isMainWindowLoaded{
             mainViewControllerObj!.boxTopButtons.isHidden = false
@@ -150,14 +150,11 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
             }
         }
         
-        if (leftMenuVcObj?.boxFocusSession.isSelected ?? false) && focusCompletedVcObj != nil{
-            if focusCompletedVcObj!.isViewLoaded{
-                if mainViewControllerObj!.containerView.subviews.contains(focusCompletedVcObj!.view){
-                    addLog(text: "focus mode completed Window auto close from window close")
-                    focusCompletedVcObj!.takeBreakClicked(isCloseWindowClicked: true)
-                    return true
-                }
-            }
+        
+        if isFocusCompletedViewVisibled(){
+            addLog(text: "focus mode completed Window auto close from window close")
+            focusCompletedVcObj!.takeBreakClicked(isCloseWindowClicked: true)
+            return true
         }
         
         if isGettingSchema{

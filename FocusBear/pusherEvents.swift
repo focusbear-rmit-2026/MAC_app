@@ -66,11 +66,11 @@ class pusherEvents:NSObject, PusherDelegate {
                                         if currentFocusModeIndex == -1{
                                             return;
                                         }
-                                        if getEndFocusModeWindowControllerObj().window!.isVisible{
-                                            let timestamp = getStringFromDate(date: startFocusModeTime ?? Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
-                                            addEntryInStatsCsv(logType: "focus block", activity: focusCompletedVcObj!.currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: "\(focusModeMinutesToPerform) of \(focusCompletedVcObj!.currentFocusModeName)", distractionsEncountered: "", abortReason: "", feedback: "", tags:"")
-                                            getEndFocusModeWindowControllerObj().window?.close()
-                                        }
+//                                        if getEndFocusModeWindowControllerObj().window!.isVisible{
+//                                            let timestamp = getStringFromDate(date: startFocusModeTime ?? Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
+//                                            addEntryInStatsCsv(logType: "focus block", activity: focusCompletedVcObj!.currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: "\(focusModeMinutesToPerform) of \(focusCompletedVcObj!.currentFocusModeName)", distractionsEncountered: "", abortReason: "", feedback: "", tags:"")
+//                                            getEndFocusModeWindowControllerObj().window?.close()
+//                                        }
                                         
                                         let calendar = Calendar.current
                                         startFocusModeTime = Date()
@@ -160,10 +160,10 @@ class pusherEvents:NSObject, PusherDelegate {
                     return;
                 }
                 
-                if getEndFocusModeWindowControllerObj().window!.isVisible{
-                    getEndFocusModeWindowControllerObj().window?.close()
-                    return;
-                }
+//                if getEndFocusModeWindowControllerObj().window!.isVisible{
+//                    getEndFocusModeWindowControllerObj().window?.close()
+//                    return;
+//                }
                 closeTaskPlayerWindowIfVisible()
                 isHardCorePomodoroModeOn = false
 

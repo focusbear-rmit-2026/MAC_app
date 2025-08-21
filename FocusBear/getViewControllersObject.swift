@@ -1482,27 +1482,27 @@ let focusCompletedFullScreenVcObj = mainStoryboard.instantiateController(withIde
 //let startingFocusWindowControllerObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
 
 
-var endingFocusWindowControllerObj: commonWindowController?
+//var endingFocusWindowControllerObj: commonWindowController?
 
-func getEndFocusModeWindowControllerObj()->commonWindowController{
-    if endingFocusWindowControllerObj == nil{
-        endingFocusWindowControllerObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
-    }
-    if let state = UserDefaults.standard.object(forKey: kUserdefaultsIsCompletedFocusWindowOnTop) as? Bool{
-        if state{
-            endingFocusWindowControllerObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
-        }else{
-            endingFocusWindowControllerObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.normalWindow)))
-        }
-    }else{
-        UserDefaults.standard.set(false, forKey: kUserdefaultsIsCompletedFocusWindowOnTop)
-        endingFocusWindowControllerObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.normalWindow)))
-    }
-    endingFocusWindowControllerObj?.window?.styleMask.insert(.resizable)
-//    endingFocusWindowControllerObj?.window?.styleMask.remove(.fullScreen)
-    endingFocusWindowControllerObj?.window?.collectionBehavior = [.fullScreenNone]
-    return endingFocusWindowControllerObj!
-}
+//func getEndFocusModeWindowControllerObj()->commonWindowController{// do not delete. this this is resizable but not full screen. code is usable
+//    if endingFocusWindowControllerObj == nil{
+//        endingFocusWindowControllerObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
+//    }
+//    if let state = UserDefaults.standard.object(forKey: kUserdefaultsIsCompletedFocusWindowOnTop) as? Bool{
+//        if state{
+//            endingFocusWindowControllerObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
+//        }else{
+//            endingFocusWindowControllerObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.normalWindow)))
+//        }
+//    }else{
+//        UserDefaults.standard.set(false, forKey: kUserdefaultsIsCompletedFocusWindowOnTop)
+//        endingFocusWindowControllerObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.normalWindow)))
+//    }
+//    endingFocusWindowControllerObj?.window?.styleMask.insert(.resizable)
+////    endingFocusWindowControllerObj?.window?.styleMask.remove(.fullScreen)
+//    endingFocusWindowControllerObj?.window?.collectionBehavior = [.fullScreenNone]
+//    return endingFocusWindowControllerObj!
+//}
 var rememberNextHabitVcObj:rememberNextHabitVc?
 
 func getRememberNextHabitVcObj()->rememberNextHabitVc{
@@ -2328,4 +2328,23 @@ func getFocusModeStateVcObject()->focusModeStateVc{
         focusModeStateVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("focusModeStateVc")) as? focusModeStateVc
     }
     return focusModeStateVcObj!
+}
+
+
+//floatingTopBarVc
+var floatingTopBarVcObj:floatingTopBarVc?
+func getFloatingTopBarVObject()->floatingTopBarVc{
+    if floatingTopBarVcObj == nil{
+        floatingTopBarVcObj = nagsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("floatingTopBarVc")) as? floatingTopBarVc
+    }
+    return floatingTopBarVcObj!
+}
+
+//floatingTopBarWc
+var floatingTopBarWcObj:commonWindowController?
+func getFloatingTopBarWObject()->commonWindowController{
+    if floatingTopBarWcObj == nil{
+        floatingTopBarWcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
+    }
+    return floatingTopBarWcObj!
 }

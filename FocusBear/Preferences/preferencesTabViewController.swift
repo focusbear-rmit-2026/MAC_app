@@ -117,7 +117,7 @@ class preferencesTabViewController: NSTabViewController {
             }
             
             tabViewItemStrictnesss!.label = tabBlockedListText
-            arrForSearchFromSimpleModeSettings.append(["title": tabBlockedListText, "tabId": idTabStrictness])// todo in main window
+            arrForSearchFromSimpleModeSettings.append(["title": tabBlockedListText, "tabId": idTabStrictness])
             if #available(macOS 11.0, *) {
                 tabViewItemStrictnesss!.image = NSImage(systemSymbolName: "bolt.circle", accessibilityDescription: nil)
             } else {

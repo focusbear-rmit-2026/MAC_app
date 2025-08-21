@@ -369,6 +369,29 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
                 if (mainWindowControllerObj?.window!.isVisible)!{//it means isi per aaya hoga
                     
                     if (leftMenuVcObj?.boxBlocks.isSelected ?? false) || (leftMenuVcObj?.boxFocusModeSettings.isSelected ?? false) || (leftMenuVcObj?.boxSettings.isSelected ?? false) || (leftMenuVcObj?.boxEditHabits.isSelected ?? false){
+                        
+                        if leftMenuVcObj?.boxSettings.isSelected ?? false{
+                            if frictionVcObj != nil{
+                                if settingsContainerVcObj?.containerView.subviews.contains(frictionVcObj!.view) ?? false{
+                                    if SettingsManagerObject.isPasswordRequireInCircumventingBlocks{
+                                        self.view.removeFromSuperview()
+                                        frictionVcObj?.turnOffReloadAfterForceQuit()
+                                        return;
+                                    }
+                                }
+                            }
+                            if uIVcObj != nil{
+                                if settingsContainerVcObj?.containerView.subviews.contains(uIVcObj!.view) ?? false{
+                                    if SettingsManagerObject.isPasswordRequireInCircumventingBlocks{
+                                        self.view.removeFromSuperview()
+                                        uIVcObj?.settingsChangegShowDockIcon()
+                                        return;
+                                    }
+                                }
+                            }
+                        }
+                        
+                        
                         self.view.removeFromSuperview()
                         return;
                     }else{
@@ -416,15 +439,7 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
             }
         }
         
-        if frictionVcObj != nil{
-            if settingsContainerVcObj?.containerView.subviews.contains(frictionVcObj!.view) ?? false{
-                if SettingsManagerObject.isPasswordRequireInCircumventingBlocks{
-                    self.view.removeFromSuperview()
-                    frictionVcObj?.turnOffReloadAfterForceQuit()
-                    return;
-                }
-            }
-        }
+        
 //        if preferencesWindowControllerObj != nil{
 //            if self.view.window == preferencesWindowControllerObj?.window{
 //                if selectJsonVcObj != nil{
@@ -441,15 +456,7 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
         
         
         
-        if uIVcObj != nil{
-            if settingsContainerVcObj?.containerView.subviews.contains(uIVcObj!.view) ?? false{
-                if SettingsManagerObject.isPasswordRequireInCircumventingBlocks{
-                    self.view.removeFromSuperview()
-                    uIVcObj?.settingsChangegShowDockIcon()
-                    return;
-                }
-            }
-        }
+        
         
         self.view.removeFromSuperview()
     }
@@ -517,7 +524,7 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
         
         if isMainWindowLoaded{
             if self.view.window == mainWindowControllerObj?.window{
-                if (mainWindowControllerObj?.window!.isVisible)!{//it means isi per aaya hoga
+                if (mainWindowControllerObj?.window!.isVisible)!{//
                     
                     
                     
@@ -531,37 +538,41 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
                                 }
                             }
                         }
+                        if leftMenuVcObj?.boxSettings.isSelected ?? false{
+                            
+                            if frictionVcObj != nil{
+                                if settingsContainerVcObj?.containerView.subviews.contains(frictionVcObj!.view) ?? false{
+                                    if SettingsManagerObject.isPasswordRequireInCircumventingBlocks{
+                                        self.view.removeFromSuperview()
+                                        frictionVcObj?.reloadAppAfterForceQuitItemVcObj?.btnSwitch.state = .on
+                                        return;
+                                    }
+                                }
+                            }
+                            
+                            if uIVcObj != nil{
+                                if settingsContainerVcObj?.containerView.subviews.contains(uIVcObj!.view) ?? false{
+                                    if SettingsManagerObject.isPasswordRequireInCircumventingBlocks{
+                                        self.view.removeFromSuperview()
+                                        uIVcObj?.showDockIconItemVcObj?.btnSwitch.state = .off
+                                        return;
+                                    }
+                                }
+                            }
+                        }
                         
-                       // if selectJsonVcObj != nil{
-        //                    if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-                                //if tabview.selectedTabViewItemIndex == preferencesEditHabitsIndex{
-                                self.view.removeFromSuperview()
-                    
+                        // if selectJsonVcObj != nil{
+                        //                    if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
+                        //if tabview.selectedTabViewItemIndex == preferencesEditHabitsIndex{
+                        self.view.removeFromSuperview()
+                        
                         leftMenuVcObj?.showHelpAndSupportView()
-                                return;
+                        return;
                                 //}
         //                    }
                        // }
-                        // todo iske niche ka baad mai dekhan hai 
-                        if frictionVcObj != nil{
-                            if settingsContainerVcObj?.containerView.subviews.contains(frictionVcObj!.view) ?? false{
-                                if SettingsManagerObject.isPasswordRequireInCircumventingBlocks{
-                                    self.view.removeFromSuperview()
-                                    frictionVcObj?.reloadAppAfterForceQuitItemVcObj?.btnSwitch.state = .on
-                                    return;
-                                }
-                            }
-                        }
+
                         
-                        if uIVcObj != nil{
-                            if settingsContainerVcObj?.containerView.subviews.contains(uIVcObj!.view) ?? false{
-                                if SettingsManagerObject.isPasswordRequireInCircumventingBlocks{
-                                    self.view.removeFromSuperview()
-                                    uIVcObj?.showDockIconItemVcObj?.btnSwitch.state = .off
-                                    return;
-                                }
-                            }
-                        }
                     }else{
                         self.view.removeFromSuperview()
                         if currentState != ._SHUTOFFMAC_ && currentState != ._FOCUS_SUMMARY_{

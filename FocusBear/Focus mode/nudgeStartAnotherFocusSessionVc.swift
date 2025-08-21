@@ -8,7 +8,7 @@
 
 import Cocoa
 
-class nudgeStartAnotherFocusSessionVc: NSViewController {
+class nudgeStartAnotherFocusSessionVc: NSViewController {// not in use 
 
     @IBOutlet weak var mainBgView: NSView!
     @IBOutlet weak var boxMessage: NSBox!
@@ -29,22 +29,22 @@ class nudgeStartAnotherFocusSessionVc: NSViewController {
 
     
     @IBAction func btnCancelClicked(_ sender: Any) {
-        if endingFocusWindowControllerObj != nil{
-            if endingFocusWindowControllerObj?.window?.isVisible ?? false{
-                addLog(text: "focus mode completed Window close")
-                focusCompletedVcObj!.btnTakeBreakClicked(self)
-            }
-        }
+//        if endingFocusWindowControllerObj != nil{
+//            if endingFocusWindowControllerObj?.window?.isVisible ?? false{
+//                addLog(text: "focus mode completed Window close")
+//                focusCompletedVcObj!.btnTakeBreakClicked(self)
+//            }
+//        }
         self.view.window?.close()
     }
     
     @IBAction func btnOkClicked(_ sender: Any) {
-        if endingFocusWindowControllerObj != nil{
-            if endingFocusWindowControllerObj?.window?.isVisible ?? false{
-                addLog(text: "focus mode completed Window close")
-                focusCompletedVcObj!.btnStartAnotherFocusBlockClicked(self)
-            }
-        }
+//        if endingFocusWindowControllerObj != nil{
+//            if endingFocusWindowControllerObj?.window?.isVisible ?? false{
+//                addLog(text: "focus mode completed Window close")
+//                focusCompletedVcObj!.btnStartAnotherFocusBlockClicked(self)
+//            }
+//        }
         self.view.window?.close()
     }
 }
