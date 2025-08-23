@@ -406,7 +406,7 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
 //            }
 //        }
         if mainWindowControllerObj != nil{
-            if mainWindowControllerObj!.window!.hasDarkAppearance{ // need to make a function for this todo
+            if mainWindowControllerObj!.window!.hasDarkAppearance{ // need to make a function for this todo 
                 theme = "DARK"
             }else {
                 theme = "LIGHT"

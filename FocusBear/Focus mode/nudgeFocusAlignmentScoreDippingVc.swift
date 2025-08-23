@@ -140,6 +140,11 @@ class nudgeFocusAlignmentScoreDippingVc: NSViewController {
         }else{
             lblCurrentTask.stringValue = "No Current Task"
         }
+        
+        
+        if !isCuddlyModeEnabled() || !SettingsManagerObject.isAiCheckUrlEnabled || isBlockSuperDistractingFocusModeOn(){
+            lblDescriptionText.stringValue = "AI is not enabled." // todo text
+        }
     }
     
     func setTimerStopAniumation(){
@@ -153,6 +158,14 @@ class nudgeFocusAlignmentScoreDippingVc: NSViewController {
     
     @IBAction func btnClicked(_ sender: Any) {
         nudgeFocusAlignmentScoreDippingWcObject?.toggleMenu()
+        
+//        /If the big floating bear is open, I don’t think we need the little one as well.
+        if floatingTopBarWcObj != nil && !isFocusBearMenuVisible(){
+            if getFloatingTopBarWObject().window?.isVisible ?? false{
+                getFloatingTopBarVObject().boxMain.isHidden = false
+                getFloatingTopBarVObject().boxMoreItems.isHidden = false
+            }
+        }
     }
     @IBAction func btnExpandTaskPlayerClicked(_ sender: Any) {
         menuViewControllerObj?.openToDoListClicked()

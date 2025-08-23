@@ -23,6 +23,7 @@ class breaksBrainDumpVc: NSViewController {
     @IBOutlet weak var btnInfo: NSButton!
     
     var timerBreaksScreenIdle: Timer?
+    var totalDurationIdleTime = 30
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -69,6 +70,7 @@ class breaksBrainDumpVc: NSViewController {
             }
         }
         totalDuration += 30
+        totalDurationIdleTime = totalDuration
         DispatchQueue.global().sync{//async {
             if self.timerBreaksScreenIdle != nil{
                 self.timerBreaksScreenIdle?.invalidate()
@@ -158,7 +160,8 @@ class breaksBrainDumpVc: NSViewController {
     }
     
     @objc func breaksScreenIdleResetBreaks(){
-        getHabitsVcObject().breaksScreenIsIdleResetBreaks()
+//        getHabitsVcObject().breaksScreenIsIdleResetBreaks()
+        showNaturalBreakDetectionWindow(duration: totalDurationIdleTime)
     }
     
     @IBAction func btnInfoClicked(_ sender: Any) {
@@ -169,6 +172,7 @@ class breaksBrainDumpVc: NSViewController {
             lblSubtitle.stringValue = breaksBrainDumpVcInfo.value(forKey: "description") as? String ?? lblSubtitle.stringValue
         }
     }
+    
     override func viewWillDisappear() {
         if self.timerBreaksScreenIdle != nil{
             self.timerBreaksScreenIdle?.invalidate()
@@ -176,6 +180,7 @@ class breaksBrainDumpVc: NSViewController {
         }
         UserDefaults.standard.set(textView.string, forKey: kUserdefaultsFocusModeNotes)
     }
+    
     @IBAction func btnPostponeBreakClicked(_ sender: Any) {
         addLog(text: "[user-action] breaksBrainDumpVc:- button Postpone Clicked")
         if currentState == ._MICRO_BREAK_{

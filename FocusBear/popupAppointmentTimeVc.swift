@@ -123,7 +123,9 @@ class popupAppointmentTimeVc: NSViewController {
             mainWindowControllerObj?.showWindow(self)
             showBlankWindowInSecondaryMonitor()
         }else{
-            getSmallCountDownWindowObject().showWindow(self)
+//            getSmallCountDownWindowObject().showWindow(self)
+//            getsmallCountDownVcObject().view.isHidden = false
+            showSmallTimerView()
         }
         getHabitsVcObject().abortCancel()
     }

@@ -750,11 +750,11 @@ class focusCompletedVc: NSViewController {
             }
             
         }else{
-            if brainDumpWcObj != nil{
-                if brainDumpWcObj!.window?.isVisible ?? false{
-                    brainDumpWcObj?.window?.close()
-                }
-            }
+//            if brainDumpWcObj != nil{
+//                if brainDumpWcObj!.window?.isVisible ?? false{
+//                    brainDumpWcObj?.window?.close()
+//                }
+//            }
             btnTakeBreak.isEnabled = false
             loader.isHidden = false
             loader.startAnimation(self)
@@ -853,11 +853,11 @@ class focusCompletedVc: NSViewController {
     func closeWindowForcefully(){
         isFinishFocusModeApiCalled = true
         whatToAchieveInFocusBlock = ""
-        if brainDumpWcObj != nil{
-            if brainDumpWcObj!.window?.isVisible ?? false{
-                brainDumpWcObj?.window?.close()
-            }
-        }
+//        if brainDumpWcObj != nil{
+//            if brainDumpWcObj!.window?.isVisible ?? false{
+//                brainDumpWcObj?.window?.close()
+//            }
+//        }
         
         
         let timestamp = getStringFromDate(date: startFocusModeTime ?? Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
@@ -984,11 +984,11 @@ class focusCompletedVc: NSViewController {
                     if self == focusCompletedVcObj{//normal case
                         self.view.window?.close()// focus end screen was showing before starting  a routine
                     }else{
-                        if brainDumpWcObj != nil{
-                            if brainDumpWcObj!.window?.isVisible ?? false{
-                                brainDumpWcObj?.window?.close()
-                            }
-                        }
+//                        if brainDumpWcObj != nil{
+//                            if brainDumpWcObj!.window?.isVisible ?? false{
+//                                brainDumpWcObj?.window?.close()
+//                            }
+//                        }
                         currentState = ._NOTHING_
                         btnTakeBreak.isEnabled = false
                         loader.isHidden = false
@@ -1000,11 +1000,11 @@ class focusCompletedVc: NSViewController {
                     if self == focusCompletedVcObj{//normal case
                         self.view.window?.close()// focus end screen was showing before starting  a routine
                     }else{
-                        if brainDumpWcObj != nil{
-                            if brainDumpWcObj!.window?.isVisible ?? false{
-                                brainDumpWcObj?.window?.close()
-                            }
-                        }
+//                        if brainDumpWcObj != nil{
+//                            if brainDumpWcObj!.window?.isVisible ?? false{
+//                                brainDumpWcObj?.window?.close()
+//                            }
+//                        }
                         currentState = ._NOTHING_
                         btnTakeBreak.isEnabled = false
                         loader.isHidden = false

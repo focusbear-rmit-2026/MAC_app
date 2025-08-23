@@ -92,8 +92,13 @@ class askQuitVc: NSViewController {
         }
         var isEasyPostponeWindowVisible = false
         
-        if easyPostponeWcObj != nil{
-            if easyPostponeWcObj?.window?.isVisible ?? false{
+//        if easyPostponeWcObj != nil{
+//            if easyPostponeWcObj?.window?.isVisible ?? false{
+//                isEasyPostponeWindowVisible = true
+//            }
+//        }
+        if easyPostponeVcObj != nil{
+            if easyPostponeVcObj?.isViewVisible ?? false{
                 isEasyPostponeWindowVisible = true
             }
         }
@@ -375,13 +380,14 @@ class askQuitVc: NSViewController {
         
         setDocBarTo(isHide: false)
         if currentHabitPlaying != nil{
-            if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
-                if smallCountDownWcObj?.window != nil{
-                    if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
-                        getSmallCountDownWindowObject().window?.close()
-                    }
-                }
-            }
+//            if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
+//                if smallCountDownWcObj?.window != nil{
+//                    if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
+//                        getSmallCountDownWindowObject().window?.close()
+//                    }
+//                }
+//            }
+            closeSmallCountDownTimerBoxIfVisibleForWithoutFocusBreak()
         }
         getHabitsVcObject().stopActivityTimer()
         if currentHabitPlaying != nil{
@@ -410,11 +416,13 @@ class askQuitVc: NSViewController {
             showBlankWindowInSecondaryMonitor()
             timerViewcontrollerObj?.btnPauseClicked(self)
             timerViewcontrollerObj?.menuItemSkipHabitClicked()
-            if smallCountDownWcObj != nil{
-                if smallCountDownWcObj!.window?.isVisible ?? false{
-                    getsmallCountDownVcObject().closeTimerBox()
-                }
-            }
+//            if smallCountDownWcObj != nil{
+//                if smallCountDownWcObj!.window?.isVisible ?? false{
+//                    getsmallCountDownVcObject().closeTimerBox()
+//                }
+//            }
+            
+            closeSmallCountDownTimerBoxIfVisible()
             
             if relaxModeWcObj != nil{
                 if relaxModeWcObj!.window?.isVisible ?? false{

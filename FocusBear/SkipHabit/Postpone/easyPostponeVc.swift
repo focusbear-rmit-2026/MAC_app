@@ -23,6 +23,7 @@ class easyPostponeVc: NSViewController {
     // if current routine is custom routine and postpone end notification is showing for morning routine .then we need not to confuse about for what easy postpone window is showing. there may be two options first is to postpone cusotm routine and second is to extend postpone duartion of morning routine . so we use this variable to understand without any confusion
     var isForExtendPostponeDuringCustomRoutine = false
     
+    var isViewVisible = false
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
@@ -70,11 +71,23 @@ class easyPostponeVc: NSViewController {
         }
     }
     
+    override func viewWillAppear() {
+        isViewVisible = true
+    }
     override func viewWillDisappear() {
+        isViewVisible = false
         if enterPasswordVcObj != nil{
             if self == enterPasswordVcObj!.presentingViewController{
                 enterPasswordVcObj!.dismiss(enterPasswordVcObj!)
             }
+        }
+    }
+    
+    func closeView(){
+        if self.presentingViewController == mainViewControllerObj{
+            self.dismiss(self)
+        }else{
+            self.view.window?.close()
         }
     }
     
@@ -98,13 +111,14 @@ class easyPostponeVc: NSViewController {
             if (currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeMorningHabit) || (currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeEveningHabit){
                 habitsVcObj?.stopActivityCountDownTimer()
                 if currentActivityPlaying != nil{
-                    if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
-                        if smallCountDownWcObj?.window != nil{
-                            if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
-                                getSmallCountDownWindowObject().window?.close()
-                            }
-                        }
-                    }
+//                    if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
+//                        if smallCountDownWcObj?.window != nil{
+//                            if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
+//                                getSmallCountDownWindowObject().window?.close()
+//                            }
+//                        }
+//                    }
+                    closeSmallCountDownTimerBoxIfVisibleForWithoutFocusBreak()
                 }
                 currentHabitPlaying = nil
                 isCustomRoutineWasRunningInPostponeMorningHabit = false
@@ -116,11 +130,12 @@ class easyPostponeVc: NSViewController {
                 if getHabitsVcObject().postponeTimer != nil{
                     getHabitsVcObject().postponeTimer?.invalidate()
                     getHabitsVcObject().postponeTimer = nil
-                    if smallCountDownWcObj != nil{
-                        if getSmallCountDownWindowObject().window!.isVisible && getsmallCountDownVcObject().isFocusBreak{
-                            smallCountDownVcObj?.closeTimerBox()
-                        }
-                    }
+//                    if smallCountDownWcObj != nil{
+//                        if getSmallCountDownWindowObject().window!.isVisible && getsmallCountDownVcObject().isFocusBreak{
+//                            smallCountDownVcObj?.closeTimerBox()
+//                        }
+//                    }
+                    closeSmallCountDownTimerBoxIfVisibleForFocusBreak()
                 }
                 if getHabitsVcObject().postponeNotificationTimer != nil{
                     getHabitsVcObject().postponeNotificationTimer?.invalidate()
@@ -131,29 +146,23 @@ class easyPostponeVc: NSViewController {
             
             
             appdelegate?.backgroundThread()
-            if self.presentingViewController == mainViewControllerObj{
-                self.dismiss(self)
-            }else{
-                self.view.window?.close()
-            }
+            closeView()
             return;
         }
         
        
         
         if currentAction == ._INPROGRESS_  && (currentHabitPlaying != nil || currentActivityPlaying != nil){// if background abit is going on
-            getSmallCountDownWindowObject().showWindow(self)
+//            getSmallCountDownWindowObject().showWindow(self)
+//            getsmallCountDownVcObject().view.isHidden = false
+            showSmallTimerView()
         }else{
             mainWindowControllerObj?.showWindow(self)
             showBlankWindowInSecondaryMonitor()
         }
         
         getHabitsVcObject().abortCancel()
-        if self.presentingViewController == mainViewControllerObj{
-            self.dismiss(self)
-        }else{
-            self.view.window?.close()
-        }
+        closeView()
     }
     
     @IBAction func btnPostponeClicked(_ sender: Any) {
@@ -165,11 +174,12 @@ class easyPostponeVc: NSViewController {
                 if getHabitsVcObject().postponeTimer != nil{
                     getHabitsVcObject().postponeTimer?.invalidate()
                     getHabitsVcObject().postponeTimer = nil
-                    if smallCountDownWcObj != nil{
-                        if getSmallCountDownWindowObject().window!.isVisible && getsmallCountDownVcObject().isFocusBreak{
-                            smallCountDownVcObj?.closeTimerBox()
-                        }
-                    }
+//                    if smallCountDownWcObj != nil{
+//                        if getSmallCountDownWindowObject().window!.isVisible && getsmallCountDownVcObject().isFocusBreak{
+//                            smallCountDownVcObj?.closeTimerBox()
+//                        }
+//                    }
+                    closeSmallCountDownTimerBoxIfVisibleForFocusBreak()
                 }
                 if getHabitsVcObject().postponeNotificationTimer != nil{
                     getHabitsVcObject().postponeNotificationTimer?.invalidate()
@@ -213,11 +223,7 @@ class easyPostponeVc: NSViewController {
         }else if lastCurrentState == ._POSTPON_EVENING_HABIT_{
             getHabitsVcObject().postponeEveningHabitFor(minutes: Int(popupButtonMinutes.title) ?? 5, secondsToPostpone: nil, showAskFocusModeView:false, showAskIntention:false)
         }
-        if self.presentingViewController == mainViewControllerObj{
-            self.dismiss(self)
-        }else{
-            self.view.window?.close()
-        }
+        closeView()
     }
     
     @IBAction func btnDeactivateAppClicked(_ sender: Any) {

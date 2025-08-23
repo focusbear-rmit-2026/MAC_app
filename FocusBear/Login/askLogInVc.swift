@@ -150,6 +150,39 @@ class askLogInVc: NSViewController {
     @IBAction func btnSignInWithAppleClicked(_ sender: Any) {
 //        Auth0
 //            .webAuth()
+//            .connection("apple") // Apple connection in Auth0
+//            .audience("https://auth.focusbear.io/api/v2/") // same audience
+//            .scope("openid profile email offline_access")
+//            .start { result in
+//                switch result {
+//                case .success(let credentials):
+//                    print("Logged in with Apple: \(credentials)")
+//
+//                    DispatchQueue.main.async {
+//                        self.view.window?.close()
+//                        appdelegate?.statusbutton?.action = nil
+//
+//                        appdelegate?.user = AuthUser(from: credentials.accessToken)
+//
+//                        allApiObject.capturePosthog(event: "login-homemade", metadata: [:])
+//                        _ = appdelegate?.credentialsManager.store(credentials: credentials)
+//
+//                        UserDefaults.standard.set(true, forKey: kUserdefaultsIsUserLoggedIn)
+//                        appdelegate?.loadCredentialsAndDeviceId()
+////                        UserDefaults.standard.set(true, forKey: kUserDefaultsLastUserLoginWithApple)
+//                    }
+//
+//                case .failure(let error):
+//                    print("Apple login failed: \(error)")
+//                    DispatchQueue.main.async {
+//                        askLogInWcObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.modalPanelWindow)))
+//                    }
+//                }
+//            }
+
+        
+//        Auth0
+//            .webAuth()
 //            .connection("apple") // The connection name for Apple
 //            .start { result in
 //                switch result {
@@ -170,9 +203,9 @@ class askLogInVc: NSViewController {
 //                    // Handle login failure, show an error message
 //                }
 //            }
-//
-//
-//        return;
+
+
+        return;
         addLog(text:"[user-action] btnSignInWithAppleClicked")
         allApiObject.capturePosthog(event: "button-signin-with-apple-clicked", metadata: [:])
         self.presentAsSheet(loginComingSoonMsgVcObject())

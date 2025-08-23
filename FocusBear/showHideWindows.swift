@@ -431,12 +431,20 @@ func showDeactivateBreaksWindow(){
 func showNaturalBreakDetectionWindow(duration:Int){
     addLog(text:"showNaturalBreakDetectionWindow")
     allApiObject.capturePosthog(event: "natural-break-detection-window-shown", metadata: [:])
-    getNaturalBreaksDetectionWindowObject().contentViewController = getNaturalBreaksDetectionVcObject()
-    getNaturalBreaksDetectionWindowObject().window?.styleMask.remove(.closable)
-    getNaturalBreaksDetectionWindowObject().window?.center()
-    getNaturalBreaksDetectionWindowObject().window?.title = appName
-    getNaturalBreaksDetectionWindowObject().showWindow(nil)
-    getNaturalBreaksDetectionVcObject().resetView(duration:duration)
+    
+    naturalBreaksDetectionVcObj = nil// always catch a fresh object
+    if mainWindowControllerObj?.window?.isVisible ?? false{
+        mainViewControllerObj?.presentAsSheet(getNaturalBreaksDetectionVcObject())
+        getNaturalBreaksDetectionVcObject().resetView(duration:duration)
+    }else{
+        getNaturalBreaksDetectionWindowObject().contentViewController = getNaturalBreaksDetectionVcObject()
+        getNaturalBreaksDetectionWindowObject().window?.styleMask.remove(.closable)
+        getNaturalBreaksDetectionWindowObject().window?.center()
+        getNaturalBreaksDetectionWindowObject().window?.title = appName
+        getNaturalBreaksDetectionWindowObject().showWindow(nil)
+        getNaturalBreaksDetectionVcObject().resetView(duration:duration)
+    }
+    
 }
 //-------------------------------------------------//
 
@@ -795,7 +803,8 @@ func showEasyPostponeWindow(){
     addLog(text:"showEasyPostponeWindow")
     allApiObject.capturePosthog(event: "easy-postpone-window-shown", metadata: [:])
     
-    if mainWindowControllerObj?.window?.isVisible ?? false{ 
+    easyPostponeVcObj = nil// always get a fresh object
+    if mainWindowControllerObj?.window?.isVisible ?? false{
         mainViewControllerObj?.presentAsSheet(getEasyPostponeVcObject())
     }else{
         getEasyPostponeWindowObject().contentViewController = getEasyPostponeVcObject()
@@ -811,6 +820,15 @@ func showEasyPostponeWindow(){
     NSApplication.shared.activate(ignoringOtherApps: true)
 }
 //-------------------------------------------------//
+
+
+func closeEasyPostponeWindowIfVisible(){
+    if easyPostponeVcObj != nil{
+        if easyPostponeVcObj?.isViewVisible ?? false{
+            easyPostponeVcObj?.closeView()
+        }
+    }
+}
 
 
 //***********show Super Gentle Quit Window***************//
@@ -1048,7 +1066,7 @@ func showUpgradeNowWindow(){
             upgradeNowVcObj?.closeView()
         }
     }
-    upgradeNowVcObj = nil// always cath a fresh object
+    upgradeNowVcObj = nil// always catch a fresh object
     if mainWindowControllerObj?.window?.isVisible ?? false{
         mainViewControllerObj?.presentAsSheet(getUpgradeNowVcObject())
     }else{
@@ -1335,6 +1353,15 @@ func showNudgeFocusAlignmentScoreWindow(score:Double){
 //    }
     //.
     
+    ///If the big floating bear is open, I don’t think we need the little one as well.
+    if floatingTopBarWcObj != nil{
+        if getFloatingTopBarWObject().window?.isVisible ?? false{
+            getFloatingTopBarVObject().boxMain.isHidden = true
+            getFloatingTopBarVObject().boxMoreItems.isHidden = true
+        }
+    }
+    
+    
     if nudgeFocusAlignmentScoreDippingWcObject == nil{
         nudgeFocusAlignmentScoreDippingWcObject = nudgeFocusAlignmentScoreDippingWc()
     }
@@ -1386,6 +1413,14 @@ func closeNudgeFocusAlignmentScoreWindow(){
     if nudgeFocusAlignmentScoreDippingWcObject != nil{
         if (nudgeFocusAlignmentScoreDippingWcObject?.isNudgeVisible ??  false){
             nudgeFocusAlignmentScoreDippingWcObject?.toggleMenu()
+            
+            ///If the big floating bear is open, I don’t think we need the little one as well.
+            if floatingTopBarWcObj != nil && !isFocusBearMenuVisible(){
+                if getFloatingTopBarWObject().window?.isVisible ?? false{
+                    getFloatingTopBarVObject().boxMain.isHidden = false
+                    getFloatingTopBarVObject().boxMoreItems.isHidden = false
+                }
+            }
         }
         nudgeFocusAlignmentScoreDippingWcObject?.window?.close()
     }
@@ -1566,10 +1601,128 @@ func showFloatingTopBarWindow(windowTopMidPoint:NSPoint){
         getFloatingTopBarWObject().window?.styleMask = .borderless
     }
     getFloatingTopBarWObject().showWindow(nil)
-    var origin = NSPoint(x: windowTopMidPoint.x - (getFloatingTopBarVObject().view.frame.width / 2), y: windowTopMidPoint.y - getFloatingTopBarVObject().view.frame.height + getFloatingTopBarVObject().topSpaceMainBox.constant)
+    let boxMainMaxY = floatingTopBarVcObj?.boxMain.frame.maxY ?? 134
+    
+    var origin = NSPoint(x: windowTopMidPoint.x - (getFloatingTopBarVObject().view.frame.width / 2), y: windowTopMidPoint.y - boxMainMaxY)// 34. box height
     if SettingsManagerObject.isMenuPopoverEnabled{
-        origin = NSPoint(x: windowTopMidPoint.x - (getFloatingTopBarVObject().view.frame.width / 2), y: windowTopMidPoint.y - getFloatingTopBarVObject().view.frame.height - 13 + getFloatingTopBarVObject().topSpaceMainBox.constant)
+        origin = NSPoint(x: windowTopMidPoint.x - (getFloatingTopBarVObject().view.frame.width / 2), y: windowTopMidPoint.y - boxMainMaxY - 10)// 10 is arrow height
     }
     getFloatingTopBarWObject().window?.setFrameOrigin(origin)
     getFloatingTopBarVObject().boxMain.isHidden = false
+    getFloatingTopBarVObject().boxMoreItems.isHidden = false
+}
+
+
+func closeMenuWindowIsVisible(){
+    if !SettingsManagerObject.isMenuPopoverEnabled{
+        if menuWcObj != nil{
+            if menuWcObj?.window?.isVisible ?? false{
+                menuWcObj?.window?.close()
+            }
+        }
+    }
+}
+
+//***********SHOW Small Timer WINDOW***************//
+
+func showSmallTimerWindow(durationSeconds: Int, msg: String, isFocusBreak:Bool, currentTimerValue:Int){
+    addLog(text:"show Top Small Timer Window for:- \(durationSeconds) seconds")
+    if SettingsManagerObject.isMenuPopoverEnabled{
+        if appdelegate?.popover.isShown ?? false{
+            appdelegate?.popover.close()
+        }
+    }else{
+        if getMenuWindowObject().window?.isVisible ?? false{
+            getMenuWindowObject().window?.close()
+        }
+    }
+    floatingTopBarVcObj?.showTimerWindow(durationSeconds: durationSeconds, msg: msg, isFocusBreak: isFocusBreak, currentTimerValue: currentTimerValue)
+    
+//    getSmallCountDownWindowObject().contentViewController = getsmallCountDownVcObject()
+//    smallCountDownVcObj?.isFocusBreak = isFocusBreak
+//    getSmallCountDownWindowObject().window?.styleMask = .borderless
+//    let screenFrame = NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 1920, height: 1080)
+//    
+//    getSmallCountDownWindowObject().window?.setFrameOrigin(NSPoint(x: screenFrame.width - (smallCountDownVcObj?.view.frame.width)!, y: screenFrame.height - (smallCountDownVcObj?.view.frame.height)! - 22)) //  22 status bar heigh
+//    getSmallCountDownWindowObject().window?.isMovableByWindowBackground = true
+//    
+//    getSmallCountDownWindowObject().showWindow(nil)
+//    
+//    smallCountDownVcObj?.startTimerHabit(durationSeconds: durationSeconds, msg: msg, currentTimerValue:currentTimerValue)
+}
+
+func showSmallTimerView(){
+//    getsmallCountDownVcObject().view.isHidden = false
+    floatingTopBarVcObj?.boxTimer.isHidden = false
+    floatingTopBarVcObj?.timerBoxShown()
+}
+
+//***********SHOW Focus End Warning***************//
+
+func showFocusEndWarningWindow(){
+    addLog(text:"showFocusEndWarningWindow")
+    getFocusEndWarningWindowObject().contentViewController = getFocusEndWarningVcObject()
+    //    getFocusEndWarningWindowObject().window?.styleMask = .borderless
+    let screenFrame = NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 1920, height: 1080)
+    //    getFocusEndWarningWindowObject().window?.styleMask.remove(.closable)
+    getFocusEndWarningWindowObject().window?.title = appName
+    getFocusEndWarningWindowObject().window?.setFrameOrigin(NSPoint(x: screenFrame.width - (getFocusEndWarningVcObject().view.frame.width), y: screenFrame.height - (getFocusEndWarningVcObject().view.frame.height) - 22)) //  22 status bar heigh
+    //    getFocusEndWarningWindowObject().window?.isMovableByWindowBackground = true
+    getFocusEndWarningWindowObject().showWindow(nil)
+}
+
+//***********SHOW Custom Notification WINDOW***************//
+//func showCustomNotificationWindow(msg: String){
+//    addLog(text:"show Custom Notification Window")
+//    getCustomNotificationWindowObject().contentViewController = getCustomNotificationVcObject()ye view  subview bhi ban rha h to dekh k use kro agar uncomment kro to
+//    getCustomNotificationWindowObject().window?.styleMask = .borderless
+//    let screenFrame = NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 1920, height: 1080)
+//    getCustomNotificationWindowObject().window?.backgroundColor = NSColor.clear
+//    getCustomNotificationWindowObject().window?.setFrameOrigin(NSPoint(x: screenFrame.width - (customNotificationVcObj?.view.frame.width)!, y: screenFrame.height - (customNotificationVcObj?.view.frame.height)! - 22)) //  22 status bar heigh
+//
+//    getCustomNotificationWindowObject().showWindow(nil)
+//    customNotificationVcObj?.resetView(msg: msg)
+//}
+
+//***********SHOW Custom Notification View***************//
+func showCustomNotificationView(msg: String){
+    if mainWindowControllerObj?.window?.isVisible ?? false{
+        addLog(text:"show Custom Notification View")
+        let _ = getCustomNotificationVcObject()
+        getHabitsVcObject().view.addSubview(customNotificationVcObj!.view)
+        getHabitsVcObject().view.addTopRightConstraints(subView: customNotificationVcObj!.view)
+        customNotificationVcObj!.resetView(msg: msg)
+    }
+    
+}
+
+
+func isSmallCountDownTimerViewVisible()->Bool{
+    if smallCountDownVcObj != nil{
+        return !(floatingTopBarVcObj?.boxTimer.isHidden ?? false)
+    }
+    return false
+}
+
+func closeSmallCountDownTimerBoxIfVisible(){
+    if isSmallCountDownTimerViewVisible(){
+        smallCountDownVcObj?.closeTimerBox()
+    }
+}
+
+func closeSmallCountDownTimerBoxIfVisibleForFocusBreak(){
+    if isSmallCountDownTimerViewVisible(){
+        if (smallCountDownVcObj?.isFocusBreak ?? false){
+            smallCountDownVcObj?.closeTimerBox()
+        }
+    }
+}
+
+
+func closeSmallCountDownTimerBoxIfVisibleForWithoutFocusBreak(){
+    if isSmallCountDownTimerViewVisible(){
+        if !(smallCountDownVcObj?.isFocusBreak ?? false){
+            smallCountDownVcObj?.closeTimerBox()
+        }
+    }
 }

@@ -1635,7 +1635,8 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {/
         SettingsManagerObject.isSettingsChanged = true
         if checkboxReloadAppAfterForceQuit.state == .on{
             SettingsManagerObject.shouldReloadAfterForceQuitEnabled = true
-            createLaunchAgent()
+//            createLaunchAgent()
+            startMainAppForceQuitMonitoring()
             allApiObject.capturePosthog(event: "settings-changed-enable-reload-after-force-quit", metadata: [:])
         }else{
             SettingsManagerObject.shouldReloadAfterForceQuitEnabled = false

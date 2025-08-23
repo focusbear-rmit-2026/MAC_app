@@ -512,7 +512,8 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
             if easyPostponeVcObj != nil{
                 if self.parentVc == easyPostponeVcObj{
                     if !isShowingForDeactivatingApp{
-                        easyPostponeWcObj?.window?.close()
+//                        easyPostponeWcObj?.window?.close()
+                        closeEasyPostponeWindowIfVisible()
                         return;
                     }else{
                         self.dismiss(self)

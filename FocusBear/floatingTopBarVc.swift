@@ -11,10 +11,16 @@ import Cocoa
 
 class floatingTopBarVc: NSViewController {
 
+    @IBOutlet weak var widthBoxMain: NSLayoutConstraint!
+    @IBOutlet weak var boxTimerSmall: NSBox!
+    @IBOutlet weak var boxTimer: NSBox!
     @IBOutlet weak var boxMain: NSBox!
     @IBOutlet weak var topSpaceMainBox: NSLayoutConstraint!
     @IBOutlet weak var boxFakeView: NSBox!
+    @IBOutlet weak var boxMoreItems: NSBox!
     
+    
+    var normalWidth:CGFloat = 205
     var boxMainTrackingArea: NSTrackingArea?
     
     override func viewDidLoad() {
@@ -23,6 +29,8 @@ class floatingTopBarVc: NSViewController {
         
         boxMainTrackingArea = NSTrackingArea.init(rect: boxMain.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
         boxMain.addTrackingArea(boxMainTrackingArea!)
+        boxTimer.isHidden = true
+        normalWidth = self.view.frame.width
     }
     
     @IBAction func btnBarClicked(_ sender: Any) {
@@ -31,16 +39,39 @@ class floatingTopBarVc: NSViewController {
     
     override func mouseEntered(with event: NSEvent) {
         if event.trackingArea == boxMainTrackingArea{
-            isCustomBarIsInFocus = true
+//            isCustomBarIsInFocus = true
         }
     }
     
     override func mouseExited(with event: NSEvent) {
         if event.trackingArea == boxMainTrackingArea{
-            isCustomBarIsInFocus = false
+//            isCustomBarIsInFocus = false
         }
     }
     @IBAction func btnCloseClicked(_ sender: Any) {
         boxMain.isHidden = true
+        boxMoreItems.isHidden = true
+    }
+    
+    func timerBoxClosed(){
+        widthBoxMain.constant = normalWidth
+    }
+    
+    func timerBoxShown(){
+        widthBoxMain.constant = normalWidth + 100
+    }
+    
+    func showTimerWindow(durationSeconds: Int, msg: String, isFocusBreak:Bool, currentTimerValue:Int){
+        if !getsmallCountDownVcObject().isViewLoaded{
+            getsmallCountDownVcObject().loadView()
+        }
+        if !boxTimerSmall.subviews.contains(getsmallCountDownVcObject().view){
+            boxTimerSmall.addSubview(getsmallCountDownVcObject().view)
+            boxTimerSmall.addConstraints(subView: getsmallCountDownVcObject().view)
+        }
+        boxTimer.isHidden = false
+        smallCountDownVcObj?.isFocusBreak = isFocusBreak
+        smallCountDownVcObj?.startTimerHabit(durationSeconds: durationSeconds, msg: msg, currentTimerValue:currentTimerValue)
+        timerBoxShown()
     }
 }

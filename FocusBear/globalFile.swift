@@ -1794,47 +1794,47 @@ var lastShownRandomChoiceDic = [String:activityChoice]()
 
 
 let mainAppBundelId = Bundle.main.bundleIdentifier ?? ""
-func createLaunchAgent(){
-    addLog(text: "func:- createLaunchAgent")
-    //Background process "open" modified when Focus Bear opened?  #409 It shouldn't appear every time the app is restarted
-    let path = Bundle.main.bundlePath
-    if let userLA = AHLaunchCtl.allJobsFromFiles(in: AHLaunchDomain.userLaunchAgent) as? [AHLaunchJob] {
-        for uLA in userLA {
-            if uLA.isCurrentlyLoaded{
-                if let arguments = uLA.programArguments as? [String]{
-                    if arguments.contains(where: {$0.caseInsensitiveCompare(path) == .orderedSame}) {
-                        addLog(text: "LaunchAgent already created return")
-                        return;
-                    }
-                }
-            }
-        }
-    }
-    //
-    
-    let destination = "/Users/\(NSUserName())/Library/LaunchAgents/"
-    if !FileManager.default.fileExists(atPath: destination) {
-        do {
-            try FileManager.default.createDirectory(at: URL(fileURLWithPath: destination), withIntermediateDirectories: true, attributes: nil)
-        } catch {}
-        
-    }
-    
-    // saves the agent plist file
-    let userLaunchAgentsPath = "\("/Users/")\(NSUserName())\("/Library/LaunchAgents/\(mainAppBundelId).plist")"
-    
-    let dicContent = ["Label": "\(mainAppBundelId).plist", "ProgramArguments":["/usr/bin/open","-F","-g",path,"--args"],"RunAtLoad":true,"KeepAlive":true] as [String : Any]
-    
-    let plistContent = NSDictionary(dictionary: dicContent)
-    let success:Bool = plistContent.write(toFile: userLaunchAgentsPath, atomically: true)
-    if success {
-        print("file has been created!")
-    }else{
-        print("unable to create the file")
-    }
-    shell(launchPath: "/bin/launchctl", arguments: ["load","-w","\("/Users/")\(NSUserName())\("/Library/LaunchAgents/\(mainAppBundelId).plist")"])
-    addLog(text: "createLaunchAgent done")
-}
+//func createLaunchAgent(){//  comment this
+//    addLog(text: "func:- createLaunchAgent")
+//    //Background process "open" modified when Focus Bear opened?  #409 It shouldn't appear every time the app is restarted
+//    let path = Bundle.main.bundlePath
+//    if let userLA = AHLaunchCtl.allJobsFromFiles(in: AHLaunchDomain.userLaunchAgent) as? [AHLaunchJob] {
+//        for uLA in userLA {
+//            if uLA.isCurrentlyLoaded{
+//                if let arguments = uLA.programArguments as? [String]{
+//                    if arguments.contains(where: {$0.caseInsensitiveCompare(path) == .orderedSame}) {
+//                        addLog(text: "LaunchAgent already created return")
+//                        return;
+//                    }
+//                }
+//            }
+//        }
+//    }
+//    //
+//    
+//    let destination = "/Users/\(NSUserName())/Library/LaunchAgents/"
+//    if !FileManager.default.fileExists(atPath: destination) {
+//        do {
+//            try FileManager.default.createDirectory(at: URL(fileURLWithPath: destination), withIntermediateDirectories: true, attributes: nil)
+//        } catch {}
+//        
+//    }
+//    
+//    // saves the agent plist file
+//    let userLaunchAgentsPath = "\("/Users/")\(NSUserName())\("/Library/LaunchAgents/\(mainAppBundelId).plist")"
+//    
+//    let dicContent = ["Label": "\(mainAppBundelId).plist", "ProgramArguments":["/usr/bin/open","-F","-g",path,"--args"],"RunAtLoad":true,"KeepAlive":true] as [String : Any]
+//    
+//    let plistContent = NSDictionary(dictionary: dicContent)
+//    let success:Bool = plistContent.write(toFile: userLaunchAgentsPath, atomically: true)
+//    if success {
+//        print("file has been created!")
+//    }else{
+//        print("unable to create the file")
+//    }
+//    shell(launchPath: "/bin/launchctl", arguments: ["load","-w","\("/Users/")\(NSUserName())\("/Library/LaunchAgents/\(mainAppBundelId).plist")"])
+//    addLog(text: "createLaunchAgent done")
+//}
 
 var helperUrl: URL = {
 
@@ -1959,62 +1959,7 @@ func showNotificationWithMessage(msg:String){
 
 
 
-//***********SHOW Small Timer WINDOW***************//
 
-func showSmallTimerWindow(durationSeconds: Int, msg: String, isFocusBreak:Bool, currentTimerValue:Int){
-    addLog(text:"show Top Small Timer Window for:- \(durationSeconds) seconds")
-    getSmallCountDownWindowObject().contentViewController = getsmallCountDownVcObject()
-    smallCountDownVcObj?.isFocusBreak = isFocusBreak
-    getSmallCountDownWindowObject().window?.styleMask = .borderless
-    let screenFrame = NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 1920, height: 1080)
-    
-    getSmallCountDownWindowObject().window?.setFrameOrigin(NSPoint(x: screenFrame.width - (smallCountDownVcObj?.view.frame.width)!, y: screenFrame.height - (smallCountDownVcObj?.view.frame.height)! - 22)) //  22 status bar heigh
-    getSmallCountDownWindowObject().window?.isMovableByWindowBackground = true
-    
-    getSmallCountDownWindowObject().showWindow(nil)
-    
-    smallCountDownVcObj?.startTimerHabit(durationSeconds: durationSeconds, msg: msg, currentTimerValue:currentTimerValue)
-}
-
-
-//***********SHOW Focus End Warning***************//
-
-func showFocusEndWarningWindow(){
-    addLog(text:"showFocusEndWarningWindow")
-    getFocusEndWarningWindowObject().contentViewController = getFocusEndWarningVcObject()
-    //    getFocusEndWarningWindowObject().window?.styleMask = .borderless
-    let screenFrame = NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 1920, height: 1080)
-    //    getFocusEndWarningWindowObject().window?.styleMask.remove(.closable)
-    getFocusEndWarningWindowObject().window?.title = appName
-    getFocusEndWarningWindowObject().window?.setFrameOrigin(NSPoint(x: screenFrame.width - (getFocusEndWarningVcObject().view.frame.width), y: screenFrame.height - (getFocusEndWarningVcObject().view.frame.height) - 22)) //  22 status bar heigh
-    //    getFocusEndWarningWindowObject().window?.isMovableByWindowBackground = true
-    getFocusEndWarningWindowObject().showWindow(nil)
-}
-
-//***********SHOW Custom Notification WINDOW***************//
-//func showCustomNotificationWindow(msg: String){
-//    addLog(text:"show Custom Notification Window")
-//    getCustomNotificationWindowObject().contentViewController = getCustomNotificationVcObject()ye view  subview bhi ban rha h to dekh k use kro agar uncomment kro to
-//    getCustomNotificationWindowObject().window?.styleMask = .borderless
-//    let screenFrame = NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 1920, height: 1080)
-//    getCustomNotificationWindowObject().window?.backgroundColor = NSColor.clear
-//    getCustomNotificationWindowObject().window?.setFrameOrigin(NSPoint(x: screenFrame.width - (customNotificationVcObj?.view.frame.width)!, y: screenFrame.height - (customNotificationVcObj?.view.frame.height)! - 22)) //  22 status bar heigh
-//
-//    getCustomNotificationWindowObject().showWindow(nil)
-//    customNotificationVcObj?.resetView(msg: msg)
-//}
-
-//***********SHOW Custom Notification View***************//
-func showCustomNotificationView(msg: String){
-    if mainWindowControllerObj?.window?.isVisible ?? false{
-        addLog(text:"show Custom Notification View")
-        let _ = getCustomNotificationVcObject()
-        getHabitsVcObject().view.addSubview(customNotificationVcObj!.view)
-        getHabitsVcObject().view.addTopRightConstraints(subView: customNotificationVcObj!.view)
-        customNotificationVcObj!.resetView(msg: msg)
-    }
-    
-}
 
 
 //***********Popup Block Confirm Window***************//
@@ -5261,4 +5206,26 @@ class BlinkingNSBox: NSBox {// 22/7/25  v 1.26.393
 
 var isExplainingPermissionsWindowShowingFromPomodoro = false
 
-var isCustomBarIsInFocus = false// when app is not in focus and user try to click close icon of custom bar . then applicationDidBecomeActive func called instead of close action because app become active and because app become active it shows menu (from inside applicationDidBecomeActive func) instead of  closing custom bar. to prevent this we are using isCustomBarIsInFocus variable. so that if user's cursor is on custom bar then menu will not show.
+//var isCustomBarIsInFocus = false// when app is not in focus and user try to click close icon of custom bar . then applicationDidBecomeActive func called instead of close action because app become active and because app become active it shows menu (from inside applicationDidBecomeActive func) instead of  closing custom bar. to prevent this we are using isCustomBarIsInFocus variable. so that if user's cursor is on custom bar then menu will not show.
+
+
+
+func startMainAppForceQuitMonitoring(){
+    appdelegate!.sharedDefaults?.setValue(true, forKeyPath: kUserdefaultsStartMainAppIfNotRunning)
+    appdelegate!.sharedDefaults?.synchronize()
+    let startMainAppForceQuitMonitoring = Notification.Name("startMainAppForceQuitMonitoring")
+    DistributedNotificationCenter.default().post(name: startMainAppForceQuitMonitoring,object: mainAppBundelId)
+}
+
+func stopMainAppForceQuitMonitoring(){
+    if let state = appdelegate!.sharedDefaults?.object(forKey: kUserdefaultsStartMainAppIfNotRunning) as? Bool{
+        if state{
+            appdelegate!.sharedDefaults?.setValue(false, forKeyPath: kUserdefaultsStartMainAppIfNotRunning)
+            appdelegate!.sharedDefaults?.synchronize()
+            
+            let stopMainAppForceQuitMonitoring = Notification.Name("stopMainAppForceQuitMonitoring")
+            DistributedNotificationCenter.default().post(name: stopMainAppForceQuitMonitoring,object: mainAppBundelId)
+        }
+    }
+}
+

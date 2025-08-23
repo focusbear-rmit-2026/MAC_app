@@ -22,6 +22,8 @@ class naturalBreaksDetectionVc: NSViewController {
     var isNormalState = false
     var showBoxTime:Date?
     var duration = 0
+    var isViewVisible = false
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
@@ -40,8 +42,28 @@ class naturalBreaksDetectionVc: NSViewController {
         }
     }
     
+    override func viewWillAppear() {
+        isViewVisible = true
+    }
+    
     override func viewWillDisappear() {
         addLog(text: "natural Breaks Detection window closed")
+        isViewVisible = false
+    }
+    
+    
+    func closeView(){
+        if isViewVisible{
+            if let window = self.view.window {
+                if let _ = window.sheetParent {
+                    self.dismiss(self)
+                } else if window.contentViewController === self {
+                    self.view.window?.close()
+                } else {
+                    self.view.window?.close()// no chance
+                }
+            }
+        }
     }
     
     func resetView(duration:Int){
@@ -68,7 +90,7 @@ class naturalBreaksDetectionVc: NSViewController {
         if isNormalState{
             addLog(text: "[user-action] naturalBreaksDetectionVc - btnThanksClicked")
             allApiObject.capturePosthog(event: "natural-break-detected-correct", metadata: [:])
-            self.view.window?.close()
+            self.closeView()
             
             if let showBoxTime = showBoxTime{
                 let idelTimeStartTime = showBoxTime.addingTimeInterval(-Double(duration))
@@ -91,13 +113,17 @@ class naturalBreaksDetectionVc: NSViewController {
             }else{
                 addLog(text: "Break start time is undefined or not initialized")
             }
-            
-            if getHabitsVcObject().breakTimer != nil{
-                getHabitsVcObject().setActivityTimer()
+            if currentState == ._MICRO_BREAK_{
+                getHabitsVcObject().breaksScreenIsIdleResetBreaks()
+            }else{
+                if getHabitsVcObject().breakTimer != nil{
+                    getHabitsVcObject().setActivityTimer()
+                }
             }
+            
         }else{
             addLog(text: "[user-action] naturalBreaksDetectionVc - btnYupINeedBreak Clicked")
-            self.view.window?.close()
+            self.closeView()
             if currentState == ._POSTPON_MORNING_HABIT_{
                 isBreakActivityExecuteFromPostponeMorningHabit = true
             }else if currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_{
@@ -106,21 +132,33 @@ class naturalBreaksDetectionVc: NSViewController {
             if !isMainWindowLoaded{
                 mainWindowControllerObj?.loadWindow()
             }
-            getHabitsVcObject().executeBreakActivities()
+            if currentState != ._MICRO_BREAK_{
+                getHabitsVcObject().executeBreakActivities()
+            }
         }
     }
     
     @IBAction func btnSecondClicked(_ sender: Any) {
         if isNormalState{
-            if currentState != ._MORNING_HABIT_ && currentState != ._MICRO_BREAK_ && (isHabitAlreadyShowed || currentState == ._POSTPON_MORNING_HABIT_) && arrAllbreakActivities.count != 0 && !appdelegate!.isUserOnMeeting && currentState != ._BREATHING_ && currentState != ._EVENING_HABIT_ && currentState != ._FOCUS_SUMMARY_{
+            if currentState != ._MORNING_HABIT_ && (isHabitAlreadyShowed || currentState == ._POSTPON_MORNING_HABIT_) && arrAllbreakActivities.count != 0 && !appdelegate!.isUserOnMeeting && currentState != ._BREATHING_ && currentState != ._EVENING_HABIT_ && currentState != ._FOCUS_SUMMARY_{
                 addLog(text: "show AskTakeBreakView")
                 showAskTakeBreakView()
             }else{
-                addLog(text: "Don't need to show Take Break View")
+                if currentState == ._MICRO_BREAK_{
+                    addLog(text: "show AskTakeBreakView")
+                    showAskTakeBreakView()
+                }else{
+                    addLog(text: "Don't need to show Take Break View")
+                    self.closeView()
+                }
+                
             }
         }else{
             addLog(text: "[user-action] naturalBreaksDetectionVc - btnNoIWillTakeLater Clicked")
-            self.view.window?.close()
+            self.closeView()
+            if currentState == ._MICRO_BREAK_{
+                getHabitsVcObject().breaksScreenIsIdleResetBreaks()
+            }
         }
     }
     

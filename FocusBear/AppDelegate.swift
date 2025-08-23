@@ -786,7 +786,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 addLog(text: "Renew token because the expiration date is within 24 hours.")
                 Auth0
                     .authentication()
-                    .renew(withRefreshToken: credential?.refreshToken ?? "")
+                    .renew(withRefreshToken: newCredential.refreshToken ?? "")
                     .start { result in
                         self.renewCredentialsProcessing = false
                         switch result {
@@ -1293,12 +1293,22 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         self.registerPomodoroShortcut()
                     }
                 }
+
+                deleteLaunchAgent()// this will be always
+                // tell helper app to  monitor force quit
                 
                 if SettingsManagerObject.shouldReloadAfterForceQuitEnabled{
-                    createLaunchAgent()
+                    startMainAppForceQuitMonitoring()
                 }else{
-                    deleteLaunchAgent()
+                    stopMainAppForceQuitMonitoring()
                 }
+                
+                
+//                if SettingsManagerObject.shouldReloadAfterForceQuitEnabled{
+//                    createLaunchAgent()
+//                }else{
+//                    deleteLaunchAgent()
+//                }
 
                 if UserDefaults.standard.object(forKey: kUserdefaultsIsAnyDistractionSetByUser) == nil{
                     if SettingsManagerObject.arrBlockedApps.count != 0 || SettingsManagerObject.arrBlockedUrls.count != 0{
@@ -1636,7 +1646,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     @objc private func macWillPowerOff(_ aNotification: Notification) {
         //respond to the power-off notification
         addLog(text: "func:- macWillPowerOff")
-        createLaunchAgent()
+//        createLaunchAgent()
+        startMainAppForceQuitMonitoring()
         terminateFromSelf = true
         disableAllAlertsBeforeQuit()
     }
@@ -1679,11 +1690,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         toolBoxWcObj?.window?.close()
                     }
                 }
-                if smallCountDownWcObj != nil{
-                    if smallCountDownWcObj!.window?.isVisible ?? false{
-                        getsmallCountDownVcObject().closeTimerBox()
-                    }
-                }
+//                if smallCountDownWcObj != nil{
+//                    if smallCountDownWcObj!.window?.isVisible ?? false{
+//                        getsmallCountDownVcObject().closeTimerBox()
+//                    }
+//                }
+                closeSmallCountDownTimerBoxIfVisible()
+                
                 enableSystemSleep()// dont change current state
             }
         }
@@ -2041,13 +2054,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             }
             
             DispatchQueue.main.async {
-                if brainDumpWcObj != nil{
-                    if brainDumpWcObj?.window != nil{
-                        if brainDumpWcObj!.window!.isVisible{
-                            brainDumpVcObj?.focusModeStarted()
-                        }
-                    }
-                }
                 if leftMenuVcObj != nil{
                     leftMenuVcObj?.focusModeOrFocusModeHabitStarted()
                     leftMenuVcObj?.resetFocusModeTitle()
@@ -2862,7 +2868,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                 hideBlankWindowInSecondaryMonitor()
                             }
                         }else if event.keyCode == 48{// tab
-                            if mainWindowControllerObj?.window?.isVisible ?? false{
+                            if mainWindowControllerObj?.window?.isVisible ?? false && (leftMenuVcObj?.boxHabits.isSelected ?? false || leftMenuVcObj?.boxCustomRoutine.isSelected ?? false || leftMenuVcObj?.boxMicroBreaks.isSelected ?? false){
                                 if (getHabitsVcObject().habitsView.subviews.contains(thirdVcObj!.view)){
                                     if (getHabitsVcObject().view.subviews.contains((logQuantityVcObj!.view))){
                                         if currentState == ._MICRO_BREAK_ || currentState == ._BREATHING_ || currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_{
@@ -2874,8 +2880,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                 }
                             }
                         }else if event.keyCode == 36 || event.keyCode == 76{
-                            if mainWindowControllerObj?.window?.isVisible ?? false{
-                                if currentState == ._MICRO_BREAK_ || currentState == ._BREATHING_ || currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_{// todo left menu selected tab ka check bhi lahao
+                            if mainWindowControllerObj?.window?.isVisible ?? false && (leftMenuVcObj?.boxHabits.isSelected ?? false || leftMenuVcObj?.boxCustomRoutine.isSelected ?? false || leftMenuVcObj?.boxMicroBreaks.isSelected ?? false){
+                                if currentState == ._MICRO_BREAK_ || currentState == ._BREATHING_ || currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_{
                                     if askPostponeVcObj != nil{
                                         if (getHabitsVcObject().view.subviews.contains((getAskPostponeVcObject().view))){
                                             return event
@@ -3010,7 +3016,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     
     @objc func togglePopoverFromButton(_ sender: Any?) {
         togglePopover(true) // or true, depending on case
-        isCustomBarIsInFocus = false
+//        isCustomBarIsInFocus = false
     }
     
     @objc func togglePopover(_ isDefaultButton:Bool = true) {
@@ -3054,22 +3060,22 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             
             if (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_) && !(mainWindowControllerObj?.window?.isVisible ?? false){
                 addLog(text: "try to show samll window")
-                if currentHabitPlaying != nil || currentActivityPlaying != nil{// it means background activity
-                    if smallCountDownWcObj != nil{
-                        addLog(text: "small window is not nil")
-                        if smallCountDownWcObj?.window?.alphaValue == 0{
-                            if popUpBlockConfirmWcObj != nil{
-                                if !(popUpBlockConfirmWcObj?.window?.isVisible ?? false){//Countdown timer pops up after allowing app/website #455
-                                    smallCountDownWcObj?.window?.alphaValue = 1
-                                    addLog(text: "try to show samll window done")
-                                }
-                            }else{
-                                smallCountDownWcObj?.window?.alphaValue = 1
-                                addLog(text: "try to show samll window done")
-                            }
-                        }
-                    }
-                }
+//                if currentHabitPlaying != nil || currentActivityPlaying != nil{// it means background activity
+//                    if smallCountDownWcObj != nil{
+//                        addLog(text: "small window is not nil")
+//                        if smallCountDownWcObj?.window?.alphaValue == 0{
+//                            if popUpBlockConfirmWcObj != nil{
+//                                if !(popUpBlockConfirmWcObj?.window?.isVisible ?? false){//Countdown timer pops up after allowing app/website #455
+//                                    smallCountDownWcObj?.window?.alphaValue = 1
+//                                    addLog(text: "try to show samll window done")
+//                                }
+//                            }else{
+//                                smallCountDownWcObj?.window?.alphaValue = 1
+//                                addLog(text: "try to show samll window done")
+//                            }
+//                        }
+//                    }
+//                }
             }
             addLog(text: "togglePopover end")
         }  
@@ -3096,9 +3102,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 }else{
                     getMenuWindowObject().showWindow(self)
                     if let barMidxPoint = floatingTopBarWcObj?.window?.frame.midX, let barMidBottomYPoint = floatingTopBarWcObj?.window?.frame.minY{
+                        let boxMainMaxY = floatingTopBarVcObj?.boxMain.frame.maxY ?? 134
                         
-                        let minXPoint = barMidxPoint - ((menuViewControllerObj?.view.frame.width ?? 300) / 2)
-                        let minYPoint = barMidBottomYPoint - (menuViewControllerObj?.view.frame.height ?? 300)
+                        let minXPoint = barMidxPoint - ((menuViewControllerObj?.view.window?.frame.width ?? 300) / 2)
+                        let minYPoint = barMidBottomYPoint - (menuViewControllerObj?.view.window?.frame.height ?? 300) + boxMainMaxY// 100 is timer box height
                         getMenuWindowObject().window?.setFrameOrigin(NSPoint(x: minXPoint, y: minYPoint))
                         
                     }
@@ -3442,13 +3449,19 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             self.timerPomodoroMode = nil
             isFocusBreakOn = false
         }
-        if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
-            if smallCountDownWcObj?.window != nil{
-                if getSmallCountDownWindowObject().window!.isVisible && getsmallCountDownVcObject().isFocusBreak{
-                    getsmallCountDownVcObject().closeTimerBox()
-                }
+//        if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
+//            if smallCountDownWcObj?.window != nil{
+//                if getSmallCountDownWindowObject().window!.isVisible && getsmallCountDownVcObject().isFocusBreak{
+//                    getsmallCountDownVcObject().closeTimerBox()
+//                }
+//            }
+//        }
+        if isSmallCountDownTimerViewVisible(){
+            if smallCountDownVcObj?.isFocusBreak ?? false{
+                smallCountDownVcObj?.closeTimerBox()
             }
         }
+        
         pomodoroVcObj?.isShowingMorningHardcorePomodoro = false
         allApiObject.capturePosthog(event: "start-focus-session-popup-opened", metadata: [:])
         
@@ -3501,13 +3514,20 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             self.timerPomodoroMode = nil
             isFocusBreakOn = false
         }
-        if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
-            if smallCountDownWcObj?.window != nil{
-                if getSmallCountDownWindowObject().window!.isVisible && getsmallCountDownVcObject().isFocusBreak{
-                    getsmallCountDownVcObject().closeTimerBox()
-                }
+//        if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
+//            if smallCountDownWcObj?.window != nil{
+//                if getSmallCountDownWindowObject().window!.isVisible && getsmallCountDownVcObject().isFocusBreak{
+//                    getsmallCountDownVcObject().closeTimerBox()
+//                }
+//            }
+//        }
+        
+        if isSmallCountDownTimerViewVisible(){
+            if smallCountDownVcObj?.isFocusBreak ?? false{
+                smallCountDownVcObj?.closeTimerBox()
             }
         }
+        
         allApiObject.capturePosthog(event: "start-focus-session-popup-opened", metadata: [:])
         
         mainWindowControllerObj?.showWindow(self)
@@ -3534,6 +3554,17 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         }else{
             leftMenuVcObj?.boxCustomRoutine.isHidden = false
         }
+        // show floating bar
+        if let frame = appdelegate?.statusbutton?.window?.frame{
+            let leading = frame.midX
+            
+            showFloatingTopBarWindow(windowTopMidPoint: (NSPoint(x: leading, y: frame.maxY - 24)))
+        }else{
+            if let screenFrame = NSScreen.main?.frame{
+                showFloatingTopBarWindow(windowTopMidPoint: (NSPoint(x: screenFrame.width - 350, y: screenFrame.height - 34)))
+            }
+        }
+        
         
         loadMenuWindow()
         isFirstRun = false
@@ -4729,16 +4760,25 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                             }
                                         }
                                     }
-                                    if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
-                                        if smallCountDownWcObj?.window != nil{
-                                            if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
-                                                if getsmallCountDownVcObject().timer != nil {
-                                                    getsmallCountDownVcObject().timer?.invalidate()
-                                                    getSmallCountDownWindowObject().window?.close()
-                                                }
-                                            }
+//                                    if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
+//                                        if smallCountDownWcObj?.window != nil{
+//                                            if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
+//                                                if getsmallCountDownVcObject().timer != nil {
+//                                                    getsmallCountDownVcObject().timer?.invalidate()
+//                                                    getSmallCountDownWindowObject().window?.close()
+//                                                }
+//                                            }
+//                                        }
+//                                    }
+                                    
+                                    
+                                    if isSmallCountDownTimerViewVisible(){
+                                        if !(smallCountDownVcObj?.isFocusBreak ?? false){
+                                            smallCountDownVcObj?.closeTimerBox()
                                         }
                                     }
+                                    
+                                    
                                 }
                             }
                             getHabitsVcObject().refreshLastPostponeCount()
@@ -4834,11 +4874,17 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         getHabitsVcObject().stopActivityCountDownTimer()
                         
                         if currentHabitPlaying != nil || currentActivityPlaying != nil{
-                            if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
-                                if smallCountDownWcObj?.window != nil{
-                                    if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
-                                        getSmallCountDownWindowObject().window?.close()
-                                    }
+//                            if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
+//                                if smallCountDownWcObj?.window != nil{
+//                                    if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
+//                                        getSmallCountDownWindowObject().window?.close()
+//                                    }
+//                                }
+//                            }
+                            
+                            if isSmallCountDownTimerViewVisible(){
+                                if !(smallCountDownVcObj?.isFocusBreak ?? false){
+                                    smallCountDownVcObj?.closeTimerBox()
                                 }
                             }
                         }
@@ -4919,11 +4965,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         hideBlankWindowInSecondaryMonitor()
                         
                         showPopupAppointmentWindow(title: eventTitle, endTime: eventEndTime!)
-                        if easyPostponeWcObj != nil{
-                            if easyPostponeWcObj?.window?.isVisible ?? false{
-                                easyPostponeWcObj?.close()
-                            }
-                        }
+//                        if easyPostponeWcObj != nil{
+//                            if easyPostponeWcObj?.window?.isVisible ?? false{
+//                                easyPostponeWcObj?.close()
+//                            }
+//                        }
+                        closeEasyPostponeWindowIfVisible()
                     }else{
                         if getHabitsVcObject().breakTimer != nil{
                             getHabitsVcObject().setActivityTimer()
@@ -5247,8 +5294,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                                     getHabitsVcObject().postponeNotificationTimer = nil
                                                 }
                                                 
-                                                if smallCountDownWcObj != nil{
-                                                    if getSmallCountDownWindowObject().window!.isVisible && getsmallCountDownVcObject().isFocusBreak{
+//                                                if smallCountDownWcObj != nil{
+//                                                    if getSmallCountDownWindowObject().window!.isVisible && getsmallCountDownVcObject().isFocusBreak{
+//                                                        smallCountDownVcObj?.closeTimerBox()
+//                                                    }
+//                                                }
+                                                
+                                                if isSmallCountDownTimerViewVisible(){
+                                                    if (smallCountDownVcObj?.isFocusBreak ?? false){
                                                         smallCountDownVcObj?.closeTimerBox()
                                                     }
                                                 }
@@ -5286,8 +5339,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                                     getHabitsVcObject().postponeNotificationTimer = nil
                                                 }
                                                 
-                                                if smallCountDownWcObj != nil{
-                                                    if getSmallCountDownWindowObject().window!.isVisible && getsmallCountDownVcObject().isFocusBreak{
+//                                                if smallCountDownWcObj != nil{
+//                                                    if getSmallCountDownWindowObject().window!.isVisible && getsmallCountDownVcObject().isFocusBreak{
+//                                                        smallCountDownVcObj?.closeTimerBox()
+//                                                    }
+//                                                }
+                                                if isSmallCountDownTimerViewVisible(){
+                                                    if (smallCountDownVcObj?.isFocusBreak ?? false){
                                                         smallCountDownVcObj?.closeTimerBox()
                                                     }
                                                 }
@@ -6490,11 +6548,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                 toolBoxWcObj?.window?.close()
                             }
                         }
-                        if smallCountDownWcObj != nil{
-                            if smallCountDownWcObj!.window?.isVisible ?? false{
-                                getsmallCountDownVcObject().closeTimerBox()
-                            }
-                        }
+//                        if smallCountDownWcObj != nil{
+//                            if smallCountDownWcObj!.window?.isVisible ?? false{
+//                                getsmallCountDownVcObject().closeTimerBox()
+//                            }
+//                        }
+                        closeSmallCountDownTimerBoxIfVisible()
                         
                         if relaxModeWcObj != nil{
                             if relaxModeWcObj!.window?.isVisible ?? false{
@@ -6523,11 +6582,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                         toolBoxWcObj?.window?.close()
                                     }
                                 }
-                                if smallCountDownWcObj != nil{
-                                    if smallCountDownWcObj!.window?.isVisible ?? false{
-                                        getsmallCountDownVcObject().closeTimerBox()
-                                    }
-                                }
+//                                if smallCountDownWcObj != nil{
+//                                    if smallCountDownWcObj!.window?.isVisible ?? false{
+//                                        getsmallCountDownVcObject().closeTimerBox()
+//                                    }
+//                                }
+                                closeSmallCountDownTimerBoxIfVisible()
+                                
                                 if relaxModeWcObj != nil{
                                     if relaxModeWcObj!.window?.isVisible ?? false{
                                         getRelaxModeVcObject().closeTimerBox()
@@ -6846,7 +6907,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     
     @objc func menuItem_Quit() {
         addLog(text: "App quit clicked by user")
-        shell(launchPath: "/bin/launchctl", arguments: ["unload","-w","\("/Users/")\(NSUserName())\("/Library/LaunchAgents/\(mainAppBundelId).plist")"])
+//        shell(launchPath: "/bin/launchctl", arguments: ["unload","-w","\("/Users/")\(NSUserName())\("/Library/LaunchAgents/\(mainAppBundelId).plist")"])
+        stopMainAppForceQuitMonitoring()
         terminateFromSelf = true
         quitApplicationSmoothly()
     }
@@ -6915,19 +6977,55 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         print("applicationShouldHandleReopen")
         
-        if let event = NSApp.currentEvent {
-            if event.type == .applicationDefined {
-                // This usually indicates a Dock icon click
-                print("Reopen triggered by Dock icon click")
-            } else {
-                // Other cases (system relaunch, LaunchAgent, resume)
-                print("Reopen triggered by system")
+        if blankLayerWcObj != nil{
+            if blankLayerWcObj?.window != nil{
+                if blankLayerWcObj!.window!.isVisible{
+                    return false
+                }
             }
-        } else {
-            // No event at all -> system-triggered
-            print("Reopen triggered by system (no event)")
         }
-        return false
+        var isAnyStanderdWindowVisible = false
+        
+        for win in NSApp.windows{
+            if win.isVisible && win.hasTitleBar{
+                isAnyStanderdWindowVisible = true
+            }
+        }
+//        if smallCountDownWcObj != nil{
+//            if smallCountDownWcObj?.window != nil{
+//                if getSmallCountDownWindowObject().window!.isVisible{
+//                    isAnyStanderdWindowVisible = true
+//                }
+//            }
+//        }
+        
+//        if !isFocusBearMenuVisible(){// window is visible but alpha is 0
+//            if (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_) && !(mainWindowControllerObj?.window?.isVisible ?? false){
+//                if currentHabitPlaying != nil || currentActivityPlaying != nil{// it means background activity
+//                    if smallCountDownWcObj != nil{
+//                        if smallCountDownWcObj?.window?.alphaValue == 0{
+//                            if popUpBlockConfirmWcObj != nil{
+//                                if !(popUpBlockConfirmWcObj?.window?.isVisible ?? false){//Countdown timer pops up after allowing app/website #455
+//                                    smallCountDownWcObj?.window?.alphaValue = 1
+//                                }
+//                            }else{
+//                                smallCountDownWcObj?.window?.alphaValue = 1
+//                            }
+//                            
+//                        }else{
+//                            isAnyStanderdWindowVisible = true
+//                        }
+//                    }
+//                }
+//            }
+//        }
+        
+        if !isFocusBearMenuVisible() && !isAnyStanderdWindowVisible{
+//            if !isCustomBarIsInFocus{
+            statusbutton?.performClick(self)
+//            }
+        }
+        return true
     }
     
     // did this because we user closes last window than app should  deactivate beacuse we need to show popover if user clicks on dock icon and if app is allready active we cant get actual state of dock icon click that's why we are doing this.
@@ -6944,6 +7042,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             }
         }
         
+        if nudgeFocusAlignmentScoreDippingWcObject != nil{
+            if (nudgeFocusAlignmentScoreDippingWcObject?.isNudgeVisible ??  false){
+                return false
+            }
+        }
         
         for window in NSApp.windows{// sometimes nsalert visible but app
             if window.isModalPanel{
@@ -6978,57 +7081,58 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 //            }
 //        }
         
-        if blankLayerWcObj != nil{
-            if blankLayerWcObj?.window != nil{
-                if blankLayerWcObj!.window!.isVisible{
-                    return;
-                }
-            }
-        }
-        var isAnyStanderdWindowVisible = false
-        
-        for win in NSApp.windows{
-            if win.isVisible && win.hasTitleBar{
-                isAnyStanderdWindowVisible = true
-            }
-        }
-        if smallCountDownWcObj != nil{
-            if smallCountDownWcObj?.window != nil{
-                if getSmallCountDownWindowObject().window!.isVisible{
-                    isAnyStanderdWindowVisible = true
-                }
-            }
-        }
-        
-        if !isFocusBearMenuVisible(){// window is visible but alpha is 0
-            if (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_) && !(mainWindowControllerObj?.window?.isVisible ?? false){
-                if currentHabitPlaying != nil || currentActivityPlaying != nil{// it means background activity
-                    if smallCountDownWcObj != nil{
-                        if smallCountDownWcObj?.window?.alphaValue == 0{
-                            if popUpBlockConfirmWcObj != nil{
-                                if !(popUpBlockConfirmWcObj?.window?.isVisible ?? false){//Countdown timer pops up after allowing app/website #455
-                                    smallCountDownWcObj?.window?.alphaValue = 1
-                                }
-                            }else{
-                                smallCountDownWcObj?.window?.alphaValue = 1
-                            }
-                            
-                        }else{
-                            isAnyStanderdWindowVisible = true
-                        }
-                    }
-                }
-            }
-        }
-        
-        if !isFocusBearMenuVisible() && !isAnyStanderdWindowVisible{
-            if !isCustomBarIsInFocus{
-                statusbutton?.performClick(self)
-            }
-        }
+//        if blankLayerWcObj != nil{
+//            if blankLayerWcObj?.window != nil{
+//                if blankLayerWcObj!.window!.isVisible{
+//                    return;
+//                }
+//            }
+//        }
+//        var isAnyStanderdWindowVisible = false
+//        
+//        for win in NSApp.windows{
+//            if win.isVisible && win.hasTitleBar{
+//                isAnyStanderdWindowVisible = true
+//            }
+//        }
+//        if smallCountDownWcObj != nil{
+//            if smallCountDownWcObj?.window != nil{
+//                if getSmallCountDownWindowObject().window!.isVisible{
+//                    isAnyStanderdWindowVisible = true
+//                }
+//            }
+//        }
+//        
+//        if !isFocusBearMenuVisible(){// window is visible but alpha is 0
+//            if (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_) && !(mainWindowControllerObj?.window?.isVisible ?? false){
+//                if currentHabitPlaying != nil || currentActivityPlaying != nil{// it means background activity
+//                    if smallCountDownWcObj != nil{
+//                        if smallCountDownWcObj?.window?.alphaValue == 0{
+//                            if popUpBlockConfirmWcObj != nil{
+//                                if !(popUpBlockConfirmWcObj?.window?.isVisible ?? false){//Countdown timer pops up after allowing app/website #455
+//                                    smallCountDownWcObj?.window?.alphaValue = 1
+//                                }
+//                            }else{
+//                                smallCountDownWcObj?.window?.alphaValue = 1
+//                            }
+//                            
+//                        }else{
+//                            isAnyStanderdWindowVisible = true
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//        
+//        if !isFocusBearMenuVisible() && !isAnyStanderdWindowVisible{
+//            if !isCustomBarIsInFocus{
+//                statusbutton?.performClick(self)
+//            }
+//        }
         addLog(text: "applicationDidBecomeActive")
         print("applicationDidBecomeActive")
     }
+    
     func applicationDidResignActive(_ notification: Notification) {
         print("applicationDidResignActive")
         addLog(text: "applicationDidResignActive")
@@ -7261,9 +7365,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             
             DispatchQueue.main.async {
                 playFocusModeStartedSound()
-                if getSmallCountDownWindowObject().window?.isVisible ?? false{
-                    getsmallCountDownVcObject().closeTimerBox()
-                }
+//                if getSmallCountDownWindowObject().window?.isVisible ?? false{
+//                    getsmallCountDownVcObject().closeTimerBox()
+//                }
+                
+                closeSmallCountDownTimerBoxIfVisible()
+                
                 if addFocusTempUrlsOrAppsWcObj != nil{
                     if addFocusTempUrlsOrAppsWcObj?.window?.isVisible ?? false{
                         addFocusTempUrlsOrAppsWcObj?.window?.close()
@@ -7277,13 +7384,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 if let date = endFocusModeTime{
                     stringTime = getStringFromDate(date: date, dateFormat: "hh:mm a")
                 }
-                if brainDumpWcObj != nil{
-                    if brainDumpWcObj?.window != nil{
-                        if brainDumpWcObj!.window!.isVisible{
-                            brainDumpVcObj?.focusModeStarted()
-                        }
-                    }
-                }
+
                 for dic in arrFocusType{
                     if dic["isOn"] as? Bool == true{
                         currentRunningFocusType = dic
@@ -7464,12 +7565,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 }
             }
             
-            if smallCountDownWcObj != nil{
-                if smallCountDownWcObj?.window?.isVisible ?? false{
-                    addLog(text: "func showFocusModeEndWarningWindow: return reason smallCountDown window is visible")
-                    return;
-                }
-            }
+//            if smallCountDownWcObj != nil{
+//                if smallCountDownWcObj?.window?.isVisible ?? false{
+//                    addLog(text: "func showFocusModeEndWarningWindow: return reason smallCountDown window is visible")
+//                    return;
+//                }
+//            }
             
             
             showFocusEndWarningWindow()
@@ -7675,13 +7776,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         
         
         DispatchQueue.main.async {
-            if brainDumpWcObj != nil{
-                if brainDumpWcObj?.window != nil{
-                    if brainDumpWcObj!.window!.isVisible{
-                        brainDumpVcObj?.focusModeFinished()
-                    }
-                }
-            }
+//            if brainDumpWcObj != nil{
+//                if brainDumpWcObj?.window != nil{
+//                    if brainDumpWcObj!.window!.isVisible{
+//                        brainDumpVcObj?.focusModeFinished()
+//                    }
+//                }
+//            }
             closePupUpBlockIfVisible()
             menuViewControllerObj?.reloadIfNeeded()
             closeNudgeFocusAlignmentScoreWindow()
@@ -7737,9 +7838,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         addLog(text: "focus Mode Started called")
         focusModeStarttedResetAllData()
         playFocusModeStartedSound()
-        if getSmallCountDownWindowObject().window?.isVisible ?? false{
-            getsmallCountDownVcObject().closeTimerBox()
-        }
+//        if getSmallCountDownWindowObject().window?.isVisible ?? false{
+//            getsmallCountDownVcObject().closeTimerBox()
+//        }
+        
+        closeSmallCountDownTimerBoxIfVisible()
         
         if addFocusTempUrlsOrAppsWcObj != nil{
             if addFocusTempUrlsOrAppsWcObj?.window?.isVisible ?? false{
@@ -7761,16 +7864,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         if let date = endFocusModeTime{
             stringTime = getStringFromDate(date: date, dateFormat: "hh:mm a")
         }
-        if brainDumpWcObj != nil{
-            if brainDumpWcObj?.window != nil{
-                if brainDumpWcObj!.window!.isVisible{
-                    brainDumpVcObj?.focusModeStarted()
-                }
-            }
-        }
-        
-        
-        
+                
         for dic in arrFocusType{
             if dic["isOn"] as? Bool == true{
                 currentRunningFocusType = dic
@@ -12052,10 +12146,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 
 
 
-// onboarding
-// upfrade now button on left side and checlk nag again 
-// show focus bear
-//  micro break aate hi thodi der tak chalu ni krte to khud hi micro break window hide ho jata hai use natural break mano. latka kr dikhao nataul break ko micro break per hi
+
+ 
+
+
 
 
 
@@ -12067,3 +12161,47 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 // todo jab app chalu ho to expire date lkhvao token ki done
 // settings bug solved  done
 // floating top bar    done
+
+
+//// upfrade checlk nag again
+// show focus bear
+
+// onboarding
+
+
+// ak launch agent se kam ho sktya hai
+// new os per buttons kaam ni kr rhe
+//
+
+
+
+
+
+// todo check settings kab kab save ho rahi hai
+// sign in with apple
+
+
+// easy postpone windown always get new object
+
+
+
+////minimise hote hi skignment nudge show kr rake h bina kisi ai check k sahi kro       Ai is not enabled done
+
+//kisi bhi option per click ho to menu band honjayga    done
+
+//If the big floating bear is open, I don’t think we need the little one as well.  done
+
+
+//  micro break aate hi thodi der tak chalu ni krte to khud hi micro break window hide ho jata hai use natural break mano. latka kr dikhao nataul break ko micro break per hi  done
+// launch agent remove now helper app will do every thing   done
+
+// nudge per click krne per window khul rahi h   done
+
+// setting ko chota karo   done 
+
+
+// apple ka ni mila
+//  timer count down chnaged background habit
+// enter work
+// easy postpone bug solved
+// todo custom habit per direct close click kiya 

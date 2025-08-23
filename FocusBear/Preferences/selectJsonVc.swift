@@ -516,7 +516,7 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
             print(message.body) 
             let brainDump = message.body as? String ?? ""
             UserDefaults.standard.set(brainDump, forKey: kUserdefaultsFocusModeNotes)
-            if brainDumpWcObj != nil{
+            if brainDumpWcObj != nil{ // todo 
                 if brainDumpWcObj?.window != nil{
                     if brainDumpWcObj!.window!.isVisible{
                         brainDumpVcObj?.textViewWorkNote.string = brainDump

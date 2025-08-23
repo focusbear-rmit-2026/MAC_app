@@ -150,7 +150,8 @@ class frictionVc: NSViewController {
     
     func turnOffReloadAfterForceQuit(){
         SettingsManagerObject.shouldReloadAfterForceQuitEnabled = false
-        deleteLaunchAgent()
+//        deleteLaunchAgent()
+        stopMainAppForceQuitMonitoring()
         allApiObject.capturePosthog(event: "settings-changed-disable-reload-after-force-quit", metadata: [:])
     }
 }
@@ -160,7 +161,8 @@ extension frictionVc: SettingToggleItemDelegate{
             SettingsManagerObject.isSettingsChanged = true
             if state == .on{
                 SettingsManagerObject.shouldReloadAfterForceQuitEnabled = true
-                createLaunchAgent()
+//                createLaunchAgent()
+                startMainAppForceQuitMonitoring()
                 allApiObject.capturePosthog(event: "settings-changed-enable-reload-after-force-quit", metadata: [:])
             }else{
                 if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil && SettingsManagerObject.isPasswordRequireInCircumventingBlocks{

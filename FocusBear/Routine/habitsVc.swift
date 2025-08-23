@@ -416,15 +416,17 @@ class habitsVc: NSViewController {
                         }
                     }
                 }
-                if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
-                    if smallCountDownWcObj?.window != nil{
-                        if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
-                            if getsmallCountDownVcObject().timer != nil {
-                                getsmallCountDownVcObject().timer?.invalidate()
-                            }
-                        }
-                    }
-                }
+//                if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
+//                    if smallCountDownWcObj?.window != nil{
+//                        if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
+//                            if getsmallCountDownVcObject().timer != nil {
+//                                getsmallCountDownVcObject().timer?.invalidate()
+//                            }
+//                        }
+//                    }
+//                }
+                closeSmallCountDownTimerBoxIfVisibleForWithoutFocusBreak()
+                
             }
         }
     }
@@ -465,13 +467,15 @@ class habitsVc: NSViewController {
             if SettingsManagerObject.isEasySkipEnabled{
                 
                 if currentHabitPlaying != nil{
-                    if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
-                        if smallCountDownWcObj?.window != nil{
-                            if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
-                                getSmallCountDownWindowObject().window?.close()
-                            }
-                        }
-                    }
+//                    if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
+//                        if smallCountDownWcObj?.window != nil{
+//                            if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
+//                                getSmallCountDownWindowObject().window?.close()
+//                            }
+//                        }
+//                    }
+                    
+                    closeSmallCountDownTimerBoxIfVisibleForWithoutFocusBreak()
                 }
                 //                mainWindowControllerObj?.window?.close() // todo
                  //               hideBlankWindowInSecondaryMonitor()
@@ -509,13 +513,14 @@ class habitsVc: NSViewController {
             if SettingsManagerObject.isEasySkipEnabled{
                 
                 if currentHabitPlaying != nil{
-                    if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
-                        if smallCountDownWcObj?.window != nil{
-                            if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
-                                getSmallCountDownWindowObject().window?.close()
-                            }
-                        }
-                    }
+//                    if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
+//                        if smallCountDownWcObj?.window != nil{
+//                            if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
+//                                getSmallCountDownWindowObject().window?.close()
+//                            }
+//                        }
+//                    }
+                    closeSmallCountDownTimerBoxIfVisibleForWithoutFocusBreak()
                 }
                 
 //                mainWindowControllerObj?.window?.close() // todo
@@ -591,13 +596,14 @@ class habitsVc: NSViewController {
                 if currentAction == ._START_ || currentAction == ._BRAIN_DUMP_{
                     
                     if currentActivityPlaying != nil{
-                        if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
-                            if smallCountDownWcObj?.window != nil{
-                                if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
-                                    getSmallCountDownWindowObject().window?.close()
-                                }
-                            }
-                        }
+//                        if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
+//                            if smallCountDownWcObj?.window != nil{
+//                                if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
+//                                    getSmallCountDownWindowObject().window?.close()
+//                                }
+//                            }
+//                        }
+                        closeSmallCountDownTimerBoxIfVisibleForWithoutFocusBreak()
                     }
                    // mainWindowControllerObj?.window?.close() // todo
             //        hideBlankWindowInSecondaryMonitor()
@@ -622,13 +628,15 @@ class habitsVc: NSViewController {
             specialActivityFinish()
         }else if currentState == ._CUSTOM_ROUTINE_{
             if currentHabitPlaying != nil{
-                if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
-                    if smallCountDownWcObj?.window != nil{
-                        if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
-                            getSmallCountDownWindowObject().window?.close()
-                        }
-                    }
-                }
+//                if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
+//                    if smallCountDownWcObj?.window != nil{
+//                        if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
+//                            getSmallCountDownWindowObject().window?.close()
+//                        }
+//                    }
+//                }
+                
+                closeSmallCountDownTimerBoxIfVisibleForWithoutFocusBreak()
             }
             //mainWindowControllerObj?.window?.close() // todo
           //  hideBlankWindowInSecondaryMonitor()
@@ -1125,12 +1133,12 @@ class habitsVc: NSViewController {
         addLog(text: "func showAllEveningHabits:- Initiate and run Evening Habits.")
         
         
-        if easyPostponeWcObj != nil{
-            if easyPostponeWcObj?.window?.isVisible ?? false{
-                easyPostponeWcObj?.window?.close()
-            }
-        }
-        
+//        if easyPostponeWcObj != nil{
+//            if easyPostponeWcObj?.window?.isVisible ?? false{
+//                easyPostponeWcObj?.window?.close()
+//            }
+//        }
+        closeEasyPostponeWindowIfVisible()
         
         if currentAction == ._VISUALIZE_{// did this beacuse we dont want user do to visualize again if he has don once for a habit
             currentState = ._EVENING_HABIT_
@@ -1262,12 +1270,12 @@ class habitsVc: NSViewController {
         addLog(text: "func showAllMorningHabits:- Showing morning habits.")
         UserDefaults.standard.removeObject(forKey: kUserdefaultsShutOffCancelledForEveningRoutine)
         
-        if easyPostponeWcObj != nil{
-            if easyPostponeWcObj?.window?.isVisible ?? false{
-                easyPostponeWcObj?.window?.close()
-            }
-        }
-        
+//        if easyPostponeWcObj != nil{
+//            if easyPostponeWcObj?.window?.isVisible ?? false{
+//                easyPostponeWcObj?.window?.close()
+//            }
+//        }
+        closeEasyPostponeWindowIfVisible()
         if currentAction == ._VISUALIZE_{// did this beacuse we dont want user do to visualize again if he has don once for a habit
             currentState = ._MORNING_HABIT_
             showVisualizeInstructionsVc()
@@ -1554,12 +1562,12 @@ class habitsVc: NSViewController {
         self.showCloseButtons()
         removeSubViews()
         
-        if easyPostponeWcObj != nil{
-            if easyPostponeWcObj?.window?.isVisible ?? false{
-                easyPostponeWcObj?.window?.close()
-            }
-        }
-
+//        if easyPostponeWcObj != nil{
+//            if easyPostponeWcObj?.window?.isVisible ?? false{
+//                easyPostponeWcObj?.window?.close()
+//            }
+//        }
+        closeEasyPostponeWindowIfVisible()
         UserDefaults.standard.set(Date(), forKey: kUserdefaultsLastHabitsStartedDate)
         
         var lastSavedActivityTime = Date()
@@ -1662,12 +1670,12 @@ class habitsVc: NSViewController {
         addLog(text: "func showRoutineAllHabits:- Showing Routine habits.")
         UserDefaults.standard.removeObject(forKey: kUserdefaultsLastCustomRoutineHabitSavedNotes)
         
-        if easyPostponeWcObj != nil{
-            if easyPostponeWcObj?.window?.isVisible ?? false{
-                easyPostponeWcObj?.window?.close()
-            }
-        }
-        
+//        if easyPostponeWcObj != nil{
+//            if easyPostponeWcObj?.window?.isVisible ?? false{
+//                easyPostponeWcObj?.window?.close()
+//            }
+//        }
+        closeEasyPostponeWindowIfVisible()
         if currentAction == ._VISUALIZE_{// did this beacuse we dont want user do to visualize again if he has don once for a habit
             currentState = ._CUSTOM_ROUTINE_
             showVisualizeInstructionsVc()
@@ -1710,13 +1718,13 @@ class habitsVc: NSViewController {
         self.showCloseButtons()
         removeSubViews()
         
-        if easyPostponeWcObj != nil{
-            if easyPostponeWcObj?.window?.isVisible ?? false{
-                easyPostponeWcObj?.window?.close()
-            }
-        }
+//        if easyPostponeWcObj != nil{
+//            if easyPostponeWcObj?.window?.isVisible ?? false{
+//                easyPostponeWcObj?.window?.close()
+//            }
+//        }
 
-        
+        closeEasyPostponeWindowIfVisible()
         var lastSavedActivityTime = Date()
         var lastSavedActivityProgress = 0
         var lastSavedActivityId = ""
@@ -1886,13 +1894,13 @@ class habitsVc: NSViewController {
         self.showCloseButtons()
         removeSubViews()
         
-        if easyPostponeWcObj != nil{
-            if easyPostponeWcObj?.window?.isVisible ?? false{
-                easyPostponeWcObj?.window?.close()
-            }
-        }
+//        if easyPostponeWcObj != nil{
+//            if easyPostponeWcObj?.window?.isVisible ?? false{
+//                easyPostponeWcObj?.window?.close()
+//            }
+//        }
         
-        
+        closeEasyPostponeWindowIfVisible()
         UserDefaults.standard.set(Date(), forKey: kUserdefaultsLastHabitsStartedDate)
         
         var lastSavedActivityTime = Date()
@@ -2236,12 +2244,12 @@ class habitsVc: NSViewController {
     
     func startSpecialActivity(duration:Int,habit:habit?, activity:breakActivity?){//start special activity
         addLog(text: "func:- startSpecialActivity")
-        if easyPostponeWcObj != nil{
-            if easyPostponeWcObj?.window?.isVisible ?? false{
-                easyPostponeWcObj?.window?.close()
-            }
-        }
-        
+//        if easyPostponeWcObj != nil{
+//            if easyPostponeWcObj?.window?.isVisible ?? false{
+//                easyPostponeWcObj?.window?.close()
+//            }
+//        }
+        closeEasyPostponeWindowIfVisible()
         if isFocusModeOnOrPaused(){
             addLog(text: "Special Activity start:- Focus Mode Finished")
             appdelegate?.tryFocusModeFinished(isSilent: true, isShutOffTime: false, isMorningRoutineTime: false, allowExtend:false, isCustomRoutineTime:false)
@@ -2668,12 +2676,13 @@ class habitsVc: NSViewController {
 //                removeSubViews() // todo
                 
                 //Extend postpone time not working for 2 minute warning popup#923
-                if smallCountDownWcObj != nil && currentState == ._POSTPON_MORNING_HABIT_{
-                    if smallCountDownWcObj?.window != nil{
-                        if getSmallCountDownWindowObject().window!.isVisible && getsmallCountDownVcObject().isFocusBreak{
-                            getSmallCountDownWindowObject().window?.close()
-                        }
-                    }
+                if currentState == ._POSTPON_MORNING_HABIT_{
+//                    if smallCountDownWcObj?.window != nil{
+//                        if getSmallCountDownWindowObject().window!.isVisible && getsmallCountDownVcObject().isFocusBreak{
+//                            getSmallCountDownWindowObject().window?.close()
+//                        }
+//                    }
+                    closeSmallCountDownTimerBoxIfVisibleForFocusBreak()
                 }
                 
                 if !isFocusModeOn(){
@@ -2685,15 +2694,17 @@ class habitsVc: NSViewController {
                 hideBlankWindowInSecondaryMonitor()
             }
             
-            if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
-                if smallCountDownWcObj?.window != nil{
-                    if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
-                        if currentHabitPlaying != nil{
-                            getSmallCountDownWindowObject().window!.close()
-                        }
-                    }
-                }
-            }
+//            if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
+//                if smallCountDownWcObj?.window != nil{
+//                    if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
+//                        if currentHabitPlaying != nil{
+//                            getSmallCountDownWindowObject().window!.close()
+//                        }
+//                    }
+//                }
+//            }
+            closeSmallCountDownTimerBoxIfVisibleForWithoutFocusBreak()
+            
             if popUpCheckListWcObj != nil{
                 if popUpCheckListWcObj?.window?.isVisible ?? false{
                     popUpCheckListWcObj?.window?.close()
@@ -2800,15 +2811,19 @@ class habitsVc: NSViewController {
         }
         currentState = ._NOTHING_
         
-        if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
-            if smallCountDownWcObj?.window != nil{
-                if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
-                    if currentHabitPlaying != nil{
-                        getSmallCountDownWindowObject().window!.close()
-                    }
-                }
-            }
+//        if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
+//            if smallCountDownWcObj?.window != nil{
+//                if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
+//                    if currentHabitPlaying != nil{
+//                        getSmallCountDownWindowObject().window!.close()
+//                    }
+//                }
+//            }
+//        }
+        if currentHabitPlaying != nil{
+            closeSmallCountDownTimerBoxIfVisibleForWithoutFocusBreak()
         }
+        
         if popUpCheckListWcObj != nil{
             if popUpCheckListWcObj?.window?.isVisible ?? false{
                 popUpCheckListWcObj?.window?.close()
@@ -2885,12 +2900,14 @@ class habitsVc: NSViewController {
             hideCloseButtons()
 //            removeSubViews()
             //Extend postpone time not working for 2 minute warning popup#923
-            if smallCountDownWcObj != nil && currentState == ._POSTPON_EVENING_HABIT_{
-                if smallCountDownWcObj?.window != nil{
-                    if getSmallCountDownWindowObject().window!.isVisible && getsmallCountDownVcObject().isFocusBreak{
-                        getSmallCountDownWindowObject().window?.close()
-                    }
-                }
+            if currentState == ._POSTPON_EVENING_HABIT_{
+//                if smallCountDownWcObj?.window != nil{
+//                    if getSmallCountDownWindowObject().window!.isVisible && getsmallCountDownVcObject().isFocusBreak{
+//                        getSmallCountDownWindowObject().window?.close()
+//                    }
+//                }
+                
+                closeSmallCountDownTimerBoxIfVisibleForFocusBreak()
             }
             //
             if !isFocusModeOn(){
@@ -2900,15 +2917,19 @@ class habitsVc: NSViewController {
             currentState = ._POSTPON_EVENING_HABIT_
 //            mainWindowControllerObj?.window?.close()
             hideBlankWindowInSecondaryMonitor()
-            if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
-                if smallCountDownWcObj?.window != nil{
-                    if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
-                        if currentHabitPlaying != nil{
-                            getSmallCountDownWindowObject().window!.close()
-                        }
-                    }
-                }
+//            if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
+//                if smallCountDownWcObj?.window != nil{
+//                    if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
+//                        if currentHabitPlaying != nil{
+//                            getSmallCountDownWindowObject().window!.close()
+//                        }
+//                    }
+//                }
+//            }
+            if currentHabitPlaying != nil{
+                closeSmallCountDownTimerBoxIfVisibleForWithoutFocusBreak()
             }
+            
             
             if popUpCheckListWcObj != nil{
                 if popUpCheckListWcObj?.window?.isVisible ?? false{
@@ -3070,13 +3091,14 @@ class habitsVc: NSViewController {
         }else if currentState == ._MICRO_BREAK_ && isBreakActivityExecuteFromPostponeMorningHabit{
             stopActivityCountDownTimer()
             if currentActivityPlaying != nil{
-                if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
-                    if smallCountDownWcObj?.window != nil{
-                        if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
-                            getSmallCountDownWindowObject().window?.close()
-                        }
-                    }
-                }
+//                if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
+//                    if smallCountDownWcObj?.window != nil{
+//                        if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
+//                            getSmallCountDownWindowObject().window?.close()
+//                        }
+//                    }
+//                }
+                closeSmallCountDownTimerBoxIfVisibleForWithoutFocusBreak()
             }
             mainWindowControllerObj?.window?.close()
             hideBlankWindowInSecondaryMonitor()
@@ -3088,13 +3110,14 @@ class habitsVc: NSViewController {
         }else if currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeMorningHabit && !isCustomRoutineWasRunningBetweenMorningHabit{
             stopActivityCountDownTimer()
             if currentActivityPlaying != nil{
-                if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
-                    if smallCountDownWcObj?.window != nil{
-                        if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
-                            getSmallCountDownWindowObject().window?.close()
-                        }
-                    }
-                }
+//                if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
+//                    if smallCountDownWcObj?.window != nil{
+//                        if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
+//                            getSmallCountDownWindowObject().window?.close()
+//                        }
+//                    }
+//                }
+                closeSmallCountDownTimerBoxIfVisibleForWithoutFocusBreak()
             }
             mainWindowControllerObj?.window?.close()
             hideBlankWindowInSecondaryMonitor()
@@ -3117,13 +3140,14 @@ class habitsVc: NSViewController {
         }else if currentState == ._MICRO_BREAK_ && isBreakActivityExecuteFromPostponeEveningHabit{
             stopActivityCountDownTimer()
             if currentActivityPlaying != nil{
-                if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
-                    if smallCountDownWcObj?.window != nil{
-                        if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
-                            getSmallCountDownWindowObject().window?.close()
-                        }
-                    }
-                }
+//                if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
+//                    if smallCountDownWcObj?.window != nil{
+//                        if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
+//                            getSmallCountDownWindowObject().window?.close()
+//                        }
+//                    }
+//                }
+                closeSmallCountDownTimerBoxIfVisibleForWithoutFocusBreak()
             }
             mainWindowControllerObj?.window?.close()
             hideBlankWindowInSecondaryMonitor()
@@ -3135,13 +3159,14 @@ class habitsVc: NSViewController {
         }else if currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeEveningHabit && !isCustomRoutineWasRunningBetweenEveningHabit{
             stopActivityCountDownTimer()
             if currentActivityPlaying != nil{
-                if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
-                    if smallCountDownWcObj?.window != nil{
-                        if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
-                            getSmallCountDownWindowObject().window?.close()
-                        }
-                    }
-                }
+//                if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
+//                    if smallCountDownWcObj?.window != nil{
+//                        if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
+//                            getSmallCountDownWindowObject().window?.close()
+//                        }
+//                    }
+//                }
+                closeSmallCountDownTimerBoxIfVisibleForWithoutFocusBreak()
             }
             mainWindowControllerObj?.window?.close()
             hideBlankWindowInSecondaryMonitor()
@@ -3157,13 +3182,14 @@ class habitsVc: NSViewController {
         if currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeEveningHabit{
             stopActivityCountDownTimer()
             if currentActivityPlaying != nil{
-                if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
-                    if smallCountDownWcObj?.window != nil{
-                        if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
-                            getSmallCountDownWindowObject().window?.close()
-                        }
-                    }
-                }
+//                if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
+//                    if smallCountDownWcObj?.window != nil{
+//                        if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
+//                            getSmallCountDownWindowObject().window?.close()
+//                        }
+//                    }
+//                }
+                closeSmallCountDownTimerBoxIfVisibleForWithoutFocusBreak()
             }
             mainWindowControllerObj?.window?.close()
             hideBlankWindowInSecondaryMonitor()
@@ -3518,13 +3544,14 @@ class habitsVc: NSViewController {
                         setAppIconForFocusModeScore(probability: nil)
                         closePupUpBlockIfVisible()
                         
-                        if smallCountDownWcObj != nil{//
-                            if smallCountDownWcObj?.window != nil{
-                                if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
-                                    smallCountDownVcObj?.closeTimerBox()
-                                }
-                            }
-                        }
+//                        if smallCountDownWcObj != nil{//
+//                            if smallCountDownWcObj?.window != nil{
+//                                if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
+//                                    smallCountDownVcObj?.closeTimerBox()
+//                                }
+//                            }
+//                        }
+                        closeSmallCountDownTimerBoxIfVisibleForWithoutFocusBreak()
                     }
 
                 }else{
@@ -3572,13 +3599,15 @@ class habitsVc: NSViewController {
                         
                         closePupUpBlockIfVisible()
                         
-                        if smallCountDownWcObj != nil{//
-                            if smallCountDownWcObj?.window != nil{
-                                if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
-                                    smallCountDownVcObj?.closeTimerBox()
-                                }
-                            }
-                        }
+//                        if smallCountDownWcObj != nil{//
+//                            if smallCountDownWcObj?.window != nil{
+//                                if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
+//                                    smallCountDownVcObj?.closeTimerBox()
+//                                }
+//                            }
+//                        }
+                        
+                        closeSmallCountDownTimerBoxIfVisibleForWithoutFocusBreak()
                     }
                     
                     
@@ -3812,11 +3841,11 @@ class habitsVc: NSViewController {
         addLog(text: "perform Break Activities")
         self.showCloseButtons()
         postponeBreaksFromBreaksWarningCount = 0
-        if brainDumpWcObj != nil{
-            if brainDumpWcObj!.window?.isVisible ?? false{
-                brainDumpWcObj?.window?.close()
-            }
-        }
+//        if brainDumpWcObj != nil{
+//            if brainDumpWcObj!.window?.isVisible ?? false{
+//                brainDumpWcObj?.window?.close()
+//            }
+//        }
         if !(thirdVcObj?.isViewLoaded ?? false){
             thirdVcObj?.loadView()
         }

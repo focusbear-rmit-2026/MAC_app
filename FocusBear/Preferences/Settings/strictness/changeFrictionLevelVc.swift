@@ -132,7 +132,8 @@ class changeFrictionLevelVc: NSViewController {
             UserDefaults.standard.set(false, forKey: SettingsManagerObject.kUserdefaultsDoNotBlockUrlsDuringSuperPomodoroBreaks)
             SettingsManagerObject.shouldReloadAfterForceQuitEnabled = true
             SettingsManagerObject.isRequiredIntentionInPostpone = true
-            createLaunchAgent()
+//            createLaunchAgent()
+            startMainAppForceQuitMonitoring()
             hideDockIcon()
             SettingsManagerObject.immediatelyBlockDistractingSites = true
             SettingsManagerObject.immediatelyBlockDistractingApps = true
@@ -157,7 +158,8 @@ class changeFrictionLevelVc: NSViewController {
             UserDefaults.standard.set(false, forKey: SettingsManagerObject.kUserdefaultsDoNotBlockUrlsDuringSuperPomodoroBreaks)
             SettingsManagerObject.shouldReloadAfterForceQuitEnabled = true
             SettingsManagerObject.isRequiredIntentionInPostpone = true
-            createLaunchAgent()
+//            createLaunchAgent()
+            startMainAppForceQuitMonitoring()
             hideDockIcon()
             SettingsManagerObject.immediatelyBlockDistractingSites = false
             SettingsManagerObject.immediatelyBlockDistractingApps = false
@@ -183,7 +185,8 @@ class changeFrictionLevelVc: NSViewController {
             UserDefaults.standard.set(false, forKey: SettingsManagerObject.kUserdefaultsDoNotBlockUrlsDuringSuperPomodoroBreaks)
             SettingsManagerObject.shouldReloadAfterForceQuitEnabled = false
             SettingsManagerObject.isRequiredIntentionInPostpone = false
-            deleteLaunchAgent()
+//            deleteLaunchAgent()
+            stopMainAppForceQuitMonitoring()
             showDockIcon()
             SettingsManagerObject.immediatelyBlockDistractingSites = false
             SettingsManagerObject.immediatelyBlockDistractingApps = false
@@ -206,7 +209,8 @@ class changeFrictionLevelVc: NSViewController {
             
             SettingsManagerObject.shouldReloadAfterForceQuitEnabled = false
             SettingsManagerObject.isRequiredIntentionInPostpone = false
-            deleteLaunchAgent()
+//            deleteLaunchAgent()
+            stopMainAppForceQuitMonitoring()
             showDockIcon()
             SettingsManagerObject.immediatelyBlockDistractingSites = false
             SettingsManagerObject.immediatelyBlockDistractingApps = false
@@ -229,7 +233,8 @@ class changeFrictionLevelVc: NSViewController {
             
             SettingsManagerObject.shouldReloadAfterForceQuitEnabled = false
             SettingsManagerObject.isRequiredIntentionInPostpone = false
-            deleteLaunchAgent()
+//            deleteLaunchAgent()
+            stopMainAppForceQuitMonitoring()
             showDockIcon()
             SettingsManagerObject.immediatelyBlockDistractingSites = false
             SettingsManagerObject.immediatelyBlockDistractingApps = false

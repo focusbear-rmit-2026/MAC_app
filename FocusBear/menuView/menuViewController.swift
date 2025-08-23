@@ -443,6 +443,7 @@ class menuViewController: NSViewController {
     
     @IBAction func btnSetFocusModesClicked(_ sender: Any) {
         showSetFocusWindow()
+        closeMenuWindowIsVisible()
     }
     
     @IBAction func btnFalseDetectionClicked(_ sender: Any) {
@@ -568,6 +569,15 @@ class menuViewController: NSViewController {
             let windowTopLeftPoint = NSPoint(x: frame.midX, y: frame.maxY)
             showFloatingTopBarWindow(windowTopMidPoint: windowTopLeftPoint)
         }
+        
+        //If the big floating bear is open, I don’t think we need the little one as well.
+
+        if nudgeFocusAlignmentScoreDippingWcObject != nil{
+            if (nudgeFocusAlignmentScoreDippingWcObject?.isNudgeVisible ??  false){
+                getFloatingTopBarVObject().boxMain.isHidden = true
+                getFloatingTopBarVObject().boxMoreItems.isHidden = true
+            }
+        }
     }
     
     
@@ -575,6 +585,7 @@ class menuViewController: NSViewController {
         if floatingTopBarWcObj != nil{
             if getFloatingTopBarWObject().window?.isVisible ?? false{
                 getFloatingTopBarVObject().boxMain.isHidden = true
+                getFloatingTopBarVObject().boxMoreItems.isHidden = true
             }
         }
         if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
@@ -1265,6 +1276,7 @@ class menuViewController: NSViewController {
 
     @IBAction func btnReactivateClicked(_ sender: Any) {
         appdelegate?.menuItem_Reactivate()
+        closeMenuWindowIsVisible()
     }
     
     @objc func menuItemStartRoutineClicked(sender:NSMenuItem){
@@ -1279,16 +1291,20 @@ class menuViewController: NSViewController {
             return;
         }
         startCustomRoutine(index: sender.tag, isOnDemand:true)
+        closeMenuWindowIsVisible()
     }
     
     @IBAction func btnEnterLicenseKeyClicked(_ sender: Any) {
         addLog(text:"[user-action] menuViewController:- btnEnterLicenseKeyClicked")
         showUpgradeNowWindow()
+        closeMenuWindowIsVisible()
     }
     
     @IBAction func btnPreferencesClicked(_ sender: Any) {
         appdelegate?.menuItem_Preferences()
+        closeMenuWindowIsVisible()
     }
+    
     @IBAction func btnStartBreakClicked(_ sender: Any) {
         addLog(text: "[user-action] button Start Break Clicked")
         if !isMainWindowLoaded{
@@ -1322,43 +1338,52 @@ class menuViewController: NSViewController {
            // }
         }
         getHabitsVcObject().executeBreakActivities()
+        closeMenuWindowIsVisible()
     }
     
     @IBAction func btnOpenToolBoxClicked(_ sender: Any) {
         openToolBoxClicked()
+        closeMenuWindowIsVisible()
     }
     
     @IBAction func btnBrainDumpClicked(_ sender: Any) {
         addLog(text: "[user-action] button Brain Dump Clicked")
         showBrainDumpWindow()
+        closeMenuWindowIsVisible()
     }
     
     @IBAction func btnToDoPlayerClicked(_ sender: Any) {
         addLog(text: "[user-action] btnToDoPlayerClicked")
         openToDoListClicked()
+        closeMenuWindowIsVisible()
     }
     
     @IBAction func btnFocusMusicClicked(_ sender: Any) {
         openAllTracksClicked()
+        closeMenuWindowIsVisible()
     }
     
     @objc func openToolBoxClicked(){
         addLog(text: "[user-action] openToolBoxClicked")
         showToolboxWindow()
+        closeMenuWindowIsVisible()
     }
     
     @objc func openToDoListClicked(){
         addLog(text: "[user-action] openToDoListClicked")
         if isFocusModeOn() || ((currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._CUSTOM_ROUTINE_) && currentAction == ._INPROGRESS_ && isAnyAllowedFocusModeActivityRunning){
             showTaskPlayerWindow(totalDuration: focusModeMinutesToPerform, intention: whatToAchieveInFocusBlock, automatically:false)
+            closeMenuWindowIsVisible()
         }else{
             showToDoListWindow()
+            closeMenuWindowIsVisible()
         }
     }
     
     @objc func openAllTracksClicked(){
         addLog(text: "[user-action] openAllTracksClicked")
         showAllTracksWindow()
+        closeMenuWindowIsVisible()
     }
     
     @IBAction func btnExportStatisticsClicked(_ sender: Any) {
@@ -1370,6 +1395,7 @@ class menuViewController: NSViewController {
                 }
             }
             showUpgradeNowWindow()
+            closeMenuWindowIsVisible()
             return;
         }
     }
@@ -1395,8 +1421,10 @@ class menuViewController: NSViewController {
                 return;
             }
             showAbortingFocusModeVc(forPause: false)
+            closeMenuWindowIsVisible()
         }else{
             appdelegate?.menuShowSimplePomodoroModeView()
+            closeMenuWindowIsVisible()
         }
     }
     
@@ -1412,6 +1440,7 @@ class menuViewController: NSViewController {
             return;
         }
         appdelegate?.menuShowPomodoroModeView()
+        closeMenuWindowIsVisible()
     }
 
     func showPasswordWindow(){
@@ -1439,6 +1468,7 @@ class menuViewController: NSViewController {
                             pomodoroVcObj?.loadView()
                         }
                         pomodoroVcObj!.selectFocusModeWithId(id: arrFocusType[i]["id"] as? String ?? "", duration: customUrlHandleLastDurationForRelaxFocusMode)
+                        closeMenuWindowIsVisible()
                         break;
                     }
                 }
@@ -1446,6 +1476,7 @@ class menuViewController: NSViewController {
         }else{
             if isFocusModeOnOrPaused(){
                 showAbortingFocusModeVc(forPause: false)
+                closeMenuWindowIsVisible()
             }else{
                 isHardCorePomodoroModeOn = false
                 if mainWindowControllerObj?.window?.isVisible ?? false{
@@ -1458,6 +1489,7 @@ class menuViewController: NSViewController {
                     }
                 }
                 reloadData()
+                closeMenuWindowIsVisible()
             }
         }
     }
@@ -1540,14 +1572,15 @@ class menuViewController: NSViewController {
                         addLog(text: "Showing enter password view from hardcodre pomodoro stop from menu")
                     }else{
                         isHardCorePomodoroModeOn = false
-                        reloadData()
+                        closeMenuWindowIsVisible()
                     }
                 }else{
                     isHardCorePomodoroModeOn = false
-                    reloadData()
+                    closeMenuWindowIsVisible()
                 }
             }else{
                 boxStopHardcorePomodoroMode.isHidden = true
+                closeMenuWindowIsVisible()
             }
         }else{
             
@@ -1564,7 +1597,7 @@ class menuViewController: NSViewController {
                     if SettingsManagerObject.isMenuPopoverEnabled{
                         appdelegate?.popover.close()
                     }else{
-                        reloadData()
+                        closeMenuWindowIsVisible()
                     }
                     break;
                 }
@@ -1581,12 +1614,15 @@ class menuViewController: NSViewController {
                     addLog(text: "Showing enter password view from hardcore pomodoro stop from focus stop menu")
                 }else{
                     showAbortingFocusModeVc(forPause: false)
+                    closeMenuWindowIsVisible()
                 }
             }else{
                 showAbortingFocusModeVc(forPause: false)
+                closeMenuWindowIsVisible()
             }
         }else{
             showAbortingFocusModeVc(forPause: false)
+            closeMenuWindowIsVisible()
         }
     }
     
@@ -1597,7 +1633,7 @@ class menuViewController: NSViewController {
                 if SettingsManagerObject.isMenuPopoverEnabled{
                     appdelegate?.popover.close()
                 }else{
-                    reloadData()
+                    closeMenuWindowIsVisible()
                 }
                 break;
             }
@@ -1615,6 +1651,7 @@ class menuViewController: NSViewController {
         }
         
         showQuitWindow()
+        closeMenuWindowIsVisible()
     }
     
     @IBAction func btnSegmentControlClicked(_ sender: Any) {
@@ -1837,7 +1874,7 @@ class menuViewController: NSViewController {
                 }
             }
         }
-        
+        closeMenuWindowIsVisible()
     }
     
     @IBAction func btnToolsClicked(_ sender: Any) {
@@ -1893,11 +1930,17 @@ class menuViewController: NSViewController {
         if currentState == ._MICRO_BREAK_ && isBreakActivityExecuteFromPostponeMorningHabit{
             getHabitsVcObject().stopActivityCountDownTimer()
             if currentActivityPlaying != nil{
-                if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
-                    if smallCountDownWcObj?.window != nil{
-                        if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
-                            getSmallCountDownWindowObject().window?.close()
-                        }
+//                if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
+//                    if smallCountDownWcObj?.window != nil{
+//                        if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
+//                            getSmallCountDownWindowObject().window?.close()
+//                        }
+//                    }
+//                }
+                
+                if isSmallCountDownTimerViewVisible(){
+                    if !(smallCountDownVcObj?.isFocusBreak ?? false){
+                        smallCountDownVcObj?.closeTimerBox()
                     }
                 }
             }
@@ -1911,13 +1954,14 @@ class menuViewController: NSViewController {
         }else if currentState == ._MICRO_BREAK_ && isBreakActivityExecuteFromPostponeEveningHabit{
             getHabitsVcObject().stopActivityCountDownTimer()
             if currentActivityPlaying != nil{
-                if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
-                    if smallCountDownWcObj?.window != nil{
-                        if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
-                            getSmallCountDownWindowObject().window?.close()
-                        }
-                    }
-                }
+//                if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
+//                    if smallCountDownWcObj?.window != nil{
+//                        if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
+//                            getSmallCountDownWindowObject().window?.close()
+//                        }
+//                    }
+//                }
+                closeSmallCountDownTimerBoxIfVisibleForWithoutFocusBreak()
             }
             mainWindowControllerObj?.window?.close()
             hideBlankWindowInSecondaryMonitor()
@@ -1929,13 +1973,14 @@ class menuViewController: NSViewController {
         }else if currentState == ._CUSTOM_ROUTINE_ && (isCustomRoutineWasRunningInPostponeMorningHabit || isCustomRoutineWasRunningInPostponeEveningHabit){
             getHabitsVcObject().stopActivityCountDownTimer()
             if currentHabitPlaying != nil{
-                if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
-                    if smallCountDownWcObj?.window != nil{
-                        if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
-                            getSmallCountDownWindowObject().window?.close()
-                        }
-                    }
-                }
+//                if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
+//                    if smallCountDownWcObj?.window != nil{
+//                        if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
+//                            getSmallCountDownWindowObject().window?.close()
+//                        }
+//                    }
+//                }
+                closeSmallCountDownTimerBoxIfVisibleForWithoutFocusBreak()
             }
             mainWindowControllerObj?.window?.close()
             hideBlankWindowInSecondaryMonitor()
@@ -1955,11 +2000,12 @@ class menuViewController: NSViewController {
             if getHabitsVcObject().postponeTimer != nil{
                 getHabitsVcObject().postponeTimer?.invalidate()
                 getHabitsVcObject().postponeTimer = nil
-                if smallCountDownWcObj != nil{
-                    if getSmallCountDownWindowObject().window!.isVisible && getsmallCountDownVcObject().isFocusBreak{
-                        smallCountDownVcObj?.closeTimerBox()
-                    }
-                }
+//                if smallCountDownWcObj != nil{
+//                    if getSmallCountDownWindowObject().window!.isVisible && getsmallCountDownVcObject().isFocusBreak{
+//                        smallCountDownVcObj?.closeTimerBox()
+//                    }
+//                }
+                closeSmallCountDownTimerBoxIfVisibleForFocusBreak()
             }
             if getHabitsVcObject().postponeNotificationTimer != nil{
                 getHabitsVcObject().postponeNotificationTimer?.invalidate()
@@ -1968,7 +2014,7 @@ class menuViewController: NSViewController {
         }
         
         appdelegate?.backgroundThread()
-        
+        closeMenuWindowIsVisible()
         
         Timer.scheduledTimer(withTimeInterval: 2, repeats: false) { timer in
             self.reloadIfNeeded()
@@ -2010,8 +2056,8 @@ class menuViewController: NSViewController {
                 
             }
         }
-        
     }
+    
     @IBAction func btnStartHabitsFirstTimeClicked(_ sender: Any) {
         addLog(text: "[user-action] button Start Habits First Time Clicked")
         if isShutOffTimeGoing(){
@@ -2031,6 +2077,7 @@ class menuViewController: NSViewController {
         UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitShowDate)
         isHabitAlreadyShowed = false
         appdelegate?.backgroundThread()
+        closeMenuWindowIsVisible()
     }
     
     @IBAction func btnRemoveAppModeOptionClicked(_ sender: Any) {
@@ -2088,6 +2135,7 @@ class menuViewController: NSViewController {
                 mainWindowControllerObj?.showWindow(self)
                 leftMenuVcObj?.showEditHabitsView()
             }
+            closeMenuWindowIsVisible()
             addLog(text: "Showing preferences")
         }
     }
@@ -2110,6 +2158,7 @@ class menuViewController: NSViewController {
         SettingsManagerObject.isSettingsChanged = true
         SettingsManagerObject.putUserLocalDeviceSettings()
     }
+    
     @IBAction func btnEditBlockingScheduleClicked(_ sender: Any) {
         addLog(text:"[user-action] menuViewController:- btnEditBlockingScheduleClicked")
         if isPurchased == false && daysLeft <= 0{// if UserDefaults.standard.object(forKey: "trialExpired") != nil{
@@ -2149,10 +2198,11 @@ class menuViewController: NSViewController {
             leftMenuVcObj?.showBlocksView()
         }else{
             mainWindowControllerObj?.showWindow(self)
-            leftMenuVcObj?.showBlocksView() // todo check with password
+            leftMenuVcObj?.showBlocksView()
         }
         addLog(text: "Showing preferences")
         tabStrictnessContainerVcObj?.showBlockingScheduleView()
+        closeMenuWindowIsVisible()
     }
     
     @IBAction func btnSetPermissionsClicked(_ sender: Any) {
@@ -2174,6 +2224,7 @@ class menuViewController: NSViewController {
             showExplainingPermissionsWindow(showingFromPomodoro: false)
             UserDefaults.standard.set(true, forKey: kUserdefaultsBrowsersPermissionsSetByUser)
         }
+        closeMenuWindowIsVisible()
     }
     
     @IBAction func btnCustomRoutineClicked(_ sender: Any) {

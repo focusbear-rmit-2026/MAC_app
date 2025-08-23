@@ -563,14 +563,6 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                 }
                 
                 endFocusModeTime = nil
-                
-                if brainDumpWcObj != nil{
-                    if brainDumpWcObj?.window != nil{
-                        if brainDumpWcObj!.window!.isVisible{
-                            brainDumpVcObj?.focusModeStarted()
-                        }
-                    }
-                }
             }
         }
        
@@ -1086,36 +1078,35 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
     }
     
     func resumeTimerHabit(durationSeconds:Int, url:String?, name:String, useTimer:Bool){
-        if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
-            if smallCountDownWcObj?.window != nil{
-                if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
-                    if currentHabitPlaying != nil{
-                        if currentHabitPlaying!.openSpecificApps{
+   // allowing postpone from timer window issue #213  date- 5/9/22
+        if isSmallCountDownTimerViewVisible(){
+            if !(smallCountDownVcObj?.isFocusBreak ?? false){
+                if currentHabitPlaying != nil{
+                    if currentHabitPlaying!.openSpecificApps{
+                        currentHabitPlaying = currentHabitPlaying!
+                        mainWindowControllerObj?.window?.close()
+                        appdelegate?.startTimerActivitiesAllowedApp(shouldLaunchAppAndUrl: false)
+                        hideBlankWindowInSecondaryMonitor()
+                        if currentHabitPlaying!.useTimer{
+                            smallCountDownVcObj?.resumeTimerHabit(durationSeconds: durationSeconds)
+                        }
+                    }else{
+                        if isAnyAllowedFocusModeActivityRunning{//activityAllowedFocusApps.count != 0{
                             currentHabitPlaying = currentHabitPlaying!
                             mainWindowControllerObj?.window?.close()
                             appdelegate?.startTimerActivitiesAllowedApp(shouldLaunchAppAndUrl: false)
                             hideBlankWindowInSecondaryMonitor()
                             if currentHabitPlaying!.useTimer{
-                                getsmallCountDownVcObject().resumeTimerHabit(durationSeconds: durationSeconds)
+                                smallCountDownVcObj?.resumeTimerHabit(durationSeconds: durationSeconds)
                             }
                         }else{
-                            if isAnyAllowedFocusModeActivityRunning{//activityAllowedFocusApps.count != 0{
-                                currentHabitPlaying = currentHabitPlaying!
-                                mainWindowControllerObj?.window?.close()
-                                appdelegate?.startTimerActivitiesAllowedApp(shouldLaunchAppAndUrl: false)
-                                hideBlankWindowInSecondaryMonitor()
-                                if currentHabitPlaying!.useTimer{
-                                    getsmallCountDownVcObject().resumeTimerHabit(durationSeconds: durationSeconds)
-                                }
-                            }else{
-                                 currentHabitPlaying = nil
-                            }
+                            currentHabitPlaying = nil
                         }
                     }
-                    
                 }
+                
             }
-        }//!getsmallCountDownVcObject().isFocusBreak{
+        }
         disableSystemSleep()
         btnSkipHabit.isHidden = true
         lblTitle.stringValue = getDoSomeActivityText(activityName: name)//"Do some \(arrFilteredMorningHabits[currentHabitIndex].name!)."

@@ -58,17 +58,13 @@ class askPostponeIntentionVc: NSViewController, NSTextViewDelegate {
         allApiObject.capturePosthog(event: "postpone-intention", metadata: ["number-of-characters":"\(textView.string.count)"])
         if lastCurrentState == ._MORNING_HABIT_{
             getHabitsVcObject().postponeMorningHabitFor(minutes: minutes, secondsToPostpone: secondsToPostpone, showAskFocusModeView: showAskFocusModeView, showAskIntention: false)
-            if easyPostponeWcObj?.window?.isVisible ?? false{
+           // if easyPostponeWcObj?.window?.isVisible ?? false{
 //                easyPostponeWcObj?.window?.close()
-            }
+          //  }
             if let easyPostponeVcObj = easyPostponeVcObj{
-                if easyPostponeVcObj.presentingViewController == mainViewControllerObj{
-                    easyPostponeVcObj.dismiss(easyPostponeVcObj)
-                }else{
-                    easyPostponeVcObj.view.window?.close()
-                }
+                easyPostponeVcObj.closeView()
             }
-            
+        
             if showAskFocusModeView && SettingsManagerObject.isGeekModeEnabled && !textView.string.isEmpty{
                // if pomodoroWindowControllerObj != nil{
                    // if pomodoroWindowControllerObj?.window?.isVisible ?? false{
@@ -82,15 +78,11 @@ class askPostponeIntentionVc: NSViewController, NSTextViewDelegate {
             
         }else if lastCurrentState == ._EVENING_HABIT_{
             getHabitsVcObject().postponeEveningHabitFor(minutes: minutes, secondsToPostpone: secondsToPostpone, showAskFocusModeView: showAskFocusModeView, showAskIntention: false)
-            if easyPostponeWcObj?.window?.isVisible ?? false{
-//                easyPostponeWcObj?.window?.close()
-            }
+//            if easyPostponeWcObj?.window?.isVisible ?? false{
+////                easyPostponeWcObj?.window?.close()
+//            }
             if let easyPostponeVcObj = easyPostponeVcObj{
-                if easyPostponeVcObj.presentingViewController == mainViewControllerObj{
-                    easyPostponeVcObj.dismiss(easyPostponeVcObj)
-                }else{
-                    easyPostponeVcObj.view.window?.close()
-                }
+                easyPostponeVcObj.closeView()
             }
             if showAskFocusModeView && SettingsManagerObject.isGeekModeEnabled && !textView.string.isEmpty{
                // if pomodoroWindowControllerObj != nil{

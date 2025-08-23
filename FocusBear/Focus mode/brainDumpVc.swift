@@ -242,13 +242,13 @@ class brainDumpVc: NSViewController, NSTextViewDelegate{
         }
     }
     
-    func focusModeStarted(){
-        if SettingsManagerObject.brainDumpCustomUrlEnabled{
-            
-        }else{
-            
-        }
-    }
+//    func focusModeStarted(){
+//        if SettingsManagerObject.brainDumpCustomUrlEnabled{
+//            
+//        }else{
+//            
+//        }
+//    }
     
     func focusModeFinished(){
         loadWebView()

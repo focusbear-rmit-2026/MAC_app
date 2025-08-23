@@ -24,7 +24,7 @@ class commonWindowController: NSWindowController, NSWindowDelegate {
     func windowDidBecomeKey(_ notification: Notification) {
         if self.window == brainDumpWcObj?.window{
             print("windowDidBecomeKey")
-            brainDumpVcObj?.checkCurrentUrl()
+            brainDumpVcObj?.checkCurrentUrl() // todo check 
         }
     }
 

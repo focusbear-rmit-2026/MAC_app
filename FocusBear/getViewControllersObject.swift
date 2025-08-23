@@ -110,14 +110,14 @@ func getsmallCountDownVcObject()->smallCountDownVc{
     return smallCountDownVcObj!
 }
 
-var smallCountDownWcObj:commonWindowController?
-func getSmallCountDownWindowObject()->commonWindowController{
-    if smallCountDownWcObj == nil{
-        smallCountDownWcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
-        smallCountDownWcObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
-    }
-    return smallCountDownWcObj!
-}
+//var smallCountDownWcObj:commonWindowController?
+//func getSmallCountDownWindowObject()->commonWindowController{ // todo not needed
+//    if smallCountDownWcObj == nil{
+//        smallCountDownWcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
+//        smallCountDownWcObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
+//    }
+//    return smallCountDownWcObj!
+//}
 
 
 var focusEndWarningVcObj:focusEndWarningVc?
@@ -159,7 +159,7 @@ func getInitialQuitFeedbackVcObject()->initialQuitFeedbackVc{
     return initialQuitFeedbackVcObj!
 }
 
-var brainDumpWcObj:commonWindowController?
+var brainDumpWcObj:commonWindowController?// todo 
 func getBrainDumpWindowObject()->commonWindowController{
     if brainDumpWcObj == nil{
         brainDumpWcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
@@ -2348,3 +2348,6 @@ func getFloatingTopBarWObject()->commonWindowController{
     }
     return floatingTopBarWcObj!
 }
+
+
+

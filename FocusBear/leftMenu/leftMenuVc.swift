@@ -443,15 +443,15 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         case boxFocusMusic:
             mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
         case boxFocusModeSettings:
-            mainViewControllerObj?.showSmallScreen()
+            mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
         case boxBlocks:
-            mainViewControllerObj?.showSmallScreen()
+            mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
         case boxSettings:
-            mainViewControllerObj?.showSmallScreen()
+            mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
         case boxEditHabits:
             mainViewControllerObj?.showSmallScreen()
         case boxMotivation:
-            mainViewControllerObj?.showSmallScreen()
+            mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
         case boxHelpAndSupport:
             if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._FOCUS_SUMMARY_ || currentState == ._SHUTOFFMAC_ || currentState == ._CUSTOM_ROUTINE_ || currentState == ._MICRO_BREAK_{
                 

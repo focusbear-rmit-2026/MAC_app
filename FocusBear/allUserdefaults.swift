@@ -212,3 +212,7 @@ var kUserdefaultsLastShutdownAbortedDate = "kUserdefaultsLastShutdownAbortedDate
 
 var kUserdefaultsFocusStatsExpanded = "kUserdefaultsFocusStatsExpanded"
 var kUserdefaultsFocusAllThingsExpanded = "kUserdefaultsFocusAllThingsExpanded"
+
+
+
+var kUserdefaultsStartMainAppIfNotRunning = "kUserdefaultsStartMainAppIfNotRunning"
