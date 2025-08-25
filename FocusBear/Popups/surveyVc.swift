@@ -76,14 +76,7 @@ class surveyVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegat
     }
     
     func setAccessTokenToWebView(){
-        var theme = "LIGHT"
-        if mainWindowControllerObj != nil{
-            if mainWindowControllerObj!.window!.hasDarkAppearance{
-                theme = "DARK"
-            }else {
-                theme = "LIGHT"
-            }
-        }
+        let theme = getWindowTheme()
         let stringJson = "{\"access_token\": \"\(appdelegate!.credential?.accessToken ?? "")\",\"platform\":\"mac\",\"theme\":\"\(theme)\",\"lang\":\"\(currentLanguageCode)\"}"
         let settingsFunc = String(format: "let waitForAppLoaded = setInterval(() => { if (window.loadAccessTokenForSurvey) { loadAccessTokenForSurvey(%@); clearInterval(waitForAppLoaded); } }, 100);", stringJson)
         

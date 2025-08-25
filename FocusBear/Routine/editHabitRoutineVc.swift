@@ -115,14 +115,8 @@ class editHabitRoutineVc: NSViewController, WKNavigationDelegate, webViewLoadFai
     }
     
     func setSettingsToWebView(){
-        var theme = "LIGHT"
-        if mainWindowControllerObj != nil{// preferencesWindowControllerObj
-            if mainWindowControllerObj!.window!.hasDarkAppearance{
-                theme = "DARK"
-            }else {
-                theme = "LIGHT"
-            }
-        }
+        let theme = getWindowTheme()
+
         let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex].webFontName
         var flags = "[\"settings-updated\"]"
         if SettingsManagerObject.isGeekModeEnabled{

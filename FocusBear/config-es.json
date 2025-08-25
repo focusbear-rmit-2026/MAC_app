@@ -205,7 +205,8 @@
         "unblockNotAvailableText": "Estás en modo superestricto - cambia tu configuración para desbloquear",
         "unblockNotAvailableForFocusBlockedUrlText": "No puedes desbloquear este sitio porque actualmente está en la lista de URLs bloqueadas para tu sesión de enfoque.",
         "buttonEndFocusSessionText": "He terminado, finalizar sesión de enfoque",
-        "syncErrorAlertText": "No se pudo renovar el token. Revisa tu conexión a internet o intenta de nuevo más tarde. Si estás conectado y sigues viendo este error, por favor contacta a support@focusbear.io"
+        "syncErrorAlertText": "No se pudo renovar el token. Revisa tu conexión a internet o intenta de nuevo más tarde. Si estás conectado y sigues viendo este error, por favor contacta a support@focusbear.io",
+        "focusSessionPausedText": "La sesión de enfoque está en pausa."
     },
     "abortInfo": {
         "abortingTitle": "Cancelando...",
@@ -880,7 +881,8 @@
         "toggleBreaksTooltip": "Activa micro-descansos para tu salud visual y recordatorios de estiramientos durante tu sesión de enfoque. Cada <BREAK_FREQUENCY> minutos, Focus Bear te indicará que tomes un breve descanso. Luego, al final de tu sesión de enfoque, tendrás un descanso más largo de <BREAK_DURATION> minutos.",
         "pomodoroModeDurationText": "Duración del enfoque:",
         "unpinWindowText": "Haz clic para desanclar la ventana (desactivar siempre encima)",
-        "pinWindowText": "Haz clic para anclar la ventana (mantener encima)"
+        "pinWindowText": "Haz clic para anclar la ventana (mantener encima)",
+        "titleAfterPostpone": "¿Qué quieres hacer en lugar de tus hábitos?"
     },
     "logQuantityInfo": {
         "title": "Registra la Cantidad de la actividad",
@@ -2387,7 +2389,11 @@
             "Buen reajuste, estás progresando de nuevo.",
             "Vuelve a la rutina, sigue así."
         ],
-        "focusAlignmentScoreText": "Puntuación de alineación de enfoque: <SCORE>%"
+        "focusAlignmentScoreText": "Puntuación de alineación de enfoque: <SCORE>%",
+        "toolTipShowToDoPlayer": "Mostrar reproductor de tareas",
+        "currentTaskText": "La tarea actual es \"<TASK>\"",
+        "aiIsDisabledText": "La IA no está activada.",
+        "noCurrentTaskText": "Sin tarea actual"
     },
     "nudgeStartAnotherFocusSessionVcInfo":{
         "title": "¿Quieres comenzar otra sesión de enfoque?",
@@ -2436,7 +2442,8 @@
         "buttonResumeHabits": "Reanudar hábitos",
         "shutoffAbortedText": "Apagado cancelado. Tu computadora vuelve a estar accesible.",
         "nextRoutineText": "¡Buen trabajo manteniéndote en camino! Tu próxima rutina programada (<ROUTINE>) está fijada para <TIME>. Prepárate para retomarla y seguir construyendo esos hábitos saludables. ¡Tú puedes!",
-        "buttonBeginCustomRoutine": "Iniciar rutina bajo demanda"
+        "buttonBeginCustomRoutine": "Iniciar rutina bajo demanda",
+        "titleEveningRoutine": "Rutina nocturna"
     },
     "breakStateVcInfo":{
         "buttonEnableBreaks": "Activar descansos",
@@ -2444,6 +2451,35 @@
         "titleEnableBreaks": "Los descansos están desactivados. Activa los descansos a intervalos regulares para aumentar tu productividad, energía y enfoque.",
         "pausedBreaksText": "Has pausado los descansos por hoy. Mañana volverán para ayudarte a recargar energías y mantener el enfoque.",
         "shutoffTimeText": "La app está en estado de apagado"
+    },
+    "leftMenuVcInfo":{
+        "titleMain": "PRINCIPAL",
+        "titleTools": "HERRAMIENTAS",
+        "titlePreferences": "PREFERENCIAS",
+        "menuHabits": "Hábitos",
+        "menuCustomRoutine": "Rutina personalizada",
+        "menuStartFocusSession": "Iniciar sesión de enfoque",
+        "menuStopFocusSession": "Detener sesión de enfoquen",
+        "menuResumeFocusSession": "Reanudar sesión de enfoque",
+        "menuStopSuperFocusSession": "Detener sesión de super enfoque",
+        "menuStartMicroBreak": "Iniciar micro descanso",
+        "menuTodoPlayer": "Reproductor de tareas",
+        "menuTodoList": "Lista de tareas",
+        "menuBrainDump": "Volcado de ideas",
+        "menuFocusMusic": "Música de enfoque",
+        "menuFocusPreferences": "Enfoque",
+        "menuBlocksPreferences": "Bloqueos",
+        "menuSettings": "Ajustes",
+        "menuEditHabits": "Editar hábitos",
+        "menuMotivation": "Motivación",
+        "menuHelpAndSupport": "Ayuda y soporte,
+        "menuUpgradeNow": "Actualizar ahora",
+        "disableReasonMorningRoutine": "Desactivado porque tu rutina matutina está en progreso.",
+        "disableReasonEveningRoutine": "Desactivado porque tu rutina nocturna está en progreso.",
+        "disableReasonFocusSummary": "Desactivado porque tu resumen de todo el día está visible.",
+        "disableReasonShutoffTime": "Desactivado porque es tu hora de apagado.",
+        "disableReasonMircoBreaks": "Desactivado porque tu micro descanso está en progreso.",
+        "disableReasonCustomRoutine": "Desactivado porque tu rutina personalizada está en progreso."
     },
     "discordUrl": "https://discord.gg/VZdv3ZjhSq",
     "whatsAppUrl": "https://chat.whatsapp.com/FV0oTbCUWpILBYif7CP6UD",

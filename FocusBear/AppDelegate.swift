@@ -12158,7 +12158,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 /// bug solved in search  in settingsw 
 // upfrade now button on left side and checlk nag again   done and  now if main window is vivible then nag will be presented on main window and if main window is not vivisble then nag will be shows on seprate window
 //
-// todo jab app chalu ho to expire date lkhvao token ki done
+// jab app chalu ho to expire date lkhvao token ki done
 // settings bug solved  done
 // floating top bar    done
 
@@ -12177,7 +12177,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 
 
 
-// todo check settings kab kab save ho rahi hai
+//  check settings kab kab save ho rahi hai
 // sign in with apple
 
 
@@ -12204,4 +12204,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 //  timer count down chnaged background habit
 // enter work
 // easy postpone bug solved
-// todo custom habit per direct close click kiya 
+
+
+
+
+//25/8/25
+// bug custom habit per direct close click kiya to postpone nag ni aakar window close ho gai     done
+// minor bug in postpone micro break from warning that if user is on habit or any rputine tab then that view was gtting blank     done
+// appli sign in work remaining
+// window theme function 
+// window full screen small scrren changes crash solved
+// brainDumpWcObj coed commented 
+// password new bug solved 
+// text added, code correction

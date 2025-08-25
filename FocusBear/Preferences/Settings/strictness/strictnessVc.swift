@@ -255,7 +255,7 @@ extension strictnessVc: SettingListItemDelegate{
 //                        getEnterPasswordVcObjForPreferences().parentVc = nil
 //                        enterPasswordVcObjForPreferences?.removeConstraints()
                         
-                        mainViewControllerObj?.askPasswordForSettingsIfNeeded() // todo test this
+                        mainViewControllerObj?.askPasswordForSettings() 
                         
                         addLog(text: "Showing enter password view inside preferences")
                     }

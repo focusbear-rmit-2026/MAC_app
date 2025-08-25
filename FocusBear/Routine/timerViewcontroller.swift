@@ -271,14 +271,8 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
     }
     
     func setAccessTokenToTutorialWebView(){
-        var theme = "LIGHT"
-        if mainWindowControllerObj != nil{// preferencesWindowControllerObj
-            if mainWindowControllerObj!.window!.hasDarkAppearance{
-                theme = "DARK"
-            }else {
-                theme = "LIGHT"
-            }
-        }
+        let theme = getWindowTheme()
+        
         let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex].webFontName
         let stringJson = "{access_token: \"\(appdelegate!.credential?.accessToken ?? "")\",\"font\":\"\(selectedFont)\",\"lang\":\"\(currentLanguageCode)\",\"theme\":\"\(theme)\",\"platform\":\"mac\",\"type\":\"mac\"}"
     

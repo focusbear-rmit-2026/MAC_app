@@ -79,7 +79,11 @@ class nudgeFocusAlignmentScoreDippingVc: NSViewController {
         if event.trackingArea == self.trackingArea{
             boxButton.isHidden = false
         }else if event.trackingArea == self.trackingAreaExpandButton{
-            showTooltip(sender: btnExpandTaskPlayer, msg: "Show To Do Player", preferredEdge: .maxY, maxWidthVal: 200) // todo text
+            var toolTipShowToDoPlayer = "Show To Do Player"
+            if let info = configjson.value(forKey: "nudgeFocusAlignmentScoreDippingVcInfo") as? NSDictionary{
+                toolTipShowToDoPlayer = info.value(forKey: "toolTipShowToDoPlayer") as? String ?? toolTipShowToDoPlayer
+            }
+            showTooltip(sender: btnExpandTaskPlayer, msg: toolTipShowToDoPlayer, preferredEdge: .maxY, maxWidthVal: 200)
         }
     }
     
@@ -134,16 +138,24 @@ class nudgeFocusAlignmentScoreDippingVc: NSViewController {
         }
         
         lastScoreShown = score
-        var currentTaskText = "Current task is \"<TASK>\"" // todo text
+        var currentTaskText = "Current task is \"<TASK>\""
         if let currentTaskInToDoPlayer = getCurrentTaskInFocusMode(){
+            if let info = configjson.value(forKey: "nudgeFocusAlignmentScoreDippingVcInfo") as? NSDictionary{
+                currentTaskText = info.value(forKey: "currentTaskText") as? String ?? currentTaskText
+            }
             lblCurrentTask.stringValue = currentTaskText.replacingOccurrences(of: "<TASK>", with: currentTaskInToDoPlayer)
         }else{
             lblCurrentTask.stringValue = "No Current Task"
+            if let info = configjson.value(forKey: "nudgeFocusAlignmentScoreDippingVcInfo") as? NSDictionary{
+                lblCurrentTask.stringValue = info.value(forKey: "noCurrentTaskText") as? String ?? lblCurrentTask.stringValue
+            }
         }
         
-        
         if !isCuddlyModeEnabled() || !SettingsManagerObject.isAiCheckUrlEnabled || isBlockSuperDistractingFocusModeOn(){
-            lblDescriptionText.stringValue = "AI is not enabled." // todo text
+            lblDescriptionText.stringValue = "AI is not enabled."
+            if let info = configjson.value(forKey: "nudgeFocusAlignmentScoreDippingVcInfo") as? NSDictionary{
+                lblDescriptionText.stringValue = info.value(forKey: "aiIsDisabledText") as? String ?? lblDescriptionText.stringValue
+            }
         }
     }
     

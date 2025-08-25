@@ -164,22 +164,7 @@ class blockingScheduleVc: NSViewController, WKNavigationDelegate, webViewLoadFai
     }
     
     func setSettingsToWebView(){
-        var theme = "LIGHT"
-//        if preferencesWindowControllerObj != nil{
-//            if preferencesWindowControllerObj!.window!.hasDarkAppearance{
-//                theme = "DARK"
-//            }else {
-//                theme = "LIGHT"
-//            }
-//        }
-        
-        if mainWindowControllerObj != nil{ // todo make fnction
-            if mainWindowControllerObj!.window!.hasDarkAppearance{
-                theme = "DARK"
-            }else {
-                theme = "LIGHT"
-            }
-        }
+        let theme = getWindowTheme()
         
         let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex].webFontName
         var flags = "[\"settings-updated\"]"

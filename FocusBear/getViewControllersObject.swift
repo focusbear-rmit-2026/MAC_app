@@ -111,7 +111,7 @@ func getsmallCountDownVcObject()->smallCountDownVc{
 }
 
 //var smallCountDownWcObj:commonWindowController?
-//func getSmallCountDownWindowObject()->commonWindowController{ // todo not needed
+//func getSmallCountDownWindowObject()->commonWindowController{ // 
 //    if smallCountDownWcObj == nil{
 //        smallCountDownWcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
 //        smallCountDownWcObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
@@ -159,14 +159,14 @@ func getInitialQuitFeedbackVcObject()->initialQuitFeedbackVc{
     return initialQuitFeedbackVcObj!
 }
 
-var brainDumpWcObj:commonWindowController?// todo 
-func getBrainDumpWindowObject()->commonWindowController{
-    if brainDumpWcObj == nil{
-        brainDumpWcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
-        brainDumpWcObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
-    }
-    return brainDumpWcObj!
-}
+//var brainDumpWcObj:commonWindowController?
+//func getBrainDumpWindowObject()->commonWindowController{
+//    if brainDumpWcObj == nil{
+//        brainDumpWcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
+//        brainDumpWcObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
+//    }
+//    return brainDumpWcObj!
+//}
 
 var brainDumpVcObj:brainDumpVc?
 func getBrainDumpVcObject()->brainDumpVc{

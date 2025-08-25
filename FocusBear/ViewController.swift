@@ -102,20 +102,26 @@ class ViewController: NSViewController {
     //            lblCurrentDateTime.stringValue = getStringFromDate(date: Date(), dateFormat: "EEE d MMM h:mm:ss")
     //        }
     //    }
-    
+    var shouldIgnoreViewWilDisappear = false
     var lastSmallWindowFrame:NSRect?
     func checkIsFullScreenNeeded() {
         if checkIsFullScreenEnabled(){
-            mainWindowControllerObj?.showFullSizeWindow()
-            boxTopButtons.isHidden = false
-            lastSmallWindowFrame = self.view.window?.frame
+            if !(self.view.window?.styleMask.contains(.fullScreen) ?? false){// Don’t do this if the user is already in fullscreen. Wait until the user toggles back to a small screen, then check the setting again.
+                shouldIgnoreViewWilDisappear = true
+                mainWindowControllerObj?.showFullSizeWindow()// This will cause the viewWillDisappear function to be called
+                boxTopButtons.isHidden = false
+                lastSmallWindowFrame = self.view.window?.frame
+                shouldIgnoreViewWilDisappear = false
+            }
         }else{
             mainWindowControllerObj?.showSmallSizeWindow()
             boxTopButtons.isHidden = true
         }
         
         if checkIsFullScreenEnabled(){
-            setframe()
+            if !(self.view.window?.styleMask.contains(.fullScreen) ?? false){// Don’t do this if the user is already in fullscreen. Wait until the user toggles back to a small screen, then check the setting again.
+                setframe()
+            }
         }else{
             if self.view.window != nil{
                 if isBreakActivityShowingWhileMeeting && currentState == ._MICRO_BREAK_{
@@ -149,7 +155,7 @@ class ViewController: NSViewController {
         mainWindowControllerObj?.showSmallSizeWindow()
         let screenList = NSScreen.screens
         
-        if showMinimumSize{
+        if !(self.view.window?.styleMask.contains(.fullScreen) ?? false) && showMinimumSize{
             self.view.window?.setContentSize(NSSize(width: mainWindowControllerObj?.smallWindowMinWidth ?? 500, height: mainWindowControllerObj?.smallWindowMinHeight ?? 500))
             self.view.window?.center()
         }else{
@@ -174,7 +180,9 @@ class ViewController: NSViewController {
         }
     }
     override func viewWillDisappear() {
-        removeSubViews()
+        if !shouldIgnoreViewWilDisappear{
+            removeSubViews()
+        }
     }
     
     override func mouseEntered(with event: NSEvent) {
@@ -199,24 +207,7 @@ class ViewController: NSViewController {
         
         habitsVcObj?.abortCurrentState()
     }
-    
-    func hideCloseButtons(){
-        //        self.btnAbort.isHidden = true
-        //        self.stackViewTopButtons.isHidden = true
-        //        if !checkIsFullScreenEnabled(){
-        //            self.view.window?.styleMask.remove(.closable)
-        //        }// todo
-    }
-    
-    func showCloseButtons(){
-        //        self.btnAbort.isHidden = false
-        //        self.stackViewTopButtons.isHidden = false
-        //        if !checkIsFullScreenEnabled(){
-        //            self.view.window?.styleMask.insert(.closable)
-        //        } // todo
-    }
-    
-    
+
     
     func newUrlOrAppAdded(){// show permissions if not added 
         if UserDefaults.standard.object(forKey: kUserdefaultsIsAnyDistractionSetByUser) == nil{
@@ -566,7 +557,7 @@ class ViewController: NSViewController {
     
     //    @IBAction func btnAbortClicked(_ sender: Any) {
     //        addLog(text: "[user-action] button Abort Clicked")
-    ////        abortCurrentState() // todo
+    ////        abortCurrentState() //
     //    }
     
     //    func abortCurrentState(){// added on 10/4/25 in 1.21.356
@@ -608,8 +599,8 @@ class ViewController: NSViewController {
     //                        }
     //                    }
     //                }
-    //                //                mainWindowControllerObj?.window?.close() // todo
-    //                //                hideBlankWindowInSecondaryMonitor() // todo
+    //                //                mainWindowControllerObj?.window?.close() //
+    //                //                hideBlankWindowInSecondaryMonitor() //
     //
     //                showEasyPostponeWindow()
     //                stopActivityTimer()
@@ -1074,7 +1065,6 @@ class ViewController: NSViewController {
     
     func showAskAppWorkVc(){
         addLog(text: "Showing Ask App Work view.")
-        self.showCloseButtons()
         removeSubViews()
         
         containerView.addSubview(getAskAppWorkVcObject().view)
@@ -1087,7 +1077,6 @@ class ViewController: NSViewController {
     func showAchieveWithFocusBearVc(){
         addLog(text: "Showing Achieve With Focus Bear view.")
         allApiObject.capturePosthog(event: "what-to-achieve-with-focus-bear-screen-shown", metadata: [:])
-        self.showCloseButtons()
         removeSubViews()
         
         containerView.addSubview(getAchieveWithFocusBearVcObject().view)
@@ -1099,7 +1088,6 @@ class ViewController: NSViewController {
     
     func showAskOccupationVc(){
         addLog(text: "Showing Ask App Work view.")
-        self.showCloseButtons()
         removeSubViews()
         
         containerView.addSubview(getAskOccupationVcObject().view)
@@ -1111,7 +1099,6 @@ class ViewController: NSViewController {
     
     func showInstalltHabitPacksVc(){
         addLog(text: "Showing install Habit Packs view.")
-        self.showCloseButtons()
         removeSubViews()
         
         containerView.addSubview(getInstallHabitPacksVcObj().view)
@@ -1124,7 +1111,6 @@ class ViewController: NSViewController {
     
     func showAdditionalGoalsVc(){
         addLog(text: "Showing Additional Goals view.")
-        self.showCloseButtons()
         removeSubViews()
         
         containerView.addSubview(getAdditionalGoalsVcObject().view)
@@ -1137,7 +1123,6 @@ class ViewController: NSViewController {
     func showOnboardingFocusExplainVc(){
         addLog(text: "Showing Onboarding Focus Explain view.")
         allApiObject.capturePosthog(event: "focus-explain-screen-shown", metadata: [:])
-        self.showCloseButtons()
         removeSubViews()
         
         containerView.addSubview(getOnboardingFocusExplainVcObject().view)
@@ -1150,7 +1135,6 @@ class ViewController: NSViewController {
     func showOnboardingHabitExplainVc(){
         addLog(text: "Showing Onboarding Habit Explain view.")
         allApiObject.capturePosthog(event: "routine-explain-screen-shown", metadata: [:])
-        self.showCloseButtons()
         removeSubViews()
         
         containerView.addSubview(getOnboardingHabitExplainVcObject().view)
@@ -1163,7 +1147,6 @@ class ViewController: NSViewController {
     
     func showSelectHabitsLaterInfoVc(){
         addLog(text: "Showing Additional Goals view.")
-        self.showCloseButtons()
         removeSubViews()
         
         containerView.addSubview(getSelectHabitsLaterInfoVcObject().view)
@@ -1175,7 +1158,6 @@ class ViewController: NSViewController {
     
     func showAskWorkTimeVc(){
         addLog(text: "Showing Ask Work Time view.")
-        self.showCloseButtons()
         removeSubViews()
         
         containerView.addSubview(getAskWorkTimeVcObject().view)
@@ -1187,7 +1169,6 @@ class ViewController: NSViewController {
     
     func showConfirmMorningRoutineTimeVc(){
         addLog(text: "Showing Confirm Morning Routine Time view.")
-        self.showCloseButtons()
         removeSubViews()
         
         containerView.addSubview(getConfirmMorningRoutineTimeVcObject().view)
@@ -1199,7 +1180,6 @@ class ViewController: NSViewController {
     
     func showConfirmEveningRoutineTimeVc(){
         addLog(text: "Showing Confirm Evening Routine Time view.")
-        self.showCloseButtons()
         removeSubViews()
         
         containerView.addSubview(getConfirmEveningRoutineTimeVcObject().view)
@@ -1210,7 +1190,6 @@ class ViewController: NSViewController {
     }
     func showAskBreakTimeVc(){
         addLog(text: "Showing Ask Break Time view.")
-        self.showCloseButtons()
         removeSubViews()
         
         containerView.addSubview(getaskBreakTimeVcObject().view)
@@ -1221,7 +1200,6 @@ class ViewController: NSViewController {
     }
     func showTakeBreaksInfoVc(){
         addLog(text: "Showing Take Breaks Info view.")
-        self.showCloseButtons()
         removeSubViews()
         
         containerView.addSubview(geTakeBreaksInfoVcObject().view)
@@ -1584,7 +1562,6 @@ class ViewController: NSViewController {
     
     func startBreathing() {
         addLog(text:"current startBreathing called")
-        self.showCloseButtons()
         removeSubViews()
         containerView.addSubview(timerViewcontrollerObj!.view)
         containerView.addConstraints(subView: timerViewcontrollerObj!.view)
@@ -1596,7 +1573,6 @@ class ViewController: NSViewController {
     
     func breathingOver(isSKipped:Bool) {
         addLog(text:"current breathing Habit Over called")
-        hideCloseButtons()
         removeSubViews()
         containerView.addSubview(thirdVcObj!.view)
         containerView.addConstraints(subView: thirdVcObj!.view)
@@ -2745,8 +2721,8 @@ class ViewController: NSViewController {
     //                    isLastActivityStoppedInRunningState = false
     //                    lastActivityRunningId = ""
     //                }
-    ////                hideCloseButtons() // todo
-    ////                removeSubViews() // todo
+    ////                hideCloseButtons() //
+    ////                removeSubViews() //
     //
     //                //Extend postpone time not working for 2 minute warning popup#923
     //                if smallCountDownWcObj != nil && currentState == ._POSTPON_MORNING_HABIT_{
@@ -2761,8 +2737,8 @@ class ViewController: NSViewController {
     //                    closeTaskPlayerWindowIfVisible()
     //                }
     //                currentState = ._POSTPON_MORNING_HABIT_
-    ////                mainWindowControllerObj?.window?.close() // todo
-    ////                hideBlankWindowInSecondaryMonitor() // todo
+    ////                mainWindowControllerObj?.window?.close() //
+    ////                hideBlankWindowInSecondaryMonitor() //
     //            }
     //
     //            if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
@@ -2962,8 +2938,8 @@ class ViewController: NSViewController {
     //                closeTaskPlayerWindowIfVisible()
     //            }
     //            currentState = ._POSTPON_EVENING_HABIT_
-    ////            mainWindowControllerObj?.window?.close() // todo
-    ////            hideBlankWindowInSecondaryMonitor() // todo
+    ////            mainWindowControllerObj?.window?.close() //
+    ////            hideBlankWindowInSecondaryMonitor() // 
     //            if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
     //                if smallCountDownWcObj?.window != nil{
     //                    if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
@@ -3896,12 +3872,16 @@ class ViewController: NSViewController {
     
     func askPasswordForSettingsIfNeeded(){
         if isPasswordRequireInOpenSettings(){
-            self.view.addSubview(getEnterPasswordVcObjForPreferences().view)
-            self.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
-            getEnterPasswordVcObjForPreferences().parentVc = nil
-            enterPasswordVcObjForPreferences?.removeConstraints()
-            addLog(text: "Showing enter password view inside edit habits")
+            askPasswordForSettings()
         }
+    }
+    
+    func askPasswordForSettings(){
+        self.view.addSubview(getEnterPasswordVcObjForPreferences().view)
+        self.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
+        getEnterPasswordVcObjForPreferences().parentVc = nil
+        enterPasswordVcObjForPreferences?.removeConstraints()
+        addLog(text: "Showing enter password view inside edit habits")
     }
     
     func isEnterPasswordForPreferencesViewVisible()->Bool{

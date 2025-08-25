@@ -3340,7 +3340,7 @@
                                                         <color key="backgroundColor" red="1" green="1" blue="1" alpha="0.0" colorSpace="custom" customColorSpace="sRGB"/>
                                                         <color key="gridColor" name="gridColor" catalog="System" colorSpace="catalog"/>
                                                         <tableColumns>
-                                                            <tableColumn width="401" minWidth="40" maxWidth="1000" id="pPm-JD-NtB">
+                                                            <tableColumn width="402" minWidth="40" maxWidth="1000" id="pPm-JD-NtB">
                                                                 <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border">
                                                                     <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
                                                                     <color key="backgroundColor" name="headerColor" catalog="System" colorSpace="catalog"/>
@@ -3353,11 +3353,11 @@
                                                                 <tableColumnResizingMask key="resizingMask" resizeWithTable="YES" userResizable="YES"/>
                                                                 <prototypeCellViews>
                                                                     <tableCellView identifier="tblCellOnboardingBlockedUrls" id="U8J-lP-MOK" customClass="tblCellOnboardingBlockedUrls" customModule="Focus_Bear" customModuleProvider="target">
-                                                                        <rect key="frame" x="0.0" y="0.0" width="413" height="27"/>
+                                                                        <rect key="frame" x="0.0" y="0.0" width="414" height="27"/>
                                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                         <subviews>
                                                                             <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="sFZ-Sp-O49">
-                                                                                <rect key="frame" x="2" y="2" width="406" height="22"/>
+                                                                                <rect key="frame" x="2" y="2" width="407" height="22"/>
                                                                                 <buttonCell key="cell" type="check" title="Check" bezelStyle="regularSquare" imagePosition="left" controlSize="large" state="on" inset="2" id="Fbr-fP-yfP">
                                                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                                                                     <font key="font" metaFont="system" size="15"/>
@@ -5174,8 +5174,8 @@ DQ
                                             <constraints>
                                                 <constraint firstAttribute="height" constant="302" id="GXy-vH-SKi"/>
                                             </constraints>
-                                            <scroller key="horizontalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" doubleValue="1" horizontal="YES" id="c6U-Mf-MGa">
-                                                <rect key="frame" x="1" y="286" width="680" height="15"/>
+                                            <scroller key="horizontalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" horizontal="YES" id="c6U-Mf-MGa">
+                                                <rect key="frame" x="1" y="286" width="681" height="15"/>
                                                 <autoresizingMask key="autoresizingMask"/>
                                             </scroller>
                                             <scroller key="verticalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" horizontal="NO" id="0Jd-rW-3sn">
@@ -8101,7 +8101,7 @@ Would you like to try out the habit features?</string>
                                                                 <constraints>
                                                                     <constraint firstAttribute="height" constant="100" id="JFn-Ml-zE8"/>
                                                                 </constraints>
-                                                                <scroller key="horizontalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" horizontal="YES" id="AtU-Ya-I34">
+                                                                <scroller key="horizontalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" doubleValue="1" horizontal="YES" id="AtU-Ya-I34">
                                                                     <rect key="frame" x="0.0" y="85" width="590" height="15"/>
                                                                     <autoresizingMask key="autoresizingMask"/>
                                                                 </scroller>
@@ -10564,8 +10564,8 @@ Edit setting -"search" in Firefox</string>
                                                                 </constraints>
                                                                 <datePickerCell key="cell" borderStyle="bezel" alignment="left" useCurrentDate="YES" id="qTO-Vt-QZ6">
                                                                     <font key="font" metaFont="system"/>
-                                                                    <date key="date" timeIntervalSinceReferenceDate="775121239.63823998">
-                                                                        <!--2025-07-25 07:27:19 +0000-->
+                                                                    <date key="date" timeIntervalSinceReferenceDate="777818475.48451304">
+                                                                        <!--2025-08-25 12:41:15 +0000-->
                                                                     </date>
                                                                     <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
                                                                     <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -10610,8 +10610,8 @@ Edit setting -"search" in Firefox</string>
                                                                 </constraints>
                                                                 <datePickerCell key="cell" borderStyle="bezel" alignment="left" useCurrentDate="YES" id="6wt-Mf-qOs">
                                                                     <font key="font" metaFont="system"/>
-                                                                    <date key="date" timeIntervalSinceReferenceDate="775121239.64144194">
-                                                                        <!--2025-07-25 07:27:19 +0000-->
+                                                                    <date key="date" timeIntervalSinceReferenceDate="777818475.48810196">
+                                                                        <!--2025-08-25 12:41:15 +0000-->
                                                                     </date>
                                                                     <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
                                                                     <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -10656,8 +10656,8 @@ Edit setting -"search" in Firefox</string>
                                                                 </constraints>
                                                                 <datePickerCell key="cell" borderStyle="bezel" alignment="left" useCurrentDate="YES" id="GwN-p0-Ywu">
                                                                     <font key="font" metaFont="system"/>
-                                                                    <date key="date" timeIntervalSinceReferenceDate="775121239.64446104">
-                                                                        <!--2025-07-25 07:27:19 +0000-->
+                                                                    <date key="date" timeIntervalSinceReferenceDate="777818475.491799">
+                                                                        <!--2025-08-25 12:41:15 +0000-->
                                                                     </date>
                                                                     <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
                                                                     <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -10702,8 +10702,8 @@ Edit setting -"search" in Firefox</string>
                                                                 </constraints>
                                                                 <datePickerCell key="cell" borderStyle="bezel" alignment="left" useCurrentDate="YES" id="2xy-0S-D4T">
                                                                     <font key="font" metaFont="system"/>
-                                                                    <date key="date" timeIntervalSinceReferenceDate="775121239.647457">
-                                                                        <!--2025-07-25 07:27:19 +0000-->
+                                                                    <date key="date" timeIntervalSinceReferenceDate="777818475.495543">
+                                                                        <!--2025-08-25 12:41:15 +0000-->
                                                                     </date>
                                                                     <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
                                                                     <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -11307,7 +11307,7 @@ Edit setting -"search" in Firefox</string>
                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                             <subviews>
                                                                 <tableView verticalHuggingPriority="750" ambiguous="YES" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" tableStyle="plain" multipleSelection="NO" emptySelection="NO" autosaveColumns="NO" rowHeight="27" viewBased="YES" id="7jY-ae-ztX">
-                                                                    <rect key="frame" x="0.0" y="0.0" width="445" height="198"/>
+                                                                    <rect key="frame" x="0.0" y="0.0" width="446" height="198"/>
                                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                     <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                                                     <color key="gridColor" name="gridColor" catalog="System" colorSpace="catalog"/>
@@ -11325,7 +11325,7 @@ Edit setting -"search" in Firefox</string>
                                                                             <tableColumnResizingMask key="resizingMask" resizeWithTable="YES" userResizable="YES"/>
                                                                             <prototypeCellViews>
                                                                                 <tableCellView identifier="tblCellFocusPreferences" id="WQL-La-80J" customClass="tblCellFocusPreferences" customModule="Focus_Bear" customModuleProvider="target">
-                                                                                    <rect key="frame" x="0.0" y="0.0" width="445" height="27"/>
+                                                                                    <rect key="frame" x="0.0" y="0.0" width="444" height="27"/>
                                                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                     <subviews>
                                                                                         <box misplaced="YES" boxType="custom" borderWidth="0.0" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="FNr-gr-rgP">
@@ -11343,7 +11343,7 @@ Edit setting -"search" in Firefox</string>
                                                                                                         <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyDown" id="bnC-ZE-5gi"/>
                                                                                                     </imageView>
                                                                                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="VcK-ea-SKh">
-                                                                                                        <rect key="frame" x="38" y="6" width="399" height="15"/>
+                                                                                                        <rect key="frame" x="38" y="6" width="398" height="15"/>
                                                                                                         <textFieldCell key="cell" lineBreakMode="clipping" title="Label" id="yfq-Z0-KOC">
                                                                                                             <font key="font" metaFont="cellTitle"/>
                                                                                                             <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -11351,7 +11351,7 @@ Edit setting -"search" in Firefox</string>
                                                                                                         </textFieldCell>
                                                                                                     </textField>
                                                                                                     <box verticalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="zki-5c-V0O">
-                                                                                                        <rect key="frame" x="40" y="-2" width="395" height="5"/>
+                                                                                                        <rect key="frame" x="40" y="-2" width="394" height="5"/>
                                                                                                     </box>
                                                                                                 </subviews>
                                                                                                 <constraints>

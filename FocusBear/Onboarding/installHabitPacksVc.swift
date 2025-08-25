@@ -122,12 +122,7 @@ class installHabitPacksVc: NSViewController, WKNavigationDelegate, webViewLoadFa
             print(error)
         }
         
-        var theme = "LIGHT"
-        if mainWindowControllerObj!.window!.hasDarkAppearance{
-            theme = "DARK"
-        }else {
-            theme = "LIGHT"
-        }
+        let theme = getWindowTheme()
         let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex].webFontName
         let stringJson1 = "{access_token: \"\(appdelegate!.credential?.accessToken ?? "")\",\"type\":\"mac\",\"platform\":\"mac\",\"lang\":\"\(currentLanguageCode)\",\"theme\":\"\(theme)\",\"font\":\"\(selectedFont)\",\"long_term_goals\":\(goalsString)}"
         

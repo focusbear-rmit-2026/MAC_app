@@ -962,7 +962,10 @@ func getCurrentHabitCurrentDurationDone(id:String)->Int?{
 
 func getNextRoutineInfo()->(Date, String){
     var nextRoutineTime:Date = Date()
-    var nextRoutineName = "Evening Routine" // todo text
+    var nextRoutineName = "Evening Routine"
+    if let habitsStateVcInfo = configjson.value(forKey: "habitsStateVcInfo") as? NSDictionary{
+        nextRoutineName = habitsStateVcInfo.value(forKey: "titleEveningRoutine") as? String ?? nextRoutineName
+    }
     var shutOffdate = Calendar.current.date(bySettingHour: shutOffTime!.hour, minute: shutOffTime!.minute, second: shutOffTime!.second, of: Date())!
     let calendar = Calendar.current
     // Get today's 11:59 PM

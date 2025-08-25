@@ -21,8 +21,12 @@ class focusModeStateVc: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
-        lblTitleFocusModeTime.stringValue = "Focus mode ends in:"// todo text all
-        
+        lblTitleFocusModeTime.stringValue = "Focus mode ends in:"
+        if let common = configjson.value(forKey: "common") as? NSDictionary{
+            if let focusEndsText = common.value(forKey: "focusEndsText") as? String {
+                lblTitleFocusModeTime.stringValue = focusEndsText + ":"
+            }
+        }
     }
     
     override func viewWillAppear() {
@@ -39,15 +43,30 @@ class focusModeStateVc: NSViewController {
         if isFocusModeOn{
             showFocusModeCountDownIfNeeded()
             btnStopFocusMode.title = "Stop Focus Session"
+            if let leftMenuVcInfo = configjson.value(forKey: "leftMenuVcInfo") as? NSDictionary{
+                btnStopFocusMode.title = leftMenuVcInfo.value(forKey: "menuStopFocusSession") as? String ?? btnStopFocusMode.title
+            }
         }else if isFocusModePaused{
             lblTitle.isHidden = false
             btnStopFocusMode.title = "Resume Focus Session"
+            if let leftMenuVcInfo = configjson.value(forKey: "leftMenuVcInfo") as? NSDictionary{
+                btnStopFocusMode.title = leftMenuVcInfo.value(forKey: "menuResumeFocusSession") as? String ?? btnStopFocusMode.title
+            }
+            
             lblTitle.stringValue = "Focus Session is paused."
+            if let common = configjson.value(forKey: "common") as? NSDictionary{
+                if let focusSessionPausedText = common.value(forKey: "focusSessionPausedText") as? String {
+                    lblTitle.stringValue = focusSessionPausedText
+                }
+            }
             boxFocusModeRemainingTime.isHidden = true
         }else if isHardCorePomodoroModeOn{
             lblTitle.isHidden = true
             boxFocusModeRemainingTime.isHidden = true
             btnStopFocusMode.title = "Stop Super Focus Session"
+            if let leftMenuVcInfo = configjson.value(forKey: "leftMenuVcInfo") as? NSDictionary{
+                btnStopFocusMode.title = leftMenuVcInfo.value(forKey: "menuStopSuperFocusSession") as? String ?? btnStopFocusMode.title
+            }
         }
     }
     
@@ -85,7 +104,7 @@ class focusModeStateVc: NSViewController {
                 if secondsBetween < 0{
                     stopFocusModeCountDownTimer()
                 }
-                var (h,m,s) = secondsToHoursMinutesSeconds(seconds: Int(secondsBetween))
+                let (h,m,s) = secondsToHoursMinutesSeconds(seconds: Int(secondsBetween))
                 var hour = "\(h)"
                 var minute = "\(m)"
                 var second = "\(s)"
@@ -145,12 +164,18 @@ class focusModeStateVc: NSViewController {
                     let menu = NSMenu()
                     if timerForFocusMode != nil{
                         let menuItemPause = NSMenuItem(title: "Pause Focus Session", action: #selector(pauseFocusMode), keyEquivalent: "")
+                        if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
+                            menuItemPause.title = menuInfo.value(forKey: "menuItemPauseFocusTitle") as? String ?? menuItemPause.title
+                        }
                         menuItemPause.image = NSImage(named: NSImage.touchBarPauseTemplateName)
                         menuItemPause.target = self
                         menu.addItem(menuItemPause)
                     }
                     
                     let menuItemStop = NSMenuItem(title: "Stop Focus Session", action: #selector(stopFocusMode), keyEquivalent: "")
+                    if let leftMenuVcInfo = configjson.value(forKey: "leftMenuVcInfo") as? NSDictionary{
+                        menuItemStop.title = leftMenuVcInfo.value(forKey: "menuStopFocusSession") as? String ?? menuItemStop.title
+                    }
                     menuItemStop.image = NSImage(named: NSImage.Name("NSTouchBarRecordStopTemplate"))
                     menuItemStop.target = self
                     menu.addItem(menuItemStop)
@@ -163,11 +188,17 @@ class focusModeStateVc: NSViewController {
                     
                     let menu = NSMenu()
                     let menuItemResume = NSMenuItem(title: "Resume Focus Session", action: #selector(resumeFocusMode), keyEquivalent: "")
+                    if let leftMenuVcInfo = configjson.value(forKey: "leftMenuVcInfo") as? NSDictionary{
+                        menuItemResume.title = leftMenuVcInfo.value(forKey: "menuResumeFocusSession") as? String ?? menuItemResume.title
+                    }
                     menuItemResume.image = NSImage(named: NSImage.touchBarPlayTemplateName)
                     menuItemResume.target = self
                     menu.addItem(menuItemResume)
                     
                     let menuItemStop = NSMenuItem(title: "Stop Focus Session", action: #selector(stopFocusMode), keyEquivalent: "")
+                    if let leftMenuVcInfo = configjson.value(forKey: "leftMenuVcInfo") as? NSDictionary{
+                        menuItemStop.title = leftMenuVcInfo.value(forKey: "menuStopFocusSession") as? String ?? menuItemStop.title
+                    }
                     menuItemStop.image = NSImage(named: NSImage.Name("NSTouchBarRecordStopTemplate"))
                     menuItemStop.target = self
                     menu.addItem(menuItemStop)

@@ -181,14 +181,7 @@ class helpVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate 
     }
     
     func setAccessTokenToWebViewGetSupport(){
-        var theme = "LIGHT"
-        if mainWindowControllerObj != nil{
-            if mainWindowControllerObj!.window!.hasDarkAppearance{
-                theme = "DARK"
-            }else {
-                theme = "LIGHT"
-            }
-        }
+        let theme = getWindowTheme()
         let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex].webFontName
         let stringJson = "{access_token: \"\(appdelegate!.credential?.accessToken ?? "")\",\"font\":\"\(selectedFont)\",\"theme\":\"\(theme)\",\"lang\":\"\(currentLanguageCode)\"}"
         let settingsFunc = String(format: "let waitForAppLoaded = setInterval(() => { if (window.loadMetaDataFoGetSupport) { loadMetaDataFoGetSupport(%@); clearInterval(waitForAppLoaded); } }, 100);", stringJson)
@@ -202,14 +195,7 @@ class helpVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate 
 
     
     func setAccessTokenToWebViewCourses(){
-        var theme = "LIGHT"
-        if mainWindowControllerObj != nil{
-            if mainWindowControllerObj!.window!.hasDarkAppearance{
-                theme = "DARK"
-            }else {
-                theme = "LIGHT"
-            }
-        }
+        let theme = getWindowTheme()
         let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex].webFontName
         let stringJson = "{access_token: \"\(appdelegate!.credential?.accessToken ?? "")\",\"font\":\"\(selectedFont)\",\"theme\":\"\(theme)\",\"lang\":\"\(currentLanguageCode)\"}"
         let settingsFunc = String(format: "let waitForAppLoaded = setInterval(() => { if (window.loadMetaDataForEnrolledCourses) { loadMetaDataForEnrolledCourses(%@); clearInterval(waitForAppLoaded); } }, 100);", stringJson)

@@ -303,15 +303,15 @@ class simplePomodoroVc: NSViewController {
     
     var browserPermissionGiven = false
     override func viewDidAppear() {
-        if SettingsManagerObject.isStrictnessLevelSuperGentle(){
-            boxPin.isHidden =  false
-            btnPin.image = #imageLiteral(resourceName: "unPin")
-            self.view.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.normalWindow)))
-        }else{
-            boxPin.isHidden = true
-            self.view.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
-        }
-        
+//        if SettingsManagerObject.isStrictnessLevelSuperGentle(){
+//            boxPin.isHidden =  false
+//            btnPin.image = #imageLiteral(resourceName: "unPin")
+//            self.view.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.normalWindow)))
+//        }else{
+//            boxPin.isHidden = true
+//            self.view.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
+//        }
+        boxPin.isHidden = true
         if UserDefaults.standard.object(forKey: kUserdefaultsPomodoroTourShown) == nil{//Onboarding feedback 1st April #1341 remove tour
 //            popoverMenuTour.show(relativeTo: boxTitle.bounds, of: boxTitle, preferredEdge: NSRectEdge.minX)
 //         

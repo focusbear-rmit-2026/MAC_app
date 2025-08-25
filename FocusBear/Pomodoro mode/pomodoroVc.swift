@@ -110,7 +110,7 @@ class pomodoroVc: NSViewController {
     var titleSuperStrictMode = "Iron Focus"
     var descriptionSuperStrictMode = "Once you start, you can't stop"
     var toolTipSuperStrictMode = "Once you start, there’s no backing out. Best for deep, distraction-free sessions."
-    var titleAfterPostpone = "What do you want to do instead of your habits?" // todo text
+    var titleAfterPostpone = "What do you want to do instead of your habits?"
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
@@ -194,7 +194,7 @@ class pomodoroVc: NSViewController {
         
         if let pomodoroInfo = configjson.value(forKey: "pomodoroInfo") as? NSDictionary{
             lblTitle.stringValue = pomodoroInfo.value(forKey: "title") as? String ?? lblTitle.stringValue
-            
+            titleAfterPostpone = pomodoroInfo.value(forKey: "titleAfterPostpone") as? String ?? titleAfterPostpone
             if let questionFirst = pomodoroInfo.value(forKey: "questionFirstText") as? String{
                 questionFirstText = questionFirst
             }
@@ -298,8 +298,9 @@ class pomodoroVc: NSViewController {
 //            self.view.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.normalWindow)))
         }else{
             boxPin.isHidden = true
-//            self.view.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow))) // recheck all these window level code  todo 
+//            self.view.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow))) // recheck all these window level code
         }
+        boxPin.isHidden = true
         
         boxError.isHidden = true
         boxTipPermissions.isHidden = true
@@ -858,16 +859,15 @@ class pomodoroVc: NSViewController {
 //            }
 //        }
         
-        
+        allApiObject.capturePosthog(event: "open-preferences", metadata: [:])
+        addLog(text: "Showing preferences from edit focus mode")
         if mainWindowControllerObj?.window?.isVisible ?? false{
             leftMenuVcObj?.showFocusModeSettingsView()
             return;
         }
-        allApiObject.capturePosthog(event: "open-preferences", metadata: [:])
+
         mainWindowControllerObj?.showWindow(self)
-        addLog(text: "Showing preferences from edit focus mode")
-        leftMenuVcObj?.showFocusModeSettingsView()// todo test with password 
-        
+        leftMenuVcObj?.showFocusModeSettingsView()
         NSApplication.shared.activate(ignoringOtherApps: true)
     }
     
@@ -1486,7 +1486,7 @@ class pomodoroVc: NSViewController {
     }
 
     
-    @IBAction func btnEditRatioClicked(_ sender: Any) {
+    @IBAction func btnEditRatioClicked(_ sender: Any) { // not in use
 //        if SettingsManagerObject.isGeekModeEnabled{
 //            allApiObject.capturePosthog(event: "open-preferences", metadata: [:])
 //            preferencesWindowControllerObj?.showWindow(self)
@@ -1515,18 +1515,18 @@ class pomodoroVc: NSViewController {
 //            }
 //        }
         
-        if SettingsManagerObject.isGeekModeEnabled{
-            allApiObject.capturePosthog(event: "open-preferences", metadata: [:])
-            mainWindowControllerObj?.showWindow(self)
-            addLog(text: "Showing preferences")
-            leftMenuVcObj?.showSettingsView()// todo test wiith password
-            if settingsSideBarVcObj != nil{
-                settingsSideBarVcObj!.tblView.selectRowIndexes(IndexSet(arrayLiteral: settingsSideBarVcObj!.pomodoroSettingsIndex), byExtendingSelection: false)
-                if !(mainViewControllerObj?.isEnterPasswordForPreferencesViewVisible() ?? false){ // todo check
-                    pomodoroSettingsVcObj?.textFieldWorkRatio.setFocus()
-                }
-            }
-        }
+//        if SettingsManagerObject.isGeekModeEnabled{
+//            allApiObject.capturePosthog(event: "open-preferences", metadata: [:])
+//            mainWindowControllerObj?.showWindow(self)
+//            addLog(text: "Showing preferences")
+//            leftMenuVcObj?.showSettingsView()
+//            if settingsSideBarVcObj != nil{
+//                settingsSideBarVcObj!.tblView.selectRowIndexes(IndexSet(arrayLiteral: settingsSideBarVcObj!.pomodoroSettingsIndex), byExtendingSelection: false)
+//                if !(mainViewControllerObj?.isEnterPasswordForPreferencesViewVisible() ?? false){
+//                    pomodoroSettingsVcObj?.textFieldWorkRatio.setFocus()
+//                }
+//            }
+//        }
         
     }
     @IBAction func btnStrictnessNormalClicked(_ sender: Any) {

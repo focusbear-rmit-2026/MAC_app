@@ -163,22 +163,22 @@ func showBrainDumpWindow(){
     mainWindowControllerObj?.showWindow(nil)
     leftMenuVcObj?.showBrainDump()
     
-    return;// todo
-    if brainDumpWcObj == nil{
-        getBrainDumpWindowObject().contentViewController = getBrainDumpVcObject()
-        brainDumpWcObj?.window?.styleMask.insert(.resizable)
-        brainDumpWcObj?.window?.title = "Focus Bear - Brain dump"
-        if let brainDumpVcInfo = configjson.value(forKey: "brainDumpVcInfo") as? NSDictionary{
-            brainDumpWcObj?.window?.title = brainDumpVcInfo.value(forKey: "title") as? String ?? "Focus Bear - Brain dump"
-        }
-//        brainDumpWcObj?.window?.standardWindowButton(.zoomButton)!.isHidden = true
-        let screenFrame = NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 1920, height: 1080)
-        
-        brainDumpWcObj!.window?.setFrameOrigin(NSPoint(x: screenFrame.width - (brainDumpVcObj?.view.frame.width)!, y: screenFrame.height - (brainDumpVcObj?.view.frame.height)! - 22 - 140)) //  22 status bar heigh // timer window height is 100 // 20 is title bar height  and 20 is extra space to add
-    }
-    
-    
-    brainDumpWcObj!.showWindow(nil)
+//    return;
+//    if brainDumpWcObj == nil{
+//        getBrainDumpWindowObject().contentViewController = getBrainDumpVcObject()
+//        brainDumpWcObj?.window?.styleMask.insert(.resizable)
+//        brainDumpWcObj?.window?.title = "Focus Bear - Brain dump"
+//        if let brainDumpVcInfo = configjson.value(forKey: "brainDumpVcInfo") as? NSDictionary{
+//            brainDumpWcObj?.window?.title = brainDumpVcInfo.value(forKey: "title") as? String ?? "Focus Bear - Brain dump"
+//        }
+////        brainDumpWcObj?.window?.standardWindowButton(.zoomButton)!.isHidden = true
+//        let screenFrame = NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 1920, height: 1080)
+//        
+//        brainDumpWcObj!.window?.setFrameOrigin(NSPoint(x: screenFrame.width - (brainDumpVcObj?.view.frame.width)!, y: screenFrame.height - (brainDumpVcObj?.view.frame.height)! - 22 - 140)) //  22 status bar heigh // timer window height is 100 // 20 is title bar height  and 20 is extra space to add
+//    }
+//    
+//    
+//    brainDumpWcObj!.showWindow(nil)
 }
 //-------------------------------------------------//
 

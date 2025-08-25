@@ -135,14 +135,7 @@ class selectJsonVc: NSViewController, NSTextViewDelegate, WKNavigationDelegate, 
     }
     
     func setSettingsToWebView(){
-        var theme = "LIGHT"
-        if mainWindowControllerObj != nil{
-            if mainWindowControllerObj!.window!.hasDarkAppearance{
-                theme = "DARK"
-            }else {
-                theme = "LIGHT"
-            }
-        }
+        let theme = getWindowTheme()
         var flags = "[\"settings-updated\"]"
         if SettingsManagerObject.isGeekModeEnabled{
             flags = "[\"settings-updated\",\"geek-mode\",\"save-settings-migrate-to-web\"]"
@@ -253,7 +246,7 @@ class selectJsonVc: NSViewController, NSTextViewDelegate, WKNavigationDelegate, 
     
     override func viewWillAppear() {
         self.setSettingsToWebView()
-//        preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: viewWidthDefault, height: viewHeightDefault)) // todo check this
+//        preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: viewWidthDefault, height: viewHeightDefault))
         allApiObject.capturePosthog(event: "edit-habits", metadata: [:])
     }
 
@@ -516,13 +509,13 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
             print(message.body) 
             let brainDump = message.body as? String ?? ""
             UserDefaults.standard.set(brainDump, forKey: kUserdefaultsFocusModeNotes)
-            if brainDumpWcObj != nil{ // todo 
-                if brainDumpWcObj?.window != nil{
-                    if brainDumpWcObj!.window!.isVisible{
-                        brainDumpVcObj?.textViewWorkNote.string = brainDump
-                    }
-                }
-            }
+//            if brainDumpWcObj != nil{ //  
+//                if brainDumpWcObj?.window != nil{
+//                    if brainDumpWcObj!.window!.isVisible{
+//                        brainDumpVcObj?.textViewWorkNote.string = brainDump
+//                    }
+//                }
+//            }
         }else if message.name == "close_focus_player_ui"{
             print(message.body)
             taskPlayerWcObj?.close()

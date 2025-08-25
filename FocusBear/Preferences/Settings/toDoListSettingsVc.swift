@@ -109,7 +109,7 @@ class toDoListSettingsVc: NSViewController {
             allApiObject.capturePosthog(event: "settings-changed-disable-specific-url-for-brain-dump", metadata: [:])
         }
         SettingsManagerObject.isSettingsChanged = true
-//        if brainDumpWcObj != nil{ // todo
+//        if brainDumpWcObj != nil{ // 
 //            if brainDumpWcObj?.window != nil{
 //                if brainDumpWcObj!.window!.isVisible{
 //                    brainDumpVcObj?.resetData()

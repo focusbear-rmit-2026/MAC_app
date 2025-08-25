@@ -205,7 +205,8 @@
         "unblockNotAvailableText": "You're in super strict mode - change your settings to unblock",
         "unblockNotAvailableForFocusBlockedUrlText": "You can't unblock this site because it's currently listed under the blocked URLs for your focus session",
         "buttonEndFocusSessionText": "I'm done, End focus session",
-        "syncErrorAlertText": "Failed to renew token. Please check your network or try again later. If you are definitely online and are getting this error, please contact support@focusbear.io"
+        "syncErrorAlertText": "Failed to renew token. Please check your network or try again later. If you are definitely online and are getting this error, please contact support@focusbear.io",
+        "focusSessionPausedText": "Focus Session is paused."
     },
     "abortInfo": {
         "abortingTitle": "Cancelling..",
@@ -880,7 +881,8 @@
         "toggleBreaksTooltip": "Activate micro-breaks for eye health and stretch reminders during your focus session. Every <BREAK_FREQUENCY> minutes, Focus Bear will ask you to take a short break. Then at the end of your focus session, you’ll get a longer break of <BREAK_DURATION> minutes",
         "pomodoroModeDurationText": "Focus duration:",
         "unpinWindowText": "Click to unpin the window (disable stay-on-top)",
-        "pinWindowText": "Click to pin the window (keep on top)"
+        "pinWindowText": "Click to pin the window (keep on top)",
+        "titleAfterPostpone": "What do you want to do instead of your habits?"
     },
     "logQuantityInfo": {
         "title": "Log Quantity of activity",
@@ -2387,7 +2389,11 @@
             "Nice reset—you’re making progress again.",
             "Back in the groove—stay with it."
         ],
-        "focusAlignmentScoreText": "Focus Alignment Score: <SCORE>%"
+        "focusAlignmentScoreText": "Focus Alignment Score: <SCORE>%",
+        "toolTipShowToDoPlayer": "Show To Do Player",
+        "currentTaskText": "Current task is \"<TASK>\"",
+        "aiIsDisabledText": "AI is not enabled.",
+        "noCurrentTaskText": "No Current Task"
     },
     "nudgeStartAnotherFocusSessionVcInfo":{
         "title": "Want to start another focus session?",
@@ -2436,7 +2442,8 @@
         "buttonResumeHabits": "Resume Habits",
         "shutoffAbortedText": "Shutoff aborted. Your computer is now accessible again.",
         "nextRoutineText": "Great job staying on track! Your next scheduled routine (<ROUTINE>) is set for <TIME>. Be ready to jump back in and continue building those healthy habits. You've got this!",
-        "buttonBeginCustomRoutine": "Begin On-Demand Routine"
+        "buttonBeginCustomRoutine": "Begin On-Demand Routine",
+        "titleEveningRoutine": "Evening Routine"
     },
     "breakStateVcInfo":{
         "buttonEnableBreaks": "Enable Breaks",
@@ -2444,6 +2451,35 @@
         "titleEnableBreaks": "Breaks are currently disabled. Enable taking breaks at regular intervals to boost your productivity, energy levels, and focus.",
         "pausedBreaksText": "You’ve paused breaks for today. They’ll be back tomorrow to help you recharge and focus.",
         "shutoffTimeText": "App is in shutoff state"
+    },
+    "leftMenuVcInfo":{
+        "titleMain": "MAIN",
+        "titleTools": "TOOLS",
+        "titlePreferences": "PREFERENCES",
+        "menuHabits": "Habits",
+        "menuCustomRoutine": "Custom Routine",
+        "menuStartFocusSession": "Start Focus Session",
+        "menuStopFocusSession": "Stop Focus Session",
+        "menuResumeFocusSession": "Resume Focus Session",
+        "menuStopSuperFocusSession": "Stop Super Focus Session",
+        "menuStartMicroBreak": "Start Micro Break",
+        "menuTodoPlayer": "Todo Player",
+        "menuTodoList": "Todo List",
+        "menuBrainDump": "Brain Dump",
+        "menuFocusMusic": "Focus Music",
+        "menuFocusPreferences": "Focus",
+        "menuBlocksPreferences": "Blocks",
+        "menuSettings": "Settings",
+        "menuEditHabits": "Edit Habits",
+        "menuMotivation": "Motivation",
+        "menuHelpAndSupport": "Help & Support",
+        "menuUpgradeNow": "Upgrade Now",
+        "disableReasonMorningRoutine": "Disabled because your morning routine is in progress.",
+        "disableReasonEveningRoutine": "Disabled because your evening routine is in progress.",
+        "disableReasonFocusSummary": "Disabled because your all-day summary is visible.",
+        "disableReasonShutoffTime": "Disabled because it’s your shutoff time.",
+        "disableReasonMircoBreaks": "Disabled because your micro break is in progress.",
+        "disableReasonCustomRoutine": "Disabled because your custom routine is in progress."
     },
     "discordUrl": "https://discord.gg/VZdv3ZjhSq",
     "whatsAppUrl": "https://chat.whatsapp.com/FV0oTbCUWpILBYif7CP6UD",

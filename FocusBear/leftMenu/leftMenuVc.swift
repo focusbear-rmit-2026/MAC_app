@@ -33,12 +33,12 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
     @IBOutlet weak var boxHabits: mainWindowListBox!
     @IBOutlet weak var boxDashboard: mainWindowListBox!
     
-    let disableReasonMorningRoutine = "Disabled because your morning routine is in progress."
-    let disableReasonEveningRoutine = "Disabled because your evening routine is in progress."
-    let disableReasonFocusSummary = "Disabled because your all-day summary is visible."
-    let disableReasonShutoffTime = "Disabled because it’s your shutoff time."
-    let disableReasonMircoBreaks = "Disabled because your micro break is in progress."
-    let disableReasonCustomRoutine = "Disabled because your custom routine is in progress." // todo text 
+    var disableReasonMorningRoutine = "Disabled because your morning routine is in progress."
+    var disableReasonEveningRoutine = "Disabled because your evening routine is in progress."
+    var disableReasonFocusSummary = "Disabled because your all-day summary is visible."
+    var disableReasonShutoffTime = "Disabled because it’s your shutoff time."
+    var disableReasonMircoBreaks = "Disabled because your micro break is in progress."
+    var disableReasonCustomRoutine = "Disabled because your custom routine is in progress."
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -48,8 +48,6 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         boxToolsItems.title = "TOOLS"
         boxPreferences.title = "PREFERENCES"
         
-//        boxDashboard.imageIcon = NSImage(named: "brainDump")
-//        boxDashboard.title = "Dashboard"
         boxDashboard.isHidden = true
         
         boxHabits.imageIcon = NSImage(named: "play_circle")
@@ -216,6 +214,43 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         
         arrForSearchFromSettings.append(["title": boxFocusModeSettings.title, "tabId": idFocus])
         arrForSearchFromSimpleModeSettings.append(["title": boxFocusModeSettings.title, "tabId": idFocus])
+        
+        
+        
+        if let leftMenuVcInfo = configjson.value(forKey: "leftMenuVcInfo") as? NSDictionary{
+            boxMainItems.title = leftMenuVcInfo.value(forKey: "titleMain") as? String ?? boxMainItems.title
+            boxToolsItems.title = leftMenuVcInfo.value(forKey: "titleTools") as? String ?? boxToolsItems.title
+            boxPreferences.title = leftMenuVcInfo.value(forKey: "titlePreferences") as? String ?? boxPreferences.title
+            
+
+            boxHabits.title = leftMenuVcInfo.value(forKey: "menuHabits") as? String ?? boxHabits.title
+            boxCustomRoutine.title = leftMenuVcInfo.value(forKey: "menuCustomRoutine") as? String ?? boxCustomRoutine.title
+            boxFocusSession.title = leftMenuVcInfo.value(forKey: "menuStartFocusSession") as? String ?? boxFocusSession.title
+            boxMicroBreaks.title = leftMenuVcInfo.value(forKey: "menuStartMicroBreak") as? String ?? boxMicroBreaks.title
+            
+            if isFocusModeRunning || isAnyAllowedFocusModeActivityRunning{
+                boxTodoPlayer.title = leftMenuVcInfo.value(forKey: "menuTodoPlayer") as? String ?? boxTodoPlayer.title
+            }else{
+                boxTodoPlayer.title = leftMenuVcInfo.value(forKey: "menuTodoList") as? String ?? boxTodoPlayer.title
+            }
+            boxBrainDump.title = leftMenuVcInfo.value(forKey: "menuBrainDump") as? String ?? boxBrainDump.title
+            boxFocusMusic.title = leftMenuVcInfo.value(forKey: "menuFocusMusic") as? String ?? boxFocusMusic.title
+            boxFocusModeSettings.title = leftMenuVcInfo.value(forKey: "menuFocusPreferences") as? String ?? boxFocusMusic.title
+
+            boxBlocks.title = leftMenuVcInfo.value(forKey: "menuBlocksPreferences") as? String ?? boxFocusMusic.title
+            boxSettings.title = leftMenuVcInfo.value(forKey: "menuSettings") as? String ?? boxFocusMusic.title
+            boxEditHabits.title = leftMenuVcInfo.value(forKey: "menuEditHabits") as? String ?? boxFocusMusic.title
+            boxMotivation.title = leftMenuVcInfo.value(forKey: "menuMotivation") as? String ?? boxFocusMusic.title
+            boxHelpAndSupport.title = leftMenuVcInfo.value(forKey: "menuHelpAndSupport") as? String ?? boxFocusMusic.title
+            boxUpgradeNow.title = leftMenuVcInfo.value(forKey: "menuUpgradeNow") as? String ?? boxFocusMusic.title
+            
+            disableReasonMorningRoutine = leftMenuVcInfo.value(forKey: "disableReasonMorningRoutine") as? String ?? disableReasonMorningRoutine
+            disableReasonEveningRoutine = leftMenuVcInfo.value(forKey: "disableReasonEveningRoutine") as? String ?? disableReasonEveningRoutine
+            disableReasonFocusSummary = leftMenuVcInfo.value(forKey: "disableReasonFocusSummary") as? String ?? disableReasonFocusSummary
+            disableReasonShutoffTime = leftMenuVcInfo.value(forKey: "disableReasonShutoffTime") as? String ?? disableReasonShutoffTime
+            disableReasonMircoBreaks = leftMenuVcInfo.value(forKey: "disableReasonMircoBreaks") as? String ?? disableReasonMircoBreaks
+            disableReasonCustomRoutine = leftMenuVcInfo.value(forKey: "disableReasonCustomRoutine") as? String ?? disableReasonCustomRoutine
+        }
     }
     
     override func viewWillAppear() {
@@ -243,20 +278,28 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         if isFocusModeOn{
             boxFocusSession.title = "Stop Focus Session"
 //            imgViewStopSuperFocusSession.image = iconStopFocusSession
+            if let leftMenuVcInfo = configjson.value(forKey: "leftMenuVcInfo") as? NSDictionary{
+                boxFocusSession.title = leftMenuVcInfo.value(forKey: "menuStopFocusSession") as? String ?? boxFocusSession.title
+            }
         }else if isFocusModePaused{
             boxFocusSession.title = "Resume Focus Session"
 //            imgViewStopSuperFocusSession.image = iconResumeFocusSession
+            if let leftMenuVcInfo = configjson.value(forKey: "leftMenuVcInfo") as? NSDictionary{
+                boxFocusSession.title = leftMenuVcInfo.value(forKey: "menuResumeFocusSession") as? String ?? boxFocusSession.title
+            }
         }else if isHardCorePomodoroModeOn{
             boxFocusSession.title = "Stop Super Focus Session"
 //            imgViewStopSuperFocusSession.image = iconStopFocusSession
+            if let leftMenuVcInfo = configjson.value(forKey: "leftMenuVcInfo") as? NSDictionary{
+                boxFocusSession.title = leftMenuVcInfo.value(forKey: "menuStopSuperFocusSession") as? String ?? boxFocusSession.title
+            }
         }else{
             boxFocusSession.title = "Start Focus Session"
+            if let leftMenuVcInfo = configjson.value(forKey: "leftMenuVcInfo") as? NSDictionary{
+                boxFocusSession.title = leftMenuVcInfo.value(forKey: "menuStartFocusSession") as? String ?? boxFocusSession.title
+            }
         }
-    }/*
-      var iconResumeFocusSession  = NSImage(named: "play_circle")
-      var iconStopFocusSession  = NSImage(named: "stop_circle")
-      var iconPlayFocusSession = NSImage(named: "play_circle")
-      */
+    }
     
     func selectableListBoxDidChangeSelectionByUser(_ box: mainWindowListBox) {
         switch box{
@@ -785,10 +828,16 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
     
     func focusModeOrFocusModeHabitStarted(){
         boxTodoPlayer.title = "Todo Player"
+        if let leftMenuVcInfo = configjson.value(forKey: "leftMenuVcInfo") as? NSDictionary{
+            boxTodoPlayer.title = leftMenuVcInfo.value(forKey: "menuTodoPlayer") as? String ?? boxTodoPlayer.title
+        }
     }
     
     func focusModeOrFocusModeHabitFinished(){
         boxTodoPlayer.title = "Todo List"
+        if let leftMenuVcInfo = configjson.value(forKey: "leftMenuVcInfo") as? NSDictionary{
+            boxTodoPlayer.title = leftMenuVcInfo.value(forKey: "menuTodoList") as? String ?? boxTodoPlayer.title
+        }
     }
     
     @IBAction func btnExpandLeftMenuClicked(_ sender: Any) {

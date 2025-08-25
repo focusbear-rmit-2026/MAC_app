@@ -118,21 +118,15 @@ class setUpVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate
     }
     
     override func viewWillAppear() {
-//        preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: viewWidthDefault, height: viewHeightDefault)) // todo need to check
+//        preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: viewWidthDefault, height: viewHeightDefault))
     }
+    
     override func viewDidAppear() {
         setAccessTokenToWebView()
     }
 
     func setAccessTokenToWebView(){
-        var theme = "LIGHT"
-        if mainWindowControllerObj != nil{
-            if mainWindowControllerObj!.window!.hasDarkAppearance{
-                theme = "DARK"
-            }else {
-                theme = "LIGHT"
-            }
-        }
+        let theme = getWindowTheme()
         let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex].webFontName
         let stringJson1 = "{\"access_token\":\"\(appdelegate!.credential?.accessToken ?? "")\",\"type\":\"mac\",\"lang\":\"\(currentLanguageCode)\",\"theme\":\"\(theme)\",\"font\":\"\(selectedFont)\"}"
         

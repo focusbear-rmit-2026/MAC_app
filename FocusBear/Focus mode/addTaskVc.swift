@@ -368,22 +368,7 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
     }
     
     func setAccessTokenToWebView(){
-        var theme = "LIGHT"
-//        if preferencesWindowControllerObj != nil{
-//            if preferencesWindowControllerObj!.window!.hasDarkAppearance{
-//                theme = "DARK"
-//            }else {
-//                theme = "LIGHT"
-//            }
-//        }
-        
-        if mainWindowControllerObj != nil{
-            if mainWindowControllerObj!.window!.hasDarkAppearance{ // need to make a function for this todo
-                theme = "DARK"
-            }else {
-                theme = "LIGHT"
-            }
-        }
+        let theme = getWindowTheme()
         
         let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex].webFontName
         let stringJson = "{\"access_token\": \"\(appdelegate!.credential?.accessToken ?? "")\",\"platform\":\"mac\",\"lang\":\"\(currentLanguageCode)\",\"font\":\"\(selectedFont)\",\"theme\":\"\(theme)\"}"
@@ -397,21 +382,7 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
     }
 
     func setAccessTokenAndTaksToWebView(){
-        var theme = "LIGHT"
-//        if preferencesWindowControllerObj != nil{
-//            if preferencesWindowControllerObj!.window!.hasDarkAppearance{
-//                theme = "DARK"
-//            }else {
-//                theme = "LIGHT"
-//            }
-//        }
-        if mainWindowControllerObj != nil{
-            if mainWindowControllerObj!.window!.hasDarkAppearance{ // need to make a function for this todo 
-                theme = "DARK"
-            }else {
-                theme = "LIGHT"
-            }
-        }
+        let theme = getWindowTheme()
         
         let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex].webFontName
         

@@ -192,13 +192,13 @@ class pusherEvents:NSObject, PusherDelegate {
                     let totalSeconds = Int(Date().timeIntervalSince(startFocusModeTimeForPauseAndResume ?? Date()))
                     focusModeActualDurationPerformed += totalSeconds
                 }
-                if brainDumpWcObj != nil{
-                    if brainDumpWcObj?.window != nil{
-                        if brainDumpWcObj!.window!.isVisible{
-                            brainDumpWcObj?.window?.close()
-                        }
-                    }
-                }
+//                if brainDumpWcObj != nil{
+//                    if brainDumpWcObj?.window != nil{
+//                        if brainDumpWcObj!.window!.isVisible{
+//                            brainDumpWcObj?.window?.close()
+//                        }
+//                    }
+//                }
                 
                 var currentFocusModeName = ""
                 for i in 0..<arrFocusType.count{

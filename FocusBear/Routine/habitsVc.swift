@@ -477,7 +477,7 @@ class habitsVc: NSViewController {
                     
                     closeSmallCountDownTimerBoxIfVisibleForWithoutFocusBreak()
                 }
-                //                mainWindowControllerObj?.window?.close() // todo
+                //                mainWindowControllerObj?.window?.close() //
                  //               hideBlankWindowInSecondaryMonitor()
                 
                 showEasyPostponeWindow()
@@ -523,7 +523,7 @@ class habitsVc: NSViewController {
                     closeSmallCountDownTimerBoxIfVisibleForWithoutFocusBreak()
                 }
                 
-//                mainWindowControllerObj?.window?.close() // todo
+//                mainWindowControllerObj?.window?.close() //
       //          hideBlankWindowInSecondaryMonitor()
                 
                 showEasyPostponeWindow()
@@ -605,7 +605,7 @@ class habitsVc: NSViewController {
 //                        }
                         closeSmallCountDownTimerBoxIfVisibleForWithoutFocusBreak()
                     }
-                   // mainWindowControllerObj?.window?.close() // todo
+                   // mainWindowControllerObj?.window?.close() //
             //        hideBlankWindowInSecondaryMonitor()
                     showEasyPostponeWindow()
                     if currentActivityPlaying != nil{
@@ -638,7 +638,7 @@ class habitsVc: NSViewController {
                 
                 closeSmallCountDownTimerBoxIfVisibleForWithoutFocusBreak()
             }
-            //mainWindowControllerObj?.window?.close() // todo
+            //mainWindowControllerObj?.window?.close() //
           //  hideBlankWindowInSecondaryMonitor()
             
             showEasyPostponeWindow()
@@ -2482,8 +2482,10 @@ class habitsVc: NSViewController {
                 UserDefaults.standard.set(currentDate, forKey: kUserdefaultsLastBreakEndTime)
             }
         }
-
-        removeSubViews()
+        if !isFromBreakWarningWindow{
+            removeSubViews()
+        }
+        
         currentState = ._NOTHING_
         
         if !isFromBreakWarningWindow{
@@ -2672,8 +2674,8 @@ class habitsVc: NSViewController {
                     isLastActivityStoppedInRunningState = false
                     lastActivityRunningId = ""
                 }
-//                hideCloseButtons() // todo
-//                removeSubViews() // todo
+//                hideCloseButtons() //
+//                removeSubViews() // 
                 
                 //Extend postpone time not working for 2 minute warning popup#923
                 if currentState == ._POSTPON_MORNING_HABIT_{
@@ -2795,9 +2797,11 @@ class habitsVc: NSViewController {
         }
         addLog(text: "postpone Custom habits ")
         
-        
-        hideCloseButtons()
-        removeSubViews()
+
+        if !fromRoutineWarning{
+            hideCloseButtons()
+            removeSubViews()
+        }
 
         if !isFocusModeOn(){
             closeTaskPlayerWindowIfVisible()

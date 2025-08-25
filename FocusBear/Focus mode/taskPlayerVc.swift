@@ -428,22 +428,7 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
         self.view.window?.zoom(nil)
     }
     func setAccessTokenToWebView(){
-        var theme = "LIGHT"
-//        if preferencesWindowControllerObj != nil{
-//            if preferencesWindowControllerObj!.window!.hasDarkAppearance{
-//                theme = "DARK"
-//            }else {
-//                theme = "LIGHT"
-//            }
-//        }
-        
-        if mainWindowControllerObj != nil{
-            if mainWindowControllerObj!.window!.hasDarkAppearance{
-                theme = "DARK"
-            }else {
-                theme = "LIGHT"
-            }
-        }
+        let theme = getWindowTheme()
         
         let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex].webFontName
         var brainDump = UserDefaults.standard.object(forKey: kUserdefaultsFocusModeNotes) as? String ?? ""
@@ -499,38 +484,6 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
         })
     }
     
-//    func addTaskInCurrentList(taskName:String){
-//        
-//        var brainDump = UserDefaults.standard.object(forKey: kUserdefaultsFocusModeNotes) as? String ?? ""
-//        brainDump = brainDump.addingPercentEncoding(withAllowedCharacters: CharacterSet.urlQueryAllowed) ?? brainDump
-//        var intention = whatToAchieveInFocusBlock
-//        self.intention = intention.addingPercentEncoding(withAllowedCharacters: CharacterSet.urlQueryAllowed) ?? intention
-//        
-//        var theme = "LIGHT"
-//        if preferencesWindowControllerObj != nil{
-//            if preferencesWindowControllerObj!.window!.hasDarkAppearance{
-//                theme = "DARK"
-//            }else {
-//                theme = "LIGHT"
-//            }
-//        }
-//        var newTask = [taskName]
-//        var selectedTask = taskName
-//        var taskJson = "{\"selectedTask\":\"\(selectedTask)\",\"newTasks\":\(newTask)}"
-//        
-//        var stringJson = "{\"brainDump\":\"\(brainDump)\",\"todoPlayer\":\(taskJson),\"totalDuration\":\"\(totalDuration)\",\"theme\":\"\(theme)\",\"intention\":\"\(self.intention)\"}"
-//        
-////        if !focusModeTaskStringIsEmpty(){
-////            stringJson = "{\"access_token\": \"\(appdelegate!.credential?.accessToken ?? "")\",\"platform\":\"mac\",\"lang\":\"\(currentLanguageCode)\",\"tasks\":\(focusModeTaskString),\"font\":\"\(selectedFont)\",\"theme\":\"\(theme)\",\"total_duration\":\"\(totalDuration)\",\"intention\":\"\(intention)\",\"brain_dump\":\"\(brainDump)\",\"isOnboarding\":\(isFirstTime)}"
-////        }
-//        let settingsFunc = String(format: "let waitForAppLoaded = setInterval(() => { if (window.syncWithDevices) { syncWithDevices(%@); clearInterval(waitForAppLoaded); } }, 100);", stringJson)
-//        
-//        webView.evaluateJavaScript(settingsFunc,completionHandler: { (html: Any?, error: Error?) in
-//            print(error as Any)
-//            print("****error")
-//            print(html as Any)
-//        })
-//    }
     func addAndPlayTaskInCurrentList(taskName: String, id:String, duration:Int, shouldCompleteCurrentTask:Bool) {
         let taskDic:[String:Any] = [
             "id": id,

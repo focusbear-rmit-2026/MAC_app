@@ -68,22 +68,23 @@ class settingsContainerVc: NSViewController {
     
     override func viewDidAppear() {
        // if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-            if passwordVcObj != nil{
-                if containerView.subviews.contains(passwordVcObj!.view){
-                    if shouldAskPassword(){
-                        if !isPasswordRequireInOpenSettingsEnabled(){
-//                            tabview.view.addSubview(getEnterPasswordVcObjForPreferences().view)
-//                            tabview.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
-//                            getEnterPasswordVcObjForPreferences().parentVc = nil
-//                            enterPasswordVcObjForPreferences?.removeConstraints()
-                            
-                            mainViewControllerObj?.askPasswordForSettingsIfNeeded() // todo test 
-                            addLog(text: "Showing enter password view inside preferences")
-                        }
-                    }
-                }
-            }
+//            if passwordVcObj != nil{
+//                if containerView.subviews.contains(passwordVcObj!.view){
+//                    if shouldAskPassword(){
+//                        if !isPasswordRequireInOpenSettingsEnabled(){
+////                            tabview.view.addSubview(getEnterPasswordVcObjForPreferences().view)
+////                            tabview.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
+////                            getEnterPasswordVcObjForPreferences().parentVc = nil
+////                            enterPasswordVcObjForPreferences?.removeConstraints()
+//                            
+//                            mainViewControllerObj?.askPasswordForSettingsIfNeeded()
+//                            addLog(text: "Showing enter password view inside preferences")
+//                        }
+//                    }
+//                }
+//            }
        // }
+        
         if SettingsManagerObject.isGeekModeEnabled{
             segmentControlGeekMode.setSelected(true, forSegment: 0)
         }else{

@@ -5229,3 +5229,14 @@ func stopMainAppForceQuitMonitoring(){
     }
 }
 
+func getWindowTheme()->String{ // todo need to check agter onboarding also
+    var theme = "LIGHT"
+    if mainWindowControllerObj != nil{
+        if mainWindowControllerObj!.window?.hasDarkAppearance ?? false{
+            theme = "DARK"
+        }else {
+            theme = "LIGHT"
+        }
+    }
+    return theme
+}

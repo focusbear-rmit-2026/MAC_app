@@ -340,7 +340,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         for tagInfo in arrAllFocusModeTags{
             focusPreferencesAdvancedVcObj?.arrAllTags.append(tagInfo["text"] ?? "")
         }
-        //preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: viewWidthDefault, height: viewHeightDefault)) todo check this 
+        //preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: viewWidthDefault, height: viewHeightDefault)) 
         reloadData()
         if Reachability.isConnectedToNetwork() == false {
             

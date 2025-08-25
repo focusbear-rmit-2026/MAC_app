@@ -65,8 +65,11 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
         window!.isRestorable = true
         window!.collectionBehavior = [.fullScreenAllowsTiling, .fullScreenPrimary]
         self.window?.minSize = NSSize(width: smallWindowMinWidth, height: smallWindowMinHeight)
-        window!.styleMask = []
-        window!.styleMask.insert([.titled, .closable, .resizable])// works good
+        if !(self.window?.styleMask.contains(.fullScreen) ?? false){// It means the user was on a small screen and clicked full screen, so no change is needed. If we change the styleMask at this stage, it may cause a crash.
+            window!.styleMask = []
+            window!.styleMask.insert([.titled, .closable, .resizable])// works good
+        }
+        
 //        self.window?.styleMask = [.resizable, .titled, .closable]// don't use this
         window!.isExcludedFromWindowsMenu = false
         self.window?.level = .floating//  .floating
@@ -95,7 +98,7 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
     
     func windowShouldClose(_ sender: NSWindow) -> Bool {
         addLog(text: "windowShouldClose delegate called")
-        if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._FOCUS_SUMMARY_{
+        if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._FOCUS_SUMMARY_ || currentState == ._CUSTOM_ROUTINE_{
             if isAnyAllowedFocusModeActivityRunning && !(leftMenuVcObj?.boxHabits.isSelected ?? false){ // allowed focus mode habit will be running in background
                 if currentAction == ._INPROGRESS_{
                     if timerViewcontrollerObj?.isActivityPaused ?? false{
@@ -137,6 +140,19 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
             if habitsVcObj?.btnAbort.isHidden ?? false{
                 return false
             }else{
+                if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._FOCUS_SUMMARY_ || currentState == ._SHUTOFFMAC_{
+                    if !(leftMenuVcObj?.boxHabits.isSelected ?? false){
+                        leftMenuVcObj?.showHabitsView()
+                    }
+                }else if currentState == ._CUSTOM_ROUTINE_{
+                    if !(leftMenuVcObj?.boxCustomRoutine.isSelected ?? false){
+                        leftMenuVcObj?.showCustomRoutineView()
+                    }
+                }else if currentState == ._MICRO_BREAK_{
+                    if !(leftMenuVcObj?.boxMicroBreaks.isSelected ?? false){
+                        leftMenuVcObj?.showBreaksView()
+                    }
+                }
                 getHabitsVcObject().abortCurrentState()
             }
            
@@ -394,12 +410,26 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
         }
         
     }
+    
     func windowWillMiniaturize(_ notification: Notification) {
         if isFocusModeRunning || isAnyAllowedFocusModeActivityRunning{
             showNudgeFocusAlignmentScoreWindow(score: currentFocusAlignmentScore)
         }
     }
+    
     func windowDidMiniaturize(_ notification: Notification) {
         self.window?.close()
+    }
+    
+    func windowDidExitFullScreen(_ notification: Notification) {
+        if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._FOCUS_SUMMARY_ || currentState == ._SHUTOFFMAC_ || currentState == ._CUSTOM_ROUTINE_{
+            if checkIsFullScreenEnabled(){
+                if let leftMenuVcObj = leftMenuVcObj{
+                    if leftMenuVcObj.boxHabits.isSelected || leftMenuVcObj.boxMicroBreaks.isSelected || leftMenuVcObj.boxCustomRoutine.isSelected{
+                        mainViewControllerObj?.checkIsFullScreenNeeded()
+                    }
+                }
+            }
+        }
     }
 }

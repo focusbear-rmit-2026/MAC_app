@@ -132,14 +132,8 @@ class visualizeInstructionsVc: NSViewController, WKNavigationDelegate, webViewLo
     }
     
     func setAccessTokenToWebView(){
-        var theme = "LIGHT"
-        if mainWindowControllerObj != nil{// preferencesWindowControllerObj
-            if mainWindowControllerObj!.window!.hasDarkAppearance{
-                theme = "DARK"
-            }else {
-                theme = "LIGHT"
-            }
-        }
+        let theme = getWindowTheme()
+        
         let flags = "[\"migrate-stats-to-motivational-summary\"]"
         let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex].webFontName
         let stringJson = "{access_token: \"\(appdelegate!.credential?.accessToken ?? "")\",\"font\":\"\(selectedFont)\",\"lang\":\"\(currentLanguageCode)\",\"theme\":\"\(theme)\",\"motivation_type\":\"desktop\",\"flags\":\(flags)}"
