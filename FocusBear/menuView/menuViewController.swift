@@ -67,7 +67,7 @@ class menuViewController: NSViewController {
     
     @IBOutlet weak var btnFalseDetection: underLineButton!
     @IBOutlet weak var lblMeetingDetection: NSTextField!
-    @IBOutlet weak var btnMeetingDetection: NSButton!
+    @IBOutlet weak var btnMeetingDetection: hoverInfoButton!
     @IBOutlet weak var boxMeetingDetection: NSBox!
     @IBOutlet weak var boxTools: NSBox!
     @IBOutlet weak var lblTitleTools: NSTextField!
@@ -438,7 +438,7 @@ class menuViewController: NSViewController {
         if let common = configjson.value(forKey: "common") as? NSDictionary{
             videoCallText = common.value(forKey: "notificationVideoCallText") as? String ?? videoCallText
         }
-        showTooltip(sender: btnMeetingDetection, msg: videoCallText, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
+        showTooltip(sender: btnMeetingDetection, msg: videoCallText, preferredEdge: NSRectEdge.maxX, maxWidthVal:230, autoCloseOnMouseExit: true)
     }
     
     @IBAction func btnSetFocusModesClicked(_ sender: Any) {
@@ -459,27 +459,27 @@ class menuViewController: NSViewController {
     
     override func mouseEntered(with event: NSEvent) {
         if event.trackingArea == segmentOfficeModeTrackingArea{
-            showTooltip(sender: segmentControlOfficeMode, msg: toolTipOfficeMode, preferredEdge: NSRectEdge.minX, maxWidthVal:230)
+            showTooltip(sender: segmentControlOfficeMode, msg: toolTipOfficeMode, preferredEdge: NSRectEdge.minX, maxWidthVal:230, autoCloseOnMouseExit: true)
         }else if event.trackingArea == segmentWfhModeTrackingArea{
-            showTooltip(sender: segmentControlOfficeMode, msg: toolTipWfhMode, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
+            showTooltip(sender: segmentControlOfficeMode, msg: toolTipWfhMode, preferredEdge: NSRectEdge.maxX, maxWidthVal:230, autoCloseOnMouseExit: true)
         }else if event.trackingArea == btnFocusMusicTrackingArea{
-            showTooltip(sender: btnFocusMusic, msg: lblTitleFocusMusic.stringValue, preferredEdge: NSRectEdge.maxY, maxWidthVal:230)
+            showTooltip(sender: btnFocusMusic, msg: lblTitleFocusMusic.stringValue, preferredEdge: NSRectEdge.maxY, maxWidthVal:230, autoCloseOnMouseExit: true)
         }else if event.trackingArea == btnTodoPlayerTrackingArea{
-            showTooltip(sender: btnTodoPlayer, msg: menuItemToDoList.title, preferredEdge: NSRectEdge.maxY, maxWidthVal:230)
+            showTooltip(sender: btnTodoPlayer, msg: menuItemToDoList.title, preferredEdge: NSRectEdge.maxY, maxWidthVal:230, autoCloseOnMouseExit: true)
         }else if event.trackingArea == btnBrainDumpTrackingArea{
-            showTooltip(sender: btnBrainDump, msg: lblTitleBrainDump.stringValue, preferredEdge: NSRectEdge.maxY, maxWidthVal:230)
+            showTooltip(sender: btnBrainDump, msg: lblTitleBrainDump.stringValue, preferredEdge: NSRectEdge.maxY, maxWidthVal:230, autoCloseOnMouseExit: true)
         }else if event.trackingArea == btnCurrentTrackTrackingArea{
-            showTooltip(sender: btnCurrentTrack, msg: lblCurrentTrack.stringValue, preferredEdge: NSRectEdge.maxY, maxWidthVal:230)
+            showTooltip(sender: btnCurrentTrack, msg: lblCurrentTrack.stringValue, preferredEdge: NSRectEdge.maxY, maxWidthVal:230, autoCloseOnMouseExit: true)
         }else if event.trackingArea == btnStartBreakTrackingArea{
-            showTooltip(sender: btnStartBreak, msg: menuItemStartBreak.title, preferredEdge: NSRectEdge.maxY, maxWidthVal:230)
+            showTooltip(sender: btnStartBreak, msg: menuItemStartBreak.title, preferredEdge: NSRectEdge.maxY, maxWidthVal:230, autoCloseOnMouseExit: true)
         }else if event.trackingArea == btnOpenToolBoxTrackingArea{
-            showTooltip(sender: btnOpenToolBox, msg: menuItemOpenToolbox.title, preferredEdge: NSRectEdge.maxY, maxWidthVal:230)
+            showTooltip(sender: btnOpenToolBox, msg: menuItemOpenToolbox.title, preferredEdge: NSRectEdge.maxY, maxWidthVal:230, autoCloseOnMouseExit: true)
         }else if event.trackingArea == trackingAreaBtnEditBlockingSchedule{
             var toolTipButtonEditBlockingSchedule = "Edit blocking schedule"
             if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
                 toolTipButtonEditBlockingSchedule = menuInfo.value(forKey: "toolTipButtonEditBlockingSchedule") as? String ?? toolTipButtonEditBlockingSchedule
             }
-            showTooltip(sender: btnEditBlockingSchedule, msg: toolTipButtonEditBlockingSchedule, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
+            showTooltip(sender: btnEditBlockingSchedule, msg: toolTipButtonEditBlockingSchedule, preferredEdge: NSRectEdge.maxX, maxWidthVal:230, autoCloseOnMouseExit: true)
         }else if event.trackingArea == trackingAreaBtnPin{
             var msg = ""
             if SettingsManagerObject.isMenuPopoverEnabled{
@@ -494,7 +494,7 @@ class menuViewController: NSViewController {
                     msg = menuInfo.value(forKey: "toolTipPopoverEnable") as? String ?? msg
                 }
             }
-            showTooltip(sender: btnPin, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:290)
+            showTooltip(sender: btnPin, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:290, autoCloseOnMouseExit: true)
         }else if event.trackingArea == boxPermissionTrackingArea{
             var msg = lblTipPermissions.stringValue
             if UserDefaults.standard.object(forKey: kUserdefaultsIsAnyDistractionSetByUser) == nil && UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) == nil{
@@ -530,7 +530,7 @@ class menuViewController: NSViewController {
             }
             
             
-            showTooltip(sender: boxForPermissionToolTip, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:400)
+            showTooltip(sender: boxForPermissionToolTip, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:400, autoCloseOnMouseExit: true)
         }
     }
     
@@ -2146,7 +2146,7 @@ class menuViewController: NSViewController {
             msg = menuInfo.value(forKey: "toolTipBlockingDisabled") as? String ?? msg
         }
         
-        showTooltip(sender: sender, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
+        showTooltip(sender: sender, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:230, autoCloseOnMouseExit: true)
     }
     
     @IBAction func btnPinClicked(_ sender: Any) {

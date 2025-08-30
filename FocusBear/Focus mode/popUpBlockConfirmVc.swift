@@ -433,7 +433,7 @@ class popUpBlockConfirmVc: NSViewController {
                     return;
                 }
             }
-            showTooltip(sender: lblAi, msg: lblAi.stringValue, preferredEdge: .minX, maxWidthVal: 250)
+            showTooltip(sender: lblAi, msg: lblAi.stringValue, preferredEdge: .minX, maxWidthVal: 250, autoCloseOnMouseExit: true)
         }
     }
 
@@ -1023,7 +1023,7 @@ class popUpBlockConfirmVc: NSViewController {
         if let popUpBlockConfirmVcInfo = configjson.value(forKey: "popUpBlockConfirmVcInfo") as? NSDictionary{
             messageText = popUpBlockConfirmVcInfo.value(forKey: "progressInfoText") as? String ?? messageText
         }
-        showTooltip(sender: btnInfoProgress, msg: messageText, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
+        showTooltip(sender: btnInfoProgress, msg: messageText, preferredEdge: NSRectEdge.maxX, maxWidthVal:230, autoCloseOnMouseExit: true)
     }
     
     func blockClicked(){
@@ -1210,7 +1210,7 @@ class popUpBlockConfirmVc: NSViewController {
         if let popUpBlockConfirmVcInfo = configjson.value(forKey: "popUpBlockConfirmVcInfo") as? NSDictionary{
             msg = popUpBlockConfirmVcInfo.value(forKey: "infoTemporaryAllow") as? String ?? msg
         }
-        showTooltip(sender: btnInfoTemporaryAllow, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
+        showTooltip(sender: btnInfoTemporaryAllow, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:230, autoCloseOnMouseExit: true)
     }
     
     @IBAction func btnCloseAskIntentionBoxClicked(_ sender: Any) {

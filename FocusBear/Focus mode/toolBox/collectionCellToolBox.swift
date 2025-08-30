@@ -38,7 +38,7 @@ class collectionCellToolBox: NSCollectionViewItem {
     override func mouseEntered(with event: NSEvent) {
         if event.trackingArea == trackingArea{
             if !appName.isEmpty{
-                showTooltip(sender: self.view, msg: appName, preferredEdge: NSRectEdge.maxY, maxWidthVal:230)
+                showTooltip(sender: self.view, msg: appName, preferredEdge: NSRectEdge.maxY, maxWidthVal:230, autoCloseOnMouseExit: true)
             }
         }
     }

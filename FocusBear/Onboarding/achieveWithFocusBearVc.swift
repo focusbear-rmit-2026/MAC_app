@@ -45,7 +45,7 @@ class achieveWithFocusBearVc: NSViewController, NSTextViewDelegate {
         if let askOccupationVcInfo = configjson.value(forKey: "achieveWithFocusBearVcInfo") as? NSDictionary{
             msg = askOccupationVcInfo.value(forKey: "infoText") as? String ?? msg
         }
-        showTooltip(sender: btnInfo, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:300)
+        showTooltip(sender: btnInfo, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:300, autoCloseOnMouseExit: true)
     }
     
     @IBAction func btnContinueClicked(_ sender: Any) {

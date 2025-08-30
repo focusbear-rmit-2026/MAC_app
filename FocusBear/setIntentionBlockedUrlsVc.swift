@@ -558,7 +558,7 @@ class setIntentionBlockedUrlsVc: NSViewController {
         if let setIntentionBlockedUrlsVcInfo = configjson.value(forKey: "setIntentionBlockedUrlsVcInfo") as? NSDictionary{
             msg = setIntentionBlockedUrlsVcInfo.value(forKey: "privacyNoteText") as? String ?? msg
         }
-        showTooltip(sender: btnInfo, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
+        showTooltip(sender: btnInfo, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:230, autoCloseOnMouseExit: true)
     }
     @IBAction func btnAllowClicked(_ sender: Any) {
         boxSetIntention.isHidden = false

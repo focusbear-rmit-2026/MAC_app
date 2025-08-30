@@ -305,7 +305,7 @@ class askOccupationVc: NSViewController, NSTextFieldDelegate {
         if let askOccupationVcInfo = configjson.value(forKey: "askOccupationVcInfo") as? NSDictionary{
             msg = askOccupationVcInfo.value(forKey: "infoText") as? String ?? msg
         }
-        showTooltip(sender: btnInfo, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:300)
+        showTooltip(sender: btnInfo, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:300, autoCloseOnMouseExit: true)
     }
     
     @IBAction func radioBtnHighSchoolClicked(_ sender: Any) {

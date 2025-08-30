@@ -676,7 +676,7 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
             }
         }
 
-        showTooltip(sender: sender, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:340)
+        showTooltip(sender: sender, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:340, autoCloseOnMouseExit: true)
     }
     
     @IBAction func btnInfoDeepWotkTimeThisSessionClicked(_ sender: NSButton) {
@@ -686,7 +686,7 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
                 msg = focusCompletedInfo.value(forKey: "tooltipDeepWotkTimeThisSession") as? String ?? msg
             }
         }
-        showTooltip(sender: sender, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:340)
+        showTooltip(sender: sender, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:340, autoCloseOnMouseExit: true)
     }
     
     @IBAction func btnInfoTotalWotkTimeTodayClicked(_ sender: NSButton) {
@@ -696,7 +696,7 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
                 msg = focusCompletedInfo.value(forKey: "tooltipTotalWotkTimeToday") as? String ?? msg
             }
         }
-        showTooltip(sender: sender, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:340)
+        showTooltip(sender: sender, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:340, autoCloseOnMouseExit: true)
     }
     
     @IBAction func btnInfoAverageTimePerTabClicked(_ sender: NSButton) {
@@ -706,7 +706,7 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
                 msg = focusCompletedInfo.value(forKey: "tooltipAverageTimePerTab") as? String ?? msg
             }
         }
-        showTooltip(sender: sender, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:340)
+        showTooltip(sender: sender, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:340, autoCloseOnMouseExit: true)
     }
     
     @IBAction func btnInfoAverageTabCountClicked(_ sender: NSButton) {
@@ -716,7 +716,7 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
                 msg = focusCompletedInfo.value(forKey: "tooltipAverageTabCount") as? String ?? msg
             }
         }
-        showTooltip(sender: sender, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:340)
+        showTooltip(sender: sender, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:340, autoCloseOnMouseExit: true)
     }
     
     @IBAction func btnInfoAppOrSiteClicked(_ sender: NSButton) {
@@ -726,7 +726,7 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
                 msg = focusCompletedInfo.value(forKey: "tooltipAppOrSite") as? String ?? msg
             }
         }
-        showTooltip(sender: sender, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:340)
+        showTooltip(sender: sender, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:340, autoCloseOnMouseExit: true)
     }
     
     

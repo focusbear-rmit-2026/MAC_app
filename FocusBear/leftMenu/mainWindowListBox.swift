@@ -195,7 +195,7 @@ class mainWindowListBox: NSBox {
             }
         }else{
             if !disableReason.isEmpty{
-                showTooltip(sender: self, msg: disableReason, preferredEdge: .maxX, maxWidthVal: 250)
+                showTooltip(sender: self, msg: disableReason, preferredEdge: .maxX, maxWidthVal: 250, autoCloseOnMouseExit: true)
             }
         }
     }

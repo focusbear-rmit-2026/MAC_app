@@ -144,15 +144,17 @@ class askAppWorkVc: NSViewController {
         if let askAppWorkVcInfo = configjson.value(forKey: "askAppWorkVcInfo") as? NSDictionary{
             msg = askAppWorkVcInfo.value(forKey: "infoBuildHabitsText") as? String ?? msg
         }
-        showTooltip(sender: btnInfoBuildHabits, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
+        showTooltip(sender: btnInfoBuildHabits, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:230, autoCloseOnMouseExit: true)
     }
+    
     @IBAction func btnInfoStayFocusedClicked(_ sender: Any) {
         var msg = "Focus Bear can help block distracting websites and apps while you're working to help you get more done."
         if let askAppWorkVcInfo = configjson.value(forKey: "askAppWorkVcInfo") as? NSDictionary{
             msg = askAppWorkVcInfo.value(forKey: "infoStayFocusedText") as? String ?? msg
         }
-        showTooltip(sender: btnInfoStayFocused, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
+        showTooltip(sender: btnInfoStayFocused, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:230, autoCloseOnMouseExit: true)
     }
+    
     @IBAction func btnContinueClicked(_ sender: Any) {
         let isDoNotCareSelected = boxDontCare.isSelected
         let isNotCommittedSelected = boxNotCommitted.isSelected

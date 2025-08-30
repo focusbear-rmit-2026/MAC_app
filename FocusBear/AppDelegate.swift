@@ -258,7 +258,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     }
 
     func applicationWillFinishLaunching(_ notification: Notification) {
-//        UserDefaults.standard.set(true, forKey: "NSConstraintBasedLayoutVisualizeMutuallyExclusiveConstraints")// todo remove
         SentrySDK.start { options in
             options.dsn = "https://85574080eb088006a0f2b0f5d326d6ff@o4509122919006208.ingest.us.sentry.io/4509122992275456"
             options.debug = true // Enabled debug when first installing is always helpful
@@ -8459,20 +8458,29 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         }
                     }
                 }
-                if isUserOnMeeting && !SettingsManagerObject.isBlockDistractingSitesDuringMeetingsEnabled{
-                    return;
+                var isOnboardingCheckBlockingTime = false
+                
+                if permissionBlockDistractionWcObj != nil && tryBlockUrlVcObj != nil{// added on 30/8/25  on version 2.27.407
+                    if permissionBlockDistractionWcObj!.window?.isVisible ?? false{
+                        if permissionBlockDistractionWcObj?.contentViewController == tryBlockUrlVcObj{
+                            isOnboardingCheckBlockingTime = true
+                        }
+                    }
                 }
+                
+                if !isOnboardingCheckBlockingTime{
+                    if isUserOnMeeting && !SettingsManagerObject.isBlockDistractingSitesDuringMeetingsEnabled{
+                        return;
+                    }
+                }
+            
                 var shouldCheckBlockedUrls = false
                 if SettingsManagerObject.blockingSchedule == ._UNTIL_I_FINISH_WORK_{
                     shouldCheckBlockedUrls = true
                 }else{
                     // for try block url if blocking schedule is != _UNTIL_I_FINISH_WORK_
-                    if permissionBlockDistractionWcObj != nil && tryBlockUrlVcObj != nil{
-                        if permissionBlockDistractionWcObj!.window?.isVisible ?? false{
-                            if permissionBlockDistractionWcObj?.contentViewController == tryBlockUrlVcObj{
-                                shouldCheckBlockedUrls = true
-                            }
-                        }
+                    if isOnboardingCheckBlockingTime{
+                        shouldCheckBlockedUrls = true
                     }
                 }
                 if shouldCheckBlockedUrls{
@@ -12217,3 +12225,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 // brainDumpWcObj coed commented 
 // password new bug solved 
 // text added, code correction
+
+
+
+
+//  30 /8/25
+//focusmode_endtime  in task player
+// timer count down timer cut bug
+// naturlal break was coming again and again
+// vimeo video added
+//bug found that if user is doing onboarding and when it comes to check facebook.com blocking duraing onboarding then if user is on call then a setting(Block super distracting sites during meetings) intrupt blocking. so ignoring that setings at that time
+
+
+// todo sparkel

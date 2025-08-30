@@ -59,7 +59,7 @@ class askBreakTimeVc: NSViewController {
         if let askBreakTimeVcInfo = configjson.value(forKey: "askBreakTimeVcInfo") as? NSDictionary{
             msg = askBreakTimeVcInfo.value(forKey: "fullDescriptionText") as? String ?? msg
         }
-        showTooltip(sender: btnInfo, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:300)
+        showTooltip(sender: btnInfo, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:300, autoCloseOnMouseExit: true)
         
     }
     @IBAction func btnContinueClicked(_ sender: Any) {

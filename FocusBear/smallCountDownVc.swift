@@ -160,6 +160,7 @@ class smallCountDownVc: NSViewController {
             timer?.invalidate()
             timer = nil
         }
+        lblTimer.isHidden = false
         totalDuration = durationSeconds//durationInMinutes*60
         let (h,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
         var hour = "\(h)"
@@ -249,6 +250,9 @@ class smallCountDownVc: NSViewController {
         }else{
             lblTitle.stringValue = msg//getDoSomeActivityText(activityName: name)
         }
+        
+        lblTimer.isHidden = false
+        
         currentTimer = currentTimerValue
         totalDuration = durationSeconds//durationInMinutes*60
         let (h,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)

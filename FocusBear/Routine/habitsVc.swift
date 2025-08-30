@@ -907,7 +907,7 @@ class habitsVc: NSViewController {
         for subview in viewsArr {
             subview.removeFromSuperview()
         }
-//        let views = self.view.subviews // todo
+//        let views = self.view.subviews // 
 //        if views.count != 1{
 //            for subview in views {
 //                if subview != boxContainer{

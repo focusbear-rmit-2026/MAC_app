@@ -135,7 +135,7 @@ class systemEventsPermissionVc: NSViewController {
         if let systemEventsPermissionVcInfo = configjson.value(forKey: "systemEventsPermissionVcInfo") as? NSDictionary{
             msg = systemEventsPermissionVcInfo.value(forKey: "toolTipText") as? String ?? msg
         }
-        showTooltip(sender: sender, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
+        showTooltip(sender: sender, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:230, autoCloseOnMouseExit: true)
     }
     
     @IBAction func btnGrantPermissionClicked(_ sender: Any) {

@@ -253,7 +253,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             }
             if isActivityPaused{
                 DispatchQueue.global().async {
-                    sleep(1)
+                    sleep(2)// for vimeo it needs 2 seconds for youtube it need 1 second
                     DispatchQueue.main.async {
                         if self.isActivityPaused{
                             if #available(macOS 12.0, *) {
@@ -304,48 +304,19 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
     
     func changeVideoUrl(url:String){
         var videoUrl = url
-        if videoUrl.lowercased().contains("watch?v="){
-            if videoUrl.contains("&"){// removing additional param
-                if let firstItem =  videoUrl.components(separatedBy: "&").first{
-                    videoUrl = firstItem
-                }
+        var isVimeoUrl = false
+        var videoID: String?
+        if let host = URL(string: videoUrl)?.host {
+            isVimeoUrl = host.contains("vimeo.com")
+            print(isVimeoUrl) // true if it's a Vimeo link
+        }
+
+        if isVimeoUrl{
+            if let (url,id) = vimeoEmbedURL(from: videoUrl){
+                videoID = id
+                videoUrl = url
             }
-            videoUrl = videoUrl.replacingOccurrences(of: "watch?v=", with: "embed/")
         }else{
-            // doing this beacuse if video is embedded than it will not play
-            if videoUrl.lowercased().contains("https://youtu.be/"){
-                if let lastItem =  videoUrl.components(separatedBy: "/").last{
-                    videoUrl = "https://www.youtube.com/embed/" + lastItem
-                }
-                
-            }
-        }
-        if videoUrl.contains("?"){
-            videoUrl = videoUrl + "&autoplay=1"
-        }else{
-            videoUrl = videoUrl + "?autoplay=1"
-        }
-        let link = URL(string:videoUrl)!
-        let request = URLRequest(url: link)
-        if #available(macOS 12.0, *) {
-            self.webView.setAllMediaPlaybackSuspended(false)
-        } else {
-            // Fallback on earlier versions
-        }
-        self.webView.load(request)
-        allApiObject.capturePosthog(event: "play-youtube-video-in-activity", metadata: [:])
-    }
-    
-    func loadWebViewTo(url:String?){
-        btnTabVideo.isHidden = true
-        isVideoLodded = false
-        if var videoUrl = url{
-            self.webView.isHidden = false
-            isVideoLodded = true
-            tabCount += 1
-            btnTabVideo.isHidden = false
-            var videoID: String?
-            
             if videoUrl.lowercased().contains("watch?v="){
                 if videoUrl.contains("&"){// removing additional param
                     if let firstItem =  videoUrl.components(separatedBy: "&").first{
@@ -353,7 +324,6 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                     }
                 }
                 videoID = videoUrl.components(separatedBy: "watch?v=").last
-                
                 videoUrl = videoUrl.replacingOccurrences(of: "watch?v=", with: "embed/")
             }else{
                 // doing this beacuse if video is embedded than it will not play
@@ -365,6 +335,102 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                     
                 }else if videoUrl.lowercased().contains("embed/") {
                     videoID = videoUrl.components(separatedBy: "/").last
+                }
+            }
+        }
+        if videoUrl.contains("?"){
+            videoUrl = videoUrl + "&autoplay=1"
+        }else{
+            videoUrl = videoUrl + "?autoplay=1"
+        }
+        
+        let videoIDUnwrapped = videoID ?? ""
+        
+        if !SettingsManagerObject.isOfficeModeEnabled || currentState == ._BREATHING_{
+            //If a video finishes before the end of a habit, automatically restart it #1476 28/7/25 v 1.26.395
+            if videoUrl.contains("?"){
+                videoUrl = videoUrl + "&loop=1&playlist=\(videoIDUnwrapped)"
+            }else{
+                videoUrl = videoUrl + "?loop=1&playlist=\(videoIDUnwrapped)"
+            }
+        }
+        
+        
+        let link = URL(string:videoUrl)!
+        let request = URLRequest(url: link)
+        if #available(macOS 12.0, *) {
+            self.webView.setAllMediaPlaybackSuspended(false)
+        } else {
+            // Fallback on earlier versions
+        }
+        self.webView.load(request)
+        allApiObject.capturePosthog(event: "play-youtube-video-in-activity", metadata: [:])
+    }
+    
+    
+    func vimeoEmbedURL(from urlString: String) -> (String,String)? {
+        guard let url = URL(string: urlString) else { return nil }
+        let host = url.host ?? ""
+        let pathComponents = url.pathComponents.filter { $0 != "/" }
+        
+        // Case 1: Already an embed URL (player.vimeo.com)
+        if host.contains("player.vimeo.com"),
+           pathComponents.contains("video"),
+           let videoID = pathComponents.last {
+            return ("https://player.vimeo.com/video/\(videoID)", videoID)
+        }
+        
+        // Case 2: Normal Vimeo link (vimeo.com/VIDEO_ID or with query params)
+        if host.contains("vimeo.com"),
+           let videoID = pathComponents.last,
+           Int(videoID) != nil {
+            return ("https://player.vimeo.com/video/\(videoID)", videoID)
+        }
+        
+        // Not a valid Vimeo link
+        return nil
+    }
+    
+    func loadWebViewTo(url:String?){
+        btnTabVideo.isHidden = true
+        isVideoLodded = false
+        if var videoUrl = url{
+            self.webView.isHidden = false
+            isVideoLodded = true
+            tabCount += 1
+            btnTabVideo.isHidden = false
+            var videoID: String?
+            var isVimeoUrl = false
+            
+            if let host = URL(string: videoUrl)?.host {
+                isVimeoUrl = host.contains("vimeo.com")
+                print(isVimeoUrl) // true if it's a Vimeo link
+            }
+            if isVimeoUrl{
+                if let (url,id) = vimeoEmbedURL(from: videoUrl){
+                    videoID = id
+                    videoUrl = url
+                }
+            }else{
+                if videoUrl.lowercased().contains("watch?v="){
+                    if videoUrl.contains("&"){// removing additional param
+                        if let firstItem =  videoUrl.components(separatedBy: "&").first{
+                            videoUrl = firstItem
+                        }
+                    }
+                    videoID = videoUrl.components(separatedBy: "watch?v=").last
+                    videoUrl = videoUrl.replacingOccurrences(of: "watch?v=", with: "embed/")
+                }else{
+                    // doing this beacuse if video is embedded than it will not play
+                    if videoUrl.lowercased().contains("https://youtu.be/"){
+                        if let lastItem =  videoUrl.components(separatedBy: "/").last{
+                            videoID = lastItem
+                            videoUrl = "https://www.youtube.com/embed/" + lastItem
+                        }
+                        
+                    }else if videoUrl.lowercased().contains("embed/") {
+                        videoID = videoUrl.components(separatedBy: "/").last
+                    }
                 }
             }
             

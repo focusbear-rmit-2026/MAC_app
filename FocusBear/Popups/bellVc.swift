@@ -29,7 +29,7 @@ class bellVc: NSViewController {
             if let bellSuggestionsVcInfo = configjson.value(forKey: "bellSuggestionsVcInfo") as? NSDictionary{
                 toolTipBellIcon = bellSuggestionsVcInfo.value(forKey: "toolTipBellIcon") as? String ?? toolTipBellIcon
             }
-            showTooltip(sender: lblBell, msg: toolTipBellIcon, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
+            showTooltip(sender: lblBell, msg: toolTipBellIcon, preferredEdge: NSRectEdge.maxX, maxWidthVal:230, autoCloseOnMouseExit: true)
         }
     }
     

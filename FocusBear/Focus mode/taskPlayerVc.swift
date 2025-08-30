@@ -189,13 +189,13 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
             if let taskPlayerVcInfo = configjson.value(forKey: "taskPlayerVcInfo") as? NSDictionary{
                 playFocusMusicTooltip = taskPlayerVcInfo.value(forKey: "playFocusMusicTooltip") as? String ?? playFocusMusicTooltip
             }
-            showTooltip(sender: btnStartFocusMusic, msg: playFocusMusicTooltip, preferredEdge: .minX, maxWidthVal: 250)
+            showTooltip(sender: btnStartFocusMusic, msg: playFocusMusicTooltip, preferredEdge: .minX, maxWidthVal: 250, autoCloseOnMouseExit: true)
         }else if event.trackingArea == trackingAreaStopFocusMode{
             var endFocusSessionTooltip = "End focus session"
             if let taskPlayerVcInfo = configjson.value(forKey: "taskPlayerVcInfo") as? NSDictionary{
                 endFocusSessionTooltip = taskPlayerVcInfo.value(forKey: "endFocusSessionTooltip") as? String ?? endFocusSessionTooltip
             }
-            showTooltip(sender: btnEndFocusSession, msg: endFocusSessionTooltip, preferredEdge: .minX, maxWidthVal: 250)
+            showTooltip(sender: btnEndFocusSession, msg: endFocusSessionTooltip, preferredEdge: .minX, maxWidthVal: 250, autoCloseOnMouseExit: true)
         }
     }
     
@@ -439,11 +439,17 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
             UserDefaults.standard.set(true, forKey: kUserDefaultsOpenTodoPlayerFirstTime)
             isFirstTime = true
         }
-
-        var stringJson = "{\"access_token\": \"\(appdelegate!.credential?.accessToken ?? "")\",\"platform\":\"mac\",\"lang\":\"\(currentLanguageCode)\",\"font\":\"\(selectedFont)\",\"theme\":\"\(theme)\",\"total_duration\":\"\(totalDuration)\",\"intention\":\"\(intention)\",\"brain_dump\":\"\(brainDump)\",\"isOnboarding\":\(isFirstTime)}"
+        var finish_time_string = ""
+        if let endFocusModeTime = endFocusModeTime{
+            finish_time_string = getStringFromDateInUtc(date: endFocusModeTime, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+        }
+        
+        
+        
+        var stringJson = "{\"access_token\": \"\(appdelegate!.credential?.accessToken ?? "")\",\"platform\":\"mac\",\"lang\":\"\(currentLanguageCode)\",\"font\":\"\(selectedFont)\",\"theme\":\"\(theme)\",\"total_duration\":\"\(totalDuration)\",\"intention\":\"\(intention)\",\"brain_dump\":\"\(brainDump)\",\"isOnboarding\":\(isFirstTime),\"focusmode_endtime\":\"\(finish_time_string)\"}"
         
         if !focusModeTaskStringIsEmpty(){
-            stringJson = "{\"access_token\": \"\(appdelegate!.credential?.accessToken ?? "")\",\"platform\":\"mac\",\"lang\":\"\(currentLanguageCode)\",\"tasks\":\(focusModeTaskString),\"font\":\"\(selectedFont)\",\"theme\":\"\(theme)\",\"total_duration\":\"\(totalDuration)\",\"intention\":\"\(intention)\",\"brain_dump\":\"\(brainDump)\",\"isOnboarding\":\(isFirstTime)}"
+            stringJson = "{\"access_token\": \"\(appdelegate!.credential?.accessToken ?? "")\",\"platform\":\"mac\",\"lang\":\"\(currentLanguageCode)\",\"tasks\":\(focusModeTaskString),\"font\":\"\(selectedFont)\",\"theme\":\"\(theme)\",\"total_duration\":\"\(totalDuration)\",\"intention\":\"\(intention)\",\"brain_dump\":\"\(brainDump)\",\"isOnboarding\":\(isFirstTime),\"focusmode_endtime\":\"\(finish_time_string)\"}"
         }
         let settingsFunc = String(format: "let waitForAppLoaded = setInterval(() => { if (window.loadMetaDataForToDoPlayer) { loadMetaDataForToDoPlayer(%@); clearInterval(waitForAppLoaded); } }, 100);", stringJson)
         

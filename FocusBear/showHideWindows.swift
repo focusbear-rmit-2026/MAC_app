@@ -429,6 +429,12 @@ func showDeactivateBreaksWindow(){
 //***********show alertReasonAutoAllowSite Window***************//
 
 func showNaturalBreakDetectionWindow(duration:Int){
+    print("showNaturalBreakDetectionWindow")
+    if naturalBreaksDetectionVcObj != nil{
+        if naturalBreaksDetectionVcObj?.isViewVisible ?? false{
+            return;
+        }
+    }
     addLog(text:"showNaturalBreakDetectionWindow")
     allApiObject.capturePosthog(event: "natural-break-detection-window-shown", metadata: [:])
     
@@ -444,8 +450,8 @@ func showNaturalBreakDetectionWindow(duration:Int){
         getNaturalBreaksDetectionWindowObject().showWindow(nil)
         getNaturalBreaksDetectionVcObject().resetView(duration:duration)
     }
-    
 }
+
 //-------------------------------------------------//
 
 //***********show Popup Appointment Time Window***************//
@@ -1232,14 +1238,18 @@ func showInformationPopover(sender:NSView, preferredEdge: NSRectEdge,mainTitle: 
 
 var popoverFocusHelp:NSPopover?
 var popoverTooltip:NSPopover?// = NSPopover()
-func showTooltip(sender:NSView, msg:String, preferredEdge: NSRectEdge, maxWidthVal:CGFloat) {
-    
+func showTooltip(sender:NSView, msg:String, preferredEdge: NSRectEdge, maxWidthVal:CGFloat, autoCloseOnMouseExit:Bool = false) {
     if popoverTooltip == nil{
         popoverTooltip = NSPopover()
-        popoverTooltip!.behavior = .transient
         popoverTooltip!.animates = false
-        //        popoverTooltip!.delegate = appdelegate
     }
+    
+//    if autoCloseOnMouseExit{// it means showing as tooltip on mouse hover and it will close on mouse exit so no transient behavior needed (transient behavior close tooltip when click again on anywhere . but with transient behavior additional nsbox was needed to click on button with same click)
+//        popoverTooltip!.behavior = .applicationDefined
+//    }else{
+//        popoverTooltip!.behavior = .transient
+//    }
+    popoverTooltip!.behavior = .transient
     if popoverTooltip!.isShown{
         popoverTooltip?.close()
     }

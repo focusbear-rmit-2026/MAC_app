@@ -83,7 +83,7 @@ class nudgeFocusAlignmentScoreDippingVc: NSViewController {
             if let info = configjson.value(forKey: "nudgeFocusAlignmentScoreDippingVcInfo") as? NSDictionary{
                 toolTipShowToDoPlayer = info.value(forKey: "toolTipShowToDoPlayer") as? String ?? toolTipShowToDoPlayer
             }
-            showTooltip(sender: btnExpandTaskPlayer, msg: toolTipShowToDoPlayer, preferredEdge: .maxY, maxWidthVal: 200)
+            showTooltip(sender: btnExpandTaskPlayer, msg: toolTipShowToDoPlayer, preferredEdge: .maxY, maxWidthVal: 200, autoCloseOnMouseExit: true)
         }
     }
     

@@ -160,7 +160,7 @@ class takeBreaksInfoVc: NSViewController {
         if let takeBreaksInfoVcInfo = configjson.value(forKey: "takeBreaksInfoVcInfo") as? NSDictionary{
             msg = takeBreaksInfoVcInfo.value(forKey: "infoText") as? String ?? msg
         }
-        showTooltip(sender: btnInfo, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:300)
+        showTooltip(sender: btnInfo, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:300, autoCloseOnMouseExit: true)
     }
 }
 extension takeBreaksInfoVc: toggleButtonBoxDelegate{

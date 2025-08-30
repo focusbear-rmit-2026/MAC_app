@@ -512,7 +512,7 @@ extension onboardingControllingBrowserVc:NSTableViewDelegate, NSTableViewDataSou
                 if let onboardingControllingBrowserVcInfo = configjson.value(forKey: "onboardingControllingBrowserVcInfo") as? NSDictionary{
                     msg = onboardingControllingBrowserVcInfo.value(forKey: "firefoxInfoText") as? String ?? msg
                 }
-                showTooltip(sender: sender, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
+                showTooltip(sender: sender, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:230, autoCloseOnMouseExit: true)
             }
         }
     }
