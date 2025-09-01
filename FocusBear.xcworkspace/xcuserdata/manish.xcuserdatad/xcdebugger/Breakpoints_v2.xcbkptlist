@@ -7,129 +7,129 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "D329FBBA-3DDC-48F7-9172-2784F9E79586"
+            uuid = "01ABDAFD-5D15-4DC4-B79F-7AA208532616"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "FocusBear/AppDelegate.swift"
+            filePath = "FocusBear/mainWindowController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "3760"
-            endingLineNumber = "3760"
-            landmarkName = "checkIsMeetingsGoingOn()"
+            startingLineNumber = "43"
+            endingLineNumber = "43"
+            landmarkName = "showFullSizeWindow()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "F2A7D042-3022-4496-80EF-81D021342A01"
+            uuid = "E48A3A24-4BBC-499B-ABA2-9C19872888C2"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "FocusBear/AppDelegate.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "3747"
-            endingLineNumber = "3747"
-            landmarkName = "checkIsMeetingsGoingOn()"
+            startingLineNumber = "11727"
+            endingLineNumber = "11727"
+            landmarkName = "showExtraWindows()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "6EE1C045-29B6-4DAC-82A8-D03CBAC021A8"
-            shouldBeEnabled = "Yes"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "FocusBear/AppDelegate.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1314"
-            endingLineNumber = "1314"
-            landmarkName = "loadAppAndSettings()"
-            landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            uuid = "F233DA7B-2452-41CC-B813-49330E90183B"
+            uuid = "001F0945-E80B-4F36-B5BD-B2FC156BAD2E"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "FocusBear/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "214"
-            endingLineNumber = "214"
-            landmarkName = "newUrlOrAppAdded()"
+            startingLineNumber = "189"
+            endingLineNumber = "189"
+            landmarkName = "setframe()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "B0CDCC2A-C272-4A23-B96C-E846F8E430A8"
+            uuid = "E9743BA3-BF4E-4EFA-AEC8-458A977EA254"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "FocusBear/Preferences/preferencesTabViewController.swift"
+            filePath = "FocusBear/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "135"
-            endingLineNumber = "135"
-            landmarkName = "newUrlOrAppAdded()"
+            startingLineNumber = "163"
+            endingLineNumber = "163"
+            landmarkName = "showSmallScreen(showMinimumSize:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "71C7162A-189C-4558-857A-BDF650EA5669"
+            uuid = "F7639509-EFBC-44A7-B600-6E63857EDD12"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "FocusBear/Pomodoro mode/pomodoroVc.swift"
+            filePath = "FocusBear/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "931"
-            endingLineNumber = "931"
-            landmarkName = "btnLetsDoItClicked(_:)"
+            startingLineNumber = "149"
+            endingLineNumber = "149"
+            landmarkName = "checkIsFullScreenNeeded()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "86832C11-34BE-4DB1-AE5D-984AE89B5858"
+            uuid = "4DC5B0B9-74BC-4DD9-A7C9-514D3D1AC756"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "FocusBear/Pomodoro mode/simplePomodoroVc.swift"
+            filePath = "FocusBear/ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "674"
-            endingLineNumber = "674"
-            landmarkName = "btnLetsDoItClicked(_:)"
+            startingLineNumber = "131"
+            endingLineNumber = "131"
+            landmarkName = "checkIsFullScreenNeeded()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "79320075-F8F1-4289-A875-51D2F2493D7C"
+            uuid = "E344604A-0F6F-4D3A-A9CB-2EB0B0642C19"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "FocusBear/showHideWindows.swift"
+            filePath = "FocusBear/mainWindowController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1051"
-            endingLineNumber = "1051"
-            landmarkName = "showDistractionTypesWindow(showingFromPomodoro:)"
-            landmarkType = "9">
+            startingLineNumber = "70"
+            endingLineNumber = "70"
+            landmarkName = "showSmallSizeWindow()"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "98CFACDF-4074-4EB6-B05A-F6FF9CE11C73"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "FocusBear/AppDelegate.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "645"
+            endingLineNumber = "645"
+            landmarkName = "applicationWillFinishLaunching(_:)"
+            landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
    </Breakpoints>

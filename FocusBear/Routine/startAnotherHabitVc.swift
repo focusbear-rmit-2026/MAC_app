@@ -10,6 +10,7 @@ import Cocoa
 
 class startAnotherHabitVc: NSViewController {
 
+    @IBOutlet weak var heightBox: NSLayoutConstraint!// 510
     @IBOutlet weak var brnClose: cursorButton!
     @IBOutlet weak var lblTitle: NSTextField!
     @IBOutlet weak var tblView: NSTableView!
@@ -63,6 +64,11 @@ class startAnotherHabitVc: NSViewController {
             }
         }
         tblView.reloadData()
+        if (mainWindowControllerObj?.window?.frame.height ?? 700) < 550{
+            heightBox.constant = (mainWindowControllerObj?.window?.frame.height ?? 700) - 60
+        }else{
+            heightBox.constant = 510
+        }
     }
     @IBAction func btnStartClicked(_ sender: Any) {
         if tblView.selectedRow == -1{

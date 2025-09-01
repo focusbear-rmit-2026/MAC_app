@@ -1502,11 +1502,11 @@ class habitsVc: NSViewController {
         isAnyAllowedFocusModeActivityRunning = false
         currentHabitPlaying = nil
         
-        if toolBoxWcObj != nil{
-            if toolBoxWcObj!.window!.isVisible{
-                toolBoxWcObj?.window?.close()
-            }
-        }
+//        if toolBoxWcObj != nil{
+//            if toolBoxWcObj!.window!.isVisible{
+//                toolBoxWcObj?.window?.close()
+//            }
+//        }
         if taskPlayerWcObj != nil{
             if taskPlayerWcObj?.window?.isVisible ?? false{
                 taskPlayerVcObj?.getToDosFromPlayer()
@@ -1547,11 +1547,11 @@ class habitsVc: NSViewController {
         isAnyAllowedFocusModeActivityRunning = false
         currentHabitPlaying = nil
         
-        if toolBoxWcObj != nil{
-            if toolBoxWcObj!.window!.isVisible{
-                toolBoxWcObj?.window?.close()
-            }
-        }
+//        if toolBoxWcObj != nil{
+//            if toolBoxWcObj!.window!.isVisible{
+//                toolBoxWcObj?.window?.close()
+//            }
+//        }
         
         refreshFocusModeData()
         
@@ -1703,11 +1703,11 @@ class habitsVc: NSViewController {
         isAnyAllowedFocusModeActivityRunning = false
         currentHabitPlaying = nil
         
-        if toolBoxWcObj != nil{
-            if toolBoxWcObj!.window!.isVisible{
-                toolBoxWcObj?.window?.close()
-            }
-        }
+//        if toolBoxWcObj != nil{
+//            if toolBoxWcObj!.window!.isVisible{
+//                toolBoxWcObj?.window?.close()
+//            }
+//        }
         
         refreshFocusModeData()
         
@@ -1837,11 +1837,11 @@ class habitsVc: NSViewController {
         isAnyAllowedFocusModeActivityRunning = false
         currentHabitPlaying = nil
         currentRelaxHabitPlaying = nil
-        if toolBoxWcObj != nil{
-            if toolBoxWcObj!.window!.isVisible{
-                toolBoxWcObj?.window?.close()
-            }
-        }
+//        if toolBoxWcObj != nil{
+//            if toolBoxWcObj!.window!.isVisible{
+//                toolBoxWcObj?.window?.close()
+//            }
+//        }
         if taskPlayerWcObj != nil{
             if taskPlayerWcObj?.window?.isVisible ?? false{
                 taskPlayerVcObj?.getToDosFromPlayer()
@@ -1879,11 +1879,11 @@ class habitsVc: NSViewController {
         isAnyAllowedFocusModeActivityRunning = false
         currentHabitPlaying = nil
         
-        if toolBoxWcObj != nil{
-            if toolBoxWcObj!.window!.isVisible{
-                toolBoxWcObj?.window?.close()
-            }
-        }
+//        if toolBoxWcObj != nil{
+//            if toolBoxWcObj!.window!.isVisible{
+//                toolBoxWcObj?.window?.close()
+//            }
+//        }
         
         refreshFocusModeData()
         
@@ -2105,11 +2105,11 @@ class habitsVc: NSViewController {
         currentActivityPlaying = nil
         currentHabitPlaying = nil
         
-        if toolBoxWcObj != nil{
-            if toolBoxWcObj!.window!.isVisible{
-                toolBoxWcObj?.window?.close()
-            }
-        }
+//        if toolBoxWcObj != nil{
+//            if toolBoxWcObj!.window!.isVisible{
+//                toolBoxWcObj?.window?.close()
+//            }
+//        }
         
         refreshFocusModeData()
         closePupUpBlockIfVisible()
@@ -2147,11 +2147,11 @@ class habitsVc: NSViewController {
         isAnyAllowedFocusModeActivityRunning = false
         currentHabitPlaying = nil
         
-        if toolBoxWcObj != nil{
-            if toolBoxWcObj!.window!.isVisible{
-                toolBoxWcObj?.window?.close()
-            }
-        }
+//        if toolBoxWcObj != nil{
+//            if toolBoxWcObj!.window!.isVisible{
+//                toolBoxWcObj?.window?.close()
+//            }
+//        }
         if taskPlayerWcObj != nil{
             if taskPlayerWcObj?.window?.isVisible ?? false{
                 taskPlayerVcObj?.getToDosFromPlayer()
@@ -2721,11 +2721,11 @@ class habitsVc: NSViewController {
                 isAnyAllowedFocusModeActivityRunning = false
                 currentHabitPlaying = nil
                 
-                if toolBoxWcObj != nil{
-                    if toolBoxWcObj!.window!.isVisible{
-                        toolBoxWcObj?.window?.close()
-                    }
-                }
+//                if toolBoxWcObj != nil{
+//                    if toolBoxWcObj!.window!.isVisible{
+//                        toolBoxWcObj?.window?.close()
+//                    }
+//                }
                 if !isFocusModeOn(){
                     refreshFocusModeData()
                     setAppIconForFocusModeScore(probability: nil)
@@ -2840,11 +2840,11 @@ class habitsVc: NSViewController {
         isAnyAllowedFocusModeActivityRunning = false
         currentHabitPlaying = nil
         
-        if toolBoxWcObj != nil{
-            if toolBoxWcObj!.window!.isVisible{
-                toolBoxWcObj?.window?.close()
-            }
-        }
+//        if toolBoxWcObj != nil{
+//            if toolBoxWcObj!.window!.isVisible{
+//                toolBoxWcObj?.window?.close()
+//            }
+//        }
         if !isFocusModeOn(){
             refreshFocusModeData()
             setAppIconForFocusModeScore(probability: nil)
@@ -2946,11 +2946,11 @@ class habitsVc: NSViewController {
             isAnyAllowedFocusModeActivityRunning = false
             currentHabitPlaying = nil
             
-            if toolBoxWcObj != nil{
-                if toolBoxWcObj!.window!.isVisible{
-                    toolBoxWcObj?.window?.close()
-                }
-            }
+//            if toolBoxWcObj != nil{
+//                if toolBoxWcObj!.window!.isVisible{
+//                    toolBoxWcObj?.window?.close()
+//                }
+//            }
             
             if !isFocusModeOn(){
                 refreshFocusModeData()

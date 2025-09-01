@@ -131,8 +131,8 @@ var kUserdefaultsSelectedLanguage = "kUserdefaultsSelectedLanguage"
 var kUserdefaultsScreenTimeEnabled = "kUserdefaultsScreenTimeEnabled"
 
 let kUserdefaultsFocusAddedFromFirstHabit = "kUserdefaultsFocusAddedFromFirstHabit"
-var kUserdefaultsDontShowToolBoxAutomatically = "kUserdefaultsShowToolBoxAutomatically"
-var kUserdefaultsDontShowToolBoxAutomaticallyForActivity = "kUserdefaultsDontShowToolBoxAutomaticallyForActivity"
+//var kUserdefaultsDontShowToolBoxAutomatically = "kUserdefaultsShowToolBoxAutomatically"
+//var kUserdefaultsDontShowToolBoxAutomaticallyForActivity = "kUserdefaultsDontShowToolBoxAutomaticallyForActivity"
 
 var kUserdefaultsFocusModeNotes = "kUserdefaultsFocusModeNotes"
 

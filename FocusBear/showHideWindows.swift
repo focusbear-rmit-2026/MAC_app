@@ -60,17 +60,17 @@ func showPopUpCheckListWindow(title: String, list: [String]){
 
 
 //***********SHOW Toolbox window***************//
-func showToolboxWindow(){
-    addLog(text:"show Toolbox Window")
-    getToolBoxWindowObject().contentViewController = getToolBoxVcObject()
-    getToolBoxWindowObject().window?.backgroundColor = NSColor.clear
-    getToolBoxWindowObject().window?.title = "Focus Bear - Toolbox"
-    if let toolBoxVcInfo = configjson.value(forKey: "toolBoxVcInfo") as? NSDictionary{
-        getToolBoxWindowObject().window?.title = toolBoxVcInfo.value(forKey: "windowTitleText") as? String ?? "Focus Bear - Toolbox"
-    }
-    getToolBoxWindowObject().showWindow(nil)
-    toolBoxVcObj?.resetView()
-}
+//func showToolboxWindow(){//// not in use now  removed on 1/9/25  on version 2.27.408
+//    addLog(text:"show Toolbox Window")
+//    getToolBoxWindowObject().contentViewController = getToolBoxVcObject()
+//    getToolBoxWindowObject().window?.backgroundColor = NSColor.clear
+//    getToolBoxWindowObject().window?.title = "Focus Bear - Toolbox"
+//    if let toolBoxVcInfo = configjson.value(forKey: "toolBoxVcInfo") as? NSDictionary{
+//        getToolBoxWindowObject().window?.title = toolBoxVcInfo.value(forKey: "windowTitleText") as? String ?? "Focus Bear - Toolbox"
+//    }
+//    getToolBoxWindowObject().showWindow(nil)
+//    toolBoxVcObj?.resetView()
+//}
 
 //***********SHOW ToDoList window***************//
 func showToDoListWindow(){
@@ -79,7 +79,7 @@ func showToDoListWindow(){
         mainWindowControllerObj?.showWindow(nil)
     }
     leftMenuVcObj?.showTaskPlayer()
-    return;
+    return; // todo
     
     getToDoListWcObject().contentViewController = getTodoListToolVcObject()
     getToDoListWcObject().window?.title = "Focus Bear - To Do List"

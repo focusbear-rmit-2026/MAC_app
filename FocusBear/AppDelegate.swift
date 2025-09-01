@@ -15,13 +15,17 @@ import TrueTime
 import CoreMedia
 
 @NSApplicationMain
-class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDelegate, SUUpdaterDelegate {
+class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDelegate, SPUUpdaterDelegate {//SUUpdaterDelegate
     let validation = urlValidation()
     let sharedDefaults = UserDefaults(suiteName: "TCUD568B3U.group.com.focusbear.fbmac")
     @IBOutlet weak var menuItemUninstall: NSMenuItem!
+    
     let statusItem = NSStatusBar.system.statusItem(withLength:NSStatusItem.variableLength)
     var statusbutton:NSStatusBarButton?
-    var updater: SUUpdater?
+    
+//    var updater: SUUpdater?
+    var updaterController: SPUStandardUpdaterController?
+    
     let client = TrueTimeClient.sharedInstance
     let popover = NSPopover()
     var terminateFromSelf = false
@@ -242,7 +246,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             }
         }
         
-        if updater != nil{// it means application is already started
+        if updaterController != nil{// it means application is already started
             if let state = UserDefaults.standard.object(forKey: kUserdefaultsShowDockIcon) as? Bool{
                 if state{
                     NSApp.setActivationPolicy(NSApplication.ActivationPolicy.regular)
@@ -321,8 +325,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         menuItemUninstall.isHidden = true
         client.start()// for getting true time
         
-        updater = SUUpdater(for: Bundle.main)
-        updater?.automaticallyChecksForUpdates = true
+//        updater = SUUpdater(for: Bundle.main)
+//        updater?.automaticallyChecksForUpdates = true
+        
+        updaterController = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: self, userDriverDelegate: nil)
+        updaterController?.updater.automaticallyChecksForUpdates = true
+        
         
         // -----------------------------GENERATE LOG FILE----------------------------
         let bundel = Bundle.main.bundleIdentifier ?? ""
@@ -481,14 +489,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         
         // setting Toolbox
         
-        if UserDefaults.standard.object(forKey: kUserdefaultsDontShowToolBoxAutomatically) == nil{
-            UserDefaults.standard.set(false, forKey: kUserdefaultsDontShowToolBoxAutomatically)
-        }
-        
-        if UserDefaults.standard.object(forKey: kUserdefaultsDontShowToolBoxAutomaticallyForActivity) == nil{
-            UserDefaults.standard.set(false, forKey: kUserdefaultsDontShowToolBoxAutomaticallyForActivity)
-        }
-        
+//        if UserDefaults.standard.object(forKey: kUserdefaultsDontShowToolBoxAutomatically) == nil{
+//            UserDefaults.standard.set(false, forKey: kUserdefaultsDontShowToolBoxAutomatically)
+//        }
+//        
+//        if UserDefaults.standard.object(forKey: kUserdefaultsDontShowToolBoxAutomaticallyForActivity) == nil{
+//            UserDefaults.standard.set(false, forKey: kUserdefaultsDontShowToolBoxAutomaticallyForActivity)
+//        }
+//        
         //  ---------------------------SETTINGS Language--------------------------
         
         var languageCode = "en"
@@ -625,6 +633,22 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             
         }
         )
+        
+        NotificationCenter.default.addObserver(
+            forName: NSWindow.didBecomeKeyNotification,
+            object: nil,
+            queue: .main
+        ) { notification in
+            if let win = notification.object as? NSWindow,
+               let identifier = win.identifier?.rawValue {
+                //SUUpdateAlert for progress alert
+                if identifier.hasPrefix("SUUpdateAlert") || identifier.hasPrefix("SUStatus"){   // catches SUUpdateAlert, SUStatus, etc.
+                    win.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.numberOfWindowLevelKeys)))
+//                    win.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+                    print("Adjusted Sparkle window:", identifier)
+                }
+            }
+        }
     }
     
     func showAskOccupation(){
@@ -1616,9 +1640,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 //
                 //        self.hotKeyResumeFocusMode = HotKey(keyCombo: KeyCombo(stkey: "r", modifiers: flags))
 
-                self.updater?.delegate = self
-                self.updater?.checkForUpdatesInBackground()
+               // self.updater?.delegate = self
+               // self.updater?.checkForUpdatesInBackground()
                 
+//                updaterController?.updater.
+                self.updaterController?.updater.checkForUpdatesInBackground()
                 
                 NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(self.sleepEvent(_:)), name: NSWorkspace.screensDidWakeNotification, object: nil)
                 
@@ -1684,11 +1710,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 self.timerAllowUrlForActivity?.invalidate()
                 self.timerAllowAppForActivity?.invalidate()
                 currentActivityPlaying = nil
-                if toolBoxWcObj != nil{
-                    if toolBoxWcObj!.window!.isVisible{
-                        toolBoxWcObj?.window?.close()
-                    }
-                }
+//                if toolBoxWcObj != nil{
+//                    if toolBoxWcObj!.window!.isVisible{
+//                        toolBoxWcObj?.window?.close()
+//                    }
+//                }
 //                if smallCountDownWcObj != nil{
 //                    if smallCountDownWcObj!.window?.isVisible ?? false{
 //                        getsmallCountDownVcObject().closeTimerBox()
@@ -2070,19 +2096,23 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     
     //4b3eb33632184640b82aa3e3f50fe11b2cdd8b0e82ce48a8bfd1cbe26edc32f5
     // if application is going to relaunch by updater we unload launchagent to make sure applicate will not autostart before install finish /// bug solved 15/7/22
-    func updaterWillRelaunchApplication(_ updater: SUUpdater) {
+//    func updaterWillRelaunchApplication(_ updater: SUUpdater) {
+//        addLog(text: "updater Will Relaunch Application")
+//        print("updater Will Relaunch Application")
+//        shell(launchPath: "/bin/launchctl", arguments: ["unload","-w","\("/Users/")\(NSUserName())\("/Library/LaunchAgents/\(mainAppBundelId).plist")"])
+//        terminateFromSelf = true
+//        disableAllAlertsBeforeQuit()
+//    }
+    
+    func updaterWillRelaunchApplication(_ updater: SPUUpdater) {
         addLog(text: "updater Will Relaunch Application")
         print("updater Will Relaunch Application")
-        shell(launchPath: "/bin/launchctl", arguments: ["unload","-w","\("/Users/")\(NSUserName())\("/Library/LaunchAgents/\(mainAppBundelId).plist")"])
+//        shell(launchPath: "/bin/launchctl", arguments: ["unload","-w","\("/Users/")\(NSUserName())\("/Library/LaunchAgents/\(mainAppBundelId).plist")"])
+        stopMainAppForceQuitMonitoring()
         terminateFromSelf = true
         disableAllAlertsBeforeQuit()
     }
-    //    func updaterDidNotFindUpdate(_ updater: SUUpdater) {
-    //        print("did not find update")
-    //    }
-    //    func updater(_ updater: SUUpdater, didFinishLoading appcast: SUAppcast) {
-    //        print("didFinishLoading")
-    //    }
+
     func checkActivationState(){
         //        DispatchQueue.main.async {
         
@@ -3541,6 +3571,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     }
 
     @objc func checkWindowState(){
+        UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitID)
+        UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitRunningInfo)
         if !getHabitsVcObject().isViewLoaded{
             getHabitsVcObject().loadView()
         }
@@ -6542,11 +6574,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         timerAllowAppForActivity?.invalidate()
                         currentActivityPlaying = nil
                         
-                        if toolBoxWcObj != nil{
-                            if toolBoxWcObj!.window!.isVisible{
-                                toolBoxWcObj?.window?.close()
-                            }
-                        }
+//                        if toolBoxWcObj != nil{
+//                            if toolBoxWcObj!.window!.isVisible{
+//                                toolBoxWcObj?.window?.close()
+//                            }
+//                        }
 //                        if smallCountDownWcObj != nil{
 //                            if smallCountDownWcObj!.window?.isVisible ?? false{
 //                                getsmallCountDownVcObject().closeTimerBox()
@@ -6576,11 +6608,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                 self.timerAllowAppForActivity?.invalidate()
                                 currentActivityPlaying = nil
                                 closePupUpBlockIfVisible()
-                                if toolBoxWcObj != nil{
-                                    if toolBoxWcObj!.window!.isVisible{
-                                        toolBoxWcObj?.window?.close()
-                                    }
-                                }
+//                                if toolBoxWcObj != nil{
+//                                    if toolBoxWcObj!.window!.isVisible{
+//                                        toolBoxWcObj?.window?.close()
+//                                    }
+//                                }
 //                                if smallCountDownWcObj != nil{
 //                                    if smallCountDownWcObj!.window?.isVisible ?? false{
 //                                        getsmallCountDownVcObject().closeTimerBox()
@@ -6990,6 +7022,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 isAnyStanderdWindowVisible = true
             }
         }
+        
 //        if smallCountDownWcObj != nil{
 //            if smallCountDownWcObj?.window != nil{
 //                if getSmallCountDownWindowObject().window!.isVisible{
@@ -7397,26 +7430,26 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         showSavedSitesForLaterWindowForBreaks()
                     }
                 }
-                if UserDefaults.standard.object(forKey: kUserdefaultsDontShowToolBoxAutomatically) as? Bool == false{
-                    var shouldShowToolBoxWindow = false
-                    
-                    let isAllowedAllAppsInFocus = currentRunningFocusType["isAllowedAllApps"] as? Bool ?? false
-                    let allowAppsPath = currentRunningFocusType["allowed_apps"] as? [String] ?? []
-                    
-                    if !isAllowedAllAppsInFocus && allowAppsPath.count != 0{
-                        shouldShowToolBoxWindow = true
-                    }
-
-                    let isAllowedListApproachInFocus = currentRunningFocusType["isAllowedListApproach"] as? Bool ?? false
-                    let arrAllowedUrlsForFocus = currentRunningFocusType["allowed_urls"] as? [String] ?? []
-                    
-                    if arrAllowedUrlsForFocus.count != 0 && isAllowedListApproachInFocus{//!isAllowedAllUrlsInFocus &&#453
-                        shouldShowToolBoxWindow = true
-                    }
-                    if shouldShowToolBoxWindow && SettingsManagerObject.isGeekModeEnabled{
-                        showToolboxWindow()
-                    }
-                }
+//                if UserDefaults.standard.object(forKey: kUserdefaultsDontShowToolBoxAutomatically) as? Bool == false{// removed on 1/9/25  on version 2.27.408
+//                    var shouldShowToolBoxWindow = false
+//                    
+//                    let isAllowedAllAppsInFocus = currentRunningFocusType["isAllowedAllApps"] as? Bool ?? false
+//                    let allowAppsPath = currentRunningFocusType["allowed_apps"] as? [String] ?? []
+//                    
+//                    if !isAllowedAllAppsInFocus && allowAppsPath.count != 0{
+//                        shouldShowToolBoxWindow = true
+//                    }
+//
+//                    let isAllowedListApproachInFocus = currentRunningFocusType["isAllowedListApproach"] as? Bool ?? false
+//                    let arrAllowedUrlsForFocus = currentRunningFocusType["allowed_urls"] as? [String] ?? []
+//                    
+//                    if arrAllowedUrlsForFocus.count != 0 && isAllowedListApproachInFocus{//!isAllowedAllUrlsInFocus &&#453
+//                        shouldShowToolBoxWindow = true
+//                    }
+//                    if shouldShowToolBoxWindow && SettingsManagerObject.isGeekModeEnabled{
+//                        showToolboxWindow()
+//                    }
+//                }
 
                 self.frontApplicationChanged()
                 
@@ -7681,11 +7714,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 })
             }
             
-            if toolBoxWcObj != nil{
-                if toolBoxWcObj!.window!.isVisible{
-                    toolBoxWcObj?.window?.close()
-                }
-            }
+//            if toolBoxWcObj != nil{
+//                if toolBoxWcObj!.window!.isVisible{
+//                    toolBoxWcObj?.window?.close()
+//                }
+//            }
         }
         
         if self.isAutoMeetingsModeStarted{
@@ -7877,26 +7910,26 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 showSavedSitesForLaterWindowForBreaks()
             }
         }
-        if UserDefaults.standard.object(forKey: kUserdefaultsDontShowToolBoxAutomatically) as? Bool == false{
-            var shouldShowToolBoxWindow = false
-            
-            let isAllowedAllAppsInFocus = currentRunningFocusType["isAllowedAllApps"] as? Bool ?? false
-            let allowAppsPath = currentRunningFocusType["allowed_apps"] as? [String] ?? []
-            
-            if !isAllowedAllAppsInFocus && allowAppsPath.count != 0{
-                shouldShowToolBoxWindow = true
-            }
-
-            let isAllowedListApproachInFocus = currentRunningFocusType["isAllowedListApproach"] as? Bool ?? false
-            let arrAllowedUrlsForFocus = currentRunningFocusType["allowed_urls"] as? [String] ?? []
-            
-            if arrAllowedUrlsForFocus.count != 0 && isAllowedListApproachInFocus{//!isAllowedAllUrlsInFocus &&#453
-                shouldShowToolBoxWindow = true
-            }
-            if shouldShowToolBoxWindow && SettingsManagerObject.isGeekModeEnabled{
-                showToolboxWindow()
-            }
-        }
+//        if UserDefaults.standard.object(forKey: kUserdefaultsDontShowToolBoxAutomatically) as? Bool == false{removed on 1/9/25  on version 2.27.408
+//            var shouldShowToolBoxWindow = false
+//            
+//            let isAllowedAllAppsInFocus = currentRunningFocusType["isAllowedAllApps"] as? Bool ?? false
+//            let allowAppsPath = currentRunningFocusType["allowed_apps"] as? [String] ?? []
+//            
+//            if !isAllowedAllAppsInFocus && allowAppsPath.count != 0{
+//                shouldShowToolBoxWindow = true
+//            }
+//
+//            let isAllowedListApproachInFocus = currentRunningFocusType["isAllowedListApproach"] as? Bool ?? false
+//            let arrAllowedUrlsForFocus = currentRunningFocusType["allowed_urls"] as? [String] ?? []
+//            
+//            if arrAllowedUrlsForFocus.count != 0 && isAllowedListApproachInFocus{//!isAllowedAllUrlsInFocus &&#453
+//                shouldShowToolBoxWindow = true
+//            }
+//            if shouldShowToolBoxWindow && SettingsManagerObject.isGeekModeEnabled{
+//                showToolboxWindow()
+//            }
+//        }
         arrFocusBlockNotificationShownForApps.removeAll()
         frontApplicationChanged()// call it because front application is active already
         
@@ -10202,43 +10235,43 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     minFocusAlignmentScoreToShowDistractingPopUp = 0
                 }
                 lastFocusAlignmentShownScore = minFocusAlignmentScoreToShowDistractingPopUp
-                if UserDefaults.standard.object(forKey: kUserdefaultsDontShowToolBoxAutomatically) as? Bool == false{
-                    var shouldShowToolBoxWindow = false
-                    
-                    let isAllowedAllAppsInFocus = currentRunningFocusType["isAllowedAllApps"] as? Bool ?? false
-                    let allowAppsPath = currentRunningFocusType["allowed_apps"] as? [String] ?? []
-                    
-                    if !isAllowedAllAppsInFocus && allowAppsPath.count != 0{
-                        shouldShowToolBoxWindow = true
-                    }
-                    let isAllowedListApproachInFocus = currentRunningFocusType["isAllowedListApproach"] as? Bool ?? false
-                    let arrAllowedUrlsForFocus = currentRunningFocusType["allowed_urls"] as? [String] ?? []
-                    
-                    if arrAllowedUrlsForFocus.count != 0 && isAllowedListApproachInFocus{//!isAllowedAllUrlsInFocus &&#453
-                        shouldShowToolBoxWindow = true
-                    }
-                    if shouldShowToolBoxWindow{
-                        showToolboxWindow()
-                    }
-                }
+//                if UserDefaults.standard.object(forKey: kUserdefaultsDontShowToolBoxAutomatically) as? Bool == false{removed on 1/9/25  on version 2.27.408
+//                    var shouldShowToolBoxWindow = false
+//                    
+//                    let isAllowedAllAppsInFocus = currentRunningFocusType["isAllowedAllApps"] as? Bool ?? false
+//                    let allowAppsPath = currentRunningFocusType["allowed_apps"] as? [String] ?? []
+//                    
+//                    if !isAllowedAllAppsInFocus && allowAppsPath.count != 0{
+//                        shouldShowToolBoxWindow = true
+//                    }
+//                    let isAllowedListApproachInFocus = currentRunningFocusType["isAllowedListApproach"] as? Bool ?? false
+//                    let arrAllowedUrlsForFocus = currentRunningFocusType["allowed_urls"] as? [String] ?? []
+//                    
+//                    if arrAllowedUrlsForFocus.count != 0 && isAllowedListApproachInFocus{//!isAllowedAllUrlsInFocus &&#453
+//                        shouldShowToolBoxWindow = true
+//                    }
+//                    if shouldShowToolBoxWindow{
+//                        showToolboxWindow()
+//                    }
+//                }
             }else{//
-                if UserDefaults.standard.object(forKey: kUserdefaultsDontShowToolBoxAutomaticallyForActivity) as? Bool == false{
-                    var shouldShowToolBoxWindow = false
-                    let allowAppsPath = currentHabitPlaying?.allowApps ?? []
-                    
-                    if allowAppsPath.count != 0{
-                        shouldShowToolBoxWindow = true
-                    }
-                    
-                    let arrAllowedUrlsForFocus = currentHabitPlaying?.allowUrls ?? []
-                    
-                    if arrAllowedUrlsForFocus.count != 0{
-                        shouldShowToolBoxWindow = true
-                    }
-                    if shouldShowToolBoxWindow{
-                        showToolboxWindow()
-                    }
-                }
+//                if UserDefaults.standard.object(forKey: kUserdefaultsDontShowToolBoxAutomaticallyForActivity) as? Bool == false{removed on 1/9/25  on version 2.27.408
+//                    var shouldShowToolBoxWindow = false
+//                    let allowAppsPath = currentHabitPlaying?.allowApps ?? []
+//                    
+//                    if allowAppsPath.count != 0{
+//                        shouldShowToolBoxWindow = true
+//                    }
+//                    
+//                    let arrAllowedUrlsForFocus = currentHabitPlaying?.allowUrls ?? []
+//                    
+//                    if arrAllowedUrlsForFocus.count != 0{
+//                        shouldShowToolBoxWindow = true
+//                    }
+//                    if shouldShowToolBoxWindow{
+//                        showToolboxWindow()
+//                    }
+//                }
             }
             
             
@@ -11691,8 +11724,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     
     
     func showExtraWindows(){
-        
-        //        NSApplication.shared.activate(ignoringOtherApps: true)
         let screenList = NSScreen.screens
         if screenList.count == 1{
             if arrWindows.count != 0{
@@ -11710,7 +11741,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             for i in 0..<screenList.count {  // create the corresponding windows
                 let screen = screenList[i]
                 //                let  mainWindowControllerObj  = mainstoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("mainWindowController")) as! mainWindowController
-                if screen != mainWindowControllerObj?.window?.screen{
+                if i != 0{//if screen != mainWindowControllerObj?.window?.screen{
                     let window = NSWindow(contentRect: NSMakeRect(0, 0, NSWidth(screen.frame), NSHeight(screen.frame)), styleMask: .borderless, backing: .buffered, defer: true, screen: screen)
                     
                     if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
@@ -11748,16 +11779,17 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             return;
         }
         if isMainWindowLoaded{
-            if (mainWindowControllerObj?.window!.isVisible)!{
+            if (mainWindowControllerObj?.window!.isVisible)! && (mainWindowControllerObj?.isFullScreenVisible ?? false){
                 let screenList = NSScreen.screens
                 for screen in screenList {  // create the corresponding windows
+                    print("screenFrame is \(screen.frame)")
                     mainWindowControllerObj!.window?.setFrame(NSMakeRect(0, 0, NSWidth(screen.frame), NSHeight(screen.frame)), display: true)
                     break;
                 }
                 for i in 0..<arrWindows.count{
                     let window = arrWindows[i]
                     window.orderOut(nil)
-                    arrWindows[i].windowController?.window=nil
+                    arrWindows[i].windowController?.window = nil
                 }
                 arrWindows.removeAll()
                 showExtraWindows()
@@ -12237,4 +12269,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 //bug found that if user is doing onboarding and when it comes to check facebook.com blocking duraing onboarding then if user is on call then a setting(Block super distracting sites during meetings) intrupt blocking. so ignoring that setings at that time
 
 
-// todo sparkel
+//2.27.408
+// sparkle coede updated
+    // toolbox removed
+// multi scrren bugs
+// small screen bugs 
+// sparkle window was below main window done 

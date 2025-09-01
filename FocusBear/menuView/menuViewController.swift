@@ -108,7 +108,7 @@ class menuViewController: NSViewController {
     var btnBrainDumpTrackingArea: NSTrackingArea?
     var btnCurrentTrackTrackingArea: NSTrackingArea?
     var btnStartBreakTrackingArea: NSTrackingArea?
-    var btnOpenToolBoxTrackingArea: NSTrackingArea?
+//    var btnOpenToolBoxTrackingArea: NSTrackingArea?
     var boxPermissionTrackingArea: NSTrackingArea?
     
     var trackingAreaBtnPin: NSTrackingArea?
@@ -139,7 +139,7 @@ class menuViewController: NSViewController {
     
     var menuItemStartBreak: NSMenuItem!
     var menuItemFocusMusic: NSMenuItem!
-    var menuItemOpenToolbox: NSMenuItem!
+//    var menuItemOpenToolbox: NSMenuItem!
     var menuItemToDoList: NSMenuItem!
     var menuItemBrainDump: NSMenuItem!
     var titleOfficeMode = "Office Mode"
@@ -192,7 +192,7 @@ class menuViewController: NSViewController {
         var itemQuitTitle = "Quit"
         
         lblTitleTools.stringValue = "Tools >"
-        var menuItemOpenToolboxTitle = "Open Toolbox"
+//        var menuItemOpenToolboxTitle = "Open Toolbox"
         var menuItemFocusMusicTitle = "Focus Music"
         
         var titleStartBreak = "Start Break"
@@ -241,7 +241,7 @@ class menuViewController: NSViewController {
             toolTipOfficeMode = menuInfo.value(forKey: "toolTipOfficeMode") as? String ?? toolTipOfficeMode
             toolTipWfhMode = menuInfo.value(forKey: "toolTipWfhMode") as? String ?? toolTipWfhMode
             lblTitleTools.stringValue = menuInfo.value(forKey: "menuItemToolsTitle") as? String ?? lblTitleTools.stringValue
-            menuItemOpenToolboxTitle = menuInfo.value(forKey: "menuItemOpenToolboxTitle") as? String ?? menuItemOpenToolboxTitle
+//            menuItemOpenToolboxTitle = menuInfo.value(forKey: "menuItemOpenToolboxTitle") as? String ?? menuItemOpenToolboxTitle
             menuItemFocusMusicTitle = menuInfo.value(forKey: "menuItemFocusMusicTitle") as? String ?? menuItemFocusMusicTitle
             menuItemToDoListTitle = menuInfo.value(forKey: "menuItemToDoListTitle") as? String ?? menuItemToDoListTitle
             menuItemToDoPlayerTitle = menuInfo.value(forKey: "menuItemToDoPlayerTitle") as? String ?? menuItemToDoPlayerTitle
@@ -295,9 +295,9 @@ class menuViewController: NSViewController {
         menuItemBrainDump.target = self
         toolsMenu.addItem(menuItemBrainDump)
         
-        menuItemOpenToolbox = NSMenuItem(title: menuItemOpenToolboxTitle, action: #selector(openToolBoxClicked), keyEquivalent: "")
-        menuItemOpenToolbox.target = self
-        toolsMenu.addItem(menuItemOpenToolbox)
+//        menuItemOpenToolbox = NSMenuItem(title: menuItemOpenToolboxTitle, action: #selector(openToolBoxClicked), keyEquivalent: "")
+//        menuItemOpenToolbox.target = self
+//        toolsMenu.addItem(menuItemOpenToolbox)
         
         menuItemToDoList = NSMenuItem(title: menuItemToDoListTitle, action: #selector(openToDoListClicked), keyEquivalent: "")
         menuItemToDoList.target = self
@@ -393,8 +393,8 @@ class menuViewController: NSViewController {
         btnStartBreakTrackingArea = NSTrackingArea.init(rect: btnStartBreak.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
         btnStartBreak.addTrackingArea(btnStartBreakTrackingArea!)
         
-        btnOpenToolBoxTrackingArea = NSTrackingArea.init(rect: btnOpenToolBox.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
-        btnOpenToolBox.addTrackingArea(btnOpenToolBoxTrackingArea!)
+//        btnOpenToolBoxTrackingArea = NSTrackingArea.init(rect: btnOpenToolBox.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
+//        btnOpenToolBox.addTrackingArea(btnOpenToolBoxTrackingArea!)
         
         boxPermissionTrackingArea = NSTrackingArea.init(rect: boxForPermissionToolTip.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
         boxForPermissionToolTip.addTrackingArea(boxPermissionTrackingArea!)
@@ -421,6 +421,7 @@ class menuViewController: NSViewController {
         } else {
             imgViewIconStartBreak.image = NSImage(named: NSImage.touchBarUserTemplateName)
         }
+        boxOpenToolBox.isHidden = true
     }
 
     override func viewDidAppear() {
@@ -472,9 +473,10 @@ class menuViewController: NSViewController {
             showTooltip(sender: btnCurrentTrack, msg: lblCurrentTrack.stringValue, preferredEdge: NSRectEdge.maxY, maxWidthVal:230, autoCloseOnMouseExit: true)
         }else if event.trackingArea == btnStartBreakTrackingArea{
             showTooltip(sender: btnStartBreak, msg: menuItemStartBreak.title, preferredEdge: NSRectEdge.maxY, maxWidthVal:230, autoCloseOnMouseExit: true)
-        }else if event.trackingArea == btnOpenToolBoxTrackingArea{
-            showTooltip(sender: btnOpenToolBox, msg: menuItemOpenToolbox.title, preferredEdge: NSRectEdge.maxY, maxWidthVal:230, autoCloseOnMouseExit: true)
-        }else if event.trackingArea == trackingAreaBtnEditBlockingSchedule{
+        }//else if event.trackingArea == btnOpenToolBoxTrackingArea{
+        // showTooltip(sender: btnOpenToolBox, msg: menuItemOpenToolbox.title, preferredEdge: NSRectEdge.maxY, maxWidthVal:230, autoCloseOnMouseExit: true)
+        //    }
+        else if event.trackingArea == trackingAreaBtnEditBlockingSchedule{
             var toolTipButtonEditBlockingSchedule = "Edit blocking schedule"
             if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
                 toolTipButtonEditBlockingSchedule = menuInfo.value(forKey: "toolTipButtonEditBlockingSchedule") as? String ?? toolTipButtonEditBlockingSchedule
@@ -553,9 +555,10 @@ class menuViewController: NSViewController {
             closePopoverTooltipIfVisible()
         }else if event.trackingArea == btnStartBreakTrackingArea{
             closePopoverTooltipIfVisible()
-        }else if event.trackingArea == btnOpenToolBoxTrackingArea{
-            closePopoverTooltipIfVisible()
-        }else if event.trackingArea == boxPermissionTrackingArea{
+        }//else if event.trackingArea == btnOpenToolBoxTrackingArea{
+//            closePopoverTooltipIfVisible()
+        //}
+        else if event.trackingArea == boxPermissionTrackingArea{
             closePopoverTooltipIfVisible()
         }
     }
@@ -817,38 +820,38 @@ class menuViewController: NSViewController {
             boxStartBreak.isHidden = true
         }
         
-        var shouldShowToolBoxWindow = false
-        if isAnyAllowedFocusModeActivityRunning || isFocusModeOn(){
-            let isAllowedAllAppsInFocus = currentRunningFocusType["isAllowedAllApps"] as? Bool ?? false
-            let allowAppsPath = currentRunningFocusType["allowed_apps"] as? [String] ?? []
-            
-            if !isAllowedAllAppsInFocus && allowAppsPath.count != 0{
-                shouldShowToolBoxWindow = true
-            }
-            let isAllowedListApproachInFocus = currentRunningFocusType["isAllowedListApproach"] as? Bool ?? false
-            let arrAllowedUrlsForFocus = currentRunningFocusType["allowed_urls"] as? [String] ?? []
-            
-            if arrAllowedUrlsForFocus.count != 0 && isAllowedListApproachInFocus{//!isAllowedAllUrlsInFocus &&#453
-                shouldShowToolBoxWindow = true
-            }
-        }else if (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._CUSTOM_ROUTINE_) && currentHabitPlaying != nil{
-            let allowAppsPath = currentHabitPlaying?.allowApps ?? []
-            if allowAppsPath.count != 0{
-                shouldShowToolBoxWindow = true
-            }
-            let arrAllowedUrlsForFocus = currentHabitPlaying?.allowUrls ?? []
-            
-            if arrAllowedUrlsForFocus.count != 0{
-                shouldShowToolBoxWindow = true
-            }
-        }
-        if shouldShowToolBoxWindow{
-            boxOpenToolBox.isHidden = false
-            menuItemOpenToolbox.isHidden = false
-        }else{
-            boxOpenToolBox.isHidden = true
-            menuItemOpenToolbox.isHidden = true
-        }
+//        var shouldShowToolBoxWindow = false
+//        if isAnyAllowedFocusModeActivityRunning || isFocusModeOn(){
+//            let isAllowedAllAppsInFocus = currentRunningFocusType["isAllowedAllApps"] as? Bool ?? false
+//            let allowAppsPath = currentRunningFocusType["allowed_apps"] as? [String] ?? []
+//            
+//            if !isAllowedAllAppsInFocus && allowAppsPath.count != 0{
+//                shouldShowToolBoxWindow = true
+//            }
+//            let isAllowedListApproachInFocus = currentRunningFocusType["isAllowedListApproach"] as? Bool ?? false
+//            let arrAllowedUrlsForFocus = currentRunningFocusType["allowed_urls"] as? [String] ?? []
+//            
+//            if arrAllowedUrlsForFocus.count != 0 && isAllowedListApproachInFocus{//!isAllowedAllUrlsInFocus &&#453
+//                shouldShowToolBoxWindow = true
+//            }
+//        }else if (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._CUSTOM_ROUTINE_) && currentHabitPlaying != nil{
+//            let allowAppsPath = currentHabitPlaying?.allowApps ?? []
+//            if allowAppsPath.count != 0{
+//                shouldShowToolBoxWindow = true
+//            }
+//            let arrAllowedUrlsForFocus = currentHabitPlaying?.allowUrls ?? []
+//            
+//            if arrAllowedUrlsForFocus.count != 0{
+//                shouldShowToolBoxWindow = true
+//            }
+//        }
+//        if shouldShowToolBoxWindow{
+//            boxOpenToolBox.isHidden = false
+//            menuItemOpenToolbox.isHidden = false
+//        }else{
+//            boxOpenToolBox.isHidden = true
+//            menuItemOpenToolbox.isHidden = true
+//        }
         
         
         boxCurrentTrack.isHidden = true
@@ -1341,10 +1344,10 @@ class menuViewController: NSViewController {
         closeMenuWindowIsVisible()
     }
     
-    @IBAction func btnOpenToolBoxClicked(_ sender: Any) {
-        openToolBoxClicked()
-        closeMenuWindowIsVisible()
-    }
+//    @IBAction func btnOpenToolBoxClicked(_ sender: Any) {
+//        openToolBoxClicked()
+//        closeMenuWindowIsVisible()
+//    }
     
     @IBAction func btnBrainDumpClicked(_ sender: Any) {
         addLog(text: "[user-action] button Brain Dump Clicked")
@@ -1365,7 +1368,7 @@ class menuViewController: NSViewController {
     
     @objc func openToolBoxClicked(){
         addLog(text: "[user-action] openToolBoxClicked")
-        showToolboxWindow()
+//        showToolboxWindow()openToolBoxClicked
         closeMenuWindowIsVisible()
     }
     
@@ -1889,38 +1892,38 @@ class menuViewController: NSViewController {
             showUpgradeNowWindow()
             return;
         }
-        var shouldShowToolBoxWindow = false
-        if isAnyAllowedFocusModeActivityRunning || isFocusModeOn(){
-            let isAllowedAllAppsInFocus = currentRunningFocusType["isAllowedAllApps"] as? Bool ?? false
-            let allowAppsPath = currentRunningFocusType["allowed_apps"] as? [String] ?? []
-            
-            if !isAllowedAllAppsInFocus && allowAppsPath.count != 0{
-                shouldShowToolBoxWindow = true
-            }
-            let isAllowedListApproachInFocus = currentRunningFocusType["isAllowedListApproach"] as? Bool ?? false
-            let arrAllowedUrlsForFocus = currentRunningFocusType["allowed_urls"] as? [String] ?? []
-            
-            if arrAllowedUrlsForFocus.count != 0 && isAllowedListApproachInFocus{//!isAllowedAllUrlsInFocus &&#453
-                shouldShowToolBoxWindow = true
-            }
-        }else if (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._CUSTOM_ROUTINE_) && currentHabitPlaying != nil{
-            let allowAppsPath = currentHabitPlaying?.allowApps ?? []
-            if allowAppsPath.count != 0{
-                shouldShowToolBoxWindow = true
-            }
-            let arrAllowedUrlsForFocus = currentHabitPlaying?.allowUrls ?? []
-            
-            if arrAllowedUrlsForFocus.count != 0{
-                shouldShowToolBoxWindow = true
-            }
-        }
-        if shouldShowToolBoxWindow{
-            boxOpenToolBox.isHidden = false
-            menuItemOpenToolbox.isHidden = false
-        }else{
-            boxOpenToolBox.isHidden = true
-            menuItemOpenToolbox.isHidden = true
-        }
+//        var shouldShowToolBoxWindow = false
+//        if isAnyAllowedFocusModeActivityRunning || isFocusModeOn(){
+//            let isAllowedAllAppsInFocus = currentRunningFocusType["isAllowedAllApps"] as? Bool ?? false
+//            let allowAppsPath = currentRunningFocusType["allowed_apps"] as? [String] ?? []
+//            
+//            if !isAllowedAllAppsInFocus && allowAppsPath.count != 0{
+//                shouldShowToolBoxWindow = true
+//            }
+//            let isAllowedListApproachInFocus = currentRunningFocusType["isAllowedListApproach"] as? Bool ?? false
+//            let arrAllowedUrlsForFocus = currentRunningFocusType["allowed_urls"] as? [String] ?? []
+//            
+//            if arrAllowedUrlsForFocus.count != 0 && isAllowedListApproachInFocus{//!isAllowedAllUrlsInFocus &&#453
+//                shouldShowToolBoxWindow = true
+//            }
+//        }else if (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._CUSTOM_ROUTINE_) && currentHabitPlaying != nil{
+//            let allowAppsPath = currentHabitPlaying?.allowApps ?? []
+//            if allowAppsPath.count != 0{
+//                shouldShowToolBoxWindow = true
+//            }
+//            let arrAllowedUrlsForFocus = currentHabitPlaying?.allowUrls ?? []
+//            
+//            if arrAllowedUrlsForFocus.count != 0{
+//                shouldShowToolBoxWindow = true
+//            }
+//        }
+//        if shouldShowToolBoxWindow{
+//            boxOpenToolBox.isHidden = false
+//            menuItemOpenToolbox.isHidden = false
+//        }else{
+//            boxOpenToolBox.isHidden = true
+//            menuItemOpenToolbox.isHidden = true
+//        }
         toolsMenu.minimumWidth = boxTools.frame.width
         let p = NSPoint(x: (sender as AnyObject).frame.origin.x, y: (sender as AnyObject).frame.origin.y )
         toolsMenu.popUp(positioning: nil, at: p, in: (sender as AnyObject).superview)

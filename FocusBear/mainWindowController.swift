@@ -10,11 +10,14 @@ import Cocoa
 
 class mainWindowController: NSWindowController, NSWindowDelegate {
     
-    let smallWindowMinWidth = 1008
-    let smallWindowMinHeight = 600
+    let smallWindowMinWidth = 900
+    let smallWindowMinHeight = 450
+    let smallWindowAvgHeight = 600
+    let smallWindowAvgWidth = 1008
     let spaceKeyCode:uint16 = 49
     let escKeyCode:uint16 = 53
     
+    var isFullScreenVisible = false
     override func windowDidLoad() {
         super.windowDidLoad()
         
@@ -36,15 +39,17 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
     
     
     func showFullSizeWindow(){
+        isFullScreenVisible = true
         window!.collectionBehavior = NSWindow.CollectionBehavior.canJoinAllSpaces          // we want these
         window!.canHide = false
         window!.isExcludedFromWindowsMenu = true
         window!.hidesOnDeactivate = false
         window!.isRestorable = false
         window!.animationBehavior = .none
-        window!.styleMask = .borderless
+//        window!.styleMask = .borderless
+        window!.styleMask = [.borderless, .resizable]// The window needs to be resizable because when a new screen is added at runtime, the window reframe does not work properly.// resizable added on 1/9/25 on version 2.27.408
         window!.backingType = .buffered
-        self.window?.minSize = NSSize(width: 900, height: 500)// unused
+        self.window?.minSize = NSSize(width: 900, height: 450)// unused
         self.window?.title = ""
         self.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.numberOfWindowLevelKeys))) //  numberOfWindowLevelKeys kro //    numberOfWindowLevelKeys
         
@@ -62,6 +67,7 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
     }
     
     func showSmallSizeWindow(){
+        isFullScreenVisible = false
         window!.isRestorable = true
         window!.collectionBehavior = [.fullScreenAllowsTiling, .fullScreenPrimary]
         self.window?.minSize = NSSize(width: smallWindowMinWidth, height: smallWindowMinHeight)
@@ -95,6 +101,15 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
             }
         }
     }
+    
+    func windowWillResize(_ sender: NSWindow, to frameSize: NSSize) -> NSSize {// The window needs to be resizable because when a new screen is added at runtime, the window reframe does not work properly.// resizable added on 1/9/25 on version 2.27.408
+        if isFullScreenVisible{
+            return sender.frame.size // ignore user resize
+        }else{
+            return frameSize
+        }
+    }
+    
     
     func windowShouldClose(_ sender: NSWindow) -> Bool {
         addLog(text: "windowShouldClose delegate called")

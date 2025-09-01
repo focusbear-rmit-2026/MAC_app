@@ -12,6 +12,10 @@ class breaksBrainDumpVc: NSViewController {
 
     
     
+    @IBOutlet weak var bottomSpaceScrollView: NSLayoutConstraint!
+    @IBOutlet weak var topSpaceScrollView: NSLayoutConstraint!//50
+    @IBOutlet weak var bottomSpaceLblTitle: NSLayoutConstraint!//80
+    @IBOutlet weak var topSpaceLblTitle: NSLayoutConstraint!//80
     @IBOutlet var textView: customTexView!
     @IBOutlet weak var scrollView: shadowScrollViewForTextView!
     @IBOutlet weak var lblSubtitle: NSTextField!
@@ -21,7 +25,8 @@ class breaksBrainDumpVc: NSViewController {
     @IBOutlet weak var btnPostponeBreak: underLineButton!
     
     @IBOutlet weak var btnInfo: NSButton!
-    
+    //lbltitlefont 39
+//        /lblsubtitlefont 24/
     var timerBreaksScreenIdle: Timer?
     var totalDurationIdleTime = 30
     
@@ -79,7 +84,7 @@ class breaksBrainDumpVc: NSViewController {
             self.timerBreaksScreenIdle = Timer.scheduledTimer(timeInterval: TimeInterval(totalDuration), target: self, selector: #selector(self.breaksScreenIdleResetBreaks), userInfo: nil, repeats: false)
             RunLoop.main.add((timerBreaksScreenIdle!), forMode: RunLoop.Mode.common)
         }
-
+        viewDidResize()
     }
     
     override func viewDidAppear() {
@@ -156,6 +161,49 @@ class breaksBrainDumpVc: NSViewController {
                 let notes = textView.string
                 textView.string = lastWorkText + "\n" + notes
             }
+        }
+    }
+    
+    override func viewDidLayout() {
+        viewDidResize()
+    }
+    
+    func viewDidResize(){
+        if self.view.frame.height < 500{
+            bottomSpaceScrollView.constant = 15
+            topSpaceScrollView.constant = 15
+            bottomSpaceLblTitle.constant = 20
+            topSpaceLblTitle.constant = 60
+            lblTitle.font = NSFont.systemFont(ofSize: 28)
+            lblSubtitle.font = NSFont.systemFont(ofSize: 14)
+        }else if self.view.frame.height < 600{
+            bottomSpaceScrollView.constant = 20
+            topSpaceScrollView.constant = 20
+            bottomSpaceLblTitle.constant = 30
+            topSpaceLblTitle.constant = 60
+            lblTitle.font = NSFont.systemFont(ofSize: 31)
+            lblSubtitle.font = NSFont.systemFont(ofSize: 16)
+        }else if self.view.frame.height < 700{
+            bottomSpaceScrollView.constant = 30
+            topSpaceScrollView.constant = 30
+            bottomSpaceLblTitle.constant = 50
+            topSpaceLblTitle.constant = 60
+            lblTitle.font = NSFont.systemFont(ofSize: 35)
+            lblSubtitle.font = NSFont.systemFont(ofSize: 20)
+        }else if self.view.frame.height < 800{
+            bottomSpaceScrollView.constant = 40
+            topSpaceScrollView.constant = 40
+            bottomSpaceLblTitle.constant = 60
+            topSpaceLblTitle.constant = 60
+            lblTitle.font = NSFont.systemFont(ofSize: 37)
+            lblSubtitle.font = NSFont.systemFont(ofSize: 22)
+        }else{
+            bottomSpaceScrollView.constant = 50
+            topSpaceScrollView.constant = 50
+            bottomSpaceLblTitle.constant = 80
+            topSpaceLblTitle.constant = 80
+            lblTitle.font = NSFont.systemFont(ofSize: 39)
+            lblSubtitle.font = NSFont.systemFont(ofSize: 24)
         }
     }
     

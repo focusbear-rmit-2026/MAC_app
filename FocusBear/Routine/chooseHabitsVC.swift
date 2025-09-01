@@ -10,6 +10,7 @@ import Cocoa
 
 class chooseHabitsVC: NSViewController {
 
+    @IBOutlet weak var heightBox: NSLayoutConstraint!
     @IBOutlet weak var searchField: NSSearchField!
     @IBOutlet weak var checkBoxSelectAll: NSButton!
     @IBOutlet weak var lblSubTitle: NSTextField!
@@ -158,6 +159,12 @@ class chooseHabitsVC: NSViewController {
 
         tblView.reloadData()
         checkTotalDuration()
+        
+        if (mainWindowControllerObj?.window?.frame.height ?? 700) < 600{
+            heightBox.constant = (mainWindowControllerObj?.window?.frame.height ?? 700) - 60
+        }else{
+            heightBox.constant = 569
+        }
     }
     
     func checkButtonState(){

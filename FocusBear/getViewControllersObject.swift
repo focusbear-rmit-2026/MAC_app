@@ -762,23 +762,23 @@ func getFocusStartHelpImgVcObject()->focusStartHelpImgVc{
 
 
 // toolBox window object
-var toolBoxWcObj:commonWindowController?
-func getToolBoxWindowObject()->commonWindowController{
-    if toolBoxWcObj == nil{
-        toolBoxWcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
-        toolBoxWcObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
-    }
-    return toolBoxWcObj!
-}
+//var toolBoxWcObj:commonWindowController?
+//func getToolBoxWindowObject()->commonWindowController{//// not in use now  removed on 1/9/25  on version 2.27.408
+//    if toolBoxWcObj == nil{
+//        toolBoxWcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
+//        toolBoxWcObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
+//    }
+//    return toolBoxWcObj!
+//}
 
 // toolBox vc object
-var toolBoxVcObj:toolBoxVc?
-func getToolBoxVcObject()->toolBoxVc{
-    if toolBoxVcObj == nil{
-        toolBoxVcObj = newStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("toolBoxVc")) as? toolBoxVc
-    }
-    return toolBoxVcObj!
-}
+//var toolBoxVcObj:toolBoxVc?
+//func getToolBoxVcObject()->toolBoxVc{// not in use now  removed on 1/9/25  on version 2.27.408
+//    if toolBoxVcObj == nil{
+//        toolBoxVcObj = newStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("toolBoxVc")) as? toolBoxVc
+//    }
+//    return toolBoxVcObj!
+//}
 
 // toDoList window object
 var toDoListWcObj:commonWindowController?

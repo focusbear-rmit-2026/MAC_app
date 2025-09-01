@@ -463,7 +463,8 @@ class settingsSideBarVc: NSViewController {
     
     @IBAction func btnCheckForUpdatesClicked(_ sender: Any) {
         addLog(text: "[user-action] settingsSideBarVc:- btnCheckForUpdatesClicked")//
-        appdelegate!.updater?.checkForUpdates(self)
+//        appdelegate!.updater?.checkForUpdates(self)
+        appdelegate!.updaterController?.checkForUpdates(self)
         allApiObject.capturePosthog(event: "check-for-updates-manually", metadata: [:])
     }
     

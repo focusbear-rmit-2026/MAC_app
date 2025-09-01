@@ -10,6 +10,7 @@ import Cocoa
 
 class firstViewController: NSViewController {
     
+    @IBOutlet weak var heightBoxScrollView: NSLayoutConstraint!
     @IBOutlet weak var boxSegmentControlOfficeMode: NSBox!
     @IBOutlet weak var segmentControlOfficeMode: NSSegmentedControl!
     @IBOutlet weak var boxNewBadge: customNewBadgeBox!
@@ -51,7 +52,7 @@ class firstViewController: NSViewController {
     var segmentWfhModeTrackingArea: NSTrackingArea?
     var toolTipOfficeMode = "When you're working from the office, I will only give you appropriate break activities (e.g. chair stretches rather than pushups)."
     var toolTipWfhMode = "No-one's around! You can do break activities that are a bit more fun, e.g. Dance like no-one's watching"
-    
+    var btnTopSpaceValue:CGFloat = 60
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
@@ -136,6 +137,7 @@ class firstViewController: NSViewController {
     }
     
     override func viewWillAppear() {
+        print("firstViewController :- viewWillAppear")
         boxSegmentControlOfficeMode.isHidden = true
         boxSelectActivities.isHidden = true
         lbltimer.isHidden = true
@@ -163,6 +165,7 @@ class firstViewController: NSViewController {
             scrollViewHabits.isHidden = true
             btnBottomSpace.constant = 63
             btnTopSpace.constant = 171
+            btnTopSpaceValue = 171
             let welcomeText = "Let’s take a quick 30 second break"
             btnInfo.isHidden = false
             if let dic = configjson.value(forKey: "welcomeInfo") as? NSDictionary{
@@ -220,6 +223,7 @@ class firstViewController: NSViewController {
                 lblProgress.isHidden = true
                 btnBottomSpace.constant = 100
                 btnTopSpace.constant = 60
+                btnTopSpaceValue = 60
                 if SettingsManagerObject.kIsReducedMotion{
                     imgView.image = nil
                     imgViewHeight.constant = 40
@@ -262,6 +266,7 @@ class firstViewController: NSViewController {
                 lblSelectHabits.isHidden = false
                 lblProgress.isHidden = true
                 btnTopSpace.constant = 60
+                btnTopSpaceValue = 60
                 btnBottomSpace.constant = 100
                 imgView.image = nil
                 imgViewHeight.constant = 40
@@ -302,6 +307,7 @@ class firstViewController: NSViewController {
                 lblProgress.stringValue = thirdVcObj?.lblProgress.stringValue ?? ""
                                 
                 btnTopSpace.constant = 60
+                btnTopSpaceValue = 60
                 btnBottomSpace.constant = 100
                 imgView.image = nil
                 imgViewHeight.constant = 40
@@ -330,6 +336,7 @@ class firstViewController: NSViewController {
                 lblProgress.isHidden = true
                 btnBottomSpace.constant = 100
                 btnTopSpace.constant = 60
+                btnTopSpaceValue = 60
                 if SettingsManagerObject.kIsReducedMotion{
                     imgView.image = nil
                     imgViewHeight.constant = 40
@@ -360,6 +367,7 @@ class firstViewController: NSViewController {
                 
             }
         }
+        resetFrame()
     }
     
     
@@ -416,6 +424,31 @@ class firstViewController: NSViewController {
     override func viewDidLayout() {// after scrollview resize it removes title and not srawing it again so doing this here
         if imgView.image != nil{
             imgViewHeight.constant = self.view.frame.height / 7
+        }
+        resetFrame()
+    }
+    
+    func resetFrame(){
+        if self.view.frame.height < 600{
+            lblTitle.font = NSFont.systemFont(ofSize: 20)
+            btnTopSpace.constant = btnTopSpaceValue - 40
+            heightBoxScrollView.constant = 120
+        }else if self.view.frame.height < 700{
+            lblTitle.font = NSFont.systemFont(ofSize: 30)
+            btnTopSpace.constant = btnTopSpaceValue - 25
+            heightBoxScrollView.constant = 155
+        }else if self.view.frame.height < 800{
+            lblTitle.font = NSFont.systemFont(ofSize: 35)
+            btnTopSpace.constant = btnTopSpaceValue - 15
+            heightBoxScrollView.constant = 165
+        }else if self.view.frame.height < 900{
+            lblTitle.font = NSFont.systemFont(ofSize: 40)
+            btnTopSpace.constant = btnTopSpaceValue
+            heightBoxScrollView.constant = 180
+        }else{
+            lblTitle.font = NSFont.systemFont(ofSize: 40)
+            btnTopSpace.constant = btnTopSpaceValue
+            heightBoxScrollView.constant = 180
         }
     }
     

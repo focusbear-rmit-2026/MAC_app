@@ -1959,11 +1959,11 @@ class thirdVc: NSViewController {
         appdelegate?.timerAllowUrlForActivity?.invalidate()
         appdelegate?.timerAllowAppForActivity?.invalidate()
         closePupUpBlockIfVisible()
-        if toolBoxWcObj != nil{
-            if toolBoxWcObj!.window!.isVisible{
-                toolBoxWcObj?.window?.close()
-            }
-        }
+//        if toolBoxWcObj != nil{
+//            if toolBoxWcObj!.window!.isVisible{
+//                toolBoxWcObj?.window?.close()
+//            }
+//        }
         if taskPlayerWcObj != nil{
             if taskPlayerWcObj?.window?.isVisible ?? false{
                 taskPlayerVcObj?.getToDosFromPlayer()
@@ -2263,11 +2263,11 @@ class thirdVc: NSViewController {
         appdelegate?.timerAllowUrlForActivity?.invalidate()
         appdelegate?.timerAllowAppForActivity?.invalidate()
         closePupUpBlockIfVisible()
-        if toolBoxWcObj != nil{
-            if toolBoxWcObj!.window!.isVisible{
-                toolBoxWcObj?.window?.close()
-            }
-        }
+//        if toolBoxWcObj != nil{
+//            if toolBoxWcObj!.window!.isVisible{
+//                toolBoxWcObj?.window?.close()
+//            }
+//        }
         if taskPlayerWcObj != nil{
             if taskPlayerWcObj?.window?.isVisible ?? false{
                 taskPlayerVcObj?.getToDosFromPlayer()
@@ -2592,11 +2592,11 @@ class thirdVc: NSViewController {
         appdelegate?.timerAllowUrlForActivity?.invalidate()
         appdelegate?.timerAllowAppForActivity?.invalidate()
         closePupUpBlockIfVisible()
-        if toolBoxWcObj != nil{
-            if toolBoxWcObj!.window!.isVisible{
-                toolBoxWcObj?.window?.close()
-            }
-        }
+//        if toolBoxWcObj != nil{
+//            if toolBoxWcObj!.window!.isVisible{
+//                toolBoxWcObj?.window?.close()
+//            }
+//        }
         if taskPlayerWcObj != nil{
             if taskPlayerWcObj?.window?.isVisible ?? false{
                 taskPlayerVcObj?.getToDosFromPlayer()
@@ -2946,11 +2946,11 @@ class thirdVc: NSViewController {
         appdelegate?.timerAllowUrlForActivity?.invalidate()
         appdelegate?.timerAllowAppForActivity?.invalidate()
         closePupUpBlockIfVisible()
-        if toolBoxWcObj != nil{
-            if toolBoxWcObj!.window!.isVisible{
-                toolBoxWcObj?.window?.close()
-            }
-        }
+//        if toolBoxWcObj != nil{
+//            if toolBoxWcObj!.window!.isVisible{
+//                toolBoxWcObj?.window?.close()
+//            }
+//        }
         if taskPlayerWcObj != nil{
             if taskPlayerWcObj?.window?.isVisible ?? false{
                 taskPlayerVcObj?.getToDosFromPlayer()

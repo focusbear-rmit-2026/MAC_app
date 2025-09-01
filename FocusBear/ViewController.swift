@@ -121,6 +121,11 @@ class ViewController: NSViewController {
         if checkIsFullScreenEnabled(){
             if !(self.view.window?.styleMask.contains(.fullScreen) ?? false){// Don’t do this if the user is already in fullscreen. Wait until the user toggles back to a small screen, then check the setting again.
                 setframe()
+                DispatchQueue.global().async {
+                    DispatchQueue.main.async {
+                        self.setframe()
+                    }
+                }
             }
         }else{
             if self.view.window != nil{
@@ -141,10 +146,14 @@ class ViewController: NSViewController {
                     }
                     
                 }else{
-                    let screenList = NSScreen.screens
-                    for screen in screenList {
-                        self.view.window?.setFrame(screen.visibleFrame, display: true)
-                        break;
+                    if let screen = self.view.window?.screen{ //
+                        self.view.window?.setFrame(screen.visibleFrame, display: true, animate: false)
+                    }else{
+                        let screenList = NSScreen.screens
+                        for screen in screenList {
+                            self.view.window?.setFrame(screen.visibleFrame, display: true)
+                            break;
+                        }
                     }
                 }
             }
@@ -156,12 +165,16 @@ class ViewController: NSViewController {
         let screenList = NSScreen.screens
         
         if !(self.view.window?.styleMask.contains(.fullScreen) ?? false) && showMinimumSize{
-            self.view.window?.setContentSize(NSSize(width: mainWindowControllerObj?.smallWindowMinWidth ?? 500, height: mainWindowControllerObj?.smallWindowMinHeight ?? 500))
+            self.view.window?.setContentSize(NSSize(width: mainWindowControllerObj?.smallWindowAvgWidth ?? 500, height: mainWindowControllerObj?.smallWindowAvgHeight ?? 500))
             self.view.window?.center()
         }else{
-            for screen in screenList {
+            if let screen = self.view.window?.screen{ //
                 self.view.window?.setFrame(screen.visibleFrame, display: true, animate: false)
-                break;
+            }else{
+                for screen in screenList {
+                    self.view.window?.setFrame(screen.visibleFrame, display: true, animate: false)
+                    break;
+                }
             }
         }
         boxTopButtons.isHidden = true
@@ -173,12 +186,13 @@ class ViewController: NSViewController {
     @objc func setframe() {
         let screenList = NSScreen.screens
         for screen in screenList {
-            self.view.window?.setFrame(NSMakeRect(0, 0, NSWidth(screen.frame), NSHeight(screen.frame)), display: true) //  uncomment this line  
+            self.view.window?.setFrame(NSMakeRect(NSMinX(screen.frame), NSMinY(screen.frame), NSWidth(screen.frame), NSHeight(screen.frame)), display: true) //  uncomment this line
 //            self.view.window?.setFrame(NSMakeRect(100, 100, NSWidth(screen.frame) - 200, NSHeight(screen.frame) - 200) , display: true)//  comment this //  do this
             
             break;
         }
-    }
+    }//
+    
     override func viewWillDisappear() {
         if !shouldIgnoreViewWilDisappear{
             removeSubViews()
@@ -3892,7 +3906,7 @@ class ViewController: NSViewController {
         }
         return false
     }
-    
+
     func showHabitsView(){
         self.removeSubViews()
         containerView.addSubview(getHabitsVcObject().view)

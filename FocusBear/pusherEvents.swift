@@ -234,11 +234,11 @@ class pusherEvents:NSObject, PusherDelegate {
                 appdelegate!.timerCheckAllowedApps?.invalidate()
                 
                 arrKeywordsToAllowInFocus.removeAll()
-                if toolBoxWcObj != nil{
-                    if toolBoxWcObj!.window!.isVisible{
-                        toolBoxWcObj?.window?.close()
-                    }
-                }
+//                if toolBoxWcObj != nil{
+//                    if toolBoxWcObj!.window!.isVisible{
+//                        toolBoxWcObj?.window?.close()
+//                    }
+//                }
 
                 let timestamp = getStringFromDate(date: startFocusModeTime ?? Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
                 addEntryInStatsCsv(logType: "focus block", activity: currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "", tags:"")

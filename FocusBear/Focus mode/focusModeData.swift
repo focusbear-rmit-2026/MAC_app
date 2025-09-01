@@ -1440,26 +1440,26 @@ func resumeFocusModeAfterAppStartted(diffSeconds: Int, focusMode: [String : Any]
             showSavedSitesForLaterWindowForBreaks()
         }
     }
-    if UserDefaults.standard.object(forKey: kUserdefaultsDontShowToolBoxAutomatically) as? Bool == false{
-        var shouldShowToolBoxWindow = false
-        
-        let isAllowedAllAppsInFocus = currentRunningFocusType["isAllowedAllApps"] as? Bool ?? false
-        let allowAppsPath = currentRunningFocusType["allowed_apps"] as? [String] ?? []
-        
-        if !isAllowedAllAppsInFocus && allowAppsPath.count != 0{
-            shouldShowToolBoxWindow = true
-        }
-        
-        let isAllowedListApproachInFocus = currentRunningFocusType["isAllowedListApproach"] as? Bool ?? false
-        let arrAllowedUrlsForFocus = currentRunningFocusType["allowed_urls"] as? [String] ?? []
-        
-        if arrAllowedUrlsForFocus.count != 0 && isAllowedListApproachInFocus{//!isAllowedAllUrlsInFocus &&#453
-            shouldShowToolBoxWindow = true
-        }
-        if shouldShowToolBoxWindow && SettingsManagerObject.isGeekModeEnabled{
-            showToolboxWindow()
-        }
-    }
+//    if UserDefaults.standard.object(forKey: kUserdefaultsDontShowToolBoxAutomatically) as? Bool == false{removed on 1/9/25  on version 2.27.408
+//        var shouldShowToolBoxWindow = false
+//        
+//        let isAllowedAllAppsInFocus = currentRunningFocusType["isAllowedAllApps"] as? Bool ?? false
+//        let allowAppsPath = currentRunningFocusType["allowed_apps"] as? [String] ?? []
+//        
+//        if !isAllowedAllAppsInFocus && allowAppsPath.count != 0{
+//            shouldShowToolBoxWindow = true
+//        }
+//        
+//        let isAllowedListApproachInFocus = currentRunningFocusType["isAllowedListApproach"] as? Bool ?? false
+//        let arrAllowedUrlsForFocus = currentRunningFocusType["allowed_urls"] as? [String] ?? []
+//        
+//        if arrAllowedUrlsForFocus.count != 0 && isAllowedListApproachInFocus{//!isAllowedAllUrlsInFocus &&#453
+//            shouldShowToolBoxWindow = true
+//        }
+//        if shouldShowToolBoxWindow && SettingsManagerObject.isGeekModeEnabled{
+//            showToolboxWindow()
+//        }
+//    }
 }
 
 
