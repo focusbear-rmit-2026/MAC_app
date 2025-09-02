@@ -96,6 +96,11 @@ class popUpAddNewFocusGoalVc: NSViewController {
             stackViewPreviousTask.isHidden = true
         }
         checkBoxMarkCurrentTaskAsCompleted.state = .off
+        
+        lblTitle.stringValue = "What's your new focus goal?"
+        if let popUpAddNewFocusGoalVcInfo = configjson.value(forKey: "popUpAddNewFocusGoalVcInfo") as? NSDictionary{
+            lblTitle.stringValue = popUpAddNewFocusGoalVcInfo.value(forKey: "title") as? String ?? lblTitle.stringValue
+        }
     }
     
     @IBAction func btnSaveClicked(_ sender: Any) {

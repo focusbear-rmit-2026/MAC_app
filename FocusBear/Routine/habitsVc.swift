@@ -62,7 +62,6 @@ class habitsVc: NSViewController {
     }
     
     override func viewWillDisappear() {
-        lblCurrentDateTime.isHidden = true
         dateTimeTimer?.invalidate()
     }
     

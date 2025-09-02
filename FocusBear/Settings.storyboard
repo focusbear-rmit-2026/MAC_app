@@ -222,7 +222,7 @@
                                                                             <rect key="frame" x="0.0" y="0.0" width="231" height="35"/>
                                                                             <subviews>
                                                                                 <imageView translatesAutoresizingMaskIntoConstraints="NO" id="iTF-he-0Yg">
-                                                                                    <rect key="frame" x="0.0" y="2" width="22" height="32"/>
+                                                                                    <rect key="frame" x="0.0" y="2" width="22" height="33"/>
                                                                                     <constraints>
                                                                                         <constraint firstAttribute="height" constant="22" id="ibn-dF-Tbh"/>
                                                                                         <constraint firstAttribute="width" constant="22" id="lFg-4A-K5K"/>
@@ -279,7 +279,7 @@
                                                                             <rect key="frame" x="0.0" y="0.0" width="247" height="35"/>
                                                                             <subviews>
                                                                                 <imageView translatesAutoresizingMaskIntoConstraints="NO" id="mSj-AG-gVs">
-                                                                                    <rect key="frame" x="0.0" y="2" width="22" height="32"/>
+                                                                                    <rect key="frame" x="0.0" y="2" width="22" height="33"/>
                                                                                     <constraints>
                                                                                         <constraint firstAttribute="height" constant="22" id="DSY-dg-8t1"/>
                                                                                         <constraint firstAttribute="width" constant="22" id="Njc-uJ-I6u"/>
@@ -336,7 +336,7 @@
                                                                             <rect key="frame" x="0.0" y="0.0" width="338" height="35"/>
                                                                             <subviews>
                                                                                 <imageView translatesAutoresizingMaskIntoConstraints="NO" id="xGl-6v-uxY">
-                                                                                    <rect key="frame" x="0.0" y="2" width="22" height="32"/>
+                                                                                    <rect key="frame" x="0.0" y="2" width="22" height="33"/>
                                                                                     <constraints>
                                                                                         <constraint firstAttribute="height" constant="22" id="8eq-aQ-be5"/>
                                                                                         <constraint firstAttribute="width" constant="22" id="eCa-rp-5Ig"/>
@@ -393,7 +393,7 @@
                                                                             <rect key="frame" x="0.0" y="0.0" width="336" height="35"/>
                                                                             <subviews>
                                                                                 <imageView translatesAutoresizingMaskIntoConstraints="NO" id="fne-9Q-ZNY">
-                                                                                    <rect key="frame" x="0.0" y="2" width="22" height="32"/>
+                                                                                    <rect key="frame" x="0.0" y="2" width="22" height="33"/>
                                                                                     <constraints>
                                                                                         <constraint firstAttribute="width" constant="22" id="hhJ-gI-gas"/>
                                                                                         <constraint firstAttribute="height" constant="22" id="ilx-pg-Bsa"/>
@@ -450,7 +450,7 @@
                                                                             <rect key="frame" x="0.0" y="0.0" width="224" height="35"/>
                                                                             <subviews>
                                                                                 <imageView translatesAutoresizingMaskIntoConstraints="NO" id="msY-HT-rJH">
-                                                                                    <rect key="frame" x="0.0" y="2" width="22" height="32"/>
+                                                                                    <rect key="frame" x="0.0" y="2" width="22" height="33"/>
                                                                                     <constraints>
                                                                                         <constraint firstAttribute="height" constant="22" id="4oU-zO-tKM"/>
                                                                                         <constraint firstAttribute="width" constant="22" id="FQV-U8-9e6"/>
@@ -972,7 +972,7 @@
                                                                                                                             <rect key="frame" x="0.0" y="27" width="337" height="5"/>
                                                                                                                         </box>
                                                                                                                         <button translatesAutoresizingMaskIntoConstraints="NO" id="Afb-rW-kBe">
-                                                                                                                            <rect key="frame" x="5" y="0.0" width="24" height="28"/>
+                                                                                                                            <rect key="frame" x="5" y="0.5" width="24.5" height="28"/>
                                                                                                                             <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="NSTouchBarAddTemplate" imagePosition="only" alignment="center" imageScaling="proportionallyUpOrDown" inset="2" id="yQN-5H-dym">
                                                                                                                                 <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                                                                                                 <font key="font" metaFont="system"/>
@@ -992,7 +992,7 @@
                                                                                                                             </constraints>
                                                                                                                         </box>
                                                                                                                         <button translatesAutoresizingMaskIntoConstraints="NO" id="Rw9-92-KQA">
-                                                                                                                            <rect key="frame" x="40" y="5" width="24" height="19"/>
+                                                                                                                            <rect key="frame" x="40" y="5" width="24.5" height="19"/>
                                                                                                                             <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="NSTouchBarRemoveTemplate" imagePosition="only" alignment="center" imageScaling="proportionallyUpOrDown" inset="2" id="AgJ-jV-60D">
                                                                                                                                 <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                                                                                                 <font key="font" metaFont="system"/>
@@ -1185,7 +1185,7 @@
                                                                                                                             <rect key="frame" x="0.0" y="27" width="335" height="5"/>
                                                                                                                         </box>
                                                                                                                         <button translatesAutoresizingMaskIntoConstraints="NO" id="8KP-AS-zv9">
-                                                                                                                            <rect key="frame" x="5" y="0.0" width="24" height="28"/>
+                                                                                                                            <rect key="frame" x="5" y="0.5" width="24.5" height="28"/>
                                                                                                                             <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="NSTouchBarAddTemplate" imagePosition="only" alignment="center" imageScaling="proportionallyUpOrDown" inset="2" id="y0x-dA-tb1">
                                                                                                                                 <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                                                                                                 <font key="font" metaFont="system"/>
@@ -1205,7 +1205,7 @@
                                                                                                                             </constraints>
                                                                                                                         </box>
                                                                                                                         <button translatesAutoresizingMaskIntoConstraints="NO" id="Ozu-ao-G8r">
-                                                                                                                            <rect key="frame" x="40" y="5" width="24" height="19"/>
+                                                                                                                            <rect key="frame" x="40" y="5" width="24.5" height="19"/>
                                                                                                                             <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="NSTouchBarRemoveTemplate" imagePosition="only" alignment="center" imageScaling="proportionallyUpOrDown" inset="2" id="Hrt-wu-sbD">
                                                                                                                                 <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                                                                                                 <font key="font" metaFont="system"/>
@@ -1789,7 +1789,7 @@
                                                                                                                         <rect key="frame" x="0.0" y="27" width="301" height="5"/>
                                                                                                                     </box>
                                                                                                                     <button translatesAutoresizingMaskIntoConstraints="NO" id="K9m-ic-Q9e" customClass="cursorButton" customModule="Focus_Bear" customModuleProvider="target">
-                                                                                                                        <rect key="frame" x="5" y="0.0" width="24" height="28"/>
+                                                                                                                        <rect key="frame" x="5" y="0.5" width="24.5" height="28"/>
                                                                                                                         <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="NSTouchBarAddTemplate" imagePosition="only" alignment="center" imageScaling="proportionallyUpOrDown" inset="2" id="6RV-s0-8gX">
                                                                                                                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                                                                                             <font key="font" metaFont="system"/>
@@ -1809,7 +1809,7 @@
                                                                                                                         </constraints>
                                                                                                                     </box>
                                                                                                                     <button translatesAutoresizingMaskIntoConstraints="NO" id="e1F-Mw-DLj" customClass="cursorButton" customModule="Focus_Bear" customModuleProvider="target">
-                                                                                                                        <rect key="frame" x="40" y="5" width="24" height="19"/>
+                                                                                                                        <rect key="frame" x="40" y="5" width="24.5" height="19"/>
                                                                                                                         <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="NSTouchBarRemoveTemplate" imagePosition="only" alignment="center" imageScaling="proportionallyUpOrDown" inset="2" id="Hdq-g3-6oW">
                                                                                                                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                                                                                             <font key="font" metaFont="system"/>
@@ -2010,7 +2010,7 @@
                                                                                                                         <rect key="frame" x="0.0" y="27" width="252" height="5"/>
                                                                                                                     </box>
                                                                                                                     <button translatesAutoresizingMaskIntoConstraints="NO" id="VVn-wT-Zqq" customClass="cursorButton" customModule="Focus_Bear" customModuleProvider="target">
-                                                                                                                        <rect key="frame" x="5" y="0.0" width="24" height="28"/>
+                                                                                                                        <rect key="frame" x="5" y="0.5" width="24.5" height="28"/>
                                                                                                                         <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="NSTouchBarAddTemplate" imagePosition="only" alignment="center" imageScaling="proportionallyUpOrDown" inset="2" id="oXr-cn-J97">
                                                                                                                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                                                                                             <font key="font" metaFont="system"/>
@@ -2030,7 +2030,7 @@
                                                                                                                         </constraints>
                                                                                                                     </box>
                                                                                                                     <button translatesAutoresizingMaskIntoConstraints="NO" id="CdN-ta-Z5c" customClass="cursorButton" customModule="Focus_Bear" customModuleProvider="target">
-                                                                                                                        <rect key="frame" x="40" y="5" width="24" height="19"/>
+                                                                                                                        <rect key="frame" x="40" y="5" width="24.5" height="19"/>
                                                                                                                         <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="NSTouchBarRemoveTemplate" imagePosition="only" alignment="center" imageScaling="proportionallyUpOrDown" inset="2" id="L9h-MU-s6W">
                                                                                                                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                                                                                             <font key="font" metaFont="system"/>
@@ -2601,7 +2601,7 @@ DQ
                                                                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                                     <color key="textColor" name="textColor" catalog="System" colorSpace="catalog"/>
                                                                                                     <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
-                                                                                                    <size key="minSize" width="577" height="58"/>
+                                                                                                    <size key="minSize" width="579" height="58"/>
                                                                                                     <size key="maxSize" width="1185" height="10000000"/>
                                                                                                     <color key="insertionPointColor" name="textColor" catalog="System" colorSpace="catalog"/>
                                                                                                 </textView>
@@ -2878,13 +2878,13 @@ DQ
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
                             <box boxType="custom" borderWidth="0.0" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="dZX-9W-fSn">
-                                <rect key="frame" x="0.0" y="0.0" width="249" height="346"/>
+                                <rect key="frame" x="0.0" y="0.0" width="249" height="344"/>
                                 <view key="contentView" id="8B0-a3-isv">
-                                    <rect key="frame" x="0.0" y="0.0" width="249" height="346"/>
+                                    <rect key="frame" x="0.0" y="0.0" width="249" height="344"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
                                         <searchField wantsLayer="YES" focusRingType="none" verticalHuggingPriority="750" textCompletion="NO" translatesAutoresizingMaskIntoConstraints="NO" id="gj7-29-Pcx" customClass="PopoverAwareSearchField" customModule="Focus_Bear" customModuleProvider="target">
-                                            <rect key="frame" x="10" y="306" width="229" height="30"/>
+                                            <rect key="frame" x="10" y="304" width="229" height="30"/>
                                             <searchFieldCell key="cell" controlSize="large" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" borderStyle="bezel" usesSingleLineMode="YES" bezelStyle="round" id="hCp-vB-PWb">
                                                 <font key="font" metaFont="system"/>
                                                 <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -2892,13 +2892,13 @@ DQ
                                             </searchFieldCell>
                                         </searchField>
                                         <scrollView borderType="none" autohidesScrollers="YES" horizontalLineScroll="34" horizontalPageScroll="10" verticalLineScroll="34" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="N7o-tz-nVy">
-                                            <rect key="frame" x="10" y="201" width="239" height="85"/>
+                                            <rect key="frame" x="10" y="201" width="239" height="83"/>
                                             <clipView key="contentView" drawsBackground="NO" id="qVo-BV-6YF">
-                                                <rect key="frame" x="0.0" y="0.0" width="239" height="85"/>
+                                                <rect key="frame" x="0.0" y="0.0" width="239" height="83"/>
                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                 <subviews>
                                                     <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" multipleSelection="NO" emptySelection="NO" autosaveColumns="NO" rowHeight="34" viewBased="YES" id="7QV-Zg-ysE">
-                                                        <rect key="frame" x="0.0" y="0.0" width="239" height="85"/>
+                                                        <rect key="frame" x="0.0" y="0.0" width="239" height="83"/>
                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                         <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                                         <color key="gridColor" name="gridColor" catalog="System" colorSpace="catalog"/>
@@ -2996,7 +2996,7 @@ DQ
                                             </scroller>
                                         </scrollView>
                                         <customView translatesAutoresizingMaskIntoConstraints="NO" id="Q0a-EW-q6p">
-                                            <rect key="frame" x="10" y="97" width="229" height="209"/>
+                                            <rect key="frame" x="10" y="95" width="229" height="209"/>
                                             <constraints>
                                                 <constraint firstAttribute="height" constant="209" id="0XF-4y-9c3"/>
                                             </constraints>
@@ -4728,7 +4728,7 @@ DQ
                                                                     </constraints>
                                                                 </box>
                                                                 <button translatesAutoresizingMaskIntoConstraints="NO" id="tZN-30-cyB">
-                                                                    <rect key="frame" x="40" y="5" width="24" height="19"/>
+                                                                    <rect key="frame" x="40" y="5" width="24.5" height="19"/>
                                                                     <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="minus" catalog="system" imagePosition="only" alignment="center" imageScaling="proportionallyUpOrDown" inset="2" id="X33-19-Lbc">
                                                                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                                         <font key="font" metaFont="system"/>
@@ -8094,7 +8094,7 @@ Gw
                                                                                 </constraints>
                                                                             </box>
                                                                             <button translatesAutoresizingMaskIntoConstraints="NO" id="F8v-Iy-BhD">
-                                                                                <rect key="frame" x="40" y="5" width="24" height="19"/>
+                                                                                <rect key="frame" x="40" y="5" width="24.5" height="19"/>
                                                                                 <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="minus" catalog="system" imagePosition="only" alignment="center" imageScaling="proportionallyUpOrDown" inset="2" id="Bdb-Kt-MgI">
                                                                                     <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                                                     <font key="font" metaFont="system"/>
@@ -12744,14 +12744,14 @@ Gw
     </scenes>
     <resources>
         <image name="NSAddTemplate" width="18" height="16"/>
-        <image name="NSFollowLinkFreestandingTemplate" width="19" height="19"/>
+        <image name="NSFollowLinkFreestandingTemplate" width="20" height="20"/>
         <image name="NSInfo" width="32" height="32"/>
         <image name="NSLeftFacingTriangleTemplate" width="12" height="16"/>
         <image name="NSSmartBadgeTemplate" width="14" height="14"/>
         <image name="NSStopProgressFreestandingTemplate" width="19" height="19"/>
-        <image name="NSTouchBarAddTemplate" width="18" height="16"/>
-        <image name="NSTouchBarGoForwardTemplate" width="12" height="16"/>
-        <image name="NSTouchBarRemoveTemplate" width="18" height="4"/>
+        <image name="NSTouchBarAddTemplate" width="18" height="17"/>
+        <image name="NSTouchBarGoForwardTemplate" width="12" height="17"/>
+        <image name="NSTouchBarRemoveTemplate" width="18" height="5"/>
         <image name="advanced" width="19" height="15"/>
         <image name="check-updates" width="16" height="16"/>
         <image name="check_circle" width="22" height="22"/>
@@ -12759,7 +12759,7 @@ Gw
         <image name="export-stats" width="16" height="16"/>
         <image name="help" width="32" height="32"/>
         <image name="info.circle" catalog="system" width="15" height="15"/>
-        <image name="minus" catalog="system" width="15" height="4"/>
+        <image name="minus" catalog="system" width="14" height="4"/>
         <image name="minus_square" width="20" height="20"/>
         <image name="plus_square" width="20" height="20"/>
         <namedColor name="backgroundColor">

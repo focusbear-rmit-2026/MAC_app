@@ -79,16 +79,16 @@ func showToDoListWindow(){
         mainWindowControllerObj?.showWindow(nil)
     }
     leftMenuVcObj?.showTaskPlayer()
-    return; // todo
-    
-    getToDoListWcObject().contentViewController = getTodoListToolVcObject()
-    getToDoListWcObject().window?.title = "Focus Bear - To Do List"
-    if let common = configjson.value(forKey: "common") as? NSDictionary{
-        getToDoListWcObject().window?.title = common.value(forKey: "toDoListWindowTitle") as? String ?? "Focus Bear - To Do List"
-    }
-    getToDoListWcObject().showWindow(nil)
-    todoListToolVcObj?.reloadData()
     allApiObject.capturePosthog(event: "todo-list-popup-shown", metadata: [:])
+//    return;
+//    
+//    getToDoListWcObject().contentViewController = getTodoListToolVcObject()
+//    getToDoListWcObject().window?.title = "Focus Bear - To Do List"
+//    if let common = configjson.value(forKey: "common") as? NSDictionary{
+//        getToDoListWcObject().window?.title = common.value(forKey: "toDoListWindowTitle") as? String ?? "Focus Bear - To Do List"
+//    }
+//    getToDoListWcObject().showWindow(nil)
+//    todoListToolVcObj?.reloadData()
 }
 
 
@@ -648,7 +648,7 @@ func showTaskPlayerWindow(totalDuration:Int, intention:String, automatically:Boo
     }
    // mainViewControllerObj?.showSmallScreen()
     leftMenuVcObj?.showTaskPlayer()
-    return;
+    return; // todo 
     
     if UserDefaults.standard.object(forKey: kUserdefaultsManageTaskFirstTime) == nil && automatically{
         UserDefaults.standard.set(true, forKey: kUserdefaultsManageTaskFirstTime)

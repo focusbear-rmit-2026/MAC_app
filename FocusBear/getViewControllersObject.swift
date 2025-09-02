@@ -781,14 +781,14 @@ func getFocusStartHelpImgVcObject()->focusStartHelpImgVc{
 //}
 
 // toDoList window object
-var toDoListWcObj:commonWindowController?
-func getToDoListWcObject()->commonWindowController{
-    if toDoListWcObj == nil{
-        toDoListWcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
-        toDoListWcObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
-    }
-    return toDoListWcObj!
-}
+//var toDoListWcObj:commonWindowController?
+//func getToDoListWcObject()->commonWindowController{
+//    if toDoListWcObj == nil{
+//        toDoListWcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
+//        toDoListWcObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
+//    }
+//    return toDoListWcObj!
+//}
 
 // todoList Tool object
 var todoListToolVcObj:todoListToolVc?

@@ -8,6 +8,7 @@ import Cocoa
 class simplePomodoroVc: NSViewController {
     
     
+    @IBOutlet weak var boxBlankSpace: NSBox!
     @IBOutlet weak var stackViewStrictnessLevel: NSStackView!
     @IBOutlet weak var stackViewIntention: NSStackView!
     @IBOutlet weak var boxBlockingStyle: NSBox!
@@ -298,6 +299,7 @@ class simplePomodoroVc: NSViewController {
         stackViewIntention.isHidden = true
         boxBlockingStyle.isHidden = true
         boxBreakDuration.isHidden = true
+        boxBlankSpace.isHidden = false
         imgViewAccordionMoreOptions.image = NSImage(named: NSImage.goForwardTemplateName)
     }
     
@@ -1180,12 +1182,14 @@ class simplePomodoroVc: NSViewController {
             boxBlockingStyle.isHidden = false
             boxBreakDuration.isHidden = false
             imgViewAccordionMoreOptions.image = NSImage(named: NSImage.touchBarGoDownTemplateName)
+            boxBlankSpace.isHidden = true
         }else{
             stackViewStrictnessLevel.isHidden = true
             stackViewIntention.isHidden = true
             boxBlockingStyle.isHidden = true
             boxBreakDuration.isHidden = true
             imgViewAccordionMoreOptions.image = NSImage(named: NSImage.goForwardTemplateName)
+            boxBlankSpace.isHidden = false
             if let window = self.view.window {
                 if window.styleMask.contains(.fullScreen) {
                     window.toggleFullScreen(nil)
@@ -1248,3 +1252,4 @@ extension simplePomodoroVc: TourDelegate{
     }
 }
 
+// scrollview added on 2/9/25 on version 2.27.409

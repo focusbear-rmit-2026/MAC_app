@@ -387,6 +387,12 @@ class popUpBlockConfirmVc: NSViewController {
         hidePopUpFocusGoalConfirmationView()
         hidePopUpAddNewFocusGoalView()
         hidePopUpSaveThisTaskForLaterView()
+        
+        
+        if getCurrentTaskInFocusMode() == nil && whatToAchieveInFocusBlock.isEmpty && !SettingsManagerObject.isGeekModeEnabled{// added on 2/9/25 on version 2.27.409
+            showoPopUpAddNewFocusGoalView()
+            popUpAddNewFocusGoalVcObj?.lblTitle.stringValue =  "AI can’t tell if this fits your work. Pick a task to guide Focus Bear!" // todo text
+        }
     }
     
     func hidePopUpFocusGoalConfirmationView(){

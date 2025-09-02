@@ -1114,13 +1114,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                             }
                         }
                         UserDefaults.standard.set(arrAllTracks, forKey: kUserdefaultsAllTracks)
-                        DispatchQueue.main.async {
-                            if allTracksVcObj != nil && allTracksWindowControllerObj != nil{
-                                if allTracksWindowControllerObj?.window?.isVisible ?? false{
-                                    allTracksVcObj?.tblView.reloadData()
-                                }
-                            }
-                        }
+//                        DispatchQueue.main.async {
+//                            if allTracksVcObj != nil && allTracksWindowControllerObj != nil{
+//                                if allTracksWindowControllerObj?.window?.isVisible ?? false{
+//                                    allTracksVcObj?.tblView.reloadData()
+//                                }
+//                            }
+//                        }
                     }
                     checkAllTracksDownloadState()
                 })
@@ -1686,7 +1686,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         if popupAppointmentTimeWcObj != nil{
             if popupAppointmentTimeWcObj?.window?.isVisible ?? false{
                 addLog(text: "Appointment popup is visible :- return.")
-                return;
+                return; 
             }
         }
         
@@ -3571,8 +3571,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     }
 
     @objc func checkWindowState(){
-        UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitID)
-        UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitRunningInfo)
         if !getHabitsVcObject().isViewLoaded{
             getHabitsVcObject().loadView()
         }
@@ -4313,10 +4311,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         if popupAppointmentTimeWcObj != nil{
             if popupAppointmentTimeWcObj?.window?.isVisible ?? false{
                 addLog(text: "Appointment popup is visible :- return.")
-                if macGoesInSleepTime != nil{
-                    macGoesInSleepTime = nil
+                if macGoesInSleepTime != nil{// it means popup comes after mac goes to sleep
+                    popupAppointmentTimeWcObj?.window?.close()// // added on 2/9/25 on version 2.27.409 . before today it was returning from here
+                }else{
+                    return;
                 }
-                return;
             }
         }
         
@@ -12275,3 +12274,17 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 // multi scrren bugs
 // small screen bugs 
 // sparkle window was below main window done 
+
+
+// kuch purane checks ki vajah se bug aai . mac sleep per gya tha or jab bhi mac sleep per jata h habits ko rokte hai or sleep se jagte hi habits ko vaps show krte hai. agar Late No More appointment reminder ka popup visible hai to habit stop ho chuki hoti hai or "back to the habits" button per vaps habits o show krte hai. to yha ye system sleep per jate time or vaps jagte time agar popup visible hota h to habit stop vala kaam ni krte hai. lekin yha case ye hua ki sleep per jane k baad popup aaya to habits stop hui lekin sleep se jagne k baad sahi se resume ni ho pai
+
+
+//2.27.409   2/9/25
+// More actions not shown for custom routine habits when paused
+///Current time not visible anymore
+///
+// full scrren ki app  mai full scrren hi rhega
+//  focus mode duarion wrong
+//  focus mode habit stops working because of system sleep and appointment popup
+// bad ai blocking in simople mode
+// scrollview added in simple mode pomodoro

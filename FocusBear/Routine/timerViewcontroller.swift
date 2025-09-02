@@ -155,7 +155,9 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
     override func viewWillAppear() {
         self.timerHideBearAnimation?.invalidate()
         self.timerHideBearAnimation = nil
-        btnSkipHabit.isHidden = true
+        if !isActivityPaused{
+            btnSkipHabit.isHidden = true
+        }
     }
     
     override func viewWillDisappear() {
