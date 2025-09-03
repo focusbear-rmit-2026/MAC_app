@@ -165,8 +165,22 @@ class ViewController: NSViewController {
         let screenList = NSScreen.screens
         
         if !(self.view.window?.styleMask.contains(.fullScreen) ?? false) && showMinimumSize{
-            self.view.window?.setContentSize(NSSize(width: mainWindowControllerObj?.smallWindowAvgWidth ?? 500, height: mainWindowControllerObj?.smallWindowAvgHeight ?? 500))
-            self.view.window?.center()
+            
+          //  self.view.window?.center()
+            let currentSize = self.view.frame.size
+            let widthToSet = mainWindowControllerObj?.smallWindowAvgWidth ?? 500
+            let heightToSet = mainWindowControllerObj?.smallWindowAvgHeight ?? 500
+            let newSize = NSSize(width: widthToSet, height: heightToSet)
+            
+            
+            // Calculate differences
+            let widthDiff = abs(currentSize.width - newSize.width)
+            let heightDiff = abs(currentSize.height - newSize.height)
+
+            // Only set if difference > 100 px
+            if widthDiff > 100 || heightDiff > 100 { // check added on 3/9/25 version 2.27.410
+                self.view.window?.setContentSize(newSize)
+            }
         }else{
             if let screen = self.view.window?.screen{ //
                 self.view.window?.setFrame(screen.visibleFrame, display: true, animate: false)

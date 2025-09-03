@@ -648,77 +648,78 @@ func showTaskPlayerWindow(totalDuration:Int, intention:String, automatically:Boo
     }
    // mainViewControllerObj?.showSmallScreen()
     leftMenuVcObj?.showTaskPlayer()
-    return; // todo 
-    
-    if UserDefaults.standard.object(forKey: kUserdefaultsManageTaskFirstTime) == nil && automatically{
-        UserDefaults.standard.set(true, forKey: kUserdefaultsManageTaskFirstTime)
-   
-        addLog(text:"show alert UseToDoList first time")
-        
-        var titleUseToDoList = "Do you want to use Focus Bear for your to do list for this focus session?"
-        var buttonTryItText = "Try it out"
-        var buttonNoThanksText = "No thanks"
-        var titleEnableToDoListFuture = "If you want to try it out in the future, enable the To Do player setting under Preferences - Settings - To Do List"
-        
-        if let toDoPlayerVcInfo = configjson.value(forKey: "toDoPlayerVcInfo") as? NSDictionary{
-            titleUseToDoList = toDoPlayerVcInfo.value(forKey: "titleUseToDoList") as? String ?? titleUseToDoList
-            buttonTryItText = toDoPlayerVcInfo.value(forKey: "buttonTryItText") as? String ?? buttonTryItText
-            buttonNoThanksText = toDoPlayerVcInfo.value(forKey: "buttonNoThanksText") as? String ?? buttonNoThanksText
-            titleEnableToDoListFuture = toDoPlayerVcInfo.value(forKey: "titleEnableToDoListFuture") as? String ?? titleEnableToDoListFuture
-        }
-
-        showCustomAlert(title: titleUseToDoList, body: nil, buttonOkText: buttonTryItText, buttonCancelText: buttonNoThanksText, checkBoxText: nil, autoClose: false, buttonLinkUrl:nil, buttonLinkText:nil, completionHandler: {isOkClicked in
-            print(isOkClicked)
-            if !isOkClicked{
-                SettingsManagerObject.isSettingsChanged = true
-                SettingsManagerObject.showToDoPlayerAutomaticallyEnabled = false
-                SettingsManagerObject.putUserLocalDeviceSettings()
-                
-                showCustomAlert(title: titleEnableToDoListFuture, body: nil, buttonOkText: buttonOkText, buttonCancelText: nil, checkBoxText: nil, autoClose: false, buttonLinkUrl:nil, buttonLinkText:nil, completionHandler: {isOkClicked in
-                    print(isOkClicked)
-                    if isOkClicked{
-                        
-                    }
-                })
-                
-            }else{
-                showTaskPlayerWindow(totalDuration: totalDuration, intention: intention, automatically: automatically)
-            }
-        })
-        
-        
-        
-        return;
-    }
-    addLog(text:"showTaskPlayerWindow")
-    if taskPlayerWcObj == nil{
-        getTaskPlayerWindowObject().contentViewController = getTaskPlayerVcObject()
-        taskPlayerWcObj?.window?.styleMask.insert(.fullSizeContentView)
-        taskPlayerWcObj?.window?.titlebarAppearsTransparent = true
-
-        taskPlayerWcObj?.window?.styleMask.insert(.resizable)
-        taskPlayerWcObj?.window?.standardWindowButton(.zoomButton)?.isHidden = true
-        taskPlayerWcObj?.window?.standardWindowButton(.closeButton)?.isHidden = true
-        taskPlayerWcObj?.window?.standardWindowButton(.miniaturizeButton)?.isHidden = true
-    }
-    
-//    getTaskPlayerWindowObject().window?.setFrameOrigin(.)
-    var taskPlayerWindowTitle = "Focus Bear - To Do Player"
-    if let common = configjson.value(forKey: "common") as? NSDictionary{
-        taskPlayerWindowTitle = common.value(forKey: "taskPlayerWindowTitle") as? String ?? taskPlayerWindowTitle
-    }
-    getTaskPlayerWindowObject().window?.title = taskPlayerWindowTitle
-
-    getTaskPlayerWindowObject().window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
-    getTaskPlayerWindowObject().showWindow(nil)
-    if shouldReloadTaskPlayer{
-        shouldReloadTaskPlayer = false
-        taskPlayerVcObj?.reloadData(totalDuration: totalDuration, intention:intention)
-    }else{
-        taskPlayerVcObj?.reloadView()
-    }
-    NSApplication.shared.activate(ignoringOtherApps: true)
     allApiObject.capturePosthog(event: "todo-player-popup-shown", metadata: [:])
+//    return; // 
+//    
+//    if UserDefaults.standard.object(forKey: kUserdefaultsManageTaskFirstTime) == nil && automatically{
+//        UserDefaults.standard.set(true, forKey: kUserdefaultsManageTaskFirstTime)
+//   
+//        addLog(text:"show alert UseToDoList first time")
+//        
+//        var titleUseToDoList = "Do you want to use Focus Bear for your to do list for this focus session?"
+//        var buttonTryItText = "Try it out"
+//        var buttonNoThanksText = "No thanks"
+//        var titleEnableToDoListFuture = "If you want to try it out in the future, enable the To Do player setting under Preferences - Settings - To Do List"
+//        
+//        if let toDoPlayerVcInfo = configjson.value(forKey: "toDoPlayerVcInfo") as? NSDictionary{
+//            titleUseToDoList = toDoPlayerVcInfo.value(forKey: "titleUseToDoList") as? String ?? titleUseToDoList
+//            buttonTryItText = toDoPlayerVcInfo.value(forKey: "buttonTryItText") as? String ?? buttonTryItText
+//            buttonNoThanksText = toDoPlayerVcInfo.value(forKey: "buttonNoThanksText") as? String ?? buttonNoThanksText
+//            titleEnableToDoListFuture = toDoPlayerVcInfo.value(forKey: "titleEnableToDoListFuture") as? String ?? titleEnableToDoListFuture
+//        }
+//
+//        showCustomAlert(title: titleUseToDoList, body: nil, buttonOkText: buttonTryItText, buttonCancelText: buttonNoThanksText, checkBoxText: nil, autoClose: false, buttonLinkUrl:nil, buttonLinkText:nil, completionHandler: {isOkClicked in
+//            print(isOkClicked)
+//            if !isOkClicked{
+//                SettingsManagerObject.isSettingsChanged = true
+//                SettingsManagerObject.showToDoPlayerAutomaticallyEnabled = false
+//                SettingsManagerObject.putUserLocalDeviceSettings()
+//                
+//                showCustomAlert(title: titleEnableToDoListFuture, body: nil, buttonOkText: buttonOkText, buttonCancelText: nil, checkBoxText: nil, autoClose: false, buttonLinkUrl:nil, buttonLinkText:nil, completionHandler: {isOkClicked in
+//                    print(isOkClicked)
+//                    if isOkClicked{
+//                        
+//                    }
+//                })
+//                
+//            }else{
+//                showTaskPlayerWindow(totalDuration: totalDuration, intention: intention, automatically: automatically)
+//            }
+//        })
+//        
+//        
+//        
+//        return;
+//    }
+//    addLog(text:"showTaskPlayerWindow")
+//    if taskPlayerWcObj == nil{
+//        getTaskPlayerWindowObject().contentViewController = getTaskPlayerVcObject()
+//        taskPlayerWcObj?.window?.styleMask.insert(.fullSizeContentView)
+//        taskPlayerWcObj?.window?.titlebarAppearsTransparent = true
+//
+//        taskPlayerWcObj?.window?.styleMask.insert(.resizable)
+//        taskPlayerWcObj?.window?.standardWindowButton(.zoomButton)?.isHidden = true
+//        taskPlayerWcObj?.window?.standardWindowButton(.closeButton)?.isHidden = true
+//        taskPlayerWcObj?.window?.standardWindowButton(.miniaturizeButton)?.isHidden = true
+//    }
+//    
+////    getTaskPlayerWindowObject().window?.setFrameOrigin(.)
+//    var taskPlayerWindowTitle = "Focus Bear - To Do Player"
+//    if let common = configjson.value(forKey: "common") as? NSDictionary{
+//        taskPlayerWindowTitle = common.value(forKey: "taskPlayerWindowTitle") as? String ?? taskPlayerWindowTitle
+//    }
+//    getTaskPlayerWindowObject().window?.title = taskPlayerWindowTitle
+//
+//    getTaskPlayerWindowObject().window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
+//    getTaskPlayerWindowObject().showWindow(nil)
+//    if shouldReloadTaskPlayer{
+//        shouldReloadTaskPlayer = false
+//        taskPlayerVcObj?.reloadData(totalDuration: totalDuration, intention:intention)
+//    }else{
+//        taskPlayerVcObj?.reloadView()
+//    }
+//    NSApplication.shared.activate(ignoringOtherApps: true)
+    
 }
 //-------------------------------------------------//
 
@@ -1296,14 +1297,14 @@ func closePomodoroWindowIOfVisible(){
 
 
 
-func closeTaskPlayerWindowIfVisible(){
-    if taskPlayerWcObj != nil{
-        if taskPlayerWcObj?.window?.isVisible ?? false{
-            taskPlayerWcObj?.window?.close()
-            allApiObject.capturePosthog(event: "todo-player-popup-closed", metadata: [:])
-        }
-    }
-}
+//func closeTaskPlayerWindowIfVisible(){
+//    if taskPlayerWcObj != nil{
+//        if taskPlayerWcObj?.window?.isVisible ?? false{
+//            taskPlayerWcObj?.window?.close()
+//            allApiObject.capturePosthog(event: "todo-player-popup-closed", metadata: [:])
+//        }
+//    }
+//}
 
 
 func closePupUpBlockIfVisible(){

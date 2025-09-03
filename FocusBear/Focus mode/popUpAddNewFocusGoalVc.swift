@@ -74,7 +74,6 @@ class popUpAddNewFocusGoalVc: NSViewController {
             DispatchQueue.main.async { [self] in
                 comboBoxTask.isEnabled = true
                 lblGettingTasks.isHidden = true
-                print("got all taks")
                 if let json = json{
                     arrAllTasks = json
                     for task in json{
@@ -106,11 +105,13 @@ class popUpAddNewFocusGoalVc: NSViewController {
     @IBAction func btnSaveClicked(_ sender: Any) {
         addLog(text: "[user-action] popUpAddNewFocusGoalVc:- btnSaveClicked")
         updateFocusModeIntention(intention: textViewIntention.string)
-        if taskPlayerWcObj != nil{
-            if taskPlayerWcObj?.window?.isVisible ?? false{
-                taskPlayerVcObj?.updateIntentionToPlayer()
-            }
-        }
+//        if taskPlayerWcObj != nil{
+//            if taskPlayerWcObj?.window?.isVisible ?? false{
+//                taskPlayerVcObj?.updateIntentionToPlayer()
+//            }
+//        }
+        taskPlayerVcObj?.updateIntentionToPlayer()
+        
         let currentTask = comboBoxTask.stringValue.lowercased()
         var taskAlreadyAdded = false
         var taskAddedIndex = 0
@@ -136,9 +137,10 @@ class popUpAddNewFocusGoalVc: NSViewController {
                 let taskName = comboBoxTask.stringValue
                 let nextWeek = Calendar.current.date(byAdding: .day, value: 7, to: today) ?? Date()
                 let dateString = getStringFromDateInUtc(date: nextWeek, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+                addLog(text: "Create new task:- name: \(taskName)")
                 allApiObject.addTask(title: taskName, details: "", eisenhowerQuadrant: 1, dueDate: dateString, objective: "", tags: [], completionHandler: { result,json in
                     if result{
-                        
+                        addLog(text: "\(taskName) task created successfully.")
                     }
                     DispatchQueue.main.async { [self] in
                         lblGettingTasks.isHidden = true
@@ -160,19 +162,17 @@ class popUpAddNewFocusGoalVc: NSViewController {
             }
         }else{
             closeView()
-        }
-        
-        
-        
+        }   
     }
     
     func closeView(){
+        addLog(text: "popUpAddNewFocusGoalVc:- closeView")
         self.view.removeFromSuperview()
         popUpBlockConfirmVcObj?.closeWindowNeedToCheckAppUrlAgain()
     }
     
     @IBAction func checkBoxMarkCurrentTaskAsCompletedClicked(_ sender: Any) {
-        
+        addLog(text: "checkBox mark current task as completed clicked.")
     }
 }
 

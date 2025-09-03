@@ -47,7 +47,8 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
     var isSnapLeft = true
     var isSnappingGoing = false
     var isMouseEntering = false
-
+    var isViewVisible = false
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         self.webView.navigationDelegate = self
@@ -86,6 +87,7 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
     }
     
     override func viewWillAppear() {
+        isViewVisible = true
         if isAnyAllowedFocusModeActivityRunning{
             btnEndFocusSession.isHidden = true
         }else{
@@ -95,13 +97,14 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
     
     
     override func viewWillDisappear() {
+        isViewVisible = false
         if boxClose.isHidden{
             boxClose.isHidden = false
             boxMinimize.isHidden = false
             boxExtraOptions.isHidden = false
             self.view.window!.setFrame(lastWindowFrame, display: true)
             boxBackToOriginalPosition.isHidden = true
-            taskPlayerWcObj?.window?.styleMask.insert(.resizable)
+//            taskPlayerWcObj?.window?.styleMask.insert(.resizable)
             imgViewAppIcon.isHidden = true
         }
     }
@@ -325,14 +328,8 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
             sleep(1)
             DispatchQueue.main.async {
                 self.removeWebViewLoadFailedView(webView: webView)
-                if taskPlayerWcObj != nil{
-                    if taskPlayerWcObj?.window?.isVisible ?? false{
-                        self.setAccessTokenToWebView()
-                    }else{
-                        if !SettingsManagerObject.showToDoPlayerAutomaticallyEnabled{
-                            self.setAccessTokenToWebView()
-                        }
-                    }
+                if self.isViewVisible{// do not remoev this check otherwise this setAccessTokenToWebView will call 2 times 
+                    self.setAccessTokenToWebView()
                 }
             }
         }
@@ -461,6 +458,7 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
     }
     
     func getToDosFromPlayer(){
+        addLog(text: "func:- getToDosFromPlayer")
         let script = "getToDosFromPlayer();"
         webView?.evaluateJavaScript(script,completionHandler: { (html: Any?, error: Error?) in
             print(html)
@@ -491,6 +489,7 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
     }
     
     func addAndPlayTaskInCurrentList(taskName: String, id:String, duration:Int, shouldCompleteCurrentTask:Bool) {
+        addLog(text: "func:- addAndPlayTaskInCurrentList taskName: \(taskName), duration: \(duration), shouldCompleteCurrentTask: \(shouldCompleteCurrentTask), id: \(id)")
         let taskDic:[String:Any] = [
             "id": id,
             "title": taskName,
@@ -555,6 +554,7 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
     
     
     func addTaskInCurrentList(taskName: String, id:String, duration:Int) {
+        addLog(text: "func:- addTaskInCurrentList taskName: \(taskName), duration: \(duration), id: \(id)")
         let taskDic:[String:Any] = [
             "id": id,
             "title": taskName,
@@ -619,7 +619,7 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
         self.view.window!.setFrame(NSRect(x: xPoint , y: self.view.window!.frame.midY, width: 60, height: 180), display: true)
         boxBackToOriginalPosition.isHidden = false
         imgViewAppIcon.isHidden = false
-        taskPlayerWcObj?.window?.styleMask.remove(.resizable)
+//        taskPlayerWcObj?.window?.styleMask.remove(.resizable)
         btnBackToOriginalPosition.isHidden = true
         isSnapLeft = true
         boxClose.isHidden = true
@@ -642,7 +642,7 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
         self.view.window!.setFrame(NSRect(x: xPoint , y: self.view.window!.frame.midY, width: width, height: 180), display: true)
         boxBackToOriginalPosition.isHidden = false
         imgViewAppIcon.isHidden = false
-        taskPlayerWcObj?.window?.styleMask.remove(.resizable)
+//        taskPlayerWcObj?.window?.styleMask.remove(.resizable)
         btnBackToOriginalPosition.isHidden = true
         isSnapLeft = false
         boxClose.isHidden = true
@@ -662,7 +662,7 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
         boxExtraOptions.isHidden = false
         self.view.window!.setFrame(lastWindowFrame, display: true)
         boxBackToOriginalPosition.isHidden = true
-        taskPlayerWcObj?.window?.styleMask.insert(.resizable)
+//        taskPlayerWcObj?.window?.styleMask.insert(.resizable)
         btnBackToOriginalPosition.isHidden = true
         imgViewAppIcon.isHidden = true
     }

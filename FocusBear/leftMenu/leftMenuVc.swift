@@ -436,7 +436,7 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
             if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._FOCUS_SUMMARY_ || currentState == ._SHUTOFFMAC_{
                 mainViewControllerObj?.checkIsFullScreenNeeded()
             }else{
-                mainViewControllerObj?.showSmallScreen()
+                mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
             }
         case boxFocusSession:
             mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
@@ -450,23 +450,23 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
                 }
                 
                 if isBreakWarningVisible{
-                    mainViewControllerObj?.showSmallScreen()
+                    mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
                 }else{
                     mainViewControllerObj?.checkIsFullScreenNeeded()
                 }
             }else{
-                mainViewControllerObj?.showSmallScreen()
+                mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
             }
         case boxCustomRoutine:
-            if currentState == ._CUSTOM_ROUTINE_{
-                mainViewControllerObj?.checkIsFullScreenNeeded()
-            }else{
-                mainViewControllerObj?.showSmallScreen()
-            }
+//            if currentState == ._CUSTOM_ROUTINE_{
+//                mainViewControllerObj?.checkIsFullScreenNeeded()
+//            }else{
+//                mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
+//            }
             if currentState == ._CUSTOM_ROUTINE_ {
                 if customRoutineTimeWcObj != nil {
                     if customRoutineTimeWcObj?.window?.isVisible ?? false{
-                        mainViewControllerObj?.showSmallScreen()
+                        mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
                     }else{
                         mainViewControllerObj?.checkIsFullScreenNeeded()
                     }
@@ -474,7 +474,7 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
                     mainViewControllerObj?.checkIsFullScreenNeeded()
                 }
             }else{
-                mainViewControllerObj?.showSmallScreen()
+                mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
             }
         case boxTodoPlayer:
             mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
@@ -492,7 +492,7 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         case boxSettings:
             mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
         case boxEditHabits:
-            mainViewControllerObj?.showSmallScreen()
+            mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
         case boxMotivation:
             mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
         case boxHelpAndSupport:
@@ -501,10 +501,12 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
                 if !isAnyAllowedFocusModeActivityRunning && checkIsFullScreenEnabled(){
                     mainViewControllerObj?.checkIsFullScreenNeeded()
                 }else{
-                    mainViewControllerObj?.showSmallScreen()
+                    if isAnyAllowedFocusModeActivityRunning{
+                        mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
+                    }
                 }
             }else{
-                mainViewControllerObj?.showSmallScreen()
+                mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
             }
             
         default:

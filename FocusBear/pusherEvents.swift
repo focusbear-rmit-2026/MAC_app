@@ -164,7 +164,7 @@ class pusherEvents:NSObject, PusherDelegate {
 //                    getEndFocusModeWindowControllerObj().window?.close()
 //                    return;
 //                }
-                closeTaskPlayerWindowIfVisible()
+//                closeTaskPlayerWindowIfVisible()
                 isHardCorePomodoroModeOn = false
 
                 isSkipBreakActivityDuringFocus = false

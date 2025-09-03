@@ -1506,13 +1506,16 @@ class habitsVc: NSViewController {
 //                toolBoxWcObj?.window?.close()
 //            }
 //        }
-        if taskPlayerWcObj != nil{
-            if taskPlayerWcObj?.window?.isVisible ?? false{
-                taskPlayerVcObj?.getToDosFromPlayer()
-                taskPlayerWcObj?.window?.close()
-                allApiObject.capturePosthog(event: "todo-player-popup-closed", metadata: [:])
-            }
-        }
+//        if taskPlayerWcObj != nil{
+//            if taskPlayerWcObj?.window?.isVisible ?? false{
+//                taskPlayerVcObj?.getToDosFromPlayer()
+//                taskPlayerWcObj?.window?.close()
+//                allApiObject.capturePosthog(event: "todo-player-popup-closed", metadata: [:])
+//            }
+//        }
+        
+        taskPlayerVcObj?.getToDosFromPlayer()
+        
         leftMenuVcObj?.focusModeOrFocusModeHabitFinished()
         addLog(text:"toolBoxWinow close passed")
         refreshFocusModeData()
@@ -1841,13 +1844,16 @@ class habitsVc: NSViewController {
 //                toolBoxWcObj?.window?.close()
 //            }
 //        }
-        if taskPlayerWcObj != nil{
-            if taskPlayerWcObj?.window?.isVisible ?? false{
-                taskPlayerVcObj?.getToDosFromPlayer()
-                taskPlayerWcObj?.window?.close()
-                allApiObject.capturePosthog(event: "todo-player-popup-closed", metadata: [:])
-            }
-        }
+//        if taskPlayerWcObj != nil{
+//            if taskPlayerWcObj?.window?.isVisible ?? false{
+//                taskPlayerVcObj?.getToDosFromPlayer()
+//                taskPlayerWcObj?.window?.close()
+//                allApiObject.capturePosthog(event: "todo-player-popup-closed", metadata: [:])
+//            }
+//        }
+        
+        taskPlayerVcObj?.getToDosFromPlayer()
+        
         leftMenuVcObj?.focusModeOrFocusModeHabitFinished()
         refreshFocusModeData()
         setAppIconForFocusModeScore(probability: nil)
@@ -2151,13 +2157,16 @@ class habitsVc: NSViewController {
 //                toolBoxWcObj?.window?.close()
 //            }
 //        }
-        if taskPlayerWcObj != nil{
-            if taskPlayerWcObj?.window?.isVisible ?? false{
-                taskPlayerVcObj?.getToDosFromPlayer()
-                taskPlayerWcObj?.window?.close()
-                allApiObject.capturePosthog(event: "todo-player-popup-closed", metadata: [:])
-            }
-        }
+//        if taskPlayerWcObj != nil{
+//            if taskPlayerWcObj?.window?.isVisible ?? false{
+//                taskPlayerVcObj?.getToDosFromPlayer()
+//                taskPlayerWcObj?.window?.close()
+//                allApiObject.capturePosthog(event: "todo-player-popup-closed", metadata: [:])
+//            }
+//        }
+        
+        taskPlayerVcObj?.getToDosFromPlayer()
+        
         leftMenuVcObj?.focusModeOrFocusModeHabitFinished()
         refreshFocusModeData()
         setAppIconForFocusModeScore(probability: nil)
@@ -2687,7 +2696,7 @@ class habitsVc: NSViewController {
                 }
                 
                 if !isFocusModeOn(){
-                    closeTaskPlayerWindowIfVisible()
+//                    closeTaskPlayerWindowIfVisible()
                     leftMenuVcObj?.focusModeOrFocusModeHabitFinished()
                 }
                 currentState = ._POSTPON_MORNING_HABIT_
@@ -2803,7 +2812,7 @@ class habitsVc: NSViewController {
         }
 
         if !isFocusModeOn(){
-            closeTaskPlayerWindowIfVisible()
+//            closeTaskPlayerWindowIfVisible()
             leftMenuVcObj?.focusModeOrFocusModeHabitFinished()
         }
         
@@ -2914,7 +2923,7 @@ class habitsVc: NSViewController {
             }
             //
             if !isFocusModeOn(){
-                closeTaskPlayerWindowIfVisible()
+//                closeTaskPlayerWindowIfVisible()
                 leftMenuVcObj?.focusModeOrFocusModeHabitFinished()
             }
             currentState = ._POSTPON_EVENING_HABIT_

@@ -234,11 +234,12 @@ class brainDumpVc: NSViewController, NSTextViewDelegate{
         }
         if textView == textViewWorkNote{
             UserDefaults.standard.set(textViewWorkNote.string, forKey: kUserdefaultsFocusModeNotes)
-            if taskPlayerWcObj != nil{
-                if taskPlayerWcObj?.window?.isVisible ?? false{
-                    taskPlayerVcObj?.updateBrainDumpToPlayer()
-                }
-            }
+//            if taskPlayerWcObj != nil{
+//                if taskPlayerWcObj?.window?.isVisible ?? false{
+//                    taskPlayerVcObj?.updateBrainDumpToPlayer()
+//                }
+//            }
+            taskPlayerVcObj?.updateBrainDumpToPlayer()
         }
     }
     

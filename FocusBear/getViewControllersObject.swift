@@ -1931,13 +1931,13 @@ func getLateNoMorePopUpVcObject()->lateNoMorePopUpVc{
 }
 
 
-var taskPlayerWcObj:taskPlayerWc?
-func getTaskPlayerWindowObject()->taskPlayerWc{
-    if taskPlayerWcObj == nil{
-        taskPlayerWcObj = newStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("taskPlayerWc")) as? taskPlayerWc
-    }
-    return taskPlayerWcObj!
-}
+//var taskPlayerWcObj:taskPlayerWc?
+//func getTaskPlayerWindowObject()->taskPlayerWc{
+//    if taskPlayerWcObj == nil{
+//        taskPlayerWcObj = newStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("taskPlayerWc")) as? taskPlayerWc
+//    }
+//    return taskPlayerWcObj!
+//}
 
 
 

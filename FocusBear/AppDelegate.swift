@@ -1912,7 +1912,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 remainingFocusModeSecondsAfterPaused = interval - passedSeconds
                 print("remaining seconds \(remainingFocusModeSecondsAfterPaused)")
             }
-            closeTaskPlayerWindowIfVisible()
+//            closeTaskPlayerWindowIfVisible()
             timerForFocusMode?.invalidate()
             timerForFocusMode = nil
             timerForFocusModeEndNotification?.invalidate()
@@ -2031,7 +2031,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             self.timerCheckAllowedApps?.invalidate()
             arrFocusType[index]["isPaused"] = true
             arrFocusType[index]["isOn"] = false
-            closeTaskPlayerWindowIfVisible()
+//            closeTaskPlayerWindowIfVisible()
             isFocusModeRunning = false
             if focusEndWarningWcObj != nil{
                 if focusEndWarningWcObj?.window?.isVisible ?? false{
@@ -7630,13 +7630,17 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     
     @objc func tryFocusModeFinished(isSilent:Bool, isShutOffTime:Bool, isMorningRoutineTime:Bool, allowExtend:Bool, isCustomRoutineTime:Bool){
         addLog(text: "focus mode finished")
-        if taskPlayerWcObj != nil{
-            if taskPlayerWcObj?.window?.isVisible ?? false{
-                taskPlayerVcObj?.getToDosFromPlayer()
-                taskPlayerWcObj?.window?.close()
-                allApiObject.capturePosthog(event: "todo-player-popup-closed", metadata: [:])
-            }
-        }
+//        if taskPlayerWcObj != nil{
+//            if taskPlayerWcObj?.window?.isVisible ?? false{
+//                taskPlayerVcObj?.getToDosFromPlayer()
+//                taskPlayerWcObj?.window?.close()
+//                allApiObject.capturePosthog(event: "todo-player-popup-closed", metadata: [:])
+//            }
+//        }
+        
+        taskPlayerVcObj?.getToDosFromPlayer()
+        
+        
         setAppIconForFocusModeScore(probability: nil)
         isSkipBreakActivityDuringFocus = false
         lastFocusModeTempInfo = nil
@@ -12288,3 +12292,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 //  focus mode habit stops working because of system sleep and appointment popup
 // bad ai blocking in simople mode
 // scrollview added in simple mode pomodoro
+
+
+//2.27.410   3/9/25
+// 13 inch screen work in completed task(extend focus mode) view in completed focus view
+// Window size shouldn’t change when you switch between different screens in main window
+// logs added
+// bug solved
+

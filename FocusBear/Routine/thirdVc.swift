@@ -1964,13 +1964,16 @@ class thirdVc: NSViewController {
 //                toolBoxWcObj?.window?.close()
 //            }
 //        }
-        if taskPlayerWcObj != nil{
-            if taskPlayerWcObj?.window?.isVisible ?? false{
-                taskPlayerVcObj?.getToDosFromPlayer()
-                taskPlayerWcObj?.window?.close()
-                allApiObject.capturePosthog(event: "todo-player-popup-closed", metadata: [:])
-            }
-        }
+//        if taskPlayerWcObj != nil{
+//            if taskPlayerWcObj?.window?.isVisible ?? false{
+//                taskPlayerVcObj?.getToDosFromPlayer()
+//                taskPlayerWcObj?.window?.close()
+//                allApiObject.capturePosthog(event: "todo-player-popup-closed", metadata: [:])
+//            }
+//        }
+        
+        taskPlayerVcObj?.getToDosFromPlayer()
+        
         refreshFocusModeData()
         leftMenuVcObj?.focusModeOrFocusModeHabitFinished()
         
@@ -2268,13 +2271,15 @@ class thirdVc: NSViewController {
 //                toolBoxWcObj?.window?.close()
 //            }
 //        }
-        if taskPlayerWcObj != nil{
-            if taskPlayerWcObj?.window?.isVisible ?? false{
-                taskPlayerVcObj?.getToDosFromPlayer()
-                taskPlayerWcObj?.window?.close()
-                allApiObject.capturePosthog(event: "todo-player-popup-closed", metadata: [:])
-            }
-        }
+//        if taskPlayerWcObj != nil{
+//            if taskPlayerWcObj?.window?.isVisible ?? false{
+//                taskPlayerVcObj?.getToDosFromPlayer()
+//                taskPlayerWcObj?.window?.close()
+//                allApiObject.capturePosthog(event: "todo-player-popup-closed", metadata: [:])
+//            }
+//        }
+        taskPlayerVcObj?.getToDosFromPlayer()
+        
         refreshFocusModeData()
         leftMenuVcObj?.focusModeOrFocusModeHabitFinished()
         
@@ -2597,13 +2602,16 @@ class thirdVc: NSViewController {
 //                toolBoxWcObj?.window?.close()
 //            }
 //        }
-        if taskPlayerWcObj != nil{
-            if taskPlayerWcObj?.window?.isVisible ?? false{
-                taskPlayerVcObj?.getToDosFromPlayer()
-                taskPlayerWcObj?.window?.close()
-                allApiObject.capturePosthog(event: "todo-player-popup-closed", metadata: [:])
-            }
-        }
+//        if taskPlayerWcObj != nil{
+//            if taskPlayerWcObj?.window?.isVisible ?? false{
+//                taskPlayerVcObj?.getToDosFromPlayer()
+//                taskPlayerWcObj?.window?.close()
+//                allApiObject.capturePosthog(event: "todo-player-popup-closed", metadata: [:])
+//            }
+//        }
+        
+        taskPlayerVcObj?.getToDosFromPlayer()
+        
         refreshFocusModeData()
         leftMenuVcObj?.focusModeOrFocusModeHabitFinished()
         btnSkipHabit.title = buttonMoreActionsText
@@ -2951,13 +2959,15 @@ class thirdVc: NSViewController {
 //                toolBoxWcObj?.window?.close()
 //            }
 //        }
-        if taskPlayerWcObj != nil{
-            if taskPlayerWcObj?.window?.isVisible ?? false{
-                taskPlayerVcObj?.getToDosFromPlayer()
-                taskPlayerWcObj?.window?.close()
-                allApiObject.capturePosthog(event: "todo-player-popup-closed", metadata: [:])
-            }
-        }
+//        if taskPlayerWcObj != nil{
+//            if taskPlayerWcObj?.window?.isVisible ?? false{
+//                taskPlayerVcObj?.getToDosFromPlayer()
+//                taskPlayerWcObj?.window?.close()
+//                allApiObject.capturePosthog(event: "todo-player-popup-closed", metadata: [:])
+//            }
+//        }
+        taskPlayerVcObj?.getToDosFromPlayer()
+        
         refreshFocusModeData()
         leftMenuVcObj?.focusModeOrFocusModeHabitFinished()
         btnSkipHabit.title = buttonMoreActionsText

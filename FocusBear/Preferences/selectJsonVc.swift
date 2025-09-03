@@ -10,8 +10,8 @@ import Cocoa
 import WebKit
 class selectJsonVc: NSViewController, NSTextViewDelegate, WKNavigationDelegate, webViewLoadFailedDelegate {
     
-    @IBOutlet weak var boxHeightConstraint: NSLayoutConstraint!
-    @IBOutlet weak var boxWidthConstraint: NSLayoutConstraint!
+//    @IBOutlet weak var boxHeightConstraint: NSLayoutConstraint!
+//    @IBOutlet weak var boxWidthConstraint: NSLayoutConstraint!
     @IBOutlet weak var webview: WKWebView!
     @IBOutlet weak var customBox: NSBox!
 
@@ -64,8 +64,8 @@ class selectJsonVc: NSViewController, NSTextViewDelegate, WKNavigationDelegate, 
 
         loadWebView()
         
-        boxWidthConstraint.constant = CGFloat(viewWidthDefault)
-        boxHeightConstraint.constant = CGFloat(viewHeightDefault)
+      //  boxWidthConstraint.constant = CGFloat(viewWidthDefault)
+        //boxHeightConstraint.constant = CGFloat(viewHeightDefault)
         webview.backgroundcolor = NSColor.clear
         addLog(text: "Edit settings (selectJsonVc) viewdidload end")
     }
@@ -442,7 +442,7 @@ class selectJsonVc: NSViewController, NSTextViewDelegate, WKNavigationDelegate, 
 
 class MessageHandler: NSObject, WKScriptMessageHandler {
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-        print("call back hua")
+        print("call back hua:- \(message.name)")
         if message.name == "close_survey_ui"{
             print(message.body)
             if surveyWcObj != nil{
@@ -479,7 +479,9 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
         }else if message.name == "send_new_task_added_to_todo_player"{
             print(message.body)
 //            focusModeTaskString = message.body as? String ?? ""
-            updateFocusModeTask(taskString: message.body as? String ?? "")
+            let taskString = message.body as? String ?? ""
+            addLog(text: "focusMode Task String is:- \(focusModeTaskString)")
+            updateFocusModeTask(taskString: taskString)
             var currentFocusModeIndex = 0
             if (isFocusModeRunning || isAnyAllowedFocusModeActivityRunning){
                 if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._CUSTOM_ROUTINE_{
@@ -518,7 +520,7 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
 //            }
         }else if message.name == "close_focus_player_ui"{
             print(message.body)
-            taskPlayerWcObj?.close()
+//            taskPlayerWcObj?.close()
         }else if message.name == "open_marketplace"{
             print(message.body)
             if let url = URL(string: message.body as? String ?? ""){

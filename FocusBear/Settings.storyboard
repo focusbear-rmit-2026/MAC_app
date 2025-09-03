@@ -549,10 +549,6 @@
                                         <constraint firstAttribute="trailing" secondItem="48d-vd-S07" secondAttribute="trailing" id="ydj-ag-lVN"/>
                                     </constraints>
                                 </view>
-                                <constraints>
-                                    <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="1040" id="Kou-aI-drS"/>
-                                    <constraint firstAttribute="height" relation="greaterThanOrEqual" constant="500" id="vd6-Qk-ohQ"/>
-                                </constraints>
                                 <color key="fillColor" name="backgroundColor"/>
                             </box>
                         </subviews>
@@ -588,7 +584,6 @@
                         <outlet property="lblTitle" destination="pWt-gv-m0m" id="JBC-t5-0Zq"/>
                         <outlet property="lblTotalProgress" destination="S7Q-g0-NlQ" id="gpu-8N-6c4"/>
                         <outlet property="webView" destination="Waj-nM-VEw" id="Ubx-Bh-8ND"/>
-                        <outlet property="widthConstraint" destination="Kou-aI-drS" id="tbZ-5H-HxX"/>
                     </connections>
                 </viewController>
                 <customObject id="dtf-3q-buP" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
@@ -2878,13 +2873,13 @@ DQ
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
                             <box boxType="custom" borderWidth="0.0" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="dZX-9W-fSn">
-                                <rect key="frame" x="0.0" y="0.0" width="249" height="344"/>
+                                <rect key="frame" x="0.0" y="0.0" width="249" height="342"/>
                                 <view key="contentView" id="8B0-a3-isv">
-                                    <rect key="frame" x="0.0" y="0.0" width="249" height="344"/>
+                                    <rect key="frame" x="0.0" y="0.0" width="249" height="342"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
                                         <searchField wantsLayer="YES" focusRingType="none" verticalHuggingPriority="750" textCompletion="NO" translatesAutoresizingMaskIntoConstraints="NO" id="gj7-29-Pcx" customClass="PopoverAwareSearchField" customModule="Focus_Bear" customModuleProvider="target">
-                                            <rect key="frame" x="10" y="304" width="229" height="30"/>
+                                            <rect key="frame" x="10" y="302" width="229" height="30"/>
                                             <searchFieldCell key="cell" controlSize="large" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" borderStyle="bezel" usesSingleLineMode="YES" bezelStyle="round" id="hCp-vB-PWb">
                                                 <font key="font" metaFont="system"/>
                                                 <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -2892,13 +2887,13 @@ DQ
                                             </searchFieldCell>
                                         </searchField>
                                         <scrollView borderType="none" autohidesScrollers="YES" horizontalLineScroll="34" horizontalPageScroll="10" verticalLineScroll="34" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="N7o-tz-nVy">
-                                            <rect key="frame" x="10" y="201" width="239" height="83"/>
+                                            <rect key="frame" x="10" y="201" width="239" height="81"/>
                                             <clipView key="contentView" drawsBackground="NO" id="qVo-BV-6YF">
-                                                <rect key="frame" x="0.0" y="0.0" width="239" height="83"/>
+                                                <rect key="frame" x="0.0" y="0.0" width="239" height="81"/>
                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                 <subviews>
                                                     <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" multipleSelection="NO" emptySelection="NO" autosaveColumns="NO" rowHeight="34" viewBased="YES" id="7QV-Zg-ysE">
-                                                        <rect key="frame" x="0.0" y="0.0" width="239" height="83"/>
+                                                        <rect key="frame" x="0.0" y="0.0" width="239" height="81"/>
                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                         <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                                         <color key="gridColor" name="gridColor" catalog="System" colorSpace="catalog"/>
@@ -2996,7 +2991,7 @@ DQ
                                             </scroller>
                                         </scrollView>
                                         <customView translatesAutoresizingMaskIntoConstraints="NO" id="Q0a-EW-q6p">
-                                            <rect key="frame" x="10" y="95" width="229" height="209"/>
+                                            <rect key="frame" x="10" y="93" width="229" height="209"/>
                                             <constraints>
                                                 <constraint firstAttribute="height" constant="209" id="0XF-4y-9c3"/>
                                             </constraints>
@@ -3151,24 +3146,24 @@ DQ
         <scene sceneID="lr4-Rt-l3T">
             <objects>
                 <viewController storyboardIdentifier="selectJsonVc" id="vPn-vM-usm" customClass="selectJsonVc" customModule="Focus_Bear" customModuleProvider="target" sceneMemberID="viewController">
-                    <view key="view" misplaced="YES" id="cRZ-8u-Mvh">
+                    <view key="view" id="cRZ-8u-Mvh">
                         <rect key="frame" x="0.0" y="0.0" width="981" height="600"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
                             <box boxType="custom" borderWidth="0.0" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="WfD-Il-4Th">
-                                <rect key="frame" x="0.0" y="0.0" width="1000" height="600"/>
+                                <rect key="frame" x="0.0" y="0.0" width="981" height="600"/>
                                 <view key="contentView" id="cLx-Rg-Sxd">
-                                    <rect key="frame" x="0.0" y="0.0" width="1000" height="600"/>
+                                    <rect key="frame" x="0.0" y="0.0" width="981" height="600"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
                                         <box boxType="custom" borderWidth="0.0" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="h0I-pA-NUC">
-                                            <rect key="frame" x="0.0" y="0.0" width="1000" height="600"/>
+                                            <rect key="frame" x="0.0" y="0.0" width="981" height="600"/>
                                             <view key="contentView" id="mv9-RV-uNk">
-                                                <rect key="frame" x="0.0" y="0.0" width="1000" height="600"/>
+                                                <rect key="frame" x="0.0" y="0.0" width="981" height="600"/>
                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                 <subviews>
                                                     <wkWebView wantsLayer="YES" horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="MFB-df-rap">
-                                                        <rect key="frame" x="0.0" y="0.0" width="1000" height="599"/>
+                                                        <rect key="frame" x="0.0" y="0.0" width="981" height="599"/>
                                                         <wkWebViewConfiguration key="configuration">
                                                             <audiovisualMediaTypes key="mediaTypesRequiringUserActionForPlayback" none="YES"/>
                                                             <wkPreferences key="preferences"/>
@@ -3191,10 +3186,6 @@ DQ
                                         <constraint firstItem="h0I-pA-NUC" firstAttribute="top" secondItem="cLx-Rg-Sxd" secondAttribute="top" id="xfe-As-kKK"/>
                                     </constraints>
                                 </view>
-                                <constraints>
-                                    <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="1000" id="dXA-6L-hBs"/>
-                                    <constraint firstAttribute="height" relation="greaterThanOrEqual" constant="500" id="wdT-Ph-raJ"/>
-                                </constraints>
                             </box>
                         </subviews>
                         <constraints>
@@ -3205,8 +3196,6 @@ DQ
                         </constraints>
                     </view>
                     <connections>
-                        <outlet property="boxHeightConstraint" destination="wdT-Ph-raJ" id="rt6-GE-S1C"/>
-                        <outlet property="boxWidthConstraint" destination="dXA-6L-hBs" id="agH-8P-LRM"/>
                         <outlet property="customBox" destination="h0I-pA-NUC" id="ffI-bm-9rx"/>
                         <outlet property="webview" destination="MFB-df-rap" id="Uqk-28-KBB"/>
                     </connections>
@@ -7432,10 +7421,6 @@ Gw
                                                                         <constraint firstItem="xZM-ul-S1h" firstAttribute="top" secondItem="21t-eh-WUZ" secondAttribute="top" id="krS-dm-U0H"/>
                                                                     </constraints>
                                                                 </view>
-                                                                <constraints>
-                                                                    <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="630" id="8RC-db-VMQ"/>
-                                                                    <constraint firstAttribute="height" relation="greaterThanOrEqual" constant="400" id="MMe-df-rYc"/>
-                                                                </constraints>
                                                             </box>
                                                         </subviews>
                                                         <constraints>
@@ -7472,10 +7457,6 @@ Gw
                                                                         <constraint firstAttribute="trailing" secondItem="O89-V9-tN9" secondAttribute="trailing" id="zjW-Ue-wrX"/>
                                                                     </constraints>
                                                                 </view>
-                                                                <constraints>
-                                                                    <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="630" id="5y1-eV-Nl4"/>
-                                                                    <constraint firstAttribute="height" relation="greaterThanOrEqual" constant="400" id="rNN-En-rkz"/>
-                                                                </constraints>
                                                             </box>
                                                         </subviews>
                                                         <constraints>
@@ -7488,17 +7469,17 @@ Gw
                                                 </tabViewItem>
                                                 <tabViewItem label="xxCommunity" identifier="community" id="OEu-hr-L0a">
                                                     <view key="view" id="0N4-ea-j7j">
-                                                        <rect key="frame" x="10" y="33" width="500" height="249"/>
+                                                        <rect key="frame" x="10" y="33" width="500" height="400"/>
                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                         <subviews>
                                                             <box boxType="custom" borderWidth="0.0" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="LvL-Yc-WVT">
-                                                                <rect key="frame" x="0.0" y="0.0" width="500" height="249"/>
+                                                                <rect key="frame" x="0.0" y="0.0" width="500" height="400"/>
                                                                 <view key="contentView" id="gqB-lp-5Qy">
-                                                                    <rect key="frame" x="0.0" y="0.0" width="500" height="249"/>
+                                                                    <rect key="frame" x="0.0" y="0.0" width="500" height="400"/>
                                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                     <subviews>
-                                                                        <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="5UF-ka-08L">
-                                                                            <rect key="frame" x="18" y="195" width="464" height="34"/>
+                                                                        <textField focusRingType="none" horizontalHuggingPriority="249" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="5UF-ka-08L">
+                                                                            <rect key="frame" x="18" y="346" width="464" height="34"/>
                                                                             <textFieldCell key="cell" title="xxJoin the Focus Bear discord server to share ideas, set up co-working/body doubling sessions and get help with the app." id="23H-75-kOw">
                                                                                 <font key="font" metaFont="system" size="14"/>
                                                                                 <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -7506,7 +7487,7 @@ Gw
                                                                             </textFieldCell>
                                                                         </textField>
                                                                         <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="y8b-ju-tmT" customClass="underLineButton" customModule="Focus_Bear" customModuleProvider="target">
-                                                                            <rect key="frame" x="229" y="142" width="123" height="28"/>
+                                                                            <rect key="frame" x="229" y="293" width="123" height="28"/>
                                                                             <buttonCell key="cell" type="square" title="xxI don't use Discord" bezelStyle="shadowlessSquare" alignment="center" imageScaling="proportionallyDown" inset="2" id="ZfV-U3-OMl">
                                                                                 <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                                                 <font key="font" metaFont="cellTitle"/>
@@ -7519,7 +7500,7 @@ Gw
                                                                             </connections>
                                                                         </button>
                                                                         <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="kyT-ha-Fko" customClass="Button" customModule="Focus_Bear" customModuleProvider="target">
-                                                                            <rect key="frame" x="20" y="142" width="180" height="28"/>
+                                                                            <rect key="frame" x="20" y="293" width="180" height="28"/>
                                                                             <buttonCell key="cell" type="square" title="xxJoin Discord Server" bezelStyle="shadowlessSquare" alignment="center" lineBreakMode="truncatingTail" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="aHL-jr-hxg">
                                                                                 <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                                                 <font key="font" metaFont="system"/>
@@ -7532,8 +7513,8 @@ Gw
                                                                                 <action selector="btnJoinDiscordServerClicked:" target="rLP-sE-Z4K" id="JfT-Mf-rSR"/>
                                                                             </connections>
                                                                         </button>
-                                                                        <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="3kA-78-n36">
-                                                                            <rect key="frame" x="18" y="78" width="464" height="34"/>
+                                                                        <textField focusRingType="none" horizontalHuggingPriority="249" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="3kA-78-n36">
+                                                                            <rect key="frame" x="18" y="229" width="464" height="34"/>
                                                                             <textFieldCell key="cell" id="iY2-wm-adu">
                                                                                 <font key="font" metaFont="system" size="14"/>
                                                                                 <string key="title">xxJoin the Focus Bear WhatsApp group to exchange ideas, organize co-working/body doubling sessions, and get support with the app!</string>
@@ -7542,7 +7523,7 @@ Gw
                                                                             </textFieldCell>
                                                                         </textField>
                                                                         <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="JJO-Cm-Td8" customClass="Button" customModule="Focus_Bear" customModuleProvider="target">
-                                                                            <rect key="frame" x="20" y="25" width="180" height="28"/>
+                                                                            <rect key="frame" x="20" y="176" width="180" height="28"/>
                                                                             <buttonCell key="cell" type="square" title="xxJoin Whatsapp Group" bezelStyle="shadowlessSquare" alignment="center" lineBreakMode="truncatingTail" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="XTM-oG-sux">
                                                                                 <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                                                 <font key="font" metaFont="system"/>
@@ -7572,9 +7553,6 @@ Gw
                                                                         <constraint firstItem="3kA-78-n36" firstAttribute="top" secondItem="y8b-ju-tmT" secondAttribute="bottom" constant="30" id="phl-nv-gIo"/>
                                                                     </constraints>
                                                                 </view>
-                                                                <constraints>
-                                                                    <constraint firstAttribute="width" constant="500" placeholder="YES" id="aAk-Bs-DvU"/>
-                                                                </constraints>
                                                             </box>
                                                         </subviews>
                                                         <constraints>
@@ -7587,17 +7565,17 @@ Gw
                                                 </tabViewItem>
                                                 <tabViewItem label="xxReport Problem" identifier="report" id="Eo8-tF-3R2">
                                                     <view key="view" id="KAl-X9-6Kx">
-                                                        <rect key="frame" x="10" y="33" width="630" height="228"/>
+                                                        <rect key="frame" x="10" y="33" width="630" height="400"/>
                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                         <subviews>
                                                             <box boxType="custom" borderWidth="0.0" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="qEa-YB-IOs">
-                                                                <rect key="frame" x="0.0" y="0.0" width="630" height="228"/>
+                                                                <rect key="frame" x="0.0" y="0.0" width="630" height="400"/>
                                                                 <view key="contentView" id="FWm-bu-gS3">
-                                                                    <rect key="frame" x="0.0" y="0.0" width="630" height="228"/>
+                                                                    <rect key="frame" x="0.0" y="0.0" width="630" height="400"/>
                                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                     <subviews>
                                                                         <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="ma0-NM-tjR">
-                                                                            <rect key="frame" x="18" y="140" width="594" height="68"/>
+                                                                            <rect key="frame" x="18" y="312" width="594" height="68"/>
                                                                             <textFieldCell key="cell" id="bDr-8H-Qek">
                                                                                 <font key="font" metaFont="system" size="14"/>
                                                                                 <string key="title">xxFocus Bear is still a new app and you might encounter issues (or have great ideas on how to make it better). We'd really appreciate your feedback. You can email us at team@focusbear.io. Screenshots are really helpful to let us understand the problem. Also if you had a problem, please export your logs (use the link below) and attach it to the email.</string>
@@ -7606,7 +7584,7 @@ Gw
                                                                             </textFieldCell>
                                                                         </textField>
                                                                         <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="eLm-ai-dhg" customClass="Button" customModule="Focus_Bear" customModuleProvider="target">
-                                                                            <rect key="frame" x="20" y="20" width="310" height="28"/>
+                                                                            <rect key="frame" x="20" y="192" width="310" height="28"/>
                                                                             <buttonCell key="cell" type="square" title="xxClick here to export logs to share with support team" bezelStyle="shadowlessSquare" alignment="center" imageScaling="proportionallyDown" inset="2" id="B0l-3u-m1v">
                                                                                 <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                                                 <font key="font" metaFont="cellTitle"/>
@@ -7619,10 +7597,10 @@ Gw
                                                                             </connections>
                                                                         </button>
                                                                         <scrollView horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" hasHorizontalScroller="NO" translatesAutoresizingMaskIntoConstraints="NO" id="l40-Ne-JrN">
-                                                                            <rect key="frame" x="20" y="58" width="590" height="70"/>
+                                                                            <rect key="frame" x="20" y="230" width="590" height="70"/>
                                                                             <clipView key="contentView" drawsBackground="NO" id="bch-Ai-ky6">
                                                                                 <rect key="frame" x="1" y="1" width="573" height="68"/>
-                                                                                <autoresizingMask key="autoresizingMask"/>
+                                                                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                 <subviews>
                                                                                     <textView importsGraphics="NO" richText="NO" verticallyResizable="YES" spellingCorrection="YES" smartInsertDelete="YES" id="Gp8-HO-z0G" customClass="customTexView" customModule="Focus_Bear" customModuleProvider="target">
                                                                                         <rect key="frame" x="0.0" y="0.0" width="573" height="68"/>
@@ -7660,9 +7638,6 @@ Gw
                                                                         <constraint firstItem="ma0-NM-tjR" firstAttribute="leading" secondItem="FWm-bu-gS3" secondAttribute="leading" constant="20" id="zLk-0v-J0J"/>
                                                                     </constraints>
                                                                 </view>
-                                                                <constraints>
-                                                                    <constraint firstAttribute="width" constant="630" placeholder="YES" id="mxu-Br-Q25"/>
-                                                                </constraints>
                                                             </box>
                                                         </subviews>
                                                         <constraints>

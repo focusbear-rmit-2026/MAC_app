@@ -54,9 +54,9 @@ class mouseDownMoveWindowButton: NSButton {
                     NSApp.sendAction(self.action!, to: self.target, from: self)
                 }
             }else{
-                if self.window?.windowController == taskPlayerWcObj{
-                    taskPlayerVcObj?.windowDragged()
-                }
+//                if self.window?.windowController == taskPlayerWcObj{
+//                    taskPlayerVcObj?.windowDragged()
+//                }
             }
         }
         mouseDragged = false
