@@ -306,6 +306,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
     
     func changeVideoUrl(url:String){
         var videoUrl = url
+        addLog(text:"video url is :- \(videoUrl)")
         var isVimeoUrl = false
         var videoID: String?
         if let host = URL(string: videoUrl)?.host {
@@ -331,12 +332,17 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                 // doing this beacuse if video is embedded than it will not play
                 if videoUrl.lowercased().contains("https://youtu.be/"){
                     if let lastItem =  videoUrl.components(separatedBy: "/").last{
-                        videoID = lastItem
-                        videoUrl = "https://www.youtube.com/embed/" + lastItem
+                        videoID = lastItem.components(separatedBy: "?").first//lastItem
+                        if let videoID = videoID {
+                            videoUrl = "https://www.youtube.com/embed/" + videoID
+                        }
                     }
                     
                 }else if videoUrl.lowercased().contains("embed/") {
-                    videoID = videoUrl.components(separatedBy: "/").last
+                    if let lastItem = videoUrl.components(separatedBy: "/").last {
+                        // Remove query params if present
+                        videoID = lastItem.components(separatedBy: "?").first
+                    }
                 }
             }
         }
@@ -397,6 +403,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         btnTabVideo.isHidden = true
         isVideoLodded = false
         if var videoUrl = url{
+            addLog(text:"video url is :- \(videoUrl)")
             self.webView.isHidden = false
             isVideoLodded = true
             tabCount += 1
@@ -426,12 +433,20 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                     // doing this beacuse if video is embedded than it will not play
                     if videoUrl.lowercased().contains("https://youtu.be/"){
                         if let lastItem =  videoUrl.components(separatedBy: "/").last{
-                            videoID = lastItem
-                            videoUrl = "https://www.youtube.com/embed/" + lastItem
+                            
+                            videoID = lastItem.components(separatedBy: "?").first//lastItem
+                            if let videoID = videoID {
+                                videoUrl = "https://www.youtube.com/embed/" + videoID
+                            }
                         }
                         
                     }else if videoUrl.lowercased().contains("embed/") {
-                        videoID = videoUrl.components(separatedBy: "/").last
+//                        videoID = videoUrl.components(separatedBy: "/").last
+                        
+                        if let lastItem = videoUrl.components(separatedBy: "/").last {
+                            // Remove query params if present
+                            videoID = lastItem.components(separatedBy: "?").first
+                        }
                     }
                 }
             }

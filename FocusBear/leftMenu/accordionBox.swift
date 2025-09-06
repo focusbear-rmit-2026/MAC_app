@@ -60,7 +60,7 @@ class accordionBox: NSBox {
         self.borderWidth = 0.0
         self.borderColor = NSColor.separatorColor
         self.cornerRadius = 4.0
-        self.fillColor = NSColor.controlBackgroundColor
+        self.fillColor = NSColor.clear
         self.titlePosition = .noTitle
         
         addSubview(titleLabel)

@@ -62,6 +62,7 @@ class abortingCountDownVc: NSViewController {
             
         }
     }
+    
     override func viewWillAppear() {
         if SettingsManagerObject.kIsReducedMotion{
             imgViewGif.image = nil
@@ -70,6 +71,7 @@ class abortingCountDownVc: NSViewController {
             imgViewGif.animates = true
         }
     }
+    
     func startTimer() {
         currentTimer = 0
         totalDuration = 10
@@ -119,6 +121,7 @@ class abortingCountDownVc: NSViewController {
     
     
     @IBAction func btnEmaiClicked(_ sender: Any) {
+        
     }
     
     @IBAction func btnCancelAbortClicked(_ sender: Any) {

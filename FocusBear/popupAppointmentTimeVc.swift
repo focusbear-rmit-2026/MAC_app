@@ -85,9 +85,11 @@ class popupAppointmentTimeVc: NSViewController {
     }
     
     @IBAction func btnOkClicked(_ sender: Any) {
+        addLog(text: "[user-action] smallCountDownVc:- button Ok clicked")
         if !shouldAskPassword{
             startAppointment()
         }else{
+            addLog(text: "smallCountDownVc:- enterPassword")
             if enterPasswordVcObj == nil{
                 enterPasswordVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("enterPasswordVc")) as? enterPasswordVc
             }
@@ -96,6 +98,7 @@ class popupAppointmentTimeVc: NSViewController {
     }
     
     func startAppointment(){
+        addLog(text: "smallCountDownVc:- startAppointment")
         let duration = Calendar.current.dateComponents([.second], from: Date(), to: endTime!).second ?? 0
         if lastCurrentState == ._MORNING_HABIT_{
             getHabitsVcObject().postponeMorningHabitFor(minutes: 0, secondsToPostpone: duration + 160, showAskFocusModeView:false, showAskIntention:false)
@@ -114,6 +117,7 @@ class popupAppointmentTimeVc: NSViewController {
     }
     
     @IBAction func btnBackToHabitsClicked(_ sender: Any) {
+        addLog(text: "[user-action] smallCountDownVc:- button back to habits clicked")
         if timer != nil{
             timer?.invalidate()
             timer = nil
@@ -127,8 +131,10 @@ class popupAppointmentTimeVc: NSViewController {
 //            getsmallCountDownVcObject().view.isHidden = false
             showSmallTimerView()
         }
+        mainViewControllerObj?.showHabitsView()
         getHabitsVcObject().abortCancel()
     }
+    
     func startTimer() {
         currentTimer = 0
         totalDuration = 120

@@ -151,7 +151,7 @@ class mainWindowListBox: NSBox {
     }
     
     func showNormalUi(){
-        self.fillColor = NSColor.controlBackgroundColor
+        self.fillColor = NSColor.clear
         self.borderColor = .clear
         if isEnabled{
             label?.textColor = NSColor.labelColor
