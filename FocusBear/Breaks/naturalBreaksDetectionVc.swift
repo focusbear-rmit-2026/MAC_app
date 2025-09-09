@@ -86,6 +86,36 @@ class naturalBreaksDetectionVc: NSViewController {
         }
     }
     
+    func closeForecefully(){// added on 9/9/25 in 2.27.413
+        addLog(text: "naturalBreaksDetectionVc - closeForecefully")
+        self.closeView()
+        
+        if let showBoxTime = showBoxTime{
+            let idelTimeStartTime = showBoxTime.addingTimeInterval(-Double(duration))
+            UserDefaults.standard.set(idelTimeStartTime, forKey: kUserdefaultsLastBreaksStartTime)
+            
+            if let startTime = UserDefaults.standard.object(forKey: kUserdefaultsLastBreaksStartTime) as? Date{
+                let currentDate = Date()
+                let diffSeconds = Calendar.current.dateComponents([.second], from: startTime, to: currentDate).second ?? 0
+                if diffSeconds > 0{
+                    var arrDuration = UserDefaults.standard.object(forKey: kUserdefaultsArrayBreaksDurations) as? [Int] ?? []
+                    arrDuration.append(diffSeconds)
+                    UserDefaults.standard.set(arrDuration, forKey: kUserdefaultsArrayBreaksDurations)
+                }
+                UserDefaults.standard.set(currentDate, forKey: kUserdefaultsLastBreakEndTime)
+                let df = DateFormatter()
+                df.dateFormat = "yyyy-MM-dd HH:mm:ss"
+                let now = df.string(from: currentDate)
+                addLog(text: "Last break recorded at \(now). It will be shown in the menu.")
+            }
+        }else{
+            addLog(text: "Break start time is undefined or not initialized")
+        }
+        if getHabitsVcObject().breakTimer != nil{
+            getHabitsVcObject().setActivityTimer()
+        }
+    }
+    
     @IBAction func btnFirstClicked(_ sender: Any) {
         if isNormalState{
             addLog(text: "[user-action] naturalBreaksDetectionVc - btnThanksClicked")

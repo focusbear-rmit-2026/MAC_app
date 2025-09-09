@@ -921,11 +921,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             self.lblTimer.stringValue = "\(hour):\(minute):\(second)"
         }
 
-        DispatchQueue.main.async {
-            self.timer?.invalidate()
-            self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
-            RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
-        }
+        setCountDownTimer()
         
         if currentHabit.useTimer{
             boxTimer.isHidden = false
@@ -1130,11 +1126,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             self.lblTimer.stringValue = "\(hour):\(minute):\(second)"
         }
 
-        DispatchQueue.main.async {
-            self.timer?.invalidate()
-            self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
-            RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
-        }
+        setCountDownTimer()
         
         if useTimer{
             boxTimer.isHidden = false
@@ -1222,11 +1214,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                 }
             }
             
-            DispatchQueue.main.async {
-                self.timer?.invalidate()
-                self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
-                RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
-            }
+            setCountDownTimer()
         }else{
             if url != nil{
                 if #available(macOS 12.0, *) {
@@ -1471,11 +1459,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             self.lblTimer.stringValue = "\(hour):\(minute):\(second)"
         }
         
-        DispatchQueue.main.async {
-            self.timer?.invalidate()
-            self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
-            RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
-        }
+        setCountDownTimer()
         
         if currentActivity.useTimer{
             boxTimer.isHidden = false
@@ -1492,6 +1476,15 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         writeStringToHabitInfo(isFinishTime: false, activityName: name)
     }
   
+    func setCountDownTimer(){
+        DispatchQueue.main.async {
+            self.lblTimer.font = NSFont.monospacedDigitSystemFont(ofSize: self.lblTimer.font?.pointSize ?? 41, weight: .regular)
+            self.timer?.invalidate()
+            self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
+            RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
+        }
+    }
+    
     func resetConstraintsForVideoAndGif(kIsReducedMotion:Bool){
         if kIsReducedMotion{
             imgViewGif.image = nil
@@ -1576,11 +1569,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                 }
             }
             
-            DispatchQueue.main.async {
-                self.timer?.invalidate()
-                self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
-                RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
-            }
+            setCountDownTimer()
         }else{
             if url != nil{
                 if #available(macOS 12.0, *) {
@@ -1642,11 +1631,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             self.lblTimer.stringValue = "\(hour):\(minute):\(second)"
         }
 
-        DispatchQueue.main.async {
-            self.timer?.invalidate()
-            self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
-            RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
-        }
+        setCountDownTimer()
         
         boxTimer.isHidden = false
         boxCompletionRequirements.isHidden = true
@@ -1740,10 +1725,8 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             allApiObject.capturePosthog(event: "resume-activity", metadata: [:])
             DispatchQueue.main.async {
                 self.btnPause.image = self.pauseIcon
-                self.timer?.invalidate()
-                self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
-                RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
             }
+            setCountDownTimer()
             if isVideoLodded{
                 if #available(macOS 12.0, *) {
                     webView.setAllMediaPlaybackSuspended(false)

@@ -123,6 +123,7 @@ class smallCountDownVc: NSViewController {
             getHabitsVcObject().timerGiveOneMoreMinut?.invalidate()
             getHabitsVcObject().timerGiveOneMoreMinut = nil
             getHabitsVcObject().showFocusSummaryView()
+            leftMenuVcObj?.showHabitsView()
         }else if currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_MORNING_HABIT_ || (currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeMorningHabit) || (currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeEveningHabit){
             addLog(text:"[user-action] button Extend postpone time Clicked")
             lastCurrentState = currentState 

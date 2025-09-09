@@ -452,6 +452,19 @@ func showNaturalBreakDetectionWindow(duration:Int){
     }
 }
 
+func closeNaturalBreakDetectionWindowIfVisible(){// added on 9/9/25 in 2.27.413
+    addLog(text: "closeNaturalBreakDetectionWindowIfVisible")
+    if naturalBreaksDetectionVcObj != nil{
+        if naturalBreaksDetectionVcObj?.isViewVisible ?? false{
+            if naturalBreaksDetectionVcObj != nil{
+                if naturalBreaksDetectionVcObj?.presentingViewController == mainViewControllerObj{
+                    naturalBreaksDetectionVcObj?.closeForecefully()
+                }
+            }
+        }
+    }
+}
+
 //-------------------------------------------------//
 
 //***********show Popup Appointment Time Window***************//

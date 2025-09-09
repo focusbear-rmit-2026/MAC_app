@@ -869,14 +869,28 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         var shouldShowOnboardingAfterLogin = true
                         allApiObject.getUserLocalDeviceSettings(completionHandler: { json in
                             if json != nil{
-                                if let settings = json?.value(forKey: "MacOS") as? NSDictionary {//
-                                    print(settings)
-                                    if settings.allKeys.count == 0{
-                                        shouldShowOnboardingAfterLogin = true
-                                    }else{
-                                        shouldShowOnboardingAfterLogin = false
+                                
+                                if let webSettings = json?.value(forKey: "Web") as? NSDictionary {// added on 9/9/25 version 2.27.413
+                            
+                                    if let onboarding = webSettings.value(forKey: "onboarding") as? NSDictionary{
+                                        if let currentStep = onboarding.value(forKey: "currentStep") as? String{
+                                            if currentStep.lowercased() == "completed"{
+                                                shouldShowOnboardingAfterLogin = false
+                                            }
+                                        }
                                     }
-                                    
+                                }
+                                
+                                if shouldShowOnboardingAfterLogin{
+                                    if let settings = json?.value(forKey: "MacOS") as? NSDictionary {//
+                                        print(settings)
+                                        if settings.allKeys.count == 0{
+                                            shouldShowOnboardingAfterLogin = true
+                                        }else{
+                                            shouldShowOnboardingAfterLogin = false
+                                        }
+                                        
+                                    }
                                 }
                             }
                             DispatchQueue.main.async {
@@ -4378,6 +4392,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     if self.isUserOnMeeting && currentState == ._NOTHING_{
                         addLog(text: "isUserOnMeeting True and currentState is None: Hide Main Window.")
                         if mainWindowControllerObj?.window?.isVisible ?? false{
+                            closeNaturalBreakDetectionWindowIfVisible()// added on 9/9/25 in 2.27.413
                             mainWindowControllerObj?.window?.close()
                             hideBlankWindowInSecondaryMonitor()
                         }
@@ -12300,3 +12315,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 // logs added
 // bug solved
 
+
+
+// onboarding ni krni h setting k hisab se
+// postpone not working
+// if ful screen window is showing then dont show popup  natural break// ak bar bhi dikh rha h to vaps ni dikhega
+// timer jump 
