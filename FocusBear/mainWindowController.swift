@@ -150,8 +150,7 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
                 
                 return false
             }
-            
-            
+
             if habitsVcObj?.btnAbort.isHidden ?? false{
                 return false
             }else{
@@ -173,6 +172,13 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
            
             return false
         }
+        
+        if currentState == ._ASK_APP_WORK_{
+            getHabitsVcObject().abortCurrentState()
+            return false
+        }
+        
+        
         if leftMenuVcObj?.boxEditHabits.isSelected ?? false{
             if areSettingsEdited{
                 leftMenuVcObj?.showAlertSettingsEdited()

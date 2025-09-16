@@ -971,6 +971,7 @@ class habitsVc: NSViewController {
         stopActivityTimer()
         NSApplication.shared.activate(ignoringOtherApps: true)
     }
+    
     func showFirstTimeVc(){
         addLog(text: "Showing first time welcome activity.")
         self.showCloseButtons()
@@ -2822,7 +2823,8 @@ class habitsVc: NSViewController {
                     pomodoroVcObj!.lblTitle.stringValue = pomodoroVcObj!.titleAfterPostpone
                     
                 }else{
-                    self.view.window?.close()
+                    leftMenuVcObj?.showHabitsView()
+                    habitsVcObj?.showHabitState()
                 }
             }
             writeStringToHabitInfo(isFinishTime: true, activityName: "")
@@ -3045,6 +3047,9 @@ class habitsVc: NSViewController {
                 pomodoroVcObj!.updateBreakDuration()
                 pomodoroVcObj!.lblTitle.stringValue = pomodoroVcObj!.titleAfterPostpone
                 
+            }else{
+                leftMenuVcObj?.showHabitsView()
+                habitsVcObj?.showHabitState()
             }
             writeStringToHabitInfo(isFinishTime: true, activityName: "")
             
@@ -3107,6 +3112,9 @@ class habitsVc: NSViewController {
                 pomodoroVcObj!.updateBreakDuration()
                 pomodoroVcObj!.lblTitle.stringValue = pomodoroVcObj!.titleAfterPostpone
                 
+            }else{
+                leftMenuVcObj?.showHabitsView()
+                habitsVcObj?.showHabitState()
             }
         }
     }
@@ -3934,6 +3942,7 @@ class habitsVc: NSViewController {
     func showHabitState(){
         addLog(text: "showHabitState")
         self.removeSubViews()
+        self.hideCloseButtons()
         habitsView.addSubview(getHabitsStateVcObject().view)
         habitsView.addConstraints(subView: getHabitsStateVcObject().view)
     }

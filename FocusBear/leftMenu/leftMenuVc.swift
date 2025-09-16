@@ -328,6 +328,21 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
                         }
                     }
                 }
+                if currentState != ._MORNING_HABIT_ && currentState != ._EVENING_HABIT_  && UserDefaults.standard.object(forKey: kUserdefaultsStartRoutineButtonClicked) == nil{
+                    let currentDate = Date()
+                    let firstRunDate = UserDefaults.standard.object(forKey: kUserdefaultsFirstRunDate) as? Date ?? currentDate
+                    let sameDay = Calendar.current.isDate(currentDate, equalTo: firstRunDate, toGranularity: .day)
+                    let isHabitsDisabled = UserDefaults.standard.object(forKey: kUserdefaultsIsHabitsDisabledFromOnboarding) as? Bool ?? false
+                    if isHabitsDisabled{
+                        UserDefaults.standard.set(true, forKey: kUserdefaultsStartRoutineButtonClicked)
+                    }else{
+                        if sameDay || !shouldDoHabits(){
+                            habitsVcObj?.showHabitState()
+                        }else{
+                            UserDefaults.standard.set(true, forKey: kUserdefaultsStartRoutineButtonClicked)
+                        }
+                    }
+                }
             }
             
             break;
@@ -621,6 +636,28 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         boxCustomRoutine.setDisableWithRaason(reason: toolTipDisableReason)
     }
     
+    func disbaleAllTabForOnboarding(){
+        let toolTipDisableReason = ""
+        boxEditHabits.setDisableWithRaason(reason: toolTipDisableReason)
+        boxSettings.setDisableWithRaason(reason: toolTipDisableReason)
+        boxBlocks.setDisableWithRaason(reason: toolTipDisableReason)
+        boxFocusModeSettings.setDisableWithRaason(reason: toolTipDisableReason)
+        
+        boxFocusMusic.setDisableWithRaason(reason: toolTipDisableReason)
+        boxBrainDump.setDisableWithRaason(reason: toolTipDisableReason)
+        boxTodoPlayer.setDisableWithRaason(reason: toolTipDisableReason)
+        boxMotivation.setDisableWithRaason(reason: toolTipDisableReason)
+        
+        boxMicroBreaks.setDisableWithRaason(reason: toolTipDisableReason)
+        boxFocusSession.setDisableWithRaason(reason: toolTipDisableReason)
+        boxHabits.setDisableWithRaason(reason: toolTipDisableReason)
+        boxCustomRoutine.setDisableWithRaason(reason: toolTipDisableReason)
+        
+        boxUpgradeNow.setDisableWithRaason(reason: toolTipDisableReason)
+        boxHelpAndSupport.setDisableWithRaason(reason: toolTipDisableReason)
+    }
+    
+    
     func disbaleAllExceptCustomRoutineTab(){
         var toolTipDisableReason = ""
         
@@ -712,6 +749,8 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         boxHabits.isEnabled = true
 //        boxDashboard.isEnabled = true
         boxCustomRoutine.isEnabled = true
+        boxUpgradeNow.isEnabled = true
+        boxHelpAndSupport.isEnabled = true
     }
     
     func showPomodoro(pomodoroVcObj:NSView){

@@ -74,6 +74,10 @@ class browserTabLimiterVc: NSViewController {
         allApiObject.capturePosthog(event: "settings-changed-tab-limiter-count", metadata: ["count":SettingsManagerObject.maxTabLimitCount])//
     }
     @IBAction func btnBackClicked(_ sender: Any) {
+        if leftMenuVcObj?.boxBlocks.isSelected ?? false{// solved in some cases settingsContainerVcObj is nil so before this added a check to solve problem on 15/9/25 version 2.27.415
+            tabStrictnessContainerVcObj?.showStrictnessView()
+            return;
+        }
         settingsContainerVcObj?.showStrictnessView()
     }
 }

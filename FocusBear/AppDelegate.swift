@@ -652,10 +652,17 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     }
     
     func showAskOccupation(){
+        if !getHabitsVcObject().isViewLoaded{
+            getHabitsVcObject().loadView()
+        }
         currentState = ._ASK_APP_WORK_
         mainWindowControllerObj?.showWindow(self)
+        mainViewControllerObj?.checkIsFullScreenNeeded()
         mainViewControllerObj!.showAskOccupationVc()
+        leftMenuVcObj?.disbaleAllTabForOnboarding()
+        mainViewControllerObj?.collapseLeftPanel()
     }
+    
     func showOnbardingHabit(){
         addLog(text: "func:- showOnbardingHabit")
         
@@ -666,12 +673,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         }else{
             mainWindowControllerObj?.showWindow(self)
         }
-//        mainViewControllerObj!.showFirstTimeVc()
-        getHabitsVcObject().showFirstTimeVc() // todo
+        mainViewControllerObj!.showHabitsView()
+        
+        getHabitsVcObject().showFirstTimeVc()
         isFirstRun = true
-        
-        
-        
+
         UserDefaults.standard.set(Date(), forKey: kUserdefaultsLastHabitShowDate)
         //                        if app is installed on the same day than user will not get morning habit on the same day until he logout and login with diffrent or same account so we write morning routine done date in userdefaulsts here but will remove when logout    and with the difrent account user will get his lastmorningroutine show date from api and write date in userdefaults
     }
@@ -3597,6 +3603,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         }else{
             leftMenuVcObj?.boxCustomRoutine.isHidden = false
         }
+        leftMenuVcObj?.enableAllItems()
         // show floating bar
         if let frame = appdelegate?.statusbutton?.window?.frame{
             let leading = frame.midX

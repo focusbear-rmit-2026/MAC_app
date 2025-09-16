@@ -32,6 +32,11 @@ class habitsStateVc: NSViewController {
     }
     
     func reloadData(){
+        btnResumeHabits.title = "Resume Habits"
+        
+        if let habitsStateVcInfo = configjson.value(forKey: "habitsStateVcInfo") as? NSDictionary{
+            btnResumeHabits.title = habitsStateVcInfo.value(forKey: "buttonResumeHabits") as? String ?? btnResumeHabits.title
+        }
         if currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_MORNING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_{
             btnResumeHabits.isHidden = false
             if currentState == ._POSTPON_MORNING_HABIT_{
@@ -87,10 +92,41 @@ class habitsStateVc: NSViewController {
                     }
                 }
             }
+            
+            if currentState != ._MORNING_HABIT_ && currentState != ._EVENING_HABIT_  && UserDefaults.standard.object(forKey: kUserdefaultsStartRoutineButtonClicked) == nil{
+                let currentDate = Date()
+                let firstRunDate = UserDefaults.standard.object(forKey: kUserdefaultsFirstRunDate) as? Date ?? currentDate
+                let sameDay = Calendar.current.isDate(currentDate, equalTo: firstRunDate, toGranularity: .day)
+                let isHabitsDisabled = UserDefaults.standard.object(forKey: kUserdefaultsIsHabitsDisabledFromOnboarding) as? Bool ?? false
+                lblTitle.stringValue = ""
+                if sameDay || !shouldDoHabits(){
+                    btnResumeHabits.isHidden = false
+                   
+                    if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
+                        if isShutOffTimeGoing(){
+                            btnResumeHabits.title = "Start evening routine"
+                            btnResumeHabits.title = menuInfo.value(forKey: "menuItemStartEveningHabitsFirstTimeTitle") as? String ?? btnResumeHabits.title
+                        }else{
+                            btnResumeHabits.title = "Start morning routine"
+                            btnResumeHabits.title = menuInfo.value(forKey: "menuItemStartMorningHabitsFirstTimeTitle") as? String ?? btnResumeHabits.title
+                        }
+                    }
+                }
+            }
         }
     }
     
     @IBAction func btnResumeHabitsClicked(_ sender: Any) {
+        if currentState != ._MORNING_HABIT_ && currentState != ._EVENING_HABIT_  && UserDefaults.standard.object(forKey: kUserdefaultsStartRoutineButtonClicked) == nil{
+            let currentDate = Date()
+            let firstRunDate = UserDefaults.standard.object(forKey: kUserdefaultsFirstRunDate) as? Date ?? currentDate
+            let sameDay = Calendar.current.isDate(currentDate, equalTo: firstRunDate, toGranularity: .day)
+            let isHabitsDisabled = UserDefaults.standard.object(forKey: kUserdefaultsIsHabitsDisabledFromOnboarding) as? Bool ?? false
+            if sameDay || !shouldDoHabits(){
+                menuViewControllerObj?.btnStartHabitsFirstTimeClicked(self)
+                return;
+            }
+        }
         menuViewControllerObj?.btnResumeHabitsClicked(self)
     }
 }

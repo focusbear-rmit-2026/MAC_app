@@ -104,6 +104,11 @@ class blockedUrlsVc: NSViewController {
         }
     }
     @IBAction func btnBackClicked(_ sender: Any) {
+        //// solved in some cases settingsContainerVcObj is nil so before this added a check to solve problem on 15/9/25 version 2.27.415
+        if leftMenuVcObj?.boxBlocks.isSelected ?? false{
+            tabStrictnessContainerVcObj?.showStrictnessView()
+            return;
+        }
         settingsContainerVcObj?.showStrictnessView()
     }
 }

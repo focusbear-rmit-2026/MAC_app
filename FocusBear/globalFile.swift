@@ -5242,30 +5242,4 @@ func getWindowTheme()->String{ // todo need to check agter onboarding also
 }
 
 
-/*
- // todo 
- 2025-09-08 11:28:40  -  showNaturalBreakDetectionWindow
- 2025-09-08 12:01:49  -  [user-action] naturalBreaksDetectionVc - btnThanksClicked
- 2025-09-08 15:27:07  -  showNaturalBreakDetectionWindow
- 2025-09-08 15:27:47  -  [user-action] naturalBreaksDetectionVc - btnThanksClicked
- 
- 2025-09-08 16:41:32  -  showNaturalBreakDetectionWindow
- 2025-09-08 16:41:34  -  [user-action] naturalBreaksDetectionVc - btnThanksClicked
- 
- 2025-09-09 09:26:41  -  showNaturalBreakDetectionWindow
- 2025-09-09 09:26:42  -  isUserOnMeeting True and currentState is None: Hide Main Window.
- 2025-09-09 12:14:21  -  [user-action] naturalBreaksDetectionVc - btnThanksClicked
- 
- 2025-09-09 11:39:44  -  showNaturalBreakDetectionWindow
- 2025-09-09 11:39:44  -  isUserOnMeeting True and currentState is None: Hide Main Window.
- 2025-09-09 11:55:49  -  isUserOnMeeting True and currentState is None: Hide Main Window.
- 
- 2025-09-09 12:14:19  -  showNaturalBreakDetectionWindow
- 2025-09-09 14:00:52  -  showNaturalBreakDetectionWindow
- 
- 2025-09-09 14:00:56  -  [user-action] naturalBreaksDetectionVc - btnThanksClicked
- 2025-09-09 14:00:58  -  [user-action] naturalBreaksDetectionVc - btnThanksClicked
- 2025-09-09 14:01:04  -  [user-action] naturalBreaksDetectionVc - btnThanksClicked
- 
- 
- */
+

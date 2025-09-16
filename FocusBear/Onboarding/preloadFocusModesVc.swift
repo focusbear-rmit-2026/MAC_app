@@ -173,7 +173,7 @@ class preloadFocusModesVc: NSViewController, NSTextFieldDelegate {
             
             if mainWindowControllerObj != nil{
                 if mainWindowControllerObj?.window?.isVisible ?? false{
-                    if leftMenuVcObj?.boxFocusModeSettings.isSelected ?? false{ // todo test 
+                    if leftMenuVcObj?.boxFocusModeSettings.isSelected ?? false{
                         focusPreferencesVcObj?.reloadData()
                     }
                 }
