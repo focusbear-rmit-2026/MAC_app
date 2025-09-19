@@ -2468,6 +2468,25 @@ extension NSAppleEventDescriptor {
         return (0..<listDescriptor.numberOfItems)
             .compactMap { listDescriptor.atIndex($0 + 1)?.stringValue }
     }
+    
+    func toTwoColumnStringArray() -> [(title: String, url: String)] {
+        guard let listDescriptor = self.coerce(toDescriptorType: typeAEList) else {
+            return []
+        }
+        guard listDescriptor.numberOfItems > 0 else { return [] }
+        var result: [(String, String)] = []
+
+        for i in 0..<listDescriptor.numberOfItems {
+            if let sublist = listDescriptor.atIndex(i + 1)?.coerce(toDescriptorType: typeAEList) {
+                let title = sublist.atIndex(1)?.stringValue ?? ""
+                let url = sublist.atIndex(2)?.stringValue ?? ""
+                result.append((title: title, url: url))
+            }
+        }
+
+        return result
+    }
+    
     func toAnyArray() -> [String:[String]] {
         guard let listDescriptor = self.coerce(toDescriptorType: typeAEList) else {
             return [:]
@@ -5229,7 +5248,7 @@ func stopMainAppForceQuitMonitoring(){
     }
 }
 
-func getWindowTheme()->String{ // todo need to check agter onboarding also
+func getWindowTheme()->String{
     var theme = "LIGHT"
     if mainWindowControllerObj != nil{
         if mainWindowControllerObj!.window?.hasDarkAppearance ?? false{

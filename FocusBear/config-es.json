@@ -1368,7 +1368,8 @@
         "buttonBlockUrlText": "Bloquear esta página",
         "buttonBlockAppText": "Bloquear esta app",
         "infoTemporaryAllow": "Este sitio ha sido marcado como una distracción 🧠❗Puedes desbloquearlo por ahora, pero se registrará como tiempo no productivo en tu informe.",
-        "currentTaskText": "La tarea actual es \"<TASK>\""
+        "currentTaskText": "La tarea actual es \"<TASK>\"",
+        "pickTaskText": "La IA no puede determinar si esto encaja con tu trabajo. ¡Elige una tarea para guiar a Focus Bear!"
     },
     "easyPostponeVcInfo": {
         "title": "Entendido – ahora no es un buen momento. Voy a esperar 5 minutos. Puedes posponer por más tiempo si asi lo necesitas.",
@@ -2474,12 +2475,27 @@
         "menuMotivation": "Motivación",
         "menuHelpAndSupport": "Ayuda y soporte,
         "menuUpgradeNow": "Actualizar ahora",
+        "menuTabAudit": "Auditoría de pestañas",
         "disableReasonMorningRoutine": "Desactivado porque tu rutina matutina está en progreso.",
         "disableReasonEveningRoutine": "Desactivado porque tu rutina nocturna está en progreso.",
         "disableReasonFocusSummary": "Desactivado porque tu resumen de todo el día está visible.",
         "disableReasonShutoffTime": "Desactivado porque es tu hora de apagado.",
         "disableReasonMircoBreaks": "Desactivado porque tu micro descanso está en progreso.",
         "disableReasonCustomRoutine": "Desactivado porque tu rutina personalizada está en progreso."
+    },
+    "browsersTabAuditVcInfo":{
+        "title": "Auditoría de pestañas",
+        "subTitle": "Focus Bear puede extraer todas las pestañas abiertas de tu navegador y guardarlas en un CSV para que decidas si las necesitas.",
+        "buttonExtractURLs": "Extraer URLs de pestañas a CSV",
+        "buttonOpenSavedReport": "Abrir informe guardado de auditoría de pestañas",
+        "lastReportDateText": "Tu última auditoría se realizó el: <DATE>",
+        "titleTabsCount": "Número de pestañas abiertas:"
+    },
+    "postBrowsersTabAuditVcInfo":{
+        "title": "Tus pestañas se han guardado en el archivo CSV. Ahora puedes cerrarlas con tranquilidad, ya que tienes una referencia guardada.",
+        "titleSetTabLimit": "Configura un límite de pestañas para no volver a sentirte abrumad@.",
+        "titleTabLimitCount": "Límite máximo de pestañas:",
+        "buttonSave": "Guardar"
     },
     "discordUrl": "https://discord.gg/VZdv3ZjhSq",
     "whatsAppUrl": "https://chat.whatsapp.com/FV0oTbCUWpILBYif7CP6UD",

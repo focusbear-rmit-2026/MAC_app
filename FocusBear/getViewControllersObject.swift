@@ -176,6 +176,26 @@ func getBrainDumpVcObject()->brainDumpVc{
     return brainDumpVcObj!
 }
 
+var browsersTabAuditVcObj:browsersTabAuditVc?
+func getBrowsersTabAuditVcObject()->browsersTabAuditVc{
+    if browsersTabAuditVcObj == nil{
+        browsersTabAuditVcObj = newStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("browsersTabAuditVc")) as? browsersTabAuditVc
+    }
+    return browsersTabAuditVcObj!
+}
+
+var postBrowsersTabAuditVcObj:postBrowsersTabAuditVc?
+func getPostBrowsersTabAuditVcObject()->postBrowsersTabAuditVc{
+    if postBrowsersTabAuditVcObj == nil{
+        postBrowsersTabAuditVcObj = nagsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("postBrowsersTabAuditVc")) as? postBrowsersTabAuditVc
+    }
+    return postBrowsersTabAuditVcObj!
+}
+
+
+
+
+
 var askLogInWcObj:loginWc?
 func getAskLogInWindowObject()->loginWc{
     if askLogInWcObj == nil{

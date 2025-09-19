@@ -93,6 +93,112 @@ func getBrowserAllTabUrl(browser:BROWSER)->[String]?{
     return nil
 }
 
+
+func getBrowserAllTabUrlAndTitle(browser:BROWSER)->[(title: String, url: String)]?{
+    if UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) == nil{
+        return nil
+    }
+    var browserName = ""
+    
+    if browser == ._SAFARI_{
+        browserName = "Safari"
+    }else if browser == ._GOOGLE_CHROME_{
+        browserName = "Google Chrome"
+    }else if browser == ._OPERA_{
+        browserName = "Opera"
+    }else if browser == ._OPERA_GX_{
+        browserName = "Opera GX"
+    }else if browser == ._VIVALDI_{
+        browserName = "Vivaldi"
+    }else if browser == ._BRAVE_BROWSER_{
+        browserName = "Brave Browser"
+    }else if browser == ._SIDEKICK_{
+        browserName = "Sidekick"
+    }else if browser == ._MICROSOFT_EDGE_{
+        browserName = "Microsoft Edge"
+    }else if browser == ._ARC_{
+        browserName = "Arc"
+    }else if browser == ._FIREFOX_{
+        if let url = getFirefoxActiveTabUrl(), let title = getFirefoxActiveTabTitle(){
+            return [(title, url)] // todo check
+        }
+    }else if browser == ._SIGMA_OS_{
+        if let url = getSigmaOSBrowserActiveTabUrl(), let title = getSigmaOSBrowserActiveTabTitle(){
+            return [(title, url)] // todo check
+        }
+    }
+    
+
+    
+    
+    var script: String = ""
+    
+    
+    if browser == ._ARC_{
+        script =
+        """
+        tell application "Arc"
+        set arrayTabs to {}
+        repeat with theTab in tabs of front window
+        set tabTitle to title of theTab
+        set tabURL to URL of theTab
+        set end of arrayTabs to {tabTitle, tabURL}
+        end repeat
+        return arrayTabs
+        end tell
+        """
+    }else if browser == ._SAFARI_{
+        script =
+        """
+        tell application "\(browserName)"
+        set allWinds to windows
+        set arrayTabs to {}
+        repeat with the_wnd in allWinds
+        set allTabs to tabs in the_wnd
+        repeat with theTab in allTabs
+        set taburl to URL of theTab
+        set tabTitle to name of theTab
+        set end of arrayTabs to {tabTitle, tabURL}
+        end repeat
+        end repeat
+        return the arrayTabs
+        end tell
+        """
+    }else{
+        script =
+        """
+        tell application "\(browserName)"
+        set allWinds to windows
+        set arrayTabs to {}
+        repeat with the_wnd in allWinds
+        set allTabs to tabs of the_wnd
+        repeat with theTab in allTabs
+        set tabTitle to title of theTab
+        set tabURL to URL of theTab
+        set end of arrayTabs to {tabTitle, tabURL}
+        end repeat
+        end repeat
+        return arrayTabs
+        end tell
+        """
+    }
+    
+
+    
+    
+    if let appleScript = NSAppleScript(source: script) {
+        
+        var errors : NSDictionary? = nil
+        let desc = appleScript.executeAndReturnError(&errors)
+        if errors != nil {
+            print(errors as Any)
+        }
+        return desc.toTwoColumnStringArray()
+    }
+    return nil
+}
+
+
 var permissionAlertShownInfoDic = [BROWSER]()
 func getActiveTabUrlOf(browser:BROWSER)->String?{
     addLog(text:"func call:- getActiveTabUrl")
@@ -1482,4 +1588,114 @@ func deepSearchForURL(from element: AXUIElement) -> String? {
         }
     }
     return nil
+}
+
+func getNumberOfOpenTabsPerBrowserInString()->(Int,String){
+    var totalTabsCount = 0
+    var allBrowsersTabCount = 0
+    var title = ""
+    
+    var keys = safariWindowsInfo.keys
+    for key in keys{
+        if let browserTabsArr = safariWindowsInfo[key]{
+            totalTabsCount += browserTabsArr.count
+        }
+    }
+    if totalTabsCount != 0{
+        title += "\nSafari - \(totalTabsCount)"
+        allBrowsersTabCount += totalTabsCount
+    }
+    
+    totalTabsCount = 0
+    keys = googleChromeWindowsInfo.keys
+    for key in keys{
+        if let browserTabsArr = googleChromeWindowsInfo[key]{
+            totalTabsCount += browserTabsArr.count
+        }
+    }
+    if totalTabsCount != 0{
+        title += "\nGoogle Chrome - \(totalTabsCount)"
+        allBrowsersTabCount += totalTabsCount
+    }
+    
+    totalTabsCount = 0
+    keys = operaWindowsInfo.keys
+    for key in keys{
+        if let browserTabsArr = operaWindowsInfo[key]{
+            totalTabsCount += browserTabsArr.count
+        }
+    }
+    if totalTabsCount != 0{
+        title += "\nOpera - \(totalTabsCount)"
+        allBrowsersTabCount += totalTabsCount
+    }
+    
+    totalTabsCount = 0
+    keys = operaGxWindowsInfo.keys
+    for key in keys{
+        if let browserTabsArr = operaGxWindowsInfo[key]{
+            totalTabsCount += browserTabsArr.count
+        }
+    }
+    if totalTabsCount != 0{
+        title += "\nOpera GX - \(totalTabsCount)"
+        allBrowsersTabCount += totalTabsCount
+    }
+    
+    
+    totalTabsCount = 0
+    keys = vivaldiWindowsInfo.keys
+    for key in keys{
+        if let browserTabsArr = vivaldiWindowsInfo[key]{
+            totalTabsCount += browserTabsArr.count
+        }
+    }
+    if totalTabsCount != 0{
+        title += "\nVivaldi - \(totalTabsCount)"
+        allBrowsersTabCount += totalTabsCount
+    }
+    
+    totalTabsCount = 0
+    keys = braveBrowserWindowsInfo.keys
+    for key in keys{
+        if let browserTabsArr = braveBrowserWindowsInfo[key]{
+            totalTabsCount += browserTabsArr.count
+        }
+    }
+    if totalTabsCount != 0{
+        title += "\nBrave Browser - \(totalTabsCount)"
+        allBrowsersTabCount += totalTabsCount
+    }
+    
+    totalTabsCount = 0
+    keys = sidekickWindowsInfo.keys
+    for key in keys{
+        if let browserTabsArr = sidekickWindowsInfo[key]{
+            totalTabsCount += browserTabsArr.count
+        }
+    }
+    if totalTabsCount != 0{
+        title += "\nSidekick - \(totalTabsCount)"
+        allBrowsersTabCount += totalTabsCount
+    }
+    
+    totalTabsCount = 0
+    keys = microsoftEdgeWindowsInfo.keys
+    for key in keys{
+        if let browserTabsArr = microsoftEdgeWindowsInfo[key]{
+            totalTabsCount += browserTabsArr.count
+        }
+    }
+    if totalTabsCount != 0{
+        title += "\nMicrosoft Edge - \(totalTabsCount)"
+        allBrowsersTabCount += totalTabsCount
+    }
+    
+    totalTabsCount = 0
+    totalTabsCount = arcBrowserTabsInfo.count
+    if totalTabsCount != 0{
+        title += "\nArc - \(totalTabsCount)"
+        allBrowsersTabCount += totalTabsCount
+    }
+    return (allBrowsersTabCount, title)
 }

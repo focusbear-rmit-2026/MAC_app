@@ -3939,6 +3939,12 @@ class ViewController: NSViewController {
         containerView.addConstraints(subView: getBrainDumpVcObject().view)
     }
     
+    func showBrowsersTabAuditView(){
+        self.removeSubViews()
+        containerView.addSubview(getBrowsersTabAuditVcObject().view)
+        containerView.addConstraints(subView: getBrowsersTabAuditVcObject().view)
+    }
+    
     func showAllTracksView(){
         self.removeSubViews()
         containerView.addSubview(getAllTracksVcObj().view)

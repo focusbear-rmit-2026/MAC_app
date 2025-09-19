@@ -11,6 +11,7 @@ import Cocoa
 class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
 
     
+    
     @IBOutlet weak var boxUpgradeNow: mainWindowListBox!
     @IBOutlet weak var btnExpandLeftMenu: cursorButton!
     @IBOutlet weak var boxHelpAndSupport: mainWindowListBox!
@@ -25,6 +26,7 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
     @IBOutlet weak var boxBrainDump: mainWindowListBox!
     @IBOutlet weak var boxTodoPlayer: mainWindowListBox!
     @IBOutlet weak var boxToolsItems: accordionBox!
+    @IBOutlet weak var boxBrowsersTabAudit: mainWindowListBox!
     
     @IBOutlet weak var boxCustomRoutine: mainWindowListBox!
     @IBOutlet weak var boxMainItems: accordionBox!
@@ -80,6 +82,11 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         
         boxBrainDump.imageIcon = NSImage(named: "brainDump")
         boxBrainDump.title = "Brain Dump"
+        
+        
+        boxBrowsersTabAudit.imageIcon = NSImage(named: "NSTouchBarOpenInBrowserTemplate")
+        boxBrowsersTabAudit.title = "Tab Audit"
+        boxBrowsersTabAudit.imageView?.contentTintColor = NSColor(named: "dark_OrangeColor") ?? NSColor.blue
         
         boxFocusMusic.imageIcon = NSImage(named: "music_albums_fill")
         boxFocusMusic.title = "Focus Music"
@@ -156,10 +163,14 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
                 self.boxFocusMusic.isHidden = false
                 self.boxBrainDump.isHidden = false
                 self.boxTodoPlayer.isHidden = false
+                self.boxMotivation.isHidden = false
+                self.boxBrowsersTabAudit.isHidden = false
             }else{
                 self.boxFocusMusic.isHidden = true
                 self.boxBrainDump.isHidden = true
                 self.boxTodoPlayer.isHidden = true
+                self.boxMotivation.isHidden = true
+                self.boxBrowsersTabAudit.isHidden = true
             }
             
         }
@@ -168,13 +179,11 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         boxPreferences.onStateChanged = { isExpanded in
             print("Preferences is now \(isExpanded ? "expanded" : "collapsed")")
             if isExpanded{
-                self.boxMotivation.isHidden = false
                 self.boxEditHabits.isHidden = false
                 self.boxSettings.isHidden = false
                 self.boxBlocks.isHidden = false
                 self.boxFocusModeSettings.isHidden = false
             }else{
-                self.boxMotivation.isHidden = true
                 self.boxEditHabits.isHidden = true
                 self.boxSettings.isHidden = true
                 self.boxBlocks.isHidden = true
@@ -183,7 +192,6 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         }
 
         boxHelpAndSupport.delegate = self
-        boxMotivation.delegate = self
         boxEditHabits.delegate = self
         boxSettings.delegate = self
         boxBlocks.delegate = self
@@ -192,7 +200,9 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         boxFocusMusic.delegate = self
         boxBrainDump.delegate = self
         boxTodoPlayer.delegate = self
-
+        boxMotivation.delegate = self
+        boxBrowsersTabAudit.delegate = self
+        
         boxMicroBreaks.delegate = self
         boxFocusSession.delegate = self
         boxHabits.delegate = self
@@ -234,6 +244,7 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
                 boxTodoPlayer.title = leftMenuVcInfo.value(forKey: "menuTodoList") as? String ?? boxTodoPlayer.title
             }
             boxBrainDump.title = leftMenuVcInfo.value(forKey: "menuBrainDump") as? String ?? boxBrainDump.title
+            boxBrowsersTabAudit.title = leftMenuVcInfo.value(forKey: "menuTabAudit") as? String ?? boxBrowsersTabAudit.title
             boxFocusMusic.title = leftMenuVcInfo.value(forKey: "menuFocusMusic") as? String ?? boxFocusMusic.title
             boxFocusModeSettings.title = leftMenuVcInfo.value(forKey: "menuFocusPreferences") as? String ?? boxFocusMusic.title
 
@@ -419,6 +430,8 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
 //            }
         case boxBrainDump:
             mainViewControllerObj?.showBrainDumpView()
+        case boxBrowsersTabAudit:
+            mainViewControllerObj?.showBrowsersTabAuditView()
         case boxFocusMusic:
             mainViewControllerObj?.showAllTracksView()
         case boxFocusModeSettings:
@@ -497,6 +510,8 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
                 self.view.window?.styleMask.insert(.miniaturizable)// task player should be miniaturizable
             }
         case boxBrainDump:
+            mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
+        case boxBrowsersTabAudit:
             mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
         case boxFocusMusic:
             mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
@@ -626,6 +641,7 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         
         boxFocusMusic.setDisableWithRaason(reason: toolTipDisableReason)
         boxBrainDump.setDisableWithRaason(reason: toolTipDisableReason)
+        boxBrowsersTabAudit.setDisableWithRaason(reason: toolTipDisableReason)
         boxTodoPlayer.setDisableWithRaason(reason: toolTipDisableReason)
         boxMotivation.setDisableWithRaason(reason: toolTipDisableReason)
         
@@ -645,6 +661,7 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         
         boxFocusMusic.setDisableWithRaason(reason: toolTipDisableReason)
         boxBrainDump.setDisableWithRaason(reason: toolTipDisableReason)
+        boxBrowsersTabAudit.setDisableWithRaason(reason: toolTipDisableReason)
         boxTodoPlayer.setDisableWithRaason(reason: toolTipDisableReason)
         boxMotivation.setDisableWithRaason(reason: toolTipDisableReason)
         
@@ -681,6 +698,7 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         
         boxFocusMusic.setDisableWithRaason(reason: toolTipDisableReason)
         boxBrainDump.setDisableWithRaason(reason: toolTipDisableReason)
+        boxBrowsersTabAudit.setDisableWithRaason(reason: toolTipDisableReason)
         boxTodoPlayer.setDisableWithRaason(reason: toolTipDisableReason)
         boxMotivation.setDisableWithRaason(reason: toolTipDisableReason)
         
@@ -710,6 +728,7 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         
         boxFocusMusic.setDisableWithRaason(reason: toolTipDisableReason)
         boxBrainDump.setDisableWithRaason(reason: toolTipDisableReason)
+        boxBrowsersTabAudit.setDisableWithRaason(reason: toolTipDisableReason)
         boxTodoPlayer.setDisableWithRaason(reason: toolTipDisableReason)
 
         boxMicroBreaks.isEnabled = true
@@ -742,6 +761,7 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         
         boxFocusMusic.isEnabled = true
         boxBrainDump.isEnabled = true
+        boxBrowsersTabAudit.isEnabled = true
         boxTodoPlayer.isEnabled = true
 
         boxMicroBreaks.isEnabled = true
@@ -784,6 +804,10 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         boxBrainDump.isSelected = true
         mainViewControllerObj?.showBrainDumpView()
 //        enableAllItems()
+    }
+    func showBrowsersTabAuditView(){
+        boxBrowsersTabAudit.isSelected = true
+        mainViewControllerObj?.showBrowsersTabAuditView()
     }
     
     func showAllTracks(){

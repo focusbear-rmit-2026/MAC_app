@@ -19,6 +19,8 @@
 		134D1DEC2E41E52300328E84 /* leftMenuVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 134D1DEB2E41E52300328E84 /* leftMenuVc.swift */; };
 		134D1DEE2E42144F00328E84 /* accordionBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 134D1DED2E42144F00328E84 /* accordionBox.swift */; };
 		134D1DF02E42378B00328E84 /* habitsVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 134D1DEF2E42378B00328E84 /* habitsVc.swift */; };
+		13501E292E7C2B020055ACB1 /* browsersTabAuditVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13501E282E7C2B020055ACB1 /* browsersTabAuditVc.swift */; };
+		13501E2B2E7C391F0055ACB1 /* postBrowsersTabAuditVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13501E2A2E7C391F0055ACB1 /* postBrowsersTabAuditVc.swift */; };
 		135ABA6D2E5345A300D133F2 /* focusModeStateVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 135ABA6C2E5345A300D133F2 /* focusModeStateVc.swift */; };
 		135ABEFD2E013254007ED73A /* breaksData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 135ABEFC2E01324D007ED73A /* breaksData.swift */; };
 		135CBDAF2D967009003BA438 /* routineData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 135CBDAE2D967005003BA438 /* routineData.swift */; };
@@ -394,6 +396,8 @@
 		134D1DEB2E41E52300328E84 /* leftMenuVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = leftMenuVc.swift; sourceTree = "<group>"; };
 		134D1DED2E42144F00328E84 /* accordionBox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = accordionBox.swift; sourceTree = "<group>"; };
 		134D1DEF2E42378B00328E84 /* habitsVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = habitsVc.swift; sourceTree = "<group>"; };
+		13501E282E7C2B020055ACB1 /* browsersTabAuditVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = browsersTabAuditVc.swift; sourceTree = "<group>"; };
+		13501E2A2E7C391F0055ACB1 /* postBrowsersTabAuditVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = postBrowsersTabAuditVc.swift; sourceTree = "<group>"; };
 		135ABA6C2E5345A300D133F2 /* focusModeStateVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = focusModeStateVc.swift; sourceTree = "<group>"; };
 		135ABEFC2E01324D007ED73A /* breaksData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = breaksData.swift; sourceTree = "<group>"; };
 		135CBDAE2D967005003BA438 /* routineData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = routineData.swift; sourceTree = "<group>"; };
@@ -1439,6 +1443,8 @@
 				8FE5587D2CEC703300C44387 /* bellVc.swift */,
 				8FE5587F2CEC7E1F00C44387 /* bellSuggestionsVc.swift */,
 				1361E6E42DB76A1900E6DE3F /* unverifiedEmailVc.swift */,
+				13501E282E7C2B020055ACB1 /* browsersTabAuditVc.swift */,
+				13501E2A2E7C391F0055ACB1 /* postBrowsersTabAuditVc.swift */,
 			);
 			path = Popups;
 			sourceTree = "<group>";
@@ -1905,6 +1911,7 @@
 				8FEFC59629FA894800ADF1E6 /* popupAppointmentTimeVc.swift in Sources */,
 				8F7C2BB72B4FBEA10003824A /* changeFrictionLevelVc.swift in Sources */,
 				8FE049D027B77F5F00ABD521 /* logQuantityVc.swift in Sources */,
+				13501E2B2E7C391F0055ACB1 /* postBrowsersTabAuditVc.swift in Sources */,
 				8F8C3FDA2A8CDB8F005CAF96 /* settingToggleItemVc.swift in Sources */,
 				8FD91CAA2A0E1A51001606FE /* popUpCheckListVc.swift in Sources */,
 				135ABEFD2E013254007ED73A /* breaksData.swift in Sources */,
@@ -1992,6 +1999,7 @@
 				8F3D784D2A6A70A300CE936B /* intentionBlockedUrlsVc.swift in Sources */,
 				8FE5587E2CEC703300C44387 /* bellVc.swift in Sources */,
 				8FB970AB2B71F7A500A38F17 /* chooseCommunityVc.swift in Sources */,
+				13501E292E7C2B020055ACB1 /* browsersTabAuditVc.swift in Sources */,
 				8F45E5012B7C995F0063088E /* savedSitesForLaterVc.swift in Sources */,
 				8F0A18542A8E412B00AFA623 /* frictionVc.swift in Sources */,
 				8FAB75C528476BC10051CE24 /* focusPreferencesAdvancedVc.swift in Sources */,
@@ -2301,7 +2309,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application: Focus Bear Pty Ltd (TCUD568B3U)";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 415;
+				CURRENT_PROJECT_VERSION = 416;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = TCUD568B3U;
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = TCUD568B3U;
@@ -2339,7 +2347,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application: Focus Bear Pty Ltd (TCUD568B3U)";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 415;
+				CURRENT_PROJECT_VERSION = 416;
 				DEVELOPMENT_TEAM = TCUD568B3U;
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = TCUD568B3U;
 				ENABLE_HARDENED_RUNTIME = YES;

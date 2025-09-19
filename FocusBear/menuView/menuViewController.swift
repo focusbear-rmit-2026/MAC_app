@@ -10,6 +10,8 @@ import Cocoa
 
 class menuViewController: NSViewController {
 
+    @IBOutlet weak var btnBrowserTabAudit: mouseDownEffectButton!
+    @IBOutlet weak var boxBrowserTabAudit: NSBox!
     @IBOutlet weak var imgViewIconStartBreak: NSImageView!
     @IBOutlet weak var boxForPermissionToolTip: NSBox!
     @IBOutlet weak var stackViewFirst: NSStackView!
@@ -17,7 +19,7 @@ class menuViewController: NSViewController {
     @IBOutlet weak var lblTimerFocusMode: NSTextField!
     @IBOutlet weak var boxFocusModeRemainingTime: NSBox!
     @IBOutlet weak var widthImageIconSimplePomodoro: NSLayoutConstraint!
-    @IBOutlet weak var btnOpenToolBox: mouseDownEffectButton!
+   // @IBOutlet weak var btnOpenToolBox: mouseDownEffectButton!
     @IBOutlet weak var btnStartBreak: mouseDownEffectButton!
     @IBOutlet weak var boxOpenToolBox: NSBox!
     @IBOutlet weak var boxStartBreak: NSBox!
@@ -108,6 +110,7 @@ class menuViewController: NSViewController {
     var btnBrainDumpTrackingArea: NSTrackingArea?
     var btnCurrentTrackTrackingArea: NSTrackingArea?
     var btnStartBreakTrackingArea: NSTrackingArea?
+    var trackingAreaBtnTabAudit: NSTrackingArea?
 //    var btnOpenToolBoxTrackingArea: NSTrackingArea?
     var boxPermissionTrackingArea: NSTrackingArea?
     
@@ -386,6 +389,9 @@ class menuViewController: NSViewController {
         btnBrainDumpTrackingArea = NSTrackingArea.init(rect: btnBrainDump.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
         btnBrainDump.addTrackingArea(btnBrainDumpTrackingArea!)
         
+        trackingAreaBtnTabAudit = NSTrackingArea.init(rect: btnBrowserTabAudit.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
+        btnBrowserTabAudit.addTrackingArea(trackingAreaBtnTabAudit!)
+        
         btnCurrentTrackTrackingArea = NSTrackingArea.init(rect: btnCurrentTrack.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
         btnCurrentTrack.addTrackingArea(btnCurrentTrackTrackingArea!)
         
@@ -421,7 +427,7 @@ class menuViewController: NSViewController {
         } else {
             imgViewIconStartBreak.image = NSImage(named: NSImage.touchBarUserTemplateName)
         }
-        boxOpenToolBox.isHidden = true
+        boxOpenToolBox.isHidden = true// if show this then check space first 
     }
 
     override func viewDidAppear() {
@@ -469,6 +475,12 @@ class menuViewController: NSViewController {
             showTooltip(sender: btnTodoPlayer, msg: menuItemToDoList.title, preferredEdge: NSRectEdge.maxY, maxWidthVal:230, autoCloseOnMouseExit: true)
         }else if event.trackingArea == btnBrainDumpTrackingArea{
             showTooltip(sender: btnBrainDump, msg: lblTitleBrainDump.stringValue, preferredEdge: NSRectEdge.maxY, maxWidthVal:230, autoCloseOnMouseExit: true)
+        }else if event.trackingArea == trackingAreaBtnTabAudit{
+            var titleTabAudit = "Tab Audit"
+            if let browsersTabAuditVcInfo = configjson.value(forKey: "browsersTabAuditVcInfo") as? NSDictionary{
+                titleTabAudit = browsersTabAuditVcInfo.value(forKey: "title") as? String ?? titleTabAudit
+            }
+            showTooltip(sender: btnBrowserTabAudit, msg: titleTabAudit, preferredEdge: NSRectEdge.maxY, maxWidthVal:230, autoCloseOnMouseExit: true)
         }else if event.trackingArea == btnCurrentTrackTrackingArea{
             showTooltip(sender: btnCurrentTrack, msg: lblCurrentTrack.stringValue, preferredEdge: NSRectEdge.maxY, maxWidthVal:230, autoCloseOnMouseExit: true)
         }else if event.trackingArea == btnStartBreakTrackingArea{
@@ -559,6 +571,8 @@ class menuViewController: NSViewController {
 //            closePopoverTooltipIfVisible()
         //}
         else if event.trackingArea == boxPermissionTrackingArea{
+            closePopoverTooltipIfVisible()
+        }else if event.trackingArea == trackingAreaBtnTabAudit{
             closePopoverTooltipIfVisible()
         }
     }
@@ -2234,6 +2248,10 @@ class menuViewController: NSViewController {
         customRoutinesMenu.minimumWidth = boxCustomRoutine.frame.width
         let p = NSPoint(x: (sender as AnyObject).frame.origin.x, y: (sender as AnyObject).frame.origin.y )
         customRoutinesMenu.popUp(positioning: nil, at: p, in: (sender as AnyObject).superview)
+    }
+    
+    @IBAction func btnBrowserTabAuditClicked(_ sender: Any) {
+        showBrowsersTabAuditView()
     }
 }
 

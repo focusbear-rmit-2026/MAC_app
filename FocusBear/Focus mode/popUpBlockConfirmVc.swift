@@ -391,7 +391,11 @@ class popUpBlockConfirmVc: NSViewController {
         
         if getCurrentTaskInFocusMode() == nil && whatToAchieveInFocusBlock.isEmpty && !SettingsManagerObject.isGeekModeEnabled{// added on 2/9/25 on version 2.27.409
             showoPopUpAddNewFocusGoalView()
-            popUpAddNewFocusGoalVcObj?.lblTitle.stringValue =  "AI can’t tell if this fits your work. Pick a task to guide Focus Bear!" // todo text
+            let pickTaskText =  "AI can’t tell if this fits your work. Pick a task to guide Focus Bear!"
+            popUpAddNewFocusGoalVcObj?.lblTitle.stringValue = pickTaskText
+            if let popUpBlockConfirmVcInfo = configjson.value(forKey: "popUpBlockConfirmVcInfo") as? NSDictionary{
+                popUpAddNewFocusGoalVcObj?.lblTitle.stringValue = popUpBlockConfirmVcInfo.value(forKey: "pickTaskText") as? String ?? pickTaskText
+            }
         }
     }
     

@@ -182,6 +182,14 @@ func showBrainDumpWindow(){
 }
 //-------------------------------------------------//
 
+//***********SHOW BRAIN DUMP WINDOW***************//
+
+func showBrowsersTabAuditView(){
+    addLog(text: "func:- showBrowsersTabAuditView")
+    mainWindowControllerObj?.showWindow(nil)
+    leftMenuVcObj?.showBrowsersTabAuditView()
+}
+//-------------------------------------------------//
 
 
 func showPopupBlockConfirmWindow(blockedAppName:String, currentApp:NSRunningApplication?, url:String, script:String, isBlockApp:Bool, browser:BROWSER?, tabTitle:String?, fullUrl:String, aiBlockReason:String?, isTimeOut:Bool, isBlockByAi:Bool, scoreForThisSiteApp: Double?, payload: [String : Any]?, isBrowser:Bool){

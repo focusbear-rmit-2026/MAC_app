@@ -345,6 +345,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         arrNonTimerBasedHabitsDurationsPlistFileUrl = applicationSupportURL!.appendingPathComponent("nonTimerBasedHabitsDurations.plist")
         focusAlignmentScoreCsvURL = applicationSupportURL!.appendingPathComponent("focusAlignmentScore.csv")
         focusAIDecisionsCsvURL = applicationSupportURL!.appendingPathComponent("focusAIDecisions.csv")
+        browsersTabAuditCsvURL = applicationSupportURL!.appendingPathComponent("browsersTabAudit.csv")
         focusProductivityStatsCsvURL = applicationSupportURL!.appendingPathComponent("focusProductivityStats.csv")
         offlineActivitiesCsvURL = applicationSupportURL!.appendingPathComponent("offlineActivities.csv")
         trackFilesFolderURL = applicationSupportURL!.appendingPathComponent("Tracks")
@@ -1156,6 +1157,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     focusProductivityStatsCsvURL = self.currentUserURL!.appendingPathComponent("focusProductivityStats.csv")
                     offlineActivitiesCsvURL = self.currentUserURL!.appendingPathComponent("offlineActivities.csv")
                     newLocalSettingsFileURL = self.currentUserURL!.appendingPathComponent("localSettings.plist")
+                    browsersTabAuditCsvURL = self.currentUserURL!.appendingPathComponent("browsersTabAudit.csv")
                 }
                 nonTimerBasedHabitsObject.readNonTimerBasedHabitsDurations()
                 if let id  = UserDefaults.standard.object(forKey: kUserdefaultsDeviceId) as? String{
@@ -5832,6 +5834,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         mainWindowControllerObj?.showWindow(self)
                         showBlankWindowInSecondaryMonitor()
                     }
+                    leftMenuVcObj?.showHabitsView()
                     getHabitsVcObject().shutOffMac()
                     return;
                 }
@@ -5865,13 +5868,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                             alertHighPriorityHabitTime.addButton(withTitle: buttonOkText)
                             
                             NSApplication.shared.activate(ignoringOtherApps: true)
-                            self.startTimerAlertHighPriorityHabit(durationSeconds: 5)
+                            self.startTimerAlertHighPriorityHabit(durationSeconds: 5)//
                             alertHighPriorityHabitTime.runModal()
                             //                            currentState = ._NOTHING_
                             isHighPrioritySequenceGoing = true
                             mainWindowControllerObj?.showWindow(self)
                             showBlankWindowInSecondaryMonitor()
-                            
+                            leftMenuVcObj?.showHabitsView()
                             getHabitsVcObject().showThirdVc()
                             thirdVcObj?.eveningHabitSkipped()
                         }else{
@@ -5901,7 +5904,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                     isHighPrioritySequenceGoing = true
                                     mainWindowControllerObj?.showWindow(self)
                                     showBlankWindowInSecondaryMonitor()
-                                    
+                                    leftMenuVcObj?.showHabitsView()
                                     getHabitsVcObject().showThirdVc()
                                     thirdVcObj?.eveningHabitSkipped()
                                 }
@@ -12328,3 +12331,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 // postpone not working
 // if ful screen window is showing then dont show popup  natural break// ak bar bhi dikh rha h to vaps ni dikhega
 // timer jump 
+
+
+// 
