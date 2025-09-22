@@ -264,7 +264,7 @@ class Button: NSButton {
         // Draw the button content with padding
         super.draw(dirtyRect)
     }
-    
+        
     
     override var title: String {
         didSet {

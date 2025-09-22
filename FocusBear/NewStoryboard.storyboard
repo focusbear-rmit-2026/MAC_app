@@ -12492,8 +12492,8 @@ DQ
                                                             <rect key="frame" x="79" y="2" width="354" height="28"/>
                                                             <datePickerCell key="cell" borderStyle="bezel" alignment="left" useCurrentDate="YES" id="IJY-cs-LOX">
                                                                 <font key="font" metaFont="system"/>
-                                                                <date key="date" timeIntervalSinceReferenceDate="779959137.75644398">
-                                                                    <!--2025-09-19 07:18:57 +0000-->
+                                                                <date key="date" timeIntervalSinceReferenceDate="780067729.54116905">
+                                                                    <!--2025-09-20 13:28:49 +0000-->
                                                                 </date>
                                                                 <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
                                                                 <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>

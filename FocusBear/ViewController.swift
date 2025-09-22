@@ -4024,6 +4024,7 @@ class ViewController: NSViewController {
         self.removeSubViews()
         containerView.addSubview(getFocusPreferencesVcObject().view)
         containerView.addConstraints(subView: getFocusPreferencesVcObject().view)
+        getFocusPreferencesVcObject().btnBackToCustomBlocking.isHidden = true
     }
     
     func showSettingsView(){

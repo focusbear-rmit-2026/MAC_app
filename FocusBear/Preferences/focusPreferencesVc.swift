@@ -10,6 +10,7 @@ import Cocoa
 
 class focusPreferencesVc: NSViewController, NSMenuDelegate {
 
+    @IBOutlet weak var btnBackToCustomBlocking: NSButton!
     @IBOutlet weak var btnInfoBlockedUrls: hoverInfoButton!
     @IBOutlet weak var heightTblViewApps: NSLayoutConstraint!
     @IBOutlet weak var lblDescriptionAlwaysBlockedUrls: NSTextField!
@@ -66,6 +67,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         super.viewDidLoad()
         // Do view setup here
         addLog(text: "focusPreferencesVc viewdidload start")
+        btnBackToCustomBlocking.title = "Back to custom blocking" // todo text
         lblTitleBlockApp.stringValue = "Which apps do you want to block?"
         var toolTipAdd = "Add"
 
@@ -203,6 +205,20 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         btnAddFocusType.title = btnAddFocusType.title
     }
 
+    
+    func selectFocusModeWithId(id:String){
+        for i in 0..<arrFocusType.count{
+            let focusMode = arrFocusType[i]
+            if focusMode["id"] as? String == id{
+                if i != arrFocusType.count - 1{
+                    tblViewFocusType.selectRowIndexes(IndexSet(arrayLiteral: i), byExtendingSelection: false)
+                    tblViewFocusType.scrollRowToVisible(i)
+                }
+                break;
+            }
+        }
+    }
+    
     @IBAction func bntColorBoxInfoClicked(_ sender: Any) {
         addLog(text: "[user-action] bntColorBoxInfoClicked")
         showTooltip(sender: bntColorBoxInfo, msg: toolTipColorBox, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
@@ -360,6 +376,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
     override func viewWillDisappear() {
         focusPreferencesAdvancedVcObj?.arrAllTags.removeAll()
         updateAllFocusModes()
+        btnBackToCustomBlocking.isHidden = true
     }
 
     
@@ -457,7 +474,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
             return;
         }
             
-        self.presentAsSheet(addFocusTypeVcObj!)
+        self.presentAsSheet(addFocusTypeVcObj!) // todo text field connection error
     }
     
     func checkState(){
@@ -911,10 +928,12 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         
         showTooltip(sender: btnInfoBlockedUrls, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
     }
+    
+    @IBAction func btnBackToCustomBlockingClicked(_ sender: Any) {
+        self.dismiss(self)
+        blockingScheduleEditorVCObj?.reloadFocusModeList()
+    }
 }
-
-
-
 
 extension focusPreferencesVc: NSTableViewDelegate, NSTableViewDataSource{
     

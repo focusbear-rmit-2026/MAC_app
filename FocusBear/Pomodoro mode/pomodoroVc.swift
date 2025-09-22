@@ -861,14 +861,11 @@ class pomodoroVc: NSViewController {
         
         allApiObject.capturePosthog(event: "open-preferences", metadata: [:])
         addLog(text: "Showing preferences from edit focus mode")
-        if mainWindowControllerObj?.window?.isVisible ?? false{
-            leftMenuVcObj?.showFocusModeSettingsView()
-            return;
-        }
-
-        mainWindowControllerObj?.showWindow(self)
         leftMenuVcObj?.showFocusModeSettingsView()
-        NSApplication.shared.activate(ignoringOtherApps: true)
+        if let focusModeId = arrFocusTypeForPomodoro[popUpBtnFocusType.indexOfSelectedItem]["id"] as? String{
+            getFocusPreferencesVcObject().selectFocusModeWithId(id: focusModeId)
+        }
+            
     }
     
     func showAlert(msg:String){

@@ -21,6 +21,11 @@
 		134D1DF02E42378B00328E84 /* habitsVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 134D1DEF2E42378B00328E84 /* habitsVc.swift */; };
 		13501E292E7C2B020055ACB1 /* browsersTabAuditVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13501E282E7C2B020055ACB1 /* browsersTabAuditVc.swift */; };
 		13501E2B2E7C391F0055ACB1 /* postBrowsersTabAuditVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13501E2A2E7C391F0055ACB1 /* postBrowsersTabAuditVc.swift */; };
+		135A8A512E7E8E6A00A96A8E /* customBlockingSchedulesVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 135A8A502E7E8E6A00A96A8E /* customBlockingSchedulesVc.swift */; };
+		135A8A532E7E91E300A96A8E /* tblCellCustomBlockingSchedules.swift in Sources */ = {isa = PBXBuildFile; fileRef = 135A8A522E7E91E300A96A8E /* tblCellCustomBlockingSchedules.swift */; };
+		135A8A552E7EB27A00A96A8E /* customBlockingScheduleData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 135A8A542E7EB27A00A96A8E /* customBlockingScheduleData.swift */; };
+		135A8A572E7EC8FD00A96A8E /* blockingScheduleEditorVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 135A8A562E7EC8FD00A96A8E /* blockingScheduleEditorVC.swift */; };
+		135A8A592E7ECE4000A96A8E /* toggleTitledBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 135A8A582E7ECE4000A96A8E /* toggleTitledBox.swift */; };
 		135ABA6D2E5345A300D133F2 /* focusModeStateVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 135ABA6C2E5345A300D133F2 /* focusModeStateVc.swift */; };
 		135ABEFD2E013254007ED73A /* breaksData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 135ABEFC2E01324D007ED73A /* breaksData.swift */; };
 		135CBDAF2D967009003BA438 /* routineData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 135CBDAE2D967005003BA438 /* routineData.swift */; };
@@ -398,6 +403,11 @@
 		134D1DEF2E42378B00328E84 /* habitsVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = habitsVc.swift; sourceTree = "<group>"; };
 		13501E282E7C2B020055ACB1 /* browsersTabAuditVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = browsersTabAuditVc.swift; sourceTree = "<group>"; };
 		13501E2A2E7C391F0055ACB1 /* postBrowsersTabAuditVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = postBrowsersTabAuditVc.swift; sourceTree = "<group>"; };
+		135A8A502E7E8E6A00A96A8E /* customBlockingSchedulesVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = customBlockingSchedulesVc.swift; sourceTree = "<group>"; };
+		135A8A522E7E91E300A96A8E /* tblCellCustomBlockingSchedules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = tblCellCustomBlockingSchedules.swift; sourceTree = "<group>"; };
+		135A8A542E7EB27A00A96A8E /* customBlockingScheduleData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = customBlockingScheduleData.swift; sourceTree = "<group>"; };
+		135A8A562E7EC8FD00A96A8E /* blockingScheduleEditorVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = blockingScheduleEditorVC.swift; sourceTree = "<group>"; };
+		135A8A582E7ECE4000A96A8E /* toggleTitledBox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = toggleTitledBox.swift; sourceTree = "<group>"; };
 		135ABA6C2E5345A300D133F2 /* focusModeStateVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = focusModeStateVc.swift; sourceTree = "<group>"; };
 		135ABEFC2E01324D007ED73A /* breaksData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = breaksData.swift; sourceTree = "<group>"; };
 		135CBDAE2D967005003BA438 /* routineData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = routineData.swift; sourceTree = "<group>"; };
@@ -781,6 +791,18 @@
 				134D1DED2E42144F00328E84 /* accordionBox.swift */,
 			);
 			path = leftMenu;
+			sourceTree = "<group>";
+		};
+		135A8A4F2E7E8DD700A96A8E /* Custom Blocking Schedules */ = {
+			isa = PBXGroup;
+			children = (
+				135A8A502E7E8E6A00A96A8E /* customBlockingSchedulesVc.swift */,
+				135A8A522E7E91E300A96A8E /* tblCellCustomBlockingSchedules.swift */,
+				135A8A562E7EC8FD00A96A8E /* blockingScheduleEditorVC.swift */,
+				135A8A582E7ECE4000A96A8E /* toggleTitledBox.swift */,
+				135A8A542E7EB27A00A96A8E /* customBlockingScheduleData.swift */,
+			);
+			path = "Custom Blocking Schedules";
 			sourceTree = "<group>";
 		};
 		135CBDAD2D966CCC003BA438 /* Routine */ = {
@@ -1410,6 +1432,7 @@
 				8F8C3FDE2A8CF5FF005CAF96 /* microBreaksSettingsVc.swift */,
 				8F889EA02C215062000CA3B6 /* toDoListSettingsVc.swift */,
 				8FA0FEE12C9EDEB00071D8CC /* blockingScheduleVc.swift */,
+				135A8A4F2E7E8DD700A96A8E /* Custom Blocking Schedules */,
 				8F0A18552A8E4B5000AFA623 /* strictness */,
 				8F8C3FDD2A8CF5B0005CAF96 /* advanced */,
 				274C9A90289A8C900066F883 /* accountVc.swift */,
@@ -1789,6 +1812,7 @@
 				8FA62B1228603B390075D545 /* TextFieldNumberFormatter.swift in Sources */,
 				8F371A6029E3D0300043D7B3 /* onboardingControllingBrowserVc.swift in Sources */,
 				8F5BCE5929FFCB96009799CD /* alertMaxTabLimitVc.swift in Sources */,
+				135A8A592E7ECE4000A96A8E /* toggleTitledBox.swift in Sources */,
 				8F8073872B3D93A4004935B5 /* firefoxPermissionVideoVc.swift in Sources */,
 				8FB74AE82861B18A00992C1F /* pomodoroPreferencesAdvancedVc.swift in Sources */,
 				8F1456BC2D40B32600130B21 /* TabMatrics.swift in Sources */,
@@ -1839,6 +1863,7 @@
 				8F9A5A9627885A6D009121E3 /* abortingCountDownVc.swift in Sources */,
 				138FE1262E5701B0002A2C4C /* floatingTopBarVc.swift in Sources */,
 				137A3D822E0A6C97008E3CF0 /* popUpAddNewFocusGoalVc.swift in Sources */,
+				135A8A532E7E91E300A96A8E /* tblCellCustomBlockingSchedules.swift in Sources */,
 				8F889EA12C215062000CA3B6 /* toDoListSettingsVc.swift in Sources */,
 				8F1DC4A72BC13A1900A51383 /* collectionViewItemOccupation.swift in Sources */,
 				8F9A5A98278863B9009121E3 /* abortingConfirmVc.swift in Sources */,
@@ -1933,6 +1958,7 @@
 				8F64E48D2A419A5500B11643 /* focusCompletedForActivityVc.swift in Sources */,
 				8FAC6C8927805F6E008A4180 /* ViewController.swift in Sources */,
 				8F4BD8C627883FBE00ABAEF5 /* Key.swift in Sources */,
+				135A8A552E7EB27A00A96A8E /* customBlockingScheduleData.swift in Sources */,
 				137A3D842E0ABBC5008E3CF0 /* popUpSaveThisTaskForLaterVc.swift in Sources */,
 				137A3D802E0A69CB008E3CF0 /* popUpFocusGoalConfirmationVc.swift in Sources */,
 				8F0A18522A8E291200AFA623 /* strictnessVc.swift in Sources */,
@@ -1995,6 +2021,7 @@
 				8F8073822B3D3F2E004935B5 /* CollectionViewItem.swift in Sources */,
 				8FF8E0FF291686EF002938B8 /* popUpBlockConfirmVc.swift in Sources */,
 				8F99C8D62A13AE1D00FD2403 /* editHabitRoutineVc.swift in Sources */,
+				135A8A512E7E8E6A00A96A8E /* customBlockingSchedulesVc.swift in Sources */,
 				8F0419462C353D4100481ACD /* getViewControllersObject.swift in Sources */,
 				8F3D784D2A6A70A300CE936B /* intentionBlockedUrlsVc.swift in Sources */,
 				8FE5587E2CEC703300C44387 /* bellVc.swift in Sources */,
@@ -2014,6 +2041,7 @@
 				13D8220D2E508F1B0055E580 /* customRoutineStateVc.swift in Sources */,
 				8F09ACC129703C5B00A0F1D0 /* tblCellTracks.swift in Sources */,
 				8F23A1DC2CAE508C0042CE2A /* explainingPermissionsVc.swift in Sources */,
+				135A8A572E7EC8FD00A96A8E /* blockingScheduleEditorVC.swift in Sources */,
 				8F36D517297AB32800A7E4AD /* addFocusTempUrlsOrAppsVc.swift in Sources */,
 				8F19BCA5293F360D00F70544 /* whySkipHabitVc.swift in Sources */,
 				8F8C3FE12A8CFFEE005CAF96 /* uIVc.swift in Sources */,

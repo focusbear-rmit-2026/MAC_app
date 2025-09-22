@@ -426,6 +426,7 @@ class blockingScheduleVc: NSViewController, WKNavigationDelegate, webViewLoadFai
             RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
         }
     }
+    
     func setProgres(){
         let remainingSeconds = self.totalDuration-currentTimer
         let (h,m,s) = secondsToHoursMinutesSeconds(seconds: remainingSeconds)

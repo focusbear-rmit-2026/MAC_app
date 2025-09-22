@@ -28,7 +28,7 @@ class strictnessVc: NSViewController {
     let browserTabLimiterItemVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingListItemVc")) as? settingListItemVc
     let blockedURLsItemVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingListItemVc")) as? settingListItemVc
     let blockedAppsItemVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingListItemVc")) as? settingListItemVc
-    
+    let customBlockingVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingListItemVc")) as? settingListItemVc
     
     
     var currentStrictnessLevel = 1
@@ -153,8 +153,24 @@ class strictnessVc: NSViewController {
         }
         blockedAppsItemVcObj?.lblDescription.isHidden = true
         blockedAppsItemVcObj?.delegate = self
-        blockedAppsItemVcObj?.lineBottom.isHidden = true
+        blockedAppsItemVcObj?.lineBottom.isHidden = false
         blockedAppsItemVcObj?.toolTip = strictness_DistractingApps
+        
+        
+        
+        
+        stackView.addView(customBlockingVcObj!.view, in: .bottom)
+        customBlockingVcObj?.lblTitle.stringValue = "Custom blocking" // todo text
+        if #available(macOS 11.0, *) {
+            customBlockingVcObj?.imgViewIcon.image = NSImage(systemSymbolName: "calendar.badge.clock", accessibilityDescription: nil)// todo get icon
+        } else {
+            customBlockingVcObj?.imgViewIcon.image = NSImage(named: NSImage.statusUnavailableName)
+        }
+        customBlockingVcObj?.lblDescription.isHidden = true
+        customBlockingVcObj?.delegate = self
+        customBlockingVcObj?.lineBottom.isHidden = true
+        customBlockingVcObj?.toolTip = "Custom blocking" // todo
+        
         
         
         arrForSearchFromSettings.append(["title": frictionItemVcObj!.lblTitle.stringValue, "tabId": idStrictness, "object": frictionItemVcObj!.bgBox as Any])
@@ -164,12 +180,13 @@ class strictnessVc: NSViewController {
         arrForSearchFromSettings.append(["title": blockedURLsItemVcObj!.lblTitle.stringValue, "tabId": idStrictness, "object": blockedURLsItemVcObj!.bgBox as Any])
         arrForSearchFromSettings.append(["title": blockedAppsItemVcObj!.lblTitle.stringValue, "tabId": idStrictness, "object": blockedAppsItemVcObj!.bgBox as Any])
         arrForSearchFromSettings.append(["title": blockingScheduleVcObj!.lblTitle.stringValue, "tabId": idTabStrictness, "object": blockingScheduleVcObj!.bgBox as Any])
-        
+        arrForSearchFromSettings.append(["title": blockedAppsItemVcObj!.lblTitle.stringValue, "tabId": idTabStrictness, "object": blockedAppsItemVcObj!.bgBox as Any])
         
         
         arrForSearchFromSimpleModeSettings.append(["title": blockingScheduleVcObj!.lblTitle.stringValue, "tabId": idTabStrictness, "object": blockingScheduleVcObj!.bgBox as Any])
         arrForSearchFromSimpleModeSettings.append(["title": browserTabLimiterItemVcObj!.lblTitle.stringValue, "tabId": idStrictness, "object": browserTabLimiterItemVcObj!.bgBox as Any])
         arrForSearchFromSimpleModeSettings.append(["title": blockedURLsItemVcObj!.lblTitle.stringValue, "tabId": idStrictness, "object": blockedURLsItemVcObj!.bgBox as Any])
+        arrForSearchFromSimpleModeSettings.append(["title": blockedAppsItemVcObj!.lblTitle.stringValue, "tabId": idStrictness, "object": blockedAppsItemVcObj!.bgBox as Any])
         arrForSearchFromSimpleModeSettings.append(["title": blockedAppsItemVcObj!.lblTitle.stringValue, "tabId": idStrictness, "object": blockedAppsItemVcObj!.bgBox as Any])
         
         getBlockingScheduleVcObject().loadView()
@@ -333,6 +350,8 @@ extension strictnessVc: SettingListItemDelegate{
         }else if object == blockingScheduleVcObj{
             tabStrictnessContainerVcObj?.showBlockingScheduleView()
             return;
+        }else if object == customBlockingVcObj{
+            tabStrictnessContainerVcObj?.showCustomBlockingSchedulesView()
         }
     }
 }

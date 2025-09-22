@@ -71,24 +71,8 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "D8DF0A79-1E12-417D-9E54-932FB900E2A8"
-            shouldBeEnabled = "Yes"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "FocusBear/globalFile.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "2484"
-            endingLineNumber = "2484"
-            landmarkName = "toTwoColumnStringArray()"
-            landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
             uuid = "C6003E8D-1BA2-4498-8AD8-E6CC560A3D46"
-            shouldBeEnabled = "Yes"
+            shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "FocusBear/Focus mode/focusModeData.swift"
@@ -104,7 +88,7 @@
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
             uuid = "B2AB0E7A-57DF-467C-BCF6-BB614D61CE37"
-            shouldBeEnabled = "Yes"
+            shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "FocusBear/Focus mode/focusModeData.swift"
@@ -114,43 +98,13 @@
             endingLineNumber = "1308"
             landmarkName = "checkIsAnyOldFoucsModeRemaining()"
             landmarkType = "9">
-            <Locations>
-               <Location
-                  uuid = "B2AB0E7A-57DF-467C-BCF6-BB614D61CE37 - e8b0b3a77f71c5cc"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "Focus_Bear.checkIsAnyOldFoucsModeRemaining() -&gt; ()"
-                  moduleName = "Focus Bear.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/manish/Documents/Apps/Focus%20Bear/SRC-NEW/FocusBear/Focus%20mode/focusModeData.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "1308"
-                  endingLineNumber = "1308">
-               </Location>
-               <Location
-                  uuid = "B2AB0E7A-57DF-467C-BCF6-BB614D61CE37 - 828be7bcd811a6c9"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "closure #1 (Swift.Optional&lt;__C.NSDictionary&gt;) -&gt; () in Focus_Bear.checkIsAnyOldFoucsModeRemaining() -&gt; ()"
-                  moduleName = "Focus Bear.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/manish/Documents/Apps/Focus%20Bear/SRC-NEW/FocusBear/Focus%20mode/focusModeData.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "1310"
-                  endingLineNumber = "1310">
-               </Location>
-            </Locations>
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
             uuid = "C046C2F2-32DF-4F39-8C26-72AAB87DCB35"
-            shouldBeEnabled = "Yes"
+            shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "FocusBear/Focus mode/focusModeData.swift"
@@ -166,7 +120,7 @@
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
             uuid = "BC870AA4-B529-464D-BB41-5D9A93C3E026"
-            shouldBeEnabled = "Yes"
+            shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "FocusBear/Focus mode/focusModeData.swift"
@@ -182,7 +136,7 @@
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
             uuid = "417B9393-BE82-452B-B5D4-8057F2B93E67"
-            shouldBeEnabled = "Yes"
+            shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "FocusBear/Focus mode/focusModeData.swift"
@@ -271,6 +225,54 @@
             startingLineNumber = "3308"
             endingLineNumber = "3308"
             landmarkName = "finishFocusMode(id:achievements:distractions:finish_time:rating:completionHandler:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "BCE078E7-9AEA-4101-9838-C8A0F187514F"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "FocusBear/globalFile.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "4600"
+            endingLineNumber = "4600"
+            landmarkName = "draw(_:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "4F0B316A-219C-42CC-B876-3675EDC2458F"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "FocusBear/globalFile.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "4599"
+            endingLineNumber = "4599"
+            landmarkName = "draw(_:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "2F73F2D6-6C00-449C-B243-989186E421AE"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "FocusBear/Preferences/Settings/Custom Blocking Schedules/customBlockingSchedulesVc.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "50"
+            endingLineNumber = "50"
+            landmarkName = "tableView(_:viewFor:row:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>

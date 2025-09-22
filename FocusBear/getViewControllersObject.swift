@@ -463,6 +463,22 @@ func getBlockingScheduleVcObject()->blockingScheduleVc{
     return blockingScheduleVcObj!
 }
 
+var customBlockingSchedulesVcObj:customBlockingSchedulesVc?
+func getCustomBlockingSchedulesVcObject()->customBlockingSchedulesVc{
+    if customBlockingSchedulesVcObj == nil{
+        customBlockingSchedulesVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("customBlockingSchedulesVc")) as? customBlockingSchedulesVc
+    }
+    return customBlockingSchedulesVcObj!
+}
+
+var blockingScheduleEditorVCObj:blockingScheduleEditorVC?
+func getBlockingScheduleEditorVCObject()->blockingScheduleEditorVC{
+    if blockingScheduleEditorVCObj == nil{
+        blockingScheduleEditorVCObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("blockingScheduleEditorVC")) as? blockingScheduleEditorVC
+    }
+    return blockingScheduleEditorVCObj!
+}
+
 
 //passwordVcObj
 
