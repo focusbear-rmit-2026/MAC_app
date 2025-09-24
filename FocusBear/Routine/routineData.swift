@@ -1049,3 +1049,36 @@ func getNextRoutineInfo()->(Date, String){
 
     return (nextRoutineTime, nextRoutineName)
 }
+
+func isShutOffTimeGoing()->Bool{
+    if startTime == nil || shutOffTime == nil{
+        return false
+    }
+    let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
+    let shutOffdate = Calendar.current.date(bySettingHour: shutOffTime!.hour, minute: shutOffTime!.minute, second: shutOffTime!.second, of: Date())!
+    let currentDate = Date()
+    
+    var isShutOffTime = false
+    
+    if  startDate.compare(shutOffdate) == .orderedDescending{//(start date jyada ho shut off date se ) ex shut off 5 bje start date 8 bje
+        if currentDate.compare(startDate) == .orderedAscending  && currentDate.compare(shutOffdate) == .orderedDescending{
+            isShutOffTime = true
+        }
+        
+    }else if currentDate.compare(startDate) == .orderedAscending  || currentDate.compare(shutOffdate) == .orderedDescending{
+        isShutOffTime = true
+    }
+    return isShutOffTime
+}
+
+
+func isCutOffTimeGoing()->Bool{
+    if cutOffTime != nil{
+        let cutOffDate = Calendar.current.date(bySettingHour: cutOffTime!.hour, minute: cutOffTime!.minute, second: cutOffTime!.second, of: Date())!
+        let currentDate = Date()
+        if currentDate > cutOffDate{
+            return true
+        }
+    }
+    return false
+}

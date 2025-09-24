@@ -10,6 +10,12 @@ import Cocoa
 
 class menuViewController: NSViewController {
 
+    @IBOutlet weak var lblCustomBlockingScheduleDayTime: NSTextField!
+    @IBOutlet weak var lblCustomBlockingScheduleName: NSTextField!
+    @IBOutlet weak var lblCustomBlockingState: NSTextField!
+    @IBOutlet weak var btnCustomBlocking: NSSwitch!
+    @IBOutlet weak var lblCustomBlocking: NSTextField!
+    @IBOutlet weak var boxCustomBlocking: NSBox!
     @IBOutlet weak var btnBrowserTabAudit: mouseDownEffectButton!
     @IBOutlet weak var boxBrowserTabAudit: NSBox!
     @IBOutlet weak var imgViewIconStartBreak: NSImageView!
@@ -172,7 +178,8 @@ class menuViewController: NSViewController {
         // Do view setup here.
         addLog(text: "menuViewController viewdidload start")
         
-        
+        lblCustomBlocking.stringValue = "Custom Blocking" // todo text
+        lblCustomBlockingState.stringValue = "Active" // todo text 
         if #available(macOS 11.0, *) {
             iconPlayFocusSession = NSImage(systemSymbolName: "play.circle", accessibilityDescription: nil)
         } 
@@ -489,10 +496,10 @@ class menuViewController: NSViewController {
         // showTooltip(sender: btnOpenToolBox, msg: menuItemOpenToolbox.title, preferredEdge: NSRectEdge.maxY, maxWidthVal:230, autoCloseOnMouseExit: true)
         //    }
         else if event.trackingArea == trackingAreaBtnEditBlockingSchedule{
-            var toolTipButtonEditBlockingSchedule = "Edit blocking schedule"
-            if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
-                toolTipButtonEditBlockingSchedule = menuInfo.value(forKey: "toolTipButtonEditBlockingSchedule") as? String ?? toolTipButtonEditBlockingSchedule
-            }
+            var toolTipButtonEditBlockingSchedule = "Add blocking schedule" // todo text 
+//            if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
+//                toolTipButtonEditBlockingSchedule = menuInfo.value(forKey: "toolTipButtonEditBlockingSchedule") as? String ?? toolTipButtonEditBlockingSchedule
+//            }
             showTooltip(sender: btnEditBlockingSchedule, msg: toolTipButtonEditBlockingSchedule, preferredEdge: NSRectEdge.maxX, maxWidthVal:230, autoCloseOnMouseExit: true)
         }else if event.trackingArea == trackingAreaBtnPin{
             var msg = ""
@@ -656,11 +663,45 @@ class menuViewController: NSViewController {
     
     func reloadData(){
         allApiObject.capturePosthog(event: "opened-menu", metadata: [:])
-        if SettingsManagerObject.blockingSchedule != ._UNTIL_I_FINISH_WORK_{
+//        if SettingsManagerObject.blockingSchedule != ._UNTIL_I_FINISH_WORK_{ //now super distarcting sites will block only in focus modes and custom blocking schedules  24/9/25 version 2.27.417
+//            boxBlockingDisabled.isHidden = false
+//        }else{
+//            boxBlockingDisabled.isHidden = true
+//        }
+//        
+        if customBlockingScheduleManagerObj.arrBlockingSchedule.count == 0{
             boxBlockingDisabled.isHidden = false
         }else{
             boxBlockingDisabled.isHidden = true
         }
+        
+        if customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
+            boxCustomBlocking.isHidden = false
+            lblCustomBlockingState.stringValue = "Active"
+            btnCustomBlocking.state = .on
+            for schedule in customBlockingScheduleManagerObj.arrBlockingSchedule{
+                if schedule.state == .on{
+                    lblCustomBlockingScheduleName.stringValue = schedule.name
+                    lblCustomBlockingScheduleDayTime.stringValue = schedule.displayString
+                    break;
+                }
+            }
+            
+        }else if customBlockingScheduleManagerObj.isAnyCustomSchedulePaused{
+            boxCustomBlocking.isHidden = false
+            lblCustomBlockingState.stringValue = "Paused"
+            btnCustomBlocking.state = .off
+            for schedule in customBlockingScheduleManagerObj.arrBlockingSchedule{
+                if schedule.state == .pause{
+                    lblCustomBlockingScheduleName.stringValue = schedule.name
+                    lblCustomBlockingScheduleDayTime.stringValue = schedule.displayString
+                    break;
+                }
+            }
+        }else{
+            boxCustomBlocking.isHidden = true
+        }
+
         if customRoutinesMenu.items.count == 0{
             boxCustomRoutine.isHidden = true
         }else{
@@ -998,7 +1039,7 @@ class menuViewController: NSViewController {
             
             if isFocusModeOn || isFocusModePaused{
                 if isFocusModeOn{
-                    if isCuddlyModeEnabled() && SettingsManagerObject.isAiCheckUrlEnabled && !isBlockSuperDistractingFocusModeOn(){
+                    if isCuddlyModeEnabled() && SettingsManagerObject.isAIBlockingEnabled() && !isBlockSuperDistractingFocusModeOn(){
                         boxFocusAlignmentScore.isHidden = false
                         setFocusAlignmentScore(totalSeconds: focusModeMinutesToPerform * 60)
                     }else{
@@ -1035,9 +1076,17 @@ class menuViewController: NSViewController {
                     boxStopHardcorePomodoroMode.isHidden = true
                 }
             }
+            
+            if customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
+                boxFocusAlignmentScore.isHidden = false
+            }else{
+                boxFocusAlignmentScore.isHidden = true
+                
+            }
+            
             if boxFocusAlignmentScore.isHidden{
                 if (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_) && currentAction == ._INPROGRESS_ && (currentHabitPlaying != nil) && isAnyAllowedFocusModeActivityRunning{
-                    if isCuddlyModeEnabled() && SettingsManagerObject.isAiCheckUrlEnabled && !isBlockSuperDistractingFocusModeOn(){
+                    if isCuddlyModeEnabled() && SettingsManagerObject.isAIBlockingEnabled() && !isBlockSuperDistractingFocusModeOn(){
                         boxFocusAlignmentScore.isHidden = false
                         setFocusAlignmentScore(totalSeconds: currentHabitPlaying?.durationSeconds ?? 200)
                     }
@@ -1388,7 +1437,7 @@ class menuViewController: NSViewController {
     
     @objc func openToDoListClicked(){
         addLog(text: "[user-action] openToDoListClicked")
-        if isFocusModeOn() || ((currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._CUSTOM_ROUTINE_) && currentAction == ._INPROGRESS_ && isAnyAllowedFocusModeActivityRunning){
+        if isFocusModeOn() || ((currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._CUSTOM_ROUTINE_) && currentAction == ._INPROGRESS_ && isAnyAllowedFocusModeActivityRunning) || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
             showTaskPlayerWindow(totalDuration: focusModeMinutesToPerform, intention: whatToAchieveInFocusBlock, automatically:false)
             closeMenuWindowIsVisible()
         }else{
@@ -2158,10 +2207,12 @@ class menuViewController: NSViewController {
     }
     
     @IBAction func btnInfoBlockingDisabledClicked(_ sender: hoverInfoButton) {
-        var msg = "Blocking disabled because you chose to only activate blocks during focus sessions."
-        if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
-            msg = menuInfo.value(forKey: "toolTipBlockingDisabled") as? String ?? msg
-        }
+//        var msg = "Blocking disabled because you chose to only activate blocks during focus sessions."
+//        if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
+//            msg = menuInfo.value(forKey: "toolTipBlockingDisabled") as? String ?? msg
+//        }
+        let msg = "Blocking is off because no custom blocking schedules have been added." // todo text
+        
         
         showTooltip(sender: sender, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:230, autoCloseOnMouseExit: true)
     }
@@ -2218,7 +2269,7 @@ class menuViewController: NSViewController {
             leftMenuVcObj?.showBlocksView()
         }
         addLog(text: "Showing preferences")
-        tabStrictnessContainerVcObj?.showBlockingScheduleView()
+        tabStrictnessContainerVcObj?.showCustomBlockingSchedulesView()////now super distarcting sites will block only in focus modes and custom blocking schedules  24/9/25 version 2.27.417
         closeMenuWindowIsVisible()
     }
     
@@ -2252,6 +2303,19 @@ class menuViewController: NSViewController {
     
     @IBAction func btnBrowserTabAuditClicked(_ sender: Any) {
         showBrowsersTabAuditView()
+    }
+    
+    @IBAction func btnCustomBlockingClicked(_ sender: Any) {
+        if customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
+            customBlockingScheduleManagerObj.customBlockingSchedulePaused()
+        }else{
+            for i in 0..<customBlockingScheduleManagerObj.arrBlockingSchedule.count{
+                if customBlockingScheduleManagerObj.arrBlockingSchedule[i].state == .pause{
+                    customBlockingScheduleManagerObj.startCustomBlockingSchedule(index: i)
+                    break;
+                }
+            }
+        }
     }
 }
 

@@ -433,7 +433,7 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
     }
     
     func windowWillMiniaturize(_ notification: Notification) {
-        if isFocusModeRunning || isAnyAllowedFocusModeActivityRunning{
+        if isFocusModeRunning || isAnyAllowedFocusModeActivityRunning || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
             showNudgeFocusAlignmentScoreWindow(score: currentFocusAlignmentScore)
         }
     }

@@ -88,7 +88,7 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
     
     override func viewWillAppear() {
         isViewVisible = true
-        if isAnyAllowedFocusModeActivityRunning{
+        if isAnyAllowedFocusModeActivityRunning || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
             btnEndFocusSession.isHidden = true
         }else{
             btnEndFocusSession.isHidden = false
@@ -119,7 +119,7 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
     
     override func viewDidAppear() {
         updateTrackingAreaIfNeeded()
-        if isCuddlyModeEnabled() && SettingsManagerObject.isAiCheckUrlEnabled && !isBlockSuperDistractingFocusModeOn(){
+        if isCuddlyModeEnabled() && SettingsManagerObject.isAIBlockingEnabled() && !isBlockSuperDistractingFocusModeOn(){
             lblFocusAlignmentScore.isHidden = false
         }else{
             lblFocusAlignmentScore.isHidden = true
@@ -252,6 +252,7 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
             closePopoverTooltipIfVisible()
         }
     }
+    
     var isAnimationGoing = false
     func animateWindowFrameChange(window: NSWindow, newFrame: NSRect, duration: TimeInterval) {
         if isAnimationGoing{

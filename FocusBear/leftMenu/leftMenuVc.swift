@@ -74,7 +74,7 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         
         boxTodoPlayer.imageIcon = NSImage(named: "validIcon")
         
-        if isFocusModeRunning || isAnyAllowedFocusModeActivityRunning{
+        if isFocusModeRunning || isAnyAllowedFocusModeActivityRunning || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
             boxTodoPlayer.title = "Todo Player"
         }else{
             boxTodoPlayer.title = "Todo List"
@@ -238,7 +238,7 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
             boxFocusSession.title = leftMenuVcInfo.value(forKey: "menuStartFocusSession") as? String ?? boxFocusSession.title
             boxMicroBreaks.title = leftMenuVcInfo.value(forKey: "menuStartMicroBreak") as? String ?? boxMicroBreaks.title
             
-            if isFocusModeRunning || isAnyAllowedFocusModeActivityRunning{
+            if isFocusModeRunning || isAnyAllowedFocusModeActivityRunning || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
                 boxTodoPlayer.title = leftMenuVcInfo.value(forKey: "menuTodoPlayer") as? String ?? boxTodoPlayer.title
             }else{
                 boxTodoPlayer.title = leftMenuVcInfo.value(forKey: "menuTodoList") as? String ?? boxTodoPlayer.title
@@ -506,7 +506,7 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
             }
         case boxTodoPlayer:
             mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
-            if isFocusModeRunning || isAnyAllowedFocusModeActivityRunning{
+            if isFocusModeRunning || isAnyAllowedFocusModeActivityRunning || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
                 self.view.window?.styleMask.insert(.miniaturizable)// task player should be miniaturizable
             }
         case boxBrainDump:

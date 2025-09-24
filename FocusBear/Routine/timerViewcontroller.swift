@@ -591,7 +591,9 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             if filterArr.count != 0{ //if activity has focus mode and and any focus mode is running then silently terminate focus mode
                 isAnyAllowedFocusModeActivityRunning = true
                 isAnyAllowedFocusModeActivityWasRunningInLastActivity = true
-                
+                if customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
+                    customBlockingScheduleManagerObj.customBlockingScheduleFinished()
+                }
                 currentRunningAppNameForAi = ""
                 currentBrowserUrlForAi = ""
                 dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus.removeAll()

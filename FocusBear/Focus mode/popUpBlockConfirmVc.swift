@@ -223,7 +223,7 @@ class popUpBlockConfirmVc: NSViewController {
             lblAi.isHidden = true
             btnBlockAndAddToRelaxMode.isHidden = true
             
-            if SettingsManagerObject.isAiCheckUrlEnabled && !isBlockSuperDistractingFocusModeOn() && !isBrowser{
+            if SettingsManagerObject.isAIBlockingEnabled() && !isBlockSuperDistractingFocusModeOn() && !isBrowser{
                 boxBellIcon.isHidden = false
                 self.payload = payload
                 lblFocusAlignmentScore.isHidden = false
@@ -248,7 +248,7 @@ class popUpBlockConfirmVc: NSViewController {
                 lblFocusAlignmentScore.isHidden = true
             }
             
-            if SettingsManagerObject.isAiCheckUrlEnabled && !isBlockSuperDistractingFocusModeOn() && !isBrowser{
+            if SettingsManagerObject.isAIBlockingEnabled() && !isBlockSuperDistractingFocusModeOn() && !isBrowser{
                 boxBellIcon.isHidden = false
                 lblAi.isHidden = false
                 if let aiBlockReason = aiBlockReason{
@@ -284,7 +284,7 @@ class popUpBlockConfirmVc: NSViewController {
         }else{
             domain = getDomainFromUrl(url: fullUrl)
             boxAllowDomain.isHidden = true 
-            if SettingsManagerObject.isAiCheckUrlEnabled && !isBlockSuperDistractingFocusModeOn(){
+            if SettingsManagerObject.isAIBlockingEnabled() && !isBlockSuperDistractingFocusModeOn(){
                 self.payload = payload
                 lblFocusAlignmentScore.isHidden = false
                 boxBellIcon.isHidden = false
@@ -347,7 +347,7 @@ class popUpBlockConfirmVc: NSViewController {
             }
             
             lblTitle.stringValue = blockTitle
-            if SettingsManagerObject.isAiCheckUrlEnabled && !isBlockSuperDistractingFocusModeOn(){
+            if SettingsManagerObject.isAIBlockingEnabled() && !isBlockSuperDistractingFocusModeOn(){
                 boxBellIcon.isHidden = false
                 lblAi.isHidden = false
                 if let aiBlockReason = aiBlockReason{
@@ -389,12 +389,14 @@ class popUpBlockConfirmVc: NSViewController {
         hidePopUpSaveThisTaskForLaterView()
         
         
-        if getCurrentTaskInFocusMode() == nil && whatToAchieveInFocusBlock.isEmpty && !SettingsManagerObject.isGeekModeEnabled{// added on 2/9/25 on version 2.27.409
-            showoPopUpAddNewFocusGoalView()
-            let pickTaskText =  "AI can’t tell if this fits your work. Pick a task to guide Focus Bear!"
-            popUpAddNewFocusGoalVcObj?.lblTitle.stringValue = pickTaskText
-            if let popUpBlockConfirmVcInfo = configjson.value(forKey: "popUpBlockConfirmVcInfo") as? NSDictionary{
-                popUpAddNewFocusGoalVcObj?.lblTitle.stringValue = popUpBlockConfirmVcInfo.value(forKey: "pickTaskText") as? String ?? pickTaskText
+        if getCurrentTaskInFocusMode() == nil && whatToAchieveInFocusBlock.isEmpty{// added on 2/9/25 on version 2.27.409
+            if !SettingsManagerObject.isGeekModeEnabled || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
+                showoPopUpAddNewFocusGoalView()
+                let pickTaskText =  "AI can’t tell if this fits your work. Pick a task to guide Focus Bear!"
+                popUpAddNewFocusGoalVcObj?.lblTitle.stringValue = pickTaskText
+                if let popUpBlockConfirmVcInfo = configjson.value(forKey: "popUpBlockConfirmVcInfo") as? NSDictionary{
+                    popUpAddNewFocusGoalVcObj?.lblTitle.stringValue = popUpBlockConfirmVcInfo.value(forKey: "pickTaskText") as? String ?? pickTaskText
+                }
             }
         }
     }
@@ -777,7 +779,7 @@ class popUpBlockConfirmVc: NSViewController {
                     appdelegate?.focusBlockUnwantedApp(runningApp: self.currentApp!, appName: self.currentAppName, showNotification: false, isAppBlockByAi: self.isBlockByAi)
                     self.currentApp = nil
                 }else{
-                    if SettingsManagerObject.isAiCheckUrlEnabled{
+                    if SettingsManagerObject.isAIBlockingEnabled(){
                         appdelegate?.focusBlockUnwantedUrl(script: self.script, url: self.url, lastBlockReasonFromAi: self.lastBlockReasonFromAi, browser: self.browser, isUrlBlockByAi: self.isBlockByAi, blockReason:"")
                     }else{
                         appdelegate?.focusBlockUnwantedUrl(script: self.script, url: self.url, lastBlockReasonFromAi: nil, browser: self.browser, isUrlBlockByAi: self.isBlockByAi, blockReason:"")
@@ -935,7 +937,7 @@ class popUpBlockConfirmVc: NSViewController {
         addLog(text: "[user-action] popUpBlockConfirmVc:- btnAllowAppClicked")
         if self.currentApp != nil && isAppBlocking{
             
-            if SettingsManagerObject.isAiCheckUrlEnabled && !isBlockSuperDistractingFocusModeOn() && !isFailedToGetResponse && !isBrowser{
+            if SettingsManagerObject.isAIBlockingEnabled() && !isBlockSuperDistractingFocusModeOn() && !isFailedToGetResponse && !isBrowser{
 //                showConvincedAiPopUpBox(allowedByConvinceAiAlready:false, reason: "")
 //                isUserTypingIntention = true
 //                isUserTypingTime = Date()
@@ -966,7 +968,7 @@ class popUpBlockConfirmVc: NSViewController {
             }
             
         }else{
-            if SettingsManagerObject.isAiCheckUrlEnabled && !isBlockSuperDistractingFocusModeOn() && !isFailedToGetResponse{
+            if SettingsManagerObject.isAIBlockingEnabled() && !isBlockSuperDistractingFocusModeOn() && !isFailedToGetResponse{
 //                showConvincedAiPopUpBox(allowedByConvinceAiAlready:false, reason: "")
 //                isUserTypingIntention = true
 //                isUserTypingTime = Date()
@@ -1041,7 +1043,7 @@ class popUpBlockConfirmVc: NSViewController {
             appdelegate?.focusBlockUnwantedApp(runningApp: self.currentApp!, appName: self.currentAppName, showNotification: false, isAppBlockByAi: self.isBlockByAi)
             self.currentApp = nil
         }else{
-            if SettingsManagerObject.isAiCheckUrlEnabled{
+            if SettingsManagerObject.isAIBlockingEnabled(){
                 appdelegate?.focusBlockUnwantedUrl(script: self.script, url: self.url, lastBlockReasonFromAi: self.lastBlockReasonFromAi, browser: browser, isUrlBlockByAi: self.isBlockByAi, blockReason:"")
             }else{
                 appdelegate?.focusBlockUnwantedUrl(script: self.script, url: self.url, lastBlockReasonFromAi: nil, browser: browser, isUrlBlockByAi: self.isBlockByAi, blockReason:"")

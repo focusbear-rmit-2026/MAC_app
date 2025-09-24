@@ -184,7 +184,7 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
         }
         let duration = Double(focusModeActualDurationPerformed)
         var finalDuration = duration
-        if SettingsManagerObject.isAiCheckUrlEnabled{
+        if SettingsManagerObject.isAIBlockingEnabled(){
             boxFocusAlignmentScore.isHidden = false
             let score = currentFocusAlignmentScore
             let deepWorkDurationForAlignmentScore = (duration * score) / 100
@@ -660,7 +660,7 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
     }
     @IBAction func btnInfoFocusAlignmentClicked(_ sender: NSButton) {
         var msg = ""
-        if SettingsManagerObject.isAiCheckUrlEnabled{
+        if SettingsManagerObject.isAIBlockingEnabled(){
             msg = "The % of the focus session that you spent on productive sites/apps based on Focus Bear's AI."
             if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
                 if let focusCompletedInfo = focusInfo.value(forKey: "focusCompletedInfo") as? NSDictionary{
@@ -756,7 +756,7 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
     func expandMoreOptions(){
         boxAverageTimeSpent.isHidden = false
         boxAverageTabCount.isHidden = false
-        if SettingsManagerObject.isAiCheckUrlEnabled{
+        if SettingsManagerObject.isAIBlockingEnabled(){
             boxFocusAlignmentScore.isHidden = false
         }else{
             boxFocusAlignmentScore.isHidden = true

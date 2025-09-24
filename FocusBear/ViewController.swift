@@ -3953,7 +3953,7 @@ class ViewController: NSViewController {
     
     func showTaskView(){
         self.removeSubViews()
-        if isFocusModeRunning || isAnyAllowedFocusModeActivityRunning{
+        if isFocusModeRunning || isAnyAllowedFocusModeActivityRunning || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
             containerView.addSubview(taskPlayerVcObj!.view)
             containerView.addConstraints(subView: taskPlayerVcObj!.view)
             if shouldReloadTaskPlayer{

@@ -24,7 +24,7 @@ class strictnessVc: NSViewController {
     let frictionItemVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingListItemVc")) as? settingListItemVc
     let passwordItemVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingListItemVc")) as? settingListItemVc
     let focusModeItemVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingListItemVc")) as? settingListItemVc
-    let blockingScheduleVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingListItemVc")) as? settingListItemVc
+//    let blockingScheduleVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingListItemVc")) as? settingListItemVc
     let browserTabLimiterItemVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingListItemVc")) as? settingListItemVc
     let blockedURLsItemVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingListItemVc")) as? settingListItemVc
     let blockedAppsItemVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingListItemVc")) as? settingListItemVc
@@ -114,17 +114,17 @@ class strictnessVc: NSViewController {
         focusModeItemVcObj?.lblDescription.isHidden = true
         focusModeItemVcObj?.delegate = self
         
-        stackView.addView(blockingScheduleVcObj!.view, in: .bottom)
-        blockingScheduleVcObj?.lblTitle.stringValue = blockingScheduleTitle
-        blockingScheduleVcObj?.imgViewIcon.image = NSImage(named: NSImage.touchBarOpenInBrowserTemplateName)
-        
-        if #available(macOS 11.0, *) {
-            blockingScheduleVcObj?.imgViewIcon.image = NSImage(systemSymbolName: "bolt.circle", accessibilityDescription: nil)
-        } else {
-            blockingScheduleVcObj?.imgViewIcon.image = NSImage(named: NSImage.stopProgressTemplateName)
-        }
-        blockingScheduleVcObj?.lblDescription.isHidden = true
-        blockingScheduleVcObj?.delegate = self
+//        stackView.addView(blockingScheduleVcObj!.view, in: .bottom)
+//        blockingScheduleVcObj?.lblTitle.stringValue = blockingScheduleTitle
+//        blockingScheduleVcObj?.imgViewIcon.image = NSImage(named: NSImage.touchBarOpenInBrowserTemplateName)
+//        
+//        if #available(macOS 11.0, *) {
+//            blockingScheduleVcObj?.imgViewIcon.image = NSImage(systemSymbolName: "bolt.circle", accessibilityDescription: nil)
+//        } else {
+//            blockingScheduleVcObj?.imgViewIcon.image = NSImage(named: NSImage.stopProgressTemplateName)
+//        }
+//        blockingScheduleVcObj?.lblDescription.isHidden = true
+//        blockingScheduleVcObj?.delegate = self
         
         stackView.addView(browserTabLimiterItemVcObj!.view, in: .bottom)
         browserTabLimiterItemVcObj?.lblTitle.stringValue = tabLimiterSettingTitle
@@ -161,15 +161,20 @@ class strictnessVc: NSViewController {
         
         stackView.addView(customBlockingVcObj!.view, in: .bottom)
         customBlockingVcObj?.lblTitle.stringValue = "Custom blocking" // todo text
+//        if #available(macOS 11.0, *) {
+//            customBlockingVcObj?.imgViewIcon.image = NSImage(systemSymbolName: "calendar.badge.clock", accessibilityDescription: nil)// todo get icon
+//        } else {
+//            customBlockingVcObj?.imgViewIcon.image = NSImage(named: NSImage.statusUnavailableName)
+//        }
         if #available(macOS 11.0, *) {
-            customBlockingVcObj?.imgViewIcon.image = NSImage(systemSymbolName: "calendar.badge.clock", accessibilityDescription: nil)// todo get icon
+            customBlockingVcObj?.imgViewIcon.image = NSImage(systemSymbolName: "bolt.circle", accessibilityDescription: nil)
         } else {
-            customBlockingVcObj?.imgViewIcon.image = NSImage(named: NSImage.statusUnavailableName)
+            customBlockingVcObj?.imgViewIcon.image = NSImage(named: NSImage.stopProgressTemplateName)
         }
         customBlockingVcObj?.lblDescription.isHidden = true
         customBlockingVcObj?.delegate = self
         customBlockingVcObj?.lineBottom.isHidden = true
-        customBlockingVcObj?.toolTip = "Custom blocking" // todo
+        customBlockingVcObj?.toolTip = "Create your own schedules to automatically block distractions. Pick the days and times when distractions should be blocked. Stay focused without needing to start blocking manually."
         
         
         
@@ -179,17 +184,18 @@ class strictnessVc: NSViewController {
         arrForSearchFromSettings.append(["title": browserTabLimiterItemVcObj!.lblTitle.stringValue, "tabId": idStrictness, "object": browserTabLimiterItemVcObj!.bgBox as Any])
         arrForSearchFromSettings.append(["title": blockedURLsItemVcObj!.lblTitle.stringValue, "tabId": idStrictness, "object": blockedURLsItemVcObj!.bgBox as Any])
         arrForSearchFromSettings.append(["title": blockedAppsItemVcObj!.lblTitle.stringValue, "tabId": idStrictness, "object": blockedAppsItemVcObj!.bgBox as Any])
-        arrForSearchFromSettings.append(["title": blockingScheduleVcObj!.lblTitle.stringValue, "tabId": idTabStrictness, "object": blockingScheduleVcObj!.bgBox as Any])
-        arrForSearchFromSettings.append(["title": blockedAppsItemVcObj!.lblTitle.stringValue, "tabId": idTabStrictness, "object": blockedAppsItemVcObj!.bgBox as Any])
+//        arrForSearchFromSettings.append(["title": blockingScheduleVcObj!.lblTitle.stringValue, "tabId": idTabStrictness, "object": blockingScheduleVcObj!.bgBox as Any])
+       // arrForSearchFromSettings.append(["title": blockedAppsItemVcObj!.lblTitle.stringValue, "tabId": idTabStrictness, "object": blockedAppsItemVcObj!.bgBox as Any])
+        arrForSearchFromSettings.append(["title": customBlockingVcObj!.lblTitle.stringValue, "tabId": idTabStrictness, "object": customBlockingVcObj!.bgBox as Any])
         
-        
-        arrForSearchFromSimpleModeSettings.append(["title": blockingScheduleVcObj!.lblTitle.stringValue, "tabId": idTabStrictness, "object": blockingScheduleVcObj!.bgBox as Any])
+//        arrForSearchFromSimpleModeSettings.append(["title": blockingScheduleVcObj!.lblTitle.stringValue, "tabId": idTabStrictness, "object": blockingScheduleVcObj!.bgBox as Any])
         arrForSearchFromSimpleModeSettings.append(["title": browserTabLimiterItemVcObj!.lblTitle.stringValue, "tabId": idStrictness, "object": browserTabLimiterItemVcObj!.bgBox as Any])
         arrForSearchFromSimpleModeSettings.append(["title": blockedURLsItemVcObj!.lblTitle.stringValue, "tabId": idStrictness, "object": blockedURLsItemVcObj!.bgBox as Any])
         arrForSearchFromSimpleModeSettings.append(["title": blockedAppsItemVcObj!.lblTitle.stringValue, "tabId": idStrictness, "object": blockedAppsItemVcObj!.bgBox as Any])
-        arrForSearchFromSimpleModeSettings.append(["title": blockedAppsItemVcObj!.lblTitle.stringValue, "tabId": idStrictness, "object": blockedAppsItemVcObj!.bgBox as Any])
+//        arrForSearchFromSimpleModeSettings.append(["title": blockedAppsItemVcObj!.lblTitle.stringValue, "tabId": idStrictness, "object": blockedAppsItemVcObj!.bgBox as Any])
+        arrForSearchFromSimpleModeSettings.append(["title": customBlockingVcObj!.lblTitle.stringValue, "tabId": idStrictness, "object": customBlockingVcObj!.bgBox as Any])
         
-        getBlockingScheduleVcObject().loadView()
+//        getBlockingScheduleVcObject().loadView()
     }
     
     override func viewWillAppear() {
@@ -240,9 +246,13 @@ class strictnessVc: NSViewController {
                 frictionItemVcObj?.view.isHidden = true
                 passwordItemVcObj?.view.isHidden = true
                 focusModeItemVcObj?.view.isHidden = true
-                blockingScheduleVcObj?.view.isHidden = false
+               // blockingScheduleVcObj?.view.isHidden = false
+                customBlockingVcObj?.view.isHidden = false
+                blockedAppsItemVcObj?.lineBottom.isHidden = false
             }else{
-                blockingScheduleVcObj?.view.isHidden = true
+              //  blockingScheduleVcObj?.view.isHidden = true
+                customBlockingVcObj?.view.isHidden = true
+                blockedAppsItemVcObj?.lineBottom.isHidden = true
             }
 //        }
     }
@@ -347,10 +357,11 @@ extension strictnessVc: SettingListItemDelegate{
 //            }
             //----------------------------------------------------//
             settingsContainerVcObj?.showBlockedAppsView()
-        }else if object == blockingScheduleVcObj{
-            tabStrictnessContainerVcObj?.showBlockingScheduleView()
-            return;
-        }else if object == customBlockingVcObj{
+        }//else if object == blockingScheduleVcObj{
+//tabStrictnessContainerVcObj?.showBlockingScheduleView()
+         //   return;
+    //    }
+    else if object == customBlockingVcObj{
             tabStrictnessContainerVcObj?.showCustomBlockingSchedulesView()
         }
     }

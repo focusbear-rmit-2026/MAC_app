@@ -9,7 +9,7 @@
 import Cocoa
 import WebKit
 
-class blockingScheduleVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate {
+class blockingScheduleVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate {// not in use 
 
     @IBOutlet weak var webView: WKWebView!
     @IBOutlet weak var lblTitle: NSTextField!

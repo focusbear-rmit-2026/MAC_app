@@ -510,7 +510,7 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
         
     }
     func updateProbabilityOf(currentUrl:String){
-        if isCuddlyModeEnabled() && SettingsManagerObject.isAiCheckUrlEnabled && !isBlockSuperDistractingFocusModeOn(){
+        if isCuddlyModeEnabled() && SettingsManagerObject.isAIBlockingEnabled() && !isBlockSuperDistractingFocusModeOn(){
             let keys = dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus.keys
             for key in keys{
                 if var dictionary = dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[key]{

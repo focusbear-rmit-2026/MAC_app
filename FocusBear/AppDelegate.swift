@@ -5088,44 +5088,44 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             
             if (currentState == ._MICRO_BREAK_ || currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_) && currentAction == ._INPROGRESS_ && (currentActivityPlaying != nil || currentHabitPlaying != nil){
                 
-            }else if isAppEnable && SettingsManagerObject.blockingSchedule == ._UNTIL_I_FINISH_WORK_{
-                if !isFocusModeOn(){
-                    if let runningApp = NSWorkspace.shared.frontmostApplication{
-                        if let appUrl = runningApp.bundleURL{
-                            let name = appUrl.deletingPathExtension().lastPathComponent
-                            let nameLowercased = name.lowercased()
-                            if nameLowercased != selfAppName.lowercased() && nameLowercased != focusBearTimeTrackerAppName{
-                                var isAppAllowed = true
-                                var isAppAllowedByUser = false
-                                let arrBlockedApps = getBlockedAppsToBlock()
-                                for path in arrBlockedApps{
-                                    let url = URL(fileURLWithPath: path)
-                                    if url.deletingPathExtension().lastPathComponent.lowercased() == nameLowercased{
-                                        isAppAllowed = false
-                                        let result = self.tryToBlockAlwaysBlockedApp(runningApp: runningApp, appName: name)
-                                        if !result{// it means allowed by user(intention set by user)
-                                            isAppAllowedByUser = true
-                                        }
-                                        break;
-                                    }
-                                }
-                                if !isAppAllowedByUser{
-                                    if !isAppAllowed{
-                                        self.timerBlockUrl?.invalidate()
-                                    }else{
-                                        if nameLowercased != selfAppName.lowercased(){
-                                            self.closeIntentionBlockedAppsWinddowIfVisible()
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+            }//else if isAppEnable && SettingsManagerObject.blockingSchedule == ._UNTIL_I_FINISH_WORK_{//now super distarcting sites will block only in focus modes and custom blocking schedules  24/9/25 version 2.27.417
+//                if !isFocusModeOn(){
+//                    if let runningApp = NSWorkspace.shared.frontmostApplication{
+//                        if let appUrl = runningApp.bundleURL{
+//                            let name = appUrl.deletingPathExtension().lastPathComponent
+//                            let nameLowercased = name.lowercased()
+//                            if nameLowercased != selfAppName.lowercased() && nameLowercased != focusBearTimeTrackerAppName{
+//                                var isAppAllowed = true
+//                                var isAppAllowedByUser = false
+//                                let arrBlockedApps = getBlockedAppsToBlock()
+//                                for path in arrBlockedApps{
+//                                    let url = URL(fileURLWithPath: path)
+//                                    if url.deletingPathExtension().lastPathComponent.lowercased() == nameLowercased{
+//                                        isAppAllowed = false
+//                                        let result = self.tryToBlockAlwaysBlockedApp(runningApp: runningApp, appName: name)
+//                                        if !result{// it means allowed by user(intention set by user)
+//                                            isAppAllowedByUser = true
+//                                        }
+//                                        break;
+//                                    }
+//                                }
+//                                if !isAppAllowedByUser{
+//                                    if !isAppAllowed{
+//                                        self.timerBlockUrl?.invalidate()
+//                                    }else{
+//                                        if nameLowercased != selfAppName.lowercased(){
+//                                            self.closeIntentionBlockedAppsWinddowIfVisible()
+//                                        }
+//                                    }
+//                                }
+//                            }
+//                        }
+//                    }
+//                }
+//            }
             
             if isFocusModeRunning || (isAnyAllowedFocusModeActivityRunning && (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._CUSTOM_ROUTINE_)){
-                if isCuddlyModeEnabled() && SettingsManagerObject.isAiCheckUrlEnabled{
+                if isCuddlyModeEnabled() && SettingsManagerObject.isAIBlockingEnabled(){
                     calculateFocusAlignmentScore()
                 }
             }
@@ -5369,6 +5369,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         
                         if currentState == ._POSTPON_FOCUS_SUMMARY_{// need to check this
                             checkCustomRoutineTime()
+                            customBlockingScheduleManagerObj.checkCustomBlockingScheduleTime()
                         }
                         return;
                     }
@@ -5412,6 +5413,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         
                         if currentState == ._POSTPON_EVENING_HABIT_{// need to check this
                             checkCustomRoutineTime()
+                            customBlockingScheduleManagerObj.checkCustomBlockingScheduleTime()
                         }
                         return;
                     }
@@ -5495,6 +5497,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                 if currentState == ._POSTPON_MORNING_HABIT_{
                                     addLog(text: "Morning Routine is Postponed. Morning Habits Time checking Cancelled.")
                                     checkCustomRoutineTime()
+                                    customBlockingScheduleManagerObj.checkCustomBlockingScheduleTime()
                                     return;
                                 }
                                 
@@ -5770,6 +5773,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         }
                         if isHabitAlreadyShowed{
                             checkCustomRoutineTime()
+                            customBlockingScheduleManagerObj.checkCustomBlockingScheduleTime()
                         }
                     }
                 }
@@ -7896,6 +7900,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     
     @objc func focusModeStartted(isStartedByPusher:Bool){
         addLog(text: "focus Mode Started called")
+        if customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
+            customBlockingScheduleManagerObj.customBlockingScheduleFinished()
+        }
+        
         focusModeStarttedResetAllData()
         playFocusModeStartedSound()
 //        if getSmallCountDownWindowObject().window?.isVisible ?? false{
@@ -8308,7 +8316,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     }
                 }
             }
-        }else if isFocusModeOn(){
+        }else if isFocusModeOn() || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
             if let runningApp = NSWorkspace.shared.frontmostApplication{
                 if let appUrl = runningApp.bundleURL{//let name = runningApp.localizedName{
                     let name = appUrl.deletingPathExtension().lastPathComponent
@@ -8536,14 +8544,22 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 }
             
                 var shouldCheckBlockedUrls = false
-                if SettingsManagerObject.blockingSchedule == ._UNTIL_I_FINISH_WORK_{
+//                if SettingsManagerObject.blockingSchedule == ._UNTIL_I_FINISH_WORK_{
+//                    shouldCheckBlockedUrls = true
+//                }else{
+//                    // for try block url if blocking schedule is != _UNTIL_I_FINISH_WORK_
+//                    if isOnboardingCheckBlockingTime{
+//                        shouldCheckBlockedUrls = true
+//                    }
+//                }
+//
+                // for try block url if blocking schedule is != _UNTIL_I_FINISH_WORK_
+                if isOnboardingCheckBlockingTime{// now super distarcting sites will block only in focus modes and custom blocking schedules  24/9/25 version 2.27.417
                     shouldCheckBlockedUrls = true
-                }else{
-                    // for try block url if blocking schedule is != _UNTIL_I_FINISH_WORK_
-                    if isOnboardingCheckBlockingTime{
-                        shouldCheckBlockedUrls = true
-                    }
                 }
+                
+                
+                
                 if shouldCheckBlockedUrls{
                     if let runningApp = NSWorkspace.shared.frontmostApplication{
                         if let appUrl = runningApp.bundleURL{//let name = runningApp.localizedName{
@@ -9749,7 +9765,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             if arrBlockedAppsInCuddlyModeCurrentFocus.contains(runningApp){
                 focusBlockUnwantedApp(runningApp: runningApp, appName: appName, showNotification: true, isAppBlockByAi: false)
             }else{
-                if SettingsManagerObject.isAiCheckUrlEnabled{
+                if SettingsManagerObject.isAIBlockingEnabled(){
                     tryCheckAppFromAi(appName: appName, runningApp: runningApp)
                 }else{
                     showPopupBlockConfirmWindow(blockedAppName: appName, currentApp: runningApp, url:"", script:"", isBlockApp:true, browser: nil, tabTitle: nil, fullUrl:"", aiBlockReason: nil, isTimeOut:false, isBlockByAi: false, scoreForThisSiteApp: nil, payload: nil, isBrowser:false)
@@ -9759,7 +9775,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             if arrBlockedAppsInCuddlyModeCurrentFocus.contains(runningApp){
                 focusBlockUnwantedApp(runningApp: runningApp, appName: appName, showNotification: true, isAppBlockByAi: false)
             }else{
-                if SettingsManagerObject.isAiCheckUrlEnabled{
+                if SettingsManagerObject.isAIBlockingEnabled(){
                     tryCheckAppFromAi(appName: appName, runningApp: runningApp)
                 }else{
                     focusBlockUnwantedApp(runningApp: runningApp, appName: appName, showNotification: true, isAppBlockByAi: false)
@@ -9801,7 +9817,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             if arrBlockedUrlsInCuddlyModeCurrentFocus.contains(url){
                 focusBlockUnwantedUrl(script: script, url: url, lastBlockReasonFromAi: nil, browser: browser, isUrlBlockByAi: false, blockReason: "blocked_once_in_this_session")
             }else{
-                if SettingsManagerObject.isAiCheckUrlEnabled{
+                if SettingsManagerObject.isAIBlockingEnabled(){
                     tryCheckUrlFromAi(script: script, url: url, tabTitle: tabTitle, browser: browser, fullUrl: fullUrl, domain:domain, runningApp: runningApp)
                 }else{
                     if isRunningAppFullScreen(runningApp: runningApp, browser: browser) || stageManagerObject.isStageManagerEnabled{
@@ -9817,7 +9833,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             if arrBlockedUrlsInCuddlyModeCurrentFocus.contains(url){
                 focusBlockUnwantedUrl(script: script, url: url, lastBlockReasonFromAi: nil, browser: browser, isUrlBlockByAi: false, blockReason: "blocked_once_in_this_session")
             }else{
-                if SettingsManagerObject.isAiCheckUrlEnabled{
+                if SettingsManagerObject.isAIBlockingEnabled(){
                     tryCheckUrlFromAi(script: script, url: url, tabTitle: tabTitle, browser: browser, fullUrl: fullUrl, domain:domain, runningApp: runningApp)
                 }else{
                     exitFullScreen(runningApp:runningApp)
@@ -10608,7 +10624,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         }
         DispatchQueue.main.async {
             
-            if !isFocusModeOn(){
+            if !isFocusModeOn() && !customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
                 if self.timerAllowUrl != nil{
                     self.timerAllowUrl!.invalidate()
                 }
@@ -10643,19 +10659,18 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             var focusModeExpiryTimeString = "&focus_mode_end_time=\(stringTime)"
             var focusMode = ""
             let intention = whatToAchieveInFocusBlock.addingPercentEncoding(withAllowedCharacters: CharacterSet.urlQueryAllowed) ?? ""
-            for dic in arrFocusType{
-                if dic["isOn"] as? Bool == true{
-                    focusMode = dic["name"] as? String ?? ""
-                    currentRunningFocusModeName = focusMode
-                    if let isRelaxFocus = dic["isRelaxFocus"] as? Bool{
-                        if  isRelaxFocus{
-                            addLog(text:"relax focus mode:- return;")
-                            return;
-                        }
+            let dic = currentRunningFocusType
+            if dic["isOn"] as? Bool == true{
+                focusMode = dic["name"] as? String ?? ""
+                currentRunningFocusModeName = focusMode
+                if let isRelaxFocus = dic["isRelaxFocus"] as? Bool{
+                    if  isRelaxFocus{
+                        addLog(text:"relax focus mode:- return;")
+                        return;
                     }
-                    break;
                 }
             }
+            
             
             focusModeExpiryTimeString = focusModeExpiryTimeString.addingPercentEncoding(withAllowedCharacters: CharacterSet.urlQueryAllowed)!
             focusMode = focusMode.addingPercentEncoding(withAllowedCharacters: CharacterSet.urlQueryAllowed)!
@@ -10704,7 +10719,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                 self.closeSetIntentionBlockedUrlsWinddowIfVisible()
                                 self.closeIntentionBlockedUrlsWinddowIfVisible()
                                 closePopupBlockWindowIfRunningForUrl()
-                                if isCuddlyModeEnabled() && SettingsManagerObject.isAiCheckUrlEnabled{
+                                if isCuddlyModeEnabled() && SettingsManagerObject.isAIBlockingEnabled(){
                                     setFocusBearIconToNormal()
                                     focusModeCloseCurrentUrlForAlignmentScore()
                                 }
@@ -10891,7 +10906,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                 self.closeSetIntentionBlockedUrlsWinddowIfVisible()
                                 self.closeIntentionBlockedUrlsWinddowIfVisible()
                                 closePopupBlockWindowIfRunningForUrl()
-                                if isCuddlyModeEnabled() && SettingsManagerObject.isAiCheckUrlEnabled && !isBlockSuperDistractingFocusModeOn(){
+                                if isCuddlyModeEnabled() && SettingsManagerObject.isAIBlockingEnabled() && !isBlockSuperDistractingFocusModeOn(){
                                     setFocusBearIconToNormal()
                                     focusModeCloseCurrentUrlForAlignmentScore()
                                 }
@@ -10903,7 +10918,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                             self.closeSetIntentionBlockedUrlsWinddowIfVisible()
                             self.closeIntentionBlockedUrlsWinddowIfVisible()
                             closePopupBlockWindowIfRunningForUrl()
-                            if isCuddlyModeEnabled() && SettingsManagerObject.isAiCheckUrlEnabled{
+                            if isCuddlyModeEnabled() && SettingsManagerObject.isAIBlockingEnabled(){
                                 setFocusBearIconToNormal()
                                 focusModeCloseCurrentUrlForAlignmentScore()
                             }
@@ -11117,7 +11132,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                     }
                                 }
                                 closePopupBlockWindowIfRunningForUrl()
-                                if isCuddlyModeEnabled() && SettingsManagerObject.isAiCheckUrlEnabled && !isBlockSuperDistractingFocusModeOn(){
+                                if isCuddlyModeEnabled() && SettingsManagerObject.isAIBlockingEnabled() && !isBlockSuperDistractingFocusModeOn(){
                                     if dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[path] == nil{
                                         addEntryInfocusAlignmentScoreCsv(url: path, tabTitle: tabTitle ?? "", focusMode: currentRunningFocusModeName, intention: whatToAchieveInFocusBlock, aiReason: "", allowedProbability: "1.0", totalScore: "")
                                         var reason = appAllowedInFocusModeText.replacingOccurrences(of: "<APP>", with: path)
@@ -11139,7 +11154,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                             self.closeIntentionBlockedUrlsWinddowIfVisible()
                             closePopupBlockWindowIfRunningForUrl()
                             tabMatricsObject.closeLastDomainIfStarted()
-                            if isCuddlyModeEnabled() && SettingsManagerObject.isAiCheckUrlEnabled{
+                            if isCuddlyModeEnabled() && SettingsManagerObject.isAIBlockingEnabled(){
                                 setFocusBearIconToNormal()
                                 focusModeCloseCurrentUrlForAlignmentScore()
                             }
@@ -11222,7 +11237,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                 self.closeIntentionBlockedUrlsWinddowIfVisible()
                                 closePopupBlockWindowIfRunningForUrl()
                                 
-                                if isCuddlyModeEnabled() && SettingsManagerObject.isAiCheckUrlEnabled && isAnyAllowedFocusModeActivityRunning && !isBlockSuperDistractingFocusModeOn(){
+                                if isCuddlyModeEnabled() && SettingsManagerObject.isAIBlockingEnabled() && isAnyAllowedFocusModeActivityRunning && !isBlockSuperDistractingFocusModeOn(){
                                     setFocusBearIconToNormal()
                                     focusModeCloseCurrentUrlForAlignmentScore()
                                 }
@@ -11387,7 +11402,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                 self.closeSetIntentionBlockedUrlsWinddowIfVisible()
                                 self.closeIntentionBlockedUrlsWinddowIfVisible()
                                 closePopupBlockWindowIfRunningForUrl()
-                                if isCuddlyModeEnabled() && SettingsManagerObject.isAiCheckUrlEnabled && isAnyAllowedFocusModeActivityRunning && !isBlockSuperDistractingFocusModeOn(){
+                                if isCuddlyModeEnabled() && SettingsManagerObject.isAIBlockingEnabled() && isAnyAllowedFocusModeActivityRunning && !isBlockSuperDistractingFocusModeOn(){
                                     setFocusBearIconToNormal()
                                     focusModeCloseCurrentUrlForAlignmentScore()
                                 }
@@ -11401,7 +11416,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                             self.closeSetIntentionBlockedUrlsWinddowIfVisible()
                             self.closeIntentionBlockedUrlsWinddowIfVisible()
                             closePopupBlockWindowIfRunningForUrl()
-                            if isCuddlyModeEnabled() && SettingsManagerObject.isAiCheckUrlEnabled && isAnyAllowedFocusModeActivityRunning && !isBlockSuperDistractingFocusModeOn(){
+                            if isCuddlyModeEnabled() && SettingsManagerObject.isAIBlockingEnabled() && isAnyAllowedFocusModeActivityRunning && !isBlockSuperDistractingFocusModeOn(){
                                 setFocusBearIconToNormal()
                                 focusModeCloseCurrentUrlForAlignmentScore()
                             }
@@ -11545,7 +11560,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                 let isAllowedListApproachInFocus = currentRunningFocusType["isAllowedListApproach"] as? Bool ?? false
                                 let arrAllowedUrlsForFocus = currentRunningFocusType["allowed_urls"] as? [String] ?? []
                                 let arrBlockedUrlsForFocus = currentRunningFocusType["blockUrlsArray"] as? [String] ?? []
-                                var currentRunningFocusModeName = currentRunningFocusType["name"] as? String ?? ""
+                                let currentRunningFocusModeName = currentRunningFocusType["name"] as? String ?? ""
                                 if isAllowedListApproachInFocus{
                                     for turl in arrBlockedUrlsForFocus{
                                         isBlocked = self.validation.isUrlValid(urlToCheck: url, allowUrl: turl)
@@ -11714,7 +11729,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                 tabMatricsObject.closeLastDomainIfStarted()
                             }
                             
-                            if isCuddlyModeEnabled() && SettingsManagerObject.isAiCheckUrlEnabled && isAnyAllowedFocusModeActivityRunning && !isBlockSuperDistractingFocusModeOn(){
+                            if isCuddlyModeEnabled() && SettingsManagerObject.isAIBlockingEnabled() && isAnyAllowedFocusModeActivityRunning && !isBlockSuperDistractingFocusModeOn(){
                                 setFocusBearIconToNormal()
                                 focusModeCloseCurrentUrlForAlignmentScore()
                             }
@@ -11824,7 +11839,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             }
         }
     }
-    
     
     var timerPomodoroMode: Timer?
     func setTimerForPomodoroMode(delay:TimeInterval){// take a five minut k break per call hoga agar pomodoro mode finish hua h to. normal focus mode finish per call ni hoga ..
@@ -12333,4 +12347,22 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 // timer jump 
 
 
-// 
+
+//
+// dibba uda do blocking schedule ho
+
+// micro break setting, ai enable setting
+// if no  custom blocking show limited blocking
+
+// removie blocking schedule  // todoa ll
+//  skip micro break or usi ai vali settings
+// start time 2 miniut baad end time 1 hour bad
+
+
+
+// custom blocking ka naam time menu mai
+
+// button add new block gets hidden after so many schedules 
+// do not block blocked sites during breaks 
+// custom blocking button back not working 
+// cuddly mode setting

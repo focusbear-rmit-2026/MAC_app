@@ -121,3 +121,37 @@ func checkIsNaturalBreakWindowNeedToShow(idleTimeValue:Int){
         }
     }
 }
+
+func getTimeSinceLastBreak()->String?{
+    var breaksEndTime = UserDefaults.standard.object(forKey: kUserdefaultsLastBreakEndTime) as? Date
+    if breaksEndTime == nil{
+        var startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
+        if Date().compare(startDate) == .orderedAscending {// current date < start date(current date is 1 am and start date is 10 am )
+            startDate = Calendar.current.date(byAdding: .day, value: -1, to: startDate) ?? startDate
+        }
+        breaksEndTime = startDate
+    }else{
+        var startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
+        if Date().compare(startDate) == .orderedAscending {// current date < start date(current date is 1 am and start date is 10 am )
+            startDate = Calendar.current.date(byAdding: .day, value: -1, to: startDate) ?? startDate
+        }
+        
+        if breaksEndTime!.compare(startDate) == .orderedAscending {//breaksStartTime < start date
+            breaksEndTime = startDate
+        }
+    }
+    if let breaksEndTime = breaksEndTime{
+        let currentDate = Date()
+        let diffSeconds = Calendar.current.dateComponents([.second], from: breaksEndTime, to: currentDate).second ?? 0
+        if diffSeconds > 0{
+            let time = getStringTimeFromSecondsWithoutSeconds(seconds: Int(diffSeconds))
+            var lastBreakTimeText = "Time since last break: <TIME>"
+            if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
+                lastBreakTimeText = menuInfo.value(forKey: "lastBreakTimeText") as? String ?? lastBreakTimeText
+            }
+            lastBreakTimeText = lastBreakTimeText.replacingOccurrences(of: "<TIME>", with: time)
+            return lastBreakTimeText
+        }
+    }
+    return nil
+}

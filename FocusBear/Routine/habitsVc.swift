@@ -3465,6 +3465,15 @@ class habitsVc: NSViewController {
             }
             
             
+            if customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
+                if !customBlockingScheduleManagerObj.isMicroBreaksEnabled(){
+                    self.setActivityTimer()
+                    addLog(text: "Custom Blocking is On and Skip Break Activity During Custom Blocking is enabled: Break Activities cancelled.")
+                    return;
+                }
+            }
+            
+            
             //show the break as soon as there are 5 seconds of inactivity
             var lastEvent:CFTimeInterval = 0
             lastEvent = CGEventSource.secondsSinceLastEventType(CGEventSourceStateID.hidSystemState, eventType: CGEventType(rawValue: ~0)!)

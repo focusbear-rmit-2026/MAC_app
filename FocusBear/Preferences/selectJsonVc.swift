@@ -483,7 +483,7 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
             addLog(text: "focusMode Task String is:- \(focusModeTaskString)")
             updateFocusModeTask(taskString: taskString)
             var currentFocusModeIndex = 0
-            if (isFocusModeRunning || isAnyAllowedFocusModeActivityRunning){
+            if (isFocusModeRunning || isAnyAllowedFocusModeActivityRunning || customBlockingScheduleManagerObj.isAnyCustomScheduleOn){
                 if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._CUSTOM_ROUTINE_{
                     for i in 0..<arrFocusType.count{
                         let dic = arrFocusType[i]
@@ -673,11 +673,11 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
                             editHabitRoutineVcObj?.alertSettingsSaved()
                         }
                     }
-                    if blockingScheduleVcObj != nil{
-                        if blockingScheduleVcObj?.webView == message.webView{
-                            blockingScheduleVcObj?.alertSettingsSaved()
-                        }
-                    }
+//                    if blockingScheduleVcObj != nil{
+//                        if blockingScheduleVcObj?.webView == message.webView{
+//                            blockingScheduleVcObj?.alertSettingsSaved()
+//                        }
+//                    }
                 }
             }else if message.body as? String == "user-settings-update-failed"{
                 if message.webView == selectJsonVcObj?.webview{
@@ -688,11 +688,11 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
                             editHabitRoutineVcObj?.alertSettingsNotValid()//
                         }
                     }
-                    if blockingScheduleVcObj != nil{
-                        if blockingScheduleVcObj?.webView == message.webView{
-                            blockingScheduleVcObj?.alertSettingsNotValid()
-                        }
-                    }
+//                    if blockingScheduleVcObj != nil{
+//                        if blockingScheduleVcObj?.webView == message.webView{
+//                            blockingScheduleVcObj?.alertSettingsNotValid()
+//                        }
+//                    }
                 }
             }else {
                 if let data = (message.body as? String ?? "").data(using: String.Encoding.utf8) {
@@ -709,11 +709,11 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
                                 }
                             }
                             
-                            if blockingScheduleVcObj != nil{
-                                if blockingScheduleVcObj?.webView == message.webView{
-                                    blockingScheduleVcObj?.jsonReceivedFromWebView(jsonResult: jsonResult)
-                                }
-                            }
+//                            if blockingScheduleVcObj != nil{
+//                                if blockingScheduleVcObj?.webView == message.webView{
+//                                    blockingScheduleVcObj?.jsonReceivedFromWebView(jsonResult: jsonResult)
+//                                }
+//                            }
                         }
                     }
                     catch{

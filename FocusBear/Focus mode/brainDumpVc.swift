@@ -114,14 +114,14 @@ class brainDumpVc: NSViewController, NSTextViewDelegate{
                 }
             }
             
-            var shouldCheckBlockedUrls = false
-            if SettingsManagerObject.blockingSchedule == ._UNTIL_I_FINISH_WORK_{
-                shouldCheckBlockedUrls = true
-            }else{
-                if isFocusModeRunning || isAnyAllowedFocusModeActivityRunning{
+            var shouldCheckBlockedUrls = false//now super distarcting sites will block only in focus modes and custom blocking schedules  24/9/25 version 2.27.417
+          //  if SettingsManagerObject.blockingSchedule == ._UNTIL_I_FINISH_WORK_{
+           //     shouldCheckBlockedUrls = true
+           // }else{
+                if isFocusModeRunning || isAnyAllowedFocusModeActivityRunning || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
                     shouldCheckBlockedUrls = true
                 }
-            }
+            //}
             if shouldCheckBlockedUrls{
                 let arrBlockedUrls = getBlockedUrlsToBlock()
                 for turl in arrBlockedUrls{
@@ -135,7 +135,7 @@ class brainDumpVc: NSViewController, NSTextViewDelegate{
             }
             
             
-            if isFocusModeRunning || isAnyAllowedFocusModeActivityRunning{
+            if isFocusModeRunning || isAnyAllowedFocusModeActivityRunning || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
                 let arrBlockedUrlsForFocus = currentRunningFocusType["blockUrlsArray"] as? [String] ?? []
                 for turl in arrBlockedUrlsForFocus{
                     let isBlocked = appdelegate!.validation.isUrlValid(urlToCheck: urlString, allowUrl: turl)
@@ -175,13 +175,8 @@ class brainDumpVc: NSViewController, NSTextViewDelegate{
         }else{
             var stringTime = ""
             var focusMode = ""
-            if isFocusModeRunning{
-                for dic in arrFocusType{
-                    if dic["isOn"] as? Bool == true{
-                        focusMode = dic["name"] as? String ?? ""
-                        break;
-                    }
-                }
+            if isFocusModeRunning || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
+                focusMode = currentRunningFocusType["name"] as? String ?? ""
                 
                 if let date = endFocusModeTime{
                     stringTime = getStringFromDateInUtc(date: date, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")

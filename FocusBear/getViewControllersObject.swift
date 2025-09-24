@@ -455,13 +455,13 @@ func getBlockedAppsVcObject()->blockedAppsVc{
 }
 //
 
-var blockingScheduleVcObj:blockingScheduleVc?
-func getBlockingScheduleVcObject()->blockingScheduleVc{
-    if blockingScheduleVcObj == nil{
-        blockingScheduleVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("blockingScheduleVc")) as? blockingScheduleVc
-    }
-    return blockingScheduleVcObj!
-}
+//var blockingScheduleVcObj:blockingScheduleVc?
+//func getBlockingScheduleVcObject()->blockingScheduleVc{
+//    if blockingScheduleVcObj == nil{
+//        blockingScheduleVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("blockingScheduleVc")) as? blockingScheduleVc
+//    }
+//    return blockingScheduleVcObj!
+//}
 
 var customBlockingSchedulesVcObj:customBlockingSchedulesVc?
 func getCustomBlockingSchedulesVcObject()->customBlockingSchedulesVc{

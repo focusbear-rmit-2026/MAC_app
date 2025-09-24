@@ -16,6 +16,10 @@
 		13188D762DEF162D00E67A44 /* serverIntel in Resources */ = {isa = PBXBuildFile; fileRef = 13188D752DEF162D00E67A44 /* serverIntel */; };
 		1338D3792E1E35B8002A1BFC /* loginWc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1338D3782E1E35B8002A1BFC /* loginWc.swift */; };
 		13395D412DB900440094F019 /* focusModeData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13395D402DB900380094F019 /* focusModeData.swift */; };
+		134C1D332E8260D00032AF65 /* allSubclasses.swift in Sources */ = {isa = PBXBuildFile; fileRef = 134C1D322E8260C10032AF65 /* allSubclasses.swift */; };
+		134C1D352E8261610032AF65 /* allExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 134C1D342E82615B0032AF65 /* allExtension.swift */; };
+		134C1D372E8261BD0032AF65 /* stageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 134C1D362E8261BD0032AF65 /* stageManager.swift */; };
+		134C1D392E8263CC0032AF65 /* log.swift in Sources */ = {isa = PBXBuildFile; fileRef = 134C1D382E8263CC0032AF65 /* log.swift */; };
 		134D1DEC2E41E52300328E84 /* leftMenuVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 134D1DEB2E41E52300328E84 /* leftMenuVc.swift */; };
 		134D1DEE2E42144F00328E84 /* accordionBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 134D1DED2E42144F00328E84 /* accordionBox.swift */; };
 		134D1DF02E42378B00328E84 /* habitsVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 134D1DEF2E42378B00328E84 /* habitsVc.swift */; };
@@ -398,6 +402,10 @@
 		13188D752DEF162D00E67A44 /* serverIntel */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; path = serverIntel; sourceTree = "<group>"; };
 		1338D3782E1E35B8002A1BFC /* loginWc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = loginWc.swift; sourceTree = "<group>"; };
 		13395D402DB900380094F019 /* focusModeData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = focusModeData.swift; sourceTree = "<group>"; };
+		134C1D322E8260C10032AF65 /* allSubclasses.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = allSubclasses.swift; sourceTree = "<group>"; };
+		134C1D342E82615B0032AF65 /* allExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = allExtension.swift; sourceTree = "<group>"; };
+		134C1D362E8261BD0032AF65 /* stageManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = stageManager.swift; sourceTree = "<group>"; };
+		134C1D382E8263CC0032AF65 /* log.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = log.swift; sourceTree = "<group>"; };
 		134D1DEB2E41E52300328E84 /* leftMenuVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = leftMenuVc.swift; sourceTree = "<group>"; };
 		134D1DED2E42144F00328E84 /* accordionBox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = accordionBox.swift; sourceTree = "<group>"; };
 		134D1DEF2E42378B00328E84 /* habitsVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = habitsVc.swift; sourceTree = "<group>"; };
@@ -800,7 +808,6 @@
 				135A8A522E7E91E300A96A8E /* tblCellCustomBlockingSchedules.swift */,
 				135A8A562E7EC8FD00A96A8E /* blockingScheduleEditorVC.swift */,
 				135A8A582E7ECE4000A96A8E /* toggleTitledBox.swift */,
-				135A8A542E7EB27A00A96A8E /* customBlockingScheduleData.swift */,
 			);
 			path = "Custom Blocking Schedules";
 			sourceTree = "<group>";
@@ -1137,6 +1144,7 @@
 				8F5937502D49FA2800442292 /* nudgeFocusAlignmentScoreDippingWc.swift */,
 				8F59374E2D49F6CD00442292 /* nudgeFocusAlignmentScoreDippingVc.swift */,
 				135ABA6C2E5345A300D133F2 /* focusModeStateVc.swift */,
+				135A8A542E7EB27A00A96A8E /* customBlockingScheduleData.swift */,
 				8FBBD19D2968283200C4C8B7 /* toolBox */,
 			);
 			path = "Focus mode";
@@ -1304,6 +1312,10 @@
 				8F050A0B278467B000F3CE17 /* FocusBear-Bridging-Header.h */,
 				8F8869CB2AE38CBB0089E109 /* searchableComboBox.swift */,
 				8FAC6C982780671E008A4180 /* globalFile.swift */,
+				134C1D382E8263CC0032AF65 /* log.swift */,
+				134C1D322E8260C10032AF65 /* allSubclasses.swift */,
+				134C1D342E82615B0032AF65 /* allExtension.swift */,
+				134C1D362E8261BD0032AF65 /* stageManager.swift */,
 				13188D732DEEE30300E67A44 /* flaskServer.swift */,
 				8F0419452C353D4100481ACD /* getViewControllersObject.swift */,
 				8F3567202D3A71B200F62403 /* showHideWindows.swift */,
@@ -1851,6 +1863,7 @@
 				8F7819DA28E5891D00FB1F63 /* customLoginVc.swift in Sources */,
 				8F371A6429E3F96C0043D7B3 /* askBuildHabitsVc.swift in Sources */,
 				8F70A56629E699170071A0BE /* askOnboardingVideoVc.swift in Sources */,
+				134C1D332E8260D00032AF65 /* allSubclasses.swift in Sources */,
 				8F0994B72A0CB5F400F4C65E /* tblCellLogQuantity.swift in Sources */,
 				1338D3792E1E35B8002A1BFC /* loginWc.swift in Sources */,
 				8F0E69DC290279500042FAF4 /* customTooltipVc.swift in Sources */,
@@ -1928,6 +1941,7 @@
 				8F8C3FD62A8CB79A005CAF96 /* advancedVc.swift in Sources */,
 				8FA0FEE22C9EDEB00071D8CC /* blockingScheduleVc.swift in Sources */,
 				8F8E9AA62AAB021900F7CD32 /* surveyVc.swift in Sources */,
+				134C1D392E8263CC0032AF65 /* log.swift in Sources */,
 				8FA7D36729F3E686007AD2C1 /* aiPermissionVc.swift in Sources */,
 				8F4BD8C427883FBE00ABAEF5 /* NSEventModifierFlags+HotKey.swift in Sources */,
 				8FD0F7F62D437BC100ED3496 /* tblCellFocsedCompletedItem.swift in Sources */,
@@ -1993,6 +2007,7 @@
 				8F6DAD842B32A84400CB210B /* lateNoMorePopUpVc.swift in Sources */,
 				8FC31BFE28C757B400E2DD4C /* brainDumpVc.swift in Sources */,
 				8F1DC4A22BC1155800A51383 /* tabStrictnessContainerVc.swift in Sources */,
+				134C1D352E8261610032AF65 /* allExtension.swift in Sources */,
 				8F0A18502A8DFA7400AFA623 /* pomodoroSettingsVc.swift in Sources */,
 				8F1E3F762B2ADC24005CE096 /* startAnotherHabitVc.swift in Sources */,
 				8F6A2FB62983F8E400B97F38 /* focusStartHelpImgVc.swift in Sources */,
@@ -2009,6 +2024,7 @@
 				8F7819DC28E5CBE100FB1F63 /* loginHelpVc.swift in Sources */,
 				8F8844C32B5E52E400A73946 /* confirmEveningRoutineTimeVc.swift in Sources */,
 				8FDA8591279A8E83008AD6AA /* AVMonitor.m in Sources */,
+				134C1D372E8261BD0032AF65 /* stageManager.swift in Sources */,
 				8FBD6DFE2B6A760000CC9430 /* lateMorningHabitPopupVc.swift in Sources */,
 				8F7C2BB92B50026A0003824A /* frictionSetPasswordVc.swift in Sources */,
 				8F70D64528E1C6A600895B3F /* customMessageVc.swift in Sources */,
@@ -2337,7 +2353,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application: Focus Bear Pty Ltd (TCUD568B3U)";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 416;
+				CURRENT_PROJECT_VERSION = 417;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = TCUD568B3U;
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = TCUD568B3U;
@@ -2375,7 +2391,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application: Focus Bear Pty Ltd (TCUD568B3U)";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 416;
+				CURRENT_PROJECT_VERSION = 417;
 				DEVELOPMENT_TEAM = TCUD568B3U;
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = TCUD568B3U;
 				ENABLE_HARDENED_RUNTIME = YES;

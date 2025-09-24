@@ -11,7 +11,7 @@ import Cocoa
 class tblCellCustomBlockingSchedules: NSTableCellView {
 
     @IBOutlet weak var btnMain: mouseDownEffectButton!
-    @IBOutlet weak var dashedView: DashedView!
+    @IBOutlet weak var dashedView: DashedViewForTableViewCell!
     @IBOutlet weak var lblAddNewBlock: NSTextField!
     @IBOutlet weak var lblFocusModeName: NSTextField!
     @IBOutlet weak var lblBlockMode: NSTextField!

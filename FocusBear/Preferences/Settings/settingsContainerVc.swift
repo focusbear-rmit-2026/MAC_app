@@ -25,8 +25,9 @@ class settingsContainerVc: NSViewController {
         getAiSettingNewVcObject().loadView()
         
         getPomodoroSettingsVcObject().loadView()
-        
-        getStrictnessVcObject().loadView()
+        if !getStrictnessVcObject().isViewLoaded{
+            getStrictnessVcObject().loadView()
+        }
         getFrictionVcObject().loadView()
         getPasswordVcObject().loadView()
         getfocusBearModeVcObject().loadView()

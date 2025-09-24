@@ -108,7 +108,7 @@ func focusModeCloseCurrentAppForAlignmentScore(){
 }
 
 func focusModeOpenCurrentUrlForAlignmentScore(domain:String){
-    if isCuddlyModeEnabled() && SettingsManagerObject.isAiCheckUrlEnabled && !isBlockSuperDistractingFocusModeOn(){
+    if isCuddlyModeEnabled() && SettingsManagerObject.isAIBlockingEnabled() && !isBlockSuperDistractingFocusModeOn(){
         //check url opening for second time
         if var info = dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[domain]{
             if let isVisibleUrl = info["isVisibleUrl"] as? Bool{
@@ -132,7 +132,7 @@ func focusModeOpenCurrentUrlForAlignmentScore(domain:String){
 
 func focusModeOpenCurrentAppForAlignmentScore(appNameLowercased:String){
     boxForStatusBarForTooltip?.customToolTip = ""
-    if isCuddlyModeEnabled() && SettingsManagerObject.isAiCheckUrlEnabled && !isBlockSuperDistractingFocusModeOn(){
+    if isCuddlyModeEnabled() && SettingsManagerObject.isAIBlockingEnabled() && !isBlockSuperDistractingFocusModeOn(){
         if var info = dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[appNameLowercased]{
             if let isVisibleApp = info["isVisibleApp"] as? Bool{
                 if !isVisibleApp{
@@ -154,7 +154,7 @@ func focusModeOpenCurrentAppForAlignmentScore(appNameLowercased:String){
 
 
 func focusModeSetCurrentAppAllowedForAlignmentScore(appNameLowercased:String, focusModeName: String, probability:Double, appName:String){
-    if isCuddlyModeEnabled() && SettingsManagerObject.isAiCheckUrlEnabled && !isBlockSuperDistractingFocusModeOn(){
+    if isCuddlyModeEnabled() && SettingsManagerObject.isAIBlockingEnabled() && !isBlockSuperDistractingFocusModeOn(){
         if !arrBrowsersLowerCasedNames.contains(appNameLowercased){// exclude browsers from Alignment Score
             var reason = appAllowedInFocusModeText.replacingOccurrences(of: "<APP>", with: appName)
             reason = reason.replacingOccurrences(of: "<FOCUSMODE>", with: focusModeName)
@@ -1058,7 +1058,7 @@ func checkAppFromAi(appName:String, currentRunningFocusModeName:String, runningA
                                     }
                                 }
                                 if arrBrowsersLowerCasedNames.contains(appNameLowercased){
-                                    if isFocusModeOn(){
+                                    if isFocusModeOn() || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
                                         appdelegate?.setTimeCheckUrlsForFocusMode(nameLowercased: appNameLowercased)
                                     }else if isAnyAllowedFocusModeActivityRunning{
                                         DispatchQueue.global().sync {
@@ -1087,7 +1087,7 @@ func checkAppFromAi(appName:String, currentRunningFocusModeName:String, runningA
                                 }
                             }else{
                                 if arrBrowsersLowerCasedNames.contains(appNameLowercased){
-                                    if isFocusModeOn(){
+                                    if isFocusModeOn() || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
                                         appdelegate?.setTimeCheckUrlsForFocusMode(nameLowercased: appNameLowercased)
                                     }else if isAnyAllowedFocusModeActivityRunning{
                                         DispatchQueue.global().sync {
@@ -1114,7 +1114,7 @@ func checkAppFromAi(appName:String, currentRunningFocusModeName:String, runningA
                                 }
                                 
                                 if arrBrowsersLowerCasedNames.contains(appNameLowercased){
-                                    if isFocusModeOn(){
+                                    if isFocusModeOn() || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
                                         appdelegate?.setTimeCheckUrlsForFocusMode(nameLowercased: appNameLowercased)
                                     }else if isAnyAllowedFocusModeActivityRunning{
                                         DispatchQueue.global().sync {
@@ -1667,20 +1667,24 @@ var isAnyAllowedFocusModeActivityWasRunningInLastActivity = false
 var isAnyAllowedFocusModeActivityFinishTime = Date()
 
 func reSetCurrentFocusMode(focusType:[String:Any]){
-    if isFocusModeOn() || isAnyAllowedFocusModeActivityRunning{
+    if isFocusModeOn() || isAnyAllowedFocusModeActivityRunning || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
         if focusType["id"] as? String ?? ""  == currentRunningFocusType["id"] as? String ?? ""{
             currentRunningFocusType = focusType
         }
     }
 }
 
-enum FOCUSMODESTRICTNESS:Int{
+enum FOCUSMODESTRICTNESS:Int,Codable{
     case _NORMAL_ = 45, _STRICT_, _SUPER_STRICT_
 }
 
 var currentFocusModeStrictness = FOCUSMODESTRICTNESS._NORMAL_
 
 func isCuddlyModeEnabled()->Bool{
+    if customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
+        return customBlockingScheduleManagerObj.isCuddlyModeEnabled()
+    }
+    
     if currentFocusModeStrictness == ._SUPER_STRICT_{
         return false
     }
