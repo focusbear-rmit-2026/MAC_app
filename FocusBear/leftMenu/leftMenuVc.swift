@@ -891,7 +891,7 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         mainViewControllerObj?.askPasswordForSettingsIfNeeded()
     }
     
-    func focusModeOrFocusModeHabitStarted(){
+    func focusModeOrFocusModeHabitStarted(){// also for custom schedule blocking
         boxTodoPlayer.title = "Todo Player"
         if let leftMenuVcInfo = configjson.value(forKey: "leftMenuVcInfo") as? NSDictionary{
             boxTodoPlayer.title = leftMenuVcInfo.value(forKey: "menuTodoPlayer") as? String ?? boxTodoPlayer.title

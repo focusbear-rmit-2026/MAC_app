@@ -80,7 +80,7 @@ class shutOffTimeVc: NSViewController {
     func resetView(){
         bottomSpaceLblAlreadyUnlocked.constant = 30
         lblAlreadyUnlocked.isHidden = true
-        if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) == nil && isCutOffTimeGoing(){
+        if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) == nil{//} && isCutOffTimeGoing(){
             // if user has not unlocked today
             if let date = UserDefaults.standard.object(forKey: kUserdefaultsLastShutdownAbortedDate) as? Date{
                 if Date().compare(date) == .orderedAscending {
@@ -196,7 +196,7 @@ class shutOffTimeVc: NSViewController {
     @IBAction func btnGetAccessNowClicked(_ sender: Any) {
         addLog(text:"[user-action] btnGetAccessNowClicked")
         
-        if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) == nil && isCutOffTimeGoing(){
+        if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) == nil{//} && isCutOffTimeGoing(){
             // if user has not unlocked today
             var shouldAbortShutDownInOneClick = true
             if let date = UserDefaults.standard.object(forKey: kUserdefaultsLastShutdownAbortedDate) as? Date{

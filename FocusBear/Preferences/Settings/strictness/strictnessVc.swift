@@ -162,7 +162,7 @@ class strictnessVc: NSViewController {
         stackView.addView(customBlockingVcObj!.view, in: .bottom)
         customBlockingVcObj?.lblTitle.stringValue = "Custom blocking" // todo text
 //        if #available(macOS 11.0, *) {
-//            customBlockingVcObj?.imgViewIcon.image = NSImage(systemSymbolName: "calendar.badge.clock", accessibilityDescription: nil)// todo get icon
+//            customBlockingVcObj?.imgViewIcon.image = NSImage(systemSymbolName: "calendar.badge.clock", accessibilityDescription: nil)
 //        } else {
 //            customBlockingVcObj?.imgViewIcon.image = NSImage(named: NSImage.statusUnavailableName)
 //        }

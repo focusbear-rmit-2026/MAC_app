@@ -79,7 +79,11 @@
         "questionHowMotivatedText": "¿Cuán motivado te sientes para hacer tus hábitos?",
         "startCustomRoutineTitleText": "¡Tu rutina personalizada te está esperando! Da un paso a la vez y saca el máximo partido a tu día.",
         "menuItemCustomRoutineText": "Cambiar a otra rutina - <ROUTINE>",
-        "canNotDoCustomRoutineText": "No puedes realizar esta rutina en este momento porque no es la hora programada o ya la completaste."
+        "canNotDoCustomRoutineText": "No puedes realizar esta rutina en este momento porque no es la hora programada o ya la completaste.",
+        "stateActive": "Activo",
+        "statePaused": "En pausa",
+        "buttonAddBlockingSchedule": "Agregar horario de bloqueo",
+        "addBlockingScheduleInfo": "El bloqueo está desactivado porque no se han agregado horarios de bloqueo personalizados."
     },
     "common": {
         "emailId": "support@focusbear.io",
@@ -401,7 +405,8 @@
         "buttonReviewSettingsText": "Revisaré y Guardaré",
         "downloadReportText": "Visita el panel de control de Focus Bear en tu navegador web para descargar el informe.",
         "buttonVisitDashboardText": "Haz clic aquí para visitar el panel de control",
-        "tokenErrorText": "¡Sesión expirada! Por favor, inicia sesión de nuevo."
+        "tokenErrorText": "¡Sesión expirada! Por favor, inicia sesión de nuevo.",
+        "settingUrlNew": "https://dashboard.focusbear.io"
     },
     "trialNagInfo": {
         "title": "Focus Bear",
@@ -2496,6 +2501,32 @@
         "titleSetTabLimit": "Configura un límite de pestañas para no volver a sentirte abrumad@.",
         "titleTabLimitCount": "Límite máximo de pestañas:",
         "buttonSave": "Guardar"
+    },
+    "blockingScheduleEditorVcInfo":{
+        "title": "Bloqueo personalizado",
+        "titleScheduleName": "Nombre del bloqueo",
+        "titleBlockingSchedule": "Horario de bloqueo",
+        "titleFromTime": "Desde",
+        "titleTillTime": "Hasta",
+        "titleFocusMode": "Lista de bloqueo",
+        "buttonEditBlockList": "Editar lista de bloqueos",
+        "buttonSkipMicrobreaks": "Omitir micro descansos",
+        "buttonEnableAi": "Usar IA para decidir si se permiten los sitios web",
+        "buttonSave": "Guardar cambios",
+        "buttonDelete": "Eliminar",
+        "daySun": "Sun",
+        "daySat": "Sat",
+        "dayFri": "Fri",
+        "dayThu": "Thu",
+        "dayWed": "Wed",
+        "dayTue": "Tue",
+        "dayMon": "Mon",
+        "titleChooseFocusMode": "Elige un modo de enfoque para administrar tu lista de bloqueos",
+        "alertEnterName": "Por favor, ingresa un nombre para tu horario personalizado antes de guardar.",
+        "alertSelectDay": "Por favor, selecciona al menos un día para este horario.",
+        "alertSelectFocusMode": "Debe seleccionarse un modo de enfoque antes de guardar este horario.",
+        "alertScheduleActive": "El horario está activo",
+        "descriptionScheduleActive": "Este horario se está ejecutando actualmente. ¿Seguro que quieres eliminarlo? El bloqueo se detendrá de inmediato."
     },
     "discordUrl": "https://discord.gg/VZdv3ZjhSq",
     "whatsAppUrl": "https://chat.whatsapp.com/FV0oTbCUWpILBYif7CP6UD",

@@ -385,7 +385,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         allApiObject.downloadBlockPageAsync(url: URL(string: "https://focus-bear.github.io/assets/focus-blocked/index.html"), destinationUrl: fileUrl){ (success, error) in
             print(success)
             if flaskServerObject.startFlaskServer(){
-                blockWebUrlString = "http://localhost:5050"
+                blockWebUrlString = "http://localhost:50501"
             }else{
                 blockWebUrlString = fileUrl.absoluteString
             }
@@ -7496,113 +7496,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     }
     
     
-//    func focusModeAborted(){
-//        addLog(text: "focus mode Aborted")
-//        if taskPlayerWcObj != nil{
-//            if taskPlayerWcObj?.window?.isVisible ?? false{
-//                taskPlayerVcObj?.getToDosFromPlayer()
-//                taskPlayerWcObj?.window?.close()
-//                allApiObject.capturePosthog(event: "todo-player-popup-closed", metadata: [:])
-//            }
-//        }
-//        setAppIconForFocusModeScore(probability: nil)
-//        isSkipBreakActivityDuringFocus = false
-//        lastFocusModeTempInfo = nil
-//        unfocusedTime = 0
-//        playFocusPomodorBreakEndsSound()
-//        endFocusModeTime = nil
-//        if timerForFocusMode != nil{
-//            timerForFocusMode?.invalidate()
-//            timerForFocusMode = nil
-//        }
-//        if timerForFocusModeEndNotification != nil{
-//            timerForFocusModeEndNotification?.invalidate()
-//            timerForFocusModeEndNotification = nil
-//        }
-//        if focusEndWarningWcObj != nil{
-//            if focusEndWarningWcObj?.window?.isVisible ?? false{
-//                focusEndWarningWcObj?.window?.close()
-//            }
-//        }
-//        if savedSitesForLaterWcObj != nil{
-//            if savedSitesForLaterWcObj!.window?.isVisible ?? false{
-//                savedSitesForLaterWcObj!.close()
-//            }
-//        }
-//        if isFocusModeOn(){// is is paused then already calculated
-//            let totalSeconds = Int(Date().timeIntervalSince(startFocusModeTimeForPauseAndResume ?? Date()))
-//            focusModeActualDurationPerformed += totalSeconds
-//        }
-//        for i in 0..<arrFocusType.count{// clear datat after focus completed
-//            arrFocusType[i]["lastStartedDate"] = nil
-//            arrFocusType[i]["lastScheduledEndDate"] = nil
-//        }
-//        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
-//        
-//        focusModeFinishedCapturePosthog()
-//        var currentFocusModeId = ""
-//        for i in 0..<arrFocusType.count{
-//            if arrFocusType[i]["isOn"] as? Bool == true || arrFocusType[i]["isPaused"] as? Bool == true{
-//                arrFocusType[i]["isOn"] = false
-//                arrFocusType[i]["isPaused"] = false
-//                currentFocusModeId = arrFocusType[i]["id"] as? String ?? ""
-//                if isDndEnabled{
-//                    disableDND()
-//                }
-//                workAfterFocusBegin(index: i)
-//                break;
-//            }
-//        }
-//        
-//        isFocusModeRunning = false
-//
-//        allApiObject.finishFocusMode(id: currentFocusModeId, achievements: "", distractions: "", finish_time: Date(), rating:nil, completionHandler: {newDic in
-//            DispatchQueue.main.async {
-//                
-//            }
-//        })
-//        
-//        if timerForFocusMode != nil{
-//            timerForFocusMode?.invalidate()
-//            //            timerForFocusMode = nil
-//        }
-//        DispatchQueue.main.async {
-//            self.setStatusBarButtonColorForFocusMode(color: NSColor.clear, colorString:nil)
-//            self.statusbutton?.title = ""
-//        }
-//        
-//        isFocusTimeType = ._NONE_
-//        if self.timerAllowUrl != nil{
-//            self.timerAllowUrl!.invalidate()
-//            //self.timerAllowUrl = nil
-//            //                print("invalidtate")
-//        }
-//        timerCheckAllowedApps?.invalidate()
-//        DispatchQueue.main.async {
-//            if brainDumpWcObj != nil{
-//                if brainDumpWcObj?.window != nil{
-//                    if brainDumpWcObj!.window!.isVisible{
-//                        brainDumpVcObj?.focusModeFinished()
-//                    }
-//                }
-//            }
-//            if toolBoxWcObj != nil{
-//                if toolBoxWcObj!.window!.isVisible{
-//                    toolBoxWcObj?.window?.close()
-//                }
-//            }
-//        }
-//        
-//        isAutoMeetingsModeStarted = false
-//        appUsedInAutoMeetingFocusMode = ""
-//        refreshFocusModeData()
-//        DispatchQueue.main.async {
-//            closePupUpBlockIfVisible()
-//            menuViewControllerObj?.reloadIfNeeded()
-//            closeNudgeFocusAlignmentScoreWindow()
-//        }
-//        
-//    }
+
     
     @objc func showFocusModeFinishNotification(){
         addLog(text: "func showFocusModeEndWarningWindow")
@@ -10613,7 +10507,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                              "view-source:",
                              "about:blank",
                              "https://focus-bear.github.io",
-                             "localhost:5050"]// new added
+                             "localhost:50501"]// new added
 
     @objc func checkInBackground(){
         print("checkInBackground")
@@ -12366,3 +12260,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 // do not block blocked sites during breaks 
 // custom blocking button back not working 
 // cuddly mode setting
+
+
+// settings.focusbear.io
+// dashboard.focusbear.io
+
+// gapping  kam kro done
+// current schedule ka naam done
+// task player name when custom blicking is on not toodo list
+// next break in 2 2 2ho gye  done
+// cuttoftime running check hataya
+// timer ka background mai box lagaya
+// nudge font color change
+// settings updated

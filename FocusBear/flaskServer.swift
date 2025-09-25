@@ -70,6 +70,8 @@ class flaskServer:NSObject {
  codesign --force --options runtime \
    --entitlements /Users/manish/Desktop/serverIntel.entitlements \
    --sign "Developer ID Application: Focus Bear Pty Ltd (TCUD568B3U)" \
-   "/Users/manish/Documents/Apps/Focus Bear/src/trunk/FocusBear/server"
+   "/Users/manish/Documents/Apps/Focus Bear/SRC-NEW/FocusBear/serverIntel"
  
  */
+
+

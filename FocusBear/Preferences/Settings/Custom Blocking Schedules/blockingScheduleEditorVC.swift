@@ -67,7 +67,7 @@ class blockingScheduleEditorVC: NSViewController {
     var titleSuperStrictMode = "Iron Focus"
     var descriptionSuperStrictMode = "Once you start, you can't stop"
     var toolTipSuperStrictMode = "Once you start, there’s no backing out. Best for deep, distraction-free sessions."
-    var titleAfterPostpone = "What do you want to do instead of your habits?"
+  
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -82,10 +82,31 @@ class blockingScheduleEditorVC: NSViewController {
         btnEditBlockList.title = "Edit block list"
         checkBoxSkipMicroBreaks.title = "Skip microbreaks"
         checkBoxAiEnabled.title = "Use Al to decide if websites should be allowed"
+        btnCancel.title = buttonCancelText
+        btnSave.title = "Save changes"
+        btnDelete.title = "Delete"
+        
         lblTitleStrictnessLevel.stringValue = "Strictness level:"
-        titleNormalMode = "Normal"
-        titleStrictMode = "Strict"
-        titleSuperStrictMode = "Super strict"
+        
+        if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
+            if let startingFocusModeInfo = focusInfo.value(forKey: "startingFocusModeInfo") as? NSDictionary{
+                lblTitleStrictnessLevel.stringValue = startingFocusModeInfo.value(forKey: "titleStrictnessLevel") as? String ?? lblTitleStrictnessLevel.stringValue
+            }
+        }
+        
+        
+        if let simplePomodoroVcInfo = configjson.value(forKey: "simplePomodoroVcInfo") as? NSDictionary{
+            titleNormalMode = simplePomodoroVcInfo.value(forKey: "titleNormalMode") as? String ?? titleNormalMode
+            descriptionNormalMode = simplePomodoroVcInfo.value(forKey: "descriptionNormalMode") as? String ?? descriptionNormalMode
+            toolTipNormalMode = simplePomodoroVcInfo.value(forKey: "toolTipNormalMode") as? String ?? toolTipNormalMode
+            titleStrictMode = simplePomodoroVcInfo.value(forKey: "titleStrictMode") as? String ?? titleStrictMode
+            descriptionStrictMode = simplePomodoroVcInfo.value(forKey: "descriptionStrictMode") as? String ?? descriptionStrictMode
+            toolTipStrictMode = simplePomodoroVcInfo.value(forKey: "toolTipStrictMode") as? String ?? toolTipStrictMode
+            titleSuperStrictMode = simplePomodoroVcInfo.value(forKey: "titleSuperStrictMode") as? String ?? titleSuperStrictMode
+            descriptionSuperStrictMode = simplePomodoroVcInfo.value(forKey: "descriptionSuperStrictMode") as? String ?? descriptionSuperStrictMode
+            toolTipSuperStrictMode = simplePomodoroVcInfo.value(forKey: "toolTipSuperStrictMode") as? String ?? toolTipSuperStrictMode
+        }
+    
         
         lblStrictnessNormal.stringValue = "🟢 " + titleNormalMode
         lblStrictnessStrict.stringValue = "🟡 " + titleStrictMode
@@ -94,8 +115,8 @@ class blockingScheduleEditorVC: NSViewController {
         btnCancel.buttonColor = NSColor.white.cgColor // todo text all
         btnDelete.buttonColor = NSColor.white.cgColor
 
-        boxSunday.title = "Sun"
-        boxSunday.titleLabel.stringValue = "Sun"
+    
+        boxSunday.titleLabel.stringValue = "Sun"// todo need to  covert with some one
         boxSaturday.titleLabel.stringValue = "Sat"
         boxFriday.titleLabel.stringValue = "Fri"
         boxThursday.titleLabel.stringValue = "Thu"
@@ -111,14 +132,12 @@ class blockingScheduleEditorVC: NSViewController {
         boxTuesday.index = 3
         boxMonday.index = 2
         
-
+//        boxSunday.titleLabel = boxSunday.index.
         arrAllWeekDayBox = [boxSunday, boxMonday, boxTuesday, boxWednesday, boxThursday, boxFriday, boxSaturday]
         
         
         
-        btnCancel.title = buttonCancelText
-        btnSave.title = "Save changes"
-        btnDelete.title = "Delete" // todo text
+        
         
 //        boxBlockingModes.wantsLayer = true
 //        boxBlockingModes.layer?.cornerRadius = boxBlockingModes.cornerRadius
@@ -343,6 +362,7 @@ class blockingScheduleEditorVC: NSViewController {
             customBlockingSchedulesVcObj?.scheduleAdded()
         }else{
             customBlockingScheduleManagerObj.arrBlockingSchedule[currentFocusModeIndex] = blockingSchedule
+            customBlockingSchedulesVcObj?.scheduleEditedAt(currentFocusModeIndex)
         }
         
         
@@ -372,7 +392,7 @@ class blockingScheduleEditorVC: NSViewController {
             alert.informativeText = "This schedule is currently running. Are you sure you want to delete it? Blocking will stop immediately."
             alert.alertStyle = .warning
             alert.addButton(withTitle: "Delete")
-            alert.addButton(withTitle: "Cancel")
+            alert.addButton(withTitle: buttonCancelText)
             
             
             alert.beginSheetModal(for: self.view.window!, completionHandler: {result in
@@ -459,3 +479,19 @@ class blockingScheduleEditorVC: NSViewController {
     }
 }
 
+/*
+ 
+ "blockingScheduleEditorVcInfo":{
+     "title": "Custom Blocking",
+     "titleSetTabLimit": "Block name",
+     "titleTabLimitCount": "Blocking schedule",
+     "buttonSave": "From",
+     "buttonSave": "Till",
+     "buttonSave": "Block list",
+     "buttonSave": "Edit block list",
+     "buttonSave": "Skip microbreaks",
+     "buttonSave": "Use Al to decide if websites should be allowed",
+     
+ },
+ 
+ */

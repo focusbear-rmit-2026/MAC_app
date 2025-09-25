@@ -71,12 +71,19 @@ class selectJsonVc: NSViewController, NSTextViewDelegate, WKNavigationDelegate, 
     }
 
     func loadWebView(){
-        var url = "https://settings.focusbear.io?bust_cache=\(getUuid())&device_id=\(currentDeviceId)"
+        var settingUrl = "https://dashboard.focusbear.io"
+        if let settings = configjson.value(forKey: "settings") as? NSDictionary{
+            if let url = settings.value(forKey: "settingUrlNew") as? String{
+                settingUrl = url
+            }
+        }
+       
+        var url = "\(settingUrl)/webview/settings?bust_cache=\(getUuid())&device_id=\(currentDeviceId)"
         
         var fileURL = URL(string: url)
         if fileURL == nil{
             addLog(text: "url is nil")
-            url = "https://settings.focusbear.io?device_id=\(currentDeviceId)"
+            url = "\(settingUrl)?device_id=\(currentDeviceId)"
             fileURL = URL(string: url)
         }
         

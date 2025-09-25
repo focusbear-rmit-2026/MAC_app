@@ -674,6 +674,8 @@ class popUpBlockConfirmVc: NSViewController {
     
     
     func startTimer(durationSeconds:Int) {
+        self.lblTimer.font = NSFont.monospacedDigitSystemFont(ofSize: self.lblTimer.font?.pointSize ?? 13, weight: .regular)
+        self.lblTimerIntentionBox.font = NSFont.monospacedDigitSystemFont(ofSize: self.lblTimerIntentionBox.font?.pointSize ?? 13, weight: .regular)
         currentTimer = 0
         totalDuration = durationSeconds//durationInMinutes*60
         let (h,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)

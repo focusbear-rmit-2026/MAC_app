@@ -1079,6 +1079,7 @@ class menuViewController: NSViewController {
             
             if customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
                 boxFocusAlignmentScore.isHidden = false
+                setFocusAlignmentScore(totalSeconds: focusModeMinutesToPerform * 60)
             }else{
                 boxFocusAlignmentScore.isHidden = true
                 

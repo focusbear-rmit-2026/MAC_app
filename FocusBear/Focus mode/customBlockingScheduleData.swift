@@ -45,11 +45,11 @@ struct customBlockingSchedule: Codable, Identifiable {
         switch blockLevel{
             
         case ._NORMAL_:
-            "Normal"
+            strictnessNormalText
         case ._STRICT_:
-            "Strict"
+            strictnessStrictText
         case ._SUPER_STRICT_:
-            "Super Strict" // todo text
+            strictnessSuperStrictText
         }
     }
     
@@ -284,6 +284,14 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
                     if arrBlockingSchedule[i].state == .pause{
                         continue;
                     }
+                    // if any another schedule pased then stop it
+                    if isAnyCustomSchedulePaused{
+                        isAnyCustomSchedulePaused = false
+                        for i in 0..<arrBlockingSchedule.count{
+                            arrBlockingSchedule[i].state = .off
+                        }
+                    }
+                    
                     startCustomBlockingSchedule(index: i)
                     break;
                 }else{
@@ -291,6 +299,7 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
                         isAnyCustomSchedulePaused = false
                     }
                     arrBlockingSchedule[i].state = .off
+                    floatingTopBarVcObj?.boxCustomBlockingSchedule.isHidden = true
                 }
             }
         }
@@ -303,21 +312,7 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
         }
         isAnyCustomScheduleOn = false
         isAnyCustomSchedulePaused = false
-        setAppIconForFocusModeScore(probability: nil)
-        isSkipBreakActivityDuringFocus = false
-        lastFocusModeTempInfo = nil
-        unfocusedTime = 0
-        endFocusModeTime = nil
-        refreshFocusModeData()
-        arrAllowedTabTitlesInCuddlyModeCurrentFocus.removeAll()
-        closePupUpBlockIfVisible()
-        menuViewControllerObj?.reloadIfNeeded()
-        closeNudgeFocusAlignmentScoreWindow()
-        if taskPlayerVcObj != nil && mainWindowControllerObj?.window?.isVisible ?? false{
-            if leftMenuVcObj?.boxTodoPlayer.isSelected ?? false{
-                mainWindowControllerObj?.window?.close()
-            }
-        }
+        customBlockingDeactivated()
     }
     
     func customBlockingSchedulePaused(){
@@ -330,6 +325,10 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
         }
         isAnyCustomScheduleOn = false
         isAnyCustomSchedulePaused = true
+        customBlockingDeactivated()
+    }
+    
+    func customBlockingDeactivated(){
         setAppIconForFocusModeScore(probability: nil)
         isSkipBreakActivityDuringFocus = false
         lastFocusModeTempInfo = nil
@@ -345,7 +344,10 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
                 mainWindowControllerObj?.window?.close()
             }
         }
+        floatingTopBarVcObj?.boxCustomBlockingSchedule.isHidden = true
+        leftMenuVcObj?.focusModeOrFocusModeHabitFinished()
     }
+    
     
     
     func startCustomBlockingSchedule(index:Int){
@@ -413,6 +415,8 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
             taskPlayerVcObj?.reloadData(totalDuration: focusModeMinutesToPerform, intention: whatToAchieveInFocusBlock)
             shouldReloadTaskPlayer = false
         }
+        showCustomBlockingScheduleStartPopUp(scheduleName: arrBlockingSchedule[index].name, scheduleTime: "\(arrBlockingSchedule[index].startTime.formattedTime()) to \(arrBlockingSchedule[index].endTime.formattedTime())")
+        leftMenuVcObj?.focusModeOrFocusModeHabitStarted()
     }
     
     func saveCustomBlockingScheduleData(){

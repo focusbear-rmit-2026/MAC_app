@@ -11,6 +11,9 @@ import Cocoa
 
 class floatingTopBarVc: NSViewController {
 
+    @IBOutlet weak var lblScheduleTime: NSTextField!
+    @IBOutlet weak var lblScheduleName: NSTextField!
+    @IBOutlet weak var boxCustomBlockingSchedule: customBoxBg!
     @IBOutlet weak var widthBoxMain: NSLayoutConstraint!
     @IBOutlet weak var boxTimerSmall: NSBox!
     @IBOutlet weak var boxTimer: NSBox!
@@ -30,6 +33,7 @@ class floatingTopBarVc: NSViewController {
         boxMainTrackingArea = NSTrackingArea.init(rect: boxMain.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
         boxMain.addTrackingArea(boxMainTrackingArea!)
         boxTimer.isHidden = true
+        boxCustomBlockingSchedule.isHidden = true
         normalWidth = self.view.frame.width
     }
     

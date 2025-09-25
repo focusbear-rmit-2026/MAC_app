@@ -1655,10 +1655,7 @@ func closeMenuWindowIsVisible(){
     }
 }
 
-//***********SHOW Small Timer WINDOW***************//
-
-func showSmallTimerWindow(durationSeconds: Int, msg: String, isFocusBreak:Bool, currentTimerValue:Int){
-    addLog(text:"show Top Small Timer Window for:- \(durationSeconds) seconds")
+func closeMainMenuIfVisible(){
     if SettingsManagerObject.isMenuPopoverEnabled{
         if appdelegate?.popover.isShown ?? false{
             appdelegate?.popover.close()
@@ -1668,6 +1665,13 @@ func showSmallTimerWindow(durationSeconds: Int, msg: String, isFocusBreak:Bool, 
             getMenuWindowObject().window?.close()
         }
     }
+}
+
+//***********SHOW Small Timer WINDOW***************//
+
+func showSmallTimerWindow(durationSeconds: Int, msg: String, isFocusBreak:Bool, currentTimerValue:Int){
+    addLog(text:"show Top Small Timer Window for:- \(durationSeconds) seconds")
+    closeMainMenuIfVisible()
     floatingTopBarVcObj?.showTimerWindow(durationSeconds: durationSeconds, msg: msg, isFocusBreak: isFocusBreak, currentTimerValue: currentTimerValue)
     
 //    getSmallCountDownWindowObject().contentViewController = getsmallCountDownVcObject()
@@ -1681,6 +1685,14 @@ func showSmallTimerWindow(durationSeconds: Int, msg: String, isFocusBreak:Bool, 
 //    getSmallCountDownWindowObject().showWindow(nil)
 //    
 //    smallCountDownVcObj?.startTimerHabit(durationSeconds: durationSeconds, msg: msg, currentTimerValue:currentTimerValue)
+}
+
+func showCustomBlockingScheduleStartPopUp(scheduleName: String, scheduleTime: String){
+    addLog(text:"show Custom Blocking Schedule Start PopUp for:- \(scheduleTime)")
+    closeMainMenuIfVisible()
+    floatingTopBarVcObj?.lblScheduleName.stringValue = scheduleName
+    floatingTopBarVcObj?.lblScheduleTime.stringValue = scheduleTime
+    floatingTopBarVcObj?.boxCustomBlockingSchedule.isHidden = false
 }
 
 func showSmallTimerView(){

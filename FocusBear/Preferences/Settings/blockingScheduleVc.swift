@@ -105,11 +105,18 @@ class blockingScheduleVc: NSViewController, WKNavigationDelegate, webViewLoadFai
     }
     
     func loadWebView(){
-        var url = "https://settings.focusbear.io?bust_cache=\(getUuid())&edit_specific_routine=timing&device_id=\(currentDeviceId)"
+        var settingUrl = "https://dashboard.focusbear.io"
+        if let settings = configjson.value(forKey: "settings") as? NSDictionary{
+            if let url = settings.value(forKey: "settingUrlNew") as? String{
+                settingUrl = url
+            }
+        }
+        
+        var url = "\(settingUrl)?bust_cache=\(getUuid())&edit_specific_routine=timing&device_id=\(currentDeviceId)"
         var  fileURL = URL(string: url)
         if fileURL == nil{
             addLog(text: "url is nil")
-            url = "https://settings.focusbear.io?edit_specific_routine=timing&device_id=\(currentDeviceId)"
+            url = "\(settingUrl)?edit_specific_routine=timing&device_id=\(currentDeviceId)"
             fileURL = URL(string: url)
         }
         let request = NSMutableURLRequest(url: fileURL!)

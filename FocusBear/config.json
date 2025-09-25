@@ -392,7 +392,8 @@
         "buttonReviewSettingsText": "I'll review and Save",
         "downloadReportText": "Please visit Focus Bear dashboard in your web browser to download the report.",
         "buttonVisitDashboardText": "Click here to visit dashboard now",
-        "tokenErrorText": "Session Expired! Please login again."
+        "tokenErrorText": "Session Expired! Please login again.",
+        "settingUrlNew": "https://dashboard.focusbear.io"
     },
     "trialNagInfo": {
         "title": "Focus Bear",
@@ -489,7 +490,11 @@
         "noPermissionSet": "- No permissions granted",
         "browserPermissionNotSet": "- Permission to any browser not granted",
         "accessibilityNotSet": "- Accessibility permission not granted",
-        "systemEventsPermissionNotSet": "- System Events permission not granted"
+        "systemEventsPermissionNotSet": "- System Events permission not granted",
+        "stateActive": "Active",
+        "statePaused": "Paused",
+        "buttonAddBlockingSchedule": "Add blocking schedule",
+        "addBlockingScheduleInfo": "Blocking is off because no custom blocking schedules have been added."
     },
     "preferencesInfo": {
         "titlePomodoro": "Pomodoro Mode:",
@@ -2496,6 +2501,32 @@
         "titleSetTabLimit": "Set a tab limit so you don't get overwhelmed with tabs again",
         "titleTabLimitCount": "Max tab limit:",
         "buttonSave": "Save"
+    },
+    "blockingScheduleEditorVcInfo":{
+        "title": "Custom Blocking",
+        "titleScheduleName": "Block name",
+        "titleBlockingSchedule": "Blocking schedule",
+        "titleFromTime": "From",
+        "titleTillTime": "Till",
+        "titleFocusMode": "Block list",
+        "buttonEditBlockList": "Edit block list",
+        "buttonSkipMicrobreaks": "Skip microbreaks",
+        "buttonEnableAi": "Use Al to decide if websites should be allowed",
+        "buttonSave": "Save changes",
+        "buttonDelete": "Delete",
+        "daySun": "Sun",
+        "daySat": "Sat",
+        "dayFri": "Fri",
+        "dayThu": "Thu",
+        "dayWed": "Wed",
+        "dayTue": "Tue",
+        "dayMon": "Mon",
+        "titleChooseFocusMode": "Choose a Focus Mode to manage your blocked list",
+        "alertEnterName": "Please enter a name for your custom schedule before saving.",
+        "alertSelectDay": "Please select at least one day for this schedule.",
+        "alertSelectFocusMode": "A focus mode must be selected before saving this schedule.",
+        "alertScheduleActive": "Schedule is Active",
+        "descriptionScheduleActive": "This schedule is currently running. Are you sure you want to delete it? Blocking will stop immediately."
     },
     "discordUrl": "https://discord.gg/VZdv3ZjhSq",
     "whatsAppUrl": "https://chat.whatsapp.com/FV0oTbCUWpILBYif7CP6UD",

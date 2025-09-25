@@ -440,6 +440,10 @@ var buttonMoreActionsText = "More Actions"
 var appAllowedInFocusModeText = "\"<APP>\" is allowed in \"<FOCUSMODE>\" focus mode."
 var appNotAllowedInFocusModeText = "\"<APP>\" is not allowed in \"<FOCUSMODE>\" focus mode."
 
+var strictnessNormalText = "Normal"
+var strictnessStrictText = "Strict"
+var strictnessSuperStrictText = "Super strict"
+
 func readConfigFile(){
     addLog(text: "read Config File")
     if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
@@ -462,6 +466,14 @@ func readConfigFile(){
         activitySkippedUnlockNowSoundText = activityInfo.value(forKey: "activitySkippedUnlockNowSoundText") as? String ?? activitySkippedUnlockNowSoundText
         activityFinishedUnlockNowSoundText = activityInfo.value(forKey: "activityFinishedUnlockNowSoundText") as? String ?? activityFinishedUnlockNowSoundText
         buttonMoreActionsText = activityInfo.value(forKey: "buttonMoreActionsText") as? String ?? buttonMoreActionsText
+    }
+    
+    if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
+        if let startingFocusModeInfo = focusInfo.value(forKey: "startingFocusModeInfo") as? NSDictionary{
+            strictnessNormalText = startingFocusModeInfo.value(forKey: "strictnessNormalText") as? String ?? strictnessNormalText
+            strictnessStrictText = startingFocusModeInfo.value(forKey: "strictnessStrictText") as? String ?? strictnessStrictText
+            strictnessSuperStrictText = startingFocusModeInfo.value(forKey: "strictnessSuperStrictText") as? String ?? strictnessSuperStrictText
+        }
     }
     
     

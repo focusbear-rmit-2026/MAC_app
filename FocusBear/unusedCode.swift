@@ -955,3 +955,111 @@
 //        self.layer?.backgroundColor = NSColor(red: 0/255, green: 0/255, blue: 0/255, alpha: 0).cgColor
 //    }
 //}
+
+//    func focusModeAborted(){
+//        addLog(text: "focus mode Aborted")
+//        if taskPlayerWcObj != nil{
+//            if taskPlayerWcObj?.window?.isVisible ?? false{
+//                taskPlayerVcObj?.getToDosFromPlayer()
+//                taskPlayerWcObj?.window?.close()
+//                allApiObject.capturePosthog(event: "todo-player-popup-closed", metadata: [:])
+//            }
+//        }
+//        setAppIconForFocusModeScore(probability: nil)
+//        isSkipBreakActivityDuringFocus = false
+//        lastFocusModeTempInfo = nil
+//        unfocusedTime = 0
+//        playFocusPomodorBreakEndsSound()
+//        endFocusModeTime = nil
+//        if timerForFocusMode != nil{
+//            timerForFocusMode?.invalidate()
+//            timerForFocusMode = nil
+//        }
+//        if timerForFocusModeEndNotification != nil{
+//            timerForFocusModeEndNotification?.invalidate()
+//            timerForFocusModeEndNotification = nil
+//        }
+//        if focusEndWarningWcObj != nil{
+//            if focusEndWarningWcObj?.window?.isVisible ?? false{
+//                focusEndWarningWcObj?.window?.close()
+//            }
+//        }
+//        if savedSitesForLaterWcObj != nil{
+//            if savedSitesForLaterWcObj!.window?.isVisible ?? false{
+//                savedSitesForLaterWcObj!.close()
+//            }
+//        }
+//        if isFocusModeOn(){// is is paused then already calculated
+//            let totalSeconds = Int(Date().timeIntervalSince(startFocusModeTimeForPauseAndResume ?? Date()))
+//            focusModeActualDurationPerformed += totalSeconds
+//        }
+//        for i in 0..<arrFocusType.count{// clear datat after focus completed
+//            arrFocusType[i]["lastStartedDate"] = nil
+//            arrFocusType[i]["lastScheduledEndDate"] = nil
+//        }
+//        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+//
+//        focusModeFinishedCapturePosthog()
+//        var currentFocusModeId = ""
+//        for i in 0..<arrFocusType.count{
+//            if arrFocusType[i]["isOn"] as? Bool == true || arrFocusType[i]["isPaused"] as? Bool == true{
+//                arrFocusType[i]["isOn"] = false
+//                arrFocusType[i]["isPaused"] = false
+//                currentFocusModeId = arrFocusType[i]["id"] as? String ?? ""
+//                if isDndEnabled{
+//                    disableDND()
+//                }
+//                workAfterFocusBegin(index: i)
+//                break;
+//            }
+//        }
+//
+//        isFocusModeRunning = false
+//
+//        allApiObject.finishFocusMode(id: currentFocusModeId, achievements: "", distractions: "", finish_time: Date(), rating:nil, completionHandler: {newDic in
+//            DispatchQueue.main.async {
+//
+//            }
+//        })
+//
+//        if timerForFocusMode != nil{
+//            timerForFocusMode?.invalidate()
+//            //            timerForFocusMode = nil
+//        }
+//        DispatchQueue.main.async {
+//            self.setStatusBarButtonColorForFocusMode(color: NSColor.clear, colorString:nil)
+//            self.statusbutton?.title = ""
+//        }
+//
+//        isFocusTimeType = ._NONE_
+//        if self.timerAllowUrl != nil{
+//            self.timerAllowUrl!.invalidate()
+//            //self.timerAllowUrl = nil
+//            //                print("invalidtate")
+//        }
+//        timerCheckAllowedApps?.invalidate()
+//        DispatchQueue.main.async {
+//            if brainDumpWcObj != nil{
+//                if brainDumpWcObj?.window != nil{
+//                    if brainDumpWcObj!.window!.isVisible{
+//                        brainDumpVcObj?.focusModeFinished()
+//                    }
+//                }
+//            }
+//            if toolBoxWcObj != nil{
+//                if toolBoxWcObj!.window!.isVisible{
+//                    toolBoxWcObj?.window?.close()
+//                }
+//            }
+//        }
+//
+//        isAutoMeetingsModeStarted = false
+//        appUsedInAutoMeetingFocusMode = ""
+//        refreshFocusModeData()
+//        DispatchQueue.main.async {
+//            closePupUpBlockIfVisible()
+//            menuViewControllerObj?.reloadIfNeeded()
+//            closeNudgeFocusAlignmentScoreWindow()
+//        }
+//
+//    }

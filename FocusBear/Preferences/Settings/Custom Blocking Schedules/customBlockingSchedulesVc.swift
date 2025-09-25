@@ -39,6 +39,11 @@ class customBlockingSchedulesVc: NSViewController {
         tblView.scrollRowToVisible(tblView.numberOfRows - 1)
     }
     
+    func scheduleEditedAt(_ index:Int){
+        tblView.reloadData(forRowIndexes: IndexSet(arrayLiteral: index), columnIndexes: IndexSet(arrayLiteral: 0))
+    }
+    
+    
     @IBAction func btnAddNewBlockClicked(_ sender: Any) {
         tabStrictnessContainerVcObj?.showBlockingSchedulesView(index: -1, shouldCreateNew: true)
     }
