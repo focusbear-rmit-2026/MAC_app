@@ -82,12 +82,11 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
     }
     
     override func viewWillAppear() {
-        randomCharacters = ""
-        tabView.selectTabViewItem(tabViewItemPassword)
         isCurrentViewInMainWindow = false
         lblError.isHidden = true
         lblError.stringValue = ""
         textFieldPassword.stringValue = ""
+        textFieldRandomString.stringValue = ""
         //btnResetPassword.isHidden = false
         
         if UserDefaults.standard.object(forKey: kUserdefaults24HoursClearPasswordTime) == nil{//if reset is in progress then disable reset button
@@ -98,10 +97,14 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
         
         if isMainWindowLoaded{
             if mainWindowControllerObj?.window?.isVisible ?? false{
-                //btnResetPassword.isHidden = true
                 isCurrentViewInMainWindow = true
-                return;//
             }
+        }
+        //If user click stop, it can prompt for the password. If no password is set, it can prompt for the random characters.// added in v 2.27.420 // 27/9/25
+        if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) == nil{
+            tabView.selectTabViewItem(tabViewItemEnterCharacters)
+        }else{
+            tabView.selectTabViewItem(tabViewItemPassword)
         }
     }
     override func viewWillDisappear() {
@@ -802,6 +805,12 @@ extension enterPasswordVc:NSTabViewDelegate{
     }
 
     func tabView(_ tabView: NSTabView, shouldSelect tabViewItem: NSTabViewItem?) -> Bool {
+        if tabViewItem == tabViewItemPassword{
+            if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) == nil{
+                return false
+            }
+        }
+        
         return true
     }
 }

@@ -346,6 +346,12 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
         }
         floatingTopBarVcObj?.boxCustomBlockingSchedule.isHidden = true
         leftMenuVcObj?.focusModeOrFocusModeHabitFinished()
+        
+        if abortingCustomScheduleBlockingVcObj != nil{
+            if abortingCustomScheduleBlockingVcObj?.isViewVisible ?? false{
+                abortingCustomScheduleBlockingVcObj?.dismiss(abortingCustomScheduleBlockingVcObj)
+            }
+        }
     }
     
     

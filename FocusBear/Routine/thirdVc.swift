@@ -762,7 +762,7 @@ class thirdVc: NSViewController {
                     type = "monthly"
                 }
                 let json = [ "label":"\(activityName)" , "labelX":graphDateText, "labelY":labelYVal, "data": arrDuration, "type":type, "max":maxInHabitsGraph, "min":minInSecondGraph] as [String : Any]
-                addGraphsLog(text: "\(json)")
+//                addGraphsLog(text: "\(json)")
                 do {
                     let data = try (JSONSerialization.data(withJSONObject: json, options: .prettyPrinted))
                     if let str = String(data: data, encoding: String.Encoding.utf8){
@@ -885,7 +885,7 @@ class thirdVc: NSViewController {
             let min:Double = 0
             let jsonForDay = ["label":activityName , "labelX":graphTimeText, "labelY":labelYVal, "TimeValues":arrGraph2DateString, "data": arrGraph2Duration, "max":max, "min":min] as [String : Any]
             
-            addGraphsLog(text: "\(jsonForDay)")
+//            addGraphsLog(text: "\(jsonForDay)")
             
             do {
                 let data = try (JSONSerialization.data(withJSONObject: jsonForDay, options: .prettyPrinted))
@@ -1155,7 +1155,7 @@ class thirdVc: NSViewController {
                 type = "monthly"
             }
             let json = [ "label":"\(activityName)" , "labelX":graphDateText, "labelY":labelYVal, "data": arrGraph1DurationOrQuantity, "type":type, "max":maxInSecondGraph, "min":minInSecondGraph] as [String : Any]
-            addGraphsLog(text: "\(json)")
+//            addGraphsLog(text: "\(json)")
             do {
                 let data = try (JSONSerialization.data(withJSONObject: json, options: .prettyPrinted))
                 if let str = String(data: data, encoding: String.Encoding.utf8){

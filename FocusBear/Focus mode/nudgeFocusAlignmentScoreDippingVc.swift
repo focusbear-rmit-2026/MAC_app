@@ -20,6 +20,7 @@ class nudgeFocusAlignmentScoreDippingVc: NSViewController {
     
     var trackingArea: NSTrackingArea?
     var trackingAreaExpandButton: NSTrackingArea?
+    var trackingAreaAlignmentScore: NSTrackingArea?
     var timerStopAniumation:Timer?
     var isScoreLow = true
     var lastScoreShown:Double = -1
@@ -59,6 +60,11 @@ class nudgeFocusAlignmentScoreDippingVc: NSViewController {
         trackingAreaExpandButton = NSTrackingArea.init(rect: self.btnExpandTaskPlayer.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
         self.btnExpandTaskPlayer.addTrackingArea(trackingAreaExpandButton!)
         
+        
+        trackingAreaAlignmentScore = NSTrackingArea.init(rect: self.lblFocusAlignmentScore.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
+        self.lblFocusAlignmentScore.addTrackingArea(trackingAreaAlignmentScore!)
+        
+        
         if let info = configjson.value(forKey: "nudgeFocusAlignmentScoreDippingVcInfo") as? NSDictionary{
             arrAlignmentScoreDown = info.value(forKey: "arrayAlignmentScoreDown") as? [String] ?? arrAlignmentScoreDown
             arrAlignmentScoreUp = info.value(forKey: "arrayAlignmentScoreUp") as? [String] ?? arrAlignmentScoreUp
@@ -84,6 +90,12 @@ class nudgeFocusAlignmentScoreDippingVc: NSViewController {
                 toolTipShowToDoPlayer = info.value(forKey: "toolTipShowToDoPlayer") as? String ?? toolTipShowToDoPlayer
             }
             showTooltip(sender: btnExpandTaskPlayer, msg: toolTipShowToDoPlayer, preferredEdge: .maxY, maxWidthVal: 200, autoCloseOnMouseExit: true)
+        }else if event.trackingArea == self.trackingAreaAlignmentScore{
+            var toolTipShowToDoPlayer = "This shows what % of the time you've been on websites/apps that are relevant to your focus goal. We use AI to check the relevance." // todo text
+//            if let info = configjson.value(forKey: "nudgeFocusAlignmentScoreDippingVcInfo") as? NSDictionary{
+//                toolTipShowToDoPlayer = info.value(forKey: "toolTipShowToDoPlayer") as? String ?? toolTipShowToDoPlayer
+//            }
+            showTooltip(sender: lblFocusAlignmentScore, msg: toolTipShowToDoPlayer, preferredEdge: .maxY, maxWidthVal: 200, autoCloseOnMouseExit: true)
         }
     }
     
@@ -91,6 +103,8 @@ class nudgeFocusAlignmentScoreDippingVc: NSViewController {
         if event.trackingArea == self.trackingArea{
             boxButton.isHidden = true
         }else if event.trackingArea == self.trackingAreaExpandButton{
+            closePopoverTooltipIfVisible()
+        }else if event.trackingArea == self.trackingAreaAlignmentScore{
             closePopoverTooltipIfVisible()
         }
     }

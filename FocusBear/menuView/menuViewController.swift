@@ -172,6 +172,7 @@ class menuViewController: NSViewController {
     var browserPermissionGiven = true
     var accessibilityPermissionGiven = true
     var systemEventsPermissionGiven = true
+    var showingPasswordViewForPausingFocusMode = false
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -1060,7 +1061,7 @@ class menuViewController: NSViewController {
                 if isHardCorePomodoroModeOn{
                     
                     if currentFocusModeStrictness == ._SUPER_STRICT_{
-                        boxStopHardcorePomodoroMode.isHidden = true
+                        boxStopHardcorePomodoroMode.isHidden = true// not showing stop pomodoro button in pomodoro breaks if strictness is super strict 
                     }else{
                         boxStopHardcorePomodoroMode.isHidden = false
                         lblTitleStopHardcorePomodoroMode.stringValue = menuItemStopHardcorePomodoroTitle
@@ -1511,6 +1512,7 @@ class menuViewController: NSViewController {
     }
 
     func showPasswordWindow(){
+        showingPasswordViewForPausingFocusMode = false
         isShowingPasswordForRelaxFocusMode = false
         if self.enterPasswordVcObj == nil{
             self.enterPasswordVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("enterPasswordVc")) as? enterPasswordVc
@@ -1541,8 +1543,16 @@ class menuViewController: NSViewController {
                 }
             }
         }else{
+            if customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
+                customBlockingScheduleManagerObj.customBlockingSchedulePaused()
+                return;
+            }
             if isFocusModeOnOrPaused(){
-                showAbortingFocusModeVc(forPause: false)
+                if showingPasswordViewForPausingFocusMode{
+                    pauseFocusMode()
+                }else{
+                    showAbortingFocusModeVc(forPause: false)
+                }
                 closeMenuWindowIsVisible()
             }else{
                 isHardCorePomodoroModeOn = false
@@ -1559,6 +1569,7 @@ class menuViewController: NSViewController {
                 closeMenuWindowIsVisible()
             }
         }
+        showingPasswordViewForPausingFocusMode = false
     }
     
     @IBAction func btnStopHardcorePomodoroModeClicked(_ sender: Any) {
@@ -1580,19 +1591,19 @@ class menuViewController: NSViewController {
                 // new work 13/3/22
                 isFocusModeOn = true
                 if arrFocusType[index]["isOn"] as? Bool == true{
-                    if currentFocusModeStrictness == ._SUPER_STRICT_{
-                        addLog(text: "can't stop focus mode in super strict focus mode :- return")
-                        var cantStopFocusModeText = "Super strict mode activated: You cannot stop this focus session until it ends."
-                        if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
-                            cantStopFocusModeText = menuInfo.value(forKey: "cantStopFocusModeText") as? String ?? cantStopFocusModeText
-                        }
-                        showTooltip(sender: boxStopHardcorePomodoroMode, msg: cantStopFocusModeText, preferredEdge: .minX, maxWidthVal: 250)
-                        return;
-                    }
+//                    if currentFocusModeStrictness == ._SUPER_STRICT_{
+//                        addLog(text: "can't stop focus mode in super strict focus mode :- return")
+//                        var cantStopFocusModeText = "Super strict mode activated: You cannot stop this focus session until it ends." // todo search this in all project
+//                        if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
+//                            cantStopFocusModeText = menuInfo.value(forKey: "cantStopFocusModeText") as? String ?? cantStopFocusModeText
+//                        }
+//                        showTooltip(sender: boxStopHardcorePomodoroMode, msg: cantStopFocusModeText, preferredEdge: .minX, maxWidthVal: 250)
+//                        return;
+//                    }
                     
                     let menu = NSMenu()
                     if timerForFocusMode != nil{
-                        let menuItemPause = NSMenuItem(title: itemPausePomodoroTitle, action: #selector(pauseFocusMode), keyEquivalent: "")
+                        let menuItemPause = NSMenuItem(title: itemPausePomodoroTitle, action: #selector(pauseFocusModeClicked), keyEquivalent: "")
                         menuItemPause.image = NSImage(named: NSImage.touchBarPauseTemplateName)
                         menuItemPause.target = self
                         menu.addItem(menuItemPause)
@@ -1629,8 +1640,6 @@ class menuViewController: NSViewController {
             }
         }
         
-        
-        
         if !isFocusModeOn{
             if isHardCorePomodoroModeOn{
                 if shouldAskPassword(){
@@ -1649,35 +1658,44 @@ class menuViewController: NSViewController {
                 boxStopHardcorePomodoroMode.isHidden = true
                 closeMenuWindowIsVisible()
             }
-        }else{
-            
         }
     }
     
-    @objc func pauseFocusMode(){
-        if currentFocusModeStrictness == ._STRICT_{
+    
+    @objc func pauseFocusModeClicked(){
+        if currentFocusModeStrictness == ._SUPER_STRICT_{
+            showPasswordWindow()// show without checking . if password not there then show enter random characters view
+            addLog(text: "Showing enter password view for super strict focus stop from focus stop menu")
+            showingPasswordViewForPausingFocusMode = true
+        }else if currentFocusModeStrictness == ._STRICT_{
             showAbortingFocusModeVc(forPause: true)
         }else{
-            for index in 0..<arrFocusType.count{
-                if arrFocusType[index]["isOn"] as? Bool == true{
-                    appdelegate?.pauseFocusMode(index: index)
-                    if SettingsManagerObject.isMenuPopoverEnabled{
-                        appdelegate?.popover.close()
-                    }else{
-                        closeMenuWindowIsVisible()
-                    }
-                    break;
+            pauseFocusMode()
+        }
+    }
+    
+    func pauseFocusMode(){
+        for index in 0..<arrFocusType.count{
+            if arrFocusType[index]["isOn"] as? Bool == true{
+                appdelegate?.pauseFocusMode(index: index)
+                if SettingsManagerObject.isMenuPopoverEnabled{
+                    appdelegate?.popover.close()
+                }else{
+                    closeMenuWindowIsVisible()
                 }
+                break;
             }
-            
         }
     }
     
     @objc func stopFocusMode(){
-        if isHardCorePomodoroModeOn{
+        if currentFocusModeStrictness == ._SUPER_STRICT_{
+            showPasswordWindow()// show without checking . if password not there then show enter random characters view
+            addLog(text: "Showing enter password view for super strict focus stop from focus stop menu")
+        }else if isHardCorePomodoroModeOn{
             if shouldAskPassword(){
                 if SettingsManagerObject.isPasswordRequireInStopPomodoro{
-                    menuViewControllerObj?.showPasswordWindow()
+                    showPasswordWindow()
                     addLog(text: "Showing enter password view from hardcore pomodoro stop from focus stop menu")
                 }else{
                     showAbortingFocusModeVc(forPause: false)
@@ -2308,7 +2326,26 @@ class menuViewController: NSViewController {
     
     @IBAction func btnCustomBlockingClicked(_ sender: Any) {
         if customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
-            customBlockingScheduleManagerObj.customBlockingSchedulePaused()
+            for i in 0..<customBlockingScheduleManagerObj.arrBlockingSchedule.count{
+                if customBlockingScheduleManagerObj.arrBlockingSchedule[i].state == .on{
+                    if customBlockingScheduleManagerObj.arrBlockingSchedule[i].blockLevel == ._STRICT_{
+                        
+                        if mainWindowControllerObj?.window?.isVisible ?? false{
+                            leftMenuVcObj?.showCustomScheduleAbortedView()
+                        }else{
+                            mainWindowControllerObj?.showWindow(self)
+                            leftMenuVcObj?.showCustomScheduleAbortedView()
+                        }
+                        btnCustomBlocking.state = .on
+                    }else if customBlockingScheduleManagerObj.arrBlockingSchedule[i].blockLevel == ._SUPER_STRICT_{
+                        showPasswordWindow()
+                        btnCustomBlocking.state = .on
+                    }else{
+                        customBlockingScheduleManagerObj.customBlockingSchedulePaused()
+                    }
+                    break;
+                }
+            }
         }else{
             for i in 0..<customBlockingScheduleManagerObj.arrBlockingSchedule.count{
                 if customBlockingScheduleManagerObj.arrBlockingSchedule[i].state == .pause{

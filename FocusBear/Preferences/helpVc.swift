@@ -11,6 +11,9 @@ import WebKit
 
 class helpVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate {
 
+    @IBOutlet weak var lblAddScreenshots: NSTextField!
+    @IBOutlet weak var dropView: dropView!
+    @IBOutlet weak var collectionView: NSCollectionView!
     @IBOutlet weak var webViewGetSupport: WKWebView!
     @IBOutlet weak var tabViewGetSupport: NSTabViewItem!
     @IBOutlet weak var lblTitleWhatsApp: NSTextField!
@@ -29,10 +32,12 @@ class helpVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate 
     @IBOutlet weak var tabViewCourses: NSTabViewItem!
     
     @IBOutlet weak var btnJoinWhatsAppGroup: Button!
-
+    var arrScrrenshots = [URL]()
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
+        lblAddScreenshots.stringValue = "➕ Drag and drop screenshots here that you want to share" // todo text
+        
         tabViewGetSupport.label = "Get Support"
         lblTitleWhatsApp.stringValue = "Join the Focus Bear WhatsApp group to exchange ideas, organize co-working/body doubling sessions, and get support with the app!"
         btnJoinWhatsAppGroup.title = "Join WhatsApp Group"
@@ -87,6 +92,8 @@ class helpVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate 
         tabView.delegate = self
         textView.placeHolderTitleString = NSAttributedString(string: placeHolderLogsFeedback, attributes: [NSAttributedString.Key.foregroundColor : NSColor.secondaryLabelColor, NSAttributedString.Key.font : NSFont.systemFont(ofSize: 13)])
         tabView.selectTabViewItem(at: 0)
+        
+        dropView.delegate = self
     }
     
     func loadGetSupportWebView(){
@@ -104,7 +111,8 @@ class helpVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate 
     }
     
     override func viewWillAppear() {
-//        preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: 676, height: 570)) // need to test 
+        arrScrrenshots.removeAll()
+        collectionView.reloadData()
     }
     
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
@@ -211,15 +219,17 @@ class helpVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate 
         self.view.addSubview(getLogsUploadingVcObjObj().view)
         self.view.addConstraints(subView: getLogsUploadingVcObjObj().view)
         let message = self.textView.string.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) ?? self.textView.string
-        allApiObject.uploadAppLogs(feedback: message, completionHandler: {uploaded in
+        allApiObject.uploadAppLogs(feedback: message, screenShots: arrScrrenshots, completionHandler: {uploaded in
             DispatchQueue.main.async {
                 getLogsUploadingVcObjObj().view.removeFromSuperview()
-                self.textView.string = ""
                 if uploaded ?? false{
                     var logsUploadDoneText = "Logs successfully shared."
                     if let helpVcInfo = configjson.value(forKey: "helpVcInfo") as? NSDictionary{
                         logsUploadDoneText = helpVcInfo.value(forKey: "logsUploadDoneText") as? String ?? logsUploadDoneText
                     }
+                    self.textView.string = ""
+                    self.arrScrrenshots.removeAll()
+                    self.collectionView.reloadData()
                     self.showAlert(msg: logsUploadDoneText, completionHandler: {bool in
                         
                     })
@@ -287,5 +297,39 @@ extension helpVc: NSTabViewDelegate{
         }else if id == "support"{
             allApiObject.capturePosthog(event: "help-tab-get-support-clicked", metadata: [:])
         }
+    }
+}
+
+extension helpVc:NSCollectionViewDelegate, NSCollectionViewDataSource, dropViewDelegate {
+    
+    func collectionView(_ collectionView: NSCollectionView, numberOfItemsInSection section: Int) -> Int {
+        if arrScrrenshots.count == 0{
+            lblAddScreenshots.isHidden = false
+        }else{
+            lblAddScreenshots.isHidden = true
+        }
+        return arrScrrenshots.count
+    }
+    
+    func collectionView(_ collectionView: NSCollectionView, itemForRepresentedObjectAt indexPath: IndexPath) -> NSCollectionViewItem {
+        
+        let item = collectionView.makeItem(withIdentifier: NSUserInterfaceItemIdentifier(rawValue: "collectionCellScreenshots"), for: indexPath) as! collectionCellScreenshots
+        
+        item.imgView.image = NSImage(contentsOf: arrScrrenshots[indexPath.item])
+        item.btnRemove.tag = indexPath.item
+        item.btnRemove.target = self
+        item.btnRemove.action = #selector(btnRemoveClicked)
+        return item
+    }
+    
+    @objc func btnRemoveClicked(sender:NSButton){
+        let index = sender.tag
+        arrScrrenshots.remove(at: index)
+        collectionView.reloadData()
+    }
+    
+    func filesAddedInDropView(filesAdded: [URL]) {
+        arrScrrenshots = arrScrrenshots + filesAdded
+        collectionView.reloadData()
     }
 }

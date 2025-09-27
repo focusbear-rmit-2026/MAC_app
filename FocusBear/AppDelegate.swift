@@ -340,7 +340,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         DebugLogsFolderURL = applicationSupportURL!.appendingPathComponent("Logs")
         CreateDirectoryIfNotExist(path: DebugLogsFolderURL!.path)
         DebugLogsURL = DebugLogsFolderURL!.appendingPathComponent("Debug_Logs.txt")
-        DebugGraphLogsURL = DebugLogsFolderURL!.appendingPathComponent("Debug_Graphs_Logs.txt")
+//        DebugGraphLogsURL = DebugLogsFolderURL!.appendingPathComponent("Debug_Graphs_Logs.txt")
         quantityCsvURL = applicationSupportURL!.appendingPathComponent("eystStats.csv")
         arrNonTimerBasedHabitsDurationsPlistFileUrl = applicationSupportURL!.appendingPathComponent("nonTimerBasedHabitsDurations.plist")
         focusAlignmentScoreCsvURL = applicationSupportURL!.appendingPathComponent("focusAlignmentScore.csv")
@@ -545,7 +545,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         checkLogFileRotation()
         allApiObject.getConfigFile(fileUrl:"https://focus-bear.github.io/assets/config/\(configFileName).json", completionHandler: {dic in
             print("response mila")
-            if dic != nil{//todo != kro
+            if dic != nil{//todo != kro  
                 configjson = dic!
             }else{
                 if let path = Bundle.main.path(forResource: configFileName, ofType: "json") {
@@ -2277,7 +2277,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 print(morningHabits)
                 for habitDic in morningHabits {
                     let id = habitDic["id"] as? String ?? ""//"image_urls","text_instructions" // completion_requirements
-                    let name = habitDic["name"] as? String ?? ""
+                    var name = habitDic["name"] as? String ?? ""
                     var durationSeconds = habitDic["duration_seconds"] as? Int ?? 0
                     let videoUrl = habitDic["video_urls"] as? [String] ?? []
                     var logQuantity = habitDic["log_quantity"] as? Bool ?? false
@@ -2291,6 +2291,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     let take_notes = habitDic["take_notes"] as? String ?? ""
                     let days_of_week = habitDic["days_of_week"] as? [String] ?? []
                     var tutorial = habitDic["tutorial"] as? String ?? ""
+                    let icon = habitDic["habit_icon"] as? String ?? ""
+                    if !icon.isEmpty{
+                        name = icon + " " + name
+                    }
+                    
+                    
                     if tutorial.isEmpty{
                         if let arrTutorials = habitDic["tutorials"] as? [NSDictionary]{
                             if let tutorialDic = arrTutorials.first{
@@ -2356,7 +2362,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 print(eveningHabits)
                 for habitDic in eveningHabits {
                     let id = habitDic["id"] as? String ?? ""
-                    let name = habitDic["name"] as? String ?? ""
+                    var name = habitDic["name"] as? String ?? ""
                     var durationSeconds = habitDic["duration_seconds"] as? Int ?? 0
                     let videoUrl = habitDic["video_urls"] as? [String] ?? []
                     var logQuantity = habitDic["log_quantity"] as? Bool ?? false
@@ -2370,6 +2376,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     let take_notes = habitDic["take_notes"] as? String ?? ""
                     let days_of_week = habitDic["days_of_week"] as? [String] ?? []
                     var tutorial = habitDic["tutorial"] as? String ?? ""
+                    let icon = habitDic["habit_icon"] as? String ?? ""
+                    if !icon.isEmpty{
+                        name = icon + " " + name
+                    }
+                    
                     if tutorial.isEmpty{
                         if let arrTutorials = habitDic["tutorials"] as? [NSDictionary]{
                             if let tutorialDic = arrTutorials.first{
@@ -2445,7 +2456,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 print(breakActivities)
                 for activityDic in breakActivities {
                     let id = activityDic["id"] as? String ?? ""
-                    let name = activityDic["name"] as? String ?? ""
+                    var name = activityDic["name"] as? String ?? ""
                     var durationSeconds = activityDic["duration_seconds"] as? Int ?? 0
                     let IncludeInEveryBreak = activityDic["include_in_every_break"] as? Bool ?? false
                     let videoUrl = activityDic["video_urls"] as? [String] ?? []
@@ -2457,7 +2468,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     let allowedFocusMode = activityDic["allowed_focus_mode_id"] as? String ?? ""
                     let activity_sequence_id = activityDic["activity_sequence_id"] as? String ?? ""
                     let take_notes = activityDic["take_notes"] as? String ?? ""
-                    
+                    let icon = activityDic["habit_icon"] as? String ?? ""
+                    if !icon.isEmpty{
+                        name = icon + " " + name
+                    }
                     var openSpecificApps = false
                     if allowApps.count != 0{
                         openSpecificApps = true
@@ -2477,12 +2491,18 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     if let choices = activityDic.value(forKey: "choices") as? [NSDictionary] {
                         for dic in choices{
                             let id = dic["id"] as? String ?? ""
-                            let name = dic["name"] as? String ?? ""
+                            var name = dic["name"] as? String ?? ""
                             let videoUrl = dic["video_urls"] as? [String] ?? []
                             let logQuantityQuestion = dic["log_quantity_question"] as? String ?? ""
                             var logQuantity = dic["log_quantity"] as? Bool ?? false
                             let logQuantityType = dic["log_summary_type"] as? String ?? ""
+                            let icon = dic["habit_icon"] as? String ?? ""
+                            if !icon.isEmpty{
+                                name = icon + " " + name
+                            }
                             var choice = activityChoice(name: name, urlsArray: videoUrl, logQuantityQuestion: logQuantityQuestion, logQuantity: logQuantity, logQuantityType: logQuantityType, id: id)
+                            
+                            
                             
                             var arrLogQuantityQuestions = [quantityQuestion]()
                             if let logQuantityQuestions = dic["log_quantity_questions"] as? [NSDictionary]{
@@ -2501,6 +2521,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                             if arrLogQuantityQuestions.count == 0{
                                 logQuantity = false
                             }
+                            
                             
                             choice.logQuantityQuestions = arrLogQuantityQuestions
                             arrChoices.append(choice)
@@ -2602,7 +2623,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                   
                         for habitDic in routineHabits {
                             let id = habitDic["id"] as? String ?? ""//"image_urls","text_instructions" // completion_requirements
-                            let name = habitDic["name"] as? String ?? ""
+                            var name = habitDic["name"] as? String ?? ""
                             var durationSeconds = habitDic["duration_seconds"] as? Int ?? 0
                             let videoUrl = habitDic["video_urls"] as? [String] ?? []
                             var logQuantity = habitDic["log_quantity"] as? Bool ?? false
@@ -2664,6 +2685,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                             }
                             if arrLogQuantityQuestions.count == 0{
                                 logQuantity = false
+                            }
+                            
+                            let icon = habitDic["habit_icon"] as? String ?? ""
+                            if !icon.isEmpty{
+                                name = icon + " " + name
                             }
                             
                             var habit = habit(id:id,name: name, durationSeconds: durationSeconds, urlsArray: videoUrl, logQuantity: logQuantity, logQuantityQuestion: logQuantityQuestion, openSpecificApps: openSpecificApps, allowUrls: allowUrls, allowApps: allowApps, allowedFocusMode: allowedFocusMode, activity_sequence_id: activity_sequence_id, run_micro_breaks: run_micro_breaks, take_notes: take_notes, isPriorityHigh: false, days_of_week: days_of_week, text_instructions: text_instructions, imgUrls: imgUrls, completion_requirements: completion_requirements, useTimer: useTimer, checkList:check_list, tutorial: tutorial)
@@ -6511,7 +6537,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                     if todaySequenceId == sequenceID && (statusLowerCased == "in_progress" || statusLowerCased == "postponed"){
                                         
                                         
-                                        addLog(text: "morning habit sequnce is pending. start from current pending habit")
+                                        addLog(text: "evening habit sequnce is pending. start from current pending habit")// it was morning in logs til v 2.27.418
                                         self.isProcessingHabitRoutine = false
                                         var skippedActivities = [String]()
                                         if let activities = morningRoutine.value(forKey: "skipped_habit_ids") as? [String]{
@@ -12273,3 +12299,68 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 // timer ka background mai box lagaya
 // nudge font color change
 // settings updated
+
+
+/*
+ 
+ 2025-09-22 10:42:31  -  api call getActivityStats https://api.focusbear.io/completed-activity/615acf2c-7058-458f-8074-5f64ae2546d0/stats?days_number=30&timezone=Australia/Melbourne
+ 2025-09-22 10:42:31  -  api call getActivityStats success
+ 2025-09-22 10:42:32  -  [user-action] whySkipHabitVc:- button AlreadyDidItClicked
+ 
+ 2025-09-22 10:42:33  -  func call:- activityCompletedApi completed-activity
+ 2025-09-22 10:42:33  -  func setProgress:- You have completed 0 seconds of habits - 3 seconds to go. You can do it!
+ 2025-09-22 10:42:33  -  api call activityCompletedApi https://api.focusbear.io/completed-activity for activityId: 615acf2c-7058-458f-8074-5f64ae2546d0, choice_id:
+ 
+ 
+ 2025-09-22 10:52:31  -  api call getLastActivityInfo success
+ 2025-09-22 10:52:31  -  morning habit sequnce is pending. start from current pending habit
+ 
+ 2025-09-22 10:52:31  -  func call:- getACtivityStats:- completed-activity/id/stats
+ 2025-09-22 10:52:31  -  func setProgress:- You have completed 0 seconds of habits - 3 seconds to go. You can do it!
+ 2025-09-22 10:52:31  -  I feel fucking amazing! I fucking rock! Finished
+ 2025-09-22 10:52:31  -  get updated credentialsInfo from credentialsManager
+ 2025-09-22 10:52:31  -  set Credential And User Info
+ 2025-09-22 10:52:31  -  api call getActivityStats https://api.focusbear.io/completed-activity/615acf2c-7058-458f-8074-5f64ae2546d0/stats?days_number=30&timezone=Australia/Melbourne
+ 
+ 
+ 2025-09-22 10:57:46  -  api call getLastActivityInfo success
+ 2025-09-22 10:57:46  -  morning habit sequnce is pending. start from current pending habit
+ 
+ 
+ 2025-09-22 10:57:46  -  func call:- getACtivityStats:- completed-activity/id/stats
+ 2025-09-22 10:57:46  -  func setProgress:- You have completed 0 seconds of habits - 3 seconds to go. You can do it!
+ 
+ 
+ 2025-09-22 10:57:46  -  api call getActivityStats https://api.focusbear.io/completed-activity/615acf2c-7058-458f-8074-5f64ae2546d0/stats?days_number=30&timezone=Australia/Melbourne
+ 2025-09-22 10:57:46  -  api call getActivityStats success
+ 2025-09-22 10:57:53  -  [user-action]Button more actions Clicked
+ 
+ 
+ 2025-09-22 10:58:22  -  [user-action]ongoing activity:-btnIAmDoneClicked
+ 
+ 
+ 2025-09-22 10:58:22  -  activityCompletedApi passed
+ 2025-09-22 10:58:22  -  func setProgress:- You have completed 0 seconds of habits - 3 seconds to go. You can do it!
+ 
+ 
+ 2025-09-22 10:58:22  -  api call activityCompletedApi https://api.focusbear.io/completed-activity for activityId: 206cabdb-7b77-4e2f-a5dc-7ab6e4447c38, choice_id:
+ 
+ */
+
+
+// timer box 60 second 30 second after 3 days also bg box only display if timer get to 15 seconds
+// blocking sited apps ka descrption change
+// if accessibility permissiioons are given dont show them
+/// youtube url not working
+/// 
+// log changed
+// add log skiiped and completed activity array we got from api
+
+
+// screenshots vlaa kaam krop  dopne
+// see more button removed .. make label a button
+// chnage blocked app urls text 
+
+// super strict password vala kaam if no pasword then show random string match tab 
+// alert hatay jh crash aaya tha 
+// aboartin custom schedule 

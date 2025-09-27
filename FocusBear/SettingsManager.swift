@@ -160,7 +160,7 @@ class SettingsManager:NSObject{
     
     var kUserdefaultsHideAllWindowInScreenShots = "kUserdefaultsHideAllWindowInScreenShots"
     var kUserdefaultsPomodoroModeEnabled = "kUserdefaultsPomodoroModeEnabled"
-    var kUserdefaultsDoNotBlockUrlsDuringSuperPomodoroBreaks = "kUserdefaultsDoNotBlockUrlsDuringSuperPomodoroBreaks"
+    var kUserdefaultsDoNotBlockUrlsDuringSuperPomodoroBreaks = "kUserdefaultsDoNotBlockUrlsDuringSuperPomodoroBreaks"// todo no useof this settings now 
     
     var kUserdefaultsHardcorePomodoroEnabled = "kUserdefaultsHardcorePomodoroEnabled"
     var kUserdefaultsHardcorePomodoroFocusedName = "kUserdefaultsHardcorePomodoroFocusedName"

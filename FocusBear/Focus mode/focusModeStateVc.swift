@@ -248,7 +248,7 @@ class focusModeStateVc: NSViewController {
     }
     
     @objc func pauseFocusMode(){
-        menuViewControllerObj?.pauseFocusMode()
+        menuViewControllerObj?.pauseFocusModeClicked()
     }
     
     @objc func stopFocusMode(){

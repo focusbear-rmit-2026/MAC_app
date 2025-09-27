@@ -2062,7 +2062,7 @@ class AllApi:NSObject {
                                             addLog(text: "api call getActivityStats success")
                                             graphOneMonthData = jsonResult//.mutableCopy() as? NSMutableDictionary
                                             
-                                            addGraphsLog(text: "Monthly Stats:-\(jsonResult)")
+//                                            addGraphsLog(text: "Monthly Stats:-\(jsonResult)")
                                             completionHandler(jsonResult)
                                             return
                                         }
@@ -2178,7 +2178,7 @@ class AllApi:NSObject {
                                             print(jsonResult)
                                             addLog(text: "api call getACtivityCurrentDayStats success")
                                             graphOneDayData = jsonResult//
-                                            addGraphsLog(text: "Current Day Stats:-\(jsonResult)")
+//                                            addGraphsLog(text: "Current Day Stats:-\(jsonResult)")
                                             completionHandler(jsonResult)
                                             return
                                         }
@@ -2293,7 +2293,7 @@ class AllApi:NSObject {
                                             print(jsonResult)
                                             addLog(text: "api call getACtivityCurrentDayStats success")
                                             graphOneDayDataForQuantity = jsonResult//
-                                            addGraphsLog(text: "Current Day Stats:-\(jsonResult)")
+//                                            addGraphsLog(text: "Current Day Stats:-\(jsonResult)")
                                             completionHandler(jsonResult)
                                             return
                                         }
@@ -4142,13 +4142,13 @@ class AllApi:NSObject {
         }
     }
     
-    func uploadAppLogs(feedback:String, completionHandler: @escaping(_ val:Bool?) -> ()){
+    func uploadAppLogs(feedback:String, screenShots:[URL]? = nil, completionHandler: @escaping(_ val:Bool?) -> ()){
         addLog(text: "func call:-  uploadAppLogs")
         var feedback = feedback
         if feedback.isEmpty{
             feedback = "no_feedback"
         }
-        allApiObject.getUploadLogUrl(completionHandler: { bool, url in
+        allApiObject.getUploadLogUrl(screenShots:screenShots, completionHandler: { bool, url in
             if bool{
                 if let url = url{
                     allApiObject.notifyUploadLogsSuccess(feedback: feedback, uploadUrl: url, completionHandler: {bool in
@@ -4166,130 +4166,6 @@ class AllApi:NSObject {
             }
             
         })
-        
-        /*  --------old code . changed on 11/4/25   version 1.21.356    User unable to upload logs - says out of space #1338 -------
-         -------------------------------------------------------------------
-        appdelegate!.credentialsManager.credentials {credentialsInfo in
-            addLog(text: "get updated credentialsInfo from credentialsManager")
-            
-            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
-            
-            if appdelegate!.credential != nil{
-                let responsePath = "\(baseUrl)/app-logs?app_platform=mac-os&app_version=\(getAppVersionInString())&feedback_message=\(feedback)"
-                if let responsePathUrl = NSURL(string: responsePath){
-                    addLog(text: "api call uploadAppLogs \(responsePathUrl)")
-                    let token = appdelegate!.credential!.accessToken
-                    
-                    let boundary = generateBoundaryString()
-                    
-                    let request = makeRequest(responsePathUrl: responsePathUrl)
-                    request.httpMethod = "POST";
-                    
-                    request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
-                    let fileName = "Debug_Logs.txt"
-                    //let mimeType = "text/plain"
-                    let body = NSMutableData()
-                    var data:Data?
-                    
-                    if FileManager.default.fileExists(atPath: DebugLogsURL.path){
-                        let zipUrl = DebugLogsURL.appendingPathExtension("zip")
-                        do {
-                            try zipTextFile(inputFilePath: DebugLogsURL.path, outputZipPath: zipUrl.path)
-                            print("Zipped file saved at: \(zipUrl)")
-                            if let nsData = NSData(contentsOfFile: zipUrl.path) {
-                                data =  nsData as Data
-                                let fm = FileManager.default
-                                do{
-                                    try fm.removeItem(at: zipUrl)
-                                }catch{
-                                    print(error.localizedDescription)
-                                }
-                            }else{
-                                completionHandler(nil)
-                                addLog(text: "api call uploadAppLogs:- data nil")
-                                completionHandler(nil)
-                                return
-                            }
-                        } catch {
-                            print("Error: \(error.localizedDescription)")
-                            completionHandler(nil)
-                            return
-                        }
-                    }else{
-                        completionHandler(nil)
-                        return;
-                    }
-                    //define the data post parameter
-                    body.append("--\(boundary)\r\n".data(using: .utf8)!)
-                    body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(fileName)\"\r\n".data(using: .utf8)!)
-                    body.append("Content-Type: text/plain\r\n\r\n".data(using: .utf8)!)
-                    body.append(data!)
-                    body.append("\r\n".data(using: .utf8)!)
-                    body.append("--\(boundary)--\r\n".data(using: .utf8)!)
-                    
-                    
-                    request.httpBody = body as Data
-                    let task = URLSession.shared.dataTask(with: request as URLRequest) {
-                        data, response, error in
-                        
-                        if let httpResponse = response as? HTTPURLResponse{
-                            //it means it is right
-                            self.isApiUploadLogsErrorFound = false
-                            
-                            if httpResponse.statusCode == 201{
-                                addLog(text: "api call uploadAppLogs success")
-                                completionHandler(true)
-                                return
-                            }else{
-                                addLog(text: "api call uploadAppLogs Api error:- statusCode is \(httpResponse.statusCode)")
-                                self.writeJsonInLog(data: data)
-                                addLog(text: "accessToken is:- \(token)")
-                                completionHandler(nil)
-                                return
-                            }
-                            
-                        }
-                        
-                        
-                        if error != nil {
-                            addLog(text: "api call uploadAppLogs error:- \(error!.localizedDescription)")
-                            if (error as? NSError)?.code == self.errorCodeRequestTimeout{
-                                if self.isApiUploadLogsErrorFound{
-                                    self.isApiUploadLogsErrorFound = false
-                                    completionHandler(nil)
-                                    return
-                                }else{
-                                    self.isApiUploadLogsErrorFound = true
-                                    addLog(text: "error uploadAppLogs:- try second time")
-                                    
-                                    allApiObject.uploadAppLogs(feedback: feedback, completionHandler: {newDic in
-                                        completionHandler(newDic)
-                                        return
-                                    })
-                                }
-                            }else{
-                                completionHandler(nil)
-                                return
-                            }
-                            
-                        }else{
-                            completionHandler(nil)
-                            return
-                        }
-                    }
-                    
-                    task.resume()
-                }else{
-                    completionHandler(nil)
-                    return
-                }
-                
-            }else{
-                completionHandler(nil)
-                return
-            }
-        }
-         */
     }
     
     func getFocusModeTags(completionHandler: @escaping(_ result: [NSDictionary]?) -> ()) {
@@ -5161,7 +5037,7 @@ class AllApi:NSObject {
         }
     }
     
-    func getUploadLogUrl(completionHandler: @escaping(_ val:Bool, _ url:String?) -> ()) {
+    func getUploadLogUrl(screenShots:[URL]? = nil, completionHandler: @escaping(_ val:Bool, _ url:String?) -> ()) {
         addLog(text: "func call:- getUploadLogUrl")
         
         appdelegate!.credentialsManager.credentials {credentialsInfo in
@@ -5187,7 +5063,7 @@ class AllApi:NSObject {
                                 let url = String(data: data!, encoding: .utf8)!
                                 
                                 if data != nil{
-                                    allApiObject.uploadAppLogsNew(url:url, completionHandler: {uploaded in
+                                    allApiObject.uploadAppLogsNew(url:url, screenShots:screenShots, completionHandler: {uploaded in
                                         completionHandler(uploaded, url)
                                         return;
                                     })
@@ -5222,7 +5098,7 @@ class AllApi:NSObject {
         }
     }
     
-    func uploadAppLogsNew(url:String, completionHandler: @escaping(_ val:Bool) -> ()){
+    func uploadAppLogsNew(url:String, screenShots:[URL]? = nil, completionHandler: @escaping(_ val:Bool) -> ()){
         addLog(text: "func call:-  uploadAppLogs")
         
         guard let url = URL(string: url) else {
@@ -5230,8 +5106,7 @@ class AllApi:NSObject {
             completionHandler(false)
             return;
         }
-        let zipUrl = DebugLogsURL.appendingPathExtension("zip")
-        let fm = FileManager.default
+        let zipUrl = DebugLogsFolderURL.deletingLastPathComponent().appendingPathComponent("FocusBearMacLogs.zip")
         var zipFilePath = ""
         if #available(macOS 13.0, *) {
             zipFilePath = zipUrl.path()
@@ -5239,29 +5114,29 @@ class AllApi:NSObject {
             zipFilePath = zipUrl.path
         }
         zipFilePath = zipFilePath.removingPercentEncoding ?? zipFilePath
-        
-        if fm.fileExists(atPath: zipFilePath){
-            do{
-                try fm.removeItem(at: zipUrl)
-            }catch{
-                print(error.localizedDescription)
-            }
-        }
-        
+         
         do {
-            try zipTextFile(inputFilePath: DebugLogsURL.path, outputZipPath: zipUrl.path)
-            print("Zipped file saved at: \(zipUrl)")
+            try createZipArchive(zipPath: zipFilePath, logFolder: DebugLogsFolderURL.path, screenshots: screenShots ?? [])
+            print("Zip created at \(zipFilePath)")
+            addLog(text: "Zipped file saved at: \(zipFilePath)")
         } catch {
             print("Error: \(error.localizedDescription)")
+            addLog(text: "Error: \(error.localizedDescription)")
             completionHandler(false)
             return;
         }
+        
         
         var request = URLRequest(url: url)
         request.httpMethod = "PUT"
         request.setValue("application/zip", forHTTPHeaderField: "Content-Type")
         
         let task = URLSession.shared.uploadTask(with: request, fromFile: zipUrl) { data, response, error in
+            do{
+                try FileManager.default.removeItem(at: zipUrl)
+            }catch{
+                print(error.localizedDescription)
+            }
             if let error = error {
                 print("Upload error: \(error)")
                 completionHandler(false)

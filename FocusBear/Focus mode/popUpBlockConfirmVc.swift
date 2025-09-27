@@ -10,6 +10,8 @@ import Cocoa
 
 class popUpBlockConfirmVc: NSViewController {
 
+    @IBOutlet weak var boxTimerIntention: NSBox!
+    @IBOutlet weak var boxTimer: NSBox!
     @IBOutlet weak var btnCloseAskIntentionBox: cursorButton!
     @IBOutlet weak var btnInfoTemporaryAllow: hoverInfoButton!
     @IBOutlet weak var lblTitleAskIntention: NSTextField!
@@ -46,6 +48,7 @@ class popUpBlockConfirmVc: NSViewController {
     @IBOutlet weak var lblTimer: NSTextField!
     @IBOutlet weak var lblTitle: NSTextField!
     @IBOutlet weak var btnBlockAndAddToRelaxMode: Button!
+    @IBOutlet weak var btnSeeMore: cursorButton!
     
     var timer:Timer?
     var currentTimer = 0
@@ -82,7 +85,7 @@ class popUpBlockConfirmVc: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
-        btnConvinceAgain.title = "Let me convince the AI again" // tod text
+        btnConvinceAgain.title = "Let me convince the AI again" // todo text
         btnAllow.title = "Yes - just this time"
         btnBlock.title = "No - I was getting distracted"
         btnEditSettings.title = "Edit Settings"
@@ -222,7 +225,7 @@ class popUpBlockConfirmVc: NSViewController {
             lblTitle.stringValue = blockTitle
             lblAi.isHidden = true
             btnBlockAndAddToRelaxMode.isHidden = true
-            
+            self.btnSeeMore.isHidden = true
             if SettingsManagerObject.isAIBlockingEnabled() && !isBlockSuperDistractingFocusModeOn() && !isBrowser{
                 boxBellIcon.isHidden = false
                 self.payload = payload
@@ -254,7 +257,8 @@ class popUpBlockConfirmVc: NSViewController {
                 if let aiBlockReason = aiBlockReason{
                     isFailedToGetResponse = false
                     lastBlockReasonFromAi = aiBlockReason
-                    self.lblAi.stringValue = aiBlockReason
+                    self.lblAi.stringValue = cropText(aiBlockReason)
+                    self.btnSeeMore.isHidden = false
                 }else{
                     isFailedToGetResponse = true
                     boxBellIcon.isHidden = true
@@ -353,7 +357,8 @@ class popUpBlockConfirmVc: NSViewController {
                 if let aiBlockReason = aiBlockReason{
                     isFailedToGetResponse = false
                     lastBlockReasonFromAi = aiBlockReason
-                    self.lblAi.stringValue = aiBlockReason
+                    self.lblAi.stringValue = cropText(aiBlockReason)
+                    self.btnSeeMore.isHidden = false
                 }else{
                     isFailedToGetResponse = true
                     boxBellIcon.isHidden = true
@@ -383,7 +388,7 @@ class popUpBlockConfirmVc: NSViewController {
         self.currentApp = currentApp
         currentAppName = blockedAppName
         updateTrackingAreaIfNeeded()
-        startTimer(durationSeconds: 30)
+        startTimer()
         hidePopUpFocusGoalConfirmationView()
         hidePopUpAddNewFocusGoalView()
         hidePopUpSaveThisTaskForLaterView()
@@ -399,6 +404,19 @@ class popUpBlockConfirmVc: NSViewController {
                 }
             }
         }
+    }
+    
+    func cropText(_ text: String, limit: Int = 100) -> String {
+        if text.count > limit {
+            let index = text.index(text.startIndex, offsetBy: limit)
+            return text[text.startIndex..<index] + "..."
+        } else {
+            return text
+        }
+    }
+    
+    func setAiReason(reason:String){
+        
     }
     
     func hidePopUpFocusGoalConfirmationView(){
@@ -445,7 +463,7 @@ class popUpBlockConfirmVc: NSViewController {
                     return;
                 }
             }
-            showTooltip(sender: lblAi, msg: lblAi.stringValue, preferredEdge: .minX, maxWidthVal: 250, autoCloseOnMouseExit: true)
+            showTooltip(sender: lblAi, msg: lastBlockReasonFromAi, preferredEdge: .minX, maxWidthVal: 250, autoCloseOnMouseExit: true)
         }
     }
 
@@ -463,7 +481,7 @@ class popUpBlockConfirmVc: NSViewController {
     }
     
     func showConvincedAiPopUpBox(allowedByConvinceAiAlready:Bool, reason:String){
-        startTimer(durationSeconds: 30)
+        startTimer()
         btnCloseAskIntentionBox.isHidden = true
         isUserTypingIntention = true
         isUserTypingTime = Date()
@@ -594,7 +612,7 @@ class popUpBlockConfirmVc: NSViewController {
     var isSetIntentionFirstTime = false
     func showUseDistractingUrlFlow(isSetIntentionFirstTime:Bool){
         addLog(text: "[user-action] popUpBlockConfirmVc:- showUseDistractingUrlFlow")
-        startTimer(durationSeconds: 30)
+        startTimer()
         self.isSetIntentionFirstTime = isSetIntentionFirstTime
         btnCloseAskIntentionBox.isHidden = false
         lblTitleAskIntention.isHidden = false
@@ -673,10 +691,20 @@ class popUpBlockConfirmVc: NSViewController {
     }
     
     
-    func startTimer(durationSeconds:Int) {
+    func startTimer() {
         self.lblTimer.font = NSFont.monospacedDigitSystemFont(ofSize: self.lblTimer.font?.pointSize ?? 13, weight: .regular)
         self.lblTimerIntentionBox.font = NSFont.monospacedDigitSystemFont(ofSize: self.lblTimerIntentionBox.font?.pointSize ?? 13, weight: .regular)
+        
+        boxTimer.fillColor = NSColor.clear
+        boxTimerIntention.fillColor = NSColor.clear
+        lblTimer.textColor = .labelColor
+        lblTimerIntentionBox.textColor = .labelColor
+        
         currentTimer = 0
+        var durationSeconds = 30
+        if isAppInstalledWithinLast3Days(){
+            durationSeconds = 60
+        }
         totalDuration = durationSeconds//durationInMinutes*60
         let (h,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
         var hour = "\(h)"
@@ -711,6 +739,17 @@ class popUpBlockConfirmVc: NSViewController {
     
     func setProgres(){
         let remainingSeconds = self.totalDuration-currentTimer
+        if remainingSeconds < 16{
+            boxTimer.fillColor = NSColor(resource: .darkOrange)
+            boxTimerIntention.fillColor = NSColor(resource: .darkOrange)
+            lblTimer.textColor = .white
+            lblTimerIntentionBox.textColor = .white
+        }else{
+            boxTimer.fillColor = NSColor.clear
+            boxTimerIntention.fillColor = NSColor.clear
+            lblTimer.textColor = .labelColor
+            lblTimerIntentionBox.textColor = .labelColor
+        }
         let (h,m,s) = secondsToHoursMinutesSeconds(seconds: remainingSeconds)
         var hour = "\(h)"
         var minute = "\(m)"
@@ -1235,6 +1274,11 @@ class popUpBlockConfirmVc: NSViewController {
         }else{
             btnCancelClicked(self)
         }
+    }
+    
+    @IBAction func btnSeeMoreClicked(_ sender: Any) {
+        self.lblAi.stringValue = lastBlockReasonFromAi
+        self.btnSeeMore.isHidden = true
     }
 }
 

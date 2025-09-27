@@ -81,18 +81,6 @@ class tryBlockUrlVc: NSViewController {
             }
         }
         
-        
-        
-//        if let blockedUrls = UserDefaults.standard.object(forKey: kUserdefaultsBlockedUrlsFromOnboarding) as? [[String:Any]]{
-//            SettingsManagerObject.arrBlockedUrls.removeAll()
-//            for i in 0..<blockedUrls.count{
-//                if let isSelected = blockedUrls[i]["isSelected"] as? Bool {
-//                    if isSelected{
-//                        SettingsManagerObject.arrBlockedUrls.append(blockedUrls[i]["url"] as? String ?? "")
-//                    }
-//                }
-//            }
-//        }
         btnLeft.buttonColor = NSColor.white.cgColor
         btnClickOpenUrl.isHidden = false
         
@@ -100,6 +88,9 @@ class tryBlockUrlVc: NSViewController {
         addLog(text: "[user-action] distraction-shield-activated-shown")
     }
     
+    override func viewWillAppear() {
+        tryBlockState = ._NOTHING_
+    }
     override func viewDidAppear() {
         showOnboardingBellIcon(view: self.view, screen: "distraction-shield-activated-screen")
         tryBlockingVcShownInOnboarding = true

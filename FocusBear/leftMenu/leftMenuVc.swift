@@ -841,6 +841,23 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
        // enableAllItems()
     }
     
+    func showCustomScheduleAbortedView(){
+        if abortingCustomScheduleBlockingVcObj != nil{
+            if abortingCustomScheduleBlockingVcObj?.isViewVisible ?? false{
+                return;
+            }
+        }
+        boxFocusSession.isSelected = true
+        if SettingsManagerObject.isGeekModeEnabled{
+            appdelegate?.menuShowPomodoroModeView()
+        }else{
+            appdelegate?.menuShowSimplePomodoroModeView()
+        }
+        
+        self.presentAsSheet(getAbortingCustomScheduleBlockingVcObject())
+        getAbortingCustomScheduleBlockingVcObject().resetData()
+    }
+    
     func showHelpAndSupportView(){
         boxHelpAndSupport.isSelected = true
         mainViewControllerObj?.showHelpView()

@@ -10,6 +10,9 @@ import Cocoa
 
 class explainingPermissionsVc: NSViewController {
 
+    @IBOutlet weak var imgViewBrowserPermission: NSImageView!
+    @IBOutlet weak var imgViewSystemEventPermission: NSImageView!
+    @IBOutlet weak var imgViewAccessibilityPermission: NSImageView!
     @IBOutlet weak var lblInfoBanner: NSTextField!
     @IBOutlet weak var lblPointBrowserPermission: NSTextField!
     @IBOutlet weak var lblPointSystemEventPermission: NSTextField!
@@ -51,6 +54,57 @@ class explainingPermissionsVc: NSViewController {
         allApiObject.capturePosthog(event: "explaining-permissions-shown", metadata: [:])
         addLog(text: "[user-action] explaining-permissions-shown")
     }
+    
+    var isBrowserPermissionGiven = false
+    var isAccessibilityPermissionGiven = true
+    var isSystemEventsPermissionGiven = true
+    
+    override func viewWillAppear() {
+        isBrowserPermissionGiven = false
+        isAccessibilityPermissionGiven = false
+        isSystemEventsPermissionGiven = false
+        imgViewBrowserPermission.isHidden = true
+        imgViewAccessibilityPermission.isHidden = true
+        imgViewSystemEventPermission.isHidden = true
+        
+        DispatchQueue.global().async { [self] in
+            if let arrBrowsersInfo = UserDefaults.standard.object(forKey: kUserdefaultsAllBrowsersPermissionInfo) as? [[String : Any]]{
+                for i in 0..<arrBrowsersInfo.count{
+                    let info = arrBrowsersInfo[i]
+                    let isEnabled = info["isEnabled"] as? Bool ?? false
+                    if isEnabled{
+                        isBrowserPermissionGiven = true
+                        break;
+                    }
+                }
+            }
+            if isBrowserPermissionGiven{
+                DispatchQueue.main.async {
+                    self.imgViewBrowserPermission.isHidden = false
+                }
+            }
+            
+            
+            if !isAccessibilityEnabled(isPrompt: false){
+                isAccessibilityPermissionGiven = false
+            }else{
+                isAccessibilityPermissionGiven = true
+                DispatchQueue.main.async {
+                    self.imgViewAccessibilityPermission.isHidden = false
+                }
+            }
+            
+            if !checkAutomationPermissionWithAppleScript(){
+                isSystemEventsPermissionGiven = false
+            }else{
+                isSystemEventsPermissionGiven = true
+                DispatchQueue.main.async {
+                    self.imgViewSystemEventPermission.isHidden = false
+                }
+            }
+
+        }
+    }
     override func viewDidAppear() {
         showOnboardingBellIcon(view: self.view, screen: "explaining-permissions-screen")
     }
@@ -59,7 +113,23 @@ class explainingPermissionsVc: NSViewController {
     }
     @IBAction func btnContinueClicked(_ sender: Any) {
         addLog(text: "[user-action] explainingPermissionsVc:- Button Continue clicked")
-        self.view.window?.contentViewController = getAccessibilityPermissionVcObject()
+        menuViewControllerObj?.accessibilityPermissionGiven = isAccessibilityPermissionGiven
+        menuViewControllerObj?.systemEventsPermissionGiven = isSystemEventsPermissionGiven
+        menuViewControllerObj?.browserPermissionGiven = isBrowserPermissionGiven
+        
+        addLog(text: "Accessibility Permission Given:- \(isAccessibilityPermissionGiven)")
+        addLog(text: "System Events Permission Given:- \(isSystemEventsPermissionGiven)")
+        addLog(text: "Any Browser Permission Given:- \(isBrowserPermissionGiven)")
+        
+        if !self.isAccessibilityPermissionGiven{
+            self.view.window?.contentViewController = getAccessibilityPermissionVcObject()
+        }else if !self.isSystemEventsPermissionGiven{
+            self.view.window?.contentViewController = getSystemEventsPermissionVcObject()
+        }else if !self.isBrowserPermissionGiven{
+            self.view.window?.contentViewController = getOnboardingControllingBrowserVcObject()
+        }else{
+            self.view.window?.contentViewController = getTryBlockUrlVcObject()
+        }
     }
 }
 

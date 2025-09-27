@@ -126,7 +126,14 @@ class systemEventsPermissionVc: NSViewController {
             if !self.btnContinue.isHidden{
                 allApiObject.capturePosthog(event: "system-events-permission-not-granted", metadata: [:])
             }
-            self.view.window?.contentViewController = getOnboardingControllingBrowserVcObject()
+
+            let isBrowserPermissionGiven = explainingPermissionsVcObj?.isBrowserPermissionGiven ?? false
+            
+            if !isBrowserPermissionGiven{
+                self.view.window?.contentViewController = getOnboardingControllingBrowserVcObject()
+            }else{
+                self.view.window?.contentViewController = getTryBlockUrlVcObject()
+            }
         })
     }
     

@@ -363,6 +363,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             }
         }
         
+        addLog(text:"Final video url is :- \(videoUrl)")// Added in v 2.27.419
         
         let link = URL(string:videoUrl)!
         let request = URLRequest(url: link)
@@ -441,8 +442,6 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                         }
                         
                     }else if videoUrl.lowercased().contains("embed/") {
-//                        videoID = videoUrl.components(separatedBy: "/").last
-                        
                         if let lastItem = videoUrl.components(separatedBy: "/").last {
                             // Remove query params if present
                             videoID = lastItem.components(separatedBy: "?").first
@@ -468,7 +467,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                 }
             }
             
-            
+            addLog(text:"Final video url is :- \(videoUrl)")// Added in v 2.27.419
             let link = URL(string:videoUrl)!
             let request = URLRequest(url: link)
             if #available(macOS 12.0, *) {
@@ -1998,6 +1997,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
     
     
     @IBAction func btnChooseDifferentVideoClicked(_ sender: Any) {
+        addLog(text:"btnChooseDifferentVideoClicked")
         if boxButtonTabViews.isHidden == false && isVideoLodded{
             btnTabVideoClicked(self)
         }

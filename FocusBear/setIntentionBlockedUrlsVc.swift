@@ -10,6 +10,8 @@ import Cocoa
 
 class setIntentionBlockedUrlsVc: NSViewController {
 
+    @IBOutlet weak var boxTimerSetIntention: NSBox!
+    @IBOutlet weak var boxTimer: NSBox!
     @IBOutlet weak var lblTimerTotalSecondsCopy: NSTextField!
     @IBOutlet weak var boxSetIntention: NSBox!
     @IBOutlet weak var lblTitleSetIntention: NSTextField!
@@ -157,6 +159,19 @@ class setIntentionBlockedUrlsVc: NSViewController {
             self.timer?.invalidate()
             self.timer = nil
         }
+        
+
+        totalDurationToAutoBlock = 30
+        if isAppInstalledWithinLast3Days(){
+            totalDurationToAutoBlock = 60
+        }
+        
+        boxTimer.fillColor = NSColor.clear
+        boxTimerSetIntention.fillColor = NSColor.clear
+        lblTimerTotalSeconds.textColor = .labelColor
+        lblTimerTotalSecondsCopy.textColor = .labelColor
+        
+        
         let (_,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDurationToAutoBlock-currentTimerToAutoBlock)
         DispatchQueue.main.async {
             var minute = "\(m)"
@@ -442,6 +457,7 @@ class setIntentionBlockedUrlsVc: NSViewController {
                 return;
             }
         }
+
         if let pid = self.currentPid{
             let options = CGWindowListOption(arrayLiteral: CGWindowListOption.excludeDesktopElements, CGWindowListOption.optionOnScreenOnly)
             let windowListInfo = CGWindowListCopyWindowInfo(options, CGWindowID(0))
@@ -494,7 +510,23 @@ class setIntentionBlockedUrlsVc: NSViewController {
             self.view.window?.setFrame(NSRect(x: (midX-(width/2)), y: (midY-(height/2)), width: width, height: height), display: true)
         }
         
-        let (_,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDurationToAutoBlock-currentTimerToAutoBlock)
+        let remainingSeconds = self.totalDurationToAutoBlock-currentTimerToAutoBlock
+        
+        
+        
+        if remainingSeconds < 16{
+            boxTimer.fillColor = NSColor(resource: .darkOrange)
+            boxTimerSetIntention.fillColor = NSColor(resource: .darkOrange)
+            lblTimerTotalSeconds.textColor = .white
+            lblTimerTotalSecondsCopy.textColor = .white
+        }else{
+            boxTimer.fillColor = NSColor.clear
+            boxTimerSetIntention.fillColor = NSColor.clear
+            lblTimerTotalSeconds.textColor = .labelColor
+            lblTimerTotalSecondsCopy.textColor = .labelColor
+        }
+        
+        let (_,m,s) = secondsToHoursMinutesSeconds(seconds: remainingSeconds)
         DispatchQueue.main.async {
             var minute = "\(m)"
             var second = "\(s)"
@@ -505,7 +537,7 @@ class setIntentionBlockedUrlsVc: NSViewController {
                 second = "0\(s)"
             }
             self.lblTimerTotalSeconds.stringValue = "\(minute):\(second)"
-            self.self.lblTimerTotalSecondsCopy.stringValue = "\(minute):\(second)"
+            self.lblTimerTotalSecondsCopy.stringValue = "\(minute):\(second)"
         }
     }
     

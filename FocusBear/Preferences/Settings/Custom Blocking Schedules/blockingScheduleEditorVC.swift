@@ -466,10 +466,10 @@ class blockingScheduleEditorVC: NSViewController {
     
     @IBAction func sliderStrictnessClicked(_ sender: Any) {
         if sliderStrictness.integerValue == 3{
-            var strictnessSuperStrictClickedText = "I understand I cannot stop this focus session until it ends. I am committed to avoiding distractions and getting a ton of work done."
+            var strictnessSuperStrictClickedText = "I understand I cannot stop this focus session without a password. I am committed to avoiding distractions and getting a ton of work done."
             if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
                 if let startingFocusModeInfo = focusInfo.value(forKey: "startingFocusModeInfo") as? NSDictionary{
-                    strictnessSuperStrictClickedText = startingFocusModeInfo.value(forKey: "strictnessSuperStrictClickedText") as? String ?? strictnessSuperStrictClickedText
+                    strictnessSuperStrictClickedText = startingFocusModeInfo.value(forKey: "strictnessSuperStrictClickedNewText") as? String ?? strictnessSuperStrictClickedText
                 }
             }
             

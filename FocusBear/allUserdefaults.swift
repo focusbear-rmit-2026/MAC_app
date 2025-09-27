@@ -142,7 +142,7 @@ let kUserdefaultsPomodoroTourShown = "kUserdefaultsPomodoroTourShown"
 
 //let kUserdefaultsAdditionalGoals = "kUserdefaultsAdditionalGoals"
 
-let kUserdefaultsSitesUnlockedInPomodoroBreakAlertShown = "kUserdefaultsSitesUnlockedInPomodoroBreakAlertShown"
+//let kUserdefaultsSitesUnlockedInPomodoroBreakAlertShown = "kUserdefaultsSitesUnlockedInPomodoroBreakAlertShown"
 let kUserdefaultsIsAdvancedPomodoroEnabled = "kUserdefaultsIsAdvancedPomodoroEnabled"
 
 

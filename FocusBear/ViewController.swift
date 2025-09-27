@@ -3982,6 +3982,7 @@ class ViewController: NSViewController {
     }
     
     
+    
     func showDashboardView(){
         self.removeSubViews()
         containerView.addSubview(getSetUpVcObject().view)

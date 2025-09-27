@@ -714,6 +714,7 @@ func checkUrlFromAi(script: String, url:String, tab_title:String, currentRunning
                                             if popUpBlockConfirmVcObj?.url == currentBrowserUrlForAi{
                                                 popUpWindowVisible = true
                                                 popUpBlockConfirmVcObj?.lblAi.stringValue = reason
+                                                popUpBlockConfirmVcObj?.lastBlockReasonFromAi = reason
                                                 return;
                                             }
                                         }
@@ -1077,6 +1078,7 @@ func checkAppFromAi(appName:String, currentRunningFocusModeName:String, runningA
                                             if popUpBlockConfirmVcObj?.currentAppName == currentRunningAppNameForAi{
                                                 popUpWindowVisible = true
                                                 popUpBlockConfirmVcObj?.lblAi.stringValue = reason
+                                                popUpBlockConfirmVcObj?.lastBlockReasonFromAi = reason
                                                 return;
                                             }
                                         }

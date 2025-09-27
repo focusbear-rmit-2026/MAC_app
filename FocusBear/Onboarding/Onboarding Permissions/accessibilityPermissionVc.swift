@@ -201,6 +201,9 @@ class accessibilityPermissionVc: NSViewController {
         currentTimer += 1
         if isAccessibilityEnabled(isPrompt: false){
             lblNextViewInfo.isHidden = false
+            if explainingPermissionsVcObj?.isSystemEventsPermissionGiven ?? false{
+                lblNextViewInfo.isHidden = true
+            }
             btnContinue.isHidden = false
             self.timer?.invalidate()
             btnContinueClicked(self)
@@ -210,6 +213,9 @@ class accessibilityPermissionVc: NSViewController {
         if currentTimer >= totalDuration{
             DispatchQueue.main.async {
                 self.lblNextViewInfo.isHidden = false
+                if explainingPermissionsVcObj?.isSystemEventsPermissionGiven ?? false{
+                    self.lblNextViewInfo.isHidden = true
+                }
                 self.btnContinue.isHidden = false
             }
         }
@@ -251,7 +257,16 @@ class accessibilityPermissionVc: NSViewController {
     
     @IBAction func btnContinueClicked(_ sender: Any) {
         addLog(text: "[user-action] accessibilityPermissionVc:- Button Continue clicked")
-        self.view.window?.contentViewController = getSystemEventsPermissionVcObject()
+        let isSystemEventsPermissionGiven = explainingPermissionsVcObj?.isSystemEventsPermissionGiven ?? false
+        let isBrowserPermissionGiven = explainingPermissionsVcObj?.isBrowserPermissionGiven ?? false
+        
+        if !isSystemEventsPermissionGiven{
+            self.view.window?.contentViewController = getSystemEventsPermissionVcObject()
+        }else if !isBrowserPermissionGiven{
+            self.view.window?.contentViewController = getOnboardingControllingBrowserVcObject()
+        }else{
+            self.view.window?.contentViewController = getTryBlockUrlVcObject()
+        }
     }
     
     @IBAction func btnInfoClicked(_ sender: hoverInfoButton) {

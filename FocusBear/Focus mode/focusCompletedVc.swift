@@ -931,53 +931,53 @@ class focusCompletedVc: NSViewController {
             }
             
         }else{
-            var shouldShowAlert = false
-            if isHardCorePomodoroModeOn{
-                if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsDoNotBlockUrlsDuringSuperPomodoroBreaks) as? Bool{
-                    if state{
-                        if UserDefaults.standard.object(forKey: kUserdefaultsSitesUnlockedInPomodoroBreakAlertShown) == nil{
-                            UserDefaults.standard.set(true, forKey: kUserdefaultsSitesUnlockedInPomodoroBreakAlertShown)
-                            shouldShowAlert = true
-                        }
-                    }
-                }
-            }
-            
-            if shouldShowAlert{
-                let alert = NSAlert()
-                alert.setSharingType()
-                
-                var alertBlockUrlsDisbaledInBreaksText = "Super distracting sites unlocked during your pomodoro break. If you're brave, you can keep distractions blocked and go for a walk away from your computer instead."
-                var buttonBlockUrlsText = "Block distractions!"
-                var buttonCancelText = "Let me get distracted 😅"
-                
-                
-                if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
-                    if let focusCompletedInfo = focusInfo.value(forKey: "focusCompletedInfo") as? NSDictionary{
-                        alertBlockUrlsDisbaledInBreaksText = focusCompletedInfo.value(forKey: "alertBlockUrlsDisbaledInBreaksText") as? String ?? alertBlockUrlsDisbaledInBreaksText
-                        buttonBlockUrlsText = focusCompletedInfo.value(forKey: "buttonBlockUrlsText") as? String ?? buttonBlockUrlsText
-                        buttonCancelText = focusCompletedInfo.value(forKey: "buttonCancelText") as? String ?? buttonCancelText
-                    }
-                }
-                
-                alert.messageText = alertBlockUrlsDisbaledInBreaksText
-                alert.addButton(withTitle: buttonBlockUrlsText)
-                alert.addButton(withTitle: buttonCancelText)
-                NSApplication.shared.activate(ignoringOtherApps: true)
-                alert.beginSheetModal(for: self.view.window!, completionHandler: { result in
-                    if result == .alertFirstButtonReturn{
-                        print("Block distractions!")
-                        SettingsManagerObject.isSettingsChanged = true
-                        UserDefaults.standard.set(false, forKey: SettingsManagerObject.kUserdefaultsDoNotBlockUrlsDuringSuperPomodoroBreaks)
-                        SettingsManagerObject.putUserLocalDeviceSettings()
-                    }
-                    windowClose(isCloseWindowClicked: isCloseWindowClicked)
-                })
-                
-            }else{
-                windowClose(isCloseWindowClicked: isCloseWindowClicked)
-            }
-            
+//            var shouldShowAlert = false
+//            if isHardCorePomodoroModeOn{
+//                if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsDoNotBlockUrlsDuringSuperPomodoroBreaks) as? Bool{
+//                    if state{
+//                        if UserDefaults.standard.object(forKey: kUserdefaultsSitesUnlockedInPomodoroBreakAlertShown) == nil{
+//                            UserDefaults.standard.set(true, forKey: kUserdefaultsSitesUnlockedInPomodoroBreakAlertShown)
+//                            shouldShowAlert = true
+//                        }
+//                    }
+//                }
+//            }
+//            if shouldShowAlert{
+//                let alert = NSAlert()
+//                alert.setSharingType()
+//                
+//                var alertBlockUrlsDisbaledInBreaksText = "Super distracting sites unlocked during your pomodoro break. If you're brave, you can keep distractions blocked and go for a walk away from your computer instead."
+//                var buttonBlockUrlsText = "Block distractions!"
+//                var buttonCancelText = "Let me get distracted 😅"
+//                
+//                
+//                if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
+//                    if let focusCompletedInfo = focusInfo.value(forKey: "focusCompletedInfo") as? NSDictionary{
+//                        alertBlockUrlsDisbaledInBreaksText = focusCompletedInfo.value(forKey: "alertBlockUrlsDisbaledInBreaksText") as? String ?? alertBlockUrlsDisbaledInBreaksText
+//                        buttonBlockUrlsText = focusCompletedInfo.value(forKey: "buttonBlockUrlsText") as? String ?? buttonBlockUrlsText
+//                        buttonCancelText = focusCompletedInfo.value(forKey: "buttonCancelText") as? String ?? buttonCancelText
+//                    }
+//                }
+//                
+//                alert.messageText = alertBlockUrlsDisbaledInBreaksText
+//                alert.addButton(withTitle: buttonBlockUrlsText)
+//                alert.addButton(withTitle: buttonCancelText)
+//                NSApplication.shared.activate(ignoringOtherApps: true)
+//                alert.beginSheetModal(for: self.view.window!, completionHandler: { result in
+//                    if result == .alertFirstButtonReturn{
+//                        print("Block distractions!")
+//                        SettingsManagerObject.isSettingsChanged = true
+//                        UserDefaults.standard.set(false, forKey: SettingsManagerObject.kUserdefaultsDoNotBlockUrlsDuringSuperPomodoroBreaks)
+//                        SettingsManagerObject.putUserLocalDeviceSettings()
+//                    }
+//                    windowClose(isCloseWindowClicked: isCloseWindowClicked)
+//                })
+//                
+//                
+//            }else{
+//                windowClose(isCloseWindowClicked: isCloseWindowClicked)
+//            }
+            windowClose(isCloseWindowClicked: isCloseWindowClicked)
             
             func windowClose(isCloseWindowClicked:Bool){
                 if currentState == ._MORNING_HABIT_{

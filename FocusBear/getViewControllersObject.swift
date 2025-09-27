@@ -1106,10 +1106,8 @@ func getAccessibilityPermissionVcObject()->accessibilityPermissionVc{
 
 // tryBlockUrlVc
 var tryBlockUrlVcObj:tryBlockUrlVc?
-func getTryBlockUrlVcObject()->tryBlockUrlVc{
-    if tryBlockUrlVcObj == nil{
-        tryBlockUrlVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("tryBlockUrlVc")) as? tryBlockUrlVc
-    }
+func getTryBlockUrlVcObject()->tryBlockUrlVc{// always catch a new object 
+    tryBlockUrlVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("tryBlockUrlVc")) as? tryBlockUrlVc
     return tryBlockUrlVcObj!
 }
 
@@ -2307,6 +2305,16 @@ func getCustomRoutineStateVcObject()->customRoutineStateVc{
     }
     return customRoutineStateVcObj!
 }
+
+
+var abortingCustomScheduleBlockingVcObj:abortingCustomScheduleBlockingVc?
+func getAbortingCustomScheduleBlockingVcObject()->abortingCustomScheduleBlockingVc{
+    if abortingCustomScheduleBlockingVcObj == nil{
+        abortingCustomScheduleBlockingVcObj = nagsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("abortingCustomScheduleBlockingVc")) as? abortingCustomScheduleBlockingVc
+    }
+    return abortingCustomScheduleBlockingVcObj!
+}
+
 
 
 

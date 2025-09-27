@@ -3983,6 +3983,150 @@ DQ
             </objects>
             <point key="canvasLocation" x="-569" y="2364"/>
         </scene>
+        <!--Aborting Custom Schedule Blocking Vc-->
+        <scene sceneID="8PN-zt-FJH">
+            <objects>
+                <viewController storyboardIdentifier="abortingCustomScheduleBlockingVc" id="p4A-IR-fym" customClass="abortingCustomScheduleBlockingVc" customModule="Focus_Bear" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" id="Lmf-DH-Fru">
+                        <rect key="frame" x="0.0" y="0.0" width="712" height="348"/>
+                        <autoresizingMask key="autoresizingMask"/>
+                        <subviews>
+                            <box boxType="custom" borderWidth="0.0" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="j54-eV-22d" customClass="customBoxBg" customModule="Focus_Bear" customModuleProvider="target">
+                                <rect key="frame" x="0.0" y="0.0" width="712" height="348"/>
+                                <view key="contentView" id="hws-kT-is2">
+                                    <rect key="frame" x="0.0" y="0.0" width="712" height="348"/>
+                                    <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                    <subviews>
+                                        <box boxType="custom" borderWidth="0.0" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="lnz-BD-HAI">
+                                            <rect key="frame" x="0.0" y="0.0" width="712" height="348"/>
+                                            <view key="contentView" id="TTa-Oj-uc5">
+                                                <rect key="frame" x="0.0" y="0.0" width="712" height="348"/>
+                                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                                <subviews>
+                                                    <stackView distribution="fillEqually" orientation="vertical" alignment="centerX" spacing="33" horizontalStackHuggingPriority="1000" verticalStackHuggingPriority="250" verticalHuggingPriority="1000" verticalCompressionResistancePriority="1000" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Zb8-MV-YSj">
+                                                        <rect key="frame" x="50" y="151" width="612" height="167"/>
+                                                        <subviews>
+                                                            <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="Zfd-xj-mCc">
+                                                                <rect key="frame" x="-2" y="138" width="616" height="29"/>
+                                                                <textFieldCell key="cell" alignment="center" title="xxAborting Focus type - coding" id="Kcw-e7-gct">
+                                                                    <font key="font" metaFont="system" size="25"/>
+                                                                    <color key="textColor" red="0.90980392160000001" green="0.53333333329999999" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                                                    <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                                                </textFieldCell>
+                                                            </textField>
+                                                            <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="jmI-TI-x66">
+                                                                <rect key="frame" x="-2" y="81" width="616" height="24"/>
+                                                                <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" alignment="center" title="00:08" id="M1c-1I-2kC">
+                                                                    <font key="font" metaFont="systemBold" size="20"/>
+                                                                    <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                                                    <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                                                </textFieldCell>
+                                                            </textField>
+                                                            <textField focusRingType="none" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="SOF-7r-IBx">
+                                                                <rect key="frame" x="-2" y="0.0" width="616" height="48"/>
+                                                                <textFieldCell key="cell" alignment="center" title="xxStrict mode activated: you asked me to show a 15 second countdown timer before you can pause / deactivate" id="hdZ-uQ-1G6">
+                                                                    <font key="font" metaFont="system" size="20"/>
+                                                                    <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                                                    <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                                                </textFieldCell>
+                                                            </textField>
+                                                        </subviews>
+                                                        <visibilityPriorities>
+                                                            <integer value="1000"/>
+                                                            <integer value="1000"/>
+                                                            <integer value="1000"/>
+                                                        </visibilityPriorities>
+                                                        <customSpacing>
+                                                            <real value="3.4028234663852886e+38"/>
+                                                            <real value="3.4028234663852886e+38"/>
+                                                            <real value="3.4028234663852886e+38"/>
+                                                        </customSpacing>
+                                                    </stackView>
+                                                    <stackView distribution="fill" orientation="horizontal" alignment="top" spacing="30" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="1000" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="qTz-lv-pkT">
+                                                        <rect key="frame" x="179" y="30" width="355" height="40"/>
+                                                        <subviews>
+                                                            <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="rvX-KQ-mfq" customClass="Button" customModule="Focus_Bear" customModuleProvider="target">
+                                                                <rect key="frame" x="0.0" y="0.0" width="125" height="40"/>
+                                                                <buttonCell key="cell" type="square" title="xxCancel" bezelStyle="shadowlessSquare" alignment="center" lineBreakMode="truncatingTail" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="7GG-vC-eZe">
+                                                                    <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                                                    <font key="font" metaFont="system" size="18"/>
+                                                                </buttonCell>
+                                                                <constraints>
+                                                                    <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="125" id="gzr-md-aFC"/>
+                                                                    <constraint firstAttribute="height" constant="40" id="s8c-lQ-Azi"/>
+                                                                </constraints>
+                                                                <connections>
+                                                                    <action selector="btnCancelClicked:" target="p4A-IR-fym" id="mFR-uw-ImL"/>
+                                                                </connections>
+                                                            </button>
+                                                            <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Dpq-oX-Zfo" customClass="Button" customModule="Focus_Bear" customModuleProvider="target">
+                                                                <rect key="frame" x="155" y="0.0" width="200" height="40"/>
+                                                                <buttonCell key="cell" type="square" title="xxAbort Focus" bezelStyle="shadowlessSquare" alignment="center" lineBreakMode="truncatingTail" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="sI2-9b-BMS">
+                                                                    <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                                                    <font key="font" metaFont="system" size="18"/>
+                                                                </buttonCell>
+                                                                <constraints>
+                                                                    <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="200" id="8Cn-wM-2M7"/>
+                                                                    <constraint firstAttribute="height" constant="40" id="M8L-Mp-rCp"/>
+                                                                </constraints>
+                                                                <connections>
+                                                                    <action selector="btnAbortFocusClicked:" target="p4A-IR-fym" id="j29-Zx-6WP"/>
+                                                                </connections>
+                                                            </button>
+                                                        </subviews>
+                                                        <visibilityPriorities>
+                                                            <integer value="1000"/>
+                                                            <integer value="1000"/>
+                                                        </visibilityPriorities>
+                                                        <customSpacing>
+                                                            <real value="3.4028234663852886e+38"/>
+                                                            <real value="3.4028234663852886e+38"/>
+                                                        </customSpacing>
+                                                    </stackView>
+                                                </subviews>
+                                                <constraints>
+                                                    <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="qTz-lv-pkT" secondAttribute="trailing" constant="50" id="0bO-mm-uYv"/>
+                                                    <constraint firstItem="Zb8-MV-YSj" firstAttribute="leading" secondItem="TTa-Oj-uc5" secondAttribute="leading" constant="50" id="5Mk-Hq-uJm"/>
+                                                    <constraint firstItem="qTz-lv-pkT" firstAttribute="centerX" secondItem="TTa-Oj-uc5" secondAttribute="centerX" id="INu-ec-t4v"/>
+                                                    <constraint firstItem="Zb8-MV-YSj" firstAttribute="centerX" secondItem="TTa-Oj-uc5" secondAttribute="centerX" id="LC2-RC-BzQ"/>
+                                                    <constraint firstItem="qTz-lv-pkT" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="TTa-Oj-uc5" secondAttribute="leading" constant="50" id="aQw-7z-gKp"/>
+                                                    <constraint firstItem="Zb8-MV-YSj" firstAttribute="top" secondItem="TTa-Oj-uc5" secondAttribute="top" constant="30" id="c0Z-fH-KWH"/>
+                                                    <constraint firstAttribute="bottom" secondItem="qTz-lv-pkT" secondAttribute="bottom" constant="30" id="eth-l4-aUL"/>
+                                                </constraints>
+                                            </view>
+                                            <constraints>
+                                                <constraint firstAttribute="height" constant="348" id="icm-Re-xDv"/>
+                                            </constraints>
+                                        </box>
+                                    </subviews>
+                                    <constraints>
+                                        <constraint firstItem="lnz-BD-HAI" firstAttribute="leading" secondItem="hws-kT-is2" secondAttribute="leading" id="QWZ-GE-gRI"/>
+                                        <constraint firstAttribute="bottom" secondItem="lnz-BD-HAI" secondAttribute="bottom" id="kqJ-Kb-Phe"/>
+                                        <constraint firstItem="lnz-BD-HAI" firstAttribute="top" secondItem="hws-kT-is2" secondAttribute="top" id="p2S-Xw-P0w"/>
+                                        <constraint firstAttribute="trailing" secondItem="lnz-BD-HAI" secondAttribute="trailing" id="xpU-jj-uy5"/>
+                                    </constraints>
+                                </view>
+                            </box>
+                        </subviews>
+                        <constraints>
+                            <constraint firstAttribute="bottom" secondItem="j54-eV-22d" secondAttribute="bottom" id="P8P-Ts-YHq"/>
+                            <constraint firstItem="j54-eV-22d" firstAttribute="top" secondItem="Lmf-DH-Fru" secondAttribute="top" id="Vsv-H9-Gwe"/>
+                            <constraint firstAttribute="trailing" secondItem="j54-eV-22d" secondAttribute="trailing" id="bn7-MB-k3l"/>
+                            <constraint firstItem="j54-eV-22d" firstAttribute="leading" secondItem="Lmf-DH-Fru" secondAttribute="leading" id="r3I-kz-Bch"/>
+                        </constraints>
+                    </view>
+                    <connections>
+                        <outlet property="btnAbortFocus" destination="Dpq-oX-Zfo" id="b21-1o-duK"/>
+                        <outlet property="btnCancel" destination="rvX-KQ-mfq" id="NLn-Gz-LUe"/>
+                        <outlet property="lblSeconds" destination="jmI-TI-x66" id="CO1-Qb-keD"/>
+                        <outlet property="lblStrictModeActivated" destination="SOF-7r-IBx" id="N11-gg-qrk"/>
+                        <outlet property="lblTitle" destination="Zfd-xj-mCc" id="AzM-WT-0kd"/>
+                    </connections>
+                </viewController>
+                <customObject id="15y-Je-SRS" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="5349" y="72"/>
+        </scene>
     </scenes>
     <resources>
         <image name="Bear-Small" width="22" height="22"/>

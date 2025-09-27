@@ -724,7 +724,8 @@
             "strictnessSuperStrictTooltip": "bloqueo inmediato de urls + impide pausar/detener la sesión de enfoque o abrir la configuración",
             "titleStrictnessLevel": "Nivel de Rigor:",
             "strictnessSuperStrictClickedText": "Entiendo que no puedo detener esta sesión de enfoque hasta que termine. Me comprometo a evitar las distracciones y a trabajar mucho.",
-            "warningDefaultFocusMode": "Atención: esto no utilizará el bloqueo IA. Focus Bear solo bloqueará los sitios de tu lista de sitios superdistractores."
+            "warningDefaultFocusMode": "Atención: esto no utilizará el bloqueo IA. Focus Bear solo bloqueará los sitios de tu lista de sitios superdistractores.",
+            "strictnessSuperStrictClickedNewText": "Entiendo que no puedo detener esta sesión de enfoque sin una contraseña. Estoy comprometid@ a evitar distracciones y a lograr mucho trabajo."
         },
         "abortingFocusModeInfo": {
             "title": "Desactivación del tipo de enfoque - <FOCUSTYPE>",
@@ -955,7 +956,8 @@
         "title": "Sitios Super Distractores",
         "invalidDomainText": "Agregar * bloqueará todas las URL. Utiliza otra combinación.",
         "subTitleText": "¿En qué sitios pierdes el tiempo? Focus Bear te ayudará a ser más consciente de cómo utilizas estos sitios. Se bloquearán durante las sesiones de enfoque. El resto del tiempo, Focus Bear te preguntará por qué quieres utilizar el sitio.",
-        "checkBoxText": "Bloquear inmediatamente sitios super distractores"
+        "checkBoxText": "Bloquear inmediatamente sitios super distractores",
+        "subTitleTextNew": "¿En qué sitios pierdes tiempo? Focus Bear te ayudará a usar estos sitios de manera más intencional. Se bloquearán durante las sesiones de enfoque y los horarios de bloqueo personalizados."
     },
     "rememberNextHabitViewInfo": {
         "randomPhraseRightChoice1": "¡Vas muy bien!",
@@ -1788,7 +1790,8 @@
         "title": "Aplicaciones Super Distractoras",
         "subTitleText": "¿En qué aplicaciones pierdes el tiempo? Focus Bear te ayudará a ser más consciente de cómo usas estas aplicaciones. Se bloquearán durante las sesiones de enfoque. El resto del tiempo, Focus Bear te preguntará por qué quieres usar la aplicación.",
         "checkBoxText": "Bloquear inmediatamente aplicaciones súper distractoras",
-        "addBrowserAlertText": "Lo sentimos, no puedes elegir aplicaciones de navegador aquí. En su lugar, pon los sitios web que te distraen en la sección URLs superdistractoras."
+        "addBrowserAlertText": "Lo sentimos, no puedes elegir aplicaciones de navegador aquí. En su lugar, pon los sitios web que te distraen en la sección URLs superdistractoras.",
+        "subTitleTextNew": "¿En qué apps pierdes tiempo? Focus Bear te ayudará a usar estas apps de manera más intencional. Se bloquearán durante las sesiones de enfoque y los horarios de bloqueo personalizados."
     },
     "settingsNew": {
         "uiSettingTitle": "IU",
@@ -2478,7 +2481,7 @@
         "menuSettings": "Ajustes",
         "menuEditHabits": "Editar hábitos",
         "menuMotivation": "Motivación",
-        "menuHelpAndSupport": "Ayuda y soporte,
+        "menuHelpAndSupport": "Ayuda y soporte",
         "menuUpgradeNow": "Actualizar ahora",
         "menuTabAudit": "Auditoría de pestañas",
         "disableReasonMorningRoutine": "Desactivado porque tu rutina matutina está en progreso.",
@@ -2510,7 +2513,7 @@
         "titleTillTime": "Hasta",
         "titleFocusMode": "Lista de bloqueo",
         "buttonEditBlockList": "Editar lista de bloqueos",
-        "buttonSkipMicrobreaks": "Omitir micro descansos",
+        "buttonSkipMicrobreaks": "Omitir micro descansos",
         "buttonEnableAi": "Usar IA para decidir si se permiten los sitios web",
         "buttonSave": "Guardar cambios",
         "buttonDelete": "Eliminar",

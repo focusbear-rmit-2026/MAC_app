@@ -715,7 +715,8 @@
             "strictnessSuperStrictTooltip": "immediately block urls + prevents pausing/stopping focus session or opening settings",
             "titleStrictnessLevel": "Strictness level:",
             "strictnessSuperStrictClickedText": "I understand I cannot stop this focus session until it ends. I am committed to avoiding distractions and getting a ton of work done.",
-            "warningDefaultFocusMode": "Heads up: this will not use AI blocking. Focus Bear will only block the sites in your super distracting sites list"
+            "warningDefaultFocusMode": "Heads up: this will not use AI blocking. Focus Bear will only block the sites in your super distracting sites list",
+            "strictnessSuperStrictClickedNewText": "I understand I cannot stop this focus session without a password. I am committed to avoiding distractions and getting a ton of work done."
         },
         "abortingFocusModeInfo": {
             "title": "Deactivating Focus Block - <FOCUSTYPE>",
@@ -955,7 +956,8 @@
         "title": "Super Distracting Sites",
         "invalidDomainText": "Adding * will block all urls. Please use another combination.",
         "subTitleText": "Which sites do you waste time on? Focus Bear will help you be more intentional about how you use these sites. They will be blocked during focus sessions. The rest of the time, Focus Bear will ask you why you want to use the site.",
-        "checkBoxText": "Immediately block super distracting sites"
+        "checkBoxText": "Immediately block super distracting sites",
+        "subTitleTextNew": "Which sites do you waste time on? Focus Bear will help you be more intentional about how you use these sites. They will be blocked during focus sessions and custom blocking schedules."
     },
     "rememberNextHabitViewInfo": {
         "randomPhraseRightChoice1": "Right on!",
@@ -1788,7 +1790,8 @@
         "title": "Super Distracting Apps",
         "subTitleText": "Which apps do you waste time on? Focus Bear will help you be more intentional about how you use these apps. They will be blocked during focus sessions. The rest of the time, Focus Bear will ask you why you want to use the app.",
         "checkBoxText": "Immediately block super distracting apps",
-        "addBrowserAlertText": "Sorry you can't choose browser apps here. Instead put distracting websites in the Super Distracting URLs section."
+        "addBrowserAlertText": "Sorry you can't choose browser apps here. Instead put distracting websites in the Super Distracting URLs section.",
+        "subTitleTextNew": "Which apps do you waste time on? Focus Bear will help you be more intentional about how you use these apps. They will be blocked during focus sessions and custom blocking schedules."
     },
     "settingsNew": {
         "uiSettingTitle": "UI",
@@ -2510,7 +2513,7 @@
         "titleTillTime": "Till",
         "titleFocusMode": "Block list",
         "buttonEditBlockList": "Edit block list",
-        "buttonSkipMicrobreaks": "Skip microbreaks",
+        "buttonSkipMicrobreaks": "Skip microbreaks",
         "buttonEnableAi": "Use Al to decide if websites should be allowed",
         "buttonSave": "Save changes",
         "buttonDelete": "Delete",

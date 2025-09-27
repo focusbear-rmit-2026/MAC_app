@@ -668,7 +668,7 @@ var localFlaskServerFolderURL:URL!
 var trackFilesFolderURL:URL!
 var DebugLogsFolderURL:URL!
 var DebugLogsURL:URL!
-var DebugGraphLogsURL:URL!
+//var DebugGraphLogsURL:URL!
 
 //var habitInfoFileURL:URL!
 var settingForScreeenTimeFileURL:URL!
@@ -725,6 +725,14 @@ func getDaysSinceAppInstalled()->Int{
     let firstRunDate = UserDefaults.standard.object(forKey: kUserdefaultsFirstRunDate) as? Date ?? currentDate
     let diffDays = Calendar.current.dateComponents([.day], from: firstRunDate, to: currentDate).day ?? 0
     return diffDays
+}
+
+func isAppInstalledWithinLast3Days() -> Bool {
+    let currentDate = Date()
+    let firstRunDate = UserDefaults.standard.object(forKey: kUserdefaultsFirstRunDate) as? Date ?? currentDate
+    
+    let threeDaysAgo = Calendar.current.date(byAdding: .day, value: -3, to: Date())!
+    return firstRunDate >= threeDaysAgo
 }
 
 //******************************************CreateDirectoryIfNotExist*******************************************************//
@@ -1983,6 +1991,160 @@ func zipTextFile(inputFilePath: String, outputZipPath: String) throws {
     }
 }
 
+
+func zipItem(inputPath: String, outputZipPath: String) throws {
+    let fm = FileManager.default
+    
+    // Remove old zip if it exists
+    if fm.fileExists(atPath: outputZipPath) {
+        try fm.removeItem(atPath: outputZipPath)
+    }
+    
+    let process = Process()
+    process.executableURL = URL(fileURLWithPath: "/usr/bin/zip")
+    
+    var isDir: ObjCBool = false
+    fm.fileExists(atPath: inputPath, isDirectory: &isDir)
+    
+    if isDir.boolValue {
+        // For folder → use -r (recursive)
+        let folderName = (inputPath as NSString).lastPathComponent
+        let parentPath = (inputPath as NSString).deletingLastPathComponent
+        
+        process.currentDirectoryURL = URL(fileURLWithPath: parentPath)
+        process.arguments = ["-r", outputZipPath, folderName]
+    } else {
+        // For file → keep -j (junk paths, no directory structure)
+        process.arguments = ["-j", outputZipPath, inputPath]
+    }
+    
+    try process.run()
+    process.waitUntilExit()
+    
+    if process.terminationStatus == 0 {
+        print("✅ Zipped at \(outputZipPath)")
+    } else {
+        throw NSError(
+            domain: "ZipError",
+            code: Int(process.terminationStatus),
+            userInfo: [NSLocalizedDescriptionKey: "Failed to zip item."]
+        )
+    }
+}
+
+
+
+func zipItems(inputPaths: [String], outputZipPath: String) throws {
+    let fm = FileManager.default
+    
+    // Remove old zip if it exists
+    if fm.fileExists(atPath: outputZipPath) {
+        try fm.removeItem(atPath: outputZipPath)
+    }
+    
+    let process = Process()
+    process.executableURL = URL(fileURLWithPath: "/usr/bin/zip")
+    
+    // Separate into parent dir + relative names (so zip doesn’t store absolute paths)
+    var allArguments: [String] = ["-r", outputZipPath]
+    
+    var parentDir: String?
+    for path in inputPaths {
+        let parent = (path as NSString).deletingLastPathComponent
+        if parentDir == nil { parentDir = parent }
+        // Ensure all files are from same parent directory, otherwise paths get long
+        allArguments.append((path as NSString).lastPathComponent)
+    }
+    
+    if let parentDir = parentDir {
+        process.currentDirectoryURL = URL(fileURLWithPath: parentDir)
+    }
+    
+    process.arguments = allArguments
+    
+    try process.run()
+    process.waitUntilExit()
+    
+    if process.terminationStatus == 0 {
+        print("✅ Zipped at \(outputZipPath)")
+    } else {
+        throw NSError(
+            domain: "ZipError",
+            code: Int(process.terminationStatus),
+            userInfo: [NSLocalizedDescriptionKey: "Failed to zip items."]
+        )
+    }
+}
+
+func createZipArchive(zipPath: String, logFolder: String, screenshots: [URL]) throws {
+    let fileManager = FileManager.default
+
+    // Remove old zip if exists
+    if fileManager.fileExists(atPath: zipPath) {
+        try fileManager.removeItem(atPath: zipPath)
+    }
+
+    // Create temporary folder for Screenshots
+    let logParent = URL(fileURLWithPath: logFolder).deletingLastPathComponent()
+    let screenshotsFolder = logParent.appendingPathComponent("Screenshots", isDirectory: true)
+
+    if fileManager.fileExists(atPath: screenshotsFolder.path) {
+        try fileManager.removeItem(at: screenshotsFolder)
+    }
+    
+    if screenshots.count != 0{
+        try fileManager.createDirectory(at: screenshotsFolder, withIntermediateDirectories: true)
+    }
+
+    // Copy screenshots into the temporary Screenshots folder
+    for sourceURL in screenshots {
+        let destURL = screenshotsFolder.appendingPathComponent(sourceURL.lastPathComponent)
+        if fileManager.fileExists(atPath: destURL.path) {
+            try fileManager.removeItem(at: destURL)
+        }
+        try fileManager.copyItem(at: sourceURL, to: destURL)
+    }
+
+    let process = Process()
+    process.executableURL = URL(fileURLWithPath: "/usr/bin/zip")
+    
+    
+    // Run /usr/bin/zip
+    var arguments: [String] = ["-r", zipPath]
+    var itemsToZip: [String] = []
+    let logURL = URL(fileURLWithPath: logFolder)
+    let parentDir = logURL.deletingLastPathComponent()
+    process.currentDirectoryURL = parentDir
+    itemsToZip.append(logURL.lastPathComponent)
+    
+    if screenshots.count != 0{
+        itemsToZip.append(screenshotsFolder.lastPathComponent)
+    }
+    arguments.append(contentsOf: itemsToZip)
+    process.arguments = arguments
+    
+
+    let pipe = Pipe()
+    process.standardOutput = pipe
+    process.standardError = pipe
+
+    try process.run()
+    process.waitUntilExit()
+
+    let data = pipe.fileHandleForReading.readDataToEndOfFile()
+    if let output = String(data: data, encoding: .utf8) {
+        print(output)
+    }
+
+    if process.terminationStatus != 0 {
+        throw NSError(domain: "ZipError", code: Int(process.terminationStatus), userInfo: [
+            NSLocalizedDescriptionKey: "Failed to create zip archive"
+        ])
+    }
+    if fileManager.fileExists(atPath: screenshotsFolder.path) {
+        try fileManager.removeItem(at: screenshotsFolder)
+    }
+}
 
 
 
