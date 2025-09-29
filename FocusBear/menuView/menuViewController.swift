@@ -179,8 +179,7 @@ class menuViewController: NSViewController {
         // Do view setup here.
         addLog(text: "menuViewController viewdidload start")
         
-        lblCustomBlocking.stringValue = "Custom Blocking" // todo text
-        lblCustomBlockingState.stringValue = "Active" // todo text 
+        lblCustomBlocking.stringValue = "Blocking Schedule"
         if #available(macOS 11.0, *) {
             iconPlayFocusSession = NSImage(systemSymbolName: "play.circle", accessibilityDescription: nil)
         } 
@@ -271,6 +270,8 @@ class menuViewController: NSViewController {
             lblBlockingDisabled.stringValue = menuInfo.value(forKey: "menuItemBlockingDisabledTitle") as? String ?? lblBlockingDisabled.stringValue
             lblCustomRoutine.stringValue = menuInfo.value(forKey: "menuItemStartCustomRoutineTitle") as? String ?? lblCustomRoutine.stringValue
             lblTipPermissions.stringValue = menuInfo.value(forKey: "permissionsNotSetText") as? String ?? lblTipPermissions.stringValue
+            lblCustomBlocking.stringValue = menuInfo.value(forKey: "titleBlockingSchedule") as? String ?? lblCustomBlocking.stringValue
+            lblCustomBlockingState.stringValue = menuInfo.value(forKey: "stateActive") as? String ?? lblCustomBlockingState.stringValue
         }
         segmentControlOfficeMode.setLabel(titleOfficeMode, forSegment: 0)
         segmentControlOfficeMode.setLabel(titleWFHMode, forSegment: 1)
@@ -497,10 +498,10 @@ class menuViewController: NSViewController {
         // showTooltip(sender: btnOpenToolBox, msg: menuItemOpenToolbox.title, preferredEdge: NSRectEdge.maxY, maxWidthVal:230, autoCloseOnMouseExit: true)
         //    }
         else if event.trackingArea == trackingAreaBtnEditBlockingSchedule{
-            var toolTipButtonEditBlockingSchedule = "Add blocking schedule" // todo text 
-//            if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
-//                toolTipButtonEditBlockingSchedule = menuInfo.value(forKey: "toolTipButtonEditBlockingSchedule") as? String ?? toolTipButtonEditBlockingSchedule
-//            }
+            var toolTipButtonEditBlockingSchedule = "Add blocking schedule"
+            if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
+                toolTipButtonEditBlockingSchedule = menuInfo.value(forKey: "buttonAddBlockingSchedule") as? String ?? toolTipButtonEditBlockingSchedule
+            }
             showTooltip(sender: btnEditBlockingSchedule, msg: toolTipButtonEditBlockingSchedule, preferredEdge: NSRectEdge.maxX, maxWidthVal:230, autoCloseOnMouseExit: true)
         }else if event.trackingArea == trackingAreaBtnPin{
             var msg = ""
@@ -664,12 +665,6 @@ class menuViewController: NSViewController {
     
     func reloadData(){
         allApiObject.capturePosthog(event: "opened-menu", metadata: [:])
-//        if SettingsManagerObject.blockingSchedule != ._UNTIL_I_FINISH_WORK_{ //now super distarcting sites will block only in focus modes and custom blocking schedules  24/9/25 version 2.27.417
-//            boxBlockingDisabled.isHidden = false
-//        }else{
-//            boxBlockingDisabled.isHidden = true
-//        }
-//        
         if customBlockingScheduleManagerObj.arrBlockingSchedule.count == 0{
             boxBlockingDisabled.isHidden = false
         }else{
@@ -679,6 +674,9 @@ class menuViewController: NSViewController {
         if customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
             boxCustomBlocking.isHidden = false
             lblCustomBlockingState.stringValue = "Active"
+            if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
+                lblCustomBlockingState.stringValue = menuInfo.value(forKey: "stateActive") as? String ?? lblCustomBlockingState.stringValue
+            }
             btnCustomBlocking.state = .on
             for schedule in customBlockingScheduleManagerObj.arrBlockingSchedule{
                 if schedule.state == .on{
@@ -691,6 +689,9 @@ class menuViewController: NSViewController {
         }else if customBlockingScheduleManagerObj.isAnyCustomSchedulePaused{
             boxCustomBlocking.isHidden = false
             lblCustomBlockingState.stringValue = "Paused"
+            if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
+                lblCustomBlockingState.stringValue = menuInfo.value(forKey: "statePaused") as? String ?? lblCustomBlockingState.stringValue
+            }
             btnCustomBlocking.state = .off
             for schedule in customBlockingScheduleManagerObj.arrBlockingSchedule{
                 if schedule.state == .pause{
@@ -1593,7 +1594,7 @@ class menuViewController: NSViewController {
                 if arrFocusType[index]["isOn"] as? Bool == true{
 //                    if currentFocusModeStrictness == ._SUPER_STRICT_{
 //                        addLog(text: "can't stop focus mode in super strict focus mode :- return")
-//                        var cantStopFocusModeText = "Super strict mode activated: You cannot stop this focus session until it ends." // todo search this in all project
+//                        var cantStopFocusModeText = "Super strict mode activated: You cannot stop this focus session until it ends.
 //                        if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
 //                            cantStopFocusModeText = menuInfo.value(forKey: "cantStopFocusModeText") as? String ?? cantStopFocusModeText
 //                        }
@@ -2226,13 +2227,10 @@ class menuViewController: NSViewController {
     }
     
     @IBAction func btnInfoBlockingDisabledClicked(_ sender: hoverInfoButton) {
-//        var msg = "Blocking disabled because you chose to only activate blocks during focus sessions."
-//        if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
-//            msg = menuInfo.value(forKey: "toolTipBlockingDisabled") as? String ?? msg
-//        }
-        let msg = "Blocking is off because no custom blocking schedules have been added." // todo text
-        
-        
+        var msg = "Blocking is off because no custom blocking schedules have been added."
+        if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
+            msg = menuInfo.value(forKey: "addBlockingScheduleInfo") as? String ?? msg
+        }
         showTooltip(sender: sender, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:230, autoCloseOnMouseExit: true)
     }
     

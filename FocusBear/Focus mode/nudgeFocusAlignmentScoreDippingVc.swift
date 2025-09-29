@@ -91,11 +91,11 @@ class nudgeFocusAlignmentScoreDippingVc: NSViewController {
             }
             showTooltip(sender: btnExpandTaskPlayer, msg: toolTipShowToDoPlayer, preferredEdge: .maxY, maxWidthVal: 200, autoCloseOnMouseExit: true)
         }else if event.trackingArea == self.trackingAreaAlignmentScore{
-            var toolTipShowToDoPlayer = "This shows what % of the time you've been on websites/apps that are relevant to your focus goal. We use AI to check the relevance." // todo text
-//            if let info = configjson.value(forKey: "nudgeFocusAlignmentScoreDippingVcInfo") as? NSDictionary{
-//                toolTipShowToDoPlayer = info.value(forKey: "toolTipShowToDoPlayer") as? String ?? toolTipShowToDoPlayer
-//            }
-            showTooltip(sender: lblFocusAlignmentScore, msg: toolTipShowToDoPlayer, preferredEdge: .maxY, maxWidthVal: 200, autoCloseOnMouseExit: true)
+            var toolTipAlignmentScore = "This shows what % of the time you've been on websites/apps that are relevant to your focus goal. We use AI to check the relevance."
+            if let info = configjson.value(forKey: "nudgeFocusAlignmentScoreDippingVcInfo") as? NSDictionary{
+                toolTipAlignmentScore = info.value(forKey: "toolTipAlignmentScore") as? String ?? toolTipAlignmentScore
+            }
+            showTooltip(sender: lblFocusAlignmentScore, msg: toolTipAlignmentScore, preferredEdge: .maxY, maxWidthVal: 200, autoCloseOnMouseExit: true)
         }
     }
     

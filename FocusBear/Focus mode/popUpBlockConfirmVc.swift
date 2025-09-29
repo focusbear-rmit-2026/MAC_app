@@ -85,7 +85,7 @@ class popUpBlockConfirmVc: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
-        btnConvinceAgain.title = "Let me convince the AI again" // todo text
+        btnConvinceAgain.title = "Let me convince the AI again"
         btnAllow.title = "Yes - just this time"
         btnBlock.title = "No - I was getting distracted"
         btnEditSettings.title = "Edit Settings"
@@ -109,6 +109,7 @@ class popUpBlockConfirmVc: NSViewController {
             btnBlockAndAddToRelaxMode.title = popUpBlockConfirmVcInfo.value(forKey: "buttonBlockAndAddToRelaxModeText") as? String ?? btnBlockAndAddToRelaxMode.title
             lblBtnReportBadAi.stringValue = popUpBlockConfirmVcInfo.value(forKey: "reportBadAiTooltip") as? String ?? lblBtnReportBadAi.stringValue
             lblTitleAskIntention.stringValue = popUpBlockConfirmVcInfo.value(forKey: "titleAskIntentionText") as? String ?? lblTitleAskIntention.stringValue
+            btnConvinceAgain.title = popUpBlockConfirmVcInfo.value(forKey: "buttonConvinceAgain") as? String ?? btnConvinceAgain.title
         }
         lblBtnConfirmReportBadAi.stringValue = lblBtnReportBadAi.stringValue
         lblTitle.stringValue = titleText

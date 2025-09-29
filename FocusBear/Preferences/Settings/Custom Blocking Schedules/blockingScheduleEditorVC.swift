@@ -19,7 +19,7 @@ class blockingScheduleEditorVC: NSViewController {
     @IBOutlet weak var lblStrictnessSuperStrict: NSTextField!
     @IBOutlet weak var sliderStrictness: CustomSlider!
     
-    @IBOutlet weak var btnInfoIUseAi: NSButton!
+    @IBOutlet weak var btnInfoIUseAi: hoverInfoButton!
     @IBOutlet weak var btnInfoSkipMicroBreaks: hoverInfoButton!
     @IBOutlet weak var checkBoxAiEnabled: NSButton!
     @IBOutlet weak var checkBoxSkipMicroBreaks: NSButton!
@@ -82,11 +82,26 @@ class blockingScheduleEditorVC: NSViewController {
         btnEditBlockList.title = "Edit block list"
         checkBoxSkipMicroBreaks.title = "Skip microbreaks"
         checkBoxAiEnabled.title = "Use Al to decide if websites should be allowed"
-        btnCancel.title = buttonCancelText
+        
         btnSave.title = "Save changes"
         btnDelete.title = "Delete"
         
         lblTitleStrictnessLevel.stringValue = "Strictness level:"
+        btnCancel.title = buttonCancelText
+        
+        if let blockingScheduleEditorVcInfo = configjson.value(forKey: "blockingScheduleEditorVcInfo") as? NSDictionary{
+            lblTitle.stringValue = blockingScheduleEditorVcInfo.value(forKey: "title") as? String ?? lblTitle.stringValue
+            lblTitleScheduleName.stringValue = blockingScheduleEditorVcInfo.value(forKey: "titleScheduleName") as? String ?? lblTitleScheduleName.stringValue
+            lblTitleScheduleDays.stringValue = blockingScheduleEditorVcInfo.value(forKey: "titleBlockingSchedule") as? String ?? lblTitleScheduleDays.stringValue
+            lblTitleFromTime.stringValue = blockingScheduleEditorVcInfo.value(forKey: "titleFromTime") as? String ?? lblTitleFromTime.stringValue
+            lblTitleTillTime.stringValue = blockingScheduleEditorVcInfo.value(forKey: "titleTillTime") as? String ?? lblTitleTillTime.stringValue
+            lblTitleFocusMode.stringValue = blockingScheduleEditorVcInfo.value(forKey: "titleFocusMode") as? String ?? lblTitleFocusMode.stringValue
+            btnEditBlockList.title = blockingScheduleEditorVcInfo.value(forKey: "buttonEditBlockList") as? String ?? btnEditBlockList.title
+            checkBoxSkipMicroBreaks.title = blockingScheduleEditorVcInfo.value(forKey: "buttonSkipMicrobreaks") as? String ?? checkBoxSkipMicroBreaks.title
+            checkBoxAiEnabled.title = blockingScheduleEditorVcInfo.value(forKey: "buttonEnableAi") as? String ?? checkBoxAiEnabled.title
+            btnSave.title = blockingScheduleEditorVcInfo.value(forKey: "buttonSave") as? String ?? btnSave.title
+            btnDelete.title = blockingScheduleEditorVcInfo.value(forKey: "buttonDelete") as? String ?? btnDelete.title
+        }
         
         if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
             if let startingFocusModeInfo = focusInfo.value(forKey: "startingFocusModeInfo") as? NSDictionary{
@@ -112,7 +127,7 @@ class blockingScheduleEditorVC: NSViewController {
         lblStrictnessStrict.stringValue = "🟡 " + titleStrictMode
         lblStrictnessSuperStrict.stringValue = "🔴 " + titleSuperStrictMode
         
-        btnCancel.buttonColor = NSColor.white.cgColor // todo text all
+        btnCancel.buttonColor = NSColor.white.cgColor
         btnDelete.buttonColor = NSColor.white.cgColor
 
     
@@ -135,16 +150,10 @@ class blockingScheduleEditorVC: NSViewController {
 //        boxSunday.titleLabel = boxSunday.index.
         arrAllWeekDayBox = [boxSunday, boxMonday, boxTuesday, boxWednesday, boxThursday, boxFriday, boxSaturday]
         
-        
-        
-        
-        
-//        boxBlockingModes.wantsLayer = true
-//        boxBlockingModes.layer?.cornerRadius = boxBlockingModes.cornerRadius
-//        boxBlockingModes.layer?.borderColor =   NSColor.
-        
         textFieldScheduleName.focusRingType = .none
         btnInfoStrictnessLevel.isAutoClickEnabled = false
+
+        btnEditBlockList.isHidden = false
     }
     
     override func viewDidLayout() {// after scrollview resize it removes title and not srawing it again so doing this here
@@ -162,9 +171,6 @@ class blockingScheduleEditorVC: NSViewController {
             }
         }
         popUpBtnFocusMode.removeAllItems()
-        if isCreatingNew{
-            popUpBtnFocusMode.addItem(withTitle: "Choose a Focus Mode to manage your blocked list")// todo text
-        }
         
         for i in 0..<arrFocusTypeForBlockingSchedule.count{
             if let name = arrFocusTypeForBlockingSchedule[i]["name"] as? String{
@@ -201,9 +207,8 @@ class blockingScheduleEditorVC: NSViewController {
                 }
             }
             
-            btnEditBlockList.isHidden = true
+//            btnEditBlockList.isHidden = true
             popUpBtnFocusMode.removeAllItems()
-            popUpBtnFocusMode.addItem(withTitle: "Choose a Focus Mode to manage your blocked list")// todo text
             for i in 0..<arrFocusTypeForBlockingSchedule.count{
                 if let name = arrFocusTypeForBlockingSchedule[i]["name"] as? String{
                     popUpBtnFocusMode.addItem(withTitle: name)
@@ -260,7 +265,7 @@ class blockingScheduleEditorVC: NSViewController {
                     }
                 }
             }
-            btnEditBlockList.isHidden = false
+//            btnEditBlockList.isHidden = false
             checkBoxAiEnabled.state = customBlockingScheduleManagerObj.arrBlockingSchedule[index].isAIBlockingEnabled ? .on : .off
             checkBoxSkipMicroBreaks.state = customBlockingScheduleManagerObj.arrBlockingSchedule[index].isMicroBreaksEnabled ? .off : .on
             datePickerFrom.dateValue = customBlockingScheduleManagerObj.arrBlockingSchedule[index].startTime
@@ -288,6 +293,7 @@ class blockingScheduleEditorVC: NSViewController {
     
     func closeView(){
         tabStrictnessContainerVcObj?.showCustomBlockingSchedulesView()
+        addLog(text: "blockingScheduleEditorVC:- closeView")//2.27.421
     }
     
     @IBAction func btnBackClicked(_ sender: Any) {
@@ -297,7 +303,7 @@ class blockingScheduleEditorVC: NSViewController {
     func showAlert(title:String){
         let alert = NSAlert()
         alert.setSharingType()
-        alert.messageText = title // todo text all alert messages
+        alert.messageText = title
         alert.addButton(withTitle: buttonOkText)
         NSApplication.shared.activate(ignoringOtherApps: true)
         alert.beginSheetModal(for: self.view.window!, completionHandler: { result in
@@ -307,8 +313,16 @@ class blockingScheduleEditorVC: NSViewController {
     }
     
     @IBAction func btnSaveClicked(_ sender: Any) {
+        addLog(text: "[user-action]blockingScheduleEditorVC:- button Save Clicked")//2.27.421
         if textFieldScheduleName.stringValue.isEmpty{
-            showAlert(title: "Please enter a name for your custom schedule before saving.")
+            
+            var alertEnterName = "Please enter a name for your custom schedule before saving."
+            if let blockingScheduleEditorVcInfo = configjson.value(forKey: "blockingScheduleEditorVcInfo") as? NSDictionary{
+                alertEnterName = blockingScheduleEditorVcInfo.value(forKey: "alertEnterName") as? String ?? alertEnterName
+            }
+            showAlert(title: alertEnterName)
+            
+            addLog(text: "showAlert:- empty name")//2.27.421
             return;
         }
         
@@ -321,18 +335,25 @@ class blockingScheduleEditorVC: NSViewController {
         }
         
         if arrDays.count == 0{
-            showAlert(title: "Please select at least one day for this schedule.")
+            var alertSelectDay = "Please select at least one day for this schedule."
+            if let blockingScheduleEditorVcInfo = configjson.value(forKey: "blockingScheduleEditorVcInfo") as? NSDictionary{
+                alertSelectDay = blockingScheduleEditorVcInfo.value(forKey: "alertSelectDay") as? String ?? alertSelectDay
+            }
+            showAlert(title: alertSelectDay)
+            
+            addLog(text: "showAlert:- empty days array")//2.27.421
             return;
         }
         
-        var index = popUpBtnFocusMode.indexOfSelectedItem
-        if isCreatingNew{
-            if index == 0{
-                showAlert(title: "A focus mode must be selected before saving this schedule.")
-                return;
-            }
-            index = index - 1
-        }
+        let index = popUpBtnFocusMode.indexOfSelectedItem
+//        if isCreatingNew{
+//            if index == 0{
+//                showAlert(title: "A focus mode must be selected before saving this schedule.")
+//                addLog(text: "showAlert:- focus mode must be selected")//2.27.
+//                return;
+//            }
+//            index = index - 1
+//        }
         
         let focusModeId = arrFocusTypeForBlockingSchedule[index]["id"] as? String ?? ""
         if sliderStrictness.integerValue == 1{
@@ -360,9 +381,11 @@ class blockingScheduleEditorVC: NSViewController {
             // Create a new schedule
             customBlockingScheduleManagerObj.arrBlockingSchedule.append(blockingSchedule)
             customBlockingSchedulesVcObj?.scheduleAdded()
+            allApiObject.capturePosthog(event: "add-blocking-schedule", metadata: [:])//2.27.421
         }else{
             customBlockingScheduleManagerObj.arrBlockingSchedule[currentFocusModeIndex] = blockingSchedule
             customBlockingSchedulesVcObj?.scheduleEditedAt(currentFocusModeIndex)
+            allApiObject.capturePosthog(event: "edit-blocking-schedule", metadata: [:])//2.27.421
         }
         
         
@@ -380,6 +403,7 @@ class blockingScheduleEditorVC: NSViewController {
     }
     
     @IBAction func btnDeleteClicked(_ sender: Any) {
+        addLog(text: "[user-action]blockingScheduleEditorVC:- button Delete Clicked")//2.27.421
         confirmDelete(schedule: customBlockingScheduleManagerObj.arrBlockingSchedule[currentFocusModeIndex], at: currentFocusModeIndex)
     }
     
@@ -388,10 +412,19 @@ class blockingScheduleEditorVC: NSViewController {
         if schedule.state == .on {
             let alert = NSAlert()
             alert.setSharingType()
-            alert.messageText = "Schedule is Active" // too text
+            alert.messageText = "Schedule is Active"
             alert.informativeText = "This schedule is currently running. Are you sure you want to delete it? Blocking will stop immediately."
+            var buttonDelete = "Delete"
+            
+            if let blockingScheduleEditorVcInfo = configjson.value(forKey: "blockingScheduleEditorVcInfo") as? NSDictionary{
+                alert.messageText = blockingScheduleEditorVcInfo.value(forKey: "alertScheduleActive") as? String ?? alert.messageText
+                alert.informativeText = blockingScheduleEditorVcInfo.value(forKey: "descriptionScheduleActive") as? String ?? alert.informativeText
+                buttonDelete = blockingScheduleEditorVcInfo.value(forKey: "buttonDelete") as? String ?? buttonDelete
+            }
+            
+            
             alert.alertStyle = .warning
-            alert.addButton(withTitle: "Delete")
+            alert.addButton(withTitle: buttonDelete)
             alert.addButton(withTitle: buttonCancelText)
             
             
@@ -399,38 +432,31 @@ class blockingScheduleEditorVC: NSViewController {
                 if result == .alertFirstButtonReturn{
                     customBlockingScheduleManagerObj.deleteScheduleAt(self.currentFocusModeIndex)
                     addLog(text: "Deleted running schedule: \(schedule.name)")
+                    customBlockingSchedulesVcObj?.tblView.reloadData()
                     self.closeView()
                 }
             })
         } else {
             customBlockingScheduleManagerObj.deleteScheduleAt(currentFocusModeIndex)
             addLog(text: "Deleted schedule: \(schedule.name)")
+            customBlockingSchedulesVcObj?.tblView.reloadData()
             closeView()
         }
     }
     
     
     @IBAction func popUpBtnFocusModeClicked(_ sender: Any) {
-        if isCreatingNew{
-            if popUpBtnFocusMode.indexOfSelectedItem == focusModeDefaultIndex{
-                btnEditBlockList.isHidden = true
-            }else{
-                btnEditBlockList.isHidden = false
-            }
-        }else{
-            btnEditBlockList.isHidden = false
-        }
     }
     
     @IBAction func btnEditBlockListClicked(_ sender: Any) {
         allApiObject.capturePosthog(event: "open-preferences", metadata: [:])// todo
-        addLog(text: "Showing preferences from edit focus mode")
+        addLog(text: "[user-action]Showing preferences from edit focus mode")
         
         self.presentAsSheet(getFocusPreferencesVcObject()) // no password needed beacause we are already inside settings
-        var index = popUpBtnFocusMode.indexOfSelectedItem
-        if isCreatingNew{
-            index = index - 1
-        }
+        let index = popUpBtnFocusMode.indexOfSelectedItem
+//        if isCreatingNew{
+//            index = index - 1
+//        }
         
         if let focusModeId = arrFocusTypeForBlockingSchedule[index]["id"] as? String{
             getFocusPreferencesVcObject().selectFocusModeWithId(id: focusModeId)
@@ -446,9 +472,19 @@ class blockingScheduleEditorVC: NSViewController {
     }
     
     @IBAction func btnInfoSkipMicroBreaksClicked(_ sender: Any) {
+        var toolTip = "Focused work sessions! Activate this setting to automatically skip micro breaks when engaged in work blocks, maintaining an unbroken flow for sustained concentration and efficiency."
+        if let tooltips = configjson.value(forKey: "tooltips") as? NSDictionary{
+            toolTip = tooltips.value(forKey: "pomodoro_Advanced_SkipBreaks") as? String ?? toolTip
+        }
+        showTooltip(sender: btnInfoSkipMicroBreaks, msg: toolTip, preferredEdge: NSRectEdge.maxX, maxWidthVal:350)
     }
     
     @IBAction func btnInfoIUseAiClicked(_ sender: Any) {
+        var toolTipAiBlocking = "When you open a website you haven't specifically blocked or allowed, we'll use AI to check whether the website is relevant or not based on your focus intention. In strict mode, it will block it immediately if it's not relevant. In non strict mode, it will show a popup asking whether you really need it."
+        if let simplePomodoroVcInfo = configjson.value(forKey: "simplePomodoroVcInfo") as? NSDictionary{
+            toolTipAiBlocking = simplePomodoroVcInfo.value(forKey: "toolTipAiBlocking") as? String ?? toolTipAiBlocking
+        }
+        showTooltip(sender: btnInfoIUseAi, msg: toolTipAiBlocking, preferredEdge: NSRectEdge.maxX, maxWidthVal:350)
     }
     
     @IBAction func btnInfoStrictnessLevelClicked(_ sender: Any) {

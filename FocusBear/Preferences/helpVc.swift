@@ -36,7 +36,7 @@ class helpVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate 
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
-        lblAddScreenshots.stringValue = "➕ Drag and drop screenshots here that you want to share" // todo text
+        lblAddScreenshots.stringValue = "➕ Drag and drop screenshots here that you want to share"
         
         tabViewGetSupport.label = "Get Support"
         lblTitleWhatsApp.stringValue = "Join the Focus Bear WhatsApp group to exchange ideas, organize co-working/body doubling sessions, and get support with the app!"
@@ -73,6 +73,9 @@ class helpVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate 
             lblTitleWhatsApp.stringValue = helpVcInfo.value(forKey: "titleWhatsAppGroup") as? String ?? lblTitleWhatsApp.stringValue
             btnJoinWhatsAppGroup.title = helpVcInfo.value(forKey: "buttonJoinWhatsAppGroupText") as? String ?? btnJoinWhatsAppGroup.title
             tabViewGetSupport.label = helpVcInfo.value(forKey: "tabGetSupport") as? String ?? tabViewGetSupport.label
+            if let title = helpVcInfo.value(forKey: "titleAddScreenshots") as? String{
+                lblAddScreenshots.stringValue = "➕ \(title)"
+            }
         }
         
 //        self.webView.navigationDelegate = self

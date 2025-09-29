@@ -18,10 +18,19 @@ class customBlockingSchedulesVc: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
-        lblTitle.stringValue = "Custom Blocking" // todo text
+        lblTitle.stringValue = "Custom Blocking"
         lblAddNewBlock.stringValue = "➕ Add new block"
         tblView.enclosingScrollView?.contentInsets = NSEdgeInsets(top: 0, left: 0, bottom: 50, right: 0)
         boxAddNewSchedule.isHidden = true
+        
+        
+        
+        if let blockingScheduleEditorVcInfo = configjson.value(forKey: "blockingScheduleEditorVcInfo") as? NSDictionary{
+            lblTitle.stringValue = blockingScheduleEditorVcInfo.value(forKey: "title") as? String ?? lblTitle.stringValue
+            if let title = blockingScheduleEditorVcInfo.value(forKey: "buttonAddNewBlock") as? String{
+                lblAddNewBlock.stringValue = "➕ \(title)"
+            }
+        }
     }
     
     @IBAction func btnBackClicked(_ sender: Any) {
@@ -67,7 +76,12 @@ extension customBlockingSchedulesVc: NSTableViewDelegate, NSTableViewDataSource{
             if row >= customBlockingScheduleManagerObj.arrBlockingSchedule.count{
                 cell.boxBlockingSchedule.isHidden = true
                 cell.boxAddSchedule.isHidden = false
-                cell.lblAddNewBlock.stringValue = "➕ Add new block" // todo text
+                cell.lblAddNewBlock.stringValue = "➕ Add new block"
+                if let blockingScheduleEditorVcInfo = configjson.value(forKey: "blockingScheduleEditorVcInfo") as? NSDictionary{
+                    if let title = blockingScheduleEditorVcInfo.value(forKey: "buttonAddNewBlock") as? String{
+                        lblAddNewBlock.stringValue = "➕ \(title)"
+                    }
+                }
             }else{
                 cell.boxBlockingSchedule.isHidden = false
                 cell.boxAddSchedule.isHidden = true

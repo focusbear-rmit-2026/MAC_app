@@ -320,8 +320,12 @@ class focusPreferencesAdvancedVc: NSViewController {
 
         btnShowBlockedUrlsAndApps.image = NSImage(named: "NSTouchBarGoForwardTemplate")
         stackViewUrlsAndApps.isHidden = true
+        showFullScrollView()
     }
 
+    override func viewDidAppear() {
+        showFullScrollView()
+    }
     
     @objc func tableRowBlockedUrlsDoubleClicked(){
         let selectedTow = tblView.selectedRow

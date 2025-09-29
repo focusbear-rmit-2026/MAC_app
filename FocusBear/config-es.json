@@ -79,11 +79,7 @@
         "questionHowMotivatedText": "¿Cuán motivado te sientes para hacer tus hábitos?",
         "startCustomRoutineTitleText": "¡Tu rutina personalizada te está esperando! Da un paso a la vez y saca el máximo partido a tu día.",
         "menuItemCustomRoutineText": "Cambiar a otra rutina - <ROUTINE>",
-        "canNotDoCustomRoutineText": "No puedes realizar esta rutina en este momento porque no es la hora programada o ya la completaste.",
-        "stateActive": "Activo",
-        "statePaused": "En pausa",
-        "buttonAddBlockingSchedule": "Agregar horario de bloqueo",
-        "addBlockingScheduleInfo": "El bloqueo está desactivado porque no se han agregado horarios de bloqueo personalizados."
+        "canNotDoCustomRoutineText": "No puedes realizar esta rutina en este momento porque no es la hora programada o ya la completaste."
     },
     "common": {
         "emailId": "support@focusbear.io",
@@ -503,7 +499,12 @@
         "noPermissionSet": "- No se otorgaron permisos",
         "browserPermissionNotSet": "- Permiso a ningún navegador otorgado",
         "accessibilityNotSet": "- Permiso de accesibilidad no otorgado",
-        "systemEventsPermissionNotSet": "- Permiso de Eventos del Sistema no otorgado"
+        "systemEventsPermissionNotSet": "- Permiso de Eventos del Sistema no otorgado",
+        "stateActive": "Activo",
+        "statePaused": "En pausa",
+        "buttonAddBlockingSchedule": "Agregar horario de bloqueo",
+        "addBlockingScheduleInfo": "El bloqueo está desactivado porque no se han agregado horarios de bloqueo personalizados.",
+        "titleBlockingSchedule": "Horario de bloqueo"
     },
     "preferencesInfo": {
         "titlePomodoro": "Modo Pomodoro:",
@@ -664,7 +665,11 @@
         "infoAlwaysBlockedUrlsText": "Los sitios súper distractores se bloquean automáticamente",
         "titleWorkToBreakRatio": "Ratio trabajo/descanso:",
         "descriptionWorkToBreakRatio": "Por cada <WORKRATIO> minutos que te concentres, tendrás un descanso de <BREAKRATIO> minutos.",
-        "toText": "para"
+        "toText": "para",
+        "buttonBackToCustomBlocking": "Volver al bloqueo personalizado",
+        "buttonAddBlockListText": "Agregar lista de bloqueos",
+        "titleBlockList": "Usa listas de bloqueos para mantenerte enfocado en un tipo de trabajo.",
+        "descriptionForCustomBlocking": "Cuando uses esta lista de bloqueos, todos los sitios web estarán permitidos excepto tus URLs siempre bloqueadas."
     },
     "focusPreferencesAdvancedInfo": {
         "runScriptBeforeText": "Ejecuta el script de Apple antes de iniciar el modo de enfoque.",
@@ -1376,7 +1381,8 @@
         "buttonBlockAppText": "Bloquear esta app",
         "infoTemporaryAllow": "Este sitio ha sido marcado como una distracción 🧠❗Puedes desbloquearlo por ahora, pero se registrará como tiempo no productivo en tu informe.",
         "currentTaskText": "La tarea actual es \"<TASK>\"",
-        "pickTaskText": "La IA no puede determinar si esto encaja con tu trabajo. ¡Elige una tarea para guiar a Focus Bear!"
+        "pickTaskText": "La IA no puede determinar si esto encaja con tu trabajo. ¡Elige una tarea para guiar a Focus Bear!",
+        "buttonConvinceAgain": "Déjame convencer a la IA otra vez"
     },
     "easyPostponeVcInfo": {
         "title": "Entendido – ahora no es un buen momento. Voy a esperar 5 minutos. Puedes posponer por más tiempo si asi lo necesitas.",
@@ -1912,7 +1918,8 @@
         "arrayCommunityOptions": ["Sub-Reddit", "Comunidad de Facebook Messenger", "Grupo de Facebook", "Otro"],
         "titleWhatsAppGroup": "¡Únete al grupo de WhatsApp de Focus Bear para intercambiar ideas, organizar sesiones de trabajo colaborativo/acompañamiento y recibir apoyo con la app!",
         "buttonJoinWhatsAppGroupText": "Unirse al grupo de WhatsApp",
-        "tabGetSupport": "Obtener Ayuda"
+        "tabGetSupport": "Obtener Ayuda",
+        "titleAddScreenshots": "Arrastra y suelta aquí las capturas de pantalla que quieras compartir"
     },
     "confirmMorningRoutineTimeVcInfo": {
         "title": "Confirmar tu rutina matutina",
@@ -2402,7 +2409,8 @@
         "toolTipShowToDoPlayer": "Mostrar reproductor de tareas",
         "currentTaskText": "La tarea actual es \"<TASK>\"",
         "aiIsDisabledText": "La IA no está activada.",
-        "noCurrentTaskText": "Sin tarea actual"
+        "noCurrentTaskText": "Sin tarea actual",
+        "toolTipAlignmentScore": "Esto muestra el % del tiempo que has estado en sitios web/apps relevantes para tu objetivo de enfoque. Usamos IA para comprobar la relevancia."
     },
     "nudgeStartAnotherFocusSessionVcInfo":{
         "title": "¿Quieres comenzar otra sesión de enfoque?",
@@ -2524,12 +2532,15 @@
         "dayWed": "Wed",
         "dayTue": "Tue",
         "dayMon": "Mon",
-        "titleChooseFocusMode": "Elige un modo de enfoque para administrar tu lista de bloqueos",
         "alertEnterName": "Por favor, ingresa un nombre para tu horario personalizado antes de guardar.",
         "alertSelectDay": "Por favor, selecciona al menos un día para este horario.",
-        "alertSelectFocusMode": "Debe seleccionarse un modo de enfoque antes de guardar este horario.",
         "alertScheduleActive": "El horario está activo",
-        "descriptionScheduleActive": "Este horario se está ejecutando actualmente. ¿Seguro que quieres eliminarlo? El bloqueo se detendrá de inmediato."
+        "descriptionScheduleActive": "Este horario se está ejecutando actualmente. ¿Seguro que quieres eliminarlo? El bloqueo se detendrá de inmediato.",
+        "buttonAddNewBlock": "Agregar nuevo bloqueo"
+    },
+    "abortingCustomScheduleBlockingVcInfo":{
+        "titlePauseText": "Pausando horario personalizado - <SCHEDULE>",
+        "buttonAbortFocus": "Pausar horario personalizado"
     },
     "discordUrl": "https://discord.gg/VZdv3ZjhSq",
     "whatsAppUrl": "https://chat.whatsapp.com/FV0oTbCUWpILBYif7CP6UD",

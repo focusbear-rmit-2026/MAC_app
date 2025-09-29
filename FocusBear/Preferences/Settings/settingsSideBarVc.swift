@@ -267,7 +267,7 @@ class settingsSideBarVc: NSViewController {
 //                    return;
 //                }
                 leftMenuVcObj?.showFocusModeSettingsView()
-                focusPreferencesVcObj?.btnAdvancedClicked(self) //constraints bigad rhe h todo
+                focusPreferencesVcObj?.btnAdvancedClicked(self)
             }
             
             for i in 0..<self.arrSettingsList.count{

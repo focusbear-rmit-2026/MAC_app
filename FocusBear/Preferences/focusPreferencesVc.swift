@@ -10,6 +10,9 @@ import Cocoa
 
 class focusPreferencesVc: NSViewController, NSMenuDelegate {
 
+    @IBOutlet weak var scrollView: NSScrollView!
+    @IBOutlet weak var btnBackToCustomBlockingSmall: cursorButton!
+    @IBOutlet weak var btnHelp: hoverInfoButton!
     @IBOutlet weak var btnBackToCustomBlocking: NSButton!
     @IBOutlet weak var btnInfoBlockedUrls: hoverInfoButton!
     @IBOutlet weak var heightTblViewApps: NSLayoutConstraint!
@@ -67,7 +70,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         super.viewDidLoad()
         // Do view setup here
         addLog(text: "focusPreferencesVc viewdidload start")
-        btnBackToCustomBlocking.title = "Back to custom blocking" // todo text
+        btnBackToCustomBlocking.title = "Back to custom blocking"
         lblTitleBlockApp.stringValue = "Which apps do you want to block?"
         var toolTipAdd = "Add"
 
@@ -109,6 +112,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
             allowUrlsQuestionText = focusPreferencesInfo.value(forKey: "allowUrlsQuestionText") as? String ?? allowUrlsQuestionText
             blockUrlsQuestionText = focusPreferencesInfo.value(forKey: "blockUrlsQuestionText") as? String ?? blockUrlsQuestionText
             lblTitleBlockApp.stringValue = focusPreferencesInfo.value(forKey: "titleBlockedApps") as? String ?? lblTitleBlockApp.stringValue
+            btnBackToCustomBlocking.title = focusPreferencesInfo.value(forKey: "buttonBackToCustomBlocking") as? String ?? btnBackToCustomBlocking.stringValue
         }
         lblTitleFocusType.stringValue = titleFocusType
         radioBtnAllowAllApps.title = titleAllowedAllApps
@@ -371,6 +375,34 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
             })
             
         }
+        
+        
+        if leftMenuVcObj?.boxBlocks.isSelected ?? false{
+            btnAddFocusType.title = "Add Block List"
+            lblTitleFocusType.stringValue = "Use Block Lists to stay focused on a certain type of work."
+            
+            if let focusPreferencesInfo = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
+                btnAddFocusType.title = focusPreferencesInfo.value(forKey: "buttonAddBlockListText") as? String ?? btnAddFocusType.title
+                lblTitleFocusType.stringValue = focusPreferencesInfo.value(forKey: "titleBlockList") as? String ?? lblTitleFocusType.stringValue
+            }
+            btnHelp.isHidden = true
+            btnBackToCustomBlockingSmall.isHidden = false
+        }else{
+            btnAddFocusType.title = "Add Focus Mode"
+            lblTitleFocusType.stringValue = "Use Focus Modes to stay focused on a certain type of work. Start a focus mode from the Focus Bear menu."
+            
+            if let focusPreferencesInfo = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
+                btnAddFocusType.title = focusPreferencesInfo.value(forKey: "buttonAddFocusTypeText") as? String ?? btnAddFocusType.title
+                lblTitleFocusType.stringValue = focusPreferencesInfo.value(forKey: "titleFocusType") as? String ?? lblTitleFocusType.stringValue
+            }
+            btnHelp.isHidden = false
+            btnBackToCustomBlockingSmall.isHidden = true
+        }
+        scrollView.scrollToTop()
+    }
+    
+    override func viewDidAppear() {
+        scrollView.scrollToTop()
     }
     
     override func viewWillDisappear() {
@@ -1251,6 +1283,14 @@ extension focusPreferencesVc: NSTableViewDelegate, NSTableViewDataSource{
                     lblUrlsQuestion.stringValue = focusPreferencesInfo.value(forKey: "descriptionAlwaysBlockedUrls") as? String ?? lblUrlsQuestion.stringValue
                     lblDescriptionAlwaysBlockedUrls.stringValue = focusPreferencesInfo.value(forKey: "titleBlockedUrls") as? String ?? lblDescriptionAlwaysBlockedUrls.stringValue
                 }
+                
+                if leftMenuVcObj?.boxBlocks.isSelected ?? false{
+                    lblUrlsQuestion.stringValue = "When you use this block list, all websites will be allowed except for your Always Blocked URLs"
+                    if let focusPreferencesInfo = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
+                        lblUrlsQuestion.stringValue = focusPreferencesInfo.value(forKey: "descriptionForCustomBlocking") as? String ?? lblUrlsQuestion.stringValue
+                    }
+                }
+                
                 
                 tblViewAllowedUrls.reloadData()
                 

@@ -313,6 +313,7 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
         isAnyCustomScheduleOn = false
         isAnyCustomSchedulePaused = false
         customBlockingDeactivated()
+        allApiObject.capturePosthog(event: "finish-blocking-schedule", metadata: [:])//2.27.421
     }
     
     func customBlockingSchedulePaused(){
@@ -326,9 +327,11 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
         isAnyCustomScheduleOn = false
         isAnyCustomSchedulePaused = true
         customBlockingDeactivated()
+        allApiObject.capturePosthog(event: "pause-blocking-schedule", metadata: [:])//2.27.421
     }
     
     func customBlockingDeactivated(){
+        addLog(text: "Custom blocking schedule deactivated.")//2.27.421
         setAppIconForFocusModeScore(probability: nil)
         isSkipBreakActivityDuringFocus = false
         lastFocusModeTempInfo = nil
@@ -423,6 +426,7 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
         }
         showCustomBlockingScheduleStartPopUp(scheduleName: arrBlockingSchedule[index].name, scheduleTime: "\(arrBlockingSchedule[index].startTime.formattedTime()) to \(arrBlockingSchedule[index].endTime.formattedTime())")
         leftMenuVcObj?.focusModeOrFocusModeHabitStarted()
+        allApiObject.capturePosthog(event: "start-blocking-schedule", metadata: [:])//2.27.421
     }
     
     func saveCustomBlockingScheduleData(){
@@ -466,12 +470,14 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
     
     
     func deleteScheduleAt(_ index:Int){
+        allApiObject.capturePosthog(event: "delete-blocking-schedule", metadata: [:])//2.27.421
         if arrBlockingSchedule[index].state == .on{
             customBlockingScheduleFinished()
         }
         
         if arrBlockingSchedule[index].state == .pause{
             isAnyCustomSchedulePaused = false
+            menuViewControllerObj?.reloadIfNeeded()
         }
         arrBlockingSchedule.remove(at: index)
     }

@@ -669,15 +669,15 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
     }
     
     @IBAction func btnEndFocusSessionClicked(_ sender: Any) {
-        if currentFocusModeStrictness == ._SUPER_STRICT_{
-            addLog(text: "can't stop focus mode in super strict focus mode :- return")
-            var cantStopFocusModeText = "Super strict mode activated: You cannot stop this focus session until it ends."
-            if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
-                cantStopFocusModeText = menuInfo.value(forKey: "cantStopFocusModeText") as? String ?? cantStopFocusModeText
-            }
-            showTooltip(sender: btnEndFocusSession, msg: cantStopFocusModeText, preferredEdge: .minX, maxWidthVal: 250)
-            return;
-        }
+//        if currentFocusModeStrictness == ._SUPER_STRICT_{
+//            addLog(text: "can't stop focus mode in super strict focus mode :- return")
+//            var cantStopFocusModeText = "Super strict mode activated: You cannot stop this focus session until it ends."
+//            if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
+//                cantStopFocusModeText = menuInfo.value(forKey: "cantStopFocusModeText") as? String ?? cantStopFocusModeText
+//            }
+//            showTooltip(sender: btnEndFocusSession, msg: cantStopFocusModeText, preferredEdge: .minX, maxWidthVal: 250)
+//            return;
+//        }
         menuViewControllerObj?.stopFocusMode()
     }
     

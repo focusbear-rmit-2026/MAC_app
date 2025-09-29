@@ -21,7 +21,7 @@ class abortingCustomScheduleBlockingVc: NSViewController {
     var totalDuration = 10
     var timer:Timer?
     
-    var titlePauseText = "Pausing Custom schedule - <SCHEDULE>" // todo text
+    var titlePauseText = "Pausing Custom schedule - <SCHEDULE>"
     var reasonWorkCompletedText = ""
     var reasonEmergencyText = ""
     var reasonFocusModeNotWorkingText = ""
@@ -31,19 +31,22 @@ class abortingCustomScheduleBlockingVc: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
-        btnCancel.title = "Cancel"
-        btnAbortFocus.title = "Pause Custom Schedule" // todo text
+        btnCancel.title = buttonCancelText
+        btnAbortFocus.title = "Pause Custom Schedule"
         
         lblStrictModeActivated.stringValue = "Strict mode activated: you asked me to show a 15 second countdown timer before you can pause / deactivate"
         
         if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
             if let abortingFocusModeInfo = focusInfo.value(forKey: "abortingFocusModeInfo") as? NSDictionary{
-                
                 btnCancel.title = abortingFocusModeInfo.value(forKey: "buttonCancelText") as? String ?? btnCancel.title
                 lblStrictModeActivated.stringValue = abortingFocusModeInfo.value(forKey: "strictModeText") as? String ?? lblStrictModeActivated.stringValue
             }
         }
         
+        if let info = configjson.value(forKey: "abortingCustomScheduleBlockingVcInfo") as? NSDictionary{
+            btnAbortFocus.title = info.value(forKey: "buttonAbortFocus") as? String ?? btnAbortFocus.title
+            titlePauseText = info.value(forKey: "titlePauseText") as? String ?? titlePauseText
+        }
         btnCancel.buttonColor = NSColor.white.cgColor
     }
     

@@ -108,23 +108,17 @@ class addFocusTypeVc: NSViewController, NSTextFieldDelegate  {
         lblError.isHidden = true
         btnAdd.keyEquivalent = "\r"
         btnAdd.isEnabled = false
-        
-//        if isAdding{
-            textFieldFocusType.stringValue = ""
-            btnAdd.title = buttonAddText
-            lblViewTitle.stringValue = titleAddFocusType
-//        }
-        
-//        else{
-//            textFieldFocusType.stringValue = arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow]["name"] as? String ?? ""
-//            if let colorString = arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow]["color"] as? String{
-//                let color = HexToColor(hexString: colorString)
-//                colorWell.color = color
-//            }
-//            btnAdd.title = buttonSaveText
-//            lblViewTitle.stringValue = titleEditFocusType
-//
-//        }
+
+        textFieldFocusType.stringValue = ""
+        btnAdd.title = buttonAddText
+        lblViewTitle.stringValue = titleAddFocusType
+
+        if leftMenuVcObj?.boxBlocks.isSelected ?? false{
+            lblViewTitle.stringValue = "Add Block List"
+            if let focusPreferencesInfo = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
+                lblViewTitle.stringValue = focusPreferencesInfo.value(forKey: "buttonAddBlockListText") as? String ?? lblViewTitle.stringValue
+            }
+        }
     }
     
     var cp = NSColorPanel.shared

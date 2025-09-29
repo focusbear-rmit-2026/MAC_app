@@ -4172,17 +4172,17 @@
             <objects>
                 <viewController storyboardIdentifier="focusStartHelpImgVc" id="C3g-pz-u7k" customClass="focusStartHelpImgVc" customModule="Focus_Bear" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" id="BUz-tG-U9U">
-                        <rect key="frame" x="0.0" y="0.0" width="372" height="546"/>
+                        <rect key="frame" x="0.0" y="0.0" width="412" height="437"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
                             <box boxType="custom" borderWidth="0.0" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="cH7-fl-gDn">
-                                <rect key="frame" x="0.0" y="0.0" width="372" height="546"/>
+                                <rect key="frame" x="0.0" y="0.0" width="412" height="437"/>
                                 <view key="contentView" id="sQU-Fs-AmT">
-                                    <rect key="frame" x="0.0" y="0.0" width="372" height="546"/>
+                                    <rect key="frame" x="0.0" y="0.0" width="412" height="437"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
                                         <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="RoY-8N-bey">
-                                            <rect key="frame" x="0.0" y="0.0" width="372" height="546"/>
+                                            <rect key="frame" x="0.0" y="0.0" width="412" height="437"/>
                                             <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyDown" image="focusMode_help" id="YQY-uE-qlu"/>
                                         </imageView>
                                     </subviews>
@@ -4194,8 +4194,8 @@
                                     </constraints>
                                 </view>
                                 <constraints>
-                                    <constraint firstAttribute="width" constant="372" id="54j-2h-vcY"/>
-                                    <constraint firstAttribute="height" constant="546" id="66w-9c-kT4"/>
+                                    <constraint firstAttribute="width" constant="412" id="54j-2h-vcY"/>
+                                    <constraint firstAttribute="height" constant="437" id="66w-9c-kT4"/>
                                 </constraints>
                             </box>
                         </subviews>
@@ -12575,8 +12575,8 @@ DQ
                                                             <rect key="frame" x="79" y="2" width="354" height="28"/>
                                                             <datePickerCell key="cell" borderStyle="bezel" alignment="left" useCurrentDate="YES" id="IJY-cs-LOX">
                                                                 <font key="font" metaFont="system"/>
-                                                                <date key="date" timeIntervalSinceReferenceDate="780670609.27860296">
-                                                                    <!--2025-09-27 12:56:49 +0000-->
+                                                                <date key="date" timeIntervalSinceReferenceDate="780830459.03731406">
+                                                                    <!--2025-09-29 09:20:59 +0000-->
                                                                 </date>
                                                                 <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
                                                                 <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -13522,7 +13522,7 @@ DQ
         <image name="close" width="25" height="25"/>
         <image name="cross" width="12" height="12"/>
         <image name="doc.on.clipboard" catalog="system" width="17" height="18"/>
-        <image name="focusMode_help" width="372" height="546"/>
+        <image name="focusMode_help" width="412" height="437"/>
         <image name="hand.thumbsdown.fill" catalog="system" width="15" height="15"/>
         <image name="lateNoMore" width="150" height="150"/>
         <image name="logo white" width="240" height="40"/>
