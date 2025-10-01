@@ -355,7 +355,7 @@ class AllApi:NSObject {
     
     func capturePosthog(event:String, metadata:[String:Any]){
         if currentUserEmail.lowercased().contains("internaltest") || isTestUser{
-            return;  
+            return;
         }
         captureEventEndpoint(event: event, metadata: metadata)
         
@@ -669,6 +669,11 @@ class AllApi:NSObject {
     var isApiPostTermsServiceErrorFound = false
     var isApigetuserLongTermGoalsErrorFound = false
     var isApiGetFocusModeTagsErrorFound = false
+    var isApiGetAllTasksErrorFound = false
+    var isApiGetAllBlockingSchedulesErrorFound = false
+    var isApiAddBlockingScheduleErrorFound = false
+    var isApiUpdateBlockingScheduleErrorFound = false
+    var isApiDeleteBlockingScheduleErrorFound = false
     
     var isApiUploadLogsErrorFound = false
     var isApiPostSavedWebsiteErrorFound = false
@@ -1311,7 +1316,8 @@ class AllApi:NSObject {
     var completedChoiceLogId:String?
     //    var isAnyErrorFoundInActivityCompletedApi = false
     func activityCompletedApi(activity_id:String, activity_sequence_id:String, start_time:Date, quantity_logged:Double?, duration_logged:Int, choice_id:String?, is_skipped:Bool, notes:String, should_not_update_current_activity:Bool, log_quantity_answers:[[String:Any]], completionHandler: @escaping(_ result: NSDictionary?) -> ()){
-        
+        completionHandler(nil)// todo remove this line
+        return;// todo remove this line
         if activity_id.isEmpty && activity_sequence_id.isEmpty{// custom special activity which is not in morning , evening or breaks
             completionHandler(nil);
             return;
@@ -2062,7 +2068,7 @@ class AllApi:NSObject {
                                             addLog(text: "api call getActivityStats success")
                                             graphOneMonthData = jsonResult//.mutableCopy() as? NSMutableDictionary
                                             
-//                                            addGraphsLog(text: "Monthly Stats:-\(jsonResult)")
+                                            //                                            addGraphsLog(text: "Monthly Stats:-\(jsonResult)")
                                             completionHandler(jsonResult)
                                             return
                                         }
@@ -2178,7 +2184,7 @@ class AllApi:NSObject {
                                             print(jsonResult)
                                             addLog(text: "api call getACtivityCurrentDayStats success")
                                             graphOneDayData = jsonResult//
-//                                            addGraphsLog(text: "Current Day Stats:-\(jsonResult)")
+                                            //                                            addGraphsLog(text: "Current Day Stats:-\(jsonResult)")
                                             completionHandler(jsonResult)
                                             return
                                         }
@@ -2293,7 +2299,7 @@ class AllApi:NSObject {
                                             print(jsonResult)
                                             addLog(text: "api call getACtivityCurrentDayStats success")
                                             graphOneDayDataForQuantity = jsonResult//
-//                                            addGraphsLog(text: "Current Day Stats:-\(jsonResult)")
+                                            //                                            addGraphsLog(text: "Current Day Stats:-\(jsonResult)")
                                             completionHandler(jsonResult)
                                             return
                                         }
@@ -3740,7 +3746,7 @@ class AllApi:NSObject {
                             if data != nil{
                                 do {
                                     if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
-
+                                        
                                         if httpResponse.statusCode == 201{
                                             addLog(text: "api call chatGPTIsURLSafe success")
                                             completionHandler(jsonResult, url, json)
@@ -3839,7 +3845,7 @@ class AllApi:NSObject {
                             if data != nil{
                                 do {
                                     if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
-
+                                        
                                         if httpResponse.statusCode == 201{
                                             addLog(text: "api call chatGPTIsURLSafeWithNewIntention success")
                                             completionHandler(jsonResult, url, json)
@@ -5114,7 +5120,7 @@ class AllApi:NSObject {
             zipFilePath = zipUrl.path
         }
         zipFilePath = zipFilePath.removingPercentEncoding ?? zipFilePath
-         
+        
         do {
             try createZipArchive(zipPath: zipFilePath, logFolder: DebugLogsFolderURL.path, screenshots: screenShots ?? [])
             print("Zip created at \(zipFilePath)")
@@ -5241,7 +5247,7 @@ class AllApi:NSObject {
                     
                     let request = makeRequest(responsePathUrl: responsePathUrl)
                     request.httpMethod = "POST";
-
+                    
                     let task = URLSession.shared.dataTask(with: request as URLRequest) {
                         data, response, error in
                         
@@ -5281,7 +5287,7 @@ class AllApi:NSObject {
             }
         }
     }
-
+    
     
     func resetPassword( completionHandler: @escaping(_ val:Bool, _ errorMessage:String?) -> ()){
         addLog(text: "func call:- resetPassword")
@@ -5387,7 +5393,7 @@ class AllApi:NSObject {
                         data, response, error in
                         
                         if let httpResponse = response as? HTTPURLResponse {
-                            self.isApiGetFocusModeTagsErrorFound = false
+                            self.isApiGetAllTasksErrorFound = false
                             if httpResponse.statusCode == 200{
                                 
                                 if data != nil{
@@ -5428,12 +5434,12 @@ class AllApi:NSObject {
                         if error != nil {
                             addLog(text: "error getAllTasks: \(error!.localizedDescription)")
                             if (error as? NSError)?.code == self.errorCodeRequestTimeout{
-                                if self.isApiGetFocusModeTagsErrorFound{
-                                    self.isApiGetFocusModeTagsErrorFound = false
+                                if self.isApiGetAllTasksErrorFound{
+                                    self.isApiGetAllTasksErrorFound = false
                                     completionHandler(nil)
                                     return
                                 }else{
-                                    self.isApiGetFocusModeTagsErrorFound = true
+                                    self.isApiGetAllTasksErrorFound = true
                                     addLog(text: "error getAllTasks:- try second time")
                                     self.getAllTasks(completionHandler: { json in
                                         completionHandler(json)
@@ -5459,6 +5465,305 @@ class AllApi:NSObject {
             }
         }
     }
+    
+    func getAllBlockingSchedules(completionHandler: @escaping(_ result: Data?) -> ()) {
+        addLog(text: "func call:- getAllBlockingSchedules")
+        
+        appdelegate!.credentialsManager.credentials {credentialsInfo in
+            addLog(text: "get updated credentialsInfo from credentialsManager")
+            
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+            if appdelegate!.credential != nil{
+                let responsePath = "\(baseUrl)/blocking-schedules"
+                if let responsePathUrl = NSURL(string: responsePath){
+                    addLog(text: "api call getAllBlockingSchedules \(responsePathUrl)")
+                    let token = appdelegate!.credential!.accessToken
+                    
+                    let request = makeRequest(responsePathUrl: responsePathUrl)
+                    request.httpMethod = "GET";
+                    
+                    let task = URLSession.shared.dataTask(with: request as URLRequest) {
+                        data, response, error in
+                        
+                        if let httpResponse = response as? HTTPURLResponse {
+                            self.isApiGetAllBlockingSchedulesErrorFound = false
+                            if httpResponse.statusCode == 200{
+                                
+                                if data != nil{
+                                    completionHandler(data!)
+                                    return
+                                }
+                                
+                                completionHandler(nil)
+                                return
+                            }else{
+                                addLog(text: "api call getAllBlockingSchedules Api error:- statusCode is \(httpResponse.statusCode)")
+                                self.writeJsonInLog(data: data)
+                                addLog(text: "accessToken is:- \(token)")
+                                completionHandler(nil)
+                                return
+                            }
+                        }
+                        if error != nil {
+                            addLog(text: "error getAllBlockingSchedules: \(error!.localizedDescription)")
+                            if (error as? NSError)?.code == self.errorCodeRequestTimeout{
+                                if self.isApiGetAllBlockingSchedulesErrorFound{
+                                    self.isApiGetAllBlockingSchedulesErrorFound = false
+                                    completionHandler(nil)
+                                    return
+                                }else{
+                                    self.isApiGetAllBlockingSchedulesErrorFound = true
+                                    addLog(text: "error getAllBlockingSchedules:- try second time")
+                                    self.getAllBlockingSchedules(completionHandler: { json in
+                                        completionHandler(json)
+                                        return
+                                    })
+                                }
+                            }else{
+                                completionHandler(nil)
+                                return
+                            }
+                            
+                        }else{
+                            completionHandler(nil)
+                            return
+                        }
+                    }
+                    task.resume()
+                }else{
+                    completionHandler(nil)
+                }
+            }else{
+                completionHandler(nil)
+            }
+        }
+    }
+    
+    
+    func addBlockingSchedule(jsonData:Data, completionHandler: @escaping(_ result: Bool) -> ()){
+        addLog(text: "func call:- addBlockingSchedule")
+        
+        appdelegate!.credentialsManager.credentials {credentialsInfo in
+            addLog(text: "get updated credentialsInfo from credentialsManager")
+            
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+            
+            if appdelegate!.credential != nil{
+                
+                let responsePath = "\(baseUrl)/blocking-schedules"
+                if let responsePathUrl = NSURL(string: responsePath){
+                    addLog(text: "api call addBlockingSchedule \(responsePathUrl)")
+                    let token = appdelegate!.credential!.accessToken
+                    
+                    let request = makeRequest(responsePathUrl: responsePathUrl)
+                    request.httpMethod = "POST";
+                    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                    request.httpBody = jsonData
+                    let task = URLSession.shared.dataTask(with: request as URLRequest) {
+                        data, response, error in
+                        
+                        if let httpResponse = response as? HTTPURLResponse{
+                            self.isApiAddBlockingScheduleErrorFound = false
+                            if httpResponse.statusCode == 201{ //it means it is right
+                                
+                                completionHandler(true)
+                                return;
+                            }else{
+                                addLog(text: "api call addBlockingSchedule error:- statusCode is \(httpResponse.statusCode)")
+                                self.writeJsonInLog(data: data)
+                                addLog(text: "accessToken is:- \(token)")
+                                completionHandler(false)
+                                return;
+                            }
+                        }
+                        
+                        
+                        if error != nil {
+                            addLog(text: "api call addBlockingSchedule error:- \(error!.localizedDescription)")
+                            if (error as? NSError)?.code == self.errorCodeRequestTimeout{
+                                if self.isApiAddBlockingScheduleErrorFound{
+                                    self.isApiAddBlockingScheduleErrorFound = false
+                                    completionHandler(false)
+                                    return;
+                                }else{
+                                    self.isApiAddBlockingScheduleErrorFound = true
+                                    addLog(text: "error addBlockingSchedule:- try second time")
+                                    self.addBlockingSchedule(jsonData: jsonData, completionHandler: { bool in
+                                        completionHandler(bool)
+                                        return;
+                                    })
+                                }
+                            }else{
+                                completionHandler(false)
+                                return;
+                            }
+                            
+                        }else{
+                            completionHandler(false)
+                            return;
+                        }
+                        
+                    }
+                    
+                    task.resume()
+                }else{
+                    completionHandler(false)
+                }
+            }else{
+                completionHandler(false)
+            }
+        }
+    }
+    
+    
+    func updateBlockingSchedule(id: String, jsonData:Data, completionHandler: @escaping(_ result: Bool) -> ()){
+        addLog(text: "func call:- updateBlockingSchedule")
+        
+        appdelegate!.credentialsManager.credentials {credentialsInfo in
+            addLog(text: "get updated credentialsInfo from credentialsManager")
+            
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+            
+            if appdelegate!.credential != nil{
+                
+                let responsePath = "\(baseUrl)/blocking-schedules/\(id)"
+                if let responsePathUrl = NSURL(string: responsePath){
+                    addLog(text: "api call updateBlockingSchedule \(responsePathUrl)")
+                    let token = appdelegate!.credential!.accessToken
+                    
+                    let request = makeRequest(responsePathUrl: responsePathUrl)
+                    request.httpMethod = "PUT";
+                    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                    request.httpBody = jsonData
+                    let task = URLSession.shared.dataTask(with: request as URLRequest) {
+                        data, response, error in
+                        
+                        if let httpResponse = response as? HTTPURLResponse{
+                            self.isApiUpdateBlockingScheduleErrorFound = false
+                            if httpResponse.statusCode == 200{
+                                
+                                completionHandler(true)
+                                return;
+                            }else{
+                                addLog(text: "api call updateBlockingSchedule error:- statusCode is \(httpResponse.statusCode)")
+                                self.writeJsonInLog(data: data)
+                                addLog(text: "accessToken is:- \(token)")
+                                completionHandler(false)
+                                return;
+                            }
+                        }
+                        
+                        
+                        if error != nil {
+                            addLog(text: "api call updateBlockingSchedule error:- \(error!.localizedDescription)")
+                            if (error as? NSError)?.code == self.errorCodeRequestTimeout{
+                                if self.isApiUpdateBlockingScheduleErrorFound{
+                                    self.isApiUpdateBlockingScheduleErrorFound = false
+                                    completionHandler(false)
+                                    return;
+                                }else{
+                                    self.isApiUpdateBlockingScheduleErrorFound = true
+                                    addLog(text: "error updateBlockingSchedule:- try second time")
+                                    self.updateBlockingSchedule(id: id, jsonData: jsonData, completionHandler: { bool in
+                                        completionHandler(bool)
+                                        return;
+                                    })
+                                }
+                            }else{
+                                completionHandler(false)
+                                return;
+                            }
+                            
+                        }else{
+                            completionHandler(false)
+                            return;
+                        }
+                        
+                    }
+                    
+                    task.resume()
+                }else{
+                    completionHandler(false)
+                }
+            }else{
+                completionHandler(false)
+            }
+        }
+    }
+    
+    func deleteBlockingSchedule(id: String, completionHandler: @escaping(_ result: Bool) -> ()){
+        addLog(text: "func call:- deleteBlockingSchedule")
+        
+        appdelegate!.credentialsManager.credentials {credentialsInfo in
+            addLog(text: "get updated credentialsInfo from credentialsManager")
+            
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+            
+            if appdelegate!.credential != nil{
+                
+                let responsePath = "\(baseUrl)/blocking-schedules/\(id)"
+                if let responsePathUrl = NSURL(string: responsePath){
+                    addLog(text: "api call deleteBlockingSchedule \(responsePathUrl)")
+                    let token = appdelegate!.credential!.accessToken
+                    
+                    let request = makeRequest(responsePathUrl: responsePathUrl)
+                    request.httpMethod = "DELETE";
+                    
+                    let task = URLSession.shared.dataTask(with: request as URLRequest) {
+                        data, response, error in
+                        
+                        if let httpResponse = response as? HTTPURLResponse{
+                            self.isApiDeleteBlockingScheduleErrorFound = false
+                            if httpResponse.statusCode == 204{
+                                completionHandler(true)
+                                return;
+                            }else{
+                                addLog(text: "api call deleteBlockingSchedule error:- statusCode is \(httpResponse.statusCode)")
+                                self.writeJsonInLog(data: data)
+                                addLog(text: "accessToken is:- \(token)")
+                                completionHandler(false)
+                                return;
+                            }
+                        }
+                        
+                        
+                        if error != nil {
+                            addLog(text: "api call deleteBlockingSchedule error:- \(error!.localizedDescription)")
+                            if (error as? NSError)?.code == self.errorCodeRequestTimeout{
+                                if self.isApiDeleteBlockingScheduleErrorFound{
+                                    self.isApiDeleteBlockingScheduleErrorFound = false
+                                    completionHandler(false)
+                                    return;
+                                }else{
+                                    self.isApiDeleteBlockingScheduleErrorFound = true
+                                    addLog(text: "error deleteBlockingSchedule:- try second time")
+                                    self.deleteBlockingSchedule(id: id, completionHandler: { bool in
+                                        completionHandler(bool)
+                                        return;
+                                    })
+                                }
+                            }else{
+                                completionHandler(false)
+                                return;
+                            }
+                            
+                        }else{
+                            completionHandler(false)
+                            return;
+                        }
+                        
+                    }
+                    
+                    task.resume()
+                }else{
+                    completionHandler(false)
+                }
+            }else{
+                completionHandler(false)
+            }
+        }
+    }
+    
 }
 
 func generateBoundaryString() -> String{

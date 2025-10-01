@@ -95,57 +95,108 @@ struct customBlockingSchedule: Codable, Identifiable {
     
     enum CodingKeys: String, CodingKey {
         case id = "id"
-        case name = "Name"
-        case startTime = "Start_time"
-        case endTime = "End_time"
-        case daysOfWeek = "Days_of_week"
+        case name = "name"
+        case startTime = "start_time"
+        case endTime = "end_time"
+        case daysOfWeek = "days_of_week"
         case focusModeID = "focus_mode_id"
         case pauseFriction = "Pause_friction"
-        case blockLevel = "Block_level"
-        case isAIBlockingEnabled = "Is_ai_blocking_enabled"
-        case isMicroBreaksEnabled = "Is_micro_breaks_enabled"
+        case blockLevel = "block_level"
+        case isAIBlockingEnabled = "is_ai_blocking_enabled"
+        case isMicroBreaksEnabled = "is_micro_breaks_enabled"
     }
     // Custom decoding/encoding for time strings
         init(from decoder: Decoder) throws {
             let container = try decoder.container(keyedBy: CodingKeys.self)
-            id = try container.decode(String.self, forKey: .id)
-            name = try container.decode(String.self, forKey: .name)
-            daysOfWeek = try container.decode([Int].self, forKey: .daysOfWeek)
-            focusModeID = try container.decode(String.self, forKey: .focusModeID)
-//            pauseFriction = try container.decode(PauseFriction.self, forKey: .pauseFriction)
-            blockLevel = try container.decode(FOCUSMODESTRICTNESS.self, forKey: .blockLevel)
-            isAIBlockingEnabled = try container.decode(Bool.self, forKey: .isAIBlockingEnabled)
-            isMicroBreaksEnabled = try container.decode(Bool.self, forKey: .isMicroBreaksEnabled)
+            id = try container.decodeIfPresent(String.self, forKey: .id) ?? UUID().uuidString
+            name = try container.decodeIfPresent(String.self, forKey: .name) ?? "Untitled"
+            let days = try container.decodeIfPresent([Int].self, forKey: .daysOfWeek) ?? [1,2,3,4,5,6,7]
+            daysOfWeek = []
+            for day in days{
+                daysOfWeek.append(day + 1)
+            }
             
-            startTimeString = try container.decode(String.self, forKey: .startTime)
-            endTimeString = try container.decode(String.self, forKey: .endTime)
-            startTime = customBlockingSchedule.timeFormatter.date(from: startTimeString)!
-            endTime = customBlockingSchedule.timeFormatter.date(from: endTimeString)!
+            
+            focusModeID = try container.decodeIfPresent(String.self, forKey: .focusModeID) ?? ""
+
+            let blockLevelString = try container.decodeIfPresent(String.self, forKey: .blockLevel) ?? "gentle"
+            switch blockLevelString {
+            case "strict":        blockLevel = ._STRICT_
+            case "super-strict":  blockLevel = ._SUPER_STRICT_
+            case "gentle":        blockLevel = ._NORMAL_
+            default:              blockLevel = ._NORMAL_
+            }
+
+            isAIBlockingEnabled = try container.decodeIfPresent(Bool.self, forKey: .isAIBlockingEnabled) ?? false
+            isMicroBreaksEnabled = try container.decodeIfPresent(Bool.self, forKey: .isMicroBreaksEnabled) ?? false// todo not getting this
+
+            startTimeString = try container.decodeIfPresent(String.self, forKey: .startTime) ?? "09:00"
+            endTimeString = try container.decodeIfPresent(String.self, forKey: .endTime) ?? "18:00"
+               
+            //let start = customBlockingSchedule.parseTime(startTimeString) ?? Date()
+            startTime = customBlockingSchedule.dateForToday(from: startTimeString) ?? Date()
+            endTime = customBlockingSchedule.dateForToday(from: endTimeString) ?? Date()// todo in dayChangedOperations also 
         }
         
-        func encode(to encoder: Encoder) throws {
-            var container = encoder.container(keyedBy: CodingKeys.self)
-            try container.encode(id, forKey: .id)
-            try container.encode(name, forKey: .name)
-            try container.encode(daysOfWeek, forKey: .daysOfWeek)
-            try container.encodeIfPresent(focusModeID, forKey: .focusModeID)
-//            try container.encode(pauseFriction, forKey: .pauseFriction)
-            try container.encode(blockLevel, forKey: .blockLevel)
-            try container.encode(isAIBlockingEnabled, forKey: .isAIBlockingEnabled)
-            
-            try container.encode(startTimeString, forKey: .startTime)
-            try container.encode(endTimeString, forKey: .endTime)
-//            try container.encode(customBlockingSchedule.timeFormatter.string(from: startTime), forKey: .startTime)
-//            try container.encode(customBlockingSchedule.timeFormatter.string(from: endTime), forKey: .endTime)
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(name, forKey: .name)
+        
+        // Shift back daysOfWeek to original form (since you added +1 while decoding)
+        let encodedDays = daysOfWeek.map { $0 - 1 }
+        try container.encode(encodedDays, forKey: .daysOfWeek)
+        
+        try container.encode(focusModeID, forKey: .focusModeID)
+        
+        
+        // Block level → back to string
+        let blockLevelString: String
+        switch blockLevel {
+        case ._STRICT_:        blockLevelString = "strict"
+        case ._SUPER_STRICT_:  blockLevelString = "super-strict"
+        case ._NORMAL_:        blockLevelString = "gentle"
         }
+        try container.encode(blockLevelString, forKey: .blockLevel)
+        
+        try container.encode(isAIBlockingEnabled, forKey: .isAIBlockingEnabled)
+        try container.encode(isMicroBreaksEnabled, forKey: .isMicroBreaksEnabled)
+        
+        try container.encode(startTimeString, forKey: .startTime)
+        try container.encode(endTimeString, forKey: .endTime)
+    }
     
     // Shared formatter for "HH:mm"
-        static let timeFormatter: DateFormatter = {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "HH:mm"
-            formatter.locale = Locale(identifier: "en_US_POSIX")
-            return formatter
-        }()
+    static let timeFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm:ss"
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        return formatter
+    }()
+//    
+//    static let timeFormatter: DateFormatter = {
+//        let formatter = DateFormatter()
+//        formatter.locale = Locale(identifier: "en_US_POSIX")
+//        return formatter
+//    }()
+
+//    static let timeFormatter: DateFormatter = {
+//        let formatter = DateFormatter()
+//        formatter.locale = Locale(identifier: "en_US_POSIX")
+//        return formatter
+//    }()
+
+    
+    static func parseTime(_ str: String) -> Date? {
+        let formats = ["HH:mm:ss", "HH:mm"]
+        for format in formats {
+            timeFormatter.dateFormat = format
+            if let date = timeFormatter.date(from: str) {
+                return date
+            }
+        }
+        return nil
+    }
     
     static func dateForToday(from timeString: String) -> Date? {
         guard let time = timeFormatter.date(from: timeString) else { return nil }
@@ -163,6 +214,7 @@ struct customBlockingSchedule: Codable, Identifiable {
 
 extension customBlockingSchedule {
     init(
+        id:String,
         name: String,
         start: String,
         end: String,
@@ -173,7 +225,7 @@ extension customBlockingSchedule {
         isAIBlockingEnabled: Bool,
         isMicroBreaksEnabled:Bool
     ) {
-        self.id = UUID().uuidString
+        self.id = id
         self.name = name
         self.startTimeString = start
         self.endTimeString = end
@@ -271,8 +323,8 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
     @objc func dayChangedOperations(_ aNotification: Notification) {
         addLog(text: "func call:- dayChangedOperations")
         for i in 0..<arrBlockingSchedule.count {
-            arrBlockingSchedule[i].startTime = customBlockingSchedule.timeFormatter.date(from: arrBlockingSchedule[i].startTimeString)!
-            arrBlockingSchedule[i].endTime = customBlockingSchedule.timeFormatter.date(from: arrBlockingSchedule[i].endTimeString)!
+            arrBlockingSchedule[i].startTime = customBlockingSchedule.dateForToday(from: arrBlockingSchedule[i].startTimeString)!
+            arrBlockingSchedule[i].endTime = customBlockingSchedule.dateForToday(from: arrBlockingSchedule[i].endTimeString)!
         }
     }
 
@@ -432,14 +484,37 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
     func saveCustomBlockingScheduleData(){
         let encoder = JSONEncoder()
         encoder.outputFormatting = .prettyPrinted
-        guard let jsonData = try? encoder.encode(arrBlockingSchedule) else { return }
+        guard let jsonData = try? encoder.encode(arrBlockingSchedule.first!) else { return }
 
         if let jsonString = String(data: jsonData, encoding: .utf8) {
             print(jsonString)
         }
     }
 
+    func addCustomBlockingScheduleAtIndex(_ index: Int){
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .prettyPrinted
+        guard let jsonData = try? encoder.encode(arrBlockingSchedule[index]) else { return }
+        allApiObject.addBlockingSchedule(jsonData: jsonData, completionHandler: {bool in
+            
+        })
+    }
 
+    func updateCustomBlockingScheduleAtIndex(_ index: Int){
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .prettyPrinted
+        guard let jsonData = try? encoder.encode(arrBlockingSchedule[index]) else { return }
+
+        if let jsonString = String(data: jsonData, encoding: .utf8) {
+            print(jsonString)
+        }
+        allApiObject.updateBlockingSchedule(id: arrBlockingSchedule[index].id, jsonData: jsonData, completionHandler: {bool in
+            
+        })
+    }
+    
+    
+    
     func readCustomBlockingScheduleData(jsonData:Data){
         let decoder = JSONDecoder()
         if let schedule = try? decoder.decode([customBlockingSchedule].self, from: jsonData){
@@ -479,6 +554,9 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
             isAnyCustomSchedulePaused = false
             menuViewControllerObj?.reloadIfNeeded()
         }
+        allApiObject.deleteBlockingSchedule(id: arrBlockingSchedule[index].id, completionHandler: {bool in
+            
+        })
         arrBlockingSchedule.remove(at: index)
     }
     

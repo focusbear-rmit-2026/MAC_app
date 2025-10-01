@@ -239,11 +239,6 @@ func calculateFocusAlignmentScore(){
     currentFocusAlignmentScore = totalAlignmentScore
     lastFocusAlignmentScore = totalAlignmentScore
     
-//    if taskPlayerWcObj != nil{
-//        if taskPlayerWcObj?.window?.isVisible ?? false{
-//            taskPlayerVcObj?.setFocusAlignmentScore()
-//        }
-//    }
     taskPlayerVcObj?.setFocusAlignmentScore()
     if SettingsManagerObject.isFocusVisualIndicatorEnabled{
         if nudgeFocusAlignmentScoreDippingWcObject != nil{

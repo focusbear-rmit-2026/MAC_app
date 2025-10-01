@@ -2469,16 +2469,20 @@ class thirdVc: NSViewController {
         if index < arrFilteredEveningHabits.count-1 {
             if isHighPrioritySequenceGoing{
                 var newIndexFound = false
-                while !newIndexFound{
+                while !newIndexFound && newHabitIndex < arrFilteredEveningHabits.count {
                     if let cutOffTime = arrFilteredEveningHabits[newHabitIndex].cutOffTime{
-                        let cutOffDate = Calendar.current.date(bySettingHour: cutOffTime.hour, minute: cutOffTime.minute, second: cutOffTime.second, of: Date())!
-                        let currentDate = Date()
-                        if currentDate < cutOffDate && arrFilteredEveningHabits[newHabitIndex].isPriorityHigh{
-                            newIndexFound = true
+                        if let cutOffDate = Calendar.current.date(bySettingHour: cutOffTime.hour, minute: cutOffTime.minute, second: cutOffTime.second, of: Date()){
+                            let currentDate = Date()
+                            if currentDate < cutOffDate && arrFilteredEveningHabits[newHabitIndex].isPriorityHigh{
+                                newIndexFound = true
+                            }else{
+                                addLog(text: "func eveningHabitFinished")// remove this
+                                addLog(text: "evening habit skipped:- this habit is high priority habit but cutoff time of this habit has passed:- \(arrFilteredEveningHabits[newHabitIndex].name)  \(arrFilteredEveningHabits[newHabitIndex].id)") // remove this
+                                newHabitIndex += 1
+                            }
                         }else{
-                            addLog(text: "func eveningHabitFinished")// remove this
-                            addLog(text: "evening habit skipped:- this habit is high priority habit but cutoff time of this habit has passed:- \(arrFilteredEveningHabits[newHabitIndex].name)  \(arrFilteredEveningHabits[newHabitIndex].id)") // remove this
-                            newHabitIndex = newHabitIndex + 1
+                            // invalid cutoff date, skip
+                            newHabitIndex += 1
                         }
                     }else{
                         if arrFilteredEveningHabits[newHabitIndex].isPriorityHigh{
@@ -2486,7 +2490,7 @@ class thirdVc: NSViewController {
                         }else{
                             addLog(text: "func eveningHabitFinished")// remove this
                             addLog(text: "evening habit skipped:- this habit is not High Priority habit and it has no cutoff time:- \(arrFilteredEveningHabits[newHabitIndex].name)  \(arrFilteredEveningHabits[newHabitIndex].id)") // remove this
-                            newHabitIndex = newHabitIndex + 1
+                            newHabitIndex += 1
                         }
                         
                     }
@@ -2691,16 +2695,20 @@ class thirdVc: NSViewController {
         if lastHabitIndex < arrFilteredEveningHabits.count-1 {
             if isHighPrioritySequenceGoing{
                 var newIndexFound = false
-                while !newIndexFound{
+                while !newIndexFound && newHabitIndex < arrFilteredEveningHabits.count {
                     if let cutOffTime = arrFilteredEveningHabits[newHabitIndex].cutOffTime{
-                        let cutOffDate = Calendar.current.date(bySettingHour: cutOffTime.hour, minute: cutOffTime.minute, second: cutOffTime.second, of: Date())!
-                        let currentDate = Date()
-                        if currentDate < cutOffDate && arrFilteredEveningHabits[newHabitIndex].isPriorityHigh{
-                            newIndexFound = true
+                        if let cutOffDate = Calendar.current.date(bySettingHour: cutOffTime.hour, minute: cutOffTime.minute, second: cutOffTime.second, of: Date()){
+                            let currentDate = Date()
+                            if currentDate < cutOffDate && arrFilteredEveningHabits[newHabitIndex].isPriorityHigh{
+                                newIndexFound = true
+                            }else{
+                                addLog(text: "func eveningHabitSkippedAndDoneAlready")// remove this
+                                addLog(text: "evening habit skipped:- this habit is high priority habit but cutoff time of this habit has passed:- \(arrFilteredEveningHabits[newHabitIndex].name)  \(arrFilteredEveningHabits[newHabitIndex].id)") // remove this
+                                newHabitIndex += 1
+                            }
                         }else{
-                            addLog(text: "func eveningHabitSkippedAndDoneAlready")// remove this
-                            addLog(text: "evening habit skipped:- this habit is high priority habit but cutoff time of this habit has passed:- \(arrFilteredEveningHabits[newHabitIndex].name)  \(arrFilteredEveningHabits[newHabitIndex].id)") // remove this
-                            newHabitIndex = newHabitIndex + 1
+                            // invalid cutoff date, skip
+                            newHabitIndex += 1
                         }
                     }else{
                         if arrFilteredEveningHabits[newHabitIndex].isPriorityHigh{
@@ -2708,7 +2716,7 @@ class thirdVc: NSViewController {
                         }else{
                             addLog(text: "func eveningHabitSkippedAndDoneAlready")// remove this
                             addLog(text: "evening habit skipped:- this habit is not High Priority habit and it has no cutoff time:- \(arrFilteredEveningHabits[newHabitIndex].name)  \(arrFilteredEveningHabits[newHabitIndex].id)") // remove this
-                            newHabitIndex = newHabitIndex + 1
+                            newHabitIndex += 1
                         }
                         
                     }
@@ -2854,16 +2862,20 @@ class thirdVc: NSViewController {
             if isHighPrioritySequenceGoing{
 
                 var newIndexFound = false
-                while !newIndexFound{
+                while !newIndexFound && newHabitIndex < arrFilteredEveningHabits.count {
                     if let cutOffTime = arrFilteredEveningHabits[newHabitIndex].cutOffTime{
-                        let cutOffDate = Calendar.current.date(bySettingHour: cutOffTime.hour, minute: cutOffTime.minute, second: cutOffTime.second, of: Date())!
-                        let currentDate = Date()
-                        if currentDate < cutOffDate && arrFilteredEveningHabits[newHabitIndex].isPriorityHigh{
-                            newIndexFound = true
+                        if let cutOffDate = Calendar.current.date(bySettingHour: cutOffTime.hour, minute: cutOffTime.minute, second: cutOffTime.second, of: Date()){
+                            let currentDate = Date()
+                            if currentDate < cutOffDate && arrFilteredEveningHabits[newHabitIndex].isPriorityHigh{
+                                newIndexFound = true
+                            }else{
+                                addLog(text: "func eveningHabitFinishedAndStartIncompleteNew")// remove this
+                                addLog(text: "evening habit skipped:- this habit is high priority habit but cutoff time of this habit has passed:- \(arrFilteredEveningHabits[newHabitIndex].name)  \(arrFilteredEveningHabits[newHabitIndex].id)") // remove this
+                                newHabitIndex += 1
+                            }
                         }else{
-                            addLog(text: "func eveningHabitFinishedAndStartIncompleteNew")// remove this
-                            addLog(text: "evening habit skipped:- this habit is high priority habit but cutoff time of this habit has passed:- \(arrFilteredEveningHabits[newHabitIndex].name)  \(arrFilteredEveningHabits[newHabitIndex].id)") // remove this
-                            newHabitIndex = newHabitIndex + 1
+                            // invalid cutoff date, skip
+                            newHabitIndex += 1
                         }
                     }else{
                         if arrFilteredEveningHabits[newHabitIndex].isPriorityHigh{
@@ -2871,7 +2883,7 @@ class thirdVc: NSViewController {
                         }else{
                             addLog(text: "func eveningHabitFinishedAndStartIncompleteNew")// remove this
                             addLog(text: "evening habit skipped:- this habit is not High Priority habit and it has no cutoff time:- \(arrFilteredEveningHabits[newHabitIndex].name)  \(arrFilteredEveningHabits[newHabitIndex].id)") // remove this
-                            newHabitIndex = newHabitIndex + 1
+                            newHabitIndex += 1
                         }
                         
                     }
@@ -2954,18 +2966,8 @@ class thirdVc: NSViewController {
         appdelegate?.timerAllowUrlForActivity?.invalidate()
         appdelegate?.timerAllowAppForActivity?.invalidate()
         closePupUpBlockIfVisible()
-//        if toolBoxWcObj != nil{
-//            if toolBoxWcObj!.window!.isVisible{
-//                toolBoxWcObj?.window?.close()
-//            }
-//        }
-//        if taskPlayerWcObj != nil{
-//            if taskPlayerWcObj?.window?.isVisible ?? false{
-//                taskPlayerVcObj?.getToDosFromPlayer()
-//                taskPlayerWcObj?.window?.close()
-//                allApiObject.capturePosthog(event: "todo-player-popup-closed", metadata: [:])
-//            }
-//        }
+
+        
         taskPlayerVcObj?.getToDosFromPlayer()
         
         refreshFocusModeData()
@@ -3016,20 +3018,24 @@ class thirdVc: NSViewController {
         
         isSequenceFinished = false
         var newHabitIndex = lastHabitIndex+1
-        if index < arrFilteredEveningHabits.count-1 {
+        if index < arrFilteredEveningHabits.count-1 {//n todo chenage this code . crash ho skta h
             if isHighPrioritySequenceGoing{
 
                 var newIndexFound = false
-                while !newIndexFound{
+                while !newIndexFound && newHabitIndex < arrFilteredEveningHabits.count {
                     if let cutOffTime = arrFilteredEveningHabits[newHabitIndex].cutOffTime{
-                        let cutOffDate = Calendar.current.date(bySettingHour: cutOffTime.hour, minute: cutOffTime.minute, second: cutOffTime.second, of: Date())!
-                        let currentDate = Date()
-                        if currentDate < cutOffDate && arrFilteredEveningHabits[newHabitIndex].isPriorityHigh{
-                            newIndexFound = true
+                        if let cutOffDate = Calendar.current.date(bySettingHour: cutOffTime.hour, minute: cutOffTime.minute, second: cutOffTime.second, of: Date()){
+                            let currentDate = Date()
+                            if currentDate < cutOffDate && arrFilteredEveningHabits[newHabitIndex].isPriorityHigh{
+                                newIndexFound = true
+                            }else{
+                                addLog(text: "func eveningHabitSkipped")// remove this
+                                addLog(text: "evening habit skipped:- this habit is high priority habit but cutoff time of this habit has passed:- \(arrFilteredEveningHabits[newHabitIndex].name)  \(arrFilteredEveningHabits[newHabitIndex].id)") // remove this
+                                newHabitIndex += 1
+                            }
                         }else{
-                            addLog(text: "func eveningHabitSkipped")// remove this
-                            addLog(text: "evening habit skipped:- this habit is high priority habit but cutoff time of this habit has passed:- \(arrFilteredEveningHabits[newHabitIndex].name)  \(arrFilteredEveningHabits[newHabitIndex].id)") // remove this
-                            newHabitIndex = newHabitIndex + 1
+                            // invalid cutoff date, skip
+                            newHabitIndex += 1
                         }
                     }else{
                         if arrFilteredEveningHabits[newHabitIndex].isPriorityHigh{
@@ -3037,7 +3043,7 @@ class thirdVc: NSViewController {
                         }else{
                             addLog(text: "func eveningHabitSkipped")// remove this
                             addLog(text: "evening habit skipped:- this habit is not High Priority habit and it has no cutoff time:- \(arrFilteredEveningHabits[newHabitIndex].name)  \(arrFilteredEveningHabits[newHabitIndex].id)") // remove this
-                            newHabitIndex = newHabitIndex + 1
+                            newHabitIndex += 1
                         }
                         
                     }

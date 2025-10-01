@@ -304,7 +304,7 @@ class askPostponeVc: NSViewController {
             if activityPostponeCount == 0 && postponeTime > 15{//when user clicks Please spare me for the first time, if the user selects to postpones for longer than 15 then the password will be asked.//#441
                 
                 if shouldAskPassword(){
-                    if isHighPrioritySequenceGoing{// allready asked password if high Priority Sequence is Going
+                    if isCutOffTimeGoing(){// changed in 2.27.422  : isHighPrioritySequenceGoing->isCutOffTimeGoing()// allready asked password if high Priority Sequence is Going
                         self.view.removeFromSuperview()
                         activityPostponeCount += 1
                         getHabitsVcObject().postponeEveningHabitFor(minutes: postponeTime, secondsToPostpone: nil, showAskFocusModeView: true, showAskIntention: true)

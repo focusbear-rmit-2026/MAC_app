@@ -165,7 +165,7 @@ class nudgeFocusAlignmentScoreDippingVc: NSViewController {
             }
         }
         
-        if !isCuddlyModeEnabled() || !SettingsManagerObject.isAIBlockingEnabled() || isBlockSuperDistractingFocusModeOn(){
+        if !isCuddlyModeEnabled() || !SettingsManagerObject.isAIBlockingEnabled() || isBlockSuperDistractingFocusModeOn(){// todo check  isCuddlyModeEnabled()
             lblDescriptionText.stringValue = "AI is not enabled."
             if let info = configjson.value(forKey: "nudgeFocusAlignmentScoreDippingVcInfo") as? NSDictionary{
                 lblDescriptionText.stringValue = info.value(forKey: "aiIsDisabledText") as? String ?? lblDescriptionText.stringValue

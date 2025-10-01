@@ -599,8 +599,7 @@ extension NSBezierPath {
             }
         }
         
-        return path
-    }
+        return path   }
 }
 
 extension NSLayoutConstraint {

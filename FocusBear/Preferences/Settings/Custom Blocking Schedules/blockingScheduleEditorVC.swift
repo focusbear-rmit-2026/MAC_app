@@ -188,6 +188,13 @@ class blockingScheduleEditorVC: NSViewController {
         for box in arrAllWeekDayBox{
             box.isSelected = false
         }
+        
+        if isCreatingNew{
+            btnDelete.isHidden = true
+        }else{
+            btnDelete.isHidden = false
+        }
+        
         arrFocusTypeForBlockingSchedule.removeAll()
         for i in 0..<arrFocusType.count{
             if !(arrFocusType[i]["isMeetings"] as? Bool ?? false == true){
@@ -367,25 +374,39 @@ class blockingScheduleEditorVC: NSViewController {
             blockMode = ._SUPER_STRICT_
         }
         
-        let blockingSchedule = customBlockingSchedule(
-            name: textFieldScheduleName.stringValue,
-            start: getTimeString(date: datePickerFrom.dateValue),
-            end: getTimeString(date: datePickerTill.dateValue),
-            daysOfWeek: arrDays,
-            focusModeID: focusModeId,
-            //pauseFriction: .timer,
-            blockLevel: blockMode,
-            isAIBlockingEnabled: checkBoxAiEnabled.state == .on, isMicroBreaksEnabled: checkBoxSkipMicroBreaks.state != .on 
-        )
+        
         if isCreatingNew{
-            // Create a new schedule
+            let blockingSchedule = customBlockingSchedule(
+                id: UUID().uuidString,
+                name: textFieldScheduleName.stringValue,
+                start: getTimeString(date: datePickerFrom.dateValue),
+                end: getTimeString(date: datePickerTill.dateValue),
+                daysOfWeek: arrDays,
+                focusModeID: focusModeId,
+                //pauseFriction: .timer,
+                blockLevel: blockMode,
+                isAIBlockingEnabled: checkBoxAiEnabled.state == .on, isMicroBreaksEnabled: checkBoxSkipMicroBreaks.state != .on
+            )
             customBlockingScheduleManagerObj.arrBlockingSchedule.append(blockingSchedule)
             customBlockingSchedulesVcObj?.scheduleAdded()
             allApiObject.capturePosthog(event: "add-blocking-schedule", metadata: [:])//2.27.421
+            customBlockingScheduleManagerObj.addCustomBlockingScheduleAtIndex(customBlockingScheduleManagerObj.arrBlockingSchedule.count - 1)
         }else{
+            let blockingSchedule = customBlockingSchedule(
+                id: customBlockingScheduleManagerObj.arrBlockingSchedule[currentFocusModeIndex].id,
+                name: textFieldScheduleName.stringValue,
+                start: getTimeString(date: datePickerFrom.dateValue),
+                end: getTimeString(date: datePickerTill.dateValue),
+                daysOfWeek: arrDays,
+                focusModeID: focusModeId,
+                //pauseFriction: .timer,
+                blockLevel: blockMode,
+                isAIBlockingEnabled: checkBoxAiEnabled.state == .on, isMicroBreaksEnabled: checkBoxSkipMicroBreaks.state != .on
+            )
             customBlockingScheduleManagerObj.arrBlockingSchedule[currentFocusModeIndex] = blockingSchedule
             customBlockingSchedulesVcObj?.scheduleEditedAt(currentFocusModeIndex)
             allApiObject.capturePosthog(event: "edit-blocking-schedule", metadata: [:])//2.27.421
+            customBlockingScheduleManagerObj.updateCustomBlockingScheduleAtIndex(currentFocusModeIndex)
         }
         
         

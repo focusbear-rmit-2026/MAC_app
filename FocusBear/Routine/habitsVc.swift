@@ -547,19 +547,8 @@ class habitsVc: NSViewController {
             if SettingsManagerObject.isEasySkipEnabled{
                 
                 if currentHabitPlaying != nil{
-                    //                    if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
-                    //                        if smallCountDownWcObj?.window != nil{
-                    //                            if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
-                    //                                getSmallCountDownWindowObject().window?.close()
-                    //                            }
-                    //                        }
-                    //                    }
                     closeSmallCountDownTimerBoxIfVisibleForWithoutFocusBreak()
                 }
-                
-                //                mainWindowControllerObj?.window?.close() //
-                //          hideBlankWindowInSecondaryMonitor()
-                
                 showEasyPostponeWindow()
                 stopActivityTimer()
                 
@@ -571,7 +560,7 @@ class habitsVc: NSViewController {
                 stopActivityTimer()
                 
                 if activityPostponeCount == 0{
-                    if isHighPrioritySequenceGoing{
+                    if isCutOffTimeGoing(){// changed in 2.27.422  : isHighPrioritySequenceGoing->isCutOffTimeGoing()
                         if shouldAskPassword(){
                             if SettingsManagerObject.isPasswordRequireInSkipEveningAfterCutOff{
                                 showPasswordView()
@@ -587,7 +576,7 @@ class habitsVc: NSViewController {
                     }
                 }else{
                     if shouldAskPassword(){
-                        if isHighPrioritySequenceGoing{
+                        if isCutOffTimeGoing(){// changed in 2.27.422  : isHighPrioritySequenceGoing->isCutOffTimeGoing()
                             if SettingsManagerObject.isPasswordRequireInSkipEveningAfterCutOff{
                                 showPasswordView()
                                 enterPasswordVcObj?.parentVc = getAskPostponeVcObject()
@@ -699,7 +688,7 @@ class habitsVc: NSViewController {
                         }
                     }else if currentState == ._EVENING_HABIT_{
                         
-                        if isHighPrioritySequenceGoing{
+                        if isCutOffTimeGoing(){// changed in 2.27.422  : isHighPrioritySequenceGoing->isCutOffTimeGoing()
                             if SettingsManagerObject.isPasswordRequireInSkipEveningAfterCutOff{
                                 showPasswordView()
                             }else{
@@ -1171,13 +1160,6 @@ class habitsVc: NSViewController {
     
     func showAllEveningHabits(){
         addLog(text: "func showAllEveningHabits:- Initiate and run Evening Habits.")
-        
-        
-//        if easyPostponeWcObj != nil{
-//            if easyPostponeWcObj?.window?.isVisible ?? false{
-//                easyPostponeWcObj?.window?.close()
-//            }
-//        }
         closeEasyPostponeWindowIfVisible()
         
         if currentAction == ._VISUALIZE_{// did this beacuse we dont want user do to visualize again if he has don once for a habit
@@ -1195,7 +1177,6 @@ class habitsVc: NSViewController {
         var lastActivityIndex = -1
         if isHighPrioritySequenceGoing{
             if !arrFilteredEveningHabits[0].isPriorityHigh{
-//                UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitRunningInfo)
                 isLastActivityStoppedInRunningState = false
             }
         }
