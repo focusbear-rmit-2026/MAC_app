@@ -506,7 +506,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
             return;
         }
             
-        self.presentAsSheet(addFocusTypeVcObj!) // todo text field connection error
+        self.presentAsSheet(addFocusTypeVcObj!)
     }
     
     func checkState(){

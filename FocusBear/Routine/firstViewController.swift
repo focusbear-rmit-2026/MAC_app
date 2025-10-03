@@ -762,6 +762,10 @@ class firstViewController: NSViewController {
             segmentControlOfficeMode.setSelected(true, forSegment: 1)
             getHabitsVcObject().reFillBreakActivitiesArray()
             tblViewHabits.reloadData()
+            //v 2.27.422
+            thirdVcObj?.startBreakActivity()
+            btnStartFirstHabit.title = thirdVcObj?.btnMain.title ?? ""
+            lblProgress.stringValue = thirdVcObj?.lblProgress.stringValue ?? ""
         }else{
             let filterArr = arrAllbreakActivities.filter { $0.isOfficeFriendly == true}
             if filterArr.count == 0{// no activity found with isOfficeFriendly //
@@ -827,6 +831,11 @@ class firstViewController: NSViewController {
         NSApplication.shared.applicationIconImage = NSImage(named: NSImage.Name("Bear-Office-icon"))
         getHabitsVcObject().reFillBreakActivitiesArray()
         tblViewHabits.reloadData()
+        
+        //v 2.27.422
+        thirdVcObj?.startBreakActivity()
+        btnStartFirstHabit.title = thirdVcObj?.btnMain.title ?? ""
+        lblProgress.stringValue = thirdVcObj?.lblProgress.stringValue ?? ""
     }
     
 }

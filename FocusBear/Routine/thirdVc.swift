@@ -1959,18 +1959,6 @@ class thirdVc: NSViewController {
         appdelegate?.timerAllowUrlForActivity?.invalidate()
         appdelegate?.timerAllowAppForActivity?.invalidate()
         closePupUpBlockIfVisible()
-//        if toolBoxWcObj != nil{
-//            if toolBoxWcObj!.window!.isVisible{
-//                toolBoxWcObj?.window?.close()
-//            }
-//        }
-//        if taskPlayerWcObj != nil{
-//            if taskPlayerWcObj?.window?.isVisible ?? false{
-//                taskPlayerVcObj?.getToDosFromPlayer()
-//                taskPlayerWcObj?.window?.close()
-//                allApiObject.capturePosthog(event: "todo-player-popup-closed", metadata: [:])
-//            }
-//        }
         
         taskPlayerVcObj?.getToDosFromPlayer()
         
@@ -2266,18 +2254,7 @@ class thirdVc: NSViewController {
         appdelegate?.timerAllowUrlForActivity?.invalidate()
         appdelegate?.timerAllowAppForActivity?.invalidate()
         closePupUpBlockIfVisible()
-//        if toolBoxWcObj != nil{
-//            if toolBoxWcObj!.window!.isVisible{
-//                toolBoxWcObj?.window?.close()
-//            }
-//        }
-//        if taskPlayerWcObj != nil{
-//            if taskPlayerWcObj?.window?.isVisible ?? false{
-//                taskPlayerVcObj?.getToDosFromPlayer()
-//                taskPlayerWcObj?.window?.close()
-//                allApiObject.capturePosthog(event: "todo-player-popup-closed", metadata: [:])
-//            }
-//        }
+
         taskPlayerVcObj?.getToDosFromPlayer()
         
         refreshFocusModeData()
@@ -2601,18 +2578,6 @@ class thirdVc: NSViewController {
         appdelegate?.timerAllowUrlForActivity?.invalidate()
         appdelegate?.timerAllowAppForActivity?.invalidate()
         closePupUpBlockIfVisible()
-//        if toolBoxWcObj != nil{
-//            if toolBoxWcObj!.window!.isVisible{
-//                toolBoxWcObj?.window?.close()
-//            }
-//        }
-//        if taskPlayerWcObj != nil{
-//            if taskPlayerWcObj?.window?.isVisible ?? false{
-//                taskPlayerVcObj?.getToDosFromPlayer()
-//                taskPlayerWcObj?.window?.close()
-//                allApiObject.capturePosthog(event: "todo-player-popup-closed", metadata: [:])
-//            }
-//        }
         
         taskPlayerVcObj?.getToDosFromPlayer()
         
@@ -3018,7 +2983,7 @@ class thirdVc: NSViewController {
         
         isSequenceFinished = false
         var newHabitIndex = lastHabitIndex+1
-        if index < arrFilteredEveningHabits.count-1 {//n todo chenage this code . crash ho skta h
+        if index < arrFilteredEveningHabits.count-1 {//n chahnge in code to prevent crash 2.27.422//ewHabitIndex < arrFilteredEveningHabits.count
             if isHighPrioritySequenceGoing{
 
                 var newIndexFound = false

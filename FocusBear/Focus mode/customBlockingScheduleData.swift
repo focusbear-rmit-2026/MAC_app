@@ -135,7 +135,7 @@ struct customBlockingSchedule: Codable, Identifiable {
                
             //let start = customBlockingSchedule.parseTime(startTimeString) ?? Date()
             startTime = customBlockingSchedule.dateForToday(from: startTimeString) ?? Date()
-            endTime = customBlockingSchedule.dateForToday(from: endTimeString) ?? Date()// todo in dayChangedOperations also 
+            endTime = customBlockingSchedule.dateForToday(from: endTimeString) ?? Date()
         }
         
     func encode(to encoder: Encoder) throws {

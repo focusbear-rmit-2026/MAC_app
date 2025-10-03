@@ -281,11 +281,6 @@ var currentState:CURRENTSTATE = ._NOTHING_{
                 leftMenuVcObj?.habitStarted()
             }
         }
-//        else if currentState == ._CUSTOM_ROUTINE_{
-//            if oldValue != currentState{
-//                leftMenuVcObj?.customRoutineStarted()
-//            }
-//        }
     }
 }
 

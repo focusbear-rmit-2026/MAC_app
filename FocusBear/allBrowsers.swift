@@ -120,11 +120,11 @@ func getBrowserAllTabUrlAndTitle(browser:BROWSER)->[(title: String, url: String)
         browserName = "Arc"
     }else if browser == ._FIREFOX_{
         if let url = getFirefoxActiveTabUrl(), let title = getFirefoxActiveTabTitle(){
-            return [(title, url)] // todo check
+            return [(title, url)]
         }
     }else if browser == ._SIGMA_OS_{
         if let url = getSigmaOSBrowserActiveTabUrl(), let title = getSigmaOSBrowserActiveTabTitle(){
-            return [(title, url)] // todo check
+            return [(title, url)]
         }
     }
     

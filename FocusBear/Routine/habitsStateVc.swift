@@ -32,6 +32,22 @@ class habitsStateVc: NSViewController {
     }
     
     func reloadData(){
+        addLog(text:"habitsStateVc:- reloadData")
+        if !isAppEnable{
+            btnResumeHabits.title = "Activate Distraction Blocking"
+            lblTitle.stringValue = "Distraction Blocking is currently paused. You can turn it back on anytime to stay focused."
+
+            if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
+                btnResumeHabits.title = menuInfo.value(forKey: "menuItemReactivateTitle") as? String ?? btnResumeHabits.title
+            }
+            if let habitsStateVcInfo = configjson.value(forKey: "habitsStateVcInfo") as? NSDictionary{
+                lblTitle.stringValue = habitsStateVcInfo.value(forKey: "titleAppDisabled") as? String ?? lblTitle.stringValue
+            }
+            
+            btnResumeHabits.isHidden = false
+            return;
+        }
+
         btnResumeHabits.title = "Resume Habits"
         
         if let habitsStateVcInfo = configjson.value(forKey: "habitsStateVcInfo") as? NSDictionary{
@@ -117,16 +133,24 @@ class habitsStateVc: NSViewController {
     }
     
     @IBAction func btnResumeHabitsClicked(_ sender: Any) {
+        if !isAppEnable{
+            addLog(text:"[user-action] habitsStateVc:- button Reactivate clicked")
+            appdelegate?.menuItem_Reactivate()
+            return;
+        }
+        
         if currentState != ._MORNING_HABIT_ && currentState != ._EVENING_HABIT_  && UserDefaults.standard.object(forKey: kUserdefaultsStartRoutineButtonClicked) == nil{
             let currentDate = Date()
             let firstRunDate = UserDefaults.standard.object(forKey: kUserdefaultsFirstRunDate) as? Date ?? currentDate
             let sameDay = Calendar.current.isDate(currentDate, equalTo: firstRunDate, toGranularity: .day)
             let isHabitsDisabled = UserDefaults.standard.object(forKey: kUserdefaultsIsHabitsDisabledFromOnboarding) as? Bool ?? false
             if sameDay || !shouldDoHabits(){
+                addLog(text:"[user-action] habitsStateVc:- button Start Habits First Time clicked")
                 menuViewControllerObj?.btnStartHabitsFirstTimeClicked(self)
                 return;
             }
         }
+        addLog(text:"[user-action] habitsStateVc:- button Resume Habits clicked")
         menuViewControllerObj?.btnResumeHabitsClicked(self)
     }
 }

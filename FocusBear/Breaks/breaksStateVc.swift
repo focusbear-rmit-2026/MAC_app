@@ -56,8 +56,34 @@ class breaksStateVc: NSViewController {
             self.timerReload = nil
         }
     }
-    //"Turn them off for today"
+   
     func reloadData() {
+        addLog(text:"breaksStateVc:- reloadData")
+        if !isAppEnable{
+            btnEnableMicroBreaks.title = "Activate Distraction Blocking"
+            lblEnableBreaks.stringValue = "Distraction Blocking is currently paused. You can turn it back on anytime to stay focused."
+
+            if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
+                btnEnableMicroBreaks.title = menuInfo.value(forKey: "menuItemReactivateTitle") as? String ?? btnEnableMicroBreaks.title
+            }
+            if let habitsStateVcInfo = configjson.value(forKey: "habitsStateVcInfo") as? NSDictionary{
+                lblEnableBreaks.stringValue = habitsStateVcInfo.value(forKey: "titleAppDisabled") as? String ?? lblEnableBreaks.stringValue
+            }
+            
+            lblEnableBreaks.isHidden = false
+            btnEnableMicroBreaks.isHidden = false
+            lblNextBreakTime.isHidden = true
+            btnStartMicroBreaks.isHidden = true
+            return;
+        }
+        
+        btnEnableMicroBreaks.title = "Enable Breaks"
+        btnStartMicroBreaks.title = "Start Break"
+        
+        if let breakStateVcInfo = configjson.value(forKey: "breakStateVcInfo") as? NSDictionary{
+            btnEnableMicroBreaks.title = breakStateVcInfo.value(forKey: "buttonEnableBreaks") as? String ?? btnEnableMicroBreaks.title
+            btnStartMicroBreaks.title = breakStateVcInfo.value(forKey: "buttonStartBreak") as? String ?? btnStartMicroBreaks.title
+        }
         var isBreakEnabled = SettingsManagerObject.isMicroBreaksEnabled
         
         if !isBreakEnabled{
@@ -139,11 +165,26 @@ class breaksStateVc: NSViewController {
                 btnEnableMicroBreaks.isHidden = true
                 lblNextBreakTime.isHidden = false
                 btnStartMicroBreaks.isHidden = false
+            }else if getHabitsVcObject().breakTimer == nil{
+                lblNextBreakTime.stringValue = "No upcoming break has been scheduled yet."// todo text 
+                if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
+//                    lblNextBreakTime.stringValue = menuInfo.value(forKey: "waitingBreakTimeText") as? String ?? lblNextBreakTime.stringValue
+                }
+                lblEnableBreaks.isHidden = true
+                btnEnableMicroBreaks.isHidden = true
+                lblNextBreakTime.isHidden = false
+                btnStartMicroBreaks.isHidden = false
             }
         }
     }
     
     @IBAction func btnEnableMicroBreaksClicked(_ sender: Any) {
+        if !isAppEnable{
+            addLog(text:"[user-action] breaksStateVc:- button Reactivate clicked")
+            appdelegate?.menuItem_Reactivate()
+            return;
+        }
+        addLog(text:"[user-action] breaksStateVc:- button Enable breaks clicked")
         SettingsManagerObject.isSettingsChanged = true
         SettingsManagerObject.isMicroBreaksEnabled = true
         allApiObject.capturePosthog(event: "settings-changed-enable-breaks", metadata: [:])
@@ -152,6 +193,7 @@ class breaksStateVc: NSViewController {
     }
     
     @IBAction func btnStartMicroBreaksClicked(_ sender: Any) {
+        addLog(text:"[user-action] breaksStateVc:- button Start Micro breaks clicked")
         menuViewControllerObj?.btnStartBreakClicked(self)
     }
     

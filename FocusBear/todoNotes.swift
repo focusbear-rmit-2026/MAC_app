@@ -103,3 +103,24 @@ blockpage params
 // old supublicedkey  tdVYiEz/MSjLl07DnhYNXOqHrNS7Tf/j5aCtwR/Tt6s=
 
 //                Application is agent (UIElement)// added on info plist because without it launch agent making problems (not allowing to remove app icon by this:- NSApp.setActivationPolicy(NSApplication.ActivationPolicy.accessory) with launc agent so adding this info plist) 28/5/25
+
+
+//https://focus-bear.sentry.io/issues/?project=4509122992275456&statsPeriod=1h // sentry 
+
+
+
+
+
+
+//ISSUES// todo
+//
+// super strict    not working  in blocking schedules
+// micro break enabled.  Not working in blocking schedules
+// focus bear settings showing wrong information :- it shows activity is office friendly but in realty it was non office friendly activity
+// wrong tab blocked not found
+// edit routine alert not showing when user is doing edit routin from morning/ evening
+
+
+// what to do with these settings because no use of these now after custom schedule blocking added and normal blocking removed
+//Do not block "super Distracting Sites" during breaks.
+//Block "Super Distracting Sites" during Meetings

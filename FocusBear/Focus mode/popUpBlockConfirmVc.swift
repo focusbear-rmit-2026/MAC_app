@@ -815,18 +815,25 @@ class popUpBlockConfirmVc: NSViewController {
             if self.totalDuration <= self.currentTimer {
                 addLog(text: "popUpBlockConfirmVc:- 30 seconds counter completed")
                 self.timer?.invalidate()
-                self.view.window?.close()
-                blurWcObj?.window?.close()
-                if self.currentApp != nil && self.isAppBlocking{
-                    appdelegate?.focusBlockUnwantedApp(runningApp: self.currentApp!, appName: self.currentAppName, showNotification: false, isAppBlockByAi: self.isBlockByAi)
-                    self.currentApp = nil
-                }else{
-                    if SettingsManagerObject.isAIBlockingEnabled(){
-                        appdelegate?.focusBlockUnwantedUrl(script: self.script, url: self.url, lastBlockReasonFromAi: self.lastBlockReasonFromAi, browser: self.browser, isUrlBlockByAi: self.isBlockByAi, blockReason:"")
-                    }else{
-                        appdelegate?.focusBlockUnwantedUrl(script: self.script, url: self.url, lastBlockReasonFromAi: nil, browser: self.browser, isUrlBlockByAi: self.isBlockByAi, blockReason:"")
+                if let window = self.view.window{
+                    if !window.isVisible{
+                        blurWcObj?.window?.close()
+                        addLog(text: "popUpBlockConfirmVc:- return:- window is not visible")
+                        return;
                     }
-                    
+                    self.view.window?.close()
+                    blurWcObj?.window?.close()
+                    if self.currentApp != nil && self.isAppBlocking{
+                        appdelegate?.focusBlockUnwantedApp(runningApp: self.currentApp!, appName: self.currentAppName, showNotification: false, isAppBlockByAi: self.isBlockByAi)
+                        self.currentApp = nil
+                    }else{
+                        if SettingsManagerObject.isAIBlockingEnabled(){
+                            appdelegate?.focusBlockUnwantedUrl(script: self.script, url: self.url, lastBlockReasonFromAi: self.lastBlockReasonFromAi, browser: self.browser, isUrlBlockByAi: self.isBlockByAi, blockReason:"")
+                        }else{
+                            appdelegate?.focusBlockUnwantedUrl(script: self.script, url: self.url, lastBlockReasonFromAi: nil, browser: self.browser, isUrlBlockByAi: self.isBlockByAi, blockReason:"")
+                        }
+                        
+                    }
                 }
             }
         }

@@ -962,7 +962,9 @@
 //            if taskPlayerWcObj?.window?.isVisible ?? false{
 //                taskPlayerVcObj?.getToDosFromPlayer()
 //                taskPlayerWcObj?.window?.close()
-//                allApiObject.capturePosthog(event: "todo-player-popup-closed", metadata: [:])
+//                allApiObject.capturePosthog(event: "
+
+//-player-popup-closed", metadata: [:])
 //            }
 //        }
 //        setAppIconForFocusModeScore(probability: nil)

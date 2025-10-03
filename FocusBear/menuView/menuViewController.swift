@@ -1177,7 +1177,7 @@ class menuViewController: NSViewController {
                 }
             }
             
-        }else{// button title "Pause blocking" if app is disabled
+        }else{// button title "Pause blocking" if app is enabled
             boxReactivate.isHidden = true
             if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
                 lblTitleQuit.stringValue = menuInfo.value(forKey: "menuItemQuitTitle") as? String ?? lblTitleQuit.stringValue
@@ -1344,6 +1344,7 @@ class menuViewController: NSViewController {
     }
 
     @IBAction func btnReactivateClicked(_ sender: Any) {
+        addLog(text:"[user-action] menuViewController:- menu Item Reactivate clicked")
         appdelegate?.menuItem_Reactivate()
         closeMenuWindowIsVisible()
     }

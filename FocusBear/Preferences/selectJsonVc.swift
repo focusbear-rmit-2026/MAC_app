@@ -447,6 +447,8 @@ class selectJsonVc: NSViewController, NSTextViewDelegate, WKNavigationDelegate, 
     
 }//user-edited-settings
 
+//send_intention_from_focus_game // todo
+//send_tasks_from_focus_game // todo  
 class MessageHandler: NSObject, WKScriptMessageHandler {
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         print("call back hua:- \(message.name)")
@@ -804,5 +806,6 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
         }
     }
 }
+
 
 

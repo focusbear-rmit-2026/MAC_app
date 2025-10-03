@@ -1303,10 +1303,6 @@ func closePopoverTooltipIfVisible(){
 }
 
 
-
-
-// hide window work
-
 func closePomodoroWindowIOfVisible(){
     if pomodoroWindowControllerObj != nil{
         if pomodoroWindowControllerObj!.window!.isVisible{
@@ -1315,18 +1311,6 @@ func closePomodoroWindowIOfVisible(){
         }
     }
 }
-
-
-
-//func closeTaskPlayerWindowIfVisible(){
-//    if taskPlayerWcObj != nil{
-//        if taskPlayerWcObj?.window?.isVisible ?? false{
-//            taskPlayerWcObj?.window?.close()
-//            allApiObject.capturePosthog(event: "todo-player-popup-closed", metadata: [:])
-//        }
-//    }
-//}
-
 
 func closePupUpBlockIfVisible(){
     if popUpBlockConfirmWcObj != nil{
@@ -1396,6 +1380,12 @@ func showNudgeFocusAlignmentScoreWindow(score:Double){
     
     if nudgeFocusAlignmentScoreDippingWcObject == nil{
         nudgeFocusAlignmentScoreDippingWcObject = nudgeFocusAlignmentScoreDippingWc()
+    }else{
+        if (nudgeFocusAlignmentScoreDippingWcObject?.isNudgeVisible ??  false){// if window is not visible but isNudgeVisible is true then make isNudgeVisible false
+            if !(nudgeFocusAlignmentScoreDippingWcObject?.window?.isVisible ?? false){
+                nudgeFocusAlignmentScoreDippingWcObject?.isNudgeVisible = false
+            }
+        }
     }
     
     if (nudgeFocusAlignmentScoreDippingWcObject?.isNudgeVisible ??  false){

@@ -2410,7 +2410,8 @@
         "currentTaskText": "Current task is \"<TASK>\"",
         "aiIsDisabledText": "AI is not enabled.",
         "noCurrentTaskText": "No Current Task",
-        "toolTipAlignmentScore": "This shows what % of the time you've been on websites/apps that are relevant to your focus goal. We use AI to check the relevance."
+        "toolTipAlignmentScore": "This shows what % of the time you've been on websites/apps that are relevant to your focus goal. We use AI to check the relevance.",
+        "aiScoreNotCalculatedText": "AI score not calculated."
     },
     "nudgeStartAnotherFocusSessionVcInfo":{
         "title": "Want to start another focus session?",
@@ -2460,7 +2461,8 @@
         "shutoffAbortedText": "Shutoff aborted. Your computer is now accessible again.",
         "nextRoutineText": "Great job staying on track! Your next scheduled routine (<ROUTINE>) is set for <TIME>. Be ready to jump back in and continue building those healthy habits. You've got this!",
         "buttonBeginCustomRoutine": "Begin On-Demand Routine",
-        "titleEveningRoutine": "Evening Routine"
+        "titleEveningRoutine": "Evening Routine",
+        "titleAppDisabled": "Distraction Blocking is currently paused. You can turn it back on anytime to stay focused."
     },
     "breakStateVcInfo":{
         "buttonEnableBreaks": "Enable Breaks",

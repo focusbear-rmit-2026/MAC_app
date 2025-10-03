@@ -1523,19 +1523,6 @@ class habitsVc: NSViewController {
         isAnyAllowedFocusModeActivityRunning = false
         currentHabitPlaying = nil
         
-//        if toolBoxWcObj != nil{
-//            if toolBoxWcObj!.window!.isVisible{
-//                toolBoxWcObj?.window?.close()
-//            }
-//        }
-//        if taskPlayerWcObj != nil{
-//            if taskPlayerWcObj?.window?.isVisible ?? false{
-//                taskPlayerVcObj?.getToDosFromPlayer()
-//                taskPlayerWcObj?.window?.close()
-//                allApiObject.capturePosthog(event: "todo-player-popup-closed", metadata: [:])
-//            }
-//        }
-        
         taskPlayerVcObj?.getToDosFromPlayer()
         
         leftMenuVcObj?.focusModeOrFocusModeHabitFinished()
@@ -1861,18 +1848,6 @@ class habitsVc: NSViewController {
         isAnyAllowedFocusModeActivityRunning = false
         currentHabitPlaying = nil
         currentRelaxHabitPlaying = nil
-//        if toolBoxWcObj != nil{
-//            if toolBoxWcObj!.window!.isVisible{
-//                toolBoxWcObj?.window?.close()
-//            }
-//        }
-//        if taskPlayerWcObj != nil{
-//            if taskPlayerWcObj?.window?.isVisible ?? false{
-//                taskPlayerVcObj?.getToDosFromPlayer()
-//                taskPlayerWcObj?.window?.close()
-//                allApiObject.capturePosthog(event: "todo-player-popup-closed", metadata: [:])
-//            }
-//        }
         
         taskPlayerVcObj?.getToDosFromPlayer()
         
@@ -2173,19 +2148,7 @@ class habitsVc: NSViewController {
         }
         isAnyAllowedFocusModeActivityRunning = false
         currentHabitPlaying = nil
-        
-//        if toolBoxWcObj != nil{
-//            if toolBoxWcObj!.window!.isVisible{
-//                toolBoxWcObj?.window?.close()
-//            }
-//        }
-//        if taskPlayerWcObj != nil{
-//            if taskPlayerWcObj?.window?.isVisible ?? false{
-//                taskPlayerVcObj?.getToDosFromPlayer()
-//                taskPlayerWcObj?.window?.close()
-//                allApiObject.capturePosthog(event: "todo-player-popup-closed", metadata: [:])
-//            }
-//        }
+
         
         taskPlayerVcObj?.getToDosFromPlayer()
         
@@ -3940,6 +3903,7 @@ class habitsVc: NSViewController {
     func showCustomRoutineState(){
         addLog(text: "showCustomRoutineState")
         self.removeSubViews()
+        self.hideCloseButtons()
         habitsView.addSubview(getCustomRoutineStateVcObject().view)
         habitsView.addConstraints(subView: getCustomRoutineStateVcObject().view)
     }
@@ -3947,6 +3911,7 @@ class habitsVc: NSViewController {
     func showBreakState(){
         addLog(text: "showBreakState")
         self.removeSubViews()
+        self.hideCloseButtons()
         habitsView.addSubview(getBreaksStateVcObject().view)
         habitsView.addConstraints(subView: getBreaksStateVcObject().view)
     }

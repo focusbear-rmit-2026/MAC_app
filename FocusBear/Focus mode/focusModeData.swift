@@ -631,26 +631,11 @@ func checkUrlFromAi(script: String, url:String, tab_title:String, currentRunning
                     let reason = dic?.value(forKey: "reason") as? String ?? ""
                     setFocusBearIconToNormal()
                     if var dProbability = dic?.value(forKey: "allowed_probability") as? Double{
+                        addLog(text: "checked chatGPTIsURLSafe:- \(url), dProbability:\(dProbability)")
                         let currentTaskName = currentTaskInToDoPlayer ?? ""
                         addEntryInFocusAIDecisionsCsv(url: url, domain: domain, tabTitle: tab_title, score: "\(dProbability)", intention: whatToAchieveInFocusBlock, aiReason: reason, currentTaskName: currentTaskName, additionalUserJustification: "")
                         
                         if isCuddlyModeEnabled(){
-//                            if dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[url] == nil{
-//                                addEntryInfocusAlignmentScoreCsv(url: url, tabTitle: tab_title, focusMode: currentRunningFocusModeName, intention: whatToAchieveInFocusBlock, aiReason: reason, allowedProbability: "\(dProbability)", totalScore: "")
-//                                dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[url] = ["probability":dProbability, "isVisibleUrl":true, "totalSeconds":0, "startedTime":Date(), "reason":reason]
-//                                if let payload = payload{
-//                                    dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[url]?["payload"] = payload
-//                                }
-//                                boxForStatusBarForTooltip?.customToolTip = reason
-//                            }else{
-//                                // if dProbability > 70 once then url will not check for that url again but if dProbability < 70 then url is checked again and again. so if if dProbability > 70 and dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[url] != nil then we need to change old state in dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus data for current url
-//                                addEntryInfocusAlignmentScoreCsv(url: url, tabTitle: tab_title, focusMode: currentRunningFocusModeName, intention: whatToAchieveInFocusBlock, aiReason: reason, allowedProbability: "\(dProbability)", totalScore: "")
-//                                dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[url] = ["probability":dProbability, "isVisibleUrl":true, "totalSeconds":0, "startedTime":Date(), "reason":reason]
-//                                if let payload = payload{
-//                                    dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[url]?["payload"] = payload
-//                                }
-//                                boxForStatusBarForTooltip?.customToolTip = reason
-//                            }
       
                             if var oldData = dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[url]{
                                 addEntryInfocusAlignmentScoreCsv(url: url, tabTitle: tab_title, focusMode: currentRunningFocusModeName, intention: whatToAchieveInFocusBlock, aiReason: reason, allowedProbability: "\(dProbability)", totalScore: "")
@@ -700,7 +685,7 @@ func checkUrlFromAi(script: String, url:String, tab_title:String, currentRunning
                                 }
                             }else if currentFocusAlignmentScore < minFocusAlignmentScoreToShowDistractingPopUp{
                                 //Unsafe url
-                                
+                                addLog(text: "Unsafe url")
                                 var popUpWindowVisible = false
                                 
                                 if popUpBlockConfirmWcObj != nil{
@@ -741,6 +726,7 @@ func checkUrlFromAi(script: String, url:String, tab_title:String, currentRunning
                                     }
                                 }
                             }else{
+                                addLog(text: "Unsafe url")
                                 appdelegate?.focusBlockUnwantedUrl(script: script, url: url, lastBlockReasonFromAi: reason, browser: browser, isUrlBlockByAi: true, blockReason:"")
                             }
                         }
@@ -836,7 +822,7 @@ func checkUrlFromAiWithNewIntention(url:String, domain:String, tab_title:String,
                 dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus[domain]?["endTime"] = Date()// because is block then popup should show again//Convince the AI should show immediate feedback #1419
                 if let dProbability = dic?.value(forKey: "allowed_probability") as? Double{
                     
-                    
+                    addLog(text: "checked checkUrlFromAiWithNewIntention:- \(url), dProbability:\(dProbability)")
                     addEntryInfocusAlignmentScoreCsv(url: url, tabTitle: tab_title, focusMode: currentRunningFocusModeName, intention: whatToAchieveInFocusBlock, aiReason: reason, allowedProbability: "\(dProbability)", totalScore: "")
                     
                     let currentTaskName = currentTaskInToDoPlayer ?? ""
@@ -876,6 +862,7 @@ func checkUrlFromAiWithNewIntention(url:String, domain:String, tab_title:String,
                     }else if currentFocusAlignmentScore < minFocusAlignmentScoreToShowDistractingPopUp{
                         //Unsafe url
                         // do not touch cuddlyModeProgressCount here ... after 90 seconds if user use it by setting intention then we will set it
+                        addLog(text: "Unsafe url")
                         dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus[domain]?["probability"] = dProbability
                     }
                 }
@@ -1004,6 +991,7 @@ func checkAppFromAi(appName:String, currentRunningFocusModeName:String, runningA
                     setFocusBearIconToNormal()
                     if var dProbability = dic?.value(forKey: "allowed_probability") as? Double{
                         print("dProbability is \(dProbability) ****")
+                        addLog(text: "checked chatGPTIsAppSafe:- \(appName), dProbability:\(dProbability)")
                         let currentTaskName = currentTaskInToDoPlayer ?? ""
                         addEntryInFocusAIDecisionsCsv(url: appName, domain: "", tabTitle: "", score: "\(dProbability)", intention: whatToAchieveInFocusBlock, aiReason: reason, currentTaskName: currentTaskName, additionalUserJustification: "")
                         
@@ -1096,7 +1084,7 @@ func checkAppFromAi(appName:String, currentRunningFocusModeName:String, runningA
                         }else{
                             if(dProbability >= 0.70){
                                 // Safe URL
-                                addLog(text: "url is safe according to chat gpt")
+                                addLog(text: "app is safe according to chat gpt")
                                 allApiObject.capturePosthog(event: "block-popup-allow-automatically", metadata: [:])
                                 
                                 arrAllowedAppsInCuddlyModeCurrentFocus.append(runningApp)
@@ -1210,7 +1198,7 @@ func checkAppFromAiWithNewIntention(appName:String, intentionForThisApp:String, 
                 let reason = dic?.value(forKey: "reason") as? String ?? ""
                 dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus[appNameLowercased]?["endTime"] = Date()// because is block then popup should show again//Convince the AI should show immediate feedback #1419
                 if let dProbability = dic?.value(forKey: "allowed_probability") as? Double{
-                    
+                    addLog(text: "checked checkAppFromAiWithNewIntention:- \(appName), dProbability:\(dProbability)")
                     addEntryInfocusAlignmentScoreCsv(url: appNameLowercased, tabTitle: "", focusMode: currentRunningFocusModeName, intention: whatToAchieveInFocusBlock, aiReason: reason, allowedProbability: "\(dProbability)", totalScore: "")
                     let currentTaskName = currentTaskInToDoPlayer ?? ""
                     addEntryInFocusAIDecisionsCsv(url: appName, domain: "", tabTitle: "", score: "\(dProbability)", intention: whatToAchieveInFocusBlock, aiReason: reason, currentTaskName: currentTaskName, additionalUserJustification: intentionForThisApp)
@@ -1250,6 +1238,7 @@ func checkAppFromAiWithNewIntention(appName:String, intentionForThisApp:String, 
                     }else if currentFocusAlignmentScore < minFocusAlignmentScoreToShowDistractingPopUp{
                         //Unsafe url
                         // do not touch cuddlyModeProgressCount here ... after 90 seconds if user use it by setting intention then we will set it
+                        addLog(text: "Unsafe url")
                         dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus[appNameLowercased]?["probability"] = dProbability
                     }
                 }

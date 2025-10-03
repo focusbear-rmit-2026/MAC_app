@@ -2410,7 +2410,8 @@
         "currentTaskText": "La tarea actual es \"<TASK>\"",
         "aiIsDisabledText": "La IA no está activada.",
         "noCurrentTaskText": "Sin tarea actual",
-        "toolTipAlignmentScore": "Esto muestra el % del tiempo que has estado en sitios web/apps relevantes para tu objetivo de enfoque. Usamos IA para comprobar la relevancia."
+        "toolTipAlignmentScore": "Esto muestra el % del tiempo que has estado en sitios web/apps relevantes para tu objetivo de enfoque. Usamos IA para comprobar la relevancia.",
+        "aiScoreNotCalculatedText": "Puntaje de IA no calculado."
     },
     "nudgeStartAnotherFocusSessionVcInfo":{
         "title": "¿Quieres comenzar otra sesión de enfoque?",
@@ -2460,7 +2461,8 @@
         "shutoffAbortedText": "Apagado cancelado. Tu computadora vuelve a estar accesible.",
         "nextRoutineText": "¡Buen trabajo manteniéndote en camino! Tu próxima rutina programada (<ROUTINE>) está fijada para <TIME>. Prepárate para retomarla y seguir construyendo esos hábitos saludables. ¡Tú puedes!",
         "buttonBeginCustomRoutine": "Iniciar rutina bajo demanda",
-        "titleEveningRoutine": "Rutina nocturna"
+        "titleEveningRoutine": "Rutina nocturna",
+        "titleAppDisabled": "El bloqueo de distracciones está en pausa. Puedes volver a activarlo en cualquier momento para mantenerte enfocado."
     },
     "breakStateVcInfo":{
         "buttonEnableBreaks": "Activar descansos",

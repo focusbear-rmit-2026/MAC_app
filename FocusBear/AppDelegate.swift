@@ -872,8 +872,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 DispatchQueue.main.async {
                     kUserdefaultsVideoShown = kUserdefaultsVideoShown + (self.user?.userId ?? "")
                     if UserDefaults.standard.object(forKey: kUserdefaultsVideoShown) == nil{
-                        //            Use Focus Mode templates for onboarding#489
                         var shouldShowOnboardingAfterLogin = true
+                        var userHasDoneOnboardingOnWeb = false
                         allApiObject.getUserLocalDeviceSettings(completionHandler: { json in
                             if json != nil{
                                 
@@ -882,39 +882,51 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                     if let onboarding = webSettings.value(forKey: "onboarding") as? NSDictionary{
                                         if let currentStep = onboarding.value(forKey: "currentStep") as? String{
                                             if currentStep.lowercased() == "completed"{
-                                                shouldShowOnboardingAfterLogin = false
+                                                //                                                shouldShowOnboardingAfterLogin = false
+                                                userHasDoneOnboardingOnWeb = true
                                             }
                                         }
                                     }
                                 }
-                                
-                                if shouldShowOnboardingAfterLogin{
-                                    if let settings = json?.value(forKey: "MacOS") as? NSDictionary {//
-                                        print(settings)
-                                        if settings.allKeys.count == 0{
-                                            shouldShowOnboardingAfterLogin = true
-                                        }else{
-                                            shouldShowOnboardingAfterLogin = false
-                                        }
-                                        
+        
+                                if let settings = json?.value(forKey: "MacOS") as? NSDictionary {//
+                                    print(settings)
+                                    if settings.allKeys.count == 0{
+                                        shouldShowOnboardingAfterLogin = true
+                                    }else{
+                                        shouldShowOnboardingAfterLogin = false
                                     }
+                                    
                                 }
                             }
                             DispatchQueue.main.async {
                                 if shouldShowOnboardingAfterLogin{
                                     
-                                    allApiObject.postTermsService(consentType: "terms_of_service")
-                                    allApiObject.postTermsService(consentType: "privacy_policy")
-                                    allApiObject.postCourse()
-                                    allApiObject.autoEenrolledCourse()
-                                    
-                                    
-                                    kUserDefaultsCustomGoals = kUserDefaultsCustomGoalsKey + (self.user?.userId ?? "")
-                                    kUserDefaultsSelectedOccupationForPosthog = kUserDefaultsSelectedOccupationForPosthogKey + (self.user?.userId ?? "")
-                                    kUserDefaultsCareFactorHabitsForPosthog = kUserDefaultsCareFactorHabitsForPosthogKey + (self.user?.userId ?? "")
-                                    closeSplashWindow()
-                                    self.showAskOccupation()
-                                    
+                                    if userHasDoneOnboardingOnWeb{// added v 2.27.422
+                                        SettingsManagerObject.doNotBlockUrlsDuringSuperPomodoroBreaksDefaultValue = true
+                                        SettingsManagerObject.isGeekModeEnabled = false // for new user app is in simple mode
+                                        if UserDefaults.standard.object(forKey: kUserdefaultsShowDockIcon) as? Bool == false{
+                                            UserDefaults.standard.set(true, forKey: kUserdefaultsShowDockIcon)
+                                            NSApp.setActivationPolicy(NSApplication.ActivationPolicy.regular)
+                                        }
+                                        self.needToCheckEmailVerification = false// if onboarding then dont show till menu tour is over
+                                        self.getUserSubscriptionInfo()
+                                        self.statusbutton?.action = nil
+                                        showMenuTourWindow()
+                                        UserDefaults.standard.set(true, forKey: kUserdefaultsVideoShown)
+                                    }else{
+                                        allApiObject.postTermsService(consentType: "terms_of_service")
+                                        allApiObject.postTermsService(consentType: "privacy_policy")
+                                        allApiObject.postCourse()
+                                        allApiObject.autoEenrolledCourse()
+                                        
+                                        
+                                        kUserDefaultsCustomGoals = kUserDefaultsCustomGoalsKey + (self.user?.userId ?? "")
+                                        kUserDefaultsSelectedOccupationForPosthog = kUserDefaultsSelectedOccupationForPosthogKey + (self.user?.userId ?? "")
+                                        kUserDefaultsCareFactorHabitsForPosthog = kUserDefaultsCareFactorHabitsForPosthogKey + (self.user?.userId ?? "")
+                                        closeSplashWindow()
+                                        self.showAskOccupation()
+                                    }
                                 }else{
                                     UserDefaults.standard.set(true, forKey: kUserdefaultsVideoShown)
                                     self.getUserSubscriptionInfo()
@@ -2894,6 +2906,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 if state{
                     self.checkWindowState()
                 }else{
+                    if !getHabitsVcObject().isViewLoaded{
+                        getHabitsVcObject().loadView()
+                    }
                     self.statusbutton?.wantsLayer = true
                     self.statusbutton?.layer?.borderColor = NSColor.red.cgColor
                     self.statusbutton?.layer?.borderWidth = 2
@@ -2901,7 +2916,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     self.statusbutton?.title = buttonStatusStateOffText
                     self.statusbutton?.imagePosition = .imageLeft
                     addLog(text: "App started in Deactivated state")
-                    loadMenuWindow()
+                    self.loadAllWindows()
                 }
             }
             if let date = UserDefaults.standard.object(forKey: kUserdefaults4HourReActivateTime) as? Date{
@@ -3630,17 +3645,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         NSApplication.shared.activate(ignoringOtherApps: true)
     }
     
-    @objc func checkWindowState(){
+    func loadAllWindows(){
         
-      //  let now = Date()
-       // let calendar = Calendar.current
-     //   let weekday = calendar.component(.weekday, from: now)
-        //let schedule = self
-       // guard schedule.daysOfWeek.contains(weekday) else { return false }
-        
-       
-//        UserDefaults.standard.removeObject(forKey: kUserdefaultsEveningHabitsShowedTillDate) // todo remove this line
-//        return;// todo remove this line
         if !getHabitsVcObject().isViewLoaded{
             getHabitsVcObject().loadView()
         }
@@ -3667,6 +3673,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         
         
         loadMenuWindow()
+    }
+    @objc func checkWindowState(){
+        loadAllWindows()
         isFirstRun = false
         
         if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
@@ -3923,7 +3932,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                             writeSettingForScreeenTime(habitInfo: "")
                             if alertSuggestFocusMode != nil{
                                 if alertSuggestFocusMode!.window.isVisible{
-                                    NSApp.endSheet(alertSuggestFocusMode!.window)
+//                                    NSApp.endSheet(alertSuggestFocusMode!.window)
+                                    if let sheet = alertSuggestFocusMode?.window,
+                                       let parentWindow = sheet.sheetParent {
+                                        parentWindow.endSheet(sheet)
+                                    }else{
+                                        NSApp.abortModal()
+//                                        alertSuggestFocusMode?.window.orderOut(nil)
+                                    }
                                     addLog(text: "close Meeting suggestion Alert")
                                 }
                             }
@@ -3948,7 +3964,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 writeSettingForScreeenTime(habitInfo: "")
                 if alertSuggestFocusMode != nil{
                     if alertSuggestFocusMode!.window.isVisible{
-                        NSApp.endSheet(alertSuggestFocusMode!.window)
+//                        NSApp.endSheet(alertSuggestFocusMode!.window)
+                        if let sheet = alertSuggestFocusMode?.window,
+                           let parentWindow = sheet.sheetParent {
+                            parentWindow.endSheet(sheet)
+                        }else{
+                            NSApp.abortModal()
+//                            alertSuggestFocusMode?.window.orderOut(nil)
+                        }
                         addLog(text: "close Meeting suggestion Alert")
                     }
                 }
@@ -4074,10 +4097,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         //        if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._BREATHING_ || currentState == ._SHUTOFFMAC_ || currentState == .
         
         // Luisa App broken bug fix 28/6/22
-        if mainWindowControllerObj?.window?.isVisible ?? false{
-            addLog(text: "Meeting suggestion aborted due to activity.")
-            return
-        }
+//        if mainWindowControllerObj?.window?.isVisible ?? false{
+//            addLog(text: "Meeting suggestion aborted due to activity.")
+//            return
+//        }
         
         if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._SHUTOFFMAC_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_{
             addLog(text: "Meeting suggestion aborted due to activity.")
@@ -7596,14 +7619,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     
     @objc func tryFocusModeFinished(isSilent:Bool, isShutOffTime:Bool, isMorningRoutineTime:Bool, allowExtend:Bool, isCustomRoutineTime:Bool){
         addLog(text: "focus mode finished")
-        //        if taskPlayerWcObj != nil{
-        //            if taskPlayerWcObj?.window?.isVisible ?? false{
-        //                taskPlayerVcObj?.getToDosFromPlayer()
-        //                taskPlayerWcObj?.window?.close()
-        //                allApiObject.capturePosthog(event: "todo-player-popup-closed", metadata: [:])
-        //            }
-        //        }
-        
         taskPlayerVcObj?.getToDosFromPlayer()
         
         
@@ -9692,6 +9707,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 }
             }
         }
+        addLog(text: "focusTryToBlockUnwantedApp:- \(appName)")
         if isCuddlyModeEnabled(){
             if arrBlockedAppsInCuddlyModeCurrentFocus.contains(runningApp){
                 focusBlockUnwantedApp(runningApp: runningApp, appName: appName, showNotification: true, isAppBlockByAi: false)
@@ -9717,9 +9733,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     }
     
     func focusBlockUnwantedApp(runningApp: NSRunningApplication, appName:String, showNotification:Bool, isAppBlockByAi:Bool){
+        addLog(text: "focusBlockUnwantedApp:- \(appName)")
         exitFullScreen(runningApp:runningApp)
         runningApp.hide()
-        allApiObject.capturePosthog(event: "block-distracting-app", metadata: [:])// log url jese
+        allApiObject.capturePosthog(event: "block-distracting-app", metadata: [:])
         if showNotification{
             showFocusAppBlockNotification(appName:appName)
         }
@@ -9744,6 +9761,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 }
             }
         }
+        addLog(text: "focusTryToBlockUnwantedUrl:- \(url)")
         if isCuddlyModeEnabled(){
             if arrBlockedUrlsInCuddlyModeCurrentFocus.contains(url){
                 focusBlockUnwantedUrl(script: script, url: url, lastBlockReasonFromAi: nil, browser: browser, isUrlBlockByAi: false, blockReason: "blocked_once_in_this_session")
@@ -12065,166 +12083,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 
 
 
-//https://focus-bear.sentry.io/issues/?project=4509122992275456&statsPeriod=1h
 
 
-
-
-
-
-
-// break warning aate hi morning state vala view hide ho gya w ki main view controller ka remove all sub view call hua kahi se
-
-
-//  full screen vali chioje handle krni hai
-
-
-
-//  change in simople pomodoro
-// title simple pomodoro mai bhi checnage kro
-
-
-
-// app kis time per full sreen hogi
-
-
-//  check shutoff and focus summary
-
-// all password screens on habit // password laga k check rkna
-// shut off
-//
-
-//  blankwindow
-
-
-// unlock dhutoff k baad staer focus session tab
-// niche se nudge aayga usme task k bare mai information
-// left menu disable satte ko or sahi kro
-// task player sahi kro
-// adhi habit chalu kro background vali
-
-
-// sare window object marne pdenge uski vjh se problem hogi
-// mail vala kaam
-
-
-// task player task not mathing check        matching hai
-
-// habits or break k time sab disable kro    done
-// motivation ko tools mai lejao       done
-
-
-//or bugs mili thi solve hui  done
-
-// this is disbaled becasue you are doing your morning routine  // tooltip done
-// task oplayer focus start hone k baad chota hi ayga  done
-// custom routin ki warning or break ki warning aate hi habit tab auto selct ho tha h  sahi kro done
-
-
-// minimise button not working   done
-// custom routine waringi se postpone krne per window band ho rahi hai done
-//focus end window duri view ya close per puranma close event fire hoga
-
-// what if mormning routine aa jay or focus completed view pda ho.. abhi tak solve ni hua ye issue . lekin user khud click kre band kare to solve hi
-
-
-
-// according to sir :- full screen habit per help bhi fulll screen per ayga.    done
-// dashboard hatoa.  done
-//  focus habit khatm hote hi task player vaps disbale karna hai   done
-
-
-//  check custom routine with warning  done
-
-
-//  break warning aaate hi break per tha phle se hi to remove  ho ya view superview se    done
-// or vaps break par aaya to full scrren ho gya jabki warning pedi hui thi                      done
-
-
-//break warning postpone krne per window bhi band ho rhi haio   done
-// hover bug                                                    done
-
-// check setting save honrhi h kya put local device setting kha h
-// extand morning evenin g postpoine if custom routine is running after postpome morning evening  done
-// custom rouinmes ni h to tab hide hoga   done
-
-
-//
-
-
-// if taks task player enabled then after start focvs mode window will close itself  done
-// enable advance analytics   done
-
-
-
-
-
-
-
-
-
-
-
-//21/8/25
-/// phle se focus mode end window pdi ho user start focus mper click kre to use handle kiya . ab vo complete mark hokar naya aa jayga
-/// bug solved in search  in settingsw
-// upfrade now button on left side and checlk nag again   done and  now if main window is vivible then nag will be presented on main window and if main window is not vivisble then nag will be shows on seprate window
-//
-// jab app chalu ho to expire date lkhvao token ki done
-// settings bug solved  done
-// floating top bar    done
-
-
-//// upfrade checlk nag again
-// show focus bear
-
-// onboarding
-
-
-// ak launch agent se kam ho sktya hai
-// new os per buttons kaam ni kr rhe
-//
-
-
-
-
-
-//  check settings kab kab save ho rahi hai
-// sign in with apple
-
-
-// easy postpone windown always get new object
-
-
-
-////minimise hote hi skignment nudge show kr rake h bina kisi ai check k sahi kro       Ai is not enabled done
-
-//kisi bhi option per click ho to menu band honjayga    done
-
-//If the big floating bear is open, I don’t think we need the little one as well.  done
-
-
-//  micro break aate hi thodi der tak chalu ni krte to khud hi micro break window hide ho jata hai use natural break mano. latka kr dikhao nataul break ko micro break per hi  done
-// launch agent remove now helper app will do every thing   done
-
-// nudge per click krne per window khul rahi h   done
-
-// setting ko chota karo   done
-
-
-// apple ka ni mila
-//  timer count down chnaged background habit
-// enter work
-// easy postpone bug solved
-
-
-
-
-
-
-//NSApp.endSheet((alert?.window)!)//todo 
-// super strict    not working 
-// micro break enabled
-//list reload  hu lekin title change ni hua
-// hiogh priority ho to password mangne vala kaam
 

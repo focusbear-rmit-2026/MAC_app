@@ -30,6 +30,7 @@ class customRoutineStateVc: NSViewController {
     }
     
     func reloadData(){
+        addLog(text:"customRoutineStateVc:- reloadData")
         customRoutinesMenu = NSMenu()
         for i in 0..<arrAllCustomRoutine.count{
             let routine = arrAllCustomRoutine[i]
@@ -45,6 +46,14 @@ class customRoutineStateVc: NSViewController {
             btnStartCustomRoutine.isHidden = true
         }else{
             btnStartCustomRoutine.isHidden = false
+        }
+        
+        if !isAppEnable{
+            lblTitle.stringValue = "Distraction Blocking is currently paused. You can turn it back on anytime to stay focused."
+            if let habitsStateVcInfo = configjson.value(forKey: "habitsStateVcInfo") as? NSDictionary{
+                lblTitle.stringValue = habitsStateVcInfo.value(forKey: "titleAppDisabled") as? String ?? lblTitle.stringValue
+            }
+            return;
         }
         
         if !isShutOffTimeGoing(){
