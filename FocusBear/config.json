@@ -657,7 +657,7 @@
         "titleWorkToBreakRatio": "Work to break ratio:",
         "descriptionWorkToBreakRatio": "For every <WORKRATIO> minutes you focus, you will have a <BREAKRATIO> minutes break.",
         "toText": "to",
-        "buttonBackToCustomBlocking": "Back to custom blocking",
+        "buttonBackToCustomBlocking": "Back to blocking schedule",
         "buttonAddBlockListText": "Add Block List",
         "titleBlockList": "Use Block Lists to stay focused on a certain type of work.",
         "descriptionForCustomBlocking": "When you use this block list, all websites will be allowed except for your Always Blocked URLs"
@@ -962,7 +962,7 @@
         "invalidDomainText": "Adding * will block all urls. Please use another combination.",
         "subTitleText": "Which sites do you waste time on? Focus Bear will help you be more intentional about how you use these sites. They will be blocked during focus sessions. The rest of the time, Focus Bear will ask you why you want to use the site.",
         "checkBoxText": "Immediately block super distracting sites",
-        "subTitleTextNew": "Which sites do you waste time on? Focus Bear will help you be more intentional about how you use these sites. They will be blocked during focus sessions and custom blocking schedules."
+        "subTitleTextNew": "Which sites do you waste time on? Focus Bear will help you be more intentional about how you use these sites. They will be blocked during focus sessions and blocking schedules."
     },
     "rememberNextHabitViewInfo": {
         "randomPhraseRightChoice1": "Right on!",
@@ -1797,7 +1797,7 @@
         "subTitleText": "Which apps do you waste time on? Focus Bear will help you be more intentional about how you use these apps. They will be blocked during focus sessions. The rest of the time, Focus Bear will ask you why you want to use the app.",
         "checkBoxText": "Immediately block super distracting apps",
         "addBrowserAlertText": "Sorry you can't choose browser apps here. Instead put distracting websites in the Super Distracting URLs section.",
-        "subTitleTextNew": "Which apps do you waste time on? Focus Bear will help you be more intentional about how you use these apps. They will be blocked during focus sessions and custom blocking schedules."
+        "subTitleTextNew": "Which apps do you waste time on? Focus Bear will help you be more intentional about how you use these apps. They will be blocked during focus sessions and blocking schedules."
     },
     "settingsNew": {
         "uiSettingTitle": "UI",
@@ -2469,7 +2469,8 @@
         "buttonStartBreak": "Start Break",
         "titleEnableBreaks": "Breaks are currently disabled. Enable taking breaks at regular intervals to boost your productivity, energy levels, and focus.",
         "pausedBreaksText": "You’ve paused breaks for today. They’ll be back tomorrow to help you recharge and focus.",
-        "shutoffTimeText": "App is in shutoff state"
+        "shutoffTimeText": "App is in shutoff state",
+        "noBreakScheduledText": "No upcoming break has been scheduled yet."
     },
     "leftMenuVcInfo":{
         "titleMain": "MAIN",
@@ -2516,7 +2517,7 @@
         "buttonSave": "Save"
     },
     "blockingScheduleEditorVcInfo":{
-        "title": "Custom Blocking",
+        "title": "Blocking Schedule",
         "titleScheduleName": "Block name",
         "titleBlockingSchedule": "Blocking schedule",
         "titleFromTime": "From",

@@ -61,9 +61,11 @@ class easyPostponeVc: NSViewController {
                         let cutOffDate = Calendar.current.date(bySettingHour: cutOffTime!.hour, minute: cutOffTime!.minute, second: cutOffTime!.second, of: Date())!
                         let currentDate = Date()
                         if currentDate > cutOffDate{
-                            self.presentAsSheet(enterPasswordVcObj!)
-                            enterPasswordVcObj?.parentVc = self
-                            enterPasswordVcObj?.isShowingForDeactivatingApp = false
+                            if self.view.window != nil{
+                                self.presentAsSheet(enterPasswordVcObj!)
+                                enterPasswordVcObj?.parentVc = self
+                                enterPasswordVcObj?.isShowingForDeactivatingApp = false
+                            }
                         }
                     }
                 }

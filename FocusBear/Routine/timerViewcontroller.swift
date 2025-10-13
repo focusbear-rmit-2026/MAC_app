@@ -260,6 +260,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                         if self.isActivityPaused{
                             if #available(macOS 12.0, *) {
                                 webView.setAllMediaPlaybackSuspended(true)
+                                print("setAllMediaPlaybackSuspended")
                             } else {
                                 // Fallback on earlier versions
                             }
@@ -362,9 +363,19 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                 videoUrl = videoUrl + "?loop=1&playlist=\(videoIDUnwrapped)"
             }
         }
+       
+        
+        if !isVimeoUrl{
+            if videoUrl.contains("?"){
+                videoUrl = videoUrl + "&rel=0"
+            }else{
+                videoUrl = videoUrl + "?rel=0"
+            }
+            //videoUrl = videoUrl.replacingOccurrences(of: "youtube.com", with: "youtube-nocookie.com")// not working
+        }
         
         addLog(text:"Final video url is :- \(videoUrl)")// Added in v 2.27.419
-        
+        print("Final video url is :- \(videoUrl)")
         let link = URL(string:videoUrl)!
         let request = URLRequest(url: link)
         if #available(macOS 12.0, *) {
@@ -467,7 +478,18 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                 }
             }
             
+            
+            
+            if !isVimeoUrl{
+                if videoUrl.contains("?"){
+                    videoUrl = videoUrl + "&rel=0"
+                }else{
+                    videoUrl = videoUrl + "?rel=0"
+                }
+                //videoUrl = videoUrl.replacingOccurrences(of: "youtube.com", with: "youtube-nocookie.com")// // not working 
+            }
             addLog(text:"Final video url is :- \(videoUrl)")// Added in v 2.27.419
+            print("Final video url is :- \(videoUrl)")
             let link = URL(string:videoUrl)!
             let request = URLRequest(url: link)
             if #available(macOS 12.0, *) {
@@ -702,9 +724,11 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                         let lastIntentionUsed = dic["lastIntentionUsed"] as? String ?? ""
                         let name = dic["name"] as? String ?? ""
                         boxBg.isHidden = true
-                        allApiObject.capturePosthog(event: "ask-intention-allowed-focus-mode-activity-shown", metadata: [:])
-                        self.presentAsSheet(getAskIntentionAllowedFocusModeActivityObject())
-                        askIntentionAllowedFocusModeActivityObj?.resetData(focusMode: name, intention: lastIntentionUsed, durationSeconds:durationSeconds, name:name,currentHabit: currentHabit, currentTimerValue:currentTimerValue)
+                        if self.view.window != nil{
+                            allApiObject.capturePosthog(event: "ask-intention-allowed-focus-mode-activity-shown", metadata: [:])
+                            self.presentAsSheet(getAskIntentionAllowedFocusModeActivityObject())
+                            askIntentionAllowedFocusModeActivityObj?.resetData(focusMode: name, intention: lastIntentionUsed, durationSeconds:durationSeconds, name:name,currentHabit: currentHabit, currentTimerValue:currentTimerValue)
+                        }
                         getTaskPlayerVcObject().loadView()
                         getTaskPlayerVcObject().loadRequest()
                     }
@@ -2009,11 +2033,13 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
     
 
     @IBAction func btnStartAnotherHabitClicked(_ sender: Any) {
-        if startAnotherHabitVcObj == nil{
-            startAnotherHabitVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("startAnotherHabitVc")) as? startAnotherHabitVc
+        if self.view.window != nil{
+            if startAnotherHabitVcObj == nil{
+                startAnotherHabitVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("startAnotherHabitVc")) as? startAnotherHabitVc
+            }
+            startAnotherHabitVcObj!.currentHabitIndex = currentHabitIndex
+            self.presentAsSheet(startAnotherHabitVcObj!)
         }
-        startAnotherHabitVcObj!.currentHabitIndex = currentHabitIndex
-        self.presentAsSheet(startAnotherHabitVcObj!)
     }
 }
 

@@ -33,7 +33,7 @@ struct customBlockingSchedule: Codable, Identifiable {
     var endTimeString: String
     var daysOfWeek: [Int]   // e.g. [1,2,3,4,5]
     var focusModeID: String
-//    var pauseFriction: PauseFriction
+    //    var pauseFriction: PauseFriction
     var blockLevel: FOCUSMODESTRICTNESS
     var isAIBlockingEnabled: Bool
     var isMicroBreaksEnabled: Bool
@@ -60,19 +60,19 @@ struct customBlockingSchedule: Codable, Identifiable {
         let weekday = calendar.component(.weekday, from: now)
         let schedule = self
         guard schedule.daysOfWeek.contains(weekday) else { return false }
-
-       // let nowComponents = calendar.dateComponents([.hour, .minute], from: now)
-       // let nowDate = calendar.date(bySettingHour: nowComponents.hour!, minute: nowComponents.minute!, second: 0, of: now)!
-
+        
+        // let nowComponents = calendar.dateComponents([.hour, .minute], from: now)
+        // let nowDate = calendar.date(bySettingHour: nowComponents.hour!, minute: nowComponents.minute!, second: 0, of: now)!
+        
         let startDate = schedule.startTime
-
+        
         var endDate = schedule.endTime
-
+        
         // Handle cross-midnight
         if endDate <= startDate {
             endDate = calendar.date(byAdding: .day, value: 1, to: endDate)!
         }
-
+        
         return now >= startDate && now <= endDate
     }
     
@@ -89,7 +89,7 @@ struct customBlockingSchedule: Codable, Identifiable {
         guard now >= start, now < end else {
             return 1
         }
-              
+        
         return end.timeIntervalSince(now)
     }
     
@@ -104,40 +104,46 @@ struct customBlockingSchedule: Codable, Identifiable {
         case blockLevel = "block_level"
         case isAIBlockingEnabled = "is_ai_blocking_enabled"
         case isMicroBreaksEnabled = "is_micro_breaks_enabled"
+        case metadata = "metadata"
     }
     // Custom decoding/encoding for time strings
-        init(from decoder: Decoder) throws {
-            let container = try decoder.container(keyedBy: CodingKeys.self)
-            id = try container.decodeIfPresent(String.self, forKey: .id) ?? UUID().uuidString
-            name = try container.decodeIfPresent(String.self, forKey: .name) ?? "Untitled"
-            let days = try container.decodeIfPresent([Int].self, forKey: .daysOfWeek) ?? [1,2,3,4,5,6,7]
-            daysOfWeek = []
-            for day in days{
-                daysOfWeek.append(day + 1)
-            }
-            
-            
-            focusModeID = try container.decodeIfPresent(String.self, forKey: .focusModeID) ?? ""
-
-            let blockLevelString = try container.decodeIfPresent(String.self, forKey: .blockLevel) ?? "gentle"
-            switch blockLevelString {
-            case "strict":        blockLevel = ._STRICT_
-            case "super-strict":  blockLevel = ._SUPER_STRICT_
-            case "gentle":        blockLevel = ._NORMAL_
-            default:              blockLevel = ._NORMAL_
-            }
-
-            isAIBlockingEnabled = try container.decodeIfPresent(Bool.self, forKey: .isAIBlockingEnabled) ?? false
-            isMicroBreaksEnabled = try container.decodeIfPresent(Bool.self, forKey: .isMicroBreaksEnabled) ?? false// todo not getting this
-
-            startTimeString = try container.decodeIfPresent(String.self, forKey: .startTime) ?? "09:00"
-            endTimeString = try container.decodeIfPresent(String.self, forKey: .endTime) ?? "18:00"
-               
-            //let start = customBlockingSchedule.parseTime(startTimeString) ?? Date()
-            startTime = customBlockingSchedule.dateForToday(from: startTimeString) ?? Date()
-            endTime = customBlockingSchedule.dateForToday(from: endTimeString) ?? Date()
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decodeIfPresent(String.self, forKey: .id) ?? UUID().uuidString
+        name = try container.decodeIfPresent(String.self, forKey: .name) ?? "Untitled"
+        let days = try container.decodeIfPresent([Int].self, forKey: .daysOfWeek) ?? [0,1,2,3,4,5,6]
+        daysOfWeek = []
+        for day in days{
+            daysOfWeek.append(day + 1)
         }
         
+        
+        focusModeID = try container.decodeIfPresent(String.self, forKey: .focusModeID) ?? ""
+        
+        let blockLevelString = try container.decodeIfPresent(String.self, forKey: .blockLevel) ?? "gentle"
+        switch blockLevelString {
+        case "strict":        blockLevel = ._STRICT_
+        case "super-strict":  blockLevel = ._SUPER_STRICT_
+        case "gentle":        blockLevel = ._NORMAL_
+        default:              blockLevel = ._NORMAL_
+        }
+        
+        isAIBlockingEnabled = try container.decodeIfPresent(Bool.self, forKey: .isAIBlockingEnabled) ?? false
+        isMicroBreaksEnabled = false
+        
+        startTimeString = try container.decodeIfPresent(String.self, forKey: .startTime) ?? "09:00"
+        endTimeString = try container.decodeIfPresent(String.self, forKey: .endTime) ?? "18:00"
+        
+        //let start = customBlockingSchedule.parseTime(startTimeString) ?? Date()
+        startTime = customBlockingSchedule.dateForToday(from: startTimeString) ?? Date()
+        endTime = customBlockingSchedule.dateForToday(from: endTimeString) ?? Date()
+        
+        
+        if let metadata = try container.decodeIfPresent([String: Bool].self, forKey: .metadata) {
+            isMicroBreaksEnabled = metadata["is_micro_breaks_enabled"] ?? false
+        }
+    }
+    
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(id, forKey: .id)
@@ -160,10 +166,13 @@ struct customBlockingSchedule: Codable, Identifiable {
         try container.encode(blockLevelString, forKey: .blockLevel)
         
         try container.encode(isAIBlockingEnabled, forKey: .isAIBlockingEnabled)
-        try container.encode(isMicroBreaksEnabled, forKey: .isMicroBreaksEnabled)
+       // try container.encode(isMicroBreaksEnabled, forKey: .isMicroBreaksEnabled)
         
         try container.encode(startTimeString, forKey: .startTime)
         try container.encode(endTimeString, forKey: .endTime)
+        //var dic = [String:Any]()
+        let metadata = ["is_micro_breaks_enabled": isMicroBreaksEnabled]
+        try container.encode(metadata, forKey: .metadata)
     }
     
     // Shared formatter for "HH:mm"
@@ -173,26 +182,55 @@ struct customBlockingSchedule: Codable, Identifiable {
         formatter.locale = Locale(identifier: "en_US_POSIX")
         return formatter
     }()
-//    
-//    static let timeFormatter: DateFormatter = {
-//        let formatter = DateFormatter()
-//        formatter.locale = Locale(identifier: "en_US_POSIX")
-//        return formatter
-//    }()
-
-//    static let timeFormatter: DateFormatter = {
-//        let formatter = DateFormatter()
-//        formatter.locale = Locale(identifier: "en_US_POSIX")
-//        return formatter
-//    }()
-
+    //
+    //    static let timeFormatter: DateFormatter = {
+    //        let formatter = DateFormatter()
+    //        formatter.locale = Locale(identifier: "en_US_POSIX")
+    //        return formatter
+    //    }()
+    
+    //    static let timeFormatter: DateFormatter = {
+    //        let formatter = DateFormatter()
+    //        formatter.locale = Locale(identifier: "en_US_POSIX")
+    //        return formatter
+    //    }()
+    
+    
+    //    static func parseTime(_ str: String) -> Date? {
+    //        let formats = ["HH:mm:ss", "HH:mm"]
+    //        for format in formats {
+    //            timeFormatter.dateFormat = format
+    //            if let date = timeFormatter.date(from: str) {
+    //                return date
+    //            }
+    //        }
+    //        return nil
+    //    }
     
     static func parseTime(_ str: String) -> Date? {
+        let timeFormatter = DateFormatter()
+        timeFormatter.locale = Locale(identifier: "en_US_POSIX")
+        
         let formats = ["HH:mm:ss", "HH:mm"]
         for format in formats {
             timeFormatter.dateFormat = format
-            if let date = timeFormatter.date(from: str) {
-                return date
+            if let timeDate = timeFormatter.date(from: str) {
+                // Get current calendar and today's date components
+                let calendar = Calendar.current
+                let now = Date()
+                let todayComponents = calendar.dateComponents([.year, .month, .day], from: now)
+                let timeComponents = calendar.dateComponents([.hour, .minute, .second], from: timeDate)
+                
+                // Merge today's date with parsed time
+                var combined = DateComponents()
+                combined.year = todayComponents.year
+                combined.month = todayComponents.month
+                combined.day = todayComponents.day
+                combined.hour = timeComponents.hour
+                combined.minute = timeComponents.minute
+                combined.second = timeComponents.second
+                
+                return calendar.date(from: combined)
             }
         }
         return nil
@@ -220,7 +258,7 @@ extension customBlockingSchedule {
         end: String,
         daysOfWeek: [Int],
         focusModeID: String,
-//        pauseFriction: PauseFriction,
+        //        pauseFriction: PauseFriction,
         blockLevel: FOCUSMODESTRICTNESS,
         isAIBlockingEnabled: Bool,
         isMicroBreaksEnabled:Bool
@@ -229,11 +267,11 @@ extension customBlockingSchedule {
         self.name = name
         self.startTimeString = start
         self.endTimeString = end
-        self.startTime = Self.dateForToday(from: start) ?? Date()
-        self.endTime = Self.dateForToday(from: end) ?? Date()
+        self.startTime = Self.parseTime(start) ?? Date()
+        self.endTime = Self.parseTime(end) ?? Date()
         self.daysOfWeek = daysOfWeek
         self.focusModeID = focusModeID
-//        self.pauseFriction = pauseFriction
+        //        self.pauseFriction = pauseFriction
         self.blockLevel = blockLevel
         self.isAIBlockingEnabled = isAIBlockingEnabled
         self.isMicroBreaksEnabled = isMicroBreaksEnabled
@@ -246,7 +284,7 @@ extension customBlockingSchedule {
 
 enum WeekDay: Int, Codable, CaseIterable {
     case sunday = 1, monday, tuesday, wednesday, thursday, friday, saturday
-
+    
     var shortName: String {
         switch self {
         case .sunday: return "Sun"
@@ -264,11 +302,11 @@ extension Array where Element == Int {
     func formattedDays() -> String {
         let sortedDays = self.sorted()
         if sortedDays.count == 7 { return "Everyday" }
-
+        
         var ranges: [String] = []
         var start: Int?
         var previous: Int?
-
+        
         for day in sortedDays {
             if start == nil {
                 start = day
@@ -283,7 +321,7 @@ extension Array where Element == Int {
             }
             previous = day
         }
-
+        
         // Add last range
         if let start = start, let prev = previous {
             if start == prev {
@@ -292,7 +330,7 @@ extension Array where Element == Int {
                 ranges.append("\(WeekDay(rawValue: start)!.shortName)-\(WeekDay(rawValue: prev)!.shortName)")
             }
         }
-
+        
         return ranges.joined(separator: ", ")
     }
 }
@@ -322,12 +360,18 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
     
     @objc func dayChangedOperations(_ aNotification: Notification) {
         addLog(text: "func call:- dayChangedOperations")
-        for i in 0..<arrBlockingSchedule.count {
-            arrBlockingSchedule[i].startTime = customBlockingSchedule.dateForToday(from: arrBlockingSchedule[i].startTimeString)!
-            arrBlockingSchedule[i].endTime = customBlockingSchedule.dateForToday(from: arrBlockingSchedule[i].endTimeString)!
+        DispatchQueue.main.async { [self] in
+            if isAnyCustomScheduleOn || isAnyCustomSchedulePaused{
+                customBlockingScheduleFinished()
+            }
+            for i in 0..<arrBlockingSchedule.count {
+                arrBlockingSchedule[i].startTime = customBlockingSchedule.dateForToday(from: arrBlockingSchedule[i].startTimeString) ?? Date()
+                arrBlockingSchedule[i].endTime = customBlockingSchedule.dateForToday(from: arrBlockingSchedule[i].endTimeString) ?? Date()
+            }
         }
+        
     }
-
+    
     func checkCustomBlockingScheduleTime(){
         if currentState != ._MORNING_HABIT_ && currentState != ._CUSTOM_ROUTINE_ && currentState != ._EVENING_HABIT_ && !appdelegate!.isProcessingHabitRoutine && !isProcessingCustomRoutine && currentState != ._MICRO_BREAK_ && !isAnyCustomScheduleOn && !isFocusModeRunning{
             for i in 0..<arrBlockingSchedule.count{
@@ -432,7 +476,7 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
                 break;
             }
         }
-
+        
         let lastIntentionUsed = currentRunningFocusType["lastIntentionUsed"] as? String ?? ""
         whatToAchieveInFocusBlock = lastIntentionUsed
         focusModeTaskString = currentRunningFocusType["lastTaskUsed"] as? String ?? ""
@@ -461,7 +505,7 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
         refreshFocusModeData()
         arrKeywordsToAllowInFocus.removeAll()
         arrAllowedTabTitlesInCuddlyModeCurrentFocus.removeAll()
-        menuViewControllerObj?.reloadIfNeeded() 
+        menuViewControllerObj?.reloadIfNeeded()
         appdelegate!.frontApplicationChanged()// call it because front application is active already
         
         focusModeMinutesToPerform = Int(remaining / 60)
@@ -485,28 +529,33 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
         let encoder = JSONEncoder()
         encoder.outputFormatting = .prettyPrinted
         guard let jsonData = try? encoder.encode(arrBlockingSchedule.first!) else { return }
-
+        
         if let jsonString = String(data: jsonData, encoding: .utf8) {
             print(jsonString)
         }
     }
-
+    
     func addCustomBlockingScheduleAtIndex(_ index: Int){
         let encoder = JSONEncoder()
         encoder.outputFormatting = .prettyPrinted
         guard let jsonData = try? encoder.encode(arrBlockingSchedule[index]) else { return }
+        if let jsonString = String(data: jsonData, encoding: .utf8) {//
+            print(jsonString)
+            addLog(text: "Blocking schedule added:- \(jsonString)")
+        }
         allApiObject.addBlockingSchedule(jsonData: jsonData, completionHandler: {bool in
             
         })
     }
-
+    
     func updateCustomBlockingScheduleAtIndex(_ index: Int){
         let encoder = JSONEncoder()
         encoder.outputFormatting = .prettyPrinted
         guard let jsonData = try? encoder.encode(arrBlockingSchedule[index]) else { return }
-
-        if let jsonString = String(data: jsonData, encoding: .utf8) {
+        
+        if let jsonString = String(data: jsonData, encoding: .utf8) {//
             print(jsonString)
+            addLog(text: "Blocking schedule updated:- \(jsonString)")
         }
         allApiObject.updateBlockingSchedule(id: arrBlockingSchedule[index].id, jsonData: jsonData, completionHandler: {bool in
             
@@ -516,6 +565,9 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
     
     
     func readCustomBlockingScheduleData(jsonData:Data){
+//        if let jsonString = String(data: jsonData, encoding: .utf8) {//
+//            print(jsonString)
+//        }
         let decoder = JSONDecoder()
         if let schedule = try? decoder.decode([customBlockingSchedule].self, from: jsonData){
             arrBlockingSchedule = schedule
@@ -560,7 +612,7 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
         arrBlockingSchedule.remove(at: index)
     }
     
-    func isCuddlyModeEnabled()->Bool{ 
+    func isCuddlyModeEnabled()->Bool{
         if isAnyCustomScheduleOn{
             for schedule in arrBlockingSchedule{
                 if schedule.state == .on{

@@ -159,37 +159,37 @@ class askLogInVc: NSViewController, ASAuthorizationControllerDelegate, ASAuthori
 //            controller.performRequests()
 //        }
         
-        //        Auth0
-        //            .webAuth()
-        //            .connection("apple") // Apple connection in Auth0
-        //            .audience("https://auth.focusbear.io/api/v2/") // same audience
-        //            .scope("openid profile email offline_access")
-        //            .start { result in
-        //                switch result {
-        //                case .success(let credentials):
-        //                    print("Logged in with Apple: \(credentials)")
-        //
-        //                    DispatchQueue.main.async {
-        //                        self.view.window?.close()
-        //                        appdelegate?.statusbutton?.action = nil
-        //
-        //                        appdelegate?.user = AuthUser(from: credentials.accessToken)
-        //
-        //                        allApiObject.capturePosthog(event: "login-homemade", metadata: [:])
-        //                        _ = appdelegate?.credentialsManager.store(credentials: credentials)
-        //
-        //                        UserDefaults.standard.set(true, forKey: kUserdefaultsIsUserLoggedIn)
-        //                        appdelegate?.loadCredentialsAndDeviceId()
-        //                        //                        UserDefaults.standard.set(true, forKey: kUserDefaultsLastUserLoginWithApple)
-        //                    }
-        //
-        //                case .failure(let error):
-        //                    print("Apple login failed: \(error)")
-        //                    DispatchQueue.main.async {
-        //                        askLogInWcObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.modalPanelWindow)))
-        //                    }
-        //                }
-        //            }
+        Auth0
+            .webAuth()
+            .connection("apple") // Apple connection in Auth0
+            .audience("https://auth.focusbear.io/api/v2/") // same audience
+            .scope("openid profile email offline_access")
+            .start { result in
+                switch result {
+                case .success(let credentials):
+                    print("Logged in with Apple: \(credentials)")
+                    
+                    DispatchQueue.main.async {
+                        self.view.window?.close()
+                        appdelegate?.statusbutton?.action = nil
+                        
+                        appdelegate?.user = AuthUser(from: credentials.accessToken)
+                        
+                        allApiObject.capturePosthog(event: "login-homemade", metadata: [:])
+                        _ = appdelegate?.credentialsManager.store(credentials: credentials)
+                        
+                        UserDefaults.standard.set(true, forKey: kUserdefaultsIsUserLoggedIn)
+                        appdelegate?.loadCredentialsAndDeviceId()
+                        //                        UserDefaults.standard.set(true, forKey: kUserDefaultsLastUserLoginWithApple)
+                    }
+                    
+                case .failure(let error):
+                    print("Apple login failed: \(error)")
+                    DispatchQueue.main.async {
+                        askLogInWcObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.modalPanelWindow)))
+                    }
+                }
+            }
         
         
         //        Auth0
@@ -216,7 +216,7 @@ class askLogInVc: NSViewController, ASAuthorizationControllerDelegate, ASAuthori
         //            }
         
         
-//        return;
+        return;
         addLog(text:"[user-action] btnSignInWithAppleClicked")
         allApiObject.capturePosthog(event: "button-signin-with-apple-clicked", metadata: [:])
         self.presentAsSheet(loginComingSoonMsgVcObject())
@@ -327,4 +327,7 @@ class askLogInVc: NSViewController, ASAuthorizationControllerDelegate, ASAuthori
     }
 }
 // com.focusbear.applesignin
+
+
+
 

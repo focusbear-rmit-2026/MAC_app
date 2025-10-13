@@ -853,8 +853,9 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         }else{
             appdelegate?.menuShowSimplePomodoroModeView()
         }
-        
-        self.presentAsSheet(getAbortingCustomScheduleBlockingVcObject())
+        if self.view.window != nil{
+            self.presentAsSheet(getAbortingCustomScheduleBlockingVcObject())
+        }
         getAbortingCustomScheduleBlockingVcObject().resetData()
     }
     

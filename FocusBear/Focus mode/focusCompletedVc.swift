@@ -419,9 +419,11 @@ class focusCompletedVc: NSViewController {
         if !focusModeTaskStringIsEmpty() || allowExtend{
             let obj = getAddTaskVcObject()
             obj.loadView()
-            obj.reloadData(isAddingTask: false, allowExtend: allowExtend, isHabitGoing: false)
             if self.view.window != nil{
-                self.presentAsSheet(obj)
+                obj.reloadData(isAddingTask: false, allowExtend: allowExtend, isHabitGoing: false)
+                if self.view.window != nil{
+                    self.presentAsSheet(obj)
+                }
             }
             allApiObject.capturePosthog(event: "mark-tasks-on-focus-session-end-screen-shown", metadata: [:])
         }

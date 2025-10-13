@@ -396,8 +396,10 @@ class firstViewController: NSViewController {
                     if UserDefaults.standard.object(forKey: kUserdefaultsImpactMeasurementShown) == nil{
                         UserDefaults.standard.set(true, forKey: kUserdefaultsImpactMeasurementShown)
                         allApiObject.capturePosthog(event: "show-recordimpact-permission", metadata: [:])
-                        self.presentAsSheet(getImpactMeasurementVcObject())
-                        isAnyNagVisible = true
+                        if self.view.window != nil{
+                            self.presentAsSheet(getImpactMeasurementVcObject())
+                            isAnyNagVisible = true
+                        }
                     }
                 }
             }
@@ -457,11 +459,15 @@ class firstViewController: NSViewController {
             if alertLimitedUsageVcObj != nil{
                 if alertLimitedUsageVcObj?.presentingViewController != self{
                     allApiObject.capturePosthog(event: "alert-limited-usage-shown", metadata: [:])
-                    self.presentAsSheet(getAlertLimitedUsageVcObject())
+                    if self.view.window != nil{
+                        self.presentAsSheet(getAlertLimitedUsageVcObject())
+                    }
                 }
             }else{
                 allApiObject.capturePosthog(event: "alert-limited-usage-shown", metadata: [:])
-                self.presentAsSheet(getAlertLimitedUsageVcObject())
+                if self.view.window != nil{
+                    self.presentAsSheet(getAlertLimitedUsageVcObject())
+                }
             }
         }
     }
@@ -495,7 +501,9 @@ class firstViewController: NSViewController {
                 let currentDate = Date()
                 let diffHours = Calendar.current.dateComponents([.hour], from: startDate, to: currentDate).hour ?? 0
                 if diffHours > 3{
-                    self.presentAsSheet(getLateMorningHabitPopupVcObject())
+                    if self.view.window != nil{
+                        self.presentAsSheet(getLateMorningHabitPopupVcObject())
+                    }
                 }
             }
         }
@@ -579,10 +587,12 @@ class firstViewController: NSViewController {
                 }
             }
             if totalSecondsAllHabits != 0{
-                addLog(text: "confirm Routine Duration view shown")
-                allApiObject.capturePosthog(event: "confirm-routine-duration-shown", metadata: [:])
-                self.presentAsSheet(getConfirmRoutineDurationVcObject())
-                getConfirmRoutineDurationVcObject().resetData(totalSeconds: totalSecondsAllHabits)
+                if self.view.window != nil{
+                    addLog(text: "confirm Routine Duration view shown")
+                    allApiObject.capturePosthog(event: "confirm-routine-duration-shown", metadata: [:])
+                    self.presentAsSheet(getConfirmRoutineDurationVcObject())
+                    getConfirmRoutineDurationVcObject().resetData(totalSeconds: totalSecondsAllHabits)
+                }
             }
         }
     }
@@ -742,11 +752,13 @@ class firstViewController: NSViewController {
     
     func showChooseHabitsView(){
         addLog(text: "showChooseHabitsView")
-        if chooseHabitsVCObj == nil{
-            chooseHabitsVCObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("chooseHabitsVC")) as? chooseHabitsVC
+        if self.view.window != nil{
+            if chooseHabitsVCObj == nil{
+                chooseHabitsVCObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("chooseHabitsVC")) as? chooseHabitsVC
+            }
+            chooseHabitsVCObj!.currentHabitIndex = currentHabitIndex
+            self.presentAsSheet(chooseHabitsVCObj!)
         }
-        chooseHabitsVCObj!.currentHabitIndex = currentHabitIndex
-        self.presentAsSheet(chooseHabitsVCObj!)
     }
     
     @IBAction func segmentControlOfficeModeClicked(_ sender: Any) {

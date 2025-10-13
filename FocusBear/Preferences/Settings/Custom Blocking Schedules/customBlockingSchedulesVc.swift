@@ -21,7 +21,7 @@ class customBlockingSchedulesVc: NSViewController {
         lblTitle.stringValue = "Custom Blocking"
         lblAddNewBlock.stringValue = "➕ Add new block"
         tblView.enclosingScrollView?.contentInsets = NSEdgeInsets(top: 0, left: 0, bottom: 50, right: 0)
-        boxAddNewSchedule.isHidden = true
+        //boxAddNewSchedule.isHidden = true
         
         
         

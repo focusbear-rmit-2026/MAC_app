@@ -1595,14 +1595,14 @@ func getPreloadFocusModeAppsVcObj()->preloadFocusModeAppsVc{
 }
 
 
-var allTracksWindowControllerObj: commonWindowController?
-
-func getAllTracksWindowControllerObj()->commonWindowController{
-    if allTracksWindowControllerObj == nil{
-        allTracksWindowControllerObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
-    }
-    return allTracksWindowControllerObj!
-}
+//var allTracksWindowControllerObj: commonWindowController?
+//
+//func getAllTracksWindowControllerObj()->commonWindowController{
+//    if allTracksWindowControllerObj == nil{
+//        allTracksWindowControllerObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
+//    }
+//    return allTracksWindowControllerObj!
+//}
 
 
 var allTracksVcObj:allTracksVc?

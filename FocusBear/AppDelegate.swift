@@ -3378,14 +3378,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     
     @objc func showAutoPomodoroModeView(){
         addLog(text: "Initiating Auto Pomodoro Mode View.")
-        
+        isFocusBreakOn = false
         if !SettingsManagerObject.isGeekModeEnabled{
             addLog(text: "simple Mode is enabled:- Show Simple Pomodoro Mode View.")
             menuShowSimplePomodoroModeView()
             return;
         }
         
-        isFocusBreakOn = false
+        
         if savedSitesForLaterWcObj != nil{
             if savedSitesForLaterWcObj!.window?.isVisible ?? false{
                 savedSitesForLaterWcObj!.close()
@@ -3521,6 +3521,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     
     @objc func menuShowPomodoroModeView(){
         addLog(text: "Initiating Pomodoro Mode View.")
+        isFocusBreakOn = false
         if !SettingsManagerObject.isGeekModeEnabled{
             addLog(text: "Simple Mode is enabled:- return.")
             return;
@@ -3551,7 +3552,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         if self.timerPomodoroMode != nil{
             self.timerPomodoroMode?.invalidate()
             self.timerPomodoroMode = nil
-            isFocusBreakOn = false
         }
         //        if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
         //            if smallCountDownWcObj?.window != nil{
@@ -3586,6 +3586,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     
     @objc func menuShowSimplePomodoroModeView(){
         addLog(text: "Initiating Simple Pomodoro Mode View.")
+        isFocusBreakOn = false
         if SettingsManagerObject.isGeekModeEnabled{
             addLog(text: "Geek Mode is enabled:- return.")
             return;
@@ -3616,7 +3617,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         if self.timerPomodoroMode != nil{
             self.timerPomodoroMode?.invalidate()
             self.timerPomodoroMode = nil
-            isFocusBreakOn = false
         }
         //        if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
         //            if smallCountDownWcObj?.window != nil{
@@ -5382,6 +5382,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 
                 if shouldShowEveningHabit{
                     if arrAllDaysEveningHabits.count == 0 {// if count is 0 then we will not do anything
+                        checkCustomRoutineTime()
+                        customBlockingScheduleManagerObj.checkCustomBlockingScheduleTime()
                         return;
                     }
                     
@@ -5569,6 +5571,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                 
                                 if self.isUserOnMeeting{
                                     addLog(text: "isUserOnMeeting True: Morning Habits Time checking Cancelled.")
+                                    customBlockingScheduleManagerObj.checkCustomBlockingScheduleTime()
                                     return
                                 }
                                 arrFilteredMorningHabits.removeAll()
@@ -8172,6 +8175,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                             if !isAppAllowed{
                                 var isAppAllowedByUser = false
                                 let arrBlockedApps = getBlockedAppsToBlock()
+                                
                                 for path in arrBlockedApps{
                                     let url = URL(fileURLWithPath: path)
                                     if url.deletingPathExtension().lastPathComponent.lowercased() == nameLowercased{
@@ -12077,12 +12081,5 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         hotKeyStartPomodoro = nil
     }
 }
-
-
-
-
-
-
-
 
 

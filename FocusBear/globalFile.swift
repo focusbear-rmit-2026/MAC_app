@@ -17,6 +17,27 @@ let screenFrame = NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 1920, height
 
 
 func getBlockedUrlsToBlock()->[String]{
+    if customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
+        if isFocusBreakOn{
+            if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsDoNotBlockUrlsDuringSuperPomodoroBreaks) as? Bool{
+                if state{
+                    return [];
+                }
+            }
+        }
+        if currentState == ._MICRO_BREAK_{
+            if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsDoNotBlockUrlsDuringSuperPomodoroBreaks) as? Bool{
+                if state{
+                    return [];
+                }
+            }
+        }
+        
+        if appdelegate!.isUserOnMeeting && !SettingsManagerObject.isBlockDistractingSitesDuringMeetingsEnabled{
+            return [];
+        }
+        
+    }
     var arrBlockedUrls = [String]()
     var blockedUrlsCount = SettingsManagerObject.arrBlockedUrls.count
     if isExpired{
@@ -32,6 +53,28 @@ func getBlockedUrlsToBlock()->[String]{
 }
 
 func getBlockedAppsToBlock()->[String]{
+    if customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
+        if isFocusBreakOn{
+            if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsDoNotBlockUrlsDuringSuperPomodoroBreaks) as? Bool{
+                if state{
+                    return [];
+                }
+            }
+        }
+        if currentState == ._MICRO_BREAK_{
+            if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsDoNotBlockUrlsDuringSuperPomodoroBreaks) as? Bool{
+                if state{
+                    return [];
+                }
+            }
+        }
+        
+        if appdelegate!.isUserOnMeeting && !SettingsManagerObject.isBlockDistractingSitesDuringMeetingsEnabled{
+            return [];
+        }
+        
+    }
+    
     var arrBlockedApps = [String]()
     var blockedAppsCount = SettingsManagerObject.arrBlockedApps.count
     if isExpired{
@@ -851,11 +894,7 @@ func pauseAutomaticallyIfAnyFocusMusicPlaying(){
                     allTracksVcObj?.currentSound?.pause()
                     isFocusMusicPausedAutomatically = true
                 }
-                if allTracksWindowControllerObj != nil{
-                    if allTracksWindowControllerObj?.window?.isVisible ?? false{
-                        allTracksVcObj?.tblView.reloadData()
-                    }
-                }
+                reloadFocusMusicListIfVisible()
                 break;
             }
         }
@@ -870,11 +909,7 @@ func resumeIfAnyFocusMusicStoppedAutomatically(){
                     arrAllTracks[i]["isPlaying"] = true
                     arrAllTracks[i]["isPaused"] = false
                     allTracksVcObj?.currentSound?.resume()
-                    if allTracksWindowControllerObj != nil{
-                        if allTracksWindowControllerObj?.window?.isVisible ?? false{
-                            allTracksVcObj?.tblView.reloadData()
-                        }
-                    }
+                    reloadFocusMusicListIfVisible()
                     break;
                 }
             }
@@ -882,6 +917,15 @@ func resumeIfAnyFocusMusicStoppedAutomatically(){
     }
 }
 
+func reloadFocusMusicListIfVisible(){
+    if allTracksVcObj != nil && mainWindowControllerObj != nil{
+        if mainWindowControllerObj?.window?.isVisible ?? false{
+            if leftMenuVcObj?.boxFocusMusic.isSelected ?? false{
+                allTracksVcObj?.tblView.reloadData()
+            }
+        }
+    }
+}
 
 func checkIsFullScreenEnabled()-> Bool{
     if currentState == ._MICRO_BREAK_{
@@ -2157,11 +2201,7 @@ func checkAllTracksDownloadState(){
             allApiObject.downloadFileAsync(url: thumbnail_download_url, destinationUrl: thumbnailLocalUrl){ (success, error) in
                 checkAllTracksDownloadState()
                 DispatchQueue.main.async {
-                    if allTracksVcObj != nil && allTracksWindowControllerObj != nil{
-                        if allTracksWindowControllerObj?.window?.isVisible ?? false{
-                            allTracksVcObj?.tblView.reloadData()
-                        }
-                    }
+                    reloadFocusMusicListIfVisible()
                 }
             }
             break;

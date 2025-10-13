@@ -2644,8 +2644,10 @@ class habitsVc: NSViewController {
             showAskIntention = false
         }
         if showAskIntention{
-            self.presentAsSheet(getAskPostponeIntentionVcObject())
-            askPostponeIntentionVcObj?.resetData(minutes: minutes, secondsToPostpone: secondsToPostpone, showAskFocusModeView: showAskFocusModeView, lastCurrentState: ._MORNING_HABIT_)
+            if self.view.window != nil{
+                self.presentAsSheet(getAskPostponeIntentionVcObject())
+                askPostponeIntentionVcObj?.resetData(minutes: minutes, secondsToPostpone: secondsToPostpone, showAskFocusModeView: showAskFocusModeView, lastCurrentState: ._MORNING_HABIT_)
+            }
         }else{
             var seconds = 0
             if secondsToPostpone != nil{
@@ -2767,6 +2769,7 @@ class habitsVc: NSViewController {
                     pomodoroVcObj!.lblTitle.stringValue = pomodoroVcObj!.titleAfterPostpone
                     
                 }else{
+                    removeSubViews() 
                     leftMenuVcObj?.showHabitsView()
                     habitsVcObj?.showHabitState()
                 }
@@ -2871,8 +2874,10 @@ class habitsVc: NSViewController {
         }
         
         if showAskIntention{
-            self.presentAsSheet(getAskPostponeIntentionVcObject())
-            askPostponeIntentionVcObj?.resetData(minutes: minutes, secondsToPostpone: secondsToPostpone, showAskFocusModeView: showAskFocusModeView, lastCurrentState: ._EVENING_HABIT_)
+            if self.view.window != nil{
+                self.presentAsSheet(getAskPostponeIntentionVcObject())
+                askPostponeIntentionVcObj?.resetData(minutes: minutes, secondsToPostpone: secondsToPostpone, showAskFocusModeView: showAskFocusModeView, lastCurrentState: ._EVENING_HABIT_)
+            }
         }else{
             var seconds = 0
             if secondsToPostpone != nil{
@@ -2992,6 +2997,7 @@ class habitsVc: NSViewController {
                 pomodoroVcObj!.lblTitle.stringValue = pomodoroVcObj!.titleAfterPostpone
                 
             }else{
+                removeSubViews()
                 leftMenuVcObj?.showHabitsView()
                 habitsVcObj?.showHabitState()
             }
@@ -3012,8 +3018,10 @@ class habitsVc: NSViewController {
             showAskIntention = false
         }
         if showAskIntention{
-            self.presentAsSheet(getAskPostponeIntentionVcObject())
-            askPostponeIntentionVcObj?.resetData(minutes: minutes, secondsToPostpone: nil, showAskFocusModeView: false, lastCurrentState: ._FOCUS_SUMMARY_)
+            if self.view.window != nil{
+                self.presentAsSheet(getAskPostponeIntentionVcObject())
+                askPostponeIntentionVcObj?.resetData(minutes: minutes, secondsToPostpone: nil, showAskFocusModeView: false, lastCurrentState: ._FOCUS_SUMMARY_)
+            }
         }else{
             hideCloseButtons()
             removeSubViews()
@@ -3057,6 +3065,7 @@ class habitsVc: NSViewController {
                 pomodoroVcObj!.lblTitle.stringValue = pomodoroVcObj!.titleAfterPostpone
                 
             }else{
+                removeSubViews()
                 leftMenuVcObj?.showHabitsView()
                 habitsVcObj?.showHabitState()
             }

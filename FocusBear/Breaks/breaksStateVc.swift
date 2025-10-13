@@ -166,9 +166,9 @@ class breaksStateVc: NSViewController {
                 lblNextBreakTime.isHidden = false
                 btnStartMicroBreaks.isHidden = false
             }else if getHabitsVcObject().breakTimer == nil{
-                lblNextBreakTime.stringValue = "No upcoming break has been scheduled yet."// todo text 
-                if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
-//                    lblNextBreakTime.stringValue = menuInfo.value(forKey: "waitingBreakTimeText") as? String ?? lblNextBreakTime.stringValue
+                lblNextBreakTime.stringValue = "No upcoming break has been scheduled yet."
+                if let breakStateVcInfo = configjson.value(forKey: "breakStateVcInfo") as? NSDictionary{
+                    lblNextBreakTime.stringValue = breakStateVcInfo.value(forKey: "noBreakScheduledText") as? String ?? lblNextBreakTime.stringValue
                 }
                 lblEnableBreaks.isHidden = true
                 btnEnableMicroBreaks.isHidden = true

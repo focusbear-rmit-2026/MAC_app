@@ -112,15 +112,10 @@ blockpage params
 
 
 
-//ISSUES// todo
-//
-// super strict    not working  in blocking schedules
-// micro break enabled.  Not working in blocking schedules
+//ISSUES//
+
+
 // focus bear settings showing wrong information :- it shows activity is office friendly but in realty it was non office friendly activity
 // wrong tab blocked not found
 // edit routine alert not showing when user is doing edit routin from morning/ evening
 
-
-// what to do with these settings because no use of these now after custom schedule blocking added and normal blocking removed
-//Do not block "super Distracting Sites" during breaks.
-//Block "Super Distracting Sites" during Meetings

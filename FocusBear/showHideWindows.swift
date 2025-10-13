@@ -546,20 +546,7 @@ func showAllTracksWindow(){
     
     mainWindowControllerObj?.showWindow(nil)
     leftMenuVcObj?.showAllTracks()
-    return; // todo
-    
-    getAllTracksWindowControllerObj().contentViewController = getAllTracksVcObj()
-    getAllTracksWindowControllerObj().window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
-    allTracksWindowControllerObj?.window?.center()
-    
-    allTracksWindowControllerObj?.window?.title = "Focus Music"
-    if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
-        allTracksWindowControllerObj?.window?.title = menuInfo.value(forKey: "menuItemFocusMusicTitle") as? String ?? "Focus Music"
-    }
-    
-    allTracksWindowControllerObj!.showWindow(nil)
-    //    breakWarningVcObj!.resetView()
-    NSApplication.shared.activate(ignoringOtherApps: true)
+    return;
 }
 //-------------------------------------------------//
 

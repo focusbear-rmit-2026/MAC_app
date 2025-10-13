@@ -392,7 +392,7 @@ class blockingScheduleEditorVC: NSViewController {
             allApiObject.capturePosthog(event: "add-blocking-schedule", metadata: [:])//2.27.421
             customBlockingScheduleManagerObj.addCustomBlockingScheduleAtIndex(customBlockingScheduleManagerObj.arrBlockingSchedule.count - 1)
         }else{
-            let blockingSchedule = customBlockingSchedule(
+            var blockingSchedule = customBlockingSchedule(
                 id: customBlockingScheduleManagerObj.arrBlockingSchedule[currentFocusModeIndex].id,
                 name: textFieldScheduleName.stringValue,
                 start: getTimeString(date: datePickerFrom.dateValue),
@@ -403,6 +403,7 @@ class blockingScheduleEditorVC: NSViewController {
                 blockLevel: blockMode,
                 isAIBlockingEnabled: checkBoxAiEnabled.state == .on, isMicroBreaksEnabled: checkBoxSkipMicroBreaks.state != .on
             )
+            blockingSchedule.state = customBlockingScheduleManagerObj.arrBlockingSchedule[currentFocusModeIndex].state
             customBlockingScheduleManagerObj.arrBlockingSchedule[currentFocusModeIndex] = blockingSchedule
             customBlockingSchedulesVcObj?.scheduleEditedAt(currentFocusModeIndex)
             allApiObject.capturePosthog(event: "edit-blocking-schedule", metadata: [:])//2.27.421

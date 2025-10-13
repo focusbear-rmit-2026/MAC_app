@@ -43,7 +43,7 @@ class ViewController: NSViewController {
     override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
         if keyPath == "frame" {
             let width = (object as? NSView)?.frame.width ?? 0
-            print("Left view width changed to \(width)")
+//            print("Left view width changed to \(width)")
             if width < 100{
                 leftMenuVcObj?.boxMainItems.titleLabel.isHidden = true
                 leftMenuVcObj?.boxToolsItems.titleLabel.isHidden = true

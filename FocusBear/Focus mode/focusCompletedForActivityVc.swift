@@ -224,8 +224,10 @@ class focusCompletedForActivityVc: NSViewController {
         if !focusModeTaskStringIsEmpty() || allowExtend{
             let obj = getAddTaskVcObject()
             obj.loadView()
-            obj.reloadData(isAddingTask: false, allowExtend: false, isHabitGoing: true)
-            self.presentAsSheet(obj)
+            if self.view.window != nil{
+                obj.reloadData(isAddingTask: false, allowExtend: false, isHabitGoing: true)
+                self.presentAsSheet(obj)
+            }
             allApiObject.capturePosthog(event: "mark-tasks-on-focus-session-end-screen-shown", metadata: [:])
         }
         setViewHeight()

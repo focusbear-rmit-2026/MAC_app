@@ -2120,11 +2120,8 @@ class menuViewController: NSViewController {
                 
                 imgViewCurrentTrackState.image = NSImage(named: NSImage.touchBarPlayTemplateName)
                 
-                if allTracksWindowControllerObj != nil{
-                    if allTracksWindowControllerObj?.window?.isVisible ?? false{
-                        allTracksVcObj?.tblView.reloadData()
-                    }
-                }
+                reloadFocusMusicListIfVisible()
+                
                 return;
             }else if arrAllTracks[i]["isPaused"] as? Bool == true{
                 
@@ -2134,11 +2131,7 @@ class menuViewController: NSViewController {
                 
                 imgViewCurrentTrackState.image = NSImage(named: NSImage.touchBarPauseTemplateName)
                 
-                if allTracksWindowControllerObj != nil{
-                    if allTracksWindowControllerObj?.window?.isVisible ?? false{
-                        allTracksVcObj?.tblView.reloadData()
-                    }
-                }
+                reloadFocusMusicListIfVisible()
                 return;
                 
             }

@@ -666,7 +666,7 @@
         "titleWorkToBreakRatio": "Ratio trabajo/descanso:",
         "descriptionWorkToBreakRatio": "Por cada <WORKRATIO> minutos que te concentres, tendrás un descanso de <BREAKRATIO> minutos.",
         "toText": "para",
-        "buttonBackToCustomBlocking": "Volver al bloqueo personalizado",
+        "buttonBackToCustomBlocking": "Volver al horario de bloqueo",
         "buttonAddBlockListText": "Agregar lista de bloqueos",
         "titleBlockList": "Usa listas de bloqueos para mantenerte enfocado en un tipo de trabajo.",
         "descriptionForCustomBlocking": "Cuando uses esta lista de bloqueos, todos los sitios web estarán permitidos excepto tus URLs siempre bloqueadas."
@@ -962,7 +962,7 @@
         "invalidDomainText": "Agregar * bloqueará todas las URL. Utiliza otra combinación.",
         "subTitleText": "¿En qué sitios pierdes el tiempo? Focus Bear te ayudará a ser más consciente de cómo utilizas estos sitios. Se bloquearán durante las sesiones de enfoque. El resto del tiempo, Focus Bear te preguntará por qué quieres utilizar el sitio.",
         "checkBoxText": "Bloquear inmediatamente sitios super distractores",
-        "subTitleTextNew": "¿En qué sitios pierdes tiempo? Focus Bear te ayudará a usar estos sitios de manera más intencional. Se bloquearán durante las sesiones de enfoque y los horarios de bloqueo personalizados."
+        "subTitleTextNew": "¿En qué sitios web pierdes tiempo? Focus Bear te ayudará a usarlos de manera más intencional. Se bloquearán durante las sesiones de enfoque y los horarios de bloqueo."
     },
     "rememberNextHabitViewInfo": {
         "randomPhraseRightChoice1": "¡Vas muy bien!",
@@ -1797,7 +1797,7 @@
         "subTitleText": "¿En qué aplicaciones pierdes el tiempo? Focus Bear te ayudará a ser más consciente de cómo usas estas aplicaciones. Se bloquearán durante las sesiones de enfoque. El resto del tiempo, Focus Bear te preguntará por qué quieres usar la aplicación.",
         "checkBoxText": "Bloquear inmediatamente aplicaciones súper distractoras",
         "addBrowserAlertText": "Lo sentimos, no puedes elegir aplicaciones de navegador aquí. En su lugar, pon los sitios web que te distraen en la sección URLs superdistractoras.",
-        "subTitleTextNew": "¿En qué apps pierdes tiempo? Focus Bear te ayudará a usar estas apps de manera más intencional. Se bloquearán durante las sesiones de enfoque y los horarios de bloqueo personalizados."
+        "subTitleTextNew": "¿En qué apps pierdes tiempo? Focus Bear te ayudará a usar estas apps de manera más intencional. Se bloquearán durante las sesiones de enfoque y los horarios de bloqueo."
     },
     "settingsNew": {
         "uiSettingTitle": "IU",
@@ -2469,7 +2469,8 @@
         "buttonStartBreak": "Iniciar descanso",
         "titleEnableBreaks": "Los descansos están desactivados. Activa los descansos a intervalos regulares para aumentar tu productividad, energía y enfoque.",
         "pausedBreaksText": "Has pausado los descansos por hoy. Mañana volverán para ayudarte a recargar energías y mantener el enfoque.",
-        "shutoffTimeText": "La app está en estado de apagado"
+        "shutoffTimeText": "La app está en estado de apagado",
+        "noBreakScheduledText": "Aún no se ha programado ningún descanso próximo."
     },
     "leftMenuVcInfo":{
         "titleMain": "PRINCIPAL",
@@ -2516,7 +2517,7 @@
         "buttonSave": "Guardar"
     },
     "blockingScheduleEditorVcInfo":{
-        "title": "Bloqueo personalizado",
+        "title": "Horario de bloqueo",
         "titleScheduleName": "Nombre del bloqueo",
         "titleBlockingSchedule": "Horario de bloqueo",
         "titleFromTime": "Desde",

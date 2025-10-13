@@ -1121,9 +1121,15 @@ class pomodoroVc: NSViewController {
         nextFocusSessionIntention = ""
         let isRelaxFocus = arrFocusTypeForPomodoro[popUpBtnFocusType.indexOfSelectedItem]["isRelaxFocus"] as? Bool ?? false
         if isRelaxFocus && shouldAskPassword() && SettingsManagerObject.isPasswordRequireInUseRelaxFocusMode{
-            self.presentAsSheet(self.enterPasswordVcObj!)
-            self.enterPasswordVcObj?.parentVc = self
-            self.enterPasswordVcObj?.isShowingForRelaxFocusMode = true
+            if self.view.window != nil{
+                self.presentAsSheet(self.enterPasswordVcObj!)
+                self.enterPasswordVcObj?.parentVc = self
+                self.enterPasswordVcObj?.isShowingForRelaxFocusMode = true
+            }else{
+                pomodoroModeStarted()
+                self.view.window?.close()//  will not work if view has changed (task player is viisble now). because if main view is changes then window is nil.no need to change anything
+                allApiObject.capturePosthog(event: "start-focus-session-popup-closed", metadata: [:])
+            }
         }else{
             pomodoroModeStarted()
             self.view.window?.close()//  will not work if view has changed (task player is viisble now). because if main view is changes then window is nil.no need to change anything

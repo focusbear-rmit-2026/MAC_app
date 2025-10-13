@@ -4082,19 +4082,23 @@ class thirdVc: NSViewController {
     }
     
     @objc func menuItemSelectAnotherHabitClicked(){
-        if startAnotherHabitVcObj == nil{
-            startAnotherHabitVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("startAnotherHabitVc")) as? startAnotherHabitVc
+        if self.view.window != nil{
+            if startAnotherHabitVcObj == nil{
+                startAnotherHabitVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("startAnotherHabitVc")) as? startAnotherHabitVc
+            }
+            startAnotherHabitVcObj!.currentHabitIndex = currentHabitIndex + 1
+            self.presentAsSheet(startAnotherHabitVcObj!)
         }
-        startAnotherHabitVcObj!.currentHabitIndex = currentHabitIndex + 1
-        self.presentAsSheet(startAnotherHabitVcObj!)
     }
     
     @objc func menuItemChooseHabitsClicked(){
-        if chooseHabitsVCObj == nil{
-            chooseHabitsVCObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("chooseHabitsVC")) as? chooseHabitsVC
+        if self.view.window != nil{
+            if chooseHabitsVCObj == nil{
+                chooseHabitsVCObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("chooseHabitsVC")) as? chooseHabitsVC
+            }
+            chooseHabitsVCObj!.currentHabitIndex = currentHabitIndex
+            self.presentAsSheet(chooseHabitsVCObj!)
         }
-        chooseHabitsVCObj!.currentHabitIndex = currentHabitIndex
-        self.presentAsSheet(chooseHabitsVCObj!)
     }
 
     func loadJavaScript(webView:WKWebView, script:String){
