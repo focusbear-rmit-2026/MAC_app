@@ -11,6 +11,7 @@ import WebKit
 
 class helpVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate {
 
+    @IBOutlet weak var btnSelectScreenshots: Button!
     @IBOutlet weak var lblAddScreenshots: NSTextField!
     @IBOutlet weak var dropView: dropView!
     @IBOutlet weak var collectionView: NSCollectionView!
@@ -36,6 +37,7 @@ class helpVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate 
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
+        btnSelectScreenshots.title = "Select Screenshots" // todo text
         lblAddScreenshots.stringValue = "➕ Drag and drop screenshots here that you want to share"
         
         tabViewGetSupport.label = "Get Support"
@@ -97,6 +99,8 @@ class helpVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate 
         tabView.selectTabViewItem(at: 0)
         
         dropView.delegate = self
+        
+        btnSelectScreenshots.buttonColor = NSColor.white.cgColor
     }
     
     func loadGetSupportWebView(){
@@ -284,6 +288,22 @@ class helpVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate 
         })
     }
     
+    @IBAction func btnSelectScreenshotsClicked(_ sender: Any) {
+        let openPanel = NSOpenPanel()
+        openPanel.title = "Select Screenshots"// todo text
+        openPanel.message = "Choose one or more screenshots you want to share."
+        openPanel.prompt = "Select" // Text on the action button
+        openPanel.allowsMultipleSelection = true
+        openPanel.allowedFileTypes = ["png", "jpg", "jpeg", "heic"]
+
+        if openPanel.runModal() == .OK {
+            let selectedURLs = openPanel.urls
+            // Handle selected screenshots
+            arrScrrenshots = arrScrrenshots + selectedURLs
+            collectionView.reloadData()
+        }
+
+    }
 }
 
 extension helpVc: NSTabViewDelegate{

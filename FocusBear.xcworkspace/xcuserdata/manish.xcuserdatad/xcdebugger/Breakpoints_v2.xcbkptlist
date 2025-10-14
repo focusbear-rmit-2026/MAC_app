@@ -7,15 +7,31 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "52028766-237E-40C8-A4F1-EE6574C0B854"
+            uuid = "C0A2B304-44B3-4AF4-9A33-F3AD04ABC022"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "FocusBear/Focus mode/focusModeData.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "1465"
+            endingLineNumber = "1465"
+            landmarkName = "updateFocusModeTask(taskString:)"
+            landmarkType = "9">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "82C30457-4244-4C79-A402-2DE7D85D456E"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "FocusBear/AllApi.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "3252"
-            endingLineNumber = "3252"
+            startingLineNumber = "3253"
+            endingLineNumber = "3253"
             landmarkName = "finishFocusMode(id:achievements:distractions:finish_time:rating:completionHandler:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -23,8 +39,8 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "821EBB51-17A9-4B9A-A2F8-CA1D86D0182A"
-            shouldBeEnabled = "Yes"
+            uuid = "E993072D-9395-4080-B985-26786E273AAD"
+            shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "FocusBear/AllApi.swift"
@@ -39,23 +55,7 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "9B8CAFDB-BC86-4645-A737-14644A8A1B34"
-            shouldBeEnabled = "Yes"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "FocusBear/AllApi.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "3312"
-            endingLineNumber = "3312"
-            landmarkName = "finishFocusMode(id:achievements:distractions:finish_time:rating:completionHandler:)"
-            landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            uuid = "7CD2D049-354E-4A10-9C36-A5A109FBC38C"
+            uuid = "A9B22ED4-2136-40E1-A738-51D79B5A0033"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
@@ -65,22 +65,6 @@
             startingLineNumber = "3310"
             endingLineNumber = "3310"
             landmarkName = "finishFocusMode(id:achievements:distractions:finish_time:rating:completionHandler:)"
-            landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            uuid = "8660B910-4D66-483C-B778-112E26178015"
-            shouldBeEnabled = "Yes"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "FocusBear/Routine/habitsVc.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "3692"
-            endingLineNumber = "3692"
-            landmarkName = "reFillBreakActivitiesArray()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>

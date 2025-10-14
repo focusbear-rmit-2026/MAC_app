@@ -975,11 +975,6 @@ class pomodoroVc: NSViewController {
             if let focusModeId = arrFocusTypeForPomodoro[popUpBtnFocusType.indexOfSelectedItem]["id"] as? String{
                 for i in 0..<arrFocusType.count{
                     if arrFocusType[i]["id"] as? String ?? "" == focusModeId{
-//                        if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled{
-//                            updateFocusModeTask(taskString: arrFocusType[i]["lastTaskUsed"] as? String ?? "")
-//                        }else{
-//                            focusModeTaskString = ""
-//                        }
                         updateFocusModeTask(taskString: arrFocusType[i]["lastTaskUsed"] as? String ?? "")
                         if !textViewAchieve.string.isEmpty{
                             arrFocusType[i]["lastIntentionUsed"] = textViewAchieve.string
@@ -1229,18 +1224,13 @@ class pomodoroVc: NSViewController {
                         arrFocusType[i]["focusAlignmentScoreThreshold"] = focusAlignmentScoreThreshold
                         allApiObject.capturePosthog(event: "focus-alignment-score-threshold-changed", metadata: [:])
                     }
-//                    if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled{
-//                        focusModeTaskString = arrFocusType[i]["lastTaskUsed"] as? String ?? ""
-//                    }else{
-//                        focusModeTaskString = ""
-//                    }
                     focusModeTaskString = arrFocusType[i]["lastTaskUsed"] as? String ?? ""
                     if !textViewAchieve.string.isEmpty{
                         arrFocusType[i]["lastIntentionUsed"] = textViewAchieve.string
                     }else{
                         arrFocusType[i]["lastIntentionUsed"] = ""
                     }
-                    
+                    taskCreatedByBlockPopup = ""
                     UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
                     updateAllFocusModes()
                     break;

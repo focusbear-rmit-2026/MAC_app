@@ -1980,7 +1980,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 setStatusBarButtonTitleForFocusMode(title: whatToAchieveInFocusBlock)
                 statusbutton?.imagePosition = .imageLeft
                 focusModeTaskString = dic["lastTaskUsed"] as? String ?? ""
-                
+                taskCreatedByBlockPopup = ""
                 if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled{
                     let minute = self.remainingFocusModeSecondsAfterPaused / 60
                     getTaskPlayerVcObject().loadView()
@@ -3674,6 +3674,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         
         loadMenuWindow()
     }
+    
     @objc func checkWindowState(){
         loadAllWindows()
         isFirstRun = false
@@ -4422,6 +4423,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     let passedSeconds = Calendar.current.dateComponents([.second], from: macGoesInSleepTime!, to: Date()).second ?? 0
                     if passedSeconds > 300{
                         currentState = ._NOTHING_
+                        leftMenuVcObj?.microBreaksOver()
                         if breakWarningWcObj != nil{
                             if breakWarningWcObj?.window?.isVisible ?? false{
                                 breakWarningWcObj?.window?.close()
@@ -4479,6 +4481,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     }
                 }else{
                     self.abortAllProcess()
+                    if currentState == ._MICRO_BREAK_{
+                        leftMenuVcObj?.microBreaksOver()
+                    }
                     currentState = ._NOTHING_
                     if mainWindowControllerObj?.window?.isVisible ?? false{
                         mainWindowControllerObj?.window?.close()
@@ -5545,6 +5550,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                     self.abortAllProcess()
                                     mainWindowControllerObj?.window?.close()
                                     hideBlankWindowInSecondaryMonitor()
+                                    leftMenuVcObj?.enableAllItems()
                                     currentState = ._NOTHING_
                                 }
                                 getHabitsVcObject().setActivityTimer()
@@ -5606,6 +5612,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                         self.abortAllProcess()
                                         mainWindowControllerObj?.window?.close()
                                         hideBlankWindowInSecondaryMonitor()
+                                        leftMenuVcObj?.enableAllItems()
                                         currentState = ._NOTHING_
                                     }
                                     UserDefaults.standard.set(Date(), forKey: kUserdefaultsLastHabitShowDate)
@@ -5685,6 +5692,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                                                             mainWindowControllerObj?.window?.close()
                                                                             hideBlankWindowInSecondaryMonitor()
                                                                         }
+                                                                        leftMenuVcObj?.enableAllItems()
                                                                         currentState = ._NOTHING_
                                                                         mainWindowControllerObj?.loadWindow()
                                                                         getHabitsVcObject().setActivityTimer()
@@ -5717,6 +5725,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                                                 self.abortAllProcess()
                                                                 mainWindowControllerObj?.window?.close()
                                                                 hideBlankWindowInSecondaryMonitor()
+                                                                leftMenuVcObj?.enableAllItems()
                                                             }
                                                             currentState = ._NOTHING_
                                                             mainWindowControllerObj?.loadWindow()
@@ -5788,6 +5797,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                                                         self.abortAllProcess()
                                                                         mainWindowControllerObj?.window?.close()
                                                                         hideBlankWindowInSecondaryMonitor()
+                                                                        leftMenuVcObj?.enableAllItems()
                                                                     }
                                                                     currentState = ._NOTHING_
                                                                     mainWindowControllerObj?.loadWindow()
@@ -5895,6 +5905,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         }else if curreentDate < startDate{ //  iska mtlb 1 se 10 k bich ka time
                             UserDefaults.standard.set(startDate, forKey: kUserdefaultsFocusSummaryShowedTillDate)
                         }
+                        leftMenuVcObj?.enableAllItems()
                         currentState = ._NOTHING_
                         focusSummaryVcObj?.viewVisibleCount = 0
                     }
@@ -12081,5 +12092,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         hotKeyStartPomodoro = nil
     }
 }
+
 
 

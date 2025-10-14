@@ -8,6 +8,8 @@
 
 
 var focusModeTaskString = ""
+var taskCreatedByBlockPopup = ""
+
 var arrFocusType = [[String:Any]]()
 var nextFocusSessionIntention = ""
 var arrAllFocusModeTags = [[String:String]]()
@@ -1414,6 +1416,7 @@ func resumeFocusModeAfterAppStartted(diffSeconds: Int, focusMode: [String : Any]
     isFocusModeStartedFromPomodoroMode = true
     isSkipBreakActivityDuringPomodoro = true
     focusModeTaskString = focusMode["lastTaskUsed"] as? String ?? ""
+    taskCreatedByBlockPopup = ""
     whatToAchieveInFocusBlock = focusMode["lastIntentionUsed"] as? String ?? ""
     appdelegate!.focusModeStarttedResetAllData()
     appdelegate?.resumeFocusMode(index: index)
@@ -1460,6 +1463,7 @@ func updateFocusModeIntention(intention:String){
 
 func updateFocusModeTask(taskString:String){
     focusModeTaskString = taskString
+    taskCreatedByBlockPopup = ""
     if let currentString = getCurrentTaskInFocusMode(){
         if currentPlayingTaskString != currentString{
             currentPlayingTaskString = currentString
@@ -1523,6 +1527,9 @@ func getStatusTextForTask(status:String)-> String{
 
 
 func getCurrentTaskInFocusMode()-> String?{
+    if !taskCreatedByBlockPopup.isEmpty{
+        return taskCreatedByBlockPopup
+    }
     if !focusModeTaskStringIsEmpty(){
         if let data = focusModeTaskString.data(using: String.Encoding.utf8) {
             do {

@@ -886,15 +886,10 @@ class simplePomodoroVc: NSViewController {
                     }else{
                         arrFocusType[i]["lastIntentionUsed"] = ""
                     }
-//                    if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled{
-//                        focusModeTaskString = arrFocusType[i]["lastTaskUsed"] as? String ?? ""
-//                    }else{
-//                        focusModeTaskString = ""
-//                    }
                     focusModeTaskString = arrFocusType[i]["lastTaskUsed"] as? String ?? ""
                     UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
                     updateAllFocusModes()
-                    
+                    taskCreatedByBlockPopup = ""
                     appdelegate!.setStatusBarButtonColorForFocusMode(color: nil, colorString:arrFocusType[i]["color"] as? String ?? "")
                     break;
                 }

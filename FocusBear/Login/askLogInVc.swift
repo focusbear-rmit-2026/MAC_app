@@ -158,7 +158,7 @@ class askLogInVc: NSViewController, ASAuthorizationControllerDelegate, ASAuthori
 //        DispatchQueue.main.async {
 //            controller.performRequests()
 //        }
-        
+        // added on 2.27.425
         Auth0
             .webAuth()
             .connection("apple") // Apple connection in Auth0

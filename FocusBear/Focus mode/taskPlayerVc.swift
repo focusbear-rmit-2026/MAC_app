@@ -491,6 +491,7 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
     
     func addAndPlayTaskInCurrentList(taskName: String, id:String, duration:Int, shouldCompleteCurrentTask:Bool) {
         addLog(text: "func:- addAndPlayTaskInCurrentList taskName: \(taskName), duration: \(duration), shouldCompleteCurrentTask: \(shouldCompleteCurrentTask), id: \(id)")
+        taskCreatedByBlockPopup = taskName
         let taskDic:[String:Any] = [
             "id": id,
             "title": taskName,
@@ -685,3 +686,5 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
         showAllTracksWindow()
     }
 }
+
+

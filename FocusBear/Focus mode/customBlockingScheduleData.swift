@@ -480,6 +480,7 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
         let lastIntentionUsed = currentRunningFocusType["lastIntentionUsed"] as? String ?? ""
         whatToAchieveInFocusBlock = lastIntentionUsed
         focusModeTaskString = currentRunningFocusType["lastTaskUsed"] as? String ?? ""
+        taskCreatedByBlockPopup = ""
         currentFocusModeStrictness = arrBlockingSchedule[index].blockLevel
         startFocusModeTime = Date()
         minFocusAlignmentScoreToShowDistractingPopUp = Double(currentRunningFocusType["focusAlignmentScoreThreshold"] as? Int ?? 80)

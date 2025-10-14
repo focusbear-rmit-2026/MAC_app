@@ -474,6 +474,7 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
             }else{
                 focusModeTaskString = message.body as? String ?? ""
             }
+            taskCreatedByBlockPopup = ""
             addTaskVcObj!.dismiss(addTaskVcObj)
            // if startingFocusWindowControllerObj?.window?.isVisible ?? false{
 //                startingFocusModeVcObj?.taskAdded()
@@ -484,13 +485,13 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
         }else if message.name == "close_todo_focus_end_ui"{
             print(message.body)
             focusModeTaskString = ""
+            taskCreatedByBlockPopup = ""
             addTaskVcObj!.dismiss(addTaskVcObj)
         }else if message.name == "send_new_task_added_to_todo_player"{
             print(message.body)
-//            focusModeTaskString = message.body as? String ?? ""
             let taskString = message.body as? String ?? ""
-            addLog(text: "focusMode Task String is:- \(focusModeTaskString)")
             updateFocusModeTask(taskString: taskString)
+            addLog(text: "focusMode Task String is:- \(taskString)")
             var currentFocusModeIndex = 0
             if (isFocusModeRunning || isAnyAllowedFocusModeActivityRunning || customBlockingScheduleManagerObj.isAnyCustomScheduleOn){
                 if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._CUSTOM_ROUTINE_{
@@ -520,16 +521,8 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
             print(message.body) 
             let brainDump = message.body as? String ?? ""
             UserDefaults.standard.set(brainDump, forKey: kUserdefaultsFocusModeNotes)
-//            if brainDumpWcObj != nil{ //  
-//                if brainDumpWcObj?.window != nil{
-//                    if brainDumpWcObj!.window!.isVisible{
-//                        brainDumpVcObj?.textViewWorkNote.string = brainDump
-//                    }
-//                }
-//            }
         }else if message.name == "close_focus_player_ui"{
             print(message.body)
-//            taskPlayerWcObj?.close()
         }else if message.name == "open_marketplace"{
             print(message.body)
             if let url = URL(string: message.body as? String ?? ""){
@@ -549,12 +542,8 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
             if addTaskVcObj != nil{
                 if addTaskVcObj?.handler == self{
                     focusModeTaskString = message.body as? String ?? ""
+                    taskCreatedByBlockPopup = ""
                     addTaskVcObj!.dismiss(addTaskVcObj)
-                  //  if startingFocusWindowControllerObj?.window?.isVisible ?? false{
-//                        startingFocusModeVcObj?.taskAdded()
-                   // }else if pomodoroWindowControllerObj?.window?.isVisible ?? false{
-//                        pomodoroVcObj?.taskAdded()
-                   // }
                     return;
                 }
             }
@@ -562,6 +551,7 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
             if addTaskVcObj != nil{
                 if addTaskVcObj?.handler == self{
                     focusModeTaskString = message.body as? String ?? ""
+                    taskCreatedByBlockPopup = ""
                     var arrTaskNotCompleted = [[String : Any]]()
                     
                     if !focusModeTaskStringIsEmpty(){
@@ -585,17 +575,7 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
                                     }
                                 }
                                 var currentFocusModeIndex: Int = 0
-                                
-                                
-                                
-//                                if endingFocusWindowControllerObj != nil{
-//                                    if (endingFocusWindowControllerObj?.window?.isVisible ?? false) && endingFocusWindowControllerObj?.contentViewController == focusCompletedVcObj{
-//                                        focusCompletedVcObj?.textFieldAchieve.stringValue = taskString
-//                                        focusCompletedVcObj?.textFieldAchieve.setFocus()
-//                                        
-//                                        currentFocusModeIndex = focusCompletedVcObj?.currentFocusModeIndex ?? 0
-//                                    }
-//                                }
+
 
                                 if isFocusCompletedViewVisibled(){
                                     focusCompletedVcObj?.textFieldAchieve.stringValue = taskString

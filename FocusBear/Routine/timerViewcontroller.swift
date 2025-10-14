@@ -637,20 +637,19 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                     
                     if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled{
                         focusModeTaskString = dic["lastTaskUsed"] as? String ?? ""
+                        taskCreatedByBlockPopup = ""
                         var minutes = 1
                         if duration > 60{
                             minutes = duration / 60
                         }
                         shouldReloadTaskPlayer = true
-                       // if checkIsFullScreenEnabled(){
-                        //    mainViewControllerObj?.showSmallScreen()
-                     //   }
                         showTaskPlayerWindow(totalDuration: minutes, intention: whatToAchieveInFocusBlock, automatically:true)
                         if leftMenuVcObj != nil{
                             leftMenuVcObj?.focusModeOrFocusModeHabitStarted()
                         }
                     }else{
                         focusModeTaskString = ""
+                        taskCreatedByBlockPopup = ""
                     }
                 }
                 
@@ -844,6 +843,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                 if shouldLaunchAppAndUrl{
                     let endTime = Calendar.current.date(bySetting: .second, value: durationSeconds, of: Date())
                     focusModeTaskString = ""
+                    taskCreatedByBlockPopup = ""
                     allApiObject.startFocusMode(id: currentRunningFocusType["id"] as? String ?? "", intention: whatToAchieveInFocusBlock, start_time: Date(), finish_time: endTime ?? Date(), completionHandler: {newDic in
                         DispatchQueue.main.async {
                             

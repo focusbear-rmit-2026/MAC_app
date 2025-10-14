@@ -2535,7 +2535,7 @@ class habitsVc: NSViewController {
         currentActivityIndex = -1
         unlockMachine()
         currentState = ._NOTHING_
-        
+        leftMenuVcObj?.microBreaksOver()
         if shouldShowPomodoroAfterBreak{
             shouldShowPomodoroAfterBreak = false
             if SettingsManagerObject.isGeekModeEnabled{
