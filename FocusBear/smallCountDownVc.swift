@@ -70,14 +70,6 @@ class smallCountDownVc: NSViewController {
                 leftMenuVcObj?.showHabitsView()
                 leftMenuVcObj?.disbaleAllExceptHabitTab()
             }
-          //  if checkIsFullScreenEnabled(){
-              //  mainViewControllerObj?.checkIsFullScreenNeeded()
-           // }
-//            if smallCountDownWcObj != nil{
-//                if smallCountDownWcObj!.window?.isVisible ?? false{
-//                    getsmallCountDownVcObject().closeTimerBox()
-//                }
-//            }
             
             closeTimerBox()
             
@@ -86,11 +78,7 @@ class smallCountDownVc: NSViewController {
                     relaxModeVcObj?.closeTimerBox()
                 }
             }
-            
-//            self.view.window?.close()
-//            self.view.isHidden = true
         }else{
-//            self.view.window?.close()
             closeTimerBox()
         }
     }

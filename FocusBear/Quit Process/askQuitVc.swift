@@ -416,11 +416,8 @@ class askQuitVc: NSViewController {
             showBlankWindowInSecondaryMonitor()
             timerViewcontrollerObj?.btnPauseClicked(self)
             timerViewcontrollerObj?.menuItemSkipHabitClicked()
-//            if smallCountDownWcObj != nil{
-//                if smallCountDownWcObj!.window?.isVisible ?? false{
-//                    getsmallCountDownVcObject().closeTimerBox()
-//                }
-//            }
+            leftMenuVcObj?.showHabitsView()
+            leftMenuVcObj?.disbaleAllExceptHabitTab()
             
             closeSmallCountDownTimerBoxIfVisible()
             

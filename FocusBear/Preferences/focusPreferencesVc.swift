@@ -589,6 +589,39 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
             
         }
         
+        let id = arrFocusType[selectedRow]["id"] as? String ?? ""
+        for i in 0..<customBlockingScheduleManagerObj.arrBlockingSchedule.count{
+            let schedule = customBlockingScheduleManagerObj.arrBlockingSchedule[i]
+            if schedule.focusModeID == id{
+                let alert = NSAlert()
+                alert.setSharingType()
+                var alertScheduleUsingFocusMode = "You can’t delete this focus mode because it’s currently assigned to the blocking schedule \"<SCHEDULE>\". Please edit that schedule first and choose a different focus mode."
+                var buttonEditBlockingSchedule = "Edit blocking schedule"
+                
+                if let focusPreferencesInfo = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
+                    alertScheduleUsingFocusMode = focusPreferencesInfo.value(forKey: "alertScheduleUsingFocusMode") as? String ?? alertScheduleUsingFocusMode
+                    buttonEditBlockingSchedule = focusPreferencesInfo.value(forKey: "buttonEditBlockingSchedule") as? String ?? buttonEditBlockingSchedule
+                }
+                
+                alert.messageText = alertScheduleUsingFocusMode.replacingOccurrences(of: "<SCHEDULE>", with: schedule.name)
+                alert.addButton(withTitle: buttonEditBlockingSchedule)
+                alert.addButton(withTitle: buttonCancelText)
+                
+                alert.beginSheetModal(for: self.view.window!){ result in
+                    if result == .alertFirstButtonReturn{
+                        //without password bacuse settngs is alreday opened
+                        leftMenuVcObj?.boxBlocks.isSelected = true
+                        mainViewControllerObj?.showBlocksPreferencesView()
+                        mainViewControllerObj?.askPasswordForSettingsIfNeeded()
+                        tabStrictnessContainerVcObj?.showBlockingSchedulesView(index: i, shouldCreateNew: false)
+                    }
+                }
+                return;
+            }
+        }
+        
+        
+        
         if arrFocusType[selectedRow]["isOn"] as? Bool == true || arrFocusType[selectedRow]["isPaused"] as? Bool == true{
             let alertFocusModeOn = NSAlert()
             alertFocusModeOn.setSharingType()
@@ -632,13 +665,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
                     self.checkState()
                     UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
                     resetPomodoroVcFocusListIfNeeded()
-//                    if startingFocusWindowControllerObj?.window?.isVisible ?? false{
-//                        if startingFocusWindowControllerObj?.contentViewController == startingFocusModeVcObj{
-//                            startingFocusWindowControllerObj?.close()
-//                        }
-//                    }
-                    
-                    
+
                     allApiObject.deleteFocusMode(id: id, completionHandler: {isDeleted in
                         
                         DispatchQueue.main.async {

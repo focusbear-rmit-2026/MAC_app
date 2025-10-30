@@ -353,14 +353,6 @@ class blockingScheduleEditorVC: NSViewController {
         }
         
         let index = popUpBtnFocusMode.indexOfSelectedItem
-//        if isCreatingNew{
-//            if index == 0{
-//                showAlert(title: "A focus mode must be selected before saving this schedule.")
-//                addLog(text: "showAlert:- focus mode must be selected")//2.27.
-//                return;
-//            }
-//            index = index - 1
-//        }
         
         let focusModeId = arrFocusTypeForBlockingSchedule[index]["id"] as? String ?? ""
         if sliderStrictness.integerValue == 1{
@@ -392,6 +384,9 @@ class blockingScheduleEditorVC: NSViewController {
             allApiObject.capturePosthog(event: "add-blocking-schedule", metadata: [:])//2.27.421
             customBlockingScheduleManagerObj.addCustomBlockingScheduleAtIndex(customBlockingScheduleManagerObj.arrBlockingSchedule.count - 1)
         }else{
+            if customBlockingScheduleManagerObj.arrBlockingSchedule[currentFocusModeIndex].state == .on {
+                currentFocusModeStrictness = blockMode
+            }
             var blockingSchedule = customBlockingSchedule(
                 id: customBlockingScheduleManagerObj.arrBlockingSchedule[currentFocusModeIndex].id,
                 name: textFieldScheduleName.stringValue,
@@ -408,6 +403,9 @@ class blockingScheduleEditorVC: NSViewController {
             customBlockingSchedulesVcObj?.scheduleEditedAt(currentFocusModeIndex)
             allApiObject.capturePosthog(event: "edit-blocking-schedule", metadata: [:])//2.27.421
             customBlockingScheduleManagerObj.updateCustomBlockingScheduleAtIndex(currentFocusModeIndex)
+            
+            
+            
         }
         
         

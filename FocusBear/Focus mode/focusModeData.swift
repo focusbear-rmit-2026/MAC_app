@@ -622,6 +622,7 @@ func checkUrlFromAi(script: String, url:String, tab_title:String, currentRunning
     }
     let currentTaskInToDoPlayer = getCurrentTaskInFocusMode()
     print("********** checkUrlFromAi ************")
+    addLog(text: "currentTask in is URL Safe to use:\(currentTaskInToDoPlayer)")//2.27.427
     
     let arrayOfLast5Domain = getArrayOfLast5UrlJustifications()
 
@@ -816,6 +817,7 @@ func checkUrlFromAiWithNewIntention(url:String, domain:String, tab_title:String,
     
     arrConvinceAiUrlsInCurrentFocus.append(["url":url, "intentionForSite":intentionForThisSite, "pageTitle":tab_title])
     let currentTaskInToDoPlayer = getCurrentTaskInFocusMode()
+    addLog(text: "currentTask in is URL with New Intention Safe to use:\(currentTaskInToDoPlayer)")
     allApiObject.chatGPTIsURLSafeWithNewIntention(url: url, tab_title: tab_title, focus_mode: currentRunningFocusModeName, intention: whatToAchieveInFocusBlock, intentionForThisSite: intentionForThisSite, other_explanations_including_domains: arrayOfLast5Domain, currentTaskInToDoPlayer: currentTaskInToDoPlayer, currentHabitName: currentHabitName, completionHandler: {dic, checkedUrl, payload  in
         if dic != nil{
             DispatchQueue.main.async{
@@ -985,6 +987,7 @@ func checkAppFromAi(appName:String, currentRunningFocusModeName:String, runningA
     let arrayOfLast5Apps = getArrayOfLast5AppJustifications()
     
     let currentTaskInToDoPlayer = getCurrentTaskInFocusMode()
+    addLog(text: "currentTask in is App Safe :\(currentTaskInToDoPlayer)")
     allApiObject.chatGPTIsAppSafe(appName: appName, focus_mode: currentRunningFocusModeName, intention: whatToAchieveInFocusBlock, other_explanations_including_apps: arrayOfLast5Apps,currentTaskInToDoPlayer: currentTaskInToDoPlayer, currentHabitName: currentHabitName, completionHandler: {dic, checkedApp, payload  in
         if dic != nil{
             if currentRunningAppNameForAi == checkedApp{
@@ -1193,6 +1196,7 @@ func checkAppFromAiWithNewIntention(appName:String, intentionForThisApp:String, 
     let arrayOfLast5Apps = getArrayOfLast5AppJustifications()
     arrConvinceAiAppsInCurrentFocus.append(["app":appName, "intentionForApp":intentionForThisApp])
     let currentTaskInToDoPlayer = getCurrentTaskInFocusMode()
+    addLog(text: "currentTask in is App Safe with New Intention to use:\(currentTaskInToDoPlayer)")
     allApiObject.chatGPTIsAppSafeWithNewIntention(appName: appName, focus_mode: currentRunningFocusModeName, intention: whatToAchieveInFocusBlock, intentionForThisApp: intentionForThisApp, other_explanations_including_apps: arrayOfLast5Apps, currentTaskInToDoPlayer: currentTaskInToDoPlayer, currentHabitName: currentHabitName, completionHandler: {dic, checkedUrl, payload  in
         if dic != nil{
             DispatchQueue.main.async{

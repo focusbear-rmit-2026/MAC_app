@@ -7,64 +7,32 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "C0A2B304-44B3-4AF4-9A33-F3AD04ABC022"
-            shouldBeEnabled = "Yes"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "FocusBear/Focus mode/focusModeData.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1465"
-            endingLineNumber = "1465"
-            landmarkName = "updateFocusModeTask(taskString:)"
-            landmarkType = "9">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            uuid = "82C30457-4244-4C79-A402-2DE7D85D456E"
+            uuid = "AA15F50F-E208-4E0D-874D-3478548CE217"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "FocusBear/AllApi.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "3253"
-            endingLineNumber = "3253"
-            landmarkName = "finishFocusMode(id:achievements:distractions:finish_time:rating:completionHandler:)"
+            startingLineNumber = "4028"
+            endingLineNumber = "4028"
+            landmarkName = "chatGPTIsAppSafeWithNewIntention(appName:focus_mode:intention:intentionForThisApp:other_explanations_including_apps:currentTaskInToDoPlayer:currentHabitName:completionHandler:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "E993072D-9395-4080-B985-26786E273AAD"
-            shouldBeEnabled = "No"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "FocusBear/AllApi.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "3288"
-            endingLineNumber = "3288"
-            landmarkName = "finishFocusMode(id:achievements:distractions:finish_time:rating:completionHandler:)"
-            landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            uuid = "A9B22ED4-2136-40E1-A738-51D79B5A0033"
+            uuid = "6E899C3F-C6C8-441E-937D-91D474C4E813"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "FocusBear/AllApi.swift"
+            filePath = "FocusBear/Routine/habitsVc.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "3310"
-            endingLineNumber = "3310"
-            landmarkName = "finishFocusMode(id:achievements:distractions:finish_time:rating:completionHandler:)"
+            startingLineNumber = "2380"
+            endingLineNumber = "2380"
+            landmarkName = "unlockMachine()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>

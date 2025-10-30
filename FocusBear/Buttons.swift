@@ -63,6 +63,7 @@ class mouseDownMoveWindowButton: NSButton {
     }
     
 }
+
 class hoverInfoButton: NSButton {
     
     var isAutoClickEnabled = true

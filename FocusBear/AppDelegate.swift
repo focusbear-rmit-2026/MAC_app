@@ -3526,13 +3526,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             addLog(text: "Simple Mode is enabled:- return.")
             return;
         }
-        //        if endingFocusWindowControllerObj != nil{
-        //            if (endingFocusWindowControllerObj?.window?.isVisible ?? false) && endingFocusWindowControllerObj?.contentViewController == focusCompletedVcObj{
-        //                addLog(text: "Focus mode completed Window is visible:- close Window Forcefully")
-        //                focusCompletedVcObj!.closeWindowForcefully()//
-        //            }
-        //        }
-        //
         
         if isFocusCompletedViewVisibled(){
             addLog(text: "Focus mode completed Window is visible:- close Window Forcefully")
@@ -3543,23 +3536,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             addLog(text: "Focus Mode Is On/Paused.")
             return
         }
-        //        if focusModeStartWindowLodded{
-        //            if startingFocusWindowControllerObj?.window?.isVisible ?? false{
-        //                addLog(text: "focusModeStartWindowLodded. Pomodoro Mode View cancelled")
-        //                return
-        //            }
-        //        }
         if self.timerPomodoroMode != nil{
             self.timerPomodoroMode?.invalidate()
             self.timerPomodoroMode = nil
         }
-        //        if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
-        //            if smallCountDownWcObj?.window != nil{
-        //                if getSmallCountDownWindowObject().window!.isVisible && getsmallCountDownVcObject().isFocusBreak{
-        //                    getsmallCountDownVcObject().closeTimerBox()
-        //                }
-        //            }
-        //        }
         if isSmallCountDownTimerViewVisible(){
             if smallCountDownVcObj?.isFocusBreak ?? false{
                 smallCountDownVcObj?.closeTimerBox()
@@ -3591,14 +3571,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             addLog(text: "Geek Mode is enabled:- return.")
             return;
         }
-        //        if endingFocusWindowControllerObj != nil{
-        //            if (endingFocusWindowControllerObj?.window?.isVisible ?? false) && endingFocusWindowControllerObj?.contentViewController == focusCompletedVcObj{
-        //                addLog(text: "Focus mode completed Window is visible:- close Window Forcefully")
-        //                focusCompletedVcObj!.closeWindowForcefully()
-        //            }
-        //        }
-        
-        
+
         if isFocusCompletedViewVisibled(){
             addLog(text: "Focus mode completed Window is visible:- close Window Forcefully")
             focusCompletedVcObj!.closeWindowForcefully()
@@ -3608,24 +3581,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             addLog(text: "Focus Mode Is On/Paused.")
             return
         }
-        //        if focusModeStartWindowLodded{
-        //            if startingFocusWindowControllerObj?.window?.isVisible ?? false{
-        //                addLog(text: "focusModeStartWindowLodded. Pomodoro Mode View cancelled")
-        //                return
-        //            }
-        //        }
+
         if self.timerPomodoroMode != nil{
             self.timerPomodoroMode?.invalidate()
             self.timerPomodoroMode = nil
         }
-        //        if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
-        //            if smallCountDownWcObj?.window != nil{
-        //                if getSmallCountDownWindowObject().window!.isVisible && getsmallCountDownVcObject().isFocusBreak{
-        //                    getsmallCountDownVcObject().closeTimerBox()
-        //                }
-        //            }
-        //        }
-        
+
         if isSmallCountDownTimerViewVisible(){
             if smallCountDownVcObj?.isFocusBreak ?? false{
                 smallCountDownVcObj?.closeTimerBox()
@@ -3676,6 +3637,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     }
     
     @objc func checkWindowState(){
+        // validate all blocking schedules by checking if their assigned focusModeID still exists in focus mode list
+        customBlockingScheduleManagerObj.validateBlockingSchedules()
+        
+        
         loadAllWindows()
         isFirstRun = false
         
@@ -12092,6 +12057,5 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         hotKeyStartPomodoro = nil
     }
 }
-
 
 

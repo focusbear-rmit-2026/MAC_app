@@ -64,6 +64,7 @@ class abortingCustomScheduleBlockingVc: NSViewController {
             let schedule = customBlockingScheduleManagerObj.arrBlockingSchedule[i]
             if schedule.state == .on{
                 scheduleName = schedule.name
+                break;
             }
         }
         self.btnAbortFocus.isEnabled = false
@@ -72,6 +73,8 @@ class abortingCustomScheduleBlockingVc: NSViewController {
         if currentFocusModeStrictness == ._STRICT_{
             self.lblStrictModeActivated.isHidden = false
             startTimer()
+        }else{
+            self.btnAbortFocus.isEnabled = true
         }
         lblTitle.stringValue = titlePauseText.replacingOccurrences(of: "<SCHEDULE>", with: scheduleName)
     }

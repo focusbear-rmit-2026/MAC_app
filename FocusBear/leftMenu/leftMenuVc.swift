@@ -824,9 +824,6 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
                 boxTodoPlayer.isEnabled = true
             }
         }
-//        else{
-//            enableAllItems()
-//        }
     }
     
     func showFocusCompletedView(){

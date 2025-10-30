@@ -55,50 +55,36 @@ class askPostponeIntentionVc: NSViewController, NSTextViewDelegate {
     
     @IBAction func btnContinueClicked(_ sender: Any) {
         self.dismiss(self)
+        addLog(text: "postpone intention :- \(textView.string)")
         allApiObject.capturePosthog(event: "postpone-intention", metadata: ["number-of-characters":"\(textView.string.count)"])
         if lastCurrentState == ._MORNING_HABIT_{
             getHabitsVcObject().postponeMorningHabitFor(minutes: minutes, secondsToPostpone: secondsToPostpone, showAskFocusModeView: showAskFocusModeView, showAskIntention: false)
-           // if easyPostponeWcObj?.window?.isVisible ?? false{
-//                easyPostponeWcObj?.window?.close()
-          //  }
             if let easyPostponeVcObj = easyPostponeVcObj{
                 easyPostponeVcObj.closeView()
             }
-        
+            
             if showAskFocusModeView && SettingsManagerObject.isGeekModeEnabled && !textView.string.isEmpty{
-               // if pomodoroWindowControllerObj != nil{
-                   // if pomodoroWindowControllerObj?.window?.isVisible ?? false{
-                        pomodoroVcObj?.isIntentionFromMorningPostpone = true
-                        pomodoroVcObj?.textViewAchieve.string = textView.string
-                   // }
-                //}
+                pomodoroVcObj?.isIntentionFromMorningPostpone = true
+                pomodoroVcObj?.textViewAchieve.string = textView.string
+                addLog(text: "postpone intention set on pomodoro view :- \(textView.string)")
                 pomodoroVcObj!.lblTitle.stringValue = pomodoroVcObj!.titleAfterPostpone
             }
-           
+            
             
         }else if lastCurrentState == ._EVENING_HABIT_{
             getHabitsVcObject().postponeEveningHabitFor(minutes: minutes, secondsToPostpone: secondsToPostpone, showAskFocusModeView: showAskFocusModeView, showAskIntention: false)
-//            if easyPostponeWcObj?.window?.isVisible ?? false{
-////                easyPostponeWcObj?.window?.close()
-//            }
             if let easyPostponeVcObj = easyPostponeVcObj{
                 easyPostponeVcObj.closeView()
             }
             if showAskFocusModeView && SettingsManagerObject.isGeekModeEnabled && !textView.string.isEmpty{
-               // if pomodoroWindowControllerObj != nil{
-                //    if pomodoroWindowControllerObj?.window?.isVisible ?? false{
-                        pomodoroVcObj?.isIntentionFromMorningPostpone = true
-                        pomodoroVcObj?.textViewAchieve.string = textView.string
-                 //   }
-                //}
+                pomodoroVcObj?.isIntentionFromMorningPostpone = true
+                pomodoroVcObj?.textViewAchieve.string = textView.string
+                addLog(text: "postpone intention set on pomodoro view :- \(textView.string)")
                 pomodoroVcObj!.lblTitle.stringValue = pomodoroVcObj!.titleAfterPostpone
             }
             
         }else if lastCurrentState == ._FOCUS_SUMMARY_{
             getHabitsVcObject().postponeFocusSummaryFor(minutes: minutes, showAskIntention: false)
-//            if easyPostponeWcObj?.window?.isVisible ?? false{
-//                easyPostponeWcObj?.window?.close()
-//            }
             if let easyPostponeVcObj = easyPostponeVcObj{
                 if easyPostponeVcObj.presentingViewController == mainViewControllerObj{
                     easyPostponeVcObj.dismiss(easyPostponeVcObj)
@@ -108,12 +94,9 @@ class askPostponeIntentionVc: NSViewController, NSTextViewDelegate {
             }
             
             if SettingsManagerObject.isGeekModeEnabled && !textView.string.isEmpty{
-               // if pomodoroWindowControllerObj != nil{
-                //    if pomodoroWindowControllerObj?.window?.isVisible ?? false{
-                        pomodoroVcObj?.isIntentionFromMorningPostpone = true
-                        pomodoroVcObj?.textViewAchieve.string = textView.string
-                   // }
-               // }
+                pomodoroVcObj?.isIntentionFromMorningPostpone = true
+                pomodoroVcObj?.textViewAchieve.string = textView.string
+                addLog(text: "postpone intention set on pomodoro view :- \(textView.string)")
                 pomodoroVcObj!.lblTitle.stringValue = pomodoroVcObj!.titleAfterPostpone
             }
             

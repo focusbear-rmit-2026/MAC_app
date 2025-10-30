@@ -92,7 +92,7 @@ extension customBlockingSchedulesVc: NSTableViewDelegate, NSTableViewDataSource{
            
                 
                 let focusModeID = customBlockingScheduleManagerObj.arrBlockingSchedule[row].focusModeID
-                
+                cell.lblFocusModeName.stringValue = "" 
                 for focusMode in arrFocusType{
                     if focusMode["id"] as? String == focusModeID{
                         cell.lblFocusModeName.stringValue = focusMode["name"] as? String ?? ""

@@ -3,7 +3,7 @@
 //  FBHelper
 //
 //  Created by Prashant Sawnani on 25/06/24.
-//  Copyright © 2024 Focus Bear. All rights reserved.
+//  Copyright © 2025 Focus Bear. All rights reserved.
 //
 
 import Cocoa
@@ -11,9 +11,12 @@ import Cocoa
 @main
 class AppDelegate: NSObject, NSApplicationDelegate {
 
+    let startMainAppForceQuitMonitoring = Notification.Name("startMainAppForceQuitMonitoring")
+    let stopMainAppForceQuitMonitoring = Notification.Name("stopMainAppForceQuitMonitoring")
     
     let mainAppQuitByUser = Notification.Name("MainAppQuitByUser")
     var timerBackgroundThread:Timer?
+    var timerMainAppForceQuitMonitoring:Timer?
     
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         // Insert code here to initialize your application
@@ -32,6 +35,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         DebugLogsURL = applicationSupportURL.appendingPathComponent("Debug_Logs.txt")
         
         addLog(text: "applicationDidFinishLaunching")
+        DistributedNotificationCenter.default().addObserver(self, selector: #selector(self.setTimerMainAppForceQuitMonitoring), name: startMainAppForceQuitMonitoring, object: "com.App.EarnYourScreentime")
+        DistributedNotificationCenter.default().addObserver(self, selector: #selector(self.stopTimerMainAppForceQuitMonitoring), name: stopMainAppForceQuitMonitoring, object: "com.App.EarnYourScreentime")
+        
+        if let state = sharedDefaults?.object(forKey: kUserdefaultsStartMainAppIfNotRunning) as? Bool{
+            if state{
+                setTimerMainAppForceQuitMonitoring()
+            }
+        }
+        
+        
+        
         DistributedNotificationCenter.default().addObserver(self, selector: #selector(self.mainAppQuit), name: mainAppQuitByUser, object: "com.App.EarnYourScreentime")
         if sharedDefaults?.object(forKey: kUserdefaultsAppQuitForUser) is Date{
             if let state = sharedDefaults?.object(forKey: kUserdefaultsDontShowNudgeView) as? Bool{
@@ -83,6 +97,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 //        }
 //        )
 //    }
+    
+    
     
     @objc func mainAppQuit(){
         print("mainAppQuit")
@@ -136,6 +152,56 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
     }
+    
+    @objc func setTimerMainAppForceQuitMonitoring(){
+        addLog(text: "setTimerMainAppForceQuitMonitoring")
+        
+        stopTimerMainAppForceQuitMonitoring()
+        
+        DispatchQueue.global().sync {//async {
+            self.timerMainAppForceQuitMonitoring = Timer.scheduledTimer(timeInterval: 10, target: self, selector: #selector(self.checkIsMainAppForceQuit), userInfo: nil, repeats: true)
+            RunLoop.main.add((self.timerMainAppForceQuitMonitoring!), forMode: RunLoop.Mode.common)
+        }
+    }
+    
+    @objc func stopTimerMainAppForceQuitMonitoring(){
+        addLog(text: "stopTimerMainAppForceQuitMonitoring")
+        if self.timerMainAppForceQuitMonitoring != nil{
+            self.timerMainAppForceQuitMonitoring?.invalidate()
+            self.timerMainAppForceQuitMonitoring = nil
+        }
+    }
+    
+    
+    @objc func checkIsMainAppForceQuit(){
+        DispatchQueue.main.async {
+            if let state = sharedDefaults?.object(forKey: kUserdefaultsStartMainAppIfNotRunning) as? Bool{
+                if state{
+                    if !self.isMainAppRunning(){
+                        let path = Bundle.main.bundlePath as NSString
+                        var components = path.pathComponents
+                        components.removeLast()
+                        components.removeLast()
+                        components.removeLast()
+                        
+                        let newPath = NSString.path(withComponents: components)
+                        NSWorkspace.shared.launchApplication(newPath)
+                    }
+                }else{
+                    self.stopTimerMainAppForceQuitMonitoring()
+                }
+            }else{
+                self.stopTimerMainAppForceQuitMonitoring()
+            }
+        }
+    }
+    
+    func isMainAppRunning() -> Bool {
+        let mainAppBundleID = "com.App.EarnYourScreentime"
+        
+        return NSRunningApplication.runningApplications(withBundleIdentifier: mainAppBundleID).count > 0
+    }
+    
     func applicationWillTerminate(_ aNotification: Notification) {
         // Insert code here to tear down your application
     }

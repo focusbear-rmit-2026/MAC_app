@@ -3,7 +3,7 @@
 //  FocusBear
 //
 //  Created by Prashant Sawnani on 12/07/24.
-//  Copyright © 2024 Focus Bear. All rights reserved.
+//  Copyright © 2025 Focus Bear. All rights reserved.
 //
 
 import Foundation

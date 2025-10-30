@@ -2332,9 +2332,11 @@ class habitsVc: NSViewController {
         if state && SettingsManagerObject.isGeekModeEnabled{
             appdelegate?.showMorningPomodoroModeView()
             unlockMachineWork()
+            hideBlankWindowInSecondaryMonitor()
         }else if SettingsManagerObject.showBrainDumpAfterMorningRoutineEnabled{
             showBrainDumpWindow()
             unlockMachineWork()
+            hideBlankWindowInSecondaryMonitor()
         }else{
             self.perform(#selector(unlockMachine), with: nil, afterDelay: 3)
         }
@@ -2669,37 +2671,18 @@ class habitsVc: NSViewController {
                     isLastActivityStoppedInRunningState = false
                     lastActivityRunningId = ""
                 }
-//                hideCloseButtons() //
-//                removeSubViews() // 
-                
                 //Extend postpone time not working for 2 minute warning popup#923
                 if currentState == ._POSTPON_MORNING_HABIT_{
-//                    if smallCountDownWcObj?.window != nil{
-//                        if getSmallCountDownWindowObject().window!.isVisible && getsmallCountDownVcObject().isFocusBreak{
-//                            getSmallCountDownWindowObject().window?.close()
-//                        }
-//                    }
                     closeSmallCountDownTimerBoxIfVisibleForFocusBreak()
                 }
                 
                 if !isFocusModeOn(){
-//                    closeTaskPlayerWindowIfVisible()
                     leftMenuVcObj?.focusModeOrFocusModeHabitFinished()
                 }
                 currentState = ._POSTPON_MORNING_HABIT_
-//                mainWindowControllerObj?.window?.close()
                 hideBlankWindowInSecondaryMonitor()
             }
             
-//            if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
-//                if smallCountDownWcObj?.window != nil{
-//                    if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
-//                        if currentHabitPlaying != nil{
-//                            getSmallCountDownWindowObject().window!.close()
-//                        }
-//                    }
-//                }
-//            }
             closeSmallCountDownTimerBoxIfVisibleForWithoutFocusBreak()
             
             if popUpCheckListWcObj != nil{
@@ -2715,12 +2698,6 @@ class habitsVc: NSViewController {
                 }
                 isAnyAllowedFocusModeActivityRunning = false
                 currentHabitPlaying = nil
-                
-//                if toolBoxWcObj != nil{
-//                    if toolBoxWcObj!.window!.isVisible{
-//                        toolBoxWcObj?.window?.close()
-//                    }
-//                }
                 if !isFocusModeOn(){
                     refreshFocusModeData()
                     setAppIconForFocusModeScore(probability: nil)
@@ -2755,12 +2732,6 @@ class habitsVc: NSViewController {
             if currentState != ._CUSTOM_ROUTINE_{
                 if showAskFocusModeView && SettingsManagerObject.isGeekModeEnabled{
                     appdelegate?.menuShowPomodoroModeView()
-//                    if pomodoroWindowControllerObj != nil{
-//                        if pomodoroWindowControllerObj?.window?.isVisible ?? false{
-//                            pomodoroVcObj!.textFieldWorkDuration.integerValue = minutes - 1
-//                            pomodoroVcObj!.updateBreakDuration()
-//                        }
-//                    }
                     if !(pomodoroVcObj?.isViewLoaded ?? false){
                         pomodoroVcObj?.loadView()
                     }
@@ -2801,7 +2772,6 @@ class habitsVc: NSViewController {
         }
 
         if !isFocusModeOn(){
-//            closeTaskPlayerWindowIfVisible()
             leftMenuVcObj?.focusModeOrFocusModeHabitFinished()
         }
         
@@ -2812,15 +2782,6 @@ class habitsVc: NSViewController {
         }
         currentState = ._NOTHING_
         
-//        if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
-//            if smallCountDownWcObj?.window != nil{
-//                if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
-//                    if currentHabitPlaying != nil{
-//                        getSmallCountDownWindowObject().window!.close()
-//                    }
-//                }
-//            }
-//        }
         if currentHabitPlaying != nil{
             closeSmallCountDownTimerBoxIfVisibleForWithoutFocusBreak()
         }
@@ -2837,11 +2798,6 @@ class habitsVc: NSViewController {
         isAnyAllowedFocusModeActivityRunning = false
         currentHabitPlaying = nil
         
-//        if toolBoxWcObj != nil{
-//            if toolBoxWcObj!.window!.isVisible{
-//                toolBoxWcObj?.window?.close()
-//            }
-//        }
         if !isFocusModeOn(){
             refreshFocusModeData()
             setAppIconForFocusModeScore(probability: nil)
@@ -2901,34 +2857,16 @@ class habitsVc: NSViewController {
             }
             
             hideCloseButtons()
-//            removeSubViews()
             //Extend postpone time not working for 2 minute warning popup#923
             if currentState == ._POSTPON_EVENING_HABIT_{
-//                if smallCountDownWcObj?.window != nil{
-//                    if getSmallCountDownWindowObject().window!.isVisible && getsmallCountDownVcObject().isFocusBreak{
-//                        getSmallCountDownWindowObject().window?.close()
-//                    }
-//                }
-                
                 closeSmallCountDownTimerBoxIfVisibleForFocusBreak()
             }
             //
             if !isFocusModeOn(){
-//                closeTaskPlayerWindowIfVisible()
                 leftMenuVcObj?.focusModeOrFocusModeHabitFinished()
             }
             currentState = ._POSTPON_EVENING_HABIT_
-//            mainWindowControllerObj?.window?.close()
             hideBlankWindowInSecondaryMonitor()
-//            if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
-//                if smallCountDownWcObj?.window != nil{
-//                    if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
-//                        if currentHabitPlaying != nil{
-//                            getSmallCountDownWindowObject().window!.close()
-//                        }
-//                    }
-//                }
-//            }
             if currentHabitPlaying != nil{
                 closeSmallCountDownTimerBoxIfVisibleForWithoutFocusBreak()
             }
@@ -2944,12 +2882,6 @@ class habitsVc: NSViewController {
             }
             isAnyAllowedFocusModeActivityRunning = false
             currentHabitPlaying = nil
-            
-//            if toolBoxWcObj != nil{
-//                if toolBoxWcObj!.window!.isVisible{
-//                    toolBoxWcObj?.window?.close()
-//                }
-//            }
             
             if !isFocusModeOn(){
                 refreshFocusModeData()
@@ -2982,12 +2914,6 @@ class habitsVc: NSViewController {
             }
             if showAskFocusModeView && SettingsManagerObject.isGeekModeEnabled{
                 appdelegate?.menuShowPomodoroModeView()
-//                if pomodoroWindowControllerObj != nil{
-//                    if pomodoroWindowControllerObj?.window?.isVisible ?? false{
-//                        pomodoroVcObj!.textFieldWorkDuration.integerValue = minutes - 1
-//                        pomodoroVcObj!.updateBreakDuration()
-//                    }
-//                }
                 
                 if !(pomodoroVcObj?.isViewLoaded ?? false){
                     pomodoroVcObj?.loadView()

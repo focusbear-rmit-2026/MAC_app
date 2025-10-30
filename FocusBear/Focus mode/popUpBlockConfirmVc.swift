@@ -209,7 +209,7 @@ class popUpBlockConfirmVc: NSViewController {
             }
             
             if let currentTaskInToDoPlayer = getCurrentTaskInFocusMode(){
-                
+                addLog(text: "currentTaskInToDoPlayer:- \(currentTaskInToDoPlayer)")
                 var currentTaskText = "Current task is \"<TASK>\""
                 if let popUpBlockConfirmVcInfo = configjson.value(forKey: "popUpBlockConfirmVcInfo") as? NSDictionary{
                     currentTaskText = popUpBlockConfirmVcInfo.value(forKey: "currentTaskText") as? String ?? currentTaskText
@@ -337,7 +337,7 @@ class popUpBlockConfirmVc: NSViewController {
             }
 
             if let currentTaskInToDoPlayer = getCurrentTaskInFocusMode(){
-                
+                addLog(text: "currentTaskInToDoPlayer:- \(currentTaskInToDoPlayer)")
                 var currentTaskText = "Current task is \"<TASK>\""
                 if let popUpBlockConfirmVcInfo = configjson.value(forKey: "popUpBlockConfirmVcInfo") as? NSDictionary{
                     currentTaskText = popUpBlockConfirmVcInfo.value(forKey: "currentTaskText") as? String ?? currentTaskText

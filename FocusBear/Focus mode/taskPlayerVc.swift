@@ -503,8 +503,7 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
             selectedTaskDic["markCurrentTaskAsComplete"] = true
         }
         let taskData: [String: Any] = [
-            "selectedTask": selectedTaskDic//,// id name duration
-//            "newTasks": [taskDic]
+            "selectedTask": selectedTaskDic
         ]
         
        // . Create main payload

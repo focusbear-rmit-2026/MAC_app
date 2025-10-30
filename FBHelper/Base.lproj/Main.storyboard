@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.Storyboard.XIB" version="3.0" toolsVersion="20037" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
+<document type="com.apple.InterfaceBuilder3.Cocoa.Storyboard.XIB" version="3.0" toolsVersion="23504" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="20037"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="23504"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <scenes>
@@ -712,7 +712,7 @@
                                     <rect key="frame" x="0.0" y="0.0" width="471" height="386"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
-                                        <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="DHg-fU-fYb">
+                                        <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="DHg-fU-fYb">
                                             <rect key="frame" x="23" y="201" width="425" height="75"/>
                                             <textFieldCell key="cell" alignment="center" title="&quot;Hello there! Ready to make today productive? Your habits are waiting for you. Let's make today a great day together!&quot;" id="Ovq-QP-Enn">
                                                 <font key="font" metaFont="system" size="21"/>
@@ -733,28 +733,28 @@
                                             <subviews>
                                                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="i2q-OQ-LVY" customClass="Button" customModule="FBHelper" customModuleProvider="target">
                                                     <rect key="frame" x="0.0" y="0.0" width="160" height="37"/>
-                                                    <constraints>
-                                                        <constraint firstAttribute="height" constant="37" id="Wky-l5-cex"/>
-                                                    </constraints>
                                                     <buttonCell key="cell" type="square" title="xxNot Today" bezelStyle="shadowlessSquare" alignment="center" lineBreakMode="truncatingTail" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="2HW-rs-RDh">
                                                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                         <font key="font" metaFont="system" size="17"/>
                                                     </buttonCell>
+                                                    <constraints>
+                                                        <constraint firstAttribute="height" constant="37" id="Wky-l5-cex"/>
+                                                    </constraints>
                                                     <connections>
                                                         <action selector="btnNotNowClicked:" target="PEV-UQ-RJu" id="xQx-Uz-aUn"/>
                                                     </connections>
                                                 </button>
                                                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="BdB-G8-4nx" customClass="Button" customModule="FBHelper" customModuleProvider="target">
                                                     <rect key="frame" x="168" y="0.0" width="160" height="37"/>
+                                                    <buttonCell key="cell" type="square" title="xxLet's do it!" bezelStyle="shadowlessSquare" alignment="center" lineBreakMode="truncatingTail" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="R2X-Ct-Uth">
+                                                        <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                                        <font key="font" metaFont="system" size="17"/>
+                                                    </buttonCell>
                                                     <constraints>
                                                         <constraint firstAttribute="width" relation="lessThanOrEqual" constant="220" id="FIS-GZ-VLt"/>
                                                         <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="160" id="b6e-Tu-Nz5"/>
                                                         <constraint firstAttribute="height" constant="37" id="hno-Ad-xq7"/>
                                                     </constraints>
-                                                    <buttonCell key="cell" type="square" title="xxLet's do it!" bezelStyle="shadowlessSquare" alignment="center" lineBreakMode="truncatingTail" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="R2X-Ct-Uth">
-                                                        <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                                                        <font key="font" metaFont="system" size="17"/>
-                                                    </buttonCell>
                                                     <connections>
                                                         <action selector="btnDoItClicked:" target="PEV-UQ-RJu" id="OPj-Xq-ywI"/>
                                                     </connections>
@@ -782,7 +782,7 @@
                                                 <action selector="checkBoxDontAskAgainClicked:" target="PEV-UQ-RJu" id="T37-fN-oHj"/>
                                             </connections>
                                         </button>
-                                        <textField horizontalHuggingPriority="1" verticalHuggingPriority="1" horizontalCompressionResistancePriority="1" verticalCompressionResistancePriority="1" translatesAutoresizingMaskIntoConstraints="NO" id="fvL-3B-BvI">
+                                        <textField focusRingType="none" horizontalHuggingPriority="1" verticalHuggingPriority="1" horizontalCompressionResistancePriority="1" verticalCompressionResistancePriority="1" translatesAutoresizingMaskIntoConstraints="NO" id="fvL-3B-BvI">
                                             <rect key="frame" x="23" y="102" width="425" height="74"/>
                                             <textFieldCell key="cell" alignment="center" title="&quot;Hello there! Ready to make today productive? Your habits are waiting for you. Let's make today a great day together!&quot;" id="4b0-O2-oYr">
                                                 <font key="font" metaFont="system" size="16"/>

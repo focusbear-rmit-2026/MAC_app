@@ -113,13 +113,6 @@ class easyPostponeVc: NSViewController {
             if (currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeMorningHabit) || (currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeEveningHabit){
                 habitsVcObj?.stopActivityCountDownTimer()
                 if currentActivityPlaying != nil{
-//                    if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
-//                        if smallCountDownWcObj?.window != nil{
-//                            if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
-//                                getSmallCountDownWindowObject().window?.close()
-//                            }
-//                        }
-//                    }
                     closeSmallCountDownTimerBoxIfVisibleForWithoutFocusBreak()
                 }
                 currentHabitPlaying = nil
@@ -132,11 +125,6 @@ class easyPostponeVc: NSViewController {
                 if getHabitsVcObject().postponeTimer != nil{
                     getHabitsVcObject().postponeTimer?.invalidate()
                     getHabitsVcObject().postponeTimer = nil
-//                    if smallCountDownWcObj != nil{
-//                        if getSmallCountDownWindowObject().window!.isVisible && getsmallCountDownVcObject().isFocusBreak{
-//                            smallCountDownVcObj?.closeTimerBox()
-//                        }
-//                    }
                     closeSmallCountDownTimerBoxIfVisibleForFocusBreak()
                 }
                 if getHabitsVcObject().postponeNotificationTimer != nil{
@@ -176,11 +164,6 @@ class easyPostponeVc: NSViewController {
                 if getHabitsVcObject().postponeTimer != nil{
                     getHabitsVcObject().postponeTimer?.invalidate()
                     getHabitsVcObject().postponeTimer = nil
-//                    if smallCountDownWcObj != nil{
-//                        if getSmallCountDownWindowObject().window!.isVisible && getsmallCountDownVcObject().isFocusBreak{
-//                            smallCountDownVcObj?.closeTimerBox()
-//                        }
-//                    }
                     closeSmallCountDownTimerBoxIfVisibleForFocusBreak()
                 }
                 if getHabitsVcObject().postponeNotificationTimer != nil{

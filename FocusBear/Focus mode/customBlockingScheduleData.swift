@@ -575,6 +575,37 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
         }
     }
     
+    func validateBlockingSchedules() {
+        if arrFocusType.count == 0 || arrBlockingSchedule.count == 0{
+            return;
+        }
+        
+        let validFocusModeIDs = arrFocusType.compactMap { $0["id"] as? String }
+        
+        // Identify invalid schedules (those with missing focus mode)
+        let invalidSchedules = arrBlockingSchedule.filter {
+            !validFocusModeIDs.contains($0.focusModeID)
+        }
+        
+        // Call remove API for each invalid schedule
+        for schedule in invalidSchedules {
+            removeBlockingScheduleFromServer(schedule: schedule)
+        }
+        
+        // Remove them from local list
+        arrBlockingSchedule.removeAll {
+            !validFocusModeIDs.contains($0.focusModeID)
+        }
+    }
+    
+    
+    func removeBlockingScheduleFromServer(schedule: customBlockingSchedule){
+        allApiObject.deleteBlockingSchedule(id: schedule.id, completionHandler: {bool in
+            
+        })
+    }
+    
+    
     func isAIBlockingEnabled()->Bool{
         if isAnyCustomScheduleOn{
             for schedule in arrBlockingSchedule{

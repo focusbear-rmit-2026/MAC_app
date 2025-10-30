@@ -37,7 +37,7 @@ class helpVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate 
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
-        btnSelectScreenshots.title = "Select Screenshots" // todo text
+        btnSelectScreenshots.title = "Select Screenshots"
         lblAddScreenshots.stringValue = "➕ Drag and drop screenshots here that you want to share"
         
         tabViewGetSupport.label = "Get Support"
@@ -51,11 +51,9 @@ class helpVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate 
         btnDontUseDiscord.title = "I don't use Discord"
         
         tabViewReportProblem.label = "Report Problem"
-//        tabViewChatWthApp.label = "Chat with Focus Bear"
         tabViewCommunity.label = "Community"
         
         lblTitle.stringValue = "Focus Bear is still a new app and you might encounter issues (or have great ideas on how to make it better). We'd really appreciate your feedback. You can email us at team@focusbear.io. Screenshots are really helpful to let us understand the problem. Also if you had a problem, please share your logs with Focus Bear Support Team (use the link below)"
-//        btnExportLogs.title = "Click here to export logs to share with Support Team."
         
         btnExportLogs.title = "Share logs with Focus Bear Support Team"
         var placeHolderLogsFeedback = "What happened?"
@@ -78,6 +76,7 @@ class helpVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate 
             if let title = helpVcInfo.value(forKey: "titleAddScreenshots") as? String{
                 lblAddScreenshots.stringValue = "➕ \(title)"
             }
+            btnSelectScreenshots.title = helpVcInfo.value(forKey: "buttonSelectScreenshots") as? String ?? btnSelectScreenshots.title
         }
         
 //        self.webView.navigationDelegate = self
@@ -290,9 +289,14 @@ class helpVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate 
     
     @IBAction func btnSelectScreenshotsClicked(_ sender: Any) {
         let openPanel = NSOpenPanel()
-        openPanel.title = "Select Screenshots"// todo text
         openPanel.message = "Choose one or more screenshots you want to share."
-        openPanel.prompt = "Select" // Text on the action button
+        openPanel.prompt = "Select"
+        
+        if let helpVcInfo = configjson.value(forKey: "helpVcInfo") as? NSDictionary{
+            openPanel.message = helpVcInfo.value(forKey: "titleSelectScreenshots") as? String ?? openPanel.message
+            openPanel.prompt = helpVcInfo.value(forKey: "buttonSelect") as? String ?? openPanel.prompt
+        }
+        
         openPanel.allowsMultipleSelection = true
         openPanel.allowedFileTypes = ["png", "jpg", "jpeg", "heic"]
 
