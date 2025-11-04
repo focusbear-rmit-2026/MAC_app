@@ -1460,7 +1460,7 @@ func resumeFocusModeAfterAppStartted(diffSeconds: Int, focusMode: [String : Any]
 func updateFocusModeIntention(intention:String){
     if whatToAchieveInFocusBlock != intention{
         whatToAchieveInFocusBlock = intention
-        arrConvinceAiUrlsInCurrentFocus.removeAll()
+        arrConvinceAiUrlsInCurrentFocus.removeAll()//reset it if the intention changes
         arrConvinceAiAppsInCurrentFocus.removeAll()
     }
 }
@@ -1471,8 +1471,6 @@ func updateFocusModeTask(taskString:String){
     if let currentString = getCurrentTaskInFocusMode(){
         if currentPlayingTaskString != currentString{
             currentPlayingTaskString = currentString
-            arrConvinceAiUrlsInCurrentFocus.removeAll()
-            arrConvinceAiAppsInCurrentFocus.removeAll()
         }
     }else{
         currentPlayingTaskString = ""

@@ -2825,7 +2825,7 @@ class habitsVc: NSViewController {
         var showAskIntention = showAskIntention
         
         if SettingsManagerObject.isStrictnessLevelSuperGentle(){
-            addLog(text: "postponeMorningHabitFor:- strictness level is super gentle so don't show postpone Intention view")
+            addLog(text: "postponeEveningHabitFor:- strictness level is super gentle so don't show postpone Intention view")// log was postponeMorningHabitFor before 2.27.428
             showAskIntention = false
         }
         

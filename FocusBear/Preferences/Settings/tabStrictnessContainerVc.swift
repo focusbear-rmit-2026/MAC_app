@@ -84,6 +84,7 @@ class tabStrictnessContainerVc: NSViewController {
         removeSubViews()
         self.containerView.addSubview(getCustomBlockingSchedulesVcObject().view)
         self.containerView.addConstraints(subView: getCustomBlockingSchedulesVcObject().view)
+        getCustomBlockingSchedulesVcObject().tblView.reloadData()
     }
     
     func showBlockingSchedulesView(index:Int, shouldCreateNew:Bool){

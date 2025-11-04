@@ -2757,8 +2757,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 sharedDefaults?.synchronize()
             }
         }
-        
     }
+    
     var isSettingsLoddedInAppdelegate = false
     func initialWork(){
         addLog(text: "initialWork")
@@ -3637,10 +3637,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     }
     
     @objc func checkWindowState(){
-        // validate all blocking schedules by checking if their assigned focusModeID still exists in focus mode list
-        customBlockingScheduleManagerObj.validateBlockingSchedules()
-        
-        
         loadAllWindows()
         isFirstRun = false
         
@@ -5352,6 +5348,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 
                 if shouldShowEveningHabit{
                     if arrAllDaysEveningHabits.count == 0 {// if count is 0 then we will not do anything
+                        
+                        // ----Focus Bear isn’t prompting breaks (#1548, v2.27.428)---
+                        // When there are no morning/evening habits, `isHabitAlreadyShowed` remains true,
+                        // preventing the code from reaching the section that sets the activity timer.
+                        // To ensure the timer setup executes, we reset `isHabitAlreadyShowed` to false here.
+                        isHabitAlreadyShowed = false
+                        //-----
+                        
                         checkCustomRoutineTime()
                         customBlockingScheduleManagerObj.checkCustomBlockingScheduleTime()
                         return;

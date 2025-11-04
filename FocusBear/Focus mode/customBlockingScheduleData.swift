@@ -54,44 +54,164 @@ struct customBlockingSchedule: Codable, Identifiable {
     }
     
     
+//    func isBlockingActive() -> Bool {
+//        let now = Date()
+//        let calendar = Calendar.current
+//        let weekday = calendar.component(.weekday, from: now)
+//        let schedule = self
+//        guard schedule.daysOfWeek.contains(weekday) else { return false }
+//
+//        let startDate = schedule.startTime
+//        
+//        var endDate = schedule.endTime
+//        
+//        // Handle cross-midnight
+//        if endDate <= startDate {
+//            endDate = calendar.date(byAdding: .day, value: 1, to: endDate)!
+//        }
+//        
+//        return now >= startDate && now <= endDate
+//    }
+    
+    // Assumes:
+    // - schedule.daysOfWeek is [Int] using Calendar.current.component(.weekday, from:) (1 = Sunday ... 7 = Saturday)
+    // - schedule.startTime and schedule.endTime are Date objects that contain the time-of-day you saved
+    //   (date components will be ignored; only hour/minute/second are used)
+
     func isBlockingActive() -> Bool {
         let now = Date()
         let calendar = Calendar.current
-        let weekday = calendar.component(.weekday, from: now)
-        let schedule = self
-        guard schedule.daysOfWeek.contains(weekday) else { return false }
-        
-        // let nowComponents = calendar.dateComponents([.hour, .minute], from: now)
-        // let nowDate = calendar.date(bySettingHour: nowComponents.hour!, minute: nowComponents.minute!, second: 0, of: now)!
-        
-        let startDate = schedule.startTime
-        
-        var endDate = schedule.endTime
-        
-        // Handle cross-midnight
-        if endDate <= startDate {
-            endDate = calendar.date(byAdding: .day, value: 1, to: endDate)!
+        let todayWeekday = calendar.component(.weekday, from: now)
+
+        // quick guard: if schedule not active this weekday at all
+        // (we'll check yesterday separately for cross-midnight case)
+        guard !daysOfWeek.isEmpty else { return false }
+
+        // Extract time components from stored start/end times
+        let startComp = calendar.dateComponents([.hour, .minute, .second], from: startTime)
+        let endComp   = calendar.dateComponents([.hour, .minute, .second], from: endTime)
+
+        // Build "today" Date objects for start and end times (using today's date)
+        guard
+            let todayStart = calendar.date(bySettingHour: startComp.hour ?? 0,
+                                           minute: startComp.minute ?? 0,
+                                           second: startComp.second ?? 0,
+                                           of: now),
+            let todayEnd   = calendar.date(bySettingHour: endComp.hour ?? 0,
+                                           minute: endComp.minute ?? 0,
+                                           second: endComp.second ?? 0,
+                                           of: now)
+        else {
+            return false
         }
-        
-        return now >= startDate && now <= endDate
+
+        // If the interval does NOT cross midnight (start < end on same day)
+        if todayStart < todayEnd {
+            // Active only if today is in schedule.daysOfWeek and now falls between start and end
+            guard daysOfWeek.contains(todayWeekday) else { return false }
+            return (now >= todayStart && now <= todayEnd)
+        } else {
+            // Interval crosses midnight (e.g., start 22:00, end 02:00)
+            //
+            // Two possibilities:
+            // 1) The schedule started today and runs until midnight (now >= todayStart)
+            //    -> only valid if today is a scheduled start-day
+            if daysOfWeek.contains(todayWeekday) && now >= todayStart {
+                return true
+            }
+
+            // 2) The schedule started yesterday and runs past midnight into today until todayEnd
+            //    -> check yesterday's weekday is a scheduled day and now <= todayEnd
+            if let yesterday = calendar.date(byAdding: .day, value: -1, to: now) {
+                let yesterdayWeekday = calendar.component(.weekday, from: yesterday)
+                if daysOfWeek.contains(yesterdayWeekday) && now <= todayEnd {
+                    return true
+                }
+            }
+
+            return false
+        }
     }
+
+
+    
+//    func remainingBlockingDuration() -> TimeInterval {
+//        let now = Date()
+//        let start = self.startTime
+//        var end = endTime
+//        let calendar = Calendar.current
+//        
+//        if end <= start {
+//            end = calendar.date(byAdding: .day, value: 1, to: end)!
+//        }
+//        
+//        guard now >= start, now < end else {
+//            return 1
+//        }
+//        
+//        return end.timeIntervalSince(now)
+//    }
     
     func remainingBlockingDuration() -> TimeInterval {
         let now = Date()
-        let start = self.startTime
-        var end = endTime
         let calendar = Calendar.current
-        
-        if end <= start {
-            end = calendar.date(byAdding: .day, value: 1, to: end)!
+
+        // Extract time components from stored start/end Dates (time-of-day only)
+        let startComp = calendar.dateComponents([.hour, .minute, .second], from: startTime)
+        let endComp   = calendar.dateComponents([.hour, .minute, .second], from: endTime)
+
+        // Build a "base" start/end for any given reference day:
+        func date(forDay day: Date, hour: Int?, minute: Int?, second: Int?) -> Date? {
+            return calendar.date(bySettingHour: hour ?? 0,
+                                  minute: minute ?? 0,
+                                  second: second ?? 0,
+                                  of: day)
         }
-        
-        guard now >= start, now < end else {
+
+        guard
+            let todayStart = date(forDay: now, hour: startComp.hour, minute: startComp.minute, second: startComp.second),
+            let todayEndRaw = date(forDay: now, hour: endComp.hour, minute: endComp.minute, second: endComp.second)
+        else {
             return 1
         }
-        
-        return end.timeIntervalSince(now)
+
+        // Helper to produce an adjusted end for a given start/end on the same reference day.
+        func adjustedEnd(for start: Date, rawEnd: Date) -> Date {
+            // If rawEnd <= start, it means the interval crosses midnight; adjusted end should be the next day rawEnd
+            if rawEnd <= start {
+                return calendar.date(byAdding: .day, value: 1, to: rawEnd)!
+            } else {
+                return rawEnd
+            }
+        }
+
+        let todayEnd = adjustedEnd(for: todayStart, rawEnd: todayEndRaw)
+
+        // Build yesterday's start & end (the same time-of-day but on yesterday's date)
+        guard let yesterdayDate = calendar.date(byAdding: .day, value: -1, to: now),
+              let yesterdayStart = date(forDay: yesterdayDate, hour: startComp.hour, minute: startComp.minute, second: startComp.second),
+              let yesterdayEndRaw = date(forDay: yesterdayDate, hour: endComp.hour, minute: endComp.minute, second: endComp.second)
+        else {
+            return 1
+        }
+
+        let yesterdayEnd = adjustedEnd(for: yesterdayStart, rawEnd: yesterdayEndRaw)
+
+        // If now lies in yesterday's window (schedule started yesterday and runs past midnight into today)
+        if now >= yesterdayStart && now < yesterdayEnd {
+            return yesterdayEnd.timeIntervalSince(now)
+        }
+
+        // If now lies in today's window (schedule starts today and runs until todayEnd or tomorrow)
+        if now >= todayStart && now < todayEnd {
+            return todayEnd.timeIntervalSince(now)
+        }
+
+        // Not active right now — keep the old behavior (1 second)
+        return 1
     }
+
+
     
     enum CodingKeys: String, CodingKey {
         case id = "id"
@@ -135,10 +255,13 @@ struct customBlockingSchedule: Codable, Identifiable {
         endTimeString = try container.decodeIfPresent(String.self, forKey: .endTime) ?? "18:00"
         
         //let start = customBlockingSchedule.parseTime(startTimeString) ?? Date()
-        startTime = customBlockingSchedule.dateForToday(from: startTimeString) ?? Date()
-        endTime = customBlockingSchedule.dateForToday(from: endTimeString) ?? Date()
-        
-        
+        startTime = Self.parseTime(startTimeString) ?? Date()
+        endTime = Self.parseTime(endTimeString) ?? Date()
+
+        if startTime > endTime{
+            let calendar = Calendar.current
+            endTime = calendar.date(byAdding: .day, value: 1, to: endTime)!
+        }
         if let metadata = try container.decodeIfPresent([String: Bool].self, forKey: .metadata) {
             isMicroBreaksEnabled = metadata["is_micro_breaks_enabled"] ?? false
         }
@@ -236,17 +359,17 @@ struct customBlockingSchedule: Codable, Identifiable {
         return nil
     }
     
-    static func dateForToday(from timeString: String) -> Date? {
-        guard let time = timeFormatter.date(from: timeString) else { return nil }
-        
-        let calendar = Calendar.current
-        let timeComponents = calendar.dateComponents([.hour, .minute], from: time)
-        var todayComponents = calendar.dateComponents([.year, .month, .day], from: Date())
-        todayComponents.hour = timeComponents.hour
-        todayComponents.minute = timeComponents.minute
-        
-        return calendar.date(from: todayComponents)
-    }
+//    static func dateForToday(from timeString: String) -> Date? {
+//        guard let time = timeFormatter.date(from: timeString) else { return nil }
+//        
+//        let calendar = Calendar.current
+//        let timeComponents = calendar.dateComponents([.hour, .minute], from: time)
+//        var todayComponents = calendar.dateComponents([.year, .month, .day], from: Date())
+//        todayComponents.hour = timeComponents.hour
+//        todayComponents.minute = timeComponents.minute
+//        
+//        return calendar.date(from: todayComponents)
+//    }
 }
 
 
@@ -361,35 +484,51 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
     @objc func dayChangedOperations(_ aNotification: Notification) {
         addLog(text: "func call:- dayChangedOperations")
         DispatchQueue.main.async { [self] in
-            if isAnyCustomScheduleOn || isAnyCustomSchedulePaused{
-                customBlockingScheduleFinished()
-            }
-            for i in 0..<arrBlockingSchedule.count {
-                arrBlockingSchedule[i].startTime = customBlockingSchedule.dateForToday(from: arrBlockingSchedule[i].startTimeString) ?? Date()
-                arrBlockingSchedule[i].endTime = customBlockingSchedule.dateForToday(from: arrBlockingSchedule[i].endTimeString) ?? Date()
+            dayChanged()
+        }
+    }
+    
+    func dayChanged(){
+        if isAnyCustomScheduleOn || isAnyCustomSchedulePaused{
+            customBlockingScheduleFinished()
+        }
+        for i in 0..<arrBlockingSchedule.count {
+            arrBlockingSchedule[i].startTime = customBlockingSchedule.parseTime(arrBlockingSchedule[i].startTimeString) ?? arrBlockingSchedule[i].startTime
+            arrBlockingSchedule[i].endTime = customBlockingSchedule.parseTime(arrBlockingSchedule[i].endTimeString) ?? arrBlockingSchedule[i].endTime
+            
+            if arrBlockingSchedule[i].startTime > arrBlockingSchedule[i].endTime{
+                let calendar = Calendar.current
+                arrBlockingSchedule[i].endTime = calendar.date(byAdding: .day, value: 1, to: arrBlockingSchedule[i].endTime)!
             }
         }
-        
     }
+    
     
     func checkCustomBlockingScheduleTime(){
         if currentState != ._MORNING_HABIT_ && currentState != ._CUSTOM_ROUTINE_ && currentState != ._EVENING_HABIT_ && !appdelegate!.isProcessingHabitRoutine && !isProcessingCustomRoutine && currentState != ._MICRO_BREAK_ && !isAnyCustomScheduleOn && !isFocusModeRunning{
             for i in 0..<arrBlockingSchedule.count{
-                
                 if arrBlockingSchedule[i].isBlockingActive(){
-                    if arrBlockingSchedule[i].state == .pause{
-                        continue;
-                    }
-                    // if any another schedule pased then stop it
-                    if isAnyCustomSchedulePaused{
-                        isAnyCustomSchedulePaused = false
-                        for i in 0..<arrBlockingSchedule.count{
-                            arrBlockingSchedule[i].state = .off
+                    if validateBlockingScheduleFocusId(schedule: arrBlockingSchedule[i]){
+                        if arrBlockingSchedule[i].state == .pause{
+                            continue;
                         }
+                        // if any another schedule paused then stop it
+                        if isAnyCustomSchedulePaused{
+                            isAnyCustomSchedulePaused = false
+                            for i in 0..<arrBlockingSchedule.count{
+                                arrBlockingSchedule[i].state = .off
+                            }
+                        }
+                        
+                        startCustomBlockingSchedule(index: i)
+                        break;
+                    }else{
+                        if arrBlockingSchedule[i].state == .pause{
+                            isAnyCustomSchedulePaused = false
+                        }
+                        arrBlockingSchedule[i].state = .off
+                        floatingTopBarVcObj?.boxCustomBlockingSchedule.isHidden = true
                     }
-                    
-                    startCustomBlockingSchedule(index: i)
-                    break;
                 }else{
                     if arrBlockingSchedule[i].state == .pause{
                         isAnyCustomSchedulePaused = false
@@ -596,6 +735,20 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
         arrBlockingSchedule.removeAll {
             !validFocusModeIDs.contains($0.focusModeID)
         }
+    }
+    
+    func validateBlockingScheduleFocusId(schedule: customBlockingSchedule)->Bool {
+        let currentFocusModeID = schedule.focusModeID
+        
+        // Check if any focus mode in arrFocusType has the same id
+        let focusModeExists = arrFocusType.contains { focus in
+            if let id = focus["id"] as? String {
+                return id == currentFocusModeID
+            }
+            return false
+        }
+        
+        return focusModeExists
     }
     
     

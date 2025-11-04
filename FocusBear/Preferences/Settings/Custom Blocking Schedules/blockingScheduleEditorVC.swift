@@ -147,7 +147,6 @@ class blockingScheduleEditorVC: NSViewController {
         boxTuesday.index = 3
         boxMonday.index = 2
         
-//        boxSunday.titleLabel = boxSunday.index.
         arrAllWeekDayBox = [boxSunday, boxMonday, boxTuesday, boxWednesday, boxThursday, boxFriday, boxSaturday]
         
         textFieldScheduleName.focusRingType = .none
@@ -164,6 +163,9 @@ class blockingScheduleEditorVC: NSViewController {
     
     func reloadFocusModeList(){
         let selectedIndex = popUpBtnFocusMode.indexOfSelectedItem
+        if selectedIndex == -1{
+            return;
+        }
         arrFocusTypeForBlockingSchedule.removeAll()
         for i in 0..<arrFocusType.count{
             if !(arrFocusType[i]["isMeetings"] as? Bool ?? false == true){
@@ -214,7 +216,6 @@ class blockingScheduleEditorVC: NSViewController {
                 }
             }
             
-//            btnEditBlockList.isHidden = true
             popUpBtnFocusMode.removeAllItems()
             for i in 0..<arrFocusTypeForBlockingSchedule.count{
                 if let name = arrFocusTypeForBlockingSchedule[i]["name"] as? String{
@@ -263,7 +264,7 @@ class blockingScheduleEditorVC: NSViewController {
             
             
             let focusModeId = customBlockingScheduleManagerObj.arrBlockingSchedule[index].focusModeID
-            
+            popUpBtnFocusMode.selectItem(at: -1)
             for i in 0..<arrFocusTypeForBlockingSchedule.count{
                 if let id = arrFocusTypeForBlockingSchedule[i]["id"] as? String{
                     if id == focusModeId{
@@ -272,7 +273,6 @@ class blockingScheduleEditorVC: NSViewController {
                     }
                 }
             }
-//            btnEditBlockList.isHidden = false
             checkBoxAiEnabled.state = customBlockingScheduleManagerObj.arrBlockingSchedule[index].isAIBlockingEnabled ? .on : .off
             checkBoxSkipMicroBreaks.state = customBlockingScheduleManagerObj.arrBlockingSchedule[index].isMicroBreaksEnabled ? .off : .on
             datePickerFrom.dateValue = customBlockingScheduleManagerObj.arrBlockingSchedule[index].startTime
@@ -353,6 +353,17 @@ class blockingScheduleEditorVC: NSViewController {
         }
         
         let index = popUpBtnFocusMode.indexOfSelectedItem
+        if index == -1{// if selected focus mode is deleted then we select -1 index of popupbtn just for show blank selection
+            var alertSelectDay = "Please select block list."
+            if let blockingScheduleEditorVcInfo = configjson.value(forKey: "blockingScheduleEditorVcInfo") as? NSDictionary{
+               // alertSelectDay = blockingScheduleEditorVcInfo.value(forKey: "alertSelectDay") as? String ?? alertSelectDay // todo text
+            }
+            showAlert(title: alertSelectDay)
+            
+            addLog(text: "showAlert:- select block list")//2.27.428
+            return;
+        }
+        
         
         let focusModeId = arrFocusTypeForBlockingSchedule[index]["id"] as? String ?? ""
         if sliderStrictness.integerValue == 1{
@@ -403,12 +414,7 @@ class blockingScheduleEditorVC: NSViewController {
             customBlockingSchedulesVcObj?.scheduleEditedAt(currentFocusModeIndex)
             allApiObject.capturePosthog(event: "edit-blocking-schedule", metadata: [:])//2.27.421
             customBlockingScheduleManagerObj.updateCustomBlockingScheduleAtIndex(currentFocusModeIndex)
-            
-            
-            
         }
-        
-        
         closeView()
     }
     
@@ -473,11 +479,10 @@ class blockingScheduleEditorVC: NSViewController {
         addLog(text: "[user-action]Showing preferences from edit focus mode")
         
         self.presentAsSheet(getFocusPreferencesVcObject()) // no password needed beacause we are already inside settings
-        let index = popUpBtnFocusMode.indexOfSelectedItem
-//        if isCreatingNew{
-//            index = index - 1
-//        }
-        
+        var index = popUpBtnFocusMode.indexOfSelectedItem
+        if index == -1{//if selected index is -1 reason is selected focus mode was deleted so we select at -1 to show none selected
+            index = 0
+        }
         if let focusModeId = arrFocusTypeForBlockingSchedule[index]["id"] as? String{
             getFocusPreferencesVcObject().selectFocusModeWithId(id: focusModeId)
         }

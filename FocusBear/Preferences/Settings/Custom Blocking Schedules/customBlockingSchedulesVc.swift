@@ -92,12 +92,17 @@ extension customBlockingSchedulesVc: NSTableViewDelegate, NSTableViewDataSource{
            
                 
                 let focusModeID = customBlockingScheduleManagerObj.arrBlockingSchedule[row].focusModeID
-                cell.lblFocusModeName.stringValue = "" 
+                cell.lblFocusModeName.stringValue = ""
+                var isFocusModeFound = false
                 for focusMode in arrFocusType{
                     if focusMode["id"] as? String == focusModeID{
                         cell.lblFocusModeName.stringValue = focusMode["name"] as? String ?? ""
+                        isFocusModeFound = true
                         break;
                     }
+                }
+                if !isFocusModeFound{
+                    cell.lblFocusModeName.stringValue = "Update block list ⚠️" // todo text
                 }
             }
             
