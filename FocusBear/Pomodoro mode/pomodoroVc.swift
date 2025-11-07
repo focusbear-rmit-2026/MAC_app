@@ -182,7 +182,7 @@ class pomodoroVc: NSViewController {
         //What do you want to do instead of your habits?
         var questionFirstText = "What do you want to achieve in this focus session?"
         
-        btnEditFocusMode.title = "Edit focus modes"
+        btnEditFocusMode.title = "Edit block lists"//"Edit focus modes" // todo text 
         btnLetsDoIt.title = "Let's do it"
         btnCheckBoxHardcodePomodoro.title = "Use hardcode pomodoro mode (lock in the focus mode for multiple pomodoros)"
         lblHowManyPomodoro.stringValue = "How many pomodoros you want to focus for:"
@@ -202,7 +202,7 @@ class pomodoroVc: NSViewController {
                 self.questionSecondText = questionSecondText
             }
             if let buttonEditFocusModeText = pomodoroInfo.value(forKey: "buttonEditFocusModeText") as? String{
-                btnEditFocusMode.title = buttonEditFocusModeText
+//                btnEditFocusMode.title = buttonEditFocusModeText
             }
             if let buttonLetsDoItText = pomodoroInfo.value(forKey: "buttonLetsDoItText") as? String{
                 btnLetsDoIt.title = buttonLetsDoItText
@@ -345,6 +345,12 @@ class pomodoroVc: NSViewController {
                 lblTipPermissions.stringValue = simplePomodoroVcInfo.value(forKey: "tipPermissionsSecond") as? String ?? lblTipPermissions.stringValue
             }
         }
+        
+//        if customBlockingScheduleManagerObj.isAnyCustomScheduleOn{ // todo 
+//            if currentFocusModeStrictness == ._SUPER_STRICT_{
+//                
+//            }
+//        }
     }
     
     override func mouseEntered(with event: NSEvent) {
@@ -566,7 +572,7 @@ class pomodoroVc: NSViewController {
                 lblQuestionSecond.stringValue = chooseTheFocusModeText
                 stackViewPomodoroModeTime.isHidden = false
             }else{
-                lblQuestionSecond.stringValue = questionSecondText
+                lblQuestionSecond.stringValue = "Which block list do you want to use?"//questionSecondText // todo text
                 stackViewPomodoroModeTime.isHidden = true
                 
             }
@@ -839,25 +845,6 @@ class pomodoroVc: NSViewController {
     
     @IBAction func btnEditFocusModeClicked(_ sender: Any) {
         addLog(text: "[user-action] btnEditFocusModeClicked")
-//        if preferencesWindowControllerObj?.window?.isVisible ?? false{
-//            if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-//                tabview.selectedTabViewItemIndex = preferencesFocusModesIndex
-//            }
-//            return;
-//        }
-//        allApiObject.capturePosthog(event: "open-preferences", metadata: [:])
-//        preferencesWindowControllerObj?.showWindow(self)
-//        addLog(text: "Showing preferences from edit focus mode")
-//        if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-//            tabview.selectedTabViewItemIndex = preferencesFocusModesIndex
-//            if isPasswordRequireInOpenSettings(){
-//                tabview.view.addSubview(getEnterPasswordVcObjForPreferences().view)
-//                tabview.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
-//                getEnterPasswordVcObjForPreferences().parentVc = nil
-//                enterPasswordVcObjForPreferences?.removeConstraints()
-//                addLog(text: "Showing enter password view")
-//            }
-//        }
         
         allApiObject.capturePosthog(event: "open-preferences", metadata: [:])
         addLog(text: "Showing preferences from edit focus mode")

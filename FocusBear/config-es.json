@@ -2547,7 +2547,8 @@
         "alertSelectDay": "Por favor, selecciona al menos un día para este horario.",
         "alertScheduleActive": "El horario está activo",
         "descriptionScheduleActive": "Este horario se está ejecutando actualmente. ¿Seguro que quieres eliminarlo? El bloqueo se detendrá de inmediato.",
-        "buttonAddNewBlock": "Agregar nuevo bloqueo"
+        "buttonAddNewBlock": "Agregar nuevo bloqueo",
+        "errorBlockListMissing": "Actualizar lista de bloqueo ⚠️"
     },
     "abortingCustomScheduleBlockingVcInfo":{
         "titlePauseText": "Pausando horario personalizado - <SCHEDULE>",

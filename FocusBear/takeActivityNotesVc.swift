@@ -52,6 +52,7 @@ class takeActivityNotesVc: NSViewController {
         self.log_quantity_answers = log_quantity_answers
         self.view.window?.makeFirstResponder(textViewNotes)
     }
+    
     @IBAction func btnOkClicked(_ sender: Any) {
         addLog(text:"[user-action] takeActivityNotesVc-btnOkClicked")
         self.view.removeFromSuperview()

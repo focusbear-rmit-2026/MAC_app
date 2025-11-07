@@ -16,12 +16,15 @@ class tabStrictnessContainerVc: NSViewController {
         super.viewDidLoad()
         addLog(text: "tabStrictnessContainerVc viewdidload")
     }
+    
     override func viewWillAppear() {
         showStrictnessView()
     }
+    
     override func viewWillDisappear() {
         SettingsManagerObject.putUserLocalDeviceSettings()
     }
+    
     @IBAction func btnSegmentControlGeekModeClicked(_ sender: Any) {
         if segmentControlGeekMode.selectedSegment == 0{
             if SettingsManagerObject.isGeekModeEnabled{
@@ -48,14 +51,13 @@ class tabStrictnessContainerVc: NSViewController {
             segmentControlGeekMode.setSelected(true, forSegment: 1)
         }
     }
+    
     func showStrictnessView(){
         removeSubViews()
         self.containerView.addSubview(getStrictnessVcObject().view)
         self.containerView.addConstraints(subView: getStrictnessVcObject().view)
     }
 
-    
-    
     func showBrowserTabLimiterView(){
         removeSubViews()
         self.containerView.addSubview(getBrowserTabLimiterVcObject().view)
@@ -92,6 +94,17 @@ class tabStrictnessContainerVc: NSViewController {
         self.containerView.addSubview(getBlockingScheduleEditorVCObject().view)
         self.containerView.addConstraints(subView: getBlockingScheduleEditorVCObject().view)
         getBlockingScheduleEditorVCObject().resetData(index: index, shouldCreateNew: shouldCreateNew)
+    }
+    
+    func showFocusPreferences(){
+        removeSubViews()
+        if focusPreferencesVcObj == nil{
+            getFocusPreferencesVcObject().loadView()
+        }
+        getFocusPreferencesVcObject().btnBackToCustomBlocking.isHidden = true
+        getFocusPreferencesVcObject().btnBack.isHidden = false
+        self.containerView.addSubview(getFocusPreferencesVcObject().view)
+        self.containerView.addConstraints(subView: getFocusPreferencesVcObject().view)
     }
 }
 

@@ -1134,12 +1134,12 @@ class GeekModeSegmentedControl: NSSegmentedControl {
             preferencesSettingsIndex = 3
             preferencesEditHabitsIndex = 4
             preferencesBlocksIndex = 2
-            leftMenuVcObj?.boxFocusModeSettings.isHidden = false
+//            leftMenuVcObj?.boxFocusModeSettings.isHidden = false
         }else{
             preferencesSettingsIndex = 2
             preferencesEditHabitsIndex = 3
             preferencesBlocksIndex = 1
-            leftMenuVcObj?.boxFocusModeSettings.isHidden = true
+//            leftMenuVcObj?.boxFocusModeSettings.isHidden = true
         }
 
         if leftMenuVcObj?.boxSettings.isSelected ?? false{

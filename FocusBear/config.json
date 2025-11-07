@@ -2547,7 +2547,8 @@
         "alertSelectDay": "Please select at least one day for this schedule.",
         "alertScheduleActive": "Schedule is Active",
         "descriptionScheduleActive": "This schedule is currently running. Are you sure you want to delete it? Blocking will stop immediately.",
-        "buttonAddNewBlock": "Add new block"
+        "buttonAddNewBlock": "Add new block",
+        "errorBlockListMissing": "Update block list ⚠️"
     },
     "abortingCustomScheduleBlockingVcInfo":{
         "titlePauseText": "Pausing Custom schedule - <SCHEDULE>",

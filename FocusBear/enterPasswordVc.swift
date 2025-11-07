@@ -333,7 +333,7 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
                 
             }else if parentVc == firstViewControllerObj{
                 self.view.removeFromSuperview()
-                firstViewControllerObj?.showEditHabitsView()
+                firstViewControllerObj?.passWordAuthenticated()
                 return;
             }
             
@@ -371,7 +371,7 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
             if self.view.window == mainWindowControllerObj?.window{
                 if (mainWindowControllerObj?.window!.isVisible)!{//it means isi per aaya hoga
                     
-                    if (leftMenuVcObj?.boxBlocks.isSelected ?? false) || (leftMenuVcObj?.boxFocusModeSettings.isSelected ?? false) || (leftMenuVcObj?.boxSettings.isSelected ?? false) || (leftMenuVcObj?.boxEditHabits.isSelected ?? false){
+                    if (leftMenuVcObj?.boxBlocks.isSelected ?? false) || (leftMenuVcObj?.boxSettings.isSelected ?? false) || (leftMenuVcObj?.boxEditHabits.isSelected ?? false){
                         
                         if leftMenuVcObj?.boxSettings.isSelected ?? false{
                             if frictionVcObj != nil{
@@ -532,7 +532,7 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
                     
                     
                     
-                    if (leftMenuVcObj?.boxBlocks.isSelected ?? false) || (leftMenuVcObj?.boxFocusModeSettings.isSelected ?? false) || (leftMenuVcObj?.boxSettings.isSelected ?? false) || (leftMenuVcObj?.boxEditHabits.isSelected ?? false){
+                    if (leftMenuVcObj?.boxBlocks.isSelected ?? false) || (leftMenuVcObj?.boxSettings.isSelected ?? false) || (leftMenuVcObj?.boxEditHabits.isSelected ?? false){
                         if passwordVcObj != nil{
                             if settingsContainerVcObj?.containerView.subviews.contains(passwordVcObj!.view) ?? false{
                                 if !SettingsManagerObject.isPasswordRequireInChangeSettings{

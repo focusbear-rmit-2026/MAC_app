@@ -10,6 +10,7 @@ import Cocoa
 
 class focusPreferencesVc: NSViewController, NSMenuDelegate {
 
+    @IBOutlet weak var btnBack: cursorButton!
     @IBOutlet weak var scrollView: NSScrollView!
     @IBOutlet weak var btnBackToCustomBlockingSmall: cursorButton!
     @IBOutlet weak var btnHelp: hoverInfoButton!
@@ -65,7 +66,8 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
     
     let viewWidthDefault = 760
     let viewHeightDefault = 624
-
+    var isViewVisible = false
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here
@@ -82,8 +84,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         
         radioBtnAllowListApproch.title = "Allow List:"
         radioBtnBlockListApproch.title = "Block List:"
-        
-        focusPreferencesVcObj = self
+
         var titleAllowedAllApps = "Allow all apps"
         var titleAllowedSelectedApps = "Allow selected apps"
         var titleFocusType = "Use Focus Modes to stay focused on a certain type of work. Start a focus mode from the Focus Bear menu."
@@ -356,6 +357,8 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
     
     
     override func viewWillAppear() {
+        isViewVisible = true
+        
         focusPreferencesAdvancedVcObj?.arrAllTags.removeAll()
         for tagInfo in arrAllFocusModeTags{
             focusPreferencesAdvancedVcObj?.arrAllTags.append(tagInfo["text"] ?? "")
@@ -377,7 +380,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         }
         
         
-        if leftMenuVcObj?.boxBlocks.isSelected ?? false{
+        if !(btnBackToCustomBlocking.isHidden){
             btnAddFocusType.title = "Add Block List"
             lblTitleFocusType.stringValue = "Use Block Lists to stay focused on a certain type of work."
             
@@ -388,12 +391,13 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
             btnHelp.isHidden = true
             btnBackToCustomBlockingSmall.isHidden = false
         }else{
-            btnAddFocusType.title = "Add Focus Mode"
-            lblTitleFocusType.stringValue = "Use Focus Modes to stay focused on a certain type of work. Start a focus mode from the Focus Bear menu."
+            tabStrictnessContainerVcObj?.segmentControlGeekMode.isHidden = true
+            btnAddFocusType.title = "Add Block List"
+            lblTitleFocusType.stringValue = "Use Block Lists to stay focused on a certain type of work. Start a focus session from the focus bear menu or use a blocking schedule." // todo text
             
             if let focusPreferencesInfo = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
-                btnAddFocusType.title = focusPreferencesInfo.value(forKey: "buttonAddFocusTypeText") as? String ?? btnAddFocusType.title
-                lblTitleFocusType.stringValue = focusPreferencesInfo.value(forKey: "titleFocusType") as? String ?? lblTitleFocusType.stringValue
+                btnAddFocusType.title = focusPreferencesInfo.value(forKey: "buttonAddBlockListText") as? String ?? btnAddFocusType.title
+               // lblTitleFocusType.stringValue = focusPreferencesInfo.value(forKey: "titleFocusType") as? String ?? lblTitleFocusType.stringValue
             }
             btnHelp.isHidden = false
             btnBackToCustomBlockingSmall.isHidden = true
@@ -406,9 +410,12 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
     }
     
     override func viewWillDisappear() {
+        isViewVisible = false
+        tabStrictnessContainerVcObj?.segmentControlGeekMode.isHidden = false
         focusPreferencesAdvancedVcObj?.arrAllTags.removeAll()
         updateAllFocusModes()
         btnBackToCustomBlocking.isHidden = true
+        btnBack.isHidden = false
     }
 
     
@@ -992,6 +999,13 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         self.dismiss(self)
         blockingScheduleEditorVCObj?.reloadFocusModeList()
     }
+    
+    @IBAction func btnBackClicked(_ sender: Any) {
+        if leftMenuVcObj?.boxBlocks.isSelected ?? false{
+            tabStrictnessContainerVcObj?.showStrictnessView()
+        }
+    }
+    
 }
 
 extension focusPreferencesVc: NSTableViewDelegate, NSTableViewDataSource{

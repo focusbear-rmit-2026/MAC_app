@@ -194,8 +194,14 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
             thirdVcObj?.btnReviseQuantity.isHidden = false
            return
         }
-        thirdVcObj?.logQuantityQuestionsForGraph.removeAll()
-        thirdVcObj?.loadGraph(activityId: self.activity_id, activityName: self.name, logQuantity: true, logQuantityType: self.logQuantityType, activityChoiceId: self.activityChoiceId,activityStartTime: lastActivityPerformedTime!, duration: durationInSeconds, quantity: "0")
+        
+        if !(getHabitsVcObject().habitsView.subviews.contains(firstViewControllerObj!.view)){ // it means user has not used quick action bar
+            thirdVcObj?.logQuantityQuestionsForGraph.removeAll()
+            thirdVcObj?.loadGraph(activityId: self.activity_id, activityName: self.name, logQuantity: true, logQuantityType: self.logQuantityType, activityChoiceId: self.activityChoiceId,activityStartTime: lastActivityPerformedTime!, duration: durationInSeconds, quantity: "0")
+               
+        }
+        
+        
 
         let startTime = getStringFromDate(date: lastActivityPerformedTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")
 
@@ -285,10 +291,13 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
 
 
         self.view.removeFromSuperview()
-        thirdVcObj?.currentGraphIndex = 0
-        thirdVcObj?.logQuantityQuestionsForGraph = logQuantityQuestions
-        thirdVcObj?.loadGraph(activityId: self.activity_id, activityName: self.name, logQuantity: true, logQuantityType: self.logQuantityType, activityChoiceId: self.activityChoiceId, activityStartTime: lastActivityPerformedTime!, duration: durationInSeconds, quantity: "\(logQuantityQuestions[0].quantity)")
-   
+        
+        if !(getHabitsVcObject().habitsView.subviews.contains(firstViewControllerObj!.view)){ // it means user has not used quick action bar
+            thirdVcObj?.currentGraphIndex = 0
+            thirdVcObj?.logQuantityQuestionsForGraph = logQuantityQuestions
+            thirdVcObj?.loadGraph(activityId: self.activity_id, activityName: self.name, logQuantity: true, logQuantityType: self.logQuantityType, activityChoiceId: self.activityChoiceId, activityStartTime: lastActivityPerformedTime!, duration: durationInSeconds, quantity: "\(logQuantityQuestions[0].quantity)")
+        }
+        
         var log_quantity_answers = [[String : Any]]()
         for question in logQuantityQuestions{
             let val = Double(round(100 * question.quantity) / 100)

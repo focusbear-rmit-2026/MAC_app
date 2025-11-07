@@ -12063,3 +12063,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 }
 
 
+
+// ovarlapping done 
+// todo iron focus h to ak hi item aayga poupbtn mai
+// dont start todo payer automatically if cusotm blocking satrted
+

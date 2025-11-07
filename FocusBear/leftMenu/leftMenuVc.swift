@@ -45,7 +45,8 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-       
+        boxFocusModeSettings.isHidden = true
+        
         boxMainItems.title = "MAIN"
         boxToolsItems.title = "TOOLS"
         boxPreferences.title = "PREFERENCES"
@@ -91,9 +92,9 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         boxFocusMusic.imageIcon = NSImage(named: "music_albums_fill")
         boxFocusMusic.title = "Focus Music"
         
-        boxFocusModeSettings.imageIcon = NSImage(named: "NSTouchBarQuickLookTemplate")
-        boxFocusModeSettings.title = "Focus"
-        boxFocusModeSettings.imageView?.contentTintColor = NSColor(named: "dark_OrangeColor") ?? NSColor.blue
+//        boxFocusModeSettings.imageIcon = NSImage(named: "NSTouchBarQuickLookTemplate")
+//        boxFocusModeSettings.title = "Focus"
+//        boxFocusModeSettings.imageView?.contentTintColor = NSColor(named: "dark_OrangeColor") ?? NSColor.blue
         
         if #available(macOS 11.0, *) {
             boxBlocks.imageIcon = NSImage(systemSymbolName: "bolt.circle", accessibilityDescription: nil)
@@ -182,12 +183,10 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
                 self.boxEditHabits.isHidden = false
                 self.boxSettings.isHidden = false
                 self.boxBlocks.isHidden = false
-                self.boxFocusModeSettings.isHidden = false
             }else{
                 self.boxEditHabits.isHidden = true
                 self.boxSettings.isHidden = true
                 self.boxBlocks.isHidden = true
-                self.boxFocusModeSettings.isHidden = true
             }
         }
 
@@ -195,7 +194,7 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         boxEditHabits.delegate = self
         boxSettings.delegate = self
         boxBlocks.delegate = self
-        boxFocusModeSettings.delegate = self
+//        boxFocusModeSettings.delegate = self
         
         boxFocusMusic.delegate = self
         boxBrainDump.delegate = self
@@ -209,10 +208,7 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         //boxDashboard.delegate = self
         boxCustomRoutine.delegate = self
         boxUpgradeNow.delegate = self
-       // boxDashboard.isSelected = true
-        
-        
-        
+
         arrForSearchFromSettings.append(["title": boxSettings.title, "tabId": idSettings])
         arrForSearchFromSimpleModeSettings.append(["title": boxSettings.title, "tabId": idSettings])
         
@@ -222,8 +218,8 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         arrForSearchFromSettings.append(["title": boxBlocks.title, "tabId": idTabStrictness])
         arrForSearchFromSimpleModeSettings.append(["title": boxBlocks.title, "tabId": idTabStrictness])
         
-        arrForSearchFromSettings.append(["title": boxFocusModeSettings.title, "tabId": idFocus])
-        arrForSearchFromSimpleModeSettings.append(["title": boxFocusModeSettings.title, "tabId": idFocus])
+//        arrForSearchFromSettings.append(["title": boxFocusModeSettings.title, "tabId": idFocus])
+//        arrForSearchFromSimpleModeSettings.append(["title": boxFocusModeSettings.title, "tabId": idFocus])
         
         
         
@@ -246,7 +242,7 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
             boxBrainDump.title = leftMenuVcInfo.value(forKey: "menuBrainDump") as? String ?? boxBrainDump.title
             boxBrowsersTabAudit.title = leftMenuVcInfo.value(forKey: "menuTabAudit") as? String ?? boxBrowsersTabAudit.title
             boxFocusMusic.title = leftMenuVcInfo.value(forKey: "menuFocusMusic") as? String ?? boxFocusMusic.title
-            boxFocusModeSettings.title = leftMenuVcInfo.value(forKey: "menuFocusPreferences") as? String ?? boxFocusMusic.title
+//            boxFocusModeSettings.title = leftMenuVcInfo.value(forKey: "menuFocusPreferences") as? String ?? boxFocusMusic.title
 
             boxBlocks.title = leftMenuVcInfo.value(forKey: "menuBlocksPreferences") as? String ?? boxFocusMusic.title
             boxSettings.title = leftMenuVcInfo.value(forKey: "menuSettings") as? String ?? boxFocusMusic.title
@@ -434,9 +430,9 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
             mainViewControllerObj?.showBrowsersTabAuditView()
         case boxFocusMusic:
             mainViewControllerObj?.showAllTracksView()
-        case boxFocusModeSettings:
-            mainViewControllerObj?.showFocusPreferencesView()
-            mainViewControllerObj?.askPasswordForSettingsIfNeeded()
+//        case boxFocusModeSettings:
+//            mainViewControllerObj?.showFocusPreferencesView()
+//            mainViewControllerObj?.askPasswordForSettingsIfNeeded()
         case boxBlocks:
             mainViewControllerObj?.showBlocksPreferencesView()
             mainViewControllerObj?.askPasswordForSettingsIfNeeded()
@@ -515,8 +511,8 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
             mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
         case boxFocusMusic:
             mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
-        case boxFocusModeSettings:
-            mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
+//        case boxFocusModeSettings:
+//            mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
         case boxBlocks:
             mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
         case boxSettings:
@@ -637,7 +633,7 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         boxEditHabits.setDisableWithRaason(reason: toolTipDisableReason)
         boxSettings.setDisableWithRaason(reason: toolTipDisableReason)
         boxBlocks.setDisableWithRaason(reason: toolTipDisableReason)
-        boxFocusModeSettings.setDisableWithRaason(reason: toolTipDisableReason)
+//        boxFocusModeSettings.setDisableWithRaason(reason: toolTipDisableReason)
         
         boxFocusMusic.setDisableWithRaason(reason: toolTipDisableReason)
         boxBrainDump.setDisableWithRaason(reason: toolTipDisableReason)
@@ -657,7 +653,7 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         boxEditHabits.setDisableWithRaason(reason: toolTipDisableReason)
         boxSettings.setDisableWithRaason(reason: toolTipDisableReason)
         boxBlocks.setDisableWithRaason(reason: toolTipDisableReason)
-        boxFocusModeSettings.setDisableWithRaason(reason: toolTipDisableReason)
+//        boxFocusModeSettings.setDisableWithRaason(reason: toolTipDisableReason)
         
         boxFocusMusic.setDisableWithRaason(reason: toolTipDisableReason)
         boxBrainDump.setDisableWithRaason(reason: toolTipDisableReason)
@@ -694,7 +690,7 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         boxEditHabits.setDisableWithRaason(reason: toolTipDisableReason)
         boxSettings.setDisableWithRaason(reason: toolTipDisableReason)
         boxBlocks.setDisableWithRaason(reason: toolTipDisableReason)
-        boxFocusModeSettings.setDisableWithRaason(reason: toolTipDisableReason)
+//        boxFocusModeSettings.setDisableWithRaason(reason: toolTipDisableReason)
         
         boxFocusMusic.setDisableWithRaason(reason: toolTipDisableReason)
         boxBrainDump.setDisableWithRaason(reason: toolTipDisableReason)
@@ -724,7 +720,7 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         boxEditHabits.setDisableWithRaason(reason: toolTipDisableReason)
         boxSettings.setDisableWithRaason(reason: toolTipDisableReason)
         boxBlocks.setDisableWithRaason(reason: toolTipDisableReason)
-        boxFocusModeSettings.setDisableWithRaason(reason: toolTipDisableReason)
+//        boxFocusModeSettings.setDisableWithRaason(reason: toolTipDisableReason)
         
         boxFocusMusic.setDisableWithRaason(reason: toolTipDisableReason)
         boxBrainDump.setDisableWithRaason(reason: toolTipDisableReason)
@@ -757,7 +753,7 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         boxEditHabits.isEnabled = true
         boxSettings.isEnabled = true
         boxBlocks.isEnabled = true
-        boxFocusModeSettings.isEnabled = true
+//        boxFocusModeSettings.isEnabled = true
         
         boxFocusMusic.isEnabled = true
         boxBrainDump.isEnabled = true
@@ -880,7 +876,7 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
             return;
         }
         
-        boxFocusModeSettings.isSelected = true
+//        boxFocusModeSettings.isSelected = true
         mainViewControllerObj?.showFocusPreferencesView()
         mainViewControllerObj?.askPasswordForSettingsIfNeeded()
     }

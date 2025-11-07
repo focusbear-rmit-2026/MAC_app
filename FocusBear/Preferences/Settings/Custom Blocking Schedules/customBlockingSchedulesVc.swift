@@ -102,7 +102,12 @@ extension customBlockingSchedulesVc: NSTableViewDelegate, NSTableViewDataSource{
                     }
                 }
                 if !isFocusModeFound{
-                    cell.lblFocusModeName.stringValue = "Update block list ⚠️" // todo text
+                    cell.lblFocusModeName.stringValue = "Update block list ⚠️"
+                    if let blockingScheduleEditorVcInfo = configjson.value(forKey: "blockingScheduleEditorVcInfo") as? NSDictionary{
+                        if let errorBlockListMissing = blockingScheduleEditorVcInfo.value(forKey: "errorBlockListMissing") as? String{
+                            cell.lblFocusModeName.stringValue = errorBlockListMissing
+                        }
+                    }
                 }
             }
             

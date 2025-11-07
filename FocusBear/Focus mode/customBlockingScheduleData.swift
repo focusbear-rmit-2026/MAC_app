@@ -654,12 +654,12 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
         }
         getTaskPlayerVcObject().loadRequest()
         shouldReloadTaskPlayer = true
-        if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled{
-            showTaskPlayerWindow(totalDuration: focusModeMinutesToPerform, intention: whatToAchieveInFocusBlock, automatically:true)
-        }else{
-            taskPlayerVcObj?.reloadData(totalDuration: focusModeMinutesToPerform, intention: whatToAchieveInFocusBlock)
-            shouldReloadTaskPlayer = false
-        }
+////        if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled{
+////            showTaskPlayerWindow(totalDuration: focusModeMinutesToPerform, intention: whatToAchieveInFocusBlock, automatically:true)
+////        }else{
+//            taskPlayerVcObj?.reloadData(totalDuration: focusModeMinutesToPerform, intention: whatToAchieveInFocusBlock)
+//            shouldReloadTaskPlayer = false
+////        }
         showCustomBlockingScheduleStartPopUp(scheduleName: arrBlockingSchedule[index].name, scheduleTime: "\(arrBlockingSchedule[index].startTime.formattedTime()) to \(arrBlockingSchedule[index].endTime.formattedTime())")
         leftMenuVcObj?.focusModeOrFocusModeHabitStarted()
         allApiObject.capturePosthog(event: "start-blocking-schedule", metadata: [:])//2.27.421
@@ -810,4 +810,45 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
         }
         return true
     }
+    
+    func isBlockingScheduleOverlapping(
+        newSchedule: customBlockingSchedule,
+        schedules: [customBlockingSchedule],
+        excludingId: String? = nil
+    ) -> Bool {
+        let calendar = Calendar.current
+        
+        // Normalize times (handle cross-midnight case)
+        func normalizedRange(for schedule: customBlockingSchedule) -> (Date, Date) {
+            let start = schedule.startTime
+            var end = schedule.endTime
+            if end <= start {
+                end = calendar.date(byAdding: .day, value: 1, to: end)!
+            }
+            return (start, end)
+        }
+        
+        // For each day the new schedule applies to
+        for newDay in newSchedule.daysOfWeek {
+            let (newStartNorm, newEndNorm) = normalizedRange(for: newSchedule)
+            
+            for existing in schedules {
+                // Skip comparing with itself
+                if existing.id == excludingId { continue }
+                
+                // Only compare if they share any common day
+                if existing.daysOfWeek.contains(newDay) {
+                    let (existingStart, existingEnd) = normalizedRange(for: existing)
+                    
+                    // Overlap check logic
+                    if (newStartNorm < existingEnd && newEndNorm > existingStart) {
+                        return true // Overlaps found
+                    }
+                }
+            }
+        }
+        
+        return false
+    }
+
 }

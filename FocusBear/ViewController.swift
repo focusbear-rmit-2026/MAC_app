@@ -596,7 +596,6 @@ class ViewController: NSViewController {
         containerView.addSubview(getHelpVcObject().view)
         containerView.addConstraints(subView: getHelpVcObject().view)
     }
-    //getTabStrictnessContainerVcObject  getFocusPreferencesVcObject getSettingsSplitViewControllerObject getSelectJsonVcObject
 
     func showBlocksPreferencesView(){
         self.removeSubViews()
@@ -605,10 +604,8 @@ class ViewController: NSViewController {
     }
     
     func showFocusPreferencesView(){
-        self.removeSubViews()
-        containerView.addSubview(getFocusPreferencesVcObject().view)
-        containerView.addConstraints(subView: getFocusPreferencesVcObject().view)
-        getFocusPreferencesVcObject().btnBackToCustomBlocking.isHidden = true
+        showBlocksPreferencesView()
+        getTabStrictnessContainerVcObject().showFocusPreferences()
     }
     
     func showSettingsView(){

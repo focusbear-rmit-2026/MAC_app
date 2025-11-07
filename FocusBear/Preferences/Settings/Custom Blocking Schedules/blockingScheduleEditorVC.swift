@@ -365,6 +365,9 @@ class blockingScheduleEditorVC: NSViewController {
         }
         
         
+        
+        
+        
         let focusModeId = arrFocusTypeForBlockingSchedule[index]["id"] as? String ?? ""
         if sliderStrictness.integerValue == 1{
             addLog(text: "strictness level is normal mode")
@@ -390,10 +393,13 @@ class blockingScheduleEditorVC: NSViewController {
                 blockLevel: blockMode,
                 isAIBlockingEnabled: checkBoxAiEnabled.state == .on, isMicroBreaksEnabled: checkBoxSkipMicroBreaks.state != .on
             )
-            customBlockingScheduleManagerObj.arrBlockingSchedule.append(blockingSchedule)
-            customBlockingSchedulesVcObj?.scheduleAdded()
-            allApiObject.capturePosthog(event: "add-blocking-schedule", metadata: [:])//2.27.421
-            customBlockingScheduleManagerObj.addCustomBlockingScheduleAtIndex(customBlockingScheduleManagerObj.arrBlockingSchedule.count - 1)
+            if customBlockingScheduleManagerObj.isBlockingScheduleOverlapping(newSchedule: blockingSchedule, schedules: customBlockingScheduleManagerObj.arrBlockingSchedule, excludingId: nil){
+                print("overlapping")
+                showOverlapAlert(for: blockingSchedule)
+                return;
+            }
+            
+            createBlockingSchedule(blockingSchedule: blockingSchedule)
         }else{
             if customBlockingScheduleManagerObj.arrBlockingSchedule[currentFocusModeIndex].state == .on {
                 currentFocusModeStrictness = blockMode
@@ -410,12 +416,56 @@ class blockingScheduleEditorVC: NSViewController {
                 isAIBlockingEnabled: checkBoxAiEnabled.state == .on, isMicroBreaksEnabled: checkBoxSkipMicroBreaks.state != .on
             )
             blockingSchedule.state = customBlockingScheduleManagerObj.arrBlockingSchedule[currentFocusModeIndex].state
-            customBlockingScheduleManagerObj.arrBlockingSchedule[currentFocusModeIndex] = blockingSchedule
-            customBlockingSchedulesVcObj?.scheduleEditedAt(currentFocusModeIndex)
-            allApiObject.capturePosthog(event: "edit-blocking-schedule", metadata: [:])//2.27.421
-            customBlockingScheduleManagerObj.updateCustomBlockingScheduleAtIndex(currentFocusModeIndex)
+            
+            
+            if customBlockingScheduleManagerObj.isBlockingScheduleOverlapping(newSchedule: blockingSchedule, schedules: customBlockingScheduleManagerObj.arrBlockingSchedule, excludingId: blockingSchedule.id){
+                showOverlapAlert(for: blockingSchedule)
+                return;
+            }
+            
+           
+            editBlockingSchedule(blockingSchedule: blockingSchedule)
         }
+        
+    }
+    
+    func createBlockingSchedule(blockingSchedule: customBlockingSchedule){
+        customBlockingScheduleManagerObj.arrBlockingSchedule.append(blockingSchedule)
+        customBlockingSchedulesVcObj?.scheduleAdded()
+        allApiObject.capturePosthog(event: "add-blocking-schedule", metadata: [:])//2.27.421
+        customBlockingScheduleManagerObj.addCustomBlockingScheduleAtIndex(customBlockingScheduleManagerObj.arrBlockingSchedule.count - 1)
         closeView()
+    }
+    
+    func editBlockingSchedule(blockingSchedule: customBlockingSchedule){
+        customBlockingScheduleManagerObj.arrBlockingSchedule[currentFocusModeIndex] = blockingSchedule
+        customBlockingSchedulesVcObj?.scheduleEditedAt(currentFocusModeIndex)
+        allApiObject.capturePosthog(event: "edit-blocking-schedule", metadata: [:])//2.27.421
+        customBlockingScheduleManagerObj.updateCustomBlockingScheduleAtIndex(currentFocusModeIndex)
+        closeView()
+    }
+    
+    func showOverlapAlert(for blockingSchedule: customBlockingSchedule) {
+        let alert = NSAlert()
+        alert.messageText = "Event Overlap Detected" // todo text
+        alert.informativeText = "This event overlaps with an existing one. Do you want to save it anyway?"
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "Save Anyway")
+        alert.addButton(withTitle: "Cancel")
+        
+        // Present as a sheet if possible
+        if let window = self.view.window {
+            alert.beginSheetModal(for: window) { response in
+                if response == .alertFirstButtonReturn {
+                    if self.isCreatingNew{
+                        self.createBlockingSchedule(blockingSchedule: blockingSchedule)
+                    }else{
+                        self.editBlockingSchedule(blockingSchedule: blockingSchedule)
+                    }
+                    
+                }
+            }
+        }
     }
     
     func getTimeString(date:Date) -> String {
@@ -423,6 +473,8 @@ class blockingScheduleEditorVC: NSViewController {
         formatter.dateFormat = "HH:mm"
         return formatter.string(from: date)
     }
+    
+    
     
     @IBAction func btnCancelClicked(_ sender: Any) {
         closeView()
@@ -477,7 +529,11 @@ class blockingScheduleEditorVC: NSViewController {
     @IBAction func btnEditBlockListClicked(_ sender: Any) {
         allApiObject.capturePosthog(event: "open-preferences", metadata: [:])// todo
         addLog(text: "[user-action]Showing preferences from edit focus mode")
-        
+        if focusPreferencesVcObj == nil{
+            getFocusPreferencesVcObject().loadView()
+        }
+        getFocusPreferencesVcObject().btnBackToCustomBlocking.isHidden = false
+        getFocusPreferencesVcObject().btnBack.isHidden = true
         self.presentAsSheet(getFocusPreferencesVcObject()) // no password needed beacause we are already inside settings
         var index = popUpBtnFocusMode.indexOfSelectedItem
         if index == -1{//if selected index is -1 reason is selected focus mode was deleted so we select at -1 to show none selected
@@ -486,7 +542,6 @@ class blockingScheduleEditorVC: NSViewController {
         if let focusModeId = arrFocusTypeForBlockingSchedule[index]["id"] as? String{
             getFocusPreferencesVcObject().selectFocusModeWithId(id: focusModeId)
         }
-        getFocusPreferencesVcObject().btnBackToCustomBlocking.isHidden = false
     }
     
     @IBAction func checkBoxSkipMicroBreaksClicked(_ sender: Any) {

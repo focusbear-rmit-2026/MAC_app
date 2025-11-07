@@ -237,18 +237,6 @@ class settingsSideBarVc: NSViewController {
             }
         }
         if !id.isEmpty{
-//            if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-//                let tabviewItems = tabview.tabViewItems
-//                for i in 0..<tabviewItems.count{
-//                    let item = tabviewItems[i]
-//                    if item.identifier as? String == id{
-//                        tabview.selectedTabViewItemIndex = i
-//                        return;
-//                    }
-//                }
-//                
-//            }
-            
 
             if id == idSettings{
                 
@@ -261,11 +249,6 @@ class settingsSideBarVc: NSViewController {
             }
             
             if id == "focusAdvanced"{
-//                if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-//                    tabview.selectedTabViewItemIndex = preferencesFocusModesIndex
-//                    focusPreferencesVcObj?.btnAdvancedClicked(self)
-//                    return;
-//                }
                 leftMenuVcObj?.showFocusModeSettingsView()
                 focusPreferencesVcObj?.btnAdvancedClicked(self)
             }

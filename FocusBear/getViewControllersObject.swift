@@ -24,6 +24,29 @@ let firstViewControllerObj = mainStoryboard.instantiateController(withIdentifier
 
 let timerViewcontrollerObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("timerViewcontroller")) as? timerViewcontroller
 
+var itemActionBarPlayVcObj: itemActionBarVc?
+func getItemActionBarPlayVcObject()->itemActionBarVc{
+    if itemActionBarPlayVcObj == nil{
+        itemActionBarPlayVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("itemActionBarVc")) as? itemActionBarVc
+    }
+    return itemActionBarPlayVcObj!
+}
+
+var itemActionBarDoneVcObj: itemActionBarVc?
+func getItemActionBarDoneVcObject()->itemActionBarVc{
+    if itemActionBarDoneVcObj == nil{
+        itemActionBarDoneVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("itemActionBarVc")) as? itemActionBarVc
+    }
+    return itemActionBarDoneVcObj!
+}
+
+var itemActionBarSkipVcObj: itemActionBarVc?
+func getItemActionBarSkipVcObject()->itemActionBarVc{
+    if itemActionBarSkipVcObj == nil{
+        itemActionBarSkipVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("itemActionBarVc")) as? itemActionBarVc
+    }
+    return itemActionBarSkipVcObj!
+}
 
 var quittingWcObj:commonWindowController?
 func getQuittingWindowObject()->commonWindowController{
@@ -1483,10 +1506,6 @@ let logQuantityVcObj = mainStoryboard.instantiateController(withIdentifier: NSSt
 
 var menuViewControllerObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("menuViewController")) as? menuViewController
 
-
-//var focusPreferencesVcObj:focusPreferencesVc?
-
-
 let addWebUrlVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("addWebUrlVc")) as? addWebUrlVc
 let addFocusTypeVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("addFocusTypeVc")) as? addFocusTypeVc
 
@@ -1513,30 +1532,6 @@ let focusCompletedVcObj = mainStoryboard.instantiateController(withIdentifier: N
 
 let focusCompletedFullScreenVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("focusCompletedVc")) as? focusCompletedVc
 
-//let startingFocusWindowControllerObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
-
-
-//var endingFocusWindowControllerObj: commonWindowController?
-
-//func getEndFocusModeWindowControllerObj()->commonWindowController{// do not delete. this this is resizable but not full screen. code is usable
-//    if endingFocusWindowControllerObj == nil{
-//        endingFocusWindowControllerObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
-//    }
-//    if let state = UserDefaults.standard.object(forKey: kUserdefaultsIsCompletedFocusWindowOnTop) as? Bool{
-//        if state{
-//            endingFocusWindowControllerObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
-//        }else{
-//            endingFocusWindowControllerObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.normalWindow)))
-//        }
-//    }else{
-//        UserDefaults.standard.set(false, forKey: kUserdefaultsIsCompletedFocusWindowOnTop)
-//        endingFocusWindowControllerObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.normalWindow)))
-//    }
-//    endingFocusWindowControllerObj?.window?.styleMask.insert(.resizable)
-////    endingFocusWindowControllerObj?.window?.styleMask.remove(.fullScreen)
-//    endingFocusWindowControllerObj?.window?.collectionBehavior = [.fullScreenNone]
-//    return endingFocusWindowControllerObj!
-//}
 var rememberNextHabitVcObj:rememberNextHabitVc?
 
 func getRememberNextHabitVcObj()->rememberNextHabitVc{
@@ -2325,7 +2320,6 @@ func getFocusPreferencesVcObject()->focusPreferencesVc{
     }
     return focusPreferencesVcObj!
 }
-//getTabStrictnessContainerVcObject  getFocusPreferencesVcObject getSettingsSplitViewControllerObject getSelectJsonVcObject
 
 //settingsSplitViewController
 var settingsSplitViewControllerObj:settingsSplitViewController?

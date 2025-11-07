@@ -644,36 +644,6 @@ class generalVc: NSViewController, NSTextFieldDelegate, NSSearchFieldDelegate {/
                 }
             }
         }
-//        if !id.isEmpty{
-//            if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-//                let tabviewItems = tabview.tabViewItems
-//                for i in 0..<tabviewItems.count{
-//                    let item = tabviewItems[i]
-//                    if item.identifier as? String == id{
-//                        tabview.selectedTabViewItemIndex = i
-//                        return;
-//                    }
-//                }
-//                
-//            }
-//            for i in 0..<self.tabView.tabViewItems.count{
-//                let item = self.tabView.tabViewItems[i]
-//                if item.identifier as? String == id{
-//                    self.tabView.selectTabViewItem(at: i)
-//                    break;
-//                }
-//            }
-//            if id == "isSuperPomodoro"{
-//                self.tabView.selectTabViewItem(at: 1)
-//                btnAdvancedPmodoroModeClicked(self)
-//            }
-//            if id == "focusAdvanced"{
-//                if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-//                    tabview.selectedTabViewItemIndex = preferencesFocusModesIndex
-//                    focusPreferencesVcObj?.btnAdvancedClicked(self)
-//                }
-//            }
-//        }
         searchField.stringValue = ""
     }
     

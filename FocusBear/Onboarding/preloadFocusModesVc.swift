@@ -160,23 +160,10 @@ class preloadFocusModesVc: NSViewController, NSTextFieldDelegate {
             sortFocusModes()
             UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
             allApiObject.addFocusMode(focusType: dic)
-            
-//            if preferencesWindowControllerObj != nil{
-//                if preferencesWindowControllerObj?.window?.isVisible ?? false{
-//                    if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-//                        if tabview.selectedTabViewItemIndex == preferencesFocusModesIndex{
-//                            focusPreferencesVcObj?.reloadData()
-//                        }
-//                    }
-//                }
-//            }
-            
-            if mainWindowControllerObj != nil{
-                if mainWindowControllerObj?.window?.isVisible ?? false{
-                    if leftMenuVcObj?.boxFocusModeSettings.isSelected ?? false{
-                        focusPreferencesVcObj?.reloadData()
-                    }
-                }
+
+            if let mainWindow = mainWindowControllerObj?.window, mainWindow.isVisible,
+               let focusVC = focusPreferencesVcObj, focusVC.isViewVisible {
+                focusVC.reloadData()
             }
             
             UserDefaults.standard.set(true, forKey: kUserdefaultsFocusTipsShown)
