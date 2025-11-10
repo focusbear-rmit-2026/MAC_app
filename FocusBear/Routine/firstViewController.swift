@@ -783,6 +783,7 @@ class firstViewController: NSViewController {
     
     func showChooseHabitsView(){
         addLog(text: "showChooseHabitsView")
+        currentHabitIndex = -1
         if self.view.window != nil{
             if chooseHabitsVCObj == nil{
                 chooseHabitsVCObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("chooseHabitsVC")) as? chooseHabitsVC
@@ -880,7 +881,201 @@ class firstViewController: NSViewController {
         btnStartFirstHabit.title = thirdVcObj?.btnMain.title ?? ""
         lblProgress.stringValue = thirdVcObj?.lblProgress.stringValue ?? ""
     }
+    func morningHabitAlreadyDoneClicked(){
+        let lastHabitIndex = currentHabitIndex
+        let lastHabit = arrFilteredMorningHabits[lastHabitIndex]
+        if arrFilteredMorningHabits[currentHabitIndex].useTimer{
+            habitTotalCompletedSeconds += lastHabit.durationSeconds!
+        }
+        lastActivityPerformedTime = Date()
+        let duration = getLastHabitDoneDuration(lastHabit: arrFilteredMorningHabits[lastHabitIndex])
+        
+        if arrFilteredMorningHabits.count == 1{
+            habitsVcObj?.showThirdVc()
+            thirdVcObj!.showLastMorningHabitFinishedViewFromActionbar(index: lastHabitIndex, isSkipped: false)
+        }else{
+            arrFilteredMorningHabits.remove(at: currentHabitIndex) // dont remove if last index
+            if let index = arrPreFilteredMorningHabits.firstIndex(where: { $0.id == lastHabit.id }) {
+                arrPreFilteredMorningHabits.remove(at: index)
+            }
+            tblViewHabits.reloadData()
+        }
+        
+        if lastHabit.logQuantity{
+            
+            getHabitsVcObject().showLogQuantityView()
+            logQuantityVcObj?.isReviseQuantity = false
+            
+            logQuantityVcObj?.resetData(name: lastHabit.name, durationInSeconds: "\(duration)", logQuantityQuestion: lastHabit.logQuantityQuestion, currentState: ._MORNING_HABIT_, logQuantityType: "", activity_id: lastHabit.id, activity_sequence_id: lastHabit.activity_sequence_id, activityChoiceId: nil, take_notes: lastHabit.take_notes, notes: "", logQuantityQuestions: lastHabit.logQuantityQuestions)
+            logQuantityVcObj?.is_skipped = true
+        }else{
+            let startTime = getStringFromDate(date: lastActivityPerformedTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")
+            addEntryInStatsCsv(logType: "morning routine", activity: lastHabit.name, durationInSeconds: "\(duration)", quantityQuestion: "", quantityLogged: "", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "", tags:"")
+            
+            if lastHabit.take_notes == END_OF_ACTIVITY{
+                getHabitsVcObject().showTakeNotesView()
+                takeActivityNotesVcObj?.resetData(durationInSeconds: duration, quantity_logged:nil, activity_id: lastHabit.id, activity_sequence_id: lastHabit.activity_sequence_id, activityChoiceId: nil, log_quantity_answers: [])
+                
+            }else{
+                allApiObject.activityCompletedApi(activity_id: lastHabit.id, activity_sequence_id: lastHabit.activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:nil, duration_logged:duration, choice_id: nil, is_skipped: true, notes: "", should_not_update_current_activity: false, log_quantity_answers: [], completionHandler: {dic  in
+                    
+                    DispatchQueue.main.async {
+                        
+                    }
+                    print(dic)
+                })
+            }
+            
+        }
+    }
     
+    func eveningHabitAlreadyDoneClicked(){
+        let lastHabitIndex = currentHabitIndex
+        let lastHabit = arrFilteredEveningHabits[lastHabitIndex]
+        if arrFilteredEveningHabits[currentHabitIndex].useTimer{
+            habitTotalCompletedSeconds += lastHabit.durationSeconds!
+        }
+        lastActivityPerformedTime = Date()
+        let duration = getLastHabitDoneDuration(lastHabit: arrFilteredEveningHabits[lastHabitIndex])
+        
+        
+        if arrFilteredEveningHabits.count == 1{
+            habitsVcObj?.showThirdVc()
+            thirdVcObj!.showLastEveningHabitFinishedViewFromActionbar(index: lastHabitIndex, isSkipped: false)
+        }else{
+            arrFilteredEveningHabits.remove(at: currentHabitIndex)
+            if let index = arrPreFilteredEveningHabits.firstIndex(where: { $0.id == lastHabit.id }) {
+                arrPreFilteredEveningHabits.remove(at: index)
+            }
+            tblViewHabits.reloadData()
+        }
+        if lastHabit.logQuantity{
+            
+            getHabitsVcObject().showLogQuantityView()
+            logQuantityVcObj?.isReviseQuantity = false
+            
+            logQuantityVcObj?.resetData(name: lastHabit.name, durationInSeconds: "\(duration)", logQuantityQuestion: lastHabit.logQuantityQuestion, currentState: ._EVENING_HABIT_, logQuantityType: "", activity_id: lastHabit.id, activity_sequence_id: lastHabit.activity_sequence_id, activityChoiceId: nil, take_notes: lastHabit.take_notes, notes: "", logQuantityQuestions: lastHabit.logQuantityQuestions)
+            logQuantityVcObj?.is_skipped = true
+        }else{
+            let startTime = getStringFromDate(date: lastActivityPerformedTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")
+            addEntryInStatsCsv(logType: "evening routine", activity: lastHabit.name, durationInSeconds: "\(duration)", quantityQuestion: "", quantityLogged: "", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "", tags:"")
+            
+            if lastHabit.take_notes == END_OF_ACTIVITY{
+                getHabitsVcObject().showTakeNotesView()
+                takeActivityNotesVcObj?.resetData(durationInSeconds: duration, quantity_logged:nil, activity_id: lastHabit.id, activity_sequence_id: lastHabit.activity_sequence_id, activityChoiceId: nil, log_quantity_answers: [])
+                
+            }else{
+                allApiObject.activityCompletedApi(activity_id: lastHabit.id, activity_sequence_id: lastHabit.activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:nil, duration_logged:duration, choice_id: nil, is_skipped: true, notes: "", should_not_update_current_activity: false, log_quantity_answers: [], completionHandler: {dic  in
+                    
+                    DispatchQueue.main.async {
+                        
+                    }
+                    print(dic)
+                })
+            }
+            
+        }
+    }
+    
+    func customHabitAlreadyDoneClicked(){
+        let lastHabitIndex = currentHabitIndex
+        let lastHabit = arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits[lastHabitIndex]
+        if lastHabit.useTimer{
+            habitTotalCompletedSeconds += lastHabit.durationSeconds!
+        }
+        lastActivityPerformedTime = Date()
+        let duration = getLastHabitDoneDuration(lastHabit: lastHabit)
+        
+        
+        if arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits.count == 1{
+            habitsVcObj?.showThirdVc()
+            thirdVcObj!.showLastCustomRoutineHabitFinishedViewFromActionbar(index: lastHabitIndex, isSkipped: false) // todo
+        }else{
+            arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits.remove(at: currentHabitIndex)
+            if let index = arrAllCustomRoutine[currentRoutineIndex].arrAllPreFilterHabits.firstIndex(where: { $0.id == lastHabit.id }) {
+                arrAllCustomRoutine[currentRoutineIndex].arrAllPreFilterHabits.remove(at: index)
+            }
+            tblViewHabits.reloadData()
+        }
+        if lastHabit.logQuantity{
+            
+            getHabitsVcObject().showLogQuantityView()
+            logQuantityVcObj?.isReviseQuantity = false
+            
+            logQuantityVcObj?.resetData(name: lastHabit.name, durationInSeconds: "\(duration)", logQuantityQuestion: lastHabit.logQuantityQuestion, currentState: ._CUSTOM_ROUTINE_, logQuantityType: "", activity_id: lastHabit.id, activity_sequence_id: lastHabit.activity_sequence_id, activityChoiceId: nil, take_notes: lastHabit.take_notes, notes: "", logQuantityQuestions: lastHabit.logQuantityQuestions)
+            logQuantityVcObj?.is_skipped = true
+        }else{
+            let startTime = getStringFromDate(date: lastActivityPerformedTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")
+            addEntryInStatsCsv(logType: "custom routine", activity: lastHabit.name, durationInSeconds: "\(duration)", quantityQuestion: "", quantityLogged: "", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "", tags:"")
+            
+            if lastHabit.take_notes == END_OF_ACTIVITY{
+                getHabitsVcObject().showTakeNotesView()
+                takeActivityNotesVcObj?.resetData(durationInSeconds: duration, quantity_logged:nil, activity_id: lastHabit.id, activity_sequence_id: lastHabit.activity_sequence_id, activityChoiceId: nil, log_quantity_answers: [])
+                
+            }else{
+                allApiObject.activityCompletedApi(activity_id: lastHabit.id, activity_sequence_id: lastHabit.activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:nil, duration_logged:duration, choice_id: nil, is_skipped: true, notes: "", should_not_update_current_activity: false, log_quantity_answers: [], completionHandler: {dic  in
+                    
+                    DispatchQueue.main.async {
+                        
+                    }
+                    print(dic)
+                })
+            }
+            
+        }
+    }
+    
+    func morningHabitSkipClicked(){
+        let lastHabitIndex = currentHabitIndex
+        let lastHabit = arrFilteredMorningHabits[lastHabitIndex]
+        lastActivityPerformedTime = Date()
+
+        if arrFilteredMorningHabits.count == 1{
+            habitsVcObj?.showThirdVc()
+            thirdVcObj!.showLastMorningHabitFinishedViewFromActionbar(index: lastHabitIndex, isSkipped: true)
+        }else{
+            arrFilteredMorningHabits.remove(at: currentHabitIndex) // dont remove if last index
+            if let index = arrPreFilteredMorningHabits.firstIndex(where: { $0.id == lastHabit.id }) {
+                arrPreFilteredMorningHabits.remove(at: index)
+            }
+            tblViewHabits.reloadData()
+        }
+    
+    }
+    
+    func eveningHabitSkipClicked(){
+        let lastHabitIndex = currentHabitIndex
+        let lastHabit = arrFilteredEveningHabits[lastHabitIndex]
+        lastActivityPerformedTime = Date()
+
+        if arrFilteredEveningHabits.count == 1{
+            habitsVcObj?.showThirdVc()
+            thirdVcObj!.showLastEveningHabitFinishedViewFromActionbar(index: lastHabitIndex, isSkipped: true)
+        }else{
+            arrFilteredEveningHabits.remove(at: currentHabitIndex) // dont remove if last index
+            if let index = arrPreFilteredEveningHabits.firstIndex(where: { $0.id == lastHabit.id }) {
+                arrPreFilteredEveningHabits.remove(at: index)
+            }
+            tblViewHabits.reloadData()
+        }
+    }
+    
+    func customRoutineHabitSkipClicked(){
+        let lastHabitIndex = currentHabitIndex
+        let lastHabit = arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits[lastHabitIndex]
+        lastActivityPerformedTime = Date()
+
+        if arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits.count == 1{
+            habitsVcObj?.showThirdVc()
+            thirdVcObj!.showLastCustomRoutineHabitFinishedViewFromActionbar(index: lastHabitIndex, isSkipped: true)
+        }else{
+            arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits.remove(at: currentHabitIndex)
+            if let index = arrAllCustomRoutine[currentRoutineIndex].arrAllPreFilterHabits.firstIndex(where: { $0.id == lastHabit.id }) {
+                arrAllCustomRoutine[currentRoutineIndex].arrAllPreFilterHabits.remove(at: index)
+            }
+            tblViewHabits.reloadData()
+        }
+    }
 }
 extension firstViewController:NSTableViewDelegate, NSTableViewDataSource {
     func numberOfRows(in tableView: NSTableView) -> Int {
@@ -937,7 +1132,7 @@ extension firstViewController:NSTableViewDelegate, NSTableViewDataSource {
                 }
                 
             }else if currentState == ._CUSTOM_ROUTINE_{
-                cell.lblTitle.stringValue  = "\(row + 1).\(arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits[row].name ?? "")"
+                cell.lblTitle.stringValue  = "\(row + 1).   \(arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits[row].name ?? "")"
                 cell.boxBg.borderColor = NSColor.clear
                 cell.lblTitle.tag = 99
                 if tblViewHabits.selectedRow == row{
@@ -963,7 +1158,7 @@ extension firstViewController:NSTableViewDelegate, NSTableViewDataSource {
     }
     
     func addActionBar(cell: tblCellHabits, row:Int){
-        if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_{
+        if cell.lblTitle.tag == 99{
             cell.boxActionBar.isHidden = false
             cell.stackViewActionBar.subviews.removeAll()
             
@@ -976,6 +1171,8 @@ extension firstViewController:NSTableViewDelegate, NSTableViewDataSource {
             itemPlay.btnMain.target = self
             itemPlay.btnMain.tag = row
             itemPlay.btnMain.action = #selector(btnPlayClicked)
+            itemPlay.boxBtn.fillColor = NSColor.orange
+            itemPlay.imgView.contentTintColor = NSColor.white
             cell.stackViewActionBar.addView(itemPlay.view, in: .bottom)
             
             let itemDone = getItemActionBarDoneVcObject()
@@ -1053,97 +1250,17 @@ extension firstViewController:NSTableViewDelegate, NSTableViewDataSource {
                 morningHabitAlreadyDoneClicked()
             }
         }else if currentState == ._EVENING_HABIT_{
-            if shouldAskPassword() && SettingsManagerObject.isPasswordRequireInSkipMorning{
+            if shouldAskPassword() && SettingsManagerObject.isPasswordRequireInSkipEvening{
                 passwordWindowShowingForMarkHabitComplete = true
                 mainViewControllerObj?.showPasswordView()
                 enterPasswordVcObj?.parentVc = self
             }else{
                 eveningHabitAlreadyDoneClicked()
             }
+        }else if currentState == ._CUSTOM_ROUTINE_{
+            customHabitAlreadyDoneClicked()
         }
     }
-    
-    func morningHabitAlreadyDoneClicked(){
-        let lastHabitIndex = currentHabitIndex
-        let lastHabit = arrFilteredMorningHabits[lastHabitIndex]
-        if arrFilteredMorningHabits[currentHabitIndex].useTimer{
-            habitTotalCompletedSeconds += lastHabit.durationSeconds!
-        }
-        lastActivityPerformedTime = Date()
-        let duration = getLastHabitDoneDuration(lastHabit: arrFilteredMorningHabits[lastHabitIndex])
-        
-        arrFilteredMorningHabits.remove(at: currentHabitIndex)
-        tblViewHabits.reloadData()
-        
-        if lastHabit.logQuantity{
-            
-            getHabitsVcObject().showLogQuantityView()
-            logQuantityVcObj?.isReviseQuantity = false
-            
-            logQuantityVcObj?.resetData(name: lastHabit.name, durationInSeconds: "\(duration)", logQuantityQuestion: lastHabit.logQuantityQuestion, currentState: ._MORNING_HABIT_, logQuantityType: "", activity_id: lastHabit.id, activity_sequence_id: lastHabit.activity_sequence_id, activityChoiceId: nil, take_notes: lastHabit.take_notes, notes: "", logQuantityQuestions: lastHabit.logQuantityQuestions)
-            logQuantityVcObj?.is_skipped = true
-        }else{
-            let startTime = getStringFromDate(date: lastActivityPerformedTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")
-            addEntryInStatsCsv(logType: "morning routine", activity: lastHabit.name, durationInSeconds: "\(duration)", quantityQuestion: "", quantityLogged: "", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "", tags:"")
-            
-            if lastHabit.take_notes == END_OF_ACTIVITY{
-                getHabitsVcObject().showTakeNotesView()
-                takeActivityNotesVcObj?.resetData(durationInSeconds: duration, quantity_logged:nil, activity_id: lastHabit.id, activity_sequence_id: lastHabit.activity_sequence_id, activityChoiceId: nil, log_quantity_answers: [])
-                
-            }else{
-                allApiObject.activityCompletedApi(activity_id: lastHabit.id, activity_sequence_id: lastHabit.activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:nil, duration_logged:duration, choice_id: nil, is_skipped: true, notes: "", should_not_update_current_activity: false, log_quantity_answers: [], completionHandler: {dic  in
-                    
-                    DispatchQueue.main.async {
-                        
-                    }
-                    print(dic)
-                })
-            }
-            
-        }
-    }
-    
-    func eveningHabitAlreadyDoneClicked(){
-        let lastHabitIndex = currentHabitIndex
-        let lastHabit = arrFilteredEveningHabits[lastHabitIndex]
-        if arrFilteredEveningHabits[currentHabitIndex].useTimer{
-            habitTotalCompletedSeconds += lastHabit.durationSeconds!
-        }
-        lastActivityPerformedTime = Date()
-        let duration = getLastHabitDoneDuration(lastHabit: arrFilteredEveningHabits[lastHabitIndex])
-        
-        arrFilteredEveningHabits.remove(at: currentHabitIndex)
-        tblViewHabits.reloadData()
-        
-        if lastHabit.logQuantity{
-            
-            getHabitsVcObject().showLogQuantityView()
-            logQuantityVcObj?.isReviseQuantity = false
-            
-            logQuantityVcObj?.resetData(name: lastHabit.name, durationInSeconds: "\(duration)", logQuantityQuestion: lastHabit.logQuantityQuestion, currentState: ._MORNING_HABIT_, logQuantityType: "", activity_id: lastHabit.id, activity_sequence_id: lastHabit.activity_sequence_id, activityChoiceId: nil, take_notes: lastHabit.take_notes, notes: "", logQuantityQuestions: lastHabit.logQuantityQuestions)
-            logQuantityVcObj?.is_skipped = true
-        }else{
-            let startTime = getStringFromDate(date: lastActivityPerformedTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")
-            addEntryInStatsCsv(logType: "morning routine", activity: lastHabit.name, durationInSeconds: "\(duration)", quantityQuestion: "", quantityLogged: "", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "", tags:"")
-            
-            if lastHabit.take_notes == END_OF_ACTIVITY{
-                getHabitsVcObject().showTakeNotesView()
-                takeActivityNotesVcObj?.resetData(durationInSeconds: duration, quantity_logged:nil, activity_id: lastHabit.id, activity_sequence_id: lastHabit.activity_sequence_id, activityChoiceId: nil, log_quantity_answers: [])
-                
-            }else{
-                allApiObject.activityCompletedApi(activity_id: lastHabit.id, activity_sequence_id: lastHabit.activity_sequence_id, start_time:lastActivityPerformedTime!, quantity_logged:nil, duration_logged:duration, choice_id: nil, is_skipped: true, notes: "", should_not_update_current_activity: false, log_quantity_answers: [], completionHandler: {dic  in
-                    
-                    DispatchQueue.main.async {
-                        
-                    }
-                    print(dic)
-                })
-            }
-            
-        }
-    }
-    
-
     
     @objc func btnSkipClicked(sender: NSButton){
         currentHabitIndex = sender.tag
@@ -1158,42 +1275,19 @@ extension firstViewController:NSTableViewDelegate, NSTableViewDataSource {
                 morningHabitSkipClicked()
             }
         }else if currentState == ._EVENING_HABIT_{
-            if shouldAskPassword() && SettingsManagerObject.isPasswordRequireInSkipMorning{
+            if shouldAskPassword() && SettingsManagerObject.isPasswordRequireInSkipEvening{
                 passwordWindowShowingForMarkHabitSkip = true
                 mainViewControllerObj?.showPasswordView()
                 enterPasswordVcObj?.parentVc = self
             }else{
                 eveningHabitSkipClicked()
             }
+        }else if currentState == ._CUSTOM_ROUTINE_{
+            customRoutineHabitSkipClicked()
         }
         
     }
-    
-    func morningHabitSkipClicked(){
-        let lastHabitIndex = currentHabitIndex
-        let lastHabit = arrFilteredMorningHabits[lastHabitIndex]
-        if arrFilteredMorningHabits[currentHabitIndex].useTimer{
-            habitTotalCompletedSeconds += lastHabit.durationSeconds!
-        }
-        lastActivityPerformedTime = Date()
-        let duration = getLastHabitDoneDuration(lastHabit: arrFilteredMorningHabits[lastHabitIndex])
-        
-        arrFilteredMorningHabits.remove(at: currentHabitIndex)
-        tblViewHabits.reloadData()
-    }
-    
-    func eveningHabitSkipClicked(){
-        let lastHabitIndex = currentHabitIndex
-        let lastHabit = arrFilteredEveningHabits[lastHabitIndex]
-        if arrFilteredEveningHabits[currentHabitIndex].useTimer{
-            habitTotalCompletedSeconds += lastHabit.durationSeconds!
-        }
-        lastActivityPerformedTime = Date()
-        let duration = getLastHabitDoneDuration(lastHabit: arrFilteredEveningHabits[lastHabitIndex])
-        
-        arrFilteredEveningHabits.remove(at: currentHabitIndex)
-        tblViewHabits.reloadData()
-    }
+
 }
 
 extension firstViewController:NSTextFieldDelegate{

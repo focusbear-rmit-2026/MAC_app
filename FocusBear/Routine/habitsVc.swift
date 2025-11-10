@@ -269,6 +269,7 @@ class habitsVc: NSViewController {
         self.view.addSubview(logQuantityVcObj!.view)
         self.view.addConstraints(subView: logQuantityVcObj!.view)
     }
+    
     func showTakeNotesView(){
         allApiObject.capturePosthog(event: "take-notes-view-shown", metadata: [:])
         self.view.addSubview(getTakeActivityNotesVcObj().view)
@@ -2031,6 +2032,16 @@ class habitsVc: NSViewController {
                 }
             }
         }
+    }
+    
+    func eveningHabitFinishShowUnlock(){//evening habit Sequence Finished
+        addLog(text: "eveningHabitFinishShowUnlock")
+        UserDefaults.standard.removeObject(forKey: kUserdefaultsShutOffCancelledForEveningRoutine)
+        UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
+        UserDefaults.standard.removeObject(forKey: kUserdefaultsLastCustomRoutineHabitSavedNotes)
+        leftMenuVcObj?.habitOver()
+        currentHabitIndex = -1
+        hideBlankWindowInSecondaryMonitor()
     }
     
     func eveningHabitFinishShowShutOff(){//evening habit Sequence Finished

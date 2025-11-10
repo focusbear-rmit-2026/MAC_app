@@ -193,18 +193,27 @@ class strictnessVc: NSViewController {
     }
     
     override func viewWillAppear() {
-        if settingsSideBarVcObj != nil{
-            if settingsSideBarVcObj!.tblView.selectedRow == -1{
-                lblTitle.stringValue = ""
-            }else{
-                lblTitle.stringValue = settingsSideBarVcObj!.arrSettingsList[settingsSideBarVcObj!.tblView.selectedRow]["title"] as? String ?? ""
+        if leftMenuVcObj?.boxBlocks.isSelected ?? false{
+            lblTitle.stringValue = "Blocking"
+            if let leftMenuVcInfo = configjson.value(forKey: "leftMenuVcInfo") as? NSDictionary{
+                lblTitle.stringValue = leftMenuVcInfo.value(forKey: "menuBlocksPreferences") as? String ?? lblTitle.stringValue
             }
         }else{
-            lblTitle.stringValue = ""
+            if settingsSideBarVcObj != nil{
+                if settingsSideBarVcObj!.tblView.selectedRow == -1{
+                    lblTitle.stringValue = ""
+                }else{
+                    lblTitle.stringValue = settingsSideBarVcObj!.arrSettingsList[settingsSideBarVcObj!.tblView.selectedRow]["title"] as? String ?? ""
+                }
+            }else{
+                lblTitle.stringValue = ""
+            }
         }
+        
         
         reloadDataForAppMode()
     }
+    
     func reloadDataForAppMode(){
         if SettingsManagerObject.isGeekModeEnabled{
             reloadStrictnessLevelState()

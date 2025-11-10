@@ -15,6 +15,9 @@ class habitsStateVc: NSViewController {
     
     var morningRoutinePostponedText = "Morning routine postponed. Resume it now by clicking 'Resume Habit'."
     var eveningRoutinePostponedText = "Evening routine postponed. Resume it now by clicking 'Resume Habit'."
+    
+    var isFreeTimeBeforeShutoff = false
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
@@ -33,6 +36,7 @@ class habitsStateVc: NSViewController {
     
     func reloadData(){
         addLog(text:"habitsStateVc:- reloadData")
+        isFreeTimeBeforeShutoff = false
         if !isAppEnable{
             btnResumeHabits.title = "Activate Distraction Blocking"
             lblTitle.stringValue = "Distraction Blocking is currently paused. You can turn it back on anytime to stay focused."
@@ -129,10 +133,44 @@ class habitsStateVc: NSViewController {
                     }
                 }
             }
+            
+            if let date = UserDefaults.standard.object(forKey: kUserdefaultsEveningHabitsShowedTillDate) as? Date{
+                if Date().compare(date) == .orderedAscending {//"Evening habits already shown for today
+                    if isShutOffTimeGoing() && !isCutOffTimeGoing(){
+                        if let cutOffTime = cutOffTime{
+                            let cutOffdate = Calendar.current.date(bySettingHour: cutOffTime.hour, minute: cutOffTime.minute, second: cutOffTime.second, of: Date())!
+                            
+                            var timeFormat = "h:mm a"
+                            if let dict = UserDefaults.standard.persistentDomain(forName: "com.apple.menuextra.clock") {
+                                print(dict)
+                                if let isShow24Hour = dict["Show24Hour"] as? Bool {
+                                    if isShow24Hour{
+                                        timeFormat = "H:mm"
+                                    }
+                                }
+                            }
+                            
+                            btnResumeHabits.isHidden = false
+                            
+                            
+                            isFreeTimeBeforeShutoff = true
+                            let cutOffDateString = getStringFromDate(date: cutOffdate, dateFormat: timeFormat)
+                            
+                            lblTitle.stringValue = "Well done! You've got free time until \(cutOffDateString)"
+                            btnResumeHabits.title = "Change timing" // todo text
+                        }
+                        
+                    }
+                }
+            }
         }
     }
     
     @IBAction func btnResumeHabitsClicked(_ sender: Any) {
+        if isFreeTimeBeforeShutoff{
+            leftMenuVcObj?.showEditHabitsView()
+            return;
+        }
         if !isAppEnable{
             addLog(text:"[user-action] habitsStateVc:- button Reactivate clicked")
             appdelegate?.menuItem_Reactivate()

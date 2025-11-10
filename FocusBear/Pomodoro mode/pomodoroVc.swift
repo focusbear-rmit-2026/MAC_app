@@ -85,7 +85,7 @@ class pomodoroVc: NSViewController {
     var isSkipMicrobreaks = false
     
     var isFrictionLevelHigh = false
-    var popoverTooltip:NSPopover?// = NSPopover()
+    var popoverInfo:NSPopover?// = NSPopover()
     
     var pomodoroTooltipVcObj:pomodoroTooltipVc?
     var alertExtendPostpone: NSAlert?
@@ -346,11 +346,29 @@ class pomodoroVc: NSViewController {
             }
         }
         
-//        if customBlockingScheduleManagerObj.isAnyCustomScheduleOn{ // todo 
-//            if currentFocusModeStrictness == ._SUPER_STRICT_{
-//                
-//            }
-//        }
+        if popUpBtnFocusType.isEnabled{
+            if customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
+                if currentFocusModeStrictness == ._SUPER_STRICT_{
+                    for index in 0..<customBlockingScheduleManagerObj.arrBlockingSchedule.count{
+                        if customBlockingScheduleManagerObj.arrBlockingSchedule[index].state == .on{
+                            let id = customBlockingScheduleManagerObj.arrBlockingSchedule[index].focusModeID
+                            for i in 0..<arrFocusTypeForPomodoro.count{
+                                let focusMode = arrFocusTypeForPomodoro[i]
+                                if let idFocusTypeForPomodoro = focusMode["id"] as? String{
+                                    if idFocusTypeForPomodoro == id{
+                                        popUpBtnFocusType.selectItem(at: i)
+                                        popUpBtnFocusType.isEnabled = false
+                                        popoverTooltip?.close()
+                                        break;
+                                    }
+                                }
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+        }
     }
     
     override func mouseEntered(with event: NSEvent) {
@@ -374,9 +392,9 @@ class pomodoroVc: NSViewController {
     
     override func mouseExited(with event: NSEvent) {
         if event.trackingArea == pinButtonTrackingArea{
-            if popoverTooltip != nil{
-                if popoverTooltip!.isShown{
-                    popoverTooltip?.close()
+            if popoverInfo != nil{
+                if popoverInfo!.isShown{
+                    popoverInfo?.close()
                 }
             }
         }
@@ -1442,14 +1460,13 @@ class pomodoroVc: NSViewController {
 //        }
 //    }
     @IBAction func btnInfoPomodoroClicked(_ sender: Any) {
-        if popoverTooltip == nil{
-            popoverTooltip = NSPopover()
-            popoverTooltip!.behavior = .transient
-            popoverTooltip!.animates = false
-            //        popoverTooltip!.delegate = appdelegate
+        if popoverInfo == nil{
+            popoverInfo = NSPopover()
+            popoverInfo!.behavior = .transient
+            popoverInfo!.animates = false
         }
-        if popoverTooltip!.isShown{
-            popoverTooltip?.close()
+        if popoverInfo!.isShown{
+            popoverInfo?.close()
         }
         let vc = getPomodoroTooltipVcObject()
 
@@ -1459,10 +1476,10 @@ class pomodoroVc: NSViewController {
             }
             return pomodoroTooltipVcObj!
         }
-        popoverTooltip!.contentViewController = vc
-        popoverTooltip!.contentSize = vc.view.frame.size
+        popoverInfo!.contentViewController = vc
+        popoverInfo!.contentSize = vc.view.frame.size
         
-        popoverTooltip!.show(relativeTo: btnInfoPomodoro.bounds, of: btnInfoPomodoro, preferredEdge: NSRectEdge.maxX)
+        popoverInfo!.show(relativeTo: btnInfoPomodoro.bounds, of: btnInfoPomodoro, preferredEdge: NSRectEdge.maxX)
     }
 
     

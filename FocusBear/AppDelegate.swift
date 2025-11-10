@@ -3039,11 +3039,27 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                                 }
                                             }
                                         }
-                                        
+                                    
                                     }else if currentAction == ._START_ {
                                         if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._BREATHING_ || currentState == ._CUSTOM_ROUTINE_{
                                             if (getHabitsVcObject().habitsView.subviews.contains(firstViewControllerObj!.view)){
                                                 if !firstViewControllerObj!.isTimerGoingOn{
+                                                    
+                                                    //------------ for action bar work:------------------// added on 10/11/25  v2.27.430
+                                                    //now log qantity and  Take Activity Notes view can appear on firstViewControllerObj(habits list view)
+                                                    if (getHabitsVcObject().view.subviews.contains((logQuantityVcObj!.view))){
+                                                        logQuantityVcObj?.btnOkClicked(self)
+                                                        return nil
+                                                    }
+                                                    
+                                                    if takeActivityNotesVcObj != nil{
+                                                        if (getHabitsVcObject().view.subviews.contains((takeActivityNotesVcObj!.view))){
+                                                            takeActivityNotesVcObj?.btnOkClicked(self)
+                                                            return nil
+                                                        }
+                                                    }
+                                                    //-----------------------------------------------------//
+                                                    
                                                     if firstViewControllerObj!.btnStartFirstHabit.isEnabled{
                                                         firstViewControllerObj?.btnStartFirstHabitClicked(self)
                                                         return nil
@@ -6020,12 +6036,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             print("arr AllEveningHabits count is 0:-  skip Evening habit")
         }
         
-        if !(mainWindowControllerObj?.window!.isVisible)! {
-            mainWindowControllerObj?.showWindow(self)
+        if isCutOffTimeAboutToReach(){
+            if !(mainWindowControllerObj?.window!.isVisible)! {
+                mainWindowControllerObj?.showWindow(self)
+            }
+            showBlankWindowInSecondaryMonitor()
+            getHabitsVcObject().shutOffMac()
         }
-        showBlankWindowInSecondaryMonitor()
-        getHabitsVcObject().shutOffMac()
     }
+    
     func showEveningHabit(activityId: String?, skippedActivities:[String], completedActivities:[String], needToCreateActivityId:Bool = false){
         additionalHabitTotalCompletedSeconds = 0
         
@@ -12068,3 +12087,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 // todo iron focus h to ak hi item aayga poupbtn mai
 // dont start todo payer automatically if cusotm blocking satrted
 
+// todo check vimeo video
+// wind down screen  todo
+
+// todo logs in action bar 
+// orange color button bnackgrounf 

@@ -349,6 +349,14 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
                             UserDefaults.standard.set(true, forKey: kUserdefaultsStartRoutineButtonClicked)
                         }
                     }
+                }else{
+                    if let date = UserDefaults.standard.object(forKey: kUserdefaultsEveningHabitsShowedTillDate) as? Date{
+                        if Date().compare(date) == .orderedAscending {//"Evening habits already shown for today
+                            if isShutOffTimeGoing() && !isCutOffTimeGoing(){
+                                habitsVcObj?.showHabitState()// free time 
+                            }
+                        }
+                    }
                 }
             }
             

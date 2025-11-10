@@ -51,7 +51,7 @@ struct routine {
     var nextSheduledTime: Date?// for postpone// and whenever routine is start at sheduled time we will remove sheduled time
     var triggerOnDemand:Bool
     var arrAllHabits = [habit]()// all habits in settings
-    //    var arrAllHabitsPreFilter = [habit]()// all habits but removed which was done in another pc and which index is greater then current index // current index is 0 but user has done 4rth in another pc so remove that one just to show to user
+    var arrAllPreFilterHabits = [habit]()
     var arrAllFilteredHabits = [habit]()// user selected habits to choose
     var skipForDate:Date?
     var days_of_week:[String]
@@ -216,7 +216,6 @@ func startCustomRoutine(index:Int, isOnDemand:Bool){
     
     if arrAllCustomRoutine.count != 0 {
         //        if need to get last saved habits then we need to comment line below
-        //        arrAllCustomRoutine[index].arrAllFilteredHabits = arrAllCustomRoutine[index].arrAllHabits
         appdelegate!.abortAllProcess()
         mainWindowControllerObj?.showWindow(appdelegate)
         showBlankWindowInSecondaryMonitor()
@@ -227,6 +226,8 @@ func startCustomRoutine(index:Int, isOnDemand:Bool){
     getHabitsVcObject().showLoaderView()
     leftMenuVcObj?.customRoutineStarted()
     
+    arrAllCustomRoutine[currentRoutineIndex].arrAllPreFilterHabits = arrAllCustomRoutine[currentRoutineIndex].arrAllHabits
+    arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits = arrAllCustomRoutine[currentRoutineIndex].arrAllHabits
     allApiObject.getLastActivityInfo(completionHandler: { json in
         DispatchQueue.main.async {
             
@@ -649,15 +650,14 @@ func startCustomRoutmieHabitsCall(routineIndex:Int, activityId:String?, skippedA
     if completedActivities.count == 0 && skippedActivities.count == 0{
         needToCreateActivityId = false
     }
-    
+    arrAllCustomRoutine[currentRoutineIndex].arrAllPreFilterHabits = arrAllCustomRoutine[currentRoutineIndex].arrAllHabits
+    arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits = arrAllCustomRoutine[currentRoutineIndex].arrAllHabits
     if activityId == nil && !needToCreateActivityId{
         mainWindowControllerObj?.showWindow(appdelegate)
         showBlankWindowInSecondaryMonitor()
         leftMenuVcObj?.showCustomRoutineView()
         getHabitsVcObject().startDirectIncompleteCustomRoutineHabitAtIndex(index: 0, isLastActivitySkipped:false)
     }else{
-        // let arrTempFilteredMorningHabits = arrAllCustomRoutine[routineIndex].arrAllFilteredHabits
-        //  arrFilteredMorningHabits.removeAll()
         
         var isActivityFound = false
         
@@ -1073,16 +1073,61 @@ func isShutOffTimeGoing()->Bool{
 
 
 func isCutOffTimeGoing()->Bool{
-    if cutOffTime != nil{
-        let cutOffDate = Calendar.current.date(bySettingHour: cutOffTime!.hour, minute: cutOffTime!.minute, second: cutOffTime!.second, of: Date())!
-        let currentDate = Date()
-        if currentDate > cutOffDate{
-            return true
-        }
+//    if cutOffTime != nil{
+//        let cutOffDate = Calendar.current.date(bySettingHour: cutOffTime!.hour, minute: cutOffTime!.minute, second: cutOffTime!.second, of: Date())!
+//        let currentDate = Date()
+//        if currentDate > cutOffDate{
+//            return true
+//        }
+//    }
+//    return false
+    
+    if startTime == nil || cutOffTime == nil{
+        return false
     }
-    return false
+    let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
+    let cutOffDate = Calendar.current.date(bySettingHour: cutOffTime!.hour, minute: cutOffTime!.minute, second: cutOffTime!.second, of: Date())!
+    let currentDate = Date()
+    
+    var isCutOffTime = false
+    
+    if  startDate.compare(cutOffDate) == .orderedDescending{
+        if currentDate.compare(startDate) == .orderedAscending  && currentDate.compare(cutOffDate) == .orderedDescending{
+            isCutOffTime = true
+        }
+        
+    }else if currentDate.compare(startDate) == .orderedAscending  || currentDate.compare(cutOffDate) == .orderedDescending{
+        isCutOffTime = true
+    }
+    
+    return isCutOffTime
+    
 }
 
 
+func isCutOffTimeAboutToReach() -> Bool {
+    if startTime == nil || cutOffTime == nil{
+        return false
+    }
+    let now = Date()
+    let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
+    let cutOffDate = Calendar.current.date(bySettingHour: cutOffTime!.hour, minute: cutOffTime!.minute, second: cutOffTime!.second, of: Date())!
+    let currentDate = Date()
+    
+    if  startDate.compare(cutOffDate) == .orderedDescending{
+        if currentDate.compare(startDate) == .orderedAscending  && currentDate.compare(cutOffDate) == .orderedDescending{
+            return true
+        }
+        
+    }else if currentDate.compare(startDate) == .orderedAscending  || currentDate.compare(cutOffDate) == .orderedDescending{
+        return true
+    }
+    
+    let differenceInSeconds = cutOffDate.timeIntervalSince(now)
+    let differenceInMinutes = differenceInSeconds / 60
+    
+    // Return true if 10 minutes or less remain, but cutoff time is still in the future
+    return differenceInMinutes > 0 && differenceInMinutes <= 10
+}
 
 

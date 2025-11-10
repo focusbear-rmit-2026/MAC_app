@@ -137,8 +137,8 @@ class chooseHabitsVC: NSViewController {
             }
         }else if currentState == ._CUSTOM_ROUTINE_{
             btnCancel.isHidden = true
-            for i in 0..<arrAllCustomRoutine[currentRoutineIndex].arrAllHabits.count{
-                let id = arrAllCustomRoutine[currentRoutineIndex].arrAllHabits[i].id ?? ""
+            for i in 0..<arrAllCustomRoutine[currentRoutineIndex].arrAllPreFilterHabits.count{
+                let id = arrAllCustomRoutine[currentRoutineIndex].arrAllPreFilterHabits[i].id ?? ""
                 let isActivityCompleted = isActivityCompleted(id: id, habits: arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits)
                 if !isActivityCompleted{
                     var isAdded = false
@@ -149,9 +149,9 @@ class chooseHabitsVC: NSViewController {
                         }
                     }
                     if isAdded{
-                        arrFilteredHabits.append(habitInfo(habit: arrAllCustomRoutine[currentRoutineIndex].arrAllHabits[i], state: true))
+                        arrFilteredHabits.append(habitInfo(habit: arrAllCustomRoutine[currentRoutineIndex].arrAllPreFilterHabits[i], state: true))
                     }else{
-                        arrFilteredHabits.append(habitInfo(habit: arrAllCustomRoutine[currentRoutineIndex].arrAllHabits[i], state: false))
+                        arrFilteredHabits.append(habitInfo(habit: arrAllCustomRoutine[currentRoutineIndex].arrAllPreFilterHabits[i], state: false))
                     }
                 }
             }

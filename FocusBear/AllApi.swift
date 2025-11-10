@@ -1321,9 +1321,6 @@ class AllApi:NSObject {
             return;
         }
         
-        completionHandler(nil) // todo remove rthis line
-        return; //  todo reove this line
-        
         addLog(text: "func call:- activityCompletedApi completed-activity")
         appdelegate!.credentialsManager.credentials {credentialsInfo in
             addLog(text: "get updated credentialsInfo from credentialsManager")
@@ -1641,9 +1638,6 @@ class AllApi:NSObject {
         addLog(text: "func call:- activitySkippedApi completed-activity")
         appdelegate!.credentialsManager.credentials {credentialsInfo in
             addLog(text: "get updated credentialsInfo from credentialsManager")
-            
-            completionHandler(nil) // todo remove rthis line
-            return; //  todo reove this line
             
             appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
             
