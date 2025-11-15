@@ -883,7 +883,9 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         if mainViewControllerObj?.isEnterPasswordForPreferencesViewVisible() ?? false{
             return;
         }
-        
+        if !(leftMenuVcObj?.boxBlocks.isSelected ?? false){
+            leftMenuVcObj?.boxBlocks.isSelected = true
+        }
 //        boxFocusModeSettings.isSelected = true
         mainViewControllerObj?.showFocusPreferencesView()
         mainViewControllerObj?.askPasswordForSettingsIfNeeded()

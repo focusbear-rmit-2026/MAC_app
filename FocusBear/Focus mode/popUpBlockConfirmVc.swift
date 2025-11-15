@@ -81,6 +81,8 @@ class popUpBlockConfirmVc: NSViewController {
     var isFailedToGetResponse = false
     var isBrowser = false
     var aiReasonTrackingArea:NSTrackingArea?
+    var convincedAiReasonTrackingArea:NSTrackingArea?
+    
     var isItemCheckedByConvinceAi = false
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -132,6 +134,11 @@ class popUpBlockConfirmVc: NSViewController {
         if let trackingArea = self.aiReasonTrackingArea {
             lblAi.removeTrackingArea(trackingArea)
         }
+        
+        if let trackingArea = self.convincedAiReasonTrackingArea {
+            lblTitleIntention.removeTrackingArea(trackingArea)
+        }
+        
         // Recreate the tracking area with the updated bounds
         createTrackingArea()
     }
@@ -139,6 +146,10 @@ class popUpBlockConfirmVc: NSViewController {
     func createTrackingArea(){
         aiReasonTrackingArea = NSTrackingArea.init(rect: lblAi.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
         lblAi.addTrackingArea(aiReasonTrackingArea!)
+        
+        convincedAiReasonTrackingArea = NSTrackingArea.init(rect: lblTitleIntention.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
+        lblTitleIntention.addTrackingArea(convincedAiReasonTrackingArea!)
+        
     }
     
     override func viewDidLayout() {
@@ -196,7 +207,7 @@ class popUpBlockConfirmVc: NSViewController {
         }
         
         domain = ""
-        
+        convincedAiReason = ""
         if isAppBlocking{
             boxAllowDomain.isHidden = true
             var blockTitle = titleText.replacingOccurrences(of: "<URL>", with: blockedAppName)
@@ -465,11 +476,17 @@ class popUpBlockConfirmVc: NSViewController {
                 }
             }
             showTooltip(sender: lblAi, msg: lastBlockReasonFromAi, preferredEdge: .minX, maxWidthVal: 250, autoCloseOnMouseExit: true)
+        }else if event.trackingArea == convincedAiReasonTrackingArea{
+            if !convincedAiReason.isEmpty{
+                showTooltip(sender: lblTitleIntention, msg: convincedAiReason, preferredEdge: .minX, maxWidthVal: 250, autoCloseOnMouseExit: true)
+            }
         }
     }
 
     override func mouseExited(with event: NSEvent) {
         if event.trackingArea == aiReasonTrackingArea{
+            closePopoverTooltipIfVisible()
+        }else if event.trackingArea == convincedAiReasonTrackingArea{
             closePopoverTooltipIfVisible()
         }
     }
@@ -481,6 +498,7 @@ class popUpBlockConfirmVc: NSViewController {
         hidePopUpSaveThisTaskForLaterView()
     }
     
+    var convincedAiReason = ""
     func showConvincedAiPopUpBox(allowedByConvinceAiAlready:Bool, reason:String){
         startTimer()
         btnCloseAskIntentionBox.isHidden = true
@@ -488,6 +506,7 @@ class popUpBlockConfirmVc: NSViewController {
         isUserTypingTime = Date()
         lblTitleAskIntention.isHidden = true
         btnInfoTemporaryAllow.isHidden = true
+        convincedAiReason = ""
         if allowedByConvinceAiAlready{
             boxAskIntention.isHidden = false
             stackViewSetDurationToUse.isHidden = true
@@ -517,7 +536,8 @@ class popUpBlockConfirmVc: NSViewController {
                 if reason.isEmpty{
                     lblTitleIntention.stringValue = stillDistractingTitle + " \n\n" + focusAlignmentScoreText
                 }else{
-                    lblTitleIntention.stringValue = stillDistractingTitle + " \n\n" + reason + " \n\n" + focusAlignmentScoreText
+                    convincedAiReason = reason
+                    lblTitleIntention.stringValue = stillDistractingTitle + " \n\n" + cropText(reason) + " \n\n" + focusAlignmentScoreText
                 }
                 
                 
@@ -550,17 +570,22 @@ class popUpBlockConfirmVc: NSViewController {
                 if reason.isEmpty{
                     lblTitleIntention.stringValue = stillDistractingTitle + " \n\n" + focusAlignmentScoreText
                 }else{
-                    lblTitleIntention.stringValue = stillDistractingTitle + " \n\n" + reason + " \n\n" + focusAlignmentScoreText
+                    convincedAiReason = reason
+                    lblTitleIntention.stringValue = stillDistractingTitle + " \n\n" + cropText(reason) + " \n\n" + focusAlignmentScoreText
                 }
                 
-               
+                var urlString = self.url
+                let maxUrlStringCount = 100
+                if urlString.count > maxUrlStringCount{
+                    urlString = String(urlString.prefix(maxUrlStringCount)) + "..."
+                }
                 
                 if let currentTaskInToDoPlayer = getCurrentTaskInFocusMode(){
-                    distractingForCurrentTaskDescription = distractingForCurrentTaskDescription.replacingOccurrences(of: "<URL>", with: self.url)
+                    distractingForCurrentTaskDescription = distractingForCurrentTaskDescription.replacingOccurrences(of: "<URL>", with: urlString)
                     distractingForCurrentTaskDescription = distractingForCurrentTaskDescription.replacingOccurrences(of: "<TASK>", with: currentTaskInToDoPlayer)
                     lblSubTitleIntention.stringValue = distractingForCurrentTaskDescription
                 }else{
-                    stillDistractingDescription = stillDistractingDescription.replacingOccurrences(of: "<URL>", with: self.url)
+                    stillDistractingDescription = stillDistractingDescription.replacingOccurrences(of: "<URL>", with: urlString)
                     lblSubTitleIntention.stringValue = stillDistractingDescription
                 }
                 
@@ -574,6 +599,7 @@ class popUpBlockConfirmVc: NSViewController {
             btnConvinceAgain.isHidden = false
         }else{
             addLog(text: "[user-action] popUpBlockConfirmVc:- ConvinceAiwhyNecessary")
+            convincedAiReason = ""
             boxAskIntention.isHidden = false
             stackViewSetDurationToUse.isHidden = true
             lblSubTitleIntention.isHidden = false
@@ -675,7 +701,7 @@ class popUpBlockConfirmVc: NSViewController {
         lblSelectMinutes.stringValue = "How long do you need?"
         lblTitleIntention.stringValue = "Temporarily unlock"
         btnConvince.title = "Temporary access"
-        
+        convincedAiReason = ""
         
         if let popUpBlockConfirmVcInfo = configjson.value(forKey: "popUpBlockConfirmVcInfo") as? NSDictionary{
             lblTitleIntention.stringValue = popUpBlockConfirmVcInfo.value(forKey: "setIntentionText") as? String ?? lblTitleIntention.stringValue

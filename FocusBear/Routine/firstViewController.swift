@@ -56,6 +56,9 @@ class firstViewController: NSViewController {
     var btnTopSpaceValue:CGFloat = 60
     var passwordWindowShowingForMarkHabitComplete = false
     var passwordWindowShowingForMarkHabitSkip = false
+    var actionBarItemPlay = "Play"
+    var actionBarItemDone = "Done"
+    var actionBarItemSkip = "Skip"
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -97,7 +100,12 @@ class firstViewController: NSViewController {
         segmentControlOfficeMode.setLabel(titleWFHMode, forSegment: 1)
         
         
-        
+        if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
+            actionBarItemPlay = activityInfo.value(forKey: "actionBarItemPlay") as? String ?? actionBarItemPlay
+            actionBarItemDone = activityInfo.value(forKey: "actionBarItemDone") as? String ?? actionBarItemDone
+            actionBarItemSkip = activityInfo.value(forKey: "actionBarItemSkip") as? String ?? actionBarItemSkip
+        }
+
         let boundsOfficeMode = NSRect(x: segmentControlOfficeMode.frame.minX, y: (segmentControlOfficeMode.frame.minY - 9), width: (segmentControlOfficeMode.frame.width/2) - 5, height: segmentControlOfficeMode.frame.height)
         let boundsWfhMode = NSRect(x: (segmentControlOfficeMode.frame.midX + 5), y: (segmentControlOfficeMode.frame.minY - 9), width: (segmentControlOfficeMode.frame.width/2) - 5, height: segmentControlOfficeMode.frame.height)// keep y to  egmentControlOfficeMode.frame.midY  do not change
         
@@ -881,7 +889,9 @@ class firstViewController: NSViewController {
         btnStartFirstHabit.title = thirdVcObj?.btnMain.title ?? ""
         lblProgress.stringValue = thirdVcObj?.lblProgress.stringValue ?? ""
     }
+    
     func morningHabitAlreadyDoneClicked(){
+        addLog(text: "action bar:- morningHabitAlreadyDoneClicked")
         let lastHabitIndex = currentHabitIndex
         let lastHabit = arrFilteredMorningHabits[lastHabitIndex]
         if arrFilteredMorningHabits[currentHabitIndex].useTimer{
@@ -930,6 +940,7 @@ class firstViewController: NSViewController {
     }
     
     func eveningHabitAlreadyDoneClicked(){
+        addLog(text: "action bar:- eveningHabitAlreadyDoneClicked")
         let lastHabitIndex = currentHabitIndex
         let lastHabit = arrFilteredEveningHabits[lastHabitIndex]
         if arrFilteredEveningHabits[currentHabitIndex].useTimer{
@@ -978,6 +989,7 @@ class firstViewController: NSViewController {
     }
     
     func customHabitAlreadyDoneClicked(){
+        addLog(text: "action bar:- customHabitAlreadyDoneClicked")
         let lastHabitIndex = currentHabitIndex
         let lastHabit = arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits[lastHabitIndex]
         if lastHabit.useTimer{
@@ -989,7 +1001,7 @@ class firstViewController: NSViewController {
         
         if arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits.count == 1{
             habitsVcObj?.showThirdVc()
-            thirdVcObj!.showLastCustomRoutineHabitFinishedViewFromActionbar(index: lastHabitIndex, isSkipped: false) // todo
+            thirdVcObj!.showLastCustomRoutineHabitFinishedViewFromActionbar(index: lastHabitIndex, isSkipped: false)
         }else{
             arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits.remove(at: currentHabitIndex)
             if let index = arrAllCustomRoutine[currentRoutineIndex].arrAllPreFilterHabits.firstIndex(where: { $0.id == lastHabit.id }) {
@@ -1026,6 +1038,7 @@ class firstViewController: NSViewController {
     }
     
     func morningHabitSkipClicked(){
+        addLog(text: "action bar:- morningHabitSkipClicked")
         let lastHabitIndex = currentHabitIndex
         let lastHabit = arrFilteredMorningHabits[lastHabitIndex]
         lastActivityPerformedTime = Date()
@@ -1044,6 +1057,7 @@ class firstViewController: NSViewController {
     }
     
     func eveningHabitSkipClicked(){
+        addLog(text: "action bar:- eveningHabitSkipClicked")
         let lastHabitIndex = currentHabitIndex
         let lastHabit = arrFilteredEveningHabits[lastHabitIndex]
         lastActivityPerformedTime = Date()
@@ -1061,6 +1075,7 @@ class firstViewController: NSViewController {
     }
     
     func customRoutineHabitSkipClicked(){
+        addLog(text: "action bar:- customRoutineHabitSkipClicked")
         let lastHabitIndex = currentHabitIndex
         let lastHabit = arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits[lastHabitIndex]
         lastActivityPerformedTime = Date()
@@ -1166,7 +1181,7 @@ extension firstViewController:NSTableViewDelegate, NSTableViewDataSource {
             if !itemPlay.isViewLoaded{
                 itemPlay.loadView()
             }
-            itemPlay.lblTitle.stringValue = "Play"// todo text
+            itemPlay.lblTitle.stringValue = actionBarItemPlay
             itemPlay.imgView.image = NSImage(named: NSImage.touchBarPlayTemplateName)
             itemPlay.btnMain.target = self
             itemPlay.btnMain.tag = row
@@ -1179,7 +1194,7 @@ extension firstViewController:NSTableViewDelegate, NSTableViewDataSource {
             if !itemDone.isViewLoaded{
                 itemDone.loadView()
             }
-            itemDone.lblTitle.stringValue = "Done"
+            itemDone.lblTitle.stringValue = actionBarItemDone
             itemDone.imgView.image = NSImage(named: NSImage.menuOnStateTemplateName)
             itemDone.btnMain.target = self
             itemDone.btnMain.tag = row
@@ -1190,7 +1205,7 @@ extension firstViewController:NSTableViewDelegate, NSTableViewDataSource {
             if !itemSkip.isViewLoaded{
                 itemSkip.loadView()
             }
-            itemSkip.lblTitle.stringValue = "Skip"
+            itemSkip.lblTitle.stringValue = actionBarItemSkip
             itemSkip.imgView.image = NSImage(named: NSImage.touchBarFastForwardTemplateName)
             itemSkip.btnMain.target = self
             itemSkip.btnMain.tag = row
@@ -1234,10 +1249,12 @@ extension firstViewController:NSTableViewDelegate, NSTableViewDataSource {
     }
     
     @objc func btnPlayClicked(sender: NSButton){
+        addLog(text: "action bar:- btnPlayClicked")
         btnStartFirstHabitClicked(self)
     }
     
     @objc func btnDoneClicked(sender: NSButton){
+        addLog(text: "action bar:- btnDoneClicked")
         currentHabitIndex = sender.tag
         passwordWindowShowingForMarkHabitComplete = false
         passwordWindowShowingForMarkHabitSkip = false
@@ -1263,6 +1280,7 @@ extension firstViewController:NSTableViewDelegate, NSTableViewDataSource {
     }
     
     @objc func btnSkipClicked(sender: NSButton){
+        addLog(text: "action bar:- btnSkipClicked")
         currentHabitIndex = sender.tag
         passwordWindowShowingForMarkHabitComplete = false
         passwordWindowShowingForMarkHabitSkip = false

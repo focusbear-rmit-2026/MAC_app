@@ -51,7 +51,7 @@ class strictnessVc: NSViewController {
         var tabLimiterSettingTitle = "Browser tab limiter"
         var blockedUrlsSettingTitle = "Super Distracting Sites"
         var blockedAppsSettingTitle = "Super Distracting Apps"
-        
+        var titleBlockLists = "Block Lists"
         if let settingsNew = configjson.value(forKey: "settingsNew") as? NSDictionary{
             frictionSettingTitle = settingsNew.value(forKey: "frictionSettingTitle") as? String ?? frictionSettingTitle
             passwordSettingTitle = settingsNew.value(forKey: "passwordSettingTitle") as? String ?? passwordSettingTitle
@@ -65,6 +65,7 @@ class strictnessVc: NSViewController {
             lblStrict.stringValue = settingsNew.value(forKey: "titleStrict") as? String ?? lblStrict.stringValue
             lblSuperStrict.stringValue = settingsNew.value(forKey: "titleSuperStrict") as? String ?? lblSuperStrict.stringValue
             blockingScheduleTitle = settingsNew.value(forKey: "blockingScheduleSettingTitle") as? String ?? blockingScheduleTitle
+            titleBlockLists = settingsNew.value(forKey: "titleBlockLists") as? String ?? titleBlockLists
         }
         
         if let blockedUrlsViewInfo = configjson.value(forKey: "blockedUrlsViewInfo") as? NSDictionary{
@@ -78,13 +79,16 @@ class strictnessVc: NSViewController {
         var strictness_Password = "If you find you keep cheating, you can have someone else set a password to prevent you from easily unlocking Focus Bear."
         var strictness_DistractingSites = "Stay focused! Designate specific sites as 'Super Distracting' to proactively prevent access during crucial work periods, ensuring an undisturbed and concentrated workflow."
         var strictness_DistractingApps = "Minimize app distractions! Label select apps as 'Super Distracting' to strategically enhance your concentration, creating a refined digital environment tailored to your productivity needs."
-        
+        var strictness_Block_Lists = "Use Block Lists to stay focused on a certain type of work. Start a focus session from the focus bear menu or use a blocking schedule."
+        var strictness_Blocking_Schedules = "Create your own schedules to automatically block distractions. Pick the days and times when distractions should be blocked. Stay focused without needing to start blocking manually."
         
         if let tooltips = configjson.value(forKey: "tooltips") as? NSDictionary{
             strictness_Friction = tooltips.value(forKey: "strictness_Friction") as? String ?? strictness_Friction
             strictness_Password = tooltips.value(forKey: "strictness_Password") as? String ?? strictness_Password
             strictness_DistractingSites = tooltips.value(forKey: "strictness_DistractingSites") as? String ?? strictness_DistractingSites
             strictness_DistractingApps = tooltips.value(forKey: "strictness_DistractingApps") as? String ?? strictness_DistractingApps
+            strictness_Block_Lists = tooltips.value(forKey: "strictness_Block_Lists") as? String ?? strictness_Block_Lists
+            strictness_Blocking_Schedules = tooltips.value(forKey: "strictness_Blocking_Schedules") as? String ?? strictness_Blocking_Schedules
         }
         
         
@@ -122,21 +126,16 @@ class strictnessVc: NSViewController {
         //---Block list----
         
         stackView.addView(blockListItemVcObj!.view, in: .bottom)
-        blockListItemVcObj?.lblTitle.stringValue = "Block Lists"
+        blockListItemVcObj?.lblTitle.stringValue = titleBlockLists
         blockListItemVcObj?.imgViewIcon.image = NSImage(named: "NSTouchBarQuickLookTemplate")
         blockListItemVcObj?.lblDescription.isHidden = true
-        blockListItemVcObj?.toolTip = "Use Block Lists to stay focused on a certain type of work. Start a focus session from the focus bear menu or use a blocking schedule." // todo text
+        blockListItemVcObj?.toolTip = strictness_Block_Lists
         blockListItemVcObj?.delegate = self
         
         
         //---Custom Blocking----
         stackView.addView(customBlockingVcObj!.view, in: .bottom)
-        customBlockingVcObj?.lblTitle.stringValue = "Custom blocking"
-        
-        if let blockingScheduleEditorVcInfo = configjson.value(forKey: "blockingScheduleEditorVcInfo") as? NSDictionary{
-            customBlockingVcObj?.lblTitle.stringValue = blockingScheduleEditorVcInfo.value(forKey: "title") as? String ?? "Custom blocking"
-        }
-
+        customBlockingVcObj?.lblTitle.stringValue = blockingScheduleTitle
         if #available(macOS 11.0, *) {
             customBlockingVcObj?.imgViewIcon.image = NSImage(systemSymbolName: "bolt.circle", accessibilityDescription: nil)
         } else {
@@ -144,7 +143,7 @@ class strictnessVc: NSViewController {
         }
         customBlockingVcObj?.lblDescription.isHidden = true
         customBlockingVcObj?.delegate = self
-        customBlockingVcObj?.toolTip = "Create your own schedules to automatically block distractions. Pick the days and times when distractions should be blocked. Stay focused without needing to start blocking manually." // todo text
+        customBlockingVcObj?.toolTip = strictness_Blocking_Schedules
 
         stackView.addView(blockedURLsItemVcObj!.view, in: .bottom)
         blockedURLsItemVcObj?.lblTitle.stringValue = blockedUrlsSettingTitle

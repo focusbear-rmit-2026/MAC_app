@@ -155,9 +155,14 @@ class habitsStateVc: NSViewController {
                             
                             isFreeTimeBeforeShutoff = true
                             let cutOffDateString = getStringFromDate(date: cutOffdate, dateFormat: timeFormat)
+                            var freeTimeText = "Well done! You've got free time until <CUTOFFTIME>"
+                            btnResumeHabits.title = "Change timing"
+                            if let habitsStateVcInfo = configjson.value(forKey: "habitsStateVcInfo") as? NSDictionary{
+                                freeTimeText = habitsStateVcInfo.value(forKey: "freeTimeText") as? String ?? freeTimeText
+                                btnResumeHabits.title = habitsStateVcInfo.value(forKey: "buttonChangeTiming") as? String ?? btnResumeHabits.title
+                            }
                             
-                            lblTitle.stringValue = "Well done! You've got free time until \(cutOffDateString)"
-                            btnResumeHabits.title = "Change timing" // todo text
+                            lblTitle.stringValue = freeTimeText.replacingOccurrences(of: "<CUTOFFTIME>", with: cutOffDateString)
                         }
                         
                     }

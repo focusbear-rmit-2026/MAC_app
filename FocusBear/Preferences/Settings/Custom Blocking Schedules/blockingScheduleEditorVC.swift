@@ -354,11 +354,11 @@ class blockingScheduleEditorVC: NSViewController {
         
         let index = popUpBtnFocusMode.indexOfSelectedItem
         if index == -1{// if selected focus mode is deleted then we select -1 index of popupbtn just for show blank selection
-            var alertSelectDay = "Please select block list."
+            var alertSelectBlockList = "Please select block list."
             if let blockingScheduleEditorVcInfo = configjson.value(forKey: "blockingScheduleEditorVcInfo") as? NSDictionary{
-               // alertSelectDay = blockingScheduleEditorVcInfo.value(forKey: "alertSelectDay") as? String ?? alertSelectDay // todo text
+                alertSelectBlockList = blockingScheduleEditorVcInfo.value(forKey: "alertSelectBlockList") as? String ?? alertSelectBlockList
             }
-            showAlert(title: alertSelectDay)
+            showAlert(title: alertSelectBlockList)
             
             addLog(text: "showAlert:- select block list")//2.27.428
             return;
@@ -447,11 +447,19 @@ class blockingScheduleEditorVC: NSViewController {
     
     func showOverlapAlert(for blockingSchedule: customBlockingSchedule) {
         let alert = NSAlert()
-        alert.messageText = "Event Overlap Detected" // todo text
-        alert.informativeText = "This event overlaps with an existing one. Do you want to save it anyway?"
         alert.alertStyle = .warning
-        alert.addButton(withTitle: "Save Anyway")
-        alert.addButton(withTitle: "Cancel")
+        alert.messageText = "Time Overlap Detected"
+        alert.informativeText = "This blocking schedule's time overlaps with an existing one. Do you want to save it anyway?"
+        var buttonSaveBlockAnyway = "Save Anyway"
+        
+        if let blockingScheduleEditorVcInfo = configjson.value(forKey: "blockingScheduleEditorVcInfo") as? NSDictionary{
+            alert.messageText = blockingScheduleEditorVcInfo.value(forKey: "titleScheduleOverlapAlert") as? String ?? alert.messageText
+            alert.informativeText = blockingScheduleEditorVcInfo.value(forKey: "subTitleScheduleOverlapAlert") as? String ?? alert.informativeText
+            buttonSaveBlockAnyway = blockingScheduleEditorVcInfo.value(forKey: "buttonSaveBlockAnyway") as? String ?? buttonSaveBlockAnyway
+        }
+        
+        alert.addButton(withTitle: buttonSaveBlockAnyway)
+        alert.addButton(withTitle: buttonCancelText)
         
         // Present as a sheet if possible
         if let window = self.view.window {

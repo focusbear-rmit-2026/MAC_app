@@ -2380,6 +2380,9 @@
                                                                         </stackView>
                                                                         <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="5RZ-HD-r0q">
                                                                             <rect key="frame" x="-2" y="360" width="319" height="30"/>
+                                                                            <constraints>
+                                                                                <constraint firstAttribute="height" relation="lessThanOrEqual" constant="90" id="eLA-2B-EY4"/>
+                                                                            </constraints>
                                                                             <textFieldCell key="cell" alignment="center" title="xxGive more info to the AI to explain why you need to use this site" id="tej-bB-YVk">
                                                                                 <font key="font" metaFont="cellTitle"/>
                                                                                 <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -2388,6 +2391,9 @@
                                                                         </textField>
                                                                         <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="HdG-4u-EXq">
                                                                             <rect key="frame" x="-2" y="317" width="319" height="30"/>
+                                                                            <constraints>
+                                                                                <constraint firstAttribute="height" relation="lessThanOrEqual" constant="90" id="eer-LJ-CEk"/>
+                                                                            </constraints>
                                                                             <textFieldCell key="cell" alignment="center" title="xxGive more info to the AI to explain why you need to use this site" id="6zJ-f6-BAq">
                                                                                 <font key="font" metaFont="cellTitle"/>
                                                                                 <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -12575,8 +12581,8 @@ DQ
                                                             <rect key="frame" x="79" y="2" width="354" height="28"/>
                                                             <datePickerCell key="cell" borderStyle="bezel" alignment="left" useCurrentDate="YES" id="IJY-cs-LOX">
                                                                 <font key="font" metaFont="system"/>
-                                                                <date key="date" timeIntervalSinceReferenceDate="780830459.03731406">
-                                                                    <!--2025-09-29 09:20:59 +0000-->
+                                                                <date key="date" timeIntervalSinceReferenceDate="784709936.891927">
+                                                                    <!--2025-11-13 06:58:56 +0000-->
                                                                 </date>
                                                                 <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
                                                                 <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>

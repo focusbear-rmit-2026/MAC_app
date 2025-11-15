@@ -214,6 +214,8 @@ func startCustomRoutine(index:Int, isOnDemand:Bool){
         addLog(text: "isUserOnMeeting True: Morning Habits skipped for some time.")
     }
     
+    arrAllCustomRoutine[currentRoutineIndex].arrAllPreFilterHabits = arrAllCustomRoutine[currentRoutineIndex].arrAllHabits
+    arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits = arrAllCustomRoutine[currentRoutineIndex].arrAllHabits
     if arrAllCustomRoutine.count != 0 {
         //        if need to get last saved habits then we need to comment line below
         appdelegate!.abortAllProcess()
@@ -226,8 +228,7 @@ func startCustomRoutine(index:Int, isOnDemand:Bool){
     getHabitsVcObject().showLoaderView()
     leftMenuVcObj?.customRoutineStarted()
     
-    arrAllCustomRoutine[currentRoutineIndex].arrAllPreFilterHabits = arrAllCustomRoutine[currentRoutineIndex].arrAllHabits
-    arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits = arrAllCustomRoutine[currentRoutineIndex].arrAllHabits
+    
     allApiObject.getLastActivityInfo(completionHandler: { json in
         DispatchQueue.main.async {
             

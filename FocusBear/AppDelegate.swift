@@ -2743,6 +2743,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             
             addLog(text: "startup_time is \(startTimeString)")
             addLog(text: "shutdown_time is \(shutOffTimeString)")
+            addLog(text: "break_after_minutes is \(breakAfterMinutes)")// 13/11/25  v 2.27.431
             if let val = jsonResult!.value(forKey: "cutoff_time_for_non_high_priority_activities") as? String {
                 cutOffTimeString = val
                 cutOffTime = getTimeFromString(val: val)
@@ -12083,12 +12084,3 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 
 
 
-// ovarlapping done 
-// todo iron focus h to ak hi item aayga poupbtn mai
-// dont start todo payer automatically if cusotm blocking satrted
-
-// todo check vimeo video
-// wind down screen  todo
-
-// todo logs in action bar 
-// orange color button bnackgrounf 

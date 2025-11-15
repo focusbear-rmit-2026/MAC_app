@@ -70,7 +70,7 @@ class pomodoroVc: NSViewController {
     var isShowingMorningPomodoro = false
     var isShowingPomodoroManually = false
     var isShowingMorningHardcorePomodoro = false
-    var questionSecondText = "Which focus mode do you want to use?"
+    var questionSecondText = "Which block list do you want to use?"
     var chooseTheFocusModeText = "Choose the focus mode and duration - you won't be able to change the focus mode until the time is up (you still get to use any app/website during the 5 minutes break)"
     
     var workDurationEmptyErrorText = "Work Duration can not be empty."
@@ -182,7 +182,7 @@ class pomodoroVc: NSViewController {
         //What do you want to do instead of your habits?
         var questionFirstText = "What do you want to achieve in this focus session?"
         
-        btnEditFocusMode.title = "Edit block lists"//"Edit focus modes" // todo text 
+        btnEditFocusMode.title = "Edit block lists"
         btnLetsDoIt.title = "Let's do it"
         btnCheckBoxHardcodePomodoro.title = "Use hardcode pomodoro mode (lock in the focus mode for multiple pomodoros)"
         lblHowManyPomodoro.stringValue = "How many pomodoros you want to focus for:"
@@ -198,11 +198,11 @@ class pomodoroVc: NSViewController {
             if let questionFirst = pomodoroInfo.value(forKey: "questionFirstText") as? String{
                 questionFirstText = questionFirst
             }
-            if let questionSecondText = pomodoroInfo.value(forKey: "questionSecondText") as? String{
+            if let questionSecondText = pomodoroInfo.value(forKey: "titleSelectBlockList") as? String{
                 self.questionSecondText = questionSecondText
             }
-            if let buttonEditFocusModeText = pomodoroInfo.value(forKey: "buttonEditFocusModeText") as? String{
-//                btnEditFocusMode.title = buttonEditFocusModeText
+            if let buttonEditBlockListsText = pomodoroInfo.value(forKey: "buttonEditBlockListsText") as? String{
+                btnEditFocusMode.title = buttonEditBlockListsText
             }
             if let buttonLetsDoItText = pomodoroInfo.value(forKey: "buttonLetsDoItText") as? String{
                 btnLetsDoIt.title = buttonLetsDoItText
@@ -590,7 +590,7 @@ class pomodoroVc: NSViewController {
                 lblQuestionSecond.stringValue = chooseTheFocusModeText
                 stackViewPomodoroModeTime.isHidden = false
             }else{
-                lblQuestionSecond.stringValue = "Which block list do you want to use?"//questionSecondText // todo text
+                lblQuestionSecond.stringValue = questionSecondText
                 stackViewPomodoroModeTime.isHidden = true
                 
             }
@@ -600,11 +600,7 @@ class pomodoroVc: NSViewController {
             
             updateBreakDuration()
         }
-//        if isFrictionLevelHigh{
-//            lblFrictionLevel.stringValue = frictionLevelHighText
-//        }else{
-//            lblFrictionLevel.stringValue = frictionLevelLowText
-//        }
+
         isFocusModeStartedAutomatically = false
         if isShowingMorningHardcorePomodoro{
             isHardCorePomodoroModeOn = true

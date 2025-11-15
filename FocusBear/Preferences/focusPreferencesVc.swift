@@ -78,7 +78,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
 
         lblUrlsQuestion.stringValue = "How do you want to allow URLs?"
         
-        btnAddFocusType.title = "Add Focus Mode"
+        btnAddFocusType.title = "Add Block List"
         btnDuplicateFocusType.title = "Duplicate"
         btnRemoveFocusType.title = "Delete"
         
@@ -102,7 +102,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
             toolTipRemove = focusPreferencesInfo.value(forKey: "toolTipRemove") as? String ?? toolTipRemove
             toolTipDuplicate = focusPreferencesInfo.value(forKey: "toolTipDuplicate") as? String ?? toolTipDuplicate
             btnAdvanced.title = focusPreferencesInfo.value(forKey: "buttonAdvancedText") as? String ?? btnAdvanced.title
-            btnAddFocusType.title = focusPreferencesInfo.value(forKey: "buttonAddFocusTypeText") as? String ?? btnAddFocusType.title
+            btnAddFocusType.title = focusPreferencesInfo.value(forKey: "buttonAddBlockListText") as? String ?? btnAddFocusType.title
             btnRemoveFocusType.title = focusPreferencesInfo.value(forKey: "buttonDeleteFocusTypeText") as? String ?? btnRemoveFocusType.title
             
             titleBlockAllUrls = focusPreferencesInfo.value(forKey: "titleBlockedAllUrls") as? String ?? titleBlockAllUrls
@@ -155,12 +155,19 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
             btnRemoveUrl.image = NSImage(systemSymbolName: "minus.square.fill", accessibilityDescription: nil)
         }
         
-        arrForSearchFromSettings.append(["title": btnAddFocusType.title, "tabId": idFocus, "object": btnAddFocusType as Any])
+        arrForSearchFromSettings.append(["title": btnAddFocusType.title, "tabId": idFocus])
         arrForSearchFromSettings.append(["title": radioBtnAllowAllApps.title, "tabId": idFocus, "object": radioBtnAllowAllApps as Any])
         arrForSearchFromSettings.append(["title": radioBtnAllowSelectedApps.title, "tabId": idFocus, "object": radioBtnAllowSelectedApps as Any])
         
         arrForSearchFromSettings.append(["title": radioBtnAllowListApproch.title, "tabId": idFocus, "object": radioBtnAllowListApproch as Any])
         arrForSearchFromSettings.append(["title": radioBtnBlockListApproch.title, "tabId": idFocus, "object": radioBtnBlockListApproch as Any])
+        
+        arrForSearchFromSimpleModeSettings.append(["title": btnAddFocusType.title, "tabId": idFocus])
+        arrForSearchFromSimpleModeSettings.append(["title": radioBtnAllowAllApps.title, "tabId": idFocus, "object": radioBtnAllowAllApps as Any])
+        arrForSearchFromSimpleModeSettings.append(["title": radioBtnAllowSelectedApps.title, "tabId": idFocus, "object": radioBtnAllowSelectedApps as Any])
+        
+        arrForSearchFromSimpleModeSettings.append(["title": radioBtnAllowListApproch.title, "tabId": idFocus, "object": radioBtnAllowListApproch as Any])
+        arrForSearchFromSimpleModeSettings.append(["title": radioBtnBlockListApproch.title, "tabId": idFocus, "object": radioBtnBlockListApproch as Any])
         
         
         if focusPreferencesAdvancedVcObj == nil{
@@ -171,31 +178,39 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         if let focusPreferencesAdvancedInfo = configjson.value(forKey: "focusPreferencesAdvancedInfo") as? NSDictionary{
             if let runScriptBeforeText = focusPreferencesAdvancedInfo.value(forKey: "runScriptBeforeText") as? String {
                 arrForSearchFromSettings.append(["title": runScriptBeforeText, "tabId": "focusAdvanced", "object": focusPreferencesAdvancedVcObj?.bgBox as Any])
+                arrForSearchFromSimpleModeSettings.append(["title": runScriptBeforeText, "tabId": "focusAdvanced", "object": focusPreferencesAdvancedVcObj?.bgBox as Any])
                 
             }
             if let runScriptAfterText = focusPreferencesAdvancedInfo.value(forKey: "runScriptAfterText") as? String{
                 arrForSearchFromSettings.append(["title": runScriptAfterText, "tabId": "focusAdvanced", "object": focusPreferencesAdvancedVcObj?.bgBox as Any])
+                arrForSearchFromSimpleModeSettings.append(["title": runScriptAfterText, "tabId": "focusAdvanced", "object": focusPreferencesAdvancedVcObj?.bgBox as Any])
             }
 
             
             if let title = focusPreferencesAdvancedInfo.value(forKey: "runShellCommandBeforeText") as? String {
                 arrForSearchFromSettings.append(["title": title, "tabId": "focusAdvanced", "object": focusPreferencesAdvancedVcObj?.bgBox as Any])
+                arrForSearchFromSimpleModeSettings.append(["title": title, "tabId": "focusAdvanced", "object": focusPreferencesAdvancedVcObj?.bgBox as Any])
             }
             if let title = focusPreferencesAdvancedInfo.value(forKey: "runShellCommandAfterText") as? String {
                 arrForSearchFromSettings.append(["title": title, "tabId": "focusAdvanced", "object": focusPreferencesAdvancedVcObj?.bgBox as Any])
+                arrForSearchFromSimpleModeSettings.append(["title": title, "tabId": "focusAdvanced", "object": focusPreferencesAdvancedVcObj?.bgBox as Any])
             }
             if let title = focusPreferencesAdvancedInfo.value(forKey: "focusAlignmentScoreTitle") as? String {
                 arrForSearchFromSettings.append(["title": title, "tabId": "focusAdvanced", "object": focusPreferencesAdvancedVcObj?.bgBox as Any])
+                arrForSearchFromSimpleModeSettings.append(["title": title, "tabId": "focusAdvanced", "object": focusPreferencesAdvancedVcObj?.bgBox as Any])
             }
 
             arrForSearchFromSettings.append(["title": focusPreferencesAdvancedVcObj?.checkBoxAutoDoNotDisturb.title ?? "", "tabId": "focusAdvanced", "object": focusPreferencesAdvancedVcObj?.checkBoxAutoDoNotDisturb as Any])
+            arrForSearchFromSimpleModeSettings.append(["title": focusPreferencesAdvancedVcObj?.checkBoxAutoDoNotDisturb.title ?? "", "tabId": "focusAdvanced", "object": focusPreferencesAdvancedVcObj?.checkBoxAutoDoNotDisturb as Any])
         }
         
         if let focusPreferencesInfo = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
             if let title = focusPreferencesInfo.value(forKey: "titleTags") as? String {
                 arrForSearchFromSettings.append(["title": title, "tabId": "focusAdvanced", "object": focusPreferencesAdvancedVcObj?.bgBox as Any])
+                arrForSearchFromSimpleModeSettings.append(["title": title, "tabId": "focusAdvanced", "object": focusPreferencesAdvancedVcObj?.bgBox as Any])
             }
         }
+        
         
         boxAllowedApps.wantsLayer = true
         boxAllowedApps.layer?.cornerRadius = 5
@@ -381,23 +396,19 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         
         
         if !(btnBackToCustomBlocking.isHidden){
-            btnAddFocusType.title = "Add Block List"
             lblTitleFocusType.stringValue = "Use Block Lists to stay focused on a certain type of work."
             
             if let focusPreferencesInfo = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
-                btnAddFocusType.title = focusPreferencesInfo.value(forKey: "buttonAddBlockListText") as? String ?? btnAddFocusType.title
                 lblTitleFocusType.stringValue = focusPreferencesInfo.value(forKey: "titleBlockList") as? String ?? lblTitleFocusType.stringValue
             }
             btnHelp.isHidden = true
             btnBackToCustomBlockingSmall.isHidden = false
         }else{
             tabStrictnessContainerVcObj?.segmentControlGeekMode.isHidden = true
-            btnAddFocusType.title = "Add Block List"
-            lblTitleFocusType.stringValue = "Use Block Lists to stay focused on a certain type of work. Start a focus session from the focus bear menu or use a blocking schedule." // todo text
             
+            lblTitleFocusType.stringValue = "Use Block Lists to stay focused on a certain type of work. Start a focus session from the focus bear menu or use a blocking schedule."
             if let focusPreferencesInfo = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
-                btnAddFocusType.title = focusPreferencesInfo.value(forKey: "buttonAddBlockListText") as? String ?? btnAddFocusType.title
-               // lblTitleFocusType.stringValue = focusPreferencesInfo.value(forKey: "titleFocusType") as? String ?? lblTitleFocusType.stringValue
+                lblTitleFocusType.stringValue = focusPreferencesInfo.value(forKey: "titleUseBlockList") as? String ?? lblTitleFocusType.stringValue
             }
             btnHelp.isHidden = false
             btnBackToCustomBlockingSmall.isHidden = true

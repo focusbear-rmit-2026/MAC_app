@@ -12,6 +12,7 @@ class tabStrictnessContainerVc: NSViewController {
 
     @IBOutlet weak var segmentControlGeekMode: GeekModeSegmentedControl!
     @IBOutlet weak var containerView: NSView!
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         addLog(text: "tabStrictnessContainerVc viewdidload")
@@ -38,6 +39,7 @@ class tabStrictnessContainerVc: NSViewController {
             segmentControlGeekMode.changeAppModeTo(geekMode: false)
         }
     }
+    
     func removeSubViews(){
         for subView in self.containerView.subviews{
             subView.removeFromSuperview()

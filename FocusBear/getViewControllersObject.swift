@@ -1237,11 +1237,6 @@ func getNaturalBreaksDetectionVcObject()->naturalBreaksDetectionVc{
     return naturalBreaksDetectionVcObj!
 }
 
-
-//
-
-
-
 // getPopupAppointmentTimeWindowObject  window object
 var popupAppointmentTimeWcObj:commonWindowController?
 func getPopupAppointmentTimeWindowObject()->commonWindowController{

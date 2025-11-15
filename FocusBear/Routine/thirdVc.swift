@@ -1763,7 +1763,7 @@ class thirdVc: NSViewController {
     }
     
     func showLastCustomRoutineHabitFinishedViewFromActionbar(index:Int, isSkipped:Bool) {
-        addLog(text:"showLastEveningHabitFinishedViewFromActionbar")
+        addLog(text:"showLastCustomRoutineFinishedViewFromActionbar")
 
         lblCreateAccount.isHidden = true
         lblDescriptionHabits.isHidden = true
