@@ -1533,7 +1533,7 @@ class habitsVc: NSViewController {
         
         closePupUpBlockIfVisible()
         addLog(text:"closePupUpBlockIfVisible passed")
-        appdelegate?.timerAllowUrlForActivity?.invalidate()
+        habitBlockTimerHelper.stopUrlTimer()
         appdelegate?.timerAllowAppForActivity?.invalidate()
         self.showCloseButtons()
         addLog(text:"showCloseButtons passed")
@@ -1569,7 +1569,7 @@ class habitsVc: NSViewController {
         
         closePupUpBlockIfVisible()
         
-        appdelegate?.timerAllowUrlForActivity?.invalidate()
+        habitBlockTimerHelper.stopUrlTimer()
         appdelegate?.timerAllowAppForActivity?.invalidate()
         self.showCloseButtons()
         removeSubViews()
@@ -1725,7 +1725,7 @@ class habitsVc: NSViewController {
         
         closePupUpBlockIfVisible()
         
-        appdelegate?.timerAllowUrlForActivity?.invalidate()
+        habitBlockTimerHelper.stopUrlTimer()
         appdelegate?.timerAllowAppForActivity?.invalidate()
         self.showCloseButtons()
         removeSubViews()
@@ -1858,7 +1858,7 @@ class habitsVc: NSViewController {
         
         closePupUpBlockIfVisible()
         
-        appdelegate?.timerAllowUrlForActivity?.invalidate()
+        habitBlockTimerHelper.stopUrlTimer()
         appdelegate?.timerAllowAppForActivity?.invalidate()
         self.showCloseButtons()
         removeSubViews()
@@ -1892,7 +1892,7 @@ class habitsVc: NSViewController {
         
         closePupUpBlockIfVisible()
         
-        appdelegate?.timerAllowUrlForActivity?.invalidate()
+        habitBlockTimerHelper.stopUrlTimer()
         appdelegate?.timerAllowAppForActivity?.invalidate()
         self.showCloseButtons()
         removeSubViews()
@@ -2086,7 +2086,7 @@ class habitsVc: NSViewController {
 //        refreshFocusModeData()
         closePupUpBlockIfVisible()
         
-        appdelegate?.timerAllowUrlForActivity?.invalidate()
+        habitBlockTimerHelper.stopUrlTimer()
         appdelegate?.timerAllowAppForActivity?.invalidate()
         self.showCloseButtons()
         removeSubViews()
@@ -2127,7 +2127,7 @@ class habitsVc: NSViewController {
         refreshFocusModeData()
         closePupUpBlockIfVisible()
         
-        appdelegate?.timerAllowUrlForActivity?.invalidate()
+        habitBlockTimerHelper.stopUrlTimer()
         appdelegate?.timerAllowAppForActivity?.invalidate()
         self.showCloseButtons()
         removeSubViews()
@@ -2168,7 +2168,7 @@ class habitsVc: NSViewController {
         setAppIconForFocusModeScore(probability: nil)
         
         closePupUpBlockIfVisible()
-        appdelegate?.timerAllowUrlForActivity?.invalidate()
+        habitBlockTimerHelper.stopUrlTimer()
         appdelegate?.timerAllowAppForActivity?.invalidate()
         self.showCloseButtons()
         removeSubViews()
@@ -2715,7 +2715,7 @@ class habitsVc: NSViewController {
                 }
                 closePupUpBlockIfVisible()
                 
-                appdelegate?.timerAllowUrlForActivity?.invalidate()
+                habitBlockTimerHelper.stopUrlTimer()
                 appdelegate?.timerAllowAppForActivity?.invalidate()
             }
             
@@ -2815,7 +2815,7 @@ class habitsVc: NSViewController {
         }
         closePupUpBlockIfVisible()
         
-        appdelegate?.timerAllowUrlForActivity?.invalidate()
+        habitBlockTimerHelper.stopUrlTimer()
         appdelegate?.timerAllowAppForActivity?.invalidate()
         
         if !arrAllCustomRoutine[currentRoutineIndex].triggerOnDemand{
@@ -2900,7 +2900,7 @@ class habitsVc: NSViewController {
             }
             closePupUpBlockIfVisible()
             
-            appdelegate?.timerAllowUrlForActivity?.invalidate()
+            habitBlockTimerHelper.stopUrlTimer()
             appdelegate?.timerAllowAppForActivity?.invalidate()
             
             if arrFilteredEveningHabits.count != 0 {

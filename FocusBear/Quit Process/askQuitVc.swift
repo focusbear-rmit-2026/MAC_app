@@ -286,7 +286,7 @@ class askQuitVc: NSViewController {
                 addLog(text: "askQuitVc:- strictness level is super gentle")
                 deavtivateApp()
             }else{
-                if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
+                if shouldAskPassword(){
                     if SettingsManagerObject.isPasswordRequireInQuitApp{
                         showPasswordView()
                         self.enterPasswordVcObj?.isShowingForDeactivatingApp = true
@@ -380,13 +380,6 @@ class askQuitVc: NSViewController {
         
         setDocBarTo(isHide: false)
         if currentHabitPlaying != nil{
-//            if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
-//                if smallCountDownWcObj?.window != nil{
-//                    if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
-//                        getSmallCountDownWindowObject().window?.close()
-//                    }
-//                }
-//            }
             closeSmallCountDownTimerBoxIfVisibleForWithoutFocusBreak()
         }
         getHabitsVcObject().stopActivityTimer()

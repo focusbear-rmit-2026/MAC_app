@@ -105,12 +105,15 @@ class explainingPermissionsVc: NSViewController {
 
         }
     }
+    
     override func viewDidAppear() {
         showOnboardingBellIcon(view: self.view, screen: "explaining-permissions-screen")
     }
+    
     override func viewWillDisappear() {
         hideOnboardingBellIcon(view: self.view)
     }
+    
     @IBAction func btnContinueClicked(_ sender: Any) {
         addLog(text: "[user-action] explainingPermissionsVc:- Button Continue clicked")
         menuViewControllerObj?.accessibilityPermissionGiven = isAccessibilityPermissionGiven

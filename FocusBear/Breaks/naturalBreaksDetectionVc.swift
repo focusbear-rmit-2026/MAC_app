@@ -43,6 +43,7 @@ class naturalBreaksDetectionVc: NSViewController {
     }
     
     override func viewWillAppear() {
+        addLog(text: "naturalBreaksDetectionVc - viewWillAppear")
         isViewVisible = true
     }
     
@@ -53,6 +54,7 @@ class naturalBreaksDetectionVc: NSViewController {
     
     
     func closeView(){
+        addLog(text:"naturalBreaksDetectionVc - func closeView")
         if isViewVisible{
             if let window = self.view.window {
                 if let _ = window.sheetParent {
@@ -67,6 +69,7 @@ class naturalBreaksDetectionVc: NSViewController {
     }
     
     func resetView(duration:Int){
+        addLog(text: "naturalBreaksDetectionVc - resetView")
         boxDontShowAgain.isHidden = false
         checkBoxDontShowAgain.isHidden = false
         checkBoxDontShowAgain.state = .off
@@ -78,7 +81,7 @@ class naturalBreaksDetectionVc: NSViewController {
         btnSecond.title = "You're wrong! I wasn't on a break"
         btnSecond.buttonColor = NSColor.white.cgColor
         isNormalState = true
-        
+        isViewVisible = true// aded on 20/11/25 in v2.27.432// asking if I just completed a break multiple times 
         if let naturalBreaksDetectionVcInfo = configjson.value(forKey: "naturalBreaksDetectionVcInfo") as? NSDictionary{
             lblTitle.stringValue = naturalBreaksDetectionVcInfo.value(forKey: "title") as? String ?? lblTitle.stringValue
             btnFirst.title = naturalBreaksDetectionVcInfo.value(forKey: "buttonThanksText") as? String ?? btnFirst.title

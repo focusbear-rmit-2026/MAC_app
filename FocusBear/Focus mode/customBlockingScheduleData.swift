@@ -660,9 +660,15 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
 //            taskPlayerVcObj?.reloadData(totalDuration: focusModeMinutesToPerform, intention: whatToAchieveInFocusBlock)
 //            shouldReloadTaskPlayer = false
 ////        }
+        
         showCustomBlockingScheduleStartPopUp(scheduleName: arrBlockingSchedule[index].name, scheduleTime: "\(arrBlockingSchedule[index].startTime.formattedTime()) to \(arrBlockingSchedule[index].endTime.formattedTime())")
         leftMenuVcObj?.focusModeOrFocusModeHabitStarted()
         allApiObject.capturePosthog(event: "start-blocking-schedule", metadata: [:])//2.27.421
+        
+        if floatingTopBarVcObj != nil {
+            floatingTopBarVcObj?.boxMain.isHidden = false
+            floatingTopBarVcObj?.boxMoreItems.isHidden = false
+        }
     }
     
     func saveCustomBlockingScheduleData(){

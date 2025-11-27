@@ -1096,35 +1096,6 @@ class focusCompletedVc: NSViewController {
                 getPrivacyVcObject().highlightAdvanceAanalyticsItemBox()
             }
             
-//            if preferencesWindowControllerObj?.window?.isVisible ?? false{
-//                if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-//                    tabview.selectedTabViewItemIndex = preferencesSettingsIndex
-//                    if settingsSideBarVcObj != nil{
-//                        settingsSideBarVcObj!.tblView.selectRowIndexes(IndexSet(arrayLiteral: settingsSideBarVcObj!.advancedSettingsIndex), byExtendingSelection: false)
-//                        settingsContainerVcObj?.showPrivacyView()
-//                        getPrivacyVcObject().highlightAdvanceAanalyticsItemBox()
-//                    }
-//                }
-//                return;
-//            }
-//            allApiObject.capturePosthog(event: "open-preferences", metadata: [:])
-//            preferencesWindowControllerObj?.showWindow(self)
-//            addLog(text: "Showing preferences from edit focus mode")
-//            if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-//                tabview.selectedTabViewItemIndex = preferencesSettingsIndex
-//                if settingsSideBarVcObj != nil{
-//                    settingsSideBarVcObj!.tblView.selectRowIndexes(IndexSet(arrayLiteral: settingsSideBarVcObj!.advancedSettingsIndex), byExtendingSelection: false)
-//                    settingsContainerVcObj?.showPrivacyView()
-//                    getPrivacyVcObject().highlightAdvanceAanalyticsItemBox()
-//                }
-//                if isPasswordRequireInOpenSettings(){
-//                    tabview.view.addSubview(getEnterPasswordVcObjForPreferences().view)
-//                    tabview.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
-//                    getEnterPasswordVcObjForPreferences().parentVc = nil
-//                    enterPasswordVcObjForPreferences?.removeConstraints()
-//                    addLog(text: "Showing enter password view")
-//                }
-//            }
             
             NSApplication.shared.activate(ignoringOtherApps: true)
         }else{
@@ -1218,36 +1189,7 @@ class focusCompletedVc: NSViewController {
             settingsContainerVcObj?.showAddOnsView()
             getAddOnsVcObject().highlightTimeTrackerEnableItemBox()
         }
-        
-//        if preferencesWindowControllerObj?.window?.isVisible ?? false{
-//            if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-//                tabview.selectedTabViewItemIndex = preferencesSettingsIndex
-//                if settingsSideBarVcObj != nil{
-//                    settingsSideBarVcObj!.tblView.selectRowIndexes(IndexSet(arrayLiteral: settingsSideBarVcObj!.advancedSettingsIndex), byExtendingSelection: false)
-//                    settingsContainerVcObj?.showAddOnsView()
-//                    getAddOnsVcObject().highlightAdvanceAanalyticsItemBox()
-//                }
-//            }
-//            return;
-//        }
-//        allApiObject.capturePosthog(event: "open-preferences", metadata: [:])
-//        preferencesWindowControllerObj?.showWindow(self)
-//        addLog(text: "Showing preferences from edit focus mode")
-//        if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-//            tabview.selectedTabViewItemIndex = preferencesSettingsIndex
-//            if settingsSideBarVcObj != nil{
-//                settingsSideBarVcObj!.tblView.selectRowIndexes(IndexSet(arrayLiteral: settingsSideBarVcObj!.advancedSettingsIndex), byExtendingSelection: false)
-//                settingsContainerVcObj?.showAddOnsView()
-//                getAddOnsVcObject().highlightAdvanceAanalyticsItemBox()
-//            }
-//            if isPasswordRequireInOpenSettings(){
-//                tabview.view.addSubview(getEnterPasswordVcObjForPreferences().view)
-//                tabview.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
-//                getEnterPasswordVcObjForPreferences().parentVc = nil
-//                enterPasswordVcObjForPreferences?.removeConstraints()
-//                addLog(text: "Showing enter password view")
-//            }
-//        }
+
         
         NSApplication.shared.activate(ignoringOtherApps: true)
     }

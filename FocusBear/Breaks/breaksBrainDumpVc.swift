@@ -16,7 +16,7 @@ class breaksBrainDumpVc: NSViewController {
     @IBOutlet weak var topSpaceScrollView: NSLayoutConstraint!//50
     @IBOutlet weak var bottomSpaceLblTitle: NSLayoutConstraint!//80
     @IBOutlet weak var topSpaceLblTitle: NSLayoutConstraint!//80
-    @IBOutlet var textView: customTexView!
+    @IBOutlet var textView: placeHolderTextView!
     @IBOutlet weak var scrollView: shadowScrollViewForTextView!
     @IBOutlet weak var lblSubtitle: NSTextField!
     @IBOutlet weak var lblTitle: NSTextField!
@@ -244,7 +244,7 @@ class breaksBrainDumpVc: NSViewController {
 
 }
 
-class customTexView: NSTextView{
+class placeHolderTextView: NSTextView{
     var placeHolderTitleString: NSAttributedString = NSAttributedString(string: "Place Holder Value", attributes: [NSAttributedString.Key.foregroundColor : NSColor.secondaryLabelColor, NSAttributedString.Key.font : NSFont.systemFont(ofSize: 22)])
 
     override func becomeFirstResponder() -> Bool {

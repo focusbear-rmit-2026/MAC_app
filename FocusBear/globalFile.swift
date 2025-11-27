@@ -2484,8 +2484,14 @@ func enableTimeTracker(){
 
 
 var lastAppUnlockTime:Date?
+var lastUnlockTimeByAccountabilityBuddy:Date?
 
 func shouldAskPassword()->Bool{
+    if let lastUnlockTimeByAccountabilityBuddy = lastUnlockTimeByAccountabilityBuddy{
+        if Date() < lastUnlockTimeByAccountabilityBuddy{
+            return false
+        }
+    }
     if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
         if let lastAppUnlockTime = lastAppUnlockTime{
             let diffSeconds = Calendar.current.dateComponents([.second], from: lastAppUnlockTime, to: Date()).second ?? 0
@@ -2502,6 +2508,11 @@ func shouldAskPassword()->Bool{
 }
 
 func isPasswordRequireInOpenSettings() -> Bool{
+    if let lastUnlockTimeByAccountabilityBuddy = lastUnlockTimeByAccountabilityBuddy{
+        if Date() < lastUnlockTimeByAccountabilityBuddy{
+            return false
+        }
+    }
     if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
         if let lastAppUnlockTime = lastAppUnlockTime{
             let diffSeconds = Calendar.current.dateComponents([.second], from: lastAppUnlockTime, to: Date()).second ?? 0
@@ -3106,4 +3117,16 @@ func getWindowTheme()->String{
 }
 
 
+// blocking helpers
+let validation = urlValidation()
+var defaultAllowedUrl = ["focus-block.html",
+                         "earnyourscreentime.com",
+                         "devtools://",
+                         "chrome-extension://",
+                         "https://focusbear.io",
+                         "https://www.focusbear.io",
+                         "view-source:",
+                         "about:blank",
+                         "https://focus-bear.github.io",
+                         "localhost:50501"]// new added
 

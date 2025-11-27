@@ -591,9 +591,20 @@ class menuViewController: NSViewController {
         if !boxTipPermissions.isHidden{
             boxTipPermissions.stopBlinking()
         }
-        if let frame = self.view.window?.frame{
-            let windowTopLeftPoint = NSPoint(x: frame.midX, y: frame.maxY)
-            showFloatingTopBarWindow(windowTopMidPoint: windowTopLeftPoint)
+        
+        var anyNotificationVisibleInFloatingBear = false
+        if floatingTopBarVcObj != nil{
+            let visibleViews = floatingTopBarVcObj!.stackViewMoreItems.arrangedSubviews.filter { !$0.isHidden }
+            if visibleViews.count != 0{
+                anyNotificationVisibleInFloatingBear = true
+            }
+        }
+        
+        if (appdelegate?.menuOpenedFromFloatingBar ?? false) || anyNotificationVisibleInFloatingBear{
+            if let frame = self.view.window?.frame{
+                let windowTopLeftPoint = NSPoint(x: frame.midX, y: frame.maxY)
+                showFloatingTopBarWindow(windowTopMidPoint: windowTopLeftPoint)
+            }
         }
         
         //If the big floating bear is open, I don’t think we need the little one as well.
@@ -1666,6 +1677,15 @@ class menuViewController: NSViewController {
     
     @objc func pauseFocusModeClicked(){
         if currentFocusModeStrictness == ._SUPER_STRICT_{
+            if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
+                if let lastUnlockTimeByAccountabilityBuddy = lastUnlockTimeByAccountabilityBuddy{// if no password is set  then chance of getting lastUnlockTimeByAccountabilityBuddy is 0% but if password is set then check this
+                    if Date() < lastUnlockTimeByAccountabilityBuddy{
+                        pauseFocusMode()
+                        return;
+                    }
+                }
+            }
+            
             showPasswordWindow()// show without checking . if password not there then show enter random characters view
             addLog(text: "Showing enter password view for super strict focus stop from focus stop menu")
             showingPasswordViewForPausingFocusMode = true
@@ -1691,7 +1711,20 @@ class menuViewController: NSViewController {
     }
     
     @objc func stopFocusMode(){
+        var needToShowPassword = false
         if currentFocusModeStrictness == ._SUPER_STRICT_{
+            needToShowPassword = true// show without checking . if password not there then show enter random characters view
+            if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
+                if let lastUnlockTimeByAccountabilityBuddy = lastUnlockTimeByAccountabilityBuddy{// if no password is set  then chance of getting lastUnlockTimeByAccountabilityBuddy is 0% but if password is set then check this
+                    if Date() < lastUnlockTimeByAccountabilityBuddy{
+                        needToShowPassword = false
+                    }
+                }
+            }
+            addLog(text: "Showing enter password view for super strict focus stop from focus stop menu:- \(needToShowPassword)")
+        }
+        
+        if needToShowPassword{
             showPasswordWindow()// show without checking . if password not there then show enter random characters view
             addLog(text: "Showing enter password view for super strict focus stop from focus stop menu")
         }else if isHardCorePomodoroModeOn{
@@ -2187,27 +2220,6 @@ class menuViewController: NSViewController {
         NSApplication.shared.activate(ignoringOtherApps: true)
         let result = alert.runModal()
         if result == .alertFirstButtonReturn{
-//            var shouldShowPassword = true
-//            if preferencesWindowControllerObj?.window?.isVisible ?? false{
-//                if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-//                    tabview.selectedTabViewItemIndex = preferencesEditHabitsIndex
-//                    addLog(text: "")
-//                }
-//                shouldShowPassword = false
-//            }else{
-//                preferencesWindowControllerObj?.showWindow(self)
-//            }
-//            addLog(text: "Showing preferences")
-//            if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-//                tabview.selectedTabViewItemIndex = preferencesEditHabitsIndex
-//                if isPasswordRequireInOpenSettings() && shouldShowPassword{
-//                    tabview.view.addSubview(getEnterPasswordVcObjForPreferences().view)
-//                    tabview.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
-//                    getEnterPasswordVcObjForPreferences().parentVc = nil
-//                    enterPasswordVcObjForPreferences?.removeConstraints()
-//                    addLog(text: "Showing enter password view")
-//                }
-//            }
 
             if mainWindowControllerObj?.window?.isVisible ?? false{
                 leftMenuVcObj?.showEditHabitsView()
@@ -2250,27 +2262,6 @@ class menuViewController: NSViewController {
             return;
         }
         
-//        var shouldShowPassword = true
-//        if preferencesWindowControllerObj?.window?.isVisible ?? false{
-//            if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-//                tabview.selectedTabViewItemIndex = preferencesBlocksIndex
-//                addLog(text: "")
-//            }
-//            shouldShowPassword = false
-//        }else{
-//            preferencesWindowControllerObj?.showWindow(self)
-//        }
-//        addLog(text: "Showing preferences")
-//        if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-//            tabview.selectedTabViewItemIndex = preferencesBlocksIndex
-//            if isPasswordRequireInOpenSettings() && shouldShowPassword{
-//                tabview.view.addSubview(getEnterPasswordVcObjForPreferences().view)
-//                tabview.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
-//                getEnterPasswordVcObjForPreferences().parentVc = nil
-//                enterPasswordVcObjForPreferences?.removeConstraints()
-//                addLog(text: "Showing enter password view")
-//            }
-//        }
         
         
         if mainWindowControllerObj?.window?.isVisible ?? false{
@@ -2330,7 +2321,16 @@ class menuViewController: NSViewController {
                         }
                         btnCustomBlocking.state = .on
                     }else if customBlockingScheduleManagerObj.arrBlockingSchedule[i].blockLevel == ._SUPER_STRICT_{
-                        showPasswordWindow()
+                        
+                        if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
+                            if let lastUnlockTimeByAccountabilityBuddy = lastUnlockTimeByAccountabilityBuddy{// if no password is set  then chance of getting lastUnlockTimeByAccountabilityBuddy is 0% but if password is set then check this
+                                if Date() < lastUnlockTimeByAccountabilityBuddy{
+                                    customBlockingScheduleManagerObj.customBlockingSchedulePaused()
+                                    return;
+                                }
+                            }
+                        }
+                        showPasswordWindow()// show without checking . if password not there then show enter random characters view
                         btnCustomBlocking.state = .on
                     }else{
                         customBlockingScheduleManagerObj.customBlockingSchedulePaused()

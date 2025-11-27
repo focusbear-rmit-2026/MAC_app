@@ -51,6 +51,7 @@ class askProcrastinatingVc: NSViewController, NSTextViewDelegate {
         lblIntention.stringValue = ""
         textView.string = ""
         lblTitleIntention.isHidden = true
+        kUserdefaultsDeviceId
     }
     
     override func viewWillAppear() {
@@ -327,6 +328,23 @@ class askProcrastinatingVc: NSViewController, NSTextViewDelegate {
                 simplePomodoroVcObj?.textViewAchieve.string = self.textView.string
             }
         }
+        
+        //The app should automatically restart the focus session after the app restarts during permissions   #1559  v2.27.435
+        for i in 0..<arrFocusType.count{
+            if let isDeepWorkFocus = arrFocusType[i]["isDeepWorkFocus"] as? Bool{//this key will only be awailable in default focus type
+                if  isDeepWorkFocus{
+                    arrFocusType[i]["lastIntentionUsed"] = textView.string
+                    UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+                    updateAllFocusModes()
+                    break;
+                }
+            }
+            
+        }
+        
+        UserDefaults.standard.set(true, forKey: kUserdefaultsUserShouldDoFirstFocusSesion)
+        
+        //--------------//
     }
     
     func textDidChange(_ notification: Notification) {

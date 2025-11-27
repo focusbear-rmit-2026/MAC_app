@@ -517,7 +517,6 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate { // not in use
             timerForFocusModeEndNotification?.invalidate()
             timerForFocusModeEndNotification = nil
         }
-        isFocusTimeType = ._HOUR_
         appdelegate?.setFocusModeTimer(hour: nil, minute: totoalMinutes)
         isFocusModeStartedFromPomodoroMode = false
         closePomodoroWindowIOfVisible()

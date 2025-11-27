@@ -1257,7 +1257,6 @@ class pomodoroVc: NSViewController {
             timerForFocusModeEndNotification?.invalidate()
             timerForFocusModeEndNotification = nil
         }
-        isFocusTimeType = ._HOUR_
         
         appdelegate?.setFocusModeTimer(hour: nil, minute: minute)
         isFocusModeStartedFromPomodoroMode = true
@@ -1480,48 +1479,10 @@ class pomodoroVc: NSViewController {
 
     
     @IBAction func btnEditRatioClicked(_ sender: Any) { // not in use
-//        if SettingsManagerObject.isGeekModeEnabled{
-//            allApiObject.capturePosthog(event: "open-preferences", metadata: [:])
-//            preferencesWindowControllerObj?.showWindow(self)
-//            addLog(text: "Showing preferences")
-//            var passWordViewVisible = false
-//            if isPasswordRequireInOpenSettings(){
-//                if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-//                    tabview.selectedTabViewItemIndex = preferencesSettingsIndex
-//                    tabview.view.addSubview(getEnterPasswordVcObjForPreferences().view)
-//                    tabview.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
-//                    getEnterPasswordVcObjForPreferences().parentVc = nil
-//                    enterPasswordVcObjForPreferences?.removeConstraints()
-//                    passWordViewVisible = true
-//                    addLog(text: "Showing enter password view")
-//                }
-//            }else{
-//                if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-//                    tabview.selectedTabViewItemIndex = preferencesSettingsIndex
-//                }
-//            }
-//            if settingsSideBarVcObj != nil{
-//                settingsSideBarVcObj!.tblView.selectRowIndexes(IndexSet(arrayLiteral: settingsSideBarVcObj!.pomodoroSettingsIndex), byExtendingSelection: false)
-//                if !passWordViewVisible{
-//                    pomodoroSettingsVcObj?.textFieldWorkRatio.setFocus()
-//                }
-//            }
-//        }
-        
-//        if SettingsManagerObject.isGeekModeEnabled{
-//            allApiObject.capturePosthog(event: "open-preferences", metadata: [:])
-//            mainWindowControllerObj?.showWindow(self)
-//            addLog(text: "Showing preferences")
-//            leftMenuVcObj?.showSettingsView()
-//            if settingsSideBarVcObj != nil{
-//                settingsSideBarVcObj!.tblView.selectRowIndexes(IndexSet(arrayLiteral: settingsSideBarVcObj!.pomodoroSettingsIndex), byExtendingSelection: false)
-//                if !(mainViewControllerObj?.isEnterPasswordForPreferencesViewVisible() ?? false){
-//                    pomodoroSettingsVcObj?.textFieldWorkRatio.setFocus()
-//                }
-//            }
-//        }
+
         
     }
+    
     @IBAction func btnStrictnessNormalClicked(_ sender: Any) {
         var msg = "can pause/stop focus session at any time"
         if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{

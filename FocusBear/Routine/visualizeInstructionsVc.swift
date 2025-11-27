@@ -230,6 +230,7 @@ class visualizeInstructionsVc: NSViewController, WKNavigationDelegate, webViewLo
             self.boxStarRating.isHidden = false
         }
     }
+    
     func tryPreLoadMotivationalMessage(){
         self.isMotivationalMessageShowing = false
         self.imgView.isHidden = false
@@ -248,6 +249,7 @@ class visualizeInstructionsVc: NSViewController, WKNavigationDelegate, webViewLo
             })
         }
     }
+    
     func showWebView(){
         isMotivationalMessageShowing = true
         self.boxStarRating.isHidden = true

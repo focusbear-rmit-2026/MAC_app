@@ -544,7 +544,6 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
         appdelegate!.setStatusBarButtonColorForFocusMode(color: nil, colorString:arrFocusType[currentFocusModeIndex]["color"] as? String ?? "")
         appdelegate!.setStatusBarButtonTitleForFocusMode(title: whatToAchieveInFocusBlock)
         appdelegate!.statusbutton?.imagePosition = .imageLeft
-        isFocusTimeType = ._HOUR_
         
         
         appdelegate?.setFocusModeTimerForExtendAfterComplete(hour: nil, minute: minutesToExtend)
@@ -578,37 +577,7 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
         if SettingsManagerObject.isGeekModeEnabled{
             
             addLog(text: "[user-action] btnEnableAdvancedAnalyticsClicked")
-            
-            // need to ask sir what to do in this case
-//            if preferencesWindowControllerObj?.window?.isVisible ?? false{
-//                if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-//                    tabview.selectedTabViewItemIndex = preferencesSettingsIndex
-//                    if settingsSideBarVcObj != nil{
-//                        settingsSideBarVcObj!.tblView.selectRowIndexes(IndexSet(arrayLiteral: settingsSideBarVcObj!.advancedSettingsIndex), byExtendingSelection: false)
-//                        settingsContainerVcObj?.showPrivacyView()
-//                        getPrivacyVcObject().highlightAdvanceAanalyticsItemBox()
-//                    }
-//                }
-//                return;
-//            }
-//            allApiObject.capturePosthog(event: "open-preferences", metadata: [:])
-//            preferencesWindowControllerObj?.showWindow(self)
-//            addLog(text: "Showing preferences from edit focus mode")
-//            if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-//                tabview.selectedTabViewItemIndex = preferencesSettingsIndex
-//                if settingsSideBarVcObj != nil{
-//                    settingsSideBarVcObj!.tblView.selectRowIndexes(IndexSet(arrayLiteral: settingsSideBarVcObj!.advancedSettingsIndex), byExtendingSelection: false)
-//                    settingsContainerVcObj?.showPrivacyView()
-//                    getPrivacyVcObject().highlightAdvanceAanalyticsItemBox()
-//                }
-//                if isPasswordRequireInOpenSettings(){
-//                    tabview.view.addSubview(getEnterPasswordVcObjForPreferences().view)
-//                    tabview.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
-//                    getEnterPasswordVcObjForPreferences().parentVc = nil
-//                    enterPasswordVcObjForPreferences?.removeConstraints()
-//                    addLog(text: "Showing enter password view")
-//                }
-//            }
+
             
             
             

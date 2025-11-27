@@ -466,7 +466,7 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
                 if var dictionary = dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[key]{
                     if dictionary["isVisibleUrl"] != nil{
                         let url = key
-                        let isAllowed = appdelegate!.validation.isUrlValid(urlToCheck: url, allowUrl: currentUrl)
+                        let isAllowed = validation.isUrlValid(urlToCheck: url, allowUrl: currentUrl)
                         if isAllowed{
                             dictionary["probability"] = 1.0
                             dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[key] = dictionary

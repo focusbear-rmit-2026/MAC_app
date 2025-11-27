@@ -8,7 +8,7 @@
 import Cocoa
 
 
-class preferencesTabViewController: NSTabViewController {
+class preferencesTabViewController: NSTabViewController {// not in use 
 
     
     //@IBOutlet weak var tabGeneral: NSTabViewItem!

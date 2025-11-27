@@ -11,6 +11,7 @@ import Cocoa
 
 class floatingTopBarVc: NSViewController {
 
+    @IBOutlet weak var stackViewMoreItems: NSStackView!
     @IBOutlet weak var lblScheduleTime: NSTextField!
     @IBOutlet weak var lblScheduleName: NSTextField!
     @IBOutlet weak var boxCustomBlockingSchedule: customBoxBg!
@@ -39,6 +40,7 @@ class floatingTopBarVc: NSViewController {
     
     @IBAction func btnBarClicked(_ sender: Any) {
         appdelegate!.togglePopover(false)
+        appdelegate!.menuOpenedFromFloatingBar = true// always next to togglepopover
     }
     
     override func mouseEntered(with event: NSEvent) {

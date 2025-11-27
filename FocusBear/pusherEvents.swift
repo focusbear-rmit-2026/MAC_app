@@ -118,7 +118,6 @@ class pusherEvents:NSObject, PusherDelegate {
                                             setAppIconForFocusModeScore(probability: nil)
                                             timerForFocusModeEndNotification = nil
                                         }
-                                        isFocusTimeType = ._HOUR_
                                         appdelegate?.setFocusModeTimer(hour: nil, minute: diffMinutes)
                                        // isFocusModeStartedFromPomodoroMode = false
                                         closePomodoroWindowIOfVisible()
@@ -227,18 +226,14 @@ class pusherEvents:NSObject, PusherDelegate {
                 appdelegate!.setStatusBarButtonColorForFocusMode(color: NSColor.clear, colorString: nil)
                 appdelegate!.statusbutton?.title = ""
                 
-                isFocusTimeType = ._NONE_
-                if appdelegate!.timerAllowUrl != nil{
-                    appdelegate!.timerAllowUrl!.invalidate()
-                }
+//                if appdelegate!.timerAllowUrl != nil{
+//                    appdelegate!.timerAllowUrl!.invalidate()
+//                }
+                focusModeHelper.stopUrlTimer()
                 appdelegate!.timerCheckAllowedApps?.invalidate()
                 
                 arrKeywordsToAllowInFocus.removeAll()
-//                if toolBoxWcObj != nil{
-//                    if toolBoxWcObj!.window!.isVisible{
-//                        toolBoxWcObj?.window?.close()
-//                    }
-//                }
+
 
                 let timestamp = getStringFromDate(date: startFocusModeTime ?? Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
                 addEntryInStatsCsv(logType: "focus block", activity: currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "", tags:"")

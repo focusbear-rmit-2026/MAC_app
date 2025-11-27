@@ -243,7 +243,7 @@ class shutOffTimeVc: NSViewController {
             }
         }
         
-        if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
+        if shouldAskPassword(){
             if SettingsManagerObject.isPasswordRequireInAbortShutoff{
                 showPasswordReason = passwordReason._ABORT_SHUTOFF_
                 mainViewControllerObj!.showPasswordView()
@@ -506,7 +506,7 @@ class shutOffTimeVc: NSViewController {
     
     @IBAction func btnWorkEmergencyClicked(_ sender: Any) {
         addLog(text: "[user-action] btnWorkEmergencyClicked")
-        if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
+        if shouldAskPassword(){
             if SettingsManagerObject.isPasswordRequireInAbortShutoff{
                 showPasswordReason = passwordReason._WORK_EMERGENCY_
                 mainViewControllerObj!.showPasswordView()
@@ -520,7 +520,7 @@ class shutOffTimeVc: NSViewController {
     
     @IBAction func btnStartMorningRoutineClicked(_ sender: Any) {
         addLog(text: "[user-action] btnStartMorningRoutineClicked")
-        if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
+        if shouldAskPassword(){
             if SettingsManagerObject.isPasswordRequireInAbortShutoff{
                 showPasswordReason = passwordReason._START_EVENING_ROUTINE_
                 mainViewControllerObj!.showPasswordView()

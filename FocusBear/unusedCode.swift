@@ -1032,8 +1032,6 @@
 //            self.setStatusBarButtonColorForFocusMode(color: NSColor.clear, colorString:nil)
 //            self.statusbutton?.title = ""
 //        }
-//
-//        isFocusTimeType = ._NONE_
 //        if self.timerAllowUrl != nil{
 //            self.timerAllowUrl!.invalidate()
 //            //self.timerAllowUrl = nil

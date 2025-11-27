@@ -399,13 +399,14 @@
         "buttonEditSettingsText": "Editar Configuración",
         "buttonAdvancedText": "Avanzado",
         "description": "Dale clic a \"Editar Configuración\" para modificar tu configuración existente. Si eres un usuario avanzado haz clic en \"Avanzado\"para ver o editar la configuración JSON",
-        "settingIsValidText": "¡Guardado! Reiniciando la aplicación ahora.",
+        "settingIsValidText": "¡Guardado! Reiniciando la app para que tu nuevo horario de hábitos funcione.",
         "settingsEditedButNotSavedText": "Has hecho cambios en tus hábitos/descansos pero aún no los has guardado. Se recomienda revisar y guardar los cambios (la aplicación se reiniciará)",
         "buttonReviewSettingsText": "Revisaré y Guardaré",
         "downloadReportText": "Visita el panel de control de Focus Bear en tu navegador web para descargar el informe.",
         "buttonVisitDashboardText": "Haz clic aquí para visitar el panel de control",
         "tokenErrorText": "Sesión expirada. Por favor, inicia sesión de nuevo.",
-        "settingUrlNew": "https://dashboard.focusbear.io"
+        "settingUrlNew": "https://dashboard.focusbear.io",
+        "buttonRestartNow": "Reiniciar ahora"
     },
     "trialNagInfo": {
         "title": "Focus Bear",
@@ -927,7 +928,8 @@
         "tabViewRandomCharactersTitle": "Escribir caracteres aleatorios",
         "titleRandomCharacters": "Por favor, escribe <NUMBER> caracteres aleatorios para continuar",
         "incorrectCharactersErrorTitle": "Los caracteres introducidos no coinciden con el número de caracteres requerido. Por favor, inténtalo de nuevo.",
-        "titleEnterCharacters": "Para desbloquear tu máquina sin contraseña, introduce estos caracteres. Dijiste que querías que fuera difícil usar tu ordenador impulsivamente 😅"
+        "titleEnterCharacters": "Para desbloquear tu máquina sin contraseña, introduce estos caracteres. Dijiste que querías que fuera difícil usar tu ordenador impulsivamente 😅",
+        "tabViewAccountabilityBuddyTitle": "Compañer@ de responsabilidad"
     },
     "passwordPreferencesInfo": {
         "titleSetPassword": "Configurar la contraseña",
@@ -1372,7 +1374,7 @@
         "buttonAllowDomainText": "Permitir todas las URL de <DOMAIN> para esta sesión de enfoque",
         "waitingAiText": "Esperando la decisión IA...",
         "aiRelevanceScoreText": "Puntuación de relevancia IA para este sitio: <SCORE>%",
-        "stillDistractingTitle": "IA sigue pensando que este sitio es distractor",
+        "stillDistractingTitle": "Focus Bear sigue pensando que este sitio es una distracción",
         "stillDistractingDescription": "La IA de Focus Bear sigue pensando que <URL> no es relevante para lo que intentas conseguir. ¿Estás seguro que lo necesitas?",
         "convinceAiTitle": "Convence a la IA de por qué es necesario",
         "convinceAiDescription": "Dar más información a la IA para explicar por qué necesitas usar este sitio",
@@ -1381,7 +1383,7 @@
         "buttonSetIntentionText": "Acceso temporal",
         "aiRelevanceScoreAppText": "Puntaje de relevancia de IA para esta app: <SCORE>%",
         "appNotVerifiedText": "No se pudo verificar el estado de esta app.",
-        "appStillDistractingTitle": "La IA sigue considerando que esta app es una distracción.",
+        "appStillDistractingTitle": "Focus Bear sigue pensando que esta app es una distracción",
         "appConvinceAiDescription": "Dale más información a la IA para explicar por qué necesitas usar esta app",
         "selectMinutesForAppText": "Selecciona los minutos para usar esta app",
         "distractingForCurrentTaskDescription": "La IA de Focus Bear sigue considerando que <URL> no es relevante para tu tarea actual \"<TASK>\". ¿Estás segur@ de que la necesitas?",
@@ -1585,7 +1587,10 @@
         "alertOpenPreferencesText": "No se puede obtener la URL de <APPNAME>. Por favor, revisa los permisos. ¿Quiere Abrir Preferencias del Sistema -> Privacidad y Seguridad y comprobar si <APPNAME> puede ser accedido por Focus Bear bajo Automatización?",
         "alertOpenPreferencesLatestOsText": "No se puede obtener la URL de <APPNAME>. Por favor, revisa los permisos. ¿Quiere abrir Preferencias del Sistema -> Seguridad y Privacidad > Privacidad y comprobar si <APPNAME> puede ser accedido por Focus Bear bajo Automatización?",
         "buttonLearnMoreText": "Más información",
-        "permissionNotGrantedText": "No has otorgado permiso a ningún navegador, lo que podría causar problemas de bloqueo. ¿Quieres continuar sin dar permiso?"
+        "permissionNotGrantedText": "No has otorgado permiso a ningún navegador, lo que podría causar problemas de bloqueo. ¿Quieres continuar sin dar permiso?",
+        "descriptionFirefoxExtensiont": "Instala la extensión Focus Bear Blocker en Firefox.",
+        "buttonAddFirefoxExtensiont": "Agregar extensión de Firefox",
+        "toolTipFirefoxExtensiont": "Firefox no puede detectar en qué sitio estás a menos que instales la extensión Focus Bear. Perdón por el paso extra; otros navegadores no lo requieren."
     },
     "onboardingPrivacyTipVcInfo": {
         "title": "Privacidad y Seguridad",
@@ -2568,6 +2573,20 @@
     "abortingCustomScheduleBlockingVcInfo":{
         "titlePauseText": "Pausando horario personalizado - <SCHEDULE>",
         "buttonAbortFocus": "Pausar horario personalizado"
+    },
+    "accountabilityBuddyInfo":{
+        "titleNoBuddyFound": "Sin compañer@ para solicitudes de desbloqueo",
+        "subTitleNoBuddyFound": "Necesitas un compañer@ de responsabilidad para crear solicitudes de desbloqueo.",
+        "buttonAddBuddy": "Agregar nuev@ compañer@",
+        "buttonRefreshBuddiesList": "Actualizar",
+        "titleCreateRequest": "Crear solicitud de desbloqueo",
+        "titleRequestTo": "Solicitando desbloqueo de",
+        "reasonTitle": "Motivo (opcional)",
+        "unlockDurationTitle": "Duración del desbloqueo (opcional)",
+        "durationRange": "Mín: 1 minuto • Máx: 24 horas (1440 minutos)",
+        "buttonCreateRequest": "Crear solicitud",
+        "buttonRefreshStatus": "Actualizar estado de la solicitud de desbloqueo",
+        "placeHolderString": "Explica por qué necesitas este desbloqueo...."
     },
     "discordUrl": "https://discord.gg/VZdv3ZjhSq",
     "whatsAppUrl": "https://chat.whatsapp.com/FV0oTbCUWpILBYif7CP6UD",

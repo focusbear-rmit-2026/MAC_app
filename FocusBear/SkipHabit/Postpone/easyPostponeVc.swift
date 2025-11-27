@@ -213,7 +213,7 @@ class easyPostponeVc: NSViewController {
     
     @IBAction func btnDeactivateAppClicked(_ sender: Any) {
         addLog(text: "[user-action] easyPostponeVc:- button deactivated app clicked")
-        if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
+        if shouldAskPassword(){
             if SettingsManagerObject.isPasswordRequireInQuitApp{
                 self.presentAsSheet(enterPasswordVcObj!)
                 enterPasswordVcObj?.parentVc = self

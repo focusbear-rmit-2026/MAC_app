@@ -356,6 +356,7 @@ class firefoxPermissionsVc: NSViewController {
         
         executeScript(script: script)
     }
+    
     @IBAction func btnPlayClicked(_ sender: Any) {
         imgview.isHidden = true
         avPlayerView.isHidden = true

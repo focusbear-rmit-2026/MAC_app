@@ -80,15 +80,6 @@ func showToDoListWindow(){
     }
     leftMenuVcObj?.showTaskPlayer()
     allApiObject.capturePosthog(event: "todo-list-popup-shown", metadata: [:])
-//    return;
-//    
-//    getToDoListWcObject().contentViewController = getTodoListToolVcObject()
-//    getToDoListWcObject().window?.title = "Focus Bear - To Do List"
-//    if let common = configjson.value(forKey: "common") as? NSDictionary{
-//        getToDoListWcObject().window?.title = common.value(forKey: "toDoListWindowTitle") as? String ?? "Focus Bear - To Do List"
-//    }
-//    getToDoListWcObject().showWindow(nil)
-//    todoListToolVcObj?.reloadData()
 }
 
 
@@ -448,9 +439,11 @@ func showNaturalBreakDetectionWindow(duration:Int){
     
     naturalBreaksDetectionVcObj = nil// always catch a fresh object
     if mainWindowControllerObj?.window?.isVisible ?? false{
+        addLog(text:"Natural Break view presenting by sheet")
         mainViewControllerObj?.presentAsSheet(getNaturalBreaksDetectionVcObject())
         getNaturalBreaksDetectionVcObject().resetView(duration:duration)
     }else{
+        addLog(text:"Natural Break view presenting as window")
         getNaturalBreaksDetectionWindowObject().contentViewController = getNaturalBreaksDetectionVcObject()
         getNaturalBreaksDetectionWindowObject().window?.styleMask.remove(.closable)
         getNaturalBreaksDetectionWindowObject().window?.center()
@@ -493,11 +486,13 @@ func showPopupAppointmentWindow(title:String, endTime:Date){
 
 func showAlertMaxTabLimitWindow(){
     addLog(text:"showAlertMaxTabLimitWindow")
-    getAlertMaxTabLimitWindowObject().contentViewController = getAlertMaxTabLimitVcObject()
-    getAlertMaxTabLimitWindowObject().window?.styleMask.remove(.closable)
-    getAlertMaxTabLimitWindowObject().window?.center()
-    getAlertMaxTabLimitWindowObject().window?.title = appName
-    getAlertMaxTabLimitWindowObject().showWindow(nil)
+    DispatchQueue.main.async {
+        getAlertMaxTabLimitWindowObject().contentViewController = getAlertMaxTabLimitVcObject()
+        getAlertMaxTabLimitWindowObject().window?.styleMask.remove(.closable)
+        getAlertMaxTabLimitWindowObject().window?.center()
+        getAlertMaxTabLimitWindowObject().window?.title = appName
+        getAlertMaxTabLimitWindowObject().showWindow(nil)
+    }
 }
 //-------------------------------------------------//
 
@@ -654,96 +649,12 @@ func showTaskPlayerWindow(totalDuration:Int, intention:String, automatically:Boo
     if !(mainWindowControllerObj?.window?.isVisible ?? false){
         mainWindowControllerObj?.showWindow(nil)
     }
-   // mainViewControllerObj?.showSmallScreen()
     leftMenuVcObj?.showTaskPlayer()
     allApiObject.capturePosthog(event: "todo-player-popup-shown", metadata: [:])
-//    return; // 
-//    
-//    if UserDefaults.standard.object(forKey: kUserdefaultsManageTaskFirstTime) == nil && automatically{
-//        UserDefaults.standard.set(true, forKey: kUserdefaultsManageTaskFirstTime)
-//   
-//        addLog(text:"show alert UseToDoList first time")
-//        
-//        var titleUseToDoList = "Do you want to use Focus Bear for your to do list for this focus session?"
-//        var buttonTryItText = "Try it out"
-//        var buttonNoThanksText = "No thanks"
-//        var titleEnableToDoListFuture = "If you want to try it out in the future, enable the To Do player setting under Preferences - Settings - To Do List"
-//        
-//        if let toDoPlayerVcInfo = configjson.value(forKey: "toDoPlayerVcInfo") as? NSDictionary{
-//            titleUseToDoList = toDoPlayerVcInfo.value(forKey: "titleUseToDoList") as? String ?? titleUseToDoList
-//            buttonTryItText = toDoPlayerVcInfo.value(forKey: "buttonTryItText") as? String ?? buttonTryItText
-//            buttonNoThanksText = toDoPlayerVcInfo.value(forKey: "buttonNoThanksText") as? String ?? buttonNoThanksText
-//            titleEnableToDoListFuture = toDoPlayerVcInfo.value(forKey: "titleEnableToDoListFuture") as? String ?? titleEnableToDoListFuture
-//        }
-//
-//        showCustomAlert(title: titleUseToDoList, body: nil, buttonOkText: buttonTryItText, buttonCancelText: buttonNoThanksText, checkBoxText: nil, autoClose: false, buttonLinkUrl:nil, buttonLinkText:nil, completionHandler: {isOkClicked in
-//            print(isOkClicked)
-//            if !isOkClicked{
-//                SettingsManagerObject.isSettingsChanged = true
-//                SettingsManagerObject.showToDoPlayerAutomaticallyEnabled = false
-//                SettingsManagerObject.putUserLocalDeviceSettings()
-//                
-//                showCustomAlert(title: titleEnableToDoListFuture, body: nil, buttonOkText: buttonOkText, buttonCancelText: nil, checkBoxText: nil, autoClose: false, buttonLinkUrl:nil, buttonLinkText:nil, completionHandler: {isOkClicked in
-//                    print(isOkClicked)
-//                    if isOkClicked{
-//                        
-//                    }
-//                })
-//                
-//            }else{
-//                showTaskPlayerWindow(totalDuration: totalDuration, intention: intention, automatically: automatically)
-//            }
-//        })
-//        
-//        
-//        
-//        return;
-//    }
-//    addLog(text:"showTaskPlayerWindow")
-//    if taskPlayerWcObj == nil{
-//        getTaskPlayerWindowObject().contentViewController = getTaskPlayerVcObject()
-//        taskPlayerWcObj?.window?.styleMask.insert(.fullSizeContentView)
-//        taskPlayerWcObj?.window?.titlebarAppearsTransparent = true
-//
-//        taskPlayerWcObj?.window?.styleMask.insert(.resizable)
-//        taskPlayerWcObj?.window?.standardWindowButton(.zoomButton)?.isHidden = true
-//        taskPlayerWcObj?.window?.standardWindowButton(.closeButton)?.isHidden = true
-//        taskPlayerWcObj?.window?.standardWindowButton(.miniaturizeButton)?.isHidden = true
-//    }
-//    
-////    getTaskPlayerWindowObject().window?.setFrameOrigin(.)
-//    var taskPlayerWindowTitle = "Focus Bear - To Do Player"
-//    if let common = configjson.value(forKey: "common") as? NSDictionary{
-//        taskPlayerWindowTitle = common.value(forKey: "taskPlayerWindowTitle") as? String ?? taskPlayerWindowTitle
-//    }
-//    getTaskPlayerWindowObject().window?.title = taskPlayerWindowTitle
-//
-//    getTaskPlayerWindowObject().window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
-//    getTaskPlayerWindowObject().showWindow(nil)
-//    if shouldReloadTaskPlayer{
-//        shouldReloadTaskPlayer = false
-//        taskPlayerVcObj?.reloadData(totalDuration: totalDuration, intention:intention)
-//    }else{
-//        taskPlayerVcObj?.reloadView()
-//    }
-//    NSApplication.shared.activate(ignoringOtherApps: true)
     
 }
 //-------------------------------------------------//
 
-
-//***********showBreakSurveyWindow***************//
-//func showBreakSurveyWindow(){
-//    addLog(text:"showBreakSurveyWindow")
-//    getBreakSurveyWindowObject().contentViewController = getBreakSurveyVcObject()
-//    getBreakSurveyWindowObject().window?.center()
-//    getBreakSurveyWindowObject().window?.title = appName
-//    getBreakSurveyWindowObject().window?.styleMask.remove(.closable)
-//    getBreakSurveyWindowObject().window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
-//    getBreakSurveyWindowObject().showWindow(nil)
-//    NSApplication.shared.activate(ignoringOtherApps: true)
-//}
-//-------------------------------------------------//
 
 
 //***********showCustomAlert***************//
@@ -1245,7 +1156,7 @@ func showInformationPopover(sender:NSView, preferredEdge: NSRectEdge,mainTitle: 
 
 //  /////////////////////////////////////////////////////////////////////////
 
-var popoverFocusHelp:NSPopover?
+var popoverFocusHelp:NSPopover?// todo new macos 
 var popoverTooltip:NSPopover?// = NSPopover()
 func showTooltip(sender:NSView, msg:String, preferredEdge: NSRectEdge, maxWidthVal:CGFloat, autoCloseOnMouseExit:Bool = false) {
     if popoverTooltip == nil{
@@ -1651,6 +1562,11 @@ func showSmallTimerWindow(durationSeconds: Int, msg: String, isFocusBreak:Bool, 
     closeMainMenuIfVisible()
     floatingTopBarVcObj?.showTimerWindow(durationSeconds: durationSeconds, msg: msg, isFocusBreak: isFocusBreak, currentTimerValue: currentTimerValue)
     
+    if floatingTopBarVcObj != nil {
+        floatingTopBarVcObj?.boxMain.isHidden = false
+        floatingTopBarVcObj?.boxMoreItems.isHidden = false
+    }
+    
 //    getSmallCountDownWindowObject().contentViewController = getsmallCountDownVcObject()
 //    smallCountDownVcObj?.isFocusBreak = isFocusBreak
 //    getSmallCountDownWindowObject().window?.styleMask = .borderless
@@ -1744,6 +1660,50 @@ func closeSmallCountDownTimerBoxIfVisibleForWithoutFocusBreak(){
     if isSmallCountDownTimerViewVisible(){
         if !(smallCountDownVcObj?.isFocusBreak ?? false){
             smallCountDownVcObj?.closeTimerBox()
+        }
+    }
+}
+
+
+func closeIntentionBlockedUrlsWinddowIfVisible(){
+    if intentionBlockedUrlsWcObj != nil{
+        if intentionBlockedUrlsWcObj?.window?.isVisible ?? false{
+            intentionBlockedUrlsWcObj?.window?.close()
+        }
+    }
+}
+func closeSetIntentionBlockedUrlsWinddowIfVisible(){
+    if setIntentionBlockedUrlsWcObj != nil{
+        if setIntentionBlockedUrlsWcObj?.window?.isVisible ?? false{
+            setIntentionBlockedUrlsVcObj?.closeWindow()
+        }
+    }
+}
+
+
+func closeAlwaysBlockPopupsIfNotForeCurrentDomain(domain:String, runningApp:NSRunningApplication){
+    if intentionBlockedUrlsWcObj != nil{
+        if intentionBlockedUrlsWcObj?.window?.isVisible ?? false{
+            if intentionBlockedUrlsVcObj?.tabUrl != domain{
+                intentionBlockedUrlsWcObj?.window?.close()
+            }
+        }
+    }
+    if setIntentionBlockedUrlsWcObj != nil{
+        if setIntentionBlockedUrlsWcObj?.window?.isVisible ?? false{
+            if setIntentionBlockedUrlsVcObj?.tabUrl == domain{
+                exitFullScreen(runningApp: runningApp)
+            }else{
+                setIntentionBlockedUrlsVcObj?.closeWindow()
+            }
+        }
+    }
+}
+
+func closeIntentionBlockedAppsWinddowIfVisible(){
+    if intentionBlockedAppsWcObj != nil{
+        if intentionBlockedAppsWcObj?.window?.isVisible ?? false{
+            intentionBlockedAppsWcObj?.window?.close()
         }
     }
 }

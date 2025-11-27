@@ -2110,7 +2110,7 @@ class thirdVc: NSViewController {
         }
         isAnyAllowedFocusModeActivityRunning = false
         currentHabitPlaying = nil
-        appdelegate?.timerAllowUrlForActivity?.invalidate()
+        habitBlockTimerHelper.stopUrlTimer()
         appdelegate?.timerAllowAppForActivity?.invalidate()
         closePupUpBlockIfVisible()
         
@@ -2406,7 +2406,7 @@ class thirdVc: NSViewController {
         }
         isAnyAllowedFocusModeActivityRunning = false
         currentHabitPlaying = nil
-        appdelegate?.timerAllowUrlForActivity?.invalidate()
+        habitBlockTimerHelper.stopUrlTimer()
         appdelegate?.timerAllowAppForActivity?.invalidate()
         closePupUpBlockIfVisible()
 
@@ -2762,7 +2762,7 @@ class thirdVc: NSViewController {
         }
         isAnyAllowedFocusModeActivityRunning = false
         currentHabitPlaying = nil
-        appdelegate?.timerAllowUrlForActivity?.invalidate()
+        habitBlockTimerHelper.stopUrlTimer()
         appdelegate?.timerAllowAppForActivity?.invalidate()
         closePupUpBlockIfVisible()
         
@@ -3197,7 +3197,7 @@ class thirdVc: NSViewController {
         }
         isAnyAllowedFocusModeActivityRunning = false
         currentHabitPlaying = nil
-        appdelegate?.timerAllowUrlForActivity?.invalidate()
+        habitBlockTimerHelper.stopUrlTimer()
         appdelegate?.timerAllowAppForActivity?.invalidate()
         closePupUpBlockIfVisible()
 

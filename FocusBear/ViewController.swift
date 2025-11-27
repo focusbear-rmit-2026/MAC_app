@@ -537,6 +537,9 @@ class ViewController: NSViewController {
     func showTaskView(){
         self.removeSubViews()
         if isFocusModeRunning || isAnyAllowedFocusModeActivityRunning || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
+            if taskPlayerVcObj == nil{
+                getTaskPlayerVcObject().loadView()// handled in v2.27.435 otherwise app can be crash when focus resumes automatically after app opens(remaining focus mode) // todo load todo player for this
+            }
             containerView.addSubview(taskPlayerVcObj!.view)
             containerView.addConstraints(subView: taskPlayerVcObj!.view)
             if shouldReloadTaskPlayer{

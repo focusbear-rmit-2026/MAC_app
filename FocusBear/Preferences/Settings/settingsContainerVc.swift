@@ -68,23 +68,6 @@ class settingsContainerVc: NSViewController {
     }
     
     override func viewDidAppear() {
-       // if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-//            if passwordVcObj != nil{
-//                if containerView.subviews.contains(passwordVcObj!.view){
-//                    if shouldAskPassword(){
-//                        if !isPasswordRequireInOpenSettingsEnabled(){
-////                            tabview.view.addSubview(getEnterPasswordVcObjForPreferences().view)
-////                            tabview.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
-////                            getEnterPasswordVcObjForPreferences().parentVc = nil
-////                            enterPasswordVcObjForPreferences?.removeConstraints()
-//                            
-//                            mainViewControllerObj?.askPasswordForSettingsIfNeeded()
-//                            addLog(text: "Showing enter password view inside preferences")
-//                        }
-//                    }
-//                }
-//            }
-       // }
         
         if SettingsManagerObject.isGeekModeEnabled{
             segmentControlGeekMode.setSelected(true, forSegment: 0)
@@ -109,32 +92,19 @@ class settingsContainerVc: NSViewController {
         self.containerView.addSubview(getPomodoroSettingsVcObject().view)
         self.containerView.addConstraints(subView: getPomodoroSettingsVcObject().view)
     }
+    
     func showStrictnessView(){
         // for simple mode if strictness tab is selected and back button is clicked
-//        if !SettingsManagerObject.isGeekModeEnabled{
-            
-        
-//        if self.view.window?.windowController == preferencesWindowControllerObj{
-//            if let tabview = preferencesWindowControllerObj?.contentViewController as? preferencesTabViewController{
-//                let selectedTabViewItem = tabview.tabViewItems[tabview.selectedTabViewItemIndex]
-//                if selectedTabViewItem.identifier as? String == idTabStrictness && tabview.tabViewItemStrictnesss != nil{
-//                    tabStrictnessContainerVcObj?.showStrictnessView()
-//                    return;
-//                }
-//            }
-//        }else{
-            if leftMenuVcObj?.boxBlocks.isSelected ?? false{
-                tabStrictnessContainerVcObj?.showStrictnessView()
-                return;
-            }
-//        }
-        
-//        }
+        if leftMenuVcObj?.boxBlocks.isSelected ?? false{
+            tabStrictnessContainerVcObj?.showStrictnessView()
+            return;
+        }
         //----------------------------------------------------//
         removeSubViews()
         self.containerView.addSubview(getStrictnessVcObject().view)
         self.containerView.addConstraints(subView: getStrictnessVcObject().view)
     }
+    
     func showPasswordView(){
         removeSubViews()
         self.containerView.addSubview(getPasswordVcObject().view)

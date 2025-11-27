@@ -9,6 +9,7 @@ import Cocoa
 
 class enterPasswordVc: NSViewController, NSTextFieldDelegate {
    
+    @IBOutlet weak var customViewAccountabilityBuddy: NSView!
     @IBOutlet weak var mainView: NSView!
     
     @IBOutlet weak var blockingView: BlockingView!
@@ -22,6 +23,10 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
     @IBOutlet weak var tabView: NSTabView!
     @IBOutlet weak var tabViewItemEnterCharacters: NSTabViewItem!
     @IBOutlet weak var tabViewItemPassword: NSTabViewItem!
+    @IBOutlet weak var tabViewItemAccountabilityBuddy: NSTabViewItem!
+    
+    
+    
     @IBOutlet weak var lblError: NSTextField!
     @IBOutlet weak var lblTitle: NSTextField!
     @IBOutlet weak var textFieldPassword: NSSecureTextField!
@@ -29,12 +34,28 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
     @IBOutlet weak var btnOk: NSButton!
     @IBOutlet weak var btnCancel: NSButton!
     
+    @IBOutlet weak var stackViewTitle: NSStackView!
+    @IBOutlet weak var stackViewTextField: NSStackView!
+    
     var isCurrentViewInMainWindow = false
     var buttonResetPasswordText = "Reset Password"
     var randomCharacters = ""
     var parentVc:NSViewController?
     var isShowingForRelaxFocusMode = false
     var isShowingForDeactivatingApp = false
+    
+    
+    
+    
+    var accountabilityBuddyVcObj:accountabilityBuddyVc?
+    func getAccountabilityBuddyVcObject()->accountabilityBuddyVc{
+        if accountabilityBuddyVcObj == nil{
+            accountabilityBuddyVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("accountabilityBuddyVc")) as? accountabilityBuddyVc
+        }
+        return accountabilityBuddyVcObj!
+    }
+
+    
     override func viewDidLoad() {
         super.viewDidLoad()
 //        trailingBox.p
@@ -46,6 +67,9 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
         tabViewItemEnterCharacters.label = "Type random characters"
         textFieldRandomString.placeholderString = "Type random characters"
 
+        tabViewItemAccountabilityBuddy.label = "Accountability Buddy"
+        
+        
         if let enterPasswordViewInfo = configjson.value(forKey: "enterPasswordViewInfo") as? NSDictionary{
             if let title = enterPasswordViewInfo.value(forKey: "title") as? String{
                 lblTitle.stringValue = title
@@ -60,6 +84,8 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
             tabViewItemPassword.label = enterPasswordViewInfo.value(forKey: "tabViewPasswordTitle") as? String ?? tabViewItemPassword.label
             tabViewItemEnterCharacters.label = enterPasswordViewInfo.value(forKey: "tabViewRandomCharactersTitle") as? String ?? tabViewItemEnterCharacters.label
             textFieldRandomString.placeholderString = enterPasswordViewInfo.value(forKey: "tabViewRandomCharactersTitle") as? String ?? textFieldRandomString.placeholderString
+            
+            tabViewItemAccountabilityBuddy.label = enterPasswordViewInfo.value(forKey: "tabViewAccountabilityBuddyTitle") as? String ?? tabViewItemAccountabilityBuddy.label
         }
         btnResetPassword.title = buttonResetPasswordText
         
@@ -71,6 +97,24 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
         
         
     }
+    
+    func hidePasswordView(){
+        stackViewTextField.isHidden = true
+        stackViewTitle.isHidden = true
+        btnOk.isHidden = true
+        btnCancel.isHidden = true
+        lblError.isHidden = true
+    }
+    
+    func showPasswordView(){
+        stackViewTextField.isHidden = false
+        stackViewTitle.isHidden = false
+        btnOk.isHidden = false
+        btnCancel.isHidden = false
+        
+        lblError.isHidden = true// keep it true
+    }
+    
     
     func removeConstraints(){
         if topBox != nil{
@@ -107,6 +151,7 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
             tabView.selectTabViewItem(tabViewItemPassword)
         }
     }
+    
     override func viewWillDisappear() {
         // Hide password dialogue from screenshots  #1276  // reset after password view removes
         if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
@@ -117,15 +162,17 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
             }
         }
     }
+    
     override func viewDidDisappear() {
         
     }
+    
     override func viewDidAppear() {
         textFieldPassword.selectText(self)
         textFieldPassword.currentEditor()?.selectedRange = NSRange(location: 0, length: 0)
         
         //Hide password dialogue from screenshots  #1276
-        self.view.window?.sharingType = .none
+        self.view.window?.sharingType = .none 
     }
     
     @IBAction func btnOkClicked(_ sender: Any) {
@@ -785,6 +832,9 @@ extension enterPasswordVc:NSTabViewDelegate{
                 lblTitle.stringValue = enterPasswordViewInfo.value(forKey: "title") as? String ?? lblTitle.stringValue
                 textFieldPassword.placeholderString = enterPasswordViewInfo.value(forKey: "passwordPlaceholderText") as? String ?? textFieldPassword.placeholderString
             }
+            showPasswordView()
+            customViewAccountabilityBuddy.isHidden = true
+            customViewAccountabilityBuddy.subviews.forEach { $0.removeFromSuperview() }
         }else if tabViewItem == tabViewItemEnterCharacters{
             textFieldPassword.isHidden = true
             textFieldRandomString.isHidden = false
@@ -800,6 +850,18 @@ extension enterPasswordVc:NSTabViewDelegate{
             lblRandomString.isHidden = false
             
             lblTitle.stringValue = title
+            showPasswordView()
+            customViewAccountabilityBuddy.isHidden = true
+            customViewAccountabilityBuddy.subviews.forEach { $0.removeFromSuperview() }
+        }else if tabViewItem == tabViewItemAccountabilityBuddy{
+            hidePasswordView()
+            customViewAccountabilityBuddy.isHidden = false
+            if !getAccountabilityBuddyVcObject().isViewLoaded{
+                getAccountabilityBuddyVcObject().loadView()
+            }
+            getAccountabilityBuddyVcObject().enterPasswordVcObj = self
+            customViewAccountabilityBuddy.addSubview(getAccountabilityBuddyVcObject().view)
+            customViewAccountabilityBuddy.addConstraints(subView: getAccountabilityBuddyVcObject().view)
             
         }
     }

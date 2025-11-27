@@ -21,7 +21,7 @@ class helpVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate 
     @IBOutlet weak var webViewCourses: WKWebView!
     @IBOutlet weak var btnDontUseDiscord: underLineButton!
     @IBOutlet weak var btnJoinDiscordServer: Button!
-    @IBOutlet var textView: customTexView!
+    @IBOutlet var textView: placeHolderTextView!
 //    @IBOutlet weak var webView: WKWebView!
 //    @IBOutlet weak var tabViewChatWthApp: NSTabViewItem!
     @IBOutlet weak var tabViewReportProblem: NSTabViewItem!

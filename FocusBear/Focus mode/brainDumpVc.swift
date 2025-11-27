@@ -108,7 +108,7 @@ class brainDumpVc: NSViewController, NSTextViewDelegate{
         }
         if let url = webView.url{
             let urlString = url.absoluteString
-            for turl in appdelegate!.defaultAllowedUrl{
+            for turl in defaultAllowedUrl{
                 if urlString.contains(turl){
                     return;
                 }
@@ -126,7 +126,7 @@ class brainDumpVc: NSViewController, NSTextViewDelegate{
                 let arrBlockedUrls = getBlockedUrlsToBlock()
                 for turl in arrBlockedUrls{
                     //Change all suggested blocked apps in onboarding to start with https:// #1233
-                    let bool = appdelegate!.validation.isUrlAlwaysBlocked(urlToCheck: urlString, blockedUrl: turl)
+                    let bool = validation.isUrlAlwaysBlocked(urlToCheck: urlString, blockedUrl: turl)
                     if bool{
                         blockCurrentUrl(isAlwaysBlock:true, oldUrl: urlString)
                         return;
@@ -138,7 +138,7 @@ class brainDumpVc: NSViewController, NSTextViewDelegate{
             if isFocusModeRunning || isAnyAllowedFocusModeActivityRunning || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
                 let arrBlockedUrlsForFocus = currentRunningFocusType["blockUrlsArray"] as? [String] ?? []
                 for turl in arrBlockedUrlsForFocus{
-                    let isBlocked = appdelegate!.validation.isUrlValid(urlToCheck: urlString, allowUrl: turl)
+                    let isBlocked = validation.isUrlValid(urlToCheck: urlString, allowUrl: turl)
                     if isBlocked{
                         blockCurrentUrl(isAlwaysBlock:false, oldUrl: urlString)
                         return;
@@ -150,7 +150,7 @@ class brainDumpVc: NSViewController, NSTextViewDelegate{
                     let arrAllowedUrlsForFocus = currentRunningFocusType["allowed_urls"] as? [String] ?? []
                     var isAllowed = false
                     for turl in arrAllowedUrlsForFocus{
-                        isAllowed = appdelegate!.validation.isUrlValid(urlToCheck: urlString, allowUrl: turl)
+                        isAllowed = validation.isUrlValid(urlToCheck: urlString, allowUrl: turl)
                         if isAllowed{
                             break;
                         }

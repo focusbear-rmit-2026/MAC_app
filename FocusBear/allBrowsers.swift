@@ -199,6 +199,125 @@ func getBrowserAllTabUrlAndTitle(browser:BROWSER)->[(title: String, url: String)
 }
 
 
+
+func getActiveTabUrlForBlocking(browser:BROWSER)->String?{
+    addLog(text:"func call:- getActiveTabUrl")
+    
+    if UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) == nil{
+        addLog(text:"Browsers Permissions is not Set By User return;")
+        return nil
+    }
+    var url:String?
+    if browser == ._SAFARI_{
+        url = getSafariActiveTabUrl()
+    }else if browser == ._GOOGLE_CHROME_{
+        url = getGoogleChromeActiveTabUrl()
+    }else if browser == ._OPERA_{
+        url = getOperaActiveTabUrl()
+    }else if browser == ._OPERA_GX_{
+        url = getOperaGxActiveTabUrl()
+    }else if browser == ._VIVALDI_{
+        url = getVivaldiActiveTabUrl()
+    }else if browser == ._BRAVE_BROWSER_{
+        url = getBraveBrowserActiveTabUrl()
+    }else if browser == ._SIDEKICK_{
+        url = getSidekickBrowserActiveTabUrl()
+    }else if browser == ._MICROSOFT_EDGE_{
+        url = getMicrosoftEdgeActiveTabUrl()
+    }else if browser == ._ARC_{
+        url = getArcBrowserActiveTabUrl()
+    }else if browser == ._FIREFOX_{
+        url = getFirefoxActiveTabUrl()
+    }else if browser == ._SIGMA_OS_{
+        url = getSigmaOSBrowserActiveTabUrl()
+    }
+    //****************Blocking Issue #1249*****************//
+    //detect if the user has not set up permissions for a browser and show a warning//
+//    if url == nil && browser != ._FIREFOX_{
+//        if UserDefaults.standard.object(forKey: kUserdefaultsIsUserLoggedIn) as? Bool != nil{
+//            if !permissionAlertShownInfoDic.contains(browser){
+//                // show alert
+//                permissionAlertShownInfoDic.append(browser)
+//                
+//                var buttonLearnMoreText = "Learn more"
+//                var urlError = "Unable to get <APPNAME> URL. Please check permissions. Do you want to Open System Preferences -> Security & Privacy > Privacy and check if <APPNAME> is allowed to be accessed by Focus Bear under Automation?"
+//                
+//                if #available(macOS 13.0, *) {
+//                    urlError = "Unable to get <APPNAME> URL. Please check permissions. Do you want to Open System Preferences -> Privacy & Security and check if <APPNAME> is allowed to be accessed by Focus Bear under Automation?"
+//                    
+//                    if let onboardingControllingBrowserVcInfo = configjson.value(forKey: "onboardingControllingBrowserVcInfo") as? NSDictionary{
+//                        urlError = onboardingControllingBrowserVcInfo.value(forKey: "alertOpenPreferencesLatestOsText") as? String ?? urlError
+//                    }
+//                }else {
+//                    urlError = "Unable to get <APPNAME> URL. Please check permissions. Do you want to Open System Preferences -> Security & Privacy > Privacy and check if <APPNAME> is allowed to be accessed by Focus Bear under Automation?"
+//                    
+//                    if let onboardingControllingBrowserVcInfo = configjson.value(forKey: "onboardingControllingBrowserVcInfo") as? NSDictionary{
+//                        urlError = onboardingControllingBrowserVcInfo.value(forKey: "alertOpenPreferencesText") as? String ?? urlError
+//                    }
+//                }
+//                
+//                let appName = getCurrentBrowserNameFrom(browser: browser) ?? ""
+//                urlError = urlError.replacingOccurrences(of: "<APPNAME>", with: appName)
+//                var buttonPreferencesText = "Open System Preferences"
+//                
+//                
+//                if let firefoxPermissionsVcInfo = configjson.value(forKey: "firefoxPermissionsVcInfo") as? NSDictionary{
+//                    buttonPreferencesText = firefoxPermissionsVcInfo.value(forKey: "buttonPreferencesText") as? String ?? buttonPreferencesText
+//                }
+//                if let onboardingControllingBrowserVcInfo = configjson.value(forKey: "onboardingControllingBrowserVcInfo") as? NSDictionary{
+//                    buttonLearnMoreText = onboardingControllingBrowserVcInfo.value(forKey: "buttonLearnMoreText") as? String ?? buttonLearnMoreText
+//                }
+//                if isBrowserRunning(browserName: appName){
+//                    DispatchQueue.main.async {
+//                        showCustomAlert(title: urlError, body: nil, buttonOkText: buttonPreferencesText, buttonCancelText: buttonCancelText, checkBoxText: nil, autoClose: false, buttonLinkUrl:"https://support.focusbear.io/portal/en/kb/articles/how-to-set-up-accessibility-permissions-for-focus-bear", buttonLinkText: buttonLearnMoreText, completionHandler: {isOkClicked in
+//                            print(isOkClicked)
+//                            if isOkClicked{
+//                                let urlstring = "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation";
+//                                NSWorkspace.shared.open(URL(string: urlstring)!)
+//                            }
+//                        })
+//                    }
+//                    
+//                }
+//            }
+//        }
+//    }
+    //--------------------------------------------//
+    // check which browser is allowed in automation
+    if url != nil{
+        if var arrBrowsersInfo = UserDefaults.standard.object(forKey: kUserdefaultsAllBrowsersPermissionInfo) as? [[String : Any]]{
+            for i in 0..<arrBrowsersInfo.count{
+                let info = arrBrowsersInfo[i]
+                let browserRawValue = info["browser"] as? Int ?? 0
+                if browser.rawValue == browserRawValue{
+                    arrBrowsersInfo[i]["isEnabled"] = true
+                    break;
+                }
+            }
+            UserDefaults.standard.set(arrBrowsersInfo, forKey: kUserdefaultsAllBrowsersPermissionInfo)
+        }
+    }else if browser == ._FIREFOX_{// may be extension not installed. for old users because from now firefox blocking is based on extension v 2.27.435
+        if var arrBrowsersInfo = UserDefaults.standard.object(forKey: kUserdefaultsAllBrowsersPermissionInfo) as? [[String : Any]]{
+            for i in 0..<arrBrowsersInfo.count{
+                let info = arrBrowsersInfo[i]
+                let browserRawValue = info["browser"] as? Int ?? 0
+                if browser.rawValue == browserRawValue{
+                    arrBrowsersInfo[i]["isEnabled"] = false
+                    break;
+                }
+            }
+            UserDefaults.standard.set(arrBrowsersInfo, forKey: kUserdefaultsAllBrowsersPermissionInfo)
+        }
+    }
+    if let url = url{
+        if url.isEmpty{
+            addLog(text:"url is empty return;")
+            return nil;  //is blank then return nil so we will not read this // 26/4/25
+        }
+    }
+    return url
+}
+
 var permissionAlertShownInfoDic = [BROWSER]()
 func getActiveTabUrlOf(browser:BROWSER)->String?{
     addLog(text:"func call:- getActiveTabUrl")
@@ -233,52 +352,52 @@ func getActiveTabUrlOf(browser:BROWSER)->String?{
     }
     //****************Blocking Issue #1249*****************//
     //detect if the user has not set up permissions for a browser and show a warning//
-    if url == nil && browser != ._FIREFOX_{
-        if UserDefaults.standard.object(forKey: kUserdefaultsIsUserLoggedIn) as? Bool != nil{
-            if !permissionAlertShownInfoDic.contains(browser){
-                // show alert
-                permissionAlertShownInfoDic.append(browser)
-                
-                var buttonLearnMoreText = "Learn more"
-                var urlError = "Unable to get <APPNAME> URL. Please check permissions. Do you want to Open System Preferences -> Security & Privacy > Privacy and check if <APPNAME> is allowed to be accessed by Focus Bear under Automation?"
-                
-                if #available(macOS 13.0, *) {
-                    urlError = "Unable to get <APPNAME> URL. Please check permissions. Do you want to Open System Preferences -> Privacy & Security and check if <APPNAME> is allowed to be accessed by Focus Bear under Automation?"
-                    
-                    if let onboardingControllingBrowserVcInfo = configjson.value(forKey: "onboardingControllingBrowserVcInfo") as? NSDictionary{
-                        urlError = onboardingControllingBrowserVcInfo.value(forKey: "alertOpenPreferencesLatestOsText") as? String ?? urlError
-                    }
-                }else {
-                    urlError = "Unable to get <APPNAME> URL. Please check permissions. Do you want to Open System Preferences -> Security & Privacy > Privacy and check if <APPNAME> is allowed to be accessed by Focus Bear under Automation?"
-                    
-                    if let onboardingControllingBrowserVcInfo = configjson.value(forKey: "onboardingControllingBrowserVcInfo") as? NSDictionary{
-                        urlError = onboardingControllingBrowserVcInfo.value(forKey: "alertOpenPreferencesText") as? String ?? urlError
-                    }
-                }
-                
-                let appName = getCurrentBrowserNameFrom(browser: browser) ?? ""
-                urlError = urlError.replacingOccurrences(of: "<APPNAME>", with: appName)
-                var buttonPreferencesText = "Open System Preferences"
-                
-                
-                if let firefoxPermissionsVcInfo = configjson.value(forKey: "firefoxPermissionsVcInfo") as? NSDictionary{
-                    buttonPreferencesText = firefoxPermissionsVcInfo.value(forKey: "buttonPreferencesText") as? String ?? buttonPreferencesText
-                }
-                if let onboardingControllingBrowserVcInfo = configjson.value(forKey: "onboardingControllingBrowserVcInfo") as? NSDictionary{
-                    buttonLearnMoreText = onboardingControllingBrowserVcInfo.value(forKey: "buttonLearnMoreText") as? String ?? buttonLearnMoreText
-                }
-                if isBrowserRunning(browserName: appName){
-                    showCustomAlert(title: urlError, body: nil, buttonOkText: buttonPreferencesText, buttonCancelText: buttonCancelText, checkBoxText: nil, autoClose: false, buttonLinkUrl:"https://support.focusbear.io/portal/en/kb/articles/how-to-set-up-accessibility-permissions-for-focus-bear", buttonLinkText: buttonLearnMoreText, completionHandler: {isOkClicked in
-                        print(isOkClicked)
-                        if isOkClicked{
-                            let urlstring = "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation";
-                            NSWorkspace.shared.open(URL(string: urlstring)!)
-                        }
-                    })
-                }
-            }
-        }
-    }
+//    if url == nil && browser != ._FIREFOX_{
+//        if UserDefaults.standard.object(forKey: kUserdefaultsIsUserLoggedIn) as? Bool != nil{
+//            if !permissionAlertShownInfoDic.contains(browser){
+//                // show alert
+//                permissionAlertShownInfoDic.append(browser)
+//                
+//                var buttonLearnMoreText = "Learn more"
+//                var urlError = "Unable to get <APPNAME> URL. Please check permissions. Do you want to Open System Preferences -> Security & Privacy > Privacy and check if <APPNAME> is allowed to be accessed by Focus Bear under Automation?"
+//                
+//                if #available(macOS 13.0, *) {
+//                    urlError = "Unable to get <APPNAME> URL. Please check permissions. Do you want to Open System Preferences -> Privacy & Security and check if <APPNAME> is allowed to be accessed by Focus Bear under Automation?"
+//                    
+//                    if let onboardingControllingBrowserVcInfo = configjson.value(forKey: "onboardingControllingBrowserVcInfo") as? NSDictionary{
+//                        urlError = onboardingControllingBrowserVcInfo.value(forKey: "alertOpenPreferencesLatestOsText") as? String ?? urlError
+//                    }
+//                }else {
+//                    urlError = "Unable to get <APPNAME> URL. Please check permissions. Do you want to Open System Preferences -> Security & Privacy > Privacy and check if <APPNAME> is allowed to be accessed by Focus Bear under Automation?"
+//                    
+//                    if let onboardingControllingBrowserVcInfo = configjson.value(forKey: "onboardingControllingBrowserVcInfo") as? NSDictionary{
+//                        urlError = onboardingControllingBrowserVcInfo.value(forKey: "alertOpenPreferencesText") as? String ?? urlError
+//                    }
+//                }
+//                
+//                let appName = getCurrentBrowserNameFrom(browser: browser) ?? ""
+//                urlError = urlError.replacingOccurrences(of: "<APPNAME>", with: appName)
+//                var buttonPreferencesText = "Open System Preferences"
+//                
+//                
+//                if let firefoxPermissionsVcInfo = configjson.value(forKey: "firefoxPermissionsVcInfo") as? NSDictionary{
+//                    buttonPreferencesText = firefoxPermissionsVcInfo.value(forKey: "buttonPreferencesText") as? String ?? buttonPreferencesText
+//                }
+//                if let onboardingControllingBrowserVcInfo = configjson.value(forKey: "onboardingControllingBrowserVcInfo") as? NSDictionary{
+//                    buttonLearnMoreText = onboardingControllingBrowserVcInfo.value(forKey: "buttonLearnMoreText") as? String ?? buttonLearnMoreText
+//                }
+//                if isBrowserRunning(browserName: appName){
+//                    showCustomAlert(title: urlError, body: nil, buttonOkText: buttonPreferencesText, buttonCancelText: buttonCancelText, checkBoxText: nil, autoClose: false, buttonLinkUrl:"https://support.focusbear.io/portal/en/kb/articles/how-to-set-up-accessibility-permissions-for-focus-bear", buttonLinkText: buttonLearnMoreText, completionHandler: {isOkClicked in
+//                        print(isOkClicked)
+//                        if isOkClicked{
+//                            let urlstring = "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation";
+//                            NSWorkspace.shared.open(URL(string: urlstring)!)
+//                        }
+//                    })
+//                }
+//            }
+//        }
+//    }
     //--------------------------------------------//
     // check which browser is allowed in automation
     if url != nil{
@@ -334,15 +453,7 @@ func getActiveTabTitleOf(browser:BROWSER)->String?{
 }
 
 
-var safariWindowsInfo = [String:[String]]()
-var googleChromeWindowsInfo = [String:[String]]()
-var operaWindowsInfo = [String:[String]]()
-var vivaldiWindowsInfo = [String:[String]]()
-var braveBrowserWindowsInfo = [String:[String]]()
-var sidekickWindowsInfo = [String:[String]]()
-var microsoftEdgeWindowsInfo = [String:[String]]()
-var arcBrowserTabsInfo = [String]()
-var operaGxWindowsInfo = [String:[String]]()
+
 
 
 
@@ -696,23 +807,27 @@ func setUrlToBrowser(browser:BROWSER, url:String){
                 end tell
                 """
     }else if browser == ._FIREFOX_{
-        if isVersionLower(currentVersion: fireFoxLatestVersion, referenceVersion: "133.0.3"){
-            script = """
-                    tell application "System Events" to set value of UI element 1 of combo box 1 of toolbar "Navigation" of first group of front window of application process "Firefox" to "\(url)"
-                    tell application "Firefox"
-                    activate
-                    end tell
-                    tell application "System Events" to key code 36
-                    """
-        }else{
-            script = """
-                    tell application "System Events" to set value of text field 1 of combo box 1 of group 1 of toolbar "Navigation" of first group of front window of application process "Firefox" to "\(url)"
-                    tell application "Firefox"
-                    activate
-                    end tell
-                    tell application "System Events" to key code 36
-                    """
-        }
+        
+        firefoxServer.sendUnBlockNow(url: url)
+        return;//
+        
+//        if isVersionLower(currentVersion: fireFoxLatestVersion, referenceVersion: "133.0.3"){
+//            script = """
+//                    tell application "System Events" to set value of UI element 1 of combo box 1 of toolbar "Navigation" of first group of front window of application process "Firefox" to "\(url)"
+//                    tell application "Firefox"
+//                    activate
+//                    end tell
+//                    tell application "System Events" to key code 36
+//                    """
+//        }else{
+//            script = """
+//                    tell application "System Events" to set value of text field 1 of combo box 1 of group 1 of toolbar "Navigation" of first group of front window of application process "Firefox" to "\(url)"
+//                    tell application "Firefox"
+//                    activate
+//                    end tell
+//                    tell application "System Events" to key code 36
+//                    """
+//        }
         
     }else if browser == ._SIGMA_OS_{
         script = """
@@ -813,129 +928,81 @@ func isVersionLower(currentVersion: String, referenceVersion: String) -> Bool {
 }
 
 func getFirefoxActiveTabUrl()->String?{
+    return firefoxServer.currentTabUrl
     
-    var script: String = ""
-    if let currentVersion = getFireFoxVersion(){
-        fireFoxLatestVersion = currentVersion
-        print("version of firefox is:-")
-        print(currentVersion)
-        
-        if isVersionLower(currentVersion: currentVersion, referenceVersion: "133.0.3"){
-            script =
-            """
-            tell application "System Events" to set isFocused to focused of UI element 1 of combo box 1 of toolbar "Navigation" of first group of front window of application process "Firefox"
-            if isFocused = false then
-                        
-            tell application "System Events" to set urlValue to value of UI element 1 of combo box 1 of toolbar "Navigation" of first group of front window of application process "Firefox"
-            end if
-            """
-        }else{
-            script =
-            """
-            tell application "System Events" to set urlValue to value of text field 1 of combo box 1 of group 1 of toolbar "Navigation" of first group of front window of application process "Firefox"
-            """
-        }
-    }else{
-        script =
-        """
-        tell application "System Events" to set urlValue to value of text field 1 of combo box 1 of group 1 of toolbar "Navigation" of first group of front window of application process "Firefox"
-        """
-    }
-    
-    if let appleScript = NSAppleScript(source: script) {
-        var errors : NSDictionary? = nil
-        let desc = appleScript.executeAndReturnError(&errors)
-        if errors != nil {
-            print(errors!)
-            if let errorCode = errors?.value(forKey: "NSAppleScriptErrorNumber") as? Int{
-                if let browser = getCurrentBrowserFrom(browserName: "firefox"){
-                    if errorCode == -1743{
-                        if var arrBrowsersInfo = UserDefaults.standard.object(forKey: kUserdefaultsAllBrowsersPermissionInfo) as? [[String : Any]]{
-                            for i in 0..<arrBrowsersInfo.count{
-                                let info = arrBrowsersInfo[i]
-                                let browserRawValue = info["browser"] as? Int ?? 0
-                                if browser.rawValue == browserRawValue{
-                                    arrBrowsersInfo[i]["isEnabled"] = false
-                                    break;
-                                }
-                            }
-                            UserDefaults.standard.set(arrBrowsersInfo, forKey: kUserdefaultsAllBrowsersPermissionInfo)
-                        }
-                    }else if desc.stringValue == nil{
-                        return ""
-                    }
-                }
-            }
-        }
-        return desc.stringValue?.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)
-    }
-    return nil
+//    var script: String = ""
+//    if let currentVersion = getFireFoxVersion(){
+//        fireFoxLatestVersion = currentVersion
+//        print("version of firefox is:-")
+//        print(currentVersion)
+//        
+//        if isVersionLower(currentVersion: currentVersion, referenceVersion: "133.0.3"){
+//            script =
+//            """
+//            tell application "System Events" to set isFocused to focused of UI element 1 of combo box 1 of toolbar "Navigation" of first group of front window of application process "Firefox"
+//            if isFocused = false then
+//                        
+//            tell application "System Events" to set urlValue to value of UI element 1 of combo box 1 of toolbar "Navigation" of first group of front window of application process "Firefox"
+//            end if
+//            """
+//        }else{
+//            script =
+//            """
+//            tell application "System Events" to set urlValue to value of text field 1 of combo box 1 of group 1 of toolbar "Navigation" of first group of front window of application process "Firefox"
+//            """
+//        }
+//    }else{
+//        script =
+//        """
+//        tell application "System Events" to set urlValue to value of text field 1 of combo box 1 of group 1 of toolbar "Navigation" of first group of front window of application process "Firefox"
+//        """
+//    }
+//    
+//    if let appleScript = NSAppleScript(source: script) {
+//        var errors : NSDictionary? = nil
+//        let desc = appleScript.executeAndReturnError(&errors)
+//        if errors != nil {
+//            print(errors!)
+//            if let errorCode = errors?.value(forKey: "NSAppleScriptErrorNumber") as? Int{
+//                if let browser = getCurrentBrowserFrom(browserName: "firefox"){
+//                    if errorCode == -1743{
+//                        if var arrBrowsersInfo = UserDefaults.standard.object(forKey: kUserdefaultsAllBrowsersPermissionInfo) as? [[String : Any]]{
+//                            for i in 0..<arrBrowsersInfo.count{
+//                                let info = arrBrowsersInfo[i]
+//                                let browserRawValue = info["browser"] as? Int ?? 0
+//                                if browser.rawValue == browserRawValue{
+//                                    arrBrowsersInfo[i]["isEnabled"] = false
+//                                    break;
+//                                }
+//                            }
+//                            UserDefaults.standard.set(arrBrowsersInfo, forKey: kUserdefaultsAllBrowsersPermissionInfo)
+//                        }
+//                    }else if desc.stringValue == nil{
+//                        return ""
+//                    }
+//                }
+//            }
+//        }
+//        return desc.stringValue?.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)
+//    }
+//    return nil
 }
 
-func getFirefoxActiveTabTitle()->String?{
-    var script: String = ""
+func getFirefoxActiveTabTitle()->String?{//
+    return firefoxServer.currentTabTitle
     
-    script =
-    """
-    tell application "Firefox"
-    set the_title to name of windows's item 1
-    end tell
-    """
-    
-    return executeScriptAndReturnString(script: script)
+//    var script: String = ""
+//    
+//    script =
+//    """
+//    tell application "Firefox"
+//    set the_title to name of windows's item 1
+//    end tell
+//    """
+//    
+//    return executeScriptAndReturnString(script: script)
 }
 
-
-
-
-func getZenActiveTabUrl()->String?{// not in use delete this after some time
-    
-    var script =
-        """
-        tell application "System Events"
-        set frontApp to name of first application process whose frontmost is true
-        if frontApp is not "Zen" then return "Zen Browser not in front"
-            
-        tell process "Zen"
-        try
-        set theURL to value of attribute "AXDocument" of front window
-        return theURL
-        on error
-        return "Could not retrieve URL"
-        end try
-        end tell
-        end tell
-        """
-    
-    if let appleScript = NSAppleScript(source: script) {
-        var errors : NSDictionary? = nil
-        let desc = appleScript.executeAndReturnError(&errors)
-        if errors != nil {
-            print(errors!)
-            if let errorCode = errors?.value(forKey: "NSAppleScriptErrorNumber") as? Int{
-                if let browser = getCurrentBrowserFrom(browserName: "firefox"){
-                    if errorCode == -1743{
-                        if var arrBrowsersInfo = UserDefaults.standard.object(forKey: kUserdefaultsAllBrowsersPermissionInfo) as? [[String : Any]]{
-                            for i in 0..<arrBrowsersInfo.count{
-                                let info = arrBrowsersInfo[i]
-                                let browserRawValue = info["browser"] as? Int ?? 0
-                                if browser.rawValue == browserRawValue{
-                                    arrBrowsersInfo[i]["isEnabled"] = false
-                                    break;
-                                }
-                            }
-                            UserDefaults.standard.set(arrBrowsersInfo, forKey: kUserdefaultsAllBrowsersPermissionInfo)
-                        }
-                    }else if desc.stringValue == nil{
-                        return ""
-                    }
-                }
-            }
-        }
-        return desc.stringValue?.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)
-    }
-    return nil
-}
 
 
 
@@ -1210,24 +1277,28 @@ func getFirefoxBlockScript(url:String)->String{
     let params = "<PARAMS>"
     let newPageParam = "<NEWPAGE>"
     
+    return """
+    old_url=\(url)&\(params)&encouraging_info=\(getGoalsAndFocusdJsonForBlockedScript())&version=\(appVersion)\(newPageParam)"
+    """
     
-    if isVersionLower(currentVersion: fireFoxLatestVersion, referenceVersion: "133.0.3"){
-        return """
-        tell application "System Events" to set value of UI element 1 of combo box 1 of toolbar "Navigation" of first group of front window of application process "Firefox" to "\(blockWebUrlString)?old_url=" & "\(url)" & "\(params)" & "&encouraging_info=\(getGoalsAndFocusdJsonForBlockedScript())" & "&version=\(appVersion)" & "\(newPageParam)"
-        tell application "Firefox"
-        activate
-        end tell
-        tell application "System Events" to key code 36
-        """
-    }else{
-        return """
-        tell application "System Events" to set value of text field 1 of combo box 1 of group 1 of toolbar "Navigation" of first group of front window of application process "Firefox" to "\(blockWebUrlString)?old_url=" & "\(url)" & "\(params)" & "&encouraging_info=\(getGoalsAndFocusdJsonForBlockedScript())" & "&version=\(appVersion)" & "\(newPageParam)"
-        tell application "Firefox"
-        activate
-        end tell
-        tell application "System Events" to key code 36
-        """
-    }
+   // return; //
+//    if isVersionLower(currentVersion: fireFoxLatestVersion, referenceVersion: "133.0.3"){
+//        return """
+//        tell application "System Events" to set value of UI element 1 of combo box 1 of toolbar "Navigation" of first group of front window of application process "Firefox" to "\(blockWebUrlString)?old_url=" & "\(url)" & "\(params)" & "&encouraging_info=\(getGoalsAndFocusdJsonForBlockedScript())" & "&version=\(appVersion)" & "\(newPageParam)"
+//        tell application "Firefox"
+//        activate
+//        end tell
+//        tell application "System Events" to key code 36
+//        """
+//    }else{
+//        return """
+//        tell application "System Events" to set value of text field 1 of combo box 1 of group 1 of toolbar "Navigation" of first group of front window of application process "Firefox" to "\(blockWebUrlString)?old_url=" & "\(url)" & "\(params)" & "&encouraging_info=\(getGoalsAndFocusdJsonForBlockedScript())" & "&version=\(appVersion)" & "\(newPageParam)"
+//        tell application "Firefox"
+//        activate
+//        end tell
+//        tell application "System Events" to key code 36
+//        """
+//    }
 }
 
 func getSigmaOsBrowserBlockScript(url:String)->String{
@@ -1699,3 +1770,5 @@ func getNumberOfOpenTabsPerBrowserInString()->(Int,String){
     }
     return (allBrowsersTabCount, title)
 }
+
+let firefoxServer = firefoxHttpServer()// for firefox

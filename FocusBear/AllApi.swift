@@ -283,44 +283,51 @@ class AllApi:NSObject {
     func captureEventEndpoint (event:String, metadata:[String:Any]){
         addLog(text: "captureEventEndpoint event: \(event)")
         
+        
+        guard (appdelegate!.credential?.accessToken) != nil else{
+            addLog(text: "func call:- captureEventEndpoint return:- no accessToken found")
+            return
+        }
+        
+        
+        var distinct_id = ""
+        if appdelegate!.user != nil{
+            if let userId = appdelegate!.user?.userId{
+                distinct_id = userId
+            }
+        }else{
+            distinct_id = globalUUID
+        }
+        
+        var properties = [String:Any]()
+        
+        
+        
+        for key in metadata.keys{
+            properties[key] = metadata[key]
+        }
+        var event_data = [String : Any]()
+        event_data = ["data":properties]
+        
+        var json: [String: Any] = [//todo let
+            "event_type": event,
+            "user_properties": [
+                "USERNAME": currentUserName,
+                "id": distinct_id,
+                "USES_MAC_APP": true
+            ],
+            "event_data": event_data
+        ]
+        
+        json["operating_system"] = "macos"// for new events endpoint #1536
+        EventBuffer.shared.addEvent(json)
+
+        /* old work
         let responsePath = "\(baseUrl)/events"
         if let responsePathUrl = NSURL(string: responsePath){
-            guard (appdelegate!.credential?.accessToken) != nil else{
-                addLog(text: "func call:- captureEventEndpoint return:- no accessToken found")
-                return
-            }
             let request = makeRequest(responsePathUrl: responsePathUrl)
             request.httpMethod = "POST";
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            
-            var distinct_id = ""
-            if appdelegate!.user != nil{
-                if let userId = appdelegate!.user?.userId{
-                    distinct_id = userId
-                }
-            }else{
-                distinct_id = globalUUID
-            }
-            
-            var properties = [String:Any]()
-            
-            
-            
-            for key in metadata.keys{
-                properties[key] = metadata[key]
-            }
-            var event_data = [String : Any]()
-            event_data = ["data":properties]
-            
-            let json: [String: Any] = [
-                "event_type": event,
-                "user_properties": [
-                    "USERNAME": currentUserName,
-                    "id": distinct_id,
-                    "USES_MAC_APP": true
-                ],
-                "event_data": event_data
-            ]
             
             let jsonData = try? JSONSerialization.data(withJSONObject: json)
             request.httpBody = jsonData
@@ -351,14 +358,15 @@ class AllApi:NSObject {
             
             return
         }
+         */
     }
     
     func capturePosthog(event:String, metadata:[String:Any]){
         if currentUserEmail.lowercased().contains("internaltest") || isTestUser{
-            return;
+            return;//todo uncomment this line  this line
         }
         captureEventEndpoint(event: event, metadata: metadata)
-        
+        return; //todo remove this line
         
         addLog(text: "capturePosthog event: \(event)")
         
@@ -670,8 +678,12 @@ class AllApi:NSObject {
     var isApigetuserLongTermGoalsErrorFound = false
     var isApiGetFocusModeTagsErrorFound = false
     var isApiGetAllTasksErrorFound = false
+    var isApiGetAllBuddiesErrorFound = false
+    var isApiGetUnlockRequestStatusErrorFound = false
     var isApiGetAllBlockingSchedulesErrorFound = false
     var isApiAddBlockingScheduleErrorFound = false
+    var isApiUnlockRequestErrorFound = false
+    
     var isApiUpdateBlockingScheduleErrorFound = false
     var isApiDeleteBlockingScheduleErrorFound = false
     
@@ -5766,6 +5778,268 @@ class AllApi:NSObject {
         }
     }
     
+    
+    func getAllBuddies(completionHandler: @escaping(_ result: [NSDictionary]?) -> ()) {
+        addLog(text: "func call:- getAllBuddies")
+        
+        appdelegate!.credentialsManager.credentials {credentialsInfo in
+            addLog(text: "get updated credentialsInfo from credentialsManager")
+            
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+            if appdelegate!.credential != nil{
+                let responsePath = "\(baseUrl)/accountability-buddy"
+                if let responsePathUrl = NSURL(string: responsePath){
+                    addLog(text: "api call getAllBuddies \(responsePathUrl)")
+                    let token = appdelegate!.credential!.accessToken
+                    
+                    let request = makeRequest(responsePathUrl: responsePathUrl)
+                    request.httpMethod = "GET";
+                    
+                    let task = URLSession.shared.dataTask(with: request as URLRequest) {
+                        data, response, error in
+                        
+                        if let httpResponse = response as? HTTPURLResponse {
+                            self.isApiGetAllBuddiesErrorFound = false
+                            if httpResponse.statusCode == 200{
+                                
+                                if data != nil{
+                                    do {
+                                        if let arrJsonResult: [NSDictionary] = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? [NSDictionary]{
+                                            
+                                            print(arrJsonResult)
+                                            completionHandler(arrJsonResult)
+                                            return;
+                                        }
+                                        
+                                    }catch{
+                                        print(error)
+                                        addLog(text: "error get getAllBuddies file: \(error.localizedDescription)")
+                                        completionHandler(nil)
+                                        return
+                                    }
+                                    
+                                }
+                                
+                                completionHandler(nil)
+                                return
+                            }else{
+                                addLog(text: "api call getAllBuddies Api error:- statusCode is \(httpResponse.statusCode)")
+                                self.writeJsonInLog(data: data)
+                                addLog(text: "accessToken is:- \(token)")
+                                completionHandler(nil)
+                                return
+                            }
+                        }
+                        if error != nil {
+                            addLog(text: "error getAllBuddies: \(error!.localizedDescription)")
+                            if (error as? NSError)?.code == self.errorCodeRequestTimeout{
+                                if self.isApiGetAllBuddiesErrorFound{
+                                    self.isApiGetAllBuddiesErrorFound = false
+                                    completionHandler(nil)
+                                    return
+                                }else{
+                                    self.isApiGetAllBuddiesErrorFound = true
+                                    addLog(text: "error getAllBuddies:- try second time")
+                                    self.getAllBuddies(completionHandler: { json in
+                                        completionHandler(json)
+                                        return
+                                    })
+                                }
+                            }else{
+                                completionHandler(nil)
+                                return
+                            }
+                            
+                        }else{
+                            completionHandler(nil)
+                            return
+                        }
+                    }
+                    task.resume()
+                }else{
+                    completionHandler(nil)
+                }
+            }else{
+                completionHandler(nil)
+            }
+        }
+    }
+    
+    func unlockRequest(withBuddyUserId:String, reason:String, durationMinutes: Int, completionHandler: @escaping(_ result: Bool) -> ()){
+        addLog(text: "func call:- unlockRequest")
+        
+        appdelegate!.credentialsManager.credentials {credentialsInfo in
+            addLog(text: "get updated credentialsInfo from credentialsManager")
+            
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+            
+            if appdelegate!.credential != nil{
+                
+                let responsePath = "\(baseUrl)/accountability-buddy/unlock-request"
+                if let responsePathUrl = NSURL(string: responsePath){
+                    addLog(text: "api call unlockRequest \(responsePathUrl)")
+                    let token = appdelegate!.credential!.accessToken
+                    
+                    let request = makeRequest(responsePathUrl: responsePathUrl)
+                    request.httpMethod = "POST";
+                    
+                    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                    
+                    let json: [String: Any] = [
+                        "accountability_buddy_user_id":withBuddyUserId,
+                        "reason": reason,
+                        "unlock_duration_minutes": durationMinutes
+                    ]
+                    
+                    let jsonData = try? JSONSerialization.data(withJSONObject: json)
+                    request.httpBody = jsonData
+                    
+                    let task = URLSession.shared.dataTask(with: request as URLRequest) {
+                        data, response, error in
+                        
+                        if let httpResponse = response as? HTTPURLResponse{
+                            self.isApiUnlockRequestErrorFound = false
+                            if httpResponse.statusCode == 201{ //it means it is right
+                                
+                                completionHandler(true)
+                                return;
+                            }else{
+                                addLog(text: "api call unlockRequest error:- statusCode is \(httpResponse.statusCode)")
+                                self.writeJsonInLog(data: data)
+                                addLog(text: "accessToken is:- \(token)")
+                                completionHandler(false)
+                                return;
+                            }
+                        }
+                        
+                        
+                        if error != nil {
+                            addLog(text: "api call unlockRequest error:- \(error!.localizedDescription)")
+                            if (error as? NSError)?.code == self.errorCodeRequestTimeout{
+                                if self.isApiUnlockRequestErrorFound{
+                                    self.isApiUnlockRequestErrorFound = false
+                                    completionHandler(false)
+                                    return;
+                                }else{
+                                    self.isApiUnlockRequestErrorFound = true
+                                    addLog(text: "error unlockRequest:- try second time")
+                                    self.unlockRequest(withBuddyUserId:withBuddyUserId, reason:reason, durationMinutes: durationMinutes, completionHandler: { bool in
+                                        completionHandler(bool)
+                                        return;
+                                    })
+                                }
+                            }else{
+                                completionHandler(false)
+                                return;
+                            }
+                            
+                        }else{
+                            completionHandler(false)
+                            return;
+                        }
+                        
+                    }
+                    
+                    task.resume()
+                }else{
+                    completionHandler(false)
+                }
+            }else{
+                completionHandler(false)
+            }
+        }
+    }
+    
+    func getUnlockRequestStatus(completionHandler: @escaping(_ result: [NSDictionary]?) -> ()) {
+        addLog(text: "func call:- getUnlockRequestStatus")
+        
+        appdelegate!.credentialsManager.credentials {credentialsInfo in
+            addLog(text: "get updated credentialsInfo from credentialsManager")
+            
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+            if appdelegate!.credential != nil{
+                let responsePath = "\(baseUrl)/accountability-buddy/unlock-requests"
+                if let responsePathUrl = NSURL(string: responsePath){
+                    addLog(text: "api call getUnlockRequestStatus \(responsePathUrl)")
+                    let token = appdelegate!.credential!.accessToken
+                    
+                    let request = makeRequest(responsePathUrl: responsePathUrl)
+                    request.httpMethod = "GET";
+                    
+                    let task = URLSession.shared.dataTask(with: request as URLRequest) {
+                        data, response, error in
+                        
+                        if let httpResponse = response as? HTTPURLResponse {
+                            self.isApiGetUnlockRequestStatusErrorFound = false
+                            if httpResponse.statusCode == 200{
+                                
+                                if data != nil{
+                                    do {
+                                        if let json: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
+                                            
+                                            print(json)
+                                            
+                                            if let data = json.value(forKey: "data") as? [NSDictionary]{
+                                                completionHandler(data)
+                                                return;
+                                            }
+                                            completionHandler(nil)
+                                            return;
+                                        }
+                                        
+                                    }catch{
+                                        print(error)
+                                        addLog(text: "error get getUnlockRequestStatus file: \(error.localizedDescription)")
+                                        completionHandler(nil)
+                                        return
+                                    }
+                                    
+                                }
+                                
+                                completionHandler(nil)
+                                return
+                            }else{
+                                addLog(text: "api call getUnlockRequestStatus Api error:- statusCode is \(httpResponse.statusCode)")
+                                self.writeJsonInLog(data: data)
+                                addLog(text: "accessToken is:- \(token)")
+                                completionHandler(nil)
+                                return
+                            }
+                        }
+                        if error != nil {
+                            addLog(text: "error getUnlockRequestStatus: \(error!.localizedDescription)")
+                            if (error as? NSError)?.code == self.errorCodeRequestTimeout{
+                                if self.isApiGetUnlockRequestStatusErrorFound{
+                                    self.isApiGetUnlockRequestStatusErrorFound = false
+                                    completionHandler(nil)
+                                    return
+                                }else{
+                                    self.isApiGetUnlockRequestStatusErrorFound = true
+                                    addLog(text: "error getUnlockRequestStatus:- try second time")
+                                    self.getUnlockRequestStatus(completionHandler: { json in
+                                        completionHandler(json)
+                                        return
+                                    })
+                                }
+                            }else{
+                                completionHandler(nil)
+                                return
+                            }
+                            
+                        }else{
+                            completionHandler(nil)
+                            return
+                        }
+                    }
+                    task.resume()
+                }else{
+                    completionHandler(nil)
+                }
+            }else{
+                completionHandler(nil)
+            }
+        }
+    }
 }
 
 func generateBoundaryString() -> String{
@@ -5785,3 +6059,87 @@ func makeRequest(responsePathUrl: NSURL)->NSMutableURLRequest{
     return request
 }
 
+
+
+
+
+//------Event Buffer Singleton--------//new events endpoint #1536 v 2.27.436
+final class EventBuffer {
+    static let shared = EventBuffer()
+    
+    private var events: [[String: Any]] = []
+    private var timer: Timer?
+    private var batchMinCount = 0
+    
+    private init() {
+        startBatchTimer()
+    }
+    
+    func addEvent(_ event: [String: Any]) {
+        DispatchQueue.main.async {
+            self.events.append(event)
+        }
+    }
+    
+    private func startBatchTimer() {
+        timer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { _ in
+            self.flushEvents()
+        }
+    }
+}
+
+extension EventBuffer {
+
+    func flushEvents() {
+        addLog(text: "func flushEvents events: \(events.count)")
+        guard events.count > batchMinCount else { return }
+
+        let batch = events
+        events.removeAll()
+
+        sendBatchToServer(batch)
+    }
+    
+    private func sendBatchToServer(_ batch: [[String: Any]]) {
+//        return; // todo remove
+        guard let url = URL(string: "https://events.aws.focusbear.io/batch-ingest-events/events")
+        else { return }
+
+//        var request = URLRequest(url: url)
+        let request = makeRequest(responsePathUrl: url as NSURL)
+        request.httpMethod = "POST"
+
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: batch, options: [])
+        } catch {
+            print("JSON error:", error)
+            return
+        }
+
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        URLSession.shared.dataTask(with: request as URLRequest) { data, response, error in
+            if let error = error {
+                print("Upload error:", error)
+                addLog(text: "api call batch-ingest-events error: \(error.localizedDescription)")
+                return
+            }
+
+            if let http = response as? HTTPURLResponse {
+                print("Batch Uploaded. Status:", http.statusCode)
+                if http.statusCode == 204{ //success
+                    return;
+                }else{
+                    addLog(text: "api call captureEventEndpoint error:- statusCode is \(http.statusCode)")
+                    allApiObject.writeJsonInLog(data: data)
+                }
+            }
+        }.resume()
+    }
+}
+// todo
+/*
+func applicationWillTerminate(_ notification: Notification) {
+    EventBuffer.shared.flushEvents()
+}
+*/

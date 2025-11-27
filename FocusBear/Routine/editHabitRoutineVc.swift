@@ -252,11 +252,11 @@ class editHabitRoutineVc: NSViewController, WKNavigationDelegate, webViewLoadFai
         self.alertSettingChanged!.setSharingType()
         self.alertSettingChanged!.alertStyle = .informational
         allApiObject.capturePosthog(event: "save-edited-habits", metadata: [:])
-        var settingIsValidText = "Your settings have been validated and will be applied now."
-        var buttonOkText = "OK"
+        var settingIsValidText = "Saved! Restarting the app so your new habit timing works."
+        var buttonOkText = "Restart now"
         if let settings = configjson.value(forKey: "settings") as? NSDictionary{
             settingIsValidText = settings.value(forKey: "settingIsValidText") as? String ?? settingIsValidText
-            buttonOkText = settings.value(forKey: "buttonOkText") as? String ?? buttonOkText
+            buttonOkText = settings.value(forKey: "buttonRestartNow") as? String ?? buttonOkText
         }
         
         self.alertSettingChanged!.messageText = settingIsValidText

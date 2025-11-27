@@ -510,7 +510,7 @@ class simplePomodoroVc: NSViewController {
         print("viewDidResize")
         let screenFrame = NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 1920, height: 1080)
 
-        if screenFrame.height < 900{
+        if screenFrame.height < 600{ // 900 change to 600 v 2.27.435
             var fontSizeNinteen:CGFloat = 19
             var fontSizeTwelve:CGFloat = 12
             var fontSizeEleven:CGFloat = 11
@@ -547,11 +547,11 @@ class simplePomodoroVc: NSViewController {
         }else{
             lblTitle.font =  getRegularFont(size: 25)
             lblQuestionFirst.font =  getRegularFont(size: 14)
-            lblTitleWorkDuration.font =  getRegularFont(size: 17)
+            lblTitleWorkDuration.font =  getRegularFont(size: 20)
             lblTitleBreakDuration.font =  getRegularFont(size: 14)
-            lblMinutesWorkDuration.font =  getRegularFont(size: 17)
+            lblMinutesWorkDuration.font =  getRegularFont(size: 20)
             lblMinutesBreakDuration.font =  getRegularFont(size: 14)
-            textFieldWorkDuration.font =  getRegularFont(size: 16)
+            textFieldWorkDuration.font =  getRegularFont(size: 19)
             textFieldBreakDuration.font =  getRegularFont(size: 13)
 
             lblTimerUnfocused.font =  getRegularFont(size: 14)
@@ -912,7 +912,6 @@ class simplePomodoroVc: NSViewController {
             timerForFocusModeEndNotification?.invalidate()
             timerForFocusModeEndNotification = nil
         }
-        isFocusTimeType = ._HOUR_
         
         appdelegate?.setFocusModeTimer(hour: nil, minute: minute)
         isFocusModeStartedFromPomodoroMode = true

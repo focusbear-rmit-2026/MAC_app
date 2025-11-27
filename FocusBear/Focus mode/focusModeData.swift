@@ -384,6 +384,7 @@ func focusAlllowUrlClickedFromNewBlockPage(url:String, currentBrowser:BROWSER){
         setUrlToBrowser(browser: currentBrowser, url: extractedUrl)
     }
 }
+
 func focusBlockUrlClickedFromNewBlockPage(url:String, currentBrowser:BROWSER)->String?{
     allApiObject.capturePosthog(event: "block-it-found", metadata: [:])
     var endString = "&focus_mode_end_time"
@@ -730,7 +731,7 @@ func checkUrlFromAi(script: String, url:String, tab_title:String, currentRunning
                                 }
                             }else{
                                 addLog(text: "Unsafe url")
-                                appdelegate?.focusBlockUnwantedUrl(script: script, url: url, lastBlockReasonFromAi: reason, browser: browser, isUrlBlockByAi: true, blockReason:"")
+                                focusBlockUnwantedUrl(script: script, url: url, lastBlockReasonFromAi: reason, browser: browser, isUrlBlockByAi: true, blockReason:"")
                             }
                         }
                         
@@ -824,6 +825,7 @@ func checkUrlFromAiWithNewIntention(url:String, domain:String, tab_title:String,
                 setFocusBearIconToNormal()
                 let reason = dic?.value(forKey: "reason") as? String ?? ""
                 dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus[domain]?["endTime"] = Date()// because is block then popup should show again//Convince the AI should show immediate feedback #1419
+                dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus[domain]?["intentionForSite"] = intentionForThisSite
                 if let dProbability = dic?.value(forKey: "allowed_probability") as? Double{
                     
                     addLog(text: "checked checkUrlFromAiWithNewIntention:- \(url), dProbability:\(dProbability)")
@@ -1113,7 +1115,7 @@ func checkAppFromAi(appName:String, currentRunningFocusModeName:String, runningA
                                     }
                                 }
                             }else{
-                                appdelegate?.focusBlockUnwantedApp(runningApp: runningApp, appName: appName, showNotification: true, isAppBlockByAi: true)
+                                focusBlockUnwantedApp(runningApp: runningApp, appName: appName, showNotification: true, isAppBlockByAi: true)
                             }
                         }
                         
@@ -1353,6 +1355,13 @@ func checkIsAnyOldFoucsModeRemaining(){
                                             getTaskPlayerVcObject().loadRequest()
                                             shouldReloadTaskPlayer = true
                                             showTaskPlayerWindow(totalDuration: minute, intention: whatToAchieveInFocusBlock, automatically:true)
+                                        }else{
+                                            let minute = diffSeconds / 60
+                                            if !getTaskPlayerVcObject().isViewLoaded{
+                                                getTaskPlayerVcObject().loadView()
+                                            }
+                                            taskPlayerVcObj?.reloadData(totalDuration: minute, intention: whatToAchieveInFocusBlock)
+                                            shouldReloadTaskPlayer = false
                                         }
                                     }
                                     
@@ -1378,6 +1387,13 @@ func checkIsAnyOldFoucsModeRemaining(){
                                             shouldReloadTaskPlayer = true
                                             let minute = diffSeconds / 60
                                             showTaskPlayerWindow(totalDuration: minute, intention: whatToAchieveInFocusBlock, automatically:true)
+                                        }else{
+                                            let minute = diffSeconds / 60
+                                            if !getTaskPlayerVcObject().isViewLoaded{
+                                                getTaskPlayerVcObject().loadView()
+                                            }
+                                            taskPlayerVcObj?.reloadData(totalDuration: minute, intention: whatToAchieveInFocusBlock)
+                                            shouldReloadTaskPlayer = false
                                         }
                                     }
                                 }
@@ -1558,7 +1574,7 @@ func getCurrentTaskInFocusMode()-> String?{
 var timerForFocusMode:Timer?
 var timerForFocusModeEndNotification:Timer?
 
-var isFocusTimeType:FocusModeTimeType = ._NONE_
+
 var endFocusModeTime:Date?// this is focusMode end time wich we calculate at the begning of focus mode
 var startFocusModeTime:Date?
 var startFocusModeTimeForPauseAndResume:Date?
@@ -1566,9 +1582,6 @@ var focusModeActualDurationPerformed:Int = 0// this will be useful to save in cs
 var focusModeMinutesToPerform = 0
 var focusModeSecondsToPerform = 0 //useful in pause resume focus mode
 var unfocusedTime = 0
-enum FocusModeTimeType:Int{
-    case _HOUR_ = 11, _TILL_SHUTOFF_, _NONE_
-}
 
 var isFocusModeRunning = false
 
@@ -1688,3 +1701,185 @@ func isCuddlyModeEnabled()->Bool{
 
 
 var isNudgeDraggedInCurrentFocusSession = false
+
+
+func getBlockScriptForFocusMode(url:String, currentBrowser:BROWSER, intention:String, cuddly_bear_modeString:String, aiReasonToBlockString:String, focusMode:String, focusModeExpiryTimeString:String)->String{
+    var script: String = ""
+    switch currentBrowser{
+        
+    case ._SAFARI_:
+        script = getSafariBlockScript(url: url).replacingOccurrences(of: "<PARAMS>", with: "\(focusModeExpiryTimeString)&focus_mode=\(focusMode)&focus_mode_intention=\(intention)\(cuddly_bear_modeString)\(aiReasonToBlockString)")
+        
+    case ._GOOGLE_CHROME_:
+        script = getGoogleChromeBlockScript(url: url).replacingOccurrences(of: "<PARAMS>", with: "\(focusModeExpiryTimeString)&focus_mode=\(focusMode)&focus_mode_intention=\(intention)\(cuddly_bear_modeString)\(aiReasonToBlockString)")
+        
+    case ._OPERA_:
+        script = getOperaBlockScript(url: url).replacingOccurrences(of: "<PARAMS>", with: "\(focusModeExpiryTimeString)&focus_mode=\(focusMode)&focus_mode_intention=\(intention)\(cuddly_bear_modeString)\(aiReasonToBlockString)")
+        
+    case ._OPERA_GX_:
+        script = getOperaGxBlockScript(url: url).replacingOccurrences(of: "<PARAMS>", with: "\(focusModeExpiryTimeString)&focus_mode=\(focusMode)&focus_mode_intention=\(intention)\(cuddly_bear_modeString)\(aiReasonToBlockString)")
+        
+    case ._VIVALDI_:
+        script = getVivaldiBlockScript(url: url).replacingOccurrences(of: "<PARAMS>", with: "\(focusModeExpiryTimeString)&focus_mode=\(focusMode)&focus_mode_intention=\(intention)\(cuddly_bear_modeString)\(aiReasonToBlockString)")
+        
+    case ._BRAVE_BROWSER_:
+        script = getBraveBrowserBlockScript(url: url).replacingOccurrences(of: "<PARAMS>", with: "\(focusModeExpiryTimeString)&focus_mode=\(focusMode)&focus_mode_intention=\(intention)\(cuddly_bear_modeString)\(aiReasonToBlockString)")
+        
+    case ._SIDEKICK_:
+        script = getSidekickBlockScript(url: url).replacingOccurrences(of: "<PARAMS>", with: "\(focusModeExpiryTimeString)&focus_mode=\(focusMode)&focus_mode_intention=\(intention)\(cuddly_bear_modeString)\(aiReasonToBlockString)")
+        
+    case ._MICROSOFT_EDGE_:
+        script = getMicrosoftEdgeBlockScript(url: url).replacingOccurrences(of: "<PARAMS>", with: "\(focusModeExpiryTimeString)&focus_mode=\(focusMode)&focus_mode_intention=\(intention)\(cuddly_bear_modeString)\(aiReasonToBlockString)")
+    case ._ARC_:
+        script = getArcBlockScript(url: url).replacingOccurrences(of: "<PARAMS>", with: "\(focusModeExpiryTimeString)&focus_mode=\(focusMode)&focus_mode_intention=\(intention)\(cuddly_bear_modeString)\(aiReasonToBlockString)")
+    case ._FIREFOX_:
+        script = getFirefoxBlockScript(url: url).replacingOccurrences(of: "<PARAMS>", with: "\(focusModeExpiryTimeString)&focus_mode=\(focusMode)&focus_mode_intention=\(intention)\(cuddly_bear_modeString)\(aiReasonToBlockString)")
+    case ._SIGMA_OS_:
+        script = getSigmaOsBrowserBlockScript(url: url).replacingOccurrences(of: "<PARAMS>", with: "\(focusModeExpiryTimeString)&focus_mode=\(focusMode)&focus_mode_intention=\(intention)\(cuddly_bear_modeString)\(aiReasonToBlockString)")
+    }
+    return script
+}
+
+
+var focusModeHelper = focusTimerManager()
+var habitBlockTimerHelper = habitBlockTimerManager()
+
+
+
+func focusBlockUnwantedUrl(script: String, url:String, lastBlockReasonFromAi:String?, browser: BROWSER?, isUrlBlockByAi:Bool, blockReason:String){
+    addLog(text:"focusBlockUnwantedUrl:- \(url)")
+    var newScript = script
+    newScript = newScript.replacingOccurrences(of: "<NEWPAGE>", with: "")
+    currentBrowserUrlForAi = ""
+    if lastBlockReasonFromAi != nil{
+        newScript = newScript.replacingOccurrences(of: "<AIREASON>", with: "&reason=\(lastBlockReasonFromAi!)")
+    }else{
+        newScript = newScript.replacingOccurrences(of: "<AIREASON>", with: "")
+    }
+    if browser == ._ARC_{
+        NSWorkspace.shared.launchApplication("Arc")
+    }
+    if browser == ._FIREFOX_{
+        firefoxServer.sendBlockNow(url: url,params: newScript)
+    }else{
+        executeScript(script: newScript)
+    }
+    
+    var blockMode = ""
+    if currentFocusModeStrictness == ._SUPER_STRICT_{
+        blockMode = "super_strict"
+    }else if currentFocusModeStrictness == ._STRICT_{
+        blockMode = "strict"
+    }else if currentFocusModeStrictness == ._NORMAL_{
+        blockMode = "normal"
+    }
+    
+    if isUrlBlockByAi{
+        allApiObject.capturePosthog(event: "block-distracting-url", metadata: ["block-reason":"ai_blocking", "block-mode": blockMode])
+    }else{
+        allApiObject.capturePosthog(event: "block-distracting-url", metadata: ["block-reason":blockReason, "block-mode": blockMode])
+    }
+    if !arrBlockedUrlsInCuddlyModeCurrentFocus.contains(url){
+        arrBlockedUrlsInCuddlyModeCurrentFocus.append(url)
+    }
+}
+
+
+func focusTryToBlockUnwantedUrl(script: String, url:String, browser: BROWSER?, tabTitle:String?, fullUrl:String, runningApp:NSRunningApplication, domain:String){
+    if popUpBlockConfirmWcObj != nil{
+        if popUpBlockConfirmWcObj!.window?.isVisible ?? false{
+            if !popUpBlockConfirmVcObj!.isAppBlocking{
+                if popUpBlockConfirmVcObj?.url == url{
+                    exitFullScreen(runningApp:runningApp)
+                    return;
+                }else{
+                    popUpBlockConfirmVcObj?.closeWindow()
+                }
+            }
+        }
+    }
+    addLog(text: "focusTryToBlockUnwantedUrl:- \(url)")
+    if isCuddlyModeEnabled(){
+        if arrBlockedUrlsInCuddlyModeCurrentFocus.contains(url){
+            focusBlockUnwantedUrl(script: script, url: url, lastBlockReasonFromAi: nil, browser: browser, isUrlBlockByAi: false, blockReason: "blocked_once_in_this_session")
+        }else{
+            if SettingsManagerObject.isAIBlockingEnabled(){
+                tryCheckUrlFromAi(script: script, url: url, tabTitle: tabTitle, browser: browser, fullUrl: fullUrl, domain:domain, runningApp: runningApp)
+            }else{
+                if isRunningAppFullScreen(runningApp: runningApp, browser: browser) || stageManagerObject.isStageManagerEnabled{
+                    let script = script.replacingOccurrences(of: "<NEWPAGE>", with: "&ai-focus-block-verification-enabled=true")
+                    executeScript(script: script)
+                }else{
+                    exitFullScreen(runningApp:runningApp)
+                    showPopupBlockConfirmWindow(blockedAppName: "", currentApp: nil, url:url, script:script, isBlockApp:false, browser: browser,tabTitle: tabTitle, fullUrl:fullUrl, aiBlockReason: nil, isTimeOut:false, isBlockByAi: false, scoreForThisSiteApp: nil, payload: nil, isBrowser:false)
+                }
+            }
+        }
+    }else{
+        if arrBlockedUrlsInCuddlyModeCurrentFocus.contains(url){
+            focusBlockUnwantedUrl(script: script, url: url, lastBlockReasonFromAi: nil, browser: browser, isUrlBlockByAi: false, blockReason: "blocked_once_in_this_session")
+        }else{
+            if SettingsManagerObject.isAIBlockingEnabled(){
+                tryCheckUrlFromAi(script: script, url: url, tabTitle: tabTitle, browser: browser, fullUrl: fullUrl, domain:domain, runningApp: runningApp)
+            }else{
+                exitFullScreen(runningApp:runningApp)
+                focusBlockUnwantedUrl(script: script, url: url, lastBlockReasonFromAi: nil, browser: browser, isUrlBlockByAi: false, blockReason: "block_in_focus_mode")
+                
+            }
+        }
+    }
+    
+}
+
+func focusBlockUnwantedApp(runningApp: NSRunningApplication, appName:String, showNotification:Bool, isAppBlockByAi:Bool){
+    addLog(text: "focusBlockUnwantedApp:- \(appName)")
+    exitFullScreen(runningApp:runningApp)
+    runningApp.hide()
+    allApiObject.capturePosthog(event: "block-distracting-app", metadata: [:])
+    if showNotification{
+        showFocusAppBlockNotification(appName:appName)
+    }
+    if isCuddlyModeEnabled(){
+        if !arrBlockedAppsInCuddlyModeCurrentFocus.contains(runningApp){
+            arrBlockedAppsInCuddlyModeCurrentFocus.append(runningApp)
+        }
+    }
+}
+
+func focusTryToBlockUnwantedApp(runningApp: NSRunningApplication, appName:String, appNameLowercased:String){
+    exitFullScreen(runningApp:runningApp)
+    if popUpBlockConfirmWcObj != nil{
+        if popUpBlockConfirmWcObj!.window?.isVisible ?? false{
+            if popUpBlockConfirmVcObj!.isAppBlocking{
+                if popUpBlockConfirmVcObj?.currentApp == runningApp{
+                    return;
+                }else{
+                    popUpBlockConfirmVcObj?.closeWindow()
+                }
+            }
+        }
+    }
+    addLog(text: "focusTryToBlockUnwantedApp:- \(appName)")
+    if isCuddlyModeEnabled(){
+        if arrBlockedAppsInCuddlyModeCurrentFocus.contains(runningApp){
+            focusBlockUnwantedApp(runningApp: runningApp, appName: appName, showNotification: true, isAppBlockByAi: false)
+        }else{
+            if SettingsManagerObject.isAIBlockingEnabled(){
+                tryCheckAppFromAi(appName: appName, runningApp: runningApp)
+            }else{
+                showPopupBlockConfirmWindow(blockedAppName: appName, currentApp: runningApp, url:"", script:"", isBlockApp:true, browser: nil, tabTitle: nil, fullUrl:"", aiBlockReason: nil, isTimeOut:false, isBlockByAi: false, scoreForThisSiteApp: nil, payload: nil, isBrowser:false)
+            }
+        }
+    }else{
+        if arrBlockedAppsInCuddlyModeCurrentFocus.contains(runningApp){
+            focusBlockUnwantedApp(runningApp: runningApp, appName: appName, showNotification: true, isAppBlockByAi: false)
+        }else{
+            if SettingsManagerObject.isAIBlockingEnabled(){
+                tryCheckAppFromAi(appName: appName, runningApp: runningApp)
+            }else{
+                focusBlockUnwantedApp(runningApp: runningApp, appName: appName, showNotification: true, isAppBlockByAi: false)
+                
+            }
+        }
+    }
+}

@@ -299,11 +299,11 @@ class blockingScheduleVc: NSViewController, WKNavigationDelegate, webViewLoadFai
         self.alertSettingChanged!.setSharingType()
         self.alertSettingChanged!.alertStyle = .informational
         allApiObject.capturePosthog(event: "save-edited-habits", metadata: [:])
-        var settingIsValidText = "Your settings have been validated and will be applied now."
-        var buttonOkText = "OK"
+        var settingIsValidText = "Saved! Restarting the app so your new habit timing works."
+        var buttonOkText = "Restart now"
         if let settings = configjson.value(forKey: "settings") as? NSDictionary{
             settingIsValidText = settings.value(forKey: "settingIsValidText") as? String ?? settingIsValidText
-            buttonOkText = settings.value(forKey: "buttonOkText") as? String ?? buttonOkText
+            buttonOkText = settings.value(forKey: "buttonRestartNow") as? String ?? buttonOkText
         }
         
         self.alertSettingChanged!.messageText = settingIsValidText
@@ -475,19 +475,8 @@ class blockingScheduleVc: NSViewController, WKNavigationDelegate, webViewLoadFai
     }
     
     @IBAction func btnBackClicked(_ sender: Any) {
-//        if self.view.window?.windowController == preferencesWindowControllerObj{
-//            if let tabview = preferencesWindowControllerObj?.contentViewController as? preferencesTabViewController{
-//                let selectedTabViewItem = tabview.tabViewItems[tabview.selectedTabViewItemIndex]
-//                if selectedTabViewItem.identifier as? String == idTabStrictness && tabview.tabViewItemStrictnesss != nil{
-//                    tabStrictnessContainerVcObj?.showStrictnessView()
-//                    return;
-//                }
-//            }
-//        }else{
-            if leftMenuVcObj?.boxBlocks.isSelected ?? false{
-                tabStrictnessContainerVcObj?.showStrictnessView()
-            }
-//        }
-        
+        if leftMenuVcObj?.boxBlocks.isSelected ?? false{
+            tabStrictnessContainerVcObj?.showStrictnessView()
+        }
     }
 }

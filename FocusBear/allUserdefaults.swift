@@ -218,3 +218,7 @@ var kUserdefaultsFocusAllThingsExpanded = "kUserdefaultsFocusAllThingsExpanded"
 var kUserdefaultsStartMainAppIfNotRunning = "kUserdefaultsStartMainAppIfNotRunning"
 
 var kUserdefaultsBrowsersTabAuditReportSaveDate = "kUserdefaultsBrowsersTabAuditReportSaveDate"
+
+var kUserdefaultsLastUnlockTimeByAccountabilityBuddy = "kLastUnlockTimeByAccountabilityBuddy"
+
+var kUserdefaultsUserShouldDoFirstFocusSesion = "kUserShouldDoFirstFocusSesion"

@@ -390,13 +390,14 @@
         "buttonEditSettingsText": "Edit Habits",
         "buttonAdvancedText": "Advanced",
         "description": "Click on \"Edit Settings\" to modify your existing settings.\nIf you are an advanced user click on \"Advanced\" to view or edit settings JSON",
-        "settingIsValidText": "Saved! Restarting the app now.",
+        "settingIsValidText": "Saved! Restarting the app so your new habit timing works.",
         "settingsEditedButNotSavedText": "You've made changes to your habits/breaks but haven't saved them yet. It is recommended to review and save the changes (the app will restart)?",
         "buttonReviewSettingsText": "I'll review and Save",
         "downloadReportText": "Please visit Focus Bear dashboard in your web browser to download the report.",
         "buttonVisitDashboardText": "Click here to visit dashboard now",
         "tokenErrorText": "Session Expired. Please login again.",
-        "settingUrlNew": "https://dashboard.focusbear.io"
+        "settingUrlNew": "https://dashboard.focusbear.io",
+        "buttonRestartNow": "Restart now"
     },
     "trialNagInfo": {
         "title": "Focus Bear",
@@ -927,7 +928,8 @@
         "tabViewRandomCharactersTitle": "Type random characters",
         "titleRandomCharacters": "Please type <NUMBER> random characters to continue",
         "incorrectCharactersErrorTitle": "Entered characters does not match the required number of characters. Please try again.",
-        "titleEnterCharacters": "To unlock your machine without a password, enter these characters. You said you wanted it to be hard to use your computer impulsively 😅"
+        "titleEnterCharacters": "To unlock your machine without a password, enter these characters. You said you wanted it to be hard to use your computer impulsively 😅",
+        "tabViewAccountabilityBuddyTitle": "Accountability Buddy"
     },
     "passwordPreferencesInfo": {
         "titleSetPassword": "Set Password",
@@ -1372,7 +1374,7 @@
         "buttonAllowDomainText": "Allow all URLs from <DOMAIN> for this focus session",
         "waitingAiText": "Waiting for AI decision...",
         "aiRelevanceScoreText": "AI relevance score for this site: <SCORE>%",
-        "stillDistractingTitle": "AI still thinks this site is distracting",
+        "stillDistractingTitle": "Focus Bear still thinks this site is distracting",
         "stillDistractingDescription": "Focus Bear's AI still thinks <URL> isn't relevant for what you're trying to achieve. Are you sure you need it?",
         "convinceAiTitle": "Convince the AI why it's necessary",
         "convinceAiDescription": "Give more info to the AI to explain why you need to use this site",
@@ -1381,7 +1383,7 @@
         "buttonSetIntentionText": "Temporary access",
         "aiRelevanceScoreAppText": "AI relevance score for this app: <SCORE>%",
         "appNotVerifiedText": "The status of this app could not be verified.",
-        "appStillDistractingTitle": "AI still thinks this app is distracting",
+        "appStillDistractingTitle": "Focus Bear still thinks this app is distracting",
         "appConvinceAiDescription": "Give more info to the AI to explain why you need to use this app",
         "selectMinutesForAppText": "Select minutes to use this app",
         "distractingForCurrentTaskDescription": "Focus Bear's AI still thinks <URL> isn't relevant for your current task \"<TASK>\". Are you sure you need it?",
@@ -1585,7 +1587,10 @@
         "alertOpenPreferencesLatestOsText": "Unable to get <APPNAME> URL. Please check permissions. Do you want to Open System Preferences -> Privacy & Security and check if <APPNAME> is allowed to be accessed by Focus Bear under Automation?",
         "alertOpenPreferencesText": "Unable to get <APPNAME> URL. Please check permissions. Do you want to Open System Preferences -> Security & Privacy > Privacy and check if <APPNAME> is allowed to be accessed by Focus Bear under Automation?",
         "buttonLearnMoreText": "Learn more",
-        "permissionNotGrantedText": "You haven’t granted permission to any browser, which could cause blocking issues. Do you want to proceed without giving permission?"
+        "permissionNotGrantedText": "You haven’t granted permission to any browser, which could cause blocking issues. Do you want to proceed without giving permission?",
+        "descriptionFirefoxExtensiont": "Install the Focus Bear Blocker extension in Firefox.",
+        "buttonAddFirefoxExtensiont": "Add Firefox Extension",
+        "toolTipFirefoxExtensiont": "Firefox can’t detect which site you're on unless you install the Focus Bear extension. Sorry for the extra step—other browsers don’t need this."
     },
     "onboardingPrivacyTipVcInfo": {
         "title": "Privacy and Security",
@@ -2568,6 +2573,20 @@
     "abortingCustomScheduleBlockingVcInfo":{
         "titlePauseText": "Pausing Custom schedule - <SCHEDULE>",
         "buttonAbortFocus": "Pause Custom Schedule"
+    },
+    "accountabilityBuddyInfo":{
+        "titleNoBuddyFound": "No buddy for unlock requests",
+        "subTitleNoBuddyFound": "You need an accountability buddy to create unlock requests.",
+        "buttonAddBuddy": "Add a new Buddy",
+        "buttonRefreshBuddiesList": "Refresh",
+        "titleCreateRequest": "Create Unlock Request",
+        "titleRequestTo": "Requesting unlock from",
+        "reasonTitle": "Reason (optional)",
+        "unlockDurationTitle": "Unlock Duration (optional)",
+        "durationRange": "Min: 1 minutes • Max: 24 hours (1440 minutes)",
+        "buttonCreateRequest": "Create Request",
+        "buttonRefreshStatus": "Refresh Unlock Request's Status",
+        "placeHolderString": "Explain why you need this unlock...."
     },
     "discordUrl": "https://discord.gg/VZdv3ZjhSq",
     "whatsAppUrl": "https://chat.whatsapp.com/FV0oTbCUWpILBYif7CP6UD",

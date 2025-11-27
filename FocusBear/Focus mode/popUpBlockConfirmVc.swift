@@ -144,8 +144,10 @@ class popUpBlockConfirmVc: NSViewController {
     }
     
     func createTrackingArea(){
-        aiReasonTrackingArea = NSTrackingArea.init(rect: lblAi.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
-        lblAi.addTrackingArea(aiReasonTrackingArea!)
+        if boxAskIntention.isHidden{
+            aiReasonTrackingArea = NSTrackingArea.init(rect: lblAi.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
+            lblAi.addTrackingArea(aiReasonTrackingArea!)
+        }
         
         convincedAiReasonTrackingArea = NSTrackingArea.init(rect: lblTitleIntention.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
         lblTitleIntention.addTrackingArea(convincedAiReasonTrackingArea!)
@@ -456,7 +458,15 @@ class popUpBlockConfirmVc: NSViewController {
     }
     
     override func mouseEntered(with event: NSEvent) {
-        if event.trackingArea == aiReasonTrackingArea{
+        print("mouseEntered")
+        if !boxAskIntention.isHidden{
+            if popoverTooltip != nil{
+                if popoverTooltip!.isShown{
+                    return;// aiReasonTrackingArea may get focus even after it's in below level
+                }
+            }
+        }
+        if event.trackingArea == aiReasonTrackingArea && boxAskIntention.isHidden{
             if boxAskIntention.isHidden == false{
                 return;
             }
@@ -484,6 +494,7 @@ class popUpBlockConfirmVc: NSViewController {
     }
 
     override func mouseExited(with event: NSEvent) {
+        print("mouseExited")
         if event.trackingArea == aiReasonTrackingArea{
             closePopoverTooltipIfVisible()
         }else if event.trackingArea == convincedAiReasonTrackingArea{
@@ -623,12 +634,13 @@ class popUpBlockConfirmVc: NSViewController {
                 }
             }
             
-            
+            textViewIntension.string = ""
+            textViewIntension.string = dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus[domain]?["intentionForSite"] as? String ?? ""
             btnCancel.title = buttonCancelText
             btnConvince.buttonColor = buttonBgColor.cgColor
             btnCancel.buttonColor = NSColor.white.cgColor
             
-            textViewIntension.string = ""
+            
             textViewIntension.window?.makeFirstResponder(textViewIntension)
             btnConvinceAgain.isHidden = true
         }
@@ -850,13 +862,13 @@ class popUpBlockConfirmVc: NSViewController {
                     self.view.window?.close()
                     blurWcObj?.window?.close()
                     if self.currentApp != nil && self.isAppBlocking{
-                        appdelegate?.focusBlockUnwantedApp(runningApp: self.currentApp!, appName: self.currentAppName, showNotification: false, isAppBlockByAi: self.isBlockByAi)
+                        focusBlockUnwantedApp(runningApp: self.currentApp!, appName: self.currentAppName, showNotification: false, isAppBlockByAi: self.isBlockByAi)
                         self.currentApp = nil
                     }else{
                         if SettingsManagerObject.isAIBlockingEnabled(){
-                            appdelegate?.focusBlockUnwantedUrl(script: self.script, url: self.url, lastBlockReasonFromAi: self.lastBlockReasonFromAi, browser: self.browser, isUrlBlockByAi: self.isBlockByAi, blockReason:"")
+                            focusBlockUnwantedUrl(script: self.script, url: self.url, lastBlockReasonFromAi: self.lastBlockReasonFromAi, browser: self.browser, isUrlBlockByAi: self.isBlockByAi, blockReason:"")
                         }else{
-                            appdelegate?.focusBlockUnwantedUrl(script: self.script, url: self.url, lastBlockReasonFromAi: nil, browser: self.browser, isUrlBlockByAi: self.isBlockByAi, blockReason:"")
+                            focusBlockUnwantedUrl(script: self.script, url: self.url, lastBlockReasonFromAi: nil, browser: self.browser, isUrlBlockByAi: self.isBlockByAi, blockReason:"")
                         }
                         
                     }
@@ -1034,8 +1046,9 @@ class popUpBlockConfirmVc: NSViewController {
         
         setFocusBearIconToNormal()
         focusModeCloseCurrentAppForAlignmentScore()
-        appdelegate!.timerAllowUrlForActivity?.invalidate()
-        appdelegate!.timerAllowUrl?.invalidate()
+        habitBlockTimerHelper.stopUrlTimer()
+//        appdelegate!.timerAllowUrl?.invalidate()
+        focusModeHelper.stopUrlTimer()
         currentBrowserUrlForAi = ""
     }
     
@@ -1049,13 +1062,13 @@ class popUpBlockConfirmVc: NSViewController {
     
     func blockClicked(){
         if self.currentApp != nil && isAppBlocking{
-            appdelegate?.focusBlockUnwantedApp(runningApp: self.currentApp!, appName: self.currentAppName, showNotification: false, isAppBlockByAi: self.isBlockByAi)
+            focusBlockUnwantedApp(runningApp: self.currentApp!, appName: self.currentAppName, showNotification: false, isAppBlockByAi: self.isBlockByAi)
             self.currentApp = nil
         }else{
             if SettingsManagerObject.isAIBlockingEnabled(){
-                appdelegate?.focusBlockUnwantedUrl(script: self.script, url: self.url, lastBlockReasonFromAi: self.lastBlockReasonFromAi, browser: browser, isUrlBlockByAi: self.isBlockByAi, blockReason:"")
+                focusBlockUnwantedUrl(script: self.script, url: self.url, lastBlockReasonFromAi: self.lastBlockReasonFromAi, browser: browser, isUrlBlockByAi: self.isBlockByAi, blockReason:"")
             }else{
-                appdelegate?.focusBlockUnwantedUrl(script: self.script, url: self.url, lastBlockReasonFromAi: nil, browser: browser, isUrlBlockByAi: self.isBlockByAi, blockReason:"")
+                focusBlockUnwantedUrl(script: self.script, url: self.url, lastBlockReasonFromAi: nil, browser: browser, isUrlBlockByAi: self.isBlockByAi, blockReason:"")
             }
 
         }
@@ -1208,8 +1221,9 @@ class popUpBlockConfirmVc: NSViewController {
         
         setFocusBearIconToNormal()
         focusModeCloseCurrentAppForAlignmentScore()
-        appdelegate!.timerAllowUrlForActivity?.invalidate()
-        appdelegate!.timerAllowUrl?.invalidate()
+        habitBlockTimerHelper.stopUrlTimer()
+//        appdelegate!.timerAllowUrl?.invalidate()
+        focusModeHelper.stopUrlTimer()
         currentBrowserUrlForAi = ""
         if isAppBlocking && currentApp != nil{
             showReportBadAIResponseWindow(url: nil, app: currentAppName, payload: payload)
@@ -1224,7 +1238,7 @@ class popUpBlockConfirmVc: NSViewController {
         addLog(text: "[user-action] btnConvinceAgainClicked")
         showPopUpFocusGoalConfirmationView()
     }
-    
+    //intentionForSite
     
     @IBAction func btnInfoTemporaryAllowClicked(_ sender: Any) {
         var msg = "This site’s been flagged as a distraction 🧠❗You can unlock it for now — just know it’ll be logged as non-productive time in your report."
