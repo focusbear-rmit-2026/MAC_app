@@ -309,7 +309,7 @@ class AllApi:NSObject {
         var event_data = [String : Any]()
         event_data = ["data":properties]
         
-        var json: [String: Any] = [//todo let
+        var json: [String: Any] = [
             "event_type": event,
             "user_properties": [
                 "USERNAME": currentUserName,
@@ -319,9 +319,12 @@ class AllApi:NSObject {
             "event_data": event_data
         ]
         
-        json["operating_system"] = "macos"// for new events endpoint #1536
+        json["operating_system"] = "macos"// for new events endpoint #1536 v 2.28.436
         EventBuffer.shared.addEvent(json)
 
+        
+        
+        
         /* old work
         let responsePath = "\(baseUrl)/events"
         if let responsePathUrl = NSURL(string: responsePath){
@@ -363,11 +366,10 @@ class AllApi:NSObject {
     
     func capturePosthog(event:String, metadata:[String:Any]){
         if currentUserEmail.lowercased().contains("internaltest") || isTestUser{
-            return;//todo uncomment this line  this line
+            return;
         }
         captureEventEndpoint(event: event, metadata: metadata)
-        return; //todo remove this line
-        
+
         addLog(text: "capturePosthog event: \(event)")
         
         let responsePath = "https://app.posthog.com/capture/"
@@ -6063,7 +6065,7 @@ func makeRequest(responsePathUrl: NSURL)->NSMutableURLRequest{
 
 
 
-//------Event Buffer Singleton--------//new events endpoint #1536 v 2.27.436
+//------Event Buffer Singleton--------//new events endpoint #1536 v 2.28.436
 final class EventBuffer {
     static let shared = EventBuffer()
     
@@ -6101,7 +6103,6 @@ extension EventBuffer {
     }
     
     private func sendBatchToServer(_ batch: [[String: Any]]) {
-//        return; // todo remove
         guard let url = URL(string: "https://events.aws.focusbear.io/batch-ingest-events/events")
         else { return }
 
@@ -6137,9 +6138,4 @@ extension EventBuffer {
         }.resume()
     }
 }
-// todo
-/*
-func applicationWillTerminate(_ notification: Notification) {
-    EventBuffer.shared.flushEvents()
-}
-*/
+

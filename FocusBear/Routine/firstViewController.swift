@@ -1213,6 +1213,8 @@ extension firstViewController:NSTableViewDelegate, NSTableViewDataSource {
             cell.stackViewActionBar.addView(itemSkip.view, in: .bottom)
             
             cell.isSelected = tblViewHabits.selectedRow == row
+        }else{
+            cell.boxActionBar.isHidden = true
         }
     }
     

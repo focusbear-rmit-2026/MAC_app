@@ -3194,12 +3194,21 @@ class habitsVc: NSViewController {
                     appdelegate!.showAutoPomodoroModeView()
                 }
             }
-        }
-        if let notes = UserDefaults.standard.object(forKey: kUserdefaultsFocusModeNotes) as? String {
-            if !notes.isEmpty{
-                showBrainDumpWindow()
+        }else{
+            if isFocusModeOn(){
+                showToDoListWindow()
+            }else{
+                appdelegate!.showAutoPomodoroModeView()
             }
         }
+//        if let notes = UserDefaults.standard.object(forKey: kUserdefaultsFocusModeNotes) as? String {
+//            if !notes.isEmpty{
+//                showBrainDumpWindow()
+//            }
+//        }
+        
+        
+        
         if isBreakActivityExecuteFromMorningHabit || isBreakActivityExecuteFromEveningHabit{
             isBreakActivityExecuteFromMorningHabit = false
             isBreakActivityExecuteFromEveningHabit = false

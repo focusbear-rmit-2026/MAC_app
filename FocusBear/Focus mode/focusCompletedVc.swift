@@ -614,23 +614,33 @@ class focusCompletedVc: NSViewController {
                 
             }
             
-            if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
-                if let focusCompletedInfo = focusInfo.value(forKey: "focusCompletedInfo") as? NSDictionary{
-                    
-                    if breakMinute == 1{
-                        var buttonRelaxOneMinuteText = "Relax for 1 minute"
-                        if let buttonTakeBreakText = focusCompletedInfo.value(forKey: "buttonRelaxOneMinuteText") as? String{
-                            buttonRelaxOneMinuteText = buttonTakeBreakText
+            if currentState == ._MICRO_BREAK_{
+                btnTakeBreak.title = "Continue Break"
+                if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
+                    if let focusCompletedInfo = focusInfo.value(forKey: "focusCompletedInfo") as? NSDictionary{
+                        btnTakeBreak.title = focusCompletedInfo.value(forKey: "buttonContinueMicroBreak") as? String ?? btnTakeBreak.title
+                    }
+                }
+            }else{
+                if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
+                    if let focusCompletedInfo = focusInfo.value(forKey: "focusCompletedInfo") as? NSDictionary{
+                        
+                        if breakMinute == 1{
+                            var buttonRelaxOneMinuteText = "Relax for 1 minute"
+                            if let buttonTakeBreakText = focusCompletedInfo.value(forKey: "buttonRelaxOneMinuteText") as? String{
+                                buttonRelaxOneMinuteText = buttonTakeBreakText
+                            }
+                            btnTakeBreak.title = buttonRelaxOneMinuteText
+                        }else{
+                            if let buttonTakeBreakText = focusCompletedInfo.value(forKey: "buttonRelaxText") as? String{
+                                self.buttonTakeBreakText = buttonTakeBreakText
+                            }
+                            btnTakeBreak.title = buttonTakeBreakText.replacingOccurrences(of: "5", with: "\(breakMinute)")
                         }
-                        btnTakeBreak.title = buttonRelaxOneMinuteText
-                    }else{
-                        if let buttonTakeBreakText = focusCompletedInfo.value(forKey: "buttonRelaxText") as? String{
-                            self.buttonTakeBreakText = buttonTakeBreakText
-                        }
-                        btnTakeBreak.title = buttonTakeBreakText.replacingOccurrences(of: "5", with: "\(breakMinute)")
                     }
                 }
             }
+            
             
             
         }
@@ -743,7 +753,7 @@ class focusCompletedVc: NSViewController {
         isFinishFocusModeApiCalled = true// perfect place this will ensure that api will called 100%
         whatToAchieveInFocusBlock = ""
         if !isShutOffTime{
-            if currentState != ._MORNING_HABIT_ && currentState != ._CUSTOM_ROUTINE_{
+            if currentState != ._MORNING_HABIT_ && currentState != ._CUSTOM_ROUTINE_ && currentState != ._MICRO_BREAK_{
                 if let notes = UserDefaults.standard.object(forKey: kUserdefaultsFocusModeNotes) as? String {
                     if !notes.isEmpty{
                         showBrainDumpWindow()
@@ -1014,6 +1024,10 @@ class focusCompletedVc: NSViewController {
                         startCustomRoutine(index: currentRoutineIndex, isOnDemand:false)
                     }
                     
+                }else if currentState == ._MICRO_BREAK_{// microbreask running and focus mode finished v 2.28.436
+                    if self == focusCompletedVcObj{//normal case
+                        leftMenuVcObj?.showBreaksView()
+                    }
                 }else if !isShutOffTime && currentState != ._MORNING_HABIT_{
                     if currentState == ._FOCUS_SUMMARY_ || currentState == ._EVENING_HABIT_{// focus end screen was showing before starting  a routine or before shutOff time
                         self.view.window?.close()
@@ -1179,10 +1193,7 @@ class focusCompletedVc: NSViewController {
     
     @IBAction func btnActivateTimeTrackerClicked(_ sender: Any) {
         addLog(text: "[user-action] btnActivateTimeTrackerClicked")
-
-        
         leftMenuVcObj?.showSettingsView()
-        allApiObject.capturePosthog(event: "open-preferences", metadata: [:])
         
         if settingsSideBarVcObj != nil{
             settingsSideBarVcObj!.tblView.selectRowIndexes(IndexSet(arrayLiteral: settingsSideBarVcObj!.advancedSettingsIndex), byExtendingSelection: false)
@@ -1190,7 +1201,6 @@ class focusCompletedVc: NSViewController {
             getAddOnsVcObject().highlightTimeTrackerEnableItemBox()
         }
 
-        
         NSApplication.shared.activate(ignoringOtherApps: true)
     }
     

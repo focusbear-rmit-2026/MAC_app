@@ -5307,7 +5307,7 @@
                                             </connections>
                                         </button>
                                         <textField focusRingType="none" horizontalHuggingPriority="1" horizontalCompressionResistancePriority="1" verticalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="G9p-JT-IMC">
-                                            <rect key="frame" x="68" y="424" width="792" height="224"/>
+                                            <rect key="frame" x="88" y="454" width="752" height="224"/>
                                             <textFieldCell key="cell" alignment="center" id="gjt-0g-cAm">
                                                 <font key="font" metaFont="system" size="24"/>
                                                 <string key="title">xxTaking regular breaks (every 20 minutes is recommended) is crucial for avoiding eye strain and postural issues. You might be worried that it will take you out of your flow and disrupt your productivity. Let's capture what you were just working on so that you won't lose your train of thought after the break. BTW you'll often find that when you take a break and give your brain some time in the "default mode network", you'll come up with novel solutions to a problem you'd been struggling with. Not necessarily a productivity killer at all</string>
@@ -5316,17 +5316,17 @@
                                             </textFieldCell>
                                         </textField>
                                         <scrollView horizontalCompressionResistancePriority="250" borderType="line" horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" hasHorizontalScroller="NO" translatesAutoresizingMaskIntoConstraints="NO" id="00l-rv-tK6" customClass="shadowScrollViewForTextView" customModule="Focus_Bear" customModuleProvider="target">
-                                            <rect key="frame" x="100" y="190" width="728" height="184"/>
+                                            <rect key="frame" x="90" y="244" width="748" height="180"/>
                                             <clipView key="contentView" drawsBackground="NO" id="Sgh-vR-IMg">
-                                                <rect key="frame" x="1" y="1" width="711" height="182"/>
+                                                <rect key="frame" x="1" y="1" width="731" height="178"/>
                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                 <subviews>
                                                     <textView importsGraphics="NO" richText="NO" verticallyResizable="YES" spellingCorrection="YES" smartInsertDelete="YES" id="oHg-nM-xyB" customClass="placeHolderTextView" customModule="Focus_Bear" customModuleProvider="target">
-                                                        <rect key="frame" x="0.0" y="0.0" width="711" height="182"/>
+                                                        <rect key="frame" x="0.0" y="0.0" width="731" height="178"/>
                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                         <color key="textColor" name="textColor" catalog="System" colorSpace="catalog"/>
                                                         <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
-                                                        <size key="minSize" width="711" height="182"/>
+                                                        <size key="minSize" width="731" height="178"/>
                                                         <size key="maxSize" width="1056" height="10000000"/>
                                                         <color key="insertionPointColor" name="textColor" catalog="System" colorSpace="catalog"/>
                                                     </textView>
@@ -5337,12 +5337,12 @@
                                                 <autoresizingMask key="autoresizingMask"/>
                                             </scroller>
                                             <scroller key="verticalScroller" verticalHuggingPriority="750" horizontal="NO" id="UT3-aI-XIW">
-                                                <rect key="frame" x="712" y="1" width="15" height="182"/>
+                                                <rect key="frame" x="732" y="1" width="15" height="178"/>
                                                 <autoresizingMask key="autoresizingMask"/>
                                             </scroller>
                                         </scrollView>
                                         <button translatesAutoresizingMaskIntoConstraints="NO" id="dZo-r5-5oo" customClass="cursorButton" customModule="Focus_Bear" customModuleProvider="target">
-                                            <rect key="frame" x="863" y="623" width="25" height="25"/>
+                                            <rect key="frame" x="843" y="653" width="25" height="25"/>
                                             <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="NSInfo" imagePosition="only" alignment="center" imageScaling="proportionallyUpOrDown" inset="2" id="oSh-h1-CHR">
                                                 <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                 <font key="font" metaFont="system"/>
@@ -5355,24 +5355,85 @@
                                                 <action selector="btnInfoClicked:" target="oDB-c7-tkj" id="7X7-zv-f4p"/>
                                             </connections>
                                         </button>
+                                        <stackView distribution="fill" orientation="vertical" alignment="leading" spacing="10" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Pyg-yV-r0b">
+                                            <rect key="frame" x="90" y="175" width="748" height="49"/>
+                                            <subviews>
+                                                <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="7vO-TR-lax">
+                                                    <rect key="frame" x="-2" y="30" width="744" height="19"/>
+                                                    <textFieldCell key="cell" title="xxBefore we start your micro-break, what task are you currently working on? I’ll remind you when you return." id="bN1-kF-oHy">
+                                                        <font key="font" metaFont="system" size="15"/>
+                                                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                                    </textFieldCell>
+                                                </textField>
+                                                <stackView distribution="fill" orientation="horizontal" alignment="centerY" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="250" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Ql7-G8-zmH">
+                                                    <rect key="frame" x="0.0" y="0.0" width="425" height="20"/>
+                                                    <subviews>
+                                                        <textField focusRingType="none" horizontalHuggingPriority="252" verticalHuggingPriority="750" horizontalCompressionResistancePriority="751" translatesAutoresizingMaskIntoConstraints="NO" id="uxF-VH-Zb3">
+                                                            <rect key="frame" x="-2" y="2" width="97" height="16"/>
+                                                            <textFieldCell key="cell" lineBreakMode="clipping" title="xxCurrent task:" id="8gO-mx-nU1">
+                                                                <font key="font" usesAppearanceFont="YES"/>
+                                                                <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                                                <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                                            </textFieldCell>
+                                                        </textField>
+                                                        <comboBox focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="AgI-z3-x5q" customClass="searchableComboBox" customModule="Focus_Bear" customModuleProvider="target">
+                                                            <rect key="frame" x="100" y="-2" width="304" height="23"/>
+                                                            <constraints>
+                                                                <constraint firstAttribute="width" constant="300" id="n4V-Dt-WgK"/>
+                                                            </constraints>
+                                                            <comboBoxCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" borderStyle="bezel" drawsBackground="YES" usesDataSource="YES" numberOfVisibleItems="5" id="ggI-EC-KRx">
+                                                                <font key="font" metaFont="system"/>
+                                                                <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                                                <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                                            </comboBoxCell>
+                                                        </comboBox>
+                                                        <progressIndicator horizontalHuggingPriority="251" verticalHuggingPriority="255" horizontalCompressionResistancePriority="751" verticalCompressionResistancePriority="751" maxValue="100" displayedWhenStopped="NO" indeterminate="YES" controlSize="small" style="spinning" translatesAutoresizingMaskIntoConstraints="NO" id="Ija-iU-h9n">
+                                                            <rect key="frame" x="409" y="2" width="16" height="16"/>
+                                                        </progressIndicator>
+                                                    </subviews>
+                                                    <visibilityPriorities>
+                                                        <integer value="1000"/>
+                                                        <integer value="1000"/>
+                                                        <integer value="1000"/>
+                                                    </visibilityPriorities>
+                                                    <customSpacing>
+                                                        <real value="3.4028234663852886e+38"/>
+                                                        <real value="3.4028234663852886e+38"/>
+                                                        <real value="3.4028234663852886e+38"/>
+                                                    </customSpacing>
+                                                </stackView>
+                                            </subviews>
+                                            <visibilityPriorities>
+                                                <integer value="1000"/>
+                                                <integer value="1000"/>
+                                            </visibilityPriorities>
+                                            <customSpacing>
+                                                <real value="3.4028234663852886e+38"/>
+                                                <real value="3.4028234663852886e+38"/>
+                                            </customSpacing>
+                                        </stackView>
                                     </subviews>
                                     <constraints>
                                         <constraint firstItem="dZo-r5-5oo" firstAttribute="leading" secondItem="G9p-JT-IMC" secondAttribute="trailing" constant="5" id="3eg-kp-zmN"/>
                                         <constraint firstItem="kYJ-HL-y6t" firstAttribute="centerX" secondItem="q7h-d1-Rwo" secondAttribute="centerX" id="4C5-Fp-ncc"/>
-                                        <constraint firstItem="00l-rv-tK6" firstAttribute="top" secondItem="G9p-JT-IMC" secondAttribute="bottom" constant="50" id="7Ml-8S-nft"/>
+                                        <constraint firstItem="00l-rv-tK6" firstAttribute="top" secondItem="G9p-JT-IMC" secondAttribute="bottom" constant="30" id="7Ml-8S-nft"/>
                                         <constraint firstItem="HvF-zm-6s3" firstAttribute="top" secondItem="q7h-d1-Rwo" secondAttribute="top" constant="80" id="8pn-Pf-wCm"/>
-                                        <constraint firstItem="00l-rv-tK6" firstAttribute="leading" secondItem="q7h-d1-Rwo" secondAttribute="leading" constant="100" id="9cu-Nr-RPn"/>
+                                        <constraint firstItem="00l-rv-tK6" firstAttribute="leading" secondItem="q7h-d1-Rwo" secondAttribute="leading" constant="90" id="9cu-Nr-RPn"/>
+                                        <constraint firstItem="Pyg-yV-r0b" firstAttribute="leading" secondItem="00l-rv-tK6" secondAttribute="leading" id="Cfj-a3-h5m"/>
                                         <constraint firstItem="rvm-Nd-jJM" firstAttribute="centerX" secondItem="q7h-d1-Rwo" secondAttribute="centerX" id="H3w-y3-kh7"/>
                                         <constraint firstItem="kYJ-HL-y6t" firstAttribute="top" secondItem="A0B-rW-3hl" secondAttribute="bottom" constant="13" id="MyH-FK-ErQ"/>
                                         <constraint firstAttribute="bottom" secondItem="A0B-rW-3hl" secondAttribute="bottom" constant="100" id="Net-av-d3K"/>
                                         <constraint firstItem="rvm-Nd-jJM" firstAttribute="top" secondItem="kYJ-HL-y6t" secondAttribute="bottom" constant="20" id="OGo-bx-Le3"/>
-                                        <constraint firstItem="A0B-rW-3hl" firstAttribute="top" secondItem="00l-rv-tK6" secondAttribute="bottom" constant="50" id="UE0-Zj-wLs"/>
                                         <constraint firstItem="A0B-rW-3hl" firstAttribute="centerX" secondItem="q7h-d1-Rwo" secondAttribute="centerX" id="UJh-hq-Of2"/>
                                         <constraint firstAttribute="trailing" secondItem="HvF-zm-6s3" secondAttribute="trailing" constant="70" id="W3f-7z-AgQ"/>
-                                        <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="G9p-JT-IMC" secondAttribute="trailing" constant="70" id="lus-cq-Nw6"/>
-                                        <constraint firstItem="G9p-JT-IMC" firstAttribute="top" secondItem="HvF-zm-6s3" secondAttribute="bottom" constant="80" id="pfv-Xn-nbB"/>
-                                        <constraint firstItem="G9p-JT-IMC" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="q7h-d1-Rwo" secondAttribute="leading" constant="70" id="rWr-76-4lu"/>
-                                        <constraint firstAttribute="trailing" secondItem="00l-rv-tK6" secondAttribute="trailing" constant="100" id="sAg-zS-mQ7"/>
+                                        <constraint firstItem="A0B-rW-3hl" firstAttribute="top" secondItem="Pyg-yV-r0b" secondAttribute="bottom" constant="35" id="ZJA-9v-9bI"/>
+                                        <constraint firstItem="Pyg-yV-r0b" firstAttribute="trailing" secondItem="00l-rv-tK6" secondAttribute="trailing" id="lfx-jv-M0x"/>
+                                        <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="G9p-JT-IMC" secondAttribute="trailing" constant="90" id="lus-cq-Nw6"/>
+                                        <constraint firstItem="G9p-JT-IMC" firstAttribute="top" secondItem="HvF-zm-6s3" secondAttribute="bottom" constant="50" id="pfv-Xn-nbB"/>
+                                        <constraint firstItem="G9p-JT-IMC" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="q7h-d1-Rwo" secondAttribute="leading" constant="90" id="rWr-76-4lu"/>
+                                        <constraint firstAttribute="trailing" secondItem="00l-rv-tK6" secondAttribute="trailing" constant="90" id="sAg-zS-mQ7"/>
+                                        <constraint firstItem="Pyg-yV-r0b" firstAttribute="top" secondItem="00l-rv-tK6" secondAttribute="bottom" constant="20" id="w2E-Qt-4Ji"/>
                                         <constraint firstItem="HvF-zm-6s3" firstAttribute="leading" secondItem="q7h-d1-Rwo" secondAttribute="leading" constant="70" id="xTS-Vb-0wb"/>
                                         <constraint firstItem="G9p-JT-IMC" firstAttribute="centerX" secondItem="q7h-d1-Rwo" secondAttribute="centerX" id="zSr-Np-Lf7"/>
                                         <constraint firstItem="dZo-r5-5oo" firstAttribute="top" secondItem="G9p-JT-IMC" secondAttribute="top" id="zdT-FE-1Lo"/>
@@ -5389,14 +5450,20 @@
                     </view>
                     <connections>
                         <outlet property="bottomSpaceLblTitle" destination="pfv-Xn-nbB" id="r2t-cu-ncQ"/>
-                        <outlet property="bottomSpaceScrollView" destination="UE0-Zj-wLs" id="myq-RG-ICz"/>
+                        <outlet property="bottomSpaceScrollView" destination="w2E-Qt-4Ji" id="6Pr-ui-eEK"/>
+                        <outlet property="bottomSpaceStackViewTask" destination="ZJA-9v-9bI" id="pLF-D8-KWy"/>
                         <outlet property="btnInfo" destination="dZo-r5-5oo" id="vYS-RP-EIt"/>
                         <outlet property="btnMain" destination="A0B-rW-3hl" id="RFN-N7-hKF"/>
                         <outlet property="btnPostponeBreak" destination="kYJ-HL-y6t" id="ypD-9c-GGC"/>
+                        <outlet property="comboBoxTask" destination="AgI-z3-x5q" id="D2x-Sd-ghd"/>
+                        <outlet property="lblCurrentTask" destination="uxF-VH-Zb3" id="CzU-r1-xng"/>
                         <outlet property="lblProgress" destination="rvm-Nd-jJM" id="mLc-au-PXH"/>
                         <outlet property="lblSubtitle" destination="G9p-JT-IMC" id="kba-2o-GQ4"/>
                         <outlet property="lblTitle" destination="HvF-zm-6s3" id="8r7-cv-PBH"/>
+                        <outlet property="lblTitleSelectTask" destination="7vO-TR-lax" id="xmT-B5-aYF"/>
+                        <outlet property="loaderTask" destination="Ija-iU-h9n" id="V5t-bG-Qmw"/>
                         <outlet property="scrollView" destination="00l-rv-tK6" id="2At-Ll-Yv4"/>
+                        <outlet property="stackViewSelectTask" destination="Pyg-yV-r0b" id="c5Q-zm-x9I"/>
                         <outlet property="textView" destination="oHg-nM-xyB" id="gxd-2N-WDj"/>
                         <outlet property="topSpaceLblTitle" destination="8pn-Pf-wCm" id="YSO-oq-tC6"/>
                         <outlet property="topSpaceScrollView" destination="7Ml-8S-nft" id="Z0B-As-11l"/>
@@ -12580,8 +12647,8 @@ DQ
                                                             <rect key="frame" x="79" y="2" width="354" height="28"/>
                                                             <datePickerCell key="cell" borderStyle="bezel" alignment="left" useCurrentDate="YES" id="IJY-cs-LOX">
                                                                 <font key="font" metaFont="system"/>
-                                                                <date key="date" timeIntervalSinceReferenceDate="785831159.426373">
-                                                                    <!--2025-11-26 06:25:59 +0000-->
+                                                                <date key="date" timeIntervalSinceReferenceDate="786003972.46446097">
+                                                                    <!--2025-11-28 06:26:12 +0000-->
                                                                 </date>
                                                                 <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
                                                                 <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>

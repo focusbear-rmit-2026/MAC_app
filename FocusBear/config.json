@@ -818,7 +818,8 @@
             "tourSubTitleNextGoal": "Set your focus goal for your next session",
             "focusModeFocusedTitles": ["You crushed it!", "You were in the zone!", "Deep work accomplished!"],
             "focusModeDecentTitles": ["Not bad", "Decent session"],
-            "focusModeDistractedTitles": ["A few distractions crept in", "Lock in your focus for the next one"]
+            "focusModeDistractedTitles": ["A few distractions crept in", "Lock in your focus for the next one"],
+            "buttonContinueMicroBreak": "Continue Break"
         },
         "focusSummaryInfo": {
             "title": "You completed <COUNT> focus blocks today.",
@@ -1533,7 +1534,9 @@
             "Writing a script that generates random passwords that only consist of emojis",
             "Designing a user interface for a self-driving unicycle"],
         "subTitleMeetings": "You're going to focus better on the meeting after this break. Write down any quick thoughts you don't forget.",
-        "lastWorkText": "I had <WORK> open. I was about to..."
+        "lastWorkText": "I had <WORK> open. I was about to...",
+        "titleSelectTask": "Before we start your micro-break, what task are you currently working on? I’ll remind you when you return.",
+        "titleCurrentTask": "Current task:"
     },
     "askWorkTimeVcInfo": {
         "titleStartupTime": "Startup Time:",

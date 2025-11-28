@@ -545,7 +545,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         checkLogFileRotation()
         allApiObject.getConfigFile(fileUrl:"https://focus-bear.github.io/assets/config/\(configFileName).json", completionHandler: {dic in
             print("response mila")
-            if dic == nil{//todo != kro
+            if dic != nil{//todo != kro
                 configjson = dic!
             }else{
                 if let path = Bundle.main.path(forResource: configFileName, ofType: "json") {
@@ -3714,7 +3714,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             }
         }
         
-        setBackgroundThreadTimer() 
+        setBackgroundThreadTimer()
         pusherEventsObject.startEventNotifications()
         
     
@@ -3723,6 +3723,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             UserDefaults.standard.removeObject(forKey: kUserdefaultsUserShouldDoFirstFocusSesion)
             menuShowSimplePomodoroModeView()
         }
+
     }
     
     
@@ -6986,7 +6987,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         }
     }
     @objc func menuItem_Preferences() {
-        allApiObject.capturePosthog(event: "open-preferences", metadata: [:])
         if mainWindowControllerObj?.window?.isVisible ?? false{
             mainWindowControllerObj?.showWindow(self)
         }
@@ -11291,5 +11291,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 // unlocka acan alert agaion and again bug solved 
 
 
-// todo check onboarding
+//  check onboarding
 
+// break chal rha ho tab focus mode end ho to
+//    .. preferences posthog
+
+
+// congig 2 text  config
+// bada abox aa rha h
+// continue break
+//preferences posthog

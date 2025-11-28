@@ -535,7 +535,6 @@ class blockingScheduleEditorVC: NSViewController {
     }
     
     @IBAction func btnEditBlockListClicked(_ sender: Any) {
-        allApiObject.capturePosthog(event: "open-preferences", metadata: [:])// todo
         addLog(text: "[user-action]Showing preferences from edit focus mode")
         if focusPreferencesVcObj == nil{
             getFocusPreferencesVcObject().loadView()

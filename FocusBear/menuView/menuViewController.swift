@@ -2009,55 +2009,16 @@ class menuViewController: NSViewController {
             showUpgradeNowWindow()
             return;
         }
-//        var shouldShowToolBoxWindow = false
-//        if isAnyAllowedFocusModeActivityRunning || isFocusModeOn(){
-//            let isAllowedAllAppsInFocus = currentRunningFocusType["isAllowedAllApps"] as? Bool ?? false
-//            let allowAppsPath = currentRunningFocusType["allowed_apps"] as? [String] ?? []
-//            
-//            if !isAllowedAllAppsInFocus && allowAppsPath.count != 0{
-//                shouldShowToolBoxWindow = true
-//            }
-//            let isAllowedListApproachInFocus = currentRunningFocusType["isAllowedListApproach"] as? Bool ?? false
-//            let arrAllowedUrlsForFocus = currentRunningFocusType["allowed_urls"] as? [String] ?? []
-//            
-//            if arrAllowedUrlsForFocus.count != 0 && isAllowedListApproachInFocus{//!isAllowedAllUrlsInFocus &&#453
-//                shouldShowToolBoxWindow = true
-//            }
-//        }else if (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._CUSTOM_ROUTINE_) && currentHabitPlaying != nil{
-//            let allowAppsPath = currentHabitPlaying?.allowApps ?? []
-//            if allowAppsPath.count != 0{
-//                shouldShowToolBoxWindow = true
-//            }
-//            let arrAllowedUrlsForFocus = currentHabitPlaying?.allowUrls ?? []
-//            
-//            if arrAllowedUrlsForFocus.count != 0{
-//                shouldShowToolBoxWindow = true
-//            }
-//        }
-//        if shouldShowToolBoxWindow{
-//            boxOpenToolBox.isHidden = false
-//            menuItemOpenToolbox.isHidden = false
-//        }else{
-//            boxOpenToolBox.isHidden = true
-//            menuItemOpenToolbox.isHidden = true
-//        }
         toolsMenu.minimumWidth = boxTools.frame.width
         let p = NSPoint(x: (sender as AnyObject).frame.origin.x, y: (sender as AnyObject).frame.origin.y )
         toolsMenu.popUp(positioning: nil, at: p, in: (sender as AnyObject).superview)
     }
     
     @IBAction func btnResumeHabitsClicked(_ sender: Any) {
+        addLog(text: "[user-action] btnResumeHabitsClicked")
         if currentState == ._MICRO_BREAK_ && isBreakActivityExecuteFromPostponeMorningHabit{
             getHabitsVcObject().stopActivityCountDownTimer()
             if currentActivityPlaying != nil{
-//                if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
-//                    if smallCountDownWcObj?.window != nil{
-//                        if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
-//                            getSmallCountDownWindowObject().window?.close()
-//                        }
-//                    }
-//                }
-                
                 if isSmallCountDownTimerViewVisible(){
                     if !(smallCountDownVcObj?.isFocusBreak ?? false){
                         smallCountDownVcObj?.closeTimerBox()
@@ -2074,13 +2035,6 @@ class menuViewController: NSViewController {
         }else if currentState == ._MICRO_BREAK_ && isBreakActivityExecuteFromPostponeEveningHabit{
             getHabitsVcObject().stopActivityCountDownTimer()
             if currentActivityPlaying != nil{
-//                if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
-//                    if smallCountDownWcObj?.window != nil{
-//                        if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
-//                            getSmallCountDownWindowObject().window?.close()
-//                        }
-//                    }
-//                }
                 closeSmallCountDownTimerBoxIfVisibleForWithoutFocusBreak()
             }
             mainWindowControllerObj?.window?.close()
@@ -2093,13 +2047,6 @@ class menuViewController: NSViewController {
         }else if currentState == ._CUSTOM_ROUTINE_ && (isCustomRoutineWasRunningInPostponeMorningHabit || isCustomRoutineWasRunningInPostponeEveningHabit){
             getHabitsVcObject().stopActivityCountDownTimer()
             if currentHabitPlaying != nil{
-//                if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
-//                    if smallCountDownWcObj?.window != nil{
-//                        if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
-//                            getSmallCountDownWindowObject().window?.close()
-//                        }
-//                    }
-//                }
                 closeSmallCountDownTimerBoxIfVisibleForWithoutFocusBreak()
             }
             mainWindowControllerObj?.window?.close()
@@ -2120,11 +2067,6 @@ class menuViewController: NSViewController {
             if getHabitsVcObject().postponeTimer != nil{
                 getHabitsVcObject().postponeTimer?.invalidate()
                 getHabitsVcObject().postponeTimer = nil
-//                if smallCountDownWcObj != nil{
-//                    if getSmallCountDownWindowObject().window!.isVisible && getsmallCountDownVcObject().isFocusBreak{
-//                        smallCountDownVcObj?.closeTimerBox()
-//                    }
-//                }
                 closeSmallCountDownTimerBoxIfVisibleForFocusBreak()
             }
             if getHabitsVcObject().postponeNotificationTimer != nil{

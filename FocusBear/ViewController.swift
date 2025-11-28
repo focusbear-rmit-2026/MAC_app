@@ -601,6 +601,7 @@ class ViewController: NSViewController {
     }
 
     func showBlocksPreferencesView(){
+        allApiObject.capturePosthog(event: "open-blocking", metadata: [:])
         self.removeSubViews()
         containerView.addSubview(getTabStrictnessContainerVcObject().view)
         containerView.addConstraints(subView: getTabStrictnessContainerVcObject().view)
@@ -612,12 +613,14 @@ class ViewController: NSViewController {
     }
     
     func showSettingsView(){
+        allApiObject.capturePosthog(event: "open-preferences", metadata: [:])
         self.removeSubViews()
         containerView.addSubview(getSettingsSplitViewControllerObject().view)
         containerView.addConstraints(subView: getSettingsSplitViewControllerObject().view)
     }
     
     func showEditHabitsView(){
+        allApiObject.capturePosthog(event: "open-edit-habits", metadata: [:])
         self.removeSubViews()
         containerView.addSubview(getSelectJsonVcObject().view)
         containerView.addConstraints(subView: getSelectJsonVcObject().view)

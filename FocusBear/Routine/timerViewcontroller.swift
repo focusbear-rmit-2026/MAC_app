@@ -377,7 +377,9 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         addLog(text:"Final video url is :- \(videoUrl)")// Added in v 2.27.419
         print("Final video url is :- \(videoUrl)")
         let link = URL(string:videoUrl)!
-        let request = URLRequest(url: link)
+        var request = URLRequest(url: link)
+        request.setValue("com.App.EarnYourScreentime", forHTTPHeaderField: "Referer")/// v 2.27.336 for Fix Youtube embed #1554(still some urls having problem)
+        ///
         if #available(macOS 12.0, *) {
             self.webView.setAllMediaPlaybackSuspended(false)
         } else {
@@ -486,19 +488,22 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                 }else{
                     videoUrl = videoUrl + "?rel=0"
                 }
-                //videoUrl = videoUrl.replacingOccurrences(of: "youtube.com", with: "youtube-nocookie.com")// // not working 
+                //videoUrl = videoUrl.replacingOccurrences(of: "youtube.com", with: "youtube-nocookie.com")// // not working //
             }
             addLog(text:"Final video url is :- \(videoUrl)")// Added in v 2.27.419
             print("Final video url is :- \(videoUrl)")
             let link = URL(string:videoUrl)!
-            let request = URLRequest(url: link)
+            var request = URLRequest(url: link)
+            
+            request.setValue("com.App.EarnYourScreentime", forHTTPHeaderField: "Referer")// v 2.27.336 for Fix Youtube embed #1554(still some urls having problem)
+            
             if #available(macOS 12.0, *) {
                 self.webView.setAllMediaPlaybackSuspended(false)
             } else {
                 // Fallback on earlier versions
             }
+            
             self.webView.load(request)
-
             allApiObject.capturePosthog(event: "play-youtube-video-in-activity", metadata: [:])
             
             if Reachability.isConnectedToNetwork() == false {
@@ -2165,36 +2170,5 @@ extension timerViewcontroller:NSTableViewDelegate, NSTableViewDataSource {
         tblViewCheckList.reloadData()
     }
 }
-
-
-
-
-
-//func loadWebViewTo(url:String?){
-//    if var videoUrl = url{
-//        if videoUrl.lowercased().contains("watch?v="){
-//            if videoUrl.contains("&"){// removing additional param
-//                if let firstItem =  videoUrl.components(separatedBy: "&").first{
-//                    videoUrl = firstItem
-//                }
-//            }
-//            videoUrl = videoUrl.replacingOccurrences(of: "watch?v=", with: "embed/")
-//        }else{
-//            if videoUrl.lowercased().contains("https://youtu.be/"){
-//                if let lastItem =  videoUrl.components(separatedBy: "/").last{
-//                   videoUrl = "https://www.youtube.com/embed/" + lastItem
-//                }
-//                
-//            }
-//        }
-//        videoUrl = videoUrl + "&autoplay=1"
-//
-//        let link = URL(string:videoUrl)!
-//        let request = URLRequest(url: link)
-//        self.webView.load(request)
-//
-//    }
-//}
-
 
 //bukN2P7WpwE

@@ -386,7 +386,8 @@
         "tourSubTitleNextGoal": "Establece tu objetivo de enfoque para la próxima sesión",
         "focusModeFocusedTitles": ["¡Lo lograste!", "¡Estuviste en tu zona!", "¡Trabajo profundo logrado!"],
         "focusModeDecentTitles": ["Nada mal", "Sesión decente"],
-        "focusModeDistractedTitles": ["Se colaron algunas distracciones", "Concéntrate al máximo en la próxima sesión"]
+        "focusModeDistractedTitles": ["Se colaron algunas distracciones", "Concéntrate al máximo en la próxima sesión"],
+        "buttonContinueMicroBreak": "Continuar descanso"
     },
     "settings": {
         "title": "Ingresa la configuración JSON a continuación:",
@@ -1533,7 +1534,9 @@
             "Escribiendo un script que genera contraseñas aleatorias que sólo consisten en emojis",
             "Diseñando una interfaz de usuario para un monociclo autoconducido"],
         "subTitleMeetings": "Te concentrarás mejor en la reunión después de este descanso. Anota cualquier pensamiento rápido para no olvidarlo.",
-        "lastWorkText": "Tenía <WORK> abierto. Estaba a punto de..."
+        "lastWorkText": "Tenía <WORK> abierto. Estaba a punto de...",
+        "titleSelectTask": "Antes de empezar tu micro-pausa, ¿en qué tarea estás trabajando ahora? Te la recordaré cuando vuelvas.",
+        "titleCurrentTask": "Tarea actual:"
     },
     "askWorkTimeVcInfo": {
         "titleStartupTime": "Hora de inicio:",

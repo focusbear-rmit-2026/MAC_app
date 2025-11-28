@@ -753,6 +753,18 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         resumeIfAnyFocusMusicStoppedAutomatically()
         mainViewControllerObj?.expandLeftPanel()
         enableAllItems()
+        
+        //Don't show brain dump after microbreak
+        //        #1565     v 2.28.436  28/11/25
+        if isFocusModeOn(){
+            if let breaksBrainDumpVcObj = breaksBrainDumpVcObj{
+                if let id = breaksBrainDumpVcObj.taskIdSaveFromBrainDump, let taskTitle = breaksBrainDumpVcObj.taskSaveFromBrainDump{
+                    taskPlayerVcObj?.addAndPlayTaskInCurrentList(taskName: taskTitle, id: id, duration: 600, shouldCompleteCurrentTask: false)
+                    breaksBrainDumpVcObj.taskIdSaveFromBrainDump = nil
+                    breaksBrainDumpVcObj.taskSaveFromBrainDump = nil
+                }
+            }
+        }
     }
 
     func enableAllItems(){
