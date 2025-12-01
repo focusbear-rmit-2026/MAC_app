@@ -57,7 +57,7 @@ class customRoutineStateVc: NSViewController {
         }
         
         if !isShutOffTimeGoing(){
-            let (nextRoutine, nextRoutineName) = getNextRoutineInfo()
+            let (nextRoutine, nextRoutineName, nextRoutineIsEveningRoutine) = getNextRoutineInfo()
             
             var timeFormat = "h:mm a"
             if let dict = UserDefaults.standard.persistentDomain(forName: "com.apple.menuextra.clock") {

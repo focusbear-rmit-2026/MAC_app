@@ -2166,21 +2166,17 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     }
     
     func checkActivationState(){
-        //        DispatchQueue.main.async {
-        
         addLog(text: "checkActivationState")
         if isPurchased == true{
             // initial work includes top menu, and habit activities process
             self.initialWork()
             writeSettingForScreeenTime(habitInfo: "")
         }else{//daysLeft
-            
+          
             //new work 12/9/22
             if daysLeft <= 0{//if expired than menu is enabled
                 //                self.readSettingsJsonDictionary(json: nil)
                 self.statusbutton?.wantsLayer = true
-                self.statusbutton?.layer?.borderColor = NSColor.red.cgColor
-                self.statusbutton?.layer?.borderWidth = 2
                 self.statusbutton?.layer?.backgroundColor = NSColor.clear.cgColor
                 var expiredBarText = "Expired"
                 if let common = configjson.value(forKey: "common") as? NSDictionary{
@@ -5363,7 +5359,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 }
                 
                 if shouldShowEveningHabit{
-                    if arrAllDaysEveningHabits.count == 0 {// if count is 0 then we will not do anything
+                    if arrAllDaysEveningHabits.count == 0 {// if count is 0 then we will not do anything // if change here then also change in habit state class 
                         
                         // ----Focus Bear isn’t prompting breaks (#1548, v2.27.428)---
                         // When there are no morning/evening habits, `isHabitAlreadyShowed` remains true,
@@ -11301,3 +11297,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 // bada abox aa rha h
 // continue break
 //preferences posthog
+
+
+//todo test app_version 

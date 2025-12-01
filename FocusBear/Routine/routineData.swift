@@ -961,8 +961,9 @@ func getCurrentHabitCurrentDurationDone(id:String)->Int?{
  };
  */
 
-func getNextRoutineInfo()->(Date, String){
+func getNextRoutineInfo()->(Date, String, Bool){
     var nextRoutineTime:Date = Date()
+    var nextRoutineIsEveningRoutine = true
     var nextRoutineName = "Evening Routine"
     if let habitsStateVcInfo = configjson.value(forKey: "habitsStateVcInfo") as? NSDictionary{
         nextRoutineName = habitsStateVcInfo.value(forKey: "titleEveningRoutine") as? String ?? nextRoutineName
@@ -1037,18 +1038,20 @@ func getNextRoutineInfo()->(Date, String){
                 if nextSheduledTimeRoutine < nextRoutineTime{
                     nextRoutineTime = nextSheduledTimeRoutine
                     nextRoutineName = arrAllCustomRoutine[i].title
+                    nextRoutineIsEveningRoutine = false
                 }
             }else{
                 if startDate < nextRoutineTime{
                     nextRoutineTime = startDate
                     nextRoutineName = arrAllCustomRoutine[i].title
+                    nextRoutineIsEveningRoutine = false
                 }
             }
         }
 
     }
 
-    return (nextRoutineTime, nextRoutineName)
+    return (nextRoutineTime, nextRoutineName, nextRoutineIsEveningRoutine)
 }
 
 func isShutOffTimeGoing()->Bool{

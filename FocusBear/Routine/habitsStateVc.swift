@@ -17,7 +17,7 @@ class habitsStateVc: NSViewController {
     var eveningRoutinePostponedText = "Evening routine postponed. Resume it now by clicking 'Resume Habit'."
     
     var isFreeTimeBeforeShutoff = false
-    
+    var editRoutineButtonShowing = false
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
@@ -37,6 +37,7 @@ class habitsStateVc: NSViewController {
     func reloadData(){
         addLog(text:"habitsStateVc:- reloadData")
         isFreeTimeBeforeShutoff = false
+        editRoutineButtonShowing = false
         if !isAppEnable{
             btnResumeHabits.title = "Activate Distraction Blocking"
             lblTitle.stringValue = "Distraction Blocking is currently paused. You can turn it back on anytime to stay focused."
@@ -80,7 +81,7 @@ class habitsStateVc: NSViewController {
         }else{
             btnResumeHabits.isHidden = true
             if isHabitAlreadyShowed && !isShutOffTimeGoing(){
-                let (nextRoutine, nextRoutineName) = getNextRoutineInfo()
+                let (nextRoutine, nextRoutineName, nextRoutineIsEveningRoutine) = getNextRoutineInfo()
                 
                 var timeFormat = "h:mm a"
                 if let dict = UserDefaults.standard.persistentDomain(forName: "com.apple.menuextra.clock") {
@@ -100,7 +101,19 @@ class habitsStateVc: NSViewController {
                 nextRoutineText = nextRoutineText.replacingOccurrences(of: "<TIME>", with: dateString)
                 lblTitle.stringValue = nextRoutineText
                 
-                
+                if nextRoutineIsEveningRoutine{
+                    if arrAllDaysEveningHabits.count == 0{
+                       
+                        var title = "There are no habits set for your account. Do you want to set habits now?"
+                        if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
+                            title = menuInfo.value(forKey: "alertNoHabitsFound") as? String ?? title
+                        }
+                        lblTitle.stringValue = nextRoutineText + "\n\n\n" + title
+                        btnResumeHabits.title = "Edit Habits" //todo text
+                        editRoutineButtonShowing = true
+                        btnResumeHabits.isHidden = false
+                    }
+                }
                 
             }else{
                 if let date = UserDefaults.standard.object(forKey: kUserdefaultsShutdownAborted) as? Date{
@@ -110,6 +123,17 @@ class habitsStateVc: NSViewController {
                             lblTitle.stringValue = habitsStateVcInfo.value(forKey: "shutoffAbortedText") as? String ?? lblTitle.stringValue
                         }
                     }
+                }
+                if isShutOffTimeGoing() && arrAllDaysEveningHabits.count == 0{
+                   
+                    var title = "There are no habits set for your account. Do you want to set habits now?"
+                    if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
+                        title = menuInfo.value(forKey: "alertNoHabitsFound") as? String ?? title
+                    }
+                    lblTitle.stringValue = title
+                    btnResumeHabits.title = "Edit Habits" //todo text
+                    editRoutineButtonShowing = true 
+                    btnResumeHabits.isHidden = false
                 }
             }
             
@@ -172,6 +196,11 @@ class habitsStateVc: NSViewController {
     }
     
     @IBAction func btnResumeHabitsClicked(_ sender: Any) {
+        if editRoutineButtonShowing{
+            addLog(text:"[user-action] habitsStateVc:- no habit in evening routine :- button Edit Habits clicked")
+            leftMenuVcObj?.showEditHabitsView()
+            return;
+        }
         if isFreeTimeBeforeShutoff{
             leftMenuVcObj?.showEditHabitsView()
             return;

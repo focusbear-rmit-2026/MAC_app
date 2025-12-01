@@ -320,6 +320,7 @@ class AllApi:NSObject {
         ]
         
         json["operating_system"] = "macos"// for new events endpoint #1536 v 2.28.436
+        json["app_version"] = getAppVersionInString()// #1255// todo ask sire then 
         EventBuffer.shared.addEvent(json)
 
         

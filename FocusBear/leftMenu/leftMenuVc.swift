@@ -356,6 +356,8 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
                                 habitsVcObj?.showHabitState()// free time 
                             }
                         }
+                    }else if isShutOffTimeGoing() && currentState != ._EVENING_HABIT_ && currentState != ._FOCUS_SUMMARY_ && currentState != ._POSTPON_EVENING_HABIT_ && currentState != ._POSTPON_FOCUS_SUMMARY_ && arrAllDaysEveningHabits.count == 0{
+                        habitsVcObj?.showHabitState()// v 2.28.437
                     }
                 }
             }
