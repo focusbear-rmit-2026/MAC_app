@@ -22,7 +22,7 @@ class frictionVc: NSViewController {
     let nextHabitRemainderItemVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingToggleItemVc")) as? settingToggleItemVc
     let allowOutOfOrderHabitsItemVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingToggleItemVc")) as? settingToggleItemVc
     let requireIntentionInpostponeItemVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingToggleItemVc")) as? settingToggleItemVc
-    let accountabilityBuddiesVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingListItemVc")) as? settingListItemVc
+  //  let accountabilityBuddiesVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingListItemVc")) as? settingListItemVc
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
@@ -35,7 +35,7 @@ class frictionVc: NSViewController {
         var settingRequireIntentionText = "Require intention when postponing"
         var descriptionSettingRequireIntention = "If this is set, when you try to postpone, Focus Bear will ask you to type in your plans for what you will do while postponing your habits. You must enter at least 10 characters."
         
-        var accountabilityBuddiesText = "Accountability buddies"
+        //var accountabilityBuddiesText = "Accountability buddies"
 
         var checkBoxReloadAppAfterForceQuitText = "Reload after Force Quit"
         lblQuestionSkipHabit.stringValue = "How easy do you want it to be to skip your habits?"
@@ -50,7 +50,7 @@ class frictionVc: NSViewController {
             checkBoxAllowOutOfOrderHabitsText = preferencesInfo.value(forKey: "allowOutOfOrderHabitsText") as? String ?? checkBoxAllowOutOfOrderHabitsText
             settingRequireIntentionText = preferencesInfo.value(forKey: "settingRequireIntentionText") as? String ?? settingRequireIntentionText
             descriptionSettingRequireIntention = preferencesInfo.value(forKey: "descriptionSettingRequireIntention") as? String ?? descriptionSettingRequireIntention
-            accountabilityBuddiesText = preferencesInfo.value(forKey: "accountabilityBuddiesText") as? String ?? accountabilityBuddiesText
+            //accountabilityBuddiesText = preferencesInfo.value(forKey: "accountabilityBuddiesText") as? String ?? accountabilityBuddiesText
         }
         var strictness_Friction_ReloadAfterForceQuit = "Effortless bounce back! Activate this convenient feature to automatically reload Focus Bear after a force quit, ensuring a swift and seamless experience for uninterrupted productivity."
         if let tooltips = configjson.value(forKey: "tooltips") as? NSDictionary{
@@ -81,15 +81,15 @@ class frictionVc: NSViewController {
         requireIntentionInpostponeItemVcObj?.lblSubTitle.stringValue = descriptionSettingRequireIntention
         requireIntentionInpostponeItemVcObj?.lblSubTitle.isHidden = false
         requireIntentionInpostponeItemVcObj?.delegate = self
-        requireIntentionInpostponeItemVcObj?.lineBottom.isHidden = false
+        requireIntentionInpostponeItemVcObj?.lineBottom.isHidden = true
         
         
-        stackView.addView(accountabilityBuddiesVcObj!.view, in: .bottom)
-        accountabilityBuddiesVcObj?.lblTitle.stringValue = accountabilityBuddiesText
-        accountabilityBuddiesVcObj?.imgViewIcon.image = NSImage(named: NSImage.userGroupName)
-        accountabilityBuddiesVcObj?.lblDescription.isHidden = true
-        accountabilityBuddiesVcObj?.delegate = self
-        accountabilityBuddiesVcObj?.lineBottom.isHidden = true
+//        stackView.addView(accountabilityBuddiesVcObj!.view, in: .bottom)
+//        accountabilityBuddiesVcObj?.lblTitle.stringValue = accountabilityBuddiesText
+//        accountabilityBuddiesVcObj?.imgViewIcon.image = NSImage(named: NSImage.userGroupName)
+//        accountabilityBuddiesVcObj?.lblDescription.isHidden = true
+//        accountabilityBuddiesVcObj?.delegate = self
+//        accountabilityBuddiesVcObj?.lineBottom.isHidden = true
         
         arrForSearchFromSettings.append(["title": lblQuestionSkipHabit.stringValue, "tabId": idFriction, "object": bgBox as Any])
         arrForSearchFromSettings.append(["title": radioButtonEasySkip.title, "tabId": idFriction, "object": bgBox as Any])
@@ -98,7 +98,7 @@ class frictionVc: NSViewController {
         arrForSearchFromSettings.append(["title": checkBoxPromptToAskNextHabitText, "tabId": idFriction, "object": nextHabitRemainderItemVcObj!.bgBox as Any])
         arrForSearchFromSettings.append(["title": checkBoxAllowOutOfOrderHabitsText, "tabId": idFriction, "object": allowOutOfOrderHabitsItemVcObj!.bgBox as Any])
         arrForSearchFromSettings.append(["title": settingRequireIntentionText, "tabId": idFriction, "object": requireIntentionInpostponeItemVcObj!.bgBox as Any])
-        arrForSearchFromSettings.append(["title": accountabilityBuddiesText, "tabId": idFriction, "object": accountabilityBuddiesVcObj!.bgBox as Any])
+       // arrForSearchFromSettings.append(["title": accountabilityBuddiesText, "tabId": idFriction, "object": accountabilityBuddiesVcObj!.bgBox as Any])
     }
     override func viewWillAppear() {
         if SettingsManagerObject.isEasySkipEnabled{
@@ -208,15 +208,15 @@ extension frictionVc: SettingToggleItemDelegate{
 
 
 
-extension frictionVc: SettingListItemDelegate{
-    func buttonClicked(object:settingListItemVc) {
-        if object == accountabilityBuddiesVcObj{
-            var comingSoonText = "Coming Soon"
-            if let common = configjson.value(forKey: "common") as? NSDictionary{
-                comingSoonText = common.value(forKey: "comingSoonText") as? String ?? comingSoonText
-            }
-            allApiObject.capturePosthog(event: "interested-in-accountability-buddies", metadata: [:])
-            showTooltip(sender: accountabilityBuddiesVcObj!.view, msg: comingSoonText, preferredEdge: NSRectEdge.maxY, maxWidthVal:230)
-        }
-    }
-}
+//extension frictionVc: SettingListItemDelegate{
+//    func buttonClicked(object:settingListItemVc) {
+//        if object == accountabilityBuddiesVcObj{
+//            var comingSoonText = "Coming Soon"
+//            if let common = configjson.value(forKey: "common") as? NSDictionary{
+//                comingSoonText = common.value(forKey: "comingSoonText") as? String ?? comingSoonText
+//            }
+//            allApiObject.capturePosthog(event: "interested-in-accountability-buddies", metadata: [:])
+//            showTooltip(sender: accountabilityBuddiesVcObj!.view, msg: comingSoonText, preferredEdge: NSRectEdge.maxY, maxWidthVal:230)
+//        }
+//    }
+//}

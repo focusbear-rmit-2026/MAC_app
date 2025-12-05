@@ -513,7 +513,9 @@ class ViewController: NSViewController {
     func showFocusSessionView(pomodoroView:NSView){
         self.removeSubViews()
         containerView.addSubview(pomodoroView)
-        containerView.addConstraints(subView: pomodoroView)
+        if containerView.subviews.contains(pomodoroView){// if auto super pomodoro has started then may be todo player was shown from inside pomodoro so current view is not pomodoro after this. to prevent crash we are doing this  v 2.28.440
+            containerView.addConstraints(subView: pomodoroView)
+        }
     }
     
     func showBrainDumpView(){

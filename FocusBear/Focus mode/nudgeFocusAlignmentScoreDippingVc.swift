@@ -25,6 +25,7 @@ class nudgeFocusAlignmentScoreDippingVc: NSViewController {
     var isScoreLow = true
     var lastScoreShown:Double = -1
     var isScoreFallingDown = true
+    var isFloatingTopBarRemovedByNudge = false
     var arrAlignmentScoreDown = ["Drifting off track—let’s bring it back.",
                 "That’s a detour, but your focus is still within reach.",
                 "Distraction’s creeping in—time to reset.",
@@ -191,13 +192,28 @@ class nudgeFocusAlignmentScoreDippingVc: NSViewController {
         nudgeFocusAlignmentScoreDippingWcObject?.toggleMenu()
         
 //        /If the big floating bear is open, I don’t think we need the little one as well.
-        if floatingTopBarWcObj != nil && !isFocusBearMenuVisible(){
-            if getFloatingTopBarWObject().window?.isVisible ?? false{
-                getFloatingTopBarVObject().boxMain.isHidden = false
-                getFloatingTopBarVObject().boxMoreItems.isHidden = false
+        
+        //check AnyNotificationVisible
+        var anyNotificationVisibleInFloatingBear = false
+        if floatingTopBarVcObj != nil{
+            let visibleViews = floatingTopBarVcObj!.stackViewMoreItems.arrangedSubviews.filter { !$0.isHidden }
+            if visibleViews.count != 0{
+                anyNotificationVisibleInFloatingBear = true
             }
         }
+        
+//        Floating bear shouldn't show when you close the bigger bear with focus alignment score #1574
+        if anyNotificationVisibleInFloatingBear || isFloatingTopBarRemovedByNudge{// check added in v2.28.440
+            if floatingTopBarWcObj != nil && !isFocusBearMenuVisible(){
+                if getFloatingTopBarWObject().window?.isVisible ?? false{
+                    getFloatingTopBarVObject().boxMain.isHidden = false
+                    getFloatingTopBarVObject().boxMoreItems.isHidden = false
+                }
+            }
+        }
+        isFloatingTopBarRemovedByNudge = false
     }
+    
     @IBAction func btnExpandTaskPlayerClicked(_ sender: Any) {
         menuViewControllerObj?.openToDoListClicked()
     }

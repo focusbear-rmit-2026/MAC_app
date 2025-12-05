@@ -2751,9 +2751,11 @@ class habitsVc: NSViewController {
                     pomodoroVcObj!.lblTitle.stringValue = pomodoroVcObj!.titleAfterPostpone
                     
                 }else{
-                    removeSubViews() 
-                    leftMenuVcObj?.showHabitsView()
-                    habitsVcObj?.showHabitState()
+                    if !(leftMenuVcObj?.boxFocusSession.isSelected ?? false){// without this check app is crashing because add task vc dissmiss cause crash because that view will be change before dissmiss v 2.28.440
+                        removeSubViews()
+                        leftMenuVcObj?.showHabitsView()
+                        habitsVcObj?.showHabitState()
+                    }
                 }
             }
             writeStringToHabitInfo(isFinishTime: true, activityName: "")

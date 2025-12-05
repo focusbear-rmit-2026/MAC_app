@@ -320,7 +320,7 @@ class AllApi:NSObject {
         ]
         
         json["operating_system"] = "macos"// for new events endpoint #1536 v 2.28.436
-        json["app_version"] = getAppVersionInString()// #1255// todo ask sire then 
+        json["app_version"] = getAppVersionInString()// #1255// 
         EventBuffer.shared.addEvent(json)
 
         
@@ -671,6 +671,7 @@ class AllApi:NSObject {
     var isApiDeleteFocusModeErrorFound = false
     var isApiEditFocusModeErrorFound = false
     var isApiStartFocusModeErrorFound = false
+    var isApiExtendFocusModeErrorFound = false
     var isApiFinishFocusModeErrorFound = false
     var isApiGetDeviceIdErrorFound = false
     var isApiActivitySkippedErrorFound = false
@@ -3217,10 +3218,6 @@ class AllApi:NSObject {
                                     return;
                                 }
                             }
-                            //                        }else{
-                            //                            completionHandler(nil)
-                            //                            return
-                            //                        }
                         }
                         
                         
@@ -3401,6 +3398,110 @@ class AllApi:NSObject {
             }else{
                 completionHandler(nil)
                 return
+            }
+        }
+    }
+    
+    func extendFocusMode(id:String, finish_time:Date, completionHandler: @escaping(_ result: NSDictionary?) -> ()){//v 2.28.439
+        addLog(text: "func call:- extendFocusMode:- update_scheduled_finish")
+        
+        appdelegate!.credentialsManager.credentials {credentialsInfo in
+            addLog(text: "get updated credentialsInfo from credentialsManager")
+            
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+            
+            
+            let responsePath = "\(baseUrl)/focus-mode/\(id)/update_scheduled_finish"
+            if let responsePathUrl = NSURL(string: responsePath){
+                addLog(text: "api call extendFocusMode Api \(responsePathUrl)")
+                let token = appdelegate!.credential?.accessToken ?? ""
+                
+                let request = makeRequest(responsePathUrl: responsePathUrl)
+                request.httpMethod = "PATCH";
+                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                
+                
+                let json: [String: Any] = [
+                    "scheduled_finish_time":getStringFromDateInUtc(date: finish_time, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+                ]
+                
+                
+                
+                print("*****************json for activity************")
+                print(json)
+                print("**********************************************")
+                let jsonData = try? JSONSerialization.data(withJSONObject: json)
+                
+                
+                request.httpBody = jsonData
+                
+                
+                let task = URLSession.shared.dataTask(with: request as URLRequest) {
+                    data, response, error in
+                    
+                    if let httpResponse = response as? HTTPURLResponse {
+                        self.isApiExtendFocusModeErrorFound = false
+                        if httpResponse.statusCode == 200{
+                            addLog(text: "api call extendFocusMode Api success")
+                            if data != nil{
+                                do {
+                                    if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
+                                        
+                                        print("*************** Activity completed response****************")
+                                        print(jsonResult)
+                                        print("***********************************************************")
+                                        completionHandler(jsonResult)
+                                        return
+                                    }
+                                    
+                                }catch{
+                                    addLog(text: "api call extendFocusMode error:- \(error.localizedDescription)")
+                                    completionHandler(nil)
+                                    return
+                                }
+                            }
+                        }else{
+                            addLog(text: "api call extendFocusMode Api error:- statusCode is \(httpResponse.statusCode)")
+                            self.writeJsonInLog(data: data)
+                            addLog(text: "accessToken is:- \(token)")
+                            completionHandler(nil)
+                            return
+                        }
+                    }
+                    
+                    if error != nil {
+                        addLog(text: "api call extendFocusMode Api error:- \(error!.localizedDescription)")
+                        if (error as? NSError)?.code == self.errorCodeRequestTimeout{
+                            if self.isApiExtendFocusModeErrorFound{
+                                self.isApiExtendFocusModeErrorFound = false
+                                completionHandler(nil)
+                                return
+                            }else{
+                                self.isApiExtendFocusModeErrorFound = true
+                                addLog(text: "error activity extendFocusMode Api:- try second time")
+                                
+                                allApiObject.extendFocusMode(id: id, finish_time:finish_time, completionHandler: {dic  in
+                                    completionHandler(dic)
+                                    return
+                                    
+                                })
+                            }
+                        }else{
+                            completionHandler(nil)
+                            return
+                        }
+                        
+                        
+                    }else{
+                        completionHandler(nil)
+                        return
+                    }
+                    
+                }
+                
+                task.resume()
+            }else{
+                completionHandler(nil)
             }
         }
     }

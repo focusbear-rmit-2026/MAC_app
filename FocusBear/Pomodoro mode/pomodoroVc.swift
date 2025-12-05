@@ -575,6 +575,7 @@ class pomodoroVc: NSViewController {
             }
             lblTimerUnfocused.isHidden = false
             startTimer()
+            lblCompletedPomodoroCount.isHidden = true
             textFieldWorkDuration.isEnabled = true
             textFieldBreakDuration.isEnabled = true
             sliderStrictness.isEnabled = true
@@ -1110,7 +1111,7 @@ class pomodoroVc: NSViewController {
         }
         checkStateAndStartPomodoroMode()
     }
-    
+   
     func checkStateAndStartPomodoroMode(){
         nextFocusSessionIntention = ""
         let isRelaxFocus = arrFocusTypeForPomodoro[popUpBtnFocusType.indexOfSelectedItem]["isRelaxFocus"] as? Bool ?? false
@@ -1121,12 +1122,22 @@ class pomodoroVc: NSViewController {
                 self.enterPasswordVcObj?.isShowingForRelaxFocusMode = true
             }else{
                 pomodoroModeStarted()
-                self.view.window?.close()//  will not work if view has changed (task player is viisble now). because if main view is changes then window is nil.no need to change anything
+                if currentState != ._MICRO_BREAK_{// if micro break started while focus mode is running and focus mode finished after miro break started then dont show small view if full screen is enabled v 2.28.438
+                    
+                    self.view.window?.close()//  will not work if view has changed (task player is viisble now). because if main view is changes then window is nil.no need to change anything
+                }else{
+                    leftMenuVcObj?.showBreaksView()
+                }
                 allApiObject.capturePosthog(event: "start-focus-session-popup-closed", metadata: [:])
             }
         }else{
             pomodoroModeStarted()
-            self.view.window?.close()//  will not work if view has changed (task player is viisble now). because if main view is changes then window is nil.no need to change anything
+            if currentState != ._MICRO_BREAK_{// if micro break started while focus mode is running and focus mode finished after miro break started then dont show small view if full screen is enabled v 2.28.438
+                
+                self.view.window?.close()//  will not work if view has changed (task player is viisble now). because if main view is changes then window is nil.no need to change anything
+            }else{
+                leftMenuVcObj?.showBreaksView()
+            }
             allApiObject.capturePosthog(event: "start-focus-session-popup-closed", metadata: [:])
         }
     }
@@ -1267,8 +1278,19 @@ class pomodoroVc: NSViewController {
         }
         whatToAchieveInFocusBlock = textViewAchieve.string
         appdelegate!.focusModeStartted(isStartedByPusher: false)
-        if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled{
-            showTaskPlayerWindow(totalDuration: minute, intention: textViewAchieve.string, automatically:true)
+        if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled && currentState != ._MICRO_BREAK_{ // added is micro break is running :- v 2.28.438
+            if isHardCorePomodoroModeOn{
+                //I did this because when isHardCorePomodoroModeOn is enabled, showTaskPlayerWindow prevents viewDidAppear from being called properly. So when coming back the next time, viewWillAppear doesn’t get called, and the previous state is shown.v 2.28.440
+                DispatchQueue.global().async {
+                    sleep(1)
+                    DispatchQueue.main.async { [self] in
+                        showTaskPlayerWindow(totalDuration: minute, intention: textViewAchieve.string, automatically:true)
+                    }
+                }
+            }else{
+                showTaskPlayerWindow(totalDuration: minute, intention: textViewAchieve.string, automatically:true)
+            }
+            
         }else{
             if !getTaskPlayerVcObject().isViewLoaded{
                 getTaskPlayerVcObject().loadView()

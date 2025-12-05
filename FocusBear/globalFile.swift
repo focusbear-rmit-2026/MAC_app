@@ -3130,3 +3130,16 @@ var defaultAllowedUrl = ["focus-block.html",
                          "https://focus-bear.github.io",
                          "localhost:50501"]// new added
 
+
+
+func isMicroBreaksRunning()->Bool{
+    if currentState == ._MICRO_BREAK_{
+        if breakWarningWcObj != nil{
+            if breakWarningWcObj?.window?.isVisible ?? false{
+                return false
+            }
+        }
+        return true
+    }
+    return false
+}

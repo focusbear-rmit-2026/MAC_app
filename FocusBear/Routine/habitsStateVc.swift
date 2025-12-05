@@ -109,9 +109,12 @@ class habitsStateVc: NSViewController {
                             title = menuInfo.value(forKey: "alertNoHabitsFound") as? String ?? title
                         }
                         lblTitle.stringValue = nextRoutineText + "\n\n\n" + title
-                        btnResumeHabits.title = "Edit Habits" //todo text
+                        btnResumeHabits.title = "Edit Habits"
                         editRoutineButtonShowing = true
                         btnResumeHabits.isHidden = false
+                        if let leftMenuVcInfo = configjson.value(forKey: "leftMenuVcInfo") as? NSDictionary{
+                            btnResumeHabits.title = leftMenuVcInfo.value(forKey: "menuEditHabits") as? String ?? btnResumeHabits.title
+                        }
                     }
                 }
                 
@@ -131,9 +134,13 @@ class habitsStateVc: NSViewController {
                         title = menuInfo.value(forKey: "alertNoHabitsFound") as? String ?? title
                     }
                     lblTitle.stringValue = title
-                    btnResumeHabits.title = "Edit Habits" //todo text
+                    btnResumeHabits.title = "Edit Habits"
                     editRoutineButtonShowing = true 
                     btnResumeHabits.isHidden = false
+                    
+                    if let leftMenuVcInfo = configjson.value(forKey: "leftMenuVcInfo") as? NSDictionary{
+                        btnResumeHabits.title = leftMenuVcInfo.value(forKey: "menuEditHabits") as? String ?? btnResumeHabits.title
+                    }
                 }
             }
             

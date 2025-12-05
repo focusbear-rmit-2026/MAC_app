@@ -905,8 +905,16 @@ class popUpBlockConfirmVc: NSViewController {
             }
         }
         
-        if currentApp != nil{
-            exitFullScreen(runningApp:currentApp!)
+       
+        DispatchQueue.global().async {
+            DispatchQueue.main.async {
+                let runningApp = NSWorkspace.shared.frontmostApplication
+                if runningApp == self.currentApp{
+                    if self.currentApp != nil{
+                        exitFullScreen(runningApp:self.currentApp!)
+                    }
+                }
+            }
         }
         
         if !isUserTypingIntention{

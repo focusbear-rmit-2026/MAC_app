@@ -501,7 +501,7 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
         let minutesToExtend = Int(popUpBtnSelectMinutes.title) ?? 0
         var currentFocusModeIndex = -1
         for i in 0..<arrFocusType.count{
-            if arrFocusType[i]["id"] as? String  == focusCompletedVcObj?.currentFocusModeId ?? ""{
+            if arrFocusType[i]["id"] as? String == focusCompletedVcObj?.currentFocusModeId ?? ""{
                 currentFocusModeIndex = i
                 break;
             }
@@ -548,18 +548,24 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
         
         appdelegate?.setFocusModeTimerForExtendAfterComplete(hour: nil, minute: minutesToExtend)
         closePomodoroWindowIOfVisible()
-        if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled{
+        if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled && currentState != ._MICRO_BREAK_{
             showTaskPlayerWindow(totalDuration: focusModeMinutesToPerform, intention: whatToAchieveInFocusBlock, automatically:false)
             leftMenuVcObj?.focusModeOrFocusModeHabitStarted()
             leftMenuVcObj?.resetFocusModeTitle()
         }else{
             leftMenuVcObj?.focusModeOrFocusModeHabitStarted()
             leftMenuVcObj?.resetFocusModeTitle()
-            mainWindowControllerObj?.window?.close()
+            if currentState != ._MICRO_BREAK_{
+                mainWindowControllerObj?.window?.close()
+            }else{
+                leftMenuVcObj?.showBreaksView()
+            }
         }
         
-        
-        
+        allApiObject.extendFocusMode(id: arrFocusType[currentFocusModeIndex]["id"] as? String ?? "", finish_time: endFocusModeTime!, completionHandler: {dic in
+            
+        })
+        updateAllFocusModes()
     }
     //self.view.window?.close()
     @IBAction func popUpBtnSelectMinutesClicked(_ sender: Any) {

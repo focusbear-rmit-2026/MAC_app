@@ -2050,6 +2050,20 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                             timerForFocusModeEndNotification = Timer.scheduledTimer(timeInterval: TimeInterval(focusModeSecondsToPerform - warningShowSecondsBeforeFocusModeEndTime), target: self, selector: #selector(self.showFocusModeFinishNotification), userInfo: nil, repeats: false)
                             RunLoop.main.add((timerForFocusModeEndNotification!), forMode: RunLoop.Mode.common)
                         }
+                    
+                        var currentFocusModeIndex = -1
+                        for i in 0..<arrFocusType.count{
+                            if arrFocusType[i]["id"] as? String == focusCompletedVcObj?.currentFocusModeId ?? ""{
+                                currentFocusModeIndex = i
+                                break;
+                            }
+                        }
+                        arrFocusType[currentFocusModeIndex]["lastScheduledEndDate"] = getStringFromDate(date: endFocusModeTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")//
+                        
+                        allApiObject.extendFocusMode(id: currentRunningFocusType["id"] as? String ?? "", finish_time: endFocusModeTime!, completionHandler: {dic in
+                            
+                        })
+                        updateAllFocusModes()
                     }
                     
                     
@@ -3402,6 +3416,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         if !SettingsManagerObject.isGeekModeEnabled{
             addLog(text: "simple Mode is enabled:- Show Simple Pomodoro Mode View.")
             menuShowSimplePomodoroModeView()
+            isHardCorePomodoroModeOn = false
             return;
         }
         
@@ -3421,25 +3436,36 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         
         if isFocusCompletedViewVisibled(){
             addLog(text: "Focus mode completed view is visible:- return")
+            isHardCorePomodoroModeOn = false
             return;
         }
         
         if !isAppEnable{
             addLog(text: "App is Disabled: Pomodoro Mode View cancelled")
+            isHardCorePomodoroModeOn = false
             return
         }
         if isFocusModeOnOrPaused(){
             addLog(text: "Focus Mode Is On/Paused: Pomodoro Mode View cancelled")
+            isHardCorePomodoroModeOn = false
             return
         }
-        if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._FOCUS_SUMMARY_ || currentState == ._CUSTOM_ROUTINE_{
-            addLog(text: "Activity is running: Pomodoro Mode View cancelled")
+        if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._FOCUS_SUMMARY_ || currentState == ._CUSTOM_ROUTINE_{
+            addLog(text: "Habit is running: Pomodoro Mode View cancelled")
+            isHardCorePomodoroModeOn = false
+            return;
+        }
+        
+        if currentState == ._MICRO_BREAK_{
+            //Super Focus session stops blocking after closing the break popup; session remains active but blocking and timer disappear#1572  v 2.28.440   (resume super pomodoro after micro breaks)
+            addLog(text: "Micro Activity is running: Pomodoro Mode View cancelled")
             return;
         }
         
         if !isHardCorePomodoroModeOn{// if hardcore pomodoro is started than it will complete first
             if isUserOnMeeting{
                 addLog(text: "isUserOnMeeting True: Pomodoro Mode View cancelled.")
+                isHardCorePomodoroModeOn = false
                 return
             }
         }
@@ -3452,6 +3478,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         
         if currentState == ._SHUTOFFMAC_{
             addLog(text: "This is Shut Off time. Auto Pomodoro Mode View cancelled")
+            isHardCorePomodoroModeOn = false
             return;//if not working hours then return
         }
         
@@ -4484,7 +4511,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     var isProcessingHabitRoutine = false
     var isProcesssingOfflineData = false
     
-    func processOfflineData(){
+    func processOfflineData(){// move it in routine data
         if !self.isProcesssingOfflineData{
             DispatchQueue.global().async {
                 if Reachability.isConnectedToNetwork() == true{
@@ -11298,5 +11325,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 // continue break
 //preferences posthog
 
+// crash solved when  task player dissmiiss because view was changed , label shoqwing in pomodoor again  hidden.  dont show top bar if was hidden when nudge was showing, pomodoro not started agaain bug solved
+// scedule over  k baad  focus start ki ui reload kroi
 
-//todo test app_version 
+// pomodoro constraint set crash solved
+
+//Super Focus session stops blocking after closing the break popup; session remains active but blocking and timer disappear#1572  v 2.28.440   (resume super pomodoro after micro breaks)
+
+
+
+
+

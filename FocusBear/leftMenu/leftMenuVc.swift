@@ -473,7 +473,15 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
                 mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
             }
         case boxFocusSession:
-            mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
+            if currentState == ._MICRO_BREAK_{// if micro break started while focus mode is running and focus mode finished after miro break started then dont show small view if full screen is enabled v 2.28.438 
+                if checkIsFullScreenEnabled(){
+                    mainViewControllerObj?.checkIsFullScreenNeeded()
+                }else{
+                    mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
+                }
+            }else{
+                mainViewControllerObj?.showSmallScreen(showMinimumSize: true)
+            }
         case boxMicroBreaks:
             if currentState == ._MICRO_BREAK_{
                 var isBreakWarningVisible = false
@@ -766,7 +774,10 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
                     breaksBrainDumpVcObj.taskSaveFromBrainDump = nil
                 }
             }
+        }else if isHardCorePomodoroModeOn{//Super Focus session stops blocking after closing the break popup; session remains active but blocking and timer disappear#1572  v 2.28.440   (resume super pomodoro after micro breaks)
+            appdelegate?.showAutoPomodoroModeView()
         }
+        
     }
 
     func enableAllItems(){

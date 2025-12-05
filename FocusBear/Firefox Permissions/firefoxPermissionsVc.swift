@@ -9,7 +9,7 @@
 import Cocoa
 import AVKit
 
-class firefoxPermissionsVc: NSViewController {
+class firefoxPermissionsVc: NSViewController {// now this not for firefox
     
     @IBOutlet weak var lblPoint1_config: NSTextField!
     @IBOutlet weak var lblPoint2_config: NSTextField!

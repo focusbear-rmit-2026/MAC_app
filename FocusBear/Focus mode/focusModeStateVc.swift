@@ -27,6 +27,7 @@ class focusModeStateVc: NSViewController {
                 lblTitleFocusModeTime.stringValue = focusEndsText + ":"
             }
         }
+        lblTitle.stringValue = ""
     }
     
     override func viewWillAppear() {

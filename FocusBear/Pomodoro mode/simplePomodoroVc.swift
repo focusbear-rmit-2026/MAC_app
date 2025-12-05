@@ -795,7 +795,12 @@ class simplePomodoroVc: NSViewController {
                             }else if modalResponse == .alertSecondButtonReturn{
                                 self.pomodoroModeStarted()
                             }
-                            self.view.window?.close()
+                            if currentState != ._MICRO_BREAK_{// if micro break started while focus mode is running and focus mode finished after miro break started then dont show small view if full screen is enabled v 2.28.438
+                                
+                                self.view.window?.close()//  will not work if view has changed (task player is viisble now). because if main view is changes then window is nil.no need to change anything
+                            }else{
+                                leftMenuVcObj?.showBreaksView()
+                            }
                             allApiObject.capturePosthog(event: "start-focus-session-popup-closed", metadata: [:])
                         })
                         return;
@@ -805,7 +810,12 @@ class simplePomodoroVc: NSViewController {
         }
         nextFocusSessionIntention = ""
         pomodoroModeStarted()
-        self.view.window?.close()
+        if currentState != ._MICRO_BREAK_{// if micro break started while focus mode is running and focus mode finished after miro break started then dont show small view if full screen is enabled v 2.28.438
+            
+            self.view.window?.close()//  will not work if view has changed (task player is viisble now). because if main view is changes then window is nil.no need to change anything
+        }else{
+            leftMenuVcObj?.showBreaksView()
+        }
         allApiObject.capturePosthog(event: "start-focus-session-popup-closed", metadata: [:])
     }
     
@@ -921,7 +931,7 @@ class simplePomodoroVc: NSViewController {
         whatToAchieveInFocusBlock = textViewAchieve.string
         appdelegate!.focusModeStartted(isStartedByPusher: false)
         
-        if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled{
+        if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled && currentState != ._MICRO_BREAK_{
             showTaskPlayerWindow(totalDuration: minute, intention: textViewAchieve.string, automatically:true)
         }else{
             if !getTaskPlayerVcObject().isViewLoaded{

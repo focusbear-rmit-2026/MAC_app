@@ -1344,7 +1344,7 @@ func checkIsAnyOldFoucsModeRemaining(){
                                     })
                                     
                                 }else{
-                                    diffSeconds = Calendar.current.dateComponents([.hour], from: Date(), to: endDate).second ?? diffSeconds
+                                    diffSeconds = Calendar.current.dateComponents([.second], from: Date(), to: endDate).second ?? diffSeconds
                                     appdelegate!.remainingFocusModeSecondsAfterPaused = diffSeconds
                                     DispatchQueue.main.async {
                                         resumeFocusModeAfterAppStartted(diffSeconds: diffSeconds, focusMode: focusMode, finishFocusMoedTime: endDate, index: i)
@@ -1847,7 +1847,7 @@ func focusBlockUnwantedApp(runningApp: NSRunningApplication, appName:String, sho
 }
 
 func focusTryToBlockUnwantedApp(runningApp: NSRunningApplication, appName:String, appNameLowercased:String){
-    exitFullScreen(runningApp:runningApp)
+    
     if popUpBlockConfirmWcObj != nil{
         if popUpBlockConfirmWcObj!.window?.isVisible ?? false{
             if popUpBlockConfirmVcObj!.isAppBlocking{
@@ -1859,6 +1859,7 @@ func focusTryToBlockUnwantedApp(runningApp: NSRunningApplication, appName:String
             }
         }
     }
+    exitFullScreen(runningApp:runningApp)
     addLog(text: "focusTryToBlockUnwantedApp:- \(appName)")
     if isCuddlyModeEnabled(){
         if arrBlockedAppsInCuddlyModeCurrentFocus.contains(runningApp){

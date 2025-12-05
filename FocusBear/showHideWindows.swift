@@ -1190,6 +1190,32 @@ func showTooltip(sender:NSView, msg:String, preferredEdge: NSRectEdge, maxWidthV
     vc.lblTitle.stringValue = msg
 }
 
+func showTooltipWithOsTahoe(sender:NSView, msg:String, preferredEdge: NSRectEdge, maxWidthVal:CGFloat, autoCloseOnMouseExit:Bool = false) {
+    if popoverTooltip == nil{
+        popoverTooltip = NSPopover()
+        popoverTooltip!.animates = false
+    }
+    popoverTooltip!.behavior = .applicationDefined
+    if popoverTooltip!.isShown{
+        popoverTooltip?.close()
+    }
+    let vc = getCustomTooltipVcObject()
+    if !vc.isViewLoaded{
+        vc.loadView()
+    }
+    if vc.maxWidthVal != maxWidthVal{
+        vc.maxWidthVal = maxWidthVal
+        vc.resetView()
+    }
+    
+    popoverTooltip!.contentViewController = vc
+    popoverTooltip!.contentSize = vc.view.frame.size
+    
+    popoverTooltip!.show(relativeTo: sender.bounds, of: sender, preferredEdge: preferredEdge)
+    //    appdelegate!.popover.behavior = .applicationDefined
+    vc.lblTitle.stringValue = msg
+}
+
 
 
 func closePopoverTooltipIfVisible(){
@@ -1268,10 +1294,15 @@ func showNudgeFocusAlignmentScoreWindow(score:Double){
     //.
     
     ///If the big floating bear is open, I don’t think we need the little one as well.
+    
+    getNudgeFocusAlignmentScoreDippingVcObject().isFloatingTopBarRemovedByNudge = false
     if floatingTopBarWcObj != nil{
         if getFloatingTopBarWObject().window?.isVisible ?? false{
-            getFloatingTopBarVObject().boxMain.isHidden = true
-            getFloatingTopBarVObject().boxMoreItems.isHidden = true
+            if !getFloatingTopBarVObject().boxMain.isHidden{
+                getFloatingTopBarVObject().boxMain.isHidden = true
+                getFloatingTopBarVObject().boxMoreItems.isHidden = true
+                getNudgeFocusAlignmentScoreDippingVcObject().isFloatingTopBarRemovedByNudge = true
+            }
         }
     }
     

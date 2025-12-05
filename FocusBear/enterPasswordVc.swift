@@ -94,7 +94,7 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
         textFieldPassword.delegate = self
         btnResetPassword.isHidden = true
         tabView.delegate = self
-        
+        customViewAccountabilityBuddy.isHidden = true
         
     }
     
@@ -278,7 +278,14 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
                     pomodoroVcObj!.checkStateAndStartPomodoroMode()
                 }else if isShowingForRelaxFocusMode{
                     pomodoroVcObj!.pomodoroModeStarted()
-                    pomodoroVcObj?.view.window?.close()
+                    
+                    
+                    if currentState != ._MICRO_BREAK_{// if micro break started while focus mode is running and focus mode finished after miro break started then dont show small view if full screen is enabled v 2.28.438
+                        
+                        pomodoroVcObj?.view.window?.close()//  will not work if view has changed (task player is viisble now). because if main view is changes then window is nil.no need to change anything
+                    }else{
+                        leftMenuVcObj?.showBreaksView()
+                    }
                 }
                 isShowingForRelaxFocusMode = false
                 return;
@@ -311,7 +318,13 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
                 let totalMinutes = simplePomodoroVcObj!.textFieldWorkDuration.integerValue
                 getHabitsVcObject().postponeEveningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
                 simplePomodoroVcObj!.pomodoroModeStarted()
-                simplePomodoroVcObj?.view.window?.close()
+                
+                if currentState != ._MICRO_BREAK_{// if micro break started while focus mode is running and focus mode finished after miro break started then dont show small view if full screen is enabled v 2.28.438
+                    
+                    simplePomodoroVcObj?.view.window?.close()//  will not work if view has changed (task player is viisble now). because if main view is changes then window is nil.no need to change anything
+                }else{
+                    leftMenuVcObj?.showBreaksView()
+                }
                 return;
             }else if parentVc == menuViewControllerObj{
                 self.view.window?.close()

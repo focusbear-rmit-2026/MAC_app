@@ -614,7 +614,7 @@ class focusCompletedVc: NSViewController {
                 
             }
             
-            if currentState == ._MICRO_BREAK_{
+            if isMicroBreaksRunning(){
                 btnTakeBreak.title = "Continue Break"
                 if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
                     if let focusCompletedInfo = focusInfo.value(forKey: "focusCompletedInfo") as? NSDictionary{
@@ -734,7 +734,9 @@ class focusCompletedVc: NSViewController {
         appdelegate?.focusModeFinishedResetAllData()
         nextFocusSessionIntention = textFieldNextSessionIntention.stringValue
         
-        self.view.window?.close()
+        if isMicroBreaksRunning(){// if micro break started while focus mode is running and focus mode finished after miro break started then dont show small view if full screen is enabled v 2.28.438
+            self.view.window?.close()
+        }
         
         if currentState == ._EVENING_HABIT_ || currentState == ._MORNING_HABIT_ || currentState == ._FOCUS_SUMMARY_ || currentState == ._CUSTOM_ROUTINE_{// focus end screen was showing before starting  a routine
             addLog(text: "focusCompletedVc - Start Another Focus Mode cancelled reason:- (sutofftime or morning routine time")//
@@ -753,7 +755,7 @@ class focusCompletedVc: NSViewController {
         isFinishFocusModeApiCalled = true// perfect place this will ensure that api will called 100%
         whatToAchieveInFocusBlock = ""
         if !isShutOffTime{
-            if currentState != ._MORNING_HABIT_ && currentState != ._CUSTOM_ROUTINE_ && currentState != ._MICRO_BREAK_{
+            if currentState != ._MORNING_HABIT_ && currentState != ._CUSTOM_ROUTINE_ && isMicroBreaksRunning(){
                 if let notes = UserDefaults.standard.object(forKey: kUserdefaultsFocusModeNotes) as? String {
                     if !notes.isEmpty{
                         showBrainDumpWindow()
@@ -928,7 +930,7 @@ class focusCompletedVc: NSViewController {
         
         workDone()
         
-        if currentState != ._MORNING_HABIT_ && currentState != ._MICRO_BREAK_ && currentState != ._EVENING_HABIT_ && currentState != ._CUSTOM_ROUTINE_ && (isHabitAlreadyShowed || currentState == ._POSTPON_MORNING_HABIT_) && arrAllbreakActivities.count != 0 && !isShutOffTimeGoing() && !isHardCorePomodoroModeOn{
+        if currentState != ._MORNING_HABIT_ && !isMicroBreaksRunning() && currentState != ._EVENING_HABIT_ && currentState != ._CUSTOM_ROUTINE_ && (isHabitAlreadyShowed || currentState == ._POSTPON_MORNING_HABIT_) && arrAllbreakActivities.count != 0 && !isShutOffTimeGoing() && !isHardCorePomodoroModeOn{
             if !isCloseWindowClicked{
                 appdelegate?.setTimerForPomodoroMode(delay: TimeInterval(60*self.breakMinute))
                 if isAppEnable{
@@ -1007,7 +1009,7 @@ class focusCompletedVc: NSViewController {
                         loader.startAnimation(self)
                         appdelegate!.backgroundThread()
                     }
-                    
+                    isHardCorePomodoroModeOn = false
                 }else if currentState == ._CUSTOM_ROUTINE_{
                     if self == focusCompletedVcObj{//normal case
                         self.view.window?.close()// focus end screen was showing before starting  a routine
@@ -1023,14 +1025,21 @@ class focusCompletedVc: NSViewController {
                         loader.startAnimation(self)
                         startCustomRoutine(index: currentRoutineIndex, isOnDemand:false)
                     }
-                    
-                }else if currentState == ._MICRO_BREAK_{// microbreask running and focus mode finished v 2.28.436
+                    isHardCorePomodoroModeOn = false
+                }else if isMicroBreaksRunning(){// microbreask running and focus mode finished v 2.28.436
                     if self == focusCompletedVcObj{//normal case
                         leftMenuVcObj?.showBreaksView()
+                        if !isCloseWindowClicked || isHardCorePomodoroModeOn{
+                            appdelegate?.setTimerForPomodoroMode(delay: TimeInterval(60*breakMinute))
+                            if isAppEnable{
+                                isFocusBreakOn = true
+                            }
+                        }
                     }
                 }else if !isShutOffTime && currentState != ._MORNING_HABIT_{
                     if currentState == ._FOCUS_SUMMARY_ || currentState == ._EVENING_HABIT_{// focus end screen was showing before starting  a routine or before shutOff time
                         self.view.window?.close()
+                        isHardCorePomodoroModeOn = false
                     }else{
                         if isFocusModeStartedFromPomodoroMode{
                             if !isCloseWindowClicked || isHardCorePomodoroModeOn{

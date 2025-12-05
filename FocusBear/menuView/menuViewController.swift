@@ -517,7 +517,7 @@ class menuViewController: NSViewController {
                     msg = menuInfo.value(forKey: "toolTipPopoverEnable") as? String ?? msg
                 }
             }
-            showTooltip(sender: btnPin, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:290, autoCloseOnMouseExit: true)
+            showTooltipWithOsTahoe(sender: btnPin, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:290, autoCloseOnMouseExit: true)
         }else if event.trackingArea == boxPermissionTrackingArea{
             var msg = lblTipPermissions.stringValue
             if UserDefaults.standard.object(forKey: kUserdefaultsIsAnyDistractionSetByUser) == nil && UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) == nil{

@@ -571,7 +571,6 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
         isSkipBreakActivityDuringFocus = false
         lastFocusModeTempInfo = nil
         unfocusedTime = 0
-        endFocusModeTime = nil
         refreshFocusModeData()
         arrAllowedTabTitlesInCuddlyModeCurrentFocus.removeAll()
         closePupUpBlockIfVisible()
@@ -590,6 +589,17 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
                 abortingCustomScheduleBlockingVcObj?.dismiss(abortingCustomScheduleBlockingVcObj)
             }
         }
+        if mainWindowControllerObj?.window?.isVisible ?? false{
+            if leftMenuVcObj?.boxFocusSession.isSelected ?? false{
+                if !isFocusModeOn() && !isHardCorePomodoroModeOn && SettingsManagerObject.isGeekModeEnabled{
+                    if pomodoroVcObj != nil{
+                        if !(pomodoroVcObj?.popUpBtnFocusType.isEnabled ?? false){
+                            pomodoroVcObj?.popUpBtnFocusType.isEnabled = true
+                        }
+                    }
+                }
+            }
+        }
     }
     
     
@@ -599,7 +609,7 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
         arrBlockingSchedule[index].state = .on
         isAnyCustomScheduleOn = true
         isAnyCustomSchedulePaused = false
-        endFocusModeTime = arrBlockingSchedule[index].endTime
+        endFocusModeTime = arrBlockingSchedule[index].endTime// no mean here 
         var stringTime = ""
         if let date = endFocusModeTime{
             stringTime = getStringFromDate(date: date, dateFormat: "hh:mm a")
