@@ -927,6 +927,10 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         mainViewControllerObj?.askPasswordForSettingsIfNeeded()
     }
     
+    func showFocusModeStateView(){
+        mainViewControllerObj?.showFocusModeState()
+    }
+    
     func showEditHabitsView(){
         if mainViewControllerObj?.isEnterPasswordForPreferencesViewVisible() ?? false{
             return;

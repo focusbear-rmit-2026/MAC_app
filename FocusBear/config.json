@@ -2459,7 +2459,8 @@
         "titleGoal": "Is your focus goal still: \"<GOAL>\"?",
         "buttonAppRelevantText": "Yes and this app is relevant",
         "buttonSiteRelevantText": "Yes and this site is relevant",
-        "buttonWorkingSomethingElseText": "No I'm working on something else now"
+        "buttonWorkingSomethingElseText": "No I'm working on something else now",
+        "buttonNoCurrentTaskAdded": "No current task - let me quickly enter one"
     },
     "popUpAddNewFocusGoalVcInfo":{
         "title": "What's your new focus goal?",

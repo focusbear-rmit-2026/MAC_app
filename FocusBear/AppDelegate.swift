@@ -2023,6 +2023,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     }
     
     func extendFocusModeFor(minutes:Int){
+        addLog(text: "extendFocusModeFor \(minutes)")
         if minutes > 0{
             if isFocusModeOn(){
                 if timerForFocusMode != nil{
@@ -2053,16 +2054,84 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     
                         var currentFocusModeIndex = -1
                         for i in 0..<arrFocusType.count{
-                            if arrFocusType[i]["id"] as? String == focusCompletedVcObj?.currentFocusModeId ?? ""{
+                            if arrFocusType[i]["id"] as? String == currentRunningFocusType["id"] as? String ?? ""{
                                 currentFocusModeIndex = i
                                 break;
                             }
+                        }
+                        if currentFocusModeIndex == -1{
+                            currentFocusModeIndex = 0
                         }
                         arrFocusType[currentFocusModeIndex]["lastScheduledEndDate"] = getStringFromDate(date: endFocusModeTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")//
                         
                         allApiObject.extendFocusMode(id: currentRunningFocusType["id"] as? String ?? "", finish_time: endFocusModeTime!, completionHandler: {dic in
                             
                         })
+                        updateAllFocusModes()
+                    }
+                    
+                    
+                }
+            }
+        }
+        
+    }
+    
+    func reduceFocusModeFor(minutes:Int){
+        addLog(text: "reduceFocusModeFor \(minutes)")
+        if minutes > 0{
+            if isFocusModeOn(){
+                if timerForFocusMode != nil{
+                    if let fireDate =  startFocusModeTimeForPauseAndResume{
+                        let interval = focusModeSecondsToPerform
+                        let passedSeconds = Calendar.current.dateComponents([.second], from: fireDate, to: Date()).second ?? 0
+                        focusModeActualDurationPerformed += passedSeconds
+                        let remainingFocusModeSeconds = interval - passedSeconds
+                        print("remaining seconds \(remainingFocusModeSeconds)")
+                        
+                        
+                        timerForFocusMode?.invalidate()
+                        timerForFocusMode = nil
+                        timerForFocusModeEndNotification?.invalidate()
+                        timerForFocusModeEndNotification = nil
+                        
+                        let reduceSeconds = minutes * 60
+                        let newRemainingSeconds = remainingFocusModeSeconds - reduceSeconds
+                        
+                        // If reduced duration finishes focus mode
+                           if newRemainingSeconds <= 0 {
+                               focusModeSecondsToPerform = 0
+                               endFocusModeTime = Date()
+                               focusModeTimerFinished()
+                               return
+                           }
+                        
+                        startFocusModeTimeForPauseAndResume = Date()
+                        focusModeSecondsToPerform = newRemainingSeconds
+                        endFocusModeTime = Calendar.current.date(byAdding: .second, value: focusModeSecondsToPerform, to: Date())
+                        timerForFocusMode = Timer.scheduledTimer(timeInterval: TimeInterval(focusModeSecondsToPerform), target: self, selector: #selector(self.focusModeTimerFinished), userInfo: nil, repeats: false)
+                        RunLoop.main.add((timerForFocusMode!), forMode: RunLoop.Mode.common)
+                        
+                        if focusModeSecondsToPerform > warningShowSecondsBeforeFocusModeEndTime{
+                            timerForFocusModeEndNotification = Timer.scheduledTimer(timeInterval: TimeInterval(focusModeSecondsToPerform - warningShowSecondsBeforeFocusModeEndTime), target: self, selector: #selector(self.showFocusModeFinishNotification), userInfo: nil, repeats: false)
+                            RunLoop.main.add((timerForFocusModeEndNotification!), forMode: RunLoop.Mode.common)
+                        }
+                    
+                        var currentFocusModeIndex = -1
+                        for i in 0..<arrFocusType.count{
+                            if arrFocusType[i]["id"] as? String == currentRunningFocusType["id"] as? String ?? ""{
+                                currentFocusModeIndex = i
+                                break;
+                            }
+                        }
+                        if currentFocusModeIndex == -1{
+                            currentFocusModeIndex = 0
+                        }
+                        arrFocusType[currentFocusModeIndex]["lastScheduledEndDate"] = getStringFromDate(date: endFocusModeTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")//
+                        
+//                        allApiObject.extendFocusMode(id: currentRunningFocusType["id"] as? String ?? "", finish_time: endFocusModeTime!, completionHandler: {dic in
+//
+//                        })
                         updateAllFocusModes()
                     }
                     
@@ -3746,7 +3815,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             UserDefaults.standard.removeObject(forKey: kUserdefaultsUserShouldDoFirstFocusSesion)
             menuShowSimplePomodoroModeView()
         }
-
     }
     
     
@@ -7845,6 +7913,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     
     @objc func focusModeStartted(isStartedByPusher:Bool){
         addLog(text: "focus Mode Started called")
+        addLog(text: "getBlockedAppsToBlock:- \(getBlockedAppsToBlock())") // need to delete in next  build // todo
         if customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
             customBlockingScheduleManagerObj.customBlockingScheduleFinished()
         }
@@ -7872,6 +7941,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 })
             }
         }
+        
         var stringTime = ""
         
         if let date = endFocusModeTime{
@@ -8169,7 +8239,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                             if !isAppAllowed{
                                 var isAppAllowedByUser = false
                                 let arrBlockedApps = getBlockedAppsToBlock()
-                                
+                                addLog(text: "arrBlockedApps:- \(arrBlockedApps)") // need to delete in next  build // todo /
+                                addLog(text: "app is:- \(nameLowercased)") // need to delete in next  build // todo /
                                 for path in arrBlockedApps{
                                     let url = URL(fileURLWithPath: path)
                                     if url.deletingPathExtension().lastPathComponent.lowercased() == nameLowercased{
@@ -8197,6 +8268,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                             }else{
                                 if !SettingsManagerObject.immediatelyBlockDistractingApps{
                                     let arrBlockedApps = getBlockedAppsToBlock()
+                                    addLog(text: "arrBlockedApps:- \(arrBlockedApps)") // need to delete in next  build // todo /
+                                    addLog(text: "app is:- \(nameLowercased)") // need to delete in next  build // todo /
                                     for path in arrBlockedApps{
                                         let url = URL(fileURLWithPath: path)
                                         if url.deletingPathExtension().lastPathComponent.lowercased() == nameLowercased{
@@ -8347,6 +8420,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     if !isAppAllowed{
                         var isAppAllowedByUser = false
                         let arrBlockedApps = getBlockedAppsToBlock()
+                        addLog(text: "arrBlockedApps:- \(arrBlockedApps)") // need to delete in next  build // todo /
+                        addLog(text: "app is:- \(nameLowercased)") // need to delete in next  build // todo /
                         for path in arrBlockedApps{
                             let url = URL(fileURLWithPath: path)
                             if url.deletingPathExtension().lastPathComponent.lowercased() == nameLowercased{
@@ -8374,6 +8449,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     }else{
                         if !SettingsManagerObject.immediatelyBlockDistractingApps{
                             let arrBlockedApps = getBlockedAppsToBlock()
+                            addLog(text: "arrBlockedApps:- \(arrBlockedApps)") // need to delete in next  build // todo /
+                            addLog(text: "app is:- \(nameLowercased)") // need to delete in next  build // todo /
                             for path in arrBlockedApps{
                                 let url = URL(fileURLWithPath: path)
                                 if url.deletingPathExtension().lastPathComponent.lowercased() == nameLowercased{
@@ -8517,6 +8594,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                             var isAppAllowed = true
                             var isAppAllowedByUser = false
                             let arrBlockedApps = getBlockedAppsToBlock()
+                            addLog(text: "arrBlockedApps:- \(arrBlockedApps)") // need to delete in next  build // todo /
+                            addLog(text: "app is:- \(nameLowercased)") // need to delete in next  build // todo /
                             for path in arrBlockedApps{
                                 let url = URL(fileURLWithPath: path)
                                 if url.deletingPathExtension().lastPathComponent.lowercased() == nameLowercased{
@@ -9027,6 +9106,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 if !isAppAllowed{
                     var isAppAllowedByUser = false
                     let arrBlockedApps = getBlockedAppsToBlock()
+                    addLog(text: "arrBlockedApps:- \(arrBlockedApps)") // need to delete in next  build // todo /
+                    addLog(text: "app is:- \(name)") // need to delete in next  build // todo /
                     for path in arrBlockedApps{
                         let url = URL(fileURLWithPath: path)
                         if url.deletingPathExtension().lastPathComponent.lowercased() == name{
@@ -9052,6 +9133,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 }else{
                     if !SettingsManagerObject.immediatelyBlockDistractingApps{
                         let arrBlockedApps = getBlockedAppsToBlock()
+                        addLog(text: "arrBlockedApps:- \(arrBlockedApps)") // need to delete in next  build // todo /
+                        addLog(text: "app is:- \(name)") // need to delete in next  build // todo /
                         for path in arrBlockedApps{
                             let url = URL(fileURLWithPath: path)
                             if url.deletingPathExtension().lastPathComponent.lowercased() == name{
@@ -9226,6 +9309,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         print("tryToBlockAlwaysBlockedApp*************")
         exitFullScreen(runningApp:runningApp)
         if SettingsManagerObject.immediatelyBlockDistractingApps{
+            addLog(text:"tryToBlockAlwaysBlockedApp:- \(appName)")// addded in 2.28.443
             closeIntentionBlockedAppsWinddowIfVisible()
             blockAlwaysBlockedApp(runningApp: runningApp, appName:appName)
             return true
@@ -9239,7 +9323,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     }
                 }
             }
-            
+            addLog(text:"tryToBlockAlwaysBlockedApp:- \(appName)")// addded in 2.28.443
             var isBlocked = true
             var isAppAllreadyChecked = false
             var intention = ""
@@ -9313,6 +9397,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     }
     
     func blockAlwaysBlockedApp(runningApp: NSRunningApplication, appName:String){
+        addLog(text:"blockAlwaysBlockedApp:- \(appName)")// addded in 2.28.443
         exitFullScreen(runningApp:runningApp)
         runningApp.hide()
         allApiObject.capturePosthog(event: "block-distracting-app", metadata: [:])
@@ -9337,6 +9422,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             }
         }
     }
+    
     func blockAlwaysBlockedUrl(script: String, browser: BROWSER?, url:String){
         addLog(text:"blockAlwaysBlockedUrl:- \(url)")
         if browser == ._ARC_{
@@ -9630,6 +9716,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                             
                             if !SettingsManagerObject.immediatelyBlockDistractingApps{
                                 let arrBlockedApps = getBlockedAppsToBlock()
+                                addLog(text: "arrBlockedApps:- \(arrBlockedApps)") // need to delete in next  build // todo /
+                                addLog(text: "app is:- \(name)") // need to delete in next  build // todo /
                                 for path in arrBlockedApps{
                                     let url = URL(fileURLWithPath: path)
                                     if url.deletingPathExtension().lastPathComponent.lowercased() == name{
@@ -9697,6 +9785,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         if !isAppAllowed{
                             var isAppAllowedByUser = false
                             let arrBlockedApps = getBlockedAppsToBlock()
+                            addLog(text: "arrBlockedApps:- \(arrBlockedApps)") // need to delete in next  build // todo /
+                            addLog(text: "app is:- \(name)") // need to delete in next  build // todo /
                             for path in arrBlockedApps{
                                 let url = URL(fileURLWithPath: path)
                                 if url.deletingPathExtension().lastPathComponent.lowercased() == name{
@@ -9723,6 +9813,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         }else{
                             if !SettingsManagerObject.immediatelyBlockDistractingApps{
                                 let arrBlockedApps = getBlockedAppsToBlock()
+                                addLog(text: "arrBlockedApps:- \(arrBlockedApps)") // need to delete in next  build // todo /
+                                addLog(text: "app is:- \(name)") // need to delete in next  build // todo /
                                 for path in arrBlockedApps{
                                     let url = URL(fileURLWithPath: path)
                                     if url.deletingPathExtension().lastPathComponent.lowercased() == name{

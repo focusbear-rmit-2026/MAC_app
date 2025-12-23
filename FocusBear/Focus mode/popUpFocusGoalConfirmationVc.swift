@@ -10,6 +10,7 @@ import Cocoa
 
 class popUpFocusGoalConfirmationVc: NSViewController {
 
+    @IBOutlet weak var btnNoCurrentTaskAdded: Button!
     @IBOutlet weak var btnYesRelevant: Button!
     @IBOutlet weak var btnWorkingOnAnotherGoal: Button!
     @IBOutlet weak var lblTitle: NSTextField!
@@ -17,6 +18,8 @@ class popUpFocusGoalConfirmationVc: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
+        btnNoCurrentTaskAdded.buttonColor = NSColor.white.cgColor
+        btnNoCurrentTaskAdded.title = "No current task - let me quickly enter one"
         lblTitle.stringValue = "Are you still working on \"<TASK>\" as part of your focus goal: \"<GOAL>\"?"
         btnWorkingOnAnotherGoal.title = "No I'm working on something else now"
         btnYesRelevant.title = "Yes and this site is relevant"
@@ -25,6 +28,7 @@ class popUpFocusGoalConfirmationVc: NSViewController {
             lblTitle.stringValue = popUpFocusGoalConfirmationVcInfo.value(forKey: "titleGoalAndTask") as? String ?? lblTitle.stringValue
             btnWorkingOnAnotherGoal.title = popUpFocusGoalConfirmationVcInfo.value(forKey: "buttonWorkingSomethingElseText") as? String ?? btnWorkingOnAnotherGoal.title
             btnYesRelevant.title = popUpFocusGoalConfirmationVcInfo.value(forKey: "buttonAppRelevantText") as? String ?? btnYesRelevant.title
+            btnNoCurrentTaskAdded.title = popUpFocusGoalConfirmationVcInfo.value(forKey: "buttonNoCurrentTaskAdded") as? String ?? btnNoCurrentTaskAdded.title
         }
         btnWorkingOnAnotherGoal.buttonColor = NSColor.white.cgColor
     }
@@ -38,6 +42,7 @@ class popUpFocusGoalConfirmationVc: NSViewController {
             title = title.replacingOccurrences(of: "<TASK>", with: task)
             title = title.replacingOccurrences(of: "<GOAL>", with: goal)
             lblTitle.stringValue = title
+            btnNoCurrentTaskAdded.isHidden = true
         }else{
             var title = "Is your focus goal still: \"<GOAL>\"?"
             if let popUpFocusGoalConfirmationVcInfo = configjson.value(forKey: "popUpFocusGoalConfirmationVcInfo") as? NSDictionary{
@@ -45,6 +50,7 @@ class popUpFocusGoalConfirmationVc: NSViewController {
             }
             title = title.replacingOccurrences(of: "<GOAL>", with: goal)
             lblTitle.stringValue = title
+            btnNoCurrentTaskAdded.isHidden = false
         }
         if isApp{
             btnYesRelevant.title = "Yes and this app is relevant"

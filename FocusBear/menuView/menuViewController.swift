@@ -107,10 +107,13 @@ class menuViewController: NSViewController {
     @IBOutlet weak var imgViewStopSuperFocusSession: NSImageView!
     @IBOutlet weak var imgViewStartSimpleFocusSession: NSImageView!
     
+    @IBOutlet weak var btnEditFocusModeDuration: cursorButton!
     
     var segmentOfficeModeTrackingArea: NSTrackingArea?
     var segmentWfhModeTrackingArea: NSTrackingArea?
     var trackingAreaBtnEditBlockingSchedule: NSTrackingArea?
+    var trackingAreaBtnEditFocusModeDuration: NSTrackingArea?
+    
     var btnFocusMusicTrackingArea: NSTrackingArea?
     var btnTodoPlayerTrackingArea: NSTrackingArea?
     var btnBrainDumpTrackingArea: NSTrackingArea?
@@ -386,6 +389,10 @@ class menuViewController: NSViewController {
         trackingAreaBtnEditBlockingSchedule = NSTrackingArea.init(rect: btnEditBlockingSchedule.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
         btnEditBlockingSchedule.addTrackingArea(trackingAreaBtnEditBlockingSchedule!)
         
+        
+        trackingAreaBtnEditFocusModeDuration = NSTrackingArea.init(rect: btnEditFocusModeDuration.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
+        btnEditFocusModeDuration.addTrackingArea(trackingAreaBtnEditFocusModeDuration!)
+        
         trackingAreaBtnPin = NSTrackingArea.init(rect: btnPin.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
         btnPin.addTrackingArea(trackingAreaBtnPin!)
         
@@ -503,6 +510,12 @@ class menuViewController: NSViewController {
                 toolTipButtonEditBlockingSchedule = menuInfo.value(forKey: "buttonAddBlockingSchedule") as? String ?? toolTipButtonEditBlockingSchedule
             }
             showTooltip(sender: btnEditBlockingSchedule, msg: toolTipButtonEditBlockingSchedule, preferredEdge: NSRectEdge.maxX, maxWidthVal:230, autoCloseOnMouseExit: true)
+        }else if event.trackingArea == trackingAreaBtnEditFocusModeDuration{
+//            var toolTipButtonEditBlockingSchedule = "Add blocking schedule"
+//            if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
+//                toolTipButtonEditBlockingSchedule = menuInfo.value(forKey: "buttonAddBlockingSchedule") as? String ?? toolTipButtonEditBlockingSchedule
+//            }
+            showTooltipWithOsTahoe(sender: btnEditFocusModeDuration, msg: "Click here to update duration, intention and current task ", preferredEdge: NSRectEdge.maxX, maxWidthVal:230, autoCloseOnMouseExit: true)// todo text
         }else if event.trackingArea == trackingAreaBtnPin{
             var msg = ""
             if SettingsManagerObject.isMenuPopoverEnabled{
@@ -571,6 +584,8 @@ class menuViewController: NSViewController {
         }else if event.trackingArea == btnCurrentTrackTrackingArea{
             closePopoverTooltipIfVisible()
         }else if event.trackingArea == trackingAreaBtnEditBlockingSchedule{
+            closePopoverTooltipIfVisible()
+        }else if event.trackingArea == trackingAreaBtnEditFocusModeDuration{
             closePopoverTooltipIfVisible()
         }else if event.trackingArea == trackingAreaBtnPin{
             closePopoverTooltipIfVisible()
@@ -1694,6 +1709,18 @@ class menuViewController: NSViewController {
         }else{
             pauseFocusMode()
         }
+    }
+    
+    @IBAction func btnEditFocusModeDurationClicked(_ sender: Any) {
+        addLog(text:"[user-action] menuViewController:- btnEditFocusModeDurationClicked")
+        
+        if mainWindowControllerObj?.window?.isVisible ?? false{
+            leftMenuVcObj?.showFocusModeStateView()
+        }else{
+            mainWindowControllerObj?.showWindow(self)
+            leftMenuVcObj?.showFocusModeStateView()
+        }
+        closeMenuWindowIsVisible()
     }
     
     func pauseFocusMode(){

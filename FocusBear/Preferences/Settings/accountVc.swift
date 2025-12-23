@@ -144,6 +144,7 @@ class accountVc: NSViewController {
         })
        
     }
+    
     @IBAction func btnRestorePurchaseClicked(_ sender: Any) {
         addLog(text: "[user-action] accountVc:- btnRestorePurchaseClicked")
         loader.startAnimation(self)

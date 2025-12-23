@@ -8,6 +8,10 @@ import Cocoa
 class simplePomodoroVc: NSViewController {
     
     
+    @IBOutlet weak var comboBoxTask: searchableComboBox!
+    @IBOutlet weak var btnInfoSelectFirstTask: hoverInfoButton!
+    @IBOutlet weak var lblEnterFirstTask: NSTextField!
+    @IBOutlet weak var stackViewFirstTask: NSStackView!
     @IBOutlet weak var boxBlankSpace: NSBox!
     @IBOutlet weak var stackViewStrictnessLevel: NSStackView!
     @IBOutlet weak var stackViewIntention: NSStackView!
@@ -74,7 +78,7 @@ class simplePomodoroVc: NSViewController {
     var breakDurationZeroErrorText = "Break Duration can not be 0."
     
     var timerText = "Time spend unfocused: <TIME>"
-    
+//    var isFirstTime = false
     
    
     var popoverTooltip:NSPopover?// = NSPopover()
@@ -100,11 +104,13 @@ class simplePomodoroVc: NSViewController {
     var descriptionSuperStrictMode = "Once you start, you can't stop"
     var toolTipSuperStrictMode = "Once you start, there’s no backing out. Best for deep, distraction-free sessions."
     
+    var arrAllTasks = [NSDictionary]()
     
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
 //        arrTourMessages.removeAll()
+        lblEnterFirstTask.stringValue = "What do you want to work on first?" // todo text
         
         
         lblTitleStrictnessLevel.stringValue = "Strictness level:"
@@ -138,7 +144,6 @@ class simplePomodoroVc: NSViewController {
             workDurationZeroErrorText = preferencesInfo.value(forKey: "workDurationZeroErrorText") as? String ?? workDurationZeroErrorText
             breakDurationEmptyErrorText = preferencesInfo.value(forKey: "breakDurationEmptyErrorText") as? String ?? breakDurationEmptyErrorText
             breakDurationZeroErrorText = preferencesInfo.value(forKey: "breakDurationZeroErrorText") as? String ?? breakDurationZeroErrorText
-            
         }
         
         if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
@@ -293,14 +298,22 @@ class simplePomodoroVc: NSViewController {
         btnInfoBreakDuration.isAutoClickEnabled = false
         btnInfoIntention.isAutoClickEnabled = false
         btnInfoStrictnessLevel.isAutoClickEnabled = false
+        btnInfoSelectFirstTask.isAutoClickEnabled = false
         
-        
+        stackViewFirstTask.isHidden = true
         stackViewStrictnessLevel.isHidden = true
         stackViewIntention.isHidden = true
         boxBlockingStyle.isHidden = true
         boxBreakDuration.isHidden = true
         boxBlankSpace.isHidden = false
         imgViewAccordionMoreOptions.image = NSImage(named: NSImage.goForwardTemplateName)
+        
+        comboBoxTask.customDelegate = self
+        comboBoxTask.stringValue = ""
+        
+        comboBoxTask.items.removeAll()
+        arrAllTasks.removeAll()
+        comboBoxTask.reloadData()
     }
     
     var browserPermissionGiven = false
@@ -494,6 +507,40 @@ class simplePomodoroVc: NSViewController {
         if !nextFocusSessionIntention.isEmpty{
             textViewAchieve.string = nextFocusSessionIntention
         }
+        comboBoxTask.isEnabled = false
+        comboBoxTask.stringValue = ""
+        comboBoxTask.items.removeAll()
+        arrAllTasks.removeAll()
+        allApiObject.getAllTasks(completionHandler: {json in
+            DispatchQueue.main.async { [self] in
+                if let json = json{
+                    let sortedTasks = json.sorted { t1, t2 in
+                        let s1 = t1.value(forKey: "created_at") as? String ?? ""
+                        let s2 = t2.value(forKey: "created_at") as? String ?? ""
+                        
+                        let d1 = getDateFromStringInUtc(dateString: s1) ?? Date.distantPast
+                        let d2 = getDateFromStringInUtc(dateString: s2) ?? Date.distantPast
+                        
+                        return d1 > d2
+                    }
+                    arrAllTasks = sortedTasks
+                    for task in arrAllTasks{
+                        let title = task.value(forKey: "title") as? String ?? ""
+                        comboBoxTask.items.append(title)
+                        print(title)
+                    }
+                    comboBoxTask.reloadData()
+                    comboBoxTask.isEnabled = true
+                    func getDateFromStringInUtc(dateString: String) -> Date? {
+                        let df = DateFormatter()
+                        df.locale = Locale(identifier: "en_US_POSIX")
+                        df.timeZone = TimeZone(secondsFromGMT: 0)
+                        df.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'" // matches your examples
+                        return df.date(from: dateString)
+                    }
+                }
+            }
+        })
     }
     
     func showSelectedStrictnessLevel(){
@@ -677,7 +724,7 @@ class simplePomodoroVc: NSViewController {
                 return;
             }
         }
-
+        
         if UserDefaults.standard.object(forKey: kUserdefaultsManageTaskFirstTime) == nil{
             UserDefaults.standard.set(true, forKey: kUserdefaultsManageTaskFirstTime)
        
@@ -930,12 +977,20 @@ class simplePomodoroVc: NSViewController {
         addLog(text: "SkipBreakActivityDuringPomodoro is true in simple focus session.")
         whatToAchieveInFocusBlock = textViewAchieve.string
         appdelegate!.focusModeStartted(isStartedByPusher: false)
-        
+
         if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled && currentState != ._MICRO_BREAK_{
+            if !comboBoxTask.stringValue.isEmpty{
+                taskPlayerVcObj?.taskToLoadForFirstTime = comboBoxTask.stringValue
+                taskPlayerVcObj?.arrAllTasks = arrAllTasks
+            }
             showTaskPlayerWindow(totalDuration: minute, intention: textViewAchieve.string, automatically:true)
         }else{
             if !getTaskPlayerVcObject().isViewLoaded{
                 getTaskPlayerVcObject().loadView()
+            }
+            if !comboBoxTask.stringValue.isEmpty{
+                taskPlayerVcObj?.taskToLoadForFirstTime = comboBoxTask.stringValue
+                taskPlayerVcObj?.arrAllTasks = arrAllTasks
             }
             taskPlayerVcObj?.reloadData(totalDuration: minute, intention: textViewAchieve.string)
             shouldReloadTaskPlayer = false
@@ -947,7 +1002,6 @@ class simplePomodoroVc: NSViewController {
 //        startingFocusModeVcObj?.lastSkipMicroBreakState = isSkipBreakActivityDuringPomodoro
         //
         allApiObject.capturePosthog(event: "start-focus-session-manually", metadata: ["type":"simple-focus", "focusDuration":currentPomodoroWorkDuration, "breakDuration":currentPomodoroBreakDuration])
- 
     }
 
     
@@ -957,6 +1011,7 @@ class simplePomodoroVc: NSViewController {
         self.view.window?.close()
         allApiObject.capturePosthog(event: "start-focus-session-popup-closed", metadata: [:])
     }
+    
     override func viewWillDisappear() {
         isIntentionFromMorningPostpone = false
         timer?.invalidate()
@@ -972,6 +1027,8 @@ class simplePomodoroVc: NSViewController {
             }
         }
     }
+    
+    
     var timer:Timer?
     var currentTimer = 0
     func startTimer() {
@@ -1187,6 +1244,7 @@ class simplePomodoroVc: NSViewController {
             boxBreakDuration.isHidden = false
             imgViewAccordionMoreOptions.image = NSImage(named: NSImage.touchBarGoDownTemplateName)
             boxBlankSpace.isHidden = true
+            stackViewFirstTask.isHidden = false
         }else{
             stackViewStrictnessLevel.isHidden = true
             stackViewIntention.isHidden = true
@@ -1199,8 +1257,14 @@ class simplePomodoroVc: NSViewController {
                     window.toggleFullScreen(nil)
                 }
             }
+            stackViewFirstTask.isHidden = true
         }
     }
+    
+    @IBAction func btnInfoSelectFirstTaskClicked(_ sender: Any) {
+        showTooltip(sender: btnInfoSelectFirstTask, msg: "Add the first task you’ll work on in this focus session. Starting with a clear task helps you stay on track.", preferredEdge: NSRectEdge.maxX, maxWidthVal:230)//todo text
+    }
+    
 }
 
 extension simplePomodoroVc: NSTextFieldDelegate, NSTextViewDelegate{
@@ -1257,3 +1321,12 @@ extension simplePomodoroVc: TourDelegate{
 }
 
 // scrollview added on 2/9/25 on version 2.27.409
+
+extension simplePomodoroVc: SearchableComboBoxDelegate{
+    func itemSelectedByUser(comboBox: searchableComboBox) {
+        if comboBox.stringValue.isEmpty{
+            return;
+        }
+
+    }
+}

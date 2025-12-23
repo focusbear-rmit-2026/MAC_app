@@ -117,6 +117,13 @@ func checkIsNaturalBreakWindowNeedToShow(idleTimeValue:Int){
             }
         }
         if shouldShowAlert{
+            if isAnyPresentationOrVideoShowing(){
+                addLog(text: "Since a presentation or video is showing in the browser, the natural break detection window won't be shown.")
+                shouldShowAlert = false
+            }
+        }
+        
+        if shouldShowAlert{
             showNaturalBreakDetectionWindow(duration:idleTimeValue)
         }
     }

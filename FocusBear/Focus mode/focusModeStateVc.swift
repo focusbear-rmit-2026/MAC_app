@@ -10,6 +10,15 @@ import Cocoa
 
 class focusModeStateVc: NSViewController {
     
+    @IBOutlet weak var loader: NSProgressIndicator!
+    @IBOutlet weak var lblGettingTasks: NSTextField!
+    @IBOutlet weak var boxEditFocusMode: NSBox!
+    @IBOutlet weak var btnDecreaseDuration: toolTipButton!
+    @IBOutlet weak var btnIncreaseDuration: toolTipButton!
+    @IBOutlet weak var lblTitleCurrentTask: NSTextField!
+    @IBOutlet weak var lblTitleIntention: NSTextField!
+    @IBOutlet weak var comboBoxTask: searchableComboBox!
+    @IBOutlet var textView: NSTextView!
     @IBOutlet weak var lblTitle: NSTextField!
     @IBOutlet weak var btnStopFocusMode: Button!
     @IBOutlet weak var lblTitleFocusModeTime: NSTextField!
@@ -17,10 +26,15 @@ class focusModeStateVc: NSViewController {
     @IBOutlet weak var boxFocusModeRemainingTime: NSBox!
     
     var isViewVisible = false
+    var arrAllTasks = [NSDictionary]()
     
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
+        lblTitleIntention.stringValue = "Focus Goal:"// todo text
+        lblTitleCurrentTask.stringValue = "Current task:"// todo text
+        lblGettingTasks.stringValue = "Fetching tasks..." // todo text
+        
         lblTitleFocusModeTime.stringValue = "Focus mode ends in:"
         if let common = configjson.value(forKey: "common") as? NSDictionary{
             if let focusEndsText = common.value(forKey: "focusEndsText") as? String {
@@ -28,6 +42,19 @@ class focusModeStateVc: NSViewController {
             }
         }
         lblTitle.stringValue = ""
+        
+        
+        comboBoxTask.customDelegate = self
+        comboBoxTask.stringValue = ""
+        
+        comboBoxTask.items.removeAll()
+        arrAllTasks.removeAll()
+        comboBoxTask.reloadData()
+        textView.delegate = self
+        
+        
+        btnIncreaseDuration.customToolTip = "Increase duration by 1 minute"
+        btnDecreaseDuration.customToolTip = "Decrease duration by 1 minute"// todo text todo 
     }
     
     override func viewWillAppear() {
@@ -35,17 +62,64 @@ class focusModeStateVc: NSViewController {
         isViewVisible = true
     }
     
-    
-    
     func reloadData(){
         let isFocusModeOn = isFocusModeOn()
         let isFocusModePaused = isFocusModePaused()
         stopFocusModeCountDownTimer()
+        
+        lblGettingTasks.isHidden = true
+        boxEditFocusMode.isHidden = true
+        lblGettingTasks.stringValue = "Fetching tasks..." // todo text
         if isFocusModeOn{
             showFocusModeCountDownIfNeeded()
             btnStopFocusMode.title = "Stop Focus Session"
             if let leftMenuVcInfo = configjson.value(forKey: "leftMenuVcInfo") as? NSDictionary{
                 btnStopFocusMode.title = leftMenuVcInfo.value(forKey: "menuStopFocusSession") as? String ?? btnStopFocusMode.title
+            }
+            if endFocusModeTime != nil{
+                boxEditFocusMode.isHidden = false
+                let currentTaskInToDoPlayer = getCurrentTaskInFocusMode() ?? ""
+                textView.string = whatToAchieveInFocusBlock
+                loader.startAnimation(self)
+                comboBoxTask.isEnabled = false
+                comboBoxTask.stringValue = ""
+                
+                comboBoxTask.items.removeAll()
+                arrAllTasks.removeAll()
+                lblGettingTasks.isHidden = false
+                allApiObject.getAllTasks(completionHandler: {json in
+                    DispatchQueue.main.async { [self] in
+                        comboBoxTask.isEnabled = true
+                        lblGettingTasks.isHidden = true
+                        if let json = json{
+                            let sortedTasks = json.sorted { t1, t2 in
+                                let s1 = t1.value(forKey: "created_at") as? String ?? ""
+                                let s2 = t2.value(forKey: "created_at") as? String ?? ""
+                                
+                                let d1 = getDateFromStringInUtc(dateString: s1) ?? Date.distantPast
+                                let d2 = getDateFromStringInUtc(dateString: s2) ?? Date.distantPast
+                                
+                                return d1 > d2
+                            }
+                            arrAllTasks = sortedTasks
+                            for task in arrAllTasks{
+                                let title = task.value(forKey: "title") as? String ?? ""
+                                comboBoxTask.items.append(title)
+                                print(title)
+                            }
+                            func getDateFromStringInUtc(dateString: String) -> Date? {
+                                let df = DateFormatter()
+                                df.locale = Locale(identifier: "en_US_POSIX")
+                                df.timeZone = TimeZone(secondsFromGMT: 0)
+                                df.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'" // matches your examples
+                                return df.date(from: dateString)
+                            }
+                        }
+                        comboBoxTask.reloadData()
+                        loader.stopAnimation(self)
+                        comboBoxTask.stringValue = currentTaskInToDoPlayer
+                    }
+                })
             }
         }else if isFocusModePaused{
             lblTitle.isHidden = false
@@ -258,5 +332,83 @@ class focusModeStateVc: NSViewController {
     
     @objc func resumeFocusMode(){
         menuViewControllerObj?.resumeFocusMode()
+    }
+    
+    @IBAction func btnIncreaseDurationClicked(_ sender: Any) {
+      //  allApiObject.capturePosthog(event: "extend-focus-session-from-button", metadata: [:]) // todo ask
+        appdelegate?.extendFocusModeFor(minutes: 1)
+    }
+    
+    @IBAction func btnDecreaseDurationClicked(_ sender: Any) {
+        appdelegate?.reduceFocusModeFor(minutes: 1)
+    }
+}
+
+extension focusModeStateVc: SearchableComboBoxDelegate{
+    func itemSelectedByUser(comboBox: searchableComboBox) {
+        if !comboBox.stringValue.isEmpty{
+            comboBoxTask.isEnabled = false
+            let currentTask = comboBoxTask.stringValue.lowercased()
+            var taskAlreadyAdded = false
+            var taskAddedIndex = 0
+            if !currentTask.isEmpty{
+                for i in 0..<arrAllTasks.count{
+                    let task = arrAllTasks[i]
+                    let taskName = task.value(forKey: "title") as? String ?? ""
+                    if taskName.lowercased() == currentTask{
+                        taskAlreadyAdded = true
+                        taskAddedIndex = i
+                        break;
+                    }
+                }
+                
+                if !taskAlreadyAdded{
+                    lblGettingTasks.stringValue = "Saving task..."
+                    if let popUpAddNewFocusGoalVcInfo = configjson.value(forKey: "popUpAddNewFocusGoalVcInfo") as? NSDictionary{
+                        lblGettingTasks.stringValue = popUpAddNewFocusGoalVcInfo.value(forKey: "SavingTaskText") as? String ?? lblGettingTasks.stringValue
+                    }
+                    lblGettingTasks.isHidden = false
+                    loader.startAnimation(self)
+                    let today = Date()
+                    let taskName = comboBoxTask.stringValue
+                    let nextWeek = Calendar.current.date(byAdding: .day, value: 7, to: today) ?? Date()
+                    let dateString = getStringFromDateInUtc(date: nextWeek, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+                    addLog(text: "Create new task:- name: \(taskName)")
+                    allApiObject.addTask(title: taskName, details: "", eisenhowerQuadrant: 1, dueDate: dateString, objective: "", tags: [], completionHandler: { result,json in
+                        if result{
+                            addLog(text: "\(taskName) task created successfully.")
+                        }
+                        DispatchQueue.main.async { [self] in
+                            comboBoxTask.isEnabled = true
+                            lblGettingTasks.isHidden = true
+                            loader.stopAnimation(self)
+                            if let json = json{
+                                if let id = json.value(forKey: "id") as? String{
+                                    taskPlayerVcObj?.addAndPlayTaskInCurrentList(taskName: taskName, id: id, duration: 600, shouldCompleteCurrentTask: false)
+                                }
+                            }
+                        }
+                    })
+                }else{
+                    let task = arrAllTasks[taskAddedIndex]
+                    if let id = task.value(forKey: "id") as? String, let taskTitle = task.value(forKey: "title") as? String{
+                        taskPlayerVcObj?.addAndPlayTaskInCurrentList(taskName: taskTitle, id: id, duration: 600, shouldCompleteCurrentTask: false)
+                    }
+                    comboBoxTask.isEnabled = true
+                }
+            }
+            return;
+        }
+    }
+}
+
+extension focusModeStateVc: NSTextViewDelegate{
+    func textDidChange(_ notification: Notification) {
+        if let textView = notification.object as? NSTextView{
+            if textView == self.textView{
+                whatToAchieveInFocusBlock = textView.string
+                taskPlayerVcObj?.updateIntentionToPlayer()
+            }
+        }
     }
 }

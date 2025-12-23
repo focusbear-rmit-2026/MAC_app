@@ -506,6 +506,15 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
     
     func checkCustomBlockingScheduleTime(){
         if currentState != ._MORNING_HABIT_ && currentState != ._CUSTOM_ROUTINE_ && currentState != ._EVENING_HABIT_ && !appdelegate!.isProcessingHabitRoutine && !isProcessingCustomRoutine && currentState != ._MICRO_BREAK_ && !isAnyCustomScheduleOn && !isFocusModeRunning{
+            
+            if let mainWindowControllerObj = mainWindowControllerObj, (mainWindowControllerObj.window?.isVisible ?? false){
+                if leftMenuVcObj?.boxFocusSession.isSelected ?? false{
+                    if mainViewControllerObj?.isFocusCompletedViewVisible() ?? false{
+                        return;
+                    }
+                }
+            }
+            
             for i in 0..<arrBlockingSchedule.count{
                 if arrBlockingSchedule[i].isBlockingActive(){
                     if validateBlockingScheduleFocusId(schedule: arrBlockingSchedule[i]){

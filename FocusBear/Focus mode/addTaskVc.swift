@@ -498,6 +498,10 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
     func extendFocusMode(){
         allApiObject.capturePosthog(event: "extend-focus-session-from-popup", metadata: [:])
         self.dismiss(self)
+        if customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
+            customBlockingScheduleManagerObj.customBlockingScheduleFinished()
+        }
+        
         let minutesToExtend = Int(popUpBtnSelectMinutes.title) ?? 0
         var currentFocusModeIndex = -1
         for i in 0..<arrFocusType.count{

@@ -563,6 +563,15 @@ class ViewController: NSViewController {
         containerView.addConstraints(subView: focusCompletedVcObj!.view)
     }
     
+    func isFocusCompletedViewVisible()-> Bool{
+        if let focusCompletedVcObj = focusCompletedVcObj, focusCompletedVcObj.isViewLoaded{
+            if containerView.subviews.contains(focusCompletedVcObj.view){
+                return true
+            }
+        }
+        return false
+    }
+    
     func showFocusAbortedView(){
         self.removeSubViews()
         containerView.addSubview(abortingFocusModeVcObj!.view)

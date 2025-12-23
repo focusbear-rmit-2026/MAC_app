@@ -75,11 +75,27 @@ class popUpAddNewFocusGoalVc: NSViewController {
                 comboBoxTask.isEnabled = true
                 lblGettingTasks.isHidden = true
                 if let json = json{
-                    arrAllTasks = json
-                    for task in json{
+                    let sortedTasks = json.sorted { t1, t2 in
+                        let s1 = t1.value(forKey: "created_at") as? String ?? ""
+                        let s2 = t2.value(forKey: "created_at") as? String ?? ""
+                        
+                        let d1 = getDateFromStringInUtc(dateString: s1) ?? Date.distantPast
+                        let d2 = getDateFromStringInUtc(dateString: s2) ?? Date.distantPast
+                        
+                        return d1 > d2
+                    }
+                    arrAllTasks = sortedTasks
+                    for task in arrAllTasks{
                         let title = task.value(forKey: "title") as? String ?? ""
                         comboBoxTask.items.append(title)
                         print(title)
+                    }
+                    func getDateFromStringInUtc(dateString: String) -> Date? {
+                        let df = DateFormatter()
+                        df.locale = Locale(identifier: "en_US_POSIX")
+                        df.timeZone = TimeZone(secondsFromGMT: 0)
+                        df.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'" // matches your examples
+                        return df.date(from: dateString)
                     }
                 }
                 comboBoxTask.reloadData()

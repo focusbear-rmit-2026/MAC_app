@@ -254,7 +254,7 @@ func showPopupBlockConfirmWindow(blockedAppName:String, currentApp:NSRunningAppl
 
 //***********Popup Set Intention Blocked urls Window***************//
 func showSetIntentionBlockedUrlsWindow(script: String, url:String, browser:BROWSER?, allreadyCheckedIndex:Int, isAppBlocking:Bool, currentApp:NSRunningApplication?, blockedAppName:String, blockItem:String){
-    addLog(text: "func:- showSetIntentionBlockedUrlsWindow")
+    addLog(text: "func:- showSetIntentionBlockedUrlsWindow :- currentApp: \(currentApp?.localizedName ?? ""), url: \(url)")
     print("showSetIntentionBlockedUrlsWindow*************")
     var currentPid: pid_t?
     if let runningApp = NSWorkspace.shared.frontmostApplication{

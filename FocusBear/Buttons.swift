@@ -94,6 +94,38 @@ class hoverInfoButton: NSButton {
         }
     }
 }
+
+class toolTipButton: NSButton {
+    
+    //var isAutoClickEnabled = true
+    var customToolTip = ""
+    override func awakeFromNib() {
+        super.awakeFromNib()
+        addTrackingArea(NSTrackingArea(rect: bounds, options: [.activeAlways, .inVisibleRect, .mouseEnteredAndExited], owner: self, userInfo: nil))
+    }
+    
+    override func mouseEntered(with event: NSEvent) {
+        NSCursor.pointingHand.set()
+        if !customToolTip.isEmpty{
+            showTooltipWithOsTahoe(sender: self, msg: customToolTip, preferredEdge: NSRectEdge.maxX, maxWidthVal:230, autoCloseOnMouseExit: true)
+        }
+    }
+    
+    override func mouseExited(with event: NSEvent) {
+        NSCursor.arrow.set()
+        if popoverTooltip != nil{
+            if popoverTooltip!.isShown{
+                popoverTooltip?.close()
+            }
+        }
+        if popoverFocusHelp != nil{
+            if popoverFocusHelp!.isShown{
+                popoverFocusHelp?.close()
+            }
+        }
+    }
+}
+
 class settingsMouseDownEffectButton: NSButton {
     var mouseDown = false
     

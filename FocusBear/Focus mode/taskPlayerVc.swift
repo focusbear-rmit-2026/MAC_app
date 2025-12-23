@@ -48,7 +48,8 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
     var isSnappingGoing = false
     var isMouseEntering = false
     var isViewVisible = false
-    
+    var taskToLoadForFirstTime:String?
+    var arrAllTasks = [NSDictionary]()
     override func viewDidLoad() {
         super.viewDidLoad()
         self.webView.navigationDelegate = self
@@ -451,10 +452,51 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
         }
         let settingsFunc = String(format: "let waitForAppLoaded = setInterval(() => { if (window.loadMetaDataForToDoPlayer) { loadMetaDataForToDoPlayer(%@); clearInterval(waitForAppLoaded); } }, 100);", stringJson)
         
-        webView.evaluateJavaScript(settingsFunc,completionHandler: { (html: Any?, error: Error?) in
+        webView.evaluateJavaScript(settingsFunc,completionHandler: { [self] (html: Any?, error: Error?) in
             print(error as Any)
             print("****error")
             print(html as Any)
+            if let error = error {
+                addLog(text: "loadIntentionForToDoPlayer:- JavaScript evaluation error: \(error)")// v 2.28.441
+            }else if let taskToLoadForFirstTime = self.taskToLoadForFirstTime{
+                var taskAlreadyAdded = false
+                var taskAddedIndex = 0
+                for i in 0..<arrAllTasks.count{
+                    let task = arrAllTasks[i]
+                    let taskName = task.value(forKey: "title") as? String ?? ""
+                    if taskName.lowercased() == taskToLoadForFirstTime.lowercased(){
+                        taskAlreadyAdded = true
+                        taskAddedIndex = i
+                        break;
+                    }
+                }
+                
+                
+                self.taskToLoadForFirstTime = nil
+                if !taskAlreadyAdded{
+                    let today = Date()
+                    let nextWeek = Calendar.current.date(byAdding: .day, value: 7, to: today) ?? Date()
+                    let dateString = getStringFromDateInUtc(date: nextWeek, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+                    allApiObject.addTask(title: taskToLoadForFirstTime, details: "", eisenhowerQuadrant: 1, dueDate: dateString, objective: "", tags: [], completionHandler: { result,json in
+                        if result{
+                            addLog(text: "\(taskToLoadForFirstTime) task created successfully.")
+                            DispatchQueue.main.async { [self] in
+                                if let json = json{
+                                    if let id = json.value(forKey: "id") as? String{
+                                        addAndPlayTaskInCurrentList(taskName: taskToLoadForFirstTime, id: id, duration: 600, shouldCompleteCurrentTask: false)
+                                    }
+                                }
+                            }
+                        }
+                        
+                    })
+                }else{
+                    let task = arrAllTasks[taskAddedIndex]
+                    if let id = task.value(forKey: "id") as? String, let taskTitle = task.value(forKey: "title") as? String{
+                        taskPlayerVcObj?.addAndPlayTaskInCurrentList(taskName: taskTitle, id: id, duration: 600, shouldCompleteCurrentTask: false)
+                    }
+                }
+            }
         })
     }
     
@@ -463,6 +505,9 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
         let script = "getToDosFromPlayer();"
         webView?.evaluateJavaScript(script,completionHandler: { (html: Any?, error: Error?) in
             print(html)
+            if let error = error {
+                addLog(text: "loadIntentionForToDoPlayer:- JavaScript evaluation error: \(error)")// v 2.28.441
+            }
         })
     }
     
@@ -476,6 +521,9 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
         webView?.evaluateJavaScript(script,completionHandler: { (html: Any?, error: Error?) in
             print(error)
             print(html)
+            if let error = error {
+                addLog(text: "loadIntentionForToDoPlayer:- JavaScript evaluation error: \(error)")// v 2.28.441
+            }
         })
     }
     
@@ -486,6 +534,9 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
         webView?.evaluateJavaScript(script,completionHandler: { (html: Any?, error: Error?) in
             print(error)
             print(html)
+            if let error = error {
+                addLog(text: "loadIntentionForToDoPlayer:- JavaScript evaluation error: \(error)")// v 2.28.441
+            }
         })
     }
     
@@ -515,6 +566,7 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
             let jsonData = try JSONSerialization.data(withJSONObject: payload, options: [])
             guard let jsonString = String(data: jsonData, encoding: .utf8) else {
                 print("Failed to convert JSON data to string")
+                addLog(text: "Failed to convert JSON data to string")// v 2.28.441
                 return
             }
             
@@ -546,10 +598,12 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
             webView.evaluateJavaScript(jsFunction) { result, error in
                 if let error = error {
                     print("JavaScript evaluation error: \(error)")
+                    addLog(text: "JavaScript evaluation error: \(error)")// v 2.28.441
                 }
             }
         } catch {
             print("JSON serialization error: \(error)")
+            addLog(text: "JSON serialization error: \(error)")// v 2.28.441
         }
     }
     
@@ -572,6 +626,7 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
             let jsonData = try JSONSerialization.data(withJSONObject: payload, options: [])
             guard let jsonString = String(data: jsonData, encoding: .utf8) else {
                 print("Failed to convert JSON data to string")
+                addLog(text: "Failed to convert JSON data to string")// v 2.28.441
                 return
             }
             
@@ -603,10 +658,12 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
             webView.evaluateJavaScript(jsFunction) { result, error in
                 if let error = error {
                     print("JavaScript evaluation error: \(error)")
+                    addLog(text: "JavaScript evaluation error: \(error)")// v 2.28.441
                 }
             }
         } catch {
             print("JSON serialization error: \(error)")
+            addLog(text: "JSON serialization error: \(error)")// v 2.28.441
         }
     }
     

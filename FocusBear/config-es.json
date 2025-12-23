@@ -2459,7 +2459,8 @@
         "titleGoal": "¿Tu objetivo de enfoque sigue siendo: \"<GOAL>\"?",
         "buttonAppRelevantText": "Sí, y esta app es relevante",
         "buttonSiteRelevantText": "Sí, y este sitio es relevante",
-        "buttonWorkingSomethingElseText": "No, ahora estoy trabajando en otra cosa"
+        "buttonWorkingSomethingElseText": "No, ahora estoy trabajando en otra cosa",
+        "buttonNoCurrentTaskAdded": "No hay tarea actual — déjame agregar una rápidamente."
     },
     "popUpAddNewFocusGoalVcInfo":{
         "title": "¿Cuál es tu nuevo objetivo de enfoque?",
