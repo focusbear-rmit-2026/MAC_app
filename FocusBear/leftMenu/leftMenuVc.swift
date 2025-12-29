@@ -928,6 +928,7 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
     }
     
     func showFocusModeStateView(){
+        boxFocusSession.isSelected = true
         mainViewControllerObj?.showFocusModeState()
     }
     

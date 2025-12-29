@@ -941,12 +941,12 @@ class popUpBlockConfirmVc: NSViewController {
         getPopUpFocusGoalConfirmationVcObject().resetData(goal: whatToAchieveInFocusBlock, task: currentTaskInToDoPlayer, isApp: isAppBlocking)
     }
     
-    func showoPopUpAddNewFocusGoalView(){
+    func showoPopUpAddNewFocusGoalView(arrAllTasks:[NSDictionary]? = nil){
         addLog(text: "[user-action] popUpBlockConfirmVc:- showoPopUpAddNewFocusGoalView")
         self.view.addSubview(getPopUpAddNewFocusGoalVcObject().view)
         self.view.addConstraints(subView: getPopUpAddNewFocusGoalVcObject().view)
         let currentTaskInToDoPlayer = getCurrentTaskInFocusMode()
-        getPopUpAddNewFocusGoalVcObject().resetData(intention: whatToAchieveInFocusBlock, task: currentTaskInToDoPlayer)
+        getPopUpAddNewFocusGoalVcObject().resetData(intention: whatToAchieveInFocusBlock, task: currentTaskInToDoPlayer, arrAllTasksAdded: arrAllTasks)
     }
     
     func showPopUpSaveThisTaskForLaterView(){
@@ -1259,11 +1259,12 @@ class popUpBlockConfirmVc: NSViewController {
     @IBAction func btnCloseAskIntentionBoxClicked(_ sender: Any) {
         addLog(text: "[user-action] btnCloseAskIntentionBoxClicked")
         btnCloseAskIntentionBox.isHidden = true
-        if self.isSetIntentionFirstTime{
-            showConvincedAiPopUpBox(allowedByConvinceAiAlready: true, reason: lastBlockReasonFromAi)
-        }else{
-            btnCancelClicked(self)
-        }
+        showConvincedAiPopUpBox(allowedByConvinceAiAlready: true, reason: lastBlockReasonFromAi)
+//        if self.isSetIntentionFirstTime{
+//            showConvincedAiPopUpBox(allowedByConvinceAiAlready: true, reason: lastBlockReasonFromAi)
+//        }else{
+//            btnCancelClicked(self)
+//        }
     }
     
     @IBAction func btnSeeMoreClicked(_ sender: Any) {

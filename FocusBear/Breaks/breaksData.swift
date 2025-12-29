@@ -67,7 +67,7 @@ struct breakActivity {
 
 func checkNaturalBreakFromIdleTimeAfterScreenUnlocked(){
     addLog(text: "func checkNaturalBreakFromIdleTimeAfterScreenUnlocked")
-    
+    closeNatutalBreakIfRunning()
     if !SettingsManagerObject.isDetectNatualBreaksEnabled{
         addLog(text: "Detect Natual Breaks is not enabled")
         return;
@@ -78,7 +78,13 @@ func checkNaturalBreakFromIdleTimeAfterScreenUnlocked(){
         addLog(text: "idleTimeValue is :- \(idleTimeValue)")
         if arrAllbreakActivities.count != 0 && currentState != ._BREATHING_{
             addLog(text: "checkIsNaturalBreakWindowNeedToShow")
-            checkIsNaturalBreakWindowNeedToShow(idleTimeValue: idleTimeValue)
+            
+            
+            if idleTimeValue > idleTimeValueForNaturalBreak{
+                UserDefaults.standard.set(macGoesInSleepTime!, forKey: kUserdefaultsLastBreaksStartTime)
+                writeNaturalBreak()//2.28.444
+            }
+//            checkIsNaturalBreakWindowNeedToShow(idleTimeValue: idleTimeValue)
         }else{
             addLog(text: "Don't need to check natural break reason:- habit window is visible")
         }
@@ -87,7 +93,27 @@ func checkNaturalBreakFromIdleTimeAfterScreenUnlocked(){
     }
 }
 
-var idleTimeValueForNaturalBreak = 600
+func writeNaturalBreak(){//2.28.444
+    if let startTime = UserDefaults.standard.object(forKey: kUserdefaultsLastBreaksStartTime) as? Date{
+        let currentDate = Date()
+        let diffSeconds = Calendar.current.dateComponents([.second], from: startTime, to: currentDate).second ?? 0
+        if diffSeconds > 0{
+            var arrDuration = UserDefaults.standard.object(forKey: kUserdefaultsArrayBreaksDurations) as? [Int] ?? []
+            arrDuration.append(diffSeconds)
+            UserDefaults.standard.set(arrDuration, forKey: kUserdefaultsArrayBreaksDurations)
+        }
+        UserDefaults.standard.set(currentDate, forKey: kUserdefaultsLastBreakEndTime)
+        let df = DateFormatter()
+        df.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        let now = df.string(from: currentDate)
+        addLog(text: "Last break recorded at \(now). It will be shown in the menu.")
+        print("\(diffSeconds) seconds Last break recorded at \(now). It will be shown in the menu.")
+    }
+}
+
+
+let idleTimeValueForNaturalBreak = 120// edited from 600 to 120  2.28.444
+var anyNaturallBreakIsOn = false
 func detectNatualBreaks(){
     if !SettingsManagerObject.isDetectNatualBreaksEnabled{
         return;
@@ -98,11 +124,17 @@ func detectNatualBreaks(){
     let idleTimeValue = Int(lastEvent)
     if currentState != ._MORNING_HABIT_ && currentState != ._MICRO_BREAK_ && (isHabitAlreadyShowed || currentState == ._POSTPON_MORNING_HABIT_) && arrAllbreakActivities.count != 0 && !appdelegate!.isUserOnMeeting{
         checkIsNaturalBreakWindowNeedToShow(idleTimeValue: idleTimeValue)
+    }else{
+        closeNatutalBreakIfRunning()
     }
 }
-
+//todo check call k doran habit na aay to kya dikhaya statevc mai
 func checkIsNaturalBreakWindowNeedToShow(idleTimeValue:Int){
-    if idleTimeValue > idleTimeValueForNaturalBreak{// 600 kro
+    print(idleTimeValue)
+    if idleTimeValue > idleTimeValueForNaturalBreak{
+        if anyNaturallBreakIsOn{
+            return;
+        }
         var shouldShowAlert = true
         if currentState == ._POSTPON_MORNING_HABIT_ || currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_{
             if !SettingsManagerObject.IsShowBreaksInPostponeEnabled{
@@ -124,8 +156,25 @@ func checkIsNaturalBreakWindowNeedToShow(idleTimeValue:Int){
         }
         
         if shouldShowAlert{
-            showNaturalBreakDetectionWindow(duration:idleTimeValue)
+            anyNaturallBreakIsOn = true
+            let idelTimeStartTime = Date().addingTimeInterval(-Double(idleTimeValue))
+            UserDefaults.standard.set(idelTimeStartTime, forKey: kUserdefaultsLastBreaksStartTime)
+            let df = DateFormatter()
+            df.dateFormat = "yyyy-MM-dd HH:mm:ss"
+            let now = df.string(from: idelTimeStartTime)
+            addLog(text: "Naturall break started at \(now).")
+            print("Naturall break started at \(now).")
+            //showNaturalBreakDetectionWindow(duration:idleTimeValue)
         }
+    }else{
+        closeNatutalBreakIfRunning()
+    }
+}
+
+func closeNatutalBreakIfRunning(){
+    if anyNaturallBreakIsOn{
+        anyNaturallBreakIsOn = false
+        writeNaturalBreak()
     }
 }
 

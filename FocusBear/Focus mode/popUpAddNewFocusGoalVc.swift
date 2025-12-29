@@ -57,51 +57,71 @@ class popUpAddNewFocusGoalVc: NSViewController {
         }
     }
     
-    func resetData(intention:String, task:String?){
+    func resetData(intention:String, task:String?,arrAllTasksAdded:[NSDictionary]?){
         textViewIntention.string = intention
-        comboBoxTask.isEnabled = false
-        comboBoxTask.stringValue = ""
-        lblGettingTasks.isHidden = false
-        comboBoxTask.items.removeAll()
-        arrAllTasks.removeAll()
-        loader.startAnimation(self)
-        lblGettingTasks.stringValue = "Fetching tasks..."
-        if let popUpAddNewFocusGoalVcInfo = configjson.value(forKey: "popUpAddNewFocusGoalVcInfo") as? NSDictionary{
-            lblGettingTasks.stringValue = popUpAddNewFocusGoalVcInfo.value(forKey: "fetchingTaskText") as? String ?? lblGettingTasks.stringValue
+        
+        
+        if let arrAllTasksAdded = arrAllTasksAdded{
+            comboBoxTask.stringValue = ""
+            comboBoxTask.isEnabled = true
+            lblGettingTasks.isHidden = true
+            self.arrAllTasks = arrAllTasksAdded
+            for task in self.arrAllTasks{
+                let title = task.value(forKey: "title") as? String ?? ""
+                comboBoxTask.items.append(title)
+                print(title)
+            }
+            comboBoxTask.reloadData()
+            loader.stopAnimation(self)
+        }else{
+            comboBoxTask.isEnabled = false
+            comboBoxTask.stringValue = ""
+            lblGettingTasks.isHidden = false
+            comboBoxTask.items.removeAll()
+            self.arrAllTasks.removeAll()
+            loader.startAnimation(self)
+            lblGettingTasks.stringValue = "Fetching tasks..."
+            if let popUpAddNewFocusGoalVcInfo = configjson.value(forKey: "popUpAddNewFocusGoalVcInfo") as? NSDictionary{
+                lblGettingTasks.stringValue = popUpAddNewFocusGoalVcInfo.value(forKey: "fetchingTaskText") as? String ?? lblGettingTasks.stringValue
+            }
+            
+            
+            allApiObject.getAllTasks(completionHandler: {json in
+                DispatchQueue.main.async { [self] in
+                    comboBoxTask.isEnabled = true
+                    lblGettingTasks.isHidden = true
+                    if let json = json{
+                        let sortedTasks = json.sorted { t1, t2 in
+                            let s1 = t1.value(forKey: "created_at") as? String ?? ""
+                            let s2 = t2.value(forKey: "created_at") as? String ?? ""
+                            
+                            let d1 = getDateFromStringInUtc(dateString: s1) ?? Date.distantPast
+                            let d2 = getDateFromStringInUtc(dateString: s2) ?? Date.distantPast
+                            
+                            return d1 > d2
+                        }
+                        self.arrAllTasks = sortedTasks
+                        for task in self.arrAllTasks{
+                            let title = task.value(forKey: "title") as? String ?? ""
+                            comboBoxTask.items.append(title)
+                            print(title)
+                        }
+                        func getDateFromStringInUtc(dateString: String) -> Date? {
+                            let df = DateFormatter()
+                            df.locale = Locale(identifier: "en_US_POSIX")
+                            df.timeZone = TimeZone(secondsFromGMT: 0)
+                            df.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'" // matches your examples
+                            return df.date(from: dateString)
+                        }
+                    }
+                    comboBoxTask.reloadData()
+                    loader.stopAnimation(self)
+                }
+            })
         }
         
-        allApiObject.getAllTasks(completionHandler: {json in
-            DispatchQueue.main.async { [self] in
-                comboBoxTask.isEnabled = true
-                lblGettingTasks.isHidden = true
-                if let json = json{
-                    let sortedTasks = json.sorted { t1, t2 in
-                        let s1 = t1.value(forKey: "created_at") as? String ?? ""
-                        let s2 = t2.value(forKey: "created_at") as? String ?? ""
-                        
-                        let d1 = getDateFromStringInUtc(dateString: s1) ?? Date.distantPast
-                        let d2 = getDateFromStringInUtc(dateString: s2) ?? Date.distantPast
-                        
-                        return d1 > d2
-                    }
-                    arrAllTasks = sortedTasks
-                    for task in arrAllTasks{
-                        let title = task.value(forKey: "title") as? String ?? ""
-                        comboBoxTask.items.append(title)
-                        print(title)
-                    }
-                    func getDateFromStringInUtc(dateString: String) -> Date? {
-                        let df = DateFormatter()
-                        df.locale = Locale(identifier: "en_US_POSIX")
-                        df.timeZone = TimeZone(secondsFromGMT: 0)
-                        df.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'" // matches your examples
-                        return df.date(from: dateString)
-                    }
-                }
-                comboBoxTask.reloadData()
-                loader.stopAnimation(self)
-            }
-        })
+        
+        
         if let task = getCurrentTaskInFocusMode(){
             lblPreviousTask.stringValue = task
             boxMarkCurrentTaskAsComplete.isHidden = false

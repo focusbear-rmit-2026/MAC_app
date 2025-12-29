@@ -2658,8 +2658,11 @@ class habitsVc: NSViewController {
         }
         if showAskIntention{
             if self.view.window != nil{
+                addLog(text: "postponeMorningHabitFor:- askPostponeIntention")// added in 2.28.444
                 self.presentAsSheet(getAskPostponeIntentionVcObject())
                 askPostponeIntentionVcObj?.resetData(minutes: minutes, secondsToPostpone: secondsToPostpone, showAskFocusModeView: showAskFocusModeView, lastCurrentState: ._MORNING_HABIT_)
+            }else{
+                addLog(text: "postponeMorningHabitFor:- window is nil")// added in 2.28.444
             }
         }else{
             var seconds = 0
@@ -2844,8 +2847,11 @@ class habitsVc: NSViewController {
         
         if showAskIntention{
             if self.view.window != nil{
+                addLog(text: "postponeEveningHabitFor:- askPostponeIntention")// added in 2.28.444
                 self.presentAsSheet(getAskPostponeIntentionVcObject())
                 askPostponeIntentionVcObj?.resetData(minutes: minutes, secondsToPostpone: secondsToPostpone, showAskFocusModeView: showAskFocusModeView, lastCurrentState: ._EVENING_HABIT_)
+            }else{
+                addLog(text: "postponeEveningHabitFor:- window is nil")// added in 2.28.444
             }
         }else{
             var seconds = 0
@@ -2958,8 +2964,11 @@ class habitsVc: NSViewController {
         }
         if showAskIntention{
             if self.view.window != nil{
+                addLog(text: "postponeFocusSummaryFor:- askPostponeIntention")// added in 2.28.444
                 self.presentAsSheet(getAskPostponeIntentionVcObject())
                 askPostponeIntentionVcObj?.resetData(minutes: minutes, secondsToPostpone: nil, showAskFocusModeView: false, lastCurrentState: ._FOCUS_SUMMARY_)
+            }else{
+                addLog(text: "postponeFocusSummaryFor:- window is nil")// added in 2.28.444
             }
         }else{
             hideCloseButtons()

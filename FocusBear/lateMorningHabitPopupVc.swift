@@ -55,6 +55,7 @@ class lateMorningHabitPopupVc: NSViewController {
         currentState = ._NOTHING_
         getHabitsVcObject().setActivityTimer()
         addLog(text: "morning habit skipped by user")
+        leftMenuVcObj?.habitOver()
     }
     
     @IBAction func btnDoHabitsClicked(_ sender: Any) {

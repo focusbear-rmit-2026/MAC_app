@@ -599,6 +599,8 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
                 if let error = error {
                     print("JavaScript evaluation error: \(error)")
                     addLog(text: "JavaScript evaluation error: \(error)")// v 2.28.441
+                }else{
+                    addLog(text: "addAndPlayTaskInCurrentList:- success")// v 2.28.444
                 }
             }
         } catch {

@@ -179,6 +179,7 @@ class easyPostponeVc: NSViewController {
                 addLog(text: "easyPostponeVc:- strictness level is super gentle so don't show postpone Intention view")
                 getHabitsVcObject().postponeMorningHabitFor(minutes: Int(popupButtonMinutes.title) ?? 5, secondsToPostpone: nil, showAskFocusModeView: true, showAskIntention: false)
             }else{
+                addLog(text: "easyPostponeVc:- askPostponeIntention")// added in 2.28.444
                 self.presentAsSheet(getAskPostponeIntentionVcObject())
                 askPostponeIntentionVcObj?.resetData(minutes: Int(popupButtonMinutes.title) ?? 5, secondsToPostpone: nil, showAskFocusModeView: true, lastCurrentState: ._MORNING_HABIT_)
                 return;// return here because we do not want to close the window
@@ -189,6 +190,7 @@ class easyPostponeVc: NSViewController {
                 addLog(text: "easyPostponeVc:- strictness level is super gentle so don't show postpone Intention view")
                 getHabitsVcObject().postponeEveningHabitFor(minutes: Int(popupButtonMinutes.title) ?? 5, secondsToPostpone: nil, showAskFocusModeView: true, showAskIntention: false)
             }else{
+                addLog(text: "easyPostponeVc:- askPostponeIntention")// added in 2.28.444
                 self.presentAsSheet(getAskPostponeIntentionVcObject())
                 askPostponeIntentionVcObj?.resetData(minutes: Int(popupButtonMinutes.title) ?? 5, secondsToPostpone: nil, showAskFocusModeView: true, lastCurrentState: ._EVENING_HABIT_)
                 return;// return here because we do not want to close the window

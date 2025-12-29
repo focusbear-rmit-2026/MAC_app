@@ -5426,7 +5426,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             //            }
             
             if isShutOffTimeGoing(){
-                
+                closeNatutalBreakIfRunning()
                 var shouldShowEveningHabit = true
                 
                 if !isAppEnable{
@@ -8239,8 +8239,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                             if !isAppAllowed{
                                 var isAppAllowedByUser = false
                                 let arrBlockedApps = getBlockedAppsToBlock()
-                                addLog(text: "arrBlockedApps:- \(arrBlockedApps)") // need to delete in next  build // todo /
-                                addLog(text: "app is:- \(nameLowercased)") // need to delete in next  build // todo /
+                                addLog(text: "app is:- \(nameLowercased)") // need to delete in next  build
                                 for path in arrBlockedApps{
                                     let url = URL(fileURLWithPath: path)
                                     if url.deletingPathExtension().lastPathComponent.lowercased() == nameLowercased{
@@ -8268,8 +8267,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                             }else{
                                 if !SettingsManagerObject.immediatelyBlockDistractingApps{
                                     let arrBlockedApps = getBlockedAppsToBlock()
-                                    addLog(text: "arrBlockedApps:- \(arrBlockedApps)") // need to delete in next  build // todo /
-                                    addLog(text: "app is:- \(nameLowercased)") // need to delete in next  build // todo /
+                                    addLog(text: "app is:- \(nameLowercased)") // need to delete in next  build
                                     for path in arrBlockedApps{
                                         let url = URL(fileURLWithPath: path)
                                         if url.deletingPathExtension().lastPathComponent.lowercased() == nameLowercased{
@@ -8420,8 +8418,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     if !isAppAllowed{
                         var isAppAllowedByUser = false
                         let arrBlockedApps = getBlockedAppsToBlock()
-                        addLog(text: "arrBlockedApps:- \(arrBlockedApps)") // need to delete in next  build // todo /
-                        addLog(text: "app is:- \(nameLowercased)") // need to delete in next  build // todo /
+                      
+                        addLog(text: "app is:- \(nameLowercased)") // need to delete in next  build
                         for path in arrBlockedApps{
                             let url = URL(fileURLWithPath: path)
                             if url.deletingPathExtension().lastPathComponent.lowercased() == nameLowercased{
@@ -8449,8 +8447,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     }else{
                         if !SettingsManagerObject.immediatelyBlockDistractingApps{
                             let arrBlockedApps = getBlockedAppsToBlock()
-                            addLog(text: "arrBlockedApps:- \(arrBlockedApps)") // need to delete in next  build // todo /
-                            addLog(text: "app is:- \(nameLowercased)") // need to delete in next  build // todo /
+                           
+                            addLog(text: "app is:- \(nameLowercased)") // need to delete in next  build
                             for path in arrBlockedApps{
                                 let url = URL(fileURLWithPath: path)
                                 if url.deletingPathExtension().lastPathComponent.lowercased() == nameLowercased{
@@ -8594,8 +8592,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                             var isAppAllowed = true
                             var isAppAllowedByUser = false
                             let arrBlockedApps = getBlockedAppsToBlock()
-                            addLog(text: "arrBlockedApps:- \(arrBlockedApps)") // need to delete in next  build // todo /
-                            addLog(text: "app is:- \(nameLowercased)") // need to delete in next  build // todo /
+                          
+                            addLog(text: "app is:- \(nameLowercased)") // need to delete in next  build
                             for path in arrBlockedApps{
                                 let url = URL(fileURLWithPath: path)
                                 if url.deletingPathExtension().lastPathComponent.lowercased() == nameLowercased{
@@ -9106,8 +9104,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 if !isAppAllowed{
                     var isAppAllowedByUser = false
                     let arrBlockedApps = getBlockedAppsToBlock()
-                    addLog(text: "arrBlockedApps:- \(arrBlockedApps)") // need to delete in next  build // todo /
-                    addLog(text: "app is:- \(name)") // need to delete in next  build // todo /
+
+                    addLog(text: "app is:- \(name)") // need to delete in next  build
                     for path in arrBlockedApps{
                         let url = URL(fileURLWithPath: path)
                         if url.deletingPathExtension().lastPathComponent.lowercased() == name{
@@ -9133,8 +9131,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 }else{
                     if !SettingsManagerObject.immediatelyBlockDistractingApps{
                         let arrBlockedApps = getBlockedAppsToBlock()
-                        addLog(text: "arrBlockedApps:- \(arrBlockedApps)") // need to delete in next  build // todo /
-                        addLog(text: "app is:- \(name)") // need to delete in next  build // todo /
+
+                        addLog(text: "app is:- \(name)") // need to delete in next  build
                         for path in arrBlockedApps{
                             let url = URL(fileURLWithPath: path)
                             if url.deletingPathExtension().lastPathComponent.lowercased() == name{
@@ -9200,7 +9198,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 
     func tryToBlockAlwaysBlockedUrl(script: String, url:String, browser: BROWSER?, runningApp:NSRunningApplication, blockItem:String){
         print("tryToBlockAlwaysBlockedUrl")
-        if SettingsManagerObject.immediatelyBlockDistractingSites{
+        var needToBlockImmediately = SettingsManagerObject.immediatelyBlockDistractingSites
+        if isFocusModeRunning || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
+            if !isCuddlyModeEnabled(){
+                needToBlockImmediately = true// addded in 2.28.444
+            }
+        }
+        
+        if needToBlockImmediately{
             closeIntentionBlockedUrlsWinddowIfVisible()
             var allowFor24Hours = false
             
@@ -9308,7 +9313,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     func tryToBlockAlwaysBlockedApp(runningApp: NSRunningApplication, appName:String)->Bool{
         print("tryToBlockAlwaysBlockedApp*************")
         exitFullScreen(runningApp:runningApp)
-        if SettingsManagerObject.immediatelyBlockDistractingApps{
+        
+        var needToBlockImmediately = SettingsManagerObject.immediatelyBlockDistractingApps
+        if isFocusModeRunning || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
+            if !isCuddlyModeEnabled(){
+                needToBlockImmediately = true// addded in 2.28.444
+            }
+        }
+        if needToBlockImmediately{
             addLog(text:"tryToBlockAlwaysBlockedApp:- \(appName)")// addded in 2.28.443
             closeIntentionBlockedAppsWinddowIfVisible()
             blockAlwaysBlockedApp(runningApp: runningApp, appName:appName)
@@ -9716,8 +9728,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                             
                             if !SettingsManagerObject.immediatelyBlockDistractingApps{
                                 let arrBlockedApps = getBlockedAppsToBlock()
-                                addLog(text: "arrBlockedApps:- \(arrBlockedApps)") // need to delete in next  build // todo /
-                                addLog(text: "app is:- \(name)") // need to delete in next  build // todo /
+                                addLog(text: "app is:- \(name)") // need to delete in next  build
                                 for path in arrBlockedApps{
                                     let url = URL(fileURLWithPath: path)
                                     if url.deletingPathExtension().lastPathComponent.lowercased() == name{
@@ -9785,8 +9796,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         if !isAppAllowed{
                             var isAppAllowedByUser = false
                             let arrBlockedApps = getBlockedAppsToBlock()
-                            addLog(text: "arrBlockedApps:- \(arrBlockedApps)") // need to delete in next  build // todo /
-                            addLog(text: "app is:- \(name)") // need to delete in next  build // todo /
+                             
+                            addLog(text: "app is:- \(name)") // need to delete in next  build 
                             for path in arrBlockedApps{
                                 let url = URL(fileURLWithPath: path)
                                 if url.deletingPathExtension().lastPathComponent.lowercased() == name{
@@ -9813,8 +9824,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         }else{
                             if !SettingsManagerObject.immediatelyBlockDistractingApps{
                                 let arrBlockedApps = getBlockedAppsToBlock()
-                                addLog(text: "arrBlockedApps:- \(arrBlockedApps)") // need to delete in next  build // todo /
-                                addLog(text: "app is:- \(name)") // need to delete in next  build // todo /
+                              
+                                addLog(text: "app is:- \(name)") // need to delete in next  build
                                 for path in arrBlockedApps{
                                     let url = URL(fileURLWithPath: path)
                                     if url.deletingPathExtension().lastPathComponent.lowercased() == name{
@@ -11428,3 +11439,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 
 
 
+// resume moening routine mai end fopcs  mode ka view aaya fr help tab per jakaer vapas habit tab per  aya to start focus session ka button unhide ho gya  todo bug
+
+// close per again convince vala kaam
+
+// immediatly block vala kaam if stricktnmess level is high in focus mode 

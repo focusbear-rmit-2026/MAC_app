@@ -300,7 +300,7 @@ class simplePomodoroVc: NSViewController {
         btnInfoStrictnessLevel.isAutoClickEnabled = false
         btnInfoSelectFirstTask.isAutoClickEnabled = false
         
-        stackViewFirstTask.isHidden = true
+//        stackViewFirstTask.isHidden = true
         stackViewStrictnessLevel.isHidden = true
         stackViewIntention.isHidden = true
         boxBlockingStyle.isHidden = true
@@ -1244,7 +1244,7 @@ class simplePomodoroVc: NSViewController {
             boxBreakDuration.isHidden = false
             imgViewAccordionMoreOptions.image = NSImage(named: NSImage.touchBarGoDownTemplateName)
             boxBlankSpace.isHidden = true
-            stackViewFirstTask.isHidden = false
+           // stackViewFirstTask.isHidden = false
         }else{
             stackViewStrictnessLevel.isHidden = true
             stackViewIntention.isHidden = true
@@ -1257,7 +1257,7 @@ class simplePomodoroVc: NSViewController {
                     window.toggleFullScreen(nil)
                 }
             }
-            stackViewFirstTask.isHidden = true
+         //   stackViewFirstTask.isHidden = true
         }
     }
     

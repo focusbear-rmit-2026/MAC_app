@@ -2481,8 +2481,8 @@
         "taskNameString": "Para trabajar en: <URL>"
     },
     "habitsStateVcInfo":{
-        "morningRoutinePostponedText": "Rutina matutina pospuesta. Reanúdala ahora haciendo clic en 'Reanudar hábito'.",
-        "eveningRoutinePostponedText": "Rutina nocturna pospuesta. Reanúdala ahora haciendo clic en 'Reanudar hábito'.",
+        "morningRoutinePostponedText": "Rutina matutina pospuesta. Reanúdala ahora haciendo clic en 'Reanudar hábitos'.",
+        "eveningRoutinePostponedText": "Rutina nocturna pospuesta. Reanúdala ahora haciendo clic en 'Reanudar hábitos'.",
         "buttonResumeHabits": "Reanudar hábitos",
         "shutoffAbortedText": "Apagado cancelado. Tu computadora vuelve a estar accesible.",
         "nextRoutineText": "¡Buen trabajo manteniéndote en camino! Tu próxima rutina programada (<ROUTINE>) está fijada para <TIME>. Prepárate para retomarla y seguir construyendo esos hábitos saludables. ¡Tú puedes!",

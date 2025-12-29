@@ -2481,8 +2481,8 @@
         "taskNameString": "To work on: <URL>"
     },
     "habitsStateVcInfo":{
-        "morningRoutinePostponedText": "Morning routine postponed. Resume it now by clicking 'Resume Habit'.",
-        "eveningRoutinePostponedText": "Evening routine postponed. Resume it now by clicking 'Resume Habit'.",
+        "morningRoutinePostponedText": "Morning routine postponed. Resume it now by clicking 'Resume Habits'.",
+        "eveningRoutinePostponedText": "Evening routine postponed. Resume it now by clicking 'Resume Habits'.",
         "buttonResumeHabits": "Resume Habits",
         "shutoffAbortedText": "Shutoff aborted. Your computer is now accessible again.",
         "nextRoutineText": "Great job staying on track! Your next scheduled routine (<ROUTINE>) is set for <TIME>. Be ready to jump back in and continue building those healthy habits. You've got this!",

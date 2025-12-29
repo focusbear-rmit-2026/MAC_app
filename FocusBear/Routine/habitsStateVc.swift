@@ -13,8 +13,8 @@ class habitsStateVc: NSViewController {
     @IBOutlet weak var btnResumeHabits: Button!
     @IBOutlet weak var lblTitle: NSTextField!
     
-    var morningRoutinePostponedText = "Morning routine postponed. Resume it now by clicking 'Resume Habit'."
-    var eveningRoutinePostponedText = "Evening routine postponed. Resume it now by clicking 'Resume Habit'."
+    var morningRoutinePostponedText = "Morning routine postponed. Resume it now by clicking 'Resume Habits'."
+    var eveningRoutinePostponedText = "Evening routine postponed. Resume it now by clicking 'Resume Habits'."
     
     var isFreeTimeBeforeShutoff = false
     var editRoutineButtonShowing = false
