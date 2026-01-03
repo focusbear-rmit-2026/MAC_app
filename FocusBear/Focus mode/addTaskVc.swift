@@ -133,6 +133,7 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
         
         popUpBtnSelectMinutes.removeAllItems()
         popUpBtnSelectMinutes.addItems(withTitles: ["5", "10", "15", "20", "25", "30", "45", "90"])
+        popUpBtnSelectMinutes.selectItem(at: 2)
     }
     override func viewWillDisappear() {
         isWebViewUrlLodded = false

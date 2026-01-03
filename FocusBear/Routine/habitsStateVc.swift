@@ -163,6 +163,13 @@ class habitsStateVc: NSViewController {
                         }
                     }
                 }
+            }else if (appdelegate?.isUserOnMeeting ?? false) && !isHabitAlreadyShowed && !isShutOffTimeGoing() && currentState != ._POSTPON_MORNING_HABIT_{
+                // v 2.28.445
+                btnResumeHabits.isHidden = true
+                lblTitle.stringValue = "Morning routine will resume after the call ends."
+                if let habitsStateVcInfo = configjson.value(forKey: "habitsStateVcInfo") as? NSDictionary{
+                    lblTitle.stringValue = habitsStateVcInfo.value(forKey: "resumeAfterCall") as? String ?? lblTitle.stringValue
+                }
             }
             
             if let date = UserDefaults.standard.object(forKey: kUserdefaultsEveningHabitsShowedTillDate) as? Date{

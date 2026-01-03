@@ -509,7 +509,8 @@
         "statePaused": "En pausa",
         "buttonAddBlockingSchedule": "Agregar horario de bloqueo",
         "addBlockingScheduleInfo": "El bloqueo está desactivado porque no se han agregado horarios de bloqueo personalizados.",
-        "titleBlockingSchedule": "Horario de bloqueo"
+        "titleBlockingSchedule": "Horario de bloqueo",
+        "buttonEditFocusModeDuration": "Haz clic aquí para actualizar la duración, la intención y la tarea actual"
     },
     "preferencesInfo": {
         "titlePomodoro": "Modo Pomodoro:",
@@ -738,7 +739,7 @@
             "titleStrictnessLevel": "Nivel de Rigor:",
             "strictnessSuperStrictClickedText": "Entiendo que no puedo detener esta sesión de enfoque hasta que termine. Me comprometo a evitar las distracciones y a trabajar mucho.",
             "warningDefaultFocusMode": "Atención: esto no utilizará el bloqueo IA. Focus Bear solo bloqueará los sitios de tu lista de sitios superdistractores.",
-            "strictnessSuperStrictClickedNewText": "Entiendo que no puedo detener esta sesión de enfoque sin una contraseña. Estoy comprometid@ a evitar distracciones y a lograr mucho trabajo."
+            "strictnessSuperStrictClickedNewText": "Entiendo que no puedo detener esta sesión de enfoque. Me comprometo a evitar distracciones y a avanzar muchísimo en mi trabajo."
         },
         "abortingFocusModeInfo": {
             "title": "Desactivación del tipo de enfoque - <FOCUSTYPE>",
@@ -1068,7 +1069,7 @@
         "buttonOwnUrlBrainDumpText": "Usa tu propio sistema de volcado de cerebro"
     },
     "askLogInVcInfo": {
-        "title": "Crea una cuenta para sincronizar tu lista de apps bloqueadas y otros ajustes con todos tus dispositivos.",
+        "title": "Crea una cuenta para sincronizar tus ajustes en todos tus dispositivos.",
         "messageText": "Inicia sesión con una cuenta de Focus Bear para administrar tu tiempo sin pensar en ello. Tener una cuenta te ayuda a establecer las horas de uso de tu computadora, crear una rutina personalizada para la mañana y la noche, y personalizar tus modos de enfoque para diferentes actividades.",
         "buttonSignInText": "Iniciar sesión",
         "buttonSignUpText": "Regístrate",
@@ -1111,7 +1112,7 @@
         "descriptionSecondText": "No podrás usar otras aplicaciones durante la inducción. ¿Tienes tiempo ahora o lo hacemos un poco más tarde?",
         "buttonLaterText": "Más tarde, por favor.",
         "buttonLetsDoItText": "Hagámoslo ya",
-        "allRightsReservedText": "© 2022-2025 Focus Bear Todos los derechos reservados.",
+        "allRightsReservedText": "© 2022-2026 Focus Bear Todos los derechos reservados.",
         "confirmText": "Verificando que tienes 2 minutos ahora.",
         "buttonConfirmLetsDoItText": "Si, Tengo 2 minutos",
         "buttonNeedMoreTimeText": "Ahora no",
@@ -1161,7 +1162,7 @@
         "tooltipCopyPassword": "Copiar contraseña",
         "checkBoxPasswordSavedText": "Guardé la contraseña en un lugar seguro",
         "buttonCopyPasswordText": "Copiar",
-        "explainCreateAccountText": "Crea una cuenta para sincronizar tu configuración de hábitos + bloqueos en todos tus dispositivos.",
+        "explainCreateAccountText": "Crea una cuenta para sincronizar tus ajustes en todos tus dispositivos.",
         "tooltipShowPassword": "Mostrar Contraseña",
 		"tooltipHidePassword": "Ocultar Contraseña",
         "passwordGenerateText": "Hemos generado una contraseña para ti",
@@ -2049,7 +2050,8 @@
     },
     "selectHabitsLaterInfo": {
         "title": "Si alguna vez decides que quieres activar hábitos en el futuro, puedes abrir Preferencias en la barra de menús y hacer clic en Editar Hábitos",
-        "buttonContinueText": "Continuar"
+        "buttonContinueText": "Continuar",
+        "titleNew": "Si decides activar hábitos en el futuro, puedes hacer clic en Editar hábitos en el menú izquierdo de la ventana principal."
     },
     "createTaskVcInfo": {
         "title": "Focus Bear - Crear Nueva Tarea",
@@ -2243,7 +2245,9 @@
         "toolTipStrictMode": "Agrega una cuenta regresiva de 15 segundos antes de que puedas pausar o detenerte. Ideal para frenar decisiones impulsivas.",
         "titleSuperStrictMode": "Enfoque de Hierro",
         "descriptionSuperStrictMode": "Una vez que empiezas, no puedes parar.",
-        "toolTipSuperStrictMode": "Una vez que empiezas, no hay marcha atrás. Ideal para sesiones profundas y sin distracciones."
+        "toolTipSuperStrictMode": "Una vez que empiezas, no hay marcha atrás. Ideal para sesiones profundas y sin distracciones.",
+        "enterFirstTask": "¿En qué quieres trabajar primero?",
+        "toolTipFirstTask": "Agrega la primera tarea en la que trabajarás en esta sesión de enfoque. Empezar con una tarea clara te ayuda a mantenerte en el camino."
     },
     "achieveWithFocusBearVcInfo":{
         "title": "¿Qué te gustaría mejorar en tu vida usando Focus Bear?",
@@ -2460,7 +2464,9 @@
         "buttonAppRelevantText": "Sí, y esta app es relevante",
         "buttonSiteRelevantText": "Sí, y este sitio es relevante",
         "buttonWorkingSomethingElseText": "No, ahora estoy trabajando en otra cosa",
-        "buttonNoCurrentTaskAdded": "No hay tarea actual — déjame agregar una rápidamente."
+        "buttonNoCurrentTaskAdded": "No hay tarea actual — déjame agregar una rápidamente.",
+        "buttonSetTask": "Definir tarea",
+        "titleSelectTask": "No hay una tarea actual, selecciona una tarea para continuar."
     },
     "popUpAddNewFocusGoalVcInfo":{
         "title": "¿Cuál es tu nuevo objetivo de enfoque?",
@@ -2490,7 +2496,8 @@
         "titleEveningRoutine": "Rutina nocturna",
         "titleAppDisabled": "El bloqueo de distracciones está en pausa. Puedes volver a activarlo en cualquier momento para mantenerte enfocado.",
         "freeTimeText": "¡Bien hecho! Tienes tiempo libre hasta las <CUTOFFTIME>.",
-        "buttonChangeTiming": "Cambiar horario"
+        "buttonChangeTiming": "Cambiar horario",
+        "resumeAfterCall": "La rutina matutina se reanudará después de que termine la llamada."
     },
     "breakStateVcInfo":{
         "buttonEnableBreaks": "Activar descansos",
@@ -2591,6 +2598,12 @@
         "buttonCreateRequest": "Crear solicitud",
         "buttonRefreshStatus": "Actualizar estado de la solicitud de desbloqueo",
         "placeHolderString": "Explica por qué necesitas este desbloqueo...."
+    },
+    "focusStateVcInfo":{
+        "titleIntention": "Objetivo de enfoque:",
+        "titleTask": "Tarea actual:",
+        "toolTipIncreaseDuration": "Aumentar la duración en 1 minuto",
+        "toolTipDecreaseDuration": "Reducir la duración en 1 minuto"
     },
     "discordUrl": "https://discord.gg/VZdv3ZjhSq",
     "whatsAppUrl": "https://chat.whatsapp.com/FV0oTbCUWpILBYif7CP6UD",

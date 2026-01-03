@@ -27,7 +27,7 @@ class browsersTabAuditVc: NSViewController {
         lblSubtile.stringValue = "Focus Bear can extract all the open browser tabs you have and put them in a CSV so you can decide if you need them."
         btnExtractTabURLs.title = "Extract tab URLs to CSV"
         btnLastSavedAuditReport.title = "Open saved Tab Audit report"
-        lblLastAuditDate.stringValue = "Your last audit was done on: 18 Sep 2025 05:09PM"
+        lblLastAuditDate.stringValue = "Your last audit was done on: 18 Sep 2026 05:09PM"
         lblTitleTabCount.stringValue = "Number of open tabs:"
         btnLastSavedAuditReport.buttonColor = NSColor.white.cgColor
         self.lblTabCountPerBrowser.stringValue = ""// need to do this

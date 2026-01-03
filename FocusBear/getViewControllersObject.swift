@@ -956,8 +956,22 @@ func getAskOccupationVcObject()->askOccupationVc{
     return askOccupationVcObj!
 }
 
+var enableAIBlockingVcObj:enableAIBlockingVc?
+func getEnableAIBlockingVcObject()->enableAIBlockingVc{
+    if enableAIBlockingVcObj == nil{
+        enableAIBlockingVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("enableAIBlockingVc")) as? enableAIBlockingVc
+    }
+    return enableAIBlockingVcObj!
+}
 
 
+var createBlockingProfileVcObj:createBlockingProfileVc?
+func getCreateBlockingProfileVcObject()->createBlockingProfileVc{
+    if createBlockingProfileVcObj == nil{
+        createBlockingProfileVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("createBlockingProfileVc")) as? createBlockingProfileVc
+    }
+    return createBlockingProfileVcObj!
+}
 
 // ask work time vc object
 var askWorkTimeVcObj:askWorkTimeVc?

@@ -11,7 +11,13 @@ import Auth0
 
 class accountVc: NSViewController {
 
+    @IBOutlet weak var topSpaceUserId: NSLayoutConstraint!
+    @IBOutlet weak var btnResendConfirmation: underLineButton!
+    @IBOutlet weak var lblEmailNotVerified: NSTextField!
+    @IBOutlet weak var boxEmailNotVerified: NSBox!
+    @IBOutlet weak var lblStatus: NSTextField!
     
+    @IBOutlet weak var lblSubscriptionDetails: NSTextField!
     @IBOutlet weak var loaderResetPassword: NSProgressIndicator!
     @IBOutlet weak var btnResetPassword: Button!
     @IBOutlet weak var lblTitleMain: NSTextField!
@@ -33,6 +39,12 @@ class accountVc: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
+        lblSubscriptionDetails.stringValue = "Subscription Details" // todo text
+        lblStatus.stringValue = "Status:" // todo text
+        lblEmailNotVerified.stringValue = "Email not Verified" // todo text
+        btnResendConfirmation.title = "Resend Confirmation Email" // todo text
+        
+        
         btnRestorePurchase.title = "Sync Payment Status"
         
         lblTitleUserId.stringValue = "User Id:"
@@ -109,8 +121,10 @@ class accountVc: NSViewController {
         
         if !isPurchased{
             lblRestore.stringValue = restoreText
+            lblRestore.isHidden = false
         }else{
             lblRestore.stringValue = ""
+            lblRestore.isHidden = true
         }
         if settingsSideBarVcObj != nil{
             if settingsSideBarVcObj!.tblView.selectedRow == -1{
@@ -120,6 +134,14 @@ class accountVc: NSViewController {
             }
         }else{
             lblTitleMain.stringValue = ""
+        }
+        
+        if !isEmailVerified{//  
+            boxEmailNotVerified.isHidden = false
+            topSpaceUserId.constant = 78
+        }else{
+            boxEmailNotVerified.isHidden = true
+            topSpaceUserId.constant = 20
         }
     }
     
@@ -259,6 +281,45 @@ class accountVc: NSViewController {
                 }
             }
             
+        })
+    }
+    @IBAction func btnResendConfirmationClicked(_ sender: Any) {
+        addLog(text: "[user-action] unverifiedEmailVc:- button Resend Clicked")
+        self.loaderResetPassword.startAnimation(self)
+        allApiObject.emailConfirmation(completionHandler: { val in
+            DispatchQueue.main.async{
+                self.loaderResetPassword.stopAnimation(self)
+                if val{
+                    if let window = self.view.window {
+                        let alert = NSAlert()
+                        alert.messageText = "Verification Email Sent"
+                        alert.informativeText = "We've sent a verification link to your email. Please check your inbox to verify your account."
+                        if let unverifiedEmailVcInfo = configjson.value(forKey: "unverifiedEmailVcInfo") as? NSDictionary{
+                            alert.messageText = unverifiedEmailVcInfo.value(forKey: "titleEmailSent") as? String ?? alert.messageText
+                            alert.informativeText = unverifiedEmailVcInfo.value(forKey: "descriptionEmailSent") as? String ?? alert.informativeText
+                        }
+                        alert.alertStyle = .informational
+                        alert.beginSheetModal(for: window, completionHandler: {_ in
+                            
+                        })
+                    }
+                }else{
+                    if let window = self.view.window {
+                        let alert = NSAlert()
+                        alert.messageText = "Failed to Send Verification Email"
+                        alert.informativeText = "Something went wrong while sending the verification email. Please try again later."
+                        if let unverifiedEmailVcInfo = configjson.value(forKey: "unverifiedEmailVcInfo") as? NSDictionary{
+                            alert.messageText = unverifiedEmailVcInfo.value(forKey: "titleEmailFailed") as? String ?? alert.messageText
+                            alert.informativeText = unverifiedEmailVcInfo.value(forKey: "descriptionEmailFailed") as? String ?? alert.informativeText
+                        }
+                        alert.alertStyle = .warning
+                        alert.beginSheetModal(for: window, completionHandler: {_ in
+                            
+                        })
+                    }
+                }
+                
+            }
         })
     }
 }

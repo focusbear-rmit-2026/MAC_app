@@ -358,6 +358,8 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
                         }
                     }else if isShutOffTimeGoing() && currentState != ._EVENING_HABIT_ && currentState != ._FOCUS_SUMMARY_ && currentState != ._POSTPON_EVENING_HABIT_ && currentState != ._POSTPON_FOCUS_SUMMARY_ && arrAllDaysEveningHabits.count == 0{
                         habitsVcObj?.showHabitState()// v 2.28.437
+                    }else if (appdelegate?.isUserOnMeeting ?? false) && !isHabitAlreadyShowed && !isShutOffTimeGoing(){
+                        habitsVcObj?.showHabitState()// v 2.28.445
                     }
                 }
             }
@@ -805,7 +807,11 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
     func showPomodoro(pomodoroVcObj:NSView){
         boxFocusSession.isSelected = true
         mainViewControllerObj?.showFocusSessionView(pomodoroView: pomodoroVcObj)
-//        enableAllItems()
+    }
+    
+    func showProcrastinatingView(){
+        boxFocusSession.isSelected = true
+        mainViewControllerObj?.showAskProcrastinatingView()
     }
     
     func showHabitsView(){
@@ -822,18 +828,12 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         boxCustomRoutine.isSelected = true
         mainViewControllerObj?.showHabitsView()
     }
-    
-//    func showDashboardView(){
-//        boxDashboard.isSelected = true
-//        mainViewControllerObj?.showDashboardView()
-//    }
-    
-    
+
     func showBrainDump(){
         boxBrainDump.isSelected = true
         mainViewControllerObj?.showBrainDumpView()
-//        enableAllItems()
     }
+    
     func showBrowsersTabAuditView(){
         boxBrowsersTabAudit.isSelected = true
         mainViewControllerObj?.showBrowsersTabAuditView()

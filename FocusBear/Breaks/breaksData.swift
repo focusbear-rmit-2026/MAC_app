@@ -128,7 +128,7 @@ func detectNatualBreaks(){
         closeNatutalBreakIfRunning()
     }
 }
-//todo check call k doran habit na aay to kya dikhaya statevc mai
+
 func checkIsNaturalBreakWindowNeedToShow(idleTimeValue:Int){
     print(idleTimeValue)
     if idleTimeValue > idleTimeValueForNaturalBreak{

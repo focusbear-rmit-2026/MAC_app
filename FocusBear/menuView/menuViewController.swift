@@ -511,11 +511,11 @@ class menuViewController: NSViewController {
             }
             showTooltip(sender: btnEditBlockingSchedule, msg: toolTipButtonEditBlockingSchedule, preferredEdge: NSRectEdge.maxX, maxWidthVal:230, autoCloseOnMouseExit: true)
         }else if event.trackingArea == trackingAreaBtnEditFocusModeDuration{
-//            var toolTipButtonEditBlockingSchedule = "Add blocking schedule"
-//            if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
-//                toolTipButtonEditBlockingSchedule = menuInfo.value(forKey: "buttonAddBlockingSchedule") as? String ?? toolTipButtonEditBlockingSchedule
-//            }
-            showTooltipWithOsTahoe(sender: btnEditFocusModeDuration, msg: "Click here to update duration, intention and current task ", preferredEdge: NSRectEdge.maxX, maxWidthVal:230, autoCloseOnMouseExit: true)// todo text
+            var buttonEditFocusModeDuration = "Click here to update duration, intention and current task"
+            if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
+                buttonEditFocusModeDuration = menuInfo.value(forKey: "buttonEditFocusModeDuration") as? String ?? buttonEditFocusModeDuration
+            }
+            showTooltipWithOsTahoe(sender: btnEditFocusModeDuration, msg: buttonEditFocusModeDuration, preferredEdge: NSRectEdge.maxX, maxWidthVal:230, autoCloseOnMouseExit: true)
         }else if event.trackingArea == trackingAreaBtnPin{
             var msg = ""
             if SettingsManagerObject.isMenuPopoverEnabled{
@@ -626,6 +626,9 @@ class menuViewController: NSViewController {
 
         if nudgeFocusAlignmentScoreDippingWcObject != nil{
             if (nudgeFocusAlignmentScoreDippingWcObject?.isNudgeVisible ??  false){
+                if floatingTopBarVcObj == nil{
+                    getFloatingTopBarVObject().loadView()
+                }
                 getFloatingTopBarVObject().boxMain.isHidden = true
                 getFloatingTopBarVObject().boxMoreItems.isHidden = true
             }
@@ -814,7 +817,7 @@ class menuViewController: NSViewController {
             boxPreferences.borderWidth = 0
             boxPreferences.fillColor = buttonBgColor
         }
-        showFocusModeCountDownIfNeeded()
+        //showFocusModeCountDownIfNeeded()
         if SettingsManagerObject.isMenuPopoverEnabled{
             btnPin.image = #imageLiteral(resourceName: "pin")
         }else{
@@ -1324,6 +1327,13 @@ class menuViewController: NSViewController {
 
                 let finalTitle = "\(hour):\(minute):\(second)"
                 lblTimerFocusMode.stringValue = finalTitle
+                if nudgeFocusAlignmentScoreDippingWcObject != nil{
+                    if nudgeFocusAlignmentScoreDippingWcObject?.window?.isVisible ?? false{
+                        if nudgeFocusAlignmentScoreDippingWcObject?.isNudgeVisible ?? false{
+                            nudgeFocusAlignmentScoreDippingVcObj?.lblTimer.stringValue = finalTitle
+                        }
+                    }
+                }
             }else{
                 stopFocusModeCountDownTimer()
             }

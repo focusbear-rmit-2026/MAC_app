@@ -222,3 +222,6 @@ var kUserdefaultsBrowsersTabAuditReportSaveDate = "kUserdefaultsBrowsersTabAudit
 var kUserdefaultsLastUnlockTimeByAccountabilityBuddy = "kLastUnlockTimeByAccountabilityBuddy"
 
 var kUserdefaultsUserShouldDoFirstFocusSesion = "kUserShouldDoFirstFocusSesion"
+
+var kUserDefaultsUserJobDetails = "kUserJobDetails"
+var kUserDefaultsUserDistractions = "kUserDistractions"

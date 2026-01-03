@@ -311,7 +311,15 @@ class focusCompletedVc: NSViewController {
         }else{
             btnStartAnotherFocusBlock.isHidden = false
         }
-
+        
+        // There was a bug where, if a focus session was running when the morning routine was about to start, the Force Completed Focus view appeared before the morning habit’s first screen or the focus summary screen. In this state, if the user navigated to the Help tab and then returned to the Habits tab, the btnStartAnotherFocusBlock button became visible because the resetData() function was not called again.
+        //  To prevent this issue, we are applying the solution below.  2.28.445
+        if isShutOffTime || currentState == ._MORNING_HABIT_ || currentState == ._CUSTOM_ROUTINE_{
+            if leftMenuVcObj?.boxHabits.isSelected ?? false{
+                btnStartAnotherFocusBlock.isHidden = true
+            }
+        }
+        
         if FileManager.default.fileExists(atPath: "/Applications/Focus Bear Time Tracker.app") && UserDefaults.standard.object(forKey: kUserdefaultsScreenTimeEnabled) as? Bool == true{// show tags box if time tracker is enabled
             boxTags.isHidden = false
         }else{

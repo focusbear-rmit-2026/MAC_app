@@ -31,9 +31,12 @@ class focusModeStateVc: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
-        lblTitleIntention.stringValue = "Focus Goal:"// todo text
-        lblTitleCurrentTask.stringValue = "Current task:"// todo text
-        lblGettingTasks.stringValue = "Fetching tasks..." // todo text
+        lblTitleIntention.stringValue = "Focus Goal:"
+        lblTitleCurrentTask.stringValue = "Current task:"
+        btnIncreaseDuration.customToolTip = "Increase duration by 1 minute"
+        btnDecreaseDuration.customToolTip = "Decrease duration by 1 minute"
+        
+        lblGettingTasks.stringValue = "Fetching tasks..."
         
         lblTitleFocusModeTime.stringValue = "Focus mode ends in:"
         if let common = configjson.value(forKey: "common") as? NSDictionary{
@@ -41,6 +44,20 @@ class focusModeStateVc: NSViewController {
                 lblTitleFocusModeTime.stringValue = focusEndsText + ":"
             }
         }
+        
+        if let popUpAddNewFocusGoalVcInfo = configjson.value(forKey: "popUpAddNewFocusGoalVcInfo") as? NSDictionary{
+            lblGettingTasks.stringValue = popUpAddNewFocusGoalVcInfo.value(forKey: "fetchingTaskText") as? String ?? lblGettingTasks.stringValue
+        }
+        
+        
+        if let focusStateVcInfo = configjson.value(forKey: "focusStateVcInfo") as? NSDictionary{
+            lblTitleIntention.stringValue = focusStateVcInfo.value(forKey: "titleIntention") as? String ?? lblTitleIntention.stringValue
+            lblTitleCurrentTask.stringValue = focusStateVcInfo.value(forKey: "titleTask") as? String ?? lblTitleCurrentTask.stringValue
+            btnIncreaseDuration.customToolTip = focusStateVcInfo.value(forKey: "toolTipIncreaseDuration") as? String ?? btnIncreaseDuration.customToolTip
+            btnDecreaseDuration.customToolTip = focusStateVcInfo.value(forKey: "toolTipDecreaseDuration") as? String ?? btnDecreaseDuration.customToolTip
+        }
+        
+        
         lblTitle.stringValue = ""
         
         
@@ -51,10 +68,6 @@ class focusModeStateVc: NSViewController {
         arrAllTasks.removeAll()
         comboBoxTask.reloadData()
         textView.delegate = self
-        
-        
-        btnIncreaseDuration.customToolTip = "Increase duration by 1 minute"
-        btnDecreaseDuration.customToolTip = "Decrease duration by 1 minute"// todo text todo 
     }
     
     override func viewWillAppear() {
@@ -69,7 +82,10 @@ class focusModeStateVc: NSViewController {
         
         lblGettingTasks.isHidden = true
         boxEditFocusMode.isHidden = true
-        lblGettingTasks.stringValue = "Fetching tasks..." // todo text
+        lblGettingTasks.stringValue = "Fetching tasks..."
+        if let popUpAddNewFocusGoalVcInfo = configjson.value(forKey: "popUpAddNewFocusGoalVcInfo") as? NSDictionary{
+            lblGettingTasks.stringValue = popUpAddNewFocusGoalVcInfo.value(forKey: "fetchingTaskText") as? String ?? lblGettingTasks.stringValue
+        }
         if isFocusModeOn{
             showFocusModeCountDownIfNeeded()
             btnStopFocusMode.title = "Stop Focus Session"
@@ -335,7 +351,6 @@ class focusModeStateVc: NSViewController {
     }
     
     @IBAction func btnIncreaseDurationClicked(_ sender: Any) {
-      //  allApiObject.capturePosthog(event: "extend-focus-session-from-button", metadata: [:]) // todo ask
         appdelegate?.extendFocusModeFor(minutes: 1)
     }
     

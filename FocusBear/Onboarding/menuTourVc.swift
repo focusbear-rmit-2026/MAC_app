@@ -8,7 +8,7 @@
 
 import Cocoa
 
-class menuTourVc: NSViewController {
+class menuTourVc: NSViewController {// not in use  v2.28.446
 
     @IBOutlet weak var topSpaceBoxStartFocus: NSLayoutConstraint! //89 & 49
     @IBOutlet weak var boxTools: NSBox!
@@ -200,9 +200,9 @@ class menuTourVc: NSViewController {
         allApiObject.capturePosthog(event: "menu_tour_close_clicked", metadata: [:])
 
         showAskProcrastinatingWindow()
-        if !isEmailVerified{
-            showUnverifiedEmailWindow()
-        }
+//        if !isEmailVerified{
+//            showUnverifiedEmailWindow()
+//        }
     }
     
 //    func showAlertSetupComplete(){
@@ -246,9 +246,9 @@ class menuTourVc: NSViewController {
                 menuViewControllerObj?.loadView()
             }
             showAskProcrastinatingWindow()
-            if !isEmailVerified{
-                showUnverifiedEmailWindow()
-            }
+//            if !isEmailVerified{
+//                showUnverifiedEmailWindow()
+//            }
         }
     }
     
@@ -262,9 +262,9 @@ class menuTourVc: NSViewController {
 
         allApiObject.capturePosthog(event: "menu_tour_Skip_clicked", metadata: [:])
         showAskProcrastinatingWindow()
-        if !isEmailVerified{
-            showUnverifiedEmailWindow()
-        }
+//        if !isEmailVerified{
+//            showUnverifiedEmailWindow()
+//        }
     }
     
     @IBAction func btnBgClicked(_ sender: Any) {

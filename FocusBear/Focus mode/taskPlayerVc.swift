@@ -561,7 +561,7 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
         let payload: [String: Any] = [
             "todoPlayer": taskData
         ]
-
+        addLog(text: "syncWithDevices payload is:- \(payload)")
         do {
             let jsonData = try JSONSerialization.data(withJSONObject: payload, options: [])
             guard let jsonString = String(data: jsonData, encoding: .utf8) else {

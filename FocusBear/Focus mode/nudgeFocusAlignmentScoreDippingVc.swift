@@ -10,6 +10,7 @@ import Cocoa
 
 class nudgeFocusAlignmentScoreDippingVc: NSViewController {
 
+    @IBOutlet weak var lblTimer: NSTextField!
     @IBOutlet weak var btnExpandTaskPlayer: NSButton!
     @IBOutlet weak var lblDescriptionText: NSTextField!
     @IBOutlet weak var boxButton: NSBox!
@@ -71,7 +72,7 @@ class nudgeFocusAlignmentScoreDippingVc: NSViewController {
             arrAlignmentScoreUp = info.value(forKey: "arrayAlignmentScoreUp") as? [String] ?? arrAlignmentScoreUp
             lblFocusAlignmentScore.stringValue = info.value(forKey: "focusAlignmentScoreText") as? String ?? lblFocusAlignmentScore.stringValue
         }
-        
+        boxButton.isHidden = false
     }
     
     override func viewWillAppear() {
@@ -83,9 +84,10 @@ class nudgeFocusAlignmentScoreDippingVc: NSViewController {
     }
     
     override func mouseEntered(with event: NSEvent) {
-        if event.trackingArea == self.trackingArea{
-            boxButton.isHidden = false
-        }else if event.trackingArea == self.trackingAreaExpandButton{
+//        if event.trackingArea == self.trackingArea{
+//            boxButton.isHidden = false
+//        }else
+        if event.trackingArea == self.trackingAreaExpandButton{
             var toolTipShowToDoPlayer = "Show To Do Player"
             if let info = configjson.value(forKey: "nudgeFocusAlignmentScoreDippingVcInfo") as? NSDictionary{
                 toolTipShowToDoPlayer = info.value(forKey: "toolTipShowToDoPlayer") as? String ?? toolTipShowToDoPlayer
@@ -101,9 +103,10 @@ class nudgeFocusAlignmentScoreDippingVc: NSViewController {
     }
     
     override func mouseExited(with event: NSEvent) {
-        if event.trackingArea == self.trackingArea{
-            boxButton.isHidden = true
-        }else if event.trackingArea == self.trackingAreaExpandButton{
+//        if event.trackingArea == self.trackingArea{
+//            boxButton.isHidden = true
+//        }else
+        if event.trackingArea == self.trackingAreaExpandButton{
             closePopoverTooltipIfVisible()
         }else if event.trackingArea == self.trackingAreaAlignmentScore{
             closePopoverTooltipIfVisible()
@@ -182,7 +185,6 @@ class nudgeFocusAlignmentScoreDippingVc: NSViewController {
     func setTimerStopAniumation(){
         timerStopAniumation?.invalidate()
         timerStopAniumation = nil
-        boxButton.isHidden = true
         imgView.animates = true
         
         timerStopAniumation = Timer.scheduledTimer(timeInterval: 3, target: self, selector: #selector(stopAnimatingImageview), userInfo: nil, repeats: false)

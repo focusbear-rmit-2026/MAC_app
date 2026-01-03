@@ -8,7 +8,7 @@
 
 import Cocoa
 
-class achieveWithFocusBearVc: NSViewController, NSTextViewDelegate {
+class achieveWithFocusBearVc: NSViewController, NSTextViewDelegate {//  not in use 
 
     @IBOutlet weak var btnInfo: hoverInfoButton!
     @IBOutlet var textView: NSTextView!
@@ -57,6 +57,7 @@ class achieveWithFocusBearVc: NSViewController, NSTextViewDelegate {
         }
         mainViewControllerObj?.showAskAppWorkVc()
     }
+    
     func textDidChange(_ notification: Notification) {
         if let textView = notification.object as? NSTextView{
             if textView == self.textView{

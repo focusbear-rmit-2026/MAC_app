@@ -332,6 +332,29 @@ class ViewController: NSViewController {
         NSApplication.shared.activate(ignoringOtherApps: true)
     }
     
+    func showEnableAIBlockingVc(){
+        addLog(text: "Showing Enable AI Blocking view.")
+        removeSubViews()
+        
+        containerView.addSubview(getEnableAIBlockingVcObject().view)
+        containerView.addConstraints(subView: getEnableAIBlockingVcObject().view)
+        currentState = ._ASK_APP_WORK_
+        currentAction = ._START_
+        NSApplication.shared.activate(ignoringOtherApps: true)
+    }
+    
+    func showCreateBlockingProfileVc(){
+        addLog(text: "Showing Create Blocking Profile view.")
+        removeSubViews()
+        
+        containerView.addSubview(getCreateBlockingProfileVcObject().view)
+        containerView.addConstraints(subView: getCreateBlockingProfileVcObject().view)
+        currentState = ._ASK_APP_WORK_
+        currentAction = ._START_
+        NSApplication.shared.activate(ignoringOtherApps: true)
+    }
+    
+    
     func showInstalltHabitPacksVc(){
         addLog(text: "Showing install Habit Packs view.")
         removeSubViews()
@@ -513,9 +536,15 @@ class ViewController: NSViewController {
     func showFocusSessionView(pomodoroView:NSView){
         self.removeSubViews()
         containerView.addSubview(pomodoroView)
-        if containerView.subviews.contains(pomodoroView){// if auto super pomodoro has started then may be todo player was shown from inside pomodoro so current view is not pomodoro after this. to prevent crash we are doing this  v 2.28.440
+        if containerView.subviews.contains(pomodoroView){// if auto super pomodoro has started then may be task player was shown from inside pomodoro so current view is not pomodoro after this. to prevent crash we are doing this  v 2.28.440
             containerView.addConstraints(subView: pomodoroView)
         }
+    }
+    
+    func showAskProcrastinatingView(){
+        self.removeSubViews()
+        containerView.addSubview(getAskProcrastinatingVcObj().view)
+        containerView.addConstraints(subView: getAskProcrastinatingVcObj().view)
     }
     
     func showBrainDumpView(){
@@ -540,7 +569,7 @@ class ViewController: NSViewController {
         self.removeSubViews()
         if isFocusModeRunning || isAnyAllowedFocusModeActivityRunning || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
             if taskPlayerVcObj == nil{
-                getTaskPlayerVcObject().loadView()// handled in v2.27.435 otherwise app can be crash when focus resumes automatically after app opens(remaining focus mode) // todo load todo player for this
+                getTaskPlayerVcObject().loadView()// handled in v2.27.435 otherwise app can be crash when focus resumes automatically after app opens(remaining focus mode)
             }
             containerView.addSubview(taskPlayerVcObj!.view)
             containerView.addConstraints(subView: taskPlayerVcObj!.view)

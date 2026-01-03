@@ -10,6 +10,7 @@ import Cocoa
 
 class collectionViewItemOccupation: NSCollectionViewItem {
 
+    @IBOutlet weak var boxSmall: NSBox!
     @IBOutlet weak var widthBoxCircle: NSLayoutConstraint!
     @IBOutlet weak var lblTitle: NSTextField!
     @IBOutlet weak var boxForCircle: NSBox!
@@ -29,6 +30,7 @@ class collectionViewItemOccupation: NSCollectionViewItem {
             boxForBorder.fillColor = buttonBgColor
             lblTitle.textColor = .black
             boxForCircle.fillColor = .white
+            boxSmall.isHidden = false
         }else{
             boxForCircle.borderWidth = 1
             boxForBorder.borderWidth = 1
@@ -37,6 +39,7 @@ class collectionViewItemOccupation: NSCollectionViewItem {
             boxForBorder.fillColor = .clear
             lblTitle.textColor = .labelColor
             boxForCircle.fillColor = .clear
+            boxSmall.isHidden = true
         }
     }
 }

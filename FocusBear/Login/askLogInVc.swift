@@ -48,6 +48,7 @@ class askLogInVc: NSViewController, ASAuthorizationControllerDelegate, ASAuthori
         }
         allApiObject.capturePosthog(event: "pre-signin-view-shown", metadata: [:])
     }
+    
     override func viewWillAppear() {
         appdelegate!.menuItemUninstall.isHidden = false
         if let common = configjson.value(forKey: "common") as? NSDictionary{

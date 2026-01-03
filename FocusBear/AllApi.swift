@@ -7,7 +7,7 @@
 //
 
 import Foundation
-var baseUrl = "https://api.focusbear.io"//https://api.aws.focusbear.io"  //https://api.focusbear.io" // todo in helper app. in pusher
+var baseUrl = "https://api.focusbear.io"//https://api.aws.focusbear.io"  //https://api.focusbear.io" // also in helper app. in pusher
 class AllApi:NSObject {
     
     func getConfigFile(fileUrl:String, completionHandler: @escaping(_ result: NSDictionary?) -> ()) {
@@ -3851,7 +3851,7 @@ class AllApi:NSObject {
                     if let currentHabitName = currentHabitName{
                         json["habit_name"] = currentHabitName
                     }
-                    addLog(text: "chatGPTIsURLSafe: json data for api is:- \(json)")// will remove it after some time //todo from all chatgpt functions // 2.27.427
+                    addLog(text: "chatGPTIsURLSafe: json data for api is:- \(json)")// will remove it after some time // from all chatgpt functions // 2.27.427
                     request.timeoutInterval = 15
                     let jsonData = try? JSONSerialization.data(withJSONObject: json)
                     request.httpBody = jsonData

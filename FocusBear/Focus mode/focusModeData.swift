@@ -179,7 +179,7 @@ func focusModeSetCurrentAppAllowedForAlignmentScore(appNameLowercased:String, fo
 
 var defaultFocusAlignmentScoreToShowDistractingPopUp:Int = 80
 var minFocusAlignmentScoreToShowDistractingPopUp:Double = 80
-var currentFocusAlignmentScore:Double = 0
+var currentFocusAlignmentScore:Double = 100
 var lastFocusAlignmentScore:Double = 0
 var lastFocusAlignmentShownScore:Double = 0
 
@@ -216,6 +216,9 @@ func calculateFocusAlignmentScore(){
             totalSeconds += seconds
             totalAlignmentScore += score
         }
+    }
+    if keys.count == 0{
+        totalAlignmentScore = 100
     }
     if totalAlignmentScore != 0{
         totalAlignmentScore = (totalAlignmentScore / Double(totalSeconds)) * 100

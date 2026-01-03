@@ -2419,7 +2419,7 @@ class habitsVc: NSViewController {
             appdelegate!.needToCheckEmailVerification = false// if onboarding then dont show till menu tour is over
             appdelegate!.getUserSubscriptionInfo()
             appdelegate!.statusbutton?.action = nil
-            showMenuTourWindow()
+            showAskProcrastinatingWindow()
             UserDefaults.standard.set(true, forKey: kUserdefaultsVideoShown)
         }else{
             setActivityTimer()
@@ -2431,6 +2431,7 @@ class habitsVc: NSViewController {
             }
         }
     }
+    
     func stopActivityTimer(){
         if breakTimer != nil{
             breakTimer?.invalidate()

@@ -24,8 +24,8 @@ class popUpFocusGoalConfirmationVc: NSViewController {
         super.viewDidLoad()
         // Do view setup here.
         btnNoCurrentTaskAdded.buttonColor = NSColor.white.cgColor
-        btnNoCurrentTaskAdded.title = "Set Task"// todo text
-        lblSelectTask.stringValue = "No current task, select a task to proceed."//todo text
+        btnNoCurrentTaskAdded.title = "Set Task"
+        lblSelectTask.stringValue = "No current task, select a task to proceed."
         
         
         lblTitle.stringValue = "Are you still working on \"<TASK>\" as part of your focus goal: \"<GOAL>\"?"
@@ -36,8 +36,10 @@ class popUpFocusGoalConfirmationVc: NSViewController {
             lblTitle.stringValue = popUpFocusGoalConfirmationVcInfo.value(forKey: "titleGoalAndTask") as? String ?? lblTitle.stringValue
             btnWorkingOnAnotherGoal.title = popUpFocusGoalConfirmationVcInfo.value(forKey: "buttonWorkingSomethingElseText") as? String ?? btnWorkingOnAnotherGoal.title
             btnYesRelevant.title = popUpFocusGoalConfirmationVcInfo.value(forKey: "buttonAppRelevantText") as? String ?? btnYesRelevant.title
-
+            btnNoCurrentTaskAdded.title = popUpFocusGoalConfirmationVcInfo.value(forKey: "buttonSetTask") as? String ?? btnNoCurrentTaskAdded.title
+            lblSelectTask.stringValue = popUpFocusGoalConfirmationVcInfo.value(forKey: "titleSelectTask") as? String ?? lblSelectTask.stringValue
         }
+        
         btnWorkingOnAnotherGoal.buttonColor = NSColor.white.cgColor
         
         comboBoxSelectTask.customDelegate = self

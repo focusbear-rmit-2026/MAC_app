@@ -874,9 +874,13 @@ func showCustomLoginWindow(isLogin:Bool){
 func showAskProcrastinatingWindow(){
     addLog(text:"showProcrastinatingWindow")
     allApiObject.capturePosthog(event: "show_procrastinating_screen", metadata: [:])
-    getOnboardingCardsWindowObject().contentViewController = getAskProcrastinatingVcObj()
-    onboardingCardsWcObj!.showWindow(nil)
-    onboardingCardsWcObj?.window?.center()
+//    getOnboardingCardsWindowObject().contentViewController = getAskProcrastinatingVcObj()
+//    onboardingCardsWcObj!.showWindow(nil)
+//    onboardingCardsWcObj?.window?.center()
+//
+    // changed from v 2.28.446
+    mainWindowControllerObj?.showWindow(nil)
+    leftMenuVcObj?.showProcrastinatingView()
 }
 
 
@@ -1156,7 +1160,7 @@ func showInformationPopover(sender:NSView, preferredEdge: NSRectEdge,mainTitle: 
 
 //  /////////////////////////////////////////////////////////////////////////
 
-var popoverFocusHelp:NSPopover?// todo new macos 
+var popoverFocusHelp:NSPopover?//
 var popoverTooltip:NSPopover?// = NSPopover()
 func showTooltip(sender:NSView, msg:String, preferredEdge: NSRectEdge, maxWidthVal:CGFloat, autoCloseOnMouseExit:Bool = false) {
     if popoverTooltip == nil{

@@ -270,6 +270,30 @@ class customLoginVc: NSViewController {
         }else{
             addLog(text: "signup view ")
             allApiObject.capturePosthog(event: "view-signup-shown", metadata: [:])
+            
+            segmentControlPassword.isHidden = true
+            segmentControlPassword.selectedSegment = 1
+            segmentControlPasswordClicked(self)
+            btnCreateAccount.keyEquivalent = "\r"
+            btnSignIn.keyEquivalent = ""
+            btnCreateAccount.isEnabled = false
+            btnForgotPassword.isHidden = true
+            topSpaceLblTitle.constant = 80
+            lblTitle.stringValue = "Sign Up"
+            lblSubtitle.stringValue = "Create an account to sync your habit + block settings across all your devices."
+            boxConfirmPassword.isHidden = true
+            btnSignIn.isHidden = true
+            btnCreateAccount.buttonColor = buttonBgColor.cgColor
+            if let customLoginVcInfo = configjson.value(forKey: "customLoginVcInfo") as? NSDictionary{
+                lblTitle.stringValue = customLoginVcInfo.value(forKey: "titleSignUp") as? String ?? lblTitle.stringValue
+                lblSubtitle.stringValue = customLoginVcInfo.value(forKey: "explainCreateAccountText") as? String ?? lblSubtitle.stringValue
+            }
+            textFieldEmail.nextKeyView = secureTextFieldPassword
+            secureTextFieldPassword.nextKeyView = textFieldEmail
+            
+            return;
+            
+            
             secureTextFieldPassword.isEditable = false
             secureTextFieldPassword.isSelectable = false
             boxPasswordGenerated.isHidden = false
@@ -308,7 +332,6 @@ class customLoginVc: NSViewController {
                 imgViewValidPassword.isHidden = true
                 btnCreateAccount.isEnabled = false
             }
-//            secureTextFieldConfirmPassword.nextKeyView = textFieldEmail
         }
     }
     

@@ -74,7 +74,7 @@ class SettingsManager:NSObject{
     var showToDoPlayerAutomaticallyEnabled = true
     var showBrainDumpAfterMorningRoutineEnabled = false
     var isMicroBreaksEnabled = true
-    var blockingSchedule:BLOCKINGSCHEDULE = ._WHEN_START_FOCUS_SESSION_// not in use need to remove soon // todo 
+    var blockingSchedule:BLOCKINGSCHEDULE = ._WHEN_START_FOCUS_SESSION_// not in use need to remove soon //  
     
     
     var brainDumpCustomUrlEnabled = false

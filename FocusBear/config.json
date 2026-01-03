@@ -499,7 +499,8 @@
         "statePaused": "Paused",
         "buttonAddBlockingSchedule": "Add blocking schedule",
         "addBlockingScheduleInfo": "Blocking is off because no custom blocking schedules have been added.",
-        "titleBlockingSchedule": "Blocking Schedule"
+        "titleBlockingSchedule": "Blocking Schedule",
+        "buttonEditFocusModeDuration": "Click here to update duration, intention and current task"
     },
     "preferencesInfo": {
         "titlePomodoro": "Pomodoro Mode:",
@@ -728,7 +729,7 @@
             "titleStrictnessLevel": "Strictness level:",
             "strictnessSuperStrictClickedText": "I understand I cannot stop this focus session until it ends. I am committed to avoiding distractions and getting a ton of work done.",
             "warningDefaultFocusMode": "Heads up: this will not use AI blocking. Focus Bear will only block the sites in your super distracting sites list",
-            "strictnessSuperStrictClickedNewText": "I understand I cannot stop this focus session without a password. I am committed to avoiding distractions and getting a ton of work done."
+            "strictnessSuperStrictClickedNewText": "I understand I cannot stop this focus session. I am committed to avoiding distractions and getting a ton of work done."
         },
         "abortingFocusModeInfo": {
             "title": "Deactivating Focus Block - <FOCUSTYPE>",
@@ -1068,7 +1069,7 @@
         "buttonOwnUrlBrainDumpText": "Use your own system for brain dump"
     },
     "askLogInVcInfo": {
-        "title": "Create an account to sync your blocked app list and other settings to all your devices.",
+        "title": "Create an account to sync your settings to all your devices.",
         "messageText": "Sign In with a Focus Bear account to manage your time without thinking about it. Having an account helps you set your computer use hours, create a custom morning and night routine, and customize your focus modes for different activities.",
         "buttonSignInText": "Sign In",
         "buttonSignUpText": "Sign Up",
@@ -1111,7 +1112,7 @@
         "descriptionSecondText": "You won't be able to use other apps during the onboarding. Do you have time now or shall we do it a bit later?",
         "buttonLaterText": "A bit later please",
         "buttonLetsDoItText": "Let's do it",
-        "allRightsReservedText": "© 2022-2025 Focus Bear All Rights Reserved.",
+        "allRightsReservedText": "© 2022-2026 Focus Bear All Rights Reserved.",
         "confirmText": "Double checking that you have 2 minutes now.",
         "buttonConfirmLetsDoItText": "Yes, I have 2 minutes",
         "buttonNeedMoreTimeText": "Not Now",
@@ -1161,7 +1162,7 @@
         "tooltipCopyPassword": "Copy password",
         "checkBoxPasswordSavedText": "I saved the password somewhere safe",
         "buttonCopyPasswordText": "Copy",
-        "explainCreateAccountText": "Create an account to sync your habit + block settings across all your devices.",
+        "explainCreateAccountText": "Create an account to sync your settings across all your devices.",
         "tooltipShowPassword": "Show Password",
 		"tooltipHidePassword": "Hide Password",
         "passwordGenerateText": "We generated a password for you",
@@ -2049,7 +2050,8 @@
     },
     "selectHabitsLaterInfo": {
         "title": "If you ever decide you want to activate habits in the future, you can open Preferences from the menu bar and click Edit Habits",
-        "buttonContinueText": "Continue"
+        "buttonContinueText": "Continue",
+        "titleNew": "If you ever decide to activate habits in the future, you can click Edit Habits in the left menu of the main window."
     },
     "createTaskVcInfo": {
         "title": "Focus Bear - Create New Task",
@@ -2243,7 +2245,9 @@
         "toolTipStrictMode": "Adds a 15s countdown before you can pause/stop. Great for catching impulsive decisions.",
         "titleSuperStrictMode": "Iron Focus",
         "descriptionSuperStrictMode": "Once you start, you can't stop",
-        "toolTipSuperStrictMode": "Once you start, there’s no backing out. Best for deep, distraction-free sessions."
+        "toolTipSuperStrictMode": "Once you start, there’s no backing out. Best for deep, distraction-free sessions.",
+        "enterFirstTask": "What do you want to work on first?",
+        "toolTipFirstTask": "Add the first task you’ll work on in this focus session. Starting with a clear task helps you stay on track."
     },
     "achieveWithFocusBearVcInfo":{
         "title": "What would you like to improve in your life by using Focus Bear?",
@@ -2460,7 +2464,9 @@
         "buttonAppRelevantText": "Yes and this app is relevant",
         "buttonSiteRelevantText": "Yes and this site is relevant",
         "buttonWorkingSomethingElseText": "No I'm working on something else now",
-        "buttonNoCurrentTaskAdded": "No current task - let me quickly enter one"
+        "buttonNoCurrentTaskAdded": "No current task - let me quickly enter one",
+        "buttonSetTask": "Set Task",
+        "titleSelectTask": "No current task, select a task to proceed."
     },
     "popUpAddNewFocusGoalVcInfo":{
         "title": "What's your new focus goal?",
@@ -2490,7 +2496,8 @@
         "titleEveningRoutine": "Evening Routine",
         "titleAppDisabled": "Distraction Blocking is currently paused. You can turn it back on anytime to stay focused.",
         "freeTimeText": "Well done! You've got free time until <CUTOFFTIME>",
-        "buttonChangeTiming": "Change timing"
+        "buttonChangeTiming": "Change timing",
+        "resumeAfterCall": "Morning routine will resume after the call ends."
     },
     "breakStateVcInfo":{
         "buttonEnableBreaks": "Enable Breaks",
@@ -2591,6 +2598,12 @@
         "buttonCreateRequest": "Create Request",
         "buttonRefreshStatus": "Refresh Unlock Request's Status",
         "placeHolderString": "Explain why you need this unlock...."
+    },
+    "focusStateVcInfo":{
+        "titleIntention": "Focus Goal:",
+        "titleTask": "Current task:",
+        "toolTipIncreaseDuration": "Increase duration by 1 minute",
+        "toolTipDecreaseDuration": "Decrease duration by 1 minute"
     },
     "discordUrl": "https://discord.gg/VZdv3ZjhSq",
     "whatsAppUrl": "https://chat.whatsapp.com/FV0oTbCUWpILBYif7CP6UD",

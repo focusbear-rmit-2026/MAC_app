@@ -9,6 +9,11 @@ import Cocoa
 
 class pomodoroVc: NSViewController {
     
+    
+    @IBOutlet weak var btnStrictnessNormal: cursorButton!
+    @IBOutlet weak var btnStrictnessSuperStrict: cursorButton!
+    @IBOutlet weak var btnStrictnessStrict: cursorButton!
+    
     @IBOutlet weak var lblSelectedStrictnessLevel: NSTextField!
     @IBOutlet weak var btnInfoStrictnessLevel: hoverInfoButton!
     @IBOutlet weak var btnPin: cursorButton!
@@ -21,9 +26,9 @@ class pomodoroVc: NSViewController {
     @IBOutlet weak var boxError: NSBox!
     @IBOutlet weak var lblPercentageSign: NSTextField!
     @IBOutlet weak var lblTitleStrictnessLevel: NSTextField!
-    @IBOutlet weak var btnStrictnessNormal: hoverInfoButton!
-    @IBOutlet weak var btnStrictnessSuperStrict: hoverInfoButton!
-    @IBOutlet weak var btnStrictnessStrict: hoverInfoButton!
+//    @IBOutlet weak var btnStrictnessNormal: hoverInfoButton!
+//    @IBOutlet weak var btnStrictnessSuperStrict: hoverInfoButton!
+//    @IBOutlet weak var btnStrictnessStrict: hoverInfoButton!
     @IBOutlet weak var lblStrictnessNormal: NSTextField!
     @IBOutlet weak var lblStrictnessStrict: NSTextField!
     @IBOutlet weak var lblStrictnessSuperStrict: NSTextField!
@@ -285,9 +290,9 @@ class pomodoroVc: NSViewController {
         
         
         btnToggleBreaksSettingsInfo.isAutoClickEnabled = false
-        btnStrictnessNormal.isAutoClickEnabled = false
-        btnStrictnessSuperStrict.isAutoClickEnabled = false
-        btnStrictnessStrict.isAutoClickEnabled = false
+//        btnStrictnessNormal.isAutoClickEnabled = false
+//        btnStrictnessSuperStrict.isAutoClickEnabled = false
+//        btnStrictnessStrict.isAutoClickEnabled = false
         btnInfoStrictnessLevel.isAutoClickEnabled = false
     }
 
@@ -1504,41 +1509,23 @@ class pomodoroVc: NSViewController {
     }
     
     @IBAction func btnStrictnessNormalClicked(_ sender: Any) {
-        var msg = "can pause/stop focus session at any time"
-        if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
-            if let startingFocusModeInfo = focusInfo.value(forKey: "startingFocusModeInfo") as? NSDictionary{
-                msg = startingFocusModeInfo.value(forKey: "strictnessNormalTooltip") as? String ?? msg
-            }
-        }
-        
-        showTooltip(sender: btnStrictnessNormal, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
+        sliderStrictness.integerValue = 1
+        sliderStrictnessClicked(self)
     }
     
     @IBAction func btnStrictnessStrictClicked(_ sender: Any) {
-        var msg = "requires countdown timer before pausing/stopping focus session"
-        if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
-            if let startingFocusModeInfo = focusInfo.value(forKey: "startingFocusModeInfo") as? NSDictionary{
-                msg = startingFocusModeInfo.value(forKey: "strictnessStrictTooltip") as? String ?? msg
-            }
-        }
-        
-        showTooltip(sender: btnStrictnessStrict, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
+        sliderStrictness.integerValue = 2
+        sliderStrictnessClicked(self)
     }
-
+    
     @IBAction func btnStrictnessSuperStrictClicked(_ sender: Any) {
-        var msg = "immediately block urls + prevents pausing/stopping focus session or opening settings"
-        if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
-            if let startingFocusModeInfo = focusInfo.value(forKey: "startingFocusModeInfo") as? NSDictionary{
-                msg = startingFocusModeInfo.value(forKey: "strictnessSuperStrictTooltip") as? String ?? msg
-            }
-        }
-        
-        showTooltip(sender: btnStrictnessSuperStrict, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
+        sliderStrictness.integerValue = 3
+        sliderStrictnessClicked(self)
     }
     
     @IBAction func sliderStrictnessClicked(_ sender: Any) {
         if sliderStrictness.integerValue == 3{
-            var strictnessSuperStrictClickedText = "I understand I cannot stop this focus session without a password. I am committed to avoiding distractions and getting a ton of work done."
+            var strictnessSuperStrictClickedText = "I understand I cannot stop this focus session. I am committed to avoiding distractions and getting a ton of work done." 
             if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
                 if let startingFocusModeInfo = focusInfo.value(forKey: "startingFocusModeInfo") as? NSDictionary{
                     strictnessSuperStrictClickedText = startingFocusModeInfo.value(forKey: "strictnessSuperStrictClickedNewText") as? String ?? strictnessSuperStrictClickedText

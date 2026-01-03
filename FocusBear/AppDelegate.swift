@@ -652,14 +652,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         }
     }
     
-    func showAskOccupation(){
+    func showEnableAIBlockingVc(){
         if !getHabitsVcObject().isViewLoaded{
             getHabitsVcObject().loadView()
         }
         currentState = ._ASK_APP_WORK_
         mainWindowControllerObj?.showWindow(self)
         mainViewControllerObj?.checkIsFullScreenNeeded()
-        mainViewControllerObj!.showAskOccupationVc()
+        mainViewControllerObj!.showEnableAIBlockingVc()
         leftMenuVcObj?.disbaleAllTabForOnboarding()
         mainViewControllerObj?.collapseLeftPanel()
     }
@@ -912,7 +912,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                         self.needToCheckEmailVerification = false// if onboarding then dont show till menu tour is over
                                         self.getUserSubscriptionInfo()
                                         self.statusbutton?.action = nil
-                                        showMenuTourWindow()
+                                        showAskProcrastinatingWindow()
                                         UserDefaults.standard.set(true, forKey: kUserdefaultsVideoShown)
                                     }else{
                                         allApiObject.postTermsService(consentType: "terms_of_service")
@@ -924,8 +924,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                         kUserDefaultsCustomGoals = kUserDefaultsCustomGoalsKey + (self.user?.userId ?? "")
                                         kUserDefaultsSelectedOccupationForPosthog = kUserDefaultsSelectedOccupationForPosthogKey + (self.user?.userId ?? "")
                                         kUserDefaultsCareFactorHabitsForPosthog = kUserDefaultsCareFactorHabitsForPosthogKey + (self.user?.userId ?? "")
+                                        
+                                        kUserDefaultsUserJobDetails = kUserDefaultsUserJobDetails + (self.user?.userId ?? "")
+                                        kUserDefaultsUserDistractions = kUserDefaultsUserDistractions + (self.user?.userId ?? "")
+                                        
                                         closeSplashWindow()
-                                        self.showAskOccupation()
+                                        self.showEnableAIBlockingVc()
                                     }
                                 }else{
                                     UserDefaults.standard.set(true, forKey: kUserdefaultsVideoShown)
@@ -1437,12 +1441,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     if dic != nil{
                         isEmailVerified = dic?.value(forKey: "email_verified") as? Bool ?? false
                         addLog(text:"isEmailVerified :- \(isEmailVerified)")
-                        if !isEmailVerified && self.needToCheckEmailVerification{
-                            DispatchQueue.main.async{
-                                closeSplashWindow()
-                                showUnverifiedEmailWindow()
-                            }
-                        }
+//                        if !isEmailVerified && self.needToCheckEmailVerification{
+//                            DispatchQueue.main.async{
+//                                closeSplashWindow()
+//                                showUnverifiedEmailWindow()
+//                            }
+//                        }
                         self.needToCheckEmailVerification = false
                         currentUserEmail = dic?.value(forKey: "email") as? String ?? ""
                         currentUserName = dic?.value(forKey: "name") as? String ?? ""
@@ -1970,6 +1974,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 }
             }
             setAppIconForFocusModeScore(probability: nil)
+            menuViewControllerObj?.stopFocusModeCountDownTimer()
         }else{
             addLog(text: "return:- timerForFocusMode is nil (auto meetings focus mode started)")
         }
@@ -2018,8 +2023,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 timerForFocusModeEndNotification = Timer.scheduledTimer(timeInterval: TimeInterval(self.remainingFocusModeSecondsAfterPaused - warningShowSecondsBeforeFocusModeEndTime), target: self, selector: #selector(self.showFocusModeFinishNotification), userInfo: nil, repeats: false)
                 RunLoop.main.add((timerForFocusModeEndNotification!), forMode: RunLoop.Mode.common)
             }
-            
         }
+        menuViewControllerObj?.showFocusModeCountDownIfNeeded()
     }
     
     func extendFocusModeFor(minutes:Int){
@@ -2158,6 +2163,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             setAppIconForFocusModeScore(probability: nil)
             timerForFocusModeEndNotification = nil
             self.timerCheckAllowedApps?.invalidate()
+            menuViewControllerObj?.stopFocusModeCountDownTimer()
             arrFocusType[index]["isPaused"] = true
             arrFocusType[index]["isOn"] = false
             //            closeTaskPlayerWindowIfVisible()
@@ -2194,6 +2200,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         setStatusBarButtonTitleForFocusMode(title: whatToAchieveInFocusBlock)
         appdelegate!.statusbutton?.imagePosition = .imageLeft
         isFocusModeRunning = true
+        if !(menuViewControllerObj?.isViewLoaded ?? false){
+            menuViewControllerObj?.loadView()
+        }
         DispatchQueue.global().sync {
             print("resume seconds \(self.remainingFocusModeSecondsAfterPaused)")
             print(getStringFromDate(date: endFocusModeTime!, dateFormat: "HH:mm:ss"))
@@ -2214,6 +2223,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             }
             
             DispatchQueue.main.async {
+                menuViewControllerObj?.showFocusModeCountDownIfNeeded()
+                
                 if leftMenuVcObj != nil{
                     leftMenuVcObj?.focusModeOrFocusModeHabitStarted()
                     leftMenuVcObj?.resetFocusModeTitle()
@@ -3736,6 +3747,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         }else{
             leftMenuVcObj?.boxCustomRoutine.isHidden = false
         }
+        mainViewControllerObj?.expandLeftPanel()
         leftMenuVcObj?.enableAllItems()
         // show floating bar
         if let frame = appdelegate?.statusbutton?.window?.frame{
@@ -3769,7 +3781,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         if !lastOpenUrlString.isEmpty{
             filterUrl(url: lastOpenUrlString)
         }
-        
+
         if let lastHabitShowDate = UserDefaults.standard.object(forKey: kUserdefaultsLastHabitShowDate) as? Date{
             checkLastHabitShowDate(lastHabitShowDate: lastHabitShowDate)
         }else{
@@ -5654,7 +5666,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                 if self.isUserOnMeeting{
                                     addLog(text: "isUserOnMeeting True: Morning Habits Time checking Cancelled.")
                                     customBlockingScheduleManagerObj.checkCustomBlockingScheduleTime()
-                                    return
+                                    return;
                                 }
                                 arrFilteredMorningHabits.removeAll()
                                 arrPreFilteredMorningHabits.removeAll()
@@ -7617,7 +7629,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     self.timerCheckAllowedApps = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.checkFcousAllowedApp), userInfo: nil, repeats: true)
                     RunLoop.main.add((self.timerCheckAllowedApps!), forMode: RunLoop.Mode.common)
                 }
-                
+                menuViewControllerObj?.showFocusModeCountDownIfNeeded()
                 
                 
                 menuViewControllerObj?.reloadIfNeeded()
@@ -7754,6 +7766,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         focusModeHelper.stopUrlTimer()
         
         timerCheckAllowedApps?.invalidate()
+        menuViewControllerObj?.stopFocusModeCountDownTimer()
         DispatchQueue.main.async {
             
             arrKeywordsToAllowInFocus.removeAll()
@@ -7913,16 +7926,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     
     @objc func focusModeStartted(isStartedByPusher:Bool){
         addLog(text: "focus Mode Started called")
-        addLog(text: "getBlockedAppsToBlock:- \(getBlockedAppsToBlock())") // need to delete in next  build // todo
+        addLog(text: "getBlockedAppsToBlock:- \(getBlockedAppsToBlock())") 
         if customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
             customBlockingScheduleManagerObj.customBlockingScheduleFinished()
         }
         
         focusModeStarttedResetAllData()
         playFocusModeStartedSound()
-        //        if getSmallCountDownWindowObject().window?.isVisible ?? false{
-        //            getsmallCountDownVcObject().closeTimerBox()
-        //        }
         
         closeSmallCountDownTimerBoxIfVisible()
         
@@ -8001,6 +8011,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         if UserDefaults.standard.object(forKey: kUserdefaultsUserShouldDoFirstFocusSesion) != nil{
             UserDefaults.standard.removeObject(forKey: kUserdefaultsUserShouldDoFirstFocusSesion)
         }
+        menuViewControllerObj?.showFocusModeCountDownIfNeeded()
+        currentFocusAlignmentScore = 100
     }
     
     
@@ -11408,39 +11420,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 }
 
 
+//  2026 kro  done
+// after onboarding expamnd left panel
+// resume moening routine mai end fopcs  mode ka view aaya fr help tab per jakaer vapas habit tab per  aya to start focus session ka button unhide ho gya  ; bug  solved
+// text added
+//Morning routine will resume after the call ends.
 
-//  firefox permission k baad blank screen aai
-// tab limiter is nt working alwaus
-// unlock url  if blocked during habit not working(by unlock button in page)
-// problems in firefox
-
-// unlocka acan alert agaion and again bug solved 
-
-
-//  check onboarding
-
-// break chal rha ho tab focus mode end ho to
-//    .. preferences posthog
-
-
-// congig 2 text  config
-// bada abox aa rha h
-// continue break
-//preferences posthog
-
-// crash solved when  task player dissmiiss because view was changed , label shoqwing in pomodoor again  hidden.  dont show top bar if was hidden when nudge was showing, pomodoro not started agaain bug solved
-// scedule over  k baad  focus start ki ui reload kroi
-
-// pomodoro constraint set crash solved
-
-//Super Focus session stops blocking after closing the break popup; session remains active but blocking and timer disappear#1572  v 2.28.440   (resume super pomodoro after micro breaks)
-
-
-
-
-
-// resume moening routine mai end fopcs  mode ka view aaya fr help tab per jakaer vapas habit tab per  aya to start focus session ka button unhide ho gya  todo bug
-
-// close per again convince vala kaam
-
-// immediatly block vala kaam if stricktnmess level is high in focus mode 

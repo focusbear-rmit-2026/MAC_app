@@ -2585,6 +2585,7 @@ func hideOnboardingProgress(view:NSView){
 //--------------------------------Onboarding Bell icon----------------------------//
 
 func showOnboardingBellIcon(view:NSView, screen:String){
+    return; //removed v 2.28.446
     view.addSubview(getBellVcObj().view)
     view.addBottomLeftConstraints(subView: getBellVcObj().view)
     bellVcObj?.screen = screen

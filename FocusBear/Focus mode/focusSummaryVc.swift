@@ -9,6 +9,7 @@ import Cocoa
 
 class focusSummaryVc: NSViewController {
     
+    @IBOutlet weak var imgViewGif: NSImageView!
     @IBOutlet weak var widthScrollViewFocusSummary: NSLayoutConstraint!
     @IBOutlet weak var lblTotalBreaksTimeGeekMode: NSTextField!
     @IBOutlet weak var lblTitleTimeSpentOnBreaks: NSTextField!
@@ -133,12 +134,25 @@ class focusSummaryVc: NSViewController {
         setScrollViewFocusSummaryWidth()
     }
     
+    var timerStopAnimation:Timer?
+    func setTimerStopAnimation(){
+        timerStopAnimation?.invalidate()
+        timerStopAnimation = nil
+        imgViewGif.animates = true
+        
+        timerStopAnimation = Timer.scheduledTimer(timeInterval: 3, target: self, selector: #selector(stopAnimatingImageview), userInfo: nil, repeats: false)
+    }
+    
+    @objc func stopAnimatingImageview(){
+        imgViewGif.animates = false
+    }
+    
     func reloadData(){
         arrActivitySummaryAverageDic.removeAll()
         arrActivitySummaryTotalDic.removeAll()
         arrActivitySummaryDurationDic.removeAll()
         arrFocusSummaryDic.removeAll()
-        
+        setTimerStopAnimation()
         if SettingsManagerObject.isGeekModeEnabled{
             scrollViewFocusSummary.isHidden = false
             scrollViewActivitySummaryTotal.isHidden = false

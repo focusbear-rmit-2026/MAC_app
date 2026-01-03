@@ -8,6 +8,11 @@ import Cocoa
 class simplePomodoroVc: NSViewController {
     
     
+    @IBOutlet weak var boxFake: NSBox!
+    @IBOutlet weak var btnStrictnessSuperStrict: cursorButton!
+    @IBOutlet weak var btnStrictnessStrict: cursorButton!
+    @IBOutlet weak var btnStrictnessNormal: cursorButton!
+   
     @IBOutlet weak var comboBoxTask: searchableComboBox!
     @IBOutlet weak var btnInfoSelectFirstTask: hoverInfoButton!
     @IBOutlet weak var lblEnterFirstTask: NSTextField!
@@ -37,9 +42,9 @@ class simplePomodoroVc: NSViewController {
     @IBOutlet weak var lblStrictnessStrict: NSTextField!
     @IBOutlet weak var lblStrictnessSuperStrict: NSTextField!
     @IBOutlet weak var lblTitleStrictnessLevel: NSTextField!
-    @IBOutlet weak var btnStrictnessNormal: hoverInfoButton!
-    @IBOutlet weak var btnStrictnessSuperStrict: hoverInfoButton!
-    @IBOutlet weak var btnStrictnessStrict: hoverInfoButton!
+//    @IBOutlet weak var btnStrictnessNormal: hoverInfoButton!
+//    @IBOutlet weak var btnStrictnessSuperStrict: hoverInfoButton!
+//    @IBOutlet weak var btnStrictnessStrict: hoverInfoButton!
     @IBOutlet weak var sliderStrictness: CustomSlider!
     @IBOutlet weak var btnInfoAiBlocking: hoverInfoButton!
     @IBOutlet weak var boxTitle: NSBox!
@@ -110,7 +115,7 @@ class simplePomodoroVc: NSViewController {
         super.viewDidLoad()
         // Do view setup here.
 //        arrTourMessages.removeAll()
-        lblEnterFirstTask.stringValue = "What do you want to work on first?" // todo text
+        lblEnterFirstTask.stringValue = "What do you want to work on first?"
         
         
         lblTitleStrictnessLevel.stringValue = "Strictness level:"
@@ -242,8 +247,8 @@ class simplePomodoroVc: NSViewController {
             titleSuperStrictMode = simplePomodoroVcInfo.value(forKey: "titleSuperStrictMode") as? String ?? titleSuperStrictMode
             descriptionSuperStrictMode = simplePomodoroVcInfo.value(forKey: "descriptionSuperStrictMode") as? String ?? descriptionSuperStrictMode
             toolTipSuperStrictMode = simplePomodoroVcInfo.value(forKey: "toolTipSuperStrictMode") as? String ?? toolTipSuperStrictMode
+            lblEnterFirstTask.stringValue = simplePomodoroVcInfo.value(forKey: "enterFirstTask") as? String ?? lblEnterFirstTask.stringValue
         }
-        
         lblStrictnessNormal.stringValue = "🟢 " + titleNormalMode
         lblStrictnessStrict.stringValue = "🟡 " + titleStrictMode
         lblStrictnessSuperStrict.stringValue = "🔴 " + titleSuperStrictMode
@@ -291,9 +296,9 @@ class simplePomodoroVc: NSViewController {
         btnPin.addTrackingArea(pinButtonTrackingArea!)
         
         btnInfoAiBlocking.isAutoClickEnabled = false
-        btnStrictnessNormal.isAutoClickEnabled = false
-        btnStrictnessSuperStrict.isAutoClickEnabled = false
-        btnStrictnessStrict.isAutoClickEnabled = false
+//        btnStrictnessNormal.isAutoClickEnabled = false
+//        btnStrictnessSuperStrict.isAutoClickEnabled = false
+//        btnStrictnessStrict.isAutoClickEnabled = false
         btnInfoWorkDuration.isAutoClickEnabled = false
         btnInfoBreakDuration.isAutoClickEnabled = false
         btnInfoIntention.isAutoClickEnabled = false
@@ -305,6 +310,7 @@ class simplePomodoroVc: NSViewController {
         stackViewIntention.isHidden = true
         boxBlockingStyle.isHidden = true
         boxBreakDuration.isHidden = true
+        boxFake.isHidden = true
         boxBlankSpace.isHidden = false
         imgViewAccordionMoreOptions.image = NSImage(named: NSImage.goForwardTemplateName)
         
@@ -1122,38 +1128,38 @@ class simplePomodoroVc: NSViewController {
     }
     
     
-    @IBAction func btnStrictnessNormalClicked(_ sender: Any) {
-        var msg = "can pause/stop focus session at any time"
-        if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
-            if let startingFocusModeInfo = focusInfo.value(forKey: "startingFocusModeInfo") as? NSDictionary{
-                msg = startingFocusModeInfo.value(forKey: "strictnessNormalTooltip") as? String ?? msg
-            }
-        }
-        
-        showTooltip(sender: btnStrictnessNormal, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
-    }
+//    @IBAction func btnStrictnessNormalClicked(_ sender: Any) {
+//        var msg = "can pause/stop focus session at any time"
+//        if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
+//            if let startingFocusModeInfo = focusInfo.value(forKey: "startingFocusModeInfo") as? NSDictionary{
+//                msg = startingFocusModeInfo.value(forKey: "strictnessNormalTooltip") as? String ?? msg
+//            }
+//        }
+//        
+//        showTooltip(sender: btnStrictnessNormal, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
+//    }
     
-    @IBAction func btnStrictnessStrictClicked(_ sender: Any) {
-        var msg = "requires countdown timer before pausing/stopping focus session"
-        if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
-            if let startingFocusModeInfo = focusInfo.value(forKey: "startingFocusModeInfo") as? NSDictionary{
-                msg = startingFocusModeInfo.value(forKey: "strictnessStrictTooltip") as? String ?? msg
-            }
-        }
-        
-        showTooltip(sender: btnStrictnessStrict, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
-    }
+//    @IBAction func btnStrictnessStrictClicked(_ sender: Any) {
+//        var msg = "requires countdown timer before pausing/stopping focus session"
+//        if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
+//            if let startingFocusModeInfo = focusInfo.value(forKey: "startingFocusModeInfo") as? NSDictionary{
+//                msg = startingFocusModeInfo.value(forKey: "strictnessStrictTooltip") as? String ?? msg
+//            }
+//        }
+//        
+//        showTooltip(sender: btnStrictnessStrict, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
+//    }
 
-    @IBAction func btnStrictnessSuperStrictClicked(_ sender: Any) {
-        var msg = "immediately block urls + prevents pausing/stopping focus session or opening settings"
-        if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
-            if let startingFocusModeInfo = focusInfo.value(forKey: "startingFocusModeInfo") as? NSDictionary{
-                msg = startingFocusModeInfo.value(forKey: "strictnessSuperStrictTooltip") as? String ?? msg
-            }
-        }
-        
-        showTooltip(sender: btnStrictnessSuperStrict, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
-    }
+//    @IBAction func btnStrictnessSuperStrictClicked(_ sender: Any) {
+//        var msg = "immediately block urls + prevents pausing/stopping focus session or opening settings"
+//        if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
+//            if let startingFocusModeInfo = focusInfo.value(forKey: "startingFocusModeInfo") as? NSDictionary{
+//                msg = startingFocusModeInfo.value(forKey: "strictnessSuperStrictTooltip") as? String ?? msg
+//            }
+//        }
+//        
+//        showTooltip(sender: btnStrictnessSuperStrict, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
+//    }
     
     @IBAction func btnErrorClicked(_ sender: Any) {
         if UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) == nil{
@@ -1189,7 +1195,7 @@ class simplePomodoroVc: NSViewController {
     
     @IBAction func sliderStrictnessClicked(_ sender: Any) {
         if sliderStrictness.integerValue == 3{
-            var strictnessSuperStrictClickedText = "I understand I cannot stop this focus session without a password. I am committed to avoiding distractions and getting a ton of work done."
+            var strictnessSuperStrictClickedText = "I understand I cannot stop this focus session. I am committed to avoiding distractions and getting a ton of work done."
             if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
                 if let startingFocusModeInfo = focusInfo.value(forKey: "startingFocusModeInfo") as? NSDictionary{
                     strictnessSuperStrictClickedText = startingFocusModeInfo.value(forKey: "strictnessSuperStrictClickedNewText") as? String ?? strictnessSuperStrictClickedText
@@ -1242,6 +1248,7 @@ class simplePomodoroVc: NSViewController {
             stackViewIntention.isHidden = false
             boxBlockingStyle.isHidden = false
             boxBreakDuration.isHidden = false
+            boxFake.isHidden = false
             imgViewAccordionMoreOptions.image = NSImage(named: NSImage.touchBarGoDownTemplateName)
             boxBlankSpace.isHidden = true
            // stackViewFirstTask.isHidden = false
@@ -1250,6 +1257,7 @@ class simplePomodoroVc: NSViewController {
             stackViewIntention.isHidden = true
             boxBlockingStyle.isHidden = true
             boxBreakDuration.isHidden = true
+            boxFake.isHidden = true
             imgViewAccordionMoreOptions.image = NSImage(named: NSImage.goForwardTemplateName)
             boxBlankSpace.isHidden = false
             if let window = self.view.window {
@@ -1262,7 +1270,26 @@ class simplePomodoroVc: NSViewController {
     }
     
     @IBAction func btnInfoSelectFirstTaskClicked(_ sender: Any) {
-        showTooltip(sender: btnInfoSelectFirstTask, msg: "Add the first task you’ll work on in this focus session. Starting with a clear task helps you stay on track.", preferredEdge: NSRectEdge.maxX, maxWidthVal:230)//todo text
+        var toolTipFirstTask = "Add the first task you’ll work on in this focus session. Starting with a clear task helps you stay on track."
+        if let simplePomodoroVcInfo = configjson.value(forKey: "simplePomodoroVcInfo") as? NSDictionary{
+            toolTipFirstTask = simplePomodoroVcInfo.value(forKey: "toolTipFirstTask") as? String ?? toolTipFirstTask
+        }
+        showTooltip(sender: btnInfoSelectFirstTask, msg: toolTipFirstTask, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
+    }
+    
+    @IBAction func btnStrictnessNormalClicked(_ sender: Any) {
+        sliderStrictness.integerValue = 1
+        sliderStrictnessClicked(self)
+    }
+    
+    @IBAction func btnStrictnessStrictClicked(_ sender: Any) {
+        sliderStrictness.integerValue = 2
+        sliderStrictnessClicked(self)
+    }
+    
+    @IBAction func btnStrictnessSuperStrictClicked(_ sender: Any) {
+        sliderStrictness.integerValue = 3
+        sliderStrictnessClicked(self)
     }
     
 }
