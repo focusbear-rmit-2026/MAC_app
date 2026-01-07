@@ -912,7 +912,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                         self.needToCheckEmailVerification = false// if onboarding then dont show till menu tour is over
                                         self.getUserSubscriptionInfo()
                                         self.statusbutton?.action = nil
-                                        showAskProcrastinatingWindow()
+//                                        showAskProcrastinatingWindow()
+                                        appdelegate?.menuShowSimplePomodoroModeView()
+//                                        showConfirmBlockingScheduleWindow()
                                         UserDefaults.standard.set(true, forKey: kUserdefaultsVideoShown)
                                     }else{
                                         allApiObject.postTermsService(consentType: "terms_of_service")
@@ -2883,71 +2885,80 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             if settings != nil{
                 if isFirstTime{
                     
-                    let breakDuration = UserDefaults.standard.object(forKey: kUserdefaultsBreakDurationValue) as? Int ?? defaultBreakDurationValue
-                    
-                    var startDate = UserDefaults.standard.object(forKey: kUserdefaultsStartupTimeFromOnboarding) as? String ?? defaultStartTime
-                    var shutOffDate = UserDefaults.standard.object(forKey: kUserdefaultsShutOffTimeFromOnboarding) as? String ?? defaultShutDownTime
-                    var sleepTime = UserDefaults.standard.object(forKey: kUserdefaultsSleepTimeFromOnboarding) as? String ?? defaultSleepTime
+//                    let breakDuration = UserDefaults.standard.object(forKey: kUserdefaultsBreakDurationValue) as? Int ?? defaultBreakDurationValue
+//                    
+//                    var startDate = UserDefaults.standard.object(forKey: kUserdefaultsStartupTimeFromOnboarding) as? String ?? defaultStartTime
+//                    var shutOffDate = UserDefaults.standard.object(forKey: kUserdefaultsShutOffTimeFromOnboarding) as? String ?? defaultShutDownTime
+//                    var sleepTime = UserDefaults.standard.object(forKey: kUserdefaultsSleepTimeFromOnboarding) as? String ?? defaultSleepTime
                     
                     //                    if packId.isEmpty{// work for focus only
                     //                        startDate = "00:00"
                     //                        shutOffDate = "23:59"
                     //                        sleepTime = "23:59"
-                    //                    }
-                    if let isHabitsDisabled = UserDefaults.standard.object(forKey: kUserdefaultsIsHabitsDisabledFromOnboarding) as? Bool{
-                        if isHabitsDisabled{
-                            startDate = "00:00"
-                            shutOffDate = "23:59"
-                            sleepTime = "23:59"
-                        }
-                    }
-                    
-                    settings!["startup_time"] = startDate
-                    settings!["shutdown_time"] = shutOffDate
-                    settings!["break_after_minutes"] = breakDuration
-                    settings!["sleep_time"] = sleepTime
-                    
-                    UserDefaults.standard.removeObject(forKey: kUserdefaultsBreakDurationValue)
-                    UserDefaults.standard.removeObject(forKey: kUserdefaultsStartupTimeFromOnboarding)
-                    UserDefaults.standard.removeObject(forKey: kUserdefaultsShutOffTimeFromOnboarding)
-                    UserDefaults.standard.removeObject(forKey: kUserdefaultsSleepTimeFromOnboarding)
-                    
-                    allApiObject.isSettingsValid(settings: settings!, isOnboarding:true, completionHandler: {dic,statusCode  in
-                        DispatchQueue.main.async {
-                            
-                            
-                            if dic == nil{
-                                self.readSettingsAndLoadApp(settings: settings)
-                            }else{
-                                if statusCode == 200{
-                                    let settings = dic?.mutableCopy() as? NSMutableDictionary
+                    //                    } //  new v 2.28.447
+                    let isHabitsDisabled = UserDefaults.standard.object(forKey: kUserdefaultsIsHabitsDisabledFromOnboarding) as? Bool ?? false
+                    if isHabitsDisabled{
+                        let startDate = "00:00"
+                        let shutOffDate = "23:59"
+                        let sleepTime = "23:59"
+                        
+                        
+                        settings!["startup_time"] = startDate
+                        settings!["shutdown_time"] = shutOffDate
+                        //                            settings!["break_after_minutes"] = breakDuration
+                        settings!["sleep_time"] = sleepTime
+                        
+                        UserDefaults.standard.removeObject(forKey: kUserdefaultsBreakDurationValue)
+                        UserDefaults.standard.removeObject(forKey: kUserdefaultsStartupTimeFromOnboarding)
+                        UserDefaults.standard.removeObject(forKey: kUserdefaultsShutOffTimeFromOnboarding)
+                        UserDefaults.standard.removeObject(forKey: kUserdefaultsSleepTimeFromOnboarding)
+                        
+                        allApiObject.isSettingsValid(settings: settings!, isOnboarding:true, completionHandler: {dic,statusCode  in
+                            DispatchQueue.main.async {
+                                
+                                
+                                if dic == nil{
                                     self.readSettingsAndLoadApp(settings: settings)
-                                    do {
-                                        let jsonResultData =  try JSONSerialization.data(withJSONObject: dic!, options: JSONSerialization.WritingOptions.prettyPrinted)
-                                        if let backToString = String(data: jsonResultData, encoding: String.Encoding.utf8){
-                                            UserDefaults.standard.set(backToString, forKey: kUserdefaultsSelectedJson)
-                                            //appdelegate?.readSettingsJsonDictionary(json: nil)//will not do this here
-                                        }
-                                    } catch let myJSONError {
-                                        print(myJSONError)
-                                    }
                                 }else{
-                                    
+                                    if statusCode == 200{
+                                        let settings = dic?.mutableCopy() as? NSMutableDictionary
+                                        self.readSettingsAndLoadApp(settings: settings)
+                                        do {
+                                            let jsonResultData =  try JSONSerialization.data(withJSONObject: dic!, options: JSONSerialization.WritingOptions.prettyPrinted)
+                                            if let backToString = String(data: jsonResultData, encoding: String.Encoding.utf8){
+                                                UserDefaults.standard.set(backToString, forKey: kUserdefaultsSelectedJson)
+                                                //appdelegate?.readSettingsJsonDictionary(json: nil)//will not do this here
+                                            }
+                                        } catch let myJSONError {
+                                            print(myJSONError)
+                                        }
+                                    }else{
+                                        do {
+                                            let data = try (JSONSerialization.data(withJSONObject: settings!, options: .prettyPrinted))
+                                            if let str = String(data: data, encoding: String.Encoding.utf8){
+                                                UserDefaults.standard.set(str, forKey: kUserdefaultsSelectedJson)
+                                            }
+                                        } catch let error as NSError {
+                                            print(error)
+                                        }
+                                        self.readSettingsAndLoadApp(settings: settings)
+                                    }
                                 }
                             }
+                        })
+                    }else{
+                        do {
+                            let data = try (JSONSerialization.data(withJSONObject: settings!, options: .prettyPrinted))
+                            if let str = String(data: data, encoding: String.Encoding.utf8){
+                                UserDefaults.standard.set(str, forKey: kUserdefaultsSelectedJson)
+                            }
+                        } catch let error as NSError {
+                            print(error)
                         }
-                    })
-                    
-                    
-                    
-                    do {
-                        let data = try (JSONSerialization.data(withJSONObject: settings!, options: .prettyPrinted))
-                        if let str = String(data: data, encoding: String.Encoding.utf8){
-                            UserDefaults.standard.set(str, forKey: kUserdefaultsSelectedJson)
-                        }
-                    } catch let error as NSError {
-                        print(error)
+                        self.readSettingsAndLoadApp(settings: settings)
                     }
+                    
+                    
                 }else{
                     do {
                         let data = try (JSONSerialization.data(withJSONObject: settings!, options: .prettyPrinted))
@@ -3763,7 +3774,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         
         loadMenuWindow()
     }
-    
+
     @objc func checkWindowState(){
         loadAllWindows()
         isFirstRun = false
@@ -11426,3 +11437,51 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 // text added
 //Morning routine will resume after the call ends.
 
+
+//  
+// screen size resizable in procastinating, button itlte to work wrap
+// button title will be defaulr title
+// add text
+// font not changing of left panel 
+
+
+
+
+
+
+
+// bug of showing timer in menu
+// No break activities added solved
+
+
+// login screen
+// break reshedule after natural break  solved
+// blocking schedule k log
+
+//.// blocing scheduel ko onboarding
+
+
+
+// permmission screen as a poopover
+
+
+
+
+
+// floating bear bug solved
+
+// button bng color changed 
+// button ka gap kam krna hai
+// sign up with email ko white kro 
+
+// screen remove
+// confirm timing screeen remove
+// break vali scrren hatao
+// set timing screen removed
+// break duration screen removed
+// - hataya. or check mark aage kr diye
+// text added
+//
+
+
+// list common krni hai

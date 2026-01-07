@@ -3081,6 +3081,7 @@ func disableAllAlertsBeforeQuit(){
 
 
 var isExplainingPermissionsWindowShowingFromPomodoro = false
+var isExplainingPermissionsWindowShowingFromBlockingSchedule = false
 
 //var isCustomBarIsInFocus = false// when app is not in focus and user try to click close icon of custom bar . then applicationDidBecomeActive func called instead of close action because app become active and because app become active it shows menu (from inside applicationDidBecomeActive func) instead of  closing custom bar. to prevent this we are using isCustomBarIsInFocus variable. so that if user's cursor is on custom bar then menu will not show.
 

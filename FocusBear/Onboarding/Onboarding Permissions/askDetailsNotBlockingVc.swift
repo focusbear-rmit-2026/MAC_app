@@ -44,6 +44,15 @@ class askDetailsNotBlockingVc: NSViewController {
                 appdelegate?.menuShowSimplePomodoroModeView()
                 simplePomodoroVcObj?.textViewAchieve.string = simplePomodoroVcObj?.intentionToShowAgain ?? ""
             }
+        }else if isExplainingPermissionsWindowShowingFromBlockingSchedule{
+            if mainWindowControllerObj?.window?.isVisible ?? false{
+                leftMenuVcObj?.showBlocksView()
+            }else{
+                mainWindowControllerObj?.showWindow(self)
+                leftMenuVcObj?.showBlocksView()
+            }
+            addLog(text: "Showing preferences")
+            tabStrictnessContainerVcObj?.showCustomBlockingSchedulesView()
         }
     }
 }

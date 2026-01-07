@@ -27,6 +27,7 @@
 		134D1DF02E42378B00328E84 /* habitsVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 134D1DEF2E42378B00328E84 /* habitsVc.swift */; };
 		13501E292E7C2B020055ACB1 /* browsersTabAuditVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13501E282E7C2B020055ACB1 /* browsersTabAuditVc.swift */; };
 		13501E2B2E7C391F0055ACB1 /* postBrowsersTabAuditVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13501E2A2E7C391F0055ACB1 /* postBrowsersTabAuditVc.swift */; };
+		135348042F0D450E00D0D2A6 /* confirmBlockingScheduleCreationVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 135348032F0D450E00D0D2A6 /* confirmBlockingScheduleCreationVc.swift */; };
 		135A8A512E7E8E6A00A96A8E /* customBlockingSchedulesVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 135A8A502E7E8E6A00A96A8E /* customBlockingSchedulesVc.swift */; };
 		135A8A532E7E91E300A96A8E /* tblCellCustomBlockingSchedules.swift in Sources */ = {isa = PBXBuildFile; fileRef = 135A8A522E7E91E300A96A8E /* tblCellCustomBlockingSchedules.swift */; };
 		135A8A552E7EB27A00A96A8E /* customBlockingScheduleData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 135A8A542E7EB27A00A96A8E /* customBlockingScheduleData.swift */; };
@@ -430,6 +431,7 @@
 		134D1DEF2E42378B00328E84 /* habitsVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = habitsVc.swift; sourceTree = "<group>"; };
 		13501E282E7C2B020055ACB1 /* browsersTabAuditVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = browsersTabAuditVc.swift; sourceTree = "<group>"; };
 		13501E2A2E7C391F0055ACB1 /* postBrowsersTabAuditVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = postBrowsersTabAuditVc.swift; sourceTree = "<group>"; };
+		135348032F0D450E00D0D2A6 /* confirmBlockingScheduleCreationVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = confirmBlockingScheduleCreationVc.swift; sourceTree = "<group>"; };
 		135A8A502E7E8E6A00A96A8E /* customBlockingSchedulesVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = customBlockingSchedulesVc.swift; sourceTree = "<group>"; };
 		135A8A522E7E91E300A96A8E /* tblCellCustomBlockingSchedules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = tblCellCustomBlockingSchedules.swift; sourceTree = "<group>"; };
 		135A8A542E7EB27A00A96A8E /* customBlockingScheduleData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = customBlockingScheduleData.swift; sourceTree = "<group>"; };
@@ -1599,6 +1601,7 @@
 				8FA7D36629F3E686007AD2C1 /* aiPermissionVc.swift */,
 				8F7210752A18CCBA00D53EF3 /* chooseFrictionLevelVc.swift */,
 				8F4B9D6B296C4B62003A3ABD /* howHeardVc.swift */,
+				135348032F0D450E00D0D2A6 /* confirmBlockingScheduleCreationVc.swift */,
 				136C5E172F08F516006DBACA /* Procrastinating */,
 				8F7210792A1900FC00D53EF3 /* onboardingSetPasswordVc.swift */,
 				8FBB72162A56E107004F52EA /* menuTourVc.swift */,
@@ -1932,6 +1935,7 @@
 				8FD86E1C2A54303A004F6761 /* unusedCode.swift in Sources */,
 				8F779DFA2B80DD600011E1BE /* chooseHabitsVC.swift in Sources */,
 				8F4BD8C527883FBE00ABAEF5 /* KeyCombo.swift in Sources */,
+				135348042F0D450E00D0D2A6 /* confirmBlockingScheduleCreationVc.swift in Sources */,
 				8F371A6629E424F10043D7B3 /* onboardingPrivacyTipVc.swift in Sources */,
 				8F752CC72B49123F00B21914 /* pomodoroTooltipVc.swift in Sources */,
 				8F8C3FDF2A8CF5FF005CAF96 /* microBreaksSettingsVc.swift in Sources */,
@@ -2447,7 +2451,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application: Focus Bear Pty Ltd (TCUD568B3U)";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 446;
+				CURRENT_PROJECT_VERSION = 447;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = TCUD568B3U;
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = TCUD568B3U;
@@ -2485,7 +2489,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application: Focus Bear Pty Ltd (TCUD568B3U)";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 446;
+				CURRENT_PROJECT_VERSION = 447;
 				DEVELOPMENT_TEAM = TCUD568B3U;
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = TCUD568B3U;
 				ENABLE_HARDENED_RUNTIME = YES;

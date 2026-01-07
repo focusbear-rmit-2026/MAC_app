@@ -32,6 +32,11 @@ class accordionBox: NSBox {
         label.font = NSFont.systemFont(ofSize: 13, weight: .medium)
         label.textColor = .labelColor
         label.translatesAutoresizingMaskIntoConstraints = false
+        if SettingsManagerObject.selectedFontIndex == systemFontIndex{
+            label.font = NSFont.systemFont(ofSize: label.font?.pointSize ?? 24)
+        }else{
+            label.font = NSFont(name: selectedFont.regularFontName, size: label.font?.pointSize ?? 24) ?? NSFont.boldSystemFont(ofSize: 24)
+        }
         return label
     }()
     

@@ -4000,7 +4000,8 @@ class thirdVc: NSViewController {
         
         if currentState == ._BREATHING_{
             boxBreathingFinished.isHidden = true
-            getHabitsVcObject().breathingFinishedUnlockMachine()
+//            getHabitsVcObject().breathingFinishedUnlockMachine()
+            showConfirmBlockingScheduleWindow()
         }else if currentState == ._MICRO_BREAK_ {
             if lastActivityIndex == -1 {
                 getHabitsVcObject().startCurrentActivity()

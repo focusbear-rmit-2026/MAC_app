@@ -39,10 +39,10 @@ class accountVc: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
-        lblSubscriptionDetails.stringValue = "Subscription Details" // todo text
-        lblStatus.stringValue = "Status:" // todo text
-        lblEmailNotVerified.stringValue = "Email not Verified" // todo text
-        btnResendConfirmation.title = "Resend Confirmation Email" // todo text
+        lblSubscriptionDetails.stringValue = "Subscription Details"
+        lblStatus.stringValue = "Status:"
+        lblEmailNotVerified.stringValue = "Email not Verified"
+        btnResendConfirmation.title = "Resend Confirmation Email"
         
         
         btnRestorePurchase.title = "Sync Payment Status"
@@ -62,6 +62,10 @@ class accountVc: NSViewController {
             restoreText = accountVcInfo.value(forKey: "restoreText") as? String ?? restoreText
             btnRestorePurchase.title = accountVcInfo.value(forKey: "buttonRestoreText") as? String ?? btnRestorePurchase.title
             btnResetPassword.title = accountVcInfo.value(forKey: "buttonResetPasswordText") as? String ?? btnResetPassword.title
+            lblSubscriptionDetails.stringValue = accountVcInfo.value(forKey: "subscriptionDetails") as? String ?? lblSubscriptionDetails.stringValue
+            lblStatus.stringValue = accountVcInfo.value(forKey: "status") as? String ?? lblStatus.stringValue
+            lblEmailNotVerified.stringValue = accountVcInfo.value(forKey: "emailNotVerified") as? String ?? lblEmailNotVerified.stringValue
+            btnResendConfirmation.title = accountVcInfo.value(forKey: "buttonResendConfirmation") as? String ?? btnResendConfirmation.title
         }
         
         arrForSearchFromSettings.append(["title": lblTitle.stringValue, "tabId": idAccount, "object": lblTitle as Any])

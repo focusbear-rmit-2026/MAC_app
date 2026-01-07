@@ -8,7 +8,7 @@
 
 import Cocoa
 
-class askProcrastinatingVc: NSViewController, NSTextViewDelegate {
+class askProcrastinatingVc: NSViewController, NSTextViewDelegate {// not in use 
 
     @IBOutlet weak var lblTitleIntention: NSTextField!
     
@@ -39,7 +39,7 @@ class askProcrastinatingVc: NSViewController, NSTextViewDelegate {
 //        btnShortSecond.buttonColor = NSColor.white.cgColor
 //        btnShortThird.buttonColor = NSColor.white.cgColor
 //        btnFourth.buttonColor = NSColor.white.cgColor
-        lblStartFocus.stringValue = "Let's focus all out for 25 minutes." // todo text 
+        lblStartFocus.stringValue = "Let's focus all out for 25 minutes." // text not added
        // lblTitle.stringValue = "Time to do something difficult"
         lblSubTitle.stringValue = "What's something you've been procrastinating on? Focus Bear will help you get it done right after this."
         btnStart.title = "Let's do this!"

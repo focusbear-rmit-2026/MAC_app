@@ -443,7 +443,9 @@ class menuViewController: NSViewController {
         } else {
             imgViewIconStartBreak.image = NSImage(named: NSImage.touchBarUserTemplateName)
         }
-        boxOpenToolBox.isHidden = true// if show this then check space first 
+        boxOpenToolBox.isHidden = true// if show this then check space first
+        
+        boxFocusModeRemainingTime.isHidden = true
     }
 
     override func viewDidAppear() {
@@ -1056,9 +1058,7 @@ class menuViewController: NSViewController {
                 boxMeetingDetection.isHidden = true
             }
 
-            
-            
-            
+
             
             if UserDefaults.standard.object(forKey: kUserdefaultsFocusTipsShown) == nil{
                 boxSetFocusModes.isHidden = false

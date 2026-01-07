@@ -12,6 +12,12 @@ import AuthenticationServices
 
 class askLogInVc: NSViewController, ASAuthorizationControllerDelegate, ASAuthorizationControllerPresentationContextProviding {
     
+    @IBOutlet weak var lblOr: NSTextField!
+    @IBOutlet weak var lblTitleCreateAccount: NSTextField!
+    @IBOutlet weak var btnSignIn: underLineButton!
+    @IBOutlet weak var boxButtonSignUpWithEmail: boxButton!
+    @IBOutlet weak var boxButtonSignUpWithApple: boxButton!
+    @IBOutlet weak var boxButtonSignUpWithGoogle: boxButton!
     @IBOutlet weak var btnInfo: NSButton!
     @IBOutlet weak var imgView: NSImageView!
     @IBOutlet weak var boxBg: NSBox!
@@ -33,12 +39,27 @@ class askLogInVc: NSViewController, ASAuthorizationControllerDelegate, ASAuthori
         btnSignInWithGoogle.title = "Sign In with Google"
         btnSignInWithApple.title = "Sign In with Apple"
         
+        lblOr.stringValue = "OR"
+        
+        var buttonSignUpWithGoogle = "Regístrate con Google"
+        var buttonSignUpWithApple = "Regístrate con Apple"
+        var buttonSignUpWithEmail = "Regístrate con correo electrónico"
+        var buttonSignInOldAccountText = "¿Ya tienes una cuenta de Focus Bear? Inicia sesión"
+        var buttonCreateAccount = "Crea tu cuenta"
+        
+        
         if let askLogInVcInfo = configjson.value(forKey: "askLogInVcInfo") as? NSDictionary{
             lblTitle.stringValue = askLogInVcInfo.value(forKey: "title") as? String ?? lblTitle.stringValue
             lblMessage.stringValue = askLogInVcInfo.value(forKey: "messageText") as? String ?? lblMessage.stringValue
             btnSignInWithEmail.title = askLogInVcInfo.value(forKey: "buttonSignInEmailText") as? String ?? btnSignInWithEmail.title
             btnSignInWithGoogle.title = askLogInVcInfo.value(forKey: "buttonSignInGoogleText") as? String ?? btnSignInWithGoogle.title
             btnSignInWithApple.title = askLogInVcInfo.value(forKey: "buttonSignInAppleText") as? String ?? btnSignInWithApple.title
+            buttonSignUpWithGoogle = askLogInVcInfo.value(forKey: "buttonSignUpWithGoogle") as? String ?? buttonSignUpWithGoogle
+            buttonSignUpWithApple = askLogInVcInfo.value(forKey: "buttonSignUpWithApple") as? String ?? buttonSignUpWithApple
+            buttonSignUpWithEmail = askLogInVcInfo.value(forKey: "buttonSignUpWithEmail") as? String ?? buttonSignUpWithEmail
+            buttonSignInOldAccountText = askLogInVcInfo.value(forKey: "buttonSignInOldAccountText") as? String ?? buttonSignInOldAccountText
+            buttonCreateAccount = askLogInVcInfo.value(forKey: "buttonCreateAccount") as? String ?? buttonCreateAccount
+            lblOr.stringValue = askLogInVcInfo.value(forKey: "orText") as? String ?? lblOr.stringValue
         }
         
         btnSignUp.isBordered = false
@@ -47,6 +68,27 @@ class askLogInVc: NSViewController, ASAuthorizationControllerDelegate, ASAuthori
             btnSignUp.title = customLoginVcInfo.value(forKey: "buttonCreateAccountText") as? String ?? btnSignUp.title
         }
         allApiObject.capturePosthog(event: "pre-signin-view-shown", metadata: [:])
+        
+        
+        
+        boxButtonSignUpWithGoogle.setTitle(buttonSignUpWithGoogle)
+        boxButtonSignUpWithGoogle.setImage(NSImage(named: "google_logo"))
+        boxButtonSignUpWithGoogle.target = self
+        boxButtonSignUpWithGoogle.action = #selector(signUpWithGoogle)
+        
+        boxButtonSignUpWithApple.setTitle(buttonSignUpWithApple)
+        boxButtonSignUpWithApple.setImage(NSImage(named: "apple_logo"))
+        boxButtonSignUpWithApple.target = self
+        boxButtonSignUpWithApple.action = #selector(signUpWithApple)
+        
+        boxButtonSignUpWithEmail.setButtonColor(NSColor.white)
+        boxButtonSignUpWithEmail.setTitle(buttonSignUpWithEmail)
+        boxButtonSignUpWithEmail.setImage(NSImage(named: "email"))
+        boxButtonSignUpWithEmail.target = self
+        boxButtonSignUpWithEmail.action = #selector(signUpWithEmail)
+        
+        btnSignIn.title = buttonSignInOldAccountText
+        lblTitleCreateAccount.stringValue = buttonCreateAccount
     }
     
     override func viewWillAppear() {
@@ -130,7 +172,7 @@ class askLogInVc: NSViewController, ASAuthorizationControllerDelegate, ASAuthori
                     // Handle successful login, save credentials, or transition to the next screen
                     print(credentials.accessToken)
                     DispatchQueue.main.async {
-                        self.view.window?.close()
+                        askLogInWcObj?.window?.close()
                         appdelegate!.statusbutton?.action = nil
                         appdelegate!.user = AuthUser(from: credentials.accessToken)
                         allApiObject.capturePosthog(event: "login-homemade", metadata: [:])
@@ -171,7 +213,7 @@ class askLogInVc: NSViewController, ASAuthorizationControllerDelegate, ASAuthori
                     print("Logged in with Apple: \(credentials)")
                     
                     DispatchQueue.main.async {
-                        self.view.window?.close()
+                        askLogInWcObj?.window?.close()
                         appdelegate?.statusbutton?.action = nil
                         
                         appdelegate?.user = AuthUser(from: credentials.accessToken)
@@ -325,6 +367,20 @@ class askLogInVc: NSViewController, ASAuthorizationControllerDelegate, ASAuthori
         alert.beginSheetModal(for: window, completionHandler: {_ in
             
         })
+    }
+    
+    @objc func signUpWithGoogle(){
+        btnSignInWithGoogleClicked(self)
+    }
+    @objc func signUpWithApple(){
+        btnSignInWithAppleClicked(self)
+    }
+    @objc func signUpWithEmail(){
+        btnSignUpClicked(self)
+    }
+    
+    @IBAction func btnSignInClicked(_ sender: Any) {
+        btnSignInWithEmailClicked(self)
     }
 }
 // com.focusbear.applesignin

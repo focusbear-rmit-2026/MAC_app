@@ -22,7 +22,7 @@ class enableAIBlockingVc: NSViewController {
     @IBOutlet weak var lblSubTitle: NSTextField!
     @IBOutlet weak var lblTitle: NSTextField!
     
-    override func viewDidLoad() {// todo text 
+    override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
         lblTitle.stringValue = "Do you want to use AI to block distractions?"
@@ -36,6 +36,30 @@ class enableAIBlockingVc: NSViewController {
         
         btnNoThanks.title = "No thanks"
         btnContinue.title = "Make me indistractible"
+        
+        if let enableAIBlockingVcInfo = configjson.value(forKey: "enableAIBlockingVcInfo") as? NSDictionary {
+
+            lblTitle.stringValue = enableAIBlockingVcInfo.value(forKey: "title") as? String ?? lblTitle.stringValue
+
+            lblSubTitle.stringValue = enableAIBlockingVcInfo.value(forKey: "subTitle") as? String ?? lblSubTitle.stringValue
+
+            lblHeadingFirstPoint.stringValue = enableAIBlockingVcInfo.value(forKey: "headingFirstPoint") as? String ?? lblHeadingFirstPoint.stringValue
+
+            lblDescriptionFirstPoint.stringValue = enableAIBlockingVcInfo.value(forKey: "descriptionFirstPoint") as? String ?? lblDescriptionFirstPoint.stringValue
+
+            lblHeadingSecondPoint.stringValue = enableAIBlockingVcInfo.value(forKey: "headingSecondPoint") as? String ?? lblHeadingSecondPoint.stringValue
+
+            lblDescriptionSecondPoint.stringValue = enableAIBlockingVcInfo.value(forKey: "descriptionSecondPoint") as? String ?? lblDescriptionSecondPoint.stringValue
+
+            lblHeadingThirdPoint.stringValue = enableAIBlockingVcInfo.value(forKey: "headingThirdPoint") as? String ?? lblHeadingThirdPoint.stringValue
+
+            lblDescriptionThirdPoint.stringValue = enableAIBlockingVcInfo.value(forKey: "descriptionThirdPoint") as? String ?? lblDescriptionThirdPoint.stringValue
+
+            btnNoThanks.title = enableAIBlockingVcInfo.value(forKey: "buttonNoThanks") as? String ?? btnNoThanks.title
+
+            btnContinue.title = enableAIBlockingVcInfo.value(forKey: "buttonContinue") as? String ?? btnContinue.title
+        }
+
         
         btnNoThanks.buttonColor = NSColor.white.cgColor
     }

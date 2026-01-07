@@ -1784,6 +1784,14 @@ func getAskProcrastinatingVcObj()->askProcrastinatingVc{
     return askProcrastinatingVcObj!
 }
 
+var confirmBlockingScheduleCreationVcObj:confirmBlockingScheduleCreationVc?
+func getConfirmBlockingScheduleCreationVcObj()->confirmBlockingScheduleCreationVc{
+    if confirmBlockingScheduleCreationVcObj == nil{
+        confirmBlockingScheduleCreationVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("confirmBlockingScheduleCreationVc")) as? confirmBlockingScheduleCreationVc
+    }
+    return confirmBlockingScheduleCreationVcObj!
+}
+
 
 //var chooseFrictionLevelVcObj:chooseFrictionLevelVc?
 //func getChooseFrictionLevelVcObj()->chooseFrictionLevelVc{

@@ -9,7 +9,9 @@
 import Cocoa
 
 class createBlockingProfileVc: NSViewController {
-// todo text
+
+    @IBOutlet weak var lblExampleSecond: NSTextField!
+    @IBOutlet weak var lblExampleFirst: NSTextField!
     @IBOutlet weak var btnContinue: Button!
     @IBOutlet var textViewSecond: NSTextView!
     @IBOutlet weak var lblHeadingSecond: NSTextField!
@@ -20,6 +22,43 @@ class createBlockingProfileVc: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
+        lblTitle.stringValue = "Create your distraction blocking profile"
+        lblSubTitle.stringValue = "Give the AI a little more context so it’s better at detecting distractions"
+        lblHeadingFirst.stringValue = "What type of sites are relevant for your work?"
+        lblExampleFirst.stringValue = "(Eg. Project management tools, Code repositories)"
+        lblHeadingSecond.stringValue = "What type of things are distracting?"
+        lblExampleSecond.stringValue = "(Eg. Social media, Video streaming)"
+        btnContinue.title = buttonContinueText
+        
+        
+        if let createBlockingProfileVcInfo =
+            configjson.value(forKey: "createBlockingProfileVcInfo") as? NSDictionary {
+
+            lblTitle.stringValue =
+                createBlockingProfileVcInfo.value(forKey: "title") as? String
+                ?? lblTitle.stringValue
+
+            lblSubTitle.stringValue =
+                createBlockingProfileVcInfo.value(forKey: "subTitle") as? String
+                ?? lblSubTitle.stringValue
+
+            lblHeadingFirst.stringValue =
+                createBlockingProfileVcInfo.value(forKey: "headingFirst") as? String
+                ?? lblHeadingFirst.stringValue
+
+            lblExampleFirst.stringValue =
+                createBlockingProfileVcInfo.value(forKey: "exampleFirst") as? String
+                ?? lblExampleFirst.stringValue
+
+            lblHeadingSecond.stringValue =
+                createBlockingProfileVcInfo.value(forKey: "headingSecond") as? String
+                ?? lblHeadingSecond.stringValue
+
+            lblExampleSecond.stringValue =
+                createBlockingProfileVcInfo.value(forKey: "exampleSecond") as? String
+                ?? lblExampleSecond.stringValue
+        }
+
     }
     
     override func viewWillAppear() {

@@ -56,9 +56,28 @@ class breaksStateVc: NSViewController {
             self.timerReload = nil
         }
     }
-   
+
     func reloadData() {
         addLog(text:"breaksStateVc:- reloadData")
+        if arrAllbreakActivities.count == 0 {
+            btnEnableMicroBreaks.title = "Edit Habits"
+            lblEnableBreaks.stringValue = "No break activities added yet."
+
+            if let leftMenuVcInfo = configjson.value(forKey: "leftMenuVcInfo") as? NSDictionary{
+                btnEnableMicroBreaks.title = leftMenuVcInfo.value(forKey: "menuEditHabits") as? String ?? btnEnableMicroBreaks.title
+            }
+            
+            if let breakStateVcInfo = configjson.value(forKey: "breakStateVcInfo") as? NSDictionary{
+                lblEnableBreaks.stringValue = breakStateVcInfo.value(forKey: "noBreakAddedText") as? String ?? lblEnableBreaks.stringValue
+            }
+            
+            lblEnableBreaks.isHidden = false
+            btnEnableMicroBreaks.isHidden = false
+            lblNextBreakTime.isHidden = true
+            btnStartMicroBreaks.isHidden = true
+            return;
+        }
+        
         if !isAppEnable{
             btnEnableMicroBreaks.title = "Activate Distraction Blocking"
             lblEnableBreaks.stringValue = "Distraction Blocking is currently paused. You can turn it back on anytime to stay focused."
@@ -179,6 +198,12 @@ class breaksStateVc: NSViewController {
     }
     
     @IBAction func btnEnableMicroBreaksClicked(_ sender: Any) {
+        if arrAllbreakActivities.count == 0 {
+            addLog(text:"[user-action] habitsStateVc:- No break activities added :- button Edit Habits clicked")
+            leftMenuVcObj?.showEditHabitsView()
+            return;
+        }
+        
         if !isAppEnable{
             addLog(text:"[user-action] breaksStateVc:- button Reactivate clicked")
             appdelegate?.menuItem_Reactivate()

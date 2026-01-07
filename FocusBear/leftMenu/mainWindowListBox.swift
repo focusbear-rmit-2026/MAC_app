@@ -132,6 +132,13 @@ class mainWindowListBox: NSBox {
         label.setContentHuggingPriority(.defaultLow, for: .horizontal)
         label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         
+    
+        if SettingsManagerObject.selectedFontIndex == systemFontIndex{
+            label.font = NSFont.systemFont(ofSize: label.font?.pointSize ?? 24)
+        }else{
+            label.font = NSFont(name: selectedFont.regularFontName, size: label.font?.pointSize ?? 24) ?? NSFont.boldSystemFont(ofSize: 24)
+        }
+        
         self.imageView = imageView
         self.label = label
     }

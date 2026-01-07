@@ -409,3 +409,190 @@ class mouseDownEffectButton: NSButton {
         self.layer?.backgroundColor = NSColor(red: 0/255, green: 0/255, blue: 0/255, alpha: 0).cgColor
     }
 }
+
+
+
+
+class boxButton: NSBox {
+
+    // MARK: - Public API
+    weak var target: AnyObject?
+    var action: Selector?
+
+    var isEnabled: Bool = true {
+        didSet {
+            updateAppearance()
+        }
+    }
+    let buttonBorderColor = NSColor(red: 232/255, green: 136/255, blue: 0/255, alpha: 1)
+    var buttonDownColor = NSColor(red: 226/255, green: 203/255, blue: 177/255, alpha: 1)
+    var buttonBgColor = NSColor(red: 255/255, green: 228/255, blue: 198/255, alpha: 1)
+    var titleColor = NSColor.black
+    // MARK: - UI
+    private let iconView = NSImageView()
+    private let titleLabel = NSTextField(labelWithString: "")
+
+    // MARK: - State
+    private var hovered = false
+    private var pressed = false
+
+    // MARK: - Init
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        commonInit()
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        commonInit()
+    }
+
+    private func commonInit() {
+        boxType = .custom
+        cornerRadius = 6
+        borderWidth = 1
+        titlePosition = .noTitle
+
+        setupContent()
+        updateAppearance()
+        borderColor = buttonBorderColor
+        addTrackingArea(NSTrackingArea(
+            rect: bounds,
+            options: [.activeAlways, .mouseEnteredAndExited],
+            owner: self,
+            userInfo: nil
+        ))
+    }
+
+    // MARK: - Content
+    private func setupContent() {
+        let contentView = NSView()
+        self.contentView = contentView
+
+        // StackView to keep icon + label together
+        let stackView = NSStackView()
+        stackView.orientation = .horizontal
+        stackView.alignment = .centerY
+        stackView.spacing = 14
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+
+        iconView.translatesAutoresizingMaskIntoConstraints = false
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+
+        // Truncation
+        titleLabel.lineBreakMode = .byTruncatingTail
+        titleLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+
+        iconView.setContentHuggingPriority(.required, for: .horizontal)
+        iconView.setContentCompressionResistancePriority(.required, for: .horizontal)
+
+        stackView.addArrangedSubview(iconView)
+        stackView.addArrangedSubview(titleLabel)
+
+        contentView.addSubview(stackView)
+
+        NSLayoutConstraint.activate([
+            // Center the whole group
+            stackView.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
+            stackView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+
+            // Minimum padding from edges
+            stackView.leadingAnchor.constraint(greaterThanOrEqualTo: contentView.leadingAnchor, constant: 10),
+            stackView.trailingAnchor.constraint(lessThanOrEqualTo: contentView.trailingAnchor, constant: -10),
+
+            // Icon size
+            iconView.widthAnchor.constraint(equalToConstant: 20),
+            iconView.heightAnchor.constraint(equalToConstant: 20)
+        ])
+    }
+
+
+    // MARK: - Public setters
+    func setTitle(_ title: String) {
+        titleLabel.stringValue = title
+    }
+
+    func setImage(_ image: NSImage?) {
+        iconView.image = image
+    }
+    func setButtonColor(_ color: NSColor) {
+        buttonBgColor = color
+        fillColor = buttonBgColor
+    }
+    
+    func setTitleColor(_ color: NSColor) {
+        titleLabel.textColor = color
+        titleColor = color
+    }
+    // MARK: - Appearance
+    private func updateAppearance() {
+        if !isEnabled {
+            fillColor = .clear
+            borderColor = .clear
+            titleLabel.textColor = .gray
+            iconView.alphaValue = 0.5
+            return
+        }
+
+        if pressed {
+            fillColor = buttonDownColor
+        } else if hovered {
+            fillColor = buttonBgColor
+        } else {
+            fillColor = buttonBgColor
+        }
+
+        titleLabel.textColor = titleColor
+        iconView.alphaValue = 1
+    }
+
+    // MARK: - Mouse handling
+    override func mouseEntered(with event: NSEvent) {
+        guard isEnabled else { return }
+        hovered = true
+        updateAppearance()
+        NSCursor.pointingHand.set()
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        hovered = false
+        pressed = false
+        updateAppearance()
+        NSCursor.arrow.set()
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        guard isEnabled else { return }
+
+        pressed = true
+        updateAppearance()
+    }
+
+    override func mouseUp(with event: NSEvent) {
+        pressed = false
+        updateAppearance()
+        
+        // Convert mouse location to local coordinates
+        let location = convert(event.locationInWindow, from: nil)
+        
+        // Fire action ONLY if mouseUp is inside the button
+        if bounds.contains(location) {
+            if let target = target, let action = action {
+                NSApp.sendAction(action, to: target, from: self)
+            }
+        }
+    }
+
+    // MARK: - Tracking area
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        trackingAreas.forEach(removeTrackingArea)
+
+        addTrackingArea(NSTrackingArea(
+            rect: bounds,
+            options: [.activeAlways, .mouseEnteredAndExited],
+            owner: self,
+            userInfo: nil
+        ))
+    }
+}

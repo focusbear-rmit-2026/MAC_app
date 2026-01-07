@@ -87,6 +87,10 @@ class nudgeFocusAlignmentScoreDippingVc: NSViewController {
 //        if event.trackingArea == self.trackingArea{
 //            boxButton.isHidden = false
 //        }else
+        //Floating bear tooltip appears on mouseover when popup is closed #1604
+        if self.view.window?.alphaValue == 0{ //v 2.28.447
+            return;
+        }
         if event.trackingArea == self.trackingAreaExpandButton{
             var toolTipShowToDoPlayer = "Show To Do Player"
             if let info = configjson.value(forKey: "nudgeFocusAlignmentScoreDippingVcInfo") as? NSDictionary{

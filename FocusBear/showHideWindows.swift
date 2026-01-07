@@ -796,11 +796,13 @@ func showPopUpOfflineWindow(){
 func showAskLoginWindow(){
     addLog(text:"showAskLoginWindow")
     getAskLogInWindowObject().contentViewController = getAskLogInVcObject()
-    getAskLogInWindowObject().window?.center()
+    if !(getAskLogInWindowObject().window?.isVisible ?? false){
+        getAskLogInWindowObject().window?.center()
+    }
     askLogInWcObj?.window?.title = appName
     appdelegate!.statusbutton?.action = nil
     askLogInWcObj!.showWindow(nil)
-    askLogInWcObj?.window?.center()
+//    askLogInWcObj?.window?.center()
 //  for  blocking at onboarding time if user set blocked urls and then open app after once quit
     if let blockedUrls = UserDefaults.standard.object(forKey: kUserdefaultsBlockedUrlsFromOnboarding) as? [[String:Any]]{
         SettingsManagerObject.arrBlockedUrls.removeAll()
@@ -821,9 +823,12 @@ func showAskLoginWindow(){
 
 func showCustomLoginWindow(isLogin:Bool){
     addLog(text:"showCustomLoginWindow")
+    if customLoginVcObj == nil{
+        getCustomLoginVcObject().loadView()
+    }
+    customLoginVcObj?.isLogin = isLogin
     getAskLogInWindowObject().contentViewController = getCustomLoginVcObject()
     appdelegate!.statusbutton?.action = nil
-    customLoginVcObj?.isLogin = isLogin
     askLogInWcObj!.showWindow(nil)
 }
 //-------------------------------------------------//
@@ -883,6 +888,12 @@ func showAskProcrastinatingWindow(){
     leftMenuVcObj?.showProcrastinatingView()
 }
 
+func showConfirmBlockingScheduleWindow(){
+    addLog(text:"showConfirmBlockingScheduleWindow")
+    allApiObject.capturePosthog(event: "show_confirm_blocking_schedule_screen", metadata: [:])
+    mainWindowControllerObj?.showWindow(nil)
+    mainViewControllerObj?.showConfirmBlockingScheduleView()
+}
 
 func showFirefoxPermissionWindow(showingFromOnboarding:Bool, currentBrowser:BROWSER){
     addLog(text:"showFirefoxPermissionWindow")
@@ -964,9 +975,10 @@ func showSetFocusWindow(){
 
 
 //***********Show Distraction Types Window***************//
-func showDistractionTypesWindow(showingFromPomodoro:Bool){
+func showDistractionTypesWindow(showingFromPomodoro:Bool, showingFromBlockingSchedule:Bool = false){
     addLog(text:"showSetFocusWindow")
     isExplainingPermissionsWindowShowingFromPomodoro = showingFromPomodoro
+    isExplainingPermissionsWindowShowingFromBlockingSchedule = showingFromBlockingSchedule
     getPermissionBlockDistractionWindowObject().contentViewController = getOnboardingDistractionTypesVcObject()
     getPermissionBlockDistractionWindowObject().window?.center()
     //    onboardingCardsWcObj!.window?.styleMask.remove(.closable)
@@ -977,9 +989,10 @@ func showDistractionTypesWindow(showingFromPomodoro:Bool){
 
 
 //***********Show Explaining Permissions Window***************//
-func showExplainingPermissionsWindow(showingFromPomodoro:Bool){
+func showExplainingPermissionsWindow(showingFromPomodoro:Bool, showingFromBlockingSchedule:Bool = false){
     addLog(text:"showSetFocusWindow")
     isExplainingPermissionsWindowShowingFromPomodoro = showingFromPomodoro
+    isExplainingPermissionsWindowShowingFromBlockingSchedule = showingFromBlockingSchedule
     getPermissionBlockDistractionWindowObject().contentViewController = getExplainingPermissionsVcObject()
     getPermissionBlockDistractionWindowObject().window?.center()
     //    onboardingCardsWcObj!.window?.styleMask.remove(.closable)

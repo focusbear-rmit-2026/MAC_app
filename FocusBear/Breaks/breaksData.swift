@@ -108,11 +108,16 @@ func writeNaturalBreak(){//2.28.444
         let now = df.string(from: currentDate)
         addLog(text: "Last break recorded at \(now). It will be shown in the menu.")
         print("\(diffSeconds) seconds Last break recorded at \(now). It will be shown in the menu.")
+        if currentState != ._MICRO_BREAK_{
+            if getHabitsVcObject().breakTimer != nil{
+                getHabitsVcObject().setActivityTimer()
+            }
+        }
     }
 }
 
 
-let idleTimeValueForNaturalBreak = 120// edited from 600 to 120  2.28.444
+let idleTimeValueForNaturalBreak = 120// edited from 600 to 120  2.28.444  //
 var anyNaturallBreakIsOn = false
 func detectNatualBreaks(){
     if !SettingsManagerObject.isDetectNatualBreaksEnabled{

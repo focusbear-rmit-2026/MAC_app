@@ -127,4 +127,32 @@ extension customBlockingSchedulesVc: NSTableViewDelegate, NSTableViewDataSource{
             tabStrictnessContainerVcObj?.showBlockingSchedulesView(index: sender.tag, shouldCreateNew: false)
         }
     }
+    
+    func firstScheduleCreatedCheckPermissions(){
+        if UserDefaults.standard.object(forKey: kUserdefaultsIsAnyDistractionSetByUser) == nil{
+            let alertWarning = NSAlert()
+            alertWarning.setSharingType()
+            alertWarning.messageText = "Allow permissions to block distracting websites and apps"
+            alertWarning.informativeText = "You will need to allow permissions to block distracting websites and distracting apps."
+            var buttonBlockText = "Grant permissions"
+            var buttonNoText = "No thanks"
+            if let blockingScheduleEditorVcInfo = configjson.value(forKey: "blockingScheduleEditorVcInfo") as? NSDictionary{
+                alertWarning.messageText = blockingScheduleEditorVcInfo.value(forKey: "permissionsMessageText") as? String ?? alertWarning.messageText
+                alertWarning.informativeText = blockingScheduleEditorVcInfo.value(forKey: "permissionsInformativeText") as? String ?? alertWarning.informativeText
+                buttonBlockText = blockingScheduleEditorVcInfo.value(forKey: "permissionsButtonGrantPermissions") as? String ?? buttonBlockText
+                buttonNoText = blockingScheduleEditorVcInfo.value(forKey: "permissionsButtonNo") as? String ?? buttonNoText
+            }
+            alertWarning.addButton(withTitle: buttonBlockText)
+            alertWarning.addButton(withTitle: buttonNoText)
+            
+            alertWarning.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
+                if modalResponse == .alertFirstButtonReturn{
+                    showDistractionTypesWindow(showingFromPomodoro: false, showingFromBlockingSchedule: true)
+                    self.view.window?.close()
+                }
+            })
+            UserDefaults.standard.set(true, forKey: kUserdefaultsIsAnyDistractionSetByUser)
+            return;
+        }
+    }
 }

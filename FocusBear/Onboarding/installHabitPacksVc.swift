@@ -168,7 +168,13 @@ class installHabitPacksVc: NSViewController, WKNavigationDelegate, webViewLoadFa
             }
             DispatchQueue.main.async {
                 self.isShowingNextView = false
-                mainViewControllerObj!.showAskWorkTimeVc()
+//                mainViewControllerObj!.showAskWorkTimeVc()
+                
+                
+                let isBreaksEnabled = true
+                UserDefaults.standard.set(20, forKey: kUserdefaultsBreakDurationValue)
+                UserDefaults.standard.set(true, forKey: kUserdefaultsBreaksEnabledFromOnboarding)
+                appdelegate!.showOnbardingHabit()
             }
         })
     }

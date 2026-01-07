@@ -305,30 +305,7 @@ struct customBlockingSchedule: Codable, Identifiable {
         formatter.locale = Locale(identifier: "en_US_POSIX")
         return formatter
     }()
-    //
-    //    static let timeFormatter: DateFormatter = {
-    //        let formatter = DateFormatter()
-    //        formatter.locale = Locale(identifier: "en_US_POSIX")
-    //        return formatter
-    //    }()
-    
-    //    static let timeFormatter: DateFormatter = {
-    //        let formatter = DateFormatter()
-    //        formatter.locale = Locale(identifier: "en_US_POSIX")
-    //        return formatter
-    //    }()
-    
-    
-    //    static func parseTime(_ str: String) -> Date? {
-    //        let formats = ["HH:mm:ss", "HH:mm"]
-    //        for format in formats {
-    //            timeFormatter.dateFormat = format
-    //            if let date = timeFormatter.date(from: str) {
-    //                return date
-    //            }
-    //        }
-    //        return nil
-    //    }
+
     
     static func parseTime(_ str: String) -> Date? {
         let timeFormatter = DateFormatter()
@@ -359,17 +336,6 @@ struct customBlockingSchedule: Codable, Identifiable {
         return nil
     }
     
-//    static func dateForToday(from timeString: String) -> Date? {
-//        guard let time = timeFormatter.date(from: timeString) else { return nil }
-//        
-//        let calendar = Calendar.current
-//        let timeComponents = calendar.dateComponents([.hour, .minute], from: time)
-//        var todayComponents = calendar.dateComponents([.year, .month, .day], from: Date())
-//        todayComponents.hour = timeComponents.hour
-//        todayComponents.minute = timeComponents.minute
-//        
-//        return calendar.date(from: todayComponents)
-//    }
 }
 
 
@@ -729,15 +695,56 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
     
     
     
-    func readCustomBlockingScheduleData(jsonData:Data){
+//    func readCustomBlockingScheduleData(jsonData:Data){
 //        if let jsonString = String(data: jsonData, encoding: .utf8) {//
 //            print(jsonString)
 //        }
+//        let decoder = JSONDecoder()
+//        if let schedule = try? decoder.decode([customBlockingSchedule].self, from: jsonData){
+//            arrBlockingSchedule = schedule
+//        }
+//    }
+    func readCustomBlockingScheduleData(jsonData: Data) {
+        if let jsonString = String(data: jsonData, encoding: .utf8) {
+            addLog(text: "Read Custom Blocking Schedule Data: \(jsonString)")
+        }
+
         let decoder = JSONDecoder()
-        if let schedule = try? decoder.decode([customBlockingSchedule].self, from: jsonData){
+
+        do {
+            let schedule = try decoder.decode([customBlockingSchedule].self, from: jsonData)
             arrBlockingSchedule = schedule
+        } catch {
+            addLog(text: "❌ Failed to decode customBlockingSchedule")
+            addLog(text: "Error: \(error.localizedDescription)")
+
+            // Optional: detailed decoding error info
+            if let decodingError = error as? DecodingError {
+                switch decodingError {
+                case .typeMismatch(let type, let context):
+                    addLog(text: "Type mismatch for type \(type): \(context.debugDescription)")
+                    addLog(text: "Coding path: \(context.codingPath)")
+
+                case .valueNotFound(let type, let context):
+                    addLog(text: "Value not found for type \(type): \(context.debugDescription)")
+                    addLog(text: "Coding path: \(context.codingPath)")
+
+                case .keyNotFound(let key, let context):
+                    addLog(text: "Key '\(key.stringValue)' not found: \(context.debugDescription)")
+                    addLog(text: "Coding path: \(context.codingPath)")
+
+                case .dataCorrupted(let context):
+                    addLog(text: "Data corrupted: \(context.debugDescription)")
+                    addLog(text: "Coding path: \(context.codingPath)")
+
+                @unknown default:
+                    addLog(text: "Unknown decoding error")
+                }
+            }
         }
     }
+
+    
     
     func validateBlockingSchedules() {
         if arrFocusType.count == 0 || arrBlockingSchedule.count == 0{

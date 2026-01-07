@@ -102,6 +102,8 @@ class procrastinatingTabBox: NSBox {
         // Label
         let label = NSTextField(labelWithString: "")
         label.translatesAutoresizingMaskIntoConstraints = false
+        label.alignment = .center
+        label.lineBreakMode = .byWordWrapping
         contentView.addSubview(label)
         
         // Layout

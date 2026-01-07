@@ -3433,7 +3433,7 @@
                             <box boxType="custom" borderWidth="0.0" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="EBv-XU-axI">
                                 <rect key="frame" x="0.0" y="0.0" width="492" height="494"/>
                                 <view key="contentView" id="cVe-yM-8fk">
-                                    <rect key="frame" x="0.0" y="0.0" width="491" height="494"/>
+                                    <rect key="frame" x="0.0" y="0.0" width="492" height="494"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
                                         <scrollView autohidesScrollers="YES" horizontalLineScroll="60" horizontalPageScroll="10" verticalLineScroll="60" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Z7y-hh-SN1">
@@ -7088,7 +7088,7 @@ DQ
                                             <constraints>
                                                 <constraint firstAttribute="height" constant="240" id="TZr-6x-cFk"/>
                                             </constraints>
-                                            <scroller key="horizontalScroller" wantsLayer="YES" verticalHuggingPriority="750" doubleValue="0.25" horizontal="YES" id="iXV-Yb-oey">
+                                            <scroller key="horizontalScroller" wantsLayer="YES" verticalHuggingPriority="750" horizontal="YES" id="iXV-Yb-oey">
                                                 <rect key="frame" x="1" y="224" width="38" height="15"/>
                                                 <autoresizingMask key="autoresizingMask"/>
                                             </scroller>
@@ -7665,7 +7665,7 @@ DQ
                                                                                                                                                                 <box boxType="custom" borderWidth="0.0" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="GnF-XJ-xMh">
                                                                                                                                                                     <rect key="frame" x="0.0" y="0.0" width="330" height="31"/>
                                                                                                                                                                     <view key="contentView" id="nYW-c0-QqQ">
-                                                                                                                                                                        <rect key="frame" x="1" y="0.0" width="328" height="31"/>
+                                                                                                                                                                        <rect key="frame" x="0.0" y="0.0" width="330" height="31"/>
                                                                                                                                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                                                                                                         <subviews>
                                                                                                                                                                             <box verticalHuggingPriority="750" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="ynD-cS-tQj">
@@ -8723,7 +8723,7 @@ DQ
                                                                                                         <box boxType="custom" cornerRadius="4" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="LFG-rf-eis">
                                                                                                             <rect key="frame" x="371" y="0.0" width="373" height="206"/>
                                                                                                             <view key="contentView" id="1B4-JG-hch">
-                                                                                                                <rect key="frame" x="1" y="1" width="370" height="204"/>
+                                                                                                                <rect key="frame" x="1" y="1" width="371" height="204"/>
                                                                                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                                                 <subviews>
                                                                                                                     <stackView distribution="fillEqually" orientation="vertical" alignment="centerX" spacing="0.0" horizontalStackHuggingPriority="750" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="eUq-fO-WTa">
@@ -8732,7 +8732,7 @@ DQ
                                                                                                                             <box boxType="custom" borderWidth="0.0" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="H6X-kC-DMK">
                                                                                                                                 <rect key="frame" x="0.0" y="180" width="371" height="24"/>
                                                                                                                                 <view key="contentView" id="LzW-sh-mgK">
-                                                                                                                                    <rect key="frame" x="1" y="0.0" width="370" height="24"/>
+                                                                                                                                    <rect key="frame" x="0.0" y="0.0" width="371" height="24"/>
                                                                                                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                                                                     <subviews>
                                                                                                                                         <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="RAD-go-c2E">
@@ -12647,8 +12647,8 @@ DQ
                                                             <rect key="frame" x="79" y="2" width="354" height="28"/>
                                                             <datePickerCell key="cell" borderStyle="bezel" alignment="left" useCurrentDate="YES" id="IJY-cs-LOX">
                                                                 <font key="font" metaFont="system"/>
-                                                                <date key="date" timeIntervalSinceReferenceDate="788185367.62883496">
-                                                                    <!--2025-12-23 12:22:47 +0000-->
+                                                                <date key="date" timeIntervalSinceReferenceDate="789304782.58170295">
+                                                                    <!--2026-01-05 11:19:42 +0000-->
                                                                 </date>
                                                                 <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
                                                                 <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>

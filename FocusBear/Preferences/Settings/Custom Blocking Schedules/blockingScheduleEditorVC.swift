@@ -435,6 +435,9 @@ class blockingScheduleEditorVC: NSViewController {
         allApiObject.capturePosthog(event: "add-blocking-schedule", metadata: [:])//2.27.421
         customBlockingScheduleManagerObj.addCustomBlockingScheduleAtIndex(customBlockingScheduleManagerObj.arrBlockingSchedule.count - 1)
         closeView()
+        if customBlockingScheduleManagerObj.arrBlockingSchedule.count == 1{// v 2.28.447
+            customBlockingSchedulesVcObj?.firstScheduleCreatedCheckPermissions()
+        }
     }
     
     func editBlockingSchedule(blockingSchedule: customBlockingSchedule){

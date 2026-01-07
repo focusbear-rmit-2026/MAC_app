@@ -547,6 +547,12 @@ class ViewController: NSViewController {
         containerView.addConstraints(subView: getAskProcrastinatingVcObj().view)
     }
     
+    func showConfirmBlockingScheduleView(){
+        self.removeSubViews()
+        containerView.addSubview(getConfirmBlockingScheduleCreationVcObj().view)
+        containerView.addConstraints(subView: getConfirmBlockingScheduleCreationVcObj().view)
+    }
+    
     func showBrainDumpView(){
         self.removeSubViews()
         containerView.addSubview(getBrainDumpVcObject().view)

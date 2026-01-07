@@ -45,11 +45,8 @@ class askOccupationVc: NSViewController, NSTextFieldDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
-        btnSkip.title = "Skip"// todo text
-        lblTitle.stringValue = "Create your distraction blocking profile" // todo text
-        
-        
-        lblTitleSpecify.stringValue = "Type of work:"
+        btnSkip.title = "Skip"
+        lblTitle.stringValue = "Create your distraction blocking profile"
         
         
         lblSelectStudyLevel.stringValue = "Select level of study:"
@@ -105,7 +102,13 @@ class askOccupationVc: NSViewController, NSTextFieldDelegate {
             
             
             lblTitleSpecify.stringValue = askOccupationVcInfo.value(forKey: "titleFreelancerType") as? String ?? lblTitleSpecify.stringValue
+            lblTitle.stringValue = askOccupationVcInfo.value(forKey: "titleBlockingProfile") as? String ?? lblTitle.stringValue
         }
+        
+        if let dic = configjson.value(forKey: "welcomeInfo") as? NSDictionary{
+            btnSkip.title = dic.value(forKey: "buttonSkipText") as? String ?? btnSkip.title
+        }
+        
         occupationStudentIndex = 0
         occupationBusinessOwnerIndex = 1
         occupationEmployeeIndex = 2
@@ -188,7 +191,12 @@ class askOccupationVc: NSViewController, NSTextFieldDelegate {
     
     @IBAction func btnSkipClicked(_ sender: Any) {
         addLog(text: "[user-action] ask occupation view:- button Skip clicked.")
-        mainViewControllerObj?.showCreateBlockingProfileVc()
+//        mainViewControllerObj?.showCreateBlockingProfileVc()
+        
+        if !getInstallHabitPacksVcObj().isViewLoaded{
+            getInstallHabitPacksVcObj().loadView()
+        }
+        mainViewControllerObj?.showAskAppWorkVc()
     }
     
     @IBAction func btnContinueClicked(_ sender: Any) {
@@ -308,7 +316,12 @@ class askOccupationVc: NSViewController, NSTextFieldDelegate {
         UserDefaults.standard.set(selectedIndexToSave, forKey: kUserDefaultsSelectedOccupationIndex)
         allApiObject.capturePosthog(event: "occupation-selected", metadata: posthogJson)
 //        mainViewControllerObj?.showAchieveWithFocusBearVc()
-        mainViewControllerObj?.showCreateBlockingProfileVc()
+//        mainViewControllerObj?.showCreateBlockingProfileVc()
+        
+        if !getInstallHabitPacksVcObj().isViewLoaded{
+            getInstallHabitPacksVcObj().loadView()
+        }
+        mainViewControllerObj?.showAskAppWorkVc()
     }
     
     func checkContinueButtonState(){
