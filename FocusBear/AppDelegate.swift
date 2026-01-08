@@ -1539,7 +1539,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     
                     if !isDefaultContain{
                         let id = getUuid()
-                        let dic:[String:Any] = ["id":id, "name":"Block super distracting sites/apps", "color": getColorString(color: NSColor(red: 163/255, green: 255/255, blue: 161/255, alpha: 1)), "blocked_apps": [], "allowed_urls": [], "isOn": false, "isAllowedAllApps":false, "isDefault":true, "isAllowedListApproach":false, "blockUrlsArray": [], "tags":[], "focusAlignmentScoreThreshold": defaultFocusAlignmentScoreToShowDistractingPopUp]//#453//tags
+                        let dic:[String:Any] = ["id":id, "name":"Block super distracting sites/apps", "color": getColorString(color: NSColor(red: 163/255, green: 255/255, blue: 161/255, alpha: 1)),"allowed_apps": [], "allowed_urls": [], "isOn": false, "isAllowedAllApps":false, "isDefault":true, "isAllowedListApproach":false, "blockUrlsArray": [], "tags":[], "focusAlignmentScoreThreshold": defaultFocusAlignmentScoreToShowDistractingPopUp]//#453//tags
                         //, "isBlockedAllUrls":false , "isAllowedAllUrls":true
                         arrFocusType.insert(dic, at: 0)
                         UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
@@ -1549,7 +1549,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         if defaultContainLocation == 0{
                             if arrFocusType[defaultContainLocation]["isAllowedAllApps"] as? Bool == true{
                                 arrFocusType[defaultContainLocation]["isAllowedAllApps"] = false
-                                arrFocusType[defaultContainLocation]["blocked_apps"] = []
                                 arrFocusType[defaultContainLocation]["allowed_apps"] = []
                                 arrFocusType[defaultContainLocation]["isAllowedListApproach"] = false
                                 arrFocusType[defaultContainLocation]["allowed_urls"] = []
@@ -1568,7 +1567,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                             var focusMode = arrFocusType[defaultContainLocation]
                             if focusMode["isAllowedAllApps"] as? Bool == true{
                                 focusMode["isAllowedAllApps"] = false
-                                focusMode["blocked_apps"] = []
                                 focusMode["allowed_apps"] = []
                                 focusMode["isAllowedListApproach"] = false
                                 focusMode["allowed_urls"] = []
@@ -5603,6 +5601,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         if let date = UserDefaults.standard.object(forKey: kUserdefaultsShutdownAborted) as? Date{
                             if Date().compare(date) == .orderedDescending {
                                 UserDefaults.standard.removeObject(forKey: kUserdefaultsShutdownAborted)
+                                addLog(text: "Shutdown Aborted date passed.")// log added  v 2.28.448
                             }
                         }
                     }
@@ -8229,18 +8228,18 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                     isAppAllowed = true
                                     isAllowedAppIsDefault = true
                                 }else{
-                                    if currentRunningFocusType["isDefault"] as? Bool == true {
-                                        isAppAllowed = true
-                                        let blocked_apps = currentRunningFocusType["blocked_apps"] as? [String] ?? []
-                                        for path in blocked_apps{
-                                            let url = URL(fileURLWithPath: path)
-                                            if url.deletingPathExtension().lastPathComponent.lowercased() == nameLowercased{
-                                                isAppAllowed = false
-                                                break;
-                                            }
-                                        }
-                                        
-                                    }else{
+//                                    if currentRunningFocusType["isDefault"] as? Bool == true {
+//                                        isAppAllowed = true
+//                                        let blocked_apps = currentRunningFocusType["blocked_apps"] as? [String] ?? []
+//                                        for path in blocked_apps{
+//                                            let url = URL(fileURLWithPath: path)
+//                                            if url.deletingPathExtension().lastPathComponent.lowercased() == nameLowercased{
+//                                                isAppAllowed = false
+//                                                break;
+//                                            }
+//                                        }
+//                                        
+//                                    }else{
                                         for path in allowAppsPath{
                                             let url = URL(fileURLWithPath: path)
                                             if url.deletingPathExtension().lastPathComponent.lowercased() == nameLowercased{
@@ -8249,7 +8248,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                                 break;
                                             }
                                         }
-                                    }
+//                                    }
                                 }
                             }
                             
@@ -8408,18 +8407,18 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                             isAppAllowed = true
                             isAllowedAppIsDefault = true
                         }else{
-                            if currentRunningFocusType["isDefault"] as? Bool == true {
-                                isAppAllowed = true
-                                let blocked_apps = currentRunningFocusType["blocked_apps"] as? [String] ?? []
-                                for path in blocked_apps{
-                                    let url = URL(fileURLWithPath: path)
-                                    if url.deletingPathExtension().lastPathComponent.lowercased() == nameLowercased{
-                                        isAppAllowed = false
-                                        break;
-                                    }
-                                }
-                                
-                            }else{
+//                            if currentRunningFocusType["isDefault"] as? Bool == true {
+//                                isAppAllowed = true
+//                                let blocked_apps = currentRunningFocusType["blocked_apps"] as? [String] ?? []
+//                                for path in blocked_apps{
+//                                    let url = URL(fileURLWithPath: path)
+//                                    if url.deletingPathExtension().lastPathComponent.lowercased() == nameLowercased{
+//                                        isAppAllowed = false
+//                                        break;
+//                                    }
+//                                }
+//                                
+//                            }else{
                                 for path in allowAppsPath{
                                     let url = URL(fileURLWithPath: path)
                                     if url.deletingPathExtension().lastPathComponent.lowercased() == nameLowercased{
@@ -8428,7 +8427,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                         break;
                                     }
                                 }
-                            }
+//                            }
                             
                         }
                     }
@@ -9096,18 +9095,18 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     isAppAllowed = true
                 }else{
                     
-                    if currentRunningFocusType["isDefault"] as? Bool == true {
-                        isAppAllowed = true
-                        let blocked_apps = currentRunningFocusType["blocked_apps"] as? [String] ?? []
-                        for path in blocked_apps{
-                            let url = URL(fileURLWithPath: path)
-                            if url.deletingPathExtension().lastPathComponent.lowercased() == name{
-                                isAppAllowed = false
-                                break;
-                            }
-                        }
-                        
-                    }else{
+//                    if currentRunningFocusType["isDefault"] as? Bool == true {
+//                        isAppAllowed = true
+//                        let blocked_apps = currentRunningFocusType["blocked_apps"] as? [String] ?? []
+//                        for path in blocked_apps{
+//                            let url = URL(fileURLWithPath: path)
+//                            if url.deletingPathExtension().lastPathComponent.lowercased() == name{
+//                                isAppAllowed = false
+//                                break;
+//                            }
+//                        }
+//                        
+//                    }else{
                         let allowAppsPath = currentRunningFocusType["allowed_apps"] as? [String] ?? []
                         for path in allowAppsPath{
                             let url = URL(fileURLWithPath: path)
@@ -9116,7 +9115,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                 break;
                             }
                         }
-                    }
+                    //}
                 }
                 
                 
@@ -9789,17 +9788,17 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         }else if focusDefaultAllowApps.contains(name){//if name == "finder" || name == "universalaccessauthwarn"{
                             isAppAllowed = true
                         }else{
-                            if currentRunningFocusType["isDefault"] as? Bool == true {
-                                isAppAllowed = true
-                                let blocked_apps = currentRunningFocusType["blocked_apps"] as? [String] ?? []
-                                for path in blocked_apps{
-                                    let url = URL(fileURLWithPath: path)
-                                    if url.deletingPathExtension().lastPathComponent.lowercased() == name{
-                                        isAppAllowed = false
-                                        break;
-                                    }
-                                }
-                            }else{
+//                            if currentRunningFocusType["isDefault"] as? Bool == true {
+//                                isAppAllowed = true
+//                                let blocked_apps = currentRunningFocusType["blocked_apps"] as? [String] ?? []
+//                                for path in blocked_apps{
+//                                    let url = URL(fileURLWithPath: path)
+//                                    if url.deletingPathExtension().lastPathComponent.lowercased() == name{
+//                                        isAppAllowed = false
+//                                        break;
+//                                    }
+//                                }
+//                            }else{
                                 let allowAppsPath = currentRunningFocusType["allowed_apps"] as? [String] ?? []
                                 for path in allowAppsPath{
                                     let url = URL(fileURLWithPath: path)
@@ -9808,7 +9807,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                         break;
                                     }
                                 }
-                            }
+//                            }
                             
                         }
                         
@@ -11485,3 +11484,4 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 
 
 // list common krni hai
+// text changed

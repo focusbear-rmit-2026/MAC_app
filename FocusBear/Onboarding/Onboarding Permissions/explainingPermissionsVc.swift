@@ -63,9 +63,10 @@ class explainingPermissionsVc: NSViewController {
         isBrowserPermissionGiven = false
         isAccessibilityPermissionGiven = false
         isSystemEventsPermissionGiven = false
-        imgViewBrowserPermission.isHidden = true
-        imgViewAccessibilityPermission.isHidden = true
-        imgViewSystemEventPermission.isHidden = true
+        
+        imgViewBrowserPermission.image = NSImage(named: "validIconGray")
+        imgViewAccessibilityPermission.image = NSImage(named: "validIconGray")
+        imgViewSystemEventPermission.image = NSImage(named: "validIconGray")
         
         DispatchQueue.global().async { [self] in
             if let arrBrowsersInfo = UserDefaults.standard.object(forKey: kUserdefaultsAllBrowsersPermissionInfo) as? [[String : Any]]{
@@ -80,7 +81,7 @@ class explainingPermissionsVc: NSViewController {
             }
             if isBrowserPermissionGiven{
                 DispatchQueue.main.async {
-                    self.imgViewBrowserPermission.isHidden = false
+                    self.imgViewBrowserPermission.image = NSImage(named: "validIcon")
                 }
             }
             
@@ -90,7 +91,7 @@ class explainingPermissionsVc: NSViewController {
             }else{
                 isAccessibilityPermissionGiven = true
                 DispatchQueue.main.async {
-                    self.imgViewAccessibilityPermission.isHidden = false
+                    self.imgViewAccessibilityPermission.image = NSImage(named: "validIcon")
                 }
             }
             
@@ -99,7 +100,7 @@ class explainingPermissionsVc: NSViewController {
             }else{
                 isSystemEventsPermissionGiven = true
                 DispatchQueue.main.async {
-                    self.imgViewSystemEventPermission.isHidden = false
+                    self.imgViewSystemEventPermission.image = NSImage(named: "validIcon")
                 }
             }
 

@@ -193,6 +193,7 @@ class shutOffTimeVc: NSViewController {
             bottomSpaceLblAlreadyUnlocked.constant = 10
         }
     }
+    
     @IBAction func btnGetAccessNowClicked(_ sender: Any) {
         addLog(text:"[user-action] btnGetAccessNowClicked")
         
@@ -311,6 +312,7 @@ class shutOffTimeVc: NSViewController {
             currentState = ._NOTHING_//need to set nothing here because in shutOffMac() func if already shutoff state is set then return from fuction
             getHabitsVcObject().shutOffMac()
             timer?.invalidate()
+            timer = nil
         }else if step == 2{
             titleCenter.constant = 0
             self.popUpBtnDuration.isHidden = true
@@ -363,6 +365,8 @@ class shutOffTimeVc: NSViewController {
         if second.count == 1 {
             second = "0\(s)"
         }
+        timer?.invalidate()
+        timer = nil
         self.lbltimer.stringValue = "\(minute):\(second)"
         DispatchQueue.global().sync {
             self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
@@ -391,6 +395,7 @@ class shutOffTimeVc: NSViewController {
             if step == 1{
                 self.step = 2
                 self.timer?.invalidate()
+                self.timer = nil
                 DispatchQueue.global().async {
                     DispatchQueue.main.async {
                         self.btnUnlock.title = "Unlock"
@@ -414,6 +419,7 @@ class shutOffTimeVc: NSViewController {
                 }
             }else{
                 self.timer?.invalidate()
+                timer = nil
                 self.step = 3
                 DispatchQueue.main.async {
                     if isCutOffTimeGoing(){
@@ -589,3 +595,32 @@ class shutOffTimeVc: NSViewController {
         }
     }
 }
+//2026-01-06 19:45:30  -  [user-action] btnGetAccessNowClicked
+//2026-01-06 19:45:39  -  func flushEvents events: 0
+//2026-01-06 19:45:41  -  [user-action] btnUnlockClicked
+//2026-01-06 19:45:46  -  captureEventEndpoint event: shutoff-aborted
+//2026-01-06 19:45:46  -  capturePosthog event: shutoff-aborted
+//2026-01-06 19:45:46  -  emergencyStartDone
+//
+//
+//2026-01-06 21:00:28  -  Initiating shut off process.
+//2026-01-06 22:00:51  -  Initiating shut off process.
+//2026-01-06 22:00:51  -  call abort all process.
+//
+//
+//2026-01-06 22:00:51  -  sleepEvent
+//2026-01-06 22:00:51  -  com.apple.screenIsUnlocked
+//2026-01-06 22:00:51  -  func checkNaturalBreakFromIdleTimeAfterScreenUnlocked
+//2026-01-06 22:00:51  -  Detect Natual Breaks is not enabled
+//2026-01-06 22:00:51  -  func:- returnFromSystemSleepCheckAppStateAgain
+//2026-01-06 22:00:51  -  call abort all process.
+//2026-01-06 22:00:51  -  func call:- updateAllFocusMode:- focus-mode
+//2026-01-06 22:00:51  -  func call:-  finishFocusMode:- focus-mode/id/finish
+//2026-01-06 22:00:51  -  func:- hideBlankWindowInSecondaryMonitor
+//2026-01-06 22:00:51  -  Initiating shut off process.
+//2026-01-06 22:00:51  -  call abort all process.
+//
+//
+//2026-01-06 22:00:53  -  [user-action] btnGetAccessNowClicked
+//2026-01-06 22:00:55  -  api call finishFocusMode success
+//2026-01-06 22:00:55  -  Initiating shut off process.

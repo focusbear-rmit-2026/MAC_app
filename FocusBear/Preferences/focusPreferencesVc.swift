@@ -739,9 +739,10 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
                 var appsArray = [String]()
                 var appsUrlArray = [URL]()
                 if arrFocusType[self.tblViewFocusType.selectedRow]["isDefault"] as? Bool == true {
-                    if let arr = arrFocusType[self.tblViewFocusType.selectedRow]["blocked_apps"] as? [String]{
-                        appsArray = arr
-                    }
+//                    if let arr = arrFocusType[self.tblViewFocusType.selectedRow]["blocked_apps"] as? [String]{
+//                        appsArray = arr
+//                    }
+                    appsArray = SettingsManagerObject.arrBlockedApps
                 }else{
                     if let arr = arrFocusType[self.tblViewFocusType.selectedRow]["allowed_apps"] as? [String]{
                         appsArray = arr
@@ -769,9 +770,15 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
                 }
                 
                 if arrFocusType[self.tblViewFocusType.selectedRow]["isDefault"] as? Bool == true {
-                    arrFocusType[self.tblViewFocusType.selectedRow]["blocked_apps"] = appsArray
+                    //arrFocusType[self.tblViewFocusType.selectedRow]["blocked_apps"] = appsArray
+                    SettingsManagerObject.arrBlockedApps = appsArray
+                    
+                    SettingsManagerObject.isSettingsChanged = true
+                    allApiObject.capturePosthog(event: "add-always-blocked-app", metadata: [:])
+                    mainViewControllerObj?.newUrlOrAppAdded()
                 }else{
                     arrFocusType[self.tblViewFocusType.selectedRow]["allowed_apps"] = appsArray
+                    allApiObject.capturePosthog(event: "add-allowed-app-in-focus-mode", metadata: [:])
                 }
                 
                 self.tblViewAllowedApps.reloadData()
@@ -782,7 +789,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
                 if isContainAlready{
                     self.showAlertAppAlreadyAdded()
                 }
-                allApiObject.capturePosthog(event: "add-allowed-app-in-focus-mode", metadata: [:])
+                
             }
         }
         
@@ -818,12 +825,18 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         if arrFocusType.count > selectedFocusTypeRow{
             
             if arrFocusType[self.tblViewFocusType.selectedRow]["isDefault"] as? Bool == true {
-                if var arr = arrFocusType[selectedFocusTypeRow]["blocked_apps"] as? [String]{
-                    if arr.count > selectedAppsRow{
-                        arr.remove(at: selectedAppsRow)
-                    }
-                    arrFocusType[selectedFocusTypeRow]["blocked_apps"] = arr
+//                if var arr = arrFocusType[selectedFocusTypeRow]["blocked_apps"] as? [String]{
+//                    if arr.count > selectedAppsRow{
+//                        arr.remove(at: selectedAppsRow)
+//                    }
+//                    arrFocusType[selectedFocusTypeRow]["blocked_apps"] = arr
+//                }
+                if selectedAppsRow < SettingsManagerObject.arrBlockedApps.count{
+                    SettingsManagerObject.arrBlockedApps.remove(at: selectedAppsRow)
+                    UserDefaults.standard.set(SettingsManagerObject.arrBlockedApps, forKey: SettingsManagerObject.kUserdefaultsArrBlockedApps)
                 }
+                SettingsManagerObject.isSettingsChanged = true 
+                allApiObject.capturePosthog(event: "remove-always-blocked-app", metadata: [:])//#490
             }else{
                 if var arr = arrFocusType[selectedFocusTypeRow]["allowed_apps"] as? [String]{
                     if arr.count > selectedAppsRow{
@@ -831,13 +844,14 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
                     }
                     arrFocusType[selectedFocusTypeRow]["allowed_apps"] = arr
                 }
+                UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+                reSetCurrentFocusMode(focusType:arrFocusType[selectedFocusTypeRow])
+                allApiObject.capturePosthog(event: "remove-allowed-app-in-focus-mode", metadata: [:])//#490
             }
             
             self.tblViewAllowedApps.reloadData()
         }
-        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
-        reSetCurrentFocusMode(focusType:arrFocusType[selectedFocusTypeRow])
-        allApiObject.capturePosthog(event: "remove-allowed-app-in-focus-mode", metadata: [:])//#490
+        
     }
     @IBAction func btnAddUrlClicked(_ sender: Any) {
         
@@ -1036,23 +1050,21 @@ extension focusPreferencesVc: NSTableViewDelegate, NSTableViewDataSource{
                         btnRemoveApp.isEnabled = false
                         return 0
                     }
-                    
+                    btnRemoveApp.isEnabled = false
                     if arrFocusType[row]["isDefault"] as? Bool == true {
-                        if let arr = arrFocusType[row]["blocked_apps"] as? [String]{
-                            btnRemoveApp.isEnabled = false
-                            return arr.count
-                        }else{
-                            btnRemoveApp.isEnabled = false
-                            return 0
-                        }
+//                        if let arr = arrFocusType[row]["blocked_apps"] as? [String]{
+//                            btnRemoveApp.isEnabled = false
+//                            return arr.count
+//                        }else{
+//                            btnRemoveApp.isEnabled = false
+//                            return 0
+//                        }
+                        return SettingsManagerObject.arrBlockedApps.count
                     }else{
-                        if let arr = arrFocusType[row]["allowed_apps"] as? [String]{
-                            btnRemoveApp.isEnabled = false
-                            return arr.count
-                        }else{
-                            btnRemoveApp.isEnabled = false
-                            return 0
-                        }
+                    let arr = arrFocusType[row]["allowed_apps"] as? [String] ?? []
+                        return arr.count
+                            
+                        
                     }
                 }
                 
@@ -1145,16 +1157,16 @@ extension focusPreferencesVc: NSTableViewDelegate, NSTableViewDataSource{
                 if tblViewFocusType.selectedRow != -1{
                     
                     if arrFocusType[tblViewFocusType.selectedRow]["isDefault"] as? Bool == true {
-                        if let arr = arrFocusType[tblViewFocusType.selectedRow]["blocked_apps"] as? [String]{
-                            if row < arr.count{
-                                let url = URL(fileURLWithPath: arr[row])
-                                cell.lblTitle.stringValue = url.lastPathComponent
-                                cell.imgView.image = NSWorkspace.shared.icon(forFile: url.path)
-                            }else{
-                                cell.lblTitle.stringValue = ""
-                                cell.imgView.image = nil
-                            }
+                         let arr = SettingsManagerObject.arrBlockedApps
+                        if row < arr.count{
+                            let url = URL(fileURLWithPath: arr[row])
+                            cell.lblTitle.stringValue = url.lastPathComponent
+                            cell.imgView.image = NSWorkspace.shared.icon(forFile: url.path)
+                        }else{
+                            cell.lblTitle.stringValue = ""
+                            cell.imgView.image = nil
                         }
+                        
                     }else{
                         if let arr = arrFocusType[tblViewFocusType.selectedRow]["allowed_apps"] as? [String]{
                             
@@ -1270,9 +1282,9 @@ extension focusPreferencesVc: NSTableViewDelegate, NSTableViewDataSource{
                 btnAddApp.isHidden = false
                 btnRemoveApp.isHidden = false
                 
-                if arrFocusType[tblViewFocusType.selectedRow]["blocked_apps"]  == nil{
-                    arrFocusType[tblViewFocusType.selectedRow]["blocked_apps"] = []
-                }
+//                if arrFocusType[tblViewFocusType.selectedRow]["blocked_apps"]  == nil{
+//                    arrFocusType[tblViewFocusType.selectedRow]["blocked_apps"] = []
+//                }
                 arrFocusType[tblViewFocusType.selectedRow]["allowed_apps"] = []
                 tblViewAllowedApps.reloadData()
             }else{

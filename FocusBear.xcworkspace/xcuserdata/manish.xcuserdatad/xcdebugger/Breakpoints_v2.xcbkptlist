@@ -8,14 +8,14 @@
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
             uuid = "3C3E1430-3D3B-498A-B958-61B9CE716545"
-            shouldBeEnabled = "Yes"
+            shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "FocusBear/AppDelegate.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "2886"
-            endingLineNumber = "2886"
+            startingLineNumber = "2884"
+            endingLineNumber = "2884"
             landmarkName = "initialWork()"
             landmarkType = "7">
          </BreakpointContent>
@@ -24,14 +24,14 @@
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
             uuid = "50B0DA1B-CFA3-41FB-8B24-B59DC40B4572"
-            shouldBeEnabled = "Yes"
+            shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "FocusBear/AppDelegate.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "2882"
-            endingLineNumber = "2882"
+            startingLineNumber = "2880"
+            endingLineNumber = "2880"
             landmarkName = "initialWork()"
             landmarkType = "7">
          </BreakpointContent>
@@ -40,14 +40,14 @@
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
             uuid = "EF070C41-73AE-40F1-87F8-AE924592F0C5"
-            shouldBeEnabled = "Yes"
+            shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "FocusBear/AppDelegate.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "2885"
-            endingLineNumber = "2885"
+            startingLineNumber = "2883"
+            endingLineNumber = "2883"
             landmarkName = "initialWork()"
             landmarkType = "7">
          </BreakpointContent>
@@ -56,14 +56,14 @@
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
             uuid = "94F5F288-5365-402E-AFCD-4A56C49345FE"
-            shouldBeEnabled = "Yes"
+            shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "FocusBear/AppDelegate.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "2985"
-            endingLineNumber = "2985"
+            startingLineNumber = "2983"
+            endingLineNumber = "2983"
             landmarkName = "readSettingsAndLoadApp(settings:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -72,14 +72,14 @@
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
             uuid = "42F04126-5F49-4C8A-AAF6-444AE13355D8"
-            shouldBeEnabled = "Yes"
+            shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "FocusBear/AppDelegate.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "2349"
-            endingLineNumber = "2349"
+            startingLineNumber = "2347"
+            endingLineNumber = "2347"
             landmarkName = "readSettingsJsonDictionary(json:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -88,14 +88,14 @@
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
             uuid = "0884B6F9-01E1-4556-A7CB-74FA0BD38241"
-            shouldBeEnabled = "Yes"
+            shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "FocusBear/AppDelegate.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "2356"
-            endingLineNumber = "2356"
+            startingLineNumber = "2354"
+            endingLineNumber = "2354"
             landmarkName = "readSettingsJsonDictionary(json:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -104,14 +104,14 @@
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
             uuid = "F0C55CB1-D5E7-4AB6-81DF-1C89B701FC5D"
-            shouldBeEnabled = "Yes"
+            shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "FocusBear/AppDelegate.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "2357"
-            endingLineNumber = "2357"
+            startingLineNumber = "2355"
+            endingLineNumber = "2355"
             landmarkName = "readSettingsJsonDictionary(json:)"
             landmarkType = "7">
          </BreakpointContent>
@@ -120,7 +120,7 @@
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
             uuid = "47118D49-C101-49EB-8AAF-4D64AB60325B"
-            shouldBeEnabled = "Yes"
+            shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "FocusBear/Preferences/selectJsonVc.swift"
@@ -135,16 +135,80 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "CBA66D4E-38E5-49B5-91A8-0C58318A1C23"
+            uuid = "5E31609D-7731-4910-A51E-8684F7343E36"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "FocusBear/SettingsManager.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "1276"
+            endingLineNumber = "1276"
+            landmarkName = "putUserLocalDeviceSettings()"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "F883F31B-E8E0-4C38-8AC4-54D29C50A504"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "FocusBear/Preferences/selectJsonVc.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "455"
+            endingLineNumber = "455"
+            landmarkName = "userContentController(_:didReceive:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "205EC342-9BAA-4264-8D4C-50F22B0EAE9C"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "FocusBear/shutOffTimeVc.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "198"
+            endingLineNumber = "198"
+            landmarkName = "btnGetAccessNowClicked(_:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "823CA9CA-7994-49CA-A13A-591F93A8496B"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "FocusBear/AppDelegate.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "551"
-            endingLineNumber = "551"
-            landmarkName = "applicationWillFinishLaunching(_:)"
+            startingLineNumber = "5245"
+            endingLineNumber = "5245"
+            landmarkName = "backgroundThread()"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "9C8A2187-3F20-4B18-AE42-A4AE48A15C5C"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "FocusBear/shutOffTimeVc.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "378"
+            endingLineNumber = "378"
+            landmarkName = "performTimerCount()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>

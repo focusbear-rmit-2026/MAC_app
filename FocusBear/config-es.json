@@ -1446,8 +1446,8 @@
     },
     "onboardingBlockedUrlsInfo": {
         "title": "Bienvenido a Focus Bear",
-        "questionText": "¿En qué sitios te distraes?",
-        "description": "Puedes bloquear ciertos sitios por defecto para evitar entrar en agujeros negros. Marca los sitios que no quieras usar nunca en tu computadora.",
+        "questionText": "¿Qué sitios quieres bloquear?",
+        "description": "(Decidirás más adelante a qué hora del día bloquearlos)",
         "bottomText": "(Puedes cambiar esto después)",
         "buttonContinueText": "Continuar",
         "enterUrlText": "Ingresa la URL para bloquear:",
@@ -1597,8 +1597,8 @@
         "buttonAlreadyHaveAccountText": "Ya tengo una cuenta de Focus Bear"
     },
     "onboardingControllingBrowserVcInfo": {
-        "title": "Permiso para bloquear distracciones",
-        "descriptionText": "Bien, ahora necesitas darle permiso a Focus Bear para bloquear distracciones.",
+        "title": "Permisos del navegador para bloquear sitios web",
+        "descriptionText": "Configura el bloqueo en todos tus navegadores para evitar distracciones por completo",
         "buttonPermissionGrantedText": "Continuar",
         "buttonRequestPermissionText": "Solicitar Permiso",
         "enabledText": "✅  ¡Activado!",
@@ -1633,7 +1633,7 @@
         "buttonViewPrivacyPolicyNewText": "Política de Privacidad"
     },
     "tryBlockUrlVcInfo": {
-        "titleShieldActivated": "¡Escudo antidistracción activado!",
+        "titleShieldActivated": "Prueba el bloqueo de sitios web",
         "descriptionTryBlockText": "Pruébalo: intenta acceder a <BLOCKED_URL> a través de tu navegador. Debería bloquear el sitio.",
         "buttonItBlockedText": "¡Lo bloqueó!",
         "buttonDidNotBlockedText": "No lo bloqueó 😒",
@@ -1643,7 +1643,7 @@
         "buttonStillNotBlockedText": "Aún no funciona",
         "buttonNowBlockedText": "Acabo de probar esos navegadores y ¡funcionó!",
         "emailUsText": "Lo siento 😓 ¿Hay alguna posibilidad de que nos envíes un correo electrónico (support@focusbear.io) e intentaremos solucionarlo?",
-        "descriptionTryIntentionText": "Intenta abrir <BLOCKED_URL>. Focus Bear te ayudará a utilizar el sitio de forma más intencional.",
+        "descriptionTryIntentionText": "Prueba abrir <BLOCKED_URL>. Deberías ver la experiencia de bloqueo suave.",
         "buttonItBlockedNewText": "Me hizo más intencional",
         "buttonDidNotBlockedNewText": "No me detuvo para nada",
         "buttonOpenUrlText": "Haz clic aquí para abrir <BLOCKED_URL> ahora",
@@ -2399,15 +2399,15 @@
         "toolTipBellIcon": "Comparte tu opinión o sugerencias"
     },
     "onboardingDistractionTypesVcInfo":{
-        "title": "¿Qué te distrae de tu trabajo?",
+        "title": "¿Qué tipo de distracciones quieres bloquear?",
         "optionWebsitesText": "Sitios web en mi computador (ej. Reddit, Youtube, Instagram)",
         "optionAppsText": "Apps en mi computador (ej. juegos, apps de mensajería)",
         "optionPhoneText": "Mi celular",
         "descriptionPhoneText": "La app móvil Focus Bear puede ayudarte. Descárgala desde focusbear.io en tu teléfono."
     },
     "onboardingBlockedAppsVcInfo":{
-        "title": "¿Qué apps te distraen más?",
-        "subTitle": "¿En qué apps pierdes el tiempo? Focus Bear te ayudará a ser más consciente del uso que haces de estas apps. Se bloquearán durante las sesiones de enfoque. El resto del tiempo, Focus Bear te preguntará por qué quieres usarlas.",
+        "title": "¿Qué apps quieres bloquear?",
+        "subTitle": "(Decidirás más adelante a qué hora del día bloquearlas)",
         "blockAppsCountText": "<COUNT> apps serán bloqueadas.",
         "oneAppBlockText": "1 app será bloqueada.",
         "tipText": "Por si tienes curiosidad, no rastreamos las apps que usas."
