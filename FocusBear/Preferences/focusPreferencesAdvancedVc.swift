@@ -320,8 +320,12 @@ class focusPreferencesAdvancedVc: NSViewController {
 
         btnShowBlockedUrlsAndApps.image = NSImage(named: "NSTouchBarGoForwardTemplate")
         stackViewUrlsAndApps.isHidden = true
+        showFullScrollView()
     }
 
+    override func viewDidAppear() {
+        showFullScrollView()
+    }
     
     @objc func tableRowBlockedUrlsDoubleClicked(){
         let selectedTow = tblView.selectedRow
@@ -710,7 +714,7 @@ class focusPreferencesAdvancedVc: NSViewController {
                         arrFocusType[row]["isAutoDoNotDisturbEnabled"] = true
                         UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
                         allApiObject.capturePosthog(event: "settings-changed-enable-dnd", metadata: [:])//#490
-                        preferencesWindowControllerObj!.window!.setFrameOrigin(NSPoint(x: 0, y: 0))
+//                        preferencesWindowControllerObj!.window!.setFrameOrigin(NSPoint(x: 0, y: 0))
                     }else{
                         self.checkBoxAutoDoNotDisturb.state = .off
                     }

@@ -10,6 +10,8 @@ import Cocoa
 
 class askAppWorkVc: NSViewController {
 
+    @IBOutlet weak var btnSetHabits: Button!
+    @IBOutlet weak var btnDoItLater: Button!
     @IBOutlet weak var topSpaceBottomBox: NSLayoutConstraint!
     @IBOutlet weak var spaceBetweenCheckBoxs: NSLayoutConstraint!
     @IBOutlet weak var lblSubTitle: NSTextField!
@@ -42,8 +44,10 @@ class askAppWorkVc: NSViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        btnDoItLater.title = "Uhh I'll do it later"
+        btnSetHabits.title = "Yup! Habits are my middle name"
+        lblTitleHowMuchCare.stringValue = "Do you want to set up habits now? (takes 5 minutes)"
         
-        lblTitleHowMuchCare.stringValue = "How much do you care about building habits?"
         lblSelect.stringValue = "Select one that apply"
         lblDontCare.stringValue = "Meh - don't really care"
         lblNotCommitted.stringValue = "I probably should do habits but am not that committed"
@@ -73,13 +77,17 @@ class askAppWorkVc: NSViewController {
                 
             btnContinue.title = askAppWorkVcInfo.value(forKey: "buttonContinueText") as? String ?? btnContinue.title
 
-            lblTitleHowMuchCare.stringValue = askAppWorkVcInfo.value(forKey: "titleHowMuchCare") as? String ?? lblTitleHowMuchCare.stringValue
+//            lblTitleHowMuchCare.stringValue = askAppWorkVcInfo.value(forKey: "titleHowMuchCare") as? String ?? lblTitleHowMuchCare.stringValue
             lblSelect.stringValue = askAppWorkVcInfo.value(forKey: "selectOneText") as? String ?? lblSelect.stringValue
             lblDontCare.stringValue = askAppWorkVcInfo.value(forKey: "buttonDontCareText") as? String ?? lblDontCare.stringValue
             lblNotCommitted.stringValue = askAppWorkVcInfo.value(forKey: "buttonNotCommittedText") as? String ?? lblNotCommitted.stringValue
             lblCommitted.stringValue = askAppWorkVcInfo.value(forKey: "buttonCommittedText") as? String ?? lblCommitted.stringValue
             lblSubTitle.stringValue = askAppWorkVcInfo.value(forKey: "titleActivateFeatures") as? String ?? lblSubTitle.stringValue
             lblQuestion.stringValue = askAppWorkVcInfo.value(forKey: "subTitleActivateFeatures") as? String ?? lblQuestion.stringValue
+            
+            lblTitleHowMuchCare.stringValue = askAppWorkVcInfo.value(forKey: "titleSetHabits") as? String ?? lblTitleHowMuchCare.stringValue
+            btnDoItLater.title = askAppWorkVcInfo.value(forKey: "buttonDoItLater") as? String ?? btnDoItLater.title
+            btnSetHabits.title = askAppWorkVcInfo.value(forKey: "buttonSetHabits") as? String ?? btnSetHabits.title
         }
         allApiObject.capturePosthog(event: "goals-screen-shown", metadata: [:])
         boxDontCare.customDelegate = self
@@ -87,6 +95,9 @@ class askAppWorkVc: NSViewController {
         boxCommitted.customDelegate = self
         
         lblSelect.isHidden = true
+        boxDontCare.isHidden = true
+        boxNotCommitted.isHidden = true
+        boxCommitted.isHidden = true
     }
     
     override func viewWillAppear() {
@@ -99,6 +110,8 @@ class askAppWorkVc: NSViewController {
             
 //        }
         NotificationCenter.default.addObserver(self, selector: #selector(viewDidResize), name: NSView.frameDidChangeNotification, object: self.view)
+        checkContinueButtonState()
+        btnDoItLater.buttonColor = NSColor.white.cgColor
     }
     
     override func viewDidAppear() {
@@ -131,12 +144,7 @@ class askAppWorkVc: NSViewController {
             lblSubTitle.font = NSFont.systemFont(ofSize: 24)
             lblQuestion.font = NSFont.systemFont(ofSize: 20)
         }
-        
-        if self.view.frame.height < 770{
-            topSpaceBottomBox.constant = 16
-        }else{
-            topSpaceBottomBox.constant = 30
-        }
+
     }
     
     @IBAction func btnInfoBuildHabitsClicked(_ sender: Any) {
@@ -144,15 +152,17 @@ class askAppWorkVc: NSViewController {
         if let askAppWorkVcInfo = configjson.value(forKey: "askAppWorkVcInfo") as? NSDictionary{
             msg = askAppWorkVcInfo.value(forKey: "infoBuildHabitsText") as? String ?? msg
         }
-        showTooltip(sender: btnInfoBuildHabits, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
+        showTooltip(sender: btnInfoBuildHabits, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:230, autoCloseOnMouseExit: true)
     }
+    
     @IBAction func btnInfoStayFocusedClicked(_ sender: Any) {
         var msg = "Focus Bear can help block distracting websites and apps while you're working to help you get more done."
         if let askAppWorkVcInfo = configjson.value(forKey: "askAppWorkVcInfo") as? NSDictionary{
             msg = askAppWorkVcInfo.value(forKey: "infoStayFocusedText") as? String ?? msg
         }
-        showTooltip(sender: btnInfoStayFocused, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
+        showTooltip(sender: btnInfoStayFocused, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:230, autoCloseOnMouseExit: true)
     }
+    
     @IBAction func btnContinueClicked(_ sender: Any) {
         let isDoNotCareSelected = boxDontCare.isSelected
         let isNotCommittedSelected = boxNotCommitted.isSelected
@@ -231,8 +241,10 @@ class askAppWorkVc: NSViewController {
         addLog(text: "[user-action] askAppWorkVc:- checkBoxFirstClicked")
         if checkBoxFirst.state == .off{
             boxAnythingElse.isHidden = true
+            boxCommitted.isSelected = false
         }else{
             boxAnythingElse.isHidden = false
+            boxCommitted.isSelected = true
         }
         checkContinueButtonState()
     }
@@ -244,15 +256,39 @@ class askAppWorkVc: NSViewController {
         btnContinue.isEnabled = false
         if checkBoxFirst.state == .off && checkBoxSecond.state == .off{
             btnContinue.isEnabled = false
+            btnDoItLater.isHidden = true
+            btnSetHabits.isHidden = true
+            btnContinue.isHidden = false
         }else if checkBoxFirst.state == .off && checkBoxSecond.state == .on{
             btnContinue.isEnabled = true
+            btnContinue.isHidden = false
+            btnSetHabits.isHidden = true
+            btnDoItLater.isHidden = true
         }else if checkBoxFirst.state == .on{
-            if boxCommitted.isSelected || boxDontCare.isSelected || boxNotCommitted.isSelected{
-                btnContinue.isEnabled = true
-            }else{
-                btnContinue.isEnabled = false
-            }
+            btnContinue.isEnabled = true
+            btnContinue.isHidden = true
+            btnSetHabits.isHidden = false
+            btnDoItLater.isHidden = false
+//            if boxCommitted.isSelected || boxDontCare.isSelected || boxNotCommitted.isSelected{
+//                btnContinue.isEnabled = true
+//            }else{
+//                btnContinue.isEnabled = false
+//            }
         }
+    }
+    
+    @IBAction func btnDoItLaterClicked(_ sender: Any) {
+        boxCommitted.isSelected = false
+        boxDontCare.isSelected = true
+        boxNotCommitted.isSelected = false
+        btnContinueClicked(self)
+    }
+    
+    @IBAction func btnSetHabitsClicked(_ sender: Any) {
+        boxCommitted.isSelected = true
+        boxDontCare.isSelected = false
+        boxNotCommitted.isSelected = false
+        btnContinueClicked(self)
     }
 }
 extension askAppWorkVc: toggleButtonBoxDelegate{

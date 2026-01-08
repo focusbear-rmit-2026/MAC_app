@@ -9,7 +9,7 @@
 import Cocoa
 import AVKit
 
-class firefoxPermissionsVc: NSViewController {
+class firefoxPermissionsVc: NSViewController {// now this not for firefox
     
     @IBOutlet weak var lblPoint1_config: NSTextField!
     @IBOutlet weak var lblPoint2_config: NSTextField!
@@ -269,7 +269,7 @@ class firefoxPermissionsVc: NSViewController {
         if showingFromOnboarding{
             permissionBlockDistractionWcObj?.showWindow(self)
         }else{
-            preferencesWindowControllerObj?.showWindow(self)
+            mainWindowControllerObj?.showWindow(self)//preferencesWindowControllerObj
         }
         self.view.window?.close()
     }
@@ -292,7 +292,7 @@ class firefoxPermissionsVc: NSViewController {
                     permissionBlockDistractionWcObj?.showWindow(self)
                     onboardingControllingBrowserVcObj?.requestSigmaOSBrowser()
                 }else{
-                    preferencesWindowControllerObj?.showWindow(self)
+                    mainWindowControllerObj?.showWindow(self)//preferencesWindowControllerObj
                     permissionsVcObj?.requestSigmaOSBrowser()
                 }
                 self.view.window?.close()
@@ -322,7 +322,7 @@ class firefoxPermissionsVc: NSViewController {
                 permissionBlockDistractionWcObj?.showWindow(self)
                 onboardingControllingBrowserVcObj?.requestSigmaOSBrowser()
             }else{
-                preferencesWindowControllerObj?.showWindow(self)
+                mainWindowControllerObj?.showWindow(self)//preferencesWindowControllerObj
                 permissionsVcObj?.requestSigmaOSBrowser()
             }
             self.view.window?.close()
@@ -338,7 +338,7 @@ class firefoxPermissionsVc: NSViewController {
         if showingFromOnboarding{
             permissionBlockDistractionWcObj?.showWindow(self)
         }else{
-            preferencesWindowControllerObj?.showWindow(self)
+            mainWindowControllerObj?.showWindow(self)//preferencesWindowControllerObj
         }
         self.view.window?.close()
     }
@@ -356,6 +356,7 @@ class firefoxPermissionsVc: NSViewController {
         
         executeScript(script: script)
     }
+    
     @IBAction func btnPlayClicked(_ sender: Any) {
         imgview.isHidden = true
         avPlayerView.isHidden = true

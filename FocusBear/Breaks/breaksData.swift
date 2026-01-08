@@ -65,51 +65,154 @@ struct breakActivity {
 }
 
 
-var idleTimeValueForNaturalBreak = 600
-func detectNatualBreaks(){
-    var lastEvent:CFTimeInterval = 0
-    lastEvent = CGEventSource.secondsSinceLastEventType(CGEventSourceStateID.hidSystemState, eventType: CGEventType(rawValue: ~0)!)
+func checkNaturalBreakFromIdleTimeAfterScreenUnlocked(){
+    addLog(text: "func checkNaturalBreakFromIdleTimeAfterScreenUnlocked")
+    closeNatutalBreakIfRunning()
+    if !SettingsManagerObject.isDetectNatualBreaksEnabled{
+        addLog(text: "Detect Natual Breaks is not enabled")
+        return;
+    }
     
-    let idleTimeValue = Int(lastEvent)
-    if currentState != ._MORNING_HABIT_ && currentState != ._ACTIVITY_ && (isHabitAlreadyShowed || currentState == ._POSTPON_MORNING_HABIT_) && arrAllbreakActivities.count != 0 && !appdelegate!.isUserOnMeeting{
-        checkIsNaturalBreakWindowNeedToShow(idleTimeValue: idleTimeValue)
+    if macGoesInSleepTime != nil{
+        let idleTimeValue = Calendar.current.dateComponents([.second], from: macGoesInSleepTime!, to: Date()).second ?? 0
+        addLog(text: "idleTimeValue is :- \(idleTimeValue)")
+        if arrAllbreakActivities.count != 0 && currentState != ._BREATHING_{
+            addLog(text: "checkIsNaturalBreakWindowNeedToShow")
+            
+            
+            if idleTimeValue > idleTimeValueForNaturalBreak{
+                UserDefaults.standard.set(macGoesInSleepTime!, forKey: kUserdefaultsLastBreaksStartTime)
+                writeNaturalBreak()//2.28.444
+            }
+//            checkIsNaturalBreakWindowNeedToShow(idleTimeValue: idleTimeValue)
+        }else{
+            addLog(text: "Don't need to check natural break reason:- habit window is visible")
+        }
     }else{
-        if naturalBreaksDetectionWcObj != nil{
-            if naturalBreaksDetectionWcObj?.window?.isVisible ?? false{
-                naturalBreaksDetectionVcObj?.btnFirstClicked(appdelegate!)
-                if breakWarningWcObj != nil{
-                    if breakWarningWcObj?.window?.isVisible ?? false{
-                        getBreakWarningVcObject().reloadTimeSinceLastBreak()
-                    }
-                }
-                naturalBreaksDetectionWcObj?.window?.close()
+        addLog(text: "macGoesInSleepTime is nil")
+    }
+}
+
+func writeNaturalBreak(){//2.28.444
+    if let startTime = UserDefaults.standard.object(forKey: kUserdefaultsLastBreaksStartTime) as? Date{
+        let currentDate = Date()
+        let diffSeconds = Calendar.current.dateComponents([.second], from: startTime, to: currentDate).second ?? 0
+        if diffSeconds > 0{
+            var arrDuration = UserDefaults.standard.object(forKey: kUserdefaultsArrayBreaksDurations) as? [Int] ?? []
+            arrDuration.append(diffSeconds)
+            UserDefaults.standard.set(arrDuration, forKey: kUserdefaultsArrayBreaksDurations)
+        }
+        UserDefaults.standard.set(currentDate, forKey: kUserdefaultsLastBreakEndTime)
+        let df = DateFormatter()
+        df.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        let now = df.string(from: currentDate)
+        addLog(text: "Last break recorded at \(now). It will be shown in the menu.")
+        print("\(diffSeconds) seconds Last break recorded at \(now). It will be shown in the menu.")
+        if currentState != ._MICRO_BREAK_{
+            if getHabitsVcObject().breakTimer != nil{
+                getHabitsVcObject().setActivityTimer()
             }
         }
     }
 }
 
+
+let idleTimeValueForNaturalBreak = 120// edited from 600 to 120  2.28.444  //
+var anyNaturallBreakIsOn = false
+func detectNatualBreaks(){
+    if !SettingsManagerObject.isDetectNatualBreaksEnabled{
+        return;
+    }
+    var lastEvent:CFTimeInterval = 0
+    lastEvent = CGEventSource.secondsSinceLastEventType(CGEventSourceStateID.hidSystemState, eventType: CGEventType(rawValue: ~0)!)
+    
+    let idleTimeValue = Int(lastEvent)
+    if currentState != ._MORNING_HABIT_ && currentState != ._MICRO_BREAK_ && (isHabitAlreadyShowed || currentState == ._POSTPON_MORNING_HABIT_) && arrAllbreakActivities.count != 0 && !appdelegate!.isUserOnMeeting{
+        checkIsNaturalBreakWindowNeedToShow(idleTimeValue: idleTimeValue)
+    }else{
+        closeNatutalBreakIfRunning()
+    }
+}
+
 func checkIsNaturalBreakWindowNeedToShow(idleTimeValue:Int){
-    if idleTimeValue > idleTimeValueForNaturalBreak{// 600 kro
-        // if !appdelegate!.isScreenLocked && !appdelegate!.isSystemSleep && !appdelegate!.isScreenSaverStart{ // 
-        var shouldShowAlert = true
-        if naturalBreaksDetectionWcObj != nil{
-            if naturalBreaksDetectionWcObj?.window?.isVisible ?? false{
-                shouldShowAlert = false
-            }
+    print(idleTimeValue)
+    if idleTimeValue > idleTimeValueForNaturalBreak{
+        if anyNaturallBreakIsOn{
+            return;
         }
-        if currentState == ._POSTPON_MORNING_HABIT_{
+        var shouldShowAlert = true
+        if currentState == ._POSTPON_MORNING_HABIT_ || currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_{
             if !SettingsManagerObject.IsShowBreaksInPostponeEnabled{
+                addLog(text: "The current state is 'Postpone' and 'Show Breaks in Postpone' is disabled, so the natural break detection window will not be shown.")// logs addded in v 1.26.395 on 30/7/25
                 shouldShowAlert = false
             }
         }
         if shouldShowAlert{
             if appdelegate!.checkIsAnyVideoWebsiteIsRunning(){
+                addLog(text: "Since a video website is currently open in the browser, the natural break detection window won't be shown.")
                 shouldShowAlert = false
             }
         }
         if shouldShowAlert{
-            showNaturalBreakDetectionWindow(duration:idleTimeValue)
+            if isAnyPresentationOrVideoShowing(){
+                addLog(text: "Since a presentation or video is showing in the browser, the natural break detection window won't be shown.")
+                shouldShowAlert = false
+            }
         }
-        //}
+        
+        if shouldShowAlert{
+            anyNaturallBreakIsOn = true
+            let idelTimeStartTime = Date().addingTimeInterval(-Double(idleTimeValue))
+            UserDefaults.standard.set(idelTimeStartTime, forKey: kUserdefaultsLastBreaksStartTime)
+            let df = DateFormatter()
+            df.dateFormat = "yyyy-MM-dd HH:mm:ss"
+            let now = df.string(from: idelTimeStartTime)
+            addLog(text: "Naturall break started at \(now).")
+            print("Naturall break started at \(now).")
+            //showNaturalBreakDetectionWindow(duration:idleTimeValue)
+        }
+    }else{
+        closeNatutalBreakIfRunning()
     }
+}
+
+func closeNatutalBreakIfRunning(){
+    if anyNaturallBreakIsOn{
+        anyNaturallBreakIsOn = false
+        writeNaturalBreak()
+    }
+}
+
+func getTimeSinceLastBreak()->String?{
+    var breaksEndTime = UserDefaults.standard.object(forKey: kUserdefaultsLastBreakEndTime) as? Date
+    if breaksEndTime == nil{
+        var startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
+        if Date().compare(startDate) == .orderedAscending {// current date < start date(current date is 1 am and start date is 10 am )
+            startDate = Calendar.current.date(byAdding: .day, value: -1, to: startDate) ?? startDate
+        }
+        breaksEndTime = startDate
+    }else{
+        var startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
+        if Date().compare(startDate) == .orderedAscending {// current date < start date(current date is 1 am and start date is 10 am )
+            startDate = Calendar.current.date(byAdding: .day, value: -1, to: startDate) ?? startDate
+        }
+        
+        if breaksEndTime!.compare(startDate) == .orderedAscending {//breaksStartTime < start date
+            breaksEndTime = startDate
+        }
+    }
+    if let breaksEndTime = breaksEndTime{
+        let currentDate = Date()
+        let diffSeconds = Calendar.current.dateComponents([.second], from: breaksEndTime, to: currentDate).second ?? 0
+        if diffSeconds > 0{
+            let time = getStringTimeFromSecondsWithoutSeconds(seconds: Int(diffSeconds))
+            var lastBreakTimeText = "Time since last break: <TIME>"
+            if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
+                lastBreakTimeText = menuInfo.value(forKey: "lastBreakTimeText") as? String ?? lastBreakTimeText
+            }
+            lastBreakTimeText = lastBreakTimeText.replacingOccurrences(of: "<TIME>", with: time)
+            return lastBreakTimeText
+        }
+    }
+    return nil
 }

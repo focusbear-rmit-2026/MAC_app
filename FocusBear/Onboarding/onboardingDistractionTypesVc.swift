@@ -94,16 +94,44 @@ class onboardingDistractionTypesVc: NSViewController {
         }else {
             if UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) == nil{
                 self.view.window?.contentViewController = getExplainingPermissionsVcObject()
-                explainingPermissionsVcObj?.showingFromPomodoro = true
                 UserDefaults.standard.set(true, forKey: kUserdefaultsBrowsersPermissionsSetByUser)
             }else{
-                self.view.window?.close()
-                if SettingsManagerObject.isGeekModeEnabled{
-                    appdelegate?.menuShowPomodoroModeView()
-                    pomodoroVcObj?.textViewAchieve.string = pomodoroVcObj?.intentionToShowAgain ?? ""
+                var browserPermissionGiven = false
+                if let arrBrowsersInfo = UserDefaults.standard.object(forKey: kUserdefaultsAllBrowsersPermissionInfo) as? [[String : Any]]{
+                    for i in 0..<arrBrowsersInfo.count{
+                        let info = arrBrowsersInfo[i]
+                        let isEnabled = info["isEnabled"] as? Bool ?? false
+                        if isEnabled{
+                            browserPermissionGiven = true
+                            break;
+                        }
+                    }
+                }
+                var accessibilityPermissionGiven = true
+                var systemEventsPermissionGiven = true
+                
+                if !isAccessibilityEnabled(isPrompt: false){
+                    accessibilityPermissionGiven = false
                 }else{
-                    appdelegate?.menuShowSimplePomodoroModeView()
-                    simplePomodoroVcObj?.textViewAchieve.string = simplePomodoroVcObj?.intentionToShowAgain ?? ""
+                    accessibilityPermissionGiven = true
+                }
+                
+                if !checkAutomationPermissionWithAppleScript(){
+                    systemEventsPermissionGiven = false
+                }else{
+                    systemEventsPermissionGiven = true
+                }
+                if !browserPermissionGiven || !accessibilityPermissionGiven || !systemEventsPermissionGiven{
+                    self.view.window?.contentViewController = getExplainingPermissionsVcObject()
+                }else{
+                    self.view.window?.close()
+                    if SettingsManagerObject.isGeekModeEnabled{
+                        appdelegate?.menuShowPomodoroModeView()
+                        pomodoroVcObj?.textViewAchieve.string = pomodoroVcObj?.intentionToShowAgain ?? ""
+                    }else{
+                        appdelegate?.menuShowSimplePomodoroModeView()
+                        simplePomodoroVcObj?.textViewAchieve.string = simplePomodoroVcObj?.intentionToShowAgain ?? ""
+                    }
                 }
             }
         }

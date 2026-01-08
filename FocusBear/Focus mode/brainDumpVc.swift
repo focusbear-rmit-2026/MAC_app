@@ -11,7 +11,7 @@ import WebKit
 
 class brainDumpVc: NSViewController, NSTextViewDelegate{
     
-    @IBOutlet weak var lblTimeSinceLastBreak: NSTextField!
+//    @IBOutlet weak var lblTimeSinceLastBreak: NSTextField!
     @IBOutlet weak var btnOpenUrl: Button!
     @IBOutlet weak var textFieldOpenUrl: NSTextField!
     @IBOutlet weak var lblTitleOpenUrl: NSTextField!
@@ -103,28 +103,59 @@ class brainDumpVc: NSViewController, NSTextViewDelegate{
     }
     
     func checkCurrentUrl(){
+        if boxBrainDumpWebView.isHidden{
+            return;
+        }
         if let url = webView.url{
             let urlString = url.absoluteString
-            for turl in appdelegate!.defaultAllowedUrl{
+            for turl in defaultAllowedUrl{
                 if urlString.contains(turl){
                     return;
                 }
             }
-            let arrBlockedUrls = getBlockedUrlsToBlock()
-            for turl in arrBlockedUrls{
-                //Change all suggested blocked apps in onboarding to start with https:// #1233
-                let bool = appdelegate!.validation.isUrlAlwaysBlocked(urlToCheck: urlString, blockedUrl: turl)
-                if bool{
-                    blockCurrentUrl(isAlwaysBlock:true, oldUrl: urlString)
-                    return;
+            
+            var shouldCheckBlockedUrls = false//now super distarcting sites will block only in focus modes and custom blocking schedules  24/9/25 version 2.27.417
+          //  if SettingsManagerObject.blockingSchedule == ._UNTIL_I_FINISH_WORK_{
+           //     shouldCheckBlockedUrls = true
+           // }else{
+                if isFocusModeRunning || isAnyAllowedFocusModeActivityRunning || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
+                    shouldCheckBlockedUrls = true
+                }
+            //}
+            if shouldCheckBlockedUrls{
+                let arrBlockedUrls = getBlockedUrlsToBlock()
+                for turl in arrBlockedUrls{
+                    //Change all suggested blocked apps in onboarding to start with https:// #1233
+                    let bool = validation.isUrlAlwaysBlocked(urlToCheck: urlString, blockedUrl: turl)
+                    if bool{
+                        blockCurrentUrl(isAlwaysBlock:true, oldUrl: urlString)
+                        return;
+                    }
                 }
             }
             
-            if isFocusModeRunning || isAnyAllowedFocusModeActivityRunning{
+            
+            if isFocusModeRunning || isAnyAllowedFocusModeActivityRunning || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
                 let arrBlockedUrlsForFocus = currentRunningFocusType["blockUrlsArray"] as? [String] ?? []
                 for turl in arrBlockedUrlsForFocus{
-                    let isBlocked = appdelegate!.validation.isUrlValid(urlToCheck: urlString, allowUrl: turl)
+                    let isBlocked = validation.isUrlValid(urlToCheck: urlString, allowUrl: turl)
                     if isBlocked{
+                        blockCurrentUrl(isAlwaysBlock:false, oldUrl: urlString)
+                        return;
+                    }
+                }
+                
+                let isAllowedListApproachInFocus = currentRunningFocusType["isAllowedListApproach"] as? Bool ?? false
+                if isAllowedListApproachInFocus{
+                    let arrAllowedUrlsForFocus = currentRunningFocusType["allowed_urls"] as? [String] ?? []
+                    var isAllowed = false
+                    for turl in arrAllowedUrlsForFocus{
+                        isAllowed = validation.isUrlValid(urlToCheck: urlString, allowUrl: turl)
+                        if isAllowed{
+                            break;
+                        }
+                    }
+                    if !isAllowed{
                         blockCurrentUrl(isAlwaysBlock:false, oldUrl: urlString)
                         return;
                     }
@@ -132,6 +163,7 @@ class brainDumpVc: NSViewController, NSTextViewDelegate{
             }
         }
     }
+    
 //    \(blockWebUrlString)?old_url=https%3A%2F%2Fwww.facebook.com&block_type=always-blocked
     func blockCurrentUrl(isAlwaysBlock:Bool, oldUrl:String){
         let oldUrl = oldUrl.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) ?? oldUrl
@@ -143,13 +175,8 @@ class brainDumpVc: NSViewController, NSTextViewDelegate{
         }else{
             var stringTime = ""
             var focusMode = ""
-            if isFocusModeRunning{
-                for dic in arrFocusType{
-                    if dic["isOn"] as? Bool == true{
-                        focusMode = dic["name"] as? String ?? ""
-                        break;
-                    }
-                }
+            if isFocusModeRunning || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
+                focusMode = currentRunningFocusType["name"] as? String ?? ""
                 
                 if let date = endFocusModeTime{
                     stringTime = getStringFromDateInUtc(date: date, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
@@ -161,7 +188,7 @@ class brainDumpVc: NSViewController, NSTextViewDelegate{
                 }
             }else{
                 var blockType = ""
-                if currentState == ._ACTIVITY_{
+                if currentState == ._MICRO_BREAK_{
                     if currentActivityPlaying != nil{
                       //  activityAllowUrls = currentActivityPlaying!.allowUrls
                     }
@@ -202,21 +229,22 @@ class brainDumpVc: NSViewController, NSTextViewDelegate{
         }
         if textView == textViewWorkNote{
             UserDefaults.standard.set(textViewWorkNote.string, forKey: kUserdefaultsFocusModeNotes)
-            if taskPlayerWcObj != nil{
-                if taskPlayerWcObj?.window?.isVisible ?? false{
-                    taskPlayerVcObj?.updateBrainDumpToPlayer()
-                }
-            }
+//            if taskPlayerWcObj != nil{
+//                if taskPlayerWcObj?.window?.isVisible ?? false{
+//                    taskPlayerVcObj?.updateBrainDumpToPlayer()
+//                }
+//            }
+            taskPlayerVcObj?.updateBrainDumpToPlayer()
         }
     }
     
-    func focusModeStarted(){
-        if SettingsManagerObject.brainDumpCustomUrlEnabled{
-            
-        }else{
-            
-        }
-    }
+//    func focusModeStarted(){
+//        if SettingsManagerObject.brainDumpCustomUrlEnabled{
+//            
+//        }else{
+//            
+//        }
+//    }
     
     func focusModeFinished(){
         loadWebView()

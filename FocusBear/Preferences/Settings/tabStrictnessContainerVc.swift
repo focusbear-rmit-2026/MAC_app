@@ -12,16 +12,20 @@ class tabStrictnessContainerVc: NSViewController {
 
     @IBOutlet weak var segmentControlGeekMode: GeekModeSegmentedControl!
     @IBOutlet weak var containerView: NSView!
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         addLog(text: "tabStrictnessContainerVc viewdidload")
     }
+    
     override func viewWillAppear() {
         showStrictnessView()
     }
+    
     override func viewWillDisappear() {
         SettingsManagerObject.putUserLocalDeviceSettings()
     }
+    
     @IBAction func btnSegmentControlGeekModeClicked(_ sender: Any) {
         if segmentControlGeekMode.selectedSegment == 0{
             if SettingsManagerObject.isGeekModeEnabled{
@@ -35,6 +39,7 @@ class tabStrictnessContainerVc: NSViewController {
             segmentControlGeekMode.changeAppModeTo(geekMode: false)
         }
     }
+    
     func removeSubViews(){
         for subView in self.containerView.subviews{
             subView.removeFromSuperview()
@@ -48,14 +53,13 @@ class tabStrictnessContainerVc: NSViewController {
             segmentControlGeekMode.setSelected(true, forSegment: 1)
         }
     }
+    
     func showStrictnessView(){
         removeSubViews()
         self.containerView.addSubview(getStrictnessVcObject().view)
         self.containerView.addConstraints(subView: getStrictnessVcObject().view)
     }
 
-    
-    
     func showBrowserTabLimiterView(){
         removeSubViews()
         self.containerView.addSubview(getBrowserTabLimiterVcObject().view)
@@ -74,10 +78,35 @@ class tabStrictnessContainerVc: NSViewController {
         self.containerView.addConstraints(subView: getBlockedAppsVcObject().view)
     }
     
-    func showBlockingScheduleView(){
+//    func showBlockingScheduleView(){
+//        removeSubViews()
+//        self.containerView.addSubview(getBlockingScheduleVcObject().view)
+//        self.containerView.addConstraints(subView: getBlockingScheduleVcObject().view)
+//    }
+    
+    func showCustomBlockingSchedulesView(){
         removeSubViews()
-        self.containerView.addSubview(getBlockingScheduleVcObject().view)
-        self.containerView.addConstraints(subView: getBlockingScheduleVcObject().view)
+        self.containerView.addSubview(getCustomBlockingSchedulesVcObject().view)
+        self.containerView.addConstraints(subView: getCustomBlockingSchedulesVcObject().view)
+        getCustomBlockingSchedulesVcObject().tblView.reloadData()
     }
     
+    func showBlockingSchedulesView(index:Int, shouldCreateNew:Bool){
+        removeSubViews()
+        self.containerView.addSubview(getBlockingScheduleEditorVCObject().view)
+        self.containerView.addConstraints(subView: getBlockingScheduleEditorVCObject().view)
+        getBlockingScheduleEditorVCObject().resetData(index: index, shouldCreateNew: shouldCreateNew)
+    }
+    
+    func showFocusPreferences(){
+        removeSubViews()
+        if focusPreferencesVcObj == nil{
+            getFocusPreferencesVcObject().loadView()
+        }
+        getFocusPreferencesVcObject().btnBackToCustomBlocking.isHidden = true
+        getFocusPreferencesVcObject().btnBack.isHidden = false
+        self.containerView.addSubview(getFocusPreferencesVcObject().view)
+        self.containerView.addConstraints(subView: getFocusPreferencesVcObject().view)
+    }
 }
+

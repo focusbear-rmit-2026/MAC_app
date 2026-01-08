@@ -29,22 +29,22 @@ class editHabitRoutineVc: NSViewController, WKNavigationDelegate, webViewLoadFai
     override func viewWillAppear() {
         allApiObject.capturePosthog(event: "edit-habits", metadata: [:])
         self.setSettingsToWebView()
-        mainViewControllerObj?.btnAbort.title = "Back to my habits"
+        getHabitsVcObject().btnAbort.title = "Back to my habits"
         if let common = configjson.value(forKey: "common") as? NSDictionary{
-            mainViewControllerObj?.btnAbort.title = common.value(forKey: "buttonBackToMyHabitsText") as? String ?? "Back to my habits"
+            getHabitsVcObject().btnAbort.title = common.value(forKey: "buttonBackToMyHabitsText") as? String ?? "Back to my habits"
         }
     }
     
     override func viewWillDisappear() {
         if checkIsFullScreenEnabled(){
-            mainViewControllerObj?.btnAbort.title = "Exit Fullscreen"
+            getHabitsVcObject().btnAbort.title = "Exit Fullscreen"
             if let common = configjson.value(forKey: "common") as? NSDictionary{
-                mainViewControllerObj?.btnAbort.title = common.value(forKey: "buttonAbortText") as? String ?? "Exit Fullscreen"
+                getHabitsVcObject().btnAbort.title = common.value(forKey: "buttonAbortText") as? String ?? "Exit Fullscreen"
             }
         }else{
             let btnTitle = "Postpone"
             if let common = configjson.value(forKey: "common") as? NSDictionary{
-                mainViewControllerObj?.btnAbort.title = common.value(forKey: "buttonPostponeText") as? String ?? btnTitle
+                getHabitsVcObject().btnAbort.title = common.value(forKey: "buttonPostponeText") as? String ?? btnTitle
             }
         }
     }
@@ -56,11 +56,19 @@ class editHabitRoutineVc: NSViewController, WKNavigationDelegate, webViewLoadFai
             routine = "evening"
         }
         
-        var url = "https://settings.focusbear.io?bust_cache=\(getUuid())&edit_specific_routine=\(routine)&device_id=\(currentDeviceId)"
+        var settingUrl = "https://dashboard.focusbear.io"
+        if let settings = configjson.value(forKey: "settings") as? NSDictionary{
+            if let url = settings.value(forKey: "settingUrlNew") as? String{
+                settingUrl = url
+            }
+        }
+
+
+        var url = "\(settingUrl)/webview/settings?bust_cache=\(getUuid())&edit_specific_routine=\(routine)&device_id=\(currentDeviceId)"
         var  fileURL = URL(string: url)
         if fileURL == nil{
             addLog(text: "url is nil")
-            url = "https://settings.focusbear.io?edit_specific_routine=\(routine)&device_id=\(currentDeviceId)"
+            url = "\(settingUrl)?edit_specific_routine=\(routine)&device_id=\(currentDeviceId)"
             fileURL = URL(string: url)
         }
         
@@ -115,14 +123,8 @@ class editHabitRoutineVc: NSViewController, WKNavigationDelegate, webViewLoadFai
     }
     
     func setSettingsToWebView(){
-        var theme = "LIGHT"
-        if preferencesWindowControllerObj != nil{
-            if preferencesWindowControllerObj!.window!.hasDarkAppearance{
-                theme = "DARK"
-            }else {
-                theme = "LIGHT"
-            }
-        }
+        let theme = getWindowTheme()
+
         let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex].webFontName
         var flags = "[\"settings-updated\"]"
         if SettingsManagerObject.isGeekModeEnabled{
@@ -250,11 +252,11 @@ class editHabitRoutineVc: NSViewController, WKNavigationDelegate, webViewLoadFai
         self.alertSettingChanged!.setSharingType()
         self.alertSettingChanged!.alertStyle = .informational
         allApiObject.capturePosthog(event: "save-edited-habits", metadata: [:])
-        var settingIsValidText = "Your settings have been validated and will be applied now."
-        var buttonOkText = "OK"
+        var settingIsValidText = "Saved! Restarting the app so your new habit timing works."
+        var buttonOkText = "Restart now"
         if let settings = configjson.value(forKey: "settings") as? NSDictionary{
             settingIsValidText = settings.value(forKey: "settingIsValidText") as? String ?? settingIsValidText
-            buttonOkText = settings.value(forKey: "buttonOkText") as? String ?? buttonOkText
+            buttonOkText = settings.value(forKey: "buttonRestartNow") as? String ?? buttonOkText
         }
         
         self.alertSettingChanged!.messageText = settingIsValidText

@@ -9,7 +9,7 @@
 import Cocoa
 import WebKit
 
-class blockingScheduleVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate {
+class blockingScheduleVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate {// not in use 
 
     @IBOutlet weak var webView: WKWebView!
     @IBOutlet weak var lblTitle: NSTextField!
@@ -105,11 +105,18 @@ class blockingScheduleVc: NSViewController, WKNavigationDelegate, webViewLoadFai
     }
     
     func loadWebView(){
-        var url = "https://settings.focusbear.io?bust_cache=\(getUuid())&edit_specific_routine=timing&device_id=\(currentDeviceId)"
+        var settingUrl = "https://dashboard.focusbear.io"
+        if let settings = configjson.value(forKey: "settings") as? NSDictionary{
+            if let url = settings.value(forKey: "settingUrlNew") as? String{
+                settingUrl = url
+            }
+        }
+        
+        var url = "\(settingUrl)?bust_cache=\(getUuid())&edit_specific_routine=timing&device_id=\(currentDeviceId)"
         var  fileURL = URL(string: url)
         if fileURL == nil{
             addLog(text: "url is nil")
-            url = "https://settings.focusbear.io?edit_specific_routine=timing&device_id=\(currentDeviceId)"
+            url = "\(settingUrl)?edit_specific_routine=timing&device_id=\(currentDeviceId)"
             fileURL = URL(string: url)
         }
         let request = NSMutableURLRequest(url: fileURL!)
@@ -164,14 +171,8 @@ class blockingScheduleVc: NSViewController, WKNavigationDelegate, webViewLoadFai
     }
     
     func setSettingsToWebView(){
-        var theme = "LIGHT"
-        if preferencesWindowControllerObj != nil{
-            if preferencesWindowControllerObj!.window!.hasDarkAppearance{
-                theme = "DARK"
-            }else {
-                theme = "LIGHT"
-            }
-        }
+        let theme = getWindowTheme()
+        
         let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex].webFontName
         var flags = "[\"settings-updated\"]"
         if SettingsManagerObject.isGeekModeEnabled{
@@ -298,11 +299,11 @@ class blockingScheduleVc: NSViewController, WKNavigationDelegate, webViewLoadFai
         self.alertSettingChanged!.setSharingType()
         self.alertSettingChanged!.alertStyle = .informational
         allApiObject.capturePosthog(event: "save-edited-habits", metadata: [:])
-        var settingIsValidText = "Your settings have been validated and will be applied now."
-        var buttonOkText = "OK"
+        var settingIsValidText = "Saved! Restarting the app so your new habit timing works."
+        var buttonOkText = "Restart now"
         if let settings = configjson.value(forKey: "settings") as? NSDictionary{
             settingIsValidText = settings.value(forKey: "settingIsValidText") as? String ?? settingIsValidText
-            buttonOkText = settings.value(forKey: "buttonOkText") as? String ?? buttonOkText
+            buttonOkText = settings.value(forKey: "buttonRestartNow") as? String ?? buttonOkText
         }
         
         self.alertSettingChanged!.messageText = settingIsValidText
@@ -432,6 +433,7 @@ class blockingScheduleVc: NSViewController, WKNavigationDelegate, webViewLoadFai
             RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
         }
     }
+    
     func setProgres(){
         let remainingSeconds = self.totalDuration-currentTimer
         let (h,m,s) = secondsToHoursMinutesSeconds(seconds: remainingSeconds)
@@ -473,12 +475,8 @@ class blockingScheduleVc: NSViewController, WKNavigationDelegate, webViewLoadFai
     }
     
     @IBAction func btnBackClicked(_ sender: Any) {
-        if let tabview = preferencesWindowControllerObj?.contentViewController as? preferencesTabViewController{
-            let selectedTabViewItem = tabview.tabViewItems[tabview.selectedTabViewItemIndex]
-            if selectedTabViewItem.identifier as? String == idTabStrictness && tabview.tabViewItemStrictnesss != nil{
-                tabStrictnessContainerVcObj?.showStrictnessView()
-                return;
-            }
+        if leftMenuVcObj?.boxBlocks.isSelected ?? false{
+            tabStrictnessContainerVcObj?.showStrictnessView()
         }
     }
 }

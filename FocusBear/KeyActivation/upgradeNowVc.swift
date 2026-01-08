@@ -29,7 +29,7 @@ class upgradeNowVc: NSViewController {
     @IBOutlet weak var btnInfo: hoverInfoButton!
     
     var vcShownFromExpireUsageAlert = false
-    
+    var isViewVisible = false
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
@@ -79,6 +79,7 @@ class upgradeNowVc: NSViewController {
             btnContinue.title = upgradeNowVcInfo.value(forKey: "buttonContinueText") as? String ?? btnContinue.title
         }
     }
+    
     override func viewWillAppear() {
         addLog(text: "upgradeNowVc:- viewWillAppear.")
         if !isPurchased && daysLeft <= 0{
@@ -87,7 +88,27 @@ class upgradeNowVc: NSViewController {
             lblSubscriptionExpired.isHidden = true
         }
         textFieldUserId.stringValue = appdelegate!.user?.userId ?? ""
+        isViewVisible = true
     }
+    
+    override func viewWillDisappear() {
+        isViewVisible = false
+    }
+    
+    func closeView(){
+        if isViewVisible{
+            if let window = self.view.window {
+                if let _ = window.sheetParent {
+                    self.dismiss(self)
+                } else if window.contentViewController === self {
+                    self.view.window?.close()
+                } else {
+                    self.view.window?.close()// no chance
+                }
+            }
+        }
+    }
+    
     @IBAction func btnUserIdClicked(_ sender: Any) {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(appdelegate!.user?.userId ?? "", forType: .string)
@@ -104,6 +125,7 @@ class upgradeNowVc: NSViewController {
             }
         }
     }
+    
     @IBAction func btnUpgradeNowClicked(_ sender: Any) {
         addLog(text: "[user-action] btnUpgradeNowClicked.")
         allApiObject.capturePosthog(event: "upgrade-nag-button-upgrade-clicked", metadata: [:])
@@ -113,6 +135,7 @@ class upgradeNowVc: NSViewController {
         
 //        upgradeButtonWasClicked = true// 
     }
+    
     @IBAction func btnRestorePurchasesClicked(_ sender: Any) {
         addLog(text: "[user-action] btnRestorePurchasesClicked.")
         allApiObject.capturePosthog(event: "sync-payment-status", metadata: ["from":"upgrade_nag"])
@@ -124,7 +147,8 @@ class upgradeNowVc: NSViewController {
                 self.btnRestorePurchases.isEnabled = true
 
                 if daysLeft > 0{
-                    self.view.window?.close()
+//                    self.view.window?.close()
+                    self.closeView()
                 }
                 
                 if !isPurchased && daysLeft <= 0{
@@ -147,7 +171,8 @@ class upgradeNowVc: NSViewController {
                 self.btnRestorePurchases.isEnabled = true
 
                 if daysLeft > 0{
-                    self.view.window?.close()
+//                    self.view.window?.close()
+                    self.closeView()
                 }
                 
                 if !isPurchased && daysLeft <= 0{
@@ -163,11 +188,11 @@ class upgradeNowVc: NSViewController {
     @IBAction func btnContinueClicked(_ sender: Any) {
         addLog(text: "[user-action] btnContinueClicked.")
         allApiObject.capturePosthog(event: "upgrade-nag-button-continue-clicked", metadata: [:])
-        self.view.window?.close()
+        self.closeView()
         if !isAppInitialLodded{
             appdelegate?.initialWork()
         }
-        if (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._ACTIVITY_) && vcShownFromExpireUsageAlert{
+        if (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_) && vcShownFromExpireUsageAlert{
             mainWindowControllerObj?.showWindow(self)
             showBlankWindowInSecondaryMonitor()
             if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_{

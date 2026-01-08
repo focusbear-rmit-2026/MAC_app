@@ -35,7 +35,7 @@ class pusherEvents:NSObject, PusherDelegate {
         // bind a callback to handle an event
         _ = channel.bind(eventName: "focus-mode-started", eventCallback: { (event: PusherEvent) in
             if let data = event.data {
-                if isFocusModeOn() || isHardCorePomodoroModeOn || currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._ACTIVITY_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._SHUTOFFMAC_ || currentState == ._CUSTOM_ROUTINE_{
+                if isFocusModeOn() || isHardCorePomodoroModeOn || currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._SHUTOFFMAC_ || currentState == ._CUSTOM_ROUTINE_{
                     return;
                 }
                 if let data = data.data(using: .utf8) {
@@ -66,11 +66,11 @@ class pusherEvents:NSObject, PusherDelegate {
                                         if currentFocusModeIndex == -1{
                                             return;
                                         }
-                                        if getEndFocusModeWindowControllerObj().window!.isVisible{
-                                            let timestamp = getStringFromDate(date: startFocusModeTime ?? Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
-                                            addEntryInStatsCsv(logType: "focus block", activity: focusCompletedVcObj!.currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: "\(focusModeMinutesToPerform) of \(focusCompletedVcObj!.currentFocusModeName)", distractionsEncountered: "", abortReason: "", feedback: "", tags:"")
-                                            getEndFocusModeWindowControllerObj().window?.close()
-                                        }
+//                                        if getEndFocusModeWindowControllerObj().window!.isVisible{
+//                                            let timestamp = getStringFromDate(date: startFocusModeTime ?? Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
+//                                            addEntryInStatsCsv(logType: "focus block", activity: focusCompletedVcObj!.currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: "\(focusModeMinutesToPerform) of \(focusCompletedVcObj!.currentFocusModeName)", distractionsEncountered: "", abortReason: "", feedback: "", tags:"")
+//                                            getEndFocusModeWindowControllerObj().window?.close()
+//                                        }
                                         
                                         let calendar = Calendar.current
                                         startFocusModeTime = Date()
@@ -118,19 +118,17 @@ class pusherEvents:NSObject, PusherDelegate {
                                             setAppIconForFocusModeScore(probability: nil)
                                             timerForFocusModeEndNotification = nil
                                         }
-                                        isFocusTimeType = ._HOUR_
                                         appdelegate?.setFocusModeTimer(hour: nil, minute: diffMinutes)
                                        // isFocusModeStartedFromPomodoroMode = false
                                         closePomodoroWindowIOfVisible()
-                                        if startingFocusWindowControllerObj != nil{
-                                            if startingFocusWindowControllerObj!.window!.isVisible{
-                                                startingFocusWindowControllerObj?.window?.close()
-                                            }
-                                        }
+//                                        if startingFocusWindowControllerObj != nil{
+//                                            if startingFocusWindowControllerObj!.window!.isVisible{
+//                                                startingFocusWindowControllerObj?.window?.close()
+//                                            }
+//                                        }
                                         whatToAchieveInFocusBlock = intention
                                         
                                         appdelegate!.focusModeStartted(isStartedByPusher: true)
-                                        appdelegate!.setIntentionInBrainDumpWindow()
   
                                     }
                                 }
@@ -161,11 +159,11 @@ class pusherEvents:NSObject, PusherDelegate {
                     return;
                 }
                 
-                if getEndFocusModeWindowControllerObj().window!.isVisible{
-                    getEndFocusModeWindowControllerObj().window?.close()
-                    return;
-                }
-                closeTaskPlayerWindowIfVisible()
+//                if getEndFocusModeWindowControllerObj().window!.isVisible{
+//                    getEndFocusModeWindowControllerObj().window?.close()
+//                    return;
+//                }
+//                closeTaskPlayerWindowIfVisible()
                 isHardCorePomodoroModeOn = false
 
                 isSkipBreakActivityDuringFocus = false
@@ -193,13 +191,13 @@ class pusherEvents:NSObject, PusherDelegate {
                     let totalSeconds = Int(Date().timeIntervalSince(startFocusModeTimeForPauseAndResume ?? Date()))
                     focusModeActualDurationPerformed += totalSeconds
                 }
-                if brainDumpWcObj != nil{
-                    if brainDumpWcObj?.window != nil{
-                        if brainDumpWcObj!.window!.isVisible{
-                            brainDumpWcObj?.window?.close()
-                        }
-                    }
-                }
+//                if brainDumpWcObj != nil{
+//                    if brainDumpWcObj?.window != nil{
+//                        if brainDumpWcObj!.window!.isVisible{
+//                            brainDumpWcObj?.window?.close()
+//                        }
+//                    }
+//                }
                 
                 var currentFocusModeName = ""
                 for i in 0..<arrFocusType.count{
@@ -228,18 +226,14 @@ class pusherEvents:NSObject, PusherDelegate {
                 appdelegate!.setStatusBarButtonColorForFocusMode(color: NSColor.clear, colorString: nil)
                 appdelegate!.statusbutton?.title = ""
                 
-                isFocusTimeType = ._NONE_
-                if appdelegate!.timerAllowUrl != nil{
-                    appdelegate!.timerAllowUrl!.invalidate()
-                }
+//                if appdelegate!.timerAllowUrl != nil{
+//                    appdelegate!.timerAllowUrl!.invalidate()
+//                }
+                focusModeHelper.stopUrlTimer()
                 appdelegate!.timerCheckAllowedApps?.invalidate()
                 
                 arrKeywordsToAllowInFocus.removeAll()
-                if toolBoxWcObj != nil{
-                    if toolBoxWcObj!.window!.isVisible{
-                        toolBoxWcObj?.window?.close()
-                    }
-                }
+
 
                 let timestamp = getStringFromDate(date: startFocusModeTime ?? Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
                 addEntryInStatsCsv(logType: "focus block", activity: currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "", tags:"")
@@ -258,10 +252,10 @@ class pusherEvents:NSObject, PusherDelegate {
                 if currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_MORNING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_{
                     menuViewControllerObj?.btnResumeHabitsClicked(self)
                     return;
-                }else if currentState == ._ACTIVITY_ && isBreakActivityExecuteFromPostponeMorningHabit{
+                }else if currentState == ._MICRO_BREAK_ && isBreakActivityExecuteFromPostponeMorningHabit{
                     menuViewControllerObj?.btnResumeHabitsClicked(self)
                     return;
-                }else if currentState == ._ACTIVITY_ && isBreakActivityExecuteFromPostponeEveningHabit{
+                }else if currentState == ._MICRO_BREAK_ && isBreakActivityExecuteFromPostponeEveningHabit{
                     menuViewControllerObj?.btnResumeHabitsClicked(self)
                     return;
                 }

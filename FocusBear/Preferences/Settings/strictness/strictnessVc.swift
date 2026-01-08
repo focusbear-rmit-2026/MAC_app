@@ -24,12 +24,12 @@ class strictnessVc: NSViewController {
     let frictionItemVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingListItemVc")) as? settingListItemVc
     let passwordItemVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingListItemVc")) as? settingListItemVc
     let focusModeItemVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingListItemVc")) as? settingListItemVc
-    let blockingScheduleVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingListItemVc")) as? settingListItemVc
     let browserTabLimiterItemVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingListItemVc")) as? settingListItemVc
     let blockedURLsItemVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingListItemVc")) as? settingListItemVc
     let blockedAppsItemVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingListItemVc")) as? settingListItemVc
+    let customBlockingVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingListItemVc")) as? settingListItemVc
     
-    
+    let blockListItemVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingListItemVc")) as? settingListItemVc
     
     var currentStrictnessLevel = 1
     override func viewDidLoad() {
@@ -43,9 +43,7 @@ class strictnessVc: NSViewController {
         lblSlightlyStrict.stringValue = "Slightly strict"
         lblStrict.stringValue = "Strict"
         lblSuperStrict.stringValue = "Super strict"
-        
-        
-        
+
         var frictionSettingTitle = "Friction"
         var passwordSettingTitle = "Password"
         var focusModeSettingTitle = "Focus Mode"
@@ -53,7 +51,7 @@ class strictnessVc: NSViewController {
         var tabLimiterSettingTitle = "Browser tab limiter"
         var blockedUrlsSettingTitle = "Super Distracting Sites"
         var blockedAppsSettingTitle = "Super Distracting Apps"
-        
+        var titleBlockLists = "Block Lists"
         if let settingsNew = configjson.value(forKey: "settingsNew") as? NSDictionary{
             frictionSettingTitle = settingsNew.value(forKey: "frictionSettingTitle") as? String ?? frictionSettingTitle
             passwordSettingTitle = settingsNew.value(forKey: "passwordSettingTitle") as? String ?? passwordSettingTitle
@@ -67,6 +65,7 @@ class strictnessVc: NSViewController {
             lblStrict.stringValue = settingsNew.value(forKey: "titleStrict") as? String ?? lblStrict.stringValue
             lblSuperStrict.stringValue = settingsNew.value(forKey: "titleSuperStrict") as? String ?? lblSuperStrict.stringValue
             blockingScheduleTitle = settingsNew.value(forKey: "blockingScheduleSettingTitle") as? String ?? blockingScheduleTitle
+            titleBlockLists = settingsNew.value(forKey: "titleBlockLists") as? String ?? titleBlockLists
         }
         
         if let blockedUrlsViewInfo = configjson.value(forKey: "blockedUrlsViewInfo") as? NSDictionary{
@@ -80,14 +79,19 @@ class strictnessVc: NSViewController {
         var strictness_Password = "If you find you keep cheating, you can have someone else set a password to prevent you from easily unlocking Focus Bear."
         var strictness_DistractingSites = "Stay focused! Designate specific sites as 'Super Distracting' to proactively prevent access during crucial work periods, ensuring an undisturbed and concentrated workflow."
         var strictness_DistractingApps = "Minimize app distractions! Label select apps as 'Super Distracting' to strategically enhance your concentration, creating a refined digital environment tailored to your productivity needs."
-        
+        var strictness_Block_Lists = "Use Block Lists to stay focused on a certain type of work. Start a focus session from the focus bear menu or use a blocking schedule."
+        var strictness_Blocking_Schedules = "Create your own schedules to automatically block distractions. Pick the days and times when distractions should be blocked. Stay focused without needing to start blocking manually."
         
         if let tooltips = configjson.value(forKey: "tooltips") as? NSDictionary{
             strictness_Friction = tooltips.value(forKey: "strictness_Friction") as? String ?? strictness_Friction
             strictness_Password = tooltips.value(forKey: "strictness_Password") as? String ?? strictness_Password
             strictness_DistractingSites = tooltips.value(forKey: "strictness_DistractingSites") as? String ?? strictness_DistractingSites
             strictness_DistractingApps = tooltips.value(forKey: "strictness_DistractingApps") as? String ?? strictness_DistractingApps
+            strictness_Block_Lists = tooltips.value(forKey: "strictness_Block_Lists") as? String ?? strictness_Block_Lists
+            strictness_Blocking_Schedules = tooltips.value(forKey: "strictness_Blocking_Schedules") as? String ?? strictness_Blocking_Schedules
         }
+        
+        
         
         stackView.addView(frictionItemVcObj!.view, in: .bottom)
         frictionItemVcObj?.lblTitle.stringValue = frictionSettingTitle
@@ -100,6 +104,7 @@ class strictnessVc: NSViewController {
         frictionItemVcObj?.delegate = self
         frictionItemVcObj?.toolTip = strictness_Friction
         
+        //---password----
         
         stackView.addView(passwordItemVcObj!.view, in: .bottom)
         passwordItemVcObj?.lblTitle.stringValue = passwordSettingTitle
@@ -108,30 +113,38 @@ class strictnessVc: NSViewController {
         passwordItemVcObj?.delegate = self
         passwordItemVcObj?.toolTip = strictness_Password
         
+        
+        //---Focus mode blocking mode----
+        
         stackView.addView(focusModeItemVcObj!.view, in: .bottom)
         focusModeItemVcObj?.lblTitle.stringValue = focusModeSettingTitle
         focusModeItemVcObj?.imgViewIcon.image = NSImage(named: NSImage.bookmarksTemplateName)
         focusModeItemVcObj?.lblDescription.isHidden = true
         focusModeItemVcObj?.delegate = self
         
-        stackView.addView(blockingScheduleVcObj!.view, in: .bottom)
-        blockingScheduleVcObj?.lblTitle.stringValue = blockingScheduleTitle
-        blockingScheduleVcObj?.imgViewIcon.image = NSImage(named: NSImage.touchBarOpenInBrowserTemplateName)
         
+        //---Block list----
+        
+        stackView.addView(blockListItemVcObj!.view, in: .bottom)
+        blockListItemVcObj?.lblTitle.stringValue = titleBlockLists
+        blockListItemVcObj?.imgViewIcon.image = NSImage(named: "NSTouchBarQuickLookTemplate")
+        blockListItemVcObj?.lblDescription.isHidden = true
+        blockListItemVcObj?.toolTip = strictness_Block_Lists
+        blockListItemVcObj?.delegate = self
+        
+        
+        //---Custom Blocking----
+        stackView.addView(customBlockingVcObj!.view, in: .bottom)
+        customBlockingVcObj?.lblTitle.stringValue = blockingScheduleTitle
         if #available(macOS 11.0, *) {
-            blockingScheduleVcObj?.imgViewIcon.image = NSImage(systemSymbolName: "bolt.circle", accessibilityDescription: nil)
+            customBlockingVcObj?.imgViewIcon.image = NSImage(systemSymbolName: "bolt.circle", accessibilityDescription: nil)
         } else {
-            blockingScheduleVcObj?.imgViewIcon.image = NSImage(named: NSImage.stopProgressTemplateName)
+            customBlockingVcObj?.imgViewIcon.image = NSImage(named: NSImage.stopProgressTemplateName)
         }
-        blockingScheduleVcObj?.lblDescription.isHidden = true
-        blockingScheduleVcObj?.delegate = self
-        
-        stackView.addView(browserTabLimiterItemVcObj!.view, in: .bottom)
-        browserTabLimiterItemVcObj?.lblTitle.stringValue = tabLimiterSettingTitle
-        browserTabLimiterItemVcObj?.imgViewIcon.image = NSImage(named: NSImage.touchBarOpenInBrowserTemplateName)
-        browserTabLimiterItemVcObj?.lblDescription.isHidden = true
-        browserTabLimiterItemVcObj?.delegate = self
-        
+        customBlockingVcObj?.lblDescription.isHidden = true
+        customBlockingVcObj?.delegate = self
+        customBlockingVcObj?.toolTip = strictness_Blocking_Schedules
+
         stackView.addView(blockedURLsItemVcObj!.view, in: .bottom)
         blockedURLsItemVcObj?.lblTitle.stringValue = blockedUrlsSettingTitle
         if #available(macOS 11.0, *) {
@@ -153,41 +166,53 @@ class strictnessVc: NSViewController {
         }
         blockedAppsItemVcObj?.lblDescription.isHidden = true
         blockedAppsItemVcObj?.delegate = self
-        blockedAppsItemVcObj?.lineBottom.isHidden = true
         blockedAppsItemVcObj?.toolTip = strictness_DistractingApps
-        
-        
+
+        stackView.addView(browserTabLimiterItemVcObj!.view, in: .bottom)
+        browserTabLimiterItemVcObj?.lblTitle.stringValue = tabLimiterSettingTitle
+        browserTabLimiterItemVcObj?.imgViewIcon.image = NSImage(named: NSImage.touchBarOpenInBrowserTemplateName)
+        browserTabLimiterItemVcObj?.lblDescription.isHidden = true
+        browserTabLimiterItemVcObj?.delegate = self
+        browserTabLimiterItemVcObj?.lineBottom.isHidden = true
+
         arrForSearchFromSettings.append(["title": frictionItemVcObj!.lblTitle.stringValue, "tabId": idStrictness, "object": frictionItemVcObj!.bgBox as Any])
         arrForSearchFromSettings.append(["title": passwordItemVcObj!.lblTitle.stringValue, "tabId": idStrictness, "object": passwordItemVcObj!.bgBox as Any])
         arrForSearchFromSettings.append(["title": focusModeItemVcObj!.lblTitle.stringValue, "tabId": idStrictness, "object": focusModeItemVcObj!.bgBox as Any])
         arrForSearchFromSettings.append(["title": browserTabLimiterItemVcObj!.lblTitle.stringValue, "tabId": idStrictness, "object": browserTabLimiterItemVcObj!.bgBox as Any])
         arrForSearchFromSettings.append(["title": blockedURLsItemVcObj!.lblTitle.stringValue, "tabId": idStrictness, "object": blockedURLsItemVcObj!.bgBox as Any])
         arrForSearchFromSettings.append(["title": blockedAppsItemVcObj!.lblTitle.stringValue, "tabId": idStrictness, "object": blockedAppsItemVcObj!.bgBox as Any])
-        arrForSearchFromSettings.append(["title": blockingScheduleVcObj!.lblTitle.stringValue, "tabId": idTabStrictness, "object": blockingScheduleVcObj!.bgBox as Any])
+        arrForSearchFromSettings.append(["title": customBlockingVcObj!.lblTitle.stringValue, "tabId": idTabStrictness, "object": customBlockingVcObj!.bgBox as Any])
+        arrForSearchFromSettings.append(["title": blockListItemVcObj!.lblTitle.stringValue, "tabId": idStrictness, "object": blockListItemVcObj!.bgBox as Any])
         
-        
-        
-        arrForSearchFromSimpleModeSettings.append(["title": blockingScheduleVcObj!.lblTitle.stringValue, "tabId": idTabStrictness, "object": blockingScheduleVcObj!.bgBox as Any])
         arrForSearchFromSimpleModeSettings.append(["title": browserTabLimiterItemVcObj!.lblTitle.stringValue, "tabId": idStrictness, "object": browserTabLimiterItemVcObj!.bgBox as Any])
         arrForSearchFromSimpleModeSettings.append(["title": blockedURLsItemVcObj!.lblTitle.stringValue, "tabId": idStrictness, "object": blockedURLsItemVcObj!.bgBox as Any])
         arrForSearchFromSimpleModeSettings.append(["title": blockedAppsItemVcObj!.lblTitle.stringValue, "tabId": idStrictness, "object": blockedAppsItemVcObj!.bgBox as Any])
-        
-        getBlockingScheduleVcObject().loadView()
+        arrForSearchFromSimpleModeSettings.append(["title": customBlockingVcObj!.lblTitle.stringValue, "tabId": idStrictness, "object": customBlockingVcObj!.bgBox as Any])
+        arrForSearchFromSimpleModeSettings.append(["title": blockListItemVcObj!.lblTitle.stringValue, "tabId": idStrictness, "object": blockListItemVcObj!.bgBox as Any])
     }
     
     override func viewWillAppear() {
-        if settingsSideBarVcObj != nil{
-            if settingsSideBarVcObj!.tblView.selectedRow == -1{
-                lblTitle.stringValue = ""
-            }else{
-                lblTitle.stringValue = settingsSideBarVcObj!.arrSettingsList[settingsSideBarVcObj!.tblView.selectedRow]["title"] as? String ?? ""
+        if leftMenuVcObj?.boxBlocks.isSelected ?? false{
+            lblTitle.stringValue = "Blocking"
+            if let leftMenuVcInfo = configjson.value(forKey: "leftMenuVcInfo") as? NSDictionary{
+                lblTitle.stringValue = leftMenuVcInfo.value(forKey: "menuBlocksPreferences") as? String ?? lblTitle.stringValue
             }
         }else{
-            lblTitle.stringValue = ""
+            if settingsSideBarVcObj != nil{
+                if settingsSideBarVcObj!.tblView.selectedRow == -1{
+                    lblTitle.stringValue = ""
+                }else{
+                    lblTitle.stringValue = settingsSideBarVcObj!.arrSettingsList[settingsSideBarVcObj!.tblView.selectedRow]["title"] as? String ?? ""
+                }
+            }else{
+                lblTitle.stringValue = ""
+            }
         }
+        
         
         reloadDataForAppMode()
     }
+    
     func reloadDataForAppMode(){
         if SettingsManagerObject.isGeekModeEnabled{
             reloadStrictnessLevelState()
@@ -202,19 +227,17 @@ class strictnessVc: NSViewController {
             focusModeItemVcObj?.view.isHidden = true
         }
         
-        if let tabview = preferencesWindowControllerObj?.contentViewController as? preferencesTabViewController{
-            let selectedTabViewItem = tabview.tabViewItems[tabview.selectedTabViewItemIndex]
-            if selectedTabViewItem.identifier as? String == idTabStrictness && tabview.tabViewItemStrictnesss != nil{
-                boxStrictnessLevel.isHidden = true
-                frictionItemVcObj?.view.isHidden = true
-                passwordItemVcObj?.view.isHidden = true
-                focusModeItemVcObj?.view.isHidden = true
-                blockingScheduleVcObj?.view.isHidden = false
-            }else{
-                blockingScheduleVcObj?.view.isHidden = true
-            }
+        if leftMenuVcObj?.boxBlocks.isSelected ?? false{
+            boxStrictnessLevel.isHidden = true
+            frictionItemVcObj?.view.isHidden = true
+            passwordItemVcObj?.view.isHidden = true
+            focusModeItemVcObj?.view.isHidden = true
+            customBlockingVcObj?.view.isHidden = false
+            blockListItemVcObj?.view.isHidden = false
+        }else{
+            customBlockingVcObj?.view.isHidden = true
+            blockListItemVcObj?.view.isHidden = true
         }
-        
     }
     
     func reloadStrictnessLevelState(){
@@ -234,15 +257,10 @@ extension strictnessVc: SettingListItemDelegate{
     func buttonClicked(object:settingListItemVc) {
         if object == passwordItemVcObj{
             settingsContainerVcObj?.showPasswordView()
-            if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-                if shouldAskPassword(){
-                    if !isPasswordRequireInOpenSettingsEnabled(){
-                        tabview.view.addSubview(getEnterPasswordVcObjForPreferences().view)
-                        tabview.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
-                        getEnterPasswordVcObjForPreferences().parentVc = nil
-                        enterPasswordVcObjForPreferences?.removeConstraints()
-                        addLog(text: "Showing enter password view inside preferences")
-                    }
+            if shouldAskPassword(){
+                if !isPasswordRequireInOpenSettingsEnabled(){
+                    mainViewControllerObj?.askPasswordForSettings()
+                    addLog(text: "Showing enter password view inside preferences")
                 }
             }
         }else if object == frictionItemVcObj{
@@ -250,47 +268,34 @@ extension strictnessVc: SettingListItemDelegate{
         }else if object == focusModeItemVcObj{
             settingsContainerVcObj?.showFocusBearModeView()
         }else if object == browserTabLimiterItemVcObj{
-            // for simple mode if strictness tab is selected
-//            if !SettingsManagerObject.isGeekModeEnabled{
-                if let tabview = preferencesWindowControllerObj?.contentViewController as? preferencesTabViewController{
-                    let selectedTabViewItem = tabview.tabViewItems[tabview.selectedTabViewItemIndex]
-                    if selectedTabViewItem.identifier as? String == idTabStrictness && tabview.tabViewItemStrictnesss != nil{
-                        tabStrictnessContainerVcObj?.showBrowserTabLimiterView()
-                        return;
-                    }
-                }
-//            }
+            if leftMenuVcObj?.boxBlocks.isSelected ?? false{
+                tabStrictnessContainerVcObj?.showBrowserTabLimiterView()
+                return;
+            }
             //----------------------------------------------------//
             settingsContainerVcObj?.showBrowserTabLimiterView()
         }else if object == blockedURLsItemVcObj{
             // for simple mode if strictness tab is selected
-//            if !SettingsManagerObject.isGeekModeEnabled{
-                if let tabview = preferencesWindowControllerObj?.contentViewController as? preferencesTabViewController{
-                    let selectedTabViewItem = tabview.tabViewItems[tabview.selectedTabViewItemIndex]
-                    if selectedTabViewItem.identifier as? String == idTabStrictness && tabview.tabViewItemStrictnesss != nil{
-                        tabStrictnessContainerVcObj?.showBlockedUrlsView()
-                        return;
-                    }
-                }
-//            }
+            if leftMenuVcObj?.boxBlocks.isSelected ?? false{
+                tabStrictnessContainerVcObj?.showBlockedUrlsView()
+                return;
+            }
             //----------------------------------------------------//
             settingsContainerVcObj?.showBlockedUrlsView()
         }else if object == blockedAppsItemVcObj{
             // for simple mode if strictness tab is selected
-//            if !SettingsManagerObject.isGeekModeEnabled{
-                if let tabview = preferencesWindowControllerObj?.contentViewController as? preferencesTabViewController{
-                    let selectedTabViewItem = tabview.tabViewItems[tabview.selectedTabViewItemIndex]
-                    if selectedTabViewItem.identifier as? String == idTabStrictness && tabview.tabViewItemStrictnesss != nil{
-                        tabStrictnessContainerVcObj?.showBlockedAppsView()
-                        return;
-                    }
-                }
-//            }
+            
+            if leftMenuVcObj?.boxBlocks.isSelected ?? false{
+                tabStrictnessContainerVcObj?.showBlockedAppsView()
+                return;
+            }
             //----------------------------------------------------//
             settingsContainerVcObj?.showBlockedAppsView()
-        }else if object == blockingScheduleVcObj{
-            tabStrictnessContainerVcObj?.showBlockingScheduleView()
-            return;
+        }
+        else if object == customBlockingVcObj{
+            tabStrictnessContainerVcObj?.showCustomBlockingSchedulesView()
+        }else if object == blockListItemVcObj{
+            tabStrictnessContainerVcObj?.showFocusPreferences()
         }
     }
 }

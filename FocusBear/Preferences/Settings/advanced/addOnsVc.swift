@@ -136,12 +136,12 @@ class addOnsVc: NSViewController {
         }
     }
     @IBAction func btnGetLateNoMoreClicked(_ sender: Any) {
-        if let url = URL(string: "https://www.focusbear.io/en/late-no-more"){
+        if let url = URL(string: "https://www.focusbear.io/late-no-more"){
             NSWorkspace.shared.open(url)
         }
     }
     
-    func highlightAdvanceAanalyticsItemBox(){
+    func highlightTimeTrackerEnableItemBox(){
         if let object = timeTrackerEnabledItemVcObj?.bgBox{
             object.wantsLayer = true
             object.layer?.cornerRadius = 3

@@ -78,14 +78,7 @@ class manageSubscriptionVc: NSViewController, WKNavigationDelegate, webViewLoadF
     }
 
     func setAccessTokenToWebView(){
-        var theme = "LIGHT"
-        if preferencesWindowControllerObj != nil{
-            if preferencesWindowControllerObj!.window!.hasDarkAppearance{
-                theme = "DARK"
-            }else {
-                theme = "LIGHT"
-            }
-        }
+        let theme = getWindowTheme()
         let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex].webFontName
         let stringJson1 = "{\"access_token\":\"\(appdelegate!.credential?.accessToken ?? "")\",\"type\":\"mac\",\"lang\":\"\(currentLanguageCode)\",\"theme\":\"\(theme)\",\"font\":\"\(selectedFont)\"}"
         
@@ -100,11 +93,12 @@ class manageSubscriptionVc: NSViewController, WKNavigationDelegate, webViewLoadF
 
     @IBAction func btnCloseClicked(_ sender: Any) {
         self.dismiss(self)
-        if upgradeNowWcObj != nil{
-            if upgradeNowWcObj?.window?.isVisible ?? false{
+        if upgradeNowVcObj != nil{
+            if upgradeNowVcObj?.isViewVisible ?? false{
                 upgradeNowVcObj?.syncPaymentStatus()
             }
         }
+        
         if trialExpiredNagWcObj != nil{
             if trialExpiredNagWcObj?.window?.isVisible ?? false{
                 trialExpiredNagObj?.syncPaymentStatus()

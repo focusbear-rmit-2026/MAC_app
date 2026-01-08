@@ -8,8 +8,10 @@
 
 import Cocoa
 
-class menuTourVc: NSViewController {
+class menuTourVc: NSViewController {// not in use  v2.28.446
 
+    @IBOutlet weak var topSpaceBoxStartFocus: NSLayoutConstraint! //89 & 49
+    @IBOutlet weak var boxTools: NSBox!
     @IBOutlet weak var boxStartPomodoro: NSBox!
     @IBOutlet weak var constraintsBoxPreferencesTop: NSLayoutConstraint!
     @IBOutlet weak var boxStartRoutine: NSBox!
@@ -26,7 +28,7 @@ class menuTourVc: NSViewController {
     
     var currentIndex = 0
     var indexText = "<CURRENTINDEX> of <TOTALCOUNT>"
-    var arrTourMessages = [["title": "Focus Bear", "description": "Let's get you familiar with the Focus Bear Menu and we will have you up and running in no time!", "buttonTitle": "Get Started"],
+    var arrTourMessages:[[String:Any]] = [["title": "Focus Bear", "description": "Let's get you familiar with the Focus Bear Menu and we will have you up and running in no time!", "buttonTitle": "Get Started"],
                            ["title": "Start first routine", "description": "Your first morning routine does not starts automatically on first day. Click Start first routine to initiate your first routine.", "buttonTitle": "Next >"],
                            ["title": "Preferences", "description": "Click on the \"Preferences\" to", "buttonTitle": "Next >", "arrayListItems":["Edit activities for your morning routine, evening routine, breaks throught the day.", "Setup or change Password.", "View your progress stats."]],
                            ["title": "Setup Focus mode", "description": "Setup focus modes to et into deep work with distraction blocking. You can remove blocks if you have an emergency.", "buttonTitle": "Finish"]]
@@ -71,6 +73,9 @@ class menuTourVc: NSViewController {
         var tourSetupFocusMode = "Setup Focus mode"
         var descriptionSetupFocusMode = "Setup focus modes to get into deep work with distraction blocking. You can remove blocks if you have an emergency."
         
+        var itemToolsTitle = "Tools"
+        var descriptionTools = "A collection of helpful tools including Brain Dump, To-Do List/To-Do Player, focus music, and more."
+        
         
         if let menuTourVcInfo = configjson.value(forKey: "menuTourVcInfo") as? NSDictionary{
             buttonGetStartedText = menuTourVcInfo.value(forKey: "buttonGetStartedText") as? String ?? buttonGetStartedText
@@ -97,6 +102,9 @@ class menuTourVc: NSViewController {
             arrayListItemsPreferences = menuTourVcInfo.value(forKey: "arrayListItemsPreferences") as? [String] ?? arrayListItemsPreferences
             tourSetupFocusMode = menuTourVcInfo.value(forKey: "tourSetupFocusMode") as? String ?? tourSetupFocusMode
             descriptionSetupFocusMode = menuTourVcInfo.value(forKey: "descriptionSetupFocusMode") as? String ?? descriptionSetupFocusMode
+            
+            itemToolsTitle = menuTourVcInfo.value(forKey: "tourTools") as? String ?? itemToolsTitle
+            descriptionTools = menuTourVcInfo.value(forKey: "descriptionTools") as? String ?? descriptionTools
         }
         
         if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
@@ -110,21 +118,30 @@ class menuTourVc: NSViewController {
         }
         
         arrTourMessages.removeAll()
-        arrTourMessages.append(["title": tourMenu, "description": descriptionMenu])
+        arrTourMessages.append(["title": tourMenu, "description": descriptionMenu, "box": boxHeader as Any])
         
        
         isHabitsDisabled = UserDefaults.standard.object(forKey: kUserdefaultsIsHabitsDisabledFromOnboarding) as? Bool ?? false
+        arrTourMessages.append(["title": tourPreferences, "description": descriptionPreferences, "arrayListItems": arrayListItemsPreferences, "box": boxPreferences as Any])
         if !isHabitsDisabled{
             imgViewMenu.image = NSImage(named: NSImage.Name("menu_ScreenShot_MorningRoutine_new"))
-            arrTourMessages.append(["title": tourFirstRoutine, "description": descriptionFirstRoutine])
+            arrTourMessages.append(["title": tourFirstRoutine, "description": descriptionFirstRoutine, "box": boxStartRoutine as Any])
+            topSpaceBoxStartFocus.constant = 89
         }else{
             imgViewMenu.image = NSImage(named: NSImage.Name("menu_HabitDisabled_ScreenShot_new"))
-            constraintsBoxPreferencesTop.constant = 179
+            topSpaceBoxStartFocus.constant = 49
         }
         
-        arrTourMessages.append(["title": tourPreferences, "description": descriptionPreferences, "arrayListItems": arrayListItemsPreferences])
         
-        arrTourMessages.append(["title": itemStartPomodoroTitle, "description": descriptionPomodoro])
+        
+        arrTourMessages.append(["title": itemStartPomodoroTitle, "description": descriptionPomodoro, "box": boxStartPomodoro as Any])
+        
+        
+        
+        
+        arrTourMessages.append(["title": itemToolsTitle, "description": descriptionTools, "box": boxTools as Any])
+        
+        
         for i in 0..<arrTourMessages.count{
             if i == 0{
                 arrTourMessages[i]["buttonTitle"] = buttonGetStartedText
@@ -161,14 +178,18 @@ class menuTourVc: NSViewController {
             }
         }
     }
+    
     func startTour(){
-        popoverMenuTour.show(relativeTo: boxHeader.bounds, of: boxHeader, preferredEdge: NSRectEdge.minX)
-        
-        var currentIndexText = indexText.replacingOccurrences(of: "<CURRENTINDEX>", with: "\(currentIndex + 1)")
-        currentIndexText = currentIndexText.replacingOccurrences(of: "<TOTALCOUNT>", with: "\(arrTourMessages.count)")
-        
-        menuTourPopoverVcObj?.showCurrentMessage(title: arrTourMessages[currentIndex]["title"] as? String ?? "", description: arrTourMessages[currentIndex]["description"] as? String ?? "", buttonTitle: arrTourMessages[currentIndex]["buttonTitle"] as? String ?? "", indexText: currentIndexText, arrList: arrTourMessages[currentIndex]["arrayListItems"] as? [String] ?? [], progress: currentIndex + 1, progressMaxValue: arrTourMessages.count)
+        if let box = arrTourMessages[currentIndex]["box"] as? NSBox {
+            popoverMenuTour.show(relativeTo: box.bounds, of: box, preferredEdge: NSRectEdge.minX)
+            
+            var currentIndexText = indexText.replacingOccurrences(of: "<CURRENTINDEX>", with: "\(currentIndex + 1)")
+            currentIndexText = currentIndexText.replacingOccurrences(of: "<TOTALCOUNT>", with: "\(arrTourMessages.count)")
+            
+            menuTourPopoverVcObj?.showCurrentMessage(title: arrTourMessages[currentIndex]["title"] as? String ?? "", description: arrTourMessages[currentIndex]["description"] as? String ?? "", buttonTitle: arrTourMessages[currentIndex]["buttonTitle"] as? String ?? "", indexText: currentIndexText, arrList: arrTourMessages[currentIndex]["arrayListItems"] as? [String] ?? [], progress: currentIndex + 1, progressMaxValue: arrTourMessages.count)
+        }
     }
+    
     @IBAction func btnCloseClicked(_ sender: Any) {
         popoverMenuTour.close()
         self.view.window?.close()
@@ -179,9 +200,9 @@ class menuTourVc: NSViewController {
         allApiObject.capturePosthog(event: "menu_tour_close_clicked", metadata: [:])
 
         showAskProcrastinatingWindow()
-        if !isEmailVerified{
-            showUnverifiedEmailWindow()
-        }
+//        if !isEmailVerified{
+//            showUnverifiedEmailWindow()
+//        }
     }
     
 //    func showAlertSetupComplete(){
@@ -210,24 +231,10 @@ class menuTourVc: NSViewController {
         allApiObject.capturePosthog(event: "menu_tour_next_clicked", metadata: [:])
         currentIndex += 1
         
-        
-        if isHabitsDisabled{
-            if currentIndex == 1{
-                popoverMenuTour.show(relativeTo: boxPreferences.bounds, of: boxPreferences, preferredEdge: NSRectEdge.minX)
-            }else if currentIndex == 2{
-                popoverMenuTour.show(relativeTo: boxStartPomodoro.bounds, of: boxStartPomodoro, preferredEdge: NSRectEdge.minX)
-            }
-        }else{
-            if currentIndex == 1{
-                popoverMenuTour.show(relativeTo: boxStartRoutine.bounds, of: boxStartRoutine, preferredEdge: NSRectEdge.minX)
-            }else if currentIndex == 2{
-                popoverMenuTour.show(relativeTo: boxPreferences.bounds, of: boxPreferences, preferredEdge: NSRectEdge.minX)
-            }else if currentIndex == 3{
-                popoverMenuTour.show(relativeTo: boxStartPomodoro.bounds, of: boxStartPomodoro, preferredEdge: NSRectEdge.minX)
-            }
-        }
-        
         if currentIndex < arrTourMessages.count{
+            if let box = arrTourMessages[currentIndex]["box"] as? NSBox {
+                popoverMenuTour.show(relativeTo: box.bounds, of: box, preferredEdge: NSRectEdge.minX)
+            }
             var currentIndexText = indexText.replacingOccurrences(of: "<CURRENTINDEX>", with: "\(currentIndex + 1)")
             currentIndexText = currentIndexText.replacingOccurrences(of: "<TOTALCOUNT>", with: "\(arrTourMessages.count)")
             menuTourPopoverVcObj?.showCurrentMessage(title: arrTourMessages[currentIndex]["title"] as? String ?? "", description: arrTourMessages[currentIndex]["description"] as? String ?? "", buttonTitle: arrTourMessages[currentIndex]["buttonTitle"] as? String ?? "", indexText: "\(currentIndex + 1) of \(arrTourMessages.count)", arrList: arrTourMessages[currentIndex]["arrayListItems"] as? [String] ?? [], progress: currentIndex + 1, progressMaxValue: arrTourMessages.count)
@@ -239,9 +246,9 @@ class menuTourVc: NSViewController {
                 menuViewControllerObj?.loadView()
             }
             showAskProcrastinatingWindow()
-            if !isEmailVerified{
-                showUnverifiedEmailWindow()
-            }
+//            if !isEmailVerified{
+//                showUnverifiedEmailWindow()
+//            }
         }
     }
     
@@ -255,9 +262,9 @@ class menuTourVc: NSViewController {
 
         allApiObject.capturePosthog(event: "menu_tour_Skip_clicked", metadata: [:])
         showAskProcrastinatingWindow()
-        if !isEmailVerified{
-            showUnverifiedEmailWindow()
-        }
+//        if !isEmailVerified{
+//            showUnverifiedEmailWindow()
+//        }
     }
     
     @IBAction func btnBgClicked(_ sender: Any) {

@@ -44,19 +44,16 @@ class popUpSaveThisTaskForLaterVc: NSViewController {
     @IBAction func btnYesSaveClicked(_ sender: Any) {
         addLog(text: "[user-action] popUpSaveThisTaskForLaterVc:- btnYesSaveClicked")
         let today = Date()
+        let taskName = textView.string
         let nextWeek = Calendar.current.date(byAdding: .day, value: 7, to: today) ?? Date()
         let dateString = getStringFromDateInUtc(date: nextWeek, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
         allApiObject.addTask(title: textView.string, details: "", eisenhowerQuadrant: 1, dueDate: dateString, objective: "", tags: [], completionHandler: { result,json in
             if result{
+                addLog(text: "\(taskName) task created successfully.")
                 DispatchQueue.main.async { [self] in
-                    if taskPlayerWcObj != nil{
-                        if taskPlayerWcObj?.window?.isVisible ?? false{
-                            if let json = json{
-                                if let id = json.value(forKey: "id") as? String{
-                                    taskPlayerVcObj?.addTaskInCurrentList(taskName: textView.string, id: id, duration: 600)
-                                }
-                            }
-                            
+                    if let json = json{
+                        if let id = json.value(forKey: "id") as? String{
+                            taskPlayerVcObj?.addTaskInCurrentList(taskName: textView.string, id: id, duration: 600)
                         }
                     }
                 }

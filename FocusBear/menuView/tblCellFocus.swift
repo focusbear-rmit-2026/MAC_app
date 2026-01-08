@@ -8,7 +8,7 @@
 
 import Cocoa
 
-class tblCellFocus: NSTableCellView {
+class tblCellFocus: NSTableCellView {// not in use 
 
 
     @IBOutlet weak var rowHeight: NSLayoutConstraint!
@@ -18,7 +18,7 @@ class tblCellFocus: NSTableCellView {
     @IBOutlet weak var imgViewAppIcon: NSImageView!
     @IBOutlet weak var boxColor: NSBox!
     @IBOutlet weak var lblTitle: NSTextField!
-    @IBOutlet weak var boxtitle: customBox!
+    @IBOutlet weak var boxtitle: NSBox!//customBox!
     var isFirstTime = false
     var trackingArea: NSTrackingArea?
     var isInfoIconVisible = false

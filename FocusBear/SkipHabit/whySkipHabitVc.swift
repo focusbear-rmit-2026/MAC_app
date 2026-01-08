@@ -32,7 +32,7 @@ class whySkipHabitVc: NSViewController {
     }
     
     override func viewWillAppear() {
-        if currentState == ._ACTIVITY_{
+        if currentState == ._MICRO_BREAK_{
             btnSkipCompletely.isHidden = false
         }else{
             btnSkipCompletely.isHidden = true
@@ -47,17 +47,17 @@ class whySkipHabitVc: NSViewController {
             }
         }
         if currentAction == ._VISUALIZE_{
-            mainViewControllerObj?.showThirdVc()
+            getHabitsVcObject().showThirdVc()
         }
         if currentAction == ._INPROGRESS_{
-            mainViewControllerObj?.showThirdVc()
+            getHabitsVcObject().showThirdVc()
         }
         
         if currentAction == ._START_{// break activity case
-            mainViewControllerObj?.showThirdVc()
+            getHabitsVcObject().showThirdVc()
         }
         
-        if currentState == ._ACTIVITY_{
+        if currentState == ._MICRO_BREAK_{
             thirdVcObj?.activitySkippedAndDoneAlready()
         }else if currentState == ._MORNING_HABIT_{
             thirdVcObj?.morningHabitSkippedAndDoneAlready()
@@ -72,7 +72,7 @@ class whySkipHabitVc: NSViewController {
         addLog(text: "[user-action] whySkipHabitVc:- button AlreadyDidItClicked")
         self.view.removeFromSuperview()
         
-        if currentState == ._ACTIVITY_{
+        if currentState == ._MICRO_BREAK_{
             skipActivityAlreadyDid()
         }else{
             if shouldAskPassword(){
@@ -115,8 +115,8 @@ class whySkipHabitVc: NSViewController {
         addLog(text: "[user-action] whySkipHabitVc:- button CanNotDoItClicked")
         self.view.removeFromSuperview()
         
-        if currentState == ._ACTIVITY_{
-            mainViewControllerObj?.showSkipHabitView()
+        if currentState == ._MICRO_BREAK_{
+            getHabitsVcObject().showSkipHabitView()
         }else{
             if shouldAskPassword(){
                 if currentState == ._MORNING_HABIT_{
@@ -124,7 +124,7 @@ class whySkipHabitVc: NSViewController {
                         mainViewControllerObj?.showPasswordView()
                         enterPasswordVcObj?.parentVc = getSkipHabitVcObject()
                     }else{
-                        mainViewControllerObj?.showSkipHabitView()
+                        getHabitsVcObject().showSkipHabitView()
                     }
                     
                 }else if currentState == ._EVENING_HABIT_{
@@ -133,21 +133,21 @@ class whySkipHabitVc: NSViewController {
                             mainViewControllerObj?.showPasswordView()
                             enterPasswordVcObj?.parentVc = getSkipHabitVcObject()
                         }else{
-                            mainViewControllerObj?.showSkipHabitView()
+                            getHabitsVcObject().showSkipHabitView()
                         }
                     }else{
                         if SettingsManagerObject.isPasswordRequireInSkipEvening{
                             mainViewControllerObj?.showPasswordView()
                             enterPasswordVcObj?.parentVc = getSkipHabitVcObject()
                         }else{
-                            mainViewControllerObj?.showSkipHabitView()
+                            getHabitsVcObject().showSkipHabitView()
                         }
                     }
                 }else if currentState == ._CUSTOM_ROUTINE_{
-                    mainViewControllerObj?.showSkipHabitView()
+                    getHabitsVcObject().showSkipHabitView()
                 }
             }else{
-                mainViewControllerObj?.showSkipHabitView()
+                getHabitsVcObject().showSkipHabitView()
             }
         }
     }
@@ -159,6 +159,6 @@ class whySkipHabitVc: NSViewController {
     @IBAction func btnSkipCompletelyClicked(_ sender: Any) {
         addLog(text: "[user-action] whySkipHabitVc - Skip Break Activities Completely Clicked")
         self.view.removeFromSuperview()
-        mainViewControllerObj?.postponeBreakActivitiesFor(minutes: breakAfterMinutes, secondsToPostpone: nil)
+        getHabitsVcObject().postponeBreakActivitiesFor(minutes: breakAfterMinutes, secondsToPostpone: nil, isFromBreakWarningWindow: false)
     }
 }

@@ -14,6 +14,9 @@ class settingsSplitViewController: NSSplitViewController {
         super.viewDidLoad()
         // Do view setup here.
         addLog(text: "settingsSplitViewController viewdidload")
+        if !getFocusPreferencesVcObject().isViewLoaded{
+            getFocusPreferencesVcObject().loadView()
+        }
     }
     
     override func viewWillDisappear() {

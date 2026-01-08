@@ -194,8 +194,14 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
             thirdVcObj?.btnReviseQuantity.isHidden = false
            return
         }
-        thirdVcObj?.logQuantityQuestionsForGraph.removeAll()
-        thirdVcObj?.loadGraph(activityId: self.activity_id, activityName: self.name, logQuantity: true, logQuantityType: self.logQuantityType, activityChoiceId: self.activityChoiceId,activityStartTime: lastActivityPerformedTime!, duration: durationInSeconds, quantity: "0")
+        
+        if !(getHabitsVcObject().habitsView.subviews.contains(firstViewControllerObj!.view)){ // it means user has not used quick action bar
+            thirdVcObj?.logQuantityQuestionsForGraph.removeAll()
+            thirdVcObj?.loadGraph(activityId: self.activity_id, activityName: self.name, logQuantity: true, logQuantityType: self.logQuantityType, activityChoiceId: self.activityChoiceId,activityStartTime: lastActivityPerformedTime!, duration: durationInSeconds, quantity: "0")
+               
+        }
+        
+        
 
         let startTime = getStringFromDate(date: lastActivityPerformedTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")
 
@@ -206,7 +212,7 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
             logType = "morning routine"
         }else if lCurrentState! == ._EVENING_HABIT_{
             logType = "evening routine"
-        }else if lCurrentState! == ._ACTIVITY_{
+        }else if lCurrentState! == ._MICRO_BREAK_{
             logType = "break"
         }else if lCurrentState! == ._SPECIAL_ACTIVITY_{
             logType = "special activity"
@@ -217,14 +223,14 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
         addEntryInStatsCsv(logType: logType, activity: name, durationInSeconds: durationInSeconds, quantityQuestion: logQuantityQuestion, quantityLogged: "0.0", startTime: startTime, workAchieved: "", distractionsEncountered: "", abortReason: "", feedback: "", tags:"")
 
         if take_notes == END_OF_ACTIVITY{
-            mainViewControllerObj!.showTakeNotesView()
+            getHabitsVcObject().showTakeNotesView()
             takeActivityNotesVcObj?.resetData(durationInSeconds: Int(durationInSeconds) ?? 0, quantity_logged:0.0, activity_id: activity_id, activity_sequence_id: activity_sequence_id, activityChoiceId: activityChoiceId, log_quantity_answers: [])
 
         }else if isAnyAllowedFocusModeActivityWasRunningInLastActivity{
             let currentFocusModeName = currentRunningFocusType["name"] as? String ?? ""
             let currentFocusModeId = currentRunningFocusType["id"] as? String ?? ""
             
-            mainViewControllerObj!.showFocusCompletedView()
+            getHabitsVcObject().showFocusCompletedView()
             focusModeActualDurationPerformed = Int(durationInSeconds) ?? 0
             focusCompletedForActivityVcObj?.resetData(focusModeName: currentFocusModeName, currentFocusModeId: currentFocusModeId, finish_time: isAnyAllowedFocusModeActivityFinishTime, durationInSeconds: Int(durationInSeconds) ?? 0, quantity_logged:0.0, activity_id: activity_id, activity_sequence_id: activity_sequence_id, activityChoiceId: activityChoiceId, log_quantity_answers: [], notes: notes)
         }else{
@@ -268,7 +274,7 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
             logType = "morning routine"
         }else if lCurrentState! == ._EVENING_HABIT_{
             logType = "evening routine"
-        }else if lCurrentState! == ._ACTIVITY_{
+        }else if lCurrentState! == ._MICRO_BREAK_{
             logType = "break"
         }else if lCurrentState! == ._SPECIAL_ACTIVITY_{
             logType = "special activity"
@@ -285,10 +291,13 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
 
 
         self.view.removeFromSuperview()
-        thirdVcObj?.currentGraphIndex = 0
-        thirdVcObj?.logQuantityQuestionsForGraph = logQuantityQuestions
-        thirdVcObj?.loadGraph(activityId: self.activity_id, activityName: self.name, logQuantity: true, logQuantityType: self.logQuantityType, activityChoiceId: self.activityChoiceId, activityStartTime: lastActivityPerformedTime!, duration: durationInSeconds, quantity: "\(logQuantityQuestions[0].quantity)")
-   
+        
+        if !(getHabitsVcObject().habitsView.subviews.contains(firstViewControllerObj!.view)){ // it means user has not used quick action bar
+            thirdVcObj?.currentGraphIndex = 0
+            thirdVcObj?.logQuantityQuestionsForGraph = logQuantityQuestions
+            thirdVcObj?.loadGraph(activityId: self.activity_id, activityName: self.name, logQuantity: true, logQuantityType: self.logQuantityType, activityChoiceId: self.activityChoiceId, activityStartTime: lastActivityPerformedTime!, duration: durationInSeconds, quantity: "\(logQuantityQuestions[0].quantity)")
+        }
+        
         var log_quantity_answers = [[String : Any]]()
         for question in logQuantityQuestions{
             let val = Double(round(100 * question.quantity) / 100)
@@ -297,13 +306,13 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
         if !isReviseQuantity{
             
             if take_notes == END_OF_ACTIVITY{
-                mainViewControllerObj!.showTakeNotesView()
+                getHabitsVcObject().showTakeNotesView()
                 takeActivityNotesVcObj?.resetData(durationInSeconds: Int(durationInSeconds) ?? 0, quantity_logged:logQuantityQuestions[0].quantity, activity_id: activity_id, activity_sequence_id: activity_sequence_id, activityChoiceId: activityChoiceId, log_quantity_answers: log_quantity_answers)
             }else if isAnyAllowedFocusModeActivityWasRunningInLastActivity{
                 let currentFocusModeName = currentRunningFocusType["name"] as? String ?? ""
                 let currentFocusModeId = currentRunningFocusType["id"] as? String ?? ""
                 
-                mainViewControllerObj!.showFocusCompletedView()
+                getHabitsVcObject().showFocusCompletedView()
                 focusModeActualDurationPerformed = Int(durationInSeconds) ?? 0
                 focusCompletedForActivityVcObj?.resetData(focusModeName: currentFocusModeName, currentFocusModeId: currentFocusModeId, finish_time: isAnyAllowedFocusModeActivityFinishTime, durationInSeconds: Int(durationInSeconds) ?? 0, quantity_logged:logQuantityQuestions[0].quantity, activity_id: activity_id, activity_sequence_id: activity_sequence_id, activityChoiceId: activityChoiceId, log_quantity_answers: log_quantity_answers, notes: notes)
             }else{

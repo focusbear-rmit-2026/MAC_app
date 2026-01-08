@@ -17,9 +17,9 @@ class pomodoroSettingsVc: NSViewController {
     @IBOutlet weak var boxWorkToBreakRatio: NSBox!
     @IBOutlet weak var btnInfoPomodoroShortcut: hoverInfoButton!
 //    @IBOutlet weak var btnInfoBreakDuration: hoverInfoButton!
-    @IBOutlet weak var btnInfoPomodoroModeDuration: hoverInfoButton!
+//    @IBOutlet weak var btnInfoPomodoroModeDuration: hoverInfoButton!
     @IBOutlet weak var boxShortcutPomodoro: NSBox!
-    @IBOutlet weak var boxPomodoroModeDuration: NSBox!
+    @IBOutlet weak var boxPomodoroModeDuration: NSBox!// not in use
 //    @IBOutlet weak var boxBreakDuration: NSBox!
     
     @IBOutlet weak var lblTitle: NSTextField!
@@ -34,10 +34,10 @@ class pomodoroSettingsVc: NSViewController {
     @IBOutlet weak var btnLearnPomodoroTechnique: underLineButton!
     @IBOutlet weak var lblDescriptionPomodoro: NSTextField!
 //    @IBOutlet weak var lblMinutesBreak: NSTextField!
-    @IBOutlet weak var lblMinutesPomodoro: NSTextField!
-    @IBOutlet weak var textFieldPomodoroDuration: NSTextField!
+//    @IBOutlet weak var lblMinutesPomodoro: NSTextField!
+//    @IBOutlet weak var textFieldPomodoroDuration: NSTextField!
 //    @IBOutlet weak var textFieldBreakDuration: NSTextField!
-    @IBOutlet weak var lblTitlePomodoroModeDuration: NSTextField!
+//    @IBOutlet weak var lblTitlePomodoroModeDuration: NSTextField!
 //    @IBOutlet weak var lblTitleBreakDuration: NSTextField!
     @IBOutlet weak var lblTitleWorkToBreakRatio: NSTextField!
     @IBOutlet weak var lblDescriptionWorkToBreakRatio: NSTextField!
@@ -65,7 +65,7 @@ class pomodoroSettingsVc: NSViewController {
         
 //        btnInfoBreakDuration.isHidden = false
         btnInfoPomodoroShortcut.isHidden = false
-        btnInfoPomodoroModeDuration.isHidden = false
+//        btnInfoPomodoroModeDuration.isHidden = false
         
         lblTitleWorkToBreakRatio.stringValue = "Work to break ratio:"
         lblDescriptionWorkToBreakRatio.stringValue = "For every 5 minutes you focus, you will have a 1 minutes break."
@@ -110,17 +110,17 @@ class pomodoroSettingsVc: NSViewController {
             
         }
         
-        lblTitlePomodoroModeDuration.stringValue = pomodoroModeDurationText
+//        lblTitlePomodoroModeDuration.stringValue = pomodoroModeDurationText
 //        lblTitleBreakDuration.stringValue = breakDurationText
-        lblMinutesPomodoro.stringValue = minutesText
+//        lblMinutesPomodoro.stringValue = minutesText
 //        lblMinutesBreak.stringValue = minutesText
 
-        textFieldPomodoroDuration.formatter = IntegerFormatter()
+//        textFieldPomodoroDuration.formatter = IntegerFormatter()
 //        textFieldBreakDuration.formatter = IntegerFormatter()
         textFieldWorkRatio.formatter = IntegerFormatter()
         textFieldBreakRatio.formatter = IntegerFormatter()
         
-        textFieldPomodoroDuration.delegate = self
+//        textFieldPomodoroDuration.delegate = self
 //        textFieldBreakDuration.delegate = self
         textFieldWorkRatio.delegate = self
         textFieldBreakRatio.delegate = self
@@ -152,7 +152,7 @@ class pomodoroSettingsVc: NSViewController {
         lineBottomShortcutPomodoro.isHidden = true
         
         arrForSearchFromSettings.append(["title": checkBoxPomodoroText, "tabId": idPomodoro, "object": pomodoroItemVcObj!.bgBox as Any])
-        arrForSearchFromSettings.append(["title": pomodoroModeDurationText, "tabId": idPomodoro, "object": boxPomodoroModeDuration as Any])
+//        arrForSearchFromSettings.append(["title": pomodoroModeDurationText, "tabId": idPomodoro, "object": boxPomodoroModeDuration as Any])
         arrForSearchFromSettings.append(["title": lblTitleWorkToBreakRatio.stringValue, "tabId": idPomodoro, "object": boxWorkToBreakRatio as Any])
         arrForSearchFromSettings.append(["title": lblTitleShortcut.stringValue, "tabId": idPomodoro, "object": boxShortcutPomodoro as Any])
         
@@ -170,6 +170,8 @@ class pomodoroSettingsVc: NSViewController {
         }
         arrForSearchFromSettings.append(["title": titleUseHardcorePomodoro, "tabId": "isSuperPomodoro", "object": pomodoroPreferencesAdvancedVcObj?.checkBoxUseHardcorePomodoro as Any])
         arrForSearchFromSettings.append(["title": titleSkipMicrobreaks, "tabId": "isSuperPomodoro", "object": pomodoroPreferencesAdvancedVcObj?.checkBoxSkipMicrobreaks as Any])
+        
+        boxPomodoroModeDuration.isHidden = true
     }
     
     override func viewWillAppear() {
@@ -178,9 +180,9 @@ class pomodoroSettingsVc: NSViewController {
         reload_newShotShortcut()
         resetPomodoroModeState()
 
-        if let duration = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsPomodoroDurationMinutes) as? Int{
-            textFieldPomodoroDuration.stringValue = "\(duration)"
-        }
+//        if let duration = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsPomodoroDurationMinutes) as? Int{
+//            textFieldPomodoroDuration.stringValue = "\(duration)"
+//        }
         
 //        if let duration = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsBreakDurationMinutes) as? Int{
 //            textFieldBreakDuration.stringValue = "\(duration)"
@@ -211,7 +213,7 @@ class pomodoroSettingsVc: NSViewController {
         }
     }
     override func viewDidAppear() {
-        self.textFieldPomodoroDuration.window?.makeFirstResponder(nil)
+//        self.textFieldPomodoroDuration.window?.makeFirstResponder(nil)
     }
     override func viewWillDisappear() {
         resetCurrentRecording()
@@ -392,13 +394,13 @@ class pomodoroSettingsVc: NSViewController {
     }
     
     
-    @IBAction func btnInfoPomodoroModeDurationClicked(_ sender: Any) {
-        var toolTip = "Normally pomodoro work blocks are 25 minutes long (with a 5 minute break) but you can customize it to a different time"
-        if let tooltips = configjson.value(forKey: "tooltips") as? NSDictionary{
-            toolTip = tooltips.value(forKey: "pomodoro_PomodoroModeDuration") as? String ?? toolTip
-        }
-        showTooltip(sender: btnInfoPomodoroModeDuration, msg: toolTip, preferredEdge: NSRectEdge.maxX, maxWidthVal:350)
-    }
+//    @IBAction func btnInfoPomodoroModeDurationClicked(_ sender: Any) {
+//        var toolTip = "Normally pomodoro work blocks are 25 minutes long (with a 5 minute break) but you can customize it to a different time"
+//        if let tooltips = configjson.value(forKey: "tooltips") as? NSDictionary{
+//            toolTip = tooltips.value(forKey: "pomodoro_PomodoroModeDuration") as? String ?? toolTip
+//        }
+//        showTooltip(sender: btnInfoPomodoroModeDuration, msg: toolTip, preferredEdge: NSRectEdge.maxX, maxWidthVal:350)
+//    }
     
 //    @IBAction func btnInfoBreakDurationClicked(_ sender: Any) {
 //        var toolTip = "Normally pomodoro breaks are 5 minutes long but you can take a break on your terms! Customize the Break Duration to align with your preferred downtime interval, allowing you to recharge and refresh in a way that perfectly complements your unique work style and preferences."
@@ -419,52 +421,53 @@ class pomodoroSettingsVc: NSViewController {
 extension pomodoroSettingsVc: NSTextFieldDelegate{
     func controlTextDidEndEditing(_ obj: Notification) {
         if let textfield = obj.object as? NSTextField{
-            if textfield == textFieldPomodoroDuration{
-                
-                if textFieldPomodoroDuration.stringValue.isEmpty{
-                    showAlert(msg: workDurationEmptyErrorText, completionHandler: {_ in
-                        if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-                            tabview.selectedTabViewItemIndex = preferencesSettingsIndex
-                        }
-                        if settingsSideBarVcObj != nil{
-                            settingsSideBarVcObj?.tblView.selectRowIndexes(IndexSet(integer: settingsSideBarVcObj?.pomodoroSettingsIndex ?? 6), byExtendingSelection: false)
-                        }
-                        
-//                        self.tabView.selectTabViewItem(self.tabViewItemPomodoro)
-                        if let duration = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsPomodoroDurationMinutes) as? Int{
-                            self.textFieldPomodoroDuration.stringValue = "\(duration)"
-                        }
-                        textfield.setFocus()
-                    })
-                    return;
-                }
-                if textFieldPomodoroDuration.integerValue < 1{
-                    showAlert(msg: workDurationZeroErrorText, completionHandler: {_ in
-                        if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-                            tabview.selectedTabViewItemIndex = preferencesSettingsIndex
-                        }
-                        if settingsSideBarVcObj != nil{
-                            settingsSideBarVcObj?.tblView.selectRowIndexes(IndexSet(integer: settingsSideBarVcObj?.pomodoroSettingsIndex ?? 6), byExtendingSelection: false)
-                        }
-//                        self.tabView.selectTabViewItem(self.tabViewItemPomodoro)
-                        if let duration = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsPomodoroDurationMinutes) as? Int{
-                            self.textFieldPomodoroDuration.stringValue = "\(duration)"
-                        }
-                        textfield.setFocus()
-                    })
-                    return;
-                }
-                let count = textfield.integerValue
-                if let oldCount = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsPomodoroDurationMinutes) as? Int{
-                    if count == oldCount{
-                        return;
-                    }
-                }
-                SettingsManagerObject.isSettingsChanged = true
-                UserDefaults.standard.set(count, forKey: SettingsManagerObject.kUserdefaultsPomodoroDurationMinutes)
-                allApiObject.capturePosthog(event: "settings-changed-pomodoro-duration", metadata: [:])//#490
-            }
-            else if textfield == textFieldWorkRatio{
+//            if textfield == textFieldPomodoroDuration{
+//                
+//                if textFieldPomodoroDuration.stringValue.isEmpty{
+//                    showAlert(msg: workDurationEmptyErrorText, completionHandler: {_ in
+//                        if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
+//                            tabview.selectedTabViewItemIndex = preferencesSettingsIndex
+//                        }
+//                        if settingsSideBarVcObj != nil{
+//                            settingsSideBarVcObj?.tblView.selectRowIndexes(IndexSet(integer: settingsSideBarVcObj?.pomodoroSettingsIndex ?? 6), byExtendingSelection: false)
+//                        }
+//                        
+////                        self.tabView.selectTabViewItem(self.tabViewItemPomodoro)
+//                        if let duration = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsPomodoroDurationMinutes) as? Int{
+//                            self.textFieldPomodoroDuration.stringValue = "\(duration)"
+//                        }
+//                        textfield.setFocus()
+//                    })
+//                    return;
+//                }
+//                if textFieldPomodoroDuration.integerValue < 1{
+//                    showAlert(msg: workDurationZeroErrorText, completionHandler: {_ in
+//                        if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
+//                            tabview.selectedTabViewItemIndex = preferencesSettingsIndex
+//                        }
+//                        if settingsSideBarVcObj != nil{
+//                            settingsSideBarVcObj?.tblView.selectRowIndexes(IndexSet(integer: settingsSideBarVcObj?.pomodoroSettingsIndex ?? 6), byExtendingSelection: false)
+//                        }
+////                        self.tabView.selectTabViewItem(self.tabViewItemPomodoro)
+//                        if let duration = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsPomodoroDurationMinutes) as? Int{
+//                            self.textFieldPomodoroDuration.stringValue = "\(duration)"
+//                        }
+//                        textfield.setFocus()
+//                    })
+//                    return;
+//                }
+//                let count = textfield.integerValue
+//                if let oldCount = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsPomodoroDurationMinutes) as? Int{
+//                    if count == oldCount{
+//                        return;
+//                    }
+//                }
+//                SettingsManagerObject.isSettingsChanged = true
+//                UserDefaults.standard.set(count, forKey: SettingsManagerObject.kUserdefaultsPomodoroDurationMinutes)
+//                allApiObject.capturePosthog(event: "settings-changed-pomodoro-duration", metadata: [:])//#490
+//            }
+//            else
+            if textfield == textFieldWorkRatio{
                 let count = textfield.integerValue
                 if let oldCount = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsWorkRatioInPomodoro) as? Int{
                     if count == oldCount{

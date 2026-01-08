@@ -8,7 +8,7 @@
 import Cocoa
 
 
-class preferencesTabViewController: NSTabViewController {
+class preferencesTabViewController: NSTabViewController {// not in use 
 
     
     //@IBOutlet weak var tabGeneral: NSTabViewItem!
@@ -155,8 +155,7 @@ class preferencesTabViewController: NSTabViewController {
             alertWarning.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
                 
                 if modalResponse == .alertFirstButtonReturn{
-                    showExplainingPermissionsWindow()
-                    explainingPermissionsVcObj?.showingFromPomodoro = false
+                    showExplainingPermissionsWindow(showingFromPomodoro: false)
                     self.view.window?.close()
                 }
                 
@@ -221,7 +220,7 @@ class preferencesTabViewController: NSTabViewController {
     
     override func tabView(_ tabView: NSTabView, shouldSelect tabViewItem: NSTabViewItem?) -> Bool {
         if areSettingsEdited{
-            preferencesWindowControllerObj!.showAlertSettingsEdited()
+            //preferencesWindowControllerObj!.showAlertSettingsEdited()
             areSettingsEdited = false
             return false
         }

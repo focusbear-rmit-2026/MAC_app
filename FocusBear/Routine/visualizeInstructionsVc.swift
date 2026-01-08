@@ -83,7 +83,7 @@ class visualizeInstructionsVc: NSViewController, WKNavigationDelegate, webViewLo
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         print("*************didFinish navigation**************")
         DispatchQueue.global().async {
-            sleep(1)
+            //sleep(1)
             DispatchQueue.main.async {
                 self.removeWebViewLoadFailedView(webView: webView)
                 self.setAccessTokenToWebView()
@@ -132,14 +132,8 @@ class visualizeInstructionsVc: NSViewController, WKNavigationDelegate, webViewLo
     }
     
     func setAccessTokenToWebView(){
-        var theme = "LIGHT"
-        if preferencesWindowControllerObj != nil{
-            if preferencesWindowControllerObj!.window!.hasDarkAppearance{
-                theme = "DARK"
-            }else {
-                theme = "LIGHT"
-            }
-        }
+        let theme = getWindowTheme()
+        
         let flags = "[\"migrate-stats-to-motivational-summary\"]"
         let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex].webFontName
         let stringJson = "{access_token: \"\(appdelegate!.credential?.accessToken ?? "")\",\"font\":\"\(selectedFont)\",\"lang\":\"\(currentLanguageCode)\",\"theme\":\"\(theme)\",\"motivation_type\":\"desktop\",\"flags\":\(flags)}"
@@ -236,6 +230,7 @@ class visualizeInstructionsVc: NSViewController, WKNavigationDelegate, webViewLo
             self.boxStarRating.isHidden = false
         }
     }
+    
     func tryPreLoadMotivationalMessage(){
         self.isMotivationalMessageShowing = false
         self.imgView.isHidden = false
@@ -254,6 +249,7 @@ class visualizeInstructionsVc: NSViewController, WKNavigationDelegate, webViewLo
             })
         }
     }
+    
     func showWebView(){
         isMotivationalMessageShowing = true
         self.boxStarRating.isHidden = true
@@ -399,13 +395,13 @@ class visualizeInstructionsVc: NSViewController, WKNavigationDelegate, webViewLo
         addLog(text:"[user-action] visualizeInstructionsVc - btnMainClicked :- \(btnMain.title)")
         if currentState == ._MORNING_HABIT_{
             allApiObject.capturePosthog(event: "routine-motivation-level", metadata: ["routine-type":"morning_routine", "motivation-level":currentRatingCount, "motivation-comments":textFieldRating.stringValue])
-            mainViewControllerObj?.startFirstMorningHabit()
+            getHabitsVcObject().startFirstMorningHabit()
         }else if currentState == ._EVENING_HABIT_{
             allApiObject.capturePosthog(event: "routine-motivation-level", metadata: ["routine-type":"evening_routine", "motivation-level":currentRatingCount, "motivation-comments":textFieldRating.stringValue])
-            mainViewControllerObj?.startFirstEveningHabit()
+            getHabitsVcObject().startFirstEveningHabit()
         }else if currentState == ._CUSTOM_ROUTINE_{
             allApiObject.capturePosthog(event: "routine-motivation-level", metadata: ["routine-type":"custom_routine", "motivation-level":currentRatingCount, "motivation-comments":textFieldRating.stringValue])
-            mainViewControllerObj?.startFirstCustomRoutineHabit()
+            getHabitsVcObject().startFirstCustomRoutineHabit()
         }
         if self.webView.isHidden == false{
             let link = URL(string:"about:blank")!

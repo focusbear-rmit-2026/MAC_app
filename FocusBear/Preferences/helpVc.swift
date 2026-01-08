@@ -11,13 +11,17 @@ import WebKit
 
 class helpVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate {
 
+    @IBOutlet weak var btnSelectScreenshots: Button!
+    @IBOutlet weak var lblAddScreenshots: NSTextField!
+    @IBOutlet weak var dropView: dropView!
+    @IBOutlet weak var collectionView: NSCollectionView!
     @IBOutlet weak var webViewGetSupport: WKWebView!
     @IBOutlet weak var tabViewGetSupport: NSTabViewItem!
     @IBOutlet weak var lblTitleWhatsApp: NSTextField!
     @IBOutlet weak var webViewCourses: WKWebView!
     @IBOutlet weak var btnDontUseDiscord: underLineButton!
     @IBOutlet weak var btnJoinDiscordServer: Button!
-    @IBOutlet var textView: customTexView!
+    @IBOutlet var textView: placeHolderTextView!
 //    @IBOutlet weak var webView: WKWebView!
 //    @IBOutlet weak var tabViewChatWthApp: NSTabViewItem!
     @IBOutlet weak var tabViewReportProblem: NSTabViewItem!
@@ -29,10 +33,13 @@ class helpVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate 
     @IBOutlet weak var tabViewCourses: NSTabViewItem!
     
     @IBOutlet weak var btnJoinWhatsAppGroup: Button!
-
+    var arrScrrenshots = [URL]()
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
+        btnSelectScreenshots.title = "Select Screenshots"
+        lblAddScreenshots.stringValue = "➕ Drag and drop screenshots here that you want to share"
+        
         tabViewGetSupport.label = "Get Support"
         lblTitleWhatsApp.stringValue = "Join the Focus Bear WhatsApp group to exchange ideas, organize co-working/body doubling sessions, and get support with the app!"
         btnJoinWhatsAppGroup.title = "Join WhatsApp Group"
@@ -44,11 +51,9 @@ class helpVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate 
         btnDontUseDiscord.title = "I don't use Discord"
         
         tabViewReportProblem.label = "Report Problem"
-//        tabViewChatWthApp.label = "Chat with Focus Bear"
         tabViewCommunity.label = "Community"
         
         lblTitle.stringValue = "Focus Bear is still a new app and you might encounter issues (or have great ideas on how to make it better). We'd really appreciate your feedback. You can email us at team@focusbear.io. Screenshots are really helpful to let us understand the problem. Also if you had a problem, please share your logs with Focus Bear Support Team (use the link below)"
-//        btnExportLogs.title = "Click here to export logs to share with Support Team."
         
         btnExportLogs.title = "Share logs with Focus Bear Support Team"
         var placeHolderLogsFeedback = "What happened?"
@@ -68,6 +73,10 @@ class helpVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate 
             lblTitleWhatsApp.stringValue = helpVcInfo.value(forKey: "titleWhatsAppGroup") as? String ?? lblTitleWhatsApp.stringValue
             btnJoinWhatsAppGroup.title = helpVcInfo.value(forKey: "buttonJoinWhatsAppGroupText") as? String ?? btnJoinWhatsAppGroup.title
             tabViewGetSupport.label = helpVcInfo.value(forKey: "tabGetSupport") as? String ?? tabViewGetSupport.label
+            if let title = helpVcInfo.value(forKey: "titleAddScreenshots") as? String{
+                lblAddScreenshots.stringValue = "➕ \(title)"
+            }
+            btnSelectScreenshots.title = helpVcInfo.value(forKey: "buttonSelectScreenshots") as? String ?? btnSelectScreenshots.title
         }
         
 //        self.webView.navigationDelegate = self
@@ -87,6 +96,10 @@ class helpVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate 
         tabView.delegate = self
         textView.placeHolderTitleString = NSAttributedString(string: placeHolderLogsFeedback, attributes: [NSAttributedString.Key.foregroundColor : NSColor.secondaryLabelColor, NSAttributedString.Key.font : NSFont.systemFont(ofSize: 13)])
         tabView.selectTabViewItem(at: 0)
+        
+        dropView.delegate = self
+        
+        btnSelectScreenshots.buttonColor = NSColor.white.cgColor
     }
     
     func loadGetSupportWebView(){
@@ -104,7 +117,8 @@ class helpVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate 
     }
     
     override func viewWillAppear() {
-        preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: 676, height: 570))
+        arrScrrenshots.removeAll()
+        collectionView.reloadData()
     }
     
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
@@ -181,14 +195,7 @@ class helpVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate 
     }
     
     func setAccessTokenToWebViewGetSupport(){
-        var theme = "LIGHT"
-        if preferencesWindowControllerObj != nil{
-            if preferencesWindowControllerObj!.window!.hasDarkAppearance{
-                theme = "DARK"
-            }else {
-                theme = "LIGHT"
-            }
-        }
+        let theme = getWindowTheme()
         let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex].webFontName
         let stringJson = "{access_token: \"\(appdelegate!.credential?.accessToken ?? "")\",\"font\":\"\(selectedFont)\",\"theme\":\"\(theme)\",\"lang\":\"\(currentLanguageCode)\"}"
         let settingsFunc = String(format: "let waitForAppLoaded = setInterval(() => { if (window.loadMetaDataFoGetSupport) { loadMetaDataFoGetSupport(%@); clearInterval(waitForAppLoaded); } }, 100);", stringJson)
@@ -199,35 +206,10 @@ class helpVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate 
             print(html)
         })
     }
-//    func setAccessTokenToWebView(){
-//        var theme = "LIGHT"
-//        if preferencesWindowControllerObj != nil{
-//            if preferencesWindowControllerObj!.window!.hasDarkAppearance{
-//                theme = "DARK"
-//            }else {
-//                theme = "LIGHT"
-//            }
-//        }
-//        let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex].webFontName
-//        let stringJson = "{access_token: \"\(appdelegate!.credential?.accessToken ?? "")\",\"font\":\"\(selectedFont)\",\"theme\":\"\(theme)\",\"lang\":\"\(currentLanguageCode)\"}"
-//        let settingsFunc = String(format: "let waitForAppLoaded = setInterval(() => { if (window.loadAccessTokenForChat) { loadAccessTokenForChat(%@); clearInterval(waitForAppLoaded); } }, 100);", stringJson)
-//
-//        webView.evaluateJavaScript(settingsFunc,completionHandler: { (html: Any?, error: Error?) in
-//            print(error)
-//            print("****error")
-//            print(html)
-//        })
-//    }
+
     
     func setAccessTokenToWebViewCourses(){
-        var theme = "LIGHT"
-        if preferencesWindowControllerObj != nil{
-            if preferencesWindowControllerObj!.window!.hasDarkAppearance{
-                theme = "DARK"
-            }else {
-                theme = "LIGHT"
-            }
-        }
+        let theme = getWindowTheme()
         let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex].webFontName
         let stringJson = "{access_token: \"\(appdelegate!.credential?.accessToken ?? "")\",\"font\":\"\(selectedFont)\",\"theme\":\"\(theme)\",\"lang\":\"\(currentLanguageCode)\"}"
         let settingsFunc = String(format: "let waitForAppLoaded = setInterval(() => { if (window.loadMetaDataForEnrolledCourses) { loadMetaDataForEnrolledCourses(%@); clearInterval(waitForAppLoaded); } }, 100);", stringJson)
@@ -243,15 +225,17 @@ class helpVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate 
         self.view.addSubview(getLogsUploadingVcObjObj().view)
         self.view.addConstraints(subView: getLogsUploadingVcObjObj().view)
         let message = self.textView.string.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) ?? self.textView.string
-        allApiObject.uploadAppLogs(feedback: message, completionHandler: {uploaded in
+        allApiObject.uploadAppLogs(feedback: message, screenShots: arrScrrenshots, completionHandler: {uploaded in
             DispatchQueue.main.async {
                 getLogsUploadingVcObjObj().view.removeFromSuperview()
-                self.textView.string = ""
                 if uploaded ?? false{
                     var logsUploadDoneText = "Logs successfully shared."
                     if let helpVcInfo = configjson.value(forKey: "helpVcInfo") as? NSDictionary{
                         logsUploadDoneText = helpVcInfo.value(forKey: "logsUploadDoneText") as? String ?? logsUploadDoneText
                     }
+                    self.textView.string = ""
+                    self.arrScrrenshots.removeAll()
+                    self.collectionView.reloadData()
                     self.showAlert(msg: logsUploadDoneText, completionHandler: {bool in
                         
                     })
@@ -303,6 +287,27 @@ class helpVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate 
         })
     }
     
+    @IBAction func btnSelectScreenshotsClicked(_ sender: Any) {
+        let openPanel = NSOpenPanel()
+        openPanel.message = "Choose one or more screenshots you want to share."
+        openPanel.prompt = "Select"
+        
+        if let helpVcInfo = configjson.value(forKey: "helpVcInfo") as? NSDictionary{
+            openPanel.message = helpVcInfo.value(forKey: "titleSelectScreenshots") as? String ?? openPanel.message
+            openPanel.prompt = helpVcInfo.value(forKey: "buttonSelect") as? String ?? openPanel.prompt
+        }
+        
+        openPanel.allowsMultipleSelection = true
+        openPanel.allowedFileTypes = ["png", "jpg", "jpeg", "heic"]
+
+        if openPanel.runModal() == .OK {
+            let selectedURLs = openPanel.urls
+            // Handle selected screenshots
+            arrScrrenshots = arrScrrenshots + selectedURLs
+            collectionView.reloadData()
+        }
+
+    }
 }
 
 extension helpVc: NSTabViewDelegate{
@@ -319,5 +324,39 @@ extension helpVc: NSTabViewDelegate{
         }else if id == "support"{
             allApiObject.capturePosthog(event: "help-tab-get-support-clicked", metadata: [:])
         }
+    }
+}
+
+extension helpVc:NSCollectionViewDelegate, NSCollectionViewDataSource, dropViewDelegate {
+    
+    func collectionView(_ collectionView: NSCollectionView, numberOfItemsInSection section: Int) -> Int {
+        if arrScrrenshots.count == 0{
+            lblAddScreenshots.isHidden = false
+        }else{
+            lblAddScreenshots.isHidden = true
+        }
+        return arrScrrenshots.count
+    }
+    
+    func collectionView(_ collectionView: NSCollectionView, itemForRepresentedObjectAt indexPath: IndexPath) -> NSCollectionViewItem {
+        
+        let item = collectionView.makeItem(withIdentifier: NSUserInterfaceItemIdentifier(rawValue: "collectionCellScreenshots"), for: indexPath) as! collectionCellScreenshots
+        
+        item.imgView.image = NSImage(contentsOf: arrScrrenshots[indexPath.item])
+        item.btnRemove.tag = indexPath.item
+        item.btnRemove.target = self
+        item.btnRemove.action = #selector(btnRemoveClicked)
+        return item
+    }
+    
+    @objc func btnRemoveClicked(sender:NSButton){
+        let index = sender.tag
+        arrScrrenshots.remove(at: index)
+        collectionView.reloadData()
+    }
+    
+    func filesAddedInDropView(filesAdded: [URL]) {
+        arrScrrenshots = arrScrrenshots + filesAdded
+        collectionView.reloadData()
     }
 }

@@ -479,7 +479,7 @@
 //                                                                            }
 //                                                                            currentState = ._NOTHING_
 //                                                                            mainWindowControllerObj?.loadWindow()
-//                                                                            mainViewControllerObj?.setActivityTimer()
+//                                                                            getHabitsVcObject().setActivityTimer()
 //
 //                                                                            allApiObject.forceCompleteCurrentSequence(activity_sequence_id: sequenceId, isForToday: true, completionHandler: {json in
 //
@@ -684,3 +684,382 @@
  //            }
  //        }
  */
+//        let url:String? = "https://www.youtube.com/watch?v=j8Hkh-x2cKw"
+//        let url:String? = "https://vimeo.com/1113240264?fl=wc"
+//        url = "https://player.vimeo.com/video/1113240264"
+
+
+//class customBox: NSBox { not in use
+//    var mouseDown = false
+//    var tagValue = 0
+//    var isTableView = false
+//    override func awakeFromNib() {
+//        super.awakeFromNib()
+//        addTrackingArea(NSTrackingArea(rect: bounds, options: [.activeAlways, .inVisibleRect, .mouseEnteredAndExited], owner: self, userInfo: nil))
+//
+//    }
+//
+//    override func mouseEntered(with event: NSEvent) {
+//        super.mouseEntered(with: event)
+//        NSCursor.pointingHand.set()
+//    }
+//
+//    override func mouseDown(with event: NSEvent) {
+//        // super.mouseDown(with: event)
+//        print("mouse down")
+//        if isTableView{
+//            mouseDown = true
+//            self.layer?.backgroundColor = NSColor(red: 0/255, green: 0/255, blue: 0/255, alpha: 0.2).cgColor
+//            NSCursor.pointingHand.set()
+//        }else{
+//            super.mouseDown(with: event)
+//        }
+//    }
+//
+//    override func mouseUp(with event: NSEvent) {
+//        super.mouseUp(with: event)
+//        print("mouse up")
+//        if mouseDown {
+//            mouseDown = false
+//
+//            NSCursor.pointingHand.set()
+//            self.layer?.backgroundColor = NSColor(red: 0/255, green: 0/255, blue: 0/255, alpha: 0).cgColor
+//        }else{
+//            return;
+//        }
+//
+//
+//        if isTableView{
+//            focusModeClicked(index: tagValue)
+//        }
+//    }
+//
+//    func focusModeClicked(index:Int){
+//        addLog(text:"[user-action] focusModeClicked")
+//        if isPurchased == false && daysLeft <= 0{//if UserDefaults.standard.object(forKey: "trialExpired") != nil{
+//            if trialExpiredNagWcObj != nil{
+//                if trialExpiredNagWcObj?.window?.isVisible ?? false{
+//                    return;
+//                }
+//            }
+//            showUpgradeNowWindow()
+//            return;
+//        }
+//
+//        if endingFocusWindowControllerObj != nil{
+//            if (endingFocusWindowControllerObj?.window?.isVisible ?? false) && endingFocusWindowControllerObj?.contentViewController == focusCompletedVcObj{
+//                addLog(text: "focus mode clicked:- focus mode completed Window is visible:- return")
+//                return;
+//            }
+//        }
+////        if endingFocusWindowControllerObj != nil{
+////            if (endingFocusWindowControllerObj?.window?.isVisible ?? false) && endingFocusWindowControllerObj?.contentViewController == focusCompletedVcObj{
+////                if addTaskVcObj != nil{
+////                    if addTaskVcObj!.presentingViewController == focusCompletedVcObj{
+////                        return;
+////                    }
+////                }
+////            }
+////        }
+//        if arrFocusType[index]["isOn"] as? Bool == true || arrFocusType[index]["isPaused"] as? Bool == true{
+//            //abort focus mode
+//            // new work 13/3/22
+//
+//            if arrFocusType[index]["isOn"] as? Bool == true{
+//                if currentFocusModeStrictness == ._SUPER_STRICT_{
+//                    addLog(text: "can't stop focus mode in super strict focus mode :- return")
+//                    var cantStopFocusModeText = "Super strict mode activated: You cannot stop this focus session until it ends."
+//                    if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
+//                        cantStopFocusModeText = menuInfo.value(forKey: "cantStopFocusModeText") as? String ?? cantStopFocusModeText
+//                    }
+//                    showTooltip(sender: self, msg: cantStopFocusModeText, preferredEdge: .minX, maxWidthVal: 250)
+//                    return;
+//                }
+//                var menuItemPauseFocusModeTitle = "Pause this focus mode"
+//                var menuItemStopFocusModeTitle = "Stop this focus mode"
+//
+//                if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
+//                    menuItemPauseFocusModeTitle = menuInfo.value(forKey: "menuItemPauseFocusModeTitle") as? String ?? menuItemPauseFocusModeTitle
+//                    menuItemStopFocusModeTitle = menuInfo.value(forKey: "menuItemStopFocusModeTitle") as? String ?? menuItemStopFocusModeTitle
+//                }
+//
+//                let menu = NSMenu()
+//                if timerForFocusMode != nil{
+//                    let menuItemPause = NSMenuItem(title: menuItemPauseFocusModeTitle, action: #selector(pauseFocusMode), keyEquivalent: "")
+//                    menuItemPause.image = NSImage(named: NSImage.touchBarPauseTemplateName)
+//                    menuItemPause.target = self
+//                    menu.addItem(menuItemPause)
+//                }
+//
+//                let menuItemStop = NSMenuItem(title: menuItemStopFocusModeTitle, action: #selector(stopFocusMode), keyEquivalent: "")
+//                menuItemStop.image = NSImage(named: NSImage.Name("NSTouchBarRecordStopTemplate"))
+//                menuItemStop.target = self
+//                menu.addItem(menuItemStop)
+//                menu.minimumWidth = self.frame.width
+//                let p = NSPoint(x: self.frame.origin.x, y: self.frame.origin.y )
+//                menu.popUp(positioning: nil, at: p, in: self.superview)
+//                return;
+//            }else if arrFocusType[index]["isPaused"] as? Bool == true{
+//                var menuItemStopFocusModeTitle = "Stop this focus mode"
+//                var menuItemResumeFocusModeTitle = "Resume this focus mode"
+//                if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
+//                    menuItemStopFocusModeTitle = menuInfo.value(forKey: "menuItemStopFocusModeTitle") as? String ?? menuItemStopFocusModeTitle
+//                    menuItemResumeFocusModeTitle = menuInfo.value(forKey: "menuItemResumeFocusModeTitle") as? String ?? menuItemResumeFocusModeTitle
+//                }
+//
+//                let menu = NSMenu()
+//                let menuItemResume = NSMenuItem(title: menuItemResumeFocusModeTitle, action: #selector(resumeFocusMode), keyEquivalent: "")
+//                menuItemResume.image = NSImage(named: NSImage.touchBarPlayTemplateName)
+//                menuItemResume.target = self
+//                menu.addItem(menuItemResume)
+//
+//                let menuItemStop = NSMenuItem(title: menuItemStopFocusModeTitle, action: #selector(stopFocusMode), keyEquivalent: "")
+//                menuItemStop.image = NSImage(named: NSImage.Name("NSTouchBarRecordStopTemplate"))
+//                menuItemStop.target = self
+//                menu.addItem(menuItemStop)
+//
+//
+//                menu.minimumWidth = self.frame.width
+//                let p = NSPoint(x: self.frame.origin.x, y: self.frame.origin.y )
+//                menu.popUp(positioning: nil, at: p, in: self.superview)
+//                return;
+//            }
+//        }else{
+//            if isHardCorePomodoroModeOn{
+//
+//                return;
+//            }
+//            for i in 0..<arrFocusType.count{
+//                if arrFocusType[i]["isOn"] as? Bool == true || arrFocusType[i]["isPaused"] as? Bool == true{
+//                    let alert = NSAlert()
+//                    alert.setSharingType()
+//                    alert.messageText = "A focus mode is already running. Please abort the running focus mode to start a new one."
+//                    var buttonStopFocusText = "Stop current focus mode and start this one"
+//
+//                    if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
+//                        if let focusAlreadyRunningText = focusInfo.value(forKey: "focusAlreadyRunningText") as? String{
+//                            alert.messageText = focusAlreadyRunningText
+//                        }
+//                    }
+//
+//                    if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
+//                        if let startingFocusModeInfo = focusInfo.value(forKey: "startingFocusModeInfo") as? NSDictionary{
+//                            buttonStopFocusText = startingFocusModeInfo.value(forKey: "buttonStopFocusText") as? String ?? buttonStopFocusText
+//                        }
+//                    }
+//
+//                    alert.addButton(withTitle: buttonOkText)
+//                    alert.addButton(withTitle: buttonStopFocusText)
+//                    NSApplication.shared.activate(ignoringOtherApps: true)
+//                    let result = alert.runModal()
+//                    if result == .alertSecondButtonReturn{
+//                        addLog(text: "Stop current focus from alert and show start focus view")
+//                        appdelegate?.tryFocusModeFinished(isSilent: true, isShutOffTime: false, isMorningRoutineTime: false, allowExtend:false, isCustomRoutineTime:false)
+//
+//                        let isRelaxFocus = arrFocusType[index]["isRelaxFocus"] as? Bool ?? false
+//                        if isRelaxFocus{
+//                            if shouldAskPassword(){
+//                                if SettingsManagerObject.isPasswordRequireInUseRelaxFocusMode{
+//                                    menuViewControllerObj?.showPasswordWindow()
+//                                    menuViewControllerObj?.isShowingPasswordForRelaxFocusMode = true
+//                                }else{
+//                                    showStartingFocusMode(focusModeIndex: index, focusType: arrFocusType[index]["name"] as? String ?? "")
+//                                }
+//                            }else{
+//                                showStartingFocusMode(focusModeIndex: index, focusType: arrFocusType[index]["name"] as? String ?? "")
+//                            }
+//                        }else{
+//                            showStartingFocusMode(focusModeIndex: index, focusType: arrFocusType[index]["name"] as? String ?? "")
+//                        }
+//                    }
+//                    return;
+//                }
+//            }
+//
+//            // //prvent user from start a focus mode while runnning a activity
+//
+//            if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_{
+//                addLog(text: "Activity is running: Can not start a focus mode")
+//                let alert = NSAlert()
+//                alert.setSharingType()
+//                alert.messageText = "You can not start a focus mode while an activity is running."
+//
+//                if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
+//                    if let startingFocusModeInfo = focusInfo.value(forKey: "startingFocusModeInfo") as? NSDictionary{
+//                        alert.messageText = startingFocusModeInfo.value(forKey: "activityRunningCantStartFocusText") as? String ?? alert.messageText
+//                    }
+//                }
+//                NSApplication.shared.activate(ignoringOtherApps: true)
+//                alert.runModal()
+//                return;
+//            }
+//
+//
+//
+//
+//            let isRelaxFocus = arrFocusType[index]["isRelaxFocus"] as? Bool ?? false
+//            if isRelaxFocus{
+//                if shouldAskPassword(){
+//                    if SettingsManagerObject.isPasswordRequireInUseRelaxFocusMode{
+//                        menuViewControllerObj?.showPasswordWindow()
+//                        menuViewControllerObj?.isShowingPasswordForRelaxFocusMode = true
+//                    }else{
+//                        showStartingFocusMode(focusModeIndex: index, focusType: arrFocusType[index]["name"] as? String ?? "")
+//                    }
+//                }else{
+//                    showStartingFocusMode(focusModeIndex: index, focusType: arrFocusType[index]["name"] as? String ?? "")
+//                }
+//            }else{
+//                showStartingFocusMode(focusModeIndex: index, focusType: arrFocusType[index]["name"] as? String ?? "")
+//            }
+//
+//            return;
+//
+//        }
+//    }
+//    @objc func pauseFocusMode(){
+//        if currentFocusModeStrictness == ._STRICT_{
+//            showAbortingFocusModeVc(forPause: true)
+//        }else{
+//            appdelegate?.pauseFocusMode(index: tagValue)
+////            menuViewControllerObj?.tblViewFocusMode.reloadData()
+//        }
+//    }
+//
+//    @objc func stopFocusMode(){
+//        if isHardCorePomodoroModeOn{
+//            if shouldAskPassword(){
+//                if SettingsManagerObject.isPasswordRequireInStopPomodoro{
+//                    menuViewControllerObj?.showPasswordWindow()
+//                    addLog(text: "Showing enter password view from hardcore pomodoro stop from focus stop menu")
+//                }else{
+//                    showAbortingFocusModeVc(forPause: false)
+//                }
+//            }else{
+//                showAbortingFocusModeVc(forPause: false)
+//            }
+//        }else{
+//            showAbortingFocusModeVc(forPause: false)
+//        }
+//    }
+//
+//    @objc func resumeFocusMode(){
+//        appdelegate?.resumeFocusMode(index: tagValue)
+////        menuViewControllerObj?.tblViewFocusMode.reloadData()
+////        menuViewControllerObj?.startFocusRemainingTimer()
+//    }
+//    override func mouseExited(with event: NSEvent) {
+//        super.mouseExited(with: event)
+//        mouseDown = false
+//        NSCursor.arrow.set()
+//        self.layer?.backgroundColor = NSColor(red: 0/255, green: 0/255, blue: 0/255, alpha: 0).cgColor
+//    }
+//}
+
+//    func focusModeAborted(){
+//        addLog(text: "focus mode Aborted")
+//        if taskPlayerWcObj != nil{
+//            if taskPlayerWcObj?.window?.isVisible ?? false{
+//                taskPlayerVcObj?.getToDosFromPlayer()
+//                taskPlayerWcObj?.window?.close()
+//                allApiObject.capturePosthog(event: "
+
+//-player-popup-closed", metadata: [:])
+//            }
+//        }
+//        setAppIconForFocusModeScore(probability: nil)
+//        isSkipBreakActivityDuringFocus = false
+//        lastFocusModeTempInfo = nil
+//        unfocusedTime = 0
+//        playFocusPomodorBreakEndsSound()
+//        endFocusModeTime = nil
+//        if timerForFocusMode != nil{
+//            timerForFocusMode?.invalidate()
+//            timerForFocusMode = nil
+//        }
+//        if timerForFocusModeEndNotification != nil{
+//            timerForFocusModeEndNotification?.invalidate()
+//            timerForFocusModeEndNotification = nil
+//        }
+//        if focusEndWarningWcObj != nil{
+//            if focusEndWarningWcObj?.window?.isVisible ?? false{
+//                focusEndWarningWcObj?.window?.close()
+//            }
+//        }
+//        if savedSitesForLaterWcObj != nil{
+//            if savedSitesForLaterWcObj!.window?.isVisible ?? false{
+//                savedSitesForLaterWcObj!.close()
+//            }
+//        }
+//        if isFocusModeOn(){// is is paused then already calculated
+//            let totalSeconds = Int(Date().timeIntervalSince(startFocusModeTimeForPauseAndResume ?? Date()))
+//            focusModeActualDurationPerformed += totalSeconds
+//        }
+//        for i in 0..<arrFocusType.count{// clear datat after focus completed
+//            arrFocusType[i]["lastStartedDate"] = nil
+//            arrFocusType[i]["lastScheduledEndDate"] = nil
+//        }
+//        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+//
+//        focusModeFinishedCapturePosthog()
+//        var currentFocusModeId = ""
+//        for i in 0..<arrFocusType.count{
+//            if arrFocusType[i]["isOn"] as? Bool == true || arrFocusType[i]["isPaused"] as? Bool == true{
+//                arrFocusType[i]["isOn"] = false
+//                arrFocusType[i]["isPaused"] = false
+//                currentFocusModeId = arrFocusType[i]["id"] as? String ?? ""
+//                if isDndEnabled{
+//                    disableDND()
+//                }
+//                workAfterFocusBegin(index: i)
+//                break;
+//            }
+//        }
+//
+//        isFocusModeRunning = false
+//
+//        allApiObject.finishFocusMode(id: currentFocusModeId, achievements: "", distractions: "", finish_time: Date(), rating:nil, completionHandler: {newDic in
+//            DispatchQueue.main.async {
+//
+//            }
+//        })
+//
+//        if timerForFocusMode != nil{
+//            timerForFocusMode?.invalidate()
+//            //            timerForFocusMode = nil
+//        }
+//        DispatchQueue.main.async {
+//            self.setStatusBarButtonColorForFocusMode(color: NSColor.clear, colorString:nil)
+//            self.statusbutton?.title = ""
+//        }
+//        if self.timerAllowUrl != nil{
+//            self.timerAllowUrl!.invalidate()
+//            //self.timerAllowUrl = nil
+//            //                print("invalidtate")
+//        }
+//        timerCheckAllowedApps?.invalidate()
+//        DispatchQueue.main.async {
+//            if brainDumpWcObj != nil{
+//                if brainDumpWcObj?.window != nil{
+//                    if brainDumpWcObj!.window!.isVisible{
+//                        brainDumpVcObj?.focusModeFinished()
+//                    }
+//                }
+//            }
+//            if toolBoxWcObj != nil{
+//                if toolBoxWcObj!.window!.isVisible{
+//                    toolBoxWcObj?.window?.close()
+//                }
+//            }
+//        }
+//
+//        isAutoMeetingsModeStarted = false
+//        appUsedInAutoMeetingFocusMode = ""
+//        refreshFocusModeData()
+//        DispatchQueue.main.async {
+//            closePupUpBlockIfVisible()
+//            menuViewControllerObj?.reloadIfNeeded()
+//            closeNudgeFocusAlignmentScoreWindow()
+//        }
+//
+//    }

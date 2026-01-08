@@ -22,16 +22,16 @@ class commonWindowController: NSWindowController, NSWindowDelegate {
         // Implement this method to handle any initialization after your window controller's window has been loaded from its nib file.
     }
     func windowDidBecomeKey(_ notification: Notification) {
-        if self.window == brainDumpWcObj?.window{
-            print("windowDidBecomeKey")
-            brainDumpVcObj?.checkCurrentUrl()
-        }
+//        if self.window == brainDumpWcObj?.window{
+//            print("windowDidBecomeKey")
+//            brainDumpVcObj?.checkCurrentUrl()
+//        }
     }
 
     func windowDidResignKey(_ notification: Notification) {
-        if self.window == brainDumpWcObj?.window{
-            print("windowDidResignKey")
-        }
+//        if self.window == brainDumpWcObj?.window{
+//            print("windowDidResignKey")
+//        }
     }
 
     func windowShouldClose(_ sender: NSWindow) -> Bool {
@@ -98,7 +98,7 @@ class commonWindowController: NSWindowController, NSWindowDelegate {
         if self == breakWarningWcObj{
             breakWarningVcObj?.timer?.invalidate()
             activityPostponeCount += 1
-            mainViewControllerObj?.postponeBreakActivitiesFor(minutes: 5, secondsToPostpone: nil)
+            getHabitsVcObject().postponeBreakActivitiesFor(minutes: 5, secondsToPostpone: nil, isFromBreakWarningWindow: true)
             return true
         }
         
@@ -149,13 +149,13 @@ class commonWindowController: NSWindowController, NSWindowDelegate {
             }
         }
         
-        if endingFocusWindowControllerObj != nil{
-            if self == endingFocusWindowControllerObj{
-                addLog(text: "focus mode completed Window close")
-                focusCompletedVcObj!.takeBreakClicked(isCloseWindowClicked: true)
-                return false
-            }
-        }
+//        if endingFocusWindowControllerObj != nil{
+//            if self == endingFocusWindowControllerObj{
+//                addLog(text: "focus mode completed Window close")
+//                focusCompletedVcObj!.takeBreakClicked(isCloseWindowClicked: true)
+//                return false
+//            }
+//        }
         if appdelegate!.user == nil && askLogInWcObj != nil{
             if self == askLogInWcObj{
                 if self.contentViewController == getAskLogInVcObject(){

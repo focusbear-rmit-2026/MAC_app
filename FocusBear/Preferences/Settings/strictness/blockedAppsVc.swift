@@ -21,13 +21,13 @@ class blockedAppsVc: NSViewController {
         // Do view setup here.
         checkBoxImmediatelyBlock.title = "Immediately block super distracting apps"
         lblTitle.stringValue = "Super Distracting Apps"
-        lblSubTitle.stringValue = "Which apps do you waste time on? Focus Bear will help you be more intentional about how you use these apps. They will be blocked during focus sessions. The rest of the time, Focus Bear will ask you why you want to use the app."
+        lblSubTitle.stringValue = "Which apps do you waste time on? Focus Bear will help you be more intentional about how you use these apps. They will be blocked during focus sessions and custom blocking schedules."
         
         if let blockedAppsViewInfo = configjson.value(forKey: "blockedAppsViewInfo") as? NSDictionary{
             if let title = blockedAppsViewInfo.value(forKey: "title") as? String{
                 lblTitle.stringValue = title
             }
-            if let subTitleText = blockedAppsViewInfo.value(forKey: "subTitleText") as? String{
+            if let subTitleText = blockedAppsViewInfo.value(forKey: "subTitleTextNew") as? String{
                 lblSubTitle.stringValue = subTitleText
             }
             checkBoxImmediatelyBlock.title = blockedAppsViewInfo.value(forKey: "checkBoxText") as? String ?? checkBoxImmediatelyBlock.title
@@ -133,9 +133,7 @@ class blockedAppsVc: NSViewController {
             }
             SettingsManagerObject.isSettingsChanged = true
             allApiObject.capturePosthog(event: "add-always-blocked-app", metadata: [:])
-            if let tabview = preferencesWindowControllerObj?.contentViewController as? preferencesTabViewController{
-                tabview.newUrlOrAppAdded()
-            }
+            mainViewControllerObj?.newUrlOrAppAdded()
         }
         
     }
@@ -198,6 +196,11 @@ class blockedAppsVc: NSViewController {
         }
     }
     @IBAction func btnBackClicked(_ sender: Any) {
+        //// solved in some cases settingsContainerVcObj is nil so before this added a check to solve problem on 15/9/25 version 2.27.415
+        if leftMenuVcObj?.boxBlocks.isSelected ?? false{
+            tabStrictnessContainerVcObj?.showStrictnessView()
+            return;
+        }
         settingsContainerVcObj?.showStrictnessView()
     }
 }

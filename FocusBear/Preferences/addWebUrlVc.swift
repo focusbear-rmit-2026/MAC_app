@@ -74,7 +74,6 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
         
     }
     override func viewWillAppear() {
-
         btnCancel.title = buttonCancelText
         
         if currenUrlAddingtState == ._FOCUS_ALLOW_URL{
@@ -82,7 +81,7 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
             lblInstructionSecond.stringValue = "To allow all subdomains of a website: *.domain.com"
             lblInstructionSThird.stringValue = "To allow any web pages that contain text in the URL or page title: reactnative or React Native"
             lblInstructionSThird.isHidden = false
-
+            
             if let focusPreferencesInfo = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
                 lblInstructionFirst.stringValue = focusPreferencesInfo.value(forKey: "allowUrlInstructionFirstText") as? String ?? lblInstructionFirst.stringValue
                 lblInstructionSecond.stringValue = focusPreferencesInfo.value(forKey: "allowUrlInstructionSecondText") as? String ?? lblInstructionSecond.stringValue
@@ -107,7 +106,7 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
                 self.view.window?.sharingType = .readOnly
             }
         }
-    
+        
         
         lblInvalidDomain.isHidden = true
         btnAdd.keyEquivalent = "\r"
@@ -154,24 +153,22 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
                 lblTitle.stringValue = titleEditWebUrl
                 btnAdd.title = buttonSaveText
             }else if currenUrlAddingtState == ._ALL_BLOCK_URL{
-                if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-                    if tabview.selectedTabViewItemIndex == preferencesFocusModesIndex && SettingsManagerObject.isGeekModeEnabled{
-                        var selectedRow = focusPreferencesVcObj?.tblViewAllowedUrls.selectedRow ?? 0
-                        if selectedRow == -1{
-                            selectedRow = 0
-                        }
-                        currentRow = selectedRow
-                        textField.stringValue = SettingsManagerObject.arrBlockedUrls[selectedRow]
-                        lblTitle.stringValue = titleEditWebUrl
-                    }else{
-                        var selectedRow = blockedUrlsVcObj!.tblView.selectedRow
-                        if selectedRow == -1{
-                            selectedRow = 0
-                        }
-                        currentRow = selectedRow
-                        textField.stringValue = SettingsManagerObject.arrBlockedUrls[selectedRow]
-                        lblTitle.stringValue = titleEditWebUrl
+                if let focusVC = focusPreferencesVcObj, focusVC.isViewVisible {
+                    var selectedRow = focusPreferencesVcObj?.tblViewAllowedUrls.selectedRow ?? 0
+                    if selectedRow == -1{
+                        selectedRow = 0
                     }
+                    currentRow = selectedRow
+                    textField.stringValue = SettingsManagerObject.arrBlockedUrls[selectedRow]
+                    lblTitle.stringValue = titleEditWebUrl
+                }else{
+                    var selectedRow = blockedUrlsVcObj!.tblView.selectedRow
+                    if selectedRow == -1{
+                        selectedRow = 0
+                    }
+                    currentRow = selectedRow
+                    textField.stringValue = SettingsManagerObject.arrBlockedUrls[selectedRow]
+                    lblTitle.stringValue = titleEditWebUrl
                 }
                 
                 btnCancel.title = buttonDeleteUrlText
@@ -180,6 +177,7 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
             }
         }
     }
+    
     @IBAction func btnAddClicked(_ sender: Any) {
         var arrDomain = [String]()
         var domain = ""
@@ -324,25 +322,18 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
                     }
                 }
                 UserDefaults.standard.set(true, forKey: kUserdefaultsEditBlockedUrlsOnce)
+
+                mainViewControllerObj?.newUrlOrAppAdded()
                 
-                if let tabview = preferencesWindowControllerObj?.contentViewController as? preferencesTabViewController{
-                    tabview.newUrlOrAppAdded()
+                if let focusVC = focusPreferencesVcObj, focusVC.isViewVisible {
+                    focusPreferencesVcObj?.tblViewAllowedUrls.reloadData()
+                    focusPreferencesVcObj?.tblViewAllowedUrls.selectRowIndexes(IndexSet(arrayLiteral: (SettingsManagerObject.arrBlockedUrls.count - 1)), byExtendingSelection: false)
+                    focusPreferencesVcObj?.tblViewAllowedUrls.scrollRowToVisible(SettingsManagerObject.arrBlockedUrls.count - 1)
+                }else{
+                    blockedUrlsVcObj?.tblView.reloadData()
+                    blockedUrlsVcObj?.tblView.selectRowIndexes(IndexSet(arrayLiteral: (SettingsManagerObject.arrBlockedUrls.count - 1)), byExtendingSelection: false)
+                    blockedUrlsVcObj?.tblView.scrollRowToVisible(SettingsManagerObject.arrBlockedUrls.count - 1)
                 }
-                
-                
-                
-                if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-                    if tabview.selectedTabViewItemIndex == preferencesFocusModesIndex && SettingsManagerObject.isGeekModeEnabled{
-                        focusPreferencesVcObj?.tblViewAllowedUrls.reloadData()
-                        focusPreferencesVcObj?.tblViewAllowedUrls.selectRowIndexes(IndexSet(arrayLiteral: (SettingsManagerObject.arrBlockedUrls.count - 1)), byExtendingSelection: false)
-                        focusPreferencesVcObj?.tblViewAllowedUrls.scrollRowToVisible(SettingsManagerObject.arrBlockedUrls.count - 1)
-                    }else{
-                        blockedUrlsVcObj?.tblView.reloadData()
-                        blockedUrlsVcObj?.tblView.selectRowIndexes(IndexSet(arrayLiteral: (SettingsManagerObject.arrBlockedUrls.count - 1)), byExtendingSelection: false)
-                        blockedUrlsVcObj?.tblView.scrollRowToVisible(SettingsManagerObject.arrBlockedUrls.count - 1)
-                    }
-                }
-                
                 
                 
                 UserDefaults.standard.set(SettingsManagerObject.arrBlockedUrls, forKey: SettingsManagerObject.kUserdefaultsArrBlockedUrls)
@@ -450,19 +441,14 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
                 }
                 UserDefaults.standard.set(true, forKey: kUserdefaultsEditBlockedUrlsOnce)
                 
-                
-                
-                if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-                    if tabview.selectedTabViewItemIndex == preferencesFocusModesIndex && SettingsManagerObject.isGeekModeEnabled{
-                        focusPreferencesVcObj?.tblViewAllowedUrls.reloadData()
-                        focusPreferencesVcObj?.tblViewAllowedUrls.selectRowIndexes(IndexSet(arrayLiteral: (currentRow)), byExtendingSelection: false)
-                    }else{
-                        blockedUrlsVcObj?.tblView.reloadData()
-                        blockedUrlsVcObj?.tblView.selectRowIndexes(IndexSet(arrayLiteral: (currentRow)), byExtendingSelection: false)
-                    }
+                if let focusVC = focusPreferencesVcObj, focusVC.isViewVisible {
+                    focusPreferencesVcObj?.tblViewAllowedUrls.reloadData()
+                    focusPreferencesVcObj?.tblViewAllowedUrls.selectRowIndexes(IndexSet(arrayLiteral: (currentRow)), byExtendingSelection: false)
+                }else{
+                    blockedUrlsVcObj?.tblView.reloadData()
+                    blockedUrlsVcObj?.tblView.selectRowIndexes(IndexSet(arrayLiteral: (currentRow)), byExtendingSelection: false)
                 }
                 
-//                blockedUrlsVcObj?.tblView.scrollRowToVisible(currentRow)//no need visible h isiliye to select kr paya or edit bhi
                 UserDefaults.standard.set(SettingsManagerObject.arrBlockedUrls, forKey: SettingsManagerObject.kUserdefaultsArrBlockedUrls)
                 SettingsManagerObject.isSettingsChanged = true
                 allApiObject.capturePosthog(event: "edit-always-blocked-url", metadata: [:])//#490//
@@ -474,13 +460,13 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
         
     }
     func updateProbabilityOf(currentUrl:String){
-        if isCuddlyModeEnabled() && SettingsManagerObject.isAiCheckUrlEnabled && !isBlockSuperDistractingFocusModeOn(){
+        if isCuddlyModeEnabled() && SettingsManagerObject.isAIBlockingEnabled() && !isBlockSuperDistractingFocusModeOn(){
             let keys = dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus.keys
             for key in keys{
                 if var dictionary = dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[key]{
                     if dictionary["isVisibleUrl"] != nil{
                         let url = key
-                        let isAllowed = appdelegate!.validation.isUrlValid(urlToCheck: url, allowUrl: currentUrl)
+                        let isAllowed = validation.isUrlValid(urlToCheck: url, allowUrl: currentUrl)
                         if isAllowed{
                             dictionary["probability"] = 1.0
                             dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[key] = dictionary
@@ -503,15 +489,25 @@ class addWebUrlVc: NSViewController, NSTextViewDelegate, NSTextFieldDelegate {
     @IBAction func btnCancelClicked(_ sender: Any) {
         if !isAdding{
             if currenUrlAddingtState == ._ALL_BLOCK_URL{
-                if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-                    if tabview.selectedTabViewItemIndex == preferencesFocusModesIndex && SettingsManagerObject.isGeekModeEnabled{
-                        if focusPreferencesVcObj != nil{
-                            focusPreferencesVcObj?.btnRemoveUrlClicked(self)
-                        }
-                    }else{
-                        if blockedUrlsVcObj != nil{
-                            blockedUrlsVcObj?.btnRemoveUrlClicked(self)
-                        }
+//                if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
+//                    if tabview.selectedTabViewItemIndex == preferencesFocusModesIndex && SettingsManagerObject.isGeekModeEnabled{
+//                        if focusPreferencesVcObj != nil{
+//                            focusPreferencesVcObj?.btnRemoveUrlClicked(self)
+//                        }
+//                    }else{
+//                        if blockedUrlsVcObj != nil{
+//                            blockedUrlsVcObj?.btnRemoveUrlClicked(self)
+//                        }
+//                    }
+//                }
+                
+                if let focusVC = focusPreferencesVcObj, focusVC.isViewVisible {
+                    if focusPreferencesVcObj != nil{
+                        focusPreferencesVcObj?.btnRemoveUrlClicked(self)
+                    }
+                }else{
+                    if blockedUrlsVcObj != nil{
+                        blockedUrlsVcObj?.btnRemoveUrlClicked(self)
                     }
                 }
             }

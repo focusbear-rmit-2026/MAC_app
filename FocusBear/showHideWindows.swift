@@ -8,19 +8,22 @@
 
 import Foundation
 
-func showStartingFocusMode(focusModeIndex: Int, focusType: String){
-    addLog(text: "Showing Starting Focus Mode view")
-    startingFocusWindowControllerObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
-    startingFocusWindowControllerObj?.contentViewController = startingFocusModeVcObj
-    startingFocusWindowControllerObj?.showWindow(nil)
-    startingFocusModeVcObj?.ResetData(focusModeIndex: focusModeIndex, focusType: focusType)
-    NSApplication.shared.activate(ignoringOtherApps: true)
-}
+//func showStartingFocusMode(focusModeIndex: Int, focusType: String){
+//    addLog(text: "Showing Starting Focus Mode view")
+//    startingFocusWindowControllerObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
+//    startingFocusWindowControllerObj?.contentViewController = startingFocusModeVcObj
+//    startingFocusWindowControllerObj?.showWindow(nil)
+//    startingFocusModeVcObj?.ResetData(focusModeIndex: focusModeIndex, focusType: focusType)
+//    NSApplication.shared.activate(ignoringOtherApps: true)
+//}
 func showAbortingFocusModeVc(forPause:Bool){// abortview for pause only in strict mode
     addLog(text: "Showing Abort focus mode view")
     if currentFocusModeStrictness == ._STRICT_{
-        startingFocusWindowControllerObj?.contentViewController = abortingFocusModeVcObj
-        startingFocusWindowControllerObj?.showWindow(nil)
+//        startingFocusWindowControllerObj?.contentViewController = abortingFocusModeVcObj
+//        startingFocusWindowControllerObj?.showWindow(nil)
+        
+        mainWindowControllerObj?.showWindow(nil)
+        leftMenuVcObj!.showFocusAbortedView()
         abortingFocusModeVcObj?.ResetData(forPause: forPause)
         NSApplication.shared.activate(ignoringOtherApps: true)
     }else{
@@ -57,28 +60,25 @@ func showPopUpCheckListWindow(title: String, list: [String]){
 
 
 //***********SHOW Toolbox window***************//
-func showToolboxWindow(){
-    addLog(text:"show Toolbox Window")
-    getToolBoxWindowObject().contentViewController = getToolBoxVcObject()
-    getToolBoxWindowObject().window?.backgroundColor = NSColor.clear
-    getToolBoxWindowObject().window?.title = "Focus Bear - Toolbox"
-    if let toolBoxVcInfo = configjson.value(forKey: "toolBoxVcInfo") as? NSDictionary{
-        getToolBoxWindowObject().window?.title = toolBoxVcInfo.value(forKey: "windowTitleText") as? String ?? "Focus Bear - Toolbox"
-    }
-    getToolBoxWindowObject().showWindow(nil)
-    toolBoxVcObj?.resetView()
-}
+//func showToolboxWindow(){//// not in use now  removed on 1/9/25  on version 2.27.408
+//    addLog(text:"show Toolbox Window")
+//    getToolBoxWindowObject().contentViewController = getToolBoxVcObject()
+//    getToolBoxWindowObject().window?.backgroundColor = NSColor.clear
+//    getToolBoxWindowObject().window?.title = "Focus Bear - Toolbox"
+//    if let toolBoxVcInfo = configjson.value(forKey: "toolBoxVcInfo") as? NSDictionary{
+//        getToolBoxWindowObject().window?.title = toolBoxVcInfo.value(forKey: "windowTitleText") as? String ?? "Focus Bear - Toolbox"
+//    }
+//    getToolBoxWindowObject().showWindow(nil)
+//    toolBoxVcObj?.resetView()
+//}
 
 //***********SHOW ToDoList window***************//
 func showToDoListWindow(){
     addLog(text:"show To Do List Window")
-    getToDoListWcObject().contentViewController = getTodoListToolVcObject()
-    getToDoListWcObject().window?.title = "Focus Bear - To Do List"
-    if let common = configjson.value(forKey: "common") as? NSDictionary{
-        getToDoListWcObject().window?.title = common.value(forKey: "toDoListWindowTitle") as? String ?? "Focus Bear - To Do List"
+    if !(mainWindowControllerObj?.window?.isVisible ?? false){
+        mainWindowControllerObj?.showWindow(nil)
     }
-    getToDoListWcObject().showWindow(nil)
-    todoListToolVcObj?.reloadData()
+    leftMenuVcObj?.showTaskPlayer()
     allApiObject.capturePosthog(event: "todo-list-popup-shown", metadata: [:])
 }
 
@@ -151,24 +151,36 @@ func showAskAppWorkWindow(){
 
 func showBrainDumpWindow(){
     addLog(text: "func:- showBrainDumpWindow")
-    if brainDumpWcObj == nil{
-        getBrainDumpWindowObject().contentViewController = getBrainDumpVcObject()
-        brainDumpWcObj?.window?.styleMask.insert(.resizable)
-        brainDumpWcObj?.window?.title = "Focus Bear - Brain dump"
-        if let brainDumpVcInfo = configjson.value(forKey: "brainDumpVcInfo") as? NSDictionary{
-            brainDumpWcObj?.window?.title = brainDumpVcInfo.value(forKey: "title") as? String ?? "Focus Bear - Brain dump"
-        }
-//        brainDumpWcObj?.window?.standardWindowButton(.zoomButton)!.isHidden = true
-        let screenFrame = NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 1920, height: 1080)
-        
-        brainDumpWcObj!.window?.setFrameOrigin(NSPoint(x: screenFrame.width - (brainDumpVcObj?.view.frame.width)!, y: screenFrame.height - (brainDumpVcObj?.view.frame.height)! - 22 - 140)) //  22 status bar heigh // timer window height is 100 // 20 is title bar height  and 20 is extra space to add
-    }
+    mainWindowControllerObj?.showWindow(nil)
+    leftMenuVcObj?.showBrainDump()
     
-    
-    brainDumpWcObj!.showWindow(nil)
+//    return;
+//    if brainDumpWcObj == nil{
+//        getBrainDumpWindowObject().contentViewController = getBrainDumpVcObject()
+//        brainDumpWcObj?.window?.styleMask.insert(.resizable)
+//        brainDumpWcObj?.window?.title = "Focus Bear - Brain dump"
+//        if let brainDumpVcInfo = configjson.value(forKey: "brainDumpVcInfo") as? NSDictionary{
+//            brainDumpWcObj?.window?.title = brainDumpVcInfo.value(forKey: "title") as? String ?? "Focus Bear - Brain dump"
+//        }
+////        brainDumpWcObj?.window?.standardWindowButton(.zoomButton)!.isHidden = true
+//        let screenFrame = NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 1920, height: 1080)
+//        
+//        brainDumpWcObj!.window?.setFrameOrigin(NSPoint(x: screenFrame.width - (brainDumpVcObj?.view.frame.width)!, y: screenFrame.height - (brainDumpVcObj?.view.frame.height)! - 22 - 140)) //  22 status bar heigh // timer window height is 100 // 20 is title bar height  and 20 is extra space to add
+//    }
+//    
+//    
+//    brainDumpWcObj!.showWindow(nil)
 }
 //-------------------------------------------------//
 
+//***********SHOW BRAIN DUMP WINDOW***************//
+
+func showBrowsersTabAuditView(){
+    addLog(text: "func:- showBrowsersTabAuditView")
+    mainWindowControllerObj?.showWindow(nil)
+    leftMenuVcObj?.showBrowsersTabAuditView()
+}
+//-------------------------------------------------//
 
 
 func showPopupBlockConfirmWindow(blockedAppName:String, currentApp:NSRunningApplication?, url:String, script:String, isBlockApp:Bool, browser:BROWSER?, tabTitle:String?, fullUrl:String, aiBlockReason:String?, isTimeOut:Bool, isBlockByAi:Bool, scoreForThisSiteApp: Double?, payload: [String : Any]?, isBrowser:Bool){
@@ -242,7 +254,7 @@ func showPopupBlockConfirmWindow(blockedAppName:String, currentApp:NSRunningAppl
 
 //***********Popup Set Intention Blocked urls Window***************//
 func showSetIntentionBlockedUrlsWindow(script: String, url:String, browser:BROWSER?, allreadyCheckedIndex:Int, isAppBlocking:Bool, currentApp:NSRunningApplication?, blockedAppName:String, blockItem:String){
-    addLog(text: "func:- showSetIntentionBlockedUrlsWindow")
+    addLog(text: "func:- showSetIntentionBlockedUrlsWindow :- currentApp: \(currentApp?.localizedName ?? ""), url: \(url)")
     print("showSetIntentionBlockedUrlsWindow*************")
     var currentPid: pid_t?
     if let runningApp = NSWorkspace.shared.frontmostApplication{
@@ -416,15 +428,44 @@ func showDeactivateBreaksWindow(){
 //***********show alertReasonAutoAllowSite Window***************//
 
 func showNaturalBreakDetectionWindow(duration:Int){
+    print("showNaturalBreakDetectionWindow")
+    if naturalBreaksDetectionVcObj != nil{
+        if naturalBreaksDetectionVcObj?.isViewVisible ?? false{
+            return;
+        }
+    }
     addLog(text:"showNaturalBreakDetectionWindow")
     allApiObject.capturePosthog(event: "natural-break-detection-window-shown", metadata: [:])
-    getNaturalBreaksDetectionWindowObject().contentViewController = getNaturalBreaksDetectionVcObject()
-    getNaturalBreaksDetectionWindowObject().window?.styleMask.remove(.closable)
-    getNaturalBreaksDetectionWindowObject().window?.center()
-    getNaturalBreaksDetectionWindowObject().window?.title = appName
-    getNaturalBreaksDetectionWindowObject().showWindow(nil)
-    getNaturalBreaksDetectionVcObject().resetView(duration:duration)
+    
+    naturalBreaksDetectionVcObj = nil// always catch a fresh object
+    if mainWindowControllerObj?.window?.isVisible ?? false{
+        addLog(text:"Natural Break view presenting by sheet")
+        mainViewControllerObj?.presentAsSheet(getNaturalBreaksDetectionVcObject())
+        getNaturalBreaksDetectionVcObject().resetView(duration:duration)
+    }else{
+        addLog(text:"Natural Break view presenting as window")
+        getNaturalBreaksDetectionWindowObject().contentViewController = getNaturalBreaksDetectionVcObject()
+        getNaturalBreaksDetectionWindowObject().window?.styleMask.remove(.closable)
+        getNaturalBreaksDetectionWindowObject().window?.center()
+        getNaturalBreaksDetectionWindowObject().window?.title = appName
+        getNaturalBreaksDetectionWindowObject().showWindow(nil)
+        getNaturalBreaksDetectionVcObject().resetView(duration:duration)
+    }
 }
+
+func closeNaturalBreakDetectionWindowIfVisible(){// added on 9/9/25 in 2.27.413
+    addLog(text: "closeNaturalBreakDetectionWindowIfVisible")
+    if naturalBreaksDetectionVcObj != nil{
+        if naturalBreaksDetectionVcObj?.isViewVisible ?? false{
+            if naturalBreaksDetectionVcObj != nil{
+                if naturalBreaksDetectionVcObj?.presentingViewController == mainViewControllerObj{
+                    naturalBreaksDetectionVcObj?.closeForecefully()
+                }
+            }
+        }
+    }
+}
+
 //-------------------------------------------------//
 
 //***********show Popup Appointment Time Window***************//
@@ -445,11 +486,13 @@ func showPopupAppointmentWindow(title:String, endTime:Date){
 
 func showAlertMaxTabLimitWindow(){
     addLog(text:"showAlertMaxTabLimitWindow")
-    getAlertMaxTabLimitWindowObject().contentViewController = getAlertMaxTabLimitVcObject()
-    getAlertMaxTabLimitWindowObject().window?.styleMask.remove(.closable)
-    getAlertMaxTabLimitWindowObject().window?.center()
-    getAlertMaxTabLimitWindowObject().window?.title = appName
-    getAlertMaxTabLimitWindowObject().showWindow(nil)
+    DispatchQueue.main.async {
+        getAlertMaxTabLimitWindowObject().contentViewController = getAlertMaxTabLimitVcObject()
+        getAlertMaxTabLimitWindowObject().window?.styleMask.remove(.closable)
+        getAlertMaxTabLimitWindowObject().window?.center()
+        getAlertMaxTabLimitWindowObject().window?.title = appName
+        getAlertMaxTabLimitWindowObject().showWindow(nil)
+    }
 }
 //-------------------------------------------------//
 
@@ -495,18 +538,10 @@ func showBlurWindow(frame:NSRect, browser:BROWSER?){
 
 func showAllTracksWindow(){
     addLog(text:"showAllTracksWindow")
-    getAllTracksWindowControllerObj().contentViewController = getAllTracksVcObj()
-    getAllTracksWindowControllerObj().window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
-    allTracksWindowControllerObj?.window?.center()
     
-    allTracksWindowControllerObj?.window?.title = "Focus Music"
-    if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
-        allTracksWindowControllerObj?.window?.title = menuInfo.value(forKey: "menuItemFocusMusicTitle") as? String ?? "Focus Music"
-    }
-    
-    allTracksWindowControllerObj!.showWindow(nil)
-    //    breakWarningVcObj!.resetView()
-    NSApplication.shared.activate(ignoringOtherApps: true)
+    mainWindowControllerObj?.showWindow(nil)
+    leftMenuVcObj?.showAllTracks()
+    return;
 }
 //-------------------------------------------------//
 
@@ -604,91 +639,22 @@ var shouldReloadTaskPlayer = true
 //***********showTaskPlayerWindow***************//
 func showTaskPlayerWindow(totalDuration:Int, intention:String, automatically:Bool){
     addLog(text:"func call:- showTaskPlayerWindow")
-    if UserDefaults.standard.object(forKey: kUserdefaultsManageTaskFirstTime) == nil && automatically{
-        UserDefaults.standard.set(true, forKey: kUserdefaultsManageTaskFirstTime)
-   
-        addLog(text:"show alert UseToDoList first time")
-        
-        var titleUseToDoList = "Do you want to use Focus Bear for your to do list for this focus session?"
-        var buttonTryItText = "Try it out"
-        var buttonNoThanksText = "No thanks"
-        var titleEnableToDoListFuture = "If you want to try it out in the future, enable the To Do player setting under Preferences - Settings - To Do List"
-        
-        if let toDoPlayerVcInfo = configjson.value(forKey: "toDoPlayerVcInfo") as? NSDictionary{
-            titleUseToDoList = toDoPlayerVcInfo.value(forKey: "titleUseToDoList") as? String ?? titleUseToDoList
-            buttonTryItText = toDoPlayerVcInfo.value(forKey: "buttonTryItText") as? String ?? buttonTryItText
-            buttonNoThanksText = toDoPlayerVcInfo.value(forKey: "buttonNoThanksText") as? String ?? buttonNoThanksText
-            titleEnableToDoListFuture = toDoPlayerVcInfo.value(forKey: "titleEnableToDoListFuture") as? String ?? titleEnableToDoListFuture
-        }
-
-        showCustomAlert(title: titleUseToDoList, body: nil, buttonOkText: buttonTryItText, buttonCancelText: buttonNoThanksText, checkBoxText: nil, autoClose: false, buttonLinkUrl:nil, buttonLinkText:nil, completionHandler: {isOkClicked in
-            print(isOkClicked)
-            if !isOkClicked{
-                SettingsManagerObject.isSettingsChanged = true
-                SettingsManagerObject.showToDoPlayerAutomaticallyEnabled = false
-                SettingsManagerObject.putUserLocalDeviceSettings()
-                
-                showCustomAlert(title: titleEnableToDoListFuture, body: nil, buttonOkText: buttonOkText, buttonCancelText: nil, checkBoxText: nil, autoClose: false, buttonLinkUrl:nil, buttonLinkText:nil, completionHandler: {isOkClicked in
-                    print(isOkClicked)
-                    if isOkClicked{
-                        
-                    }
-                })
-                
-            }else{
-                showTaskPlayerWindow(totalDuration: totalDuration, intention: intention, automatically: automatically)
-            }
-        })
-        
-        
-        
-        return;
-    }
-    addLog(text:"showTaskPlayerWindow")
-    if taskPlayerWcObj == nil{
-        getTaskPlayerWindowObject().contentViewController = getTaskPlayerVcObject()
-        taskPlayerWcObj?.window?.styleMask.insert(.fullSizeContentView)
-        taskPlayerWcObj?.window?.titlebarAppearsTransparent = true
-
-        taskPlayerWcObj?.window?.styleMask.insert(.resizable)
-        taskPlayerWcObj?.window?.standardWindowButton(.zoomButton)?.isHidden = true
-        taskPlayerWcObj?.window?.standardWindowButton(.closeButton)?.isHidden = true
-        taskPlayerWcObj?.window?.standardWindowButton(.miniaturizeButton)?.isHidden = true
+    if !getHabitsVcObject().isViewLoaded{
+        getHabitsVcObject().loadView()
     }
     
-    getTaskPlayerWindowObject().window?.center()
-    var taskPlayerWindowTitle = "Focus Bear - To Do Player"
-    if let common = configjson.value(forKey: "common") as? NSDictionary{
-        taskPlayerWindowTitle = common.value(forKey: "taskPlayerWindowTitle") as? String ?? taskPlayerWindowTitle
+    if !(mainViewControllerObj?.isViewLoaded ?? false){
+        mainViewControllerObj?.loadView()
     }
-    getTaskPlayerWindowObject().window?.title = taskPlayerWindowTitle
-
-    getTaskPlayerWindowObject().window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
-    getTaskPlayerWindowObject().showWindow(nil)
-    if shouldReloadTaskPlayer{
-        shouldReloadTaskPlayer = false
-        taskPlayerVcObj?.reloadData(totalDuration: totalDuration, intention:intention)
-    }else{
-        taskPlayerVcObj?.reloadView()
+    if !(mainWindowControllerObj?.window?.isVisible ?? false){
+        mainWindowControllerObj?.showWindow(nil)
     }
-    NSApplication.shared.activate(ignoringOtherApps: true)
+    leftMenuVcObj?.showTaskPlayer()
     allApiObject.capturePosthog(event: "todo-player-popup-shown", metadata: [:])
+    
 }
 //-------------------------------------------------//
 
-
-//***********showBreakSurveyWindow***************//
-//func showBreakSurveyWindow(){
-//    addLog(text:"showBreakSurveyWindow")
-//    getBreakSurveyWindowObject().contentViewController = getBreakSurveyVcObject()
-//    getBreakSurveyWindowObject().window?.center()
-//    getBreakSurveyWindowObject().window?.title = appName
-//    getBreakSurveyWindowObject().window?.styleMask.remove(.closable)
-//    getBreakSurveyWindowObject().window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
-//    getBreakSurveyWindowObject().showWindow(nil)
-//    NSApplication.shared.activate(ignoringOtherApps: true)
-//}
-//-------------------------------------------------//
 
 
 //***********showCustomAlert***************//
@@ -762,19 +728,33 @@ func showPreloadFocusModesWindow(){
 func showEasyPostponeWindow(){
     addLog(text:"showEasyPostponeWindow")
     allApiObject.capturePosthog(event: "easy-postpone-window-shown", metadata: [:])
-    getEasyPostponeWindowObject().contentViewController = getEasyPostponeVcObject()
     
-    let screenFrame = NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 1920, height: 1080)
-    easyPostponeWcObj!.window?.setFrameOrigin(NSPoint(x: screenFrame.width - (easyPostponeVcObj?.view.frame.width)!, y: screenFrame.height - (easyPostponeVcObj?.view.frame.height)! - 22)) //  22 status bar heigh
-    
-    easyPostponeWcObj!.window?.styleMask.remove(.closable)
-    easyPostponeWcObj?.window?.title = appName
-    easyPostponeWcObj!.showWindow(nil)
+    easyPostponeVcObj = nil// always get a fresh object
+    if mainWindowControllerObj?.window?.isVisible ?? false{
+        mainViewControllerObj?.presentAsSheet(getEasyPostponeVcObject())
+    }else{
+        getEasyPostponeWindowObject().contentViewController = getEasyPostponeVcObject()
+        
+        let screenFrame = NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 1920, height: 1080)
+        easyPostponeWcObj!.window?.setFrameOrigin(NSPoint(x: screenFrame.width - (easyPostponeVcObj?.view.frame.width)!, y: screenFrame.height - (easyPostponeVcObj?.view.frame.height)! - 22)) //  22 status bar heigh
+        
+        easyPostponeWcObj!.window?.styleMask.remove(.closable)
+        easyPostponeWcObj?.window?.title = appName
+        easyPostponeWcObj!.showWindow(nil)
+    }
     easyPostponeVcObj?.isForExtendPostponeDuringCustomRoutine = false
-    //    breakWarningVcObj!.resetView()
     NSApplication.shared.activate(ignoringOtherApps: true)
 }
 //-------------------------------------------------//
+
+
+func closeEasyPostponeWindowIfVisible(){
+    if easyPostponeVcObj != nil{
+        if easyPostponeVcObj?.isViewVisible ?? false{
+            easyPostponeVcObj?.closeView()
+        }
+    }
+}
 
 
 //***********show Super Gentle Quit Window***************//
@@ -816,11 +796,13 @@ func showPopUpOfflineWindow(){
 func showAskLoginWindow(){
     addLog(text:"showAskLoginWindow")
     getAskLogInWindowObject().contentViewController = getAskLogInVcObject()
-    getAskLogInWindowObject().window?.center()
+    if !(getAskLogInWindowObject().window?.isVisible ?? false){
+        getAskLogInWindowObject().window?.center()
+    }
     askLogInWcObj?.window?.title = appName
     appdelegate!.statusbutton?.action = nil
     askLogInWcObj!.showWindow(nil)
-    askLogInWcObj?.window?.center()
+//    askLogInWcObj?.window?.center()
 //  for  blocking at onboarding time if user set blocked urls and then open app after once quit
     if let blockedUrls = UserDefaults.standard.object(forKey: kUserdefaultsBlockedUrlsFromOnboarding) as? [[String:Any]]{
         SettingsManagerObject.arrBlockedUrls.removeAll()
@@ -841,9 +823,12 @@ func showAskLoginWindow(){
 
 func showCustomLoginWindow(isLogin:Bool){
     addLog(text:"showCustomLoginWindow")
+    if customLoginVcObj == nil{
+        getCustomLoginVcObject().loadView()
+    }
+    customLoginVcObj?.isLogin = isLogin
     getAskLogInWindowObject().contentViewController = getCustomLoginVcObject()
     appdelegate!.statusbutton?.action = nil
-    customLoginVcObj?.isLogin = isLogin
     askLogInWcObj!.showWindow(nil)
 }
 //-------------------------------------------------//
@@ -894,11 +879,21 @@ func showCustomLoginWindow(isLogin:Bool){
 func showAskProcrastinatingWindow(){
     addLog(text:"showProcrastinatingWindow")
     allApiObject.capturePosthog(event: "show_procrastinating_screen", metadata: [:])
-    getOnboardingCardsWindowObject().contentViewController = getAskProcrastinatingVcObj()
-    onboardingCardsWcObj!.showWindow(nil)
-    onboardingCardsWcObj?.window?.center()
+//    getOnboardingCardsWindowObject().contentViewController = getAskProcrastinatingVcObj()
+//    onboardingCardsWcObj!.showWindow(nil)
+//    onboardingCardsWcObj?.window?.center()
+//
+    // changed from v 2.28.446
+    mainWindowControllerObj?.showWindow(nil)
+    leftMenuVcObj?.showProcrastinatingView()
 }
 
+func showConfirmBlockingScheduleWindow(){
+    addLog(text:"showConfirmBlockingScheduleWindow")
+    allApiObject.capturePosthog(event: "show_confirm_blocking_schedule_screen", metadata: [:])
+    mainWindowControllerObj?.showWindow(nil)
+    mainViewControllerObj?.showConfirmBlockingScheduleView()
+}
 
 func showFirefoxPermissionWindow(showingFromOnboarding:Bool, currentBrowser:BROWSER){
     addLog(text:"showFirefoxPermissionWindow")
@@ -980,19 +975,24 @@ func showSetFocusWindow(){
 
 
 //***********Show Distraction Types Window***************//
-func showDistractionTypesWindow(){
+func showDistractionTypesWindow(showingFromPomodoro:Bool, showingFromBlockingSchedule:Bool = false){
     addLog(text:"showSetFocusWindow")
+    isExplainingPermissionsWindowShowingFromPomodoro = showingFromPomodoro
+    isExplainingPermissionsWindowShowingFromBlockingSchedule = showingFromBlockingSchedule
     getPermissionBlockDistractionWindowObject().contentViewController = getOnboardingDistractionTypesVcObject()
     getPermissionBlockDistractionWindowObject().window?.center()
     //    onboardingCardsWcObj!.window?.styleMask.remove(.closable)
     getPermissionBlockDistractionWindowObject().showWindow(nil)
     getPermissionBlockDistractionWindowObject().window?.center()
+    UserDefaults.standard.set(true, forKey: kUserdefaultsIsAnyDistractionSetByUser) // line added on 23/7/25 version 1.26.393
 }
 
 
 //***********Show Explaining Permissions Window***************//
-func showExplainingPermissionsWindow(){
+func showExplainingPermissionsWindow(showingFromPomodoro:Bool, showingFromBlockingSchedule:Bool = false){
     addLog(text:"showSetFocusWindow")
+    isExplainingPermissionsWindowShowingFromPomodoro = showingFromPomodoro
+    isExplainingPermissionsWindowShowingFromBlockingSchedule = showingFromBlockingSchedule
     getPermissionBlockDistractionWindowObject().contentViewController = getExplainingPermissionsVcObject()
     getPermissionBlockDistractionWindowObject().window?.center()
     //    onboardingCardsWcObj!.window?.styleMask.remove(.closable)
@@ -1004,11 +1004,19 @@ func showExplainingPermissionsWindow(){
 func showUpgradeNowWindow(){
     addLog(text:"showUpgradeNowWindow")
     allApiObject.capturePosthog(event: "upgrade-nag-shown", metadata: [:])
-    if upgradeNowWcObj == nil{
+    if upgradeNowVcObj != nil{
+        if upgradeNowVcObj?.isViewVisible ?? false{
+            upgradeNowVcObj?.closeView()
+        }
+    }
+    upgradeNowVcObj = nil// always catch a fresh object
+    if mainWindowControllerObj?.window?.isVisible ?? false{
+        mainViewControllerObj?.presentAsSheet(getUpgradeNowVcObject())
+    }else{
         getUpgradeNowWindowObject().contentViewController = getUpgradeNowVcObject()
         upgradeNowWcObj?.window?.title = appName
+        upgradeNowWcObj!.showWindow(nil)
     }
-    upgradeNowWcObj!.showWindow(nil)
 }
 //-------------------------------------------------//
 
@@ -1165,16 +1173,46 @@ func showInformationPopover(sender:NSView, preferredEdge: NSRectEdge,mainTitle: 
 
 //  /////////////////////////////////////////////////////////////////////////
 
-var popoverFocusHelp:NSPopover?
+var popoverFocusHelp:NSPopover?//
 var popoverTooltip:NSPopover?// = NSPopover()
-func showTooltip(sender:NSView, msg:String, preferredEdge: NSRectEdge, maxWidthVal:CGFloat) {
-    
+func showTooltip(sender:NSView, msg:String, preferredEdge: NSRectEdge, maxWidthVal:CGFloat, autoCloseOnMouseExit:Bool = false) {
     if popoverTooltip == nil{
         popoverTooltip = NSPopover()
-        popoverTooltip!.behavior = .transient
         popoverTooltip!.animates = false
-        //        popoverTooltip!.delegate = appdelegate
     }
+    
+//    if autoCloseOnMouseExit{// it means showing as tooltip on mouse hover and it will close on mouse exit so no transient behavior needed (transient behavior close tooltip when click again on anywhere . but with transient behavior additional nsbox was needed to click on button with same click)
+//        popoverTooltip!.behavior = .applicationDefined
+//    }else{
+//        popoverTooltip!.behavior = .transient
+//    }
+    popoverTooltip!.behavior = .transient
+    if popoverTooltip!.isShown{
+        popoverTooltip?.close()
+    }
+    let vc = getCustomTooltipVcObject()
+    if !vc.isViewLoaded{
+        vc.loadView()
+    }
+    if vc.maxWidthVal != maxWidthVal{
+        vc.maxWidthVal = maxWidthVal
+        vc.resetView()
+    }
+    
+    popoverTooltip!.contentViewController = vc
+    popoverTooltip!.contentSize = vc.view.frame.size
+    
+    popoverTooltip!.show(relativeTo: sender.bounds, of: sender, preferredEdge: preferredEdge)
+    //    appdelegate!.popover.behavior = .applicationDefined
+    vc.lblTitle.stringValue = msg
+}
+
+func showTooltipWithOsTahoe(sender:NSView, msg:String, preferredEdge: NSRectEdge, maxWidthVal:CGFloat, autoCloseOnMouseExit:Bool = false) {
+    if popoverTooltip == nil{
+        popoverTooltip = NSPopover()
+        popoverTooltip!.animates = false
+    }
+    popoverTooltip!.behavior = .applicationDefined
     if popoverTooltip!.isShown{
         popoverTooltip?.close()
     }
@@ -1206,10 +1244,6 @@ func closePopoverTooltipIfVisible(){
 }
 
 
-
-
-// hide window work
-
 func closePomodoroWindowIOfVisible(){
     if pomodoroWindowControllerObj != nil{
         if pomodoroWindowControllerObj!.window!.isVisible{
@@ -1218,18 +1252,6 @@ func closePomodoroWindowIOfVisible(){
         }
     }
 }
-
-
-
-func closeTaskPlayerWindowIfVisible(){
-    if taskPlayerWcObj != nil{
-        if taskPlayerWcObj?.window?.isVisible ?? false{
-            taskPlayerWcObj?.window?.close()
-            allApiObject.capturePosthog(event: "todo-player-popup-closed", metadata: [:])
-        }
-    }
-}
-
 
 func closePupUpBlockIfVisible(){
     if popUpBlockConfirmWcObj != nil{
@@ -1270,26 +1292,46 @@ func showNudgeFocusAlignmentScoreWindow(score:Double){
     }
     
     //  dont showe popup if active app is focus bear for time tracker
-    if let runningApp = NSWorkspace.shared.frontmostApplication{
-        if let appUrl = runningApp.bundleURL{
-            let name = appUrl.deletingPathExtension().lastPathComponent
-            let nameLowercased = name.lowercased()
-            if nameLowercased == selfAppName.lowercased() || nameLowercased == focusBearTimeTrackerAppName{
-                
-                if (nudgeFocusAlignmentScoreDippingWcObject?.isNudgeVisible ??  false){
-                    getNudgeFocusAlignmentScoreDippingVcObject().reloadData(score: score, isNudgeVisible: true)
-                    lastFocusAlignmentShownScore = score
-                    return;
-                }
-                
-                return;
+//    if let runningApp = NSWorkspace.shared.frontmostApplication{
+//        if let appUrl = runningApp.bundleURL{
+//            let name = appUrl.deletingPathExtension().lastPathComponent
+//            let nameLowercased = name.lowercased()
+//            if nameLowercased == selfAppName.lowercased() || nameLowercased == focusBearTimeTrackerAppName{
+//                
+//                if (nudgeFocusAlignmentScoreDippingWcObject?.isNudgeVisible ??  false){
+//                    getNudgeFocusAlignmentScoreDippingVcObject().reloadData(score: score, isNudgeVisible: true)
+//                    lastFocusAlignmentShownScore = score
+//                    return;
+//                }
+//                
+//                return;
+//            }
+//        }
+//    }
+    //.
+    
+    ///If the big floating bear is open, I don’t think we need the little one as well.
+    
+    getNudgeFocusAlignmentScoreDippingVcObject().isFloatingTopBarRemovedByNudge = false
+    if floatingTopBarWcObj != nil{
+        if getFloatingTopBarWObject().window?.isVisible ?? false{
+            if !getFloatingTopBarVObject().boxMain.isHidden{
+                getFloatingTopBarVObject().boxMain.isHidden = true
+                getFloatingTopBarVObject().boxMoreItems.isHidden = true
+                getNudgeFocusAlignmentScoreDippingVcObject().isFloatingTopBarRemovedByNudge = true
             }
         }
     }
-    //.
+    
     
     if nudgeFocusAlignmentScoreDippingWcObject == nil{
         nudgeFocusAlignmentScoreDippingWcObject = nudgeFocusAlignmentScoreDippingWc()
+    }else{
+        if (nudgeFocusAlignmentScoreDippingWcObject?.isNudgeVisible ??  false){// if window is not visible but isNudgeVisible is true then make isNudgeVisible false
+            if !(nudgeFocusAlignmentScoreDippingWcObject?.window?.isVisible ?? false){
+                nudgeFocusAlignmentScoreDippingWcObject?.isNudgeVisible = false
+            }
+        }
     }
     
     if (nudgeFocusAlignmentScoreDippingWcObject?.isNudgeVisible ??  false){
@@ -1339,6 +1381,14 @@ func closeNudgeFocusAlignmentScoreWindow(){
     if nudgeFocusAlignmentScoreDippingWcObject != nil{
         if (nudgeFocusAlignmentScoreDippingWcObject?.isNudgeVisible ??  false){
             nudgeFocusAlignmentScoreDippingWcObject?.toggleMenu()
+            
+            ///If the big floating bear is open, I don’t think we need the little one as well.
+            if floatingTopBarWcObj != nil && !isFocusBearMenuVisible(){
+                if getFloatingTopBarWObject().window?.isVisible ?? false{
+                    getFloatingTopBarVObject().boxMain.isHidden = false
+                    getFloatingTopBarVObject().boxMoreItems.isHidden = false
+                }
+            }
         }
         nudgeFocusAlignmentScoreDippingWcObject?.window?.close()
     }
@@ -1427,10 +1477,281 @@ func showSplashWindow(){
     getSplashWindowObject().contentViewController = getSplashVcObject()
     getSplashWindowObject().showWindow(nil)
 }
+
 func closeSplashWindow(){
     if splashWcObj != nil{
         if splashWcObj?.window?.isVisible ?? false{
             getSplashWindowObject().window?.close()
+        }
+    }
+}
+
+
+var arrWindows = [NSWindow]()
+func showBlankWindowInSecondaryMonitor(){
+    addLog(text: "func:- showBlankWindowInSecondaryMonitor")
+    
+    // Luisa App broken bug fix 28/6/22
+    let windows = NSApp.windows
+    for win in windows{
+        print(win)
+        if win.isModalPanel{
+            NSApp.stopModal()
+            break;
+        }
+    }
+    //  /////////////////////////////////
+    if !checkIsFullScreenEnabled(){//Blank Window In Secondary Monitor is not required if full screen is not enabled
+        return;
+    }
+    appdelegate?.showExtraWindows()
+}
+
+
+
+func hideBlankWindowInSecondaryMonitor(){
+    addLog(text: "func:- hideBlankWindowInSecondaryMonitor")
+    for i in 0..<arrWindows.count{
+        let window = arrWindows[i]
+        window.orderOut(nil)
+        arrWindows[i].windowController?.window=nil
+    }
+    arrWindows.removeAll()
+}
+
+func resetWin(_ win: NSWindow) -> NSWindow {
+    win.collectionBehavior = NSWindow.CollectionBehavior.canJoinAllSpaces          // we want these windows to follow Spaces around
+    //use .desktopWindow for window below icons   //hack? this makes mission control and expose ignore these windows
+    //        if toggleButtonHideDesktopIcons.isOn{
+    //            win.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.backstopMenu)))
+    //        }else{
+    win.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.maximumWindow)))
+    //        }
+    // rest is to make the windows dumb
+    win.canHide = false
+    win.isExcludedFromWindowsMenu = true
+    win.hidesOnDeactivate = false
+    win.discardCursorRects()
+    win.discardEvents(matching: NSEvent.EventTypeMask.any, before: nil)
+    //win.ignoresMouseEvents = true
+    win.orderBack(nil)
+    win.isRestorable = false
+    win.animationBehavior = .none
+    win.backgroundColor = NSColor.clear
+    return win
+}
+
+
+
+func isFocusCompletedViewVisibled()->Bool{
+    if mainWindowControllerObj?.window?.isVisible ?? false{
+        if (leftMenuVcObj?.boxFocusSession.isSelected ?? false) && focusCompletedVcObj != nil{
+            if focusCompletedVcObj!.isViewLoaded{
+                if mainViewControllerObj!.containerView.subviews.contains(focusCompletedVcObj!.view){
+                    return true
+                }
+            }
+        }
+    }
+    return false
+}
+
+
+func showFloatingTopBarWindow(windowTopMidPoint:NSPoint){
+    if floatingTopBarWcObj == nil{
+        getFloatingTopBarWObject().contentViewController = getFloatingTopBarVObject()
+        getFloatingTopBarWObject().window?.level = .statusBar
+        getFloatingTopBarWObject().window?.isMovable = true
+        getFloatingTopBarWObject().window?.isMovableByWindowBackground = true
+        getFloatingTopBarWObject().window?.isOpaque = false
+        getFloatingTopBarWObject().window?.hasShadow = false
+        getFloatingTopBarWObject().window?.backgroundColor = NSColor.clear
+        getFloatingTopBarWObject().window?.styleMask = .borderless
+    }
+    getFloatingTopBarWObject().showWindow(nil)
+    let boxMainMaxY = floatingTopBarVcObj?.boxMain.frame.maxY ?? 134
+    
+    var origin = NSPoint(x: windowTopMidPoint.x - (getFloatingTopBarVObject().view.frame.width / 2), y: windowTopMidPoint.y - boxMainMaxY)// 34. box height
+    if SettingsManagerObject.isMenuPopoverEnabled{
+        origin = NSPoint(x: windowTopMidPoint.x - (getFloatingTopBarVObject().view.frame.width / 2), y: windowTopMidPoint.y - boxMainMaxY - 10)// 10 is arrow height
+    }
+    getFloatingTopBarWObject().window?.setFrameOrigin(origin)
+    getFloatingTopBarVObject().boxMain.isHidden = false
+    getFloatingTopBarVObject().boxMoreItems.isHidden = false
+}
+
+
+func closeMenuWindowIsVisible(){
+    if !SettingsManagerObject.isMenuPopoverEnabled{
+        if menuWcObj != nil{
+            if menuWcObj?.window?.isVisible ?? false{
+                menuWcObj?.window?.close()
+            }
+        }
+    }
+}
+
+func closeMainMenuIfVisible(){
+    if SettingsManagerObject.isMenuPopoverEnabled{
+        if appdelegate?.popover.isShown ?? false{
+            appdelegate?.popover.close()
+        }
+    }else{
+        if getMenuWindowObject().window?.isVisible ?? false{
+            getMenuWindowObject().window?.close()
+        }
+    }
+}
+
+//***********SHOW Small Timer WINDOW***************//
+
+func showSmallTimerWindow(durationSeconds: Int, msg: String, isFocusBreak:Bool, currentTimerValue:Int){
+    addLog(text:"show Top Small Timer Window for:- \(durationSeconds) seconds")
+    closeMainMenuIfVisible()
+    floatingTopBarVcObj?.showTimerWindow(durationSeconds: durationSeconds, msg: msg, isFocusBreak: isFocusBreak, currentTimerValue: currentTimerValue)
+    
+    if floatingTopBarVcObj != nil {
+        floatingTopBarVcObj?.boxMain.isHidden = false
+        floatingTopBarVcObj?.boxMoreItems.isHidden = false
+    }
+    
+//    getSmallCountDownWindowObject().contentViewController = getsmallCountDownVcObject()
+//    smallCountDownVcObj?.isFocusBreak = isFocusBreak
+//    getSmallCountDownWindowObject().window?.styleMask = .borderless
+//    let screenFrame = NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 1920, height: 1080)
+//    
+//    getSmallCountDownWindowObject().window?.setFrameOrigin(NSPoint(x: screenFrame.width - (smallCountDownVcObj?.view.frame.width)!, y: screenFrame.height - (smallCountDownVcObj?.view.frame.height)! - 22)) //  22 status bar heigh
+//    getSmallCountDownWindowObject().window?.isMovableByWindowBackground = true
+//    
+//    getSmallCountDownWindowObject().showWindow(nil)
+//    
+//    smallCountDownVcObj?.startTimerHabit(durationSeconds: durationSeconds, msg: msg, currentTimerValue:currentTimerValue)
+}
+
+func showCustomBlockingScheduleStartPopUp(scheduleName: String, scheduleTime: String){
+    addLog(text:"show Custom Blocking Schedule Start PopUp for:- \(scheduleTime)")
+    closeMainMenuIfVisible()
+    floatingTopBarVcObj?.lblScheduleName.stringValue = scheduleName
+    floatingTopBarVcObj?.lblScheduleTime.stringValue = scheduleTime
+    floatingTopBarVcObj?.boxCustomBlockingSchedule.isHidden = false
+}
+
+func showSmallTimerView(){
+//    getsmallCountDownVcObject().view.isHidden = false
+    floatingTopBarVcObj?.boxTimer.isHidden = false
+    floatingTopBarVcObj?.timerBoxShown()
+}
+
+//***********SHOW Focus End Warning***************//
+
+func showFocusEndWarningWindow(){
+    addLog(text:"showFocusEndWarningWindow")
+    getFocusEndWarningWindowObject().contentViewController = getFocusEndWarningVcObject()
+    //    getFocusEndWarningWindowObject().window?.styleMask = .borderless
+    let screenFrame = NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 1920, height: 1080)
+    //    getFocusEndWarningWindowObject().window?.styleMask.remove(.closable)
+    getFocusEndWarningWindowObject().window?.title = appName
+    getFocusEndWarningWindowObject().window?.setFrameOrigin(NSPoint(x: screenFrame.width - (getFocusEndWarningVcObject().view.frame.width), y: screenFrame.height - (getFocusEndWarningVcObject().view.frame.height) - 22)) //  22 status bar heigh
+    //    getFocusEndWarningWindowObject().window?.isMovableByWindowBackground = true
+    getFocusEndWarningWindowObject().showWindow(nil)
+}
+
+//***********SHOW Custom Notification WINDOW***************//
+//func showCustomNotificationWindow(msg: String){
+//    addLog(text:"show Custom Notification Window")
+//    getCustomNotificationWindowObject().contentViewController = getCustomNotificationVcObject()ye view  subview bhi ban rha h to dekh k use kro agar uncomment kro to
+//    getCustomNotificationWindowObject().window?.styleMask = .borderless
+//    let screenFrame = NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 1920, height: 1080)
+//    getCustomNotificationWindowObject().window?.backgroundColor = NSColor.clear
+//    getCustomNotificationWindowObject().window?.setFrameOrigin(NSPoint(x: screenFrame.width - (customNotificationVcObj?.view.frame.width)!, y: screenFrame.height - (customNotificationVcObj?.view.frame.height)! - 22)) //  22 status bar heigh
+//
+//    getCustomNotificationWindowObject().showWindow(nil)
+//    customNotificationVcObj?.resetView(msg: msg)
+//}
+
+//***********SHOW Custom Notification View***************//
+func showCustomNotificationView(msg: String){
+    if mainWindowControllerObj?.window?.isVisible ?? false{
+        addLog(text:"show Custom Notification View")
+        let _ = getCustomNotificationVcObject()
+        getHabitsVcObject().view.addSubview(customNotificationVcObj!.view)
+        getHabitsVcObject().view.addTopRightConstraints(subView: customNotificationVcObj!.view)
+        customNotificationVcObj!.resetView(msg: msg)
+    }
+    
+}
+
+
+func isSmallCountDownTimerViewVisible()->Bool{
+    if smallCountDownVcObj != nil{
+        return !(floatingTopBarVcObj?.boxTimer.isHidden ?? false)
+    }
+    return false
+}
+
+func closeSmallCountDownTimerBoxIfVisible(){
+    if isSmallCountDownTimerViewVisible(){
+        smallCountDownVcObj?.closeTimerBox()
+    }
+}
+
+func closeSmallCountDownTimerBoxIfVisibleForFocusBreak(){
+    if isSmallCountDownTimerViewVisible(){
+        if (smallCountDownVcObj?.isFocusBreak ?? false){
+            smallCountDownVcObj?.closeTimerBox()
+        }
+    }
+}
+
+
+func closeSmallCountDownTimerBoxIfVisibleForWithoutFocusBreak(){
+    if isSmallCountDownTimerViewVisible(){
+        if !(smallCountDownVcObj?.isFocusBreak ?? false){
+            smallCountDownVcObj?.closeTimerBox()
+        }
+    }
+}
+
+
+func closeIntentionBlockedUrlsWinddowIfVisible(){
+    if intentionBlockedUrlsWcObj != nil{
+        if intentionBlockedUrlsWcObj?.window?.isVisible ?? false{
+            intentionBlockedUrlsWcObj?.window?.close()
+        }
+    }
+}
+func closeSetIntentionBlockedUrlsWinddowIfVisible(){
+    if setIntentionBlockedUrlsWcObj != nil{
+        if setIntentionBlockedUrlsWcObj?.window?.isVisible ?? false{
+            setIntentionBlockedUrlsVcObj?.closeWindow()
+        }
+    }
+}
+
+
+func closeAlwaysBlockPopupsIfNotForeCurrentDomain(domain:String, runningApp:NSRunningApplication){
+    if intentionBlockedUrlsWcObj != nil{
+        if intentionBlockedUrlsWcObj?.window?.isVisible ?? false{
+            if intentionBlockedUrlsVcObj?.tabUrl != domain{
+                intentionBlockedUrlsWcObj?.window?.close()
+            }
+        }
+    }
+    if setIntentionBlockedUrlsWcObj != nil{
+        if setIntentionBlockedUrlsWcObj?.window?.isVisible ?? false{
+            if setIntentionBlockedUrlsVcObj?.tabUrl == domain{
+                exitFullScreen(runningApp: runningApp)
+            }else{
+                setIntentionBlockedUrlsVcObj?.closeWindow()
+            }
+        }
+    }
+}
+
+func closeIntentionBlockedAppsWinddowIfVisible(){
+    if intentionBlockedAppsWcObj != nil{
+        if intentionBlockedAppsWcObj?.window?.isVisible ?? false{
+            intentionBlockedAppsWcObj?.window?.close()
         }
     }
 }

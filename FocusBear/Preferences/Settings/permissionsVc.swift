@@ -14,13 +14,19 @@ class permissionsVc: NSViewController {
     @IBOutlet weak var lblTitle: NSTextField!
     
     @IBOutlet weak var lblDescription: NSTextField!
-    var checkPermissionTimer:Timer?
+    
+    private let queue = DispatchQueue(label: "queueTimerCheckPermission")
+    var checkPermissionTimer:DispatchSourceTimer?
+    
     var arrBrowsers = [[String:Any]]()
     
     var buttonRequestPermissionText = "Request Permission"
     var enabledText = "✅  Enabled!"
     var accessibilityPermissionText = "(Accessibility permission given)"
     var allPermissionText = "(All needed permissions given)"
+    var descriptionFirefoxExtensiont = "Install the Focus Bear Blocker extension in Firefox."
+    var buttonAddFirefoxExtensiont = "Add Firefox Extension"
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.//
@@ -32,7 +38,10 @@ class permissionsVc: NSViewController {
             enabledText = dic.value(forKey: "enabledText") as? String ?? enabledText
             accessibilityPermissionText = dic.value(forKey: "accessibilityPermissionText") as? String ?? accessibilityPermissionText
             allPermissionText = dic.value(forKey: "allPermissionText") as? String ?? allPermissionText
+            descriptionFirefoxExtensiont = dic.value(forKey: "descriptionFirefoxExtensiont") as? String ?? descriptionFirefoxExtensiont
+            buttonAddFirefoxExtensiont = dic.value(forKey: "buttonAddFirefoxExtensiont") as? String ?? buttonAddFirefoxExtensiont
         }
+        
         if let settingsNew = configjson.value(forKey: "settingsNew") as? NSDictionary{
             lblTitle.stringValue = settingsNew.value(forKey: "permissionsSettingTitle") as? String ?? lblTitle.stringValue
             lblDescription.stringValue = settingsNew.value(forKey: "descriptionPermissions") as? String ?? lblDescription.stringValue
@@ -41,6 +50,20 @@ class permissionsVc: NSViewController {
     }
     
     override func viewWillAppear() {
+        settingsContainerVcObj?.isPermissionsViewVisible = true
+        reloadData()
+    }
+    
+    override func viewWillDisappear() {
+        settingsContainerVcObj?.isPermissionsViewVisible = false
+        saveBrowsersPermissionInfo()
+        if self.checkPermissionTimer != nil{
+            self.checkPermissionTimer?.cancel()
+            self.checkPermissionTimer = nil
+        }
+    }
+    
+    func reloadData(){
         arrBrowsers.removeAll()
         let filemanager = FileManager.default
         
@@ -127,19 +150,24 @@ class permissionsVc: NSViewController {
         tblView.reloadData()
     }
     
-    func startTimerCheckPermission(){
-        DispatchQueue.global().sync {
-            if self.checkPermissionTimer != nil{
-                self.checkPermissionTimer?.invalidate()
-                self.checkPermissionTimer = nil
-            }
-            self.checkPermissionTimer = Timer.scheduledTimer(timeInterval: TimeInterval(1), target: self, selector: #selector(self.checkPermission), userInfo: nil, repeats: true)
-            
-            RunLoop.main.add((checkPermissionTimer!), forMode: RunLoop.Mode.common)
-        }
-    }
     
-    override func viewWillDisappear() {
+    func startTimerCheckPermission(){
+        if self.checkPermissionTimer != nil{
+            self.checkPermissionTimer?.cancel()
+            self.checkPermissionTimer = nil
+        }
+        let newTimer = DispatchSource.makeTimerSource(queue: queue)
+        newTimer.schedule(deadline: .now(), repeating: 1)
+        
+        newTimer.setEventHandler { [weak self] in
+            self?.checkPermission()
+        }
+        
+        newTimer.resume()
+        checkPermissionTimer = newTimer
+    }
+
+    func saveBrowsersPermissionInfo(){
         var arrBrowsersInfo: [[String : Any]] = []
         for browserInfo in arrBrowsers{
             if let browser = browserInfo["browser"] as? BROWSER{
@@ -147,7 +175,6 @@ class permissionsVc: NSViewController {
             }
         }
         UserDefaults.standard.set(arrBrowsersInfo, forKey: kUserdefaultsAllBrowsersPermissionInfo)
-        checkPermissionTimer?.invalidate()
     }
     
     var lastBrowserClicked:BROWSER?
@@ -179,12 +206,21 @@ class permissionsVc: NSViewController {
                                                 UserDefaults.standard.set(true, forKey: kUserdefaultsBrowsersPermissionsSetByUser)
                                             }
                                         }
+                                        saveBrowsersPermissionInfo()
                                         
+                                        DispatchQueue.main.async {
+                                            self.permissionGivenFromBrowser()
+                                        }
                                     }
                                 }else{
-                                    self.checkPermissionTimer?.invalidate()
+                                    if self.checkPermissionTimer != nil{
+                                        self.checkPermissionTimer?.cancel()
+                                        self.checkPermissionTimer = nil
+                                    }
                                     self.lastBrowserClicked = nil
-                                    self.tblView.reloadData()
+                                    DispatchQueue.main.async {
+                                        self.tblView.reloadData()
+                                    }
                                 }
                                 
                                 break;
@@ -197,6 +233,15 @@ class permissionsVc: NSViewController {
         }
     }
     
+    func permissionGivenFromBrowser(){// added on 23/7/25 version 1.26.393
+        if permissionBlockDistractionWcObj != nil && onboardingControllingBrowserVcObj != nil{
+            if permissionBlockDistractionWcObj?.window?.isVisible ?? false{
+                if permissionBlockDistractionWcObj?.contentViewController == onboardingControllingBrowserVcObj{
+                    onboardingControllingBrowserVcObj?.reloadData()
+                }
+            }
+        }
+    }
 }
 
 extension permissionsVc:NSTableViewDelegate, NSTableViewDataSource {
@@ -228,18 +273,16 @@ extension permissionsVc:NSTableViewDelegate, NSTableViewDataSource {
             
             if arrBrowsers[row]["browser"] as? BROWSER == ._FIREFOX_{
                 if !state{
-                    if isAccessibilityEnabled(isPrompt: false) == true{
-                        cell.lblFirefoxPermission.isHidden = false
-                        cell.lblFirefoxPermission.stringValue = accessibilityPermissionText
-                    }
-                }else{
                     cell.lblFirefoxPermission.isHidden = false
-                    cell.lblFirefoxPermission.stringValue = allPermissionText
+                    cell.lblFirefoxPermission.stringValue = descriptionFirefoxExtensiont
                 }
+                cell.btnRequest.title = buttonAddFirefoxExtensiont
+            }else{
+                cell.btnRequest.title = buttonRequestPermissionText
             }
             
             
-            cell.btnRequest.title = buttonRequestPermissionText
+            
             cell.lblState.stringValue = enabledText
             
             cell.btnRequest.target = self
@@ -270,11 +313,22 @@ extension permissionsVc:NSTableViewDelegate, NSTableViewDataSource {
     }
     
     func requestPermission(row:Int){
+        UserDefaults.standard.set(true, forKey: kUserdefaultsBrowsersPermissionsSetByUser)// need to set here true because user has clicked for request permission (and user may skipped onbording permisions). if we do not do here then user can't get permiison// added on v2.27.435
         if let browser = arrBrowsers[row]["browser"] as? BROWSER{
             lastBrowserClicked = browser
             if browser == ._FIREFOX_{
-                showFirefoxPermissionWindow(showingFromOnboarding: false, currentBrowser: browser)
-                self.view.window?.close()
+                let urlString = "https://addons.mozilla.org/en-US/firefox/addon/focus-bear-blocker/"
+                let firefoxPath = "/Applications/Firefox.app"
+
+                if let url = URL(string: urlString) {
+                    NSWorkspace.shared.open(
+                        [url],
+                        withApplicationAt: URL(fileURLWithPath: firefoxPath),
+                        configuration: NSWorkspace.OpenConfiguration(),
+                        completionHandler: nil
+                    )
+                }
+                self.startTimerCheckPermission()
             }else{
                 
                 if browser == ._SIGMA_OS_{
@@ -298,6 +352,8 @@ extension permissionsVc:NSTableViewDelegate, NSTableViewDataSource {
                         if UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) == nil{
                             UserDefaults.standard.set(true, forKey: kUserdefaultsBrowsersPermissionsSetByUser)
                         }
+                        self.saveBrowsersPermissionInfo()
+                        self.permissionGivenFromBrowser()
                     }
                 }else {
                     DispatchQueue.main.async {

@@ -109,13 +109,13 @@ class toDoListSettingsVc: NSViewController {
             allApiObject.capturePosthog(event: "settings-changed-disable-specific-url-for-brain-dump", metadata: [:])
         }
         SettingsManagerObject.isSettingsChanged = true
-        if brainDumpWcObj != nil{
-            if brainDumpWcObj?.window != nil{
-                if brainDumpWcObj!.window!.isVisible{
-                    brainDumpVcObj?.resetData()
-                }
-            }
-        }
+//        if brainDumpWcObj != nil{ // 
+//            if brainDumpWcObj?.window != nil{
+//                if brainDumpWcObj!.window!.isVisible{
+//                    brainDumpVcObj?.resetData()
+//                }
+//            }
+//        }
     }
     
     @IBAction func btnBackClicked(_ sender: Any) {
@@ -158,13 +158,13 @@ extension toDoListSettingsVc: NSTextFieldDelegate{
     func controlTextDidEndEditing(_ obj: Notification) {
         if let textField = obj.object as? NSTextField{
             if self.textFieldUrl == textField{
-                if brainDumpWcObj != nil{
-                    if brainDumpWcObj?.window != nil{
-                        if brainDumpWcObj!.window!.isVisible{
-                            brainDumpVcObj?.resetData()
-                        }
-                    }
-                }
+//                if brainDumpWcObj != nil{
+//                    if brainDumpWcObj?.window != nil{
+//                        if brainDumpWcObj!.window!.isVisible{
+//                            brainDumpVcObj?.resetData()
+//                        }
+//                    }
+//                }
             }
         }
     }

@@ -8,7 +8,7 @@
 
 import Cocoa
 
-class toolBoxVc: NSViewController {
+class toolBoxVc: NSViewController {//// not in use now  removed on 1/9/25  on version 2.27.408 // it could   // We may add it back in the future
     
     
     @IBOutlet weak var lblCheckBoxForActivity: NSTextField!
@@ -158,43 +158,43 @@ class toolBoxVc: NSViewController {
             boxForAllowedActivity.isHidden = false
         }
 
-        let screenFrame = NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 1920, height: 1080)
-        getToolBoxWindowObject().window?.setFrameOrigin(NSPoint(x: 0, y: ((screenFrame.height) - (self.view.window?.frame.height ?? 100))))
-        if UserDefaults.standard.object(forKey: kUserdefaultsDontShowToolBoxAutomatically) as? Bool == false{
-            checkBoxDontShow.state = .off
-        }else{
-            checkBoxDontShow.state = .on
-        }
-        
-        if UserDefaults.standard.object(forKey: kUserdefaultsDontShowToolBoxAutomaticallyForActivity) as? Bool == false{
-            checkBoxDontShowForActivity.state = .off
-        }else{
-            checkBoxDontShowForActivity.state = .on
-        }
+//        let screenFrame = NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 1920, height: 1080)
+//        getToolBoxWindowObject().window?.setFrameOrigin(NSPoint(x: 0, y: ((screenFrame.height) - (self.view.window?.frame.height ?? 100))))
+//        if UserDefaults.standard.object(forKey: kUserdefaultsDontShowToolBoxAutomatically) as? Bool == false{
+//            checkBoxDontShow.state = .off
+//        }else{
+//            checkBoxDontShow.state = .on
+//        }
+//        
+//        if UserDefaults.standard.object(forKey: kUserdefaultsDontShowToolBoxAutomaticallyForActivity) as? Bool == false{
+//            checkBoxDontShowForActivity.state = .off
+//        }else{
+//            checkBoxDontShowForActivity.state = .on
+//        }
     }
     @IBAction func checkBoxDontShowAutoClicked(_ sender: Any) {
-        if checkBoxDontShow.state == .on{
-            allApiObject.capturePosthog(event: "toolbox-checkbox-dont-show-checked", metadata: [:])
-            addLog(text: "toolBoxVc:- checkBoxDontShowAutoClicked:- state is on")
-            UserDefaults.standard.set(true, forKey: kUserdefaultsDontShowToolBoxAutomatically)
-        }else{
-            allApiObject.capturePosthog(event: "toolbox-checkbox-dont-show-unchecked", metadata: [:])
-            addLog(text: "toolBoxVc:- checkBoxDontShowAutoClicked:- state is off")
-            UserDefaults.standard.set(false, forKey: kUserdefaultsDontShowToolBoxAutomatically)
-        }
+//        if checkBoxDontShow.state == .on{
+//            allApiObject.capturePosthog(event: "toolbox-checkbox-dont-show-checked", metadata: [:])
+//            addLog(text: "toolBoxVc:- checkBoxDontShowAutoClicked:- state is on")
+//            UserDefaults.standard.set(true, forKey: kUserdefaultsDontShowToolBoxAutomatically)
+//        }else{
+//            allApiObject.capturePosthog(event: "toolbox-checkbox-dont-show-unchecked", metadata: [:])
+//            addLog(text: "toolBoxVc:- checkBoxDontShowAutoClicked:- state is off")
+//            UserDefaults.standard.set(false, forKey: kUserdefaultsDontShowToolBoxAutomatically)
+//        }
         
     }
     
     @IBAction func checkBoxDontShowAutoForActivityClicked(_ sender: Any) {
-        if checkBoxDontShowForActivity.state == .on{
-            allApiObject.capturePosthog(event: "toolbox-checkbox-dont-show-checked-for-activity", metadata: [:])
-            addLog(text: "toolBoxVc:- checkBoxDontShowAutoForActivityClicked:- state is on")
-            UserDefaults.standard.set(true, forKey: kUserdefaultsDontShowToolBoxAutomaticallyForActivity)
-        }else{
-            allApiObject.capturePosthog(event: "toolbox-checkbox-dont-show-unchecked-for-activity", metadata: [:])
-            addLog(text: "toolBoxVc:- checkBoxDontShowAutoForActivityClicked:- state is off")
-            UserDefaults.standard.set(false, forKey: kUserdefaultsDontShowToolBoxAutomaticallyForActivity)
-        }
+//        if checkBoxDontShowForActivity.state == .on{
+//            allApiObject.capturePosthog(event: "toolbox-checkbox-dont-show-checked-for-activity", metadata: [:])
+//            addLog(text: "toolBoxVc:- checkBoxDontShowAutoForActivityClicked:- state is on")
+//            UserDefaults.standard.set(true, forKey: kUserdefaultsDontShowToolBoxAutomaticallyForActivity)
+//        }else{
+//            allApiObject.capturePosthog(event: "toolbox-checkbox-dont-show-unchecked-for-activity", metadata: [:])
+//            addLog(text: "toolBoxVc:- checkBoxDontShowAutoForActivityClicked:- state is off")
+//            UserDefaults.standard.set(false, forKey: kUserdefaultsDontShowToolBoxAutomaticallyForActivity)
+//        }
         
     }
 }

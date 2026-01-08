@@ -8,9 +8,16 @@
 
 import Cocoa
 import Auth0
+import AuthenticationServices
 
-class askLogInVc: NSViewController {
+class askLogInVc: NSViewController, ASAuthorizationControllerDelegate, ASAuthorizationControllerPresentationContextProviding {
     
+    @IBOutlet weak var lblOr: NSTextField!
+    @IBOutlet weak var lblTitleCreateAccount: NSTextField!
+    @IBOutlet weak var btnSignIn: underLineButton!
+    @IBOutlet weak var boxButtonSignUpWithEmail: boxButton!
+    @IBOutlet weak var boxButtonSignUpWithApple: boxButton!
+    @IBOutlet weak var boxButtonSignUpWithGoogle: boxButton!
     @IBOutlet weak var btnInfo: NSButton!
     @IBOutlet weak var imgView: NSImageView!
     @IBOutlet weak var boxBg: NSBox!
@@ -32,21 +39,58 @@ class askLogInVc: NSViewController {
         btnSignInWithGoogle.title = "Sign In with Google"
         btnSignInWithApple.title = "Sign In with Apple"
         
+        lblOr.stringValue = "OR"
+        
+        var buttonSignUpWithGoogle = "Regístrate con Google"
+        var buttonSignUpWithApple = "Regístrate con Apple"
+        var buttonSignUpWithEmail = "Regístrate con correo electrónico"
+        var buttonSignInOldAccountText = "¿Ya tienes una cuenta de Focus Bear? Inicia sesión"
+        var buttonCreateAccount = "Crea tu cuenta"
+        
+        
         if let askLogInVcInfo = configjson.value(forKey: "askLogInVcInfo") as? NSDictionary{
             lblTitle.stringValue = askLogInVcInfo.value(forKey: "title") as? String ?? lblTitle.stringValue
             lblMessage.stringValue = askLogInVcInfo.value(forKey: "messageText") as? String ?? lblMessage.stringValue
             btnSignInWithEmail.title = askLogInVcInfo.value(forKey: "buttonSignInEmailText") as? String ?? btnSignInWithEmail.title
             btnSignInWithGoogle.title = askLogInVcInfo.value(forKey: "buttonSignInGoogleText") as? String ?? btnSignInWithGoogle.title
             btnSignInWithApple.title = askLogInVcInfo.value(forKey: "buttonSignInAppleText") as? String ?? btnSignInWithApple.title
+            buttonSignUpWithGoogle = askLogInVcInfo.value(forKey: "buttonSignUpWithGoogle") as? String ?? buttonSignUpWithGoogle
+            buttonSignUpWithApple = askLogInVcInfo.value(forKey: "buttonSignUpWithApple") as? String ?? buttonSignUpWithApple
+            buttonSignUpWithEmail = askLogInVcInfo.value(forKey: "buttonSignUpWithEmail") as? String ?? buttonSignUpWithEmail
+            buttonSignInOldAccountText = askLogInVcInfo.value(forKey: "buttonSignInOldAccountText") as? String ?? buttonSignInOldAccountText
+            buttonCreateAccount = askLogInVcInfo.value(forKey: "buttonCreateAccount") as? String ?? buttonCreateAccount
+            lblOr.stringValue = askLogInVcInfo.value(forKey: "orText") as? String ?? lblOr.stringValue
         }
-
+        
         btnSignUp.isBordered = false
-
+        
         if let customLoginVcInfo = configjson.value(forKey: "customLoginVcInfo") as? NSDictionary{
             btnSignUp.title = customLoginVcInfo.value(forKey: "buttonCreateAccountText") as? String ?? btnSignUp.title
         }
         allApiObject.capturePosthog(event: "pre-signin-view-shown", metadata: [:])
+        
+        
+        
+        boxButtonSignUpWithGoogle.setTitle(buttonSignUpWithGoogle)
+        boxButtonSignUpWithGoogle.setImage(NSImage(named: "google_logo"))
+        boxButtonSignUpWithGoogle.target = self
+        boxButtonSignUpWithGoogle.action = #selector(signUpWithGoogle)
+        
+        boxButtonSignUpWithApple.setTitle(buttonSignUpWithApple)
+        boxButtonSignUpWithApple.setImage(NSImage(named: "apple_logo"))
+        boxButtonSignUpWithApple.target = self
+        boxButtonSignUpWithApple.action = #selector(signUpWithApple)
+        
+        boxButtonSignUpWithEmail.setButtonColor(NSColor.white)
+        boxButtonSignUpWithEmail.setTitle(buttonSignUpWithEmail)
+        boxButtonSignUpWithEmail.setImage(NSImage(named: "email"))
+        boxButtonSignUpWithEmail.target = self
+        boxButtonSignUpWithEmail.action = #selector(signUpWithEmail)
+        
+        btnSignIn.title = buttonSignInOldAccountText
+        lblTitleCreateAccount.stringValue = buttonCreateAccount
     }
+    
     override func viewWillAppear() {
         appdelegate!.menuItemUninstall.isHidden = false
         if let common = configjson.value(forKey: "common") as? NSDictionary{
@@ -96,8 +140,8 @@ class askLogInVc: NSViewController {
     @IBAction func btnSignInWithEmailClicked(_ sender: Any) {
         addLog(text:"[user-action] btnSignInClicked")
         allApiObject.capturePosthog(event: "button-signin-with-google-clicked", metadata: [:])
-//        self.view.window?.close()
-        showCustomLoginWindow(isLogin: true) 
+        //        self.view.window?.close()
+        showCustomLoginWindow(isLogin: true)
     }
     
     var loginComingSoonMsgVcObj:loginComingSoonMsgVc?
@@ -128,7 +172,7 @@ class askLogInVc: NSViewController {
                     // Handle successful login, save credentials, or transition to the next screen
                     print(credentials.accessToken)
                     DispatchQueue.main.async {
-                        self.view.window?.close()
+                        askLogInWcObj?.window?.close()
                         appdelegate!.statusbutton?.action = nil
                         appdelegate!.user = AuthUser(from: credentials.accessToken)
                         allApiObject.capturePosthog(event: "login-homemade", metadata: [:])
@@ -148,35 +192,160 @@ class askLogInVc: NSViewController {
     }
     
     @IBAction func btnSignInWithAppleClicked(_ sender: Any) {
-//        Auth0
-//            .webAuth()
-//            .connection("apple") // The connection name for Apple
-//            .start { result in
-//                switch result {
-//                case .success(let credentials):
-//                    print("Logged in with Apple: \(credentials)")
-//                    // Handle successful login, save credentials, or transition to the next screen
-//
-//                    self.view.window?.close()
-//                    appdelegate!.statusbutton?.action = nil
-//                    appdelegate!.user = AuthUser(from: credentials.accessToken)
-//                    allApiObject.capturePosthog(event: "login-homemade", metadata: [:])
-//                    let _ = appdelegate!.credentialsManager.store(credentials: credentials)
-//                    UserDefaults.standard.set(true, forKey: kUserdefaultsIsUserLoggedIn)
-//                    appdelegate!.loadCredentialsAndDeviceId()
-//
-//                case .failure(let error):
-//                    print("Apple login failed: \(error)")
-//                    // Handle login failure, show an error message
-//                }
-//            }
-//
-//
-//        return;
+//        let request = ASAuthorizationAppleIDProvider().createRequest()
+//        request.requestedScopes = [.fullName, .email]
+//        
+//        let controller = ASAuthorizationController(authorizationRequests: [request])
+//        controller.delegate = self
+//        controller.presentationContextProvider = self
+//        DispatchQueue.main.async {
+//            controller.performRequests()
+//        }
+        // added on 2.27.425
+        Auth0
+            .webAuth()
+            .connection("apple") // Apple connection in Auth0
+            .audience("https://auth.focusbear.io/api/v2/") // same audience
+            .scope("openid profile email offline_access")
+            .start { result in
+                switch result {
+                case .success(let credentials):
+                    print("Logged in with Apple: \(credentials)")
+                    
+                    DispatchQueue.main.async {
+                        askLogInWcObj?.window?.close()
+                        appdelegate?.statusbutton?.action = nil
+                        
+                        appdelegate?.user = AuthUser(from: credentials.accessToken)
+                        
+                        allApiObject.capturePosthog(event: "login-homemade", metadata: [:])
+                        _ = appdelegate?.credentialsManager.store(credentials: credentials)
+                        
+                        UserDefaults.standard.set(true, forKey: kUserdefaultsIsUserLoggedIn)
+                        appdelegate?.loadCredentialsAndDeviceId()
+                        //                        UserDefaults.standard.set(true, forKey: kUserDefaultsLastUserLoginWithApple)
+                    }
+                    
+                case .failure(let error):
+                    print("Apple login failed: \(error)")
+                    DispatchQueue.main.async {
+                        askLogInWcObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.modalPanelWindow)))
+                    }
+                }
+            }
+        
+        
+        //        Auth0
+        //            .webAuth()
+        //            .connection("apple") // The connection name for Apple
+        //            .start { result in
+        //                switch result {
+        //                case .success(let credentials):
+        //                    print("Logged in with Apple: \(credentials)")
+        //                    // Handle successful login, save credentials, or transition to the next screen
+        //
+        //                    self.view.window?.close()
+        //                    appdelegate!.statusbutton?.action = nil
+        //                    appdelegate!.user = AuthUser(from: credentials.accessToken)
+        //                    allApiObject.capturePosthog(event: "login-homemade", metadata: [:])
+        //                    let _ = appdelegate!.credentialsManager.store(credentials: credentials)
+        //                    UserDefaults.standard.set(true, forKey: kUserdefaultsIsUserLoggedIn)
+        //                    appdelegate!.loadCredentialsAndDeviceId()
+        //
+        //                case .failure(let error):
+        //                    print("Apple login failed: \(error)")
+        //                    // Handle login failure, show an error message
+        //                }
+        //            }
+        
+        
+        return;
         addLog(text:"[user-action] btnSignInWithAppleClicked")
         allApiObject.capturePosthog(event: "button-signin-with-apple-clicked", metadata: [:])
         self.presentAsSheet(loginComingSoonMsgVcObject())
     }
+    
+    
+    
+    func startAppleLogin() {
+        let clientID = "com.focusbear.applesignin"
+        let redirectURI = "Focus Bear://auth/callback"
+        
+        let authURL = URL(string:
+            "https://appleid.apple.com/auth/authorize?" +
+            "response_type=code%20id_token&" +
+            "client_id=\(clientID)&" +
+            "redirect_uri=\(redirectURI)&" +
+            "scope=email%20name"
+        )!
+        
+        let session = ASWebAuthenticationSession(
+            url: authURL,
+            callbackURLScheme: "yourapp"
+        ) { callbackURL, error in
+            guard error == nil, let callbackURL = callbackURL else {
+                print("Login canceled or failed")
+                return
+            }
+            // Extract ?code= and ?id_token= from callbackURL
+            print("Apple returned: \(callbackURL)")
+        }
+        
+        session.start()
+    }
+    
+    func authorizationController(controller: ASAuthorizationController, didCompleteWithAuthorization authorization: ASAuthorization) {
+        if let credential = authorization.credential as? ASAuthorizationAppleIDCredential,
+           let authorizationCodeData = credential.authorizationCode,
+           let authorizationCode = String(data: authorizationCodeData, encoding: .utf8) {
+            
+            // Exchange Apple authorizationCode with Auth0
+            let url = URL(string: "https://YOUR_DOMAIN.auth0.com/oauth/token")!
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            
+            let body: [String: Any] = [
+                "grant_type": "urn:ietf:params:oauth:grant-type:token-exchange",
+                "subject_token_type": "http://auth0.com/oauth/token-type/apple-authz-code",
+                "scope": "openid profile email offline_access",
+                "audience": "https://auth.focusbear.io/api/v2/",
+                "subject_token": authorizationCode,
+                "client_id": "com.focusbear.applesignin",
+                "user_profile": [
+                    "name": [
+                        "firstName": credential.fullName?.givenName ?? "",
+                        "lastName": credential.fullName?.familyName ?? ""
+                    ],
+                    "email": credential.email ?? ""
+                ]
+            ]
+            
+            request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+            
+            URLSession.shared.dataTask(with: request) { data, response, error in
+                if let data = data {
+                    do {
+                        let result = try JSONSerialization.jsonObject(with: data, options: [])
+                        print("Auth0 response: \(result)")
+                        // store credentials in CredentialsManager like you do for Google
+                    } catch {
+                        print("Failed to decode: \(error)")
+                    }
+                }
+            }.resume()
+        }
+    }
+    
+    func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
+        print("Apple login failed: \(error)")
+    }
+    
+    func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
+        return self.view.window!
+    }
+    
+    
     func showAlertNoInternet(window:NSWindow){
         var noInternetTitle = "No Internet Connection"
         var noInternetSubTitle = "Make sure your device is connected to the internet."
@@ -199,4 +368,23 @@ class askLogInVc: NSViewController {
             
         })
     }
+    
+    @objc func signUpWithGoogle(){
+        btnSignInWithGoogleClicked(self)
+    }
+    @objc func signUpWithApple(){
+        btnSignInWithAppleClicked(self)
+    }
+    @objc func signUpWithEmail(){
+        btnSignUpClicked(self)
+    }
+    
+    @IBAction func btnSignInClicked(_ sender: Any) {
+        btnSignInWithEmailClicked(self)
+    }
 }
+// com.focusbear.applesignin
+
+
+
+

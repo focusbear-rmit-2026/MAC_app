@@ -122,12 +122,7 @@ class installHabitPacksVc: NSViewController, WKNavigationDelegate, webViewLoadFa
             print(error)
         }
         
-        var theme = "LIGHT"
-        if mainWindowControllerObj!.window!.hasDarkAppearance{
-            theme = "DARK"
-        }else {
-            theme = "LIGHT"
-        }
+        let theme = getWindowTheme()
         let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex].webFontName
         let stringJson1 = "{access_token: \"\(appdelegate!.credential?.accessToken ?? "")\",\"type\":\"mac\",\"platform\":\"mac\",\"lang\":\"\(currentLanguageCode)\",\"theme\":\"\(theme)\",\"font\":\"\(selectedFont)\",\"long_term_goals\":\(goalsString)}"
         
@@ -173,7 +168,13 @@ class installHabitPacksVc: NSViewController, WKNavigationDelegate, webViewLoadFa
             }
             DispatchQueue.main.async {
                 self.isShowingNextView = false
-                mainViewControllerObj!.showAskWorkTimeVc()
+//                mainViewControllerObj!.showAskWorkTimeVc()
+                
+                
+                let isBreaksEnabled = true
+                UserDefaults.standard.set(20, forKey: kUserdefaultsBreakDurationValue)
+                UserDefaults.standard.set(true, forKey: kUserdefaultsBreaksEnabledFromOnboarding)
+                appdelegate!.showOnbardingHabit()
             }
         })
     }

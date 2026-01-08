@@ -71,6 +71,8 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
     var menuItemSkipHabit: NSMenuItem!
     var menuItemChooseHabit: NSMenuItem!
     var menuItemChooseVideo: NSMenuItem!
+    var arrStartCustomRoutineMenu = [NSMenuItem]()
+    var isActivityPaused = false
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -148,11 +150,16 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         btnTabCheckList.isHidden = true
         boxTutorial.isHidden = true
     }
+
+    
     override func viewWillAppear() {
         self.timerHideBearAnimation?.invalidate()
         self.timerHideBearAnimation = nil
-        btnSkipHabit.isHidden = true
+        if !isActivityPaused{
+            btnSkipHabit.isHidden = true
+        }
     }
+    
     override func viewWillDisappear() {
         self.timerHideBearAnimation?.invalidate()
         self.timerHideBearAnimation = nil
@@ -239,7 +246,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             if isVideoLoding{
                 isVideoLoding = false
             }
-            if currentState == ._ACTIVITY_ && appdelegate!.isUserOnMeeting{//Mute video volume during in meeting breaks #796
+            if currentState == ._MICRO_BREAK_ && appdelegate!.isUserOnMeeting{//Mute video volume during in meeting breaks #796
                 if #available(macOS 12.0, *) {
                     self.webView.pauseAllMediaPlayback()
                 } else {
@@ -248,11 +255,12 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             }
             if isActivityPaused{
                 DispatchQueue.global().async {
-                    sleep(1)
+                    sleep(2)// for vimeo it needs 2 seconds for youtube it need 1 second
                     DispatchQueue.main.async {
                         if self.isActivityPaused{
                             if #available(macOS 12.0, *) {
                                 webView.setAllMediaPlaybackSuspended(true)
+                                print("setAllMediaPlaybackSuspended")
                             } else {
                                 // Fallback on earlier versions
                             }
@@ -264,15 +272,10 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             setAccessTokenToTutorialWebView()
         }
     }
+    
     func setAccessTokenToTutorialWebView(){
-        var theme = "LIGHT"
-        if preferencesWindowControllerObj != nil{
-            if preferencesWindowControllerObj!.window!.hasDarkAppearance{
-                theme = "DARK"
-            }else {
-                theme = "LIGHT"
-            }
-        }
+        let theme = getWindowTheme()
+        
         let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex].webFontName
         let stringJson = "{access_token: \"\(appdelegate!.credential?.accessToken ?? "")\",\"font\":\"\(selectedFont)\",\"lang\":\"\(currentLanguageCode)\",\"theme\":\"\(theme)\",\"platform\":\"mac\",\"type\":\"mac\"}"
     
@@ -284,13 +287,14 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             print(html)
         })
     }
+    
     var isVideoLoding = false{
         didSet{
             if isVideoLoding{
-                mainViewControllerObj?.btnAbort.isEnabled = false
+                getHabitsVcObject().btnAbort.isEnabled = false
                 btnPause.isEnabled = false
             }else{
-                mainViewControllerObj?.btnAbort.isEnabled = true
+                getHabitsVcObject().btnAbort.isEnabled = true
                 btnPause.isEnabled = true
                 currentTimer = startTimerValue
                 startTimerValue = 0
@@ -303,20 +307,44 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
     
     func changeVideoUrl(url:String){
         var videoUrl = url
-        if videoUrl.lowercased().contains("watch?v="){
-            if videoUrl.contains("&"){// removing additional param
-                if let firstItem =  videoUrl.components(separatedBy: "&").first{
-                    videoUrl = firstItem
-                }
+        addLog(text:"video url is :- \(videoUrl)")
+        var isVimeoUrl = false
+        var videoID: String?
+        if let host = URL(string: videoUrl)?.host {
+            isVimeoUrl = host.contains("vimeo.com")
+            print(isVimeoUrl) // true if it's a Vimeo link
+        }
+
+        if isVimeoUrl{
+            if let (url,id) = vimeoEmbedURL(from: videoUrl){
+                videoID = id
+                videoUrl = url
             }
-            videoUrl = videoUrl.replacingOccurrences(of: "watch?v=", with: "embed/")
         }else{
-            // doing this beacuse if video is embedded than it will not play
-            if videoUrl.lowercased().contains("https://youtu.be/"){
-                if let lastItem =  videoUrl.components(separatedBy: "/").last{
-                    videoUrl = "https://www.youtube.com/embed/" + lastItem
+            if videoUrl.lowercased().contains("watch?v="){
+                if videoUrl.contains("&"){// removing additional param
+                    if let firstItem =  videoUrl.components(separatedBy: "&").first{
+                        videoUrl = firstItem
+                    }
                 }
-                
+                videoID = videoUrl.components(separatedBy: "watch?v=").last
+                videoUrl = videoUrl.replacingOccurrences(of: "watch?v=", with: "embed/")
+            }else{
+                // doing this beacuse if video is embedded than it will not play
+                if videoUrl.lowercased().contains("https://youtu.be/"){
+                    if let lastItem =  videoUrl.components(separatedBy: "/").last{
+                        videoID = lastItem.components(separatedBy: "?").first//lastItem
+                        if let videoID = videoID {
+                            videoUrl = "https://www.youtube.com/embed/" + videoID
+                        }
+                    }
+                    
+                }else if videoUrl.lowercased().contains("embed/") {
+                    if let lastItem = videoUrl.components(separatedBy: "/").last {
+                        // Remove query params if present
+                        videoID = lastItem.components(separatedBy: "?").first
+                    }
+                }
             }
         }
         if videoUrl.contains("?"){
@@ -324,8 +352,34 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         }else{
             videoUrl = videoUrl + "?autoplay=1"
         }
+        
+        let videoIDUnwrapped = videoID ?? ""
+        
+        if !SettingsManagerObject.isOfficeModeEnabled || currentState == ._BREATHING_{
+            //If a video finishes before the end of a habit, automatically restart it #1476 28/7/25 v 1.26.395
+            if videoUrl.contains("?"){
+                videoUrl = videoUrl + "&loop=1&playlist=\(videoIDUnwrapped)"
+            }else{
+                videoUrl = videoUrl + "?loop=1&playlist=\(videoIDUnwrapped)"
+            }
+        }
+       
+        
+        if !isVimeoUrl{
+            if videoUrl.contains("?"){
+                videoUrl = videoUrl + "&rel=0"
+            }else{
+                videoUrl = videoUrl + "?rel=0"
+            }
+            //videoUrl = videoUrl.replacingOccurrences(of: "youtube.com", with: "youtube-nocookie.com")// not working
+        }
+        
+        addLog(text:"Final video url is :- \(videoUrl)")// Added in v 2.27.419
+        print("Final video url is :- \(videoUrl)")
         let link = URL(string:videoUrl)!
-        let request = URLRequest(url: link)
+        var request = URLRequest(url: link)
+        request.setValue("com.App.EarnYourScreentime", forHTTPHeaderField: "Referer")/// v 2.27.336 for Fix Youtube embed #1554(still some urls having problem)
+        ///
         if #available(macOS 12.0, *) {
             self.webView.setAllMediaPlaybackSuspended(false)
         } else {
@@ -335,46 +389,120 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         allApiObject.capturePosthog(event: "play-youtube-video-in-activity", metadata: [:])
     }
     
+    
+    func vimeoEmbedURL(from urlString: String) -> (String,String)? {
+        guard let url = URL(string: urlString) else { return nil }
+        let host = url.host ?? ""
+        let pathComponents = url.pathComponents.filter { $0 != "/" }
+        
+        // Case 1: Already an embed URL (player.vimeo.com)
+        if host.contains("player.vimeo.com"),
+           pathComponents.contains("video"),
+           let videoID = pathComponents.last {
+            return ("https://player.vimeo.com/video/\(videoID)", videoID)
+        }
+        
+        // Case 2: Normal Vimeo link (vimeo.com/VIDEO_ID or with query params)
+        if host.contains("vimeo.com"),
+           let videoID = pathComponents.last,
+           Int(videoID) != nil {
+            return ("https://player.vimeo.com/video/\(videoID)", videoID)
+        }
+        
+        // Not a valid Vimeo link
+        return nil
+    }
+    
     func loadWebViewTo(url:String?){
         btnTabVideo.isHidden = true
         isVideoLodded = false
         if var videoUrl = url{
+            addLog(text:"video url is :- \(videoUrl)")
             self.webView.isHidden = false
             isVideoLodded = true
             tabCount += 1
             btnTabVideo.isHidden = false
-            if videoUrl.lowercased().contains("watch?v="){
-                if videoUrl.contains("&"){// removing additional param
-                    if let firstItem =  videoUrl.components(separatedBy: "&").first{
-                        videoUrl = firstItem
-                    }
+            var videoID: String?
+            var isVimeoUrl = false
+            
+            if let host = URL(string: videoUrl)?.host {
+                isVimeoUrl = host.contains("vimeo.com")
+                print(isVimeoUrl) // true if it's a Vimeo link
+            }
+            if isVimeoUrl{
+                if let (url,id) = vimeoEmbedURL(from: videoUrl){
+                    videoID = id
+                    videoUrl = url
                 }
-                videoUrl = videoUrl.replacingOccurrences(of: "watch?v=", with: "embed/")
             }else{
-                // doing this beacuse if video is embedded than it will not play
-                if videoUrl.lowercased().contains("https://youtu.be/"){
-                    if let lastItem =  videoUrl.components(separatedBy: "/").last{
-                       videoUrl = "https://www.youtube.com/embed/" + lastItem
+                if videoUrl.lowercased().contains("watch?v="){
+                    if videoUrl.contains("&"){// removing additional param
+                        if let firstItem =  videoUrl.components(separatedBy: "&").first{
+                            videoUrl = firstItem
+                        }
                     }
-                    
+                    videoID = videoUrl.components(separatedBy: "watch?v=").last
+                    videoUrl = videoUrl.replacingOccurrences(of: "watch?v=", with: "embed/")
+                }else{
+                    // doing this beacuse if video is embedded than it will not play
+                    if videoUrl.lowercased().contains("https://youtu.be/"){
+                        if let lastItem =  videoUrl.components(separatedBy: "/").last{
+                            
+                            videoID = lastItem.components(separatedBy: "?").first//lastItem
+                            if let videoID = videoID {
+                                videoUrl = "https://www.youtube.com/embed/" + videoID
+                            }
+                        }
+                        
+                    }else if videoUrl.lowercased().contains("embed/") {
+                        if let lastItem = videoUrl.components(separatedBy: "/").last {
+                            // Remove query params if present
+                            videoID = lastItem.components(separatedBy: "?").first
+                        }
+                    }
                 }
             }
+            
+            let videoIDUnwrapped = videoID ?? ""
+            
             if !SettingsManagerObject.isOfficeModeEnabled || currentState == ._BREATHING_{
                 if videoUrl.contains("?"){
                     videoUrl = videoUrl + "&autoplay=1"
                 }else{
                     videoUrl = videoUrl + "?autoplay=1"
                 }
+                
+                //If a video finishes before the end of a habit, automatically restart it #1476 28/7/25 v 1.26.395
+                if videoUrl.contains("?"){
+                    videoUrl = videoUrl + "&loop=1&playlist=\(videoIDUnwrapped)"
+                }else{
+                    videoUrl = videoUrl + "?loop=1&playlist=\(videoIDUnwrapped)"
+                }
             }
             
             
+            
+            if !isVimeoUrl{
+                if videoUrl.contains("?"){
+                    videoUrl = videoUrl + "&rel=0"
+                }else{
+                    videoUrl = videoUrl + "?rel=0"
+                }
+                //videoUrl = videoUrl.replacingOccurrences(of: "youtube.com", with: "youtube-nocookie.com")// // not working //
+            }
+            addLog(text:"Final video url is :- \(videoUrl)")// Added in v 2.27.419
+            print("Final video url is :- \(videoUrl)")
             let link = URL(string:videoUrl)!
-            let request = URLRequest(url: link)
+            var request = URLRequest(url: link)
+            
+            request.setValue("com.App.EarnYourScreentime", forHTTPHeaderField: "Referer")// v 2.27.336 for Fix Youtube embed #1554(still some urls having problem)
+            
             if #available(macOS 12.0, *) {
                 self.webView.setAllMediaPlaybackSuspended(false)
             } else {
                 // Fallback on earlier versions
             }
+            
             self.webView.load(request)
             allApiObject.capturePosthog(event: "play-youtube-video-in-activity", metadata: [:])
             
@@ -489,7 +617,9 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             if filterArr.count != 0{ //if activity has focus mode and and any focus mode is running then silently terminate focus mode
                 isAnyAllowedFocusModeActivityRunning = true
                 isAnyAllowedFocusModeActivityWasRunningInLastActivity = true
-                
+                if customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
+                    customBlockingScheduleManagerObj.customBlockingScheduleFinished()
+                }
                 currentRunningAppNameForAi = ""
                 currentBrowserUrlForAi = ""
                 dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus.removeAll()
@@ -512,14 +642,19 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                     
                     if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled{
                         focusModeTaskString = dic["lastTaskUsed"] as? String ?? ""
+                        taskCreatedByBlockPopup = ""
                         var minutes = 1
                         if duration > 60{
                             minutes = duration / 60
                         }
                         shouldReloadTaskPlayer = true
                         showTaskPlayerWindow(totalDuration: minutes, intention: whatToAchieveInFocusBlock, automatically:true)
+                        if leftMenuVcObj != nil{
+                            leftMenuVcObj?.focusModeOrFocusModeHabitStarted()
+                        }
                     }else{
                         focusModeTaskString = ""
+                        taskCreatedByBlockPopup = ""
                     }
                 }
                 
@@ -532,14 +667,6 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                 }
                 
                 endFocusModeTime = nil
-                
-                if brainDumpWcObj != nil{
-                    if brainDumpWcObj?.window != nil{
-                        if brainDumpWcObj!.window!.isVisible{
-                            brainDumpVcObj?.focusModeStarted()
-                        }
-                    }
-                }
             }
         }
        
@@ -601,9 +728,11 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                         let lastIntentionUsed = dic["lastIntentionUsed"] as? String ?? ""
                         let name = dic["name"] as? String ?? ""
                         boxBg.isHidden = true
-                        allApiObject.capturePosthog(event: "ask-intention-allowed-focus-mode-activity-shown", metadata: [:])
-                        self.presentAsSheet(getAskIntentionAllowedFocusModeActivityObject())
-                        askIntentionAllowedFocusModeActivityObj?.resetData(focusMode: name, intention: lastIntentionUsed, durationSeconds:durationSeconds, name:name,currentHabit: currentHabit, currentTimerValue:currentTimerValue)
+                        if self.view.window != nil{
+                            allApiObject.capturePosthog(event: "ask-intention-allowed-focus-mode-activity-shown", metadata: [:])
+                            self.presentAsSheet(getAskIntentionAllowedFocusModeActivityObject())
+                            askIntentionAllowedFocusModeActivityObj?.resetData(focusMode: name, intention: lastIntentionUsed, durationSeconds:durationSeconds, name:name,currentHabit: currentHabit, currentTimerValue:currentTimerValue)
+                        }
                         getTaskPlayerVcObject().loadView()
                         getTaskPlayerVcObject().loadRequest()
                     }
@@ -629,8 +758,8 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         }
         
         isAnyAllowedFocusModeActivityRunning = false
-        if !(mainViewControllerObj?.isBreakActivityPostponeInsideAllowedHabit ?? false){
-            mainViewControllerObj?.stopActivityTimer()
+        if !(getHabitsVcObject().isBreakActivityPostponeInsideAllowedHabit ?? false){
+            getHabitsVcObject().stopActivityTimer()
         }
         if isFocusModeOnOrPaused(){
             addLog(text: "Activity start:- Focus Mode Finished")
@@ -680,6 +809,9 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         if currentHabit.showSavedDistractingWebsites{
             currentRelaxHabitPlaying = currentHabit
             showRelaxModeWindow(durationSeconds: durationSeconds, currentTimerValue: currentTimerValue)
+           // if checkIsFullScreenEnabled(){
+                //mainViewControllerObj?.showSmallScreen()
+          //  }
             mainWindowControllerObj?.window?.close()
             hideBlankWindowInSecondaryMonitor()
         }else if currentHabit.openSpecificApps{
@@ -689,6 +821,9 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             }else{
                 showcompletionRequirementsWindow(title: currentHabit.completion_requirements)
             }
+            //if checkIsFullScreenEnabled(){
+                //mainViewControllerObj?.showSmallScreen()
+            //}
             mainWindowControllerObj?.window?.close()
             appdelegate?.startTimerActivitiesAllowedApp(shouldLaunchAppAndUrl: shouldLaunchAppAndUrl)
             hideBlankWindowInSecondaryMonitor()
@@ -700,13 +835,20 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                 }else{
                     showcompletionRequirementsWindow(title: currentHabit.completion_requirements)
                 }
-                mainWindowControllerObj?.window?.close()
+               //
+                if !SettingsManagerObject.showToDoPlayerAutomaticallyEnabled{
+                    mainWindowControllerObj?.window?.close()
+                }
+                //if checkIsFullScreenEnabled(){
+                 //   mainViewControllerObj?.showSmallScreen()
+                //}
                 appdelegate?.startTimerActivitiesAllowedApp(shouldLaunchAppAndUrl: shouldLaunchAppAndUrl)
                 hideBlankWindowInSecondaryMonitor()
                 
                 if shouldLaunchAppAndUrl{
                     let endTime = Calendar.current.date(bySetting: .second, value: durationSeconds, of: Date())
                     focusModeTaskString = ""
+                    taskCreatedByBlockPopup = ""
                     allApiObject.startFocusMode(id: currentRunningFocusType["id"] as? String ?? "", intention: whatToAchieveInFocusBlock, start_time: Date(), finish_time: endTime ?? Date(), completionHandler: {newDic in
                         DispatchQueue.main.async {
                             
@@ -809,11 +951,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             self.lblTimer.stringValue = "\(hour):\(minute):\(second)"
         }
 
-        DispatchQueue.main.async {
-            self.timer?.invalidate()
-            self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
-            RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
-        }
+        setCountDownTimer()
         
         if currentHabit.useTimer{
             boxTimer.isHidden = false
@@ -1018,11 +1156,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             self.lblTimer.stringValue = "\(hour):\(minute):\(second)"
         }
 
-        DispatchQueue.main.async {
-            self.timer?.invalidate()
-            self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
-            RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
-        }
+        setCountDownTimer()
         
         if useTimer{
             boxTimer.isHidden = false
@@ -1043,36 +1177,35 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
     }
     
     func resumeTimerHabit(durationSeconds:Int, url:String?, name:String, useTimer:Bool){
-        if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
-            if smallCountDownWcObj?.window != nil{
-                if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
-                    if currentHabitPlaying != nil{
-                        if currentHabitPlaying!.openSpecificApps{
+   // allowing postpone from timer window issue #213  date- 5/9/22
+        if isSmallCountDownTimerViewVisible(){
+            if !(smallCountDownVcObj?.isFocusBreak ?? false){
+                if currentHabitPlaying != nil{
+                    if currentHabitPlaying!.openSpecificApps{
+                        currentHabitPlaying = currentHabitPlaying!
+                        mainWindowControllerObj?.window?.close()
+                        appdelegate?.startTimerActivitiesAllowedApp(shouldLaunchAppAndUrl: false)
+                        hideBlankWindowInSecondaryMonitor()
+                        if currentHabitPlaying!.useTimer{
+                            smallCountDownVcObj?.resumeTimerHabit(durationSeconds: durationSeconds)
+                        }
+                    }else{
+                        if isAnyAllowedFocusModeActivityRunning{//activityAllowedFocusApps.count != 0{
                             currentHabitPlaying = currentHabitPlaying!
                             mainWindowControllerObj?.window?.close()
                             appdelegate?.startTimerActivitiesAllowedApp(shouldLaunchAppAndUrl: false)
                             hideBlankWindowInSecondaryMonitor()
                             if currentHabitPlaying!.useTimer{
-                                getsmallCountDownVcObject().resumeTimerHabit(durationSeconds: durationSeconds)
+                                smallCountDownVcObj?.resumeTimerHabit(durationSeconds: durationSeconds)
                             }
                         }else{
-                            if isAnyAllowedFocusModeActivityRunning{//activityAllowedFocusApps.count != 0{
-                                currentHabitPlaying = currentHabitPlaying!
-                                mainWindowControllerObj?.window?.close()
-                                appdelegate?.startTimerActivitiesAllowedApp(shouldLaunchAppAndUrl: false)
-                                hideBlankWindowInSecondaryMonitor()
-                                if currentHabitPlaying!.useTimer{
-                                    getsmallCountDownVcObject().resumeTimerHabit(durationSeconds: durationSeconds)
-                                }
-                            }else{
-                                 currentHabitPlaying = nil
-                            }
+                            currentHabitPlaying = nil
                         }
                     }
-                    
                 }
+                
             }
-        }//!getsmallCountDownVcObject().isFocusBreak{
+        }
         disableSystemSleep()
         btnSkipHabit.isHidden = true
         lblTitle.stringValue = getDoSomeActivityText(activityName: name)//"Do some \(arrFilteredMorningHabits[currentHabitIndex].name!)."
@@ -1111,11 +1244,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                 }
             }
             
-            DispatchQueue.main.async {
-                self.timer?.invalidate()
-                self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
-                RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
-            }
+            setCountDownTimer()
         }else{
             if url != nil{
                 if #available(macOS 12.0, *) {
@@ -1360,11 +1489,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             self.lblTimer.stringValue = "\(hour):\(minute):\(second)"
         }
         
-        DispatchQueue.main.async {
-            self.timer?.invalidate()
-            self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
-            RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
-        }
+        setCountDownTimer()
         
         if currentActivity.useTimer{
             boxTimer.isHidden = false
@@ -1381,6 +1506,15 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         writeStringToHabitInfo(isFinishTime: false, activityName: name)
     }
   
+    func setCountDownTimer(){
+        DispatchQueue.main.async {
+            self.lblTimer.font = NSFont.monospacedDigitSystemFont(ofSize: self.lblTimer.font?.pointSize ?? 41, weight: .regular)
+            self.timer?.invalidate()
+            self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
+            RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
+        }
+    }
+    
     func resetConstraintsForVideoAndGif(kIsReducedMotion:Bool){
         if kIsReducedMotion{
             imgViewGif.image = nil
@@ -1465,11 +1599,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                 }
             }
             
-            DispatchQueue.main.async {
-                self.timer?.invalidate()
-                self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
-                RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
-            }
+            setCountDownTimer()
         }else{
             if url != nil{
                 if #available(macOS 12.0, *) {
@@ -1531,11 +1661,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             self.lblTimer.stringValue = "\(hour):\(minute):\(second)"
         }
 
-        DispatchQueue.main.async {
-            self.timer?.invalidate()
-            self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
-            RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
-        }
+        setCountDownTimer()
         
         boxTimer.isHidden = false
         boxCompletionRequirements.isHidden = true
@@ -1549,7 +1675,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         self.webView.load(request)
     }
     @objc func performTimerCount() {
-        currentTimer += 1
+        currentTimer += 1 
         if isAnyAllowedFocusModeActivityRunning{
             addEntryInProductivityStatsCsv()
         }
@@ -1595,27 +1721,33 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                 DispatchQueue.main.async {
                     self.loadBlankUrl()
                     if currentState == ._BREATHING_{
-                        mainViewControllerObj?.breathingOver(isSKipped: false)
+                        getHabitsVcObject().breathingOver(isSKipped: false)
                     }else if currentState == ._MORNING_HABIT_ {
-                        mainViewControllerObj?.morningHabitOver()
+                        getHabitsVcObject().morningHabitOver()
                     }else if currentState == ._EVENING_HABIT_ {
-                        mainViewControllerObj?.eveningHabitOver()
-                    }else if currentState == ._ACTIVITY_{
-                        mainViewControllerObj?.activityOver()
+                        getHabitsVcObject().eveningHabitOver()
+                    }else if currentState == ._MICRO_BREAK_{
+                        getHabitsVcObject().activityOver()
                     }else if currentState == ._SPECIAL_ACTIVITY_{
-                        mainViewControllerObj?.specialActivityOver()
+                        getHabitsVcObject().specialActivityOver()
                     }else if currentState == ._CUSTOM_ROUTINE_{
-                        mainViewControllerObj?.customRoutineHabitOver()
+                        getHabitsVcObject().customRoutineHabitOver()
                     }
                 }
             }
         }
     }
-    var isActivityPaused = false
+    
+    
     @IBAction func btnPauseClicked(_ sender: Any) {
         if boxButtonTabViews.isHidden == false && isVideoLodded{
             btnTabVideoClicked(self)
         }
+
+        for menu in arrStartCustomRoutineMenu{// remove all custom routine menu items
+            moreActionsMenu.removeItem(menu)
+        }
+        arrStartCustomRoutineMenu.removeAll()
         
         if isActivityPaused{
             addLog(text:"[user-action]Ongoing activity:-btn Resume Clicked")
@@ -1623,10 +1755,8 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             allApiObject.capturePosthog(event: "resume-activity", metadata: [:])
             DispatchQueue.main.async {
                 self.btnPause.image = self.pauseIcon
-                self.timer?.invalidate()
-                self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
-                RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
             }
+            setCountDownTimer()
             if isVideoLodded{
                 if #available(macOS 12.0, *) {
                     webView.setAllMediaPlaybackSuspended(false)
@@ -1683,6 +1813,9 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                         addLog(text:"Show menu Item Select Another Habit")
                     }
                     saveCurrentHabitCurrentDurationDone(id: arrFilteredMorningHabits[currentHabitIndex].id, duration: currentTimer)
+                    
+                    enableMenuForStartCustomRoutine()
+                    
                 }else if currentState == ._EVENING_HABIT_{
                     if currentHabitIndex == arrFilteredEveningHabits.count - 1{
                         menuItemChooseHabit.isHidden = true
@@ -1715,8 +1848,10 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                             menuItemChooseHabit.isHidden = false
                             addLog(text:"Show menu Item Select Another Habit")
                         }
+                        
                     }
                     saveCurrentHabitCurrentDurationDone(id: arrFilteredEveningHabits[currentHabitIndex].id, duration: currentTimer)
+                    enableMenuForStartCustomRoutine()
                 }else if currentState == ._CUSTOM_ROUTINE_{
                     if currentHabitIndex == arrAllCustomRoutine[currentHabitIndex].arrAllFilteredHabits.count - 1{
                         menuItemChooseHabit.isHidden = true
@@ -1745,14 +1880,33 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
                 if let dic = configjson.value(forKey: "welcomeInfo") as? NSDictionary{
                     btnSkipHabit.title = dic.value(forKey: "buttonSkipText") as? String ?? btnSkipHabit.title
                 }
-            }else if currentState == ._ACTIVITY_{
+            }else if currentState == ._MICRO_BREAK_{
                 btnSkipHabit.isHidden = false
                 menuItemChooseHabit.isHidden = true
                 menuItemChooseVideo.isHidden = true
                 btnSkipHabit.title = buttonMoreActionsText
             }
         }
-        
+    }
+    
+    func enableMenuForStartCustomRoutine(){
+        arrStartCustomRoutineMenu.removeAll()
+        let arrCustomRoutine = getListCustomRoutineTime()
+        if arrCustomRoutine.count != 0{
+            var menuItemCustomRoutineText = "Change to another routine - <ROUTINE>"
+            if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
+                menuItemCustomRoutineText = activityInfo.value(forKey: "menuItemCustomRoutineText") as? String ?? menuItemCustomRoutineText
+            }
+            
+            for routine in arrCustomRoutine{
+                let menuItemCustomRoutineTitle = menuItemCustomRoutineText.replacingOccurrences(of: "<ROUTINE>", with: routine.title)
+                let menuItemCustomRoutine = NSMenuItem(title: menuItemCustomRoutineTitle, action: #selector(menuItemStartCustomRoutineClicked), keyEquivalent: "")
+                menuItemCustomRoutine.target = self
+                menuItemCustomRoutine.identifier = NSUserInterfaceItemIdentifier(routine.sequenceId)
+                moreActionsMenu.addItem(menuItemCustomRoutine)
+                arrStartCustomRoutineMenu.append(menuItemCustomRoutine)
+            }
+        }
     }
     
     @IBAction func btnIAmDoneClicked(_ sender: Any) {
@@ -1768,17 +1922,17 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             DispatchQueue.main.async {
                 self.loadBlankUrl()
                 if currentState == ._BREATHING_{
-                    mainViewControllerObj?.breathingOver(isSKipped: false)
+                    getHabitsVcObject().breathingOver(isSKipped: false)
                 }else if currentState == ._MORNING_HABIT_ {
-                    mainViewControllerObj?.morningHabitOver()
+                    getHabitsVcObject().morningHabitOver()
                 }else if currentState == ._EVENING_HABIT_ {
-                    mainViewControllerObj?.eveningHabitOver()
-                }else if currentState == ._ACTIVITY_{
-                    mainViewControllerObj?.activityOver()
+                    getHabitsVcObject().eveningHabitOver()
+                }else if currentState == ._MICRO_BREAK_{
+                    getHabitsVcObject().activityOver()
                 }else if currentState == ._SPECIAL_ACTIVITY_{
-                    mainViewControllerObj?.specialActivityOver()
+                    getHabitsVcObject().specialActivityOver()
                 }else if currentState == ._CUSTOM_ROUTINE_{
-                    mainViewControllerObj?.customRoutineHabitOver()
+                    getHabitsVcObject().customRoutineHabitOver()
                 }
             }
         }
@@ -1788,7 +1942,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
             if !isActivityPaused{
                 btnPauseClicked(self)
             }
-            mainViewControllerObj?.breathingOver(isSKipped: true)
+            getHabitsVcObject().breathingOver(isSKipped: true)
         }else{
             addLog(text:"Show more Actions menu")
             let p = NSPoint(x: (sender as AnyObject).frame.origin.x, y: (sender as AnyObject).frame.origin.y - 8 )
@@ -1797,7 +1951,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
     }
     
     @objc func menuItemSkipHabitClicked(){
-        mainViewControllerObj?.showWhySkipHabitView()
+        getHabitsVcObject().showWhySkipHabitView()
     }
     
     @objc func menuItemChooseAnotherHabitClicked(){
@@ -1808,7 +1962,71 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         btnChooseDifferentVideoClicked(self)
     }
     
+    @objc func menuItemStartCustomRoutineClicked(menuItem:NSMenuItem){
+        addLog(text:"[user-action]ongoing activity:-menuItemStartCustomRoutineClicked")
+        if let id = menuItem.identifier?.rawValue{
+            print(id)
+            getHabitsVcObject().showLoaderView()
+            isCustomRoutineTime(id: id) { isCustom,currentRoutineIndex,duration   in
+                print(isCustom)
+                getHabitsVcObject().hideLoaderView()
+                if !isCustom{ // show alert
+                    addLog(text:"Can't perform this routine right now")
+                    let alert = NSAlert()
+                    alert.setSharingType()
+                    var canNotDoRoutine = "You can't perform this routine right now because either it's not the scheduled time or you've already completed it."
+                    if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
+                        canNotDoRoutine = activityInfo.value(forKey: "canNotDoCustomRoutineText") as? String ?? canNotDoRoutine
+                    }
+                    alert.messageText = canNotDoRoutine
+                    alert.addButton(withTitle: buttonOkText)
+                    NSApplication.shared.activate(ignoringOtherApps: true)
+                    alert.beginSheetModal(for: self.view.window!, completionHandler: nil)
+                    
+        
+                    self.moreActionsMenu.removeItem(menuItem)
+                    for i in 0..<self.arrStartCustomRoutineMenu.count{
+                        let menuItemStartCustomRoutine = self.arrStartCustomRoutineMenu[i]
+                        if menuItemStartCustomRoutine == menuItem{
+                            self.arrStartCustomRoutineMenu.remove(at: i)
+                            break;
+                        }
+                    }
+                    
+                    
+                }else{
+                    isCustomRoutineWasRunningInPostponeMorningHabit = false
+                    isCustomRoutineWasRunningInPostponeEveningHabit = false
+                    let lastCurrentState = currentState
+                    if currentState == ._MORNING_HABIT_{
+                        addLog(text:"Perform custom routine- \(id) from morning routine")
+                        mainWindowControllerObj?.window?.close()
+                        hideBlankWindowInSecondaryMonitor()
+                        getHabitsVcObject().postponeMorningHabitFor(minutes: 0, secondsToPostpone: duration, showAskFocusModeView: false, showAskIntention: false)
+                        isCustomRoutineWasRunningInPostponeMorningHabit = true
+                    }else if currentState == ._EVENING_HABIT_{
+                        addLog(text:"Perform custom routine- \(id) from evening routine")
+                        mainWindowControllerObj?.window?.close()
+                        hideBlankWindowInSecondaryMonitor()
+                        getHabitsVcObject().postponeEveningHabitFor(minutes: 0, secondsToPostpone: duration, showAskFocusModeView: false, showAskIntention: false)
+                        isCustomRoutineWasRunningInPostponeEveningHabit = true
+                    }
+                    currentState = ._CUSTOM_ROUTINE_
+                    startCustomRoutine(index: currentRoutineIndex, isOnDemand:false)
+                    
+                    if lastCurrentState == ._MORNING_HABIT_{
+                        isCustomRoutineWasRunningBetweenMorningHabit = true
+                    }else if lastCurrentState == ._EVENING_HABIT_{
+                        isCustomRoutineWasRunningBetweenEveningHabit = true
+                    }
+                }
+            }
+        }
+    }
+    
+    
     @IBAction func btnChooseDifferentVideoClicked(_ sender: Any) {
+        addLog(text:"btnChooseDifferentVideoClicked")
         if boxButtonTabViews.isHidden == false && isVideoLodded{
             btnTabVideoClicked(self)
         }
@@ -1820,11 +2038,13 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
     
 
     @IBAction func btnStartAnotherHabitClicked(_ sender: Any) {
-        if startAnotherHabitVcObj == nil{
-            startAnotherHabitVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("startAnotherHabitVc")) as? startAnotherHabitVc
+        if self.view.window != nil{
+            if startAnotherHabitVcObj == nil{
+                startAnotherHabitVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("startAnotherHabitVc")) as? startAnotherHabitVc
+            }
+            startAnotherHabitVcObj!.currentHabitIndex = currentHabitIndex
+            self.presentAsSheet(startAnotherHabitVcObj!)
         }
-        startAnotherHabitVcObj!.currentHabitIndex = currentHabitIndex
-        self.presentAsSheet(startAnotherHabitVcObj!)
     }
 }
 
@@ -1836,7 +2056,7 @@ extension timerViewcontroller:NSTextViewDelegate{
         if textView == self.textViewNotes{
             if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_{
                 UserDefaults.standard.set(textViewNotes.string, forKey: kUserdefaultsLastHabitSavedNotes)
-            }else if currentState == ._ACTIVITY_{
+            }else if currentState == ._MICRO_BREAK_{
                 UserDefaults.standard.set(textViewNotes.string, forKey: kUserdefaultsLastActivitySavedNotes)
             }else if currentState == ._SPECIAL_ACTIVITY_{
                 UserDefaults.standard.set(textViewNotes.string, forKey: kUserdefaultsLastSpecaialActivitySavedNotes)
@@ -1951,5 +2171,4 @@ extension timerViewcontroller:NSTableViewDelegate, NSTableViewDataSource {
     }
 }
 
-
-
+//bukN2P7WpwE

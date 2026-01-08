@@ -9,6 +9,11 @@ import Cocoa
 
 class pomodoroVc: NSViewController {
     
+    
+    @IBOutlet weak var btnStrictnessNormal: cursorButton!
+    @IBOutlet weak var btnStrictnessSuperStrict: cursorButton!
+    @IBOutlet weak var btnStrictnessStrict: cursorButton!
+    
     @IBOutlet weak var lblSelectedStrictnessLevel: NSTextField!
     @IBOutlet weak var btnInfoStrictnessLevel: hoverInfoButton!
     @IBOutlet weak var btnPin: cursorButton!
@@ -21,9 +26,9 @@ class pomodoroVc: NSViewController {
     @IBOutlet weak var boxError: NSBox!
     @IBOutlet weak var lblPercentageSign: NSTextField!
     @IBOutlet weak var lblTitleStrictnessLevel: NSTextField!
-    @IBOutlet weak var btnStrictnessNormal: hoverInfoButton!
-    @IBOutlet weak var btnStrictnessSuperStrict: hoverInfoButton!
-    @IBOutlet weak var btnStrictnessStrict: hoverInfoButton!
+//    @IBOutlet weak var btnStrictnessNormal: hoverInfoButton!
+//    @IBOutlet weak var btnStrictnessSuperStrict: hoverInfoButton!
+//    @IBOutlet weak var btnStrictnessStrict: hoverInfoButton!
     @IBOutlet weak var lblStrictnessNormal: NSTextField!
     @IBOutlet weak var lblStrictnessStrict: NSTextField!
     @IBOutlet weak var lblStrictnessSuperStrict: NSTextField!
@@ -70,7 +75,7 @@ class pomodoroVc: NSViewController {
     var isShowingMorningPomodoro = false
     var isShowingPomodoroManually = false
     var isShowingMorningHardcorePomodoro = false
-    var questionSecondText = "Which focus mode do you want to use?"
+    var questionSecondText = "Which block list do you want to use?"
     var chooseTheFocusModeText = "Choose the focus mode and duration - you won't be able to change the focus mode until the time is up (you still get to use any app/website during the 5 minutes break)"
     
     var workDurationEmptyErrorText = "Work Duration can not be empty."
@@ -85,7 +90,7 @@ class pomodoroVc: NSViewController {
     var isSkipMicrobreaks = false
     
     var isFrictionLevelHigh = false
-    var popoverTooltip:NSPopover?// = NSPopover()
+    var popoverInfo:NSPopover?// = NSPopover()
     
     var pomodoroTooltipVcObj:pomodoroTooltipVc?
     var alertExtendPostpone: NSAlert?
@@ -110,7 +115,7 @@ class pomodoroVc: NSViewController {
     var titleSuperStrictMode = "Iron Focus"
     var descriptionSuperStrictMode = "Once you start, you can't stop"
     var toolTipSuperStrictMode = "Once you start, there’s no backing out. Best for deep, distraction-free sessions."
-    
+    var titleAfterPostpone = "What do you want to do instead of your habits?"
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
@@ -179,9 +184,10 @@ class pomodoroVc: NSViewController {
         }
         
         lblTitle.stringValue = "Pomodoro time!"
+        //What do you want to do instead of your habits?
         var questionFirstText = "What do you want to achieve in this focus session?"
         
-        btnEditFocusMode.title = "Edit focus modes"
+        btnEditFocusMode.title = "Edit block lists"
         btnLetsDoIt.title = "Let's do it"
         btnCheckBoxHardcodePomodoro.title = "Use hardcode pomodoro mode (lock in the focus mode for multiple pomodoros)"
         lblHowManyPomodoro.stringValue = "How many pomodoros you want to focus for:"
@@ -192,17 +198,16 @@ class pomodoroVc: NSViewController {
         var descriptionIntention = "If you don't want to bother creating tasks, you can write a quick intention for what you'll do during this focus session"
         
         if let pomodoroInfo = configjson.value(forKey: "pomodoroInfo") as? NSDictionary{
-            if let title = pomodoroInfo.value(forKey: "title") as? String{
-                lblTitle.stringValue = title
-            }
+            lblTitle.stringValue = pomodoroInfo.value(forKey: "title") as? String ?? lblTitle.stringValue
+            titleAfterPostpone = pomodoroInfo.value(forKey: "titleAfterPostpone") as? String ?? titleAfterPostpone
             if let questionFirst = pomodoroInfo.value(forKey: "questionFirstText") as? String{
                 questionFirstText = questionFirst
             }
-            if let questionSecondText = pomodoroInfo.value(forKey: "questionSecondText") as? String{
+            if let questionSecondText = pomodoroInfo.value(forKey: "titleSelectBlockList") as? String{
                 self.questionSecondText = questionSecondText
             }
-            if let buttonEditFocusModeText = pomodoroInfo.value(forKey: "buttonEditFocusModeText") as? String{
-                btnEditFocusMode.title = buttonEditFocusModeText
+            if let buttonEditBlockListsText = pomodoroInfo.value(forKey: "buttonEditBlockListsText") as? String{
+                btnEditFocusMode.title = buttonEditBlockListsText
             }
             if let buttonLetsDoItText = pomodoroInfo.value(forKey: "buttonLetsDoItText") as? String{
                 btnLetsDoIt.title = buttonLetsDoItText
@@ -285,9 +290,9 @@ class pomodoroVc: NSViewController {
         
         
         btnToggleBreaksSettingsInfo.isAutoClickEnabled = false
-        btnStrictnessNormal.isAutoClickEnabled = false
-        btnStrictnessSuperStrict.isAutoClickEnabled = false
-        btnStrictnessStrict.isAutoClickEnabled = false
+//        btnStrictnessNormal.isAutoClickEnabled = false
+//        btnStrictnessSuperStrict.isAutoClickEnabled = false
+//        btnStrictnessStrict.isAutoClickEnabled = false
         btnInfoStrictnessLevel.isAutoClickEnabled = false
     }
 
@@ -295,11 +300,12 @@ class pomodoroVc: NSViewController {
         if SettingsManagerObject.isStrictnessLevelSuperGentle(){
             boxPin.isHidden =  false
             btnPin.image = #imageLiteral(resourceName: "unPin")
-            self.view.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.normalWindow)))
+//            self.view.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.normalWindow)))
         }else{
             boxPin.isHidden = true
-            self.view.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
+//            self.view.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow))) // recheck all these window level code
         }
+        boxPin.isHidden = true
         
         boxError.isHidden = true
         boxTipPermissions.isHidden = true
@@ -344,6 +350,30 @@ class pomodoroVc: NSViewController {
                 lblTipPermissions.stringValue = simplePomodoroVcInfo.value(forKey: "tipPermissionsSecond") as? String ?? lblTipPermissions.stringValue
             }
         }
+        
+        if popUpBtnFocusType.isEnabled{
+            if customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
+                if currentFocusModeStrictness == ._SUPER_STRICT_{
+                    for index in 0..<customBlockingScheduleManagerObj.arrBlockingSchedule.count{
+                        if customBlockingScheduleManagerObj.arrBlockingSchedule[index].state == .on{
+                            let id = customBlockingScheduleManagerObj.arrBlockingSchedule[index].focusModeID
+                            for i in 0..<arrFocusTypeForPomodoro.count{
+                                let focusMode = arrFocusTypeForPomodoro[i]
+                                if let idFocusTypeForPomodoro = focusMode["id"] as? String{
+                                    if idFocusTypeForPomodoro == id{
+                                        popUpBtnFocusType.selectItem(at: i)
+                                        popUpBtnFocusType.isEnabled = false
+                                        popoverTooltip?.close()
+                                        break;
+                                    }
+                                }
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+        }
     }
     
     override func mouseEntered(with event: NSEvent) {
@@ -367,9 +397,9 @@ class pomodoroVc: NSViewController {
     
     override func mouseExited(with event: NSEvent) {
         if event.trackingArea == pinButtonTrackingArea{
-            if popoverTooltip != nil{
-                if popoverTooltip!.isShown{
-                    popoverTooltip?.close()
+            if popoverInfo != nil{
+                if popoverInfo!.isShown{
+                    popoverInfo?.close()
                 }
             }
         }
@@ -385,6 +415,25 @@ class pomodoroVc: NSViewController {
         textFieldBreakDuration.stringValue = "\(breakDuration)"
         isBreakDurationComesFromBreakRatio = true
         print("isBreakDurationComesFromBreakRatio true")
+    }
+    
+    func selectFocusModeWithId(id:String, duration:Int){
+        var focusFoundWithId = false
+        for i in 0..<arrFocusTypeForPomodoro.count{
+            let focusMode = arrFocusTypeForPomodoro[i]
+            if let idFocusTypeForPomodoro = focusMode["id"] as? String{
+                if idFocusTypeForPomodoro == id{
+                    popUpBtnFocusType.selectItem(at: i)
+                    textFieldWorkDuration.integerValue = duration/60
+                    updateBreakDuration()
+                    focusFoundWithId = true
+                    break;
+                }
+            }
+        }
+        if !focusFoundWithId{
+            showAlert(msg: "Focus mode not found.")
+        }
     }
     
     func updateWorkBreakRatio(){
@@ -421,11 +470,11 @@ class pomodoroVc: NSViewController {
         getTaskPlayerVcObject().loadView()
         getTaskPlayerVcObject().loadRequest()
         reFillFocusTypeList()
-        if startingFocusWindowControllerObj?.window?.isVisible ?? false{
-            if startingFocusWindowControllerObj?.contentViewController == startingFocusModeVcObj{
-                startingFocusWindowControllerObj?.close()
-            }
-        }
+//        if startingFocusWindowControllerObj?.window?.isVisible ?? false{
+//            if startingFocusWindowControllerObj?.contentViewController == startingFocusModeVcObj{
+//                startingFocusWindowControllerObj?.close()
+//            }
+//        }
         isFrictionLevelHigh = false
         
         
@@ -531,6 +580,7 @@ class pomodoroVc: NSViewController {
             }
             lblTimerUnfocused.isHidden = false
             startTimer()
+            lblCompletedPomodoroCount.isHidden = true
             textFieldWorkDuration.isEnabled = true
             textFieldBreakDuration.isEnabled = true
             sliderStrictness.isEnabled = true
@@ -556,11 +606,7 @@ class pomodoroVc: NSViewController {
             
             updateBreakDuration()
         }
-//        if isFrictionLevelHigh{
-//            lblFrictionLevel.stringValue = frictionLevelHighText
-//        }else{
-//            lblFrictionLevel.stringValue = frictionLevelLowText
-//        }
+
         isFocusModeStartedAutomatically = false
         if isShowingMorningHardcorePomodoro{
             isHardCorePomodoroModeOn = true
@@ -632,32 +678,32 @@ class pomodoroVc: NSViewController {
     }
     
     //Re-center the pomodoro popup if user takes no action #1053
-    func setTimerMoveWindowToCenter(){
-        removeTimerMoveWindowToCenter()
-        self.timerMoveWindowToCenter = Timer.scheduledTimer(timeInterval: 60, target: self, selector: #selector(self.moveWindowToCenter), userInfo: nil, repeats: true)
-    }
+//    func setTimerMoveWindowToCenter(){
+//        removeTimerMoveWindowToCenter()
+//        self.timerMoveWindowToCenter = Timer.scheduledTimer(timeInterval: 60, target: self, selector: #selector(self.moveWindowToCenter), userInfo: nil, repeats: true)
+//    }
     
-    func removeTimerMoveWindowToCenter(){
-        if self.timerMoveWindowToCenter != nil{
-            self.timerMoveWindowToCenter?.invalidate()
-            self.timerMoveWindowToCenter = nil
-        }
-    }
+//    func removeTimerMoveWindowToCenter(){
+//        if self.timerMoveWindowToCenter != nil{
+//            self.timerMoveWindowToCenter?.invalidate()
+//            self.timerMoveWindowToCenter = nil
+//        }
+//    }
     
-    @objc func moveWindowToCenter() {
-        if let window = self.view.window{
-            if window.isVisible{
-                if let screen = NSScreen.screens.first {
-                    let screenFrame = screen.frame
-                    let windowFrame = window.frame
-                    let newOriginX = screenFrame.midX - (windowFrame.width / 2)
-                    let newOriginY = screenFrame.midY - (windowFrame.height / 2)
-                    window.setFrameOrigin(NSPoint(x: newOriginX, y: newOriginY))
-                }
-            }
-        }
-        removeTimerMoveWindowToCenter()
-    }
+//    @objc func moveWindowToCenter() {
+//        if let window = self.view.window{
+//            if window.isVisible{
+//                if let screen = NSScreen.screens.first {
+//                    let screenFrame = screen.frame
+//                    let windowFrame = window.frame
+//                    let newOriginX = screenFrame.midX - (windowFrame.width / 2)
+//                    let newOriginY = screenFrame.midY - (windowFrame.height / 2)
+//                    window.setFrameOrigin(NSPoint(x: newOriginX, y: newOriginY))
+//                }
+//            }
+//        }
+//        removeTimerMoveWindowToCenter()
+//    }
     //-----------------------------------------------//
     
     override func viewDidLayout() {// after scrollview resize it removes title and not srawing it again so doing this here 
@@ -800,8 +846,9 @@ class pomodoroVc: NSViewController {
                                 warningDefaultFocusMode = startingFocusModeInfo.value(forKey: "warningDefaultFocusMode") as? String ?? warningDefaultFocusMode
                             }
                         }
-                        
-                        showTooltip(sender: self.popUpBtnFocusType, msg: warningDefaultFocusMode, preferredEdge: .minX, maxWidthVal: 250)
+                        if self.view.window != nil{
+                            showTooltip(sender: self.popUpBtnFocusType, msg: warningDefaultFocusMode, preferredEdge: .minX, maxWidthVal: 250)
+                        }
                     }
                 }
             }
@@ -814,32 +861,16 @@ class pomodoroVc: NSViewController {
 
         textViewAchieve.string = ""
         textViewAchieve.string = lastIntentionUsed
-        appdelegate!.setIntentionInBrainDumpWindow()
     }
     
     @IBAction func btnEditFocusModeClicked(_ sender: Any) {
         addLog(text: "[user-action] btnEditFocusModeClicked")
-        if preferencesWindowControllerObj?.window?.isVisible ?? false{
-            if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-                tabview.selectedTabViewItemIndex = preferencesFocusModesIndex
-            }
-            return;
-        }
-        allApiObject.capturePosthog(event: "open-preferences", metadata: [:])
-        preferencesWindowControllerObj?.showWindow(self)
         addLog(text: "Showing preferences from edit focus mode")
-        if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-            tabview.selectedTabViewItemIndex = preferencesFocusModesIndex
-            if isPasswordRequireInOpenSettings(){
-                tabview.view.addSubview(getEnterPasswordVcObjForPreferences().view)
-                tabview.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
-                getEnterPasswordVcObjForPreferences().parentVc = nil
-                enterPasswordVcObjForPreferences?.removeConstraints()
-                addLog(text: "Showing enter password view")
-            }
+        leftMenuVcObj?.showFocusModeSettingsView()
+        if let focusModeId = arrFocusTypeForPomodoro[popUpBtnFocusType.indexOfSelectedItem]["id"] as? String{
+            getFocusPreferencesVcObject().selectFocusModeWithId(id: focusModeId)
         }
-        
-        NSApplication.shared.activate(ignoringOtherApps: true)
+            
     }
     
     func showAlert(msg:String){
@@ -892,7 +923,7 @@ class pomodoroVc: NSViewController {
             
             alertWarning.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
                 if modalResponse == .alertFirstButtonReturn{
-                    showDistractionTypesWindow()
+                    showDistractionTypesWindow(showingFromPomodoro: true)
                     self.intentionToShowAgain = self.textViewAchieve.string
                     self.view.window?.close()
                 }else{
@@ -920,7 +951,7 @@ class pomodoroVc: NSViewController {
             
             alertWarning.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
                 if modalResponse == .alertFirstButtonReturn{
-                    showExplainingPermissionsWindow()
+                    showExplainingPermissionsWindow(showingFromPomodoro: true)
                     self.intentionToShowAgain = self.textViewAchieve.string
                     self.view.window?.close()
                 }else{
@@ -933,22 +964,23 @@ class pomodoroVc: NSViewController {
         
         if isHardCorePomodoroModeOn{
             whatToAchieveInFocusBlock = textViewAchieve.string
-            appdelegate!.setIntentionInBrainDumpWindow()
             appdelegate!.setStatusBarButtonTitleForFocusMode(title: whatToAchieveInFocusBlock)
             if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled{
                 let minute = textFieldWorkDuration.integerValue
                 showTaskPlayerWindow(totalDuration: minute, intention: textViewAchieve.string, automatically:true)
+            }else{
+                let minute = textFieldWorkDuration.integerValue
+                if !getTaskPlayerVcObject().isViewLoaded{
+                    getTaskPlayerVcObject().loadView()
+                }
+                taskPlayerVcObj?.reloadData(totalDuration: minute, intention: textViewAchieve.string)
+                shouldReloadTaskPlayer = false
             }
             
             if let focusModeId = arrFocusTypeForPomodoro[popUpBtnFocusType.indexOfSelectedItem]["id"] as? String{
                 for i in 0..<arrFocusType.count{
                     if arrFocusType[i]["id"] as? String ?? "" == focusModeId{
-                        if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled{
-//                            focusModeTaskString = arrFocusType[i]["lastTaskUsed"] as? String ?? ""
-                            updateFocusModeTask(taskString: arrFocusType[i]["lastTaskUsed"] as? String ?? "")
-                        }else{
-                            focusModeTaskString = ""
-                        }
+                        updateFocusModeTask(taskString: arrFocusType[i]["lastTaskUsed"] as? String ?? "")
                         if !textViewAchieve.string.isEmpty{
                             arrFocusType[i]["lastIntentionUsed"] = textViewAchieve.string
                         }else{
@@ -991,10 +1023,10 @@ class pomodoroVc: NSViewController {
         let totalMinutes = textFieldWorkDuration.integerValue
         
         if currentState == ._POSTPON_MORNING_HABIT_ || currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_{
-            if mainViewControllerObj?.postponeTimer != nil {
-                if mainViewControllerObj!.postponeTimer!.isValid{
+            if getHabitsVcObject().postponeTimer != nil {
+                if getHabitsVcObject().postponeTimer!.isValid{
                     let currentTime = Date()
-                    let breakTime = mainViewControllerObj!.postponeTimer!.fireDate
+                    let breakTime = getHabitsVcObject().postponeTimer!.fireDate
                     let diffMinute = Calendar.current.dateComponents([.minute], from: currentTime, to: breakTime).minute ?? 0
                     if diffMinute < totalMinutes{
                         alertExtendPostpone = NSAlert()
@@ -1023,7 +1055,7 @@ class pomodoroVc: NSViewController {
                                     
                                     
                                     if SettingsManagerObject.isEasySkipEnabled{
-                                        mainViewControllerObj?.postponeMorningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
+                                        getHabitsVcObject().postponeMorningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
                                         self.checkStateAndStartPomodoroMode()
                                     }else{
                                         if SettingsManagerObject.isPasswordRequireInSkipMorning && shouldAskPassword(){
@@ -1032,7 +1064,7 @@ class pomodoroVc: NSViewController {
                                             self.enterPasswordVcObj?.isShowingForRelaxFocusMode = false
                                             return;
                                         }else{
-                                            mainViewControllerObj?.postponeMorningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
+                                            getHabitsVcObject().postponeMorningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
                                             self.checkStateAndStartPomodoroMode()
                                         }
                                     }
@@ -1066,9 +1098,9 @@ class pomodoroVc: NSViewController {
                                         return;
                                     }else{
                                         if currentState == ._POSTPON_EVENING_HABIT_{
-                                            mainViewControllerObj?.postponeEveningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
+                                            getHabitsVcObject().postponeEveningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
                                         }else if currentState == ._POSTPON_FOCUS_SUMMARY_{
-                                            mainViewControllerObj?.postponeFocusSummaryFor(minutes: totalMinutes + 2, showAskIntention: false)
+                                            getHabitsVcObject().postponeFocusSummaryFor(minutes: totalMinutes + 2, showAskIntention: false)
                                         }
                                         self.checkStateAndStartPomodoroMode()
                                     }
@@ -1084,17 +1116,33 @@ class pomodoroVc: NSViewController {
         }
         checkStateAndStartPomodoroMode()
     }
-    
+   
     func checkStateAndStartPomodoroMode(){
         nextFocusSessionIntention = ""
         let isRelaxFocus = arrFocusTypeForPomodoro[popUpBtnFocusType.indexOfSelectedItem]["isRelaxFocus"] as? Bool ?? false
         if isRelaxFocus && shouldAskPassword() && SettingsManagerObject.isPasswordRequireInUseRelaxFocusMode{
-            self.presentAsSheet(self.enterPasswordVcObj!)
-            self.enterPasswordVcObj?.parentVc = self
-            self.enterPasswordVcObj?.isShowingForRelaxFocusMode = true
+            if self.view.window != nil{
+                self.presentAsSheet(self.enterPasswordVcObj!)
+                self.enterPasswordVcObj?.parentVc = self
+                self.enterPasswordVcObj?.isShowingForRelaxFocusMode = true
+            }else{
+                pomodoroModeStarted()
+                if currentState != ._MICRO_BREAK_{// if micro break started while focus mode is running and focus mode finished after miro break started then dont show small view if full screen is enabled v 2.28.438
+                    
+                    self.view.window?.close()//  will not work if view has changed (task player is viisble now). because if main view is changes then window is nil.no need to change anything
+                }else{
+                    leftMenuVcObj?.showBreaksView()
+                }
+                allApiObject.capturePosthog(event: "start-focus-session-popup-closed", metadata: [:])
+            }
         }else{
             pomodoroModeStarted()
-            self.view.window?.close()
+            if currentState != ._MICRO_BREAK_{// if micro break started while focus mode is running and focus mode finished after miro break started then dont show small view if full screen is enabled v 2.28.438
+                
+                self.view.window?.close()//  will not work if view has changed (task player is viisble now). because if main view is changes then window is nil.no need to change anything
+            }else{
+                leftMenuVcObj?.showBreaksView()
+            }
             allApiObject.capturePosthog(event: "start-focus-session-popup-closed", metadata: [:])
         }
     }
@@ -1114,13 +1162,25 @@ class pomodoroVc: NSViewController {
             addLog(text: "focus mode is super strict mode")
             currentFocusModeStrictness = ._SUPER_STRICT_
         }
-        UserDefaults.standard.set(sliderStrictness.integerValue, forKey: kUserdefaultsLastFocusModeStrictness)
         
-        if getEndFocusModeWindowControllerObj().window!.isVisible{
-            let timestamp = getStringFromDate(date: startFocusModeTime ?? Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
-            addEntryInStatsCsv(logType: "focus block", activity: focusCompletedVcObj!.currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: "\(focusModeMinutesToPerform) of \(focusCompletedVcObj!.currentFocusModeName)", distractionsEncountered: "", abortReason: "", feedback: "", tags:"")
-            getEndFocusModeWindowControllerObj().window?.close()
+        UserDefaults.standard.set(sliderStrictness.integerValue, forKey: kUserdefaultsLastFocusModeStrictness)
+
+        //App should remember the last focus session + break duration. If you change it to 40 minutes, it should remember that for next time.
+        // 29/7/25 v 1.26.395
+        let count = textFieldWorkDuration.integerValue
+        if let oldCount = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsPomodoroDurationMinutes) as? Int{
+            if count != oldCount{
+                SettingsManagerObject.isSettingsChanged = true
+                UserDefaults.standard.set(count, forKey: SettingsManagerObject.kUserdefaultsPomodoroDurationMinutes)
+                SettingsManagerObject.putUserLocalDeviceSettings()
+            }
         }
+
+//        if getEndFocusModeWindowControllerObj().window!.isVisible{
+//            let timestamp = getStringFromDate(date: startFocusModeTime ?? Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
+//            addEntryInStatsCsv(logType: "focus block", activity: focusCompletedVcObj!.currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: "\(focusModeMinutesToPerform) of \(focusCompletedVcObj!.currentFocusModeName)", distractionsEncountered: "", abortReason: "", feedback: "", tags:"")
+//            getEndFocusModeWindowControllerObj().window?.close()
+//        }
         let minute = textFieldWorkDuration.integerValue
         let calendar = Calendar.current
         endFocusModeTime = calendar.date(byAdding: .minute, value: minute, to: Date())
@@ -1133,7 +1193,7 @@ class pomodoroVc: NSViewController {
         
         getTotalFocuedTime()
         //After finishing pomodoro block, clicking start another focus block doesn't use correct focus mode #741
-        startingFocusModeVcObj?.loadView()
+//        startingFocusModeVcObj?.loadView()
         //
         
         if let focusModeId = arrFocusTypeForPomodoro[popUpBtnFocusType.indexOfSelectedItem]["id"] as? String{
@@ -1170,7 +1230,7 @@ class pomodoroVc: NSViewController {
                     workBeforeFocusBegin(index: i)
                     
                     //After finishing pomodoro block, clicking start another focus block doesn't use correct focus mode #741
-                    startingFocusModeVcObj?.lastFocusModeId = focusModeId
+//                    startingFocusModeVcObj?.lastFocusModeId = focusModeId
                     //
                     
                     let oldFocusAlignmentScoreThreshold = arrFocusType[i]["focusAlignmentScoreThreshold"] as? Int ?? -1
@@ -1179,17 +1239,13 @@ class pomodoroVc: NSViewController {
                         arrFocusType[i]["focusAlignmentScoreThreshold"] = focusAlignmentScoreThreshold
                         allApiObject.capturePosthog(event: "focus-alignment-score-threshold-changed", metadata: [:])
                     }
-                    if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled{
-                        focusModeTaskString = arrFocusType[i]["lastTaskUsed"] as? String ?? ""
-                    }else{
-                        focusModeTaskString = ""
-                    }
+                    focusModeTaskString = arrFocusType[i]["lastTaskUsed"] as? String ?? ""
                     if !textViewAchieve.string.isEmpty{
                         arrFocusType[i]["lastIntentionUsed"] = textViewAchieve.string
                     }else{
                         arrFocusType[i]["lastIntentionUsed"] = ""
                     }
-                    
+                    taskCreatedByBlockPopup = ""
                     UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
                     updateAllFocusModes()
                     break;
@@ -1215,7 +1271,6 @@ class pomodoroVc: NSViewController {
             timerForFocusModeEndNotification?.invalidate()
             timerForFocusModeEndNotification = nil
         }
-        isFocusTimeType = ._HOUR_
         
         appdelegate?.setFocusModeTimer(hour: nil, minute: minute)
         isFocusModeStartedFromPomodoroMode = true
@@ -1227,10 +1282,20 @@ class pomodoroVc: NSViewController {
             addLog(text: "checkBoxSkipMicrobreaks is off in geek mode focus session.")
         }
         whatToAchieveInFocusBlock = textViewAchieve.string
-        appdelegate!.setIntentionInBrainDumpWindow()
         appdelegate!.focusModeStartted(isStartedByPusher: false)
-        if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled{
-            showTaskPlayerWindow(totalDuration: minute, intention: textViewAchieve.string, automatically:true)
+        if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled && currentState != ._MICRO_BREAK_{ // added is micro break is running :- v 2.28.438
+            if isHardCorePomodoroModeOn{
+                //I did this because when isHardCorePomodoroModeOn is enabled, showTaskPlayerWindow prevents viewDidAppear from being called properly. So when coming back the next time, viewWillAppear doesn’t get called, and the previous state is shown.v 2.28.440
+                DispatchQueue.global().async {
+                    sleep(1)
+                    DispatchQueue.main.async { [self] in
+                        showTaskPlayerWindow(totalDuration: minute, intention: textViewAchieve.string, automatically:true)
+                    }
+                }
+            }else{
+                showTaskPlayerWindow(totalDuration: minute, intention: textViewAchieve.string, automatically:true)
+            }
+            
         }else{
             if !getTaskPlayerVcObject().isViewLoaded{
                 getTaskPlayerVcObject().loadView()
@@ -1239,10 +1304,10 @@ class pomodoroVc: NSViewController {
             shouldReloadTaskPlayer = false
         }
         //After finishing pomodoro block, clicking start another focus block doesn't use correct focus mode #741
-        startingFocusModeVcObj?.lastIntention = textViewAchieve.string
-        startingFocusModeVcObj?.lastHourValue = 0
-        startingFocusModeVcObj?.lastMinuteValue = textFieldWorkDuration.integerValue
-        startingFocusModeVcObj?.lastSkipMicroBreakState = isSkipBreakActivityDuringPomodoro
+//        startingFocusModeVcObj?.lastIntention = textViewAchieve.string
+//        startingFocusModeVcObj?.lastHourValue = 0
+//        startingFocusModeVcObj?.lastMinuteValue = textFieldWorkDuration.integerValue
+//        startingFocusModeVcObj?.lastSkipMicroBreakState = isSkipBreakActivityDuringPomodoro
         //
         
         if isShowingPomodoroManually{
@@ -1298,7 +1363,7 @@ class pomodoroVc: NSViewController {
         allApiObject.capturePosthog(event: "start-focus-session-popup-closed", metadata: [:])
     }
     override func viewWillDisappear() {
-        removeTimerMoveWindowToCenter()
+//        removeTimerMoveWindowToCenter()
         
         isIntentionFromMorningPostpone = false
         timer?.invalidate()
@@ -1312,6 +1377,12 @@ class pomodoroVc: NSViewController {
             if self == enterPasswordVcObj!.presentingViewController{
                 enterPasswordVcObj!.dismiss(enterPasswordVcObj!)
             }
+        }
+        
+        //Proposed focus session title text adjustment emphasizes user choices post-habit postponement, enhancing clarity. Title - What do you want to do instead of your habits?
+        // setting normal title again
+        if let pomodoroInfo = configjson.value(forKey: "pomodoroInfo") as? NSDictionary{
+            lblTitle.stringValue = pomodoroInfo.value(forKey: "title") as? String ?? lblTitle.stringValue
         }
     }
     var timer:Timer?
@@ -1367,7 +1438,7 @@ class pomodoroVc: NSViewController {
     }
     
     @objc func performTimerCount() {
-        if !appdelegate!.isSystemSleep && !appdelegate!.isScreenSaverStart && currentState != ._ACTIVITY_{
+        if !appdelegate!.isSystemSleep && !appdelegate!.isScreenSaverStart && currentState != ._MICRO_BREAK_{
             currentTimer += 1
         }
         setProgres()
@@ -1409,14 +1480,13 @@ class pomodoroVc: NSViewController {
 //        }
 //    }
     @IBAction func btnInfoPomodoroClicked(_ sender: Any) {
-        if popoverTooltip == nil{
-            popoverTooltip = NSPopover()
-            popoverTooltip!.behavior = .transient
-            popoverTooltip!.animates = false
-            //        popoverTooltip!.delegate = appdelegate
+        if popoverInfo == nil{
+            popoverInfo = NSPopover()
+            popoverInfo!.behavior = .transient
+            popoverInfo!.animates = false
         }
-        if popoverTooltip!.isShown{
-            popoverTooltip?.close()
+        if popoverInfo!.isShown{
+            popoverInfo?.close()
         }
         let vc = getPomodoroTooltipVcObject()
 
@@ -1426,81 +1496,39 @@ class pomodoroVc: NSViewController {
             }
             return pomodoroTooltipVcObj!
         }
-        popoverTooltip!.contentViewController = vc
-        popoverTooltip!.contentSize = vc.view.frame.size
+        popoverInfo!.contentViewController = vc
+        popoverInfo!.contentSize = vc.view.frame.size
         
-        popoverTooltip!.show(relativeTo: btnInfoPomodoro.bounds, of: btnInfoPomodoro, preferredEdge: NSRectEdge.maxX)
+        popoverInfo!.show(relativeTo: btnInfoPomodoro.bounds, of: btnInfoPomodoro, preferredEdge: NSRectEdge.maxX)
     }
 
     
-    @IBAction func btnEditRatioClicked(_ sender: Any) {
-        if SettingsManagerObject.isGeekModeEnabled{
-            allApiObject.capturePosthog(event: "open-preferences", metadata: [:])
-            preferencesWindowControllerObj?.showWindow(self)
-            addLog(text: "Showing preferences")
-            var passWordViewVisible = false
-            if isPasswordRequireInOpenSettings(){
-                if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-                    tabview.selectedTabViewItemIndex = preferencesSettingsIndex
-                    tabview.view.addSubview(getEnterPasswordVcObjForPreferences().view)
-                    tabview.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
-                    getEnterPasswordVcObjForPreferences().parentVc = nil
-                    enterPasswordVcObjForPreferences?.removeConstraints()
-                    passWordViewVisible = true
-                    addLog(text: "Showing enter password view")
-                }
-            }else{
-                if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-                    tabview.selectedTabViewItemIndex = preferencesSettingsIndex
-                }
-            }
-            if settingsSideBarVcObj != nil{
-                settingsSideBarVcObj!.tblView.selectRowIndexes(IndexSet(arrayLiteral: settingsSideBarVcObj!.pomodoroSettingsIndex), byExtendingSelection: false)
-                if !passWordViewVisible{
-                    pomodoroSettingsVcObj?.textFieldWorkRatio.setFocus()
-                }
-            }
-        }
-    }
-    @IBAction func btnStrictnessNormalClicked(_ sender: Any) {
-        var msg = "can pause/stop focus session at any time"
-        if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
-            if let startingFocusModeInfo = focusInfo.value(forKey: "startingFocusModeInfo") as? NSDictionary{
-                msg = startingFocusModeInfo.value(forKey: "strictnessNormalTooltip") as? String ?? msg
-            }
-        }
+    @IBAction func btnEditRatioClicked(_ sender: Any) { // not in use
+
         
-        showTooltip(sender: btnStrictnessNormal, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
+    }
+    
+    @IBAction func btnStrictnessNormalClicked(_ sender: Any) {
+        sliderStrictness.integerValue = 1
+        sliderStrictnessClicked(self)
     }
     
     @IBAction func btnStrictnessStrictClicked(_ sender: Any) {
-        var msg = "requires countdown timer before pausing/stopping focus session"
-        if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
-            if let startingFocusModeInfo = focusInfo.value(forKey: "startingFocusModeInfo") as? NSDictionary{
-                msg = startingFocusModeInfo.value(forKey: "strictnessStrictTooltip") as? String ?? msg
-            }
-        }
-        
-        showTooltip(sender: btnStrictnessStrict, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
+        sliderStrictness.integerValue = 2
+        sliderStrictnessClicked(self)
     }
-
+    
     @IBAction func btnStrictnessSuperStrictClicked(_ sender: Any) {
-        var msg = "immediately block urls + prevents pausing/stopping focus session or opening settings"
-        if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
-            if let startingFocusModeInfo = focusInfo.value(forKey: "startingFocusModeInfo") as? NSDictionary{
-                msg = startingFocusModeInfo.value(forKey: "strictnessSuperStrictTooltip") as? String ?? msg
-            }
-        }
-        
-        showTooltip(sender: btnStrictnessSuperStrict, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
+        sliderStrictness.integerValue = 3
+        sliderStrictnessClicked(self)
     }
     
     @IBAction func sliderStrictnessClicked(_ sender: Any) {
         if sliderStrictness.integerValue == 3{
-            var strictnessSuperStrictClickedText = "I understand I cannot stop this focus session until it ends. I am committed to avoiding distractions and getting a ton of work done."
+            var strictnessSuperStrictClickedText = "I understand I cannot stop this focus session. I am committed to avoiding distractions and getting a ton of work done." 
             if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
                 if let startingFocusModeInfo = focusInfo.value(forKey: "startingFocusModeInfo") as? NSDictionary{
-                    strictnessSuperStrictClickedText = startingFocusModeInfo.value(forKey: "strictnessSuperStrictClickedText") as? String ?? strictnessSuperStrictClickedText
+                    strictnessSuperStrictClickedText = startingFocusModeInfo.value(forKey: "strictnessSuperStrictClickedNewText") as? String ?? strictnessSuperStrictClickedText
                 }
             }
             
@@ -1564,15 +1592,14 @@ class pomodoroVc: NSViewController {
             alertWarning.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
                 
                 if modalResponse == .alertFirstButtonReturn{
-                    showDistractionTypesWindow()
+                    showDistractionTypesWindow(showingFromPomodoro: true)
                     self.intentionToShowAgain = self.textViewAchieve.string
                 }
                 
             })
         }else if !browserPermissionGiven{
-            showExplainingPermissionsWindow()
+            showExplainingPermissionsWindow(showingFromPomodoro: true)
             self.intentionToShowAgain = self.textViewAchieve.string
-            explainingPermissionsVcObj?.showingFromPomodoro = true
             self.view.window?.close()
         }
     }

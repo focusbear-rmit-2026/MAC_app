@@ -52,6 +52,7 @@ class takeActivityNotesVc: NSViewController {
         self.log_quantity_answers = log_quantity_answers
         self.view.window?.makeFirstResponder(textViewNotes)
     }
+    
     @IBAction func btnOkClicked(_ sender: Any) {
         addLog(text:"[user-action] takeActivityNotesVc-btnOkClicked")
         self.view.removeFromSuperview()
@@ -60,7 +61,7 @@ class takeActivityNotesVc: NSViewController {
             let currentFocusModeName = currentRunningFocusType["name"] as? String ?? ""
             let currentFocusModeId = currentRunningFocusType["id"] as? String ?? ""
             
-            mainViewControllerObj!.showFocusCompletedView()
+            getHabitsVcObject().showFocusCompletedView()
             focusModeActualDurationPerformed = durationInSeconds
             focusCompletedForActivityVcObj?.resetData(focusModeName: currentFocusModeName, currentFocusModeId: currentFocusModeId, finish_time: isAnyAllowedFocusModeActivityFinishTime, durationInSeconds: durationInSeconds, quantity_logged:quantity_logged, activity_id: activity_id, activity_sequence_id: activity_sequence_id, activityChoiceId: activityChoiceId, log_quantity_answers: log_quantity_answers, notes: textViewNotes.string)
         }else{

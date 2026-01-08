@@ -8,6 +8,8 @@
 
 
 var focusModeTaskString = ""
+var taskCreatedByBlockPopup = ""
+
 var arrFocusType = [[String:Any]]()
 var nextFocusSessionIntention = ""
 var arrAllFocusModeTags = [[String:String]]()
@@ -50,7 +52,7 @@ struct lastFocusTempInfo {
 
 var arrFocusTypeForPomodoro = [[String:Any]]()
 
-var focusModeStartWindowLodded = false
+//var focusModeStartWindowLodded = false
 var isFocusModeStartedAutomatically = false
 var isMeetingsFocusStartedAutomatically = false
 
@@ -108,7 +110,7 @@ func focusModeCloseCurrentAppForAlignmentScore(){
 }
 
 func focusModeOpenCurrentUrlForAlignmentScore(domain:String){
-    if isCuddlyModeEnabled() && SettingsManagerObject.isAiCheckUrlEnabled && !isBlockSuperDistractingFocusModeOn(){
+    if isCuddlyModeEnabled() && SettingsManagerObject.isAIBlockingEnabled() && !isBlockSuperDistractingFocusModeOn(){
         //check url opening for second time
         if var info = dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[domain]{
             if let isVisibleUrl = info["isVisibleUrl"] as? Bool{
@@ -132,7 +134,7 @@ func focusModeOpenCurrentUrlForAlignmentScore(domain:String){
 
 func focusModeOpenCurrentAppForAlignmentScore(appNameLowercased:String){
     boxForStatusBarForTooltip?.customToolTip = ""
-    if isCuddlyModeEnabled() && SettingsManagerObject.isAiCheckUrlEnabled && !isBlockSuperDistractingFocusModeOn(){
+    if isCuddlyModeEnabled() && SettingsManagerObject.isAIBlockingEnabled() && !isBlockSuperDistractingFocusModeOn(){
         if var info = dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[appNameLowercased]{
             if let isVisibleApp = info["isVisibleApp"] as? Bool{
                 if !isVisibleApp{
@@ -154,7 +156,7 @@ func focusModeOpenCurrentAppForAlignmentScore(appNameLowercased:String){
 
 
 func focusModeSetCurrentAppAllowedForAlignmentScore(appNameLowercased:String, focusModeName: String, probability:Double, appName:String){
-    if isCuddlyModeEnabled() && SettingsManagerObject.isAiCheckUrlEnabled && !isBlockSuperDistractingFocusModeOn(){
+    if isCuddlyModeEnabled() && SettingsManagerObject.isAIBlockingEnabled() && !isBlockSuperDistractingFocusModeOn(){
         if !arrBrowsersLowerCasedNames.contains(appNameLowercased){// exclude browsers from Alignment Score
             var reason = appAllowedInFocusModeText.replacingOccurrences(of: "<APP>", with: appName)
             reason = reason.replacingOccurrences(of: "<FOCUSMODE>", with: focusModeName)
@@ -177,7 +179,7 @@ func focusModeSetCurrentAppAllowedForAlignmentScore(appNameLowercased:String, fo
 
 var defaultFocusAlignmentScoreToShowDistractingPopUp:Int = 80
 var minFocusAlignmentScoreToShowDistractingPopUp:Double = 80
-var currentFocusAlignmentScore:Double = 0
+var currentFocusAlignmentScore:Double = 100
 var lastFocusAlignmentScore:Double = 0
 var lastFocusAlignmentShownScore:Double = 0
 
@@ -215,6 +217,9 @@ func calculateFocusAlignmentScore(){
             totalAlignmentScore += score
         }
     }
+    if keys.count == 0{
+        totalAlignmentScore = 100
+    }
     if totalAlignmentScore != 0{
         totalAlignmentScore = (totalAlignmentScore / Double(totalSeconds)) * 100
     }
@@ -239,12 +244,7 @@ func calculateFocusAlignmentScore(){
     currentFocusAlignmentScore = totalAlignmentScore
     lastFocusAlignmentScore = totalAlignmentScore
     
-    if taskPlayerWcObj != nil{
-        if taskPlayerWcObj?.window?.isVisible ?? false{
-            taskPlayerVcObj?.setFocusAlignmentScore()
-        }
-    }
-    
+    taskPlayerVcObj?.setFocusAlignmentScore()
     if SettingsManagerObject.isFocusVisualIndicatorEnabled{
         if nudgeFocusAlignmentScoreDippingWcObject != nil{
             if nudgeFocusAlignmentScoreDippingWcObject?.window?.isVisible ?? false{
@@ -387,6 +387,7 @@ func focusAlllowUrlClickedFromNewBlockPage(url:String, currentBrowser:BROWSER){
         setUrlToBrowser(browser: currentBrowser, url: extractedUrl)
     }
 }
+
 func focusBlockUrlClickedFromNewBlockPage(url:String, currentBrowser:BROWSER)->String?{
     allApiObject.capturePosthog(event: "block-it-found", metadata: [:])
     var endString = "&focus_mode_end_time"
@@ -625,6 +626,7 @@ func checkUrlFromAi(script: String, url:String, tab_title:String, currentRunning
     }
     let currentTaskInToDoPlayer = getCurrentTaskInFocusMode()
     print("********** checkUrlFromAi ************")
+    addLog(text: "currentTask in is URL Safe to use:\(currentTaskInToDoPlayer)")//2.27.427
     
     let arrayOfLast5Domain = getArrayOfLast5UrlJustifications()
 
@@ -636,26 +638,11 @@ func checkUrlFromAi(script: String, url:String, tab_title:String, currentRunning
                     let reason = dic?.value(forKey: "reason") as? String ?? ""
                     setFocusBearIconToNormal()
                     if var dProbability = dic?.value(forKey: "allowed_probability") as? Double{
+                        addLog(text: "checked chatGPTIsURLSafe:- \(url), dProbability:\(dProbability)")
                         let currentTaskName = currentTaskInToDoPlayer ?? ""
                         addEntryInFocusAIDecisionsCsv(url: url, domain: domain, tabTitle: tab_title, score: "\(dProbability)", intention: whatToAchieveInFocusBlock, aiReason: reason, currentTaskName: currentTaskName, additionalUserJustification: "")
                         
                         if isCuddlyModeEnabled(){
-//                            if dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[url] == nil{
-//                                addEntryInfocusAlignmentScoreCsv(url: url, tabTitle: tab_title, focusMode: currentRunningFocusModeName, intention: whatToAchieveInFocusBlock, aiReason: reason, allowedProbability: "\(dProbability)", totalScore: "")
-//                                dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[url] = ["probability":dProbability, "isVisibleUrl":true, "totalSeconds":0, "startedTime":Date(), "reason":reason]
-//                                if let payload = payload{
-//                                    dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[url]?["payload"] = payload
-//                                }
-//                                boxForStatusBarForTooltip?.customToolTip = reason
-//                            }else{
-//                                // if dProbability > 70 once then url will not check for that url again but if dProbability < 70 then url is checked again and again. so if if dProbability > 70 and dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[url] != nil then we need to change old state in dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus data for current url
-//                                addEntryInfocusAlignmentScoreCsv(url: url, tabTitle: tab_title, focusMode: currentRunningFocusModeName, intention: whatToAchieveInFocusBlock, aiReason: reason, allowedProbability: "\(dProbability)", totalScore: "")
-//                                dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[url] = ["probability":dProbability, "isVisibleUrl":true, "totalSeconds":0, "startedTime":Date(), "reason":reason]
-//                                if let payload = payload{
-//                                    dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[url]?["payload"] = payload
-//                                }
-//                                boxForStatusBarForTooltip?.customToolTip = reason
-//                            }
       
                             if var oldData = dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[url]{
                                 addEntryInfocusAlignmentScoreCsv(url: url, tabTitle: tab_title, focusMode: currentRunningFocusModeName, intention: whatToAchieveInFocusBlock, aiReason: reason, allowedProbability: "\(dProbability)", totalScore: "")
@@ -705,7 +692,7 @@ func checkUrlFromAi(script: String, url:String, tab_title:String, currentRunning
                                 }
                             }else if currentFocusAlignmentScore < minFocusAlignmentScoreToShowDistractingPopUp{
                                 //Unsafe url
-                                
+                                addLog(text: "Unsafe url")
                                 var popUpWindowVisible = false
                                 
                                 if popUpBlockConfirmWcObj != nil{
@@ -714,6 +701,7 @@ func checkUrlFromAi(script: String, url:String, tab_title:String, currentRunning
                                             if popUpBlockConfirmVcObj?.url == currentBrowserUrlForAi{
                                                 popUpWindowVisible = true
                                                 popUpBlockConfirmVcObj?.lblAi.stringValue = reason
+                                                popUpBlockConfirmVcObj?.lastBlockReasonFromAi = reason
                                                 return;
                                             }
                                         }
@@ -745,7 +733,8 @@ func checkUrlFromAi(script: String, url:String, tab_title:String, currentRunning
                                     }
                                 }
                             }else{
-                                appdelegate?.focusBlockUnwantedUrl(script: script, url: url, lastBlockReasonFromAi: reason, browser: browser, isUrlBlockByAi: true, blockReason:"")
+                                addLog(text: "Unsafe url")
+                                focusBlockUnwantedUrl(script: script, url: url, lastBlockReasonFromAi: reason, browser: browser, isUrlBlockByAi: true, blockReason:"")
                             }
                         }
                         
@@ -832,15 +821,17 @@ func checkUrlFromAiWithNewIntention(url:String, domain:String, tab_title:String,
     
     arrConvinceAiUrlsInCurrentFocus.append(["url":url, "intentionForSite":intentionForThisSite, "pageTitle":tab_title])
     let currentTaskInToDoPlayer = getCurrentTaskInFocusMode()
+    addLog(text: "currentTask in is URL with New Intention Safe to use:\(currentTaskInToDoPlayer)")
     allApiObject.chatGPTIsURLSafeWithNewIntention(url: url, tab_title: tab_title, focus_mode: currentRunningFocusModeName, intention: whatToAchieveInFocusBlock, intentionForThisSite: intentionForThisSite, other_explanations_including_domains: arrayOfLast5Domain, currentTaskInToDoPlayer: currentTaskInToDoPlayer, currentHabitName: currentHabitName, completionHandler: {dic, checkedUrl, payload  in
         if dic != nil{
             DispatchQueue.main.async{
                 setFocusBearIconToNormal()
                 let reason = dic?.value(forKey: "reason") as? String ?? ""
                 dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus[domain]?["endTime"] = Date()// because is block then popup should show again//Convince the AI should show immediate feedback #1419
+                dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus[domain]?["intentionForSite"] = intentionForThisSite
                 if let dProbability = dic?.value(forKey: "allowed_probability") as? Double{
                     
-                    
+                    addLog(text: "checked checkUrlFromAiWithNewIntention:- \(url), dProbability:\(dProbability)")
                     addEntryInfocusAlignmentScoreCsv(url: url, tabTitle: tab_title, focusMode: currentRunningFocusModeName, intention: whatToAchieveInFocusBlock, aiReason: reason, allowedProbability: "\(dProbability)", totalScore: "")
                     
                     let currentTaskName = currentTaskInToDoPlayer ?? ""
@@ -880,6 +871,7 @@ func checkUrlFromAiWithNewIntention(url:String, domain:String, tab_title:String,
                     }else if currentFocusAlignmentScore < minFocusAlignmentScoreToShowDistractingPopUp{
                         //Unsafe url
                         // do not touch cuddlyModeProgressCount here ... after 90 seconds if user use it by setting intention then we will set it
+                        addLog(text: "Unsafe url")
                         dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus[domain]?["probability"] = dProbability
                     }
                 }
@@ -1000,6 +992,7 @@ func checkAppFromAi(appName:String, currentRunningFocusModeName:String, runningA
     let arrayOfLast5Apps = getArrayOfLast5AppJustifications()
     
     let currentTaskInToDoPlayer = getCurrentTaskInFocusMode()
+    addLog(text: "currentTask in is App Safe :\(currentTaskInToDoPlayer)")
     allApiObject.chatGPTIsAppSafe(appName: appName, focus_mode: currentRunningFocusModeName, intention: whatToAchieveInFocusBlock, other_explanations_including_apps: arrayOfLast5Apps,currentTaskInToDoPlayer: currentTaskInToDoPlayer, currentHabitName: currentHabitName, completionHandler: {dic, checkedApp, payload  in
         if dic != nil{
             if currentRunningAppNameForAi == checkedApp{
@@ -1008,6 +1001,7 @@ func checkAppFromAi(appName:String, currentRunningFocusModeName:String, runningA
                     setFocusBearIconToNormal()
                     if var dProbability = dic?.value(forKey: "allowed_probability") as? Double{
                         print("dProbability is \(dProbability) ****")
+                        addLog(text: "checked chatGPTIsAppSafe:- \(appName), dProbability:\(dProbability)")
                         let currentTaskName = currentTaskInToDoPlayer ?? ""
                         addEntryInFocusAIDecisionsCsv(url: appName, domain: "", tabTitle: "", score: "\(dProbability)", intention: whatToAchieveInFocusBlock, aiReason: reason, currentTaskName: currentTaskName, additionalUserJustification: "")
                         
@@ -1058,7 +1052,7 @@ func checkAppFromAi(appName:String, currentRunningFocusModeName:String, runningA
                                     }
                                 }
                                 if arrBrowsersLowerCasedNames.contains(appNameLowercased){
-                                    if isFocusModeOn(){
+                                    if isFocusModeOn() || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
                                         appdelegate?.setTimeCheckUrlsForFocusMode(nameLowercased: appNameLowercased)
                                     }else if isAnyAllowedFocusModeActivityRunning{
                                         DispatchQueue.global().sync {
@@ -1077,6 +1071,7 @@ func checkAppFromAi(appName:String, currentRunningFocusModeName:String, runningA
                                             if popUpBlockConfirmVcObj?.currentAppName == currentRunningAppNameForAi{
                                                 popUpWindowVisible = true
                                                 popUpBlockConfirmVcObj?.lblAi.stringValue = reason
+                                                popUpBlockConfirmVcObj?.lastBlockReasonFromAi = reason
                                                 return;
                                             }
                                         }
@@ -1087,7 +1082,7 @@ func checkAppFromAi(appName:String, currentRunningFocusModeName:String, runningA
                                 }
                             }else{
                                 if arrBrowsersLowerCasedNames.contains(appNameLowercased){
-                                    if isFocusModeOn(){
+                                    if isFocusModeOn() || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
                                         appdelegate?.setTimeCheckUrlsForFocusMode(nameLowercased: appNameLowercased)
                                     }else if isAnyAllowedFocusModeActivityRunning{
                                         DispatchQueue.global().sync {
@@ -1099,7 +1094,7 @@ func checkAppFromAi(appName:String, currentRunningFocusModeName:String, runningA
                         }else{
                             if(dProbability >= 0.70){
                                 // Safe URL
-                                addLog(text: "url is safe according to chat gpt")
+                                addLog(text: "app is safe according to chat gpt")
                                 allApiObject.capturePosthog(event: "block-popup-allow-automatically", metadata: [:])
                                 
                                 arrAllowedAppsInCuddlyModeCurrentFocus.append(runningApp)
@@ -1114,7 +1109,7 @@ func checkAppFromAi(appName:String, currentRunningFocusModeName:String, runningA
                                 }
                                 
                                 if arrBrowsersLowerCasedNames.contains(appNameLowercased){
-                                    if isFocusModeOn(){
+                                    if isFocusModeOn() || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
                                         appdelegate?.setTimeCheckUrlsForFocusMode(nameLowercased: appNameLowercased)
                                     }else if isAnyAllowedFocusModeActivityRunning{
                                         DispatchQueue.global().sync {
@@ -1123,7 +1118,7 @@ func checkAppFromAi(appName:String, currentRunningFocusModeName:String, runningA
                                     }
                                 }
                             }else{
-                                appdelegate?.focusBlockUnwantedApp(runningApp: runningApp, appName: appName, showNotification: true, isAppBlockByAi: true)
+                                focusBlockUnwantedApp(runningApp: runningApp, appName: appName, showNotification: true, isAppBlockByAi: true)
                             }
                         }
                         
@@ -1206,6 +1201,7 @@ func checkAppFromAiWithNewIntention(appName:String, intentionForThisApp:String, 
     let arrayOfLast5Apps = getArrayOfLast5AppJustifications()
     arrConvinceAiAppsInCurrentFocus.append(["app":appName, "intentionForApp":intentionForThisApp])
     let currentTaskInToDoPlayer = getCurrentTaskInFocusMode()
+    addLog(text: "currentTask in is App Safe with New Intention to use:\(currentTaskInToDoPlayer)")
     allApiObject.chatGPTIsAppSafeWithNewIntention(appName: appName, focus_mode: currentRunningFocusModeName, intention: whatToAchieveInFocusBlock, intentionForThisApp: intentionForThisApp, other_explanations_including_apps: arrayOfLast5Apps, currentTaskInToDoPlayer: currentTaskInToDoPlayer, currentHabitName: currentHabitName, completionHandler: {dic, checkedUrl, payload  in
         if dic != nil{
             DispatchQueue.main.async{
@@ -1213,7 +1209,7 @@ func checkAppFromAiWithNewIntention(appName:String, intentionForThisApp:String, 
                 let reason = dic?.value(forKey: "reason") as? String ?? ""
                 dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus[appNameLowercased]?["endTime"] = Date()// because is block then popup should show again//Convince the AI should show immediate feedback #1419
                 if let dProbability = dic?.value(forKey: "allowed_probability") as? Double{
-                    
+                    addLog(text: "checked checkAppFromAiWithNewIntention:- \(appName), dProbability:\(dProbability)")
                     addEntryInfocusAlignmentScoreCsv(url: appNameLowercased, tabTitle: "", focusMode: currentRunningFocusModeName, intention: whatToAchieveInFocusBlock, aiReason: reason, allowedProbability: "\(dProbability)", totalScore: "")
                     let currentTaskName = currentTaskInToDoPlayer ?? ""
                     addEntryInFocusAIDecisionsCsv(url: appName, domain: "", tabTitle: "", score: "\(dProbability)", intention: whatToAchieveInFocusBlock, aiReason: reason, currentTaskName: currentTaskName, additionalUserJustification: intentionForThisApp)
@@ -1253,6 +1249,7 @@ func checkAppFromAiWithNewIntention(appName:String, intentionForThisApp:String, 
                     }else if currentFocusAlignmentScore < minFocusAlignmentScoreToShowDistractingPopUp{
                         //Unsafe url
                         // do not touch cuddlyModeProgressCount here ... after 90 seconds if user use it by setting intention then we will set it
+                        addLog(text: "Unsafe url")
                         dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus[appNameLowercased]?["probability"] = dProbability
                     }
                 }
@@ -1314,13 +1311,16 @@ func checkIsAnyOldFoucsModeRemaining(){
                 if let currentFocusModeId = currentFocusMode.value(forKey: "id") as? String{
                     print(currentFocusModeId)
                     //arrFocusType
-                    addLog(text: "old focus mode is running- finish it")
+                    let name = currentFocusMode.value(forKey: "name") as? String ?? ""
+                    addLog(text: "old focus mode with id: \(currentFocusModeId) and name: \(name) is running- finish it")
                     var finishFocusMoedTime = Date()
                     if let currentFocusModeFinishTime = json?.value(forKey: "current_focus_mode_finish_time") as? String{
                         finishFocusMoedTime = getDateFromStringInUtc(date: currentFocusModeFinishTime, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'") ?? finishFocusMoedTime
+                        addLog(text: "current_focus_mode_finish_time is \(currentFocusModeFinishTime)")
+                    }else{
+                        addLog(text: "current_focus_mode_finish_time is nil")
                     }
                     
-
                     
                     var diffSeconds = Calendar.current.dateComponents([.second], from: Date(), to: finishFocusMoedTime).second ?? 0
                     appdelegate!.remainingFocusModeSecondsAfterPaused = diffSeconds
@@ -1328,15 +1328,18 @@ func checkIsAnyOldFoucsModeRemaining(){
                         let focusMode = arrFocusType[i]
                         if focusMode["id"] as? String == currentFocusModeId{
                             
-                            
+                            addLog(text: "A focus mode with the same ID was found in the focus mode list. Now checking if there are any locally saved start or finish times for this focus mode.")
                             if let startDateString = focusMode["lastStartedDate"] as? String, let endDateString = focusMode["lastScheduledEndDate"] as? String{
                                 let startDate = getDateFromString(date: startDateString, dateFormat: "yyyy-MM-dd HH:mm:ss") ?? Date()
                                 startFocusModeTime = startDate
                                 let endDate = getDateFromString(date: endDateString, dateFormat: "yyyy-MM-dd HH:mm:ss") ?? finishFocusMoedTime
+                                
+                                addLog(text: "Retrieved startDateString: \(startDateString) and endDateString: \(endDateString) from local")
+                                
                                 if Date().compare(endDate) == .orderedDescending {
-                                    addLog(text: "focus mode finished reason:- current time is greater then focus mode end time ")
-                                    focusModeActualDurationPerformed = Calendar.current.dateComponents([.second], from: startDate, to: Date()).second ?? diffSeconds
-                                    allApiObject.finishFocusMode(id: currentFocusModeId, achievements: "", distractions: "", finish_time: finishFocusMoedTime, rating:nil, completionHandler: {newDic in
+                                    focusModeActualDurationPerformed = Calendar.current.dateComponents([.second], from: startDate, to: endDate).second ?? diffSeconds
+                                    addLog(text: "focus mode finished with duration seconds: \(focusModeActualDurationPerformed) reason:- current time is greater then focus mode end time ")
+                                    allApiObject.finishFocusMode(id: currentFocusModeId, achievements: "", distractions: "", finish_time: endDate, rating:nil, completionHandler: {newDic in
                                         DispatchQueue.main.async {
                                             
                                             
@@ -1344,7 +1347,7 @@ func checkIsAnyOldFoucsModeRemaining(){
                                     })
                                     
                                 }else{
-                                    diffSeconds = Calendar.current.dateComponents([.hour], from: Date(), to: endDate).second ?? diffSeconds
+                                    diffSeconds = Calendar.current.dateComponents([.second], from: Date(), to: endDate).second ?? diffSeconds
                                     appdelegate!.remainingFocusModeSecondsAfterPaused = diffSeconds
                                     DispatchQueue.main.async {
                                         resumeFocusModeAfterAppStartted(diffSeconds: diffSeconds, focusMode: focusMode, finishFocusMoedTime: endDate, index: i)
@@ -1355,12 +1358,21 @@ func checkIsAnyOldFoucsModeRemaining(){
                                             getTaskPlayerVcObject().loadRequest()
                                             shouldReloadTaskPlayer = true
                                             showTaskPlayerWindow(totalDuration: minute, intention: whatToAchieveInFocusBlock, automatically:true)
+                                        }else{
+                                            let minute = diffSeconds / 60
+                                            if !getTaskPlayerVcObject().isViewLoaded{
+                                                getTaskPlayerVcObject().loadView()
+                                            }
+                                            taskPlayerVcObj?.reloadData(totalDuration: minute, intention: whatToAchieveInFocusBlock)
+                                            shouldReloadTaskPlayer = false
                                         }
                                     }
                                     
                                 }
                                 
                             }else{
+                                
+                                addLog(text: "There is no locally saved start or finish times for this focus mode. now beleive on current_focus_mode_finish_time retrives from api")
                                 if Date().compare(finishFocusMoedTime) == .orderedDescending{
                                     addLog(text: "focus mode finished reason:- current time is greater then focus mode end time ")
                                     allApiObject.finishFocusMode(id: currentFocusModeId, achievements: "", distractions: "", finish_time: finishFocusMoedTime, rating:nil, completionHandler: {newDic in
@@ -1371,7 +1383,6 @@ func checkIsAnyOldFoucsModeRemaining(){
                                     })
                                 }else{
                                     DispatchQueue.main.async {
-                                        addLog(text: "resumeFocusModeAfterAppStartted")
                                         resumeFocusModeAfterAppStartted(diffSeconds: diffSeconds, focusMode: focusMode, finishFocusMoedTime: finishFocusMoedTime, index: i)
                                         if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled{
                                             getTaskPlayerVcObject().loadView()
@@ -1379,6 +1390,13 @@ func checkIsAnyOldFoucsModeRemaining(){
                                             shouldReloadTaskPlayer = true
                                             let minute = diffSeconds / 60
                                             showTaskPlayerWindow(totalDuration: minute, intention: whatToAchieveInFocusBlock, automatically:true)
+                                        }else{
+                                            let minute = diffSeconds / 60
+                                            if !getTaskPlayerVcObject().isViewLoaded{
+                                                getTaskPlayerVcObject().loadView()
+                                            }
+                                            taskPlayerVcObj?.reloadData(totalDuration: minute, intention: whatToAchieveInFocusBlock)
+                                            shouldReloadTaskPlayer = false
                                         }
                                     }
                                 }
@@ -1421,8 +1439,8 @@ func resumeFocusModeAfterAppStartted(diffSeconds: Int, focusMode: [String : Any]
     isFocusModeStartedFromPomodoroMode = true
     isSkipBreakActivityDuringPomodoro = true
     focusModeTaskString = focusMode["lastTaskUsed"] as? String ?? ""
+    taskCreatedByBlockPopup = ""
     whatToAchieveInFocusBlock = focusMode["lastIntentionUsed"] as? String ?? ""
-    appdelegate!.setIntentionInBrainDumpWindow()
     appdelegate!.focusModeStarttedResetAllData()
     appdelegate?.resumeFocusMode(index: index)
     endFocusModeTime = finishFocusMoedTime
@@ -1434,26 +1452,26 @@ func resumeFocusModeAfterAppStartted(diffSeconds: Int, focusMode: [String : Any]
             showSavedSitesForLaterWindowForBreaks()
         }
     }
-    if UserDefaults.standard.object(forKey: kUserdefaultsDontShowToolBoxAutomatically) as? Bool == false{
-        var shouldShowToolBoxWindow = false
-        
-        let isAllowedAllAppsInFocus = currentRunningFocusType["isAllowedAllApps"] as? Bool ?? false
-        let allowAppsPath = currentRunningFocusType["allowed_apps"] as? [String] ?? []
-        
-        if !isAllowedAllAppsInFocus && allowAppsPath.count != 0{
-            shouldShowToolBoxWindow = true
-        }
-        
-        let isAllowedListApproachInFocus = currentRunningFocusType["isAllowedListApproach"] as? Bool ?? false
-        let arrAllowedUrlsForFocus = currentRunningFocusType["allowed_urls"] as? [String] ?? []
-        
-        if arrAllowedUrlsForFocus.count != 0 && isAllowedListApproachInFocus{//!isAllowedAllUrlsInFocus &&#453
-            shouldShowToolBoxWindow = true
-        }
-        if shouldShowToolBoxWindow && SettingsManagerObject.isGeekModeEnabled{
-            showToolboxWindow()
-        }
-    }
+//    if UserDefaults.standard.object(forKey: kUserdefaultsDontShowToolBoxAutomatically) as? Bool == false{removed on 1/9/25  on version 2.27.408
+//        var shouldShowToolBoxWindow = false
+//        
+//        let isAllowedAllAppsInFocus = currentRunningFocusType["isAllowedAllApps"] as? Bool ?? false
+//        let allowAppsPath = currentRunningFocusType["allowed_apps"] as? [String] ?? []
+//        
+//        if !isAllowedAllAppsInFocus && allowAppsPath.count != 0{
+//            shouldShowToolBoxWindow = true
+//        }
+//        
+//        let isAllowedListApproachInFocus = currentRunningFocusType["isAllowedListApproach"] as? Bool ?? false
+//        let arrAllowedUrlsForFocus = currentRunningFocusType["allowed_urls"] as? [String] ?? []
+//        
+//        if arrAllowedUrlsForFocus.count != 0 && isAllowedListApproachInFocus{//!isAllowedAllUrlsInFocus &&#453
+//            shouldShowToolBoxWindow = true
+//        }
+//        if shouldShowToolBoxWindow && SettingsManagerObject.isGeekModeEnabled{
+//            showToolboxWindow()
+//        }
+//    }
 }
 
 
@@ -1461,18 +1479,17 @@ func resumeFocusModeAfterAppStartted(diffSeconds: Int, focusMode: [String : Any]
 func updateFocusModeIntention(intention:String){
     if whatToAchieveInFocusBlock != intention{
         whatToAchieveInFocusBlock = intention
-        arrConvinceAiUrlsInCurrentFocus.removeAll()
+        arrConvinceAiUrlsInCurrentFocus.removeAll()//reset it if the intention changes
         arrConvinceAiAppsInCurrentFocus.removeAll()
     }
 }
 
 func updateFocusModeTask(taskString:String){
     focusModeTaskString = taskString
+    taskCreatedByBlockPopup = ""
     if let currentString = getCurrentTaskInFocusMode(){
         if currentPlayingTaskString != currentString{
             currentPlayingTaskString = currentString
-            arrConvinceAiUrlsInCurrentFocus.removeAll()
-            arrConvinceAiAppsInCurrentFocus.removeAll()
         }
     }else{
         currentPlayingTaskString = ""
@@ -1531,6 +1548,9 @@ func getStatusTextForTask(status:String)-> String{
 
 
 func getCurrentTaskInFocusMode()-> String?{
+    if !taskCreatedByBlockPopup.isEmpty{
+        return taskCreatedByBlockPopup
+    }
     if !focusModeTaskStringIsEmpty(){
         if let data = focusModeTaskString.data(using: String.Encoding.utf8) {
             do {
@@ -1557,7 +1577,7 @@ func getCurrentTaskInFocusMode()-> String?{
 var timerForFocusMode:Timer?
 var timerForFocusModeEndNotification:Timer?
 
-var isFocusTimeType:FocusModeTimeType = ._NONE_
+
 var endFocusModeTime:Date?// this is focusMode end time wich we calculate at the begning of focus mode
 var startFocusModeTime:Date?
 var startFocusModeTimeForPauseAndResume:Date?
@@ -1565,9 +1585,6 @@ var focusModeActualDurationPerformed:Int = 0// this will be useful to save in cs
 var focusModeMinutesToPerform = 0
 var focusModeSecondsToPerform = 0 //useful in pause resume focus mode
 var unfocusedTime = 0
-enum FocusModeTimeType:Int{
-    case _HOUR_ = 11, _TILL_SHUTOFF_, _NONE_
-}
 
 var isFocusModeRunning = false
 
@@ -1661,20 +1678,24 @@ var isAnyAllowedFocusModeActivityWasRunningInLastActivity = false
 var isAnyAllowedFocusModeActivityFinishTime = Date()
 
 func reSetCurrentFocusMode(focusType:[String:Any]){
-    if isFocusModeOn() || isAnyAllowedFocusModeActivityRunning{
+    if isFocusModeOn() || isAnyAllowedFocusModeActivityRunning || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
         if focusType["id"] as? String ?? ""  == currentRunningFocusType["id"] as? String ?? ""{
             currentRunningFocusType = focusType
         }
     }
 }
 
-enum FOCUSMODESTRICTNESS:Int{
+enum FOCUSMODESTRICTNESS:Int,Codable{
     case _NORMAL_ = 45, _STRICT_, _SUPER_STRICT_
 }
 
 var currentFocusModeStrictness = FOCUSMODESTRICTNESS._NORMAL_
 
 func isCuddlyModeEnabled()->Bool{
+    if customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
+        return customBlockingScheduleManagerObj.isCuddlyModeEnabled()
+    }
+    
     if currentFocusModeStrictness == ._SUPER_STRICT_{
         return false
     }
@@ -1683,3 +1704,186 @@ func isCuddlyModeEnabled()->Bool{
 
 
 var isNudgeDraggedInCurrentFocusSession = false
+
+
+func getBlockScriptForFocusMode(url:String, currentBrowser:BROWSER, intention:String, cuddly_bear_modeString:String, aiReasonToBlockString:String, focusMode:String, focusModeExpiryTimeString:String)->String{
+    var script: String = ""
+    switch currentBrowser{
+        
+    case ._SAFARI_:
+        script = getSafariBlockScript(url: url).replacingOccurrences(of: "<PARAMS>", with: "\(focusModeExpiryTimeString)&focus_mode=\(focusMode)&focus_mode_intention=\(intention)\(cuddly_bear_modeString)\(aiReasonToBlockString)")
+        
+    case ._GOOGLE_CHROME_:
+        script = getGoogleChromeBlockScript(url: url).replacingOccurrences(of: "<PARAMS>", with: "\(focusModeExpiryTimeString)&focus_mode=\(focusMode)&focus_mode_intention=\(intention)\(cuddly_bear_modeString)\(aiReasonToBlockString)")
+        
+    case ._OPERA_:
+        script = getOperaBlockScript(url: url).replacingOccurrences(of: "<PARAMS>", with: "\(focusModeExpiryTimeString)&focus_mode=\(focusMode)&focus_mode_intention=\(intention)\(cuddly_bear_modeString)\(aiReasonToBlockString)")
+        
+    case ._OPERA_GX_:
+        script = getOperaGxBlockScript(url: url).replacingOccurrences(of: "<PARAMS>", with: "\(focusModeExpiryTimeString)&focus_mode=\(focusMode)&focus_mode_intention=\(intention)\(cuddly_bear_modeString)\(aiReasonToBlockString)")
+        
+    case ._VIVALDI_:
+        script = getVivaldiBlockScript(url: url).replacingOccurrences(of: "<PARAMS>", with: "\(focusModeExpiryTimeString)&focus_mode=\(focusMode)&focus_mode_intention=\(intention)\(cuddly_bear_modeString)\(aiReasonToBlockString)")
+        
+    case ._BRAVE_BROWSER_:
+        script = getBraveBrowserBlockScript(url: url).replacingOccurrences(of: "<PARAMS>", with: "\(focusModeExpiryTimeString)&focus_mode=\(focusMode)&focus_mode_intention=\(intention)\(cuddly_bear_modeString)\(aiReasonToBlockString)")
+        
+    case ._SIDEKICK_:
+        script = getSidekickBlockScript(url: url).replacingOccurrences(of: "<PARAMS>", with: "\(focusModeExpiryTimeString)&focus_mode=\(focusMode)&focus_mode_intention=\(intention)\(cuddly_bear_modeString)\(aiReasonToBlockString)")
+        
+    case ._MICROSOFT_EDGE_:
+        script = getMicrosoftEdgeBlockScript(url: url).replacingOccurrences(of: "<PARAMS>", with: "\(focusModeExpiryTimeString)&focus_mode=\(focusMode)&focus_mode_intention=\(intention)\(cuddly_bear_modeString)\(aiReasonToBlockString)")
+    case ._ARC_:
+        script = getArcBlockScript(url: url).replacingOccurrences(of: "<PARAMS>", with: "\(focusModeExpiryTimeString)&focus_mode=\(focusMode)&focus_mode_intention=\(intention)\(cuddly_bear_modeString)\(aiReasonToBlockString)")
+    case ._FIREFOX_:
+        script = getFirefoxBlockScript(url: url).replacingOccurrences(of: "<PARAMS>", with: "\(focusModeExpiryTimeString)&focus_mode=\(focusMode)&focus_mode_intention=\(intention)\(cuddly_bear_modeString)\(aiReasonToBlockString)")
+    case ._SIGMA_OS_:
+        script = getSigmaOsBrowserBlockScript(url: url).replacingOccurrences(of: "<PARAMS>", with: "\(focusModeExpiryTimeString)&focus_mode=\(focusMode)&focus_mode_intention=\(intention)\(cuddly_bear_modeString)\(aiReasonToBlockString)")
+    }
+    return script
+}
+
+
+var focusModeHelper = focusTimerManager()
+var habitBlockTimerHelper = habitBlockTimerManager()
+
+
+
+func focusBlockUnwantedUrl(script: String, url:String, lastBlockReasonFromAi:String?, browser: BROWSER?, isUrlBlockByAi:Bool, blockReason:String){
+    addLog(text:"focusBlockUnwantedUrl:- \(url)")
+    var newScript = script
+    newScript = newScript.replacingOccurrences(of: "<NEWPAGE>", with: "")
+    currentBrowserUrlForAi = ""
+    if lastBlockReasonFromAi != nil{
+        newScript = newScript.replacingOccurrences(of: "<AIREASON>", with: "&reason=\(lastBlockReasonFromAi!)")
+    }else{
+        newScript = newScript.replacingOccurrences(of: "<AIREASON>", with: "")
+    }
+    if browser == ._ARC_{
+        NSWorkspace.shared.launchApplication("Arc")
+    }
+    if browser == ._FIREFOX_{
+        firefoxServer.sendBlockNow(url: url,params: newScript)
+    }else{
+        executeScript(script: newScript)
+    }
+    
+    var blockMode = ""
+    if currentFocusModeStrictness == ._SUPER_STRICT_{
+        blockMode = "super_strict"
+    }else if currentFocusModeStrictness == ._STRICT_{
+        blockMode = "strict"
+    }else if currentFocusModeStrictness == ._NORMAL_{
+        blockMode = "normal"
+    }
+    
+    if isUrlBlockByAi{
+        allApiObject.capturePosthog(event: "block-distracting-url", metadata: ["block-reason":"ai_blocking", "block-mode": blockMode])
+    }else{
+        allApiObject.capturePosthog(event: "block-distracting-url", metadata: ["block-reason":blockReason, "block-mode": blockMode])
+    }
+    if !arrBlockedUrlsInCuddlyModeCurrentFocus.contains(url){
+        arrBlockedUrlsInCuddlyModeCurrentFocus.append(url)
+    }
+}
+
+
+func focusTryToBlockUnwantedUrl(script: String, url:String, browser: BROWSER?, tabTitle:String?, fullUrl:String, runningApp:NSRunningApplication, domain:String){
+    if popUpBlockConfirmWcObj != nil{
+        if popUpBlockConfirmWcObj!.window?.isVisible ?? false{
+            if !popUpBlockConfirmVcObj!.isAppBlocking{
+                if popUpBlockConfirmVcObj?.url == url{
+                    exitFullScreen(runningApp:runningApp)
+                    return;
+                }else{
+                    popUpBlockConfirmVcObj?.closeWindow()
+                }
+            }
+        }
+    }
+    addLog(text: "focusTryToBlockUnwantedUrl:- \(url)")
+    if isCuddlyModeEnabled(){
+        if arrBlockedUrlsInCuddlyModeCurrentFocus.contains(url){
+            focusBlockUnwantedUrl(script: script, url: url, lastBlockReasonFromAi: nil, browser: browser, isUrlBlockByAi: false, blockReason: "blocked_once_in_this_session")
+        }else{
+            if SettingsManagerObject.isAIBlockingEnabled(){
+                tryCheckUrlFromAi(script: script, url: url, tabTitle: tabTitle, browser: browser, fullUrl: fullUrl, domain:domain, runningApp: runningApp)
+            }else{
+                if isRunningAppFullScreen(runningApp: runningApp, browser: browser) || stageManagerObject.isStageManagerEnabled{
+                    let script = script.replacingOccurrences(of: "<NEWPAGE>", with: "&ai-focus-block-verification-enabled=true")
+                    executeScript(script: script)
+                }else{
+                    exitFullScreen(runningApp:runningApp)
+                    showPopupBlockConfirmWindow(blockedAppName: "", currentApp: nil, url:url, script:script, isBlockApp:false, browser: browser,tabTitle: tabTitle, fullUrl:fullUrl, aiBlockReason: nil, isTimeOut:false, isBlockByAi: false, scoreForThisSiteApp: nil, payload: nil, isBrowser:false)
+                }
+            }
+        }
+    }else{
+        if arrBlockedUrlsInCuddlyModeCurrentFocus.contains(url){
+            focusBlockUnwantedUrl(script: script, url: url, lastBlockReasonFromAi: nil, browser: browser, isUrlBlockByAi: false, blockReason: "blocked_once_in_this_session")
+        }else{
+            if SettingsManagerObject.isAIBlockingEnabled(){
+                tryCheckUrlFromAi(script: script, url: url, tabTitle: tabTitle, browser: browser, fullUrl: fullUrl, domain:domain, runningApp: runningApp)
+            }else{
+                exitFullScreen(runningApp:runningApp)
+                focusBlockUnwantedUrl(script: script, url: url, lastBlockReasonFromAi: nil, browser: browser, isUrlBlockByAi: false, blockReason: "block_in_focus_mode")
+                
+            }
+        }
+    }
+    
+}
+
+func focusBlockUnwantedApp(runningApp: NSRunningApplication, appName:String, showNotification:Bool, isAppBlockByAi:Bool){
+    addLog(text: "focusBlockUnwantedApp:- \(appName)")
+    exitFullScreen(runningApp:runningApp)
+    runningApp.hide()
+    allApiObject.capturePosthog(event: "block-distracting-app", metadata: [:])
+    if showNotification{
+        showFocusAppBlockNotification(appName:appName)
+    }
+    if isCuddlyModeEnabled(){
+        if !arrBlockedAppsInCuddlyModeCurrentFocus.contains(runningApp){
+            arrBlockedAppsInCuddlyModeCurrentFocus.append(runningApp)
+        }
+    }
+}
+
+func focusTryToBlockUnwantedApp(runningApp: NSRunningApplication, appName:String, appNameLowercased:String){
+    
+    if popUpBlockConfirmWcObj != nil{
+        if popUpBlockConfirmWcObj!.window?.isVisible ?? false{
+            if popUpBlockConfirmVcObj!.isAppBlocking{
+                if popUpBlockConfirmVcObj?.currentApp == runningApp{
+                    return;
+                }else{
+                    popUpBlockConfirmVcObj?.closeWindow()
+                }
+            }
+        }
+    }
+    exitFullScreen(runningApp:runningApp)
+    addLog(text: "focusTryToBlockUnwantedApp:- \(appName)")
+    if isCuddlyModeEnabled(){
+        if arrBlockedAppsInCuddlyModeCurrentFocus.contains(runningApp){
+            focusBlockUnwantedApp(runningApp: runningApp, appName: appName, showNotification: true, isAppBlockByAi: false)
+        }else{
+            if SettingsManagerObject.isAIBlockingEnabled(){
+                tryCheckAppFromAi(appName: appName, runningApp: runningApp)
+            }else{
+                showPopupBlockConfirmWindow(blockedAppName: appName, currentApp: runningApp, url:"", script:"", isBlockApp:true, browser: nil, tabTitle: nil, fullUrl:"", aiBlockReason: nil, isTimeOut:false, isBlockByAi: false, scoreForThisSiteApp: nil, payload: nil, isBrowser:false)
+            }
+        }
+    }else{
+        if arrBlockedAppsInCuddlyModeCurrentFocus.contains(runningApp){
+            focusBlockUnwantedApp(runningApp: runningApp, appName: appName, showNotification: true, isAppBlockByAi: false)
+        }else{
+            if SettingsManagerObject.isAIBlockingEnabled(){
+                tryCheckAppFromAi(appName: appName, runningApp: runningApp)
+            }else{
+                focusBlockUnwantedApp(runningApp: runningApp, appName: appName, showNotification: true, isAppBlockByAi: false)
+                
+            }
+        }
+    }
+}

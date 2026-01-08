@@ -68,28 +68,28 @@ class chooseFrictionLevelVc: NSViewController {// not in use
         if let chooseFrictionLevelVcInfo = configjson.value(forKey: "chooseFrictionLevelVcInfo") as? NSDictionary{
             msg = chooseFrictionLevelVcInfo.value(forKey: "descriptionSuperGentle") as? String ?? msg
         }
-        showTooltip(sender: btnSuperGentle, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:600)
+        showTooltip(sender: btnSuperGentle, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:600, autoCloseOnMouseExit: true)
     }
     @IBAction func btnGentleClicked(_ sender: Any) {
         var msg = "- Incorporates Cuddly mode for a user-friendly approach\n- Habits run in full screen, maintaining focus\n- Enables instant habit postponement\n- App does not restart upon force quit"
         if let chooseFrictionLevelVcInfo = configjson.value(forKey: "chooseFrictionLevelVcInfo") as? NSDictionary{
             msg = chooseFrictionLevelVcInfo.value(forKey: "descriptionGentle") as? String ?? msg
         }
-        showTooltip(sender: btnGentle, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:600)
+        showTooltip(sender: btnGentle, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:600, autoCloseOnMouseExit: true)
     }
     @IBAction func btnSlightlyStrictClicked(_ sender: Any) {
         var msg = "- Retains Cuddly mode for user comfort\n- Introduces countdown timers for controlled habit postponement within full screen\n- App restarts upon force quit to uphold commitment to established habits"
         if let chooseFrictionLevelVcInfo = configjson.value(forKey: "chooseFrictionLevelVcInfo") as? NSDictionary{
             msg = chooseFrictionLevelVcInfo.value(forKey: "descriptionSlightlyStrict") as? String ?? msg
         }
-        showTooltip(sender: btnSlightlyStrict, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:600)
+        showTooltip(sender: btnSlightlyStrict, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:600, autoCloseOnMouseExit: true)
     }
     @IBAction func btnStrictClicked(_ sender: Any) {
         var msg = "- Upholds Cuddly mode for a friendly interface\n- Requires a password for habit postponement, promoting commitment\n- App restarts upon force quit, emphasizing the importance of adherence to habits"
         if let chooseFrictionLevelVcInfo = configjson.value(forKey: "chooseFrictionLevelVcInfo") as? NSDictionary{
             msg = chooseFrictionLevelVcInfo.value(forKey: "descriptionStrict") as? String ?? msg
         }
-        showTooltip(sender: btnStrict, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:600)
+        showTooltip(sender: btnStrict, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:600, autoCloseOnMouseExit: true)
     }
     @IBAction func btnSuperStrictClicked(_ sender: Any) {
         var msg = "- Activates Grizzly mode for enhanced security measures\n- Implements a password system for habit postponement/skipping, ensuring accountability\n- App restarts upon force quit, reinforcing unwavering commitment\n- Immediately blocks distracting websites for an undistracted working environment"

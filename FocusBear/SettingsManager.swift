@@ -24,6 +24,7 @@ class SettingsManager:NSObject{
     var isAdvancedAnalyticsInFocusModeEnabled = false// Advance analytics during focus mode //27/1/25 //  default  will be false
     var isDataCollectionModeEnabled = false// equvalent of the focus alignment score cutoff being set to 0% //30/5/25 //  default  will be false
     
+    var isDetectNatualBreaksEnabled = true// 19/7/25 version 1.26.392   "Don't show this again" option for natural break detection popups #1466
     
     var isFocusVisualIndicatorEnabled = true
     
@@ -73,7 +74,7 @@ class SettingsManager:NSObject{
     var showToDoPlayerAutomaticallyEnabled = true
     var showBrainDumpAfterMorningRoutineEnabled = false
     var isMicroBreaksEnabled = true
-    var blockingSchedule:BLOCKINGSCHEDULE = ._WHEN_START_FOCUS_SESSION_
+    var blockingSchedule:BLOCKINGSCHEDULE = ._WHEN_START_FOCUS_SESSION_// not in use need to remove soon //  
     
     
     var brainDumpCustomUrlEnabled = false
@@ -416,6 +417,7 @@ class SettingsManager:NSObject{
                 let kIsMenuPopoverEnabled = "kIsMenuPopoverEnabled"
                 let kIsAdvancedAnalyticsInFocusModeEnabled = "kIsAdvancedAnalyticsInFocusModeEnabled"
                 let kIsDataCollectionModeEnabled = "kIsDataCollectionModeEnabled"
+                let kDetectNatualBreaksEnabled = "kDetectNatualBreaksEnabled"
                 
                 let kIsFocusVisualIndicatorEnabled = "kIsFocusVisualIndicatorEnabled"
                 let kBrainDumpCustomUrlValue = "kBrainDumpCustomUrlValue"
@@ -647,6 +649,10 @@ class SettingsManager:NSObject{
                 
                 if let val = settings.value(forKey: kIsDataCollectionModeEnabled) as? Bool{
                     isDataCollectionModeEnabled = val
+                }
+                
+                if let val = settings.value(forKey: kDetectNatualBreaksEnabled) as? Bool{
+                    isDetectNatualBreaksEnabled = val
                 }
                 
                 if let val = settings.value(forKey: kIsFocusVisualIndicatorEnabled) as? Bool{
@@ -1176,6 +1182,7 @@ class SettingsManager:NSObject{
         let kIsMenuPopoverEnabled = "kIsMenuPopoverEnabled"
         let kIsAdvancedAnalyticsInFocusModeEnabled = "kIsAdvancedAnalyticsInFocusModeEnabled"
         let kIsDataCollectionModeEnabled = "kIsDataCollectionModeEnabled"
+        let kDetectNatualBreaksEnabled = "kDetectNatualBreaksEnabled"
         let kIsFocusVisualIndicatorEnabled = "kIsFocusVisualIndicatorEnabled"
         let kBrainDumpCustomUrlValue = "kBrainDumpCustomUrlValue"
         let kShowBrainDumpAfterMorningRoutine = "kShowBrainDumpAfterMorningRoutine"
@@ -1241,6 +1248,7 @@ class SettingsManager:NSObject{
             kIsMenuPopoverEnabled: isMenuPopoverEnabled,
             kIsAdvancedAnalyticsInFocusModeEnabled:isAdvancedAnalyticsInFocusModeEnabled,
             kIsDataCollectionModeEnabled:isDataCollectionModeEnabled,
+            kDetectNatualBreaksEnabled:isDetectNatualBreaksEnabled,
             kIsFocusVisualIndicatorEnabled:isFocusVisualIndicatorEnabled,
             kBrainDumpCustomUrlValue:brainDumpCustomUrlValue,
             kShowBrainDumpAfterMorningRoutine:showBrainDumpAfterMorningRoutineEnabled,
@@ -1538,6 +1546,14 @@ class SettingsManager:NSObject{
         }
         return false
     }
+    
+    func isAIBlockingEnabled()->Bool{
+        if customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
+            return customBlockingScheduleManagerObj.isAIBlockingEnabled()
+        }
+        return isAiCheckUrlEnabled
+    }
+    
 }
 
 

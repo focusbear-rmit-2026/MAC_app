@@ -131,8 +131,8 @@ var kUserdefaultsSelectedLanguage = "kUserdefaultsSelectedLanguage"
 var kUserdefaultsScreenTimeEnabled = "kUserdefaultsScreenTimeEnabled"
 
 let kUserdefaultsFocusAddedFromFirstHabit = "kUserdefaultsFocusAddedFromFirstHabit"
-var kUserdefaultsDontShowToolBoxAutomatically = "kUserdefaultsShowToolBoxAutomatically"
-var kUserdefaultsDontShowToolBoxAutomaticallyForActivity = "kUserdefaultsDontShowToolBoxAutomaticallyForActivity"
+//var kUserdefaultsDontShowToolBoxAutomatically = "kUserdefaultsShowToolBoxAutomatically"
+//var kUserdefaultsDontShowToolBoxAutomaticallyForActivity = "kUserdefaultsDontShowToolBoxAutomaticallyForActivity"
 
 var kUserdefaultsFocusModeNotes = "kUserdefaultsFocusModeNotes"
 
@@ -142,7 +142,7 @@ let kUserdefaultsPomodoroTourShown = "kUserdefaultsPomodoroTourShown"
 
 //let kUserdefaultsAdditionalGoals = "kUserdefaultsAdditionalGoals"
 
-let kUserdefaultsSitesUnlockedInPomodoroBreakAlertShown = "kUserdefaultsSitesUnlockedInPomodoroBreakAlertShown"
+//let kUserdefaultsSitesUnlockedInPomodoroBreakAlertShown = "kUserdefaultsSitesUnlockedInPomodoroBreakAlertShown"
 let kUserdefaultsIsAdvancedPomodoroEnabled = "kUserdefaultsIsAdvancedPomodoroEnabled"
 
 
@@ -191,6 +191,7 @@ var kUserdefaultsBlockingScheduleFromOnboarding = "kUserdefaultsBlockingSchedule
 
 var kUserdefaultsLastBreaksStartTime = "kUserdefaultsLastBreaksStartTime"
 var kUserdefaultsArrayBreaksDurations = "kUserdefaultsArrayBreaksDurations"
+var kUserdefaultsLastBreakEndTime = "kUserdefaultsLastBreakEndTime" // added on 24/7/25 v 1.26.394 //Mac app shows “Time since last break: 39m” but I actually had my laptop closed for 39m and just opened it now. It should show more like 2minutes
 
 
 var kUserDefaultsCustomGoals = "kUserDefaultsCustomGoals"
@@ -211,3 +212,16 @@ var kUserdefaultsLastShutdownAbortedDate = "kUserdefaultsLastShutdownAbortedDate
 
 var kUserdefaultsFocusStatsExpanded = "kUserdefaultsFocusStatsExpanded"
 var kUserdefaultsFocusAllThingsExpanded = "kUserdefaultsFocusAllThingsExpanded"
+
+
+
+var kUserdefaultsStartMainAppIfNotRunning = "kUserdefaultsStartMainAppIfNotRunning"
+
+var kUserdefaultsBrowsersTabAuditReportSaveDate = "kUserdefaultsBrowsersTabAuditReportSaveDate"
+
+var kUserdefaultsLastUnlockTimeByAccountabilityBuddy = "kLastUnlockTimeByAccountabilityBuddy"
+
+var kUserdefaultsUserShouldDoFirstFocusSesion = "kUserShouldDoFirstFocusSesion"
+
+var kUserDefaultsUserJobDetails = "kUserJobDetails"
+var kUserDefaultsUserDistractions = "kUserDistractions"

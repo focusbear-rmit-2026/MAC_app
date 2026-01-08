@@ -7,7 +7,7 @@
 
 import Cocoa
 
-class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
+class startingFocusModeVc: NSViewController, NSTextFieldDelegate { // not in use
 
     @IBOutlet weak var lblTitleStrictnessLevel: NSTextField!
     @IBOutlet weak var btnStrictnessNormal: hoverInfoButton!
@@ -81,7 +81,7 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
-        focusModeStartWindowLodded = true
+//        focusModeStartWindowLodded = true
 
         arrTourMessages.removeAll()
         lblTitleStrictnessLevel.stringValue = "Strictness level:"
@@ -406,7 +406,7 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
         }
     }
     @objc func performTimerCount() {
-        if !appdelegate!.isSystemSleep && !appdelegate!.isScreenSaverStart && currentState != ._ACTIVITY_{
+        if !appdelegate!.isSystemSleep && !appdelegate!.isScreenSaverStart && currentState != ._MICRO_BREAK_{
             currentTimer += 1
         }
         setProgres()
@@ -421,11 +421,11 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
             currentFocusModeStrictness = ._SUPER_STRICT_
         }
         UserDefaults.standard.set(sliderStrictness.integerValue, forKey: kUserdefaultsLastFocusModeStrictness)
-        if getEndFocusModeWindowControllerObj().window!.isVisible{
-            let timestamp = getStringFromDate(date: startFocusModeTime ?? Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
-            addEntryInStatsCsv(logType: "focus block", activity: focusCompletedVcObj!.currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: "\(focusModeMinutesToPerform) of \(focusCompletedVcObj!.currentFocusModeName)", distractionsEncountered: "", abortReason: "", feedback: "", tags:"")
-            getEndFocusModeWindowControllerObj().window?.close()
-        }
+//        if getEndFocusModeWindowControllerObj().window!.isVisible{
+//            let timestamp = getStringFromDate(date: startFocusModeTime ?? Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
+//            addEntryInStatsCsv(logType: "focus block", activity: focusCompletedVcObj!.currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: "\(focusModeMinutesToPerform) of \(focusCompletedVcObj!.currentFocusModeName)", distractionsEncountered: "", abortReason: "", feedback: "", tags:"")
+//            getEndFocusModeWindowControllerObj().window?.close()
+//        }
         
         if checkBoxSkipMicrobreaks.state == .on{
             isSkipBreakActivityDuringFocus = true
@@ -517,7 +517,6 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
             timerForFocusModeEndNotification?.invalidate()
             timerForFocusModeEndNotification = nil
         }
-        isFocusTimeType = ._HOUR_
         appdelegate?.setFocusModeTimer(hour: nil, minute: totoalMinutes)
         isFocusModeStartedFromPomodoroMode = false
         closePomodoroWindowIOfVisible()
@@ -534,7 +533,6 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
         lastSkipMicroBreakState = isSkipBreakActivityDuringFocus
         
         allApiObject.capturePosthog(event: "start-focus-mode-manually", metadata: [:])
-        appdelegate!.setIntentionInBrainDumpWindow()
         
 
         
@@ -548,10 +546,10 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
         let totalMinutes = (textFieldHourValue.integerValue * 60) + textFieldMinutesValue.integerValue
         
         if currentState == ._POSTPON_MORNING_HABIT_ || currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_{
-            if mainViewControllerObj?.postponeTimer != nil {
-                if mainViewControllerObj!.postponeTimer!.isValid{
+            if getHabitsVcObject().postponeTimer != nil {
+                if getHabitsVcObject().postponeTimer!.isValid{
                     let currentTime = Date()
-                    let breakTime = mainViewControllerObj!.postponeTimer!.fireDate
+                    let breakTime = getHabitsVcObject().postponeTimer!.fireDate
                     let diffMinute = Calendar.current.dateComponents([.minute], from: currentTime, to: breakTime).minute ?? 0
                     if diffMinute < totalMinutes{
                         alertExtendPostpone = NSAlert()
@@ -575,14 +573,14 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
                             if modalResponse == .alertFirstButtonReturn{
                                 if currentState == ._POSTPON_MORNING_HABIT_{
                                     if SettingsManagerObject.isEasySkipEnabled{
-                                        mainViewControllerObj?.postponeMorningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
+                                        getHabitsVcObject().postponeMorningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
                                         self.checkTotalMinutesAndStart()
                                     }else{
                                         if SettingsManagerObject.isPasswordRequireInSkipMorning && shouldAskPassword(){
                                             self.presentAsSheet(self.enterPasswordVcObj!)
                                             self.enterPasswordVcObj?.parentVc = self
                                         }else{
-                                            mainViewControllerObj?.postponeMorningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
+                                            getHabitsVcObject().postponeMorningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
                                             self.checkTotalMinutesAndStart()
                                         }
                                     }
@@ -614,9 +612,9 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
                                             self.enterPasswordVcObj?.parentVc = self
                                         }else{
                                             if currentState == ._EVENING_HABIT_{
-                                                mainViewControllerObj?.postponeEveningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
+                                                getHabitsVcObject().postponeEveningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
                                             }else if currentState == ._POSTPON_FOCUS_SUMMARY_{
-                                                mainViewControllerObj?.postponeFocusSummaryFor(minutes: totalMinutes + 2, showAskIntention: false)
+                                                getHabitsVcObject().postponeFocusSummaryFor(minutes: totalMinutes + 2, showAskIntention: false)
                                             }
                                             self.checkTotalMinutesAndStart()
                                         }
@@ -875,7 +873,7 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
                     }
                 }
                 
-                showTooltip(sender: lblTitle, msg: warningDefaultFocusMode, preferredEdge: .minX, maxWidthVal: 250)
+                showTooltip(sender: lblTitle, msg: warningDefaultFocusMode, preferredEdge: .minX, maxWidthVal: 250) 
             }
         }
         
@@ -1074,12 +1072,13 @@ class startingFocusModeVc: NSViewController, NSTextFieldDelegate {
         
         showTooltip(sender: btnStrictnessSuperStrict, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
     }
+    
     @IBAction func sliderStrictnessClicked(_ sender: Any) {
         if sliderStrictness.integerValue == 3{
-            var strictnessSuperStrictClickedText = "I understand I cannot stop this focus session until it ends. I am committed to avoiding distractions and getting a ton of work done."
+            var strictnessSuperStrictClickedText = "I understand I cannot stop this focus session without a password. I am committed to avoiding distractions and getting a ton of work done."
             if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
                 if let startingFocusModeInfo = focusInfo.value(forKey: "startingFocusModeInfo") as? NSDictionary{
-                    strictnessSuperStrictClickedText = startingFocusModeInfo.value(forKey: "strictnessSuperStrictClickedText") as? String ?? strictnessSuperStrictClickedText
+                    strictnessSuperStrictClickedText = startingFocusModeInfo.value(forKey: "strictnessSuperStrictClickedNewText") as? String ?? strictnessSuperStrictClickedText
                 }
             }
             showTooltip(sender: sliderStrictness, msg: strictnessSuperStrictClickedText, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)

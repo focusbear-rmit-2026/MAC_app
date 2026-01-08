@@ -10,6 +10,7 @@ import Cocoa
 
 class welcomeVc: NSViewController {
 
+    @IBOutlet weak var imgViewWave: NSImageView!
     @IBOutlet weak var btnAlreadyHaveAccount: underLineButton!
     @IBOutlet weak var lblAllRights: NSTextField!
     @IBOutlet weak var btnLetsDoIt: Button!
@@ -27,7 +28,7 @@ class welcomeVc: NSViewController {
         lblDescriptionFirst.stringValue = "Focus Bear helps you avoid distractions and build healthy habits."
         lblDescriptionSecond.stringValue = "Let's start out by blocking distractions."
         btnLetsDoIt.title = "Let's do it"
-        lblAllRights.stringValue = "© 2022-2025 Focus Bear All Rights Reserved."
+        lblAllRights.stringValue = "© 2022-2026 Focus Bear All Rights Reserved."
         
         if let welcomeOnboardingVcInfo = configjson.value(forKey: "welcomeOnboardingVcInfo") as? NSDictionary{
             lblSubTitle.stringValue = welcomeOnboardingVcInfo.value(forKey: "subTitle") as? String ?? lblSubTitle.stringValue
@@ -48,9 +49,11 @@ class welcomeVc: NSViewController {
         getOnboardingHabitExplainVcObject().loadView()
         
         
-        
+        //imgViewWave.alphaValue = 0.3
         lblDescriptionSecond.isHidden = true // change onboarding 20/12/24
     }
+    
+
     
     @IBAction func btnLetsDoItClicked(_ sender: Any) {
         addLog(text: "[user-action] btnLetsDoItClicked.")

@@ -10,8 +10,8 @@ import Cocoa
 import WebKit
 class selectJsonVc: NSViewController, NSTextViewDelegate, WKNavigationDelegate, webViewLoadFailedDelegate {
     
-    @IBOutlet weak var boxHeightConstraint: NSLayoutConstraint!
-    @IBOutlet weak var boxWidthConstraint: NSLayoutConstraint!
+//    @IBOutlet weak var boxHeightConstraint: NSLayoutConstraint!
+//    @IBOutlet weak var boxWidthConstraint: NSLayoutConstraint!
     @IBOutlet weak var webview: WKWebView!
     @IBOutlet weak var customBox: NSBox!
 
@@ -64,19 +64,26 @@ class selectJsonVc: NSViewController, NSTextViewDelegate, WKNavigationDelegate, 
 
         loadWebView()
         
-        boxWidthConstraint.constant = CGFloat(viewWidthDefault)
-        boxHeightConstraint.constant = CGFloat(viewHeightDefault)
+      //  boxWidthConstraint.constant = CGFloat(viewWidthDefault)
+        //boxHeightConstraint.constant = CGFloat(viewHeightDefault)
         webview.backgroundcolor = NSColor.clear
         addLog(text: "Edit settings (selectJsonVc) viewdidload end")
     }
 
     func loadWebView(){
-        var url = "https://settings.focusbear.io?bust_cache=\(getUuid())&device_id=\(currentDeviceId)"
+        var settingUrl = "https://dashboard.focusbear.io"
+        if let settings = configjson.value(forKey: "settings") as? NSDictionary{
+            if let url = settings.value(forKey: "settingUrlNew") as? String{
+                settingUrl = url
+            }
+        }
+       
+        var url = "\(settingUrl)/webview/settings?bust_cache=\(getUuid())&device_id=\(currentDeviceId)"
         
         var fileURL = URL(string: url)
         if fileURL == nil{
             addLog(text: "url is nil")
-            url = "https://settings.focusbear.io?device_id=\(currentDeviceId)"
+            url = "\(settingUrl)?device_id=\(currentDeviceId)"
             fileURL = URL(string: url)
         }
         
@@ -135,14 +142,7 @@ class selectJsonVc: NSViewController, NSTextViewDelegate, WKNavigationDelegate, 
     }
     
     func setSettingsToWebView(){
-        var theme = "LIGHT"
-        if preferencesWindowControllerObj != nil{
-            if preferencesWindowControllerObj!.window!.hasDarkAppearance{
-                theme = "DARK"
-            }else {
-                theme = "LIGHT"
-            }
-        }
+        let theme = getWindowTheme()
         var flags = "[\"settings-updated\"]"
         if SettingsManagerObject.isGeekModeEnabled{
             flags = "[\"settings-updated\",\"geek-mode\",\"save-settings-migrate-to-web\"]"
@@ -253,7 +253,7 @@ class selectJsonVc: NSViewController, NSTextViewDelegate, WKNavigationDelegate, 
     
     override func viewWillAppear() {
         self.setSettingsToWebView()
-        preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: viewWidthDefault, height: viewHeightDefault))
+//        preferencesWindowControllerObj?.window?.setContentSize(NSSize(width: viewWidthDefault, height: viewHeightDefault))
         allApiObject.capturePosthog(event: "edit-habits", metadata: [:])
     }
 
@@ -285,11 +285,11 @@ class selectJsonVc: NSViewController, NSTextViewDelegate, WKNavigationDelegate, 
         self.alertSettingChanged!.setSharingType()
         self.alertSettingChanged!.alertStyle = .informational
         allApiObject.capturePosthog(event: "save-edited-habits", metadata: [:])
-        var settingIsValidText = "Your settings have been validated and will be applied now."
-        var buttonOkText = "OK"
+        var settingIsValidText = "Saved! Restarting the app so your new habit timing works."
+        var buttonOkText = "Restart now"
         if let settings = configjson.value(forKey: "settings") as? NSDictionary{
             settingIsValidText = settings.value(forKey: "settingIsValidText") as? String ?? settingIsValidText
-            buttonOkText = settings.value(forKey: "buttonOkText") as? String ?? buttonOkText
+            buttonOkText = settings.value(forKey: "buttonRestartNow") as? String ?? buttonOkText
         }
         
         self.alertSettingChanged!.messageText = settingIsValidText
@@ -447,9 +447,11 @@ class selectJsonVc: NSViewController, NSTextViewDelegate, WKNavigationDelegate, 
     
 }//user-edited-settings
 
+//send_intention_from_focus_game // 
+//send_tasks_from_focus_game //
 class MessageHandler: NSObject, WKScriptMessageHandler {
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-        print("call back hua")
+        print("call back hua:- \(message.name)")
         if message.name == "close_survey_ui"{
             print(message.body)
             if surveyWcObj != nil{
@@ -472,23 +474,26 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
             }else{
                 focusModeTaskString = message.body as? String ?? ""
             }
+            taskCreatedByBlockPopup = ""
             addTaskVcObj!.dismiss(addTaskVcObj)
-            if startingFocusWindowControllerObj?.window?.isVisible ?? false{
+           // if startingFocusWindowControllerObj?.window?.isVisible ?? false{
 //                startingFocusModeVcObj?.taskAdded()
-            }else if pomodoroWindowControllerObj?.window?.isVisible ?? false{
+           // }else if pomodoroWindowControllerObj?.window?.isVisible ?? false{
 //                pomodoroVcObj?.taskAdded()
-            }
+            //}
             return;
         }else if message.name == "close_todo_focus_end_ui"{
             print(message.body)
             focusModeTaskString = ""
+            taskCreatedByBlockPopup = ""
             addTaskVcObj!.dismiss(addTaskVcObj)
         }else if message.name == "send_new_task_added_to_todo_player"{
             print(message.body)
-//            focusModeTaskString = message.body as? String ?? ""
-            updateFocusModeTask(taskString: message.body as? String ?? "")
+            let taskString = message.body as? String ?? ""
+            updateFocusModeTask(taskString: taskString)
+            addLog(text: "focusMode Task String is:- \(taskString)")
             var currentFocusModeIndex = 0
-            if (isFocusModeRunning || isAnyAllowedFocusModeActivityRunning){
+            if (isFocusModeRunning || isAnyAllowedFocusModeActivityRunning || customBlockingScheduleManagerObj.isAnyCustomScheduleOn){
                 if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._CUSTOM_ROUTINE_{
                     for i in 0..<arrFocusType.count{
                         let dic = arrFocusType[i]
@@ -512,21 +517,12 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
             print(message.body)
             let intention = message.body as? String ?? ""
             updateFocusModeIntention(intention: intention)
-            appdelegate!.setIntentionInBrainDumpWindow()
         }else if message.name == "send_brain_dump_content"{
             print(message.body) 
             let brainDump = message.body as? String ?? ""
             UserDefaults.standard.set(brainDump, forKey: kUserdefaultsFocusModeNotes)
-            if brainDumpWcObj != nil{
-                if brainDumpWcObj?.window != nil{
-                    if brainDumpWcObj!.window!.isVisible{
-                        brainDumpVcObj?.textViewWorkNote.string = brainDump
-                    }
-                }
-            }
         }else if message.name == "close_focus_player_ui"{
             print(message.body)
-            taskPlayerWcObj?.close()
         }else if message.name == "open_marketplace"{
             print(message.body)
             if let url = URL(string: message.body as? String ?? ""){
@@ -546,12 +542,8 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
             if addTaskVcObj != nil{
                 if addTaskVcObj?.handler == self{
                     focusModeTaskString = message.body as? String ?? ""
+                    taskCreatedByBlockPopup = ""
                     addTaskVcObj!.dismiss(addTaskVcObj)
-                    if startingFocusWindowControllerObj?.window?.isVisible ?? false{
-//                        startingFocusModeVcObj?.taskAdded()
-                    }else if pomodoroWindowControllerObj?.window?.isVisible ?? false{
-//                        pomodoroVcObj?.taskAdded()
-                    }
                     return;
                 }
             }
@@ -559,6 +551,7 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
             if addTaskVcObj != nil{
                 if addTaskVcObj?.handler == self{
                     focusModeTaskString = message.body as? String ?? ""
+                    taskCreatedByBlockPopup = ""
                     var arrTaskNotCompleted = [[String : Any]]()
                     
                     if !focusModeTaskStringIsEmpty(){
@@ -582,22 +575,19 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
                                     }
                                 }
                                 var currentFocusModeIndex: Int = 0
-                                
-                                
-                                
-                                if endingFocusWindowControllerObj != nil{
-                                    if (endingFocusWindowControllerObj?.window?.isVisible ?? false) && endingFocusWindowControllerObj?.contentViewController == focusCompletedVcObj{
-                                        focusCompletedVcObj?.textFieldAchieve.stringValue = taskString
-                                        focusCompletedVcObj?.textFieldAchieve.setFocus()
-                                        
-                                        currentFocusModeIndex = focusCompletedVcObj?.currentFocusModeIndex ?? 0
-                                    }
+
+
+                                if isFocusCompletedViewVisibled(){
+                                    focusCompletedVcObj?.textFieldAchieve.stringValue = taskString
+                                    focusCompletedVcObj?.textFieldAchieve.setFocus()
+                                    
+                                    currentFocusModeIndex = focusCompletedVcObj?.currentFocusModeIndex ?? 0
                                 }
                                 
                                 if currentAction == ._END_ && (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._CUSTOM_ROUTINE_){
-                                    if (mainViewControllerObj?.containerView.subviews.contains(thirdVcObj!.view))!{
+                                    if (getHabitsVcObject().habitsView.subviews.contains(thirdVcObj!.view)){
                                         if focusCompletedForActivityVcObj != nil{
-                                            if (mainViewControllerObj?.view.subviews.contains((focusCompletedForActivityVcObj!.view)))!{
+                                            if (getHabitsVcObject().view.subviews.contains((focusCompletedForActivityVcObj!.view))){
                                                 focusCompletedForActivityVcObj?.textFieldAchieve.stringValue = taskString
                                                 focusCompletedForActivityVcObj?.textFieldAchieve.setFocus()
                                                 currentFocusModeIndex = focusCompletedForActivityVcObj?.currentFocusModeIndex ?? 0
@@ -672,11 +662,11 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
                             editHabitRoutineVcObj?.alertSettingsSaved()
                         }
                     }
-                    if blockingScheduleVcObj != nil{
-                        if blockingScheduleVcObj?.webView == message.webView{
-                            blockingScheduleVcObj?.alertSettingsSaved()
-                        }
-                    }
+//                    if blockingScheduleVcObj != nil{
+//                        if blockingScheduleVcObj?.webView == message.webView{
+//                            blockingScheduleVcObj?.alertSettingsSaved()
+//                        }
+//                    }
                 }
             }else if message.body as? String == "user-settings-update-failed"{
                 if message.webView == selectJsonVcObj?.webview{
@@ -684,14 +674,14 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
                 }else{
                     if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_{
                         if (mainWindowControllerObj?.window?.isVisible ?? false) && editHabitRoutineVcObj != nil{
-                            editHabitRoutineVcObj?.alertSettingsNotValid()
+                            editHabitRoutineVcObj?.alertSettingsNotValid()//
                         }
                     }
-                    if blockingScheduleVcObj != nil{
-                        if blockingScheduleVcObj?.webView == message.webView{
-                            blockingScheduleVcObj?.alertSettingsNotValid()
-                        }
-                    }
+//                    if blockingScheduleVcObj != nil{
+//                        if blockingScheduleVcObj?.webView == message.webView{
+//                            blockingScheduleVcObj?.alertSettingsNotValid()
+//                        }
+//                    }
                 }
             }else {
                 if let data = (message.body as? String ?? "").data(using: String.Encoding.utf8) {
@@ -708,15 +698,15 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
                                 }
                             }
                             
-                            if blockingScheduleVcObj != nil{
-                                if blockingScheduleVcObj?.webView == message.webView{
-                                    blockingScheduleVcObj?.jsonReceivedFromWebView(jsonResult: jsonResult)
-                                }
-                            }
+//                            if blockingScheduleVcObj != nil{
+//                                if blockingScheduleVcObj?.webView == message.webView{
+//                                    blockingScheduleVcObj?.jsonReceivedFromWebView(jsonResult: jsonResult)
+//                                }
+//                            }
                         }
                     }
                     catch{
-                        
+                        print(error.localizedDescription)
                     }
                 }
             }
@@ -752,7 +742,7 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
             alert.messageText = downloadReportText
             alert.addButton(withTitle: buttonClickText)
             alert.addButton(withTitle: buttonCancelText)
-            alert.beginSheetModal(for: preferencesWindowControllerObj!.window!, completionHandler: { (modalResponse) in
+            alert.beginSheetModal(for: mainWindowControllerObj!.window!, completionHandler: { (modalResponse) in//preferencesWindowControllerObj
                 if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
                     
                     NSWorkspace.shared.open(URL(string: "https://dashboard.focusbear.io/stats")!)
@@ -796,5 +786,6 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
         }
     }
 }
+
 
 

@@ -10,6 +10,7 @@ import Cocoa
 
 class askOccupationVc: NSViewController, NSTextFieldDelegate {
 
+    @IBOutlet weak var btnSkip: underLineButton!
     @IBOutlet weak var textFieldFreelancer: NSTextField!
     @IBOutlet weak var lblTitleSpecify: NSTextField!
     @IBOutlet weak var boxEmployee: NSBox!
@@ -44,7 +45,8 @@ class askOccupationVc: NSViewController, NSTextFieldDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
-        lblTitleSpecify.stringValue = "Type of work:"
+        btnSkip.title = "Skip"
+        lblTitle.stringValue = "Create your distraction blocking profile"
         
         
         lblSelectStudyLevel.stringValue = "Select level of study:"
@@ -68,7 +70,7 @@ class askOccupationVc: NSViewController, NSTextFieldDelegate {
         
         
         
-        lblTitle.stringValue = appName
+        
         lblSubTitle.stringValue = "What type of work do you do?"
         lblDescription.stringValue = "This will be used to recommend the most suitable features for your work."
         btnContinue.title = "Continue"
@@ -100,7 +102,13 @@ class askOccupationVc: NSViewController, NSTextFieldDelegate {
             
             
             lblTitleSpecify.stringValue = askOccupationVcInfo.value(forKey: "titleFreelancerType") as? String ?? lblTitleSpecify.stringValue
+            lblTitle.stringValue = askOccupationVcInfo.value(forKey: "titleBlockingProfile") as? String ?? lblTitle.stringValue
         }
+        
+        if let dic = configjson.value(forKey: "welcomeInfo") as? NSDictionary{
+            btnSkip.title = dic.value(forKey: "buttonSkipText") as? String ?? btnSkip.title
+        }
+        
         occupationStudentIndex = 0
         occupationBusinessOwnerIndex = 1
         occupationEmployeeIndex = 2
@@ -123,18 +131,25 @@ class askOccupationVc: NSViewController, NSTextFieldDelegate {
     }
 
     @objc func viewDidResize(){
-        if self.view.frame.height < 700{
-            lblTitle.font = NSFont.systemFont(ofSize: 36)
-            lblSubTitle.font = NSFont.systemFont(ofSize: 21)
-            lblDescription.font = NSFont.systemFont(ofSize: 18)
-            topSpaceCollectionView.constant = 35
+        if self.view.frame.height < 600{
+            lblTitle.font = NSFont.systemFont(ofSize: 24)
+            lblSubTitle.font = NSFont.systemFont(ofSize: 15)
+            lblDescription.font = NSFont.systemFont(ofSize: 13)
+            topSpaceCollectionView.constant = 8
+            stackViewStudy.spacing = 3
+            stackViewEmployee.spacing = 3
+        }else if self.view.frame.height < 700{
+            lblTitle.font = NSFont.systemFont(ofSize: 30)
+            lblSubTitle.font = NSFont.systemFont(ofSize: 19)
+            lblDescription.font = NSFont.systemFont(ofSize: 16)
+            topSpaceCollectionView.constant = 20
             stackViewStudy.spacing = 7
             stackViewEmployee.spacing = 7
         }else if self.view.frame.height < 900{
             lblTitle.font = NSFont.systemFont(ofSize: 36)
             lblSubTitle.font = NSFont.systemFont(ofSize: 21)
             lblDescription.font = NSFont.systemFont(ofSize: 18)
-            topSpaceCollectionView.constant = 35
+            topSpaceCollectionView.constant = 30
             stackViewStudy.spacing = 12
             stackViewEmployee.spacing = 12
         }else{
@@ -146,9 +161,6 @@ class askOccupationVc: NSViewController, NSTextFieldDelegate {
             stackViewEmployee.spacing = 15
         }
         collectionView.reloadData()
-        DispatchQueue.global().async {
-            usleep(50000)
-        }
     }
     
     override func viewWillAppear() {
@@ -159,6 +171,7 @@ class askOccupationVc: NSViewController, NSTextFieldDelegate {
         viewDidResize()
         NotificationCenter.default.addObserver(self, selector: #selector(viewDidResize), name: NSView.frameDidChangeNotification, object: self.view)
     }
+    
     override func viewDidAppear() {
         showOnboardingBellIcon(view: self.view, screen: "ask-occupation-screen")
     }
@@ -176,10 +189,21 @@ class askOccupationVc: NSViewController, NSTextFieldDelegate {
         }
     }
     
+    @IBAction func btnSkipClicked(_ sender: Any) {
+        addLog(text: "[user-action] ask occupation view:- button Skip clicked.")
+//        mainViewControllerObj?.showCreateBlockingProfileVc()
+        
+        if !getInstallHabitPacksVcObj().isViewLoaded{
+            getInstallHabitPacksVcObj().loadView()
+        }
+        mainViewControllerObj?.showAskAppWorkVc()
+    }
+    
     @IBAction func btnContinueClicked(_ sender: Any) {
         if selectedIndex == -1{
             return;
         }
+        addLog(text: "[user-action] ask occupation view:- button continue clicked.")
         isStudentSelected = false
         var occupationToSave = ""
         var selectedIndexToSave = selectedIndex
@@ -291,8 +315,15 @@ class askOccupationVc: NSViewController, NSTextFieldDelegate {
         UserDefaults.standard.set(occupationToSave, forKey: kUserDefaultsSelectedOccupationForPosthog)
         UserDefaults.standard.set(selectedIndexToSave, forKey: kUserDefaultsSelectedOccupationIndex)
         allApiObject.capturePosthog(event: "occupation-selected", metadata: posthogJson)
-        mainViewControllerObj?.showAchieveWithFocusBearVc()
+//        mainViewControllerObj?.showAchieveWithFocusBearVc()
+//        mainViewControllerObj?.showCreateBlockingProfileVc()
+        
+        if !getInstallHabitPacksVcObj().isViewLoaded{
+            getInstallHabitPacksVcObj().loadView()
+        }
+        mainViewControllerObj?.showAskAppWorkVc()
     }
+    
     func checkContinueButtonState(){
         if selectedIndex == -1{
             btnContinue.isEnabled = false
@@ -300,12 +331,13 @@ class askOccupationVc: NSViewController, NSTextFieldDelegate {
         }
         btnContinue.isEnabled = true
     }
+    
     @IBAction func btnInfoClicked(_ sender: Any) {
         var msg = "We’ll set up a special focus mode designed for your job that will have websites and apps that are relevant for your work. This information also helps us understand who’s using the app so we can improve the features."
         if let askOccupationVcInfo = configjson.value(forKey: "askOccupationVcInfo") as? NSDictionary{
             msg = askOccupationVcInfo.value(forKey: "infoText") as? String ?? msg
         }
-        showTooltip(sender: btnInfo, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:300)
+        showTooltip(sender: btnInfo, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:300, autoCloseOnMouseExit: true)
     }
     
     @IBAction func radioBtnHighSchoolClicked(_ sender: Any) {

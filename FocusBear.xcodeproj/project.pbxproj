@@ -7,24 +7,64 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1303D9AD2E4B085900FD5BEC /* breaksStateVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1303D9AC2E4B085900FD5BEC /* breaksStateVc.swift */; };
+		130CE9A82E40C131004A6F04 /* mainWindowListBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 130CE9A72E40C131004A6F04 /* mainWindowListBox.swift */; };
+		130FFDBB2E4C663800694795 /* blankController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 130FFDBA2E4C663800694795 /* blankController.swift */; };
+		130FFDBD2E4C666300694795 /* logsUploadingVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 130FFDBC2E4C666300694795 /* logsUploadingVc.swift */; };
 		13188D722DEED55900E67A44 /* server in Resources */ = {isa = PBXBuildFile; fileRef = 13188D712DEED55800E67A44 /* server */; };
 		13188D742DEEE30300E67A44 /* flaskServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13188D732DEEE30300E67A44 /* flaskServer.swift */; };
 		13188D762DEF162D00E67A44 /* serverIntel in Resources */ = {isa = PBXBuildFile; fileRef = 13188D752DEF162D00E67A44 /* serverIntel */; };
+		13219A8C2ED5977000699D2E /* tabLimiterData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13219A8B2ED5977000699D2E /* tabLimiterData.swift */; };
+		13219A8F2ED5CD8B00699D2E /* firefoxHttpServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13219A8E2ED5CD8B00699D2E /* firefoxHttpServer.swift */; };
 		1338D3792E1E35B8002A1BFC /* loginWc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1338D3782E1E35B8002A1BFC /* loginWc.swift */; };
 		13395D412DB900440094F019 /* focusModeData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13395D402DB900380094F019 /* focusModeData.swift */; };
+		134C1D332E8260D00032AF65 /* allSubclasses.swift in Sources */ = {isa = PBXBuildFile; fileRef = 134C1D322E8260C10032AF65 /* allSubclasses.swift */; };
+		134C1D352E8261610032AF65 /* allExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 134C1D342E82615B0032AF65 /* allExtension.swift */; };
+		134C1D372E8261BD0032AF65 /* stageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 134C1D362E8261BD0032AF65 /* stageManager.swift */; };
+		134C1D392E8263CC0032AF65 /* log.swift in Sources */ = {isa = PBXBuildFile; fileRef = 134C1D382E8263CC0032AF65 /* log.swift */; };
+		134D1DEC2E41E52300328E84 /* leftMenuVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 134D1DEB2E41E52300328E84 /* leftMenuVc.swift */; };
+		134D1DEE2E42144F00328E84 /* accordionBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 134D1DED2E42144F00328E84 /* accordionBox.swift */; };
+		134D1DF02E42378B00328E84 /* habitsVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 134D1DEF2E42378B00328E84 /* habitsVc.swift */; };
+		13501E292E7C2B020055ACB1 /* browsersTabAuditVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13501E282E7C2B020055ACB1 /* browsersTabAuditVc.swift */; };
+		13501E2B2E7C391F0055ACB1 /* postBrowsersTabAuditVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13501E2A2E7C391F0055ACB1 /* postBrowsersTabAuditVc.swift */; };
+		135348042F0D450E00D0D2A6 /* confirmBlockingScheduleCreationVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 135348032F0D450E00D0D2A6 /* confirmBlockingScheduleCreationVc.swift */; };
+		135A8A512E7E8E6A00A96A8E /* customBlockingSchedulesVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 135A8A502E7E8E6A00A96A8E /* customBlockingSchedulesVc.swift */; };
+		135A8A532E7E91E300A96A8E /* tblCellCustomBlockingSchedules.swift in Sources */ = {isa = PBXBuildFile; fileRef = 135A8A522E7E91E300A96A8E /* tblCellCustomBlockingSchedules.swift */; };
+		135A8A552E7EB27A00A96A8E /* customBlockingScheduleData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 135A8A542E7EB27A00A96A8E /* customBlockingScheduleData.swift */; };
+		135A8A572E7EC8FD00A96A8E /* blockingScheduleEditorVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 135A8A562E7EC8FD00A96A8E /* blockingScheduleEditorVC.swift */; };
+		135A8A592E7ECE4000A96A8E /* toggleTitledBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 135A8A582E7ECE4000A96A8E /* toggleTitledBox.swift */; };
+		135ABA6D2E5345A300D133F2 /* focusModeStateVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 135ABA6C2E5345A300D133F2 /* focusModeStateVc.swift */; };
 		135ABEFD2E013254007ED73A /* breaksData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 135ABEFC2E01324D007ED73A /* breaksData.swift */; };
-		135CBDAF2D967009003BA438 /* routine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 135CBDAE2D967005003BA438 /* routine.swift */; };
+		135AD5312ED18D7D00870175 /* focusHabitTimerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 135AD5302ED18D7D00870175 /* focusHabitTimerManager.swift */; };
+		135CBDAF2D967009003BA438 /* routineData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 135CBDAE2D967005003BA438 /* routineData.swift */; };
+		1361D61F2E446DAD00601AB1 /* habitsStateVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1361D61E2E446DAD00601AB1 /* habitsStateVc.swift */; };
 		1361E6E52DB76A1900E6DE3F /* unverifiedEmailVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1361E6E42DB76A1900E6DE3F /* unverifiedEmailVc.swift */; };
 		1364364B2DE1FA7400B90724 /* splashVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1364364A2DE1FA7400B90724 /* splashVc.swift */; };
+		136C5E192F08F52C006DBACA /* procrastinatingTabBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 136C5E182F08F52C006DBACA /* procrastinatingTabBox.swift */; };
 		137A3D802E0A69CB008E3CF0 /* popUpFocusGoalConfirmationVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 137A3D7F2E0A69CB008E3CF0 /* popUpFocusGoalConfirmationVc.swift */; };
 		137A3D822E0A6C97008E3CF0 /* popUpAddNewFocusGoalVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 137A3D812E0A6C97008E3CF0 /* popUpAddNewFocusGoalVc.swift */; };
 		137A3D842E0ABBC5008E3CF0 /* popUpSaveThisTaskForLaterVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 137A3D832E0ABBC5008E3CF0 /* popUpSaveThisTaskForLaterVc.swift */; };
 		137CD6032D9D4ACC00A8385A /* Sparkle.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 137CD6022D9D4ACC00A8385A /* Sparkle.framework */; };
 		137CD6042D9D4ACC00A8385A /* Sparkle.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 137CD6022D9D4ACC00A8385A /* Sparkle.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		138F0D8E2EBDE5180046CDB0 /* itemActionBarVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 138F0D8D2EBDE5180046CDB0 /* itemActionBarVc.swift */; };
+		138FE1262E5701B0002A2C4C /* floatingTopBarVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 138FE1252E5701B0002A2C4C /* floatingTopBarVc.swift */; };
 		13A45A2E2DB3DB12009ECF81 /* superGentleQuitVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13A45A2D2DB3DB12009ECF81 /* superGentleQuitVc.swift */; };
 		13AAC9DC2D97CC76000AD619 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8F7DCC022796E8D200EE3282 /* WebKit.framework */; };
 		13AAC9E12D9819F7000AD619 /* customRoutineTimeVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13AAC9E02D9819F7000AD619 /* customRoutineTimeVc.swift */; };
+		13B74D582E87A71E00556C79 /* collectionCellScreenshots.xib in Resources */ = {isa = PBXBuildFile; fileRef = 13B74D572E87A71E00556C79 /* collectionCellScreenshots.xib */; };
+		13B74D592E87A71E00556C79 /* collectionCellScreenshots.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13B74D562E87A71E00556C79 /* collectionCellScreenshots.swift */; };
+		13B74D5B2E87AA6B00556C79 /* dropView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13B74D5A2E87AA6B00556C79 /* dropView.swift */; };
+		13B74D5D2E8801DA00556C79 /* abortingCustomScheduleBlockingVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13B74D5C2E8801DA00556C79 /* abortingCustomScheduleBlockingVc.swift */; };
+		13CBE7652F07E9660025544E /* enableAIBlockingVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13CBE7642F07E9660025544E /* enableAIBlockingVc.swift */; };
+		13D8220D2E508F1B0055E580 /* customRoutineStateVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13D8220C2E508F1B0055E580 /* customRoutineStateVc.swift */; };
+		13D90E802ECC514000FC39FD /* createUnlockRequestVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13D90E7F2ECC514000FC39FD /* createUnlockRequestVc.swift */; };
+		13E0386F2ED075420097E91C /* focusTimerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13E0386E2ED075420097E91C /* focusTimerManager.swift */; };
+		13EC67962F0801B200E3649B /* createBlockingProfileVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13EC67952F0801B200E3649B /* createBlockingProfileVc.swift */; };
 		13EC6E022DB26FBE0031303D /* nudgeStartAnotherFocusSessionVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13EC6E012DB26FBE0031303D /* nudgeStartAnotherFocusSessionVc.swift */; };
+		13F46AFD2ECB4EAD00BA2F44 /* accountabilityBuddyVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13F46AFC2ECB4EAD00BA2F44 /* accountabilityBuddyVc.swift */; };
+		13F46AFF2ECB4F4300BA2F44 /* noBuddyFoundVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13F46AFE2ECB4F4300BA2F44 /* noBuddyFoundVc.swift */; };
+		13F46B032ECB568200BA2F44 /* buddyData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13F46B022ECB567B00BA2F44 /* buddyData.swift */; };
+		13F8278E2ED5ED75006C0BEF /* Swifter in Frameworks */ = {isa = PBXBuildFile; productRef = 13F8278D2ED5ED75006C0BEF /* Swifter */; };
 		13FB9DFE2DE9D9DF00C11AA2 /* researchVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13FB9DFD2DE9D9DF00C11AA2 /* researchVc.swift */; };
 		274C9A91289A8C910066F883 /* accountVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 274C9A90289A8C900066F883 /* accountVc.swift */; };
 		274C9A93289BF8D70066F883 /* SettingsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 274C9A92289BF8D40066F883 /* SettingsManager.swift */; };
@@ -371,22 +411,62 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		1303D9AC2E4B085900FD5BEC /* breaksStateVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = breaksStateVc.swift; sourceTree = "<group>"; };
+		130CE9A72E40C131004A6F04 /* mainWindowListBox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = mainWindowListBox.swift; sourceTree = "<group>"; };
+		130FFDBA2E4C663800694795 /* blankController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = blankController.swift; sourceTree = "<group>"; };
+		130FFDBC2E4C666300694795 /* logsUploadingVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = logsUploadingVc.swift; sourceTree = "<group>"; };
 		13188D712DEED55800E67A44 /* server */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; path = server; sourceTree = "<group>"; };
 		13188D732DEEE30300E67A44 /* flaskServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = flaskServer.swift; sourceTree = "<group>"; };
 		13188D752DEF162D00E67A44 /* serverIntel */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; path = serverIntel; sourceTree = "<group>"; };
+		13219A8B2ED5977000699D2E /* tabLimiterData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = tabLimiterData.swift; sourceTree = "<group>"; };
+		13219A8E2ED5CD8B00699D2E /* firefoxHttpServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = firefoxHttpServer.swift; sourceTree = "<group>"; };
 		1338D3782E1E35B8002A1BFC /* loginWc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = loginWc.swift; sourceTree = "<group>"; };
 		13395D402DB900380094F019 /* focusModeData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = focusModeData.swift; sourceTree = "<group>"; };
+		134C1D322E8260C10032AF65 /* allSubclasses.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = allSubclasses.swift; sourceTree = "<group>"; };
+		134C1D342E82615B0032AF65 /* allExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = allExtension.swift; sourceTree = "<group>"; };
+		134C1D362E8261BD0032AF65 /* stageManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = stageManager.swift; sourceTree = "<group>"; };
+		134C1D382E8263CC0032AF65 /* log.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = log.swift; sourceTree = "<group>"; };
+		134D1DEB2E41E52300328E84 /* leftMenuVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = leftMenuVc.swift; sourceTree = "<group>"; };
+		134D1DED2E42144F00328E84 /* accordionBox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = accordionBox.swift; sourceTree = "<group>"; };
+		134D1DEF2E42378B00328E84 /* habitsVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = habitsVc.swift; sourceTree = "<group>"; };
+		13501E282E7C2B020055ACB1 /* browsersTabAuditVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = browsersTabAuditVc.swift; sourceTree = "<group>"; };
+		13501E2A2E7C391F0055ACB1 /* postBrowsersTabAuditVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = postBrowsersTabAuditVc.swift; sourceTree = "<group>"; };
+		135348032F0D450E00D0D2A6 /* confirmBlockingScheduleCreationVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = confirmBlockingScheduleCreationVc.swift; sourceTree = "<group>"; };
+		135A8A502E7E8E6A00A96A8E /* customBlockingSchedulesVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = customBlockingSchedulesVc.swift; sourceTree = "<group>"; };
+		135A8A522E7E91E300A96A8E /* tblCellCustomBlockingSchedules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = tblCellCustomBlockingSchedules.swift; sourceTree = "<group>"; };
+		135A8A542E7EB27A00A96A8E /* customBlockingScheduleData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = customBlockingScheduleData.swift; sourceTree = "<group>"; };
+		135A8A562E7EC8FD00A96A8E /* blockingScheduleEditorVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = blockingScheduleEditorVC.swift; sourceTree = "<group>"; };
+		135A8A582E7ECE4000A96A8E /* toggleTitledBox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = toggleTitledBox.swift; sourceTree = "<group>"; };
+		135ABA6C2E5345A300D133F2 /* focusModeStateVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = focusModeStateVc.swift; sourceTree = "<group>"; };
 		135ABEFC2E01324D007ED73A /* breaksData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = breaksData.swift; sourceTree = "<group>"; };
-		135CBDAE2D967005003BA438 /* routine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = routine.swift; sourceTree = "<group>"; };
+		135AD5302ED18D7D00870175 /* focusHabitTimerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = focusHabitTimerManager.swift; sourceTree = "<group>"; };
+		135CBDAE2D967005003BA438 /* routineData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = routineData.swift; sourceTree = "<group>"; };
+		1361D61E2E446DAD00601AB1 /* habitsStateVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = habitsStateVc.swift; sourceTree = "<group>"; };
 		1361E6E42DB76A1900E6DE3F /* unverifiedEmailVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = unverifiedEmailVc.swift; sourceTree = "<group>"; };
 		1364364A2DE1FA7400B90724 /* splashVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = splashVc.swift; sourceTree = "<group>"; };
+		136C5E182F08F52C006DBACA /* procrastinatingTabBox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = procrastinatingTabBox.swift; sourceTree = "<group>"; };
 		137A3D7F2E0A69CB008E3CF0 /* popUpFocusGoalConfirmationVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = popUpFocusGoalConfirmationVc.swift; sourceTree = "<group>"; };
 		137A3D812E0A6C97008E3CF0 /* popUpAddNewFocusGoalVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = popUpAddNewFocusGoalVc.swift; sourceTree = "<group>"; };
 		137A3D832E0ABBC5008E3CF0 /* popUpSaveThisTaskForLaterVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = popUpSaveThisTaskForLaterVc.swift; sourceTree = "<group>"; };
 		137CD6022D9D4ACC00A8385A /* Sparkle.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Sparkle.framework; sourceTree = "<group>"; };
+		138F0D8D2EBDE5180046CDB0 /* itemActionBarVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = itemActionBarVc.swift; sourceTree = "<group>"; };
+		138FE1252E5701B0002A2C4C /* floatingTopBarVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = floatingTopBarVc.swift; sourceTree = "<group>"; };
 		13A45A2D2DB3DB12009ECF81 /* superGentleQuitVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = superGentleQuitVc.swift; sourceTree = "<group>"; };
 		13AAC9E02D9819F7000AD619 /* customRoutineTimeVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = customRoutineTimeVc.swift; sourceTree = "<group>"; };
+		13B74D562E87A71E00556C79 /* collectionCellScreenshots.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = collectionCellScreenshots.swift; sourceTree = "<group>"; };
+		13B74D572E87A71E00556C79 /* collectionCellScreenshots.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = collectionCellScreenshots.xib; sourceTree = "<group>"; };
+		13B74D5A2E87AA6B00556C79 /* dropView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = dropView.swift; sourceTree = "<group>"; };
+		13B74D5C2E8801DA00556C79 /* abortingCustomScheduleBlockingVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = abortingCustomScheduleBlockingVc.swift; sourceTree = "<group>"; };
+		13CBE7642F07E9660025544E /* enableAIBlockingVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = enableAIBlockingVc.swift; sourceTree = "<group>"; };
+		13D8220C2E508F1B0055E580 /* customRoutineStateVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = customRoutineStateVc.swift; sourceTree = "<group>"; };
+		13D90E7F2ECC514000FC39FD /* createUnlockRequestVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = createUnlockRequestVc.swift; sourceTree = "<group>"; };
+		13DF413B2E4E1BF3001184FF /* FocusBear.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = FocusBear.xcodeproj; sourceTree = "<group>"; };
+		13E0386E2ED075420097E91C /* focusTimerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = focusTimerManager.swift; sourceTree = "<group>"; };
+		13EC67952F0801B200E3649B /* createBlockingProfileVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = createBlockingProfileVc.swift; sourceTree = "<group>"; };
 		13EC6E012DB26FBE0031303D /* nudgeStartAnotherFocusSessionVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = nudgeStartAnotherFocusSessionVc.swift; sourceTree = "<group>"; };
+		13F46AFC2ECB4EAD00BA2F44 /* accountabilityBuddyVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = accountabilityBuddyVc.swift; sourceTree = "<group>"; };
+		13F46AFE2ECB4F4300BA2F44 /* noBuddyFoundVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = noBuddyFoundVc.swift; sourceTree = "<group>"; };
+		13F46B022ECB567B00BA2F44 /* buddyData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = buddyData.swift; sourceTree = "<group>"; };
 		13FB9DFD2DE9D9DF00C11AA2 /* researchVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = researchVc.swift; sourceTree = "<group>"; };
 		274C9A90289A8C900066F883 /* accountVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = accountVc.swift; sourceTree = "<group>"; };
 		274C9A92289BF8D40066F883 /* SettingsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsManager.swift; sourceTree = "<group>"; };
@@ -731,6 +811,7 @@
 				8FB66A322B3FD7FF00951B09 /* AVKit.framework in Frameworks */,
 				274E0F472890291D000234A3 /* Auth0 in Frameworks */,
 				137CD6032D9D4ACC00A8385A /* Sparkle.framework in Frameworks */,
+				13F8278E2ED5ED75006C0BEF /* Swifter in Frameworks */,
 				13AAC9DC2D97CC76000AD619 /* WebKit.framework in Frameworks */,
 				BEED37F6C1373AFCB67BCF04 /* Pods_Focus_Bear.framework in Frameworks */,
 			);
@@ -746,22 +827,82 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		13219A8D2ED597CF00699D2E /* tabLimiter */ = {
+			isa = PBXGroup;
+			children = (
+				13219A8B2ED5977000699D2E /* tabLimiterData.swift */,
+				8F5BCE5829FFCB96009799CD /* alertMaxTabLimitVc.swift */,
+			);
+			path = tabLimiter;
+			sourceTree = "<group>";
+		};
+		132EFCA82E5437FE00189428 /* leftMenu */ = {
+			isa = PBXGroup;
+			children = (
+				134D1DEB2E41E52300328E84 /* leftMenuVc.swift */,
+				130CE9A72E40C131004A6F04 /* mainWindowListBox.swift */,
+				134D1DED2E42144F00328E84 /* accordionBox.swift */,
+			);
+			path = leftMenu;
+			sourceTree = "<group>";
+		};
+		135A8A4F2E7E8DD700A96A8E /* Custom Blocking Schedules */ = {
+			isa = PBXGroup;
+			children = (
+				135A8A502E7E8E6A00A96A8E /* customBlockingSchedulesVc.swift */,
+				135A8A522E7E91E300A96A8E /* tblCellCustomBlockingSchedules.swift */,
+				135A8A562E7EC8FD00A96A8E /* blockingScheduleEditorVC.swift */,
+				135A8A582E7ECE4000A96A8E /* toggleTitledBox.swift */,
+			);
+			path = "Custom Blocking Schedules";
+			sourceTree = "<group>";
+		};
 		135CBDAD2D966CCC003BA438 /* Routine */ = {
 			isa = PBXGroup;
 			children = (
-				8F6138B528B7698300A45B1A /* visualizeInstructionsVc.swift */,
+				134D1DEF2E42378B00328E84 /* habitsVc.swift */,
 				8FAC6C9C27806DCB008A4180 /* firstViewController.swift */,
 				8F99C8D52A13AE1D00FD2403 /* editHabitRoutineVc.swift */,
-				8FAC6CA027808125008A4180 /* timerViewcontroller.swift */,
+				8F6138B528B7698300A45B1A /* visualizeInstructionsVc.swift */,
 				8F050A0827842B8400F3CE17 /* thirdVc.swift */,
+				8FAC6CA027808125008A4180 /* timerViewcontroller.swift */,
 				13AAC9E02D9819F7000AD619 /* customRoutineTimeVc.swift */,
 				8FAC6C9E2780748D008A4180 /* tblCellHabits.swift */,
 				8F94EF882836094400355E66 /* rememberNextHabitVc.swift */,
 				8F1E3F752B2ADC24005CE096 /* startAnotherHabitVc.swift */,
 				8F779DF92B80DD600011E1BE /* chooseHabitsVC.swift */,
-				135CBDAE2D967005003BA438 /* routine.swift */,
+				1361D61E2E446DAD00601AB1 /* habitsStateVc.swift */,
+				13D8220C2E508F1B0055E580 /* customRoutineStateVc.swift */,
+				130FFDBA2E4C663800694795 /* blankController.swift */,
+				135CBDAE2D967005003BA438 /* routineData.swift */,
+				138F0D8D2EBDE5180046CDB0 /* itemActionBarVc.swift */,
 			);
 			path = Routine;
+			sourceTree = "<group>";
+		};
+		136C5E172F08F516006DBACA /* Procrastinating */ = {
+			isa = PBXGroup;
+			children = (
+				8FF889712CA3DEBC00BD69E8 /* askProcrastinatingVc.swift */,
+				136C5E182F08F52C006DBACA /* procrastinatingTabBox.swift */,
+			);
+			path = Procrastinating;
+			sourceTree = "<group>";
+		};
+		13EE47102E50420C00F952FE /* Products */ = {
+			isa = PBXGroup;
+			name = Products;
+			sourceTree = "<group>";
+		};
+		13F46B012ECB565C00BA2F44 /* AccountabilityBuddy */ = {
+			isa = PBXGroup;
+			children = (
+				13F46AFC2ECB4EAD00BA2F44 /* accountabilityBuddyVc.swift */,
+				13F46AFE2ECB4F4300BA2F44 /* noBuddyFoundVc.swift */,
+				13D90E7F2ECC514000FC39FD /* createUnlockRequestVc.swift */,
+				13F46B022ECB567B00BA2F44 /* buddyData.swift */,
+			);
+			path = AccountabilityBuddy;
 			sourceTree = "<group>";
 		};
 		274E0F4A28902E17000234A3 /* Auth0 */ = {
@@ -836,6 +977,7 @@
 			children = (
 				8F2F1624291BAC0600F8EFCD /* skipHabitVc.swift */,
 				8F19BCA4293F360D00F70544 /* whySkipHabitVc.swift */,
+				8FBBD19C2968185100C4C8B7 /* Postpone */,
 			);
 			path = SkipHabit;
 			sourceTree = "<group>";
@@ -865,6 +1007,7 @@
 				8F3A28982C22A46F002AD2E3 /* deactivateBreaksVc.swift */,
 				8F0419432C353B9C00481ACD /* breakSurveyVc.swift */,
 				135ABEFC2E01324D007ED73A /* breaksData.swift */,
+				1303D9AC2E4B085900FD5BEC /* breaksStateVc.swift */,
 			);
 			path = Breaks;
 			sourceTree = "<group>";
@@ -1026,6 +1169,8 @@
 				8F92E88527BF8B340085AF8C /* addFocusTypeVc.swift */,
 				8FA7D36829F3FB94007AD2C1 /* AISettingVc.swift */,
 				8F212FE729DAFF02006620DF /* helpVc.swift */,
+				13B74D562E87A71E00556C79 /* collectionCellScreenshots.swift */,
+				13B74D572E87A71E00556C79 /* collectionCellScreenshots.xib */,
 				8FB970AA2B71F7A500A38F17 /* chooseCommunityVc.swift */,
 				8F8C3FD32A8CB297005CAF96 /* settingListItemVc.swift */,
 				8F8C3FD92A8CDB8F005CAF96 /* settingToggleItemVc.swift */,
@@ -1066,6 +1211,11 @@
 				13395D402DB900380094F019 /* focusModeData.swift */,
 				8F5937502D49FA2800442292 /* nudgeFocusAlignmentScoreDippingWc.swift */,
 				8F59374E2D49F6CD00442292 /* nudgeFocusAlignmentScoreDippingVc.swift */,
+				135ABA6C2E5345A300D133F2 /* focusModeStateVc.swift */,
+				135A8A542E7EB27A00A96A8E /* customBlockingScheduleData.swift */,
+				13B74D5C2E8801DA00556C79 /* abortingCustomScheduleBlockingVc.swift */,
+				13E0386E2ED075420097E91C /* focusTimerManager.swift */,
+				135AD5302ED18D7D00870175 /* focusHabitTimerManager.swift */,
 				8FBBD19D2968283200C4C8B7 /* toolBox */,
 			);
 			path = "Focus mode";
@@ -1158,6 +1308,7 @@
 				8FAC6C8427805F6D008A4180 /* Products */,
 				8F69D1E02796A34B00DB3EFD /* Frameworks */,
 				C39F497A522955388D68AA8B /* Pods */,
+				13DF413B2E4E1BF3001184FF /* FocusBear.xcodeproj */,
 			);
 			sourceTree = "<group>";
 		};
@@ -1180,8 +1331,13 @@
 				8FAC6C962780612B008A4180 /* mainWindowController.swift */,
 				8FAC6C8827805F6E008A4180 /* ViewController.swift */,
 				1364364A2DE1FA7400B90724 /* splashVc.swift */,
+				138FE1252E5701B0002A2C4C /* floatingTopBarVc.swift */,
+				8FB50EF727BE12CB00A7175B /* menuView */,
+				132EFCA82E5437FE00189428 /* leftMenu */,
 				135CBDAD2D966CCC003BA438 /* Routine */,
 				8F3A28972C22A429002AD2E3 /* Breaks */,
+				13219A8D2ED597CF00699D2E /* tabLimiter */,
+				8F93BE5E27CCA168004FA0BE /* Focus mode */,
 				8F9BB8B82787307D00BB25D4 /* shutOffTimeVc.swift */,
 				8FFBCE8928549EB1004B77D9 /* PopoverViewController.swift */,
 				8FFBCE8828549EB1004B77D9 /* PopoverViewController.xib */,
@@ -1192,10 +1348,10 @@
 				8F70D64428E1C6A600895B3F /* customMessageVc.swift */,
 				8FA2A8952846262000675DFF /* smallCountDownVc.swift */,
 				8FABDDD227DA2ED600F6A58C /* enterPasswordVc.swift */,
+				13F46B012ECB565C00BA2F44 /* AccountabilityBuddy */,
 				8F4088092977DD3600A70130 /* takeActivityNotesVc.swift */,
 				8F378E252976701A00A43C06 /* shareFeedbackVc.swift */,
 				8FEFC59529FA894800ADF1E6 /* popupAppointmentTimeVc.swift */,
-				8F5BCE5829FFCB96009799CD /* alertMaxTabLimitVc.swift */,
 				8F70A53C2A67E383001E1DFE /* loaderVc.swift */,
 				8F3D784A2A6A6C1B00CE936B /* setIntentionBlockedUrlsVc.swift */,
 				8F3D784C2A6A70A200CE936B /* intentionBlockedUrlsVc.swift */,
@@ -1210,9 +1366,7 @@
 				8F8073832B3D5C51004935B5 /* Firefox Permissions */,
 				8F0994B82A0CB9D000F4C65E /* activity Ongoing */,
 				8F0994B52A0CB35500F4C65E /* log Quantity */,
-				8FB50EF727BE12CB00A7175B /* menuView */,
 				8F09ACBD29703BF900A0F1D0 /* Tracks */,
-				8FBBD19C2968185100C4C8B7 /* Postpone */,
 				8F19BCA6293F361600F70544 /* SkipHabit */,
 				8FF9351929110D8C004511C0 /* Onboarding */,
 				8FDA858F279A8E82008AD6AA /* AVMonitor.h */,
@@ -1225,27 +1379,32 @@
 				8F8C52D527BBD53F00E11A38 /* Preferences */,
 				8FAD22D127CA03D500CDC866 /* Pomodoro mode */,
 				8FAD22D827CA514700CDC866 /* commonWindowController.swift */,
-				8F93BE5E27CCA168004FA0BE /* Focus mode */,
 				8F9829522806AB7D00B17414 /* Quit Process */,
 				8FA7D36529F3E633007AD2C1 /* LaunchAgents */,
 				8F050A0B278467B000F3CE17 /* FocusBear-Bridging-Header.h */,
 				8F8869CB2AE38CBB0089E109 /* searchableComboBox.swift */,
 				8FAC6C982780671E008A4180 /* globalFile.swift */,
+				134C1D382E8263CC0032AF65 /* log.swift */,
+				134C1D322E8260C10032AF65 /* allSubclasses.swift */,
+				134C1D342E82615B0032AF65 /* allExtension.swift */,
+				134C1D362E8261BD0032AF65 /* stageManager.swift */,
 				13188D732DEEE30300E67A44 /* flaskServer.swift */,
+				13219A8E2ED5CD8B00699D2E /* firefoxHttpServer.swift */,
 				8F0419452C353D4100481ACD /* getViewControllersObject.swift */,
 				8F3567202D3A71B200F62403 /* showHideWindows.swift */,
 				8F250F532CC63E460058DC85 /* allBrowsers.swift */,
 				8F0419472C353DCA00481ACD /* allUserdefaults.swift */,
 				8FCD13AF2C2BD8AA005EEA63 /* Buttons.swift */,
 				274C9A92289BF8D40066F883 /* SettingsManager.swift */,
-				274E671528951DDC0030163F /* AllApi.swift */,
 				8F1456BB2D40B32600130B21 /* TabMatrics.swift */,
+				274E671528951DDC0030163F /* AllApi.swift */,
 				8F344A032D882532003D82A4 /* allCsvFilesData.swift */,
 				8F7DA75D2B1B412000B2E1CC /* pusherEvents.swift */,
 				8FD86E1B2A54303A004F6761 /* unusedCode.swift */,
 				8FD1054627EF1A3B00B7728E /* urlValidation.swift */,
 				8FD86E1D2A54376C004F6761 /* todoNotes.swift */,
 				8F1E189F28EAF3FF00367413 /* macInfo.swift */,
+				13B74D5A2E87AA6B00556C79 /* dropView.swift */,
 				8F41BA4429B321C300066B79 /* Settings.storyboard */,
 				8FAC6C8C27805F70008A4180 /* Main.storyboard */,
 				8FC31BFB28C72AA600E2DD4C /* NewStoryboard.storyboard */,
@@ -1359,12 +1518,14 @@
 				8F8C3FDE2A8CF5FF005CAF96 /* microBreaksSettingsVc.swift */,
 				8F889EA02C215062000CA3B6 /* toDoListSettingsVc.swift */,
 				8FA0FEE12C9EDEB00071D8CC /* blockingScheduleVc.swift */,
+				135A8A4F2E7E8DD700A96A8E /* Custom Blocking Schedules */,
 				8F0A18552A8E4B5000AFA623 /* strictness */,
 				8F8C3FDD2A8CF5B0005CAF96 /* advanced */,
 				274C9A90289A8C900066F883 /* accountVc.swift */,
 				8F892E5F2B3E91550030414C /* permissionsVc.swift */,
 				8F28E8312822B15A00310F4E /* uninstallVc.swift */,
 				8F08FD6F28B60DD60016C741 /* uninstallingConfirmVc.swift */,
+				130FFDBC2E4C666300694795 /* logsUploadingVc.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -1391,6 +1552,8 @@
 				8FE5587D2CEC703300C44387 /* bellVc.swift */,
 				8FE5587F2CEC7E1F00C44387 /* bellSuggestionsVc.swift */,
 				1361E6E42DB76A1900E6DE3F /* unverifiedEmailVc.swift */,
+				13501E282E7C2B020055ACB1 /* browsersTabAuditVc.swift */,
+				13501E2A2E7C391F0055ACB1 /* postBrowsersTabAuditVc.swift */,
 			);
 			path = Popups;
 			sourceTree = "<group>";
@@ -1410,9 +1573,11 @@
 				8F270CB129436D4400E91015 /* tblCellOnboardingBlockedUrls.swift */,
 				8F6866052D15488800DC2C21 /* Onboarding Permissions */,
 				8F657D7828DF094E008A4E6E /* welcomeOnboardingVc.swift */,
+				13CBE7642F07E9660025544E /* enableAIBlockingVc.swift */,
 				8F1DC4A32BC1364500A51383 /* askOccupationVc.swift */,
 				8F1DC4A52BC13A1900A51383 /* collectionViewItemOccupation.swift */,
 				8F1DC4A62BC13A1900A51383 /* collectionViewItemOccupation.xib */,
+				13EC67952F0801B200E3649B /* createBlockingProfileVc.swift */,
 				8F37FD9A2C6F83A600440939 /* achieveWithFocusBearVc.swift */,
 				8F0B63B5290FEC8700DE7EF8 /* askAppWorkVc.swift */,
 				8F067D662B96F17B00CF135D /* additionalGoalsVc.swift */,
@@ -1436,7 +1601,8 @@
 				8FA7D36629F3E686007AD2C1 /* aiPermissionVc.swift */,
 				8F7210752A18CCBA00D53EF3 /* chooseFrictionLevelVc.swift */,
 				8F4B9D6B296C4B62003A3ABD /* howHeardVc.swift */,
-				8FF889712CA3DEBC00BD69E8 /* askProcrastinatingVc.swift */,
+				135348032F0D450E00D0D2A6 /* confirmBlockingScheduleCreationVc.swift */,
+				136C5E172F08F516006DBACA /* Procrastinating */,
 				8F7210792A1900FC00D53EF3 /* onboardingSetPasswordVc.swift */,
 				8FBB72162A56E107004F52EA /* menuTourVc.swift */,
 				8FF1CD9A2A57D7340092AB9B /* menuTourPopoverVc.swift */,
@@ -1494,6 +1660,7 @@
 			name = "Focus Bear";
 			packageProductDependencies = (
 				274E0F462890291D000234A3 /* Auth0 */,
+				13F8278D2ED5ED75006C0BEF /* Swifter */,
 			);
 			productName = EarnYourScreentime;
 			productReference = 8FAC6C8327805F6D008A4180 /* Focus Bear.app */;
@@ -1552,9 +1719,16 @@
 			mainGroup = 8FAC6C7A27805F6D008A4180;
 			packageReferences = (
 				274E0F452890291D000234A3 /* XCRemoteSwiftPackageReference "Auth0" */,
+				13F8278C2ED5EC8B006C0BEF /* XCRemoteSwiftPackageReference "swifter" */,
 			);
 			productRefGroup = 8FAC6C8427805F6D008A4180 /* Products */;
 			projectDirPath = "";
+			projectReferences = (
+				{
+					ProductGroup = 13EE47102E50420C00F952FE /* Products */;
+					ProjectRef = 13DF413B2E4E1BF3001184FF /* FocusBear.xcodeproj */;
+				},
+			);
 			projectRoot = "";
 			targets = (
 				8FAC6C8227805F6D008A4180 /* Focus Bear */,
@@ -1629,6 +1803,7 @@
 				8F3F894428BA00A0003E5EA4 /* Sparkle.strings in Resources */,
 				8F753FB028E81CBA006DF594 /* grunz__success-low.wav in Resources */,
 				8FE5E5B32C468EB000420717 /* Nags.storyboard in Resources */,
+				13B74D582E87A71E00556C79 /* collectionCellScreenshots.xib in Resources */,
 				8F461B2028C0EDD60082B0A2 /* Start Focus Button_1.wav in Resources */,
 				8F59952529714197009D49CD /* audio Wave.gif in Resources */,
 				8FBB72152A568965004F52EA /* Poppins-Regular.ttf in Resources */,
@@ -1706,6 +1881,7 @@
 			files = (
 				8F8C3FD82A8CD865005CAF96 /* meetingDetactionVc.swift in Sources */,
 				8F2E993A2B31CC52001AF655 /* addOnsVc.swift in Sources */,
+				134D1DEC2E41E52300328E84 /* leftMenuVc.swift in Sources */,
 				8FA2A8962846262100675DFF /* smallCountDownVc.swift in Sources */,
 				8F6C10F427BD37F00013972F /* menuViewController.swift in Sources */,
 				8FBB72172A56E107004F52EA /* menuTourVc.swift in Sources */,
@@ -1728,6 +1904,8 @@
 				8FA62B1228603B390075D545 /* TextFieldNumberFormatter.swift in Sources */,
 				8F371A6029E3D0300043D7B3 /* onboardingControllingBrowserVc.swift in Sources */,
 				8F5BCE5929FFCB96009799CD /* alertMaxTabLimitVc.swift in Sources */,
+				135A8A592E7ECE4000A96A8E /* toggleTitledBox.swift in Sources */,
+				13E0386F2ED075420097E91C /* focusTimerManager.swift in Sources */,
 				8F8073872B3D93A4004935B5 /* firefoxPermissionVideoVc.swift in Sources */,
 				8FB74AE82861B18A00992C1F /* pomodoroPreferencesAdvancedVc.swift in Sources */,
 				8F1456BC2D40B32600130B21 /* TabMatrics.swift in Sources */,
@@ -1736,6 +1914,7 @@
 				8F7210762A18CCBA00D53EF3 /* chooseFrictionLevelVc.swift in Sources */,
 				8F3DD01029F3B47800E23715 /* AHLaunchCtl.m in Sources */,
 				8F0419482C353DCA00481ACD /* allUserdefaults.swift in Sources */,
+				13EC67962F0801B200E3649B /* createBlockingProfileVc.swift in Sources */,
 				8FFBCE8B28549EB1004B77D9 /* PopoverViewController.swift in Sources */,
 				8FF9351B29113EAB004511C0 /* tblCellToolBox.swift in Sources */,
 				8F3DD00D29F3B41C00E23715 /* AHLaunchJob.m in Sources */,
@@ -1743,36 +1922,51 @@
 				8FB50EFD27BE6AD100A7175B /* focusPreferencesVc.swift in Sources */,
 				8FD86E1E2A54376C004F6761 /* todoNotes.swift in Sources */,
 				8F861DBA2CB8F36A000BCF72 /* webViewLoadFailedVc.swift in Sources */,
+				134D1DEE2E42144F00328E84 /* accordionBox.swift in Sources */,
 				8FF1CD9B2A57D7340092AB9B /* menuTourPopoverVc.swift in Sources */,
 				8F378E262976701A00A43C06 /* shareFeedbackVc.swift in Sources */,
 				8FAB113B2B42ABDA006D1261 /* longTermGoalsVc.swift in Sources */,
 				8F37FD9B2C6F83A600440939 /* achieveWithFocusBearVc.swift in Sources */,
+				130CE9A82E40C131004A6F04 /* mainWindowListBox.swift in Sources */,
 				8F0A18572A8E4B9A00AFA623 /* focusBearModeVc.swift in Sources */,
 				8FAD22DB27CA526200CDC866 /* startingFocusModeVc.swift in Sources */,
 				8F8C3FD42A8CB297005CAF96 /* settingListItemVc.swift in Sources */,
+				1361D61F2E446DAD00601AB1 /* habitsStateVc.swift in Sources */,
 				8FD86E1C2A54303A004F6761 /* unusedCode.swift in Sources */,
 				8F779DFA2B80DD600011E1BE /* chooseHabitsVC.swift in Sources */,
 				8F4BD8C527883FBE00ABAEF5 /* KeyCombo.swift in Sources */,
+				135348042F0D450E00D0D2A6 /* confirmBlockingScheduleCreationVc.swift in Sources */,
 				8F371A6629E424F10043D7B3 /* onboardingPrivacyTipVc.swift in Sources */,
 				8F752CC72B49123F00B21914 /* pomodoroTooltipVc.swift in Sources */,
 				8F8C3FDF2A8CF5FF005CAF96 /* microBreaksSettingsVc.swift in Sources */,
 				8F0734692C5228F1002FACE8 /* onboardingHabitExplainVc.swift in Sources */,
+				13F46B032ECB568200BA2F44 /* buddyData.swift in Sources */,
+				130FFDBB2E4C663800694795 /* blankController.swift in Sources */,
 				8F6465CC2A612974009A3341 /* relaxModeVc.swift in Sources */,
+				13219A8C2ED5977000699D2E /* tabLimiterData.swift in Sources */,
 				8FDCA2C32CAACE9B0014623D /* initialQuitFeedbackVc.swift in Sources */,
 				8F7819DA28E5891D00FB1F63 /* customLoginVc.swift in Sources */,
 				8F371A6429E3F96C0043D7B3 /* askBuildHabitsVc.swift in Sources */,
 				8F70A56629E699170071A0BE /* askOnboardingVideoVc.swift in Sources */,
+				135AD5312ED18D7D00870175 /* focusHabitTimerManager.swift in Sources */,
+				134C1D332E8260D00032AF65 /* allSubclasses.swift in Sources */,
+				13D90E802ECC514000FC39FD /* createUnlockRequestVc.swift in Sources */,
 				8F0994B72A0CB5F400F4C65E /* tblCellLogQuantity.swift in Sources */,
 				1338D3792E1E35B8002A1BFC /* loginWc.swift in Sources */,
 				8F0E69DC290279500042FAF4 /* customTooltipVc.swift in Sources */,
 				8F9E5A112B69298C004814D1 /* onboardingProgressVc.swift in Sources */,
+				13219A8F2ED5CD8B00699D2E /* firefoxHttpServer.swift in Sources */,
+				1303D9AD2E4B085900FD5BEC /* breaksStateVc.swift in Sources */,
 				8F5B03282CD8F62900F261D3 /* onboardingBlockingScheduleVc.swift in Sources */,
 				8FAC6C9F2780748D008A4180 /* tblCellHabits.swift in Sources */,
 				8FABDDD327DA2ED600F6A58C /* enterPasswordVc.swift in Sources */,
 				8FABDDD527DA367100F6A58C /* passwordVc.swift in Sources */,
 				8F9A5A9627885A6D009121E3 /* abortingCountDownVc.swift in Sources */,
+				138FE1262E5701B0002A2C4C /* floatingTopBarVc.swift in Sources */,
 				137A3D822E0A6C97008E3CF0 /* popUpAddNewFocusGoalVc.swift in Sources */,
+				135A8A532E7E91E300A96A8E /* tblCellCustomBlockingSchedules.swift in Sources */,
 				8F889EA12C215062000CA3B6 /* toDoListSettingsVc.swift in Sources */,
+				138F0D8E2EBDE5180046CDB0 /* itemActionBarVc.swift in Sources */,
 				8F1DC4A72BC13A1900A51383 /* collectionViewItemOccupation.swift in Sources */,
 				8F9A5A98278863B9009121E3 /* abortingConfirmVc.swift in Sources */,
 				13FB9DFE2DE9D9DF00C11AA2 /* researchVc.swift in Sources */,
@@ -1794,6 +1988,7 @@
 				8F5596B42805B49E0044DF28 /* quitCountDownVc.swift in Sources */,
 				8FA7D36929F3FB94007AD2C1 /* AISettingVc.swift in Sources */,
 				13395D412DB900440094F019 /* focusModeData.swift in Sources */,
+				135ABA6D2E5345A300D133F2 /* focusModeStateVc.swift in Sources */,
 				8F94E5932976909900BA7E8C /* trialExpiredNag.swift in Sources */,
 				8FAC6CA127808125008A4180 /* timerViewcontroller.swift in Sources */,
 				8F59374F2D49F6CD00442292 /* nudgeFocusAlignmentScoreDippingVc.swift in Sources */,
@@ -1802,12 +1997,15 @@
 				274E0F4928902CF1000234A3 /* User.swift in Sources */,
 				8F212FE829DAFF02006620DF /* helpVc.swift in Sources */,
 				13188D742DEEE30300E67A44 /* flaskServer.swift in Sources */,
+				134D1DF02E42378B00328E84 /* habitsVc.swift in Sources */,
+				130FFDBD2E4C666300694795 /* logsUploadingVc.swift in Sources */,
 				8FB222172BA865F400F3DA68 /* blankLayerWc.swift in Sources */,
 				8F889EA52C219CE1000CA3B6 /* takeBreaksInfoVc.swift in Sources */,
 				8F1E18A028EAF3FF00367413 /* macInfo.swift in Sources */,
 				8FCD13B02C2BD8AA005EEA63 /* Buttons.swift in Sources */,
 				8F8C52D927BBD53F00E11A38 /* generalVc.swift in Sources */,
 				8F8869CE2AE3AD4E0089E109 /* todoListToolVc.swift in Sources */,
+				13B74D592E87A71E00556C79 /* collectionCellScreenshots.swift in Sources */,
 				8FAC6C9D27806DCB008A4180 /* firstViewController.swift in Sources */,
 				8F64AF8328FE712800E18A2D /* onboardingCardsVc.swift in Sources */,
 				274C9A93289BF8D70066F883 /* SettingsManager.swift in Sources */,
@@ -1818,11 +2016,15 @@
 				8F3DD01329F3B4B400E23715 /* AHLaunchJobSchedule.m in Sources */,
 				8F067D672B96F17B00CF135D /* additionalGoalsVc.swift in Sources */,
 				8F66E7F6298547940074546C /* setUpVc.swift in Sources */,
+				13F46AFF2ECB4F4300BA2F44 /* noBuddyFoundVc.swift in Sources */,
 				8F0E69DA290267DE0042FAF4 /* customNotificationVc.swift in Sources */,
+				13B74D5B2E87AA6B00556C79 /* dropView.swift in Sources */,
 				8FA62B1428605B150075D545 /* preloadFocusModesVc.swift in Sources */,
 				13A45A2E2DB3DB12009ECF81 /* superGentleQuitVc.swift in Sources */,
 				8F344A042D882532003D82A4 /* allCsvFilesData.swift in Sources */,
+				13B74D5D2E8801DA00556C79 /* abortingCustomScheduleBlockingVc.swift in Sources */,
 				8F492726291A60F600BE10CA /* askQuitVc.swift in Sources */,
+				13F46AFD2ECB4EAD00BA2F44 /* accountabilityBuddyVc.swift in Sources */,
 				8F3DD01A29F3B4ED00E23715 /* AHServiceManagement.m in Sources */,
 				8F1FBAE629F2A46000AA1979 /* naturalBreaksDetectionVc.swift in Sources */,
 				8FD1054727EF1A3B00B7728E /* urlValidation.swift in Sources */,
@@ -1833,6 +2035,7 @@
 				8F8C3FD62A8CB79A005CAF96 /* advancedVc.swift in Sources */,
 				8FA0FEE22C9EDEB00071D8CC /* blockingScheduleVc.swift in Sources */,
 				8F8E9AA62AAB021900F7CD32 /* surveyVc.swift in Sources */,
+				134C1D392E8263CC0032AF65 /* log.swift in Sources */,
 				8FA7D36729F3E686007AD2C1 /* aiPermissionVc.swift in Sources */,
 				8F4BD8C427883FBE00ABAEF5 /* NSEventModifierFlags+HotKey.swift in Sources */,
 				8FD0F7F62D437BC100ED3496 /* tblCellFocsedCompletedItem.swift in Sources */,
@@ -1841,6 +2044,7 @@
 				8FEFC59629FA894800ADF1E6 /* popupAppointmentTimeVc.swift in Sources */,
 				8F7C2BB72B4FBEA10003824A /* changeFrictionLevelVc.swift in Sources */,
 				8FE049D027B77F5F00ABD521 /* logQuantityVc.swift in Sources */,
+				13501E2B2E7C391F0055ACB1 /* postBrowsersTabAuditVc.swift in Sources */,
 				8F8C3FDA2A8CDB8F005CAF96 /* settingToggleItemVc.swift in Sources */,
 				8FD91CAA2A0E1A51001606FE /* popUpCheckListVc.swift in Sources */,
 				135ABEFD2E013254007ED73A /* breaksData.swift in Sources */,
@@ -1853,6 +2057,7 @@
 				8F4BD8C827883FBE00ABAEF5 /* HotKey.swift in Sources */,
 				8F050A0927842B8400F3CE17 /* thirdVc.swift in Sources */,
 				8FAD22D327CA044800CDC866 /* pomodoroWindowController.swift in Sources */,
+				13CBE7652F07E9660025544E /* enableAIBlockingVc.swift in Sources */,
 				8F4C902F2A03C1D8009CE61F /* completionRequirementsVc.swift in Sources */,
 				8F6DD76C2A8A5B4C00096F08 /* settingsContainerVc.swift in Sources */,
 				8FB50EF927BE148B00A7175B /* tblCellFocus.swift in Sources */,
@@ -1862,6 +2067,7 @@
 				8F64E48D2A419A5500B11643 /* focusCompletedForActivityVc.swift in Sources */,
 				8FAC6C8927805F6E008A4180 /* ViewController.swift in Sources */,
 				8F4BD8C627883FBE00ABAEF5 /* Key.swift in Sources */,
+				135A8A552E7EB27A00A96A8E /* customBlockingScheduleData.swift in Sources */,
 				137A3D842E0ABBC5008E3CF0 /* popUpSaveThisTaskForLaterVc.swift in Sources */,
 				137A3D802E0A69CB008E3CF0 /* popUpFocusGoalConfirmationVc.swift in Sources */,
 				8F0A18522A8E291200AFA623 /* strictnessVc.swift in Sources */,
@@ -1896,6 +2102,7 @@
 				8F6DAD842B32A84400CB210B /* lateNoMorePopUpVc.swift in Sources */,
 				8FC31BFE28C757B400E2DD4C /* brainDumpVc.swift in Sources */,
 				8F1DC4A22BC1155800A51383 /* tabStrictnessContainerVc.swift in Sources */,
+				134C1D352E8261610032AF65 /* allExtension.swift in Sources */,
 				8F0A18502A8DFA7400AFA623 /* pomodoroSettingsVc.swift in Sources */,
 				8F1E3F762B2ADC24005CE096 /* startAnotherHabitVc.swift in Sources */,
 				8F6A2FB62983F8E400B97F38 /* focusStartHelpImgVc.swift in Sources */,
@@ -1912,6 +2119,7 @@
 				8F7819DC28E5CBE100FB1F63 /* loginHelpVc.swift in Sources */,
 				8F8844C32B5E52E400A73946 /* confirmEveningRoutineTimeVc.swift in Sources */,
 				8FDA8591279A8E83008AD6AA /* AVMonitor.m in Sources */,
+				134C1D372E8261BD0032AF65 /* stageManager.swift in Sources */,
 				8FBD6DFE2B6A760000CC9430 /* lateMorningHabitPopupVc.swift in Sources */,
 				8F7C2BB92B50026A0003824A /* frictionSetPasswordVc.swift in Sources */,
 				8F70D64528E1C6A600895B3F /* customMessageVc.swift in Sources */,
@@ -1924,23 +2132,28 @@
 				8F8073822B3D3F2E004935B5 /* CollectionViewItem.swift in Sources */,
 				8FF8E0FF291686EF002938B8 /* popUpBlockConfirmVc.swift in Sources */,
 				8F99C8D62A13AE1D00FD2403 /* editHabitRoutineVc.swift in Sources */,
+				135A8A512E7E8E6A00A96A8E /* customBlockingSchedulesVc.swift in Sources */,
 				8F0419462C353D4100481ACD /* getViewControllersObject.swift in Sources */,
 				8F3D784D2A6A70A300CE936B /* intentionBlockedUrlsVc.swift in Sources */,
 				8FE5587E2CEC703300C44387 /* bellVc.swift in Sources */,
 				8FB970AB2B71F7A500A38F17 /* chooseCommunityVc.swift in Sources */,
+				13501E292E7C2B020055ACB1 /* browsersTabAuditVc.swift in Sources */,
 				8F45E5012B7C995F0063088E /* savedSitesForLaterVc.swift in Sources */,
 				8F0A18542A8E412B00AFA623 /* frictionVc.swift in Sources */,
 				8FAB75C528476BC10051CE24 /* focusPreferencesAdvancedVc.swift in Sources */,
 				8FF889722CA3DEBC00BD69E8 /* askProcrastinatingVc.swift in Sources */,
 				8F51EFB727E0741700EFF0A8 /* blockedUrlsVc.swift in Sources */,
 				8F07346B2C526AA1002FACE8 /* informationPopoverVc.swift in Sources */,
-				135CBDAF2D967009003BA438 /* routine.swift in Sources */,
+				135CBDAF2D967009003BA438 /* routineData.swift in Sources */,
 				8F4E34BD29BC52FB00E161F4 /* focusEndWarningVc.swift in Sources */,
 				8F09ACBF29703C1B00A0F1D0 /* allTracksVc.swift in Sources */,
+				136C5E192F08F52C006DBACA /* procrastinatingTabBox.swift in Sources */,
 				8FAC6C972780612B008A4180 /* mainWindowController.swift in Sources */,
 				8FE5E5BA2C46A5C800420717 /* alertLimitedUsageVc.swift in Sources */,
+				13D8220D2E508F1B0055E580 /* customRoutineStateVc.swift in Sources */,
 				8F09ACC129703C5B00A0F1D0 /* tblCellTracks.swift in Sources */,
 				8F23A1DC2CAE508C0042CE2A /* explainingPermissionsVc.swift in Sources */,
+				135A8A572E7EC8FD00A96A8E /* blockingScheduleEditorVC.swift in Sources */,
 				8F36D517297AB32800A7E4AD /* addFocusTempUrlsOrAppsVc.swift in Sources */,
 				8F19BCA5293F360D00F70544 /* whySkipHabitVc.swift in Sources */,
 				8F8C3FE12A8CFFEE005CAF96 /* uIVc.swift in Sources */,
@@ -2052,7 +2265,8 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = FBHelper/Info.plist;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2022-2025 Focus Bear Pty Ltd, All rights reserved";
+				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2022-2026 Focus Bear Pty Ltd, All rights reserved";
 				INFOPLIST_KEY_NSMainStoryboardFile = Main;
 				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -2089,7 +2303,8 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = FBHelper/Info.plist;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2022-2025 Focus Bear Pty Ltd, All rights reserved";
+				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2022-2026 Focus Bear Pty Ltd, All rights reserved";
 				INFOPLIST_KEY_NSMainStoryboardFile = Main;
 				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -2236,7 +2451,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application: Focus Bear Pty Ltd (TCUD568B3U)";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 391;
+				CURRENT_PROJECT_VERSION = 448;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = TCUD568B3U;
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = TCUD568B3U;
@@ -2246,12 +2461,13 @@
 					"$(PROJECT_DIR)",
 				);
 				INFOPLIST_FILE = FocusBear/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
-				MARKETING_VERSION = 1.26;
+				MARKETING_VERSION = 2.28;
 				PRODUCT_BUNDLE_IDENTIFIER = com.App.EarnYourScreentime;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = FocusBearMainAppProfile;
@@ -2273,7 +2489,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application: Focus Bear Pty Ltd (TCUD568B3U)";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 391;
+				CURRENT_PROJECT_VERSION = 448;
 				DEVELOPMENT_TEAM = TCUD568B3U;
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = TCUD568B3U;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -2283,12 +2499,13 @@
 					"$(PROJECT_DIR)",
 				);
 				INFOPLIST_FILE = FocusBear/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
-				MARKETING_VERSION = 1.26;
+				MARKETING_VERSION = 2.28;
 				PRODUCT_BUNDLE_IDENTIFIER = com.App.EarnYourScreentime;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = FocusBearMainAppProfile;
@@ -2382,6 +2599,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		13F8278C2ED5EC8B006C0BEF /* XCRemoteSwiftPackageReference "swifter" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/httpswift/swifter.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.5.0;
+			};
+		};
 		274E0F452890291D000234A3 /* XCRemoteSwiftPackageReference "Auth0" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/auth0/Auth0.swift";
@@ -2393,6 +2618,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		13F8278D2ED5ED75006C0BEF /* Swifter */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 13F8278C2ED5EC8B006C0BEF /* XCRemoteSwiftPackageReference "swifter" */;
+			productName = Swifter;
+		};
 		274E0F462890291D000234A3 /* Auth0 */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 274E0F452890291D000234A3 /* XCRemoteSwiftPackageReference "Auth0" */;

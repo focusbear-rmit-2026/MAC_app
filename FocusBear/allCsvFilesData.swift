@@ -13,9 +13,12 @@ var offlineActivitiesCsvURL:URL!
 var focusAlignmentScoreCsvURL:URL!
 var focusAIDecisionsCsvURL:URL!
 var focusProductivityStatsCsvURL:URL!
+var browsersTabAuditCsvURL:URL!
+
 
 //stast CSV new entry
 func addEntryInofflineActivitiesCsv(activity_id:String, duration_logged:String, device_id:String, activity_sequence_id:String, start_time:String, finish_time:String, skipped_did_complete:String, choice_id:String, quantity_logged:String, skipped_did_not_complete:String, note_logged:String ){
+    addLog(text: "addEntryInofflineActivitiesCsv activity_id:- \(activity_id)")
     do {
         var csv = try String(contentsOf: offlineActivitiesCsvURL, encoding: .utf8)
         
@@ -323,3 +326,38 @@ extension String {
         return outputString
     }
 }
+
+
+//stast CSV new entry
+func saveBrowsersTabAuditCsv(arrTabs:[(String,String)]){
+    if browsersTabAuditCsvURL != nil{
+        do{
+            try FileManager.default.removeItem(at: browsersTabAuditCsvURL!)
+        }catch{
+            
+        }
+    }
+    var csv = "URL,Title,Notes\n"
+    for tabEntry in arrTabs{
+        let csvString = "\"\(tabEntry.1)\",\"\(tabEntry.0)\",\"\"\n"
+        csv = csv.appending(csvString)
+    }
+    
+    do {
+        try csv.write(to: browsersTabAuditCsvURL, atomically: true, encoding: .utf8)
+    } catch {
+        print("error creating file")
+    }
+}
+/*
+ 
+ if !fileManager.fileExists(atPath: focusAIDecisionsCsvURL.path){
+     let csvString = "Timestamp,Url,Domain,TabTitle,AIRelevanceScore,AdditionalUserJustification,currentTaskName,focusIntention,AIReason\n"
+
+     do {
+         try csvString.write(to: focusAIDecisionsCsvURL, atomically: true, encoding: .utf8)
+     } catch {
+         print("error creating file")
+     }
+ }browsersTabAuditCsvURL = applicationSupportURL!.appendingPathComponent("browsersTabAudit.csv")
+ */

@@ -19,20 +19,15 @@ class addFocusTypeVc: NSViewController, NSTextFieldDelegate  {
     @IBOutlet weak var btnAdd: NSButton!
     @IBOutlet weak var btnCancel: NSButton!
     @IBOutlet weak var lblError: NSTextField!
-    
-//    var isAdding = true
+
     var buttonAddText = "Add"
     var titleAddFocusType = "Add Focus Type"
-//    var titleEditFocusType = "Edit Focus Type"
-    
-    
-    
+
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
         btnCancel.title = "Cancel"
-        
-        
+
         lblTitleName.stringValue = "Title:"
         lblTitleColor.stringValue = "Color:"
         
@@ -57,9 +52,7 @@ class addFocusTypeVc: NSViewController, NSTextFieldDelegate  {
             }
             
             buttonAddText = focusPreferencesInfo.value(forKey: "buttonAddText") as? String ?? buttonAddText
-//            buttonSaveText = focusPreferencesInfo.value(forKey: "buttonSaveText") as? String ?? buttonSaveText
             titleAddFocusType = focusPreferencesInfo.value(forKey: "titleAddFocusType") as? String ?? titleAddFocusType
-//            titleEditFocusType = focusPreferencesInfo.value(forKey: "titleEditFocusType") as? String ?? titleEditFocusType
         }
         
         btnInfoColorBoxTrackingArea = NSTrackingArea.init(rect: bntColorBoxInfo.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
@@ -108,23 +101,17 @@ class addFocusTypeVc: NSViewController, NSTextFieldDelegate  {
         lblError.isHidden = true
         btnAdd.keyEquivalent = "\r"
         btnAdd.isEnabled = false
-        
-//        if isAdding{
-            textFieldFocusType.stringValue = ""
-            btnAdd.title = buttonAddText
-            lblViewTitle.stringValue = titleAddFocusType
-//        }
-        
-//        else{
-//            textFieldFocusType.stringValue = arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow]["name"] as? String ?? ""
-//            if let colorString = arrFocusType[focusPreferencesVcObj!.tblViewFocusType.selectedRow]["color"] as? String{
-//                let color = HexToColor(hexString: colorString)
-//                colorWell.color = color
-//            }
-//            btnAdd.title = buttonSaveText
-//            lblViewTitle.stringValue = titleEditFocusType
-//
-//        }
+
+        textFieldFocusType.stringValue = ""
+        btnAdd.title = buttonAddText
+        lblViewTitle.stringValue = titleAddFocusType
+
+        if leftMenuVcObj?.boxBlocks.isSelected ?? false{
+            lblViewTitle.stringValue = "Add Block List"
+            if let focusPreferencesInfo = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
+                lblViewTitle.stringValue = focusPreferencesInfo.value(forKey: "buttonAddBlockListText") as? String ?? lblViewTitle.stringValue
+            }
+        }
     }
     
     var cp = NSColorPanel.shared
@@ -144,18 +131,13 @@ class addFocusTypeVc: NSViewController, NSTextFieldDelegate  {
     }
     
     @IBAction func colorWellClicked(_ sender: Any) {
-//        if !isAdding{
-//            if !textFieldFocusType.stringValue.isEmpty{
-//                btnAdd.isEnabled = true
-//            }
-//        }
+
     }
     @IBAction func btnCancelClicked(_ sender: Any) {
         self.dismiss(self)
     }
     
     @IBAction func btnAddClicked(_ sender: Any) {
-        //        if isAdding{
         let newName = textFieldFocusType.stringValue.lowercased
         for dic in arrFocusType{
             if let name = dic["name"] as? String{
@@ -182,22 +164,13 @@ class addFocusTypeVc: NSViewController, NSTextFieldDelegate  {
                 }
             }
         }
-        
-        
-        
+
         focusPreferencesVcObj?.checkState()
-        
-        
+
         lblError.isHidden = true
         self.dismiss(self)
         UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
         resetPomodoroVcFocusListIfNeeded()
-        
-        if startingFocusWindowControllerObj?.window?.isVisible ?? false{
-            if startingFocusWindowControllerObj?.contentViewController == startingFocusModeVcObj{
-                startingFocusWindowControllerObj?.close()
-            }
-        }
         
         allApiObject.addFocusMode(focusType: dic)
         allApiObject.capturePosthog(event: "add-new-focus-mode", metadata: [:])
@@ -209,7 +182,6 @@ class addFocusTypeVc: NSViewController, NSTextFieldDelegate  {
         if txtfield == textFieldFocusType{
             lblError.isHidden = true
             if textFieldFocusType.stringValue.count > 250{
-//                textFieldFocusType.currentEditor()?.deleteBackward(nil)//
                 let index = textFieldFocusType.stringValue.index(textFieldFocusType.stringValue.startIndex, offsetBy: 250)
                 textFieldFocusType.stringValue = String(textFieldFocusType.stringValue.prefix(upTo: index))
             }

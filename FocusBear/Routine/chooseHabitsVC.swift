@@ -10,6 +10,7 @@ import Cocoa
 
 class chooseHabitsVC: NSViewController {
 
+    @IBOutlet weak var heightBox: NSLayoutConstraint!
     @IBOutlet weak var searchField: NSSearchField!
     @IBOutlet weak var checkBoxSelectAll: NSButton!
     @IBOutlet weak var lblSubTitle: NSTextField!
@@ -136,8 +137,8 @@ class chooseHabitsVC: NSViewController {
             }
         }else if currentState == ._CUSTOM_ROUTINE_{
             btnCancel.isHidden = true
-            for i in 0..<arrAllCustomRoutine[currentRoutineIndex].arrAllHabits.count{
-                let id = arrAllCustomRoutine[currentRoutineIndex].arrAllHabits[i].id ?? ""
+            for i in 0..<arrAllCustomRoutine[currentRoutineIndex].arrAllPreFilterHabits.count{
+                let id = arrAllCustomRoutine[currentRoutineIndex].arrAllPreFilterHabits[i].id ?? ""
                 let isActivityCompleted = isActivityCompleted(id: id, habits: arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits)
                 if !isActivityCompleted{
                     var isAdded = false
@@ -148,9 +149,9 @@ class chooseHabitsVC: NSViewController {
                         }
                     }
                     if isAdded{
-                        arrFilteredHabits.append(habitInfo(habit: arrAllCustomRoutine[currentRoutineIndex].arrAllHabits[i], state: true))
+                        arrFilteredHabits.append(habitInfo(habit: arrAllCustomRoutine[currentRoutineIndex].arrAllPreFilterHabits[i], state: true))
                     }else{
-                        arrFilteredHabits.append(habitInfo(habit: arrAllCustomRoutine[currentRoutineIndex].arrAllHabits[i], state: false))
+                        arrFilteredHabits.append(habitInfo(habit: arrAllCustomRoutine[currentRoutineIndex].arrAllPreFilterHabits[i], state: false))
                     }
                 }
             }
@@ -158,6 +159,12 @@ class chooseHabitsVC: NSViewController {
 
         tblView.reloadData()
         checkTotalDuration()
+        
+        if (mainWindowControllerObj?.window?.frame.height ?? 700) < 600{
+            heightBox.constant = (mainWindowControllerObj?.window?.frame.height ?? 700) - 60
+        }else{
+            heightBox.constant = 569
+        }
     }
     
     func checkButtonState(){
@@ -349,7 +356,7 @@ class chooseHabitsVC: NSViewController {
         mainWindowControllerObj?.window?.close()
         hideBlankWindowInSecondaryMonitor()
         currentState = ._NOTHING_
-        mainViewControllerObj?.setActivityTimer()
+        getHabitsVcObject().setActivityTimer()
         addLog(text: "morning habit skipped by user")
     }
     

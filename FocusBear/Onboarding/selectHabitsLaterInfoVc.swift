@@ -18,10 +18,10 @@ class selectHabitsLaterInfoVc: NSViewController {
         // Do view setup here.
         lblTitle.stringValue = appName
         
-        lblSubTitle.stringValue = "If you ever decide you want to activate habits in the future, you can open Preferences from the menu bar and click Edit Habits"
+        lblSubTitle.stringValue = "If you ever decide to activate habits in the future, you can click Edit Habits in the left menu of the main window."
         btnContinue.title = "Continue"
         if let selectHabitsLaterInfo = configjson.value(forKey: "selectHabitsLaterInfo") as? NSDictionary{
-            lblSubTitle.stringValue = selectHabitsLaterInfo.value(forKey: "title") as? String ?? lblSubTitle.stringValue
+            lblSubTitle.stringValue = selectHabitsLaterInfo.value(forKey: "titleNew") as? String ?? lblSubTitle.stringValue
             btnContinue.title = selectHabitsLaterInfo.value(forKey: "buttonContinueText") as? String ?? btnContinue.title
         }
             
@@ -32,12 +32,14 @@ class selectHabitsLaterInfoVc: NSViewController {
         showOnboardingProgress(view: self.view, progress: 10)
         showOnboardingBellIcon(view: self.view, screen: "set-habits-later-info-screen")
     }
+    
     override func viewWillDisappear() {
         hideOnboardingProgress(view: self.view)
         hideOnboardingBellIcon(view: self.view)
     }
+    
     @IBAction func btnContinueClicked(_ sender: Any) {
-        mainViewControllerObj!.abortOboardingWorkTime()
+        getHabitsVcObject().abortOboardingWorkTime()
     }
     
 }

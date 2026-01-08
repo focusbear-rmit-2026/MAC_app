@@ -35,7 +35,7 @@ class welcomeOnboardingVc: NSViewController {// not in use
 //        lblDescriptionSecond.stringValue = "You won't be able to use other apps during the onboarding. Do you have time now or shall we do it a bit later?"
         btnLater.title = "A bit later please"
         btnLetsDoIt.title = "Let's do it"
-        lblAllRights.stringValue = "© 2022-2025 Focus Bear All Rights Reserved."
+        lblAllRights.stringValue = "© 2022-2026 Focus Bear All Rights Reserved."
         
 //        lblGotTwoMinutes.stringValue = "Got two minutes to try out our habit guide feature?"
         
@@ -140,7 +140,7 @@ class welcomeOnboardingVc: NSViewController {// not in use
                 //
                 
                 self.view.window?.close()
-                appdelegate!.showAskOccupation()//showOnbardingHabit()
+                appdelegate!.showEnableAIBlockingVc()//showOnbardingHabit()
             }else {
                 addLog(text: "Alert:- btnLaterClicked.")
                 self.presentAsSheet(getOnboardingPostponeVcObject())

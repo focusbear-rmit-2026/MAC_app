@@ -47,7 +47,9 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
     var isSnapLeft = true
     var isSnappingGoing = false
     var isMouseEntering = false
-
+    var isViewVisible = false
+    var taskToLoadForFirstTime:String?
+    var arrAllTasks = [NSDictionary]()
     override func viewDidLoad() {
         super.viewDidLoad()
         self.webView.navigationDelegate = self
@@ -83,11 +85,11 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
         
         trackingAreaPlayFocusMusic = NSTrackingArea.init(rect: self.btnStartFocusMusic.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
         self.btnStartFocusMusic.addTrackingArea(trackingAreaPlayFocusMusic!)
-        
     }
     
     override func viewWillAppear() {
-        if isAnyAllowedFocusModeActivityRunning{
+        isViewVisible = true
+        if isAnyAllowedFocusModeActivityRunning || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
             btnEndFocusSession.isHidden = true
         }else{
             btnEndFocusSession.isHidden = false
@@ -96,13 +98,14 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
     
     
     override func viewWillDisappear() {
+        isViewVisible = false
         if boxClose.isHidden{
             boxClose.isHidden = false
             boxMinimize.isHidden = false
             boxExtraOptions.isHidden = false
             self.view.window!.setFrame(lastWindowFrame, display: true)
             boxBackToOriginalPosition.isHidden = true
-            taskPlayerWcObj?.window?.styleMask.insert(.resizable)
+//            taskPlayerWcObj?.window?.styleMask.insert(.resizable)
             imgViewAppIcon.isHidden = true
         }
     }
@@ -117,7 +120,7 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
     
     override func viewDidAppear() {
         updateTrackingAreaIfNeeded()
-        if isCuddlyModeEnabled() && SettingsManagerObject.isAiCheckUrlEnabled && !isBlockSuperDistractingFocusModeOn(){
+        if isCuddlyModeEnabled() && SettingsManagerObject.isAIBlockingEnabled() && !isBlockSuperDistractingFocusModeOn(){
             lblFocusAlignmentScore.isHidden = false
         }else{
             lblFocusAlignmentScore.isHidden = true
@@ -190,13 +193,13 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
             if let taskPlayerVcInfo = configjson.value(forKey: "taskPlayerVcInfo") as? NSDictionary{
                 playFocusMusicTooltip = taskPlayerVcInfo.value(forKey: "playFocusMusicTooltip") as? String ?? playFocusMusicTooltip
             }
-            showTooltip(sender: btnStartFocusMusic, msg: playFocusMusicTooltip, preferredEdge: .minX, maxWidthVal: 250)
+            showTooltip(sender: btnStartFocusMusic, msg: playFocusMusicTooltip, preferredEdge: .minX, maxWidthVal: 250, autoCloseOnMouseExit: true)
         }else if event.trackingArea == trackingAreaStopFocusMode{
             var endFocusSessionTooltip = "End focus session"
             if let taskPlayerVcInfo = configjson.value(forKey: "taskPlayerVcInfo") as? NSDictionary{
                 endFocusSessionTooltip = taskPlayerVcInfo.value(forKey: "endFocusSessionTooltip") as? String ?? endFocusSessionTooltip
             }
-            showTooltip(sender: btnEndFocusSession, msg: endFocusSessionTooltip, preferredEdge: .minX, maxWidthVal: 250)
+            showTooltip(sender: btnEndFocusSession, msg: endFocusSessionTooltip, preferredEdge: .minX, maxWidthVal: 250, autoCloseOnMouseExit: true)
         }
     }
     
@@ -250,6 +253,7 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
             closePopoverTooltipIfVisible()
         }
     }
+    
     var isAnimationGoing = false
     func animateWindowFrameChange(window: NSWindow, newFrame: NSRect, duration: TimeInterval) {
         if isAnimationGoing{
@@ -326,14 +330,8 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
             sleep(1)
             DispatchQueue.main.async {
                 self.removeWebViewLoadFailedView(webView: webView)
-                if taskPlayerWcObj != nil{
-                    if taskPlayerWcObj?.window?.isVisible ?? false{
-                        self.setAccessTokenToWebView()
-                    }else{
-                        if !SettingsManagerObject.showToDoPlayerAutomaticallyEnabled{
-                            self.setAccessTokenToWebView()
-                        }
-                    }
+                if self.isViewVisible{// do not remoev this check otherwise this setAccessTokenToWebView will call 2 times 
+                    self.setAccessTokenToWebView()
                 }
             }
         }
@@ -429,14 +427,8 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
         self.view.window?.zoom(nil)
     }
     func setAccessTokenToWebView(){
-        var theme = "LIGHT"
-        if preferencesWindowControllerObj != nil{
-            if preferencesWindowControllerObj!.window!.hasDarkAppearance{
-                theme = "DARK"
-            }else {
-                theme = "LIGHT"
-            }
-        }
+        let theme = getWindowTheme()
+        
         let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex].webFontName
         var brainDump = UserDefaults.standard.object(forKey: kUserdefaultsFocusModeNotes) as? String ?? ""
         brainDump = brainDump.addingPercentEncoding(withAllowedCharacters: CharacterSet.urlQueryAllowed) ?? brainDump
@@ -446,25 +438,76 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
             UserDefaults.standard.set(true, forKey: kUserDefaultsOpenTodoPlayerFirstTime)
             isFirstTime = true
         }
-
-        var stringJson = "{\"access_token\": \"\(appdelegate!.credential?.accessToken ?? "")\",\"platform\":\"mac\",\"lang\":\"\(currentLanguageCode)\",\"font\":\"\(selectedFont)\",\"theme\":\"\(theme)\",\"total_duration\":\"\(totalDuration)\",\"intention\":\"\(intention)\",\"brain_dump\":\"\(brainDump)\",\"isOnboarding\":\(isFirstTime)}"
+        var finish_time_string = ""
+        if let endFocusModeTime = endFocusModeTime{
+            finish_time_string = getStringFromDateInUtc(date: endFocusModeTime, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+        }
+        
+        
+        
+        var stringJson = "{\"access_token\": \"\(appdelegate!.credential?.accessToken ?? "")\",\"platform\":\"mac\",\"lang\":\"\(currentLanguageCode)\",\"font\":\"\(selectedFont)\",\"theme\":\"\(theme)\",\"total_duration\":\"\(totalDuration)\",\"intention\":\"\(intention)\",\"brain_dump\":\"\(brainDump)\",\"isOnboarding\":\(isFirstTime),\"focusmode_endtime\":\"\(finish_time_string)\"}"
         
         if !focusModeTaskStringIsEmpty(){
-            stringJson = "{\"access_token\": \"\(appdelegate!.credential?.accessToken ?? "")\",\"platform\":\"mac\",\"lang\":\"\(currentLanguageCode)\",\"tasks\":\(focusModeTaskString),\"font\":\"\(selectedFont)\",\"theme\":\"\(theme)\",\"total_duration\":\"\(totalDuration)\",\"intention\":\"\(intention)\",\"brain_dump\":\"\(brainDump)\",\"isOnboarding\":\(isFirstTime)}"
+            stringJson = "{\"access_token\": \"\(appdelegate!.credential?.accessToken ?? "")\",\"platform\":\"mac\",\"lang\":\"\(currentLanguageCode)\",\"tasks\":\(focusModeTaskString),\"font\":\"\(selectedFont)\",\"theme\":\"\(theme)\",\"total_duration\":\"\(totalDuration)\",\"intention\":\"\(intention)\",\"brain_dump\":\"\(brainDump)\",\"isOnboarding\":\(isFirstTime),\"focusmode_endtime\":\"\(finish_time_string)\"}"
         }
         let settingsFunc = String(format: "let waitForAppLoaded = setInterval(() => { if (window.loadMetaDataForToDoPlayer) { loadMetaDataForToDoPlayer(%@); clearInterval(waitForAppLoaded); } }, 100);", stringJson)
         
-        webView.evaluateJavaScript(settingsFunc,completionHandler: { (html: Any?, error: Error?) in
+        webView.evaluateJavaScript(settingsFunc,completionHandler: { [self] (html: Any?, error: Error?) in
             print(error as Any)
             print("****error")
             print(html as Any)
+            if let error = error {
+                addLog(text: "loadIntentionForToDoPlayer:- JavaScript evaluation error: \(error)")// v 2.28.441
+            }else if let taskToLoadForFirstTime = self.taskToLoadForFirstTime{
+                var taskAlreadyAdded = false
+                var taskAddedIndex = 0
+                for i in 0..<arrAllTasks.count{
+                    let task = arrAllTasks[i]
+                    let taskName = task.value(forKey: "title") as? String ?? ""
+                    if taskName.lowercased() == taskToLoadForFirstTime.lowercased(){
+                        taskAlreadyAdded = true
+                        taskAddedIndex = i
+                        break;
+                    }
+                }
+                
+                
+                self.taskToLoadForFirstTime = nil
+                if !taskAlreadyAdded{
+                    let today = Date()
+                    let nextWeek = Calendar.current.date(byAdding: .day, value: 7, to: today) ?? Date()
+                    let dateString = getStringFromDateInUtc(date: nextWeek, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+                    allApiObject.addTask(title: taskToLoadForFirstTime, details: "", eisenhowerQuadrant: 1, dueDate: dateString, objective: "", tags: [], completionHandler: { result,json in
+                        if result{
+                            addLog(text: "\(taskToLoadForFirstTime) task created successfully.")
+                            DispatchQueue.main.async { [self] in
+                                if let json = json{
+                                    if let id = json.value(forKey: "id") as? String{
+                                        addAndPlayTaskInCurrentList(taskName: taskToLoadForFirstTime, id: id, duration: 600, shouldCompleteCurrentTask: false)
+                                    }
+                                }
+                            }
+                        }
+                        
+                    })
+                }else{
+                    let task = arrAllTasks[taskAddedIndex]
+                    if let id = task.value(forKey: "id") as? String, let taskTitle = task.value(forKey: "title") as? String{
+                        taskPlayerVcObj?.addAndPlayTaskInCurrentList(taskName: taskTitle, id: id, duration: 600, shouldCompleteCurrentTask: false)
+                    }
+                }
+            }
         })
     }
     
     func getToDosFromPlayer(){
+        addLog(text: "func:- getToDosFromPlayer")
         let script = "getToDosFromPlayer();"
         webView?.evaluateJavaScript(script,completionHandler: { (html: Any?, error: Error?) in
             print(html)
+            if let error = error {
+                addLog(text: "loadIntentionForToDoPlayer:- JavaScript evaluation error: \(error)")// v 2.28.441
+            }
         })
     }
     
@@ -478,6 +521,9 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
         webView?.evaluateJavaScript(script,completionHandler: { (html: Any?, error: Error?) in
             print(error)
             print(html)
+            if let error = error {
+                addLog(text: "loadIntentionForToDoPlayer:- JavaScript evaluation error: \(error)")// v 2.28.441
+            }
         })
     }
     
@@ -488,42 +534,15 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
         webView?.evaluateJavaScript(script,completionHandler: { (html: Any?, error: Error?) in
             print(error)
             print(html)
+            if let error = error {
+                addLog(text: "loadIntentionForToDoPlayer:- JavaScript evaluation error: \(error)")// v 2.28.441
+            }
         })
     }
     
-//    func addTaskInCurrentList(taskName:String){
-//        
-//        var brainDump = UserDefaults.standard.object(forKey: kUserdefaultsFocusModeNotes) as? String ?? ""
-//        brainDump = brainDump.addingPercentEncoding(withAllowedCharacters: CharacterSet.urlQueryAllowed) ?? brainDump
-//        var intention = whatToAchieveInFocusBlock
-//        self.intention = intention.addingPercentEncoding(withAllowedCharacters: CharacterSet.urlQueryAllowed) ?? intention
-//        
-//        var theme = "LIGHT"
-//        if preferencesWindowControllerObj != nil{
-//            if preferencesWindowControllerObj!.window!.hasDarkAppearance{
-//                theme = "DARK"
-//            }else {
-//                theme = "LIGHT"
-//            }
-//        }
-//        var newTask = [taskName]
-//        var selectedTask = taskName
-//        var taskJson = "{\"selectedTask\":\"\(selectedTask)\",\"newTasks\":\(newTask)}"
-//        
-//        var stringJson = "{\"brainDump\":\"\(brainDump)\",\"todoPlayer\":\(taskJson),\"totalDuration\":\"\(totalDuration)\",\"theme\":\"\(theme)\",\"intention\":\"\(self.intention)\"}"
-//        
-////        if !focusModeTaskStringIsEmpty(){
-////            stringJson = "{\"access_token\": \"\(appdelegate!.credential?.accessToken ?? "")\",\"platform\":\"mac\",\"lang\":\"\(currentLanguageCode)\",\"tasks\":\(focusModeTaskString),\"font\":\"\(selectedFont)\",\"theme\":\"\(theme)\",\"total_duration\":\"\(totalDuration)\",\"intention\":\"\(intention)\",\"brain_dump\":\"\(brainDump)\",\"isOnboarding\":\(isFirstTime)}"
-////        }
-//        let settingsFunc = String(format: "let waitForAppLoaded = setInterval(() => { if (window.syncWithDevices) { syncWithDevices(%@); clearInterval(waitForAppLoaded); } }, 100);", stringJson)
-//        
-//        webView.evaluateJavaScript(settingsFunc,completionHandler: { (html: Any?, error: Error?) in
-//            print(error as Any)
-//            print("****error")
-//            print(html as Any)
-//        })
-//    }
     func addAndPlayTaskInCurrentList(taskName: String, id:String, duration:Int, shouldCompleteCurrentTask:Bool) {
+        addLog(text: "func:- addAndPlayTaskInCurrentList taskName: \(taskName), duration: \(duration), shouldCompleteCurrentTask: \(shouldCompleteCurrentTask), id: \(id)")
+        taskCreatedByBlockPopup = taskName
         let taskDic:[String:Any] = [
             "id": id,
             "title": taskName,
@@ -535,19 +554,19 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
             selectedTaskDic["markCurrentTaskAsComplete"] = true
         }
         let taskData: [String: Any] = [
-            "selectedTask": selectedTaskDic//,// id name duration
-//            "newTasks": [taskDic]
+            "selectedTask": selectedTaskDic
         ]
         
        // . Create main payload
         let payload: [String: Any] = [
             "todoPlayer": taskData
         ]
-
+        addLog(text: "syncWithDevices payload is:- \(payload)")
         do {
             let jsonData = try JSONSerialization.data(withJSONObject: payload, options: [])
             guard let jsonString = String(data: jsonData, encoding: .utf8) else {
                 print("Failed to convert JSON data to string")
+                addLog(text: "Failed to convert JSON data to string")// v 2.28.441
                 return
             }
             
@@ -579,15 +598,20 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
             webView.evaluateJavaScript(jsFunction) { result, error in
                 if let error = error {
                     print("JavaScript evaluation error: \(error)")
+                    addLog(text: "JavaScript evaluation error: \(error)")// v 2.28.441
+                }else{
+                    addLog(text: "addAndPlayTaskInCurrentList:- success")// v 2.28.444
                 }
             }
         } catch {
             print("JSON serialization error: \(error)")
+            addLog(text: "JSON serialization error: \(error)")// v 2.28.441
         }
     }
     
     
     func addTaskInCurrentList(taskName: String, id:String, duration:Int) {
+        addLog(text: "func:- addTaskInCurrentList taskName: \(taskName), duration: \(duration), id: \(id)")
         let taskDic:[String:Any] = [
             "id": id,
             "title": taskName,
@@ -604,6 +628,7 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
             let jsonData = try JSONSerialization.data(withJSONObject: payload, options: [])
             guard let jsonString = String(data: jsonData, encoding: .utf8) else {
                 print("Failed to convert JSON data to string")
+                addLog(text: "Failed to convert JSON data to string")// v 2.28.441
                 return
             }
             
@@ -635,10 +660,12 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
             webView.evaluateJavaScript(jsFunction) { result, error in
                 if let error = error {
                     print("JavaScript evaluation error: \(error)")
+                    addLog(text: "JavaScript evaluation error: \(error)")// v 2.28.441
                 }
             }
         } catch {
             print("JSON serialization error: \(error)")
+            addLog(text: "JSON serialization error: \(error)")// v 2.28.441
         }
     }
     
@@ -652,7 +679,7 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
         self.view.window!.setFrame(NSRect(x: xPoint , y: self.view.window!.frame.midY, width: 60, height: 180), display: true)
         boxBackToOriginalPosition.isHidden = false
         imgViewAppIcon.isHidden = false
-        taskPlayerWcObj?.window?.styleMask.remove(.resizable)
+//        taskPlayerWcObj?.window?.styleMask.remove(.resizable)
         btnBackToOriginalPosition.isHidden = true
         isSnapLeft = true
         boxClose.isHidden = true
@@ -675,7 +702,7 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
         self.view.window!.setFrame(NSRect(x: xPoint , y: self.view.window!.frame.midY, width: width, height: 180), display: true)
         boxBackToOriginalPosition.isHidden = false
         imgViewAppIcon.isHidden = false
-        taskPlayerWcObj?.window?.styleMask.remove(.resizable)
+//        taskPlayerWcObj?.window?.styleMask.remove(.resizable)
         btnBackToOriginalPosition.isHidden = true
         isSnapLeft = false
         boxClose.isHidden = true
@@ -695,21 +722,21 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
         boxExtraOptions.isHidden = false
         self.view.window!.setFrame(lastWindowFrame, display: true)
         boxBackToOriginalPosition.isHidden = true
-        taskPlayerWcObj?.window?.styleMask.insert(.resizable)
+//        taskPlayerWcObj?.window?.styleMask.insert(.resizable)
         btnBackToOriginalPosition.isHidden = true
         imgViewAppIcon.isHidden = true
     }
     
     @IBAction func btnEndFocusSessionClicked(_ sender: Any) {
-        if currentFocusModeStrictness == ._SUPER_STRICT_{
-            addLog(text: "can't stop focus mode in super strict focus mode :- return")
-            var cantStopFocusModeText = "Super strict mode activated: You cannot stop this focus session until it ends."
-            if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
-                cantStopFocusModeText = menuInfo.value(forKey: "cantStopFocusModeText") as? String ?? cantStopFocusModeText
-            }
-            showTooltip(sender: btnEndFocusSession, msg: cantStopFocusModeText, preferredEdge: .minX, maxWidthVal: 250)
-            return;
-        }
+//        if currentFocusModeStrictness == ._SUPER_STRICT_{
+//            addLog(text: "can't stop focus mode in super strict focus mode :- return")
+//            var cantStopFocusModeText = "Super strict mode activated: You cannot stop this focus session until it ends."
+//            if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
+//                cantStopFocusModeText = menuInfo.value(forKey: "cantStopFocusModeText") as? String ?? cantStopFocusModeText
+//            }
+//            showTooltip(sender: btnEndFocusSession, msg: cantStopFocusModeText, preferredEdge: .minX, maxWidthVal: 250)
+//            return;
+//        }
         menuViewControllerObj?.stopFocusMode()
     }
     
@@ -717,3 +744,5 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
         showAllTracksWindow()
     }
 }
+
+

@@ -1,0 +1,31 @@
+{
+  "manifest_version": 2,
+  "name": "Focus Bear Blocker",
+  "version": "1.0",
+  "description": "This official Firefox extension extends Focus Bear's powerful distraction-blocking capabilities to your Firefox browser, ensuring consistent website blocking. Install Focus Bear macOS app from focusbear.io",
+  "permissions": [
+    "tabs",
+    "activeTab",
+    "webRequest",
+    "webRequestBlocking",
+    "<all_urls>"
+  ],
+  "background": {
+    "scripts": ["background.js"]
+  },
+  "icons": {
+    "48": "icons/icon.png"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "team@focusbear.io",
+      "strict_min_version": "109.0",
+	  "data_collection_permissions": {
+          "required": [
+             "browsingActivity"
+          ]
+         }
+    }
+  }
+  
+}

@@ -92,6 +92,7 @@ class privacyVc: NSViewController {
             advanceAanalyticsItemVcObj?.btnSwitch.state = .off
         }
     }
+    
     func highlightAdvanceAanalyticsItemBox(){
         if let object = advanceAanalyticsItemVcObj?.bgBox{
             object.wantsLayer = true

@@ -8,7 +8,7 @@
 
 import Cocoa
 
-class discourageDefaultFocusVc: NSViewController {
+class discourageDefaultFocusVc: NSViewController {// not in use
 
     @IBOutlet weak var lblTimer: NSTextField!
     @IBOutlet weak var lblShutUp: NSTextField!
@@ -96,15 +96,15 @@ class discourageDefaultFocusVc: NSViewController {
     
     @IBAction func btnCancelClicked(_ sender: Any) {
         addLog(text: "[user-action] discourageDefaultFocusVc - btnCancelClicked")//
-        if focusModeStartWindowLodded{
-            if startingFocusWindowControllerObj?.window?.isVisible ?? false{
-                if self.view.window?.sheetParent?.windowController == startingFocusWindowControllerObj{
-                    self.dismiss(self)
-                    startingFocusWindowControllerObj?.window?.close()
-                    return
-                }
-            }
-        }
+       // if focusModeStartWindowLodded{
+//            if startingFocusWindowControllerObj?.window?.isVisible ?? false{
+//                if self.view.window?.sheetParent?.windowController == startingFocusWindowControllerObj{
+//                    self.dismiss(self)
+//                    startingFocusWindowControllerObj?.window?.close()
+//                    return
+//                }
+//            }
+       // }
         self.dismiss(self)
     }
     

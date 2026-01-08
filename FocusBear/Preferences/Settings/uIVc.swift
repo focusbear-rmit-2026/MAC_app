@@ -332,25 +332,25 @@ extension uIVc: SettingToggleItemDelegate, SettingPopUpButtonItemDelegate{
                 SettingsManagerObject.isFullScreenEnabled = true
                 allApiObject.capturePosthog(event: "settings-changed-enable-full-screen", metadata: [:])
                 if isMainWindowLoaded{
-                    mainWindowControllerObj?.showFullSizeWindow()
+//                    mainWindowControllerObj?.showFullSizeWindow()
                 }
             }else{
                 SettingsManagerObject.isFullScreenEnabled = false
                 allApiObject.capturePosthog(event: "settings-changed-disable-full-screen", metadata: [:])
                 if isMainWindowLoaded{
-                    mainWindowControllerObj?.showSmallSizeWindow()
+//                    mainWindowControllerObj?.showSmallSizeWindow()
                 }
             }
         }else if object == showDockIconItemVcObj{
             if state == .on{
                 if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil && SettingsManagerObject.isPasswordRequireInCircumventingBlocks{
-                    if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-                        tabview.view.addSubview(getEnterPasswordVcObjForPreferences().view)
-                        tabview.view.addConstraints(subView: getEnterPasswordVcObjForPreferences().view)
-                        getEnterPasswordVcObjForPreferences().parentVc = nil
-                        enterPasswordVcObjForPreferences?.removeConstraints()
-                        addLog(text: "Showing enter password view inside preferences:- uivc")
+                    if isPasswordRequireInOpenSettings(){
+                        mainViewControllerObj?.askPasswordForSettingsIfNeeded()
+                    }else{
+                        settingsChangegShowDockIcon()
                     }
+                   
+                    addLog(text: "Showing enter password view inside preferences:- uivc")
                 }else{
                     settingsChangegShowDockIcon()
                 }

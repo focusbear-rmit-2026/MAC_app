@@ -74,6 +74,10 @@ class browserTabLimiterVc: NSViewController {
         allApiObject.capturePosthog(event: "settings-changed-tab-limiter-count", metadata: ["count":SettingsManagerObject.maxTabLimitCount])//
     }
     @IBAction func btnBackClicked(_ sender: Any) {
+        if leftMenuVcObj?.boxBlocks.isSelected ?? false{// solved in some cases settingsContainerVcObj is nil so before this added a check to solve problem on 15/9/25 version 2.27.415
+            tabStrictnessContainerVcObj?.showStrictnessView()
+            return;
+        }
         settingsContainerVcObj?.showStrictnessView()
     }
 }
@@ -92,13 +96,6 @@ extension browserTabLimiterVc: NSTextFieldDelegate{
                         msg = preferencesInfo.value(forKey: "alertTabCountText") as? String ?? msg
                     }
                     showAlert(msg: msg, completionHandler: {_ in
-                        if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-                            tabview.selectedTabViewItemIndex = preferencesSettingsIndex
-                        }
-                        if settingsSideBarVcObj != nil{
-                            settingsSideBarVcObj?.tblView.selectRowIndexes(IndexSet(integer: settingsSideBarVcObj!.strictnessSettingsIndex), byExtendingSelection: false)
-                        }
-
                         self.textFieldTabLimitCount.integerValue = SettingsManagerObject.maxTabLimitCount
                         textfield.setFocus()
                     })
@@ -151,8 +148,7 @@ extension browserTabLimiterVc: SettingToggleItemDelegate{
                     
                     alertWarning.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
                         if modalResponse == .alertFirstButtonReturn{
-                            showExplainingPermissionsWindow()
-                            explainingPermissionsVcObj?.showingFromPomodoro = false
+                            showExplainingPermissionsWindow(showingFromPomodoro: false)
                             UserDefaults.standard.set(true, forKey: kUserdefaultsBrowsersPermissionsSetByUser) // if ok clicked then then only save here
                             self.view.window?.close()
                         }

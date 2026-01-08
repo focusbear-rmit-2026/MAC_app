@@ -12,7 +12,7 @@ class smallCountDownVc: NSViewController {
 
     @IBOutlet weak var btnSkip: underLineButton!
     @IBOutlet weak var btnClose: cursorButton!
-    @IBOutlet weak var lblTimerTopSpaceConstraint: NSLayoutConstraint!
+   // @IBOutlet weak var lblTimerTopSpaceConstraint: NSLayoutConstraint!
     @IBOutlet weak var btnPostpone: underLineButton!
     @IBOutlet weak var lblTimer: NSTextField!
     @IBOutlet weak var lblTitle: NSTextField!
@@ -38,8 +38,15 @@ class smallCountDownVc: NSViewController {
             timer?.invalidate()
             timer = nil
         }
-        self.view.window?.close()
+//        self.view.window?.close()
+//        self.view.isHidden = true
+        floatingTopBarVcObj?.boxTimer.isHidden = true
+        floatingTopBarVcObj?.timerBoxClosed()
     }
+    
+//    func isVisible()-> Bool{
+//        return !self.view.isHidden
+//    }
     
     override func viewWillAppear() {
 //        btnPostpone.isHidden = true
@@ -55,21 +62,24 @@ class smallCountDownVc: NSViewController {
             showBlankWindowInSecondaryMonitor()
             timerViewcontrollerObj?.btnPauseClicked(self)
             timerViewcontrollerObj?.menuItemSkipHabitClicked()
-            if smallCountDownWcObj != nil{
-                if smallCountDownWcObj!.window?.isVisible ?? false{
-                    getsmallCountDownVcObject().closeTimerBox()
-                }
+
+            if currentState == ._CUSTOM_ROUTINE_{
+                leftMenuVcObj?.showCustomRoutineView()
+                leftMenuVcObj?.disbaleAllExceptCustomRoutineTab()
+            }else{
+                leftMenuVcObj?.showHabitsView()
+                leftMenuVcObj?.disbaleAllExceptHabitTab()
             }
+            
+            closeTimerBox()
             
             if relaxModeWcObj != nil{
                 if relaxModeWcObj!.window?.isVisible ?? false{
                     relaxModeVcObj?.closeTimerBox()
                 }
             }
-            
-            self.view.window?.close()
         }else{
-            self.view.window?.close()
+            closeTimerBox()
         }
     }
     
@@ -78,7 +88,17 @@ class smallCountDownVc: NSViewController {
             addLog(text:"[user-action] smallCountDownVc:- button Postpone Clicked")
             mainWindowControllerObj?.window?.setIsVisible(true)
             showBlankWindowInSecondaryMonitor()
-            mainViewControllerObj?.abortCurrentState()
+            if currentState == ._CUSTOM_ROUTINE_{
+                leftMenuVcObj?.showCustomRoutineView()
+                leftMenuVcObj?.disbaleAllExceptCustomRoutineTab()
+            }else{
+                leftMenuVcObj?.showHabitsView()
+                leftMenuVcObj?.disbaleAllExceptHabitTab()
+            }
+          //  if checkIsFullScreenEnabled(){
+             //   mainViewControllerObj?.checkIsFullScreenNeeded()
+           // }
+            getHabitsVcObject().abortCurrentState()
             if quittingWcObj != nil{
                 if quittingWcObj?.window?.isVisible ?? false{
                     quittingWcObj?.window?.close()
@@ -88,9 +108,10 @@ class smallCountDownVc: NSViewController {
         }else if currentState == ._FOCUS_SUMMARY_{
             addLog(text:"button Back To My Habits")
             closeTimerBox()
-            mainViewControllerObj?.timerGiveOneMoreMinut?.invalidate()
-            mainViewControllerObj?.timerGiveOneMoreMinut = nil
-            mainViewControllerObj?.showFocusSummaryView()
+            getHabitsVcObject().timerGiveOneMoreMinut?.invalidate()
+            getHabitsVcObject().timerGiveOneMoreMinut = nil
+            getHabitsVcObject().showFocusSummaryView()
+            leftMenuVcObj?.showHabitsView()
         }else if currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_MORNING_HABIT_ || (currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeMorningHabit) || (currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeEveningHabit){
             addLog(text:"[user-action] button Extend postpone time Clicked")
             lastCurrentState = currentState 
@@ -100,13 +121,13 @@ class smallCountDownVc: NSViewController {
         }
     }
     
-    @IBAction func btnCloseClicked(_ sender: Any) {
+    @IBAction func btnCloseClicked(_ sender: Any) {// not in use
         addLog(text:"[user-action] smallCountDownVc:- btnCloseClicked")
         if isFocusBreak{
             closeTimerBox()
         }else{  
             self.view.window?.alphaValue = 0
-            if (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._ACTIVITY_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_) && !(mainWindowControllerObj?.window?.isVisible ?? false){
+            if (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_) && !(mainWindowControllerObj?.window?.isVisible ?? false){
                 if currentHabitPlaying != nil || currentActivityPlaying != nil{
                     var isAnyStanderdWindowVisible = false
                     
@@ -128,6 +149,7 @@ class smallCountDownVc: NSViewController {
             timer?.invalidate()
             timer = nil
         }
+        lblTimer.isHidden = false
         totalDuration = durationSeconds//durationInMinutes*60
         let (h,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
         var hour = "\(h)"
@@ -163,9 +185,9 @@ class smallCountDownVc: NSViewController {
         
         if (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._CUSTOM_ROUTINE_) && !isFocusBreak{
             if SettingsManagerObject.selectedFontIndex == intelOneMonoFontIndex || SettingsManagerObject.selectedFontIndex == openDyslexicFontIndex{
-                lblTimerTopSpaceConstraint.constant = lblTopSpaceInBigFont
+                //lblTimerTopSpaceConstraint.constant = lblTopSpaceInBigFont
             }else{
-                lblTimerTopSpaceConstraint.constant = lblTopSpaceInNormalFont
+                //lblTimerTopSpaceConstraint.constant = lblTopSpaceInNormalFont
             }
             btnPostpone.isHidden = false
             btnPostpone.title = "Postpone"
@@ -175,9 +197,9 @@ class smallCountDownVc: NSViewController {
             btnSkip.isHidden = false
         }else if currentState == ._FOCUS_SUMMARY_{
             if SettingsManagerObject.selectedFontIndex == intelOneMonoFontIndex || SettingsManagerObject.selectedFontIndex == openDyslexicFontIndex{
-                lblTimerTopSpaceConstraint.constant = lblTopSpaceInBigFont
+               // lblTimerTopSpaceConstraint.constant = lblTopSpaceInBigFont
             }else{
-                lblTimerTopSpaceConstraint.constant = lblTopSpaceInNormalFont
+              //  lblTimerTopSpaceConstraint.constant = lblTopSpaceInNormalFont
             }
             btnPostpone.isHidden = false
             btnPostpone.title = "Back to my habits"
@@ -188,9 +210,9 @@ class smallCountDownVc: NSViewController {
         }else if (currentState == ._POSTPON_MORNING_HABIT_ || currentState == ._POSTPON_EVENING_HABIT_ || (currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeMorningHabit) || (currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeEveningHabit)) && !msg.isEmpty{
             
             if SettingsManagerObject.selectedFontIndex == intelOneMonoFontIndex || SettingsManagerObject.selectedFontIndex == openDyslexicFontIndex{
-                lblTimerTopSpaceConstraint.constant = lblTopSpaceInBigFont
+               // lblTimerTopSpaceConstraint.constant = lblTopSpaceInBigFont
             }else{
-                lblTimerTopSpaceConstraint.constant = lblTopSpaceInNormalFont
+                //lblTimerTopSpaceConstraint.constant = lblTopSpaceInNormalFont
             }
             btnPostpone.isHidden = false
             btnPostpone.title = "Postpone"
@@ -199,7 +221,7 @@ class smallCountDownVc: NSViewController {
             }
             btnSkip.isHidden = true
         }else{
-            lblTimerTopSpaceConstraint.constant = lblTopSpaceDefault
+           // lblTimerTopSpaceConstraint.constant = lblTopSpaceDefault
             btnPostpone.isHidden = true
             btnSkip.isHidden = true
         }
@@ -217,6 +239,9 @@ class smallCountDownVc: NSViewController {
         }else{
             lblTitle.stringValue = msg//getDoSomeActivityText(activityName: name)
         }
+        
+        lblTimer.isHidden = false
+        
         currentTimer = currentTimerValue
         totalDuration = durationSeconds//durationInMinutes*60
         let (h,m,s) = secondsToHoursMinutesSeconds(seconds: self.totalDuration-currentTimer)
@@ -285,8 +310,10 @@ class smallCountDownVc: NSViewController {
                     self.view.window?.alphaValue = 1
                     NSApplication.shared.activate(ignoringOtherApps: true)
                 }
-                self.timer?.invalidate()
-                self.view.window?.close()
+//                self.timer?.invalidate()
+//                self.view.window?.close()
+//                self.view.isHidden = true
+                self.closeTimerBox()
                 if self.isFocusBreak{
                     playFocusPomodorBreakEndsSound()
                 }

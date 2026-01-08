@@ -156,7 +156,7 @@ class addFocusTempUrlsOrAppsVc: NSViewController {
     
     override func mouseEntered(with event: NSEvent) {
         if event.trackingArea == btnInfoTrackingArea{
-            showTooltip(sender: btnInfo, msg: keywordsInfoText, preferredEdge: NSRectEdge.maxX, maxWidthVal:400)
+            showTooltip(sender: btnInfo, msg: keywordsInfoText, preferredEdge: NSRectEdge.maxX, maxWidthVal:400, autoCloseOnMouseExit: true)
         }
     }
     override func mouseExited(with event: NSEvent) {
@@ -269,7 +269,7 @@ class addFocusTempUrlsOrAppsVc: NSViewController {
     }
     
     @IBAction func btnInfoClicked(_ sender: Any) {
-        showTooltip(sender: btnInfo, msg: keywordsInfoText, preferredEdge: NSRectEdge.maxX, maxWidthVal:400)
+        showTooltip(sender: btnInfo, msg: keywordsInfoText, preferredEdge: NSRectEdge.maxX, maxWidthVal:400, autoCloseOnMouseExit: true)
     }
     @IBAction func btnAddKeyword(_ sender: Any) {
         let item = ["state":false, "item": ""] as [String : Any]

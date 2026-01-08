@@ -201,14 +201,21 @@ class accessibilityPermissionVc: NSViewController {
         currentTimer += 1
         if isAccessibilityEnabled(isPrompt: false){
             lblNextViewInfo.isHidden = false
+            if explainingPermissionsVcObj?.isSystemEventsPermissionGiven ?? false{
+                lblNextViewInfo.isHidden = true
+            }
             btnContinue.isHidden = false
             self.timer?.invalidate()
             btnContinueClicked(self)
+            menuViewControllerObj?.accessibilityPermissionGiven = true
             return;
         }
         if currentTimer >= totalDuration{
             DispatchQueue.main.async {
                 self.lblNextViewInfo.isHidden = false
+                if explainingPermissionsVcObj?.isSystemEventsPermissionGiven ?? false{
+                    self.lblNextViewInfo.isHidden = true
+                }
                 self.btnContinue.isHidden = false
             }
         }
@@ -245,12 +252,21 @@ class accessibilityPermissionVc: NSViewController {
         if videoPlayer != nil{
             videoPlayer?.pause()
         }
-        self.view.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
+        self.view.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.assistiveTechHighWindow)))
     }
     
     @IBAction func btnContinueClicked(_ sender: Any) {
         addLog(text: "[user-action] accessibilityPermissionVc:- Button Continue clicked")
-        self.view.window?.contentViewController = getSystemEventsPermissionVcObject()
+        let isSystemEventsPermissionGiven = explainingPermissionsVcObj?.isSystemEventsPermissionGiven ?? false
+        let isBrowserPermissionGiven = explainingPermissionsVcObj?.isBrowserPermissionGiven ?? false
+        
+        if !isSystemEventsPermissionGiven{
+            self.view.window?.contentViewController = getSystemEventsPermissionVcObject()
+        }else if !isBrowserPermissionGiven{
+            self.view.window?.contentViewController = getOnboardingControllingBrowserVcObject()
+        }else{
+            self.view.window?.contentViewController = getTryBlockUrlVcObject()
+        }
     }
     
     @IBAction func btnInfoClicked(_ sender: hoverInfoButton) {
@@ -258,7 +274,7 @@ class accessibilityPermissionVc: NSViewController {
         if let systemEventsPermissionVcInfo = configjson.value(forKey: "accessibilityPermissionVcInfo") as? NSDictionary{
             msg = systemEventsPermissionVcInfo.value(forKey: "toolTipText") as? String ?? msg
         }
-        showTooltip(sender: sender, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
+        showTooltip(sender: sender, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:230, autoCloseOnMouseExit: true)
     }
     
     @IBAction func btnOpenPreferences(_ sender: Any) {

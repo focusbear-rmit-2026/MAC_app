@@ -224,8 +224,10 @@ class focusCompletedForActivityVc: NSViewController {
         if !focusModeTaskStringIsEmpty() || allowExtend{
             let obj = getAddTaskVcObject()
             obj.loadView()
-            obj.reloadData(isAddingTask: false, allowExtend: false, isHabitGoing: true)
-            self.presentAsSheet(obj)
+            if self.view.window != nil{
+                obj.reloadData(isAddingTask: false, allowExtend: false, isHabitGoing: true)
+                self.presentAsSheet(obj)
+            }
             allApiObject.capturePosthog(event: "mark-tasks-on-focus-session-end-screen-shown", metadata: [:])
         }
         setViewHeight()
@@ -443,7 +445,6 @@ class focusCompletedForActivityVc: NSViewController {
         })
 
         whatToAchieveInFocusBlock = ""
-        appdelegate!.setIntentionInBrainDumpWindow()
 
         
         
@@ -505,7 +506,7 @@ class focusCompletedForActivityVc: NSViewController {
             }
         }
 
-        showTooltip(sender: sender, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:340)
+        showTooltip(sender: sender, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:340, autoCloseOnMouseExit: true)
     }
     
     @IBAction func btnInfoDeepWotkTimeThisSessionClicked(_ sender: NSButton) {
@@ -515,7 +516,7 @@ class focusCompletedForActivityVc: NSViewController {
                 msg = focusCompletedInfo.value(forKey: "tooltipDeepWotkTimeThisSession") as? String ?? msg
             }
         }
-        showTooltip(sender: sender, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:340)
+        showTooltip(sender: sender, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:340, autoCloseOnMouseExit: true)
     }
     
     @IBAction func btnInfoTotalWotkTimeTodayClicked(_ sender: NSButton) {
@@ -525,7 +526,7 @@ class focusCompletedForActivityVc: NSViewController {
                 msg = focusCompletedInfo.value(forKey: "tooltipTotalWotkTimeToday") as? String ?? msg
             }
         }
-        showTooltip(sender: sender, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:340)
+        showTooltip(sender: sender, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:340, autoCloseOnMouseExit: true)
     }
     
     @IBAction func btnInfoAverageTimePerTabClicked(_ sender: NSButton) {
@@ -535,7 +536,7 @@ class focusCompletedForActivityVc: NSViewController {
                 msg = focusCompletedInfo.value(forKey: "tooltipAverageTimePerTab") as? String ?? msg
             }
         }
-        showTooltip(sender: sender, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:340)
+        showTooltip(sender: sender, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:340, autoCloseOnMouseExit: true)
     }
     
     @IBAction func btnInfoAverageTabCountClicked(_ sender: NSButton) {
@@ -545,7 +546,7 @@ class focusCompletedForActivityVc: NSViewController {
                 msg = focusCompletedInfo.value(forKey: "tooltipAverageTabCount") as? String ?? msg
             }
         }
-        showTooltip(sender: sender, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:340)
+        showTooltip(sender: sender, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:340, autoCloseOnMouseExit: true)
     }
     
     @IBAction func btnInfoAppOrSiteClicked(_ sender: NSButton) {
@@ -555,7 +556,7 @@ class focusCompletedForActivityVc: NSViewController {
                 msg = focusCompletedInfo.value(forKey: "tooltipAppOrSite") as? String ?? msg
             }
         }
-        showTooltip(sender: sender, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:340)
+        showTooltip(sender: sender, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:340, autoCloseOnMouseExit: true)
     }
     
     @IBAction func btnMoreOptionsClicked(_ sender: Any) {

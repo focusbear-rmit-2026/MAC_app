@@ -10,17 +10,23 @@ import Cocoa
 
 class nudgeFocusAlignmentScoreDippingVc: NSViewController {
 
+    @IBOutlet weak var lblTimer: NSTextField!
+    @IBOutlet weak var btnExpandTaskPlayer: NSButton!
     @IBOutlet weak var lblDescriptionText: NSTextField!
     @IBOutlet weak var boxButton: NSBox!
     @IBOutlet weak var btnClose: NSButton!
     @IBOutlet weak var lblFocusAlignmentScore: NSTextField!
     @IBOutlet weak var imgView: NSImageView!
+    @IBOutlet weak var lblCurrentTask: NSTextField!
     
     var trackingArea: NSTrackingArea?
+    var trackingAreaExpandButton: NSTrackingArea?
+    var trackingAreaAlignmentScore: NSTrackingArea?
     var timerStopAniumation:Timer?
     var isScoreLow = true
     var lastScoreShown:Double = -1
     var isScoreFallingDown = true
+    var isFloatingTopBarRemovedByNudge = false
     var arrAlignmentScoreDown = ["Drifting off track—let’s bring it back.",
                 "That’s a detour, but your focus is still within reach.",
                 "Distraction’s creeping in—time to reset.",
@@ -53,13 +59,20 @@ class nudgeFocusAlignmentScoreDippingVc: NSViewController {
         trackingArea = NSTrackingArea.init(rect: self.view.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
         self.view.addTrackingArea(trackingArea!)
         
+        trackingAreaExpandButton = NSTrackingArea.init(rect: self.btnExpandTaskPlayer.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
+        self.btnExpandTaskPlayer.addTrackingArea(trackingAreaExpandButton!)
+        
+        
+        trackingAreaAlignmentScore = NSTrackingArea.init(rect: self.lblFocusAlignmentScore.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
+        self.lblFocusAlignmentScore.addTrackingArea(trackingAreaAlignmentScore!)
+        
         
         if let info = configjson.value(forKey: "nudgeFocusAlignmentScoreDippingVcInfo") as? NSDictionary{
             arrAlignmentScoreDown = info.value(forKey: "arrayAlignmentScoreDown") as? [String] ?? arrAlignmentScoreDown
             arrAlignmentScoreUp = info.value(forKey: "arrayAlignmentScoreUp") as? [String] ?? arrAlignmentScoreUp
             lblFocusAlignmentScore.stringValue = info.value(forKey: "focusAlignmentScoreText") as? String ?? lblFocusAlignmentScore.stringValue
         }
-        
+        boxButton.isHidden = false
     }
     
     override func viewWillAppear() {
@@ -71,14 +84,36 @@ class nudgeFocusAlignmentScoreDippingVc: NSViewController {
     }
     
     override func mouseEntered(with event: NSEvent) {
-        if event.trackingArea == self.trackingArea{
-            boxButton.isHidden = false
+//        if event.trackingArea == self.trackingArea{
+//            boxButton.isHidden = false
+//        }else
+        //Floating bear tooltip appears on mouseover when popup is closed #1604
+        if self.view.window?.alphaValue == 0{ //v 2.28.447
+            return;
+        }
+        if event.trackingArea == self.trackingAreaExpandButton{
+            var toolTipShowToDoPlayer = "Show To Do Player"
+            if let info = configjson.value(forKey: "nudgeFocusAlignmentScoreDippingVcInfo") as? NSDictionary{
+                toolTipShowToDoPlayer = info.value(forKey: "toolTipShowToDoPlayer") as? String ?? toolTipShowToDoPlayer
+            }
+            showTooltip(sender: btnExpandTaskPlayer, msg: toolTipShowToDoPlayer, preferredEdge: .maxY, maxWidthVal: 200, autoCloseOnMouseExit: true)
+        }else if event.trackingArea == self.trackingAreaAlignmentScore{
+            var toolTipAlignmentScore = "This shows what % of the time you've been on websites/apps that are relevant to your focus goal. We use AI to check the relevance."
+            if let info = configjson.value(forKey: "nudgeFocusAlignmentScoreDippingVcInfo") as? NSDictionary{
+                toolTipAlignmentScore = info.value(forKey: "toolTipAlignmentScore") as? String ?? toolTipAlignmentScore
+            }
+            showTooltip(sender: lblFocusAlignmentScore, msg: toolTipAlignmentScore, preferredEdge: .maxY, maxWidthVal: 200, autoCloseOnMouseExit: true)
         }
     }
     
     override func mouseExited(with event: NSEvent) {
-        if event.trackingArea == self.trackingArea{
-            boxButton.isHidden = true
+//        if event.trackingArea == self.trackingArea{
+//            boxButton.isHidden = true
+//        }else
+        if event.trackingArea == self.trackingAreaExpandButton{
+            closePopoverTooltipIfVisible()
+        }else if event.trackingArea == self.trackingAreaAlignmentScore{
+            closePopoverTooltipIfVisible()
         }
     }
     
@@ -125,12 +160,35 @@ class nudgeFocusAlignmentScoreDippingVc: NSViewController {
         }
         
         lastScoreShown = score
+        var currentTaskText = "Current task is \"<TASK>\""
+        if let currentTaskInToDoPlayer = getCurrentTaskInFocusMode(){
+            if let info = configjson.value(forKey: "nudgeFocusAlignmentScoreDippingVcInfo") as? NSDictionary{
+                currentTaskText = info.value(forKey: "currentTaskText") as? String ?? currentTaskText
+            }
+            lblCurrentTask.stringValue = currentTaskText.replacingOccurrences(of: "<TASK>", with: currentTaskInToDoPlayer)
+        }else{
+            lblCurrentTask.stringValue = "No Current Task"
+            if let info = configjson.value(forKey: "nudgeFocusAlignmentScoreDippingVcInfo") as? NSDictionary{
+                lblCurrentTask.stringValue = info.value(forKey: "noCurrentTaskText") as? String ?? lblCurrentTask.stringValue
+            }
+        }
+        
+        if !SettingsManagerObject.isAIBlockingEnabled() || isBlockSuperDistractingFocusModeOn(){
+            lblDescriptionText.stringValue = "AI is not enabled."
+            if let info = configjson.value(forKey: "nudgeFocusAlignmentScoreDippingVcInfo") as? NSDictionary{
+                lblDescriptionText.stringValue = info.value(forKey: "aiIsDisabledText") as? String ?? lblDescriptionText.stringValue
+            }
+        }else if !isCuddlyModeEnabled(){
+            lblDescriptionText.stringValue = "AI score not calculated."
+            if let info = configjson.value(forKey: "nudgeFocusAlignmentScoreDippingVcInfo") as? NSDictionary{
+                lblDescriptionText.stringValue = info.value(forKey: "aiScoreNotCalculatedText") as? String ?? lblDescriptionText.stringValue
+            }
+        }
     }
     
     func setTimerStopAniumation(){
         timerStopAniumation?.invalidate()
         timerStopAniumation = nil
-        boxButton.isHidden = true
         imgView.animates = true
         
         timerStopAniumation = Timer.scheduledTimer(timeInterval: 3, target: self, selector: #selector(stopAnimatingImageview), userInfo: nil, repeats: false)
@@ -138,5 +196,31 @@ class nudgeFocusAlignmentScoreDippingVc: NSViewController {
     
     @IBAction func btnClicked(_ sender: Any) {
         nudgeFocusAlignmentScoreDippingWcObject?.toggleMenu()
+        
+//        /If the big floating bear is open, I don’t think we need the little one as well.
+        
+        //check AnyNotificationVisible
+        var anyNotificationVisibleInFloatingBear = false
+        if floatingTopBarVcObj != nil{
+            let visibleViews = floatingTopBarVcObj!.stackViewMoreItems.arrangedSubviews.filter { !$0.isHidden }
+            if visibleViews.count != 0{
+                anyNotificationVisibleInFloatingBear = true
+            }
+        }
+        
+//        Floating bear shouldn't show when you close the bigger bear with focus alignment score #1574
+        if anyNotificationVisibleInFloatingBear || isFloatingTopBarRemovedByNudge{// check added in v2.28.440
+            if floatingTopBarWcObj != nil && !isFocusBearMenuVisible(){
+                if getFloatingTopBarWObject().window?.isVisible ?? false{
+                    getFloatingTopBarVObject().boxMain.isHidden = false
+                    getFloatingTopBarVObject().boxMoreItems.isHidden = false
+                }
+            }
+        }
+        isFloatingTopBarRemovedByNudge = false
+    }
+    
+    @IBAction func btnExpandTaskPlayerClicked(_ sender: Any) {
+        menuViewControllerObj?.openToDoListClicked()
     }
 }

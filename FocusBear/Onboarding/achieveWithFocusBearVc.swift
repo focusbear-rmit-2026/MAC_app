@@ -8,7 +8,7 @@
 
 import Cocoa
 
-class achieveWithFocusBearVc: NSViewController, NSTextViewDelegate {
+class achieveWithFocusBearVc: NSViewController, NSTextViewDelegate {//  not in use 
 
     @IBOutlet weak var btnInfo: hoverInfoButton!
     @IBOutlet var textView: NSTextView!
@@ -45,7 +45,7 @@ class achieveWithFocusBearVc: NSViewController, NSTextViewDelegate {
         if let askOccupationVcInfo = configjson.value(forKey: "achieveWithFocusBearVcInfo") as? NSDictionary{
             msg = askOccupationVcInfo.value(forKey: "infoText") as? String ?? msg
         }
-        showTooltip(sender: btnInfo, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:300)
+        showTooltip(sender: btnInfo, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:300, autoCloseOnMouseExit: true)
     }
     
     @IBAction func btnContinueClicked(_ sender: Any) {
@@ -57,6 +57,7 @@ class achieveWithFocusBearVc: NSViewController, NSTextViewDelegate {
         }
         mainViewControllerObj?.showAskAppWorkVc()
     }
+    
     func textDidChange(_ notification: Notification) {
         if let textView = notification.object as? NSTextView{
             if textView == self.textView{

@@ -335,7 +335,7 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
                 allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"morning_routine", "deactivate-reason":"I've got an emergency"])
             }else if lastCurrentState == ._EVENING_HABIT_{
                 allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"evening_routine", "deactivate-reason":"I've got an emergency"])
-            }else if lastCurrentState == ._ACTIVITY_{
+            }else if lastCurrentState == ._MICRO_BREAK_{
                 allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"break_activity", "deactivate-reason":"I've got an emergency"])
             }
         }else if popUpBtnReasons.indexOfSelectedItem == haveMeetingReasonIndex{
@@ -343,7 +343,7 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
                 allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"morning_routine", "deactivate-reason":"I have a meeting"])
             }else if lastCurrentState == ._EVENING_HABIT_{
                 allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"evening_routine", "deactivate-reason":"I have a meeting"])
-            }else if lastCurrentState == ._ACTIVITY_{
+            }else if lastCurrentState == ._MICRO_BREAK_{
                 allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"break_activity", "deactivate-reason":"I have a meeting"])
             }
         }else if popUpBtnReasons.indexOfSelectedItem == someOneElseReasonIndex{
@@ -351,7 +351,7 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
                 allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"morning_routine", "deactivate-reason":"Someone else is using my computer"])
             }else if lastCurrentState == ._EVENING_HABIT_{
                 allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"evening_routine", "deactivate-reason":"Someone else is using my computer"])
-            }else if lastCurrentState == ._ACTIVITY_{
+            }else if lastCurrentState == ._MICRO_BREAK_{
                 allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"break_activity", "deactivate-reason":"Someone else is using my computer"])
             }
         }else if popUpBtnReasons.indexOfSelectedItem == wantToRelaxReasonIndex{
@@ -359,7 +359,7 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
                 allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"morning_routine", "deactivate-reason":"I want to relax for a while without restrictions"])
             }else if lastCurrentState == ._EVENING_HABIT_{
                 allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"evening_routine", "deactivate-reason":"I want to relax for a while without restrictions"])
-            }else if lastCurrentState == ._ACTIVITY_{
+            }else if lastCurrentState == ._MICRO_BREAK_{
                 allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"break_activity", "deactivate-reason":"I want to relax for a while without restrictions"])
             }
         }
@@ -398,7 +398,7 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
                     }else if lastCurrentState == ._EVENING_HABIT_{
                         logType = "evening routine abort"
                         activity = "evening routine"
-                    }else if lastCurrentState == ._ACTIVITY_{
+                    }else if lastCurrentState == ._MICRO_BREAK_{
                         logType = "break abort"
                         activity = "break"
                     }
@@ -430,7 +430,7 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
                 allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"morning_routine", "deactivate-reason":"The app is broken", "detailed-reason":textViewAppBroken.string])
             }else if lastCurrentState == ._EVENING_HABIT_{
                 allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"evening_routine", "deactivate-reason":"The app is broken", "detailed-reason":textViewAppBroken.string])
-            }else if lastCurrentState == ._ACTIVITY_{
+            }else if lastCurrentState == ._MICRO_BREAK_{
                 allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"break_activity", "deactivate-reason":"The app is broken", "detailed-reason":textViewAppBroken.string])
             }
             
@@ -464,7 +464,7 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
 //                                    mainViewControllerObj?.showAbortDoneView()
 //                                }
 //                            })
-                            mainViewControllerObj?.showAbortDoneView()
+                            getHabitsVcObject().showAbortDoneView()
                         }
                     })
                 }else{
@@ -473,7 +473,7 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
 //                            mainViewControllerObj?.showAbortDoneView()
 //                        }
 //                    })
-                    mainViewControllerObj?.showAbortDoneView()
+                    getHabitsVcObject().showAbortDoneView()
                 }
             })
             
@@ -483,7 +483,7 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
                 allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"morning_routine", "deactivate-reason":"I'm finding Focus Bear annoying", "detailed-reason":textViewAppBroken.string])
             }else if lastCurrentState == ._EVENING_HABIT_{
                 allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"evening_routine", "deactivate-reason":"I'm finding Focus Bear annoying", "detailed-reason":textViewAppBroken.string])
-            }else if lastCurrentState == ._ACTIVITY_{
+            }else if lastCurrentState == ._MICRO_BREAK_{
                 allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"break_activity", "deactivate-reason":"I'm finding Focus Bear annoying", "detailed-reason":textViewAppBroken.string])
             }
             
@@ -493,7 +493,7 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
 //                    mainViewControllerObj?.showAbortDoneView()
 //                }
 //            })
-            mainViewControllerObj?.showAbortDoneView()
+            getHabitsVcObject().showAbortDoneView()
         }
         
     }
@@ -635,11 +635,11 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
             }
         })
         
-        mainViewControllerObj?.showAbortStartSmallVc(isAnyHabitRemoved:isAnyHabitRemoved)
+        getHabitsVcObject().showAbortStartSmallVc(isAnyHabitRemoved:isAnyHabitRemoved)
     }
     @IBAction func btnDontWantRoutine_boxHabitClicked(_ sender: Any) {
         addLog(text: "[user-action] btnDontWantRoutine_boxHabitClicked")//
-        mainViewControllerObj?.showAbortDisableMorningRoutineVc()
+        getHabitsVcObject().showAbortDisableMorningRoutineVc()
     }
     @IBAction func btnDeactivate_boxSomethingElseClicked(_ sender: Any) {
        addLog(text: "[user-action] btnDeactivate_boxSomethingElseClicked")//
@@ -653,7 +653,7 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
             logType = "evening routine abort"
             activity = "evening routine"
             allApiObject.capturePosthog(event: "deactivate-routine", metadata: ["routine-type":"evening_routine", "deactivate-reason":"Something else", "detailed-reason":textViewSomethingElse.string])
-        }else if lastCurrentState == ._ACTIVITY_{
+        }else if lastCurrentState == ._MICRO_BREAK_{
             logType = "break abort"
             activity = "break"
 
@@ -662,7 +662,7 @@ class abortingConfirmVc: NSViewController, NSTextViewDelegate {
         
         addEntryInStatsCsv(logType: logType, activity: activity, durationInSeconds: "", quantityQuestion: "", quantityLogged: "", startTime: "", workAchieved: "", distractionsEncountered: "", abortReason: "Something else", feedback: textViewSomethingElse.string, tags:"")
             
-        mainViewControllerObj?.showAbortDoneView()
+        getHabitsVcObject().showAbortDoneView()
     }
 }
 

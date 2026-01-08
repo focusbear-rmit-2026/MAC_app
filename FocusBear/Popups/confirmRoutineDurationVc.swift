@@ -75,7 +75,7 @@ class confirmRoutineDurationVc: NSViewController {
             mainWindowControllerObj?.window?.close()
             hideBlankWindowInSecondaryMonitor()
             currentState = ._NOTHING_
-            mainViewControllerObj?.setActivityTimer()
+            getHabitsVcObject().setActivityTimer()
             addLog(text: "morning habit skipped by user")
         }else if slider.integerValue == totalSeconds{// button ok
             allApiObject.capturePosthog(event: "routine-duration-selected", metadata: ["duration":slider.integerValue])

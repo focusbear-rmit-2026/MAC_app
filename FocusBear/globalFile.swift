@@ -9,14 +9,35 @@
 import Cocoa
 //import IOKit
 import IOKit.pwr_mgt
-import SystemConfiguration// for check internet availibility code
-import WebKit
+//import SystemConfiguration// for check internet availibility code
+//import WebKit
 
 
 let screenFrame = NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 1920, height: 1080)
 
 
 func getBlockedUrlsToBlock()->[String]{
+    if customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
+        if isFocusBreakOn{
+            if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsDoNotBlockUrlsDuringSuperPomodoroBreaks) as? Bool{
+                if state{
+                    return [];
+                }
+            }
+        }
+        if currentState == ._MICRO_BREAK_{
+            if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsDoNotBlockUrlsDuringSuperPomodoroBreaks) as? Bool{
+                if state{
+                    return [];
+                }
+            }
+        }
+        
+        if appdelegate!.isUserOnMeeting && !SettingsManagerObject.isBlockDistractingSitesDuringMeetingsEnabled{
+            return [];
+        }
+        
+    }
     var arrBlockedUrls = [String]()
     var blockedUrlsCount = SettingsManagerObject.arrBlockedUrls.count
     if isExpired{
@@ -32,6 +53,28 @@ func getBlockedUrlsToBlock()->[String]{
 }
 
 func getBlockedAppsToBlock()->[String]{
+    if customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
+        if isFocusBreakOn{
+            if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsDoNotBlockUrlsDuringSuperPomodoroBreaks) as? Bool{
+                if state{
+                    return [];
+                }
+            }
+        }
+        if currentState == ._MICRO_BREAK_{
+            if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsDoNotBlockUrlsDuringSuperPomodoroBreaks) as? Bool{
+                if state{
+                    return [];
+                }
+            }
+        }
+        
+        if appdelegate!.isUserOnMeeting && !SettingsManagerObject.isBlockDistractingSitesDuringMeetingsEnabled{
+            return [];
+        }
+        
+    }
+    
     var arrBlockedApps = [String]()
     var blockedAppsCount = SettingsManagerObject.arrBlockedApps.count
     if isExpired{
@@ -105,91 +148,7 @@ struct Time{
     var minute = 0
     var second = 0
 }
-extension NSScrollView{
-    func scrollToLast(){
-        if let documentView = documentView {
-            let newOrigin = NSPoint(x: 0, y: 0)
-            documentView.scroll(newOrigin)
-        }
-    }
-}
-    
-    
-extension NSView{
-    func addConstraints(subView:NSView) {
-        subView.translatesAutoresizingMaskIntoConstraints = false
-        //Trailing
-        let trailing = NSLayoutConstraint(item: subView, attribute: .trailing, relatedBy: .equal, toItem: self, attribute: .trailing, multiplier: 1.0, constant: 0.0)
-        //Leading
-        let leading = NSLayoutConstraint(item: subView, attribute: .leading, relatedBy: .equal, toItem: self, attribute: .leading, multiplier: 1.0, constant: 0.0)
-        //Bottom
-        let bottom = NSLayoutConstraint(item: subView, attribute: .bottom, relatedBy: .equal, toItem: self, attribute: .bottom, multiplier: 1.0, constant: 0.0)
-        //Height to be fixed for SubView same as AdHeight
-        let height = NSLayoutConstraint(item: subView, attribute: .top, relatedBy: .equal, toItem: self, attribute: .top, multiplier: 1.0, constant: 0.0)
-        self.addConstraint(trailing)
-        self.addConstraint(bottom)
-        self.addConstraint(leading)
-        //Add height constraint to the subview, as subview owns it.
-        self.addConstraint(height)
-    }
-    func addTopRightConstraints(subView:NSView) {
-        subView.translatesAutoresizingMaskIntoConstraints = false
-        //Trailing
-        let trailing = NSLayoutConstraint(item: subView, attribute: .trailing, relatedBy: .equal, toItem: self, attribute: .trailing, multiplier: 1.0, constant: 0.0)
-        
-        let top = NSLayoutConstraint(item: subView, attribute: .top, relatedBy: .equal, toItem: self, attribute: .top, multiplier: 1.0, constant: 0.0)
-        self.addConstraint(trailing)
-        self.addConstraint(top)
-    }
-    
-    func addVerticalCenterConstraints(subView:NSView) {
-        subView.translatesAutoresizingMaskIntoConstraints = false
-        //Trailing
-        let trailing = NSLayoutConstraint(item: subView, attribute: .trailing, relatedBy: .equal, toItem: self, attribute: .trailing, multiplier: 1.0, constant: 0.0)
-        //Leading
-        let leading = NSLayoutConstraint(item: subView, attribute: .leading, relatedBy: .equal, toItem: self, attribute: .leading, multiplier: 1.0, constant: 0.0)
-        //Bottom
-      //  let bottom = NSLayoutConstraint(item: subView, attribute: .bottom, relatedBy: .equal, toItem: self, attribute: .bottom, multiplier: 1.0, constant: 0.0)
-        //Height to be fixed for SubView same as AdHeight
-        let center = NSLayoutConstraint(item: subView, attribute: .centerY, relatedBy: .equal, toItem: self, attribute: .centerY, multiplier: 1.0, constant: 0.0)
-        self.addConstraint(trailing)
-        self.addConstraint(center)
-        self.addConstraint(leading)
-        //Add height constraint to the subview, as subview owns it.
-     //   self.addConstraint(height)
-    }
-    
-    func addBottomRightConstraints(subView:NSView) {
-        subView.translatesAutoresizingMaskIntoConstraints = false
-        //Trailing
-        let trailing = NSLayoutConstraint(item: subView, attribute: .trailing, relatedBy: .equal, toItem: self, attribute: .trailing, multiplier: 1.0, constant: 0.0)
-        let bottom = NSLayoutConstraint(item: subView, attribute: .bottom, relatedBy: .equal, toItem: self, attribute: .bottom, multiplier: 1.0, constant: 0.0)
-        self.addConstraint(trailing)
-        self.addConstraint(bottom)
-    }
-    
-    func addBottomLeftConstraints(subView:NSView) {
-        subView.translatesAutoresizingMaskIntoConstraints = false
-        //Trailing
-        let leading = NSLayoutConstraint(item: subView, attribute: .leading, relatedBy: .equal, toItem: self, attribute: .leading, multiplier: 1.0, constant: 0.0)
-        let bottom = NSLayoutConstraint(item: subView, attribute: .bottom, relatedBy: .equal, toItem: self, attribute: .bottom, multiplier: 1.0, constant: 0.0)
-        self.addConstraint(leading)
-        self.addConstraint(bottom)
-    }
-    
-    func addConstraints(subView:NSView, leading:CGFloat, trailing:CGFloat, bottom:CGFloat, top:CGFloat) {
-        subView.translatesAutoresizingMaskIntoConstraints = false
-        let trailing = NSLayoutConstraint(item: subView, attribute: .trailing, relatedBy: .equal, toItem: self, attribute: .trailing, multiplier: 1.0, constant: trailing)
-        let leading = NSLayoutConstraint(item: subView, attribute: .leading, relatedBy: .equal, toItem: self, attribute: .leading, multiplier: 1.0, constant: leading)
-        let bottom = NSLayoutConstraint(item: subView, attribute: .bottom, relatedBy: .equal, toItem: self, attribute: .bottom, multiplier: 1.0, constant: bottom)
-        let top = NSLayoutConstraint(item: subView, attribute: .top, relatedBy: .equal, toItem: self, attribute: .top, multiplier: 1.0, constant: top)
-        self.addConstraint(trailing)
-        self.addConstraint(bottom)
-        self.addConstraint(leading)
-        self.addConstraint(top)
-    }
-    
-}
+
 //var isBreathingGoing = false
 //var isHabitGoing = false
 //var isBreakActivitiesGoing = false
@@ -283,90 +242,8 @@ func getTimeFromString(val:String)->Time{
     return Time(hour: hour, minute: minute, second: second)
 }
 
-extension Date {
-    
-    func fullDistance(from date: Date, resultIn component: Calendar.Component, calendar: Calendar = .current) -> Int? {
-        calendar.dateComponents([component], from: self, to: date).value(for: component)
-    }
-    
-    func distance(from date: Date, only component: Calendar.Component, calendar: Calendar = .current) -> Int {
-        let days1 = calendar.component(component, from: self)
-        let days2 = calendar.component(component, from: date)
-        return days1 - days2
-    }
-    
-    func hasSame(_ component: Calendar.Component, as date: Date) -> Bool {
-        distance(from: date, only: component) == 0
-    }
 
-    static func from(year: Int, month: Int, day: Int, hour:Int, minute:Int, second:Int) -> Date? {
-        let calendar = Calendar(identifier: .gregorian)
-        var dateComponents = DateComponents()
-        dateComponents.year = year
-        dateComponents.month = month
-        dateComponents.day = day
-        dateComponents.hour = year
-        dateComponents.minute = month
-        dateComponents.second = day
-        return calendar.date(from: dateComponents) ?? nil
-    }
-    
-    func dayOfWeek() -> String{
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "EEE"
-        return dateFormatter.string(from: self).uppercased()
-        // or use capitalized(with: locale) if you want
-    }
-    
-    func interval(ofComponent comp: Calendar.Component, fromDate date: Date) -> Int {
-        
-        let currentCalendar = Calendar.current
-        
-        guard let start = currentCalendar.ordinality(of: comp, in: .era, for: date) else { return 0 }
-        guard let end = currentCalendar.ordinality(of: comp, in: .era, for: self) else { return 0 }
-        
-        return end - start
-    }
-}
 
-class CustomTextField: NSTextField, NSTextViewDelegate {
-    override func rightMouseDown(with event: NSEvent) {
-        
-    }
-    func textView(_ view: NSTextView, menu: NSMenu, for event: NSEvent, at charIndex: Int) -> NSMenu? {
-        return nil
-    }
-    private let commandKey = NSEvent.ModifierFlags.command.rawValue
-    private let commandShiftKey = NSEvent.ModifierFlags.command.rawValue | NSEvent.ModifierFlags.shift.rawValue
-    
-    override func performKeyEquivalent(with event: NSEvent) -> Bool {
-
-        NSApp.sendAction(#selector(NSText.copy(_:)), to: nil, from: nil)
-        return false
-    }
-}
-class ignoreMouseTextField: NSTextField, NSTextViewDelegate {
-    override func hitTest(_ point: NSPoint) -> NSView? {
-        return nil
-    }
-}
-
-class PasteView: NSTextView, NSTextViewDelegate {
-    
-    override func draw(_ dirtyRect: NSRect) {
-        super.draw(dirtyRect)
-    }
-    
-    override func paste(_ sender: Any?) {
-        Swift.print("user tries to paste")
-        // super.pasteAsPlainText(nil)
-    }
-}
-class CustomWindow: NSWindow {//bacause titleless window per textfield kaam ni kar rhi
-    override var canBecomeKey: Bool{
-        return true
-    }
-}
 
 func attechIconWithString(text:String)->NSMutableAttributedString{
     if text.localizedCaseInsensitiveContains("<icon>"){
@@ -408,7 +285,7 @@ enum ACTION:Int{
 var applastSettingsGetTime:Date?
 
 enum CURRENTSTATE:Int{
-    case _NOTHING_ = 111, _MORNING_HABIT_, _EVENING_HABIT_, _ACTIVITY_, _SHUTOFFMAC_, _BREATHING_, _ABORT_, _FOCUS_SUMMARY_, _POSTPON_MORNING_HABIT_, _POSTPON_EVENING_HABIT_, _POSTPON_FOCUS_SUMMARY_, _POSTPON_ONBOARDING_HABIT_, _ASK_APP_WORK_, _SPECIAL_ACTIVITY_, _CUSTOM_ROUTINE_//_POSTPON_BREAK_ACTIVITY_
+    case _NOTHING_ = 111, _MORNING_HABIT_, _EVENING_HABIT_, _MICRO_BREAK_, _SHUTOFFMAC_, _BREATHING_, _ABORT_, _FOCUS_SUMMARY_, _POSTPON_MORNING_HABIT_, _POSTPON_EVENING_HABIT_, _POSTPON_FOCUS_SUMMARY_, _POSTPON_ONBOARDING_HABIT_, _ASK_APP_WORK_, _SPECIAL_ACTIVITY_, _CUSTOM_ROUTINE_//_POSTPON_BREAK_ACTIVITY_
 }//_POSTPON_BREAK_ACTIVITY_ iski need nahi h qki normal timer utne hi time baad ka laga dete hai
 
 var lastCurrentStateSaved:CURRENTSTATE = ._NOTHING_
@@ -416,11 +293,11 @@ var lastCurrentStateSaved:CURRENTSTATE = ._NOTHING_
 var currentState:CURRENTSTATE = ._NOTHING_{
     didSet{
         if currentState == ._NOTHING_ && lastCurrentStateSaved == ._CUSTOM_ROUTINE_{// if currest state was custom routine and custom routine was started during postpone morning/evening routine state then after complete or abort custom routine set postpone state again
-            if isCustomRoutineWasRunningInPostponeEveningHabit{
+            if isCustomRoutineWasRunningInPostponeEveningHabit && !isCustomRoutineWasRunningBetweenEveningHabit{
                 currentState = ._POSTPON_EVENING_HABIT_
             }
             
-            if isCustomRoutineWasRunningInPostponeMorningHabit{
+            if isCustomRoutineWasRunningInPostponeMorningHabit && !isCustomRoutineWasRunningBetweenMorningHabit{
                 currentState = ._POSTPON_MORNING_HABIT_
             }
         }
@@ -429,6 +306,24 @@ var currentState:CURRENTSTATE = ._NOTHING_{
             isCustomRoutineWasRunningInPostponeEveningHabit = false
         }
         lastCurrentStateSaved = currentState
+        
+        if currentState == ._MORNING_HABIT_{
+            if oldValue != currentState{
+                leftMenuVcObj?.habitStarted()
+            }
+        }else if currentState == ._EVENING_HABIT_{
+            if oldValue != currentState{
+                leftMenuVcObj?.habitStarted()
+            }
+        }else if currentState == ._FOCUS_SUMMARY_{
+            if oldValue != currentState{
+                leftMenuVcObj?.habitStarted()
+            }
+        }else if currentState == ._SHUTOFFMAC_{
+            if oldValue != currentState{
+                leftMenuVcObj?.habitStarted()
+            }
+        }
     }
 }
 
@@ -583,6 +478,10 @@ var buttonMoreActionsText = "More Actions"
 var appAllowedInFocusModeText = "\"<APP>\" is allowed in \"<FOCUSMODE>\" focus mode."
 var appNotAllowedInFocusModeText = "\"<APP>\" is not allowed in \"<FOCUSMODE>\" focus mode."
 
+var strictnessNormalText = "Normal"
+var strictnessStrictText = "Strict"
+var strictnessSuperStrictText = "Super strict"
+
 func readConfigFile(){
     addLog(text: "read Config File")
     if let activityInfo = configjson.value(forKey: "activityInfo") as? NSDictionary{
@@ -605,6 +504,14 @@ func readConfigFile(){
         activitySkippedUnlockNowSoundText = activityInfo.value(forKey: "activitySkippedUnlockNowSoundText") as? String ?? activitySkippedUnlockNowSoundText
         activityFinishedUnlockNowSoundText = activityInfo.value(forKey: "activityFinishedUnlockNowSoundText") as? String ?? activityFinishedUnlockNowSoundText
         buttonMoreActionsText = activityInfo.value(forKey: "buttonMoreActionsText") as? String ?? buttonMoreActionsText
+    }
+    
+    if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
+        if let startingFocusModeInfo = focusInfo.value(forKey: "startingFocusModeInfo") as? NSDictionary{
+            strictnessNormalText = startingFocusModeInfo.value(forKey: "strictnessNormalText") as? String ?? strictnessNormalText
+            strictnessStrictText = startingFocusModeInfo.value(forKey: "strictnessStrictText") as? String ?? strictnessStrictText
+            strictnessSuperStrictText = startingFocusModeInfo.value(forKey: "strictnessSuperStrictText") as? String ?? strictnessSuperStrictText
+        }
     }
     
     
@@ -786,96 +693,7 @@ func getstartActivityButtonText(seconds:Int, name:String)->String{
 }
 
 
-class cursorSegmentedControl: NSSegmentedControl {
-    
-    override func awakeFromNib() {
-        super.awakeFromNib()
-        addTrackingArea(NSTrackingArea(rect: bounds, options: [.activeAlways, .inVisibleRect, .mouseEnteredAndExited], owner: self, userInfo: nil))
-    }
-    
-    override func mouseEntered(with event: NSEvent) {
-        NSCursor.pointingHand.set()
-    }
-    
-    override func mouseExited(with event: NSEvent) {
-        NSCursor.arrow.set()
-    }
-}
 
-
-class shadowScrollViewForTextView: NSScrollView {
-    
-    var shadowOpacity:Float = 0.3
-    var shadowOffset: CGSize = NSMakeSize(0, 5)
-    var shadowRadius: CGFloat = 5
-    
-    override func awakeFromNib() {
-        super.awakeFromNib()
-        setShadow()
-    }
-    
-    func setShadow(){
-        self.wantsLayer = true
-        self.shadow = NSShadow()
-        self.layer?.shadowOpacity = shadowOpacity
-        self.layer?.shadowColor = NSColor.black.cgColor
-        self.layer?.shadowOffset = shadowOffset
-        self.layer?.shadowRadius = shadowRadius
-    }
-}
-
-class shadowView: NSBox {
-    override func awakeFromNib() {
-        super.awakeFromNib()
-        
-        self.wantsLayer = true
-        self.shadow = NSShadow()
-        self.layer?.shadowOpacity = 0.3
-        self.layer?.shadowColor = NSColor.black.cgColor
-        self.layer?.shadowOffset = NSMakeSize(0, -2)
-        self.layer?.shadowRadius = 3
-    }
-}
-
-class shadowTextField: NSTextField {
-    
-    override func awakeFromNib() {
-        super.awakeFromNib()
-        
-        self.wantsLayer = true
-        self.shadow = NSShadow()
-        self.layer?.shadowOpacity = 0.3
-        self.layer?.shadowColor = NSColor.black.cgColor
-        self.layer?.shadowOffset = NSMakeSize(0, 2)
-        self.layer?.shadowRadius = 3
-    }
-    
-    
-}
-
-class menuItemLabel: NSTextField {
-    
-    override func awakeFromNib() {
-        super.awakeFromNib()
-        self.textColor = NSColor.black//buttonTitleColor
-        
-    }
-}
-
-class shadowSecureTextField: NSSecureTextField {
-    override func awakeFromNib() {
-        super.awakeFromNib()
-        
-        self.wantsLayer = true
-        self.shadow = NSShadow()
-        self.layer?.shadowOpacity = 0.3
-        self.layer?.shadowColor = NSColor.black.cgColor
-        self.layer?.shadowOffset = NSMakeSize(0, 2)
-        self.layer?.shadowRadius = 3
-    }
-    
-    
-}
 var isGettingSchema = false
 
 
@@ -888,7 +706,7 @@ var localFlaskServerFolderURL:URL!
 var trackFilesFolderURL:URL!
 var DebugLogsFolderURL:URL!
 var DebugLogsURL:URL!
-var DebugGraphLogsURL:URL!
+//var DebugGraphLogsURL:URL!
 
 //var habitInfoFileURL:URL!
 var settingForScreeenTimeFileURL:URL!
@@ -898,63 +716,7 @@ var arrNonTimerBasedHabitsDurationsPlistFileUrl:URL!
 
 //var blockURL:URL!
 var blockWebUrlString = ""
-class Log: TextOutputStream {
-    
-    func write(_ string: String) {
-        //        let fm = FileManager.default
-        
-        if let log = DebugLogsURL{//fm.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("Debug_Logs.txt")
-            if let handle = try? FileHandle(forWritingTo: log) {
-                handle.seekToEndOfFile()
-                handle.write(string.data(using: .utf8)!)
-                handle.closeFile()
-            } else {
-                try? string.data(using: .utf8)?.write(to: log)
-            }
-        }
-    }
-    static var log: Log = Log()
-    private init() {} // we are sure, nobody else could create it
-}
 
-class Log_Graphs: TextOutputStream {
-    
-    func write(_ string: String) {
-        //        let fm = FileManager.default
-        
-        if let log = DebugGraphLogsURL{//fm.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("Debug_Logs.txt")
-            if let handle = try? FileHandle(forWritingTo: log) {
-                handle.seekToEndOfFile()
-                handle.write(string.data(using: .utf8)!)
-                handle.closeFile()
-            } else {
-                try? string.data(using: .utf8)?.write(to: log)
-            }
-        }
-    }
-    static var log_Graphs: Log_Graphs = Log_Graphs()
-    private init() {} // we are sure, nobody else could create it
-}
-
-func addGraphsLog(text:String){
-    // if isDebugModeEnabled{
-    let df = DateFormatter()
-    df.dateFormat = "yyyy-MM-dd HH:mm:ss"
-    let now = df.string(from: Date())
-    
-    print(now , " - ", text, to: &Log_Graphs.log_Graphs)
-    //}
-}
-
-func addLog(text:String){
-    // if isDebugModeEnabled{
-    let df = DateFormatter()
-    df.dateFormat = "yyyy-MM-dd HH:mm:ss"
-    let now = df.string(from: Date())
-    
-    print(now , " - ", text, to: &Log.log)
-    //}
-}
 
 func getStringFromDate(date:Date, dateFormat:String)->String{
     let df = DateFormatter()
@@ -1003,6 +765,14 @@ func getDaysSinceAppInstalled()->Int{
     return diffDays
 }
 
+func isAppInstalledWithinLast3Days() -> Bool {
+    let currentDate = Date()
+    let firstRunDate = UserDefaults.standard.object(forKey: kUserdefaultsFirstRunDate) as? Date ?? currentDate
+    
+    let threeDaysAgo = Calendar.current.date(byAdding: .day, value: -3, to: Date())!
+    return firstRunDate >= threeDaysAgo
+}
+
 //******************************************CreateDirectoryIfNotExist*******************************************************//
 func CreateDirectoryIfNotExist(path:String){
     if !FileManager.default.fileExists(atPath: path){
@@ -1016,380 +786,15 @@ func CreateDirectoryIfNotExist(path:String){
 
 
 
-////////////////////////////////activation text field ///////////////////////////////////
-class CustomTextFieldCell: NSTextFieldCell {
-    
-    func adjustedFrame(toVerticallyCenterText rect: NSRect) -> NSRect {
-        // super would normally draw text at the top of the cell
-        var titleRect = super.titleRect(forBounds: rect)
-        
-        let minimumHeight = self.cellSize(forBounds: rect).height
-        titleRect.origin.y += (titleRect.height - minimumHeight) / 2
-        titleRect.size.height = minimumHeight
-        
-        return titleRect
-    }
-    
-    override func edit(withFrame rect: NSRect, in controlView: NSView, editor textObj: NSText, delegate: Any?, event: NSEvent?) {
-        super.edit(withFrame: adjustedFrame(toVerticallyCenterText: rect), in: controlView, editor: textObj, delegate: delegate, event: event)
-    }
-    
-    override func select(withFrame rect: NSRect, in controlView: NSView, editor textObj: NSText, delegate: Any?, start selStart: Int, length selLength: Int) {
-        super.select(withFrame: adjustedFrame(toVerticallyCenterText: rect), in: controlView, editor: textObj, delegate: delegate, start: selStart, length: selLength)
-    }
-    
-    override func drawInterior(withFrame cellFrame: NSRect, in controlView: NSView) {
-        super.drawInterior(withFrame: adjustedFrame(toVerticallyCenterText: cellFrame), in: controlView)
-    }
-    
-    override func draw(withFrame cellFrame: NSRect, in controlView: NSView) {
-        super.draw(withFrame: cellFrame, in: controlView)
-    }
-}
-class Editing: NSTextField {
-    
-    private let commandKey = NSEvent.ModifierFlags.command.rawValue
-    private let commandShiftKey = NSEvent.ModifierFlags.command.rawValue | NSEvent.ModifierFlags.shift.rawValue
-    
-    override func performKeyEquivalent(with event: NSEvent) -> Bool {
-        if event.type == NSEvent.EventType.keyDown {
-            if (event.modifierFlags.rawValue & NSEvent.ModifierFlags.deviceIndependentFlagsMask.rawValue) == commandKey {
-                switch event.charactersIgnoringModifiers! {
-                case "x":
-                    if NSApp.sendAction(#selector(NSText.cut(_:)), to:nil, from:self) { return true }
-                case "c":
-                    if NSApp.sendAction(#selector(NSText.copy(_:)), to:nil, from:self) { return true }
-                case "v":
-                    if NSApp.sendAction(#selector(NSText.paste(_:)), to:nil, from:self) { return true }
-                case "z":
-                    if NSApp.sendAction(Selector(("undo:")), to:nil, from:self) { return true }
-                case "a":
-                    if NSApp.sendAction(#selector(NSResponder.selectAll(_:)), to:nil, from:self) { return true }
-                default:
-                    break
-                }
-            }
-            else if (event.modifierFlags.rawValue & NSEvent.ModifierFlags.deviceIndependentFlagsMask.rawValue) == commandShiftKey {
-                if event.charactersIgnoringModifiers == "Z" {
-                    if NSApp.sendAction(Selector(("redo:")), to:nil, from:self) { return true }
-                }
-            }
-        }
-        return super.performKeyEquivalent(with: event)
-    }
-}
-
-
 
 
 //
 
 
-// #MARK:- Check Internet connectivity
-public class Reachability {
-    class func isConnectedToNetwork() -> Bool {
-        var zeroAddress = sockaddr_in(sin_len: 0, sin_family: 0, sin_port: 0, sin_addr: in_addr(s_addr: 0), sin_zero: (0, 0, 0, 0, 0, 0, 0, 0))
-        zeroAddress.sin_len = UInt8(MemoryLayout.size(ofValue: zeroAddress))
-        zeroAddress.sin_family = sa_family_t(AF_INET)
-        
-        let defaultRouteReachability = withUnsafePointer(to: &zeroAddress) {
-            $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {zeroSockAddress in
-                SCNetworkReachabilityCreateWithAddress(nil, zeroSockAddress)
-            }
-        }
-        
-        var flags: SCNetworkReachabilityFlags = SCNetworkReachabilityFlags(rawValue: 0)
-        if SCNetworkReachabilityGetFlags(defaultRouteReachability!, &flags) == false {
-            return false
-        }
-        
-        let isReachable = flags == .reachable
-        let needsConnection = flags == .connectionRequired
-        
-        return isReachable && !needsConnection
-        
-    }
-}
+
 var isPurchased = false
 var daysLeft = 0
 let daysFreeTrial  = 31
-
-
-//func  purchaseNow_clicked(){
-//    let buynow_path = "https://focusbear.io/buynow"
-//    NSWorkspace.shared.open(URL(string: buynow_path)!)
-//}
-
-
-class customBox: NSBox {
-    var mouseDown = false
-    var tagValue = 0
-    var isTableView = false
-    override func awakeFromNib() {
-        super.awakeFromNib()
-        addTrackingArea(NSTrackingArea(rect: bounds, options: [.activeAlways, .inVisibleRect, .mouseEnteredAndExited], owner: self, userInfo: nil))
-        
-    }
-    
-    override func mouseEntered(with event: NSEvent) {
-        super.mouseEntered(with: event)
-        NSCursor.pointingHand.set()
-    }
-    
-    override func mouseDown(with event: NSEvent) {
-        // super.mouseDown(with: event)
-        print("mouse down")
-        if isTableView{
-            mouseDown = true
-            self.layer?.backgroundColor = NSColor(red: 0/255, green: 0/255, blue: 0/255, alpha: 0.2).cgColor
-            NSCursor.pointingHand.set()
-        }else{
-            super.mouseDown(with: event)
-        }
-    }
-    
-    override func mouseUp(with event: NSEvent) {
-        super.mouseUp(with: event)
-        print("mouse up")
-        if mouseDown {
-            mouseDown = false
-            
-            NSCursor.pointingHand.set()
-            self.layer?.backgroundColor = NSColor(red: 0/255, green: 0/255, blue: 0/255, alpha: 0).cgColor
-        }else{
-            return;
-        }
-        
-        
-        if isTableView{
-            focusModeClicked(index: tagValue)
-        }
-    }
-    
-    func focusModeClicked(index:Int){
-        addLog(text:"[user-action] focusModeClicked")
-        if isPurchased == false && daysLeft <= 0{//if UserDefaults.standard.object(forKey: "trialExpired") != nil{
-            if trialExpiredNagWcObj != nil{
-                if trialExpiredNagWcObj?.window?.isVisible ?? false{
-                    return;
-                }
-            }
-            showUpgradeNowWindow()
-            return;
-        }
-        
-        if endingFocusWindowControllerObj != nil{
-            if (endingFocusWindowControllerObj?.window?.isVisible ?? false) && endingFocusWindowControllerObj?.contentViewController == focusCompletedVcObj{
-                addLog(text: "focus mode clicked:- focus mode completed Window is visible:- return")
-                return;
-            }
-        }
-//        if endingFocusWindowControllerObj != nil{
-//            if (endingFocusWindowControllerObj?.window?.isVisible ?? false) && endingFocusWindowControllerObj?.contentViewController == focusCompletedVcObj{
-//                if addTaskVcObj != nil{
-//                    if addTaskVcObj!.presentingViewController == focusCompletedVcObj{
-//                        return;
-//                    }
-//                }
-//            }
-//        }
-        if arrFocusType[index]["isOn"] as? Bool == true || arrFocusType[index]["isPaused"] as? Bool == true{
-            //abort focus mode
-            // new work 13/3/22
-            
-            if arrFocusType[index]["isOn"] as? Bool == true{
-                if currentFocusModeStrictness == ._SUPER_STRICT_{
-                    addLog(text: "can't stop focus mode in super strict focus mode :- return")
-                    var cantStopFocusModeText = "Super strict mode activated: You cannot stop this focus session until it ends."
-                    if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
-                        cantStopFocusModeText = menuInfo.value(forKey: "cantStopFocusModeText") as? String ?? cantStopFocusModeText
-                    }
-                    showTooltip(sender: self, msg: cantStopFocusModeText, preferredEdge: .minX, maxWidthVal: 250)
-                    return;
-                }
-                var menuItemPauseFocusModeTitle = "Pause this focus mode"
-                var menuItemStopFocusModeTitle = "Stop this focus mode"
-                
-                if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
-                    menuItemPauseFocusModeTitle = menuInfo.value(forKey: "menuItemPauseFocusModeTitle") as? String ?? menuItemPauseFocusModeTitle
-                    menuItemStopFocusModeTitle = menuInfo.value(forKey: "menuItemStopFocusModeTitle") as? String ?? menuItemStopFocusModeTitle
-                }
-                
-                let menu = NSMenu()
-                if timerForFocusMode != nil{
-                    let menuItemPause = NSMenuItem(title: menuItemPauseFocusModeTitle, action: #selector(pauseFocusMode), keyEquivalent: "")
-                    menuItemPause.image = NSImage(named: NSImage.touchBarPauseTemplateName)
-                    menuItemPause.target = self
-                    menu.addItem(menuItemPause)
-                }
-                
-                let menuItemStop = NSMenuItem(title: menuItemStopFocusModeTitle, action: #selector(stopFocusMode), keyEquivalent: "")
-                menuItemStop.image = NSImage(named: NSImage.Name("NSTouchBarRecordStopTemplate"))
-                menuItemStop.target = self
-                menu.addItem(menuItemStop)
-                menu.minimumWidth = self.frame.width
-                let p = NSPoint(x: self.frame.origin.x, y: self.frame.origin.y )
-                menu.popUp(positioning: nil, at: p, in: self.superview)
-                return;
-            }else if arrFocusType[index]["isPaused"] as? Bool == true{
-                var menuItemStopFocusModeTitle = "Stop this focus mode"
-                var menuItemResumeFocusModeTitle = "Resume this focus mode"
-                if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
-                    menuItemStopFocusModeTitle = menuInfo.value(forKey: "menuItemStopFocusModeTitle") as? String ?? menuItemStopFocusModeTitle
-                    menuItemResumeFocusModeTitle = menuInfo.value(forKey: "menuItemResumeFocusModeTitle") as? String ?? menuItemResumeFocusModeTitle
-                }
-                
-                let menu = NSMenu()
-                let menuItemResume = NSMenuItem(title: menuItemResumeFocusModeTitle, action: #selector(resumeFocusMode), keyEquivalent: "")
-                menuItemResume.image = NSImage(named: NSImage.touchBarPlayTemplateName)
-                menuItemResume.target = self
-                menu.addItem(menuItemResume)
-                
-                let menuItemStop = NSMenuItem(title: menuItemStopFocusModeTitle, action: #selector(stopFocusMode), keyEquivalent: "")
-                menuItemStop.image = NSImage(named: NSImage.Name("NSTouchBarRecordStopTemplate"))
-                menuItemStop.target = self
-                menu.addItem(menuItemStop)
-                
-                
-                menu.minimumWidth = self.frame.width
-                let p = NSPoint(x: self.frame.origin.x, y: self.frame.origin.y )
-                menu.popUp(positioning: nil, at: p, in: self.superview)
-                return;
-            }
-        }else{
-            if isHardCorePomodoroModeOn{
-                
-                return;
-            }
-            for i in 0..<arrFocusType.count{
-                if arrFocusType[i]["isOn"] as? Bool == true || arrFocusType[i]["isPaused"] as? Bool == true{
-                    let alert = NSAlert()
-                    alert.setSharingType()
-                    alert.messageText = "A focus mode is already running. Please abort the running focus mode to start a new one."
-                    var buttonStopFocusText = "Stop current focus mode and start this one"
-                    
-                    if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
-                        if let focusAlreadyRunningText = focusInfo.value(forKey: "focusAlreadyRunningText") as? String{
-                            alert.messageText = focusAlreadyRunningText
-                        }
-                    }
-                    
-                    if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
-                        if let startingFocusModeInfo = focusInfo.value(forKey: "startingFocusModeInfo") as? NSDictionary{
-                            buttonStopFocusText = startingFocusModeInfo.value(forKey: "buttonStopFocusText") as? String ?? buttonStopFocusText
-                        }
-                    }
-                    
-                    alert.addButton(withTitle: buttonOkText)
-                    alert.addButton(withTitle: buttonStopFocusText)
-                    NSApplication.shared.activate(ignoringOtherApps: true)
-                    let result = alert.runModal()
-                    if result == .alertSecondButtonReturn{
-                        addLog(text: "Stop current focus from alert and show start focus view")
-                        appdelegate?.tryFocusModeFinished(isSilent: true, isShutOffTime: false, isMorningRoutineTime: false, allowExtend:false, isCustomRoutineTime:false)
-                        
-                        let isRelaxFocus = arrFocusType[index]["isRelaxFocus"] as? Bool ?? false
-                        if isRelaxFocus{
-                            if shouldAskPassword(){
-                                if SettingsManagerObject.isPasswordRequireInUseRelaxFocusMode{
-                                    menuViewControllerObj?.showPasswordWindow()
-                                    menuViewControllerObj?.isShowingPasswordForRelaxFocusMode = true
-                                }else{
-                                    showStartingFocusMode(focusModeIndex: index, focusType: arrFocusType[index]["name"] as? String ?? "")
-                                }
-                            }else{
-                                showStartingFocusMode(focusModeIndex: index, focusType: arrFocusType[index]["name"] as? String ?? "")
-                            }
-                        }else{
-                            showStartingFocusMode(focusModeIndex: index, focusType: arrFocusType[index]["name"] as? String ?? "")
-                        }
-                    }
-                    return;
-                }
-            }
-            
-            // //prvent user from start a focus mode while runnning a activity
-            
-            if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._ACTIVITY_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_{
-                addLog(text: "Activity is running: Can not start a focus mode")
-                let alert = NSAlert()
-                alert.setSharingType()
-                alert.messageText = "You can not start a focus mode while an activity is running."
-                
-                if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
-                    if let startingFocusModeInfo = focusInfo.value(forKey: "startingFocusModeInfo") as? NSDictionary{
-                        alert.messageText = startingFocusModeInfo.value(forKey: "activityRunningCantStartFocusText") as? String ?? alert.messageText
-                    }
-                }
-                NSApplication.shared.activate(ignoringOtherApps: true)
-                alert.runModal()
-                return;
-            }
-            
-            
-            
-            
-            let isRelaxFocus = arrFocusType[index]["isRelaxFocus"] as? Bool ?? false
-            if isRelaxFocus{
-                if shouldAskPassword(){
-                    if SettingsManagerObject.isPasswordRequireInUseRelaxFocusMode{
-                        menuViewControllerObj?.showPasswordWindow()
-                        menuViewControllerObj?.isShowingPasswordForRelaxFocusMode = true
-                    }else{
-                        showStartingFocusMode(focusModeIndex: index, focusType: arrFocusType[index]["name"] as? String ?? "")
-                    }
-                }else{
-                    showStartingFocusMode(focusModeIndex: index, focusType: arrFocusType[index]["name"] as? String ?? "")
-                }
-            }else{
-                showStartingFocusMode(focusModeIndex: index, focusType: arrFocusType[index]["name"] as? String ?? "")
-            }
-            
-            return;
-            
-        }
-    }
-    @objc func pauseFocusMode(){
-        if currentFocusModeStrictness == ._STRICT_{
-            showAbortingFocusModeVc(forPause: true)
-        }else{
-            appdelegate?.pauseFocusMode(index: tagValue)
-//            menuViewControllerObj?.tblViewFocusMode.reloadData()
-        }
-    }
-    
-    @objc func stopFocusMode(){
-        if isHardCorePomodoroModeOn{
-            if shouldAskPassword(){
-                if SettingsManagerObject.isPasswordRequireInStopPomodoro{
-                    menuViewControllerObj?.showPasswordWindow()
-                    addLog(text: "Showing enter password view from hardcore pomodoro stop from focus stop menu")
-                }else{
-                    showAbortingFocusModeVc(forPause: false)
-                }
-            }else{
-                showAbortingFocusModeVc(forPause: false)
-            }
-        }else{
-            showAbortingFocusModeVc(forPause: false)
-        }
-    }
-    
-    @objc func resumeFocusMode(){
-        appdelegate?.resumeFocusMode(index: tagValue)
-//        menuViewControllerObj?.tblViewFocusMode.reloadData()
-//        menuViewControllerObj?.startFocusRemainingTimer()
-    }
-    override func mouseExited(with event: NSEvent) {
-        super.mouseExited(with: event)
-        mouseDown = false
-        NSCursor.arrow.set()
-        self.layer?.backgroundColor = NSColor(red: 0/255, green: 0/255, blue: 0/255, alpha: 0).cgColor
-    }
-}
-
-
-
 
 
 
@@ -1476,10 +881,10 @@ func disableSystemSleep(){
 func enableSystemSleep(){
     IOPMAssertionRelease(assertionIDDisableSleep);
 }
-var isFocusMusicPausedAutomatically = false
 
-func showBlankWindowInSecondaryMonitor(){
-    addLog(text: "func:- showBlankWindowInSecondaryMonitor")
+
+var isFocusMusicPausedAutomatically = false
+func pauseAutomaticallyIfAnyFocusMusicPlaying(){
     if allTracksVcObj != nil{
         for i in 0..<arrAllTracks.count{
             if arrAllTracks[i]["isPlaying"] as? Bool == true{
@@ -1489,43 +894,13 @@ func showBlankWindowInSecondaryMonitor(){
                     allTracksVcObj?.currentSound?.pause()
                     isFocusMusicPausedAutomatically = true
                 }
-                if allTracksWindowControllerObj != nil{
-                    if allTracksWindowControllerObj?.window?.isVisible ?? false{
-                        allTracksVcObj?.tblView.reloadData()
-                    }
-                }
+                reloadFocusMusicListIfVisible()
                 break;
             }
         }
     }
-    
-    // Luisa App broken bug fix 28/6/22
-    let windows = NSApp.windows
-    for win in windows{
-        print(win)
-        if win.isModalPanel{
-            NSApp.stopModal()
-            break;
-        }
-    }
-    //  /////////////////////////////////
-    if !checkIsFullScreenEnabled(){//Blank Window In Secondary Monitor is not required if full screen is not enabled
-        return;
-    }
-    appdelegate?.showExtraWindows()
 }
-func checkIsFullScreenEnabled()-> Bool{
-    if currentState == ._ACTIVITY_{
-        if isBreakActivityShowingWhileMeeting{
-            return false
-        }
-    }
-    
-    return SettingsManagerObject.isFullScreenEnabled
-}
-
-func hideBlankWindowInSecondaryMonitor(){
-    addLog(text: "func:- hideBlankWindowInSecondaryMonitor")
+func resumeIfAnyFocusMusicStoppedAutomatically(){
     if isFocusMusicPausedAutomatically{
         isFocusMusicPausedAutomatically = false
         if allTracksVcObj != nil{
@@ -1534,98 +909,40 @@ func hideBlankWindowInSecondaryMonitor(){
                     arrAllTracks[i]["isPlaying"] = true
                     arrAllTracks[i]["isPaused"] = false
                     allTracksVcObj?.currentSound?.resume()
-                    if allTracksWindowControllerObj != nil{
-                        if allTracksWindowControllerObj?.window?.isVisible ?? false{
-                            allTracksVcObj?.tblView.reloadData()
-                        }
-                    }
+                    reloadFocusMusicListIfVisible()
                     break;
                 }
             }
         }
     }
-    
-    
-    for i in 0..<arrWindows.count{
-        let window = arrWindows[i]
-        //        if let vc = window.contentViewController as? ViewController{
-        //            vc.customView.cbox?.isHidden = true
-        //            vc.customView.setNeedsDisplay(vc.customView.frame)
-        //            vc.customView.cRect = NSRect(x: 0, y: 0, width: 0, height: 0)
-        //            vc.customView.mouseDownPoint = NSPoint.zero
-        //        }
-        window.orderOut(nil)
-        arrWindows[i].windowController?.window=nil
-    }
-    arrWindows.removeAll()
-}
-var arrWindows = [NSWindow]()
-
-
-func resetWin(_ win: NSWindow) -> NSWindow {
-    win.collectionBehavior = NSWindow.CollectionBehavior.canJoinAllSpaces          // we want these windows to follow Spaces around
-    //use .desktopWindow for window below icons   //hack? this makes mission control and expose ignore these windows
-    //        if toggleButtonHideDesktopIcons.isOn{
-    //            win.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.backstopMenu)))
-    //        }else{
-    win.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.maximumWindow)))
-    //        }
-    // rest is to make the windows dumb
-    win.canHide = false
-    win.isExcludedFromWindowsMenu = true
-    win.hidesOnDeactivate = false
-    win.discardCursorRects()
-    win.discardEvents(matching: NSEvent.EventTypeMask.any, before: nil)
-    //win.ignoresMouseEvents = true
-    win.orderBack(nil)
-    win.isRestorable = false
-    win.animationBehavior = .none
-    win.backgroundColor = NSColor.clear
-    return win
 }
 
-class blankController: NSViewController {
-    @IBOutlet weak var lblTitle: NSTextField!
-    override func viewDidLoad() {
-        lblTitle.stringValue = appName//"Focus Bear"
-    }
-}
-
-class logsUploadingVc: NSViewController {
-    @IBOutlet weak var lblTitle: NSTextField!
-    @IBOutlet weak var loader: NSProgressIndicator!
-    override func viewDidLoad() {
-        lblTitle.stringValue = "Uploading..."
-        
-        if let common = configjson.value(forKey: "common") as? NSDictionary{
-            lblTitle.stringValue = common.value(forKey: "uploadingText") as? String ?? lblTitle.stringValue
+func reloadFocusMusicListIfVisible(){
+    if allTracksVcObj != nil && mainWindowControllerObj != nil{
+        if mainWindowControllerObj?.window?.isVisible ?? false{
+            if leftMenuVcObj?.boxFocusMusic.isSelected ?? false{
+                allTracksVcObj?.tblView.reloadData()
+            }
         }
     }
-    override func viewWillAppear() {
-        loader.startAnimation(self)
-    }
 }
 
-//4b3eb33632184640b82aa3e3f50fe11b2cdd8b0e82ce48a8bfd1cbe26edc32f5
+func checkIsFullScreenEnabled()-> Bool{
+    if currentState == ._MICRO_BREAK_{
+        if isBreakActivityShowingWhileMeeting{
+            return false
+        }
+    }
+    
+    return SettingsManagerObject.isFullScreenEnabled
+}
+
+
 
 var newGifsNamesArray = ["Glasses-Bear-250-px_V3", "cheer_250px_trans_centered", "Finger-and-Sign-Bear-250px", "Weight-bear-250-px_V2", "Whistle-bear-250-px"]
 
 
-extension String {
-    
-    func fromBase64() -> String? {
-        guard let data = Data(base64Encoded: self) else {
-            return nil
-        }
-        
-        return String(data: data, encoding: .utf8)
-    }
-    
-    func toBase64() -> String {
-        return Data(self.utf8).base64EncodedString()
-    }
-    
-}
+
 
 //
 
@@ -1846,47 +1163,47 @@ var lastShownRandomChoiceDic = [String:activityChoice]()
 
 
 let mainAppBundelId = Bundle.main.bundleIdentifier ?? ""
-func createLaunchAgent(){
-    addLog(text: "func:- createLaunchAgent")
-    //Background process "open" modified when Focus Bear opened?  #409 It shouldn't appear every time the app is restarted
-    let path = Bundle.main.bundlePath
-    if let userLA = AHLaunchCtl.allJobsFromFiles(in: AHLaunchDomain.userLaunchAgent) as? [AHLaunchJob] {
-        for uLA in userLA {
-            if uLA.isCurrentlyLoaded{
-                if let arguments = uLA.programArguments as? [String]{
-                    if arguments.contains(where: {$0.caseInsensitiveCompare(path) == .orderedSame}) {
-                        addLog(text: "LaunchAgent already created return")
-                        return;
-                    }
-                }
-            }
-        }
-    }
-    //
-    
-    let destination = "/Users/\(NSUserName())/Library/LaunchAgents/"
-    if !FileManager.default.fileExists(atPath: destination) {
-        do {
-            try FileManager.default.createDirectory(at: URL(fileURLWithPath: destination), withIntermediateDirectories: true, attributes: nil)
-        } catch {}
-        
-    }
-    
-    // saves the agent plist file
-    let userLaunchAgentsPath = "\("/Users/")\(NSUserName())\("/Library/LaunchAgents/\(mainAppBundelId).plist")"
-    
-    let dicContent = ["Label": "\(mainAppBundelId).plist", "ProgramArguments":["/usr/bin/open","-F","-g",path,"--args"],"RunAtLoad":true,"KeepAlive":true] as [String : Any]
-    
-    let plistContent = NSDictionary(dictionary: dicContent)
-    let success:Bool = plistContent.write(toFile: userLaunchAgentsPath, atomically: true)
-    if success {
-        print("file has been created!")
-    }else{
-        print("unable to create the file")
-    }
-    shell(launchPath: "/bin/launchctl", arguments: ["load","-w","\("/Users/")\(NSUserName())\("/Library/LaunchAgents/\(mainAppBundelId).plist")"])
-    addLog(text: "createLaunchAgent done")
-}
+//func createLaunchAgent(){//  comment this
+//    addLog(text: "func:- createLaunchAgent")
+//    //Background process "open" modified when Focus Bear opened?  #409 It shouldn't appear every time the app is restarted
+//    let path = Bundle.main.bundlePath
+//    if let userLA = AHLaunchCtl.allJobsFromFiles(in: AHLaunchDomain.userLaunchAgent) as? [AHLaunchJob] {
+//        for uLA in userLA {
+//            if uLA.isCurrentlyLoaded{
+//                if let arguments = uLA.programArguments as? [String]{
+//                    if arguments.contains(where: {$0.caseInsensitiveCompare(path) == .orderedSame}) {
+//                        addLog(text: "LaunchAgent already created return")
+//                        return;
+//                    }
+//                }
+//            }
+//        }
+//    }
+//    //
+//    
+//    let destination = "/Users/\(NSUserName())/Library/LaunchAgents/"
+//    if !FileManager.default.fileExists(atPath: destination) {
+//        do {
+//            try FileManager.default.createDirectory(at: URL(fileURLWithPath: destination), withIntermediateDirectories: true, attributes: nil)
+//        } catch {}
+//        
+//    }
+//    
+//    // saves the agent plist file
+//    let userLaunchAgentsPath = "\("/Users/")\(NSUserName())\("/Library/LaunchAgents/\(mainAppBundelId).plist")"
+//    
+//    let dicContent = ["Label": "\(mainAppBundelId).plist", "ProgramArguments":["/usr/bin/open","-F","-g",path,"--args"],"RunAtLoad":true,"KeepAlive":true] as [String : Any]
+//    
+//    let plistContent = NSDictionary(dictionary: dicContent)
+//    let success:Bool = plistContent.write(toFile: userLaunchAgentsPath, atomically: true)
+//    if success {
+//        print("file has been created!")
+//    }else{
+//        print("unable to create the file")
+//    }
+//    shell(launchPath: "/bin/launchctl", arguments: ["load","-w","\("/Users/")\(NSUserName())\("/Library/LaunchAgents/\(mainAppBundelId).plist")"])
+//    addLog(text: "createLaunchAgent done")
+//}
 
 var helperUrl: URL = {
 
@@ -1979,26 +1296,7 @@ func shell(launchPath: String, arguments: [String] = [])  {
 }
 
 
-func isShutOffTimeGoing()->Bool{
-    if startTime == nil || shutOffTime == nil{
-        return false
-    }
-    let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
-    let shutOffdate = Calendar.current.date(bySettingHour: shutOffTime!.hour, minute: shutOffTime!.minute, second: shutOffTime!.second, of: Date())!
-    let currentDate = Date()
-    
-    var isShutOffTime = false
-    
-    if  startDate.compare(shutOffdate) == .orderedDescending{//(start date jyada ho shut off date se ) ex shut off 5 bje start date 8 bje
-        if currentDate.compare(startDate) == .orderedAscending  && currentDate.compare(shutOffdate) == .orderedDescending{
-            isShutOffTime = true
-        }
-        
-    }else if currentDate.compare(startDate) == .orderedAscending  || currentDate.compare(shutOffdate) == .orderedDescending{
-        isShutOffTime = true
-    }
-    return isShutOffTime
-}
+
 
 
 func showNotificationWithMessage(msg:String){
@@ -2011,62 +1309,7 @@ func showNotificationWithMessage(msg:String){
 
 
 
-//***********SHOW Small Timer WINDOW***************//
 
-func showSmallTimerWindow(durationSeconds: Int, msg: String, isFocusBreak:Bool, currentTimerValue:Int){
-    addLog(text:"show Top Small Timer Window for:- \(durationSeconds) seconds")
-    getSmallCountDownWindowObject().contentViewController = getsmallCountDownVcObject()
-    smallCountDownVcObj?.isFocusBreak = isFocusBreak
-    getSmallCountDownWindowObject().window?.styleMask = .borderless
-    let screenFrame = NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 1920, height: 1080)
-    
-    getSmallCountDownWindowObject().window?.setFrameOrigin(NSPoint(x: screenFrame.width - (smallCountDownVcObj?.view.frame.width)!, y: screenFrame.height - (smallCountDownVcObj?.view.frame.height)! - 22)) //  22 status bar heigh
-    getSmallCountDownWindowObject().window?.isMovableByWindowBackground = true
-    
-    getSmallCountDownWindowObject().showWindow(nil)
-    
-    smallCountDownVcObj?.startTimerHabit(durationSeconds: durationSeconds, msg: msg, currentTimerValue:currentTimerValue)
-}
-
-
-//***********SHOW Focus End Warning***************//
-
-func showFocusEndWarningWindow(){
-    addLog(text:"showFocusEndWarningWindow")
-    getFocusEndWarningWindowObject().contentViewController = getFocusEndWarningVcObject()
-    //    getFocusEndWarningWindowObject().window?.styleMask = .borderless
-    let screenFrame = NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 1920, height: 1080)
-    //    getFocusEndWarningWindowObject().window?.styleMask.remove(.closable)
-    getFocusEndWarningWindowObject().window?.title = appName
-    getFocusEndWarningWindowObject().window?.setFrameOrigin(NSPoint(x: screenFrame.width - (getFocusEndWarningVcObject().view.frame.width), y: screenFrame.height - (getFocusEndWarningVcObject().view.frame.height) - 22)) //  22 status bar heigh
-    //    getFocusEndWarningWindowObject().window?.isMovableByWindowBackground = true
-    getFocusEndWarningWindowObject().showWindow(nil)
-}
-
-//***********SHOW Custom Notification WINDOW***************//
-//func showCustomNotificationWindow(msg: String){
-//    addLog(text:"show Custom Notification Window")
-//    getCustomNotificationWindowObject().contentViewController = getCustomNotificationVcObject()ye view  subview bhi ban rha h to dekh k use kro agar uncomment kro to
-//    getCustomNotificationWindowObject().window?.styleMask = .borderless
-//    let screenFrame = NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 1920, height: 1080)
-//    getCustomNotificationWindowObject().window?.backgroundColor = NSColor.clear
-//    getCustomNotificationWindowObject().window?.setFrameOrigin(NSPoint(x: screenFrame.width - (customNotificationVcObj?.view.frame.width)!, y: screenFrame.height - (customNotificationVcObj?.view.frame.height)! - 22)) //  22 status bar heigh
-//
-//    getCustomNotificationWindowObject().showWindow(nil)
-//    customNotificationVcObj?.resetView(msg: msg)
-//}
-
-//***********SHOW Custom Notification View***************//
-func showCustomNotificationView(msg: String){
-    if mainWindowControllerObj?.window?.isVisible ?? false{
-        addLog(text:"show Custom Notification View")
-        let _ = getCustomNotificationVcObject()
-        mainViewControllerObj?.view.addSubview(customNotificationVcObj!.view)
-        mainViewControllerObj?.view.addTopRightConstraints(subView: customNotificationVcObj!.view)
-        customNotificationVcObj!.resetView(msg: msg)
-    }
-    
-}
 
 
 //***********Popup Block Confirm Window***************//
@@ -2252,216 +1495,7 @@ var arrLanguageDic = [["name":"English", "id":"en", "languageName":"English"], [
 var currentLanguageCode = ""
 
 
-class PopoverAwareTextField: NSTextField, NSPopoverDelegate {// not in use 
-    
-    var parentVcObj:rememberNextHabitVc?
-    var itemsArr = [String]()
-    var popoverViewControllerObj:PopoverViewController?// = PopoverViewController()
-    var selectedItemId = -1
-    
-    
-    override func becomeFirstResponder() -> Bool {
-        
-        print("becomeFirstResponder")
-        if popoverViewControllerObj!.view.isHidden == false{
-            return super.becomeFirstResponder()
-        }
-        
-        if itemsArr.count != 0{
-            selectedItemId = -1
-            
-            popoverViewControllerObj!.view.isHidden = false
-            popoverViewControllerObj!.textFieldObj = self
-            popoverViewControllerObj!.ReloadData(arr: itemsArr)
-            popoverViewControllerObj!.tblView.reloadData()
-            let range = self.currentEditor()?.selectedRange
-            self.selectText(self)
-            self.currentEditor()?.selectedRange = range ?? NSMakeRange(0, 0)
-        }
-        
-        return super.becomeFirstResponder()
-    }
-    
-    
-    
-    @objc func Close(){
-        popoverViewControllerObj!.view.isHidden = true
-    }
-    
-    override func keyUp(with theEvent: NSEvent) {
-        
-        if theEvent.keyCode == 53 || theEvent.keyCode == 48{//esc,tab
-            super.keyUp(with: theEvent)
-            popoverViewControllerObj?.view.isHidden = true
-            return
-        }
-        if theEvent.keyCode == 36 || theEvent.keyCode == 76{//enter
-            if popoverViewControllerObj!.view.isHidden == false{
-                popoverViewControllerObj!.doubleClicked()
-            }else{
-                
-            }
-            super.keyUp(with: theEvent)
-            return
-        }
-        if theEvent.keyCode == 126{//// up key
-            popoverViewControllerObj!.selectPrevious()
-            return
-        }
-        if theEvent.keyCode == 125{//down key (go next)
-            if popoverViewControllerObj!.view.isHidden == true{
-                popoverViewControllerObj!.view.isHidden = false
-            }else{
-                popoverViewControllerObj!.selectNext()
-            }
-            return
-        }
-        self.complete(self)
-        super.keyUp(with: theEvent)
-    }
-    
-    override func complete(_ sender: Any?) {
-        let lengthOfWord = self.stringValue.count
-        var matches = [String]()
-        selectedItemId = -1
-        if self.itemsArr.count != 0 {
-            matches.removeAll()
-            for result in self.itemsArr {
-                if result.localizedStandardContains(self.stringValue){
-                    matches.append(result)
-                }
-            }
-            
-        }
-        
-        if lengthOfWord == 0{
-            matches = self.itemsArr
-        }
-        if matches.count > 0 {
-            let range = self.currentEditor()?.selectedRange
-            popoverViewControllerObj!.view.isHidden = false
-            popoverViewControllerObj!.textFieldObj = self
-            popoverViewControllerObj!.ReloadData(arr: matches)
-            popoverViewControllerObj!.tblView.reloadData()
-            
-            self.selectText(self)
-            self.currentEditor()?.selectedRange = range ?? NSMakeRange(0, 0)
-        } else{
-            popoverViewControllerObj!.view.isHidden = true
-        }
-    }
-    
-}
-class PopoverAwareSearchField: NSSearchField, NSPopoverDelegate {
-    
-    var parentVcObj:settingsSideBarVc?
-    var itemsArr = [[String:Any]]()
-    var popoverViewControllerObj:PopoverViewControllerForSearch?// = PopoverViewController()
-    var selectedItemId = ""
-    
-    
-    override func becomeFirstResponder() -> Bool {
-        
-        print("becomeFirstResponder")
-        if popoverViewControllerObj!.view.isHidden == false{
-            return super.becomeFirstResponder()
-        }
-        
-        if itemsArr.count != 0{
-            selectedItemId = ""
-            
-            
-            //            self.superview?.addSubview(popoverViewControllerObj.view)
-            //            addConstraints()
-            //            popover.show(relativeTo: self.frame, of: NSApp.keyWindow?.contentView ?? self, preferredEdge: .minY)
-            popoverViewControllerObj!.view.isHidden = true
-            popoverViewControllerObj!.textFieldObj = self
-            popoverViewControllerObj!.ReloadData(arr: itemsArr)
-            popoverViewControllerObj!.tblView.reloadData()
-            let range = self.currentEditor()?.selectedRange
-            self.selectText(self)
-            self.currentEditor()?.selectedRange = range ?? NSMakeRange(0, 0)
-        }
-        
-        return super.becomeFirstResponder()
-    }
-    
-    
-    @objc func Close(){
-        popoverViewControllerObj!.view.isHidden = true
-    }
-    
-    override func keyUp(with theEvent: NSEvent) {
-        
-        if theEvent.keyCode == 53 || theEvent.keyCode == 48{//esc,tab
-            super.keyUp(with: theEvent)
-            popoverViewControllerObj?.view.isHidden = true
-            return
-        }
-        if theEvent.keyCode == 36 || theEvent.keyCode == 76{//enter
-            if popoverViewControllerObj!.view.isHidden == false{
-                popoverViewControllerObj!.doubleClicked()
-            }else{
-                
-            }
-            super.keyUp(with: theEvent)
-            return
-        }
-        if theEvent.keyCode == 126{//// up key
-            popoverViewControllerObj!.selectPrevious()
-            return
-        }
-        if theEvent.keyCode == 125{//down key (go next)
-            if popoverViewControllerObj!.view.isHidden == true{
-                popoverViewControllerObj!.view.isHidden = false
-            }else{
-                popoverViewControllerObj!.selectNext()
-            }
-            return
-        }
-        self.complete(self)
-        super.keyUp(with: theEvent)
-    }
-    
-    override func complete(_ sender: Any?) {
-        let lengthOfWord = self.stringValue.count
-        if lengthOfWord == 0{
-            popoverViewControllerObj!.view.isHidden = true
-            return;
-        }
-        var matches = [[String:Any]]()
-        selectedItemId = ""
-        if self.itemsArr.count != 0 {
-            matches.removeAll()
-            for result in self.itemsArr {
-                if ((result)["title"] as? String ?? "").localizedStandardContains(self.stringValue){
-                    matches.append(result)
-                }
-            }
-            
-        }
-        
-        if lengthOfWord == 0{
-            matches = self.itemsArr
-        }
-        if matches.count > 0 {
-            let range = self.currentEditor()?.selectedRange
-            //            popover.show(relativeTo: self.frame, of: self, preferredEdge: .maxY)
-            //            popover.show(relativeTo: self.frame, of: NSApp.keyWindow?.contentView ?? self, preferredEdge: .minY)//////
-            popoverViewControllerObj!.view.isHidden = false
-            popoverViewControllerObj!.textFieldObj = self
-            popoverViewControllerObj!.ReloadData(arr: matches)
-            popoverViewControllerObj!.tblView.reloadData()
-            
-            self.selectText(self)
-            self.currentEditor()?.selectedRange = range ?? NSMakeRange(0, 0)
-        } else{
-            //            popover.close()/////
-            popoverViewControllerObj!.view.isHidden = true
-        }
-    }
-    
-}
+
 
 func roundToHundred(number : Int) -> Int {
     let rounded = Int(number + 50)/100 * 100
@@ -2506,17 +1540,7 @@ func roundDoubleValue(val:Double)->Double{
 }
 
 
-extension NSTextField{
-    func setFocus(){
-        self.selectText(self)
-        self.currentEditor()?.selectedRange = NSRange(location: self.stringValue.count, length: 0)
-    }
-    
-    func setFocusAndSelectText(){
-        self.selectText(self)
-        self.currentEditor()?.selectedRange = NSRange(location: 0, length: self.stringValue.count)
-    }
-}
+
 
 
 
@@ -2548,14 +1572,7 @@ func showAlertNoInternet(window:NSWindow){
     }) 
 }
 
-extension Bundle {
-    var releaseVersionNumber: String? {
-        return infoDictionary?["CFBundleShortVersionString"] as? String
-    }
-    var buildVersionNumber: String? {
-        return infoDictionary?["CFBundleVersion"] as? String
-    }
-}
+
 
 var allActivityTodaySummaryData:NSDictionary?
 var graphOneMonthData:NSDictionary?
@@ -2565,57 +1582,7 @@ var graphOneDayDataForQuantity:NSDictionary?
 var focusModeTemplateData:[NSDictionary]?
 var habitPacksData:[NSDictionary]?
 
-extension NSAppleEventDescriptor {
-    
-    func toStringArray() -> [String] {
-        guard let listDescriptor = self.coerce(toDescriptorType: typeAEList) else {
-            return []
-        }
-        
-        return (0..<listDescriptor.numberOfItems)
-            .compactMap { listDescriptor.atIndex($0 + 1)?.stringValue }
-    }
-    func toAnyArray() -> [String:[String]] {
-        guard let listDescriptor = self.coerce(toDescriptorType: typeAEList) else {
-            return [:]
-        }
-        var tabStruct = [String:[String]]()
-        
-        for i in 0..<listDescriptor.numberOfItems{
-            guard let listWindDescriptor = listDescriptor.atIndex(i + 1)?.coerce(toDescriptorType: typeAEList) else {
-                return [:]
-            }
-            var currentKey = ""
-            for j in 0..<listWindDescriptor.numberOfItems{
-                
-                if  let listTabDescriptor = listWindDescriptor.atIndex(j + 1)?.coerce(toDescriptorType: typeAEList){
-                    
-                    for k in 0..<listTabDescriptor.numberOfItems{
-                        if let stringValue = listTabDescriptor.atIndex(k + 1)?.stringValue{
-                            
-                            if let id  = Int(stringValue){
-                                currentKey = stringValue
-                                var arrTabs = [String]()
-                                tabStruct[currentKey] = arrTabs
-                            }else{
-                                if !currentKey.isEmpty{
-                                    var tabArr = tabStruct[currentKey] ?? []
-                                    tabArr.append(stringValue)
-                                    tabStruct[currentKey] = tabArr
-                                }
-                            }
-                            
-                        }
-                        
-                    }
-                    
-                }
-            }
-        }
-        
-        return tabStruct;
-    }
-}
+
 
 func setDocBarTo(isHide:Bool){
     DispatchQueue.global().async {
@@ -2653,201 +1620,22 @@ func checkDocBarState()->String?{
     end tell
     """
     
-    return executeScriptAndReturnString(script: script)
-}
-
-
-
-extension NSLayoutConstraint {
-    /**
-     Change multiplier constraint
-     
-     - parameter multiplier: CGFloat
-     - returns: NSLayoutConstraint
-     */
-    func setMultiplier(multiplier:CGFloat) -> NSLayoutConstraint {
-        
-        NSLayoutConstraint.deactivate([self])
-        
-        let newConstraint = NSLayoutConstraint(
-            item: firstItem,
-            attribute: firstAttribute,
-            relatedBy: relation,
-            toItem: secondItem,
-            attribute: secondAttribute,
-            multiplier: multiplier,
-            constant: constant)
-        
-        newConstraint.priority = priority
-        newConstraint.shouldBeArchived = self.shouldBeArchived
-        newConstraint.identifier = self.identifier
-        
-        NSLayoutConstraint.activate([newConstraint])
-        return newConstraint
-    }
-}
-
-var backgroundColor = NSColor(named: "backgroundColor") ?? NSColor.windowBackgroundColor
-class customBoxBg:NSBox{
-    //    override func draw(_ dirtyRect: NSRect) {
-
-    override func draw(_ dirtyRect: NSRect) {
-        // Make the pattern tile repeat from the top of the view.
-        let yOffset = NSMaxY(self.convert(self.frame, to: nil))
-        NSGraphicsContext.current?.patternPhase = NSMakePoint(0, yOffset)
-        
-        super.draw(dirtyRect)
-    }
-    override func awakeFromNib() {
-        super.awakeFromNib()
-        self.fillColor = backgroundColor
-        //let image = #imageLiteral(resourceName: "background")
-        //self.contentView?.backgroundcolor = NSColor(patternImage: image)
-    }
-}
-
-
-
-class CustomImageView: NSImageView {
-    override var mouseDownCanMoveWindow: Bool{
-        return true
-    }
-}
-
-//MARK: Custom Popover Background and Arrow
-class PopoverContentView:NSView {
-    var backgroundView:PopoverBackgroundView?
-    override func viewDidMoveToWindow() {
-        super.viewDidMoveToWindow()
-        if SettingsManagerObject.isMenuPopoverEnabled{
-            if let frameView = self.window?.contentView?.superview {
-                if backgroundView == nil {
-                    backgroundView = PopoverBackgroundView(frame: frameView.bounds)
-                    backgroundView!.autoresizingMask = NSView.AutoresizingMask([.width, .height]);
-                    frameView.addSubview(backgroundView!, positioned: NSWindow.OrderingMode.below, relativeTo: frameView)
-                }
-            }
-        }else if backgroundView != nil{
-            backgroundView?.removeFromSuperview()
-            backgroundView = nil
+    if let appleScript = NSAppleScript(source: script) {
+        var errors : NSDictionary? = nil
+        let desc = appleScript.executeAndReturnError(&errors)
+        if errors != nil {
+            print(errors!)
         }
+        return desc.stringValue
     }
-}
-
-class PopoverBackgroundView:NSView {
-    override func draw(_ dirtyRect: NSRect) {
-        backgroundColor.set()
-        //  NSRectFill(self.bounds)
-        bounds.fill()
-        
-    }
+    return nil
 }
 
 
 
-class PopoverContentViewForMenuTour:NSView {
-    var backgroundView:PopoverBackgroundViewForMenuTour?
-    override func viewDidMoveToWindow() {
-        super.viewDidMoveToWindow()
-        if let frameView = self.window?.contentView?.superview {
-            if backgroundView == nil {
-                backgroundView = PopoverBackgroundViewForMenuTour(frame: frameView.bounds)
-                backgroundView!.autoresizingMask = NSView.AutoresizingMask([.width, .height]);
-                frameView.addSubview(backgroundView!, positioned: NSWindow.OrderingMode.below, relativeTo: frameView)
-            }
-        }
-    }
-}
-
-class PopoverBackgroundViewForMenuTour:NSView {
-    override func draw(_ dirtyRect: NSRect) {
-        NSColor.white.set()
-        //  NSRectFill(self.bounds)
-        bounds.fill()
-        
-    }
-}
 
 
 
-//var headercolor = NSColor(red: 62/255, green: 70/255, blue: 106/255, alpha: 1)
-class CustomScroller: NSScroller {
-    
-    override func draw(_ dirtyRect: NSRect) {
-        NSColor.clear.set()
-        dirtyRect.fill()
-        self.drawKnob()
-    }
-    
-    override func drawKnob() {
-        var knobSlot: NSRect = rect(for: .knob)
-        let orientation = self.accessibilityOrientation()
-        if orientation.rawValue == 2  {
-            //Horizontal
-            knobSlot.size.height = 20
-            knobSlot.origin.y = 4
-        } else {
-            knobSlot.size.width = 7
-            knobSlot.origin.x = 3
-        }
-        
-        let path = NSBezierPath(roundedRect: knobSlot, xRadius: 5, yRadius: 5)
-        NSColor.black.withAlphaComponent(0.5).set()
-        path.fill()
-    }
-    
-    override func drawKnobSlot(in slotRect: NSRect, highlight flag: Bool) {
-        var newRect: NSRect = slotRect
-        let orientation = self.accessibilityOrientation()
-        
-        if orientation.rawValue == 2 {
-            newRect.origin.y = 4
-        } else {
-            newRect.origin.x = 3
-        }
-        super.drawKnobSlot(in: newRect, highlight: flag)
-    }
-    
-}
-
-class CustomScrollerForSettiings: NSScroller {
-    
-    override func draw(_ dirtyRect: NSRect) {
-        NSColor.tertiaryLabelColor.withAlphaComponent(0.1).set()
-        dirtyRect.fill()
-        self.drawKnob()
-    }
-    
-    override func drawKnob() {
-        var knobSlot: NSRect = rect(for: .knob)
-        let orientation = self.accessibilityOrientation()
-        if orientation.rawValue == 2  {
-            //Horizontal
-            knobSlot.size.height = 20
-            knobSlot.origin.y = 4
-        } else {
-            knobSlot.size.width = 8
-            knobSlot.origin.x = 3
-        }
-        
-        let path = NSBezierPath(roundedRect: knobSlot, xRadius: 5, yRadius: 5)
-        NSColor.secondaryLabelColor.set()
-        path.fill()
-    }
-    
-    override func drawKnobSlot(in slotRect: NSRect, highlight flag: Bool) {
-        var newRect: NSRect = slotRect
-        let orientation = self.accessibilityOrientation()
-        
-        if orientation.rawValue == 2 {
-            newRect.origin.y = 4
-        } else {
-            newRect.origin.x = 3
-        }
-        super.drawKnobSlot(in: newRect, highlight: flag)
-    }
-    
-}
 
 var defaultBrowser: String? {
     NSWorkspace.shared.urlForApplication(toOpen: URL(string: "http://")!)
@@ -2919,155 +1707,6 @@ func getBoldFont(size: CGFloat)->NSFont{
     }
     return NSFont(name: selectedFont.boldFontName, size: size) ?? NSFont.boldSystemFont(ofSize: size)
 }
-
-// This font is from storybord change this according to user settings
-extension NSTextField {//CourierNewPSMT // CourierNewPS-BoldMT
-    open override func awakeFromNib() {
-        super.awakeFromNib()
-
-        if self.font?.fontName == "CourierNewPS-BoldMT"{
-            font = getBoldFont(size: self.font?.pointSize ?? 24)
-        }else if self.font?.fontName == "CourierNewPSMT"{
-            font = getRegularFont(size: self.font?.pointSize ?? 24)
-        }else if self.font?.fontName == ".AppleSystemUIFontBold"{
-            font = getBoldFont(size: self.font?.pointSize ?? 24)
-        }else if self.font?.fontName == ".AppleSystemUIFont"{
-            font = getRegularFont(size: self.font?.pointSize ?? 24)
-        }else if self.font?.fontName == ".SF NS Regular"{
-            font = getRegularFont(size: self.font?.pointSize ?? 24)
-        }else if self.font?.fontName == ".SFNS-Bold"{
-            font = getBoldFont(size: self.font?.pointSize ?? 24)
-        }else{
-            font = getRegularFont(size: self.font?.pointSize ?? 24)
-        }
-    }
-}
-
-extension NSButton {
-    open override func awakeFromNib() {
-        super.awakeFromNib()
-        if self.font?.fontName == "CourierNewPS-BoldMT"{
-            font = getBoldFont(size: self.font?.pointSize ?? 24)
-        }else if self.font?.fontName == "CourierNewPSMT"{
-            font = getRegularFont(size: self.font?.pointSize ?? 24)
-        }else if self.font?.fontName == ".AppleSystemUIFontBold"{
-            font = getBoldFont(size: self.font?.pointSize ?? 24)
-        }else if self.font?.fontName == ".AppleSystemUIFont"{
-            font = getRegularFont(size: self.font?.pointSize ?? 24)
-        }else if self.font?.fontName == ".SF NS Regular"{
-            font = getRegularFont(size: self.font?.pointSize ?? 24)
-        }else{
-            font = getRegularFont(size: self.font?.pointSize ?? 24)
-        }
-    }
-}
-extension NSSegmentedControl {
-    open override func awakeFromNib() {
-        super.awakeFromNib()
-        if self.font?.fontName == "CourierNewPS-BoldMT"{
-            font = getBoldFont(size: self.font?.pointSize ?? 24)
-        }else if self.font?.fontName == "CourierNewPSMT"{
-            font = getRegularFont(size: self.font?.pointSize ?? 24)
-        }else if self.font?.fontName == ".AppleSystemUIFontBold"{
-            font = getBoldFont(size: self.font?.pointSize ?? 24)
-        }else if self.font?.fontName == ".AppleSystemUIFont"{
-            font = getRegularFont(size: self.font?.pointSize ?? 24)
-        }else if self.font?.fontName == ".SF NS Regular"{
-            font = getRegularFont(size: self.font?.pointSize ?? 24)
-        }else{
-            font = getRegularFont(size: self.font?.pointSize ?? 24)
-        }
-    }
-}
-
-extension NSTabView {
-    open override func awakeFromNib() {
-        super.awakeFromNib()
-        if self.font.fontName == "CourierNewPS-BoldMT"{
-            font = getBoldFont(size: self.font.pointSize)
-        }else if self.font.fontName == "CourierNewPSMT"{
-            font = getRegularFont(size: self.font.pointSize)
-        }else if self.font.fontName == ".AppleSystemUIFontBold"{
-            font = getBoldFont(size: self.font.pointSize)
-        }else if self.font.fontName == ".AppleSystemUIFont"{
-            font = getRegularFont(size: self.font.pointSize)
-        }else if self.font.fontName == ".SF NS Regular"{
-            font = getRegularFont(size: self.font.pointSize)
-        }else{
-            font = getRegularFont(size: self.font.pointSize)
-        }
-    }
-}
-
-extension NSTextView {
-    open override func awakeFromNib() {
-        super.awakeFromNib()
-        if self.font != nil{
-            if self.font!.fontName == "CourierNewPS-BoldMT"{
-                font = getBoldFont(size: self.font!.pointSize)
-            }else if self.font!.fontName == "CourierNewPSMT"{
-                font = getRegularFont(size: self.font!.pointSize)
-            }else if self.font!.fontName == ".AppleSystemUIFontBold"{
-                font = getBoldFont(size: self.font!.pointSize)
-            }else if self.font!.fontName == ".AppleSystemUIFont"{
-                font = getRegularFont(size: self.font!.pointSize)
-            }else if self.font!.fontName == ".SF NS Regular"{
-                font = getRegularFont(size: self.font!.pointSize)
-            }else{
-                font = getRegularFont(size: self.font!.pointSize)
-            }
-        }else{
-            font = getRegularFont(size: 13)
-        }
-    }
-}
-
-
-extension NSFont {
-    
-    func getFontWeight() -> NSFont.Weight {
-        
-        let fontAttributeKey = NSFontDescriptor.AttributeName.init(rawValue: "NSCTFontUIUsageAttribute")
-        if let fontWeight = self.fontDescriptor.fontAttributes[fontAttributeKey] as? String {
-            switch fontWeight {
-                
-            case "CTFontBoldUsage":
-                return NSFont.Weight.bold
-                
-            case "CTFontBlackUsage":
-                return NSFont.Weight.black
-                
-            case "CTFontHeavyUsage":
-                return NSFont.Weight.heavy
-                
-            case "CTFontUltraLightUsage":
-                return NSFont.Weight.ultraLight
-                
-            case "CTFontThinUsage":
-                return NSFont.Weight.thin
-                
-            case "CTFontLightUsage":
-                return NSFont.Weight.light
-                
-            case "CTFontMediumUsage":
-                return NSFont.Weight.medium
-                
-            case "CTFontDemiUsage":
-                return NSFont.Weight.semibold
-                
-            case "CTFontRegularUsage":
-                return NSFont.Weight.regular
-                
-            default:
-                return NSFont.Weight.regular
-            }
-        }
-        
-        return NSFont.Weight.regular
-    }
-}
-
-
 
 
 
@@ -3315,28 +1954,6 @@ func isAccessibilityEnabled(isPrompt: Bool) -> Bool {// if  isPrompt is true it 
 //*********************************************************//
 
 
-//************* andom color**************//
-extension NSColor {
-    static var random: NSColor {
-        let r:CGFloat  = .random(in: 0...1)
-        let g:CGFloat  = .random(in: 0...1)
-        let b:CGFloat  = .random(in: 0...1)
-        return NSColor(red: r, green: g, blue: b, alpha: 1)
-    }
-}
-
-
-
-
-extension NSAlert{
-    func setSharingType() {
-        if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
-            if state{
-                self.window.sharingType = .none
-            }
-        }
-    }
-}
 
 
 func forceCompleteIfAnyHabitGoing(){
@@ -3385,52 +2002,7 @@ func forceCompleteIfAnyHabitGoing(){
 
 
 
-// zip a folder 
-public extension URL {
-    
-    /// Creates a zip archive of the file/folder represented by this URL and returns a references to the zipped file
-    ///
-    /// - parameter dest: the destination URL; if nil, the destination will be this URL with ".zip" appended
-    func zip(dest: URL) throws -> URL {
-        let destURL = dest// ?? self.URLByAppendingPathExtension("zip")
-        
-        let fm = FileManager.default
-        if fm.fileExists(atPath: destURL.path){
-            do{
-                try fm.removeItem(at: destURL)
-            }catch{
-                print(error.localizedDescription)
-            }
-        }
-        var isDir: ObjCBool = false
-        
-        let srcDir: URL
-        let srcDirIsTemporary: Bool
-        let path = self.path //{
-        
-        srcDir = self
-        srcDirIsTemporary = false
-        
-        let coord = NSFileCoordinator()
-        var error: NSError?
-        
-        // coordinateReadingItemAtURL is invoked synchronously, but the passed in zippedURL is only valid
-        // for the duration of the block, so it needs to be copied out
-        coord.coordinate(readingItemAt: srcDir as URL, options: NSFileCoordinator.ReadingOptions.forUploading, error: nil) { (zippedURL: URL) -> Void in
-            do {
-                try fm.copyItem(at: zippedURL, to: destURL as URL)
-            } catch let err {
-                error = err as NSError
-            }
-        }
-        
-        if srcDirIsTemporary { try fm.removeItem(at: srcDir as URL) }
-        if let error = error { throw error }
-        return destURL
-    }
-    
-    
-}
+
 func zipTextFile(inputFilePath: String, outputZipPath: String) throws {
     let fm = FileManager.default
     if fm.fileExists(atPath: outputZipPath){
@@ -3459,6 +2031,160 @@ func zipTextFile(inputFilePath: String, outputZipPath: String) throws {
 }
 
 
+func zipItem(inputPath: String, outputZipPath: String) throws {
+    let fm = FileManager.default
+    
+    // Remove old zip if it exists
+    if fm.fileExists(atPath: outputZipPath) {
+        try fm.removeItem(atPath: outputZipPath)
+    }
+    
+    let process = Process()
+    process.executableURL = URL(fileURLWithPath: "/usr/bin/zip")
+    
+    var isDir: ObjCBool = false
+    fm.fileExists(atPath: inputPath, isDirectory: &isDir)
+    
+    if isDir.boolValue {
+        // For folder → use -r (recursive)
+        let folderName = (inputPath as NSString).lastPathComponent
+        let parentPath = (inputPath as NSString).deletingLastPathComponent
+        
+        process.currentDirectoryURL = URL(fileURLWithPath: parentPath)
+        process.arguments = ["-r", outputZipPath, folderName]
+    } else {
+        // For file → keep -j (junk paths, no directory structure)
+        process.arguments = ["-j", outputZipPath, inputPath]
+    }
+    
+    try process.run()
+    process.waitUntilExit()
+    
+    if process.terminationStatus == 0 {
+        print("✅ Zipped at \(outputZipPath)")
+    } else {
+        throw NSError(
+            domain: "ZipError",
+            code: Int(process.terminationStatus),
+            userInfo: [NSLocalizedDescriptionKey: "Failed to zip item."]
+        )
+    }
+}
+
+
+
+func zipItems(inputPaths: [String], outputZipPath: String) throws {
+    let fm = FileManager.default
+    
+    // Remove old zip if it exists
+    if fm.fileExists(atPath: outputZipPath) {
+        try fm.removeItem(atPath: outputZipPath)
+    }
+    
+    let process = Process()
+    process.executableURL = URL(fileURLWithPath: "/usr/bin/zip")
+    
+    // Separate into parent dir + relative names (so zip doesn’t store absolute paths)
+    var allArguments: [String] = ["-r", outputZipPath]
+    
+    var parentDir: String?
+    for path in inputPaths {
+        let parent = (path as NSString).deletingLastPathComponent
+        if parentDir == nil { parentDir = parent }
+        // Ensure all files are from same parent directory, otherwise paths get long
+        allArguments.append((path as NSString).lastPathComponent)
+    }
+    
+    if let parentDir = parentDir {
+        process.currentDirectoryURL = URL(fileURLWithPath: parentDir)
+    }
+    
+    process.arguments = allArguments
+    
+    try process.run()
+    process.waitUntilExit()
+    
+    if process.terminationStatus == 0 {
+        print("✅ Zipped at \(outputZipPath)")
+    } else {
+        throw NSError(
+            domain: "ZipError",
+            code: Int(process.terminationStatus),
+            userInfo: [NSLocalizedDescriptionKey: "Failed to zip items."]
+        )
+    }
+}
+
+func createZipArchive(zipPath: String, logFolder: String, screenshots: [URL]) throws {
+    let fileManager = FileManager.default
+
+    // Remove old zip if exists
+    if fileManager.fileExists(atPath: zipPath) {
+        try fileManager.removeItem(atPath: zipPath)
+    }
+
+    // Create temporary folder for Screenshots
+    let logParent = URL(fileURLWithPath: logFolder).deletingLastPathComponent()
+    let screenshotsFolder = logParent.appendingPathComponent("Screenshots", isDirectory: true)
+
+    if fileManager.fileExists(atPath: screenshotsFolder.path) {
+        try fileManager.removeItem(at: screenshotsFolder)
+    }
+    
+    if screenshots.count != 0{
+        try fileManager.createDirectory(at: screenshotsFolder, withIntermediateDirectories: true)
+    }
+
+    // Copy screenshots into the temporary Screenshots folder
+    for sourceURL in screenshots {
+        let destURL = screenshotsFolder.appendingPathComponent(sourceURL.lastPathComponent)
+        if fileManager.fileExists(atPath: destURL.path) {
+            try fileManager.removeItem(at: destURL)
+        }
+        try fileManager.copyItem(at: sourceURL, to: destURL)
+    }
+
+    let process = Process()
+    process.executableURL = URL(fileURLWithPath: "/usr/bin/zip")
+    
+    
+    // Run /usr/bin/zip
+    var arguments: [String] = ["-r", zipPath]
+    var itemsToZip: [String] = []
+    let logURL = URL(fileURLWithPath: logFolder)
+    let parentDir = logURL.deletingLastPathComponent()
+    process.currentDirectoryURL = parentDir
+    itemsToZip.append(logURL.lastPathComponent)
+    
+    if screenshots.count != 0{
+        itemsToZip.append(screenshotsFolder.lastPathComponent)
+    }
+    arguments.append(contentsOf: itemsToZip)
+    process.arguments = arguments
+    
+
+    let pipe = Pipe()
+    process.standardOutput = pipe
+    process.standardError = pipe
+
+    try process.run()
+    process.waitUntilExit()
+
+    let data = pipe.fileHandleForReading.readDataToEndOfFile()
+    if let output = String(data: data, encoding: .utf8) {
+        print(output)
+    }
+
+    if process.terminationStatus != 0 {
+        throw NSError(domain: "ZipError", code: Int(process.terminationStatus), userInfo: [
+            NSLocalizedDescriptionKey: "Failed to create zip archive"
+        ])
+    }
+    if fileManager.fileExists(atPath: screenshotsFolder.path) {
+        try fileManager.removeItem(at: screenshotsFolder)
+    }
+}
+
 
 
 
@@ -3475,11 +2201,7 @@ func checkAllTracksDownloadState(){
             allApiObject.downloadFileAsync(url: thumbnail_download_url, destinationUrl: thumbnailLocalUrl){ (success, error) in
                 checkAllTracksDownloadState()
                 DispatchQueue.main.async {
-                    if allTracksVcObj != nil && allTracksWindowControllerObj != nil{
-                        if allTracksWindowControllerObj?.window?.isVisible ?? false{
-                            allTracksVcObj?.tblView.reloadData()
-                        }
-                    }
+                    reloadFocusMusicListIfVisible()
                 }
             }
             break;
@@ -3498,13 +2220,6 @@ func shouldDoHabits()->Bool{//after onboarding cards morning evening routine sho
         }
     }
     return true
-}
-
-
-extension URL {
-    var isDirectory: Bool {
-        (try? resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true
-    }
 }
 
 
@@ -3651,45 +2366,6 @@ func getAppAppearance()->NSAppearance?{
     return appearance
 }
 
-//*******************CUSTOM SLIDER CLASS ******************//
-
-class CustomSliderCell: NSSliderCell {
-    required init(coder aDecoder: NSCoder) {
-        super.init(coder: aDecoder)
-    }
-    override func drawBar(inside aRect: NSRect, flipped: Bool) {
-        var rect = aRect
-        rect.size.height = aRect.height
-        let barRadius = CGFloat(2.5)
-        let value = CGFloat((self.doubleValue - self.minValue) / (self.maxValue - self.minValue))
-        let finalWidth = CGFloat(value * (self.controlView!.frame.size.width - 8))
-        var leftRect = rect
-        leftRect.size.width = finalWidth
-        let bg = NSBezierPath(roundedRect: rect, xRadius: barRadius, yRadius: barRadius)
-        NSColor.lightGray.setFill()
-        bg.fill()
-    }
-}
-class CustomSlider: NSSlider {
-    init() {
-        super.init(frame: NSZeroRect)
-        addFilter()
-    }
-    
-    required init?(coder: NSCoder) {
-        super.init(coder: coder)
-        addFilter()
-    }
-    
-    func addFilter() {
-        let colorFilter = CIFilter(name: "CIFalseColor")!
-        colorFilter.setDefaults()
-        colorFilter.setValue(CIColor(cgColor: NSColor.lightGray.cgColor), forKey: "inputColor1")
-        self.contentFilters = [colorFilter]
-    }
-}
-//------------------------------------------------------------------------//
-
 
 //******GET OR CREATE FOCUS MODE TAG ID********//
 
@@ -3738,25 +2414,6 @@ func updateFlags(sflags:[Int]){
 
 
 
-extension NSWindow {
-    var hasDarkAppearance: Bool {
-        if #available(OSX 10.14, *) {
-            switch effectiveAppearance.name {
-            case .darkAqua, .vibrantDark, .accessibilityHighContrastDarkAqua, .accessibilityHighContrastVibrantDark:
-                return true
-            default:
-                return false
-            }
-        } else {
-            switch effectiveAppearance.name {
-            case .vibrantDark:
-                return true
-            default:
-                return false
-            }
-        }
-    }
-}
 
 
 func calculateBackoffWithJitter(baseDelayMs: Int, retry: Int) -> Int {
@@ -3770,20 +2427,7 @@ func calculateBackoffWithJitter(baseDelayMs: Int, retry: Int) -> Int {
 
 
 
-extension NSView {
 
-    var backgroundcolor: NSColor? {
-        get {
-            guard let layer = layer, let backgroundColor = layer.backgroundColor else { return nil }
-            return NSColor(cgColor: backgroundColor)
-        }
-        set {
-            wantsLayer = true
-            layer?.backgroundColor = newValue?.cgColor
-        }
-    }
-
-}
 
 
 func writeStringToHabitInfo(isFinishTime:Bool, activityName:String){
@@ -3836,31 +2480,18 @@ func enableTimeTracker(){
 
 
 
-extension Date {
-    static var yesterday: Date { return Date().dayBefore }
-    static var tomorrow:  Date { return Date().dayAfter }
-    var dayBefore: Date {
-        return Calendar.current.date(byAdding: .day, value: -1, to: noon)!
-    }
-    var dayAfter: Date {
-        return Calendar.current.date(byAdding: .day, value: 1, to: noon)!
-    }
-    var noon: Date {
-        return Calendar.current.date(bySettingHour: 12, minute: 0, second: 0, of: self)!
-    }
-    var month: Int {
-        return Calendar.current.component(.month,  from: self)
-    }
-    var isLastDayOfMonth: Bool {
-        return dayAfter.month != month
-    }
-}
 
 
 
 var lastAppUnlockTime:Date?
+var lastUnlockTimeByAccountabilityBuddy:Date?
 
 func shouldAskPassword()->Bool{
+    if let lastUnlockTimeByAccountabilityBuddy = lastUnlockTimeByAccountabilityBuddy{
+        if Date() < lastUnlockTimeByAccountabilityBuddy{
+            return false
+        }
+    }
     if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
         if let lastAppUnlockTime = lastAppUnlockTime{
             let diffSeconds = Calendar.current.dateComponents([.second], from: lastAppUnlockTime, to: Date()).second ?? 0
@@ -3877,6 +2508,11 @@ func shouldAskPassword()->Bool{
 }
 
 func isPasswordRequireInOpenSettings() -> Bool{
+    if let lastUnlockTimeByAccountabilityBuddy = lastUnlockTimeByAccountabilityBuddy{
+        if Date() < lastUnlockTimeByAccountabilityBuddy{
+            return false
+        }
+    }
     if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
         if let lastAppUnlockTime = lastAppUnlockTime{
             let diffSeconds = Calendar.current.dateComponents([.second], from: lastAppUnlockTime, to: Date()).second ?? 0
@@ -3914,29 +2550,6 @@ func isPasswordRequireInOpenSettingsEnabled() -> Bool{
 }
 
 
-extension String {
-    var length:Int {
-        return self.count
-    }
-    func indexOf(target: String) -> Int? {
-        let range = (self as NSString).range(of: target)
-        guard range.toRange() != nil else {
-            return nil
-        }
-        return range.location
-    }
-    func lastIndexOf(target: String) -> Int? {
-        let range = (self as NSString).range(of: target, options: NSString.CompareOptions.backwards)
-        
-        guard range.toRange() != nil else {
-            return nil
-        }
-        return self.length - range.location - 1
-    }
-    func contains(s: String) -> Bool {
-        return (self.range(of: s) != nil) ? true : false
-    }
-}
 
 
 
@@ -3953,75 +2566,7 @@ var defaultSleepTime = "21:30"
 
 
 
-//--------------------------------custom New Item Badge Box----------------------------//
 
-class customNewBadgeBox: NSBox {
-    var mouseDown = false
-    var tagValue = 0
-    var isTableView = false
-    var label:NSTextField!
-    override func awakeFromNib() {
-        super.awakeFromNib()
-        addTrackingArea(NSTrackingArea(rect: bounds, options: [.activeAlways, .inVisibleRect, .mouseEnteredAndExited], owner: self, userInfo: nil))
-        self.boxType = .custom
-        self.borderWidth = 0
-        self.cornerRadius = self.frame.height / 2
-        self.fillColor = NSColor(named: "dark_OrangeColor") ?? NSColor.blue
-        var newBadgeText = "New"
-        if let common = configjson.value(forKey: "common") as? NSDictionary{
-            newBadgeText = common.value(forKey: "newBadgeText") as? String ?? newBadgeText
-        }
-        label = NSTextField(string: newBadgeText)
-        label.isBordered = false
-        label.backgroundColor = NSColor.clear
-        label.alignment = .center
-        label.font = NSFont.systemFont(ofSize: 10)
-        label.textColor = NSColor.black
-        label.isEditable = false
-        label.isSelectable = false
-        self.addSubview(label)
-        self.addVerticalCenterConstraints(subView: label)
-    }
-    
-    override func mouseEntered(with event: NSEvent) {
-        super.mouseEntered(with: event)
-        NSCursor.pointingHand.set()
-    }
-    
-    override func mouseDown(with event: NSEvent) {
-        // super.mouseDown(with: event)
-        print("mouse down")
-        if isTableView{
-            mouseDown = true
-            self.layer?.backgroundColor = NSColor(red: 0/255, green: 0/255, blue: 0/255, alpha: 0.2).cgColor
-            NSCursor.pointingHand.set()
-        }else{
-            super.mouseDown(with: event)
-        }
-    }
-    
-    override func mouseUp(with event: NSEvent) {
-        super.mouseUp(with: event)
-        print("mouse up")
-        if mouseDown {
-            mouseDown = false
-            
-            NSCursor.pointingHand.set()
-            self.layer?.backgroundColor = NSColor(red: 0/255, green: 0/255, blue: 0/255, alpha: 0).cgColor
-        }else{
-            return;
-        }
-    }
-    
-
-    override func mouseExited(with event: NSEvent) {
-        super.mouseExited(with: event)
-        mouseDown = false
-        NSCursor.arrow.set()
-        self.layer?.backgroundColor = NSColor(red: 0/255, green: 0/255, blue: 0/255, alpha: 0).cgColor
-    }
-}
-//--------------------------------Onboarding Progress----------------------------//
 
 func showOnboardingProgress(view:NSView, progress:Int){
     view.addSubview(getOnboardingProgressVcObj().view)
@@ -4040,6 +2585,7 @@ func hideOnboardingProgress(view:NSView){
 //--------------------------------Onboarding Bell icon----------------------------//
 
 func showOnboardingBellIcon(view:NSView, screen:String){
+    return; //removed v 2.28.446
     view.addSubview(getBellVcObj().view)
     view.addBottomLeftConstraints(subView: getBellVcObj().view)
     bellVcObj?.screen = screen
@@ -4124,80 +2670,10 @@ func setFocusBearIconToNormal(){
 
 
 var boxForStatusBar: customStatusBarBox!
-class customStatusBarBox: NSBox {
-    var count = 0
-    override func draw(_ dirtyRect: NSRect) {
-        super.draw(dirtyRect)
-        if count == 0{
-            count = 1
-            addTrackingArea(NSTrackingArea(rect: bounds, options: [.activeAlways, .inVisibleRect, .mouseEnteredAndExited], owner: self, userInfo: nil))
-        }
-    }
-    
-    override func mouseEntered(with event: NSEvent) {
-        super.mouseEntered(with: event)
-        if isPurchased == false && daysLeft <= 0{
-            return;
-        }
-        if !SettingsManagerObject.isGeekModeEnabled{
-            return;
-        }
-        if appdelegate?.popover.isShown ?? false{
-            return;
-        }
-        
-        if !NSEvent.modifierFlags.contains(.control){
-            return;
-        }
-        getBlankLayerWcObject().showWindow(nil)
-    }
-    
-    override func mouseExited(with event: NSEvent) {
-        super.mouseExited(with: event)
-        
-    }
-}
+
 
 var boxForStatusBarForTooltip: customStatusBarBoxForTooltip!
-class customStatusBarBoxForTooltip: NSBox {
-    var count = 0
-    var customToolTip = ""
-    override func draw(_ dirtyRect: NSRect) {
-        super.draw(dirtyRect)
-        if count == 0{
-            count = 1
-            addTrackingArea(NSTrackingArea(rect: bounds, options: [.activeAlways, .inVisibleRect, .mouseEnteredAndExited], owner: self, userInfo: nil))
-        }
-    }
-    override func mouseEntered(with event: NSEvent) {
-        super.mouseEntered(with: event)
-        if appdelegate?.popover.isShown ?? false{
-            return;
-        }
-        if !self.customToolTip.isEmpty{
-            showTooltip(sender: self, msg: customToolTip, preferredEdge: .minY, maxWidthVal: 300)
-        }else if appdelegate!.isUserOnMeeting{
-            if !SettingsManagerObject.IsShowBreaksInCallEnabled{
-                var toolTipMeetingsText = "We've detected that you're in a video call and won't show breaks during this time"
-                if let common = configjson.value(forKey: "common") as? NSDictionary{
-                    toolTipMeetingsText = common.value(forKey: "toolTipMeetingsText") as? String ?? toolTipMeetingsText
-                }
-                showTooltip(sender: self, msg: toolTipMeetingsText, preferredEdge: .minY, maxWidthVal: 300)
-            }
-        }else{
-            print("customToolTip is blank")
-        }
-    }
-    
-    override func mouseExited(with event: NSEvent) {
-        super.mouseExited(with: event)
-        if popoverTooltip != nil{
-            if popoverTooltip!.isShown{
-                popoverTooltip?.close()
-            }
-        }
-    }
-}
+
 
 
 
@@ -4258,309 +2734,6 @@ func getGoalsAndFocusdJsonForBlockedScript()-> String{
     }
     
     return jsonString
-}
-
-
-
-
-protocol toggleButtonBoxDelegate {
-    func toggleButtonBoxClicked(box:NSBox)
-}
-class toggleButtonBox: NSBox {
-    var mouseDown = false
-    var isSelected = false
-    var customDelegate: toggleButtonBoxDelegate?
-    var normalColor = NSColor(red: 204/255, green: 204/255, blue: 204/255, alpha: 1)
-    override func awakeFromNib() {
-        super.awakeFromNib()
-        addTrackingArea(NSTrackingArea(rect: bounds, options: [.activeAlways, .inVisibleRect, .mouseEnteredAndExited], owner: self, userInfo: nil))
-    }
-    
-    override func mouseEntered(with event: NSEvent) {
-        super.mouseEntered(with: event)
-        self.fillColor = buttonBgColor
-        NSCursor.pointingHand.set()
-    }
-    override func mouseDown(with event: NSEvent) {
-        // super.mouseDown(with: event)
-        print("mouse down")
-        mouseDown = true
-        self.fillColor = NSColor(named: "dark_OrangeColor") ?? NSColor.blue
-        NSCursor.pointingHand.set()
-        
-    }
-    
-    override func mouseUp(with event: NSEvent) {
-        super.mouseUp(with: event)
-        print("mouse up")
-        if mouseDown {
-            mouseDown = false
-            NSCursor.pointingHand.set()
-            self.fillColor = buttonBgColor
-            self.isSelected = true
-            self.borderWidth = 1
-            self.borderColor = .separatorColor
-            customDelegate?.toggleButtonBoxClicked(box:self)
-        }
-
-    }
-
-    override func mouseExited(with event: NSEvent) {
-        super.mouseExited(with: event)
-        mouseDown = false
-        NSCursor.arrow.set()
-        if !isSelected{
-            self.fillColor = normalColor
-        }
-    }
-}
-
-
-
-
-
-
-
-class GeekModeSegmentedControl: NSSegmentedControl {
-
-    var segmentGeekModeTrackingArea: NSTrackingArea?
-    let geekModeIndex = 0
-    let simpleModeIndex = 1
-    var isMenuButton = false
-    override func awakeFromNib() {
-        super.awakeFromNib()
-        
-        self.selectedSegmentBezelColor = NSColor(named: "dark_OrangeColor") ?? NSColor.blue
-        
-        var titleGeekMode = "🤓 Geek Mode"
-        var titleSimpleMode = "😎 Simple Mode"
-        
-        if let geekModeInfo = configjson.value(forKey: "geekModeInfo") as? NSDictionary{
-            titleGeekMode = geekModeInfo.value(forKey: "titleGeekMode") as? String ?? titleGeekMode
-            titleSimpleMode = geekModeInfo.value(forKey: "titleSimpleMode") as? String ?? titleSimpleMode
-        }
-        self.setLabel(titleGeekMode, forSegment: geekModeIndex)
-        self.setLabel(titleSimpleMode, forSegment: simpleModeIndex)
-        
-        addTrackingArea(NSTrackingArea(rect: bounds, options: [.activeAlways, .inVisibleRect, .mouseEnteredAndExited], owner: self, userInfo: nil))
-        self.wantsLayer = true
-        segmentGeekModeTrackingArea = NSTrackingArea.init(rect: self.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
-        self.addTrackingArea(segmentGeekModeTrackingArea!)
-        
-        
-        let customBox = NSBox()
-        customBox.boxType = .custom
-        customBox.borderWidth = 0
-        customBox.fillColor = NSColor.clear
-        self.superview?.addSubview(customBox)
-//        self.addConstraints(subView: customBox)
-        
-        
-        customBox.translatesAutoresizingMaskIntoConstraints = false
-        //Trailing
-        let trailing = NSLayoutConstraint(item: customBox, attribute: .trailing, relatedBy: .equal, toItem: self, attribute: .trailing, multiplier: 1.0, constant: 0.0)
-        //Leading
-        let leading = NSLayoutConstraint(item: customBox, attribute: .leading, relatedBy: .equal, toItem: self, attribute: .leading, multiplier: 1.0, constant: 0.0)
-        //Bottom
-        let bottom = NSLayoutConstraint(item: customBox, attribute: .bottom, relatedBy: .equal, toItem: self, attribute: .bottom, multiplier: 1.0, constant: 0.0)
-        //Height to be fixed for SubView same as AdHeight
-        let height = NSLayoutConstraint(item: customBox, attribute: .top, relatedBy: .equal, toItem: self, attribute: .top, multiplier: 1.0, constant: 0.0)
-        self.superview?.addConstraint(trailing)
-        self.superview?.addConstraint(bottom)
-        self.superview?.addConstraint(leading)
-        //Add height constraint to the subview, as subview owns it.
-        self.superview?.addConstraint(height)
-        
-    }
-
-    
-    override func mouseEntered(with event: NSEvent) {
-        if SettingsManagerObject.isGeekModeEnabled{
-            var tooltipGeekMode = "Geek Mode active! Advanced features activated. Overwhelmed? Toggle the switch to go back to Simple Mode"
-            if let geekModeInfo = configjson.value(forKey: "geekModeInfo") as? NSDictionary{
-                tooltipGeekMode = geekModeInfo.value(forKey: "tooltipGeekMode") as? String ?? tooltipGeekMode
-            }
-            showTooltip(sender: self, msg: tooltipGeekMode, preferredEdge: NSRectEdge.minX, maxWidthVal:230)
-        }else{
-            var tooltipSimpleMode = "Simple Mode active - only basic features shown. Toggle the switch to activate Geek Mode"
-            if let geekModeInfo = configjson.value(forKey: "geekModeInfo") as? NSDictionary{
-                tooltipSimpleMode = geekModeInfo.value(forKey: "tooltipSimpleMode") as? String ?? tooltipSimpleMode
-            }
-            showTooltip(sender: self, msg: tooltipSimpleMode, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
-        }
-        NSCursor.pointingHand.set()
-    }
-    
-    override func mouseExited(with event: NSEvent) {
-        if event.trackingArea == segmentGeekModeTrackingArea{
-            if popoverTooltip != nil{
-                if popoverTooltip!.isShown{
-                    popoverTooltip?.close()
-                }
-            }
-        }
-        NSCursor.arrow.set()
-    }
-    
-    func changeAppModeTo(geekMode:Bool){
-        //--------------------------------------------------------------------//
-        //Support freemium#1066
-        //only simple mode allowed
-        addLog(text:"func changeAppModeTo geekMode \(geekMode)")
-        if isExpired && geekMode{
-            var titleNoGeekMode = "Geek mode is only supported in Pro edition."
-            if let upgradeToProNagVcInfo = configjson.value(forKey: "upgradeToProNagVcInfo") as? NSDictionary{
-                titleNoGeekMode = upgradeToProNagVcInfo.value(forKey: "titleNoGeekMode") as? String ?? titleNoGeekMode
-            }
-            showUpgradeToProNagWindow(titleText: titleNoGeekMode, reason: "activate_geek_mode")
-            if SettingsManagerObject.isGeekModeEnabled{
-                self.setSelected(true, forSegment: 0)
-            }else{
-                self.setSelected(true, forSegment: 1)
-            }
-            return;
-        }
-        //-----------------------------------------------------------------------//
-        if SettingsManagerObject.isGeekModeEnabled == geekMode{
-            return;
-        }
-        
-        if geekMode{
-            let dontShowGeekModeConfirmAlert = UserDefaults.standard.object(forKey: kUserdefaultsDontShowConfirmGeekModeAlert) as? Bool ?? false
-            if !dontShowGeekModeConfirmAlert{
-                allApiObject.capturePosthog(event: "waiting-to-confirm-wants-to-switch-to-geek-mode", metadata: [:])
-                
-                var alertConfirmSwitchGeekMode = "Geek Mode activates a lot more features and can be overwhelming. We recommend you stick with Simple Mode for the first few days."
-                var buttonActivateGeekModeText = "Activate Geek Mode"
-                var buttonStickSimpleModeText = "Stick with Simple Mode"
-                var buttonDontShowAgainText = "Don't show again"
-                var alertConfirmSwitchGeekModeDescription = "You can switch the modes from Preferences -> Settings tab"
-                
-                if let geekModeInfo = configjson.value(forKey: "geekModeInfo") as? NSDictionary{
-                    alertConfirmSwitchGeekMode = geekModeInfo.value(forKey: "alertConfirmSwitchGeekMode") as? String ?? alertConfirmSwitchGeekMode
-                    buttonActivateGeekModeText = geekModeInfo.value(forKey: "buttonActivateGeekModeText") as? String ?? buttonActivateGeekModeText
-                    buttonStickSimpleModeText = geekModeInfo.value(forKey: "buttonStickSimpleModeText") as? String ?? buttonStickSimpleModeText
-                    buttonDontShowAgainText = geekModeInfo.value(forKey: "buttonDontShowAgainText") as? String ?? buttonDontShowAgainText
-                    alertConfirmSwitchGeekModeDescription = geekModeInfo.value(forKey: "alertConfirmSwitchGeekModeDescription") as? String ?? alertConfirmSwitchGeekModeDescription
-                }
-            
-                let alert = NSAlert()
-                alert.setSharingType()
-                alert.messageText = alertConfirmSwitchGeekMode
-                if isMenuButton{
-                    alert.informativeText = alertConfirmSwitchGeekModeDescription
-                }
-                alert.addButton(withTitle: buttonStickSimpleModeText)
-                alert.addButton(withTitle: buttonActivateGeekModeText)
-                
-                alert.showsSuppressionButton = true
-                alert.suppressionButton?.title = buttonDontShowAgainText
-                NSApplication.shared.activate(ignoringOtherApps: true)
-                let result = alert.runModal()
-                if result == .alertFirstButtonReturn{
-                    self.setSelected(true, forSegment: 1)
-                    allApiObject.capturePosthog(event: "stick-to-simple-mode", metadata: [:])
-                }else if result == .alertSecondButtonReturn{
-                    SettingsManagerObject.isGeekModeEnabled = geekMode
-                    appModeChangeDone(geekMode: geekMode)
-                }
-                if alert.suppressionButton?.state == .on{
-                    UserDefaults.standard.set(true, forKey: kUserdefaultsDontShowConfirmGeekModeAlert)
-                }
-            }else{
-                SettingsManagerObject.isGeekModeEnabled = geekMode
-                appModeChangeDone(geekMode: geekMode)
-            }
-        }else{
-            SettingsManagerObject.isGeekModeEnabled = geekMode
-            appModeChangeDone(geekMode: geekMode)
-        }
-    }
-    
-    func appModeChangeDone(geekMode:Bool){
-        if !geekMode{
-            SettingsManagerObject.isCuddlyModeEnabled = true
-        }else{
-            // doing this because in simple mode when user start a pomodoro mode with blocking style (AI) we change local var isAiCheckUrlEnabled to true and if user starts pomodoro with blockDistractingsites/apps focus mode we change isAiCheckUrlEnabled to false but doesn't upload it so when user change app mode to geek mode we need to reload this setting from userdefaults
-            if let isEnabled = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAiCheckUrlEnabled) as? Bool{
-                SettingsManagerObject.isAiCheckUrlEnabled = isEnabled
-            }
-        }
-        SettingsManagerObject.isSettingsChanged = true
-        
-        if isFocusBearMenuVisible(){
-            menuViewControllerObj?.reloadData()
-        }
-        if SettingsManagerObject.isGeekModeEnabled{
-            preferencesSettingsIndex = 3
-            preferencesEditHabitsIndex = 4
-            preferencesBlocksIndex = 2
-        }else{
-            preferencesSettingsIndex = 2
-            preferencesEditHabitsIndex = 3
-            preferencesBlocksIndex = 1
-        }
-        if preferencesWindowControllerObj?.window?.isVisible ?? false{
-            if let tabview = preferencesWindowControllerObj?.contentViewController as? preferencesTabViewController{
-                tabview.reloadDataForAppMode()
-                let tabViewItem = tabview.tabViewItems[tabview.selectedTabViewItemIndex]
-                if tabViewItem.identifier as? String == idSettings{
-                    settingsSideBarVcObj?.reloadDataForAppMode()
-                    if geekMode{
-                        settingsContainerVcObj?.segmentControlGeekMode.setSelected(true, forSegment: geekModeIndex)
-                    }else{
-                        settingsContainerVcObj?.segmentControlGeekMode.setSelected(true, forSegment: simpleModeIndex)
-                    }
-                    
-                    let selectedRow = settingsSideBarVcObj?.tblView.selectedRow ?? 0
-                    let arrSettingsList = settingsSideBarVcObj?.arrSettingsList ?? []
-                    let id = arrSettingsList[selectedRow]["id"] as? String ?? ""
-                    
-                    switch id {
-                    case idUi:
-                        uIVcObj?.reloadDataForAppMode()
-                    case idAccesibility:
-                        break;
-                    case idAi:
-                        break;
-                    case idPomodoro:
-                        break;
-                    case idStrictness:
-                        strictnessVcObj?.reloadDataForAppMode()
-                    case idAdvanced:
-                        break;
-                    case idAccount:
-                        break;
-                    case idUninstall:
-                        break;
-                    case idPermissions:
-                        break;
-                    default:
-                        break;
-                    }
-                }
-                
-            }
-        }
-        if SettingsManagerObject.isGeekModeEnabled{
-            allApiObject.capturePosthog(event: "switch-to-geek-mode", metadata: [:])
-        }else{
-            allApiObject.capturePosthog(event: "switch-to-simple-mode", metadata: [:])
-        }
-        
-        if !geekMode{
-            var msg = "Simple Mode active - only basic features shown. Focus modes, pomodoros etc. are no longer available. Toggle the switch to go back to Geek Mode."
-            if let geekModeInfo = configjson.value(forKey: "geekModeInfo") as? NSDictionary{
-                msg = geekModeInfo.value(forKey: "alertSimpleModeEnabled") as? String ?? msg
-            }
-            let alert = NSAlert()
-            alert.setSharingType()
-            alert.messageText = msg
-            alert.addButton(withTitle: buttonOkText)
-            NSApplication.shared.activate(ignoringOtherApps: true)
-            alert.runModal()
-        }
-    }
 }
 
 
@@ -4626,61 +2799,7 @@ func isChromeFullScreen(runningApp:NSRunningApplication) -> Bool {
 
 
 
-extension NSTextField {
-    var isFirstResponder: Bool {
-        currentEditor() == window?.firstResponder
-    }
-}
 
-
-
-
-class DashedView:NSView {
-    var isFirst = true
-    let yourViewBorder = CAShapeLayer()
-    override func draw(_ dirtyRect: NSRect) {
-        yourViewBorder.strokeColor = NSColor.secondaryLabelColor.cgColor
-        yourViewBorder.lineDashPattern = [3, 5]
-        yourViewBorder.frame = dirtyRect
-        yourViewBorder.fillColor = nil//NSColor.red.cgColor
-        yourViewBorder.path = NSBezierPath(rect:dirtyRect).cgPath
-        yourViewBorder.lineWidth = 2
-        if isFirst {
-            self.layer?.addSublayer(yourViewBorder)
-            isFirst = false
-        }
-        super.draw(dirtyRect)
-    }
-}
-extension NSBezierPath {
-    
-    public var cgPath: CGPath {
-        let path = CGMutablePath()
-        var points = [CGPoint](repeating: .zero, count: 3)
-        
-        for i in 0 ..< self.elementCount {
-            let type = self.element(at: i, associatedPoints: &points)
-            switch type {
-            case .moveTo:
-                path.move(to: points[0])
-            case .lineTo:
-                path.addLine(to: points[0])
-            case .curveTo:
-                path.addCurve(to: points[2], control1: points[0], control2: points[1])
-            case .closePath:
-                path.closeSubpath()
-            case .cubicCurveTo:
-                path.addQuadCurve(to: points[1], control: points[0])
-            case .quadraticCurveTo:
-                path.addQuadCurve(to: points[1], control: points[0])
-            @unknown default:
-                break // Handle unknown cases safely
-            }
-        }
-        
-        return path
-    }
-}
 
 
 func shutDownMac() {
@@ -4796,51 +2915,12 @@ func extractValue(from query: String, key:String) -> String? {
     return nil
 }
 
-//------------------------------------------------------------------//
-//if the user has non timer based habits, add an estimate based on how long they spent on the habits the last few times
 let nonTimerBasedHabitsObject = NonTimerBasedHabit()
-class NonTimerBasedHabit:NSObject {
-    var arrNonTimerBasedHabitsDurations = [String:[Int]]()
-    
-    func addDurationForHabit(id:String, duration:Int){
-        var arrDurations = [Int]()
-        if let arrOldDurations = arrNonTimerBasedHabitsDurations[id]{
-            arrDurations = arrOldDurations
-        }
-        arrDurations.append(duration)
-        if arrDurations.count > 10{
-            arrDurations.remove(at: 0)
-        }
-        arrNonTimerBasedHabitsDurations[id] = arrDurations
-        writeNonTimerBasedHabitsDurations()
-    }
-
-    func writeNonTimerBasedHabitsDurations(){
-        let plistContent = NSDictionary(dictionary: arrNonTimerBasedHabitsDurations)
-        let _ = plistContent.write(toFile: arrNonTimerBasedHabitsDurationsPlistFileUrl!.path, atomically: true)
-    }
-
-    func readNonTimerBasedHabitsDurations(){
-        if let data = try? Data(contentsOf: arrNonTimerBasedHabitsDurationsPlistFileUrl) {
-            if let result = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: [Int]] { // [String: Any] which ever it is
-                print(result)
-                arrNonTimerBasedHabitsDurations = result
-            }
-        }
-        print(arrNonTimerBasedHabitsDurations)
-    }
-}
 
 
 
-//-----------------------------------------------//
 
 
-//class CustomWKWebView: WKWebView {
-//    override var mouseDownCanMoveWindow: Bool{
-//        return true
-//    }
-//}
 
 
 enum BLOCKINGSCHEDULE:Int{
@@ -4879,45 +2959,6 @@ func runCommandAsRoot(command: String, arguments: [String]) {
     }
 }
 
-extension WKWebView {
-    func stringByEvaluatingJavaScript(from script: String?) -> String? {
-        var resultString: String? = nil
-        var finished = false
-        
-        evaluateJavaScript(script ?? "", completionHandler: { result, error in
-            if error == nil {
-                if result != nil {
-                    if let result = result {
-                        resultString = "\(result)"
-                    }
-                }
-            } else {
-                print("evaluateJavaScript error : \(error?.localizedDescription ?? "")")
-            }
-            finished = true
-        })
-        
-        while !finished {
-            RunLoop.current.run(mode: .default, before: Date.distantFuture)
-        }
-        
-        return resultString
-    }
-    
-    class func clean() {
-        //guard #available(iOS 9.0, *) else {return}
-        
-        HTTPCookieStorage.shared.removeCookies(since: Date.distantPast)
-        WKWebsiteDataStore.default().fetchDataRecords(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes()) { records in
-            records.forEach { record in
-                WKWebsiteDataStore.default().removeData(ofTypes: record.dataTypes, for: [record], completionHandler: {})
-                #if DEBUG
-                print("WKWebsiteDataStore record deleted:", record)
-                #endif
-            }
-        }
-    }
-}
 
 
 
@@ -4940,7 +2981,7 @@ func enableMenuPopover(){
     appdelegate?.popover.animates = false
     appdelegate?.popover.behavior = .transient
     allApiObject.capturePosthog(event: "settings-changed-menu-as-popover-enabled", metadata: [:])
-    appdelegate?.showPopover(sender: nil)
+    appdelegate?.showPopover()
     menuViewControllerObj?.view.window?.makeKey()
 //    appdelegate?.popover.becomeFirstResponder()
 }
@@ -4973,7 +3014,7 @@ func disableMenuPopover(){
     
     
     allApiObject.capturePosthog(event: "settings-changed-menu-as-popover-disabled", metadata: [:])
-    appdelegate?.showPopover(sender: nil)
+    appdelegate?.showPopover()
 }
 
 
@@ -5003,63 +3044,8 @@ protocol NudgeWindowDelegate {
     func nudgeDragged()
 }
 
-class DraggableHorizontallyNudgeWindow: NSWindow {
-    private var initialLocation: NSPoint = .zero
-    var nudgeWindowDelegate:NudgeWindowDelegate?
-    override func mouseDown(with event: NSEvent) {
-        // Store the initial mouse location relative to window frame
-        initialLocation = event.locationInWindow
-    }
 
-    override func mouseDragged(with event: NSEvent) {
-        super.mouseDragged(with: event)
-//        guard let screen = screen else { return }
-//        
-//        // Get current window frame
-//        var windowFrame = frame
-//
-//        // Calculate new X position while keeping Y position fixed
-//        let newX = windowFrame.origin.x + (event.locationInWindow.x - initialLocation.x)
-//
-//        // Ensure the window remains within screen bounds
-//        let maxX = screen.visibleFrame.maxX - windowFrame.width
-//        let minX = screen.visibleFrame.minX
-//
-//        windowFrame.origin.x = min(maxX, max(minX, newX))  // Clamp X position
-//
-//        // Apply new frame
-//        setFrame(windowFrame, display: true, animate: false)
-//        nudgeWindowDelegate?.nudgeDragged()
-        isNudgeDraggedInCurrentFocusSession = true
-    }
-}
-
-
-
-
-
-var stageManagerObject = StageManager()
-class StageManager:NSObject {
-    
-    var isStageManagerEnabled = false
-    
-    func checkIsStageManagerEnabled() -> Bool {
-        guard #available(macOS 13.0, *) else {
-            return false // Only available on macOS Ventura+
-        }
-        
-        let windowInfos = CGWindowListCopyWindowInfo(.optionOnScreenOnly, kCGNullWindowID) as? [[String: Any]]
-        let appWindows = windowInfos?.filter { window in
-            if let ownerName = window[kCGWindowOwnerName as String] as? String {
-                return ownerName == "WindowManager"
-            }
-            return false
-        }
-        return (appWindows?.count ?? 0) >= 1
-    }
-}
-
-
+let stageManagerObject = StageManager()
 
 
 var habitPlayingBeforeMacSleepId = ""//Focus alignment score drops to 0% after resuming from sleep #1321
@@ -5094,90 +3080,68 @@ func disableAllAlertsBeforeQuit(){
 
 
 
+var isExplainingPermissionsWindowShowingFromPomodoro = false
+var isExplainingPermissionsWindowShowingFromBlockingSchedule = false
 
-//func setupLocalCrashReporter() {
-//    let config = PLCrashReporterConfig(signalHandlerType: .BSD, symbolicationStrategy: .all)
-//    let reporter = PLCrashReporter(configuration: config)
-//
-//    if reporter.hasPendingCrashReport() {
-//        do {
-//            let data = try reporter.loadPendingCrashReportDataAndReturnError()
-//            let crashReport = try PLCrashReport(data: data)
-//            let text = PLCrashReportTextFormatter.stringValue(for: crashReport, with: .full)
-//
-//            // Save to disk
-//            let url = FileManager.default.homeDirectoryForCurrentUser
-//                .appendingPathComponent("Library/Logs/MyApp/crash_\(Date().timeIntervalSince1970).log")
-//            try text.write(to: url, atomically: true, encoding: .utf8)
-//
-//            // Purge the crash so it's not handled again
-//            reporter.purgePendingCrashReport()
-//        } catch {
-//            print("Failed to process crash report: \(error)")
-//        }
-//    }
-//
-//    do {
-//        try reporter.enableAndReturnError()
-//    } catch {
-//        print("Failed to enable crash reporter: \(error)")
-//    }
-//}
+//var isCustomBarIsInFocus = false// when app is not in focus and user try to click close icon of custom bar . then applicationDidBecomeActive func called instead of close action because app become active and because app become active it shows menu (from inside applicationDidBecomeActive func) instead of  closing custom bar. to prevent this we are using isCustomBarIsInFocus variable. so that if user's cursor is on custom bar then menu will not show.
 
 
-func isCutOffTimeGoing()->Bool{
-    if cutOffTime != nil{
-        let cutOffDate = Calendar.current.date(bySettingHour: cutOffTime!.hour, minute: cutOffTime!.minute, second: cutOffTime!.second, of: Date())!
-        let currentDate = Date()
-        if currentDate > cutOffDate{
-            return true
+
+func startMainAppForceQuitMonitoring(){
+    appdelegate!.sharedDefaults?.setValue(true, forKeyPath: kUserdefaultsStartMainAppIfNotRunning)
+    appdelegate!.sharedDefaults?.synchronize()
+    let startMainAppForceQuitMonitoring = Notification.Name("startMainAppForceQuitMonitoring")
+    DistributedNotificationCenter.default().post(name: startMainAppForceQuitMonitoring,object: mainAppBundelId)
+}
+
+func stopMainAppForceQuitMonitoring(){
+    if let state = appdelegate!.sharedDefaults?.object(forKey: kUserdefaultsStartMainAppIfNotRunning) as? Bool{
+        if state{
+            appdelegate!.sharedDefaults?.setValue(false, forKeyPath: kUserdefaultsStartMainAppIfNotRunning)
+            appdelegate!.sharedDefaults?.synchronize()
+            
+            let stopMainAppForceQuitMonitoring = Notification.Name("stopMainAppForceQuitMonitoring")
+            DistributedNotificationCenter.default().post(name: stopMainAppForceQuitMonitoring,object: mainAppBundelId)
         }
+    }
+}
+
+func getWindowTheme()->String{
+    var theme = "LIGHT"
+    if mainWindowControllerObj != nil{
+        if mainWindowControllerObj!.window?.hasDarkAppearance ?? false{
+            theme = "DARK"
+        }else {
+            theme = "LIGHT"
+        }
+    }
+    return theme
+}
+
+
+// blocking helpers
+let validation = urlValidation()
+var defaultAllowedUrl = ["focus-block.html",
+                         "earnyourscreentime.com",
+                         "devtools://",
+                         "chrome-extension://",
+                         "https://focusbear.io",
+                         "https://www.focusbear.io",
+                         "view-source:",
+                         "about:blank",
+                         "https://focus-bear.github.io",
+                         "localhost:50501"]// new added
+
+
+
+func isMicroBreaksRunning()->Bool{
+    if currentState == ._MICRO_BREAK_{
+        if breakWarningWcObj != nil{
+            if breakWarningWcObj?.window?.isVisible ?? false{
+                return false
+            }
+        }
+        return true
     }
     return false
-}
-
-
-func getTimeSinceLastBreak()->String?{
-    var breaksStartTime = UserDefaults.standard.object(forKey: kUserdefaultsLastBreaksStartTime) as? Date
-    if breaksStartTime == nil{
-        var startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
-        if Date().compare(startDate) == .orderedAscending {// current date < start date(current date is 1 am and start date is 10 am )
-            startDate = Calendar.current.date(byAdding: .day, value: -1, to: startDate) ?? startDate
-        }
-        breaksStartTime = startDate
-    }else{
-        var startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
-        if Date().compare(startDate) == .orderedAscending {// current date < start date(current date is 1 am and start date is 10 am )
-            startDate = Calendar.current.date(byAdding: .day, value: -1, to: startDate) ?? startDate
-        }
-        
-        if breaksStartTime!.compare(startDate) == .orderedAscending {//breaksStartTime < start date
-            breaksStartTime = startDate
-        }
-    }
-    if let breaksStartTime = breaksStartTime{
-        let currentDate = Date()
-        let diffSeconds = Calendar.current.dateComponents([.second], from: breaksStartTime, to: currentDate).second ?? 0
-        if diffSeconds > 0{
-            let time = getStringTimeFromSecondsWithoutSeconds(seconds: Int(diffSeconds))
-            var lastBreakTimeText = "Time since last break: <TIME>"
-            if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
-                lastBreakTimeText = menuInfo.value(forKey: "lastBreakTimeText") as? String ?? lastBreakTimeText
-            }
-            lastBreakTimeText = lastBreakTimeText.replacingOccurrences(of: "<TIME>", with: time)
-            return lastBreakTimeText
-        }
-    }
-    return nil
-}
-
-
-// in macos 26 user was able to click on superview through subview in enterPasswordVc view (a button to prevent this already there but in macos 26 button was not stoppoint clickin on superview) to prevent this made this view 14/7/25 1.26.390
-class BlockingView: NSView {
-    override func mouseDown(with event: NSEvent) {
-       // super.mouseDown(with: event)
-    }
-    override func mouseUp(with event: NSEvent) {
-       // super.mouseDown(with: event)
-    }
 }

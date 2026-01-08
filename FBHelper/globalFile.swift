@@ -3,7 +3,7 @@
 //  FBHelper
 //
 //  Created by Prashant Sawnani on 26/06/24.
-//  Copyright © 2024 Focus Bear. All rights reserved.
+//  Copyright © 2025 Focus Bear. All rights reserved.
 //
 
 import Cocoa
@@ -170,6 +170,8 @@ let kUserdefaultsDontShowNudgeView = "kUserdefaultsDontShowNudgeView"
 let kUserdefaultsNoHabitFound = "kUserdefaultsNoHabitFound"
 let kUserdefaultsOnboardingIncompleted = "kUserdefaultsOnboardingIncompleted"
 
+var kUserdefaultsStartMainAppIfNotRunning = "kUserdefaultsStartMainAppIfNotRunning"
+
 let appdelegate = NSApplication.shared.delegate as? AppDelegate
 
 
@@ -199,7 +201,8 @@ func showNudgeWindow(day:Int){
     getNudgeWcObject().contentViewController = getNudgeVcObject()
     getNudgeWcObject().showWindow(nil)
     nudgeVcObj?.resetData(dayCount: day)
-    NSApp.activate(ignoringOtherApps: true)
+//    NSApp.activate(ignoringOtherApps: true)
+    NSRunningApplication.current.activate(options: [.activateIgnoringOtherApps])
 }
 
 var DebugLogsURL:URL?
@@ -258,11 +261,12 @@ extension Bundle {
     }
 }
 
+var baseUrl = "https://api.focusbear.io"//"https://api.aws.focusbear.io" // todo //  //https://api.focusbear.io"
 
 func captureEventEndpoint (event:String, metadata:[String:Any]){
     addLog(text: "captureEventEndpoint event: \(event)")
     
-    let responsePath = "https://api.focusbear.io/events"
+    let responsePath = "\(baseUrl)/events"
     if let responsePathUrl = NSURL(string: responsePath){
         guard sharedDefaults?.object(forKey: kUserdefaultsSharedAccessToken) != nil else{
             addLog(text: "func call:- captureEventEndpoint return:- no accessToken found")

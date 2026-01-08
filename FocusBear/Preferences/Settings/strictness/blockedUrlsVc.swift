@@ -22,13 +22,13 @@ class blockedUrlsVc: NSViewController {
         checkBoxImmediatelyBlock.title = "Immediately block super distracting sites"
         lblTitle.stringValue = "Super Distracting Sites"
         tblView.doubleAction = #selector(tableRowAllowedUrlsDoubleClicked)
-        lblSubTitle.stringValue = "\"Block these URLs even if you're not in a focus block. You might want to put social media or news sites that you would rather not use at any time. You can always set up an evening routine activity where you explicitly allow access to Facebook so that you can still stay connected - just not during your morning routine/work day.\""
+        lblSubTitle.stringValue = "Which sites do you waste time on? Focus Bear will help you be more intentional about how you use these sites. They will be blocked during focus sessions and custom blocking schedules."
         
         if let blockedUrlsViewInfo = configjson.value(forKey: "blockedUrlsViewInfo") as? NSDictionary{
             if let title = blockedUrlsViewInfo.value(forKey: "title") as? String{
                 lblTitle.stringValue = title
             }
-            if let subTitleText = blockedUrlsViewInfo.value(forKey: "subTitleText") as? String{
+            if let subTitleText = blockedUrlsViewInfo.value(forKey: "subTitleTextNew") as? String{
                 lblSubTitle.stringValue = subTitleText
             }
             checkBoxImmediatelyBlock.title = blockedUrlsViewInfo.value(forKey: "checkBoxText") as? String ?? checkBoxImmediatelyBlock.title
@@ -104,6 +104,11 @@ class blockedUrlsVc: NSViewController {
         }
     }
     @IBAction func btnBackClicked(_ sender: Any) {
+        //// solved in some cases settingsContainerVcObj is nil so before this added a check to solve problem on 15/9/25 version 2.27.415
+        if leftMenuVcObj?.boxBlocks.isSelected ?? false{
+            tabStrictnessContainerVcObj?.showStrictnessView()
+            return;
+        }
         settingsContainerVcObj?.showStrictnessView()
     }
 }

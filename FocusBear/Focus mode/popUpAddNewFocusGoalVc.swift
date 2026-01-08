@@ -57,36 +57,71 @@ class popUpAddNewFocusGoalVc: NSViewController {
         }
     }
     
-    func resetData(intention:String, task:String?){
+    func resetData(intention:String, task:String?,arrAllTasksAdded:[NSDictionary]?){
         textViewIntention.string = intention
-        comboBoxTask.isEnabled = false
-        comboBoxTask.stringValue = ""
-        lblGettingTasks.isHidden = false
-        comboBoxTask.items.removeAll()
-        arrAllTasks.removeAll()
-        loader.startAnimation(self)
-        lblGettingTasks.stringValue = "Fetching tasks..."
-        if let popUpAddNewFocusGoalVcInfo = configjson.value(forKey: "popUpAddNewFocusGoalVcInfo") as? NSDictionary{
-            lblGettingTasks.stringValue = popUpAddNewFocusGoalVcInfo.value(forKey: "fetchingTaskText") as? String ?? lblGettingTasks.stringValue
+        
+        
+        if let arrAllTasksAdded = arrAllTasksAdded{
+            comboBoxTask.stringValue = ""
+            comboBoxTask.isEnabled = true
+            lblGettingTasks.isHidden = true
+            self.arrAllTasks = arrAllTasksAdded
+            for task in self.arrAllTasks{
+                let title = task.value(forKey: "title") as? String ?? ""
+                comboBoxTask.items.append(title)
+                print(title)
+            }
+            comboBoxTask.reloadData()
+            loader.stopAnimation(self)
+        }else{
+            comboBoxTask.isEnabled = false
+            comboBoxTask.stringValue = ""
+            lblGettingTasks.isHidden = false
+            comboBoxTask.items.removeAll()
+            self.arrAllTasks.removeAll()
+            loader.startAnimation(self)
+            lblGettingTasks.stringValue = "Fetching tasks..."
+            if let popUpAddNewFocusGoalVcInfo = configjson.value(forKey: "popUpAddNewFocusGoalVcInfo") as? NSDictionary{
+                lblGettingTasks.stringValue = popUpAddNewFocusGoalVcInfo.value(forKey: "fetchingTaskText") as? String ?? lblGettingTasks.stringValue
+            }
+            
+            
+            allApiObject.getAllTasks(completionHandler: {json in
+                DispatchQueue.main.async { [self] in
+                    comboBoxTask.isEnabled = true
+                    lblGettingTasks.isHidden = true
+                    if let json = json{
+                        let sortedTasks = json.sorted { t1, t2 in
+                            let s1 = t1.value(forKey: "created_at") as? String ?? ""
+                            let s2 = t2.value(forKey: "created_at") as? String ?? ""
+                            
+                            let d1 = getDateFromStringInUtc(dateString: s1) ?? Date.distantPast
+                            let d2 = getDateFromStringInUtc(dateString: s2) ?? Date.distantPast
+                            
+                            return d1 > d2
+                        }
+                        self.arrAllTasks = sortedTasks
+                        for task in self.arrAllTasks{
+                            let title = task.value(forKey: "title") as? String ?? ""
+                            comboBoxTask.items.append(title)
+                            print(title)
+                        }
+                        func getDateFromStringInUtc(dateString: String) -> Date? {
+                            let df = DateFormatter()
+                            df.locale = Locale(identifier: "en_US_POSIX")
+                            df.timeZone = TimeZone(secondsFromGMT: 0)
+                            df.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'" // matches your examples
+                            return df.date(from: dateString)
+                        }
+                    }
+                    comboBoxTask.reloadData()
+                    loader.stopAnimation(self)
+                }
+            })
         }
         
-        allApiObject.getAllTasks(completionHandler: {json in
-            DispatchQueue.main.async { [self] in
-                comboBoxTask.isEnabled = true
-                lblGettingTasks.isHidden = true
-                print("got all taks")
-                if let json = json{
-                    arrAllTasks = json
-                    for task in json{
-                        let title = task.value(forKey: "title") as? String ?? ""
-                        comboBoxTask.items.append(title)
-                        print(title)
-                    }
-                }
-                comboBoxTask.reloadData()
-                loader.stopAnimation(self)
-            }
-        })
+        
+        
         if let task = getCurrentTaskInFocusMode(){
             lblPreviousTask.stringValue = task
             boxMarkCurrentTaskAsComplete.isHidden = false
@@ -96,16 +131,23 @@ class popUpAddNewFocusGoalVc: NSViewController {
             stackViewPreviousTask.isHidden = true
         }
         checkBoxMarkCurrentTaskAsCompleted.state = .off
+        
+        lblTitle.stringValue = "What's your new focus goal?"
+        if let popUpAddNewFocusGoalVcInfo = configjson.value(forKey: "popUpAddNewFocusGoalVcInfo") as? NSDictionary{
+            lblTitle.stringValue = popUpAddNewFocusGoalVcInfo.value(forKey: "title") as? String ?? lblTitle.stringValue
+        }
     }
     
     @IBAction func btnSaveClicked(_ sender: Any) {
         addLog(text: "[user-action] popUpAddNewFocusGoalVc:- btnSaveClicked")
         updateFocusModeIntention(intention: textViewIntention.string)
-        if taskPlayerWcObj != nil{
-            if taskPlayerWcObj?.window?.isVisible ?? false{
-                taskPlayerVcObj?.updateIntentionToPlayer()
-            }
-        }
+//        if taskPlayerWcObj != nil{
+//            if taskPlayerWcObj?.window?.isVisible ?? false{
+//                taskPlayerVcObj?.updateIntentionToPlayer()
+//            }
+//        }
+        taskPlayerVcObj?.updateIntentionToPlayer()
+        
         let currentTask = comboBoxTask.stringValue.lowercased()
         var taskAlreadyAdded = false
         var taskAddedIndex = 0
@@ -131,53 +173,42 @@ class popUpAddNewFocusGoalVc: NSViewController {
                 let taskName = comboBoxTask.stringValue
                 let nextWeek = Calendar.current.date(byAdding: .day, value: 7, to: today) ?? Date()
                 let dateString = getStringFromDateInUtc(date: nextWeek, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+                addLog(text: "Create new task:- name: \(taskName)")
                 allApiObject.addTask(title: taskName, details: "", eisenhowerQuadrant: 1, dueDate: dateString, objective: "", tags: [], completionHandler: { result,json in
                     if result{
-                        
+                        addLog(text: "\(taskName) task created successfully.")
                     }
                     DispatchQueue.main.async { [self] in
                         lblGettingTasks.isHidden = true
                         loader.stopAnimation(self)
                         closeView()
-                        if taskPlayerWcObj != nil{
-                            if taskPlayerWcObj?.window?.isVisible ?? false{
-                                if let json = json{
-                                    if let id = json.value(forKey: "id") as? String{
-                                        taskPlayerVcObj?.addAndPlayTaskInCurrentList(taskName: taskName, id: id, duration: 600, shouldCompleteCurrentTask: checkBoxMarkCurrentTaskAsCompleted.state == .on)
-                                    }
-                                }
-                                
+                        if let json = json{
+                            if let id = json.value(forKey: "id") as? String{
+                                taskPlayerVcObj?.addAndPlayTaskInCurrentList(taskName: taskName, id: id, duration: 600, shouldCompleteCurrentTask: checkBoxMarkCurrentTaskAsCompleted.state == .on)
                             }
                         }
                     }
                 })
             }else{
                 closeView()
-                if taskPlayerWcObj != nil{
-                    if taskPlayerWcObj?.window?.isVisible ?? false{
-                        let task = arrAllTasks[taskAddedIndex]
-                        if let id = task.value(forKey: "id") as? String, let taskTitle = task.value(forKey: "title") as? String{
-                            taskPlayerVcObj?.addAndPlayTaskInCurrentList(taskName: taskTitle, id: id, duration: 600, shouldCompleteCurrentTask: checkBoxMarkCurrentTaskAsCompleted.state == .on)
-                        }
-                        
-                    }
+                let task = arrAllTasks[taskAddedIndex]
+                if let id = task.value(forKey: "id") as? String, let taskTitle = task.value(forKey: "title") as? String{
+                    taskPlayerVcObj?.addAndPlayTaskInCurrentList(taskName: taskTitle, id: id, duration: 600, shouldCompleteCurrentTask: checkBoxMarkCurrentTaskAsCompleted.state == .on)
                 }
             }
         }else{
             closeView()
-        }
-        
-        
-        
+        }   
     }
     
     func closeView(){
+        addLog(text: "popUpAddNewFocusGoalVc:- closeView")
         self.view.removeFromSuperview()
         popUpBlockConfirmVcObj?.closeWindowNeedToCheckAppUrlAgain()
     }
     
     @IBAction func checkBoxMarkCurrentTaskAsCompletedClicked(_ sender: Any) {
-        
+        addLog(text: "checkBox mark current task as completed clicked.")
     }
 }
 

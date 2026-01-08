@@ -156,7 +156,7 @@ class draggableView:NSView{
             }
             
         }else{
-            appdelegate?.showPopover(sender: self)
+            appdelegate?.showPopover()
             blankLayerWcObj?.window?.close()
         }
         isMouseDown = false

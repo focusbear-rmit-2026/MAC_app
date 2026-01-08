@@ -9,6 +9,7 @@ import Cocoa
 
 class enterPasswordVc: NSViewController, NSTextFieldDelegate {
    
+    @IBOutlet weak var customViewAccountabilityBuddy: NSView!
     @IBOutlet weak var mainView: NSView!
     
     @IBOutlet weak var blockingView: BlockingView!
@@ -22,6 +23,10 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
     @IBOutlet weak var tabView: NSTabView!
     @IBOutlet weak var tabViewItemEnterCharacters: NSTabViewItem!
     @IBOutlet weak var tabViewItemPassword: NSTabViewItem!
+    @IBOutlet weak var tabViewItemAccountabilityBuddy: NSTabViewItem!
+    
+    
+    
     @IBOutlet weak var lblError: NSTextField!
     @IBOutlet weak var lblTitle: NSTextField!
     @IBOutlet weak var textFieldPassword: NSSecureTextField!
@@ -29,12 +34,28 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
     @IBOutlet weak var btnOk: NSButton!
     @IBOutlet weak var btnCancel: NSButton!
     
+    @IBOutlet weak var stackViewTitle: NSStackView!
+    @IBOutlet weak var stackViewTextField: NSStackView!
+    
     var isCurrentViewInMainWindow = false
     var buttonResetPasswordText = "Reset Password"
     var randomCharacters = ""
     var parentVc:NSViewController?
     var isShowingForRelaxFocusMode = false
     var isShowingForDeactivatingApp = false
+    
+    
+    
+    
+    var accountabilityBuddyVcObj:accountabilityBuddyVc?
+    func getAccountabilityBuddyVcObject()->accountabilityBuddyVc{
+        if accountabilityBuddyVcObj == nil{
+            accountabilityBuddyVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("accountabilityBuddyVc")) as? accountabilityBuddyVc
+        }
+        return accountabilityBuddyVcObj!
+    }
+
+    
     override func viewDidLoad() {
         super.viewDidLoad()
 //        trailingBox.p
@@ -46,6 +67,9 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
         tabViewItemEnterCharacters.label = "Type random characters"
         textFieldRandomString.placeholderString = "Type random characters"
 
+        tabViewItemAccountabilityBuddy.label = "Accountability Buddy"
+        
+        
         if let enterPasswordViewInfo = configjson.value(forKey: "enterPasswordViewInfo") as? NSDictionary{
             if let title = enterPasswordViewInfo.value(forKey: "title") as? String{
                 lblTitle.stringValue = title
@@ -60,6 +84,8 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
             tabViewItemPassword.label = enterPasswordViewInfo.value(forKey: "tabViewPasswordTitle") as? String ?? tabViewItemPassword.label
             tabViewItemEnterCharacters.label = enterPasswordViewInfo.value(forKey: "tabViewRandomCharactersTitle") as? String ?? tabViewItemEnterCharacters.label
             textFieldRandomString.placeholderString = enterPasswordViewInfo.value(forKey: "tabViewRandomCharactersTitle") as? String ?? textFieldRandomString.placeholderString
+            
+            tabViewItemAccountabilityBuddy.label = enterPasswordViewInfo.value(forKey: "tabViewAccountabilityBuddyTitle") as? String ?? tabViewItemAccountabilityBuddy.label
         }
         btnResetPassword.title = buttonResetPasswordText
         
@@ -68,9 +94,27 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
         textFieldPassword.delegate = self
         btnResetPassword.isHidden = true
         tabView.delegate = self
-        
+        customViewAccountabilityBuddy.isHidden = true
         
     }
+    
+    func hidePasswordView(){
+        stackViewTextField.isHidden = true
+        stackViewTitle.isHidden = true
+        btnOk.isHidden = true
+        btnCancel.isHidden = true
+        lblError.isHidden = true
+    }
+    
+    func showPasswordView(){
+        stackViewTextField.isHidden = false
+        stackViewTitle.isHidden = false
+        btnOk.isHidden = false
+        btnCancel.isHidden = false
+        
+        lblError.isHidden = true// keep it true
+    }
+    
     
     func removeConstraints(){
         if topBox != nil{
@@ -82,12 +126,11 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
     }
     
     override func viewWillAppear() {
-        randomCharacters = ""
-        tabView.selectTabViewItem(tabViewItemPassword)
         isCurrentViewInMainWindow = false
         lblError.isHidden = true
         lblError.stringValue = ""
         textFieldPassword.stringValue = ""
+        textFieldRandomString.stringValue = ""
         //btnResetPassword.isHidden = false
         
         if UserDefaults.standard.object(forKey: kUserdefaults24HoursClearPasswordTime) == nil{//if reset is in progress then disable reset button
@@ -98,12 +141,17 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
         
         if isMainWindowLoaded{
             if mainWindowControllerObj?.window?.isVisible ?? false{
-                //btnResetPassword.isHidden = true
                 isCurrentViewInMainWindow = true
-                return;//
             }
         }
+        //If user click stop, it can prompt for the password. If no password is set, it can prompt for the random characters.// added in v 2.27.420 // 27/9/25
+        if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) == nil{
+            tabView.selectTabViewItem(tabViewItemEnterCharacters)
+        }else{
+            tabView.selectTabViewItem(tabViewItemPassword)
+        }
     }
+    
     override func viewWillDisappear() {
         // Hide password dialogue from screenshots  #1276  // reset after password view removes
         if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsHideAllWindowInScreenShots) as? Bool{
@@ -114,15 +162,17 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
             }
         }
     }
+    
     override func viewDidDisappear() {
         
     }
+    
     override func viewDidAppear() {
         textFieldPassword.selectText(self)
         textFieldPassword.currentEditor()?.selectedRange = NSRange(location: 0, length: 0)
         
         //Hide password dialogue from screenshots  #1276
-        self.view.window?.sharingType = .none
+        self.view.window?.sharingType = .none 
     }
     
     @IBAction func btnOkClicked(_ sender: Any) {
@@ -200,33 +250,42 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
     
     func authenticated(){
         if parentVc != nil{
-            if parentVc == startingFocusModeVcObj{
-                self.dismiss(self)
-                let totalMinutes = (startingFocusModeVcObj!.textFieldHourValue.integerValue * 60) + startingFocusModeVcObj!.textFieldMinutesValue.integerValue
-                if currentState == ._POSTPON_MORNING_HABIT_{
-                    mainViewControllerObj?.postponeMorningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
-                }else if currentState == ._POSTPON_EVENING_HABIT_{
-                    mainViewControllerObj?.postponeEveningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
-                }else if currentState == ._POSTPON_FOCUS_SUMMARY_{
-                    mainViewControllerObj?.postponeFocusSummaryFor(minutes: totalMinutes + 2, showAskIntention: false)
-                }
-                startingFocusModeVcObj!.checkTotalMinutesAndStart()
-                return;
-            }else if parentVc == pomodoroVcObj{
+//            if parentVc == startingFocusModeVcObj{
+//                self.dismiss(self)
+//                let totalMinutes = (startingFocusModeVcObj!.textFieldHourValue.integerValue * 60) + startingFocusModeVcObj!.textFieldMinutesValue.integerValue
+//                if currentState == ._POSTPON_MORNING_HABIT_{
+//                    getHabitsVcObject().postponeMorningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
+//                }else if currentState == ._POSTPON_EVENING_HABIT_{
+//                    getHabitsVcObject().postponeEveningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
+//                }else if currentState == ._POSTPON_FOCUS_SUMMARY_{
+//                    getHabitsVcObject().postponeFocusSummaryFor(minutes: totalMinutes + 2, showAskIntention: false)
+//                }
+//                startingFocusModeVcObj!.checkTotalMinutesAndStart()
+//                return;
+//            }else
+            
+            if parentVc == pomodoroVcObj{
                 self.dismiss(self)
                 let totalMinutes = pomodoroVcObj!.textFieldWorkDuration.integerValue
                 if currentState == ._POSTPON_MORNING_HABIT_ && !isShowingForRelaxFocusMode{
-                    mainViewControllerObj?.postponeMorningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
+                    getHabitsVcObject().postponeMorningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
                     pomodoroVcObj!.checkStateAndStartPomodoroMode()
                 }else if currentState == ._POSTPON_EVENING_HABIT_ && !isShowingForRelaxFocusMode{
-                    mainViewControllerObj?.postponeEveningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
+                    getHabitsVcObject().postponeEveningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
                     pomodoroVcObj!.checkStateAndStartPomodoroMode()
                 }else if currentState == ._POSTPON_FOCUS_SUMMARY_ && !isShowingForRelaxFocusMode{
-                    mainViewControllerObj?.postponeFocusSummaryFor(minutes: totalMinutes + 2, showAskIntention: false)
+                    getHabitsVcObject().postponeFocusSummaryFor(minutes: totalMinutes + 2, showAskIntention: false)
                     pomodoroVcObj!.checkStateAndStartPomodoroMode()
                 }else if isShowingForRelaxFocusMode{
                     pomodoroVcObj!.pomodoroModeStarted()
-                    pomodoroVcObj?.view.window?.close()
+                    
+                    
+                    if currentState != ._MICRO_BREAK_{// if micro break started while focus mode is running and focus mode finished after miro break started then dont show small view if full screen is enabled v 2.28.438
+                        
+                        pomodoroVcObj?.view.window?.close()//  will not work if view has changed (task player is viisble now). because if main view is changes then window is nil.no need to change anything
+                    }else{
+                        leftMenuVcObj?.showBreaksView()
+                    }
                 }
                 isShowingForRelaxFocusMode = false
                 return;
@@ -234,11 +293,11 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
                 self.dismiss(self)
                 let totalMinutes = Int(focusEndWarningVcObj?.popUpBtn.title ?? "1") ?? 0
                 if currentState == ._POSTPON_MORNING_HABIT_{
-                    mainViewControllerObj?.postponeMorningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
+                    getHabitsVcObject().postponeMorningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
                 }else if currentState == ._POSTPON_EVENING_HABIT_{
-                    mainViewControllerObj?.postponeEveningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
+                    getHabitsVcObject().postponeEveningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
                 }else if currentState == ._POSTPON_FOCUS_SUMMARY_{
-                    mainViewControllerObj?.postponeFocusSummaryFor(minutes: totalMinutes + 2, showAskIntention: false)
+                    getHabitsVcObject().postponeFocusSummaryFor(minutes: totalMinutes + 2, showAskIntention: false)
                 }
                 focusEndWarningVcObj!.extendFocusMode()
                 return;
@@ -246,20 +305,26 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
                 self.dismiss(self)
                 let totalMinutes = Int(addTaskVcObj?.popUpBtnSelectMinutes.title ?? "1") ?? 0
                 if currentState == ._POSTPON_MORNING_HABIT_{
-                    mainViewControllerObj?.postponeMorningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
+                    getHabitsVcObject().postponeMorningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
                 }else if currentState == ._POSTPON_EVENING_HABIT_{
-                    mainViewControllerObj?.postponeEveningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
+                    getHabitsVcObject().postponeEveningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
                 }else if currentState == ._POSTPON_FOCUS_SUMMARY_{
-                    mainViewControllerObj?.postponeFocusSummaryFor(minutes: totalMinutes + 2, showAskIntention: false)
+                    getHabitsVcObject().postponeFocusSummaryFor(minutes: totalMinutes + 2, showAskIntention: false)
                 }
                 addTaskVcObj?.extendFocusMode()
                 return;
             }else if parentVc == simplePomodoroVcObj{
                 self.dismiss(self)
                 let totalMinutes = simplePomodoroVcObj!.textFieldWorkDuration.integerValue
-                mainViewControllerObj?.postponeEveningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
+                getHabitsVcObject().postponeEveningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
                 simplePomodoroVcObj!.pomodoroModeStarted()
-                simplePomodoroVcObj?.view.window?.close()
+                
+                if currentState != ._MICRO_BREAK_{// if micro break started while focus mode is running and focus mode finished after miro break started then dont show small view if full screen is enabled v 2.28.438
+                    
+                    simplePomodoroVcObj?.view.window?.close()//  will not work if view has changed (task player is viisble now). because if main view is changes then window is nil.no need to change anything
+                }else{
+                    leftMenuVcObj?.showBreaksView()
+                }
                 return;
             }else if parentVc == menuViewControllerObj{
                 self.view.window?.close()
@@ -282,11 +347,11 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
                     if activityPostponeCount == 0 && postponeTime > 15{
                         activityPostponeCount += 1
                         self.view.removeFromSuperview()
-                        mainViewControllerObj?.postponeMorningHabitFor(minutes: postponeTime, secondsToPostpone: nil, showAskFocusModeView: true, showAskIntention: true)
+                        getHabitsVcObject().postponeMorningHabitFor(minutes: postponeTime, secondsToPostpone: nil, showAskFocusModeView: true, showAskIntention: true)
                         return;
                     }else{
                         self.view.removeFromSuperview()
-                        mainViewControllerObj?.showAskPostponeView()
+                        getHabitsVcObject().showAskPostponeView()
                         return;
                     }
                     
@@ -301,11 +366,11 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
                     if activityPostponeCount == 0 && postponeTime > 15{
                         activityPostponeCount += 1
                         self.view.removeFromSuperview()
-                        mainViewControllerObj?.postponeEveningHabitFor(minutes: postponeTime, secondsToPostpone: nil, showAskFocusModeView: true, showAskIntention: true)
+                        getHabitsVcObject().postponeEveningHabitFor(minutes: postponeTime, secondsToPostpone: nil, showAskFocusModeView: true, showAskIntention: true)
                         return;
                     }else{
                         self.view.removeFromSuperview()
-                        mainViewControllerObj?.showAskPostponeView()
+                        getHabitsVcObject().showAskPostponeView()
                         return;
                     }
                     
@@ -316,19 +381,19 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
 
                     if askPostponeVcObj != nil{
                         if askPostponeVcObj!.popUpButtonSelectMinutes != nil{
-                            mainViewControllerObj?.postponeFocusSummaryFor(minutes: Int(askPostponeVcObj!.popUpButtonSelectMinutes.title) ?? 15, showAskIntention: true)
+                            getHabitsVcObject().postponeFocusSummaryFor(minutes: Int(askPostponeVcObj!.popUpButtonSelectMinutes.title) ?? 15, showAskIntention: true)
                         }else{
-                            mainViewControllerObj?.postponeFocusSummaryFor(minutes: 15, showAskIntention: true)
+                            getHabitsVcObject().postponeFocusSummaryFor(minutes: 15, showAskIntention: true)
                         }
                     }else{
-                        mainViewControllerObj?.postponeFocusSummaryFor(minutes: 15, showAskIntention: true)
+                        getHabitsVcObject().postponeFocusSummaryFor(minutes: 15, showAskIntention: true)
                     }
                     return;
                 }
                 
             }else if parentVc == firstViewControllerObj{
                 self.view.removeFromSuperview()
-                firstViewControllerObj?.showEditHabitsView()
+                firstViewControllerObj?.passWordAuthenticated()
                 return;
             }
             
@@ -348,7 +413,7 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
             if skipHabitVcObj != nil{
                 if parentVc == skipHabitVcObj!{
                     self.view.removeFromSuperview()
-                    mainViewControllerObj?.showSkipHabitView()
+                    getHabitsVcObject().showSkipHabitView()
                     return;
                 }
             }
@@ -365,13 +430,42 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
         if isMainWindowLoaded{
             if self.view.window == mainWindowControllerObj?.window{
                 if (mainWindowControllerObj?.window!.isVisible)!{//it means isi per aaya hoga
-                    self.view.removeFromSuperview()
-                    if currentState == ._FOCUS_SUMMARY_{
-                        focusSummaryVcObj?.postponeFocusSummaryForOneMinute()
-                    }else if currentState == ._SHUTOFFMAC_{
-                        shutOffTimeVcObj!.passwordEnteredSuccessfully()
+                    
+                    if (leftMenuVcObj?.boxBlocks.isSelected ?? false) || (leftMenuVcObj?.boxSettings.isSelected ?? false) || (leftMenuVcObj?.boxEditHabits.isSelected ?? false){
+                        
+                        if leftMenuVcObj?.boxSettings.isSelected ?? false{
+                            if frictionVcObj != nil{
+                                if settingsContainerVcObj?.containerView.subviews.contains(frictionVcObj!.view) ?? false{
+                                    if SettingsManagerObject.isPasswordRequireInCircumventingBlocks{
+                                        self.view.removeFromSuperview()
+                                        frictionVcObj?.turnOffReloadAfterForceQuit()
+                                        return;
+                                    }
+                                }
+                            }
+                            if uIVcObj != nil{
+                                if settingsContainerVcObj?.containerView.subviews.contains(uIVcObj!.view) ?? false{
+                                    if SettingsManagerObject.isPasswordRequireInCircumventingBlocks{
+                                        self.view.removeFromSuperview()
+                                        uIVcObj?.settingsChangegShowDockIcon()
+                                        return;
+                                    }
+                                }
+                            }
+                        }
+                        
+                        
+                        self.view.removeFromSuperview()
+                        return;
                     }else{
-                        mainViewControllerObj?.showAbortStartView()
+                        self.view.removeFromSuperview()
+                        if currentState == ._FOCUS_SUMMARY_{
+                            focusSummaryVcObj?.postponeFocusSummaryForOneMinute()
+                        }else if currentState == ._SHUTOFFMAC_{
+                            shutOffTimeVcObj!.passwordEnteredSuccessfully()
+                        }else{
+                            getHabitsVcObject().showAbortStartView()
+                        }
                     }
                     return;
                 }
@@ -408,36 +502,24 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
             }
         }
         
-        if frictionVcObj != nil{
-            if settingsContainerVcObj?.containerView.subviews.contains(frictionVcObj!.view) ?? false{
-                if SettingsManagerObject.isPasswordRequireInCircumventingBlocks{
-                    self.view.removeFromSuperview()
-                    frictionVcObj?.turnOffReloadAfterForceQuit()
-                    return;
-                }
-            }
-        }
-        if preferencesWindowControllerObj != nil{
-            if self.view.window == preferencesWindowControllerObj?.window{
-                if selectJsonVcObj != nil{
-                    if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
-                        if tabview.selectedTabViewItemIndex == preferencesEditHabitsIndex{
-                            self.view.removeFromSuperview()
-                            return;
-                        }
-                    }
-                }
-            }
-        }
-        if uIVcObj != nil{
-            if settingsContainerVcObj?.containerView.subviews.contains(uIVcObj!.view) ?? false{
-                if SettingsManagerObject.isPasswordRequireInCircumventingBlocks{
-                    self.view.removeFromSuperview()
-                    uIVcObj?.settingsChangegShowDockIcon()
-                    return;
-                }
-            }
-        }
+        
+//        if preferencesWindowControllerObj != nil{
+//            if self.view.window == preferencesWindowControllerObj?.window{
+//                if selectJsonVcObj != nil{
+//                    if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
+//                        if tabview.selectedTabViewItemIndex == preferencesEditHabitsIndex{
+//                            self.view.removeFromSuperview()
+//                            return;
+//                        }
+//                    }
+//                }
+//            }
+//        }
+        
+        
+        
+        
+        
         
         self.view.removeFromSuperview()
     }
@@ -445,11 +527,12 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
         addLog(text: "[user-action] Enter password view - cancel clicked")
         allApiObject.capturePosthog(event: "cancel-when-prompted-password", metadata: [:])
         if parentVc != nil{
-            if parentVc == startingFocusModeVcObj{
-                self.dismiss(self)
-                startingFocusModeVcObj!.checkTotalMinutesAndStart()
-                return;
-            }else if parentVc == pomodoroVcObj{
+//            if parentVc == startingFocusModeVcObj{
+//                self.dismiss(self)
+//                startingFocusModeVcObj!.checkTotalMinutesAndStart()
+//                return;
+//            }else
+            if parentVc == pomodoroVcObj{
                 self.dismiss(self)
                 isShowingForRelaxFocusMode = false
                 return;
@@ -470,7 +553,7 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
                 return;
             }else if parentVc == getAskPostponeVcObject(){
                 self.view.removeFromSuperview()
-                mainViewControllerObj?.abortCancel()
+                getHabitsVcObject().abortCancel()
                 return;
             }else if parentVc == firstViewControllerObj{
                 self.view.removeFromSuperview()
@@ -492,7 +575,8 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
             if easyPostponeVcObj != nil{
                 if self.parentVc == easyPostponeVcObj{
                     if !isShowingForDeactivatingApp{
-                        easyPostponeWcObj?.window?.close()
+//                        easyPostponeWcObj?.window?.close()
+                        closeEasyPostponeWindowIfVisible()
                         return;
                     }else{
                         self.dismiss(self)
@@ -504,58 +588,111 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
         
         if isMainWindowLoaded{
             if self.view.window == mainWindowControllerObj?.window{
-                if (mainWindowControllerObj?.window!.isVisible)!{//it means isi per aaya hoga
-                    self.view.removeFromSuperview()
-                    if currentState != ._SHUTOFFMAC_ && currentState != ._FOCUS_SUMMARY_{
-                        mainViewControllerObj?.abortCancel()
-                    }
-                    return;
-                }
-            }
-        }
-        if preferencesWindowControllerObj != nil{ // ask password for password tab when PasswordRequireInChangeSettings is false
-            if self.view.window == preferencesWindowControllerObj?.window{
-                if passwordVcObj != nil{
-                    if settingsContainerVcObj?.containerView.subviews.contains(passwordVcObj!.view) ?? false{
-                        if !SettingsManagerObject.isPasswordRequireInChangeSettings{
-                            self.view.removeFromSuperview()
-                            passwordVcObj?.btnBackClicked(self)
-                            return;
+                if (mainWindowControllerObj?.window!.isVisible)!{//
+                    
+                    
+                    
+                    if (leftMenuVcObj?.boxBlocks.isSelected ?? false) || (leftMenuVcObj?.boxSettings.isSelected ?? false) || (leftMenuVcObj?.boxEditHabits.isSelected ?? false){
+                        if passwordVcObj != nil{
+                            if settingsContainerVcObj?.containerView.subviews.contains(passwordVcObj!.view) ?? false{
+                                if !SettingsManagerObject.isPasswordRequireInChangeSettings{
+                                    self.view.removeFromSuperview()
+                                    passwordVcObj?.btnBackClicked(self)
+                                    return;
+                                }
+                            }
                         }
-                    }
-                }
-                
-                if selectJsonVcObj != nil{
-                    if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
+                        if leftMenuVcObj?.boxSettings.isSelected ?? false{
+                            
+                            if frictionVcObj != nil{
+                                if settingsContainerVcObj?.containerView.subviews.contains(frictionVcObj!.view) ?? false{
+                                    if SettingsManagerObject.isPasswordRequireInCircumventingBlocks{
+                                        self.view.removeFromSuperview()
+                                        frictionVcObj?.reloadAppAfterForceQuitItemVcObj?.btnSwitch.state = .on
+                                        return;
+                                    }
+                                }
+                            }
+                            
+                            if uIVcObj != nil{
+                                if settingsContainerVcObj?.containerView.subviews.contains(uIVcObj!.view) ?? false{
+                                    if SettingsManagerObject.isPasswordRequireInCircumventingBlocks{
+                                        self.view.removeFromSuperview()
+                                        uIVcObj?.showDockIconItemVcObj?.btnSwitch.state = .off
+                                        return;
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // if selectJsonVcObj != nil{
+                        //                    if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
                         //if tabview.selectedTabViewItemIndex == preferencesEditHabitsIndex{
                         self.view.removeFromSuperview()
-                        tabview.selectedTabViewItemIndex = 0
+                        
+                        leftMenuVcObj?.showHelpAndSupportView()
                         return;
-                        //}
-                    }
-                }
-                
-                if frictionVcObj != nil{
-                    if settingsContainerVcObj?.containerView.subviews.contains(frictionVcObj!.view) ?? false{
-                        if SettingsManagerObject.isPasswordRequireInCircumventingBlocks{
-                            self.view.removeFromSuperview()
-                            frictionVcObj?.reloadAppAfterForceQuitItemVcObj?.btnSwitch.state = .on
-                            return;
+                                //}
+        //                    }
+                       // }
+
+                        
+                    }else{
+                        self.view.removeFromSuperview()
+                        if currentState != ._SHUTOFFMAC_ && currentState != ._FOCUS_SUMMARY_{
+                            getHabitsVcObject().abortCancel()
                         }
+                        return;
                     }
-                }
-                
-                if uIVcObj != nil{
-                    if settingsContainerVcObj?.containerView.subviews.contains(uIVcObj!.view) ?? false{
-                        if SettingsManagerObject.isPasswordRequireInCircumventingBlocks{
-                            self.view.removeFromSuperview()
-                            uIVcObj?.showDockIconItemVcObj?.btnSwitch.state = .off
-                            return;
-                        }
-                    }
+                    
                 }
             }
         }
+//        if preferencesWindowControllerObj != nil{ // ask password for password tab when PasswordRequireInChangeSettings is false
+//            if self.view.window == preferencesWindowControllerObj?.window{
+//                if passwordVcObj != nil{
+//                    if settingsContainerVcObj?.containerView.subviews.contains(passwordVcObj!.view) ?? false{
+//                        if !SettingsManagerObject.isPasswordRequireInChangeSettings{
+//                            self.view.removeFromSuperview()
+//                            passwordVcObj?.btnBackClicked(self)
+//                            return;
+//                        }
+//                    }
+//                }
+//                
+//                if selectJsonVcObj != nil{
+//                    if let tabview = preferencesWindowControllerObj?.contentViewController as? NSTabViewController{
+//                        //if tabview.selectedTabViewItemIndex == preferencesEditHabitsIndex{
+//                        self.view.removeFromSuperview()
+//                        tabview.selectedTabViewItemIndex = 0
+//                        return;
+//                        //}
+//                    }
+//                }
+//                
+//                if frictionVcObj != nil{
+//                    if settingsContainerVcObj?.containerView.subviews.contains(frictionVcObj!.view) ?? false{
+//                        if SettingsManagerObject.isPasswordRequireInCircumventingBlocks{
+//                            self.view.removeFromSuperview()
+//                            frictionVcObj?.reloadAppAfterForceQuitItemVcObj?.btnSwitch.state = .on
+//                            return;
+//                        }
+//                    }
+//                }
+//                
+//                if uIVcObj != nil{
+//                    if settingsContainerVcObj?.containerView.subviews.contains(uIVcObj!.view) ?? false{
+//                        if SettingsManagerObject.isPasswordRequireInCircumventingBlocks{
+//                            self.view.removeFromSuperview()
+//                            uIVcObj?.showDockIconItemVcObj?.btnSwitch.state = .off
+//                            return;
+//                        }
+//                    }
+//                }
+//            }
+//        }
+        
+    
         if quittingWcObj != nil{//postpone cancel from password box
             if self.view.window == quittingWcObj?.window{
                 if quittingWcObj?.contentViewController == askQuitVcObj{
@@ -646,7 +783,7 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
                             if mainWindowControllerObj?.window!.isVisible ?? false{//it means isi per aaya hoga
                                 self.view.removeFromSuperview()
                                 if currentState != ._SHUTOFFMAC_{
-                                    mainViewControllerObj?.abortCancel()
+                                    getHabitsVcObject().abortCancel()
                                 }
                                 return;
                             }
@@ -708,6 +845,9 @@ extension enterPasswordVc:NSTabViewDelegate{
                 lblTitle.stringValue = enterPasswordViewInfo.value(forKey: "title") as? String ?? lblTitle.stringValue
                 textFieldPassword.placeholderString = enterPasswordViewInfo.value(forKey: "passwordPlaceholderText") as? String ?? textFieldPassword.placeholderString
             }
+            showPasswordView()
+            customViewAccountabilityBuddy.isHidden = true
+            customViewAccountabilityBuddy.subviews.forEach { $0.removeFromSuperview() }
         }else if tabViewItem == tabViewItemEnterCharacters{
             textFieldPassword.isHidden = true
             textFieldRandomString.isHidden = false
@@ -723,11 +863,29 @@ extension enterPasswordVc:NSTabViewDelegate{
             lblRandomString.isHidden = false
             
             lblTitle.stringValue = title
+            showPasswordView()
+            customViewAccountabilityBuddy.isHidden = true
+            customViewAccountabilityBuddy.subviews.forEach { $0.removeFromSuperview() }
+        }else if tabViewItem == tabViewItemAccountabilityBuddy{
+            hidePasswordView()
+            customViewAccountabilityBuddy.isHidden = false
+            if !getAccountabilityBuddyVcObject().isViewLoaded{
+                getAccountabilityBuddyVcObject().loadView()
+            }
+            getAccountabilityBuddyVcObject().enterPasswordVcObj = self
+            customViewAccountabilityBuddy.addSubview(getAccountabilityBuddyVcObject().view)
+            customViewAccountabilityBuddy.addConstraints(subView: getAccountabilityBuddyVcObject().view)
             
         }
     }
 
     func tabView(_ tabView: NSTabView, shouldSelect tabViewItem: NSTabViewItem?) -> Bool {
+        if tabViewItem == tabViewItemPassword{
+            if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) == nil{
+                return false
+            }
+        }
+        
         return true
     }
 }

@@ -137,7 +137,7 @@ class customRoutineTimeVc: NSViewController {
         self.view.window?.close()
         if currentState == ._CUSTOM_ROUTINE_{
             if !arrAllCustomRoutine[currentRoutineIndex].triggerOnDemand{
-                mainViewControllerObj?.postponeCustomRoutineFor(minutes: Int(popUpBtnSelect.title) ?? 5, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
+                getHabitsVcObject().postponeCustomRoutineFor(minutes: Int(popUpBtnSelect.title) ?? 5, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false, fromRoutineWarning:true)
                 return;
             }
         }

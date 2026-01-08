@@ -372,13 +372,22 @@ class askWorkTimeVc: NSViewController {
         
         
         
-        if confirmMorningRoutineTimeVcObj != nil{
-            if confirmMorningRoutineTimeVcObj!.isConfirmTimeForMorningShown{
-                mainViewControllerObj!.showConfirmEveningRoutineTimeVc()
-                return;
-            }
-        }
-        mainViewControllerObj!.showConfirmMorningRoutineTimeVc()
+//        if confirmMorningRoutineTimeVcObj != nil{
+//            if confirmMorningRoutineTimeVcObj!.isConfirmTimeForMorningShown{
+//                mainViewControllerObj!.showConfirmEveningRoutineTimeVc()
+//                return;
+//            }
+//        }
+//        mainViewControllerObj!.showConfirmMorningRoutineTimeVc()
+        
+        
+        
+//        addLog(text: "takeBreaksInfoVc:- btnContinueClicked:isBreaksEnabled:- \(isBreaksEnabled)")
+//        let isBreaksEnabled = true
+        UserDefaults.standard.set(20, forKey: kUserdefaultsBreakDurationValue)
+        UserDefaults.standard.set(true, forKey: kUserdefaultsBreaksEnabledFromOnboarding)
+        appdelegate!.showOnbardingHabit()
+        
     }
     @IBAction func datePickerShutDownTimeClicked(_ sender: Any) {
         allApiObject.capturePosthog(event: "finish-time-edited", metadata: [:])
