@@ -9074,6 +9074,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 if name == selfAppName.lowercased() || name == focusBearTimeTrackerAppName{
                     return;
                 }
+                
+                for path in SettingsManagerObject.arrAlwaysAllowedApps{
+                    let url = URL(fileURLWithPath: path)
+                    if url.deletingPathExtension().lastPathComponent.lowercased() == name{
+                        return;
+                    }
+                }
                 let blockAppsPath = currentRunningFocusType["blockAppsArray"] as? [String] ?? []
                 for path in blockAppsPath{
                     let url = URL(fileURLWithPath: path)

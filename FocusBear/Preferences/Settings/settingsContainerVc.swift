@@ -142,6 +142,12 @@ class settingsContainerVc: NSViewController {
         self.containerView.addConstraints(subView: getBlockedAppsVcObject().view)
     }
     
+    func showAlwaysAllowedAppsView(){
+        removeSubViews()
+        self.containerView.addSubview(getAlwaysAllowedAppsVcObject().view)
+        self.containerView.addConstraints(subView: getAlwaysAllowedAppsVcObject().view)
+    }
+    
     func showAiView(){
         removeSubViews()
         self.containerView.addSubview(getAiSettingNewVcObject().view)
