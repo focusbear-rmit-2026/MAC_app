@@ -515,6 +515,11 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
             }
         }else if message.name == "send_intention"{
             print(message.body)
+            // In super strict mode, prevent changing the focus intention
+            if currentFocusModeStrictness == ._SUPER_STRICT_ {
+                addLog(text: "Cannot change focus intention in super strict mode")
+                return
+            }
             let intention = message.body as? String ?? ""
             updateFocusModeIntention(intention: intention)
         }else if message.name == "send_brain_dump_content"{

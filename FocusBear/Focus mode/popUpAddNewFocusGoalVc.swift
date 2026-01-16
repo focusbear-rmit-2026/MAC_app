@@ -140,6 +140,22 @@ class popUpAddNewFocusGoalVc: NSViewController {
     
     @IBAction func btnSaveClicked(_ sender: Any) {
         addLog(text: "[user-action] popUpAddNewFocusGoalVc:- btnSaveClicked")
+        
+        // In super strict mode, prevent changing the focus intention
+        if currentFocusModeStrictness == ._SUPER_STRICT_ {
+            addLog(text: "Cannot change focus intention in super strict mode")
+            let alert = NSAlert()
+            alert.setSharingType()
+            alert.alertStyle = .warning
+            alert.messageText = "Cannot change focus intention in super strict mode"
+            if let popUpAddNewFocusGoalVcInfo = configjson.value(forKey: "popUpAddNewFocusGoalVcInfo") as? NSDictionary {
+                alert.messageText = popUpAddNewFocusGoalVcInfo.value(forKey: "cannotChangeIntentionInSuperStrictText") as? String ?? alert.messageText
+            }
+            alert.addButton(withTitle: buttonOkText)
+            alert.runModal()
+            return
+        }
+        
         updateFocusModeIntention(intention: textViewIntention.string)
 //        if taskPlayerWcObj != nil{
 //            if taskPlayerWcObj?.window?.isVisible ?? false{
