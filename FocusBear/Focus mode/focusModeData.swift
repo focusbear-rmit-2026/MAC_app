@@ -184,6 +184,25 @@ var lastFocusAlignmentScore:Double = 0
 var lastFocusAlignmentShownScore:Double = 0
 
 func calculateFocusAlignmentScore(){
+    // If AI is not enabled or Block super distracting mode is on, set score to 100%
+    // since we can't calculate the score without AI
+    if !SettingsManagerObject.isAIBlockingEnabled() || isBlockSuperDistractingFocusModeOn() {
+        currentFocusAlignmentScore = 100
+        lastFocusAlignmentScore = 100
+        taskPlayerVcObj?.setFocusAlignmentScore()
+        if SettingsManagerObject.isFocusVisualIndicatorEnabled{
+            if nudgeFocusAlignmentScoreDippingWcObject != nil{
+                if nudgeFocusAlignmentScoreDippingWcObject?.window?.isVisible ?? false{
+                    if (nudgeFocusAlignmentScoreDippingWcObject?.isNudgeVisible ??  false){
+                        lastFocusAlignmentShownScore = 100
+                        getNudgeFocusAlignmentScoreDippingVcObject().reloadData(score: 100, isNudgeVisible: true)
+                    }
+                }
+            }
+        }
+        return
+    }
+    
     var totalAlignmentScore:Double = 0
     var totalSeconds = 0
     let keys = dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus.keys
@@ -261,6 +280,12 @@ func calculateFocusAlignmentScore(){
 
 
 func getFocusAlignmentScoreFromLastEntry()->Double{
+    // If AI is not enabled or Block super distracting mode is on, return 100%
+    // since we can't calculate the score without AI
+    if !SettingsManagerObject.isAIBlockingEnabled() || isBlockSuperDistractingFocusModeOn() {
+        return 100
+    }
+    
     let lastEntryInProductivityStatsTime = lastEntryInProductivityStatsTime ?? Date()
     var totalAlignmentScore:Double = 0
     var totalSeconds = 0
