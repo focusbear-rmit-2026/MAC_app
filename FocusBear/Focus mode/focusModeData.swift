@@ -110,6 +110,7 @@ func focusModeCloseCurrentAppForAlignmentScore(){
 }
 
 func focusModeOpenCurrentUrlForAlignmentScore(domain:String){
+    // Track URLs when AI is enabled (cuddly mode)
     if isCuddlyModeEnabled() && SettingsManagerObject.isAIBlockingEnabled() && !isBlockSuperDistractingFocusModeOn(){
         //check url opening for second time
         if var info = dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[domain]{
@@ -130,10 +131,43 @@ func focusModeOpenCurrentUrlForAlignmentScore(domain:String){
             focusModeCloseCurrentUrlForAlignmentScore()
         }
     }
+    // Track URLs when AI is disabled - use 0% for super distracting sites, 100% for others
+    else if isCuddlyModeEnabled() && !SettingsManagerObject.isAIBlockingEnabled() {
+        // Check if this URL is in the super distracting list
+        let blockedUrls = getBlockedUrlsToBlock()
+        var isSuperDistracting = false
+        for blockedUrl in blockedUrls {
+            if domain.lowercased().contains(blockedUrl.lowercased()) || blockedUrl.lowercased().contains(domain.lowercased()) {
+                isSuperDistracting = true
+                break
+            }
+        }
+        let probability: Double = isSuperDistracting ? 0.0 : 1.0
+        
+        if var info = dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[domain]{
+            if let isVisibleUrl = info["isVisibleUrl"] as? Bool{
+                if !isVisibleUrl{
+                    focusModeCloseCurrentUrlForAlignmentScore()
+                    info["isVisibleUrl"] = true
+                    info["startedTime"] = Date()
+                    info["probability"] = probability
+                    dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[domain] = info
+                }
+            }
+            setAppIconForFocusModeScore(probability: probability)
+        }else{
+            // Add new entry for this URL
+            focusModeCloseCurrentUrlForAlignmentScore()
+            dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[domain] = ["probability":probability, "isVisibleUrl":true, "totalSeconds":0, "startedTime":Date(), "reason": ""]
+            setAppIconForFocusModeScore(probability: probability)
+            calculateFocusAlignmentScore()
+        }
+    }
 }
 
 func focusModeOpenCurrentAppForAlignmentScore(appNameLowercased:String){
     boxForStatusBarForTooltip?.customToolTip = ""
+    // Track apps when AI is enabled (cuddly mode)
     if isCuddlyModeEnabled() && SettingsManagerObject.isAIBlockingEnabled() && !isBlockSuperDistractingFocusModeOn(){
         if var info = dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[appNameLowercased]{
             if let isVisibleApp = info["isVisibleApp"] as? Bool{
@@ -150,6 +184,40 @@ func focusModeOpenCurrentAppForAlignmentScore(appNameLowercased:String){
         }else{
             setFocusBearIconToNormal()
             focusModeCloseCurrentAppForAlignmentScore()
+        }
+    }
+    // Track apps when AI is disabled - use 0% for super distracting apps, 100% for others
+    else if isCuddlyModeEnabled() && !SettingsManagerObject.isAIBlockingEnabled() {
+        // Check if this app is in the super distracting list
+        let blockedApps = getBlockedAppsToBlock()
+        var isSuperDistracting = false
+        for blockedApp in blockedApps {
+            if appNameLowercased.contains(blockedApp.lowercased()) || blockedApp.lowercased().contains(appNameLowercased) {
+                isSuperDistracting = true
+                break
+            }
+        }
+        let probability: Double = isSuperDistracting ? 0.0 : 1.0
+        
+        if var info = dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[appNameLowercased]{
+            if let isVisibleApp = info["isVisibleApp"] as? Bool{
+                if !isVisibleApp{
+                    focusModeCloseCurrentAppForAlignmentScore()
+                    info["isVisibleApp"] = true
+                    info["startedTime"] = Date()
+                    info["probability"] = probability
+                    dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[appNameLowercased] = info
+                }
+            }
+            setAppIconForFocusModeScore(probability: probability)
+        }else{
+            // Add new entry for this app (exclude browsers from Alignment Score)
+            if !arrBrowsersLowerCasedNames.contains(appNameLowercased){
+                focusModeCloseCurrentAppForAlignmentScore()
+                dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[appNameLowercased] = ["probability":probability, "isVisibleApp":true, "totalSeconds":0, "startedTime":Date(), "reason": ""]
+                setAppIconForFocusModeScore(probability: probability)
+                calculateFocusAlignmentScore()
+            }
         }
     }
 }
@@ -184,25 +252,6 @@ var lastFocusAlignmentScore:Double = 0
 var lastFocusAlignmentShownScore:Double = 0
 
 func calculateFocusAlignmentScore(){
-    // If AI is not enabled or Block super distracting mode is on, set score to 100%
-    // since we can't calculate the score without AI
-    if !SettingsManagerObject.isAIBlockingEnabled() || isBlockSuperDistractingFocusModeOn() {
-        currentFocusAlignmentScore = 100
-        lastFocusAlignmentScore = 100
-        taskPlayerVcObj?.setFocusAlignmentScore()
-        if SettingsManagerObject.isFocusVisualIndicatorEnabled{
-            if nudgeFocusAlignmentScoreDippingWcObject != nil{
-                if nudgeFocusAlignmentScoreDippingWcObject?.window?.isVisible ?? false{
-                    if (nudgeFocusAlignmentScoreDippingWcObject?.isNudgeVisible ??  false){
-                        lastFocusAlignmentShownScore = 100
-                        getNudgeFocusAlignmentScoreDippingVcObject().reloadData(score: 100, isNudgeVisible: true)
-                    }
-                }
-            }
-        }
-        return
-    }
-    
     var totalAlignmentScore:Double = 0
     var totalSeconds = 0
     let keys = dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus.keys
@@ -280,12 +329,6 @@ func calculateFocusAlignmentScore(){
 
 
 func getFocusAlignmentScoreFromLastEntry()->Double{
-    // If AI is not enabled or Block super distracting mode is on, return 100%
-    // since we can't calculate the score without AI
-    if !SettingsManagerObject.isAIBlockingEnabled() || isBlockSuperDistractingFocusModeOn() {
-        return 100
-    }
-    
     let lastEntryInProductivityStatsTime = lastEntryInProductivityStatsTime ?? Date()
     var totalAlignmentScore:Double = 0
     var totalSeconds = 0
