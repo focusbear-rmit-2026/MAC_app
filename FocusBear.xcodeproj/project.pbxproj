@@ -351,6 +351,7 @@ AAW00002 /* alwaysAllowedAppsVc.swift in Sources */ = {isa = PBXBuildFile; fileR
 		8FD1054B27EF221800B7728E /* validationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FD1054A27EF221800B7728E /* validationTest.swift */; };
 		ABH00001 /* AppBlockingHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABH00002 /* AppBlockingHelper.swift */; };
 		ABH00003 /* AppBlockingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABH00004 /* AppBlockingTests.swift */; };
+		UBT00001 /* URLBlockingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = UBT00002 /* URLBlockingTests.swift */; };
 		8FD180312944791C009062E1 /* preloadFocusModeAppsVc.swift in Sources */= {isa = PBXBuildFile; fileRef = 8FD180302944791C009062E1 /* preloadFocusModeAppsVc.swift */; };
 		8FD86E1C2A54303A004F6761 /* unusedCode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FD86E1B2A54303A004F6761 /* unusedCode.swift */; };
 		8FD86E1E2A54376C004F6761 /* todoNotes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FD86E1D2A54376C004F6761 /* todoNotes.swift */; };
@@ -772,6 +773,7 @@ AAW00001 /* alwaysAllowedAppsVc.swift */ = {isa = PBXFileReference; fileEncoding
 		8FD1054A27EF221800B7728E /* validationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = validationTest.swift; sourceTree = "<group>"; };
 		ABH00002 /* AppBlockingHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBlockingHelper.swift; sourceTree = "<group>"; };
 		ABH00004 /* AppBlockingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBlockingTests.swift; sourceTree = "<group>"; };
+		UBT00002 /* URLBlockingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLBlockingTests.swift; sourceTree = "<group>"; };
 		8FD180302944791C009062E1 /* preloadFocusModeAppsVc.swift */= {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = preloadFocusModeAppsVc.swift; sourceTree = "<group>"; };
 		8FD86E1B2A54303A004F6761 /* unusedCode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = unusedCode.swift; sourceTree = "<group>"; };
 		8FD86E1D2A54376C004F6761 /* todoNotes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = todoNotes.swift; sourceTree = "<group>"; };
@@ -1544,6 +1546,7 @@ AAW00001 /* alwaysAllowedAppsVc.swift */ = {isa = PBXFileReference; fileEncoding
 				8FD1053E27EEE44100B7728E /* Focus_BearTests.swift */,
 				8FD1054A27EF221800B7728E /* validationTest.swift */,
 				ABH00004 /* AppBlockingTests.swift */,
+				UBT00002 /* URLBlockingTests.swift */,
 				8FD1054027EEE44100B7728E /* Info.plist */,
 			);
 			path = FocusBearTests;
@@ -2194,6 +2197,7 @@ AAW00001 /* alwaysAllowedAppsVc.swift */ = {isa = PBXFileReference; fileEncoding
 				8FD1054B27EF221800B7728E /* validationTest.swift in Sources */,
 				8FD1053F27EEE44100B7728E /* Focus_BearTests.swift in Sources */,
 				ABH00003 /* AppBlockingTests.swift in Sources */,
+				UBT00001 /* URLBlockingTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
