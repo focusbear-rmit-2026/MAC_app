@@ -26,6 +26,19 @@ class popUpAddNewFocusGoalVc: NSViewController {
     @IBOutlet weak var lblTitle: NSTextField!
     
     var arrAllTasks = [NSDictionary]()
+    
+    lazy var lblSuperStrictModeNotification: NSTextField = {
+        let label = NSTextField(labelWithString: "")
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.textColor = NSColor.systemOrange
+        label.font = NSFont.systemFont(ofSize: 11)
+        label.alignment = .left
+        label.lineBreakMode = .byWordWrapping
+        label.maximumNumberOfLines = 2
+        label.isHidden = true
+        return label
+    }()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
@@ -55,13 +68,24 @@ class popUpAddNewFocusGoalVc: NSViewController {
             lblTitlePreviousTask.stringValue = popUpAddNewFocusGoalVcInfo.value(forKey: "titlePreviousTask") as? String ?? lblTitlePreviousTask.stringValue
             checkBoxMarkCurrentTaskAsCompleted.title = popUpAddNewFocusGoalVcInfo.value(forKey: "buttonMarkCurrentTaskAsCompleted") as? String ?? checkBoxMarkCurrentTaskAsCompleted.title
         }
+        
+        setupSuperStrictModeNotificationLabel()
+    }
+    
+    func setupSuperStrictModeNotificationLabel() {
+        if let scrollView = textViewIntention.enclosingScrollView,
+           let horizontalStackView = scrollView.superview as? NSStackView,
+           let verticalStackView = horizontalStackView.superview as? NSStackView {
+            if let index = verticalStackView.arrangedSubviews.firstIndex(of: horizontalStackView) {
+                verticalStackView.insertArrangedSubview(lblSuperStrictModeNotification, at: index + 1)
+                lblSuperStrictModeNotification.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor).isActive = true
+            }
+        }
     }
     
     func resetData(intention:String, task:String?,arrAllTasksAdded:[NSDictionary]?){
         textViewIntention.string = intention
         
-<<<<<<< Updated upstream
-=======
         // In super strict mode, disable the intention text field and show a notification below it
         if currentFocusModeStrictness == ._SUPER_STRICT_ {
             textViewIntention.isEditable = false
@@ -77,7 +101,6 @@ class popUpAddNewFocusGoalVc: NSViewController {
             textViewIntention.backgroundColor = NSColor.textBackgroundColor
             lblSuperStrictModeNotification.isHidden = true
         }
->>>>>>> Stashed changes
         
         if let arrAllTasksAdded = arrAllTasksAdded{
             comboBoxTask.stringValue = ""
@@ -158,13 +181,14 @@ class popUpAddNewFocusGoalVc: NSViewController {
     
     @IBAction func btnSaveClicked(_ sender: Any) {
         addLog(text: "[user-action] popUpAddNewFocusGoalVc:- btnSaveClicked")
-        updateFocusModeIntention(intention: textViewIntention.string)
-//        if taskPlayerWcObj != nil{
-//            if taskPlayerWcObj?.window?.isVisible ?? false{
-//                taskPlayerVcObj?.updateIntentionToPlayer()
-//            }
-//        }
-        taskPlayerVcObj?.updateIntentionToPlayer()
+        
+        // In super strict mode, skip updating the focus intention but still allow task addition
+        if currentFocusModeStrictness != ._SUPER_STRICT_ {
+            updateFocusModeIntention(intention: textViewIntention.string)
+            taskPlayerVcObj?.updateIntentionToPlayer()
+        } else {
+            addLog(text: "Skipping intention update in super strict mode, but allowing task addition")
+        }
         
         let currentTask = comboBoxTask.stringValue.lowercased()
         var taskAlreadyAdded = false
