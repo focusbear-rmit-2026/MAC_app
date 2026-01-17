@@ -109,13 +109,9 @@ func focusModeCloseCurrentAppForAlignmentScore(){
     }
 }
 
-<<<<<<< Updated upstream
-func focusModeOpenCurrentUrlForAlignmentScore(domain:String){
-=======
 // v 2.28.449  13/1/26 // solution of Swift EXC_BAD_ACCESS crash Crash likely stems from dictionary subscripting within an asynchronous block in focusModeData.swif
 func focusModeOpenCurrentUrlForAlignmentScoreForBackgroundThread(domain:String){
     // Track URLs when AI is enabled (cuddly mode)
->>>>>>> Stashed changes
     if isCuddlyModeEnabled() && SettingsManagerObject.isAIBlockingEnabled() && !isBlockSuperDistractingFocusModeOn(){
         //check url opening for second time
         if var info = dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[domain]{
@@ -143,8 +139,6 @@ func focusModeOpenCurrentUrlForAlignmentScoreForBackgroundThread(domain:String){
             focusModeCloseCurrentUrlForAlignmentScore()
         }
     }
-<<<<<<< Updated upstream
-=======
     // Track URLs when AI is disabled - use 0% for super distracting sites, 100% for others
     else if isCuddlyModeEnabled() && (!SettingsManagerObject.isAIBlockingEnabled() || isBlockSuperDistractingFocusModeOn()) {
         // Check if this URL is in the super distracting list
@@ -182,20 +176,16 @@ func focusModeOpenCurrentUrlForAlignmentScoreForBackgroundThread(domain:String){
             }
         }
     }
->>>>>>> Stashed changes
 }
 
 
 
 func focusModeOpenCurrentAppForAlignmentScore(appNameLowercased:String){
     boxForStatusBarForTooltip?.customToolTip = ""
-<<<<<<< Updated upstream
-=======
     // Track apps when AI is enabled (cuddly mode)
     if arrBrowsersLowerCasedNames.contains(appNameLowercased){// exclude browsers from Alignment Score
         return;
     }
->>>>>>> Stashed changes
     if isCuddlyModeEnabled() && SettingsManagerObject.isAIBlockingEnabled() && !isBlockSuperDistractingFocusModeOn(){
         if var info = dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[appNameLowercased]{
             if let isVisibleApp = info["isVisibleApp"] as? Bool{
@@ -214,8 +204,6 @@ func focusModeOpenCurrentAppForAlignmentScore(appNameLowercased:String){
             focusModeCloseCurrentAppForAlignmentScore()
         }
     }
-<<<<<<< Updated upstream
-=======
     // Track apps when AI is disabled - use 0% for super distracting apps, 100% for others
     else if isCuddlyModeEnabled() && (!SettingsManagerObject.isAIBlockingEnabled() || isBlockSuperDistractingFocusModeOn()){
         // Check if this app is in the super distracting list
@@ -250,7 +238,6 @@ func focusModeOpenCurrentAppForAlignmentScore(appNameLowercased:String){
             }
         }
     }
->>>>>>> Stashed changes
 }
 
 
