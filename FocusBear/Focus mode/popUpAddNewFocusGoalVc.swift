@@ -60,6 +60,25 @@ class popUpAddNewFocusGoalVc: NSViewController {
     func resetData(intention:String, task:String?,arrAllTasksAdded:[NSDictionary]?){
         textViewIntention.string = intention
         
+        // In super strict mode, disable the intention text field and show a notification
+        if currentFocusModeStrictness == ._SUPER_STRICT_ {
+            textViewIntention.isEditable = false
+            textViewIntention.backgroundColor = NSColor.windowBackgroundColor
+            var notificationText = "Focus goal cannot be changed in super strict mode"
+            if let popUpAddNewFocusGoalVcInfo = configjson.value(forKey: "popUpAddNewFocusGoalVcInfo") as? NSDictionary {
+                notificationText = popUpAddNewFocusGoalVcInfo.value(forKey: "cannotChangeIntentionInSuperStrictText") as? String ?? notificationText
+            }
+            lblTitleFocusGoal.stringValue = notificationText
+            lblTitleFocusGoal.textColor = NSColor.systemOrange
+        } else {
+            textViewIntention.isEditable = true
+            textViewIntention.backgroundColor = NSColor.textBackgroundColor
+            lblTitleFocusGoal.stringValue = "Focus Goal:"
+            if let popUpAddNewFocusGoalVcInfo = configjson.value(forKey: "popUpAddNewFocusGoalVcInfo") as? NSDictionary {
+                lblTitleFocusGoal.stringValue = popUpAddNewFocusGoalVcInfo.value(forKey: "titleGoal") as? String ?? lblTitleFocusGoal.stringValue
+            }
+            lblTitleFocusGoal.textColor = NSColor.labelColor
+        }
         
         if let arrAllTasksAdded = arrAllTasksAdded{
             comboBoxTask.stringValue = ""
@@ -141,28 +160,13 @@ class popUpAddNewFocusGoalVc: NSViewController {
     @IBAction func btnSaveClicked(_ sender: Any) {
         addLog(text: "[user-action] popUpAddNewFocusGoalVc:- btnSaveClicked")
         
-        // In super strict mode, prevent changing the focus intention
-        if currentFocusModeStrictness == ._SUPER_STRICT_ {
-            addLog(text: "Cannot change focus intention in super strict mode")
-            let alert = NSAlert()
-            alert.setSharingType()
-            alert.alertStyle = .warning
-            alert.messageText = "Cannot change focus intention in super strict mode"
-            if let popUpAddNewFocusGoalVcInfo = configjson.value(forKey: "popUpAddNewFocusGoalVcInfo") as? NSDictionary {
-                alert.messageText = popUpAddNewFocusGoalVcInfo.value(forKey: "cannotChangeIntentionInSuperStrictText") as? String ?? alert.messageText
-            }
-            alert.addButton(withTitle: buttonOkText)
-            alert.runModal()
-            return
+        // In super strict mode, skip updating the focus intention but still allow task addition
+        if currentFocusModeStrictness != ._SUPER_STRICT_ {
+            updateFocusModeIntention(intention: textViewIntention.string)
+            taskPlayerVcObj?.updateIntentionToPlayer()
+        } else {
+            addLog(text: "Skipping intention update in super strict mode, but allowing task addition")
         }
-        
-        updateFocusModeIntention(intention: textViewIntention.string)
-//        if taskPlayerWcObj != nil{
-//            if taskPlayerWcObj?.window?.isVisible ?? false{
-//                taskPlayerVcObj?.updateIntentionToPlayer()
-//            }
-//        }
-        taskPlayerVcObj?.updateIntentionToPlayer()
         
         let currentTask = comboBoxTask.stringValue.lowercased()
         var taskAlreadyAdded = false
