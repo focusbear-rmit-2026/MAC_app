@@ -73,13 +73,13 @@ class popUpAddNewFocusGoalVc: NSViewController {
     }
     
     func setupSuperStrictModeNotificationLabel() {
-        if let scrollView = textViewIntention.enclosingScrollView {
-            self.view.addSubview(lblSuperStrictModeNotification)
-            NSLayoutConstraint.activate([
-                lblSuperStrictModeNotification.topAnchor.constraint(equalTo: scrollView.bottomAnchor, constant: 4),
-                lblSuperStrictModeNotification.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
-                lblSuperStrictModeNotification.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor)
-            ])
+        if let scrollView = textViewIntention.enclosingScrollView,
+           let horizontalStackView = scrollView.superview as? NSStackView,
+           let verticalStackView = horizontalStackView.superview as? NSStackView {
+            if let index = verticalStackView.arrangedSubviews.firstIndex(of: horizontalStackView) {
+                verticalStackView.insertArrangedSubview(lblSuperStrictModeNotification, at: index + 1)
+                lblSuperStrictModeNotification.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor).isActive = true
+            }
         }
     }
     
