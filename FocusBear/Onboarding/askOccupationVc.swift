@@ -429,7 +429,7 @@ extension askOccupationVc: NSCollectionViewDelegate, NSCollectionViewDataSource{
                     studentInfoText = askOccupationVcInfo.value(forKey: "studentInfoText") as? String ?? studentInfoText
                 }
                 
-                showTooltip(sender: collectionView, msg: studentInfoText, preferredEdge: NSRectEdge.minX, maxWidthVal:230)
+                showTooltip(sender: collectionView, msg: studentInfoText, preferredEdge: NSRectEdge.minX, maxWidthVal:230)//todo 
             }else if selectedIndex == occupationEmployeeIndex{
                 boxEmployee.isHidden = false
                 radioBtnProgrammer.state = .off

@@ -3851,6 +3851,13 @@ class AllApi:NSObject {
                     if let currentHabitName = currentHabitName{
                         json["habit_name"] = currentHabitName
                     }
+<<<<<<< Updated upstream
+=======
+                    
+                    if currentFocusModeStrictness == ._SUPER_STRICT_ {
+                        json["task_must_align_to_focus_intention"] = true
+                    }
+>>>>>>> Stashed changes
                     addLog(text: "chatGPTIsURLSafe: json data for api is:- \(json)")// will remove it after some time // from all chatgpt functions // 2.27.427
                     request.timeoutInterval = 15
                     let jsonData = try? JSONSerialization.data(withJSONObject: json)

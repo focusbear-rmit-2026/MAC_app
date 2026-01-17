@@ -590,6 +590,21 @@ func showaddFocusTempUrlsOrAppsWindow(){
         addLog(text:"Simple mode is enabled:- return")
         return;
     }
+    // dont show for Default focus mode / v 2.28.449 
+    if let currentFocusModeId = lastFocusModeTempInfo?.id{
+        for i in 0..<arrFocusType.count{
+            if arrFocusType[i]["id"] as? String  == currentFocusModeId{
+                if let isDefault = arrFocusType[i]["isDefault"] as? Bool{
+                    if  isDefault{
+                        addLog(text:"Default focus mode:- return")
+                        return;
+                    }
+                }
+                break;
+            }
+        }
+    }
+    
     getAddFocusTempUrlsOrAppsWcObj().contentViewController = getAddFocusTempUrlsOrAppsVcObj()
     
     getAddFocusTempUrlsOrAppsWcObj().window?.center()

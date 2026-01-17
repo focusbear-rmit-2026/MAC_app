@@ -233,9 +233,7 @@ class focusTimerManager {
             if !url.contains(defaultPageOfBrowser){
                 domain = getDomainFromUrl(url: url)
                 let path = getPathFromUrl(url: url, domain: domain)//getDomainFromUrl(url: url)
-                DispatchQueue.main.async {
-                    focusModeOpenCurrentUrlForAlignmentScore(domain: path)
-                }
+                focusModeOpenCurrentUrlForAlignmentScoreForBackgroundThread(domain: path)
                 tabMatricsObject.frontDomainChanged(domain: path)
                 
                 DispatchQueue.main.async {
@@ -407,7 +405,7 @@ class focusTimerManager {
                     DispatchQueue.main.async {
                         closePopupBlockWindowIfRunningForUrl()
                     }
-                    if isCuddlyModeEnabled() && SettingsManagerObject.isAIBlockingEnabled() && !isBlockSuperDistractingFocusModeOn(){
+                    if isCuddlyModeEnabled()/* && SettingsManagerObject.isAIBlockingEnabled()*/ && !isBlockSuperDistractingFocusModeOn(){
                         if dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[path] == nil{
                             addEntryInfocusAlignmentScoreCsv(url: path, tabTitle: tabTitle ?? "", focusMode: currentRunningFocusModeName, intention: whatToAchieveInFocusBlock, aiReason: "", allowedProbability: "1.0", totalScore: "")
                             var reason = appAllowedInFocusModeText.replacingOccurrences(of: "<APP>", with: path)

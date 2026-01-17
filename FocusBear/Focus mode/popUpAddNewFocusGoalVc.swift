@@ -60,6 +60,24 @@ class popUpAddNewFocusGoalVc: NSViewController {
     func resetData(intention:String, task:String?,arrAllTasksAdded:[NSDictionary]?){
         textViewIntention.string = intention
         
+<<<<<<< Updated upstream
+=======
+        // In super strict mode, disable the intention text field and show a notification below it
+        if currentFocusModeStrictness == ._SUPER_STRICT_ {
+            textViewIntention.isEditable = false
+            textViewIntention.backgroundColor = NSColor.windowBackgroundColor
+            var notificationText = "Focus goal cannot be changed in super strict mode"//todo text 
+            if let popUpAddNewFocusGoalVcInfo = configjson.value(forKey: "popUpAddNewFocusGoalVcInfo") as? NSDictionary {
+                notificationText = popUpAddNewFocusGoalVcInfo.value(forKey: "cannotChangeIntentionInSuperStrictText") as? String ?? notificationText
+            }
+            lblSuperStrictModeNotification.stringValue = notificationText
+            lblSuperStrictModeNotification.isHidden = false
+        } else {
+            textViewIntention.isEditable = true
+            textViewIntention.backgroundColor = NSColor.textBackgroundColor
+            lblSuperStrictModeNotification.isHidden = true
+        }
+>>>>>>> Stashed changes
         
         if let arrAllTasksAdded = arrAllTasksAdded{
             comboBoxTask.stringValue = ""
