@@ -3851,6 +3851,7 @@ class AllApi:NSObject {
                     if let currentHabitName = currentHabitName{
                         json["habit_name"] = currentHabitName
                     }
+                    
                     if currentFocusModeStrictness == ._SUPER_STRICT_ {
                         json["task_must_align_to_focus_intention"] = true
                     }

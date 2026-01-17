@@ -403,9 +403,7 @@ class habitBlockTimerManager {
                 domain = getDomainFromUrl(url: url)
                 let path = getPathFromUrl(url: url, domain: domain)//getDomainFromUrl(url: url)
                 if isAnyAllowedFocusModeActivityRunning{
-                    DispatchQueue.main.async {
-                        focusModeOpenCurrentUrlForAlignmentScore(domain: path)
-                    }
+                    focusModeOpenCurrentUrlForAlignmentScoreForBackgroundThread(domain: path)
                     tabMatricsObject.frontDomainChanged(domain: path)
                 }
                 DispatchQueue.main.async {
@@ -731,7 +729,7 @@ class habitBlockTimerManager {
         closeSetIntentionBlockedUrlsWinddowIfVisible()
         closeIntentionBlockedUrlsWinddowIfVisible()
         closePopupBlockWindowIfRunningForUrl()
-        if isCuddlyModeEnabled() && SettingsManagerObject.isAIBlockingEnabled() && isAnyAllowedFocusModeActivityRunning && !isBlockSuperDistractingFocusModeOn(){
+        if isCuddlyModeEnabled()/* && SettingsManagerObject.isAIBlockingEnabled()*/ && isAnyAllowedFocusModeActivityRunning{
             setFocusBearIconToNormal()
             focusModeCloseCurrentUrlForAlignmentScore()
         }

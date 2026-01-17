@@ -90,7 +90,7 @@ class popUpAddNewFocusGoalVc: NSViewController {
         if currentFocusModeStrictness == ._SUPER_STRICT_ {
             textViewIntention.isEditable = false
             textViewIntention.backgroundColor = NSColor.windowBackgroundColor
-            var notificationText = "Focus goal cannot be changed in super strict mode"
+            var notificationText = "Focus goal cannot be changed in super strict mode"//todo text 
             if let popUpAddNewFocusGoalVcInfo = configjson.value(forKey: "popUpAddNewFocusGoalVcInfo") as? NSDictionary {
                 notificationText = popUpAddNewFocusGoalVcInfo.value(forKey: "cannotChangeIntentionInSuperStrictText") as? String ?? notificationText
             }

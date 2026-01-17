@@ -109,7 +109,8 @@ func focusModeCloseCurrentAppForAlignmentScore(){
     }
 }
 
-func focusModeOpenCurrentUrlForAlignmentScore(domain:String){
+// v 2.28.449  13/1/26 // solution of Swift EXC_BAD_ACCESS crash Crash likely stems from dictionary subscripting within an asynchronous block in focusModeData.swif
+func focusModeOpenCurrentUrlForAlignmentScoreForBackgroundThread(domain:String){
     // Track URLs when AI is enabled (cuddly mode)
     if isCuddlyModeEnabled() && SettingsManagerObject.isAIBlockingEnabled() && !isBlockSuperDistractingFocusModeOn(){
         //check url opening for second time
@@ -119,20 +120,27 @@ func focusModeOpenCurrentUrlForAlignmentScore(domain:String){
                     focusModeCloseCurrentUrlForAlignmentScore()
                     info["isVisibleUrl"] = true
                     info["startedTime"] = Date()
-                    boxForStatusBarForTooltip?.customToolTip = info["reason"] as? String ?? ""
+                    let reason = info["reason"] as? String ?? ""
+                    DispatchQueue.main.async {
+                        boxForStatusBarForTooltip?.customToolTip = reason
+                    }
                     dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[domain] = info
                 }
             }
             let probability = info["probability"] as? Double ?? 0
-            setAppIconForFocusModeScore(probability: probability)
+            DispatchQueue.main.async {
+                setAppIconForFocusModeScore(probability: probability)
+            }
         }else{
             // check and close all url if any of them is visible
-            setFocusBearIconToNormal()
+            DispatchQueue.main.async {
+                setFocusBearIconToNormal()
+            }
             focusModeCloseCurrentUrlForAlignmentScore()
         }
     }
     // Track URLs when AI is disabled - use 0% for super distracting sites, 100% for others
-    else if isCuddlyModeEnabled() && !SettingsManagerObject.isAIBlockingEnabled() {
+    else if isCuddlyModeEnabled() && (!SettingsManagerObject.isAIBlockingEnabled() || isBlockSuperDistractingFocusModeOn()) {
         // Check if this URL is in the super distracting list
         let blockedUrls = getBlockedUrlsToBlock()
         var isSuperDistracting = false
@@ -154,20 +162,30 @@ func focusModeOpenCurrentUrlForAlignmentScore(domain:String){
                     dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[domain] = info
                 }
             }
-            setAppIconForFocusModeScore(probability: probability)
+            DispatchQueue.main.async {
+                setAppIconForFocusModeScore(probability: probability)
+            }
         }else{
             // Add new entry for this URL
             focusModeCloseCurrentUrlForAlignmentScore()
             dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[domain] = ["probability":probability, "isVisibleUrl":true, "totalSeconds":0, "startedTime":Date(), "reason": ""]
-            setAppIconForFocusModeScore(probability: probability)
-            calculateFocusAlignmentScore()
+            
+            DispatchQueue.main.async {
+                setAppIconForFocusModeScore(probability: probability)
+                calculateFocusAlignmentScore()
+            }
         }
     }
 }
 
+
+
 func focusModeOpenCurrentAppForAlignmentScore(appNameLowercased:String){
     boxForStatusBarForTooltip?.customToolTip = ""
     // Track apps when AI is enabled (cuddly mode)
+    if arrBrowsersLowerCasedNames.contains(appNameLowercased){// exclude browsers from Alignment Score
+        return;
+    }
     if isCuddlyModeEnabled() && SettingsManagerObject.isAIBlockingEnabled() && !isBlockSuperDistractingFocusModeOn(){
         if var info = dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[appNameLowercased]{
             if let isVisibleApp = info["isVisibleApp"] as? Bool{
@@ -187,7 +205,7 @@ func focusModeOpenCurrentAppForAlignmentScore(appNameLowercased:String){
         }
     }
     // Track apps when AI is disabled - use 0% for super distracting apps, 100% for others
-    else if isCuddlyModeEnabled() && !SettingsManagerObject.isAIBlockingEnabled() {
+    else if isCuddlyModeEnabled() && (!SettingsManagerObject.isAIBlockingEnabled() || isBlockSuperDistractingFocusModeOn()){
         // Check if this app is in the super distracting list
         let blockedApps = getBlockedAppsToBlock()
         var isSuperDistracting = false
@@ -224,7 +242,7 @@ func focusModeOpenCurrentAppForAlignmentScore(appNameLowercased:String){
 
 
 func focusModeSetCurrentAppAllowedForAlignmentScore(appNameLowercased:String, focusModeName: String, probability:Double, appName:String){
-    if isCuddlyModeEnabled() && SettingsManagerObject.isAIBlockingEnabled() && !isBlockSuperDistractingFocusModeOn(){
+    if isCuddlyModeEnabled()/*&& SettingsManagerObject.isAIBlockingEnabled()*/ && !isBlockSuperDistractingFocusModeOn(){
         if !arrBrowsersLowerCasedNames.contains(appNameLowercased){// exclude browsers from Alignment Score
             var reason = appAllowedInFocusModeText.replacingOccurrences(of: "<APP>", with: appName)
             reason = reason.replacingOccurrences(of: "<FOCUSMODE>", with: focusModeName)
@@ -1699,7 +1717,7 @@ func focusModeTaskStringIsEmpty()->Bool{
         return false
     }
 }
-func sortFocusModes(){
+func sortFocusModes(){// this is also removing multiple isDefault focus modes 
     var isDefaultContain = false
     var islockedFocusContain = false
     var defaultFocus: [String : Any]?
