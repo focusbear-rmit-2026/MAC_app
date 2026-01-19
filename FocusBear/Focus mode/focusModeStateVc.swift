@@ -242,15 +242,6 @@ class focusModeStateVc: NSViewController {
                 // new work 13/3/22
                 isFocusModeOn = true
                 if arrFocusType[index]["isOn"] as? Bool == true{
-//                    if currentFocusModeStrictness == ._SUPER_STRICT_{
-//                        addLog(text: "can't stop focus mode in super strict focus mode :- return")
-//                        var cantStopFocusModeText = "Super strict mode activated: You cannot stop this focus session until it ends."
-//                        if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
-//                            cantStopFocusModeText = menuInfo.value(forKey: "cantStopFocusModeText") as? String ?? cantStopFocusModeText
-//                        }
-//                        showTooltip(sender: btnStopFocusMode, msg: cantStopFocusModeText, preferredEdge: .minX, maxWidthVal: 250)
-//                        return;
-//                    }
                     
                     let menu = NSMenu()
                     if timerForFocusMode != nil{

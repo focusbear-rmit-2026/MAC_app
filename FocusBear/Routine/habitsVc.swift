@@ -670,6 +670,19 @@ class habitsVc: NSViewController {
             if currentHabitPlaying != nil{
                 closePupUpBlockIfVisible()
             }
+        }else if currentState == ._SHUTOFFMAC_{ // minimise button was not working in full screen. solved // v 2.28.450 #1632
+            if !(shutOffTimeVcObj?.btnGetAccessNow.isHidden ?? true){
+                if mainViewControllerObj?.isEnterPasswordViewVisible() ?? false{
+                    addLog(text: "Enter password View is visible:- return;")
+                    return;
+                }
+                if !(leftMenuVcObj?.boxHabits.isSelected ?? false){
+                    leftMenuVcObj?.showHabitsView()
+                }
+                shutOffTimeVcObj?.btnGetAccessNowClicked(self)
+            }else{
+                addLog(text: "btn get access now is hidden:- return;")
+            }
         }else{
             addLog(text: "If the state we expected is not among the current states, then just close the window.")// added on 9/9/25 in 2.27.413
             mainWindowControllerObj?.window?.close()
@@ -960,6 +973,25 @@ class habitsVc: NSViewController {
         currentState = ._SHUTOFFMAC_
         stopActivityTimer()
         NSApplication.shared.activate(ignoringOtherApps: true)
+    }
+    
+    func showAlertNoHighPriorityActivities(){
+        addLog(text: "Showing Alert No High Priority Activities.")
+        if let window = mainWindowControllerObj?.window{
+            let alert = NSAlert()
+            alert.setSharingType()
+            var noHighPriorityActivityText = "No activities with high Priority found"
+            
+            if let common = configjson.value(forKey: "common") as? NSDictionary{
+                noHighPriorityActivityText = common.value(forKey: "noHighPriorityActivityText") as? String ?? noHighPriorityActivityText
+            }
+            
+            alert.messageText = noHighPriorityActivityText
+            alert.addButton(withTitle: buttonOkText)
+            
+            NSApplication.shared.activate(ignoringOtherApps: true)
+            alert.beginSheetModal(for: window)
+        }
     }
     
     func showFirstTimeVc(){

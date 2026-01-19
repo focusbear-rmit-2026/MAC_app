@@ -2497,7 +2497,8 @@
         "SavingTaskText": "Saving task...",
         "buttonMarkCurrentTaskAsCompleted": "Mark the previous task as complete",
         "titleNewTask": "New task:",
-        "titlePreviousTask": "Previous task:"
+        "titlePreviousTask": "Previous task:",
+        "cannotChangeIntentionInSuperStrictText": "Focus goal cannot be changed in super strict mode"
     },
     "popUpSaveThisTaskForLaterVcInfo":{
         "title": "Do you want to save this as a task for later?",

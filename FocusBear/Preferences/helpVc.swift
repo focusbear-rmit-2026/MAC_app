@@ -299,14 +299,16 @@ class helpVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate 
         
         openPanel.allowsMultipleSelection = true
         openPanel.allowedFileTypes = ["png", "jpg", "jpeg", "heic"]
-
-        if openPanel.runModal() == .OK {
-            let selectedURLs = openPanel.urls
-            // Handle selected screenshots
-            arrScrrenshots = arrScrrenshots + selectedURLs
-            collectionView.reloadData()
+        if let window = self.view.window{
+            openPanel.beginSheetModal(for: window,completionHandler: { [self] result in
+                if result == .OK{
+                    let selectedURLs = openPanel.urls
+                    // Handle selected screenshots
+                    arrScrrenshots = arrScrrenshots + selectedURLs
+                    collectionView.reloadData()
+                }
+            })
         }
-
     }
 }
 

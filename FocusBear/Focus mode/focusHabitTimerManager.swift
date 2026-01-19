@@ -130,7 +130,7 @@ class habitBlockTimerManager {
                 }
             }
             // New block page work (when browser is in full screen or stage manager is enable)
-            if isCuddlyModeEnabled() && isAnyAllowedFocusModeActivityRunning{// no need additional check
+            if isAnyAllowedFocusModeActivityRunning{// no need additional check
                 if url.localizedCaseInsensitiveContains("yes-i-need=true"){
                     focusAlllowUrlClickedFromNewBlockPage(url: url, currentBrowser: currentBrowser)
                     return;
@@ -413,7 +413,7 @@ class habitBlockTimerManager {
                 var isAllowed = false
                 
                 
-                if isCuddlyModeEnabled() && isAnyAllowedFocusModeActivityRunning{// no need additional check
+                if isAnyAllowedFocusModeActivityRunning{// no need additional check
                     
                     if arrAllowedDomianInCuddlyModeCurrentFocus.count != 0{
                         if arrAllowedDomianInCuddlyModeCurrentFocus.contains(domain){
@@ -729,7 +729,7 @@ class habitBlockTimerManager {
         closeSetIntentionBlockedUrlsWinddowIfVisible()
         closeIntentionBlockedUrlsWinddowIfVisible()
         closePopupBlockWindowIfRunningForUrl()
-        if isCuddlyModeEnabled()/* && SettingsManagerObject.isAIBlockingEnabled()*/ && isAnyAllowedFocusModeActivityRunning{
+        if /* isCuddlyModeEnabled() && SettingsManagerObject.isAIBlockingEnabled() &&*/isAnyAllowedFocusModeActivityRunning{
             setFocusBearIconToNormal()
             focusModeCloseCurrentUrlForAlignmentScore()
         }

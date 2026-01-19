@@ -7,14 +7,52 @@
 //
 
 
+//class Log: TextOutputStream {
+//    private static let queue = DispatchQueue(label: "logQueue")// queue added in version 2.27.419 to handle mixud up logs(two threads writing at the same time)
+//    static var log: Log = Log()
+//    private init() {} // we are sure, nobody else could create it
+//    
+//    func write(_ string: String) {
+//        guard let log = DebugLogsURL else { return }
+//        Self.queue.async { // ensures only one write at a time
+//            if let handle = try? FileHandle(forWritingTo: log) {
+//                handle.seekToEndOfFile()
+//                if let data = string.data(using: .utf8) {
+//                    handle.write(data)
+//                }
+//                handle.closeFile()
+//            } else {
+//                try? string.data(using: .utf8)?.write(to: log)
+//            }
+//        }
+//    }
+//}
+//
+//func addLog(text:String){
+//    let df = DateFormatter()
+//    df.dateFormat = "yyyy-MM-dd HH:mm:ss"
+//    let now = df.string(from: Date())
+//    print(now , " - ", text, to: &Log.log)
+//}
+
+
 class Log: TextOutputStream {
-    private static let queue = DispatchQueue(label: "logQueue")// queue added in version 2.27.419 to handle mixud up logs(two threads writing at the same time)
-    static var log: Log = Log()
-    private init() {} // we are sure, nobody else could create it
-    
+    static let queue = DispatchQueue(label: "logQueue")
+
+    static let formatter: DateFormatter = {
+        let df = DateFormatter()
+        df.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        df.locale = Locale(identifier: "en_US_POSIX")
+        return df
+    }()
+
+    static var log = Log()
+    private init() {}
+
     func write(_ string: String) {
         guard let log = DebugLogsURL else { return }
-        Self.queue.async { // ensures only one write at a time
+
+        Self.queue.async {
             if let handle = try? FileHandle(forWritingTo: log) {
                 handle.seekToEndOfFile()
                 if let data = string.data(using: .utf8) {
@@ -28,12 +66,15 @@ class Log: TextOutputStream {
     }
 }
 
-func addLog(text:String){
-    let df = DateFormatter()
-    df.dateFormat = "yyyy-MM-dd HH:mm:ss"
-    let now = df.string(from: Date())
-    print(now , " - ", text, to: &Log.log)
+func addLog(text: String) {
+    Log.queue.async {
+        let now = Log.formatter.string(from: Date())
+        print("\(now) - \(text)", to: &Log.log)
+    }
 }
+
+
+
 
 
 //class Log_Graphs: TextOutputStream { // removed in version 2.27.419

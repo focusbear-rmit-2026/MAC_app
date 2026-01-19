@@ -1070,7 +1070,7 @@ class menuViewController: NSViewController {
             
             if isFocusModeOn || isFocusModePaused{
                 if isFocusModeOn{
-                    if isCuddlyModeEnabled() && SettingsManagerObject.isAIBlockingEnabled() && !isBlockSuperDistractingFocusModeOn(){
+                    if SettingsManagerObject.isAIBlockingEnabled() && !isBlockSuperDistractingFocusModeOn(){
                         boxFocusAlignmentScore.isHidden = false
                         setFocusAlignmentScore(totalSeconds: focusModeMinutesToPerform * 60)
                     }else{
@@ -1118,7 +1118,7 @@ class menuViewController: NSViewController {
             
             if boxFocusAlignmentScore.isHidden{
                 if (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_) && currentAction == ._INPROGRESS_ && (currentHabitPlaying != nil) && isAnyAllowedFocusModeActivityRunning{
-                    if isCuddlyModeEnabled() && SettingsManagerObject.isAIBlockingEnabled() && !isBlockSuperDistractingFocusModeOn(){
+                    if SettingsManagerObject.isAIBlockingEnabled() && !isBlockSuperDistractingFocusModeOn(){
                         boxFocusAlignmentScore.isHidden = false
                         setFocusAlignmentScore(totalSeconds: currentHabitPlaying?.durationSeconds ?? 200)
                     }
@@ -1629,16 +1629,6 @@ class menuViewController: NSViewController {
                 // new work 13/3/22
                 isFocusModeOn = true
                 if arrFocusType[index]["isOn"] as? Bool == true{
-//                    if currentFocusModeStrictness == ._SUPER_STRICT_{
-//                        addLog(text: "can't stop focus mode in super strict focus mode :- return")
-//                        var cantStopFocusModeText = "Super strict mode activated: You cannot stop this focus session until it ends.
-//                        if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
-//                            cantStopFocusModeText = menuInfo.value(forKey: "cantStopFocusModeText") as? String ?? cantStopFocusModeText
-//                        }
-//                        showTooltip(sender: boxStopHardcorePomodoroMode, msg: cantStopFocusModeText, preferredEdge: .minX, maxWidthVal: 250)
-//                        return;
-//                    }
-                    
                     let menu = NSMenu()
                     if timerForFocusMode != nil{
                         let menuItemPause = NSMenuItem(title: itemPausePomodoroTitle, action: #selector(pauseFocusModeClicked), keyEquivalent: "")

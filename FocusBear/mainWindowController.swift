@@ -51,7 +51,7 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
         window!.backingType = .buffered
         self.window?.minSize = NSSize(width: 900, height: 450)// unused
         self.window?.title = ""
-        self.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.numberOfWindowLevelKeys))) //  numberOfWindowLevelKeys kro //    numberOfWindowLevelKeys
+        self.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.numberOfWindowLevelKeys))) //  numberOfWindowLevelKeys kro //    numberOfWindowLevelKeys 
         
         if isMainWindowLoaded{
             mainViewControllerObj!.boxTopButtons.isHidden = false
@@ -199,7 +199,19 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
         }
         
         if currentState == ._SHUTOFFMAC_{
-            return false 
+            if !(shutOffTimeVcObj?.btnGetAccessNow.isHidden ?? true){
+                if mainViewControllerObj?.isEnterPasswordViewVisible() ?? false{
+                    addLog(text: "Enter password View is visible:- return;")
+                    return false
+                }
+                if !(leftMenuVcObj?.boxHabits.isSelected ?? false){
+                    leftMenuVcObj?.showHabitsView()
+                }
+                shutOffTimeVcObj?.btnGetAccessNowClicked(self)
+            }else{
+                addLog(text: "btn get access now is hidden:- return;")
+            }
+            return false
         }
         return true
     }

@@ -3892,9 +3892,18 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     var isPreventUserIdleDisplaySleepAlreadyOn = false
     
     func checkIsMeetingsGoingOn(){
+        DispatchQueue.global(qos: .utility).async {
+            self.checkMeetingsInternal()
+        }
+        
+        
+    }
+    private func checkMeetingsInternal(){
         if !SettingsManagerObject.isMeetingDetectionEnabled{
-            if isFocusModeRunning || isAnyAllowedFocusModeActivityRunning{
-                self.setStatusBarButtonTitleForFocusMode(title: buttonStatusStateFocusText)
+            DispatchQueue.main.async {
+                if isFocusModeRunning || isAnyAllowedFocusModeActivityRunning {
+                    self.setStatusBarButtonTitleForFocusMode(title: buttonStatusStateFocusText)
+                }
             }
             return;
         }
@@ -3903,61 +3912,143 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         let isPreventUserIdleDisplaySleepOn = isPreventUserIdleDisplaySleepOn()
         
         if isMicOn || isACameraOn || isPreventUserIdleDisplaySleepOn{
-            if isMicOn{
-                if !isMicAlreadyOn{
-                    addLog(text: "func checkIsMeetingsGoingOn:- Mic is On")
-                    isMicAlreadyOn = true
+            
+            logStateTransitions(mic: isMicOn, camera: isACameraOn, preventSleep: isPreventUserIdleDisplaySleepOn)
+
+            if isUserOnMeeting{
+                if isFocusModeOn(){
+                    DispatchQueue.main.async {
+                        self.setStatusBarButtonTitleForFocusMode(title: buttonStatusStateCallText + " / " + buttonStatusStateFocusText)
+                    }
+                }else{
+                    DispatchQueue.main.async {
+                        self.setStatusBarButtonColorForFocusMode(color: NSColor.systemBlue, colorString: nil)
+                        self.setStatusBarButtonTitleForFocusMode(title: buttonStatusStateCallText)
+                        self.statusbutton?.imagePosition = .imageLeft
+                    }
+                }
+                return;
+            }
+            
+            detectMeetingAppAndUpdateState(isPreventUserIdleDisplaySleepOn: isPreventUserIdleDisplaySleepOn)
+            
+        }else{
+            isMicAlreadyOn = false
+            isCameraAlreadyOn = false
+            isPreventUserIdleDisplaySleepAlreadyOn = false
+            
+            if isAutoMeetingsModeStarted{//end meetings focus mode
+                if isFocusModeOn(){
+                    DispatchQueue.main.async {
+                        self.tryFocusModeFinished(isSilent: false, isShutOffTime: false, isMorningRoutineTime: false, allowExtend:false, isCustomRoutineTime:false)
+                    }
+                }
+            }
+            handleMeetingEnded()
+            
+            if isFocusModeOn() {
+                DispatchQueue.main.async { [self] in
+                    self.setStatusBarButtonColorForFocusMode(color: nil, colorString: currentRunningFocusType["color"] as? String ?? "")
+                    setStatusBarButtonTitleForFocusMode(title: whatToAchieveInFocusBlock)
+                    statusbutton?.imagePosition = .imageLeft
+                }
+            }else if isAnyAllowedFocusModeActivityRunning && (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._CUSTOM_ROUTINE_){
+                DispatchQueue.main.async { [self] in
+                    self.setStatusBarButtonColorForFocusMode(color: nil, colorString: currentRunningFocusType["color"] as? String ?? "")
+                    setStatusBarButtonTitleForFocusMode(title: whatToAchieveInFocusBlock)
+                    statusbutton?.imagePosition = .imageLeft
                 }
             }else{
-                isMicAlreadyOn = false
-            }
-            if isACameraOn{
-                if !isCameraAlreadyOn{
-                    addLog(text: "func checkIsMeetingsGoingOn:- Camera is On")
-                    isCameraAlreadyOn = true
-                }
-            }else{
-                isCameraAlreadyOn = false
-            }
-            
-            if isPreventUserIdleDisplaySleepOn{
-                if !isPreventUserIdleDisplaySleepAlreadyOn{
-                    addLog(text: "func checkIsMeetingsGoingOn:- PreventUserIdleDisplaySleep is On")
-                    isPreventUserIdleDisplaySleepAlreadyOn = true
-                }
-            }else{
-                isPreventUserIdleDisplaySleepAlreadyOn = false
-            }
-            
-            if alertSuggestFocusMode != nil{
-                if alertSuggestFocusMode!.window.isVisible{
-                    return
+                DispatchQueue.main.async {
+                    self.statusbutton?.title = ""
+                    self.setStatusBarButtonColorForFocusMode(color: NSColor.clear, colorString: nil)
                 }
             }
-            let runningApps = NSWorkspace.shared.runningApplications
             
+            timerMeetingStartAlert?.invalidate()
+            timerMeetingStartAlert = nil
+        }
+    }
+    
+    private func logStateTransitions(mic: Bool, camera: Bool, preventSleep: Bool) {
+        if mic{
+            if !isMicAlreadyOn{
+                addLog(text: "func checkIsMeetingsGoingOn:- Mic is On")
+                isMicAlreadyOn = true
+            }
+        }else{
+            isMicAlreadyOn = false
+        }
+        if camera{
+            if !isCameraAlreadyOn{
+                addLog(text: "func checkIsMeetingsGoingOn:- Camera is On")
+                isCameraAlreadyOn = true
+            }
+        }else{
+            isCameraAlreadyOn = false
+        }
+        
+        if preventSleep{
+            if !isPreventUserIdleDisplaySleepAlreadyOn{
+                addLog(text: "func checkIsMeetingsGoingOn:- PreventUserIdleDisplaySleep is On")
+                isPreventUserIdleDisplaySleepAlreadyOn = true
+            }
+        }else{
+            isPreventUserIdleDisplaySleepAlreadyOn = false
+        }
+    }
+    
+    private func fetchRunningAppNames(
+        completion: @escaping (Set<String>) -> Void
+    ) {
+        DispatchQueue.main.async {
+            let names = Set(
+                NSWorkspace.shared.runningApplications.compactMap {
+                    $0.bundleURL?
+                        .deletingPathExtension()
+                        .lastPathComponent
+                        .lowercased()
+                }
+            )
+            completion(names)
+        }
+    }
+    
+    func detectMeetingAppAndUpdateState(isPreventUserIdleDisplaySleepOn: Bool){
+        DispatchQueue.main.async {
+            let runningAppNames = Set(
+                NSWorkspace.shared.runningApplications.compactMap {
+                    $0.bundleURL?
+                        .deletingPathExtension()
+                        .lastPathComponent
+                        .lowercased()
+                }
+            )
             
-            for i in 0..<arrFocusType.count{
-                let focus = arrFocusType[i]
-                if let state = focus["isMeetings"] as? Bool{//this key will only be awailable in default focus type
-                    if  state{
-                        if let arr = focus["allowed_apps"] as? [String]{
-                            for apppPath in arr{
-                                for app in runningApps{
-                                    if let appUrl = app.bundleURL{
-                                        let nameLowercased = appUrl.deletingPathExtension().lastPathComponent.lowercased()
+            DispatchQueue.global(qos: .utility).async { [self] in
+                for i in 0..<arrFocusType.count{
+                    let focus = arrFocusType[i]
+                    if let state = focus["isMeetings"] as? Bool{//this key will only be awailable in default focus type
+                        if  state{
+                            if let arr = focus["allowed_apps"] as? [String]{
+                                for apppPath in arr{
+                                    for nameLowercased in runningAppNames{
                                         let url = URL(fileURLWithPath: apppPath)
                                         if url.deletingPathExtension().lastPathComponent.lowercased() == nameLowercased{
                                             
                                             if isUserOnMeeting{
                                                 if isFocusModeOn(){
-                                                    self.setStatusBarButtonTitleForFocusMode(title: buttonStatusStateCallText + " / " + buttonStatusStateFocusText) //self.statusbutton?.title = buttonStatusStateCallText + " / " + buttonStatusStateFocusText
+                                                    DispatchQueue.main.async {
+                                                        self.setStatusBarButtonTitleForFocusMode(title: buttonStatusStateCallText + " / " + buttonStatusStateFocusText)
+                                                    }
                                                 }else{
-                                                    self.setStatusBarButtonColorForFocusMode(color: NSColor.systemBlue, colorString: nil)
-                                                    self.setStatusBarButtonTitleForFocusMode(title: buttonStatusStateCallText)
-                                                    self.statusbutton?.imagePosition = .imageLeft
+                                                    DispatchQueue.main.async {
+                                                        self.setStatusBarButtonColorForFocusMode(color: NSColor.systemBlue, colorString: nil)
+                                                        self.setStatusBarButtonTitleForFocusMode(title: buttonStatusStateCallText)
+                                                        self.statusbutton?.imagePosition = .imageLeft
+                                                    }
                                                 }
-                                                return
+                                                return;
                                             }
                                             
                                             if nameLowercased == "microsoft teams" || nameLowercased == "microsoft teams classic" || nameLowercased == "zoom.us"{
@@ -3970,136 +4061,119 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                             if let browser = getCurrentBrowserFrom(browserName: nameLowercased){
                                                 addLog(text: "func checkIsMeetingsGoingOn:- Running meeting app is a browser:- get current url")
                                                 
-                                                var isAllowed = false
-                                                
-                                                if let allTabUrls = getBrowserAllTabUrl(browser: browser){
-                                                    for  activeTabUrl in allTabUrls{
-                                                        
-                                                        let domain = getDomainFromUrl(url: activeTabUrl)
-                                                        if domain == "meet.google.com"{
-                                                            let urlElements = activeTabUrl.components(separatedBy: "/")
-                                                            if urlElements.last != "meet.google.com"{
-                                                                isAllowed = true
-                                                                break;
-                                                            }
-                                                        }
-                                                        
-                                                        let arrAllowedUrlsMeetingsFocus = focus["allowed_urls"] as? [String] ?? []
-                                                        for turl in arrAllowedUrlsMeetingsFocus{
-                                                            isAllowed = validation.isUrlValid(urlToCheck: activeTabUrl, allowUrl: turl)
-                                                            if isAllowed{
-                                                                break;
-                                                            }
-                                                        }
-                                                        if isAllowed{
-                                                            break;
-                                                        }
-                                                    }
-                                                }
-                                                
-                                                if !isAllowed{
-                                                    
+                                                if !isBrowserMeetingAllowed(focus: focus, browser: browser){
                                                     continue;
                                                 }
-                                                
                                             }
                                             
                                             addLog(text: "func checkIsMeetingsGoingOn:- Running meeting app is \(nameLowercased)")
                                             
                                             appUsedInAutoMeetingFocusMode = url.lastPathComponent
-                                            isUserOnMeeting = true
-                                            meetingStartTime = Date()
-                                            writeSettingForScreeenTime(habitInfo: "")
                                             
-                                            if isFocusModeOn(){
-                                                self.setStatusBarButtonTitleForFocusMode(title: buttonStatusStateCallText + " / " + buttonStatusStateFocusText) //self.statusbutton?.title = buttonStatusStateCallText + " / " + buttonStatusStateFocusText
-                                            }else{
-                                                self.setStatusBarButtonColorForFocusMode(color: NSColor.systemBlue, colorString: nil)
-                                                self.setStatusBarButtonTitleForFocusMode(title: buttonStatusStateCallText)
-                                                self.statusbutton?.imagePosition = .imageLeft
-                                            }
-                                            if  SettingsManagerObject.showMeetingDetectionAlert{
-                                                timerMeetingStartAlert?.invalidate()
-                                                timerMeetingStartAlert = nil
-                                                
-                                                timerMeetingStartAlert = Timer.scheduledTimer(timeInterval: 0, target: self, selector: #selector(self.showMeetingSuggestionAlert), userInfo: nil, repeats: false) //no need run loop////
-                                            }else{
-                                                addLog(text: "func checkIsMeetingsGoingOn:- showMeetingDetectionAlert setting is false:- return")
-                                            }
-                                            
+                                            handleMeetingDetected()
                                             return;
                                         }
+                                        
                                     }
                                 }
                             }
+                            handleMeetingEnded()
+                            break;
                         }
-                        if isUserOnMeeting{
-                            isUserOnMeeting = false
-                            writeSettingForScreeenTime(habitInfo: "")
-                            if alertSuggestFocusMode != nil{
-                                if alertSuggestFocusMode!.window.isVisible{
-//                                    NSApp.endSheet(alertSuggestFocusMode!.window)
-                                    if let sheet = alertSuggestFocusMode?.window,
-                                       let parentWindow = sheet.sheetParent {
-                                        parentWindow.endSheet(sheet)
-                                    }else{
-                                        NSApp.abortModal()
-//                                        alertSuggestFocusMode?.window.orderOut(nil)
-                                    }
-                                    addLog(text: "close Meeting suggestion Alert")
-                                }
-                            }
-                        }
-                        break;
                     }
                 }
             }
             
-        }else{
-            isMicAlreadyOn = false
-            isCameraAlreadyOn = false
-            isPreventUserIdleDisplaySleepAlreadyOn = false
             
-            if isAutoMeetingsModeStarted{//end meetings focus mode
-                if isFocusModeOn(){
-                    tryFocusModeFinished(isSilent: false, isShutOffTime: false, isMorningRoutineTime: false, allowExtend:false, isCustomRoutineTime:false)
-                }
-            }
-            if isUserOnMeeting{
-                isUserOnMeeting = false
-                writeSettingForScreeenTime(habitInfo: "")
+        }
+        
+    }
+    
+    private func handleMeetingEnded(){
+        if isUserOnMeeting{
+            isUserOnMeeting = false
+            writeSettingForScreeenTime(habitInfo: "")
+            DispatchQueue.main.async { [self] in
                 if alertSuggestFocusMode != nil{
                     if alertSuggestFocusMode!.window.isVisible{
-//                        NSApp.endSheet(alertSuggestFocusMode!.window)
                         if let sheet = alertSuggestFocusMode?.window,
                            let parentWindow = sheet.sheetParent {
                             parentWindow.endSheet(sheet)
                         }else{
                             NSApp.abortModal()
-//                            alertSuggestFocusMode?.window.orderOut(nil)
                         }
                         addLog(text: "close Meeting suggestion Alert")
                     }
                 }
             }
-            
-            if isFocusModeOn() {
-                self.setStatusBarButtonColorForFocusMode(color: nil, colorString: currentRunningFocusType["color"] as? String ?? "")
-                setStatusBarButtonTitleForFocusMode(title: whatToAchieveInFocusBlock)
-                statusbutton?.imagePosition = .imageLeft
-            }else if isAnyAllowedFocusModeActivityRunning && (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._CUSTOM_ROUTINE_){
-                self.setStatusBarButtonColorForFocusMode(color: nil, colorString: currentRunningFocusType["color"] as? String ?? "")
-                setStatusBarButtonTitleForFocusMode(title: whatToAchieveInFocusBlock)
-                statusbutton?.imagePosition = .imageLeft
-            }else{
-                self.statusbutton?.title = ""
-                self.setStatusBarButtonColorForFocusMode(color: NSColor.clear, colorString: nil)
+        }
+    }
+    
+    private func isBrowserMeetingAllowed(focus: [String: Any], browser:BROWSER) -> Bool {
+        
+        if let allTabUrls = fetchBrowserAllTabUrlsInBackground(browser: browser){
+            for  activeTabUrl in allTabUrls{
+                
+                let domain = getDomainFromUrl(url: activeTabUrl)
+                if domain == "meet.google.com"{
+                    let urlElements = activeTabUrl.components(separatedBy: "/")
+                    if urlElements.last != "meet.google.com"{
+                        return true
+                    }
+                }
+                
+                let arrAllowedUrlsMeetingsFocus = focus["allowed_urls"] as? [String] ?? []
+                for turl in arrAllowedUrlsMeetingsFocus{
+                    if validation.isUrlValid(urlToCheck: activeTabUrl, allowUrl: turl){
+                        return true
+                    }
+                }
             }
-            
+        }
+        return false
+    }
+    
+    private func fetchBrowserAllTabUrlsInBackground(browser: BROWSER) -> [String]?  {
+        var resultURL: [String]? = nil
+        
+        let semaphore = DispatchSemaphore(value: 0)
+        
+        // AppleScript must run on MAIN
+        DispatchQueue.main.async {
+            resultURL = getBrowserAllTabUrl(browser: browser) ?? []
+            semaphore.signal()
+        }
+        
+        // Wait for the main thread to finish
+        semaphore.wait()
+        
+        return resultURL
+    }
+
+    func handleMeetingDetected(){
+        isUserOnMeeting = true
+        meetingStartTime = Date()
+        writeSettingForScreeenTime(habitInfo: "")
+        
+        if isFocusModeOn(){
+            DispatchQueue.main.async {
+                self.setStatusBarButtonTitleForFocusMode(title: buttonStatusStateCallText + " / " + buttonStatusStateFocusText)
+            }
+        }else{
+            DispatchQueue.main.async {
+                self.setStatusBarButtonColorForFocusMode(color: NSColor.systemBlue, colorString: nil)
+                self.setStatusBarButtonTitleForFocusMode(title: buttonStatusStateCallText)
+                self.statusbutton?.imagePosition = .imageLeft
+            }
+        }
+        if  SettingsManagerObject.showMeetingDetectionAlert{
             timerMeetingStartAlert?.invalidate()
             timerMeetingStartAlert = nil
-            
-            
+            DispatchQueue.main.async { [self] in
+                timerMeetingStartAlert = Timer.scheduledTimer(timeInterval: 0, target: self, selector: #selector(self.showMeetingSuggestionAlert), userInfo: nil, repeats: false)
+            }
+        }else{
+            addLog(text: "func checkIsMeetingsGoingOn:- showMeetingDetectionAlert setting is false:- return")
         }
     }
     
@@ -5290,9 +5364,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             //            }
             
             if isFocusModeRunning || (isAnyAllowedFocusModeActivityRunning && (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._CUSTOM_ROUTINE_)){
-                if isCuddlyModeEnabled(){ //&& SettingsManagerObject.isAIBlockingEnabled(){
-                    calculateFocusAlignmentScore()
-                }
+//                if isCuddlyModeEnabled(){ //&& SettingsManagerObject.isAIBlockingEnabled(){
+//                    calculateFocusAlignmentScore()
+//                }
+                calculateFocusAlignmentScore()
             }
             
             self.processOfflineData()
@@ -6223,6 +6298,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 }
                 if !isAnyHighPriorityActivityFound{
                     abortAllProcess()
+                    
+                    //Weird no high priority activities warning. It shouldn’t show this. Should go straight to the end screen. #1634 v 2.28.450
+                    // now we will show warning after showing shutoff screen
+                    /*
+                     
+                     
+                     
                     if mainWindowControllerObj?.window?.isVisible ?? false{
                         mainWindowControllerObj?.window?.close()
                         hideBlankWindowInSecondaryMonitor()
@@ -6241,8 +6323,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     
                     NSApplication.shared.activate(ignoringOtherApps: true)
                     alert.runModal()
-                    
-                    
+                    */
+                    addLog(text: "No activities with high Priority found:- showing ShutOff screen with no activities warning")// v 2.28.450
                     let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
                     let shutOffdate = Calendar.current.date(bySettingHour: shutOffTime!.hour, minute: shutOffTime!.minute, second: shutOffTime!.second, of: Date())!
                     
@@ -6261,6 +6343,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     }
                     showBlankWindowInSecondaryMonitor()
                     getHabitsVcObject().shutOffMac()
+                    getHabitsVcObject().showAlertNoHighPriorityActivities()
                     return;
                 }
                 
@@ -6508,10 +6591,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     
                     if arrFilteredEveningHabits.count == 0{
                         abortAllProcess()
-                        if mainWindowControllerObj?.window?.isVisible ?? false{
-                            mainWindowControllerObj?.window?.close()
-                            hideBlankWindowInSecondaryMonitor()
-                        }
+                        
+                        //Weird no high priority activities warning. It shouldn’t show this. Should go straight to the end screen. #1634 v 2.28.450
+                        // now we will show warning after showing shutoff screen
+                        /*
+                         
+                         if mainWindowControllerObj?.window?.isVisible ?? false{
+                             mainWindowControllerObj?.window?.close()
+                             hideBlankWindowInSecondaryMonitor()
+                         }
+                         
                         isNoHighPriorityActivityAlertVisible = true
                         let alert = NSAlert()
                         alert.setSharingType()
@@ -6527,8 +6616,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         NSApplication.shared.activate(ignoringOtherApps: true)
                         alert.runModal()
                         isNoHighPriorityActivityAlertVisible = false
+                        */
                         
-                        
+                        addLog(text: "No activities with high Priority found:- showing ShutOff screen with no activities warning")// v 2.28.450
                         let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
                         let shutOffdate = Calendar.current.date(bySettingHour: shutOffTime!.hour, minute: shutOffTime!.minute, second: shutOffTime!.second, of: Date())!
                         
@@ -6547,6 +6637,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         }
                         showBlankWindowInSecondaryMonitor()
                         getHabitsVcObject().shutOffMac()
+                        getHabitsVcObject().showAlertNoHighPriorityActivities()
                         return;
                     }
                     
@@ -8067,7 +8158,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         }
         
         timerBlockUrl?.invalidate()
-//        timerAllowUrlForActivity?.invalidate()
         habitBlockTimerHelper.stopUrlTimer()
         currentBrowserUrlForAi = ""
         currentRunningAppNameForAi = ""

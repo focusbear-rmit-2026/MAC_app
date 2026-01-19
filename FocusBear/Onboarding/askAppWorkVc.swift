@@ -10,9 +10,9 @@ import Cocoa
 
 class askAppWorkVc: NSViewController {
 
+    @IBOutlet weak var btnSkip: underLineButton!
     @IBOutlet weak var btnSetHabits: Button!
     @IBOutlet weak var btnDoItLater: Button!
-    @IBOutlet weak var topSpaceBottomBox: NSLayoutConstraint!
     @IBOutlet weak var spaceBetweenCheckBoxs: NSLayoutConstraint!
     @IBOutlet weak var lblSubTitle: NSTextField!
     @IBOutlet weak var lblSelect: NSTextField!
@@ -24,7 +24,6 @@ class askAppWorkVc: NSViewController {
     @IBOutlet weak var btnInfoStayFocused: hoverInfoButton!
     @IBOutlet weak var btnInfoBuildHabits: hoverInfoButton!
     @IBOutlet weak var boxAnythingElse: NSBox!
-    @IBOutlet weak var loader: NSProgressIndicator!
     @IBOutlet weak var checkBoxSecond: NSButton!
     @IBOutlet weak var checkBoxFirst: NSButton!
     @IBOutlet weak var btnContinue: Button!
@@ -63,7 +62,10 @@ class askAppWorkVc: NSViewController {
         lblSubTitle.stringValue = "Activate features"
         lblQuestion.stringValue = "We'll do our best to help you achieve your goals 🤩 Which Focus Bear features do you want to activate?"
         
-        
+        btnSkip.title = "Skip"
+        if let dic = configjson.value(forKey: "welcomeInfo") as? NSDictionary{
+            btnSkip.title = dic.value(forKey: "buttonSkipText") as? String ?? btnSkip.title
+        }
         
         if let askAppWorkVcInfo = configjson.value(forKey: "askAppWorkVcInfo") as? NSDictionary{
             lblTitle.stringValue = appName
@@ -278,6 +280,7 @@ class askAppWorkVc: NSViewController {
     }
     
     @IBAction func btnDoItLaterClicked(_ sender: Any) {
+        addLog(text: "[user-action] askAppWorkVc:- button Do It Later clicked.")
         boxCommitted.isSelected = false
         boxDontCare.isSelected = true
         boxNotCommitted.isSelected = false
@@ -285,12 +288,20 @@ class askAppWorkVc: NSViewController {
     }
     
     @IBAction func btnSetHabitsClicked(_ sender: Any) {
+        addLog(text: "[user-action] askAppWorkVc:- button Set Habits clicked.")
         boxCommitted.isSelected = true
         boxDontCare.isSelected = false
         boxNotCommitted.isSelected = false
         btnContinueClicked(self)
     }
+    
+    @IBAction func btnSkipClicked(_ sender: Any) {
+        addLog(text: "[user-action] askAppWorkVc:- button Skip clicked.")
+        habitsVcObj?.btnAbortClicked(self)
+    }
+    
 }
+
 extension askAppWorkVc: toggleButtonBoxDelegate{
     func toggleButtonBoxClicked(box: NSBox) {
         lblResult.isHidden = false
