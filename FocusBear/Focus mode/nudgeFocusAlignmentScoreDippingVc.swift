@@ -178,12 +178,13 @@ class nudgeFocusAlignmentScoreDippingVc: NSViewController {
             if let info = configjson.value(forKey: "nudgeFocusAlignmentScoreDippingVcInfo") as? NSDictionary{
                 lblDescriptionText.stringValue = info.value(forKey: "aiIsDisabledText") as? String ?? lblDescriptionText.stringValue
             }
-        }else if !isCuddlyModeEnabled(){
-            lblDescriptionText.stringValue = "AI score not calculated."
-            if let info = configjson.value(forKey: "nudgeFocusAlignmentScoreDippingVcInfo") as? NSDictionary{
-                lblDescriptionText.stringValue = info.value(forKey: "aiScoreNotCalculatedText") as? String ?? lblDescriptionText.stringValue
-            }
         }
+//        else if !isCuddlyModeEnabled(){
+//            lblDescriptionText.stringValue = "AI score not calculated."
+//            if let info = configjson.value(forKey: "nudgeFocusAlignmentScoreDippingVcInfo") as? NSDictionary{
+//                lblDescriptionText.stringValue = info.value(forKey: "aiScoreNotCalculatedText") as? String ?? lblDescriptionText.stringValue
+//            }
+//        }
     }
     
     func setTimerStopAniumation(){

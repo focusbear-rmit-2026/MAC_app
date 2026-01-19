@@ -120,7 +120,7 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
     
     override func viewDidAppear() {
         updateTrackingAreaIfNeeded()
-        if isCuddlyModeEnabled() && SettingsManagerObject.isAIBlockingEnabled() && !isBlockSuperDistractingFocusModeOn(){
+        if SettingsManagerObject.isAIBlockingEnabled() && !isBlockSuperDistractingFocusModeOn(){
             lblFocusAlignmentScore.isHidden = false
         }else{
             lblFocusAlignmentScore.isHidden = true

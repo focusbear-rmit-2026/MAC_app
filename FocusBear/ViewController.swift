@@ -151,7 +151,7 @@ class ViewController: NSViewController {
     @objc func setframe() {
         let screenList = NSScreen.screens
         for screen in screenList {
-            self.view.window?.setFrame(NSMakeRect(NSMinX(screen.frame), NSMinY(screen.frame), NSWidth(screen.frame), NSHeight(screen.frame)), display: true) //  uncomment this line
+            self.view.window?.setFrame(NSMakeRect(NSMinX(screen.frame), NSMinY(screen.frame), NSWidth(screen.frame), NSHeight(screen.frame)), display: true) //  uncomment this line 
 //            self.view.window?.setFrame(NSMakeRect(100, 100, NSWidth(screen.frame) - 200, NSHeight(screen.frame) - 200) , display: true)//  comment this //  do this
             
             break;
@@ -526,7 +526,19 @@ class ViewController: NSViewController {
         }
         return false
     }
-
+    
+    func isEnterPasswordViewVisible()->Bool{
+        if enterPasswordVcObj == nil{
+            return false
+        }
+        if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) != nil{
+            if self.view.subviews.contains(enterPasswordVcObj!.view){
+                return true
+            }
+        }
+        return false
+    }
+    
     func showHabitsView(){
         self.removeSubViews()
         containerView.addSubview(getHabitsVcObject().view)

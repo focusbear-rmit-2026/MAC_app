@@ -731,6 +731,7 @@ func getCurrentBrowserFrom(browserName:String)->BROWSER?{
         return nil
     }
 }
+
 func getCurrentBrowserNameFrom(browser:BROWSER)->String?{
     if browser == ._SAFARI_{
         return "Safari"

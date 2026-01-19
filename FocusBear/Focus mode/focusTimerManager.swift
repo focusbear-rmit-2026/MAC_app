@@ -179,7 +179,7 @@ class focusTimerManager {
             //
             
             // New block page work (when browser is in full screen or stage manager is enable)
-            if isCuddlyModeEnabled(){
+            //if isCuddlyModeEnabled(){
                 if url.localizedCaseInsensitiveContains("yes-i-need=true"){
                     focusAlllowUrlClickedFromNewBlockPage(url: url, currentBrowser: currentBrowser)
                     return;
@@ -205,7 +205,7 @@ class focusTimerManager {
                         originalUrlStringFromBrowser = url
                     }
                 }
-            }
+           // }
             
             //------------unlock url work//----------------
             if checkUrlIsUnlock(url: url, arrBlockedUrlsForFocus: arrBlockedUrlsForFocus, currentBrowser: currentBrowser, originalUrlStringFromBrowser: originalUrlStringFromBrowser){ // if true it means no need to check any thing else //
@@ -242,7 +242,7 @@ class focusTimerManager {
                 
                 var isBlocked = false
                 var isAllowed = false
-                if isCuddlyModeEnabled(){
+                //if isCuddlyModeEnabled(){
                     if arrAllowedDomianInCuddlyModeCurrentFocus.count != 0{
                         if arrAllowedDomianInCuddlyModeCurrentFocus.contains(domain){
                             DispatchQueue.main.async {
@@ -251,7 +251,7 @@ class focusTimerManager {
                             return;
                         }
                     }
-                }
+               // }
                 if arrAllowedUrlsInCuddlyModeCurrentFocus.contains(path){
                     if let title = getTabTitleSafeInBackground(browser: currentBrowser)?.lowercased(){
                         if !arrAllowedTabTitlesInCuddlyModeCurrentFocus.contains(title){
@@ -405,7 +405,7 @@ class focusTimerManager {
                     DispatchQueue.main.async {
                         closePopupBlockWindowIfRunningForUrl()
                     }
-                    if isCuddlyModeEnabled()/* && SettingsManagerObject.isAIBlockingEnabled()*/ && !isBlockSuperDistractingFocusModeOn(){
+                    if /*isCuddlyModeEnabled() && SettingsManagerObject.isAIBlockingEnabled() &&*/  !isBlockSuperDistractingFocusModeOn(){
                         if dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[path] == nil{
                             addEntryInfocusAlignmentScoreCsv(url: path, tabTitle: tabTitle ?? "", focusMode: currentRunningFocusModeName, intention: whatToAchieveInFocusBlock, aiReason: "", allowedProbability: "1.0", totalScore: "")
                             var reason = appAllowedInFocusModeText.replacingOccurrences(of: "<APP>", with: path)
@@ -450,7 +450,7 @@ class focusTimerManager {
         closeSetIntentionBlockedUrlsWinddowIfVisible()
         closeIntentionBlockedUrlsWinddowIfVisible()
         closePopupBlockWindowIfRunningForUrl()
-        if isCuddlyModeEnabled() && SettingsManagerObject.isAIBlockingEnabled(){
+        if SettingsManagerObject.isAIBlockingEnabled(){
             setFocusBearIconToNormal()
             focusModeCloseCurrentUrlForAlignmentScore()
         }

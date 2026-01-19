@@ -2497,7 +2497,8 @@
         "SavingTaskText": "Guardando tarea...",
         "buttonMarkCurrentTaskAsCompleted": "Marcar la tarea anterior como completada",
         "titleNewTask": "Nueva tarea:",
-        "titlePreviousTask": "Tarea anterior:"
+        "titlePreviousTask": "Tarea anterior:",
+        "cannotChangeIntentionInSuperStrictText": "El objetivo de enfoque no se puede cambiar en el modo súper estricto"
     },
     "popUpSaveThisTaskForLaterVcInfo":{
         "title": "¿Quieres guardar esto como una tarea para más tarde?",

@@ -119,3 +119,6 @@ blockpage params
 // wrong tab blocked not found
 // edit routine alert not showing when user is doing edit routin from morning/ evening
 
+
+
+// from v 2.28.450 app alwaus show cuddly mode popups during focus mode even afater focus mode is in super strit mode 

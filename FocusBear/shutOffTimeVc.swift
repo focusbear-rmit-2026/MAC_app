@@ -77,6 +77,11 @@ class shutOffTimeVc: NSViewController {
         resetView()
     }
     
+    override func viewWillDisappear() {
+        timer?.invalidate()
+        timer = nil
+    }
+    
     func resetView(){
         bottomSpaceLblAlreadyUnlocked.constant = 30
         lblAlreadyUnlocked.isHidden = true
