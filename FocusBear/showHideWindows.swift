@@ -183,7 +183,7 @@ func showBrowsersTabAuditView(){
 //-------------------------------------------------//
 
 
-func showPopupBlockConfirmWindow(blockedAppName:String, currentApp:NSRunningApplication?, url:String, script:String, isBlockApp:Bool, browser:BROWSER?, tabTitle:String?, fullUrl:String, aiBlockReason:String?, isTimeOut:Bool, isBlockByAi:Bool, scoreForThisSiteApp: Double?, payload: [String : Any]?, isBrowser:Bool){
+func showPopupBlockConfirmWindow(blockedAppName:String, currentApp:NSRunningApplication?, url:String, script:String, isBlockApp:Bool, browser:BROWSER?, tabTitle:String?, fullUrl:String, aiBlockReason:String?, isTimeOut:Bool, isBlockByAi:Bool, scoreForThisSiteApp: Double?, payload: [String : Any]?, isBrowser:Bool, suggestedTask:String?, suggestedTaskId:String?){
     addLog(text: "func:- PopupBlockConfirmWindow")
     var currentPid: pid_t?
     if let runningApp = NSWorkspace.shared.frontmostApplication{
@@ -238,7 +238,7 @@ func showPopupBlockConfirmWindow(blockedAppName:String, currentApp:NSRunningAppl
         midY = screenFrame.height / 2
     }
     
-    popUpBlockConfirmVcObj?.resetView(blockedAppName: blockedAppName, currentApp:currentApp, url:url, script:script, isBlockApp:isBlockApp, browser:browser, currentPid: currentPid, tabTitle: tabTitle, fullUrl: fullUrl, aiBlockReason:aiBlockReason, isTimeOut:isTimeOut, isBlockByAi: isBlockByAi, scoreForThisSiteApp: scoreForThisSiteApp, payload: payload, isBrowser:isBrowser)
+    popUpBlockConfirmVcObj?.resetView(blockedAppName: blockedAppName, currentApp:currentApp, url:url, script:script, isBlockApp:isBlockApp, browser:browser, currentPid: currentPid, tabTitle: tabTitle, fullUrl: fullUrl, aiBlockReason:aiBlockReason, isTimeOut:isTimeOut, isBlockByAi: isBlockByAi, scoreForThisSiteApp: scoreForThisSiteApp, payload: payload, isBrowser:isBrowser, suggestedTask: suggestedTask, suggestedTaskId: suggestedTaskId)
     popUpBlockConfirmWcObj?.window?.setFrame(NSRect(x: (midX-(width/2)), y: (midY-(height/2)), width: width, height: height), display: true)
     
     DispatchQueue.global().async {

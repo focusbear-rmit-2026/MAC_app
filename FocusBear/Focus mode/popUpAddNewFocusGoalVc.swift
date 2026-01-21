@@ -103,6 +103,7 @@ class popUpAddNewFocusGoalVc: NSViewController {
         }
         
         if let arrAllTasksAdded = arrAllTasksAdded{
+            comboBoxTask.setFocus()
             comboBoxTask.stringValue = ""
             comboBoxTask.isEnabled = true
             lblGettingTasks.isHidden = true
@@ -115,6 +116,7 @@ class popUpAddNewFocusGoalVc: NSViewController {
             comboBoxTask.reloadData()
             loader.stopAnimation(self)
         }else{
+            comboBoxTask.setFocus()
             comboBoxTask.isEnabled = false
             comboBoxTask.stringValue = ""
             lblGettingTasks.isHidden = false

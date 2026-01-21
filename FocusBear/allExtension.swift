@@ -128,6 +128,7 @@ extension NSView{
         //Add height constraint to the subview, as subview owns it.
         self.addConstraint(height)
     }
+    
     func addTopRightConstraints(subView:NSView) {
         subView.translatesAutoresizingMaskIntoConstraints = false
         //Trailing

@@ -10,6 +10,17 @@ import Cocoa
 
 class popUpBlockConfirmVc: NSViewController {
 
+    @IBOutlet weak var btnInfoAlScore: hoverInfoButton!
+    @IBOutlet weak var btnWorkingOnSomethingElse: Button!
+    @IBOutlet weak var imgView: NSImageView!
+    
+    @IBOutlet weak var boxNoTaskSpecified: NSBox!
+    @IBOutlet weak var loader: NSProgressIndicator!
+    @IBOutlet weak var comboBoxSelectTask: searchableComboBox!
+    @IBOutlet weak var lblSelectTask: NSTextField!
+    @IBOutlet weak var btnSetTask: Button!
+    
+    
     @IBOutlet weak var boxTimerIntention: NSBox!
     @IBOutlet weak var boxTimer: NSBox!
     @IBOutlet weak var btnCloseAskIntentionBox: cursorButton!
@@ -43,7 +54,7 @@ class popUpBlockConfirmVc: NSViewController {
     @IBOutlet weak var lblAi: NSTextField!
     @IBOutlet weak var lblIntention: NSTextField!
     @IBOutlet weak var btnEditSettings: Button!// not in use
-    @IBOutlet weak var btnBlock: Button!
+    @IBOutlet weak var btnBlock: underLineButton!
     @IBOutlet weak var btnAllow: Button!
     @IBOutlet weak var lblTimer: NSTextField!
     @IBOutlet weak var lblTitle: NSTextField!
@@ -84,9 +95,33 @@ class popUpBlockConfirmVc: NSViewController {
     var convincedAiReasonTrackingArea:NSTrackingArea?
     
     var isItemCheckedByConvinceAi = false
+    private var arrAllTasks = [NSDictionary]()
+    private var lastTasksAPICallDate: Date?
+    private let tasksCacheInterval: TimeInterval = 120 // 2 minutes
+    var currentTaskInToDoPlayer:String?
+    
+    
+    var titleChangedFocus = "Have you changed focus?"
+    var changeTaskText = "Want to change your current task?"
+    var suggestedTaskText = "It looks like you're now working on <TASK>."
+    var buttoWorkingOnOldTask = "No I'm still working on <TASK>"
+    var titleStillWorking = "Are you still working on \"<TASK>\" as part of your focus goal: \"<GOAL>\"?"
+    var titleStillFocusGoal = "Is your focus goal still: \"<GOAL>\"?"
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
+        lblSelectTask.stringValue = "No current task, select a task to proceed."
+        btnWorkingOnSomethingElse.title = "No I'm working on something else now"
+        btnSetTask.title = "Set Task"
+        
+        if let popUpFocusGoalConfirmationVcInfo = configjson.value(forKey: "popUpFocusGoalConfirmationVcInfo") as? NSDictionary{
+            btnWorkingOnSomethingElse.title = popUpFocusGoalConfirmationVcInfo.value(forKey: "buttonWorkingSomethingElseText") as? String ?? btnWorkingOnSomethingElse.title
+            btnSetTask.title = popUpFocusGoalConfirmationVcInfo.value(forKey: "buttonSetTask") as? String ?? btnSetTask.title
+            lblSelectTask.stringValue = popUpFocusGoalConfirmationVcInfo.value(forKey: "titleSelectTask") as? String ?? lblSelectTask.stringValue
+            titleStillFocusGoal = popUpFocusGoalConfirmationVcInfo.value(forKey: "titleGoal") as? String ?? titleStillFocusGoal
+            titleStillWorking = popUpFocusGoalConfirmationVcInfo.value(forKey: "titleGoalAndTask") as? String ?? titleStillWorking
+        }
+
         btnConvinceAgain.title = "Let me convince the AI again"
         btnAllow.title = "Yes - just this time"
         btnBlock.title = "No - I was getting distracted"
@@ -112,6 +147,10 @@ class popUpBlockConfirmVc: NSViewController {
             lblBtnReportBadAi.stringValue = popUpBlockConfirmVcInfo.value(forKey: "reportBadAiTooltip") as? String ?? lblBtnReportBadAi.stringValue
             lblTitleAskIntention.stringValue = popUpBlockConfirmVcInfo.value(forKey: "titleAskIntentionText") as? String ?? lblTitleAskIntention.stringValue
             btnConvinceAgain.title = popUpBlockConfirmVcInfo.value(forKey: "buttonConvinceAgain") as? String ?? btnConvinceAgain.title
+            titleChangedFocus = popUpBlockConfirmVcInfo.value(forKey: "titleChangedFocus") as? String ?? titleChangedFocus
+            changeTaskText = popUpBlockConfirmVcInfo.value(forKey: "changeTaskText") as? String ?? changeTaskText
+            suggestedTaskText = popUpBlockConfirmVcInfo.value(forKey: "suggestedTaskText") as? String ?? suggestedTaskText
+            buttoWorkingOnOldTask = popUpBlockConfirmVcInfo.value(forKey: "buttoWorkingOnOldTask") as? String ?? buttoWorkingOnOldTask
         }
         lblBtnConfirmReportBadAi.stringValue = lblBtnReportBadAi.stringValue
         lblTitle.stringValue = titleText
@@ -126,6 +165,18 @@ class popUpBlockConfirmVc: NSViewController {
         textViewIntension.delegate = self
         btnBelIcon.wantsLayer = true
         btnConvinceAgain.isHidden = true
+        
+        
+        
+        imgView.image = NSImage(named: "Glasses-Bear-250-px_V3")
+        imgView.animates = true
+        btnWorkingOnSomethingElse.buttonColor = NSColor.white.cgColor
+        comboBoxSelectTask.customDelegate = self
+        comboBoxSelectTask.stringValue = ""
+        comboBoxSelectTask.items.removeAll()
+        arrAllTasks.removeAll()
+        comboBoxSelectTask.reloadData()
+        btnSetTask.buttonColor = NSColor.white.cgColor
     }
     
 
@@ -161,13 +212,17 @@ class popUpBlockConfirmVc: NSViewController {
             }
         }
     }
-    func resetView(blockedAppName:String, currentApp:NSRunningApplication?, url:String, script:String, isBlockApp:Bool, browser:BROWSER?,currentPid: pid_t?, tabTitle:String?, fullUrl:String, aiBlockReason:String?, isTimeOut:Bool, isBlockByAi:Bool, scoreForThisSiteApp: Double?, payload:[String:Any]?, isBrowser:Bool){
+    func resetView(blockedAppName:String, currentApp:NSRunningApplication?, url:String, script:String, isBlockApp:Bool, browser:BROWSER?,currentPid: pid_t?, tabTitle:String?, fullUrl:String, aiBlockReason:String?, isTimeOut:Bool, isBlockByAi:Bool, scoreForThisSiteApp: Double?, payload:[String:Any]?, isBrowser:Bool, suggestedTask:String?, suggestedTaskId:String?){
         self.scoreForThisSiteApp = scoreForThisSiteApp
         if self.currentApp != nil{
             if self.currentApp == currentApp{
                 return;
             }
         }
+        
+        boxNoTaskSpecified.isHidden = true
+        btnWorkingOnSomethingElse.isHidden = true
+        currentTaskInToDoPlayer = nil
         btnCloseAskIntentionBox.isHidden = true
         isItemCheckedByConvinceAi = false
         btnInfoTemporaryAllow.isHidden = true
@@ -234,6 +289,7 @@ class popUpBlockConfirmVc: NSViewController {
                 }else{
                     lblIntention.stringValue = lblIntention.stringValue + "\n\n" + currentTaskText
                 }
+                self.currentTaskInToDoPlayer = currentTaskInToDoPlayer
             }
 
             lblTitle.stringValue = blockTitle
@@ -295,9 +351,68 @@ class popUpBlockConfirmVc: NSViewController {
             }else{
                 lblAi.isHidden = true
                 boxBellIcon.isHidden = true
+                self.btnSeeMore.isHidden = true
             }
             
-            
+            // new work v 2.28.451
+            if SettingsManagerObject.isAIBlockingEnabled() && !isBlockSuperDistractingFocusModeOn() && !isBrowser{
+                if let suggestedTask = suggestedTask{
+                    lblTitle.stringValue = titleChangedFocus
+                    lblIntention.stringValue = suggestedTaskText.replacingOccurrences(of: "<TASK>", with: suggestedTask)
+                    lblSelectTask.stringValue = changeTaskText
+
+                    lblAi.isHidden = true
+                    self.btnSeeMore.isHidden = true
+                    btnAllow.isHidden = false
+                    boxNoTaskSpecified.isHidden = false
+                    btnWorkingOnSomethingElse.isHidden = true
+                    lblIntention.isHidden = false
+                    if let currentTaskInToDoPlayer = currentTaskInToDoPlayer{
+                        btnAllow.title = buttoWorkingOnOldTask.replacingOccurrences(of: "<TASK>", with: currentTaskInToDoPlayer)
+                    }else{
+                        btnAllow.title = "Yes and this app is relevant"
+                        if let popUpFocusGoalConfirmationVcInfo = configjson.value(forKey: "popUpFocusGoalConfirmationVcInfo") as? NSDictionary{
+                            btnAllow.title = popUpFocusGoalConfirmationVcInfo.value(forKey: "buttonAppRelevantText") as? String ?? btnAllow.title
+                        }
+                    }
+                    
+                }else{
+                    if let currentTaskInToDoPlayer = currentTaskInToDoPlayer{
+                        var title = titleStillWorking.replacingOccurrences(of: "<TASK>", with: currentTaskInToDoPlayer)
+                        title = title.replacingOccurrences(of: "<GOAL>", with: whatToAchieveInFocusBlock)
+                        lblTitle.stringValue = title
+                        boxNoTaskSpecified.isHidden = true
+                        btnAllow.isHidden = false
+                    }else{
+                        lblTitle.stringValue = titleStillFocusGoal.replacingOccurrences(of: "<GOAL>", with: whatToAchieveInFocusBlock)
+                        boxNoTaskSpecified.isHidden = false
+                        btnAllow.isHidden = true
+                    }
+                    lblIntention.isHidden = true
+                    
+                    lblAi.isHidden = true
+                    btnWorkingOnSomethingElse.isHidden = false
+                    btnAllow.title = "Yes and this app is relevant"
+                    if let popUpFocusGoalConfirmationVcInfo = configjson.value(forKey: "popUpFocusGoalConfirmationVcInfo") as? NSDictionary{
+                        btnAllow.title = popUpFocusGoalConfirmationVcInfo.value(forKey: "buttonAppRelevantText") as? String ?? btnAllow.title
+                    }
+                }
+                btnInfoAlScore.isHidden = false
+                btnAllow.buttonColor = buttonBgColor.cgColor
+            }else{
+                boxNoTaskSpecified.isHidden = true
+                btnAllow.title = "Yes"
+                if let popUpBlockConfirmVcInfo = configjson.value(forKey: "popUpBlockConfirmVcInfo") as? NSDictionary{
+                    btnAllow.title = popUpBlockConfirmVcInfo.value(forKey: "buttonAllowText") as? String ?? btnAllow.title
+                }
+                btnInfoAlScore.isHidden = true
+                btnAllow.buttonColor = NSColor.white.cgColor
+                btnAllow.isHidden = false
+            }
+            btnBlock.title = "Block this app"
+            if let popUpBlockConfirmVcInfo = configjson.value(forKey: "popUpBlockConfirmVcInfo") as? NSDictionary{
+                btnBlock.title = popUpBlockConfirmVcInfo.value(forKey: "buttonBlockAppText") as? String ?? btnBlock.title
+            }
             
         }else{
             domain = getDomainFromUrl(url: fullUrl)
@@ -349,6 +464,8 @@ class popUpBlockConfirmVc: NSViewController {
                 lblIntention.isHidden = true
             }
 
+            lblTitle.stringValue = blockTitle
+            
             if let currentTaskInToDoPlayer = getCurrentTaskInFocusMode(){
                 addLog(text: "currentTaskInToDoPlayer:- \(currentTaskInToDoPlayer)")
                 var currentTaskText = "Current task is \"<TASK>\""
@@ -362,12 +479,13 @@ class popUpBlockConfirmVc: NSViewController {
                 }else{
                     lblIntention.stringValue = lblIntention.stringValue + "\n\n" + currentTaskText
                 }
+                self.currentTaskInToDoPlayer = currentTaskInToDoPlayer
             }
             
-            lblTitle.stringValue = blockTitle
             if SettingsManagerObject.isAIBlockingEnabled() && !isBlockSuperDistractingFocusModeOn(){
                 boxBellIcon.isHidden = false
                 lblAi.isHidden = false
+                self.btnSeeMore.isHidden = false
                 if let aiBlockReason = aiBlockReason{
                     isFailedToGetResponse = false
                     lastBlockReasonFromAi = aiBlockReason
@@ -395,6 +513,71 @@ class popUpBlockConfirmVc: NSViewController {
             }else{
                 lblAi.isHidden = true
                 boxBellIcon.isHidden = true
+                self.btnSeeMore.isHidden = true
+            }
+            
+            if SettingsManagerObject.isAIBlockingEnabled() && !isBlockSuperDistractingFocusModeOn() && !isBrowser{
+                if let suggestedTask = suggestedTask{
+                    lblTitle.stringValue = titleChangedFocus
+                    lblIntention.stringValue = suggestedTaskText.replacingOccurrences(of: "<TASK>", with: suggestedTask)
+                    lblSelectTask.stringValue = changeTaskText
+
+                    lblAi.isHidden = true
+                    self.btnSeeMore.isHidden = true
+                    btnAllow.isHidden = false
+                    boxNoTaskSpecified.isHidden = false
+                    btnWorkingOnSomethingElse.isHidden = true
+                    lblIntention.isHidden = false
+                    if let currentTaskInToDoPlayer = currentTaskInToDoPlayer{
+                        btnAllow.title = buttoWorkingOnOldTask.replacingOccurrences(of: "<TASK>", with: currentTaskInToDoPlayer)
+                    }else{
+                        btnAllow.title = "Yes and this site is relevant"
+                        if let popUpFocusGoalConfirmationVcInfo = configjson.value(forKey: "popUpFocusGoalConfirmationVcInfo") as? NSDictionary{
+                            btnAllow.title = popUpFocusGoalConfirmationVcInfo.value(forKey: "buttonSiteRelevantText") as? String ?? btnAllow.title
+                        }
+                    }
+                    
+                }else{
+                    lblSelectTask.stringValue = "No current task, select a task to proceed."
+                    if let popUpFocusGoalConfirmationVcInfo = configjson.value(forKey: "popUpFocusGoalConfirmationVcInfo") as? NSDictionary{
+                        lblSelectTask.stringValue = popUpFocusGoalConfirmationVcInfo.value(forKey: "titleSelectTask") as? String ?? lblSelectTask.stringValue
+                    }
+                    if let currentTaskInToDoPlayer = currentTaskInToDoPlayer{
+                        var title = titleStillWorking.replacingOccurrences(of: "<TASK>", with: currentTaskInToDoPlayer)
+                        title = title.replacingOccurrences(of: "<GOAL>", with: whatToAchieveInFocusBlock)
+                        lblTitle.stringValue = title
+                        boxNoTaskSpecified.isHidden = true
+                        btnAllow.isHidden = false
+                    }else{
+                        lblTitle.stringValue = titleStillFocusGoal.replacingOccurrences(of: "<GOAL>", with: whatToAchieveInFocusBlock)
+                        boxNoTaskSpecified.isHidden = false
+                        btnAllow.isHidden = true
+                    }
+                    lblIntention.isHidden = true
+                    
+                    lblAi.isHidden = true
+                    btnWorkingOnSomethingElse.isHidden = false
+                    btnAllow.title = "Yes and this site is relevant"
+                    if let popUpFocusGoalConfirmationVcInfo = configjson.value(forKey: "popUpFocusGoalConfirmationVcInfo") as? NSDictionary{
+                        btnAllow.title = popUpFocusGoalConfirmationVcInfo.value(forKey: "buttonSiteRelevantText") as? String ?? btnAllow.title
+                    }
+                }
+                btnInfoAlScore.isHidden = false
+                btnAllow.buttonColor = buttonBgColor.cgColor
+                
+            }else{
+                boxNoTaskSpecified.isHidden = true
+                btnAllow.title = "Yes"
+                if let popUpBlockConfirmVcInfo = configjson.value(forKey: "popUpBlockConfirmVcInfo") as? NSDictionary{
+                    btnAllow.title = popUpBlockConfirmVcInfo.value(forKey: "buttonAllowText") as? String ?? btnAllow.title
+                }
+                btnInfoAlScore.isHidden = true
+                btnAllow.buttonColor = NSColor.white.cgColor
+                btnAllow.isHidden = false
+            }
+            btnBlock.title = "Block this site"
+            if let popUpBlockConfirmVcInfo = configjson.value(forKey: "popUpBlockConfirmVcInfo") as? NSDictionary{
+                btnBlock.title = popUpBlockConfirmVcInfo.value(forKey: "buttonBlockUrlText") as? String ?? btnBlock.title
             }
             
         }
@@ -418,7 +601,87 @@ class popUpBlockConfirmVc: NSViewController {
                 }
             }
         }
+        if boxNoTaskSpecified.isHidden == false{
+            
+            if let suggestedTask = suggestedTask{
+                comboBoxSelectTask.stringValue = suggestedTask
+            }else{
+                comboBoxSelectTask.stringValue = ""
+            }
+            
+            
+            loadTasks()
+        }
     }
+    
+    func loadTasks() {
+
+        //  If API was called within last 2 minutes, use cached data
+        if let lastCall = lastTasksAPICallDate,
+           Date().timeIntervalSince(lastCall) < tasksCacheInterval,
+           !arrAllTasks.isEmpty {
+
+            print("✅ Using cached tasks")
+            updateComboBox(with: arrAllTasks)
+            return
+        }
+
+        print("🌐 Calling API")
+
+        comboBoxSelectTask.isEnabled = false
+        comboBoxSelectTask.items.removeAll()
+        arrAllTasks.removeAll()
+        loader.startAnimation(self)
+
+        allApiObject.getAllTasks { json in
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+
+                self.comboBoxSelectTask.isEnabled = true
+                self.loader.stopAnimation(self)
+
+                guard let json = json else { return }
+
+                let sortedTasks = json.sorted { t1, t2 in
+                    let s1 = t1.value(forKey: "created_at") as? String ?? ""
+                    let s2 = t2.value(forKey: "created_at") as? String ?? ""
+
+                    let d1 = getDateFromStringInUtc(dateString: s1) ?? .distantPast
+                    let d2 = getDateFromStringInUtc(dateString: s2) ?? .distantPast
+
+                    return d1 > d2
+                }
+
+                self.arrAllTasks = sortedTasks
+                self.lastTasksAPICallDate = Date() // ✅ save API call time
+
+                self.updateComboBox(with: sortedTasks)
+                
+                
+                
+                func getDateFromStringInUtc(dateString: String) -> Date? {
+                    let df = DateFormatter()
+                    df.locale = Locale(identifier: "en_US_POSIX")
+                    df.timeZone = TimeZone(secondsFromGMT: 0)
+                    df.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'" // matches your examples
+                    return df.date(from: dateString)
+                }
+            }
+        }
+    }
+
+    private func updateComboBox(with tasks: [NSDictionary]) {
+        comboBoxSelectTask.items.removeAll()
+
+        for task in self.arrAllTasks{
+            let title = task.value(forKey: "title") as? String ?? ""
+            comboBoxSelectTask.items.append(title)
+            print(title)
+        }
+
+        comboBoxSelectTask.reloadData()
+    }
+
     
     func cropText(_ text: String, limit: Int = 100) -> String {
         if text.count > limit {
@@ -964,6 +1227,14 @@ class popUpBlockConfirmVc: NSViewController {
     
     @IBAction func btnAllowAppClicked(_ sender: Any) {
         addLog(text: "[user-action] popUpBlockConfirmVc:- btnAllowAppClicked")
+        
+        if SettingsManagerObject.isAIBlockingEnabled() && !isBlockSuperDistractingFocusModeOn() && !isBrowser{
+            
+            showConvincedAiPopUpBox(allowedByConvinceAiAlready:false, reason: "")
+            return;
+        }
+        
+        
         if self.currentApp != nil && isAppBlocking{
             
             if SettingsManagerObject.isAIBlockingEnabled() && !isBlockSuperDistractingFocusModeOn() && !isFailedToGetResponse && !isBrowser{
@@ -1271,6 +1542,71 @@ class popUpBlockConfirmVc: NSViewController {
         self.lblAi.stringValue = lastBlockReasonFromAi
         self.btnSeeMore.isHidden = true
     }
+    
+    @IBAction func btnSetTaskClicked(_ sender: Any) {
+        addLog(text: "[user-action] popUpBlockConfirmVc:- btnSetTaskClicked")
+        
+        taskPlayerVcObj?.updateIntentionToPlayer()
+        
+        let currentTask = comboBoxSelectTask.stringValue.lowercased()
+        var taskAlreadyAdded = false
+        var taskAddedIndex = 0
+        if !currentTask.isEmpty{
+            for i in 0..<arrAllTasks.count{
+                let task = arrAllTasks[i]
+                let taskName = task.value(forKey: "title") as? String ?? ""
+                if taskName.lowercased() == currentTask{
+                    taskAlreadyAdded = true
+                    taskAddedIndex = i
+                    break;
+                }
+            }
+            
+            if !taskAlreadyAdded{
+                //lblGettingTasks.isHidden = false
+                loader.startAnimation(self)
+                let today = Date()
+                let taskName = comboBoxSelectTask.stringValue
+                let nextWeek = Calendar.current.date(byAdding: .day, value: 7, to: today) ?? Date()
+                let dateString = getStringFromDateInUtc(date: nextWeek, dateFormat: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+                addLog(text: "Create new task:- name: \(taskName)")
+                allApiObject.addTask(title: taskName, details: "", eisenhowerQuadrant: 1, dueDate: dateString, objective: "", tags: [], completionHandler: { result,json in
+                    if result{
+                        addLog(text: "\(taskName) task created successfully.")
+                    }
+                    DispatchQueue.main.async { [self] in
+                        loader.stopAnimation(self)
+                        closeWindow()
+                        if let json = json{
+                            if let id = json.value(forKey: "id") as? String{
+                                taskPlayerVcObj?.addAndPlayTaskInCurrentList(taskName: taskName, id: id, duration: 600, shouldCompleteCurrentTask: false)
+                            }
+                        }
+                    }
+                })
+            }else{
+                closeWindow()
+                let task = arrAllTasks[taskAddedIndex]
+                if let id = task.value(forKey: "id") as? String, let taskTitle = task.value(forKey: "title") as? String{
+                    taskPlayerVcObj?.addAndPlayTaskInCurrentList(taskName: taskTitle, id: id, duration: 600, shouldCompleteCurrentTask: false)
+                }
+            }
+        }else{
+            return;
+        }
+    }
+    
+    @IBAction func btnWorkingOnSomethingElseClicked(_ sender: Any) {
+        if arrAllTasks.count == 0{
+            showoPopUpAddNewFocusGoalView()
+        }else{
+            showoPopUpAddNewFocusGoalView(arrAllTasks: arrAllTasks)
+        }
+    }
+    
+    @IBAction func btnInfoAlScoreClicked(_ sender: Any) {
+        showTooltip(sender: btnInfoAlScore, msg: lastBlockReasonFromAi, preferredEdge: .minX, maxWidthVal: 250, autoCloseOnMouseExit: true)
+    }
 }
 
 extension popUpBlockConfirmVc: NSTextViewDelegate{
@@ -1288,5 +1624,14 @@ extension popUpBlockConfirmVc: NSTextViewDelegate{
             isUserTypingIntention = true
             isUserTypingTime = Date()
         }
+    }
+}
+
+extension popUpBlockConfirmVc: SearchableComboBoxDelegate{
+    func itemSelectedByUser(comboBox: searchableComboBox) {
+        if comboBox.stringValue.isEmpty{
+            return;
+        }
+
     }
 }
