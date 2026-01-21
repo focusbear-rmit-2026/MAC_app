@@ -10,6 +10,7 @@
 var focusModeTaskString = ""
 var taskCreatedByBlockPopup = ""
 
+var arrCurrentFocusTasks = [[String:Any]]()
 var arrFocusType = [[String:Any]]()
 var nextFocusSessionIntention = ""
 var arrAllFocusModeTags = [[String:String]]()
@@ -588,6 +589,9 @@ func tryCheckUrlFromAi(script: String, url:String, tabTitle:String?, browser:BRO
         let reason = dictionaryAllowedUrlsWithIntention["reason"] as? String ?? ""
         let probability = dictionaryAllowedUrlsWithIntention["probability"] as? Double ?? 0
         let payload = dictionaryAllowedUrlsWithIntention["payload"] as? [String:Any] ?? [:]
+        let suggestedTask = dictionaryAllowedUrlsWithIntention["suggested_task"] as? String
+        let suggestedTaskId = dictionaryAllowedUrlsWithIntention["suggested_task_id"] as? String
+        
         
         if let alllowUrlEndTime = dictionaryAllowedUrlsWithIntention["endTime"] as? Date{
             if Date().compare(alllowUrlEndTime) == .orderedDescending{//>
@@ -602,7 +606,7 @@ func tryCheckUrlFromAi(script: String, url:String, tabTitle:String?, browser:BRO
                         executeScript(script: script) // new
                     }
                 }else{
-                    showPopupBlockConfirmWindow(blockedAppName: "", currentApp: nil, url:url, script:script, isBlockApp:false, browser: browser,tabTitle: tabTitle, fullUrl:fullUrl, aiBlockReason: reason, isTimeOut:false, isBlockByAi: true, scoreForThisSiteApp: probability, payload: payload, isBrowser:false)
+                    showPopupBlockConfirmWindow(blockedAppName: "", currentApp: nil, url:url, script:script, isBlockApp:false, browser: browser,tabTitle: tabTitle, fullUrl:fullUrl, aiBlockReason: reason, isTimeOut:false, isBlockByAi: true, scoreForThisSiteApp: probability, payload: payload, isBrowser:false, suggestedTask: suggestedTask,suggestedTaskId: suggestedTaskId)
                     
                     if dictionaryAllowedUrlsWithIntention["userSetIntention"] as? String != nil{
                         popUpBlockConfirmVcObj?.showUseDistractingUrlFlow(isSetIntentionFirstTime: false)
@@ -624,6 +628,8 @@ func tryCheckUrlFromAi(script: String, url:String, tabTitle:String?, browser:BRO
             boxForStatusBarForTooltip?.customToolTip = reason
             let probability = info["probability"] as? Double ?? 0.0
             let payload = info["payload"] as? [String:Any] ?? [:]
+            let suggestedTask = info["suggested_task"] as? String
+            let suggestedTaskId = info["suggested_task_id"] as? String
             calculateFocusAlignmentScore()
             if probability < 0.70{
                 if currentFocusAlignmentScore < minFocusAlignmentScoreToShowDistractingPopUp{
@@ -632,7 +638,7 @@ func tryCheckUrlFromAi(script: String, url:String, tabTitle:String?, browser:BRO
                             let script = script.replacingOccurrences(of: "<NEWPAGE>", with: "&ai-focus-block-verification-enabled=true&ai-focus-block-enabled=true&ai-relevance-explanation=\(reason)&ai-relevance-score=\(probability)")
                             executeScript(script: script) // new
                         }else{
-                            showPopupBlockConfirmWindow(blockedAppName: "", currentApp: nil, url:url, script:script, isBlockApp:false, browser: browser,tabTitle: tabTitle, fullUrl:fullUrl, aiBlockReason: reason, isTimeOut:false, isBlockByAi: true, scoreForThisSiteApp: probability, payload: payload, isBrowser:false)
+                            showPopupBlockConfirmWindow(blockedAppName: "", currentApp: nil, url:url, script:script, isBlockApp:false, browser: browser,tabTitle: tabTitle, fullUrl:fullUrl, aiBlockReason: reason, isTimeOut:false, isBlockByAi: true, scoreForThisSiteApp: probability, payload: payload, isBrowser:false, suggestedTask: suggestedTask, suggestedTaskId: suggestedTaskId)
                         }
                     }
                     
@@ -726,6 +732,9 @@ func checkUrlFromAi(script: String, url:String, tab_title:String, currentRunning
                     if var dProbability = dic?.value(forKey: "allowed_probability") as? Double{
                         addLog(text: "checked chatGPTIsURLSafe:- \(url), dProbability:\(dProbability)")
                         let currentTaskName = currentTaskInToDoPlayer ?? ""
+                        let suggested_task = dic?.value(forKey: "suggested_task") as? String
+                        let suggested_task_id = dic?.value(forKey: "suggested_task_id") as? String
+                        
                         addEntryInFocusAIDecisionsCsv(url: url, domain: domain, tabTitle: tab_title, score: "\(dProbability)", intention: whatToAchieveInFocusBlock, aiReason: reason, currentTaskName: currentTaskName, additionalUserJustification: "")
                         
                         //  if isCuddlyModeEnabled(){
@@ -738,10 +747,20 @@ func checkUrlFromAi(script: String, url:String, tab_title:String, currentRunning
                             }
                             oldData["probability"] = dProbability
                             oldData["reason"] = reason
+                            if let suggested_task = suggested_task, let suggested_task_id = suggested_task_id{
+                                oldData["suggested_task"] = suggested_task
+                                oldData["suggested_task_id"] = suggested_task_id
+                            }
                             dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[url] = oldData
                         }else{
                             addEntryInfocusAlignmentScoreCsv(url: url, tabTitle: tab_title, focusMode: currentRunningFocusModeName, intention: whatToAchieveInFocusBlock, aiReason: reason, allowedProbability: "\(dProbability)", totalScore: "")
                             dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[url] = ["probability":dProbability, "isVisibleUrl":true, "totalSeconds":0, "startedTime":Date(), "reason":reason]
+                            
+                            if let suggested_task = suggested_task, let suggested_task_id = suggested_task_id{
+                                dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[url]?["suggested_task"] = suggested_task
+                                dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[url]?["suggested_task_id"] = suggested_task_id
+                            }
+                            
                             if let payload = payload{
                                 dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[url]?["payload"] = payload
                             }
@@ -798,7 +817,7 @@ func checkUrlFromAi(script: String, url:String, tab_title:String, currentRunning
                                     let script = script.replacingOccurrences(of: "<NEWPAGE>", with: "&ai-focus-block-verification-enabled=true&ai-focus-block-enabled=true&ai-relevance-explanation=\(reason)&ai-relevance-score=\(dProbability)")
                                     executeScript(script: script) // new
                                 }else{
-                                    showPopupBlockConfirmWindow(blockedAppName: "", currentApp: nil, url:url, script:script, isBlockApp:false, browser: browser,tabTitle: tab_title, fullUrl:fullUrl, aiBlockReason: reason, isTimeOut:false, isBlockByAi: true, scoreForThisSiteApp: dProbability, payload: payload, isBrowser:false)
+                                    showPopupBlockConfirmWindow(blockedAppName: "", currentApp: nil, url:url, script:script, isBlockApp:false, browser: browser,tabTitle: tab_title, fullUrl:fullUrl, aiBlockReason: reason, isTimeOut:false, isBlockByAi: true, scoreForThisSiteApp: dProbability, payload: payload, isBrowser:false,suggestedTask: suggested_task,suggestedTaskId: suggested_task_id)
                                 }
                             }
                         }
@@ -920,6 +939,9 @@ func checkUrlFromAiWithNewIntention(url:String, domain:String, tab_title:String,
                     addLog(text: "checked checkUrlFromAiWithNewIntention:- \(url), dProbability:\(dProbability)")
                     addEntryInfocusAlignmentScoreCsv(url: url, tabTitle: tab_title, focusMode: currentRunningFocusModeName, intention: whatToAchieveInFocusBlock, aiReason: reason, allowedProbability: "\(dProbability)", totalScore: "")
                     
+                    let suggested_task = dic?.value(forKey: "suggested_task") as? String
+                    let suggested_task_id = dic?.value(forKey: "suggested_task_id") as? String
+                    
                     let currentTaskName = currentTaskInToDoPlayer ?? ""
                     addEntryInFocusAIDecisionsCsv(url: url, domain: domain, tabTitle: tab_title, score: "\(dProbability)", intention: whatToAchieveInFocusBlock, aiReason: reason, currentTaskName: currentTaskName, additionalUserJustification: intentionForThisSite)
                     
@@ -930,9 +952,18 @@ func checkUrlFromAiWithNewIntention(url:String, domain:String, tab_title:String,
                         }
                         oldData["probability"] = dProbability
                         oldData["reason"] = reason
+                        if let suggested_task = suggested_task, let suggested_task_id = suggested_task_id{
+                            oldData["suggested_task"] = suggested_task
+                            oldData["suggested_task_id"] = suggested_task_id
+                        }
                         dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[url] = oldData
                     }else{
                         dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[url] = ["probability":dProbability, "isVisibleUrl":true, "totalSeconds":0, "startedTime":Date(), "reason":reason]
+                        
+                        if let suggested_task = suggested_task, let suggested_task_id = suggested_task_id{
+                            dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[url]?["suggested_task"] = suggested_task
+                            dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[url]?["suggested_task_id"] = suggested_task_id
+                        }
                     }
                     dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus[domain]?["reason"] = reason
                     dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus[domain]?["payload"] = payload
@@ -983,6 +1014,7 @@ func refreshFocusModeData(){
     dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus.removeAll()
     arrAllowedDomianInCuddlyModeCurrentFocus.removeAll()
     isNudgeDraggedInCurrentFocusSession = false
+    arrCurrentFocusTasks.removeAll()
 }
 
 
@@ -997,7 +1029,7 @@ func tryCheckAppFromAi(appName:String, runningApp:NSRunningApplication){
         if SettingsManagerObject.isDataCollectionModeEnabled{
             arrAllowedAppsInCuddlyModeCurrentFocus.append(runningApp)
         }else{
-            showPopupBlockConfirmWindow(blockedAppName: appName, currentApp: runningApp, url:"", script:"", isBlockApp:true, browser: nil, tabTitle: nil, fullUrl:"", aiBlockReason: nil, isTimeOut:false, isBlockByAi: false, scoreForThisSiteApp: nil, payload: nil, isBrowser:true)
+            showPopupBlockConfirmWindow(blockedAppName: appName, currentApp: runningApp, url:"", script:"", isBlockApp:true, browser: nil, tabTitle: nil, fullUrl:"", aiBlockReason: nil, isTimeOut:false, isBlockByAi: false, scoreForThisSiteApp: nil, payload: nil, isBrowser:true,suggestedTask: nil,suggestedTaskId: nil)
         }
         
         return;
@@ -1011,12 +1043,14 @@ func tryCheckAppFromAi(appName:String, runningApp:NSRunningApplication){
         let reason = dictionaryAllowedAppsWithIntention["reason"] as? String ?? ""
         let probability = dictionaryAllowedAppsWithIntention["probability"] as? Double ?? 0
         let payload = dictionaryAllowedAppsWithIntention["payload"] as? [String:Any] ?? [:]
+        let suggestedTask = dictionaryAllowedAppsWithIntention["suggested_task"] as? String
+        let suggestedTaskId = dictionaryAllowedAppsWithIntention["suggested_task_id"] as? String
         
         if let alllowUrlEndTime = dictionaryAllowedAppsWithIntention["endTime"] as? Date{
             if Date().compare(alllowUrlEndTime) == .orderedDescending{//>
                 // showBoxAgain
                 
-                showPopupBlockConfirmWindow(blockedAppName: appName, currentApp: runningApp, url:"", script:"", isBlockApp:true, browser: nil, tabTitle: nil, fullUrl:"", aiBlockReason: nil, isTimeOut:false, isBlockByAi: false, scoreForThisSiteApp: probability, payload: payload, isBrowser:false)
+                showPopupBlockConfirmWindow(blockedAppName: appName, currentApp: runningApp, url:"", script:"", isBlockApp:true, browser: nil, tabTitle: nil, fullUrl:"", aiBlockReason: nil, isTimeOut:false, isBlockByAi: false, scoreForThisSiteApp: probability, payload: payload, isBrowser:false, suggestedTask: suggestedTask, suggestedTaskId: suggestedTaskId)
                 
                 if dictionaryAllowedAppsWithIntention["userSetIntention"] as? String != nil{
                     popUpBlockConfirmVcObj?.showUseDistractingUrlFlow(isSetIntentionFirstTime: false)
@@ -1038,11 +1072,13 @@ func tryCheckAppFromAi(appName:String, runningApp:NSRunningApplication){
             boxForStatusBarForTooltip?.customToolTip = reason
             let probability = info["probability"] as? Double ?? 0.0
             let payload = info["payload"] as? [String:Any] ?? [:]
+            let suggestedTask = info["suggested_task"] as? String
+            let suggestedTaskId = info["suggested_task_id"] as? String
             calculateFocusAlignmentScore()
             if probability < 0.70{
                 if currentFocusAlignmentScore < minFocusAlignmentScoreToShowDistractingPopUp{
                     if reason.lowercased() != "unable to get a decision from ai. trusting you to decide whether the site is relevant 😅"{
-                        showPopupBlockConfirmWindow(blockedAppName: appName, currentApp: runningApp, url:"", script:"", isBlockApp:true, browser: nil,tabTitle: nil, fullUrl:"", aiBlockReason: reason, isTimeOut:false, isBlockByAi: true, scoreForThisSiteApp: probability, payload: payload, isBrowser:false)
+                        showPopupBlockConfirmWindow(blockedAppName: appName, currentApp: runningApp, url:"", script:"", isBlockApp:true, browser: nil,tabTitle: nil, fullUrl:"", aiBlockReason: reason, isTimeOut:false, isBlockByAi: true, scoreForThisSiteApp: probability, payload: payload, isBrowser:false, suggestedTask: suggestedTask, suggestedTaskId: suggestedTaskId)
                     }
                     
                 }
@@ -1089,6 +1125,9 @@ func checkAppFromAi(appName:String, currentRunningFocusModeName:String, runningA
                     if var dProbability = dic?.value(forKey: "allowed_probability") as? Double{
                         print("dProbability is \(dProbability) ****")
                         addLog(text: "checked chatGPTIsAppSafe:- \(appName), dProbability:\(dProbability)")
+                        let suggested_task = dic?.value(forKey: "suggested_task") as? String
+                        let suggested_task_id = dic?.value(forKey: "suggested_task_id") as? String
+                        
                         let currentTaskName = currentTaskInToDoPlayer ?? ""
                         addEntryInFocusAIDecisionsCsv(url: appName, domain: "", tabTitle: "", score: "\(dProbability)", intention: whatToAchieveInFocusBlock, aiReason: reason, currentTaskName: currentTaskName, additionalUserJustification: "")
                         
@@ -1102,12 +1141,21 @@ func checkAppFromAi(appName:String, currentRunningFocusModeName:String, runningA
                                 }
                                 oldData["probability"] = dProbability
                                 oldData["reason"] = reason
+                                if let suggested_task = suggested_task, let suggested_task_id = suggested_task_id{
+                                    oldData["suggested_task"] = suggested_task
+                                    oldData["suggested_task_id"] = suggested_task_id
+                                }
                                 dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[appNameLowercased] = oldData
                             }else{
                                 addEntryInfocusAlignmentScoreCsv(url: appNameLowercased, tabTitle: "", focusMode: currentRunningFocusModeName, intention: whatToAchieveInFocusBlock, aiReason: "", allowedProbability: "\(dProbability)", totalScore: "")
                                 dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[appNameLowercased] = ["probability":dProbability, "isVisibleApp":true, "totalSeconds":0, "startedTime":Date(), "reason":reason]
                                 if let payload = payload{
                                     dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[appNameLowercased]?["payload"] = payload
+                                }
+                                
+                                if let suggested_task = suggested_task, let suggested_task_id = suggested_task_id{
+                                    dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[appNameLowercased]?["suggested_task"] = suggested_task
+                                    dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[appNameLowercased]?["suggested_task_id"] = suggested_task_id
                                 }
                                 boxForStatusBarForTooltip?.customToolTip = reason
                             }
@@ -1165,7 +1213,7 @@ func checkAppFromAi(appName:String, currentRunningFocusModeName:String, runningA
                                 }
                             }
                             if !popUpWindowVisible && shouldShowPopup{
-                                showPopupBlockConfirmWindow(blockedAppName: appName, currentApp: runningApp, url: "", script:"", isBlockApp:true, browser: nil,tabTitle: nil, fullUrl:"", aiBlockReason: reason, isTimeOut:false, isBlockByAi: true, scoreForThisSiteApp: dProbability, payload: payload, isBrowser:false)
+                                showPopupBlockConfirmWindow(blockedAppName: appName, currentApp: runningApp, url: "", script:"", isBlockApp:true, browser: nil,tabTitle: nil, fullUrl:"", aiBlockReason: reason, isTimeOut:false, isBlockByAi: true, scoreForThisSiteApp: dProbability, payload: payload, isBrowser:false, suggestedTask: suggested_task, suggestedTaskId: suggested_task_id)
                             }
                         }else{
                             if arrBrowsersLowerCasedNames.contains(appNameLowercased){
@@ -1298,6 +1346,10 @@ func checkAppFromAiWithNewIntention(appName:String, intentionForThisApp:String, 
                 if let dProbability = dic?.value(forKey: "allowed_probability") as? Double{
                     addLog(text: "checked checkAppFromAiWithNewIntention:- \(appName), dProbability:\(dProbability)")
                     addEntryInfocusAlignmentScoreCsv(url: appNameLowercased, tabTitle: "", focusMode: currentRunningFocusModeName, intention: whatToAchieveInFocusBlock, aiReason: reason, allowedProbability: "\(dProbability)", totalScore: "")
+                    
+                    let suggested_task = dic?.value(forKey: "suggested_task") as? String
+                    let suggested_task_id = dic?.value(forKey: "suggested_task_id") as? String
+                    
                     let currentTaskName = currentTaskInToDoPlayer ?? ""
                     addEntryInFocusAIDecisionsCsv(url: appName, domain: "", tabTitle: "", score: "\(dProbability)", intention: whatToAchieveInFocusBlock, aiReason: reason, currentTaskName: currentTaskName, additionalUserJustification: intentionForThisApp)
                     if !arrBrowsersLowerCasedNames.contains(appNameLowercased){// exclude browsers from Alignment Score
@@ -1308,9 +1360,18 @@ func checkAppFromAiWithNewIntention(appName:String, intentionForThisApp:String, 
                             }
                             oldData["probability"] = dProbability
                             oldData["reason"] = reason
+                            if let suggested_task = suggested_task, let suggested_task_id = suggested_task_id{
+                                oldData["suggested_task"] = suggested_task
+                                oldData["suggested_task_id"] = suggested_task_id
+                            }
                             dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[appNameLowercased] = oldData
                         }else{
                             dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[appNameLowercased] = ["probability":dProbability, "isVisibleApp":true, "totalSeconds":0, "startedTime":Date(), "reason":reason]
+                            
+                            if let suggested_task = suggested_task, let suggested_task_id = suggested_task_id{
+                                dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[appNameLowercased]?["suggested_task"] = suggested_task
+                                dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[appNameLowercased]?["suggested_task_id"] = suggested_task_id
+                            }
                         }
                     }
                     dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus[appNameLowercased]?["reason"] = reason
@@ -1574,6 +1635,7 @@ func updateFocusModeIntention(intention:String){
 func updateFocusModeTask(taskString:String){
     focusModeTaskString = taskString
     taskCreatedByBlockPopup = ""
+    getArrayOfTaskForApi()
     if let currentString = getCurrentTaskInFocusMode(){
         if currentPlayingTaskString != currentString{
             currentPlayingTaskString = currentString
@@ -1609,6 +1671,28 @@ func getFocusModeTaskString()->String{
         }
     }
     return ""
+}
+
+func getArrayOfTaskForApi(){//at start of focus mode we get array of taks from api so we do not need to call it again and again when showing on popup block v2.48.451
+    var arrTasks = [[String: Any]]()
+    if !focusModeTaskStringIsEmpty(){
+        if let data = focusModeTaskString.data(using: String.Encoding.utf8) {
+            do {
+                let jsonResult:[[String: Any]] = try (JSONSerialization.jsonObject(with: data, options: []) as? [[String: Any]] ?? [])
+                print(jsonResult)
+//                var taskString = ""
+                for i in 0..<jsonResult.count{
+                    let task = jsonResult[i]
+                    let title = task["title"] as? String ?? ""
+                    let id = task["id"] as? String ?? ""
+                    arrTasks.append(["task_name":title, "task_id":id])
+                }
+            }catch{
+                print(error)
+            }
+        }
+    }
+    arrCurrentFocusTasks = arrTasks
 }
 
 func getStatusTextForTask(status:String)-> String{
@@ -1901,7 +1985,7 @@ func focusTryToBlockUnwantedUrl(script: String, url:String, browser: BROWSER?, t
                 executeScript(script: script)
             }else{
                 exitFullScreen(runningApp:runningApp)
-                showPopupBlockConfirmWindow(blockedAppName: "", currentApp: nil, url:url, script:script, isBlockApp:false, browser: browser,tabTitle: tabTitle, fullUrl:fullUrl, aiBlockReason: nil, isTimeOut:false, isBlockByAi: false, scoreForThisSiteApp: nil, payload: nil, isBrowser:false)
+                showPopupBlockConfirmWindow(blockedAppName: "", currentApp: nil, url:url, script:script, isBlockApp:false, browser: browser,tabTitle: tabTitle, fullUrl:fullUrl, aiBlockReason: nil, isTimeOut:false, isBlockByAi: false, scoreForThisSiteApp: nil, payload: nil, isBrowser:false, suggestedTask: nil, suggestedTaskId: nil)
             }
         }
     }
@@ -1958,7 +2042,7 @@ func focusTryToBlockUnwantedApp(runningApp: NSRunningApplication, appName:String
         if SettingsManagerObject.isAIBlockingEnabled(){
             tryCheckAppFromAi(appName: appName, runningApp: runningApp)
         }else{
-            showPopupBlockConfirmWindow(blockedAppName: appName, currentApp: runningApp, url:"", script:"", isBlockApp:true, browser: nil, tabTitle: nil, fullUrl:"", aiBlockReason: nil, isTimeOut:false, isBlockByAi: false, scoreForThisSiteApp: nil, payload: nil, isBrowser:false)
+            showPopupBlockConfirmWindow(blockedAppName: appName, currentApp: runningApp, url:"", script:"", isBlockApp:true, browser: nil, tabTitle: nil, fullUrl:"", aiBlockReason: nil, isTimeOut:false, isBlockByAi: false, scoreForThisSiteApp: nil, payload: nil, isBrowser:false, suggestedTask: nil, suggestedTaskId: nil)
         }
     }
     //    }else{

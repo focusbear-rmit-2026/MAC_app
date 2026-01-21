@@ -39,6 +39,7 @@ class popUpSaveThisTaskForLaterVc: NSViewController {
         }
         taskNameString = taskNameString.replacingOccurrences(of: "<URL>", with: url)
         textView.string = taskNameString
+        textView.window?.makeFirstResponder(textView)
     }// Task title
     
     @IBAction func btnYesSaveClicked(_ sender: Any) {

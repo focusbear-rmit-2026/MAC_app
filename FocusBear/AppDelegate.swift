@@ -270,6 +270,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             options.enableAutoSessionTracking = false
             options.sendDefaultPii = true // Enables sending personally identifiable information
         }
+        //SentrySDK.addBreadcrumb(Breadcrumb(level: Se, category: <#T##String#>))
         
         //doing this because if app is started after quit by user then  helper app will know that main app is restarted
         //        getTransparentWindowObject().showWindow(nil)
@@ -8114,6 +8115,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         }
         menuViewControllerObj?.showFocusModeCountDownIfNeeded()
         currentFocusAlignmentScore = 100
+        getArrayOfTaskForApi()
     }
     
     

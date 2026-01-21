@@ -10,6 +10,7 @@ import Cocoa
 
 class focusModeStateVc: NSViewController {
     
+    @IBOutlet weak var lblNotification: NSTextField!
     @IBOutlet weak var loader: NSProgressIndicator!
     @IBOutlet weak var lblGettingTasks: NSTextField!
     @IBOutlet weak var boxEditFocusMode: NSBox!
@@ -37,6 +38,14 @@ class focusModeStateVc: NSViewController {
         btnDecreaseDuration.customToolTip = "Decrease duration by 1 minute"
         
         lblGettingTasks.stringValue = "Fetching tasks..."
+        
+        
+        lblNotification.stringValue = "Focus goal cannot be changed in super strict mode"
+        if let popUpAddNewFocusGoalVcInfo = configjson.value(forKey: "popUpAddNewFocusGoalVcInfo") as? NSDictionary {
+            lblNotification.stringValue = popUpAddNewFocusGoalVcInfo.value(forKey: "cannotChangeIntentionInSuperStrictText") as? String ?? lblNotification.stringValue
+        }
+        
+        
         
         lblTitleFocusModeTime.stringValue = "Focus mode ends in:"
         if let common = configjson.value(forKey: "common") as? NSDictionary{
@@ -96,6 +105,23 @@ class focusModeStateVc: NSViewController {
                 boxEditFocusMode.isHidden = false
                 let currentTaskInToDoPlayer = getCurrentTaskInFocusMode() ?? ""
                 textView.string = whatToAchieveInFocusBlock
+                
+
+                if currentFocusModeStrictness == ._SUPER_STRICT_ {
+                    textView.isEditable = false
+                    textView.backgroundColor = NSColor.windowBackgroundColor
+                    var notificationText = "Focus goal cannot be changed in super strict mode"
+                    if let popUpAddNewFocusGoalVcInfo = configjson.value(forKey: "popUpAddNewFocusGoalVcInfo") as? NSDictionary {
+                        notificationText = popUpAddNewFocusGoalVcInfo.value(forKey: "cannotChangeIntentionInSuperStrictText") as? String ?? notificationText
+                    }
+                    lblNotification.isHidden = false
+                } else {
+                    textView.isEditable = true
+                    textView.backgroundColor = NSColor.textBackgroundColor
+                    lblNotification.isHidden = true
+                }
+
+                
                 loader.startAnimation(self)
                 comboBoxTask.isEnabled = false
                 comboBoxTask.stringValue = ""

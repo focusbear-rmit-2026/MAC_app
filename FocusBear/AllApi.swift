@@ -3836,6 +3836,7 @@ class AllApi:NSObject {
                     if currentLanguageCode == "es"{
                         language = "spanish"
                     }
+                    
                     var json: [String: Any] = [
                         "url": url,
                         "tab_title": tab_title,
@@ -3843,7 +3844,8 @@ class AllApi:NSObject {
                         "focus_mode": focus_mode,
                         "language": language,
                         "intention": intention,
-                        "lastFiveJustificationsInThisFocusSession": other_explanations_including_domains
+                        "lastFiveJustificationsInThisFocusSession": other_explanations_including_domains,
+                        "current_tasks": arrCurrentFocusTasks 
                     ]
                     if let currentTask = currentTaskInToDoPlayer{
                         json["currentTaskInToDoPlayer"] = currentTask
@@ -4046,7 +4048,8 @@ class AllApi:NSObject {
                         "intention": intention,
                         "appName": appName,
                         "language": language,
-                        "lastFiveJustificationsInThisFocusSession": other_explanations_including_apps
+                        "lastFiveJustificationsInThisFocusSession": other_explanations_including_apps,
+                        "current_tasks": arrCurrentFocusTasks
                     ]
                     if let currentTask = currentTaskInToDoPlayer{
                         json["currentTaskInToDoPlayer"] = currentTask
