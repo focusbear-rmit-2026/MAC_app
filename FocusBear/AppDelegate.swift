@@ -9350,6 +9350,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     
     func tryToBlockAlwaysBlockedApp(runningApp: NSRunningApplication, appName:String)->Bool{
         print("tryToBlockAlwaysBlockedApp*************")
+        
+        for path in SettingsManagerObject.arrAlwaysAllowedApps{
+            let url = URL(fileURLWithPath: path)
+            if url.deletingPathExtension().lastPathComponent.lowercased() == appName.lowercased(){
+                print("App \(appName) is in Always Allowed list, skipping block")
+                return false
+            }
+        }
+        
         exitFullScreen(runningApp:runningApp)
         
         var needToBlockImmediately = SettingsManagerObject.immediatelyBlockDistractingApps
