@@ -1103,6 +1103,12 @@ class SettingsManager:NSObject{
                 UserDefaults.standard.set(arrBlockedApps, forKey: kUserdefaultsArrBlockedApps)
             }
             
+            if let arr = UserDefaults.standard.object(forKey: kUserdefaultsArrAlwaysAllowedApps) as? [String]{
+                arrAlwaysAllowedApps = arr
+            }else{
+                UserDefaults.standard.set(arrAlwaysAllowedApps, forKey: kUserdefaultsArrAlwaysAllowedApps)
+            }
+            
             if isSettingsBlank{
                 //                if let blockedUrls = UserDefaults.standard.object(forKey: kUserdefaultsBlockedUrlsFromOnboarding) as? [[String:Any]]{
                 //                    arrBlockedUrls.removeAll()

@@ -8202,6 +8202,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                 focusModeCloseCurrentAppForAlignmentScore()
                                 return;
                             }
+                            
+                            for path in SettingsManagerObject.arrAlwaysAllowedApps{
+                                let url = URL(fileURLWithPath: path)
+                                if url.deletingPathExtension().lastPathComponent.lowercased() == nameLowercased{
+                                    setFocusBearIconToNormal()
+                                    focusModeCloseCurrentAppForAlignmentScore()
+                                    return;
+                                }
+                            }
                             tabMatricsObject.currentAppTabCount = 1
                             for path in blockAppsPath{
                                 let url = URL(fileURLWithPath: path)
