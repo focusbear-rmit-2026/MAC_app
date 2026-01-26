@@ -27,6 +27,7 @@ class strictnessVc: NSViewController {
     let browserTabLimiterItemVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingListItemVc")) as? settingListItemVc
     let blockedURLsItemVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingListItemVc")) as? settingListItemVc
     let blockedAppsItemVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingListItemVc")) as? settingListItemVc
+    let alwaysAllowedAppsItemVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingListItemVc")) as? settingListItemVc
     let customBlockingVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingListItemVc")) as? settingListItemVc
     
     let blockListItemVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingListItemVc")) as? settingListItemVc
@@ -51,6 +52,7 @@ class strictnessVc: NSViewController {
         var tabLimiterSettingTitle = "Browser tab limiter"
         var blockedUrlsSettingTitle = "Super Distracting Sites"
         var blockedAppsSettingTitle = "Super Distracting Apps"
+        var alwaysAllowedAppsSettingTitle = "Always Allowed Apps"
         var titleBlockLists = "Block Lists"
         if let settingsNew = configjson.value(forKey: "settingsNew") as? NSDictionary{
             frictionSettingTitle = settingsNew.value(forKey: "frictionSettingTitle") as? String ?? frictionSettingTitle
@@ -74,11 +76,15 @@ class strictnessVc: NSViewController {
         if let blockedAppsViewInfo = configjson.value(forKey: "blockedAppsViewInfo") as? NSDictionary{
             blockedAppsSettingTitle = blockedAppsViewInfo.value(forKey: "title") as? String ?? blockedAppsSettingTitle
         }
+        if let alwaysAllowedAppsViewInfo = configjson.value(forKey: "alwaysAllowedAppsViewInfo") as? NSDictionary{
+            alwaysAllowedAppsSettingTitle = alwaysAllowedAppsViewInfo.value(forKey: "title") as? String ?? alwaysAllowedAppsSettingTitle
+        }
         
         var strictness_Friction = "Change how hard it is to unlock Focus Bear."
         var strictness_Password = "If you find you keep cheating, you can have someone else set a password to prevent you from easily unlocking Focus Bear."
         var strictness_DistractingSites = "Stay focused! Designate specific sites as 'Super Distracting' to proactively prevent access during crucial work periods, ensuring an undisturbed and concentrated workflow."
         var strictness_DistractingApps = "Minimize app distractions! Label select apps as 'Super Distracting' to strategically enhance your concentration, creating a refined digital environment tailored to your productivity needs."
+        var strictness_AlwaysAllowedApps = "Apps added here will never be blocked, regardless of focus mode, blocking schedules, or strictness settings. Use this for essential apps that you always need access to."
         var strictness_Block_Lists = "Use Block Lists to stay focused on a certain type of work. Start a focus session from the focus bear menu or use a blocking schedule."
         var strictness_Blocking_Schedules = "Create your own schedules to automatically block distractions. Pick the days and times when distractions should be blocked. Stay focused without needing to start blocking manually."
         
@@ -87,6 +93,7 @@ class strictnessVc: NSViewController {
             strictness_Password = tooltips.value(forKey: "strictness_Password") as? String ?? strictness_Password
             strictness_DistractingSites = tooltips.value(forKey: "strictness_DistractingSites") as? String ?? strictness_DistractingSites
             strictness_DistractingApps = tooltips.value(forKey: "strictness_DistractingApps") as? String ?? strictness_DistractingApps
+            strictness_AlwaysAllowedApps = tooltips.value(forKey: "strictness_AlwaysAllowedApps") as? String ?? strictness_AlwaysAllowedApps
             strictness_Block_Lists = tooltips.value(forKey: "strictness_Block_Lists") as? String ?? strictness_Block_Lists
             strictness_Blocking_Schedules = tooltips.value(forKey: "strictness_Blocking_Schedules") as? String ?? strictness_Blocking_Schedules
         }
@@ -168,6 +175,17 @@ class strictnessVc: NSViewController {
         blockedAppsItemVcObj?.delegate = self
         blockedAppsItemVcObj?.toolTip = strictness_DistractingApps
 
+        stackView.addView(alwaysAllowedAppsItemVcObj!.view, in: .bottom)
+        alwaysAllowedAppsItemVcObj?.lblTitle.stringValue = alwaysAllowedAppsSettingTitle
+        if #available(macOS 11.0, *) {
+            alwaysAllowedAppsItemVcObj?.imgViewIcon.image = NSImage(systemSymbolName: "checkmark.shield", accessibilityDescription: nil)
+        } else {
+            alwaysAllowedAppsItemVcObj?.imgViewIcon.image = NSImage(named: NSImage.statusAvailableName)
+        }
+        alwaysAllowedAppsItemVcObj?.lblDescription.isHidden = true
+        alwaysAllowedAppsItemVcObj?.delegate = self
+        alwaysAllowedAppsItemVcObj?.toolTip = strictness_AlwaysAllowedApps
+
         stackView.addView(browserTabLimiterItemVcObj!.view, in: .bottom)
         browserTabLimiterItemVcObj?.lblTitle.stringValue = tabLimiterSettingTitle
         browserTabLimiterItemVcObj?.imgViewIcon.image = NSImage(named: NSImage.touchBarOpenInBrowserTemplateName)
@@ -181,12 +199,14 @@ class strictnessVc: NSViewController {
         arrForSearchFromSettings.append(["title": browserTabLimiterItemVcObj!.lblTitle.stringValue, "tabId": idStrictness, "object": browserTabLimiterItemVcObj!.bgBox as Any])
         arrForSearchFromSettings.append(["title": blockedURLsItemVcObj!.lblTitle.stringValue, "tabId": idStrictness, "object": blockedURLsItemVcObj!.bgBox as Any])
         arrForSearchFromSettings.append(["title": blockedAppsItemVcObj!.lblTitle.stringValue, "tabId": idStrictness, "object": blockedAppsItemVcObj!.bgBox as Any])
+        arrForSearchFromSettings.append(["title": alwaysAllowedAppsItemVcObj!.lblTitle.stringValue, "tabId": idStrictness, "object": alwaysAllowedAppsItemVcObj!.bgBox as Any])
         arrForSearchFromSettings.append(["title": customBlockingVcObj!.lblTitle.stringValue, "tabId": idTabStrictness, "object": customBlockingVcObj!.bgBox as Any])
         arrForSearchFromSettings.append(["title": blockListItemVcObj!.lblTitle.stringValue, "tabId": idStrictness, "object": blockListItemVcObj!.bgBox as Any])
         
         arrForSearchFromSimpleModeSettings.append(["title": browserTabLimiterItemVcObj!.lblTitle.stringValue, "tabId": idStrictness, "object": browserTabLimiterItemVcObj!.bgBox as Any])
         arrForSearchFromSimpleModeSettings.append(["title": blockedURLsItemVcObj!.lblTitle.stringValue, "tabId": idStrictness, "object": blockedURLsItemVcObj!.bgBox as Any])
         arrForSearchFromSimpleModeSettings.append(["title": blockedAppsItemVcObj!.lblTitle.stringValue, "tabId": idStrictness, "object": blockedAppsItemVcObj!.bgBox as Any])
+        arrForSearchFromSimpleModeSettings.append(["title": alwaysAllowedAppsItemVcObj!.lblTitle.stringValue, "tabId": idStrictness, "object": alwaysAllowedAppsItemVcObj!.bgBox as Any])
         arrForSearchFromSimpleModeSettings.append(["title": customBlockingVcObj!.lblTitle.stringValue, "tabId": idStrictness, "object": customBlockingVcObj!.bgBox as Any])
         arrForSearchFromSimpleModeSettings.append(["title": blockListItemVcObj!.lblTitle.stringValue, "tabId": idStrictness, "object": blockListItemVcObj!.bgBox as Any])
     }
@@ -291,6 +311,14 @@ extension strictnessVc: SettingListItemDelegate{
             }
             //----------------------------------------------------//
             settingsContainerVcObj?.showBlockedAppsView()
+        }else if object == alwaysAllowedAppsItemVcObj{
+            // for simple mode if strictness tab is selected
+            if leftMenuVcObj?.boxBlocks.isSelected ?? false{
+                tabStrictnessContainerVcObj?.showAlwaysAllowedAppsView()
+                return;
+            }
+            //----------------------------------------------------//
+            settingsContainerVcObj?.showAlwaysAllowedAppsView()
         }
         else if object == customBlockingVcObj{
             tabStrictnessContainerVcObj?.showCustomBlockingSchedulesView()
