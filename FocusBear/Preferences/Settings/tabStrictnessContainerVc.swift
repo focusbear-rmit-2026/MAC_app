@@ -78,6 +78,12 @@ class tabStrictnessContainerVc: NSViewController {
         self.containerView.addConstraints(subView: getBlockedAppsVcObject().view)
     }
     
+    func showAlwaysAllowedAppsView(){
+        removeSubViews()
+        self.containerView.addSubview(getAlwaysAllowedAppsVcObject().view)
+        self.containerView.addConstraints(subView: getAlwaysAllowedAppsVcObject().view)
+    }
+    
 //    func showBlockingScheduleView(){
 //        removeSubViews()
 //        self.containerView.addSubview(getBlockingScheduleVcObject().view)

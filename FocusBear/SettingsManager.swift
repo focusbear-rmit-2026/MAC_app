@@ -56,6 +56,9 @@ class SettingsManager:NSObject{
     // **blocked urls**
     var arrBlockedUrls = [String]()
     var arrBlockedApps = [String]()
+    
+    // **always allowed apps (global whitelist)**
+    var arrAlwaysAllowedApps = [String]()
     var isOfficeModeEnabled = true
     var kIsReducedMotion = false
     var isMeetingDetectionEnabled = true
@@ -105,6 +108,7 @@ class SettingsManager:NSObject{
     
     var kUserdefaultsArrBlockedUrls = "kUserdefaultsArrBlockedUrls"
     var kUserdefaultsArrBlockedApps = "kUserdefaultsArrBlockedApps"
+    var kUserdefaultsArrAlwaysAllowedApps = "kUserdefaultsArrAlwaysAllowedApps"
     
     var kUserdefaultsOfficeModeEnabled = "kUserdefaultsOfficeModeEnabled"
     var kUserdefaultsReducedMotion = "kUserdefaultsReducedMotion"
@@ -218,6 +222,7 @@ class SettingsManager:NSObject{
         
         kUserdefaultsArrBlockedUrls = kUserdefaultsArrBlockedUrls + (appdelegate?.user?.userId ?? "")
         kUserdefaultsArrBlockedApps = kUserdefaultsArrBlockedApps + (appdelegate?.user?.userId ?? "")
+        kUserdefaultsArrAlwaysAllowedApps = kUserdefaultsArrAlwaysAllowedApps + (appdelegate?.user?.userId ?? "")
         kUserdefaultsOfficeModeEnabled = kUserdefaultsOfficeModeEnabled + (appdelegate?.user?.userId ?? "")
         kUserdefaultsReducedMotion = kUserdefaultsReducedMotion + (appdelegate?.user?.userId ?? "")
         kUserdefaultsMeetingDetectionEnabled = kUserdefaultsMeetingDetectionEnabled + (appdelegate?.user?.userId ?? "")
@@ -400,6 +405,7 @@ class SettingsManager:NSObject{
                 
                 let kArrBlockedUrls = "kArrBlockedUrls"
                 let kArrBlockedApps = "kArrBlockedApps"
+                let kArrAlwaysAllowedApps = "kArrAlwaysAllowedApps"
                 
                 let kCuddlyModeEnabled = "kCuddlyModeEnabled"
                 let kIsGeekModeEnabled = "kIsGeekModeEnabled"
@@ -587,6 +593,9 @@ class SettingsManager:NSObject{
                 }
                 if let val = settings.value(forKey: kArrBlockedApps) as? [String]{
                     UserDefaults.standard.set(val, forKey: self.kUserdefaultsArrBlockedApps)
+                }
+                if let val = settings.value(forKey: kArrAlwaysAllowedApps) as? [String]{
+                    UserDefaults.standard.set(val, forKey: self.kUserdefaultsArrAlwaysAllowedApps)
                 }
                 addLog(text: "Local AppPassword")
                 if let val = settings.value(forKey: kAppPassword) as? String{
@@ -1094,6 +1103,12 @@ class SettingsManager:NSObject{
                 UserDefaults.standard.set(arrBlockedApps, forKey: kUserdefaultsArrBlockedApps)
             }
             
+            if let arr = UserDefaults.standard.object(forKey: kUserdefaultsArrAlwaysAllowedApps) as? [String]{
+                arrAlwaysAllowedApps = arr
+            }else{
+                UserDefaults.standard.set(arrAlwaysAllowedApps, forKey: kUserdefaultsArrAlwaysAllowedApps)
+            }
+            
             if isSettingsBlank{
                 //                if let blockedUrls = UserDefaults.standard.object(forKey: kUserdefaultsBlockedUrlsFromOnboarding) as? [[String:Any]]{
                 //                    arrBlockedUrls.removeAll()
@@ -1168,6 +1183,7 @@ class SettingsManager:NSObject{
         let kAppPassword = "kAppPassword"
         let kArrBlockedUrls = "kArrBlockedUrls"
         let kArrBlockedApps = "kArrBlockedApps"
+        let kArrAlwaysAllowedApps = "kArrAlwaysAllowedApps"
         let kCuddlyModeEnabled = "kCuddlyModeEnabled"
         let kIsGeekModeEnabled = "kIsGeekModeEnabled"
         let kImmediatelyBlockDistractingSites = "kImmediatelyBlockDistractingSites"
@@ -1225,6 +1241,7 @@ class SettingsManager:NSObject{
             kHardcorePomodoroArrDays:UserDefaults.standard.object(forKey: kUserdefaultsHardcorePomodoroArrDays) as? [String] ?? [],
             kArrBlockedUrls:arrBlockedUrls,
             kArrBlockedApps:arrBlockedApps,
+            kArrAlwaysAllowedApps:arrAlwaysAllowedApps,
             kCuddlyModeEnabled:isCuddlyModeEnabled,
             kIsGeekModeEnabled:isGeekModeEnabled,
             kImmediatelyBlockDistractingSites:immediatelyBlockDistractingSites,

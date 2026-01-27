@@ -478,6 +478,15 @@ func getBlockedAppsVcObject()->blockedAppsVc{
 }
 //
 
+var alwaysAllowedAppsVcObj:alwaysAllowedAppsVc?
+func getAlwaysAllowedAppsVcObject()->alwaysAllowedAppsVc{
+    if alwaysAllowedAppsVcObj == nil{
+        alwaysAllowedAppsVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("alwaysAllowedAppsVc")) as? alwaysAllowedAppsVc
+    }
+    return alwaysAllowedAppsVcObj!
+}
+//
+
 //var blockingScheduleVcObj:blockingScheduleVc?
 //func getBlockingScheduleVcObject()->blockingScheduleVc{
 //    if blockingScheduleVcObj == nil{

@@ -20,6 +20,7 @@ var idFocusBearMode = "focusbearmode"
 var idBrowserTabLimiter = "browsertablimiter"
 var idBlockedUrls = "blockedurls"
 var idBlockedApps = "blockedapps"
+var idAlwaysAllowedApps = "alwaysallowedapps"
 var idMeetings = "meetings"
 var idPrivacy = "privacy"
 var idMicroBreaks = "microbreaks"
@@ -294,6 +295,11 @@ class settingsSideBarVc: NSViewController {
             if id == idBlockedApps{
                 tblView.selectRowIndexes(IndexSet(integer: 0), byExtendingSelection: false)
                 settingsContainerVcObj?.showBlockedAppsView()
+                return;
+            }
+            if id == idAlwaysAllowedApps{
+                tblView.selectRowIndexes(IndexSet(integer: 0), byExtendingSelection: false)
+                settingsContainerVcObj?.showAlwaysAllowedAppsView()
                 return;
             }
             

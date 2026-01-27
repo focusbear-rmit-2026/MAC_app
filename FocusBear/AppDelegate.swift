@@ -8294,6 +8294,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                 focusModeCloseCurrentAppForAlignmentScore()
                                 return;
                             }
+                            
+                            for path in SettingsManagerObject.arrAlwaysAllowedApps{
+                                let url = URL(fileURLWithPath: path)
+                                if url.deletingPathExtension().lastPathComponent.lowercased() == nameLowercased{
+                                    setFocusBearIconToNormal()
+                                    focusModeCloseCurrentAppForAlignmentScore()
+                                    return;
+                                }
+                            }
                             tabMatricsObject.currentAppTabCount = 1
                             for path in blockAppsPath{
                                 let url = URL(fileURLWithPath: path)
@@ -9161,6 +9170,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 if name == selfAppName.lowercased() || name == focusBearTimeTrackerAppName{
                     return;
                 }
+                
+                for path in SettingsManagerObject.arrAlwaysAllowedApps{
+                    let url = URL(fileURLWithPath: path)
+                    if url.deletingPathExtension().lastPathComponent.lowercased() == name{
+                        return;
+                    }
+                }
                 let blockAppsPath = currentRunningFocusType["blockAppsArray"] as? [String] ?? []
                 for path in blockAppsPath{
                     let url = URL(fileURLWithPath: path)
@@ -9430,6 +9446,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     
     func tryToBlockAlwaysBlockedApp(runningApp: NSRunningApplication, appName:String)->Bool{
         print("tryToBlockAlwaysBlockedApp*************")
+        
+        for path in SettingsManagerObject.arrAlwaysAllowedApps{
+            let url = URL(fileURLWithPath: path)
+            if url.deletingPathExtension().lastPathComponent.lowercased() == appName.lowercased(){
+                print("App \(appName) is in Always Allowed list, skipping block")
+                return false
+            }
+        }
+        
         exitFullScreen(runningApp:runningApp)
         
         var needToBlockImmediately = SettingsManagerObject.immediatelyBlockDistractingApps
