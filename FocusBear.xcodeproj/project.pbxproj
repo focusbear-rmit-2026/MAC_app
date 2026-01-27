@@ -73,6 +73,7 @@
 		274E0F4C28902E29000234A3 /* Auth0.plist in Resources */ = {isa = PBXBuildFile; fileRef = 274E0F4B28902E28000234A3 /* Auth0.plist */; };
 		274E671628951DDD0030163F /* AllApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = 274E671528951DDC0030163F /* AllApi.swift */; };
 		8F02AF422A751A5200BA6536 /* blockedAppsVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F02AF412A751A5200BA6536 /* blockedAppsVc.swift */; };
+AAW00002 /* alwaysAllowedAppsVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAW00001 /* alwaysAllowedAppsVc.swift */; };
 		8F0419442C353B9C00481ACD /* breakSurveyVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F0419432C353B9C00481ACD /* breakSurveyVc.swift */; };
 		8F0419462C353D4100481ACD /* getViewControllersObject.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F0419452C353D4100481ACD /* getViewControllersObject.swift */; };
 		8F0419482C353DCA00481ACD /* allUserdefaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F0419472C353DCA00481ACD /* allUserdefaults.swift */; };
@@ -348,7 +349,10 @@
 		8FD1053F27EEE44100B7728E /* Focus_BearTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FD1053E27EEE44100B7728E /* Focus_BearTests.swift */; };
 		8FD1054727EF1A3B00B7728E /* urlValidation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FD1054627EF1A3B00B7728E /* urlValidation.swift */; };
 		8FD1054B27EF221800B7728E /* validationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FD1054A27EF221800B7728E /* validationTest.swift */; };
-		8FD180312944791C009062E1 /* preloadFocusModeAppsVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FD180302944791C009062E1 /* preloadFocusModeAppsVc.swift */; };
+		ABH00001 /* AppBlockingHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABH00002 /* AppBlockingHelper.swift */; };
+		ABH00003 /* AppBlockingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABH00004 /* AppBlockingTests.swift */; };
+		UBT00001 /* URLBlockingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = UBT00002 /* URLBlockingTests.swift */; };
+		8FD180312944791C009062E1 /* preloadFocusModeAppsVc.swift in Sources */= {isa = PBXBuildFile; fileRef = 8FD180302944791C009062E1 /* preloadFocusModeAppsVc.swift */; };
 		8FD86E1C2A54303A004F6761 /* unusedCode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FD86E1B2A54303A004F6761 /* unusedCode.swift */; };
 		8FD86E1E2A54376C004F6761 /* todoNotes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FD86E1D2A54376C004F6761 /* todoNotes.swift */; };
 		8FD91CAA2A0E1A51001606FE /* popUpCheckListVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FD91CA92A0E1A51001606FE /* popUpCheckListVc.swift */; };
@@ -479,6 +483,7 @@
 		274E671528951DDC0030163F /* AllApi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllApi.swift; sourceTree = "<group>"; };
 		889FCE3E1080DC22C97AB6D8 /* Pods-Focus Bear.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Focus Bear.debug.xcconfig"; path = "Target Support Files/Pods-Focus Bear/Pods-Focus Bear.debug.xcconfig"; sourceTree = "<group>"; };
 		8F02AF412A751A5200BA6536 /* blockedAppsVc.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = blockedAppsVc.swift; sourceTree = "<group>"; };
+AAW00001 /* alwaysAllowedAppsVc.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = alwaysAllowedAppsVc.swift; sourceTree = "<group>"; };
 		8F0419432C353B9C00481ACD /* breakSurveyVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = breakSurveyVc.swift; sourceTree = "<group>"; };
 		8F0419452C353D4100481ACD /* getViewControllersObject.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = getViewControllersObject.swift; sourceTree = "<group>"; };
 		8F0419472C353DCA00481ACD /* allUserdefaults.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = allUserdefaults.swift; sourceTree = "<group>"; };
@@ -770,7 +775,10 @@
 		8FD1054027EEE44100B7728E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		8FD1054627EF1A3B00B7728E /* urlValidation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = urlValidation.swift; sourceTree = "<group>"; };
 		8FD1054A27EF221800B7728E /* validationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = validationTest.swift; sourceTree = "<group>"; };
-		8FD180302944791C009062E1 /* preloadFocusModeAppsVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = preloadFocusModeAppsVc.swift; sourceTree = "<group>"; };
+		ABH00002 /* AppBlockingHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBlockingHelper.swift; sourceTree = "<group>"; };
+		ABH00004 /* AppBlockingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBlockingTests.swift; sourceTree = "<group>"; };
+		UBT00002 /* URLBlockingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLBlockingTests.swift; sourceTree = "<group>"; };
+		8FD180302944791C009062E1 /* preloadFocusModeAppsVc.swift */= {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = preloadFocusModeAppsVc.swift; sourceTree = "<group>"; };
 		8FD86E1B2A54303A004F6761 /* unusedCode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = unusedCode.swift; sourceTree = "<group>"; };
 		8FD86E1D2A54376C004F6761 /* todoNotes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = todoNotes.swift; sourceTree = "<group>"; };
 		8FD91CA92A0E1A51001606FE /* popUpCheckListVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = popUpCheckListVc.swift; sourceTree = "<group>"; };
@@ -964,6 +972,7 @@
 				8F0A18582A8E545300AFA623 /* browserTabLimiterVc.swift */,
 				8F51EFB627E0741700EFF0A8 /* blockedUrlsVc.swift */,
 				8F02AF412A751A5200BA6536 /* blockedAppsVc.swift */,
+				AAW00001 /* alwaysAllowedAppsVc.swift */,
 				8F7C2BB62B4FBE9F0003824A /* changeFrictionLevelVc.swift */,
 				8F7C2BB82B50026A0003824A /* frictionSetPasswordVc.swift */,
 			);
@@ -1410,6 +1419,7 @@
 				8F7DA75D2B1B412000B2E1CC /* pusherEvents.swift */,
 				8FD86E1B2A54303A004F6761 /* unusedCode.swift */,
 				8FD1054627EF1A3B00B7728E /* urlValidation.swift */,
+				ABH00002 /* AppBlockingHelper.swift */,
 				8FD86E1D2A54376C004F6761 /* todoNotes.swift */,
 				8F1E189F28EAF3FF00367413 /* macInfo.swift */,
 				13B74D5A2E87AA6B00556C79 /* dropView.swift */,
@@ -1543,6 +1553,8 @@
 			children = (
 				8FD1053E27EEE44100B7728E /* Focus_BearTests.swift */,
 				8FD1054A27EF221800B7728E /* validationTest.swift */,
+				ABH00004 /* AppBlockingTests.swift */,
+				UBT00002 /* URLBlockingTests.swift */,
 				8FD1054027EEE44100B7728E /* Info.plist */,
 			);
 			path = FocusBearTests;
@@ -2181,6 +2193,8 @@
 				8F0A184E2A8DE76100AFA623 /* accessibilityVc.swift in Sources */,
 				8F94EF892836094400355E66 /* rememberNextHabitVc.swift in Sources */,
 				8F02AF422A751A5200BA6536 /* blockedAppsVc.swift in Sources */,
+				AAW00002 /* alwaysAllowedAppsVc.swift in Sources */,
+				ABH00001 /* AppBlockingHelper.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2190,6 +2204,8 @@
 			files = (
 				8FD1054B27EF221800B7728E /* validationTest.swift in Sources */,
 				8FD1053F27EEE44100B7728E /* Focus_BearTests.swift in Sources */,
+				ABH00003 /* AppBlockingTests.swift in Sources */,
+				UBT00001 /* URLBlockingTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
