@@ -19,6 +19,7 @@ class customRoutineStateVc: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
+        lblTitle.stringValue = ""// v 2.28.453
         btnStartCustomRoutine.title = "Begin On-Demand Routine"
         if let habitsStateVcInfo = configjson.value(forKey: "habitsStateVcInfo") as? NSDictionary{
             btnStartCustomRoutine.title = habitsStateVcInfo.value(forKey: "buttonBeginCustomRoutine") as? String ?? btnStartCustomRoutine.title
@@ -83,6 +84,41 @@ class customRoutineStateVc: NSViewController {
                     lblTitle.stringValue = "Shutoff aborted. Your computer is now accessible again."
                     if let habitsStateVcInfo = configjson.value(forKey: "habitsStateVcInfo") as? NSDictionary{
                         lblTitle.stringValue = habitsStateVcInfo.value(forKey: "shutoffAbortedText") as? String ?? lblTitle.stringValue
+                    }
+                }
+            }
+            
+            if let date = UserDefaults.standard.object(forKey: kUserdefaultsEveningHabitsShowedTillDate) as? Date{
+                if Date().compare(date) == .orderedAscending {//"Evening habits already shown for today
+                    if isShutOffTimeGoing() && !isCutOffTimeGoing(){
+                        if let cutOffTime = cutOffTime{
+                            let cutOffdate = Calendar.current.date(bySettingHour: cutOffTime.hour, minute: cutOffTime.minute, second: cutOffTime.second, of: Date())!
+                            
+                            var timeFormat = "h:mm a"
+                            if let dict = UserDefaults.standard.persistentDomain(forName: "com.apple.menuextra.clock") {
+                                print(dict)
+                                if let isShow24Hour = dict["Show24Hour"] as? Bool {
+                                    if isShow24Hour{
+                                        timeFormat = "H:mm"
+                                    }
+                                }
+                            }
+                            let cutOffDateString = getStringFromDate(date: cutOffdate, dateFormat: timeFormat)
+                            var freeTimeText = "Well done! You've got free time until <CUTOFFTIME>"// v 2.28.453
+                            if let habitsStateVcInfo = configjson.value(forKey: "habitsStateVcInfo") as? NSDictionary{
+                                freeTimeText = habitsStateVcInfo.value(forKey: "freeTimeText") as? String ?? freeTimeText
+                            }
+                            
+                            lblTitle.stringValue = freeTimeText.replacingOccurrences(of: "<CUTOFFTIME>", with: cutOffDateString)
+                        }else{//// v  2.28.453
+                            var setSleepTime = "You do not have sleep time set."
+                            if let habitsStateVcInfo = configjson.value(forKey: "habitsStateVcInfo") as? NSDictionary{
+                                setSleepTime = habitsStateVcInfo.value(forKey: "setSleepTime") as? String ?? setSleepTime
+                            }
+                            
+                            lblTitle.stringValue = setSleepTime
+                        }
+                        
                     }
                 }
             }

@@ -33,8 +33,8 @@ var arrConvinceAiAppsInCurrentFocus = [[String:String]]()
 var arrKeywordsToAllowInFocus = [String]()
 var currentRunningFocusType = [String:Any]()
 
-var dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus = [String:[String:Any]]()
-
+//var dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus = [String:[String:Any]]()
+let dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus = SafeDict()
 
 var lastFocusModeTempInfo:lastFocusTempInfo?
 
@@ -273,9 +273,12 @@ var lastFocusAlignmentShownScore:Double = 0
 func calculateFocusAlignmentScore(){
     var totalAlignmentScore:Double = 0
     var totalSeconds = 0
-    let keys = dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus.keys
+//    let snapshot = dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus
+    let snapshot = dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus.snapshot
+    let keys = Array(snapshot.keys)
+    //let keys = dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus.keys
     for key in keys{
-        if let dictionary = dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[key]{
+        if let dictionary = snapshot[key]{
             var seconds = dictionary["totalSeconds"] as? Int ?? 0
             
             var shouldCalculateSecondsOFCurrentUrl = false
@@ -352,9 +355,11 @@ func getFocusAlignmentScoreFromLastEntry()->Double{
     var totalAlignmentScore:Double = 0
     var totalSeconds = 0
     //    var totalTabActive = 0
-    let keys = dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus.keys
+//    let keys = dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus.keys
+    let snapshot = dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus.snapshot
+    let keys = Array(snapshot.keys)
     for key in keys{
-        if let dictionary = dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[key]{
+        if let dictionary = snapshot[key] {
             let startTime = dictionary["startedTime"] as? Date ?? Date()
             var seconds = dictionary["totalSeconds"] as? Int ?? 0
             let endTime = dictionary["endTime"] as? Date ?? Date()
@@ -2058,3 +2063,63 @@ func focusTryToBlockUnwantedApp(runningApp: NSRunningApplication, appName:String
     //        }
     //    }
 }
+
+
+
+/**
+ THREAD-SAFE DICTIONARY FOR FOCUS MODE ALIGNMENT SCORE
+ 
+ Problem: Multiple threads (timer, UI, AI) accessing same dictionary → random crashes
+ Solution: NSLock serializes access (one thread at a time)
+ Performance: <0.1ms overhead for <100 entries
+ Usage: .snapshot for bulk reads, subscript for single operations
+*/
+
+// safe dict v 2.28.452
+final class SafeDict {
+    private var storage = [String: [String: Any]]()
+    private let lock = NSLock()
+    
+    var snapshot: [String: [String: Any]] {
+        lock.lock()
+        let copy = storage
+        lock.unlock()
+        return copy
+    }
+    
+    subscript(key: String) -> [String: Any]? {
+        get {
+            lock.lock()
+            let value = storage[key]
+            lock.unlock()
+            return value
+        }
+        set {
+            lock.lock()
+            storage[key] = newValue
+            lock.unlock()
+        }
+    }
+    
+    var keys: [String] {
+        lock.lock()
+        let keys = Array(storage.keys)
+        lock.unlock()
+        return keys
+    }
+    
+    func removeAll() {
+        lock.lock()
+        storage.removeAll()
+        lock.unlock()
+    }
+    
+    func removeValue(forKey key: String) {
+        lock.lock()
+        storage.removeValue(forKey: key)
+        lock.unlock()
+    }
+}
+
+
+

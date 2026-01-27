@@ -21,6 +21,7 @@ class habitsStateVc: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
+        lblTitle.stringValue = ""// v 2.28.453
         btnResumeHabits.title = "Resume Habits"
         
         if let habitsStateVcInfo = configjson.value(forKey: "habitsStateVcInfo") as? NSDictionary{
@@ -175,7 +176,7 @@ class habitsStateVc: NSViewController {
             if let date = UserDefaults.standard.object(forKey: kUserdefaultsEveningHabitsShowedTillDate) as? Date{
                 if Date().compare(date) == .orderedAscending {//"Evening habits already shown for today
                     if isShutOffTimeGoing() && !isCutOffTimeGoing(){
-                        if let cutOffTime = cutOffTime{
+                        if let cutOffTime = cutOffTime{// v 2.28.445
                             let cutOffdate = Calendar.current.date(bySettingHour: cutOffTime.hour, minute: cutOffTime.minute, second: cutOffTime.second, of: Date())!
                             
                             var timeFormat = "h:mm a"
@@ -201,6 +202,17 @@ class habitsStateVc: NSViewController {
                             }
                             
                             lblTitle.stringValue = freeTimeText.replacingOccurrences(of: "<CUTOFFTIME>", with: cutOffDateString)
+                        }else{//// v  2.28.453
+                            isFreeTimeBeforeShutoff = true
+                            btnResumeHabits.isHidden = false
+                            var setSleepTime = "You do not have sleep time set."
+                            btnResumeHabits.title = "Set timing"
+                            if let habitsStateVcInfo = configjson.value(forKey: "habitsStateVcInfo") as? NSDictionary{
+                                setSleepTime = habitsStateVcInfo.value(forKey: "setSleepTime") as? String ?? setSleepTime
+                                btnResumeHabits.title = habitsStateVcInfo.value(forKey: "buttonSetTiming") as? String ?? btnResumeHabits.title
+                            }
+                            
+                            lblTitle.stringValue = setSleepTime
                         }
                         
                     }

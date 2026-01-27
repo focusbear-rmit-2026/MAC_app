@@ -1,9 +1,9 @@
 import Cocoa
 
-protocol SearchableComboBoxDelegate {
+@objc protocol SearchableComboBoxDelegate: AnyObject {
     func itemSelectedByUser(comboBox: searchableComboBox)
+    @objc optional func itemEditedByUser(comboBox: searchableComboBox)
 }
-
 
 class searchableComboBox: NSComboBox, NSComboBoxCellDataSource, NSComboBoxDataSource, NSComboBoxDelegate {
     
@@ -78,6 +78,7 @@ class searchableComboBox: NSComboBox, NSComboBoxCellDataSource, NSComboBoxDataSo
         if let object = obj.object as? NSComboBox{
             filterData(comboBox: object, selectedText: object.stringValue)
             expandPopUp(comboBox: object, value: object.stringValue)
+            customDelegate?.itemEditedByUser?(comboBox: self)
         }
     }
     
