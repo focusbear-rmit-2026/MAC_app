@@ -7,18 +7,16 @@
 
 import Cocoa
 
-class alwaysAllowedAppsVc: NSViewController {
+class alwaysAllowedAppsVc: NSViewController {//todo
 
     @IBOutlet weak var lblSubTitle: NSTextField!
     @IBOutlet weak var btnAddApp: NSButton!
     @IBOutlet weak var btnRemoveApp: NSButton!
     @IBOutlet weak var lblTitle: NSTextField!
     @IBOutlet weak var tblView: NSTableView!
-    @IBOutlet weak var checkBoxImmediatelyBlock: NSButton?
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        checkBoxImmediatelyBlock?.isHidden = true
         lblTitle.stringValue = "Always Allowed Apps"
         lblSubTitle.stringValue = "Apps added here will never be blocked, regardless of focus mode, blocking schedules, or strictness settings. Use this for essential apps that you always need access to."
         

@@ -6180,6 +6180,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         
         abortAllProcess()
         if isFocusModeOnOrPaused(){
+            // v 2.28.453
+            //  bug:- After completing the evening habit, when Focus Mode was started before sleep time, the finish screen appeared immediately. When clicking Continue, the app got stuck on the same screen and did not proceed
+            // solved:- if free time then we will not stop focus session
+            if let date = UserDefaults.standard.object(forKey: kUserdefaultsEveningHabitsShowedTillDate) as? Date{
+                if Date().compare(date) == .orderedAscending {//"Evening habits already shown for today
+                    if isShutOffTimeGoing() && !isCutOffTimeGoing(){
+                        return;
+                    }
+                }
+            }
             tryFocusModeFinished(isSilent: false, isShutOffTime: true, isMorningRoutineTime: false, allowExtend:false, isCustomRoutineTime:false)
             return;
         }
@@ -8270,6 +8280,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                     }
                                 }
                                 
+                                
+                                for path in SettingsManagerObject.arrAlwaysAllowedApps{
+                                    let url = URL(fileURLWithPath: path)
+                                    if url.deletingPathExtension().lastPathComponent.lowercased() == nameLowercased{
+                                        isAppAllowed = true
+                                        break;
+                                    }
+                                }
+                                
                             }
                             
                             if !isAppAllowed{
@@ -8294,12 +8313,20 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                 focusModeCloseCurrentAppForAlignmentScore()
                                 return;
                             }
-                            
+
                             for path in SettingsManagerObject.arrAlwaysAllowedApps{
                                 let url = URL(fileURLWithPath: path)
                                 if url.deletingPathExtension().lastPathComponent.lowercased() == nameLowercased{
                                     setFocusBearIconToNormal()
                                     focusModeCloseCurrentAppForAlignmentScore()
+                                    
+                                    if popUpBlockConfirmWcObj != nil{
+                                        if popUpBlockConfirmWcObj!.window?.isVisible ?? false{
+                                            if popUpBlockConfirmVcObj!.isAppBlocking{
+                                                popUpBlockConfirmVcObj?.closeWindow()
+                                            }
+                                        }
+                                    }
                                     return;
                                 }
                             }
@@ -8484,6 +8511,23 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         focusModeCloseCurrentAppForAlignmentScore()
                         return;
                     }
+                    
+                    for path in SettingsManagerObject.arrAlwaysAllowedApps{
+                        let url = URL(fileURLWithPath: path)
+                        if url.deletingPathExtension().lastPathComponent.lowercased() == nameLowercased{
+                            setFocusBearIconToNormal()
+                            focusModeCloseCurrentAppForAlignmentScore()
+                            if popUpBlockConfirmWcObj != nil{
+                                if popUpBlockConfirmWcObj!.window?.isVisible ?? false{
+                                    if popUpBlockConfirmVcObj!.isAppBlocking{
+                                        popUpBlockConfirmVcObj?.closeWindow()
+                                    }
+                                }
+                            }
+                            return;
+                        }
+                    }
+                    
                     tabMatricsObject.currentAppTabCount = 1
                     for path in blockAppsPath{
                         let url = URL(fileURLWithPath: path)
@@ -9170,13 +9214,23 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 if name == selfAppName.lowercased() || name == focusBearTimeTrackerAppName{
                     return;
                 }
-                
+      
                 for path in SettingsManagerObject.arrAlwaysAllowedApps{
                     let url = URL(fileURLWithPath: path)
                     if url.deletingPathExtension().lastPathComponent.lowercased() == name{
+                        DispatchQueue.main.async {
+                            if popUpBlockConfirmWcObj != nil{
+                                if popUpBlockConfirmWcObj!.window?.isVisible ?? false{
+                                    if popUpBlockConfirmVcObj!.isAppBlocking{
+                                        popUpBlockConfirmVcObj?.closeWindow()
+                                    }
+                                }
+                            }
+                        }
                         return;
                     }
                 }
+
                 let blockAppsPath = currentRunningFocusType["blockAppsArray"] as? [String] ?? []
                 for path in blockAppsPath{
                     let url = URL(fileURLWithPath: path)
@@ -9447,7 +9501,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     func tryToBlockAlwaysBlockedApp(runningApp: NSRunningApplication, appName:String)->Bool{
         print("tryToBlockAlwaysBlockedApp*************")
         
-        for path in SettingsManagerObject.arrAlwaysAllowedApps{
+        for path in SettingsManagerObject.arrAlwaysAllowedApps{ 
             let url = URL(fileURLWithPath: path)
             if url.deletingPathExtension().lastPathComponent.lowercased() == appName.lowercased(){
                 print("App \(appName) is in Always Allowed list, skipping block")
@@ -9455,6 +9509,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             }
         }
         
+
         exitFullScreen(runningApp:runningApp)
         
         var needToBlockImmediately = SettingsManagerObject.immediatelyBlockDistractingApps
@@ -9862,6 +9917,22 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     
                     if name == selfAppName.lowercased() || name == focusBearTimeTrackerAppName{
                         return;
+                    }
+                    
+                    for path in SettingsManagerObject.arrAlwaysAllowedApps{
+                        let url = URL(fileURLWithPath: path)
+                        if url.deletingPathExtension().lastPathComponent.lowercased() == name{
+                            DispatchQueue.main.async {
+                                if popUpBlockConfirmWcObj != nil{
+                                    if popUpBlockConfirmWcObj!.window?.isVisible ?? false{
+                                        if popUpBlockConfirmVcObj!.isAppBlocking{
+                                            popUpBlockConfirmVcObj?.closeWindow()
+                                        }
+                                    }
+                                }
+                            }
+                            return;
+                        }
                     }
                     
                     var isAppAllowed = false

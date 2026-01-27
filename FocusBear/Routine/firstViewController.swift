@@ -490,18 +490,24 @@ class firstViewController: NSViewController {
         }
     }
     
+    var limitedUsageViewNagShownOnce = false
     func showLimitedUsgaeViewIfNeeded(){// after 7 trial days
+        if limitedUsageViewNagShownOnce{
+            return;// doing this so that it is shown only once per app session
+        }
         if isExpired && isActivitiesReducedInExpiredApp{
             if alertLimitedUsageVcObj != nil{
                 if alertLimitedUsageVcObj?.presentingViewController != self{
                     allApiObject.capturePosthog(event: "alert-limited-usage-shown", metadata: [:])
                     if self.view.window != nil{
+                        limitedUsageViewNagShownOnce = true
                         self.presentAsSheet(getAlertLimitedUsageVcObject())
                     }
                 }
             }else{
                 allApiObject.capturePosthog(event: "alert-limited-usage-shown", metadata: [:])
                 if self.view.window != nil{
+                    limitedUsageViewNagShownOnce = true
                     self.presentAsSheet(getAlertLimitedUsageVcObject())
                 }
             }

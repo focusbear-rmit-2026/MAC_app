@@ -1,0 +1,53 @@
+1. Create the Project Folder Structure
+
+   FlaskAppBuild/
+   ├── server.py
+   └── static/
+       └── focus-block.html
+
+    server.py → main Flask server file
+    static/ → folder for static files (focus-block.html)
+
+
+2. Create a Virtual Environment 
+    
+    From inside the FlaskAppBuild directory, run:
+
+	python3 -m venv myenv
+     
+        This creates a virtual environment named myenv.
+
+
+3. Activate the Virtual Environment
+
+        source myenv/bin/activate
+
+	Once activated, your terminal prompt should show (myenv)
+
+
+4. Install Flask
+
+  	pip install flask
+
+
+
+5. Run the Flask Server
+
+	python server.py
+
+
+
+
+Code Signing the Final Server Binary (macOS)
+		codesign --force --options runtime \
+ 		 --entitlements /Users/manish/Desktop/serverIntel.entitlements \
+		  --sign "Developer ID Application: Focus Bear Pty Ltd (TCUD568B3U)" \
+		  "/Users/manish/Documents/Apps/Focus Bear/SRC-NEW/FocusBear/serverIntel"
+
+
+
+
+
+
+
+
