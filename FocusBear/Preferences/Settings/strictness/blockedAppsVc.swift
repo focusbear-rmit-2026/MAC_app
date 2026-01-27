@@ -117,6 +117,16 @@ class blockedAppsVc: NSViewController {
                     isBrowserAdding = true
                 }else{
                     SettingsManagerObject.arrBlockedApps.append(url.path)
+                    if isExpired{// 2.28.453
+                        if SettingsManagerObject.arrBlockedApps.count >= alwaysBlockedUrlsCountInExpireApp{
+                            var titleLimitedBlockApps = "Max 3 blocked apps can be added in Basic version."
+                            if let upgradeToProNagVcInfo = configjson.value(forKey: "upgradeToProNagVcInfo") as? NSDictionary{
+                                titleLimitedBlockApps = upgradeToProNagVcInfo.value(forKey: "titleLimitedBlockApps") as? String ?? titleLimitedBlockApps
+                            }
+                            showUpgradeToProNagWindow(titleText: titleLimitedBlockApps, reason: "add_always_blocked_app")
+                            break;
+                        }
+                    }
                 }
                 
             }

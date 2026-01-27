@@ -195,6 +195,7 @@ class upgradeNowVc: NSViewController {
         if (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_) && vcShownFromExpireUsageAlert{
             mainWindowControllerObj?.showWindow(self)
             showBlankWindowInSecondaryMonitor()
+            leftMenuVcObj?.showHabitsView()
             if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_{
                 firstViewControllerObj?.showConfirmRoutineDurationViewIfNeeded()
             }

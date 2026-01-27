@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Focus Bear</title>
+    <link rel="icon" href="favicon.ico" />
+    <link
+      rel="stylesheet"
+      href="https://focus-bear.github.io/assets/focus-blocked/styles/main.css"
+    />
+  </head>
+
+  <body>
+    <div id="container" class="container">
+      <img src="logo.svg" alt="Focusbear" />
+      <div class="focusTitleWrapper">
+        <h1 id="focusTitle"></h1>
+        <h3 id="focusSubTitle"></h3>
+        <p id="focusAdditionalInfo"></p>
+        <div id="confirmation-distracting-actions" class="hide">
+          <button
+            id="temp-allow-access-btn"
+            onclick="openConfirmationModal()"
+            class="btn btn-primary btn-medium"
+          ></button>
+          <button
+            id="block-access-btn"
+            class="btn btn-secondary btn-medium"
+          ></button>
+        </div>
+      </div>
+      <div id="progressWrapper"></div>
+
+      <div id="privacyContainer">
+        <h6 id="privacyNoticeContent" class="hide"></h6>
+        <div id="privacyNoticeContentArrow" class="hide"></div>
+        <button id="privacyBtn"></button>
+      </div>
+      <a id="cuddlyBearBtn" href="#cuddlyBearMode" class="cuddlyBearBtn"> </a>
+      <div id="longTermGoalsContainer">
+        <h4 id="longTermGoalsTitle"></h4>
+        <ul id="goals"></ul>
+      </div>
+      <a id="originalUrl"></a>
+      <h3 id="focusTipWrapper"></h3>
+    </div>
+    <div id="cuddlyBearMode" class="overlay">
+      <div class="popup">
+        <h1 id="popupTitle"></h1>
+        <div class="content">
+          <button id="popupUnblockBtn"></button>
+          <a id="popupClose" href="#"></a>
+        </div>
+      </div>
+    </div>
+    <div id="toast" class="toast"></div>
+
+    <div class="modal-overlay" id="confirmation-modal">
+      <div class="modal">
+        <div class="modal-header">
+          <h2 class="modal-title ellipsis" id="confirmation-modal-title"></h2>
+          <h3 class="modal-sub-title" id="confirmation-modal-sub-title"></h3>
+          <button class="modal-close" onclick="closeConfirmationModal()">
+            ×
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="input-group">
+            <label
+              for="input-achievement"
+              id="confirmation-modal-achievement-label"
+            ></label>
+            <textarea
+              id="input-achievement"
+              rows="4"
+              class="input input-primary"
+            ></textarea>
+          </div>
+          <div class="input-group">
+            <label
+              for="input-number-wrapper"
+              id="confirmation-modal-input-time-label"
+            ></label>
+            <div id="input-number-wrapper">
+              <input
+                id="confirmation-modal-time-input"
+                type="number"
+                value="2"
+                class="input input-primary"
+                min="1"
+                step="1"
+                autofocus="false"
+              />
+              <p id="confirmation-modal-input-time-unit-label"></p>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button
+            class="btn btn-primary"
+            id="confirmation-modal-unlock-btn"
+          ></button>
+        </div>
+      </div>
+    </div>
+
+    <div id="focus-verify-modal" class="focus-verify-modal hide">
+      <h2>Focus Bear</h2>
+      <div class="focus-verify-modal-content">
+        <div class="focus-verify-modal-state" id="initial-question-state">
+          <p class="question"></p>
+          <p class="intention-info"></p>
+          <div class="timer" id="timer-initial-question"></div>
+        </div>
+
+        <div class="focus-verify-modal-state" id="low-relevance-state">
+          <p class="question"></p>
+          <p class="explanation"></p>
+          <div class="relevance-score"></div>
+          <div class="timer" id="timer-low-relevance"></div>
+        </div>
+
+        <div class="focus-verify-modal-state" id="convince-ai-state">
+          <h3></h3>
+          <div class="explanation"></div>
+          <textarea
+            id="convince-reason"
+            class="input input-primary convince-section"
+          ></textarea>
+          <div class="timer" id="timer-convince-ai"></div>
+        </div>
+
+        <div class="focus-verify-modal-state" id="ai-response-state">
+          <h3></h3>
+          <h5></h5>
+          <div class="ai-convince-response"></div>
+          <div class="explanation"></div>
+          <div class="timer" id="timer-ai-response"></div>
+        </div>
+
+        <div class="focus-verify-modal-state" id="set-time-limit-state">
+          <p class="question"></p>
+          <textarea
+            id="limit-time-reason"
+            class="input input-primary convince-section"
+          ></textarea>
+          <div class="time-selection">
+            <label></label>
+            <div class="time-options">
+              <div class="time-option" data-minutes="0.5">30s</div>
+              <div class="time-option" data-minutes="1">1m</div>
+              <div class="time-option" data-minutes="5">5m</div>
+              <div class="time-option" data-minutes="10">10m</div>
+              <div class="time-option" data-minutes="15">15m</div>
+              <div class="time-option" data-minutes="25">25m</div>
+              <div class="time-option" data-minutes="30">30m</div>
+            </div>
+          </div>
+          <div class="timer" id="timer-set-time-limit"></div>
+        </div>
+      </div>
+      <div class="focus-verify-modal-actions">
+        <div class="focus-verify-modal-buttons">
+          <button
+            class="btn btn-primary btn-medium"
+            id="confirm-action-btn"
+          ></button>
+          <button
+            class="btn btn-secondary btn-medium"
+            id="cancel-action-btn"
+          ></button>
+        </div>
+      </div>
+    </div>
+
+    <script
+      src="https://js.sentry-cdn.com/8b33ad393d38fc72d06eab2fd40446be.min.js"
+      crossorigin="anonymous"
+    ></script>
+    <script src="https://focus-bear.github.io/assets/focus-blocked/js/moment_2.29.1.min.js"></script>
+    <script src="https://focus-bear.github.io/assets/focus-blocked/js/tour.js"></script>
+    <script src="https://focus-bear.github.io/assets/focus-blocked/js/utils.js"></script>
+    <script src="https://focus-bear.github.io/assets/focus-blocked/js/locale.js"></script>
+    <script src="https://focus-bear.github.io/assets/focus-blocked/js/constant.js"></script>
+    <script src="https://focus-bear.github.io/assets/focus-blocked/js/messages.js"></script>
+    <script src="https://focus-bear.github.io/assets/focus-blocked/js/init.js"></script>
+    <script src="https://focus-bear.github.io/assets/focus-blocked/js/main.js"></script>
+    <script src="https://focus-bear.github.io/assets/focus-blocked/js/intro.js"></script>
+    <script src="https://focus-bear.github.io/assets/focus-blocked/js/confirmation.modal.js"></script>
+    <script src="https://focus-bear.github.io/assets/focus-blocked/js/focus_verify_modal.js"></script>
+  </body>
+</html>
