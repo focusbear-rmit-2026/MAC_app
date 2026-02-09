@@ -134,6 +134,10 @@ class habitsVc: NSViewController {
         if startTime == nil || shutOffTime == nil{
             return;
         }
+        
+        UserDefaults.standard.removeObject(forKey: kUserDefaultsLastRoutinePostponeEndDate)
+        UserDefaults.standard.removeObject(forKey: kUserDefaultsLastRoutinePostponeState)
+        
         let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
         let shutOffdate = Calendar.current.date(bySettingHour: shutOffTime!.hour, minute: shutOffTime!.minute, second: shutOffTime!.second, of: Date())!
         
@@ -2766,6 +2770,12 @@ class habitsVc: NSViewController {
                     self.postponeTimer = Timer.scheduledTimer(timeInterval: TimeInterval(seconds), target: self, selector: #selector(self.resumeMorningHabit), userInfo: nil, repeats: false)//  seconds
                     RunLoop.main.add((postponeTimer!), forMode: RunLoop.Mode.common)
                     
+                    
+                    // saving postpone information //Remember postpone status when app is restarted #1582  v 2.28.454
+                    let postponeEndDate = Date().addingTimeInterval(TimeInterval(seconds))
+                    UserDefaults.standard.set(postponeEndDate, forKey: kUserDefaultsLastRoutinePostponeEndDate)
+                    UserDefaults.standard.set(CURRENTSTATE._POSTPON_MORNING_HABIT_.rawValue,forKey: kUserDefaultsLastRoutinePostponeState)
+                    
                     if seconds > 120{
                         setPostponeNotificationTimer(duration: ((seconds) - 120))
                     }
@@ -2955,6 +2965,13 @@ class habitsVc: NSViewController {
                     self.postponeTimer = Timer.scheduledTimer(timeInterval: TimeInterval(seconds), target: self, selector: #selector(self.resumeEveningHabit), userInfo: nil, repeats: false)//  seconds
                     RunLoop.main.add((postponeTimer!), forMode: RunLoop.Mode.common)
                     
+                    
+                    // saving postpone information //Remember postpone status when app is restarted #1582  v 2.28.454
+                    let postponeEndDate = Date().addingTimeInterval(TimeInterval(seconds))
+                    UserDefaults.standard.set(postponeEndDate, forKey: kUserDefaultsLastRoutinePostponeEndDate)
+                    UserDefaults.standard.set(CURRENTSTATE._POSTPON_EVENING_HABIT_.rawValue,forKey: kUserDefaultsLastRoutinePostponeState)
+                    
+                    
                     if seconds > 120{
                         setPostponeNotificationTimer(duration: ((seconds) - 120))
                     }
@@ -3019,6 +3036,13 @@ class habitsVc: NSViewController {
                 focusSummaryLastPostponeTime = Date()
                 self.postponeTimer = Timer.scheduledTimer(timeInterval: TimeInterval(minutes*60), target: self, selector: #selector(self.resumeFocusSummary), userInfo: nil, repeats: false)//  minutes*60 kroTimeInterval(minutes*60)
                 RunLoop.main.add((postponeTimer!), forMode: RunLoop.Mode.common)
+                
+                
+                // saving postpone information //Remember postpone status when app is restarted #1582  v 2.28.454
+                let postponeEndDate = Date().addingTimeInterval(TimeInterval(minutes*60))
+                UserDefaults.standard.set(postponeEndDate, forKey: kUserDefaultsLastRoutinePostponeEndDate)
+                UserDefaults.standard.set(CURRENTSTATE._POSTPON_FOCUS_SUMMARY_.rawValue,forKey: kUserDefaultsLastRoutinePostponeState)
+                
                 
                 if minutes > 2{
                     setPostponeNotificationTimer(duration: ((minutes*60) - 120))
@@ -3287,6 +3311,7 @@ class habitsVc: NSViewController {
         currentState = ._NOTHING_
         isCustomRoutineWasRunningBetweenMorningHabit = false
         isCustomRoutineWasRunningBetweenEveningHabit = false
+        leftMenuVcObj?.habitOver()
     }
     
     func breathingFinishedUnlockMachine(){

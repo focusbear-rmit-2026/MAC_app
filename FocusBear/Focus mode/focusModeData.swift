@@ -2027,7 +2027,7 @@ func focusBlockUnwantedApp(runningApp: NSRunningApplication, appName:String, sho
 
 func focusTryToBlockUnwantedApp(runningApp: NSRunningApplication, appName:String, appNameLowercased:String){
     
-    for path in SettingsManagerObject.arrAlwaysAllowedApps{
+    for path in SettingsManagerObject.arrAlwaysAllowedApps{ 
         let url = URL(fileURLWithPath: path)
         if url.deletingPathExtension().lastPathComponent.lowercased() == appNameLowercased{
             return;

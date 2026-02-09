@@ -10,6 +10,7 @@ import Cocoa
 
 class confirmRoutineDurationVc: NSViewController {
 
+    @IBOutlet weak var lblCurrentDuration: NSTextField!
     @IBOutlet weak var btnClose: NSButton!
     @IBOutlet weak var boxExtra: NSBox!
     @IBOutlet weak var stackViewButtons: NSStackView!
@@ -40,6 +41,7 @@ class confirmRoutineDurationVc: NSViewController {
         lblTitleConfirm.isHidden = true
         btnYes.isHidden = true
     }
+    
     func resetData(totalSeconds:Int){
         lblMaximumDuration.stringValue = getStringTimeFromSeconds(seconds: totalSeconds)
         slider.maxValue = Double(totalSeconds)
@@ -50,6 +52,13 @@ class confirmRoutineDurationVc: NSViewController {
         btnNo.title = btnTitleLetsDoIt
         lblTitleConfirm.isHidden = true
         sliderClicked(self)
+        
+        if currentState == ._MORNING_HABIT_{
+            UserDefaults.standard.set(Date(), forKey: kUserdefaultsBeginMorningHabitClickedDate)
+        }else if currentState == ._EVENING_HABIT_{
+            UserDefaults.standard.set(Date(), forKey: kUserdefaultsBeginEveningHabitClickedDate)
+        }
+        
     }
 
     @IBAction func btnYesClicked(_ sender: Any) {
@@ -86,14 +95,36 @@ class confirmRoutineDurationVc: NSViewController {
             firstViewControllerObj?.showChooseHabitsView()
         }
     }
-    @IBAction func sliderClicked(_ sender: Any) {
-        addLog(text: "sliderClicked")
-        addLog(text: "selected duration:- \(self.slider.integerValue)")
-        if currentState == ._MORNING_HABIT_{
-            UserDefaults.standard.set(Date(), forKey: kUserdefaultsBeginMorningHabitClickedDate)
-        }else if currentState == ._EVENING_HABIT_{
-            UserDefaults.standard.set(Date(), forKey: kUserdefaultsBeginEveningHabitClickedDate)
+    
+    func getStringTimeFromSeconds(seconds : Int)->String{
+        let (h,m,s) = secondsToHoursMinutesSeconds(seconds: seconds)
+        var stringTime: String = ""
+        if h != 0{
+            stringTime = "\(h)" + hoursHText
         }
+        if m != 0{
+            if stringTime.isEmpty{
+                stringTime = "\(m)" + minutesMText
+            }else{
+                stringTime += " \(m)" + minutesMText
+            }
+        }
+        if s != 0{
+            if stringTime.isEmpty{
+                stringTime = "\(s)" + secondsSText
+            }else{
+                stringTime += " \(s)" + secondsSText
+            }
+        }
+        
+        if stringTime.isEmpty{
+            stringTime = "\(s)" + secondsSText
+        }
+        return stringTime
+    }
+    
+    @IBAction func sliderClicked(_ sender: Any) {
+        lblCurrentDuration.stringValue = getStringTimeFromSeconds(seconds: slider.integerValue)
         if slider.integerValue == 0{
             stackViewButtons.isHidden = false
             btnYes.isHidden = false

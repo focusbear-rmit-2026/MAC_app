@@ -10,6 +10,11 @@ import Cocoa
 
 class menuViewController: NSViewController {
 
+    @IBOutlet weak var stackViewSecond: NSStackView!
+    @IBOutlet weak var imgIconEditHabits: NSImageView!
+    @IBOutlet weak var lblTitleEditHabits: menuItemLabel!
+    @IBOutlet weak var boxEditHabits: NSBox!
+    
     @IBOutlet weak var lblCustomBlockingScheduleDayTime: NSTextField!
     @IBOutlet weak var lblCustomBlockingScheduleName: NSTextField!
     @IBOutlet weak var lblCustomBlockingState: NSTextField!
@@ -182,6 +187,14 @@ class menuViewController: NSViewController {
         // Do view setup here.
         addLog(text: "menuViewController viewdidload start")
         
+        
+        if #available(macOS 11.0, *) {
+            imgIconEditHabits.image = NSImage(systemSymbolName: "checkmark.rectangle.fill", accessibilityDescription: nil)
+        } else {
+            imgIconEditHabits.image = NSImage(named: "checkmark")
+        }
+        
+        lblTitleEditHabits.stringValue = "Edit Habits" // todo text
         lblCustomBlocking.stringValue = "Blocking Schedule"
         if #available(macOS 11.0, *) {
             iconPlayFocusSession = NSImage(systemSymbolName: "play.circle", accessibilityDescription: nil)
@@ -446,6 +459,10 @@ class menuViewController: NSViewController {
         boxOpenToolBox.isHidden = true// if show this then check space first
         
         boxFocusModeRemainingTime.isHidden = true
+        
+//        if !getSelectJsonVcObject().isViewLoaded{ // todo 
+//            getSelectJsonVcObject().loadView()
+//        }
     }
 
     override func viewDidAppear() {
@@ -819,6 +836,11 @@ class menuViewController: NSViewController {
             boxPreferences.borderWidth = 0
             boxPreferences.fillColor = buttonBgColor
         }
+        
+        boxEditHabits.borderColor =  boxPreferences.borderColor
+        boxEditHabits.borderWidth = boxPreferences.borderWidth
+        boxEditHabits.fillColor = boxPreferences.fillColor
+        
         //showFocusModeCountDownIfNeeded()
         if SettingsManagerObject.isMenuPopoverEnabled{
             btnPin.image = #imageLiteral(resourceName: "pin")
@@ -1148,15 +1170,23 @@ class menuViewController: NSViewController {
             
             
             let isFocusModeOn = isFocusModeOn()
-            if isFocusModeOn{
+            let isFocusModePaused = isFocusModePaused()
+
+            if isFocusModeOn || isFocusModePaused{
                 lblTitleStartSimplePomodoroMode.font = NSFont.systemFont(ofSize: 13)
                 if isFocusModeStartedFromPomodoroMode{
-                    lblTitleStartSimplePomodoroMode.stringValue = itemStopPomodoroTitle
-                    imgViewStartSimpleFocusSession.image = iconStopFocusSession
+                    if isFocusModeOn{
+                        lblTitleStartSimplePomodoroMode.stringValue = itemStopPomodoroTitle
+                        imgViewStartSimpleFocusSession.image = iconStopFocusSession
+                    }else{
+                        lblTitleStartSimplePomodoroMode.stringValue = itemResumePomodoroTitle
+                        imgViewStartSimpleFocusSession.image = iconResumeFocusSession
+                    }
                     boxStartSimplePomodoroMode.isHidden = false
                 }else{
                     boxStartSimplePomodoroMode.isHidden = true
                 }
+                
                 heightButtonSimplePomodoro.constant = 28
                 widthImageIconSimplePomodoro.constant = 23
                 boxStartSimplePomodoroMode.borderWidth = 0
@@ -1507,31 +1537,74 @@ class menuViewController: NSViewController {
     }
     
     @IBAction func btnStartSimplePomodoroModeClicked(_ sender: Any) {
-//        if isPurchased == false && daysLeft <= 0{
-//            if trialExpiredNagWcObj != nil{
-//                if trialExpiredNagWcObj?.window?.isVisible ?? false{
-//                    return;
-//                }
-//            }
-//            showUpgradeNowWindow()
-//            return;
-//        }
-        if isFocusModeOn(){
-            if currentFocusModeStrictness == ._SUPER_STRICT_{
-                addLog(text: "can't stop focus mode in super strict focus mode :- return")
-                var cantStopFocusModeText = "Super strict mode activated: You cannot stop this focus session until it ends."
-                if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
-                    cantStopFocusModeText = menuInfo.value(forKey: "cantStopFocusModeText") as? String ?? cantStopFocusModeText
+
+        var isFocusModeOn = false
+        
+        for index in 0..<arrFocusType.count{
+            if arrFocusType[index]["isOn"] as? Bool == true || arrFocusType[index]["isPaused"] as? Bool == true{
+                //abort focus mode
+                // new work 13/3/22
+                isFocusModeOn = true
+                if arrFocusType[index]["isOn"] as? Bool == true{
+                    let menu = NSMenu()
+                    if timerForFocusMode != nil{
+                        let menuItemPause = NSMenuItem(title: itemPausePomodoroTitle, action: #selector(pauseFocusModeClicked), keyEquivalent: "")
+                        menuItemPause.image = NSImage(named: NSImage.touchBarPauseTemplateName)
+                        menuItemPause.target = self
+                        menu.addItem(menuItemPause)
+                    }
+                    
+                    let menuItemStop = NSMenuItem(title: itemStopPomodoroTitle, action: #selector(stopFocusMode), keyEquivalent: "")
+                    menuItemStop.image = NSImage(named: NSImage.Name("NSTouchBarRecordStopTemplate"))
+                    menuItemStop.target = self
+                    menu.addItem(menuItemStop)
+                    menu.minimumWidth = boxStartSimplePomodoroMode.frame.width
+                    let p = NSPoint(x: boxStartSimplePomodoroMode.frame.origin.x, y: boxStartSimplePomodoroMode.frame.origin.y )
+                    menu.popUp(positioning: nil, at: p, in: stackViewSecond)
+                    
+                    break;
+                }else if arrFocusType[index]["isPaused"] as? Bool == true{
+                    
+                    let menu = NSMenu()
+                    let menuItemResume = NSMenuItem(title: itemResumePomodoroTitle, action: #selector(resumeFocusMode), keyEquivalent: "")
+                    menuItemResume.image = NSImage(named: NSImage.touchBarPlayTemplateName)
+                    menuItemResume.target = self
+                    menu.addItem(menuItemResume)
+                    
+                    let menuItemStop = NSMenuItem(title: itemStopPomodoroTitle, action: #selector(stopFocusMode), keyEquivalent: "")
+                    menuItemStop.image = NSImage(named: NSImage.Name("NSTouchBarRecordStopTemplate"))
+                    menuItemStop.target = self
+                    menu.addItem(menuItemStop)
+                    
+                    
+                    menu.minimumWidth = boxStartSimplePomodoroMode.frame.width
+                    let p = NSPoint(x: boxStartSimplePomodoroMode.frame.origin.x, y: boxStartSimplePomodoroMode.frame.origin.y )
+                    menu.popUp(positioning: nil, at: p, in: stackViewSecond)
+                    break;
                 }
-                showTooltip(sender: boxStartSimplePomodoroMode, msg: cantStopFocusModeText, preferredEdge: .minX, maxWidthVal: 250)
-                return;
             }
-            showAbortingFocusModeVc(forPause: false)
-            closeMenuWindowIsVisible()
-        }else{
+        }
+        
+        if !isFocusModeOn{
             appdelegate?.menuShowSimplePomodoroModeView()
             closeMenuWindowIsVisible()
         }
+//        if isFocusModeOn{
+//            if currentFocusModeStrictness == ._SUPER_STRICT_{
+//                addLog(text: "can't stop focus mode in super strict focus mode :- return")
+//                var cantStopFocusModeText = "Super strict mode activated: You cannot stop this focus session until it ends."
+//                if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
+//                    cantStopFocusModeText = menuInfo.value(forKey: "cantStopFocusModeText") as? String ?? cantStopFocusModeText
+//                }
+//                showTooltip(sender: boxStartSimplePomodoroMode, msg: cantStopFocusModeText, preferredEdge: .minX, maxWidthVal: 250)
+//                return;
+//            }
+//            showAbortingFocusModeVc(forPause: false)
+//            closeMenuWindowIsVisible()
+//        }else{
+//            appdelegate?.menuShowSimplePomodoroModeView()
+//            closeMenuWindowIsVisible()
+//        }
     }
     
     @IBAction func btnStartPomodoroModeClicked(_ sender: Any) {
@@ -2267,12 +2340,14 @@ class menuViewController: NSViewController {
     }
     
     @IBAction func btnCustomRoutineClicked(_ sender: Any) {
+        addLog(text:"[user-action] menuViewController:- btnCustomRoutineClicked")
         customRoutinesMenu.minimumWidth = boxCustomRoutine.frame.width
         let p = NSPoint(x: (sender as AnyObject).frame.origin.x, y: (sender as AnyObject).frame.origin.y )
         customRoutinesMenu.popUp(positioning: nil, at: p, in: (sender as AnyObject).superview)
     }
     
     @IBAction func btnBrowserTabAuditClicked(_ sender: Any) {
+        addLog(text:"[user-action] menuViewController:- btnBrowserTabAuditClicked")
         showBrowsersTabAuditView()
     }
     
@@ -2315,6 +2390,16 @@ class menuViewController: NSViewController {
                 }
             }
         }
+    }
+    
+    @IBAction func btnEditHabitsClicked(_ sender: Any) {// v 2.28.454
+        addLog(text:"[user-action] menuViewController:- btnEditHabitsClicked")
+        if !(mainWindowControllerObj?.window?.isVisible ?? false){
+            mainWindowControllerObj?.showWindow(self)
+        }
+        leftMenuVcObj?.showEditHabitsView()
+        NSRunningApplication.current.activate(options: [.activateIgnoringOtherApps])
+        closeMenuWindowIsVisible()
     }
 }
 

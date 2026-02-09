@@ -75,7 +75,7 @@ class popUpFocusGoalConfirmationVc: NSViewController {
             lblTitle.stringValue = title
             boxNoTaskSpecified.isHidden = false
             btnYesRelevant.isHidden = true
-            
+            comboBoxSelectTask.setFocus()
             comboBoxSelectTask.isEnabled = false
             comboBoxSelectTask.stringValue = ""
             comboBoxSelectTask.items.removeAll()
@@ -112,6 +112,7 @@ class popUpFocusGoalConfirmationVc: NSViewController {
                     }
                     comboBoxSelectTask.reloadData()
                     loader.stopAnimation(self)
+                    comboBoxSelectTask.setFocus()
                 }
             })
             

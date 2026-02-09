@@ -158,6 +158,66 @@ class askLogInVc: NSViewController, ASAuthorizationControllerDelegate, ASAuthori
         trySignInWithGoogle()
     }
     
+    var messageBoxView: NSView?
+    var hideWorkItem: DispatchWorkItem?
+    
+    func showMessageBoxFor(sender: NSBox) {
+        guard
+            let window = sender.window,
+            let contentView = window.contentView
+        else { return }
+
+        // Cancel previous timer
+        hideWorkItem?.cancel()
+        hideWorkItem = nil
+
+        // Remove existing box
+        messageBoxView?.removeFromSuperview()
+
+        let vc = getMessageBoxVcObject()
+        let boxView = vc.view
+        messageBoxView = boxView
+
+        // 🔁 Convert sender bounds → window contentView
+        let senderRectInContent =
+            sender.convert(sender.bounds, to: contentView)
+
+        let boxSize = boxView.frame.size
+
+        let x = senderRectInContent.maxX + 8
+        let y = senderRectInContent.midY - boxSize.height / 2
+
+        boxView.frame = NSRect(
+            x: x,
+            y: y,
+            width: boxSize.width,
+            height: boxSize.height
+        )
+
+        boxView.alphaValue = 1
+        contentView.addSubview(boxView)
+
+        // ⏱ Auto hide after 10 seconds
+        let workItem = DispatchWorkItem { [weak self, weak boxView] in
+            guard let view = boxView else { return }
+
+            NSAnimationContext.runAnimationGroup({ context in
+                context.duration = 0.25
+                view.animator().alphaValue = 0
+            }, completionHandler: {
+                view.removeFromSuperview()
+                self?.messageBoxView = nil
+            })
+        }
+
+        hideWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + 10, execute: workItem)
+    }
+
+
+    
+    
+    
     func trySignInWithGoogle(){
         askLogInWcObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.normalWindow)))
         Auth0
@@ -371,9 +431,11 @@ class askLogInVc: NSViewController, ASAuthorizationControllerDelegate, ASAuthori
     
     @objc func signUpWithGoogle(){
         btnSignInWithGoogleClicked(self)
+        showMessageBoxFor(sender: boxButtonSignUpWithGoogle)
     }
     @objc func signUpWithApple(){
         btnSignInWithAppleClicked(self)
+        showMessageBoxFor(sender: boxButtonSignUpWithApple)
     }
     @objc func signUpWithEmail(){
         btnSignUpClicked(self)

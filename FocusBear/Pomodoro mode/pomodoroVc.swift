@@ -408,6 +408,12 @@ class pomodoroVc: NSViewController {
     func updateBreakDuration(){
         let workDuration = textFieldWorkDuration.integerValue
         
+        if workRatio == 0  {
+            workRatio = 1
+        }
+        if breakRatio == 0  {
+            breakRatio = 1
+        }
         var breakDuration =  Int((Double(workDuration) / Double(workRatio)) * Double(breakRatio))
         if breakDuration < 1{
             breakDuration = 1
@@ -439,9 +445,15 @@ class pomodoroVc: NSViewController {
     func updateWorkBreakRatio(){
         if let ratio = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsWorkRatioInPomodoro) as? Int{
             workRatio = ratio
+            if workRatio <= 0{
+                workRatio = 1
+            }
         }
         if let ratio = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsBreakRatioInPomodoro) as? Int{
             breakRatio = ratio
+            if breakRatio <= 0{
+                breakRatio = 1
+            }
         }
         
         var workRatioText = "Break duration is based on <WORKRATIO> to <BREAKRATIO> minutes work to break ratio."

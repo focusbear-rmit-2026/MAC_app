@@ -1022,3 +1022,45 @@ func isCutOffTimeAboutToReach() -> Bool {
 }
 
 
+
+
+func restorePostponeStateIfNeeded() {
+    guard
+        let endDate = UserDefaults.standard.object(
+            forKey: kUserDefaultsLastRoutinePostponeEndDate
+        ) as? Date
+    else { return }
+    
+    guard
+        let state = UserDefaults.standard.object(
+            forKey: kUserDefaultsLastRoutinePostponeState
+        ) as? Int
+    else { return }
+    let remaining = endDate.timeIntervalSinceNow
+
+    if remaining > 0 {
+        // ⏳ Still postponed
+        let remainingSeconds = Int(remaining)
+        if state == CURRENTSTATE._POSTPON_MORNING_HABIT_.rawValue{
+            addLog(text: "Restored morning postpone: \(remainingSeconds)s left")
+            getHabitsVcObject().postponeMorningHabitFor(minutes: remainingSeconds / 60, secondsToPostpone: remainingSeconds, showAskFocusModeView: false, showAskIntention: false)
+
+        }else if state == CURRENTSTATE._POSTPON_EVENING_HABIT_.rawValue{
+            addLog(text: "Restored evening postpone: \(remainingSeconds)s left")
+            getHabitsVcObject().postponeEveningHabitFor(minutes: remainingSeconds / 60, secondsToPostpone: remainingSeconds, showAskFocusModeView: false, showAskIntention: false)
+        }else if state == CURRENTSTATE._POSTPON_FOCUS_SUMMARY_.rawValue{
+            addLog(text: "Restored focus summary postpone: \(remainingSeconds)s left")
+            if !(focusSummaryVcObj?.isViewLoaded ?? false){
+                focusSummaryVcObj?.loadView()
+                focusSummaryVcObj?.viewVisibleCount = 1
+            }
+            
+            getHabitsVcObject().postponeFocusSummaryFor(minutes: remainingSeconds / 60, showAskIntention: false)
+        }
+ 
+    } else {
+        // ❌ Postpone expired while app was closed
+        UserDefaults.standard.removeObject(forKey: kUserDefaultsLastRoutinePostponeEndDate)
+        UserDefaults.standard.removeObject(forKey: kUserDefaultsLastRoutinePostponeState)
+    }
+}

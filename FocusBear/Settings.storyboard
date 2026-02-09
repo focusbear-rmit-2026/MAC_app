@@ -2951,13 +2951,13 @@ DQ
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
                             <box boxType="custom" borderWidth="0.0" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="dZX-9W-fSn">
-                                <rect key="frame" x="0.0" y="0.0" width="330" height="283"/>
+                                <rect key="frame" x="0.0" y="0.0" width="330" height="278"/>
                                 <view key="contentView" id="8B0-a3-isv">
-                                    <rect key="frame" x="0.0" y="0.0" width="330" height="283"/>
+                                    <rect key="frame" x="0.0" y="0.0" width="330" height="278"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
                                         <searchField wantsLayer="YES" focusRingType="none" verticalHuggingPriority="750" textCompletion="NO" translatesAutoresizingMaskIntoConstraints="NO" id="gj7-29-Pcx" customClass="PopoverAwareSearchField" customModule="Focus_Bear" customModuleProvider="target">
-                                            <rect key="frame" x="10" y="243" width="310" height="30"/>
+                                            <rect key="frame" x="10" y="239" width="310" height="30"/>
                                             <searchFieldCell key="cell" controlSize="large" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" borderStyle="bezel" usesSingleLineMode="YES" bezelStyle="round" id="hCp-vB-PWb">
                                                 <font key="font" metaFont="system"/>
                                                 <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -2965,13 +2965,13 @@ DQ
                                             </searchFieldCell>
                                         </searchField>
                                         <scrollView borderType="none" autohidesScrollers="YES" horizontalLineScroll="34" horizontalPageScroll="10" verticalLineScroll="34" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="N7o-tz-nVy">
-                                            <rect key="frame" x="10" y="201" width="320" height="22"/>
+                                            <rect key="frame" x="10" y="201" width="320" height="18"/>
                                             <clipView key="contentView" drawsBackground="NO" id="qVo-BV-6YF">
-                                                <rect key="frame" x="0.0" y="0.0" width="320" height="22"/>
+                                                <rect key="frame" x="0.0" y="0.0" width="305" height="18"/>
                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                 <subviews>
                                                     <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" multipleSelection="NO" emptySelection="NO" autosaveColumns="NO" rowHeight="34" viewBased="YES" id="7QV-Zg-ysE">
-                                                        <rect key="frame" x="0.0" y="0.0" width="320" height="33"/>
+                                                        <rect key="frame" x="0.0" y="0.0" width="305" height="33"/>
                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                         <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                                         <color key="gridColor" name="gridColor" catalog="System" colorSpace="catalog"/>
@@ -3063,13 +3063,13 @@ DQ
                                                 <rect key="frame" x="0.0" y="32" width="304" height="15"/>
                                                 <autoresizingMask key="autoresizingMask"/>
                                             </scroller>
-                                            <scroller key="verticalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" horizontal="NO" id="MJt-8t-qaV">
-                                                <rect key="frame" x="224" y="17" width="15" height="102"/>
+                                            <scroller key="verticalScroller" wantsLayer="YES" verticalHuggingPriority="750" horizontal="NO" id="MJt-8t-qaV">
+                                                <rect key="frame" x="305" y="0.0" width="15" height="18"/>
                                                 <autoresizingMask key="autoresizingMask"/>
                                             </scroller>
                                         </scrollView>
                                         <customView translatesAutoresizingMaskIntoConstraints="NO" id="Q0a-EW-q6p">
-                                            <rect key="frame" x="10" y="34" width="310" height="209"/>
+                                            <rect key="frame" x="10" y="29" width="310" height="209"/>
                                             <constraints>
                                                 <constraint firstAttribute="height" constant="209" id="0XF-4y-9c3"/>
                                             </constraints>
@@ -13661,8 +13661,8 @@ Gw
                                                                                                         <rect key="frame" x="5" y="5" width="82" height="28"/>
                                                                                                         <datePickerCell key="cell" borderStyle="bezel" alignment="left" useCurrentDate="YES" id="W8V-79-Irg">
                                                                                                             <font key="font" metaFont="system"/>
-                                                                                                            <date key="date" timeIntervalSinceReferenceDate="791207520.53162599">
-                                                                                                                <!--2026-01-27 11:52:00 +0000-->
+                                                                                                            <date key="date" timeIntervalSinceReferenceDate="791971885.69462705">
+                                                                                                                <!--2026-02-05 08:11:25 +0000-->
                                                                                                             </date>
                                                                                                             <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
                                                                                                             <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -13712,8 +13712,8 @@ Gw
                                                                                                         <rect key="frame" x="5" y="5" width="82" height="28"/>
                                                                                                         <datePickerCell key="cell" borderStyle="bezel" alignment="left" useCurrentDate="YES" id="6n0-X7-F0q">
                                                                                                             <font key="font" metaFont="system"/>
-                                                                                                            <date key="date" timeIntervalSinceReferenceDate="791207520.53486896">
-                                                                                                                <!--2026-01-27 11:52:00 +0000-->
+                                                                                                            <date key="date" timeIntervalSinceReferenceDate="791971885.69785094">
+                                                                                                                <!--2026-02-05 08:11:25 +0000-->
                                                                                                             </date>
                                                                                                             <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
                                                                                                             <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -14084,7 +14084,7 @@ Gw
                                                                             <rect key="frame" x="0.0" y="0.0" width="700" height="45"/>
                                                                             <subviews>
                                                                                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="eiP-nn-oXX" customClass="Button" customModule="Focus_Bear" customModuleProvider="target">
-                                                                                    <rect key="frame" x="0.0" y="0.0" width="163" height="45"/>
+                                                                                    <rect key="frame" x="0.0" y="0.0" width="150" height="45"/>
                                                                                     <buttonCell key="cell" type="bevel" title="Cancel" bezelStyle="rounded" alignment="center" imageScaling="proportionallyDown" inset="2" id="fT6-1o-ZcV">
                                                                                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                                                         <font key="font" metaFont="system"/>
@@ -14101,14 +14101,14 @@ Gw
                                                                                     </connections>
                                                                                 </button>
                                                                                 <box boxType="custom" borderWidth="0.0" cornerRadius="4" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="tWs-Zy-L3K">
-                                                                                    <rect key="frame" x="183" y="0.0" width="177" height="45"/>
+                                                                                    <rect key="frame" x="170" y="0.0" width="177" height="45"/>
                                                                                     <view key="contentView" id="QZf-v6-obp">
                                                                                         <rect key="frame" x="0.0" y="0.0" width="177" height="45"/>
                                                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                                     </view>
                                                                                 </box>
                                                                                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="GS0-JM-otC" customClass="Button" customModule="Focus_Bear" customModuleProvider="target">
-                                                                                    <rect key="frame" x="380" y="0.0" width="150" height="45"/>
+                                                                                    <rect key="frame" x="367" y="0.0" width="163" height="45"/>
                                                                                     <buttonCell key="cell" type="bevel" title="Delete" bezelStyle="rounded" alignment="center" imageScaling="proportionallyDown" inset="2" id="gtC-tO-oji">
                                                                                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                                                         <font key="font" metaFont="system" size="15"/>
