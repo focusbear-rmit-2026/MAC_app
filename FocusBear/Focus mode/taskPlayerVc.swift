@@ -672,7 +672,29 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
     }
     
     
-    
+    func notifyToDoPlayerPauseState(isPaused: Bool) {
+        addLog(text: "func:- notifyToDoPlayerPauseState: \(isPaused)")
+        do {
+            let pausedValue = isPaused ? "true" : "false"
+            
+            let script = """
+                (function() {
+                    if (window.setFocusPausedFromDesktopApp) {
+                        window.setFocusPausedFromDesktopApp(\(pausedValue));
+                    }
+                })();
+                """
+            
+            webView.evaluateJavaScript(script) { _, error in
+                if let error = error {
+                    addLog(text: "NotifyToDoPlayerPauseState JS error - \(error.localizedDescription)")
+                }
+            }
+            
+        } catch {
+            addLog(text: "NotifyToDoPlayerPauseState ex - \(error.localizedDescription)")
+        }
+    }
     
     @IBAction func btnArrowLeftClicked(_ sender: Any) {// will be a samll window in left side
         self.isSnappingGoing = true

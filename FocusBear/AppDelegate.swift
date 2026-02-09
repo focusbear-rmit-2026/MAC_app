@@ -1105,7 +1105,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 
                 kUserdefaultsIsAnyDistractionSetByUser = kUserdefaultsIsAnyDistractionSetByUser + (self.user?.userId ?? "")
                 
-                //                kUserDefaultsHideShowBrainDumpOption = kUserDefaultsHideShowBrainDumpOption + (self.user?.userId ?? "")
+                kUserDefaultsLastRoutinePostponeEndDate = kUserDefaultsLastRoutinePostponeEndDate + (self.user?.userId ?? "")
+                kUserDefaultsLastRoutinePostponeState = kUserDefaultsLastRoutinePostponeState + (self.user?.userId ?? "")
                 
                 connectGlobalAndMacIDWithDistinctUserID()
                 
@@ -2175,6 +2176,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 }
             }
             leftMenuVcObj?.resetFocusModeTitle()
+            leftMenuVcObj?.focusModeOrFocusModeHabitFinished()
+            if leftMenuVcObj?.boxTodoPlayer.isSelected ?? false{
+                mainViewControllerObj?.showTaskView()//reloading
+            }
+            getTaskPlayerVcObject().notifyToDoPlayerPauseState(isPaused: true)
             if leftMenuVcObj?.boxFocusSession.isSelected ?? false{
                 if focusModeStateVcObj != nil{
                     if focusModeStateVcObj!.isViewVisible{
@@ -2228,6 +2234,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 
                 if leftMenuVcObj != nil{
                     leftMenuVcObj?.focusModeOrFocusModeHabitStarted()
+                    if leftMenuVcObj?.boxTodoPlayer.isSelected ?? false{
+                        mainViewControllerObj?.showTaskView()//reloading
+                    }
+                    getTaskPlayerVcObject().notifyToDoPlayerPauseState(isPaused: false)
                     leftMenuVcObj?.resetFocusModeTitle()
                     if leftMenuVcObj?.boxFocusSession.isSelected ?? false{
                         if focusModeStateVcObj != nil{
@@ -3827,7 +3837,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 }
             }
         }
-        
+        restorePostponeStateIfNeeded()
         setBackgroundThreadTimer()
         pusherEventsObject.startEventNotifications()
         
@@ -6247,6 +6257,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     func showEveningHabit(activityId: String?, skippedActivities:[String], completedActivities:[String], needToCreateActivityId:Bool = false){
         additionalHabitTotalCompletedSeconds = 0
         
+        UserDefaults.standard.removeObject(forKey: kUserDefaultsLastRoutinePostponeEndDate)
+        UserDefaults.standard.removeObject(forKey: kUserDefaultsLastRoutinePostponeState)
+        
         var activityId = activityId
         if activityId == nil && needToCreateActivityId{
             if skippedActivities.count != 0 || completedActivities.count != 0{
@@ -6948,6 +6961,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         addLog(text: "Initiating morning habits.")
         additionalHabitTotalCompletedSeconds = 0
         UserDefaults.standard.removeObject(forKey: kUserdefaultsShutdownAborted)
+
+        UserDefaults.standard.removeObject(forKey: kUserDefaultsLastRoutinePostponeEndDate)
+        UserDefaults.standard.removeObject(forKey: kUserDefaultsLastRoutinePostponeState)
+        
         checkTrialExpire()
         if isUserOnMeeting{
             addLog(text: "isUserOnMeeting True: Morning Habits skipped for some time.")
@@ -7202,10 +7219,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         }
     }
     @objc func menuItem_Preferences() {
-        if mainWindowControllerObj?.window?.isVisible ?? false{
+        if !(mainWindowControllerObj?.window?.isVisible ?? false){
             mainWindowControllerObj?.showWindow(self)
         }
-        leftMenuVcObj?.showSettingsView() // tdo test
+        leftMenuVcObj?.showSettingsView()
         
         addLog(text: "Showing preferences")
         NSRunningApplication.current.activate(options: [.activateIgnoringOtherApps])
@@ -7454,31 +7471,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         
         makeAllAlertWindowToTopLevelWindow()
         
-        //        if !SettingsManagerObject.isStrictnessLevelSuperGentle(){
-        //            if endingFocusWindowControllerObj != nil{
-        //                if (endingFocusWindowControllerObj?.window?.isVisible ?? false) && endingFocusWindowControllerObj?.contentViewController == focusCompletedVcObj{
-        //                    focusCompletedVcObj?.setTimerMoveWindowToCenter()
-        //                }
-        //            }
-        
-        //            if pomodoroWindowControllerObj != nil{
-        //                if pomodoroWindowControllerObj?.window?.isVisible ?? false{
-        //                    if pomodoroWindowControllerObj?.contentViewController == pomodoroVcObj{
-        //                        pomodoroVcObj?.setTimerMoveWindowToCenter()
-        //                    }
-        //                }
-        //            }
-        //        }else{
-        //            if endingFocusWindowControllerObj != nil{//Ultra low friction level #1357
-        //                if (endingFocusWindowControllerObj?.window?.isVisible ?? false) && endingFocusWindowControllerObj?.contentViewController == focusCompletedVcObj{
-        //                    if endingFocusWindowControllerObj?.window?.level != NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow))){
-        //                        if !focusCompletedVcObj!.btnStartAnotherFocusBlock.isHidden{
-        //                            showNudgeStartAnotherFocusSessionWindow()
-        //                        }
-        //                    }
-        //                }
-        //            }
-        //        }
         
         if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._CUSTOM_ROUTINE_{
             if mainWindowControllerObj?.window?.isVisible ?? false{
@@ -8313,7 +8305,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                 focusModeCloseCurrentAppForAlignmentScore()
                                 return;
                             }
-
+                            
                             for path in SettingsManagerObject.arrAlwaysAllowedApps{
                                 let url = URL(fileURLWithPath: path)
                                 if url.deletingPathExtension().lastPathComponent.lowercased() == nameLowercased{
@@ -9214,7 +9206,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 if name == selfAppName.lowercased() || name == focusBearTimeTrackerAppName{
                     return;
                 }
-      
+                
                 for path in SettingsManagerObject.arrAlwaysAllowedApps{
                     let url = URL(fileURLWithPath: path)
                     if url.deletingPathExtension().lastPathComponent.lowercased() == name{
@@ -9230,7 +9222,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         return;
                     }
                 }
-
                 let blockAppsPath = currentRunningFocusType["blockAppsArray"] as? [String] ?? []
                 for path in blockAppsPath{
                     let url = URL(fileURLWithPath: path)
@@ -9509,7 +9500,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             }
         }
         
-
         exitFullScreen(runningApp:runningApp)
         
         var needToBlockImmediately = SettingsManagerObject.immediatelyBlockDistractingApps
@@ -10552,3 +10542,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 
 
 // save temp app url after focus box should not come in block duper url focus mode  //  showaddFocusTempUrlsOrAppsWindow
+
+// bug when focus session in paused // todo 
+
+
+// bug afer custom routine ends solved 
+// load habits settings . and review result bug
+
+/// text continue in browser// todo add in file

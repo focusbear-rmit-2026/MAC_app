@@ -7,176 +7,160 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "48E9D0F5-F7D0-4015-864D-2F82407A5128"
+            uuid = "01CFDEE2-1D2F-4596-92A4-B52CF343D01B"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "FocusBear/AllApi.swift"
+            filePath = "FocusBear/Focus mode/focusCompletedVc.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "3840"
-            endingLineNumber = "3840"
-            landmarkName = "chatGPTIsURLSafe(url:tab_title:focus_mode:intention:currentTaskInToDoPlayer:currentHabitName:other_explanations_including_domains:completionHandler:)"
+            startingLineNumber = "1315"
+            endingLineNumber = "1315"
+            landmarkName = "btnViewAccordinMoreOptionsClicked(_:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "6EBF0C1C-98CE-4F47-BB5C-86157F16E386"
-            shouldBeEnabled = "Yes"
+            uuid = "3CCDFBEB-0BB8-432B-9FBA-DFC203BD4B94"
+            shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "FocusBear/AllApi.swift"
+            filePath = "FocusBear/menuView/menuViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "3866"
-            endingLineNumber = "3866"
-            landmarkName = "chatGPTIsURLSafe(url:tab_title:focus_mode:intention:currentTaskInToDoPlayer:currentHabitName:other_explanations_including_domains:completionHandler:)"
+            startingLineNumber = "1580"
+            endingLineNumber = "1580"
+            landmarkName = "btnStartSimplePomodoroModeClicked(_:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "F4C892E2-B510-4DB2-857C-8F8061A2AE85"
-            shouldBeEnabled = "Yes"
+            uuid = "EAF1EB3F-3832-4F9D-A8F7-F2F6B3821FA0"
+            shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "FocusBear/shutOffTimeVc.swift"
+            filePath = "FocusBear/menuView/menuViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "172"
-            endingLineNumber = "172"
-            landmarkName = "resetView()"
+            startingLineNumber = "1541"
+            endingLineNumber = "1541"
+            landmarkName = "btnStartSimplePomodoroModeClicked(_:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "736E60D2-D65D-446D-9352-15E60A684B32"
-            shouldBeEnabled = "Yes"
+            uuid = "5710FF17-9CB3-4DBB-8A9B-ABA203E62441"
+            shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "FocusBear/Routine/customRoutineStateVc.swift"
+            filePath = "FocusBear/Focus mode/taskPlayerVc.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "34"
-            endingLineNumber = "34"
-            landmarkName = "reloadData()"
+            startingLineNumber = "677"
+            endingLineNumber = "677"
+            landmarkName = "notifyToDoPlayerPauseState(isPaused:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "7B2F4001-0EC8-4075-AAB3-7C9665505B4A"
-            shouldBeEnabled = "Yes"
+            uuid = "37A3E351-EB29-4AEA-B6DD-8349A05538F9"
+            shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "FocusBear/Routine/habitsStateVc.swift"
+            filePath = "FocusBear/Focus mode/taskPlayerVc.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "38"
-            endingLineNumber = "38"
-            landmarkName = "reloadData()"
+            startingLineNumber = "676"
+            endingLineNumber = "676"
+            landmarkName = "notifyToDoPlayerPauseState(isPaused:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "98F874EF-253A-4F95-A263-4596CFD3F1D5"
+            uuid = "EA89EF40-94B5-4D9B-9FFE-23D1DA3D319A"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "FocusBear/Routine/habitsStateVc.swift"
+            filePath = "FocusBear/Focus mode/taskPlayerVc.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "39"
-            endingLineNumber = "39"
-            landmarkName = "reloadData()"
+            startingLineNumber = "689"
+            endingLineNumber = "689"
+            landmarkName = "notifyToDoPlayerPauseState(isPaused:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "CA95871D-9C01-42CF-941B-734228295323"
-            shouldBeEnabled = "Yes"
+            uuid = "47EC64F3-974D-468A-8B43-7C5AC58F232A"
+            shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "FocusBear/Routine/habitsVc.swift"
+            filePath = "FocusBear/Focus mode/taskPlayerVc.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "3897"
-            endingLineNumber = "3897"
-            landmarkName = "showHabitState()"
+            startingLineNumber = "690"
+            endingLineNumber = "690"
+            landmarkName = "notifyToDoPlayerPauseState(isPaused:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "18A8F3B6-79D9-4F4E-9925-26B204D738D1"
+            uuid = "30E8767A-765A-430D-8ABE-79589B56B61A"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "FocusBear/SettingsManager.swift"
+            filePath = "FocusBear/AppDelegate.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1287"
-            endingLineNumber = "1287"
-            landmarkName = "putUserLocalDeviceSettings()"
+            startingLineNumber = "2201"
+            endingLineNumber = "2201"
+            landmarkName = "resumeFocusMode(index:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "3BEC4489-C666-4094-8A90-8D53E37833C9"
+            uuid = "5C3DEFF3-612C-4817-BFC3-5D36B22B04CE"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "FocusBear/SettingsManager.swift"
+            filePath = "FocusBear/AppDelegate.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1139"
-            endingLineNumber = "1139"
-            landmarkName = "getLocalJsonToUpload()"
+            startingLineNumber = "2233"
+            endingLineNumber = "2233"
+            landmarkName = "resumeFocusMode(index:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "8AF589D1-E858-42E9-80C5-717A97B87FF3"
+            uuid = "06F05A6F-3CE7-4953-8C1F-239D5F3E9260"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "FocusBear/SettingsManager.swift"
+            filePath = "FocusBear/leftMenu/leftMenuVc.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1244"
-            endingLineNumber = "1244"
-            landmarkName = "getLocalJsonToUpload()"
-            landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            uuid = "07C66F22-BFA4-457A-9B19-C65C7F877673"
-            shouldBeEnabled = "Yes"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "FocusBear/Popups/alertLimitedUsageVc.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "61"
-            endingLineNumber = "61"
-            landmarkName = "btnContinueClicked(_:)"
+            startingLineNumber = "564"
+            endingLineNumber = "564"
+            landmarkName = "selectableListBoxShouldChangeSelection(_:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>

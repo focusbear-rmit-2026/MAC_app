@@ -2415,3 +2415,13 @@ func getFloatingTopBarWObject()->commonWindowController{
 
 
 
+
+//messageBoxVc
+var messageBoxVcObj:messageBoxVc?
+func getMessageBoxVcObject()->messageBoxVc{
+    if messageBoxVcObj == nil{
+        messageBoxVcObj = nagsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("messageBoxVc")) as? messageBoxVc
+    }
+    return messageBoxVcObj!
+}
+

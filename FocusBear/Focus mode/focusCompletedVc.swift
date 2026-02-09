@@ -596,9 +596,15 @@ class focusCompletedVc: NSViewController {
                         var breakRatio = 1
                         if let ratio = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsWorkRatioInPomodoro) as? Int{
                             workRatio = ratio
+                            if workRatio <= 0{
+                                workRatio = 1
+                            }
                         }
                         if let ratio = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsBreakRatioInPomodoro) as? Int{
                             breakRatio = ratio
+                            if breakRatio <= 0{
+                                breakRatio = 1
+                            }
                         }
                         
                         var breakDuration =  Int(((Double(focusModeActualDurationPerformed) / 60) / Double(workRatio)) * Double(breakRatio))
@@ -1305,6 +1311,10 @@ class focusCompletedVc: NSViewController {
                         
                         let tour = arrTourMessages[currentIndex]
                         if let view = tour["view"] as? NSView{
+                            if self.view.window == nil{
+                                print("widow was nil so returning ****************")
+                                return;
+                            }
                             popoverMenuTour.show(relativeTo: view.bounds, of: view, preferredEdge: NSRectEdge.minX)
                             var currentIndexText = indexText.replacingOccurrences(of: "<CURRENTINDEX>", with: "\(currentIndex + 1)")
                             currentIndexText = currentIndexText.replacingOccurrences(of: "<TOTALCOUNT>", with: "\(arrTourMessages.count)")

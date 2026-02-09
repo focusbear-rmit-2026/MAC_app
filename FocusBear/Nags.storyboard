@@ -1318,7 +1318,7 @@ DQ
                                                                 <constraints>
                                                                     <constraint firstAttribute="width" constant="250" id="U1m-U2-sIw"/>
                                                                 </constraints>
-                                                                <sliderCell key="cell" alignment="left" maxValue="100" doubleValue="100" tickMarkPosition="above" sliderType="linear" id="W7a-Rh-H7Q"/>
+                                                                <sliderCell key="cell" continuous="YES" alignment="left" maxValue="100" doubleValue="100" tickMarkPosition="above" sliderType="linear" id="W7a-Rh-H7Q"/>
                                                                 <connections>
                                                                     <action selector="sliderClicked:" target="p5P-q9-NFB" id="fKQ-xU-a6K"/>
                                                                 </connections>
@@ -1339,8 +1339,18 @@ DQ
                                                                     <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                                                 </textFieldCell>
                                                             </textField>
+                                                            <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="BO8-DL-XH8">
+                                                                <rect key="frame" x="105" y="9" width="41" height="16"/>
+                                                                <textFieldCell key="cell" lineBreakMode="clipping" title="00:44" id="SHr-ec-BUm">
+                                                                    <font key="font" metaFont="system"/>
+                                                                    <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                                                    <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                                                </textFieldCell>
+                                                            </textField>
                                                         </subviews>
                                                         <constraints>
+                                                            <constraint firstItem="BO8-DL-XH8" firstAttribute="centerY" secondItem="puv-Om-sU9" secondAttribute="centerY" id="3Lb-Cx-xpo"/>
+                                                            <constraint firstItem="BO8-DL-XH8" firstAttribute="centerX" secondItem="x4n-GR-jNa" secondAttribute="centerX" id="EJ0-8F-ZBa"/>
                                                             <constraint firstItem="Wr9-oa-0A1" firstAttribute="leading" secondItem="x4n-GR-jNa" secondAttribute="leading" id="Okj-9j-S8G"/>
                                                             <constraint firstItem="puv-Om-sU9" firstAttribute="centerY" secondItem="Wr9-oa-0A1" secondAttribute="centerY" id="TLW-bN-OzT"/>
                                                             <constraint firstItem="FIZ-Xz-Fgt" firstAttribute="top" secondItem="x4n-GR-jNa" secondAttribute="top" id="ZQb-zU-Kcw"/>
@@ -1478,6 +1488,7 @@ DQ
                         <outlet property="btnClose" destination="8YL-f2-uKI" id="tCY-Nf-7JK"/>
                         <outlet property="btnNo" destination="3Jk-TT-xQh" id="9dB-zJ-Ura"/>
                         <outlet property="btnYes" destination="E23-Q9-xPD" id="qpN-ks-PMv"/>
+                        <outlet property="lblCurrentDuration" destination="BO8-DL-XH8" id="RKX-4n-TfW"/>
                         <outlet property="lblMaximumDuration" destination="puv-Om-sU9" id="0kZ-ec-kjt"/>
                         <outlet property="lblMinimumDuration" destination="Wr9-oa-0A1" id="zTw-0o-jxz"/>
                         <outlet property="lblTitle" destination="YVa-AT-pD5" id="1iX-a0-8v3"/>
@@ -2067,6 +2078,64 @@ DQ
                 <customObject id="nFN-ca-Qly" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="-1325" y="1430.5"/>
+        </scene>
+        <!--Message Box Vc-->
+        <scene sceneID="FJk-de-3Bq">
+            <objects>
+                <viewController storyboardIdentifier="messageBoxVc" id="drx-tG-yPw" customClass="messageBoxVc" customModule="Focus_Bear" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" id="uKC-mw-qKX">
+                        <rect key="frame" x="0.0" y="0.0" width="290" height="60"/>
+                        <autoresizingMask key="autoresizingMask"/>
+                        <subviews>
+                            <box boxType="custom" borderWidth="2" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="9Zq-ni-dnb">
+                                <rect key="frame" x="0.0" y="0.0" width="290" height="60"/>
+                                <view key="contentView" id="dxd-Zl-8J6">
+                                    <rect key="frame" x="2" y="2" width="286" height="56"/>
+                                    <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                    <subviews>
+                                        <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="i6p-TK-cUz">
+                                            <rect key="frame" x="10" y="12" width="31" height="33"/>
+                                            <constraints>
+                                                <constraint firstAttribute="width" constant="31" id="D43-lH-xCv"/>
+                                                <constraint firstAttribute="height" constant="33" id="xL1-hG-b4L"/>
+                                            </constraints>
+                                            <imageCell key="cell" refusesFirstResponder="YES" alignment="left" animates="YES" imageScaling="proportionallyDown" image="bulb_small" id="S8B-wd-eym"/>
+                                        </imageView>
+                                        <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="bsp-ag-FH0">
+                                            <rect key="frame" x="49" y="19" width="229" height="19"/>
+                                            <textFieldCell key="cell" title="Continue in your browser" id="qL7-Cm-iZ3">
+                                                <font key="font" metaFont="system" size="16"/>
+                                                <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                                <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                            </textFieldCell>
+                                        </textField>
+                                    </subviews>
+                                    <constraints>
+                                        <constraint firstAttribute="trailing" secondItem="bsp-ag-FH0" secondAttribute="trailing" constant="10" id="Ah6-gj-5Qp"/>
+                                        <constraint firstItem="i6p-TK-cUz" firstAttribute="leading" secondItem="dxd-Zl-8J6" secondAttribute="leading" constant="10" id="G78-KX-gX5"/>
+                                        <constraint firstItem="bsp-ag-FH0" firstAttribute="leading" secondItem="i6p-TK-cUz" secondAttribute="trailing" constant="10" id="hK7-xf-KLZ"/>
+                                        <constraint firstItem="i6p-TK-cUz" firstAttribute="centerY" secondItem="dxd-Zl-8J6" secondAttribute="centerY" id="n8j-dw-Zwc"/>
+                                        <constraint firstItem="bsp-ag-FH0" firstAttribute="centerY" secondItem="dxd-Zl-8J6" secondAttribute="centerY" id="paP-a4-ID6"/>
+                                    </constraints>
+                                </view>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="60" id="FF5-Ta-ovA"/>
+                                </constraints>
+                                <color key="borderColor" red="0.97647058819999999" green="0.91372549020000005" blue="0.5568627451" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                <color key="fillColor" red="0.97649091480000005" green="0.91371864079999998" blue="0.55689555410000002" alpha="0.1641274536" colorSpace="custom" customColorSpace="sRGB"/>
+                            </box>
+                        </subviews>
+                        <constraints>
+                            <constraint firstAttribute="trailing" secondItem="9Zq-ni-dnb" secondAttribute="trailing" id="8rm-Cp-cnG"/>
+                            <constraint firstItem="9Zq-ni-dnb" firstAttribute="leading" secondItem="uKC-mw-qKX" secondAttribute="leading" id="Biv-cu-kum"/>
+                            <constraint firstItem="9Zq-ni-dnb" firstAttribute="top" secondItem="uKC-mw-qKX" secondAttribute="top" id="Hcu-Og-y1X"/>
+                            <constraint firstAttribute="bottom" secondItem="9Zq-ni-dnb" secondAttribute="bottom" id="oSS-fI-mcg"/>
+                        </constraints>
+                    </view>
+                </viewController>
+                <customObject id="rSb-QW-r3h" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-951" y="1439"/>
         </scene>
         <!--Floating Top Bar Vc-->
         <scene sceneID="eKw-cw-ESs">
@@ -4272,6 +4341,7 @@ DQ
         <image name="FocusBear-Geek" width="54" height="53"/>
         <image name="Glasses-Bear-250-px_V3" width="250" height="250"/>
         <image name="NSApplicationIcon" width="32" height="32"/>
+        <image name="bulb_small" width="31" height="32"/>
         <image name="close" width="25" height="25"/>
         <image name="expand" width="20" height="20"/>
         <image name="fbPro" width="256" height="256"/>

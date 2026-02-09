@@ -51,7 +51,7 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
         window!.backingType = .buffered
         self.window?.minSize = NSSize(width: 900, height: 450)// unused
         self.window?.title = ""
-        self.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.numberOfWindowLevelKeys))) //  numberOfWindowLevelKeys kro //    numberOfWindowLevelKeys 
+     //   self.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.numberOfWindowLevelKeys))) //  numberOfWindowLevelKeys kro //    numberOfWindowLevelKeys
         
         if isMainWindowLoaded{
             mainViewControllerObj!.boxTopButtons.isHidden = false
@@ -78,7 +78,7 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
         
 //        self.window?.styleMask = [.resizable, .titled, .closable]// don't use this
         window!.isExcludedFromWindowsMenu = false
-        self.window?.level = .floating//  .floating
+     //   self.window?.level = .floating//  .floating
         self.window?.title = appName
         window!.animationBehavior = .default
         window!.hasShadow = true

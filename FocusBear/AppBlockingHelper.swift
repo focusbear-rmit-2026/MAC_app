@@ -7,7 +7,7 @@
 
 import Foundation
 
-class AppBlockingHelper {
+class AppBlockingHelper { 
     
     static func isAppInAlwaysAllowedList(appName: String, alwaysAllowedApps: [String]) -> Bool {
         let normalizedAppName = appName.lowercased()

@@ -200,10 +200,12 @@ class customLoginVc: NSViewController {
     
     @objc func signUpWithGoogle(){
         askLogInVcObj?.btnSignInWithGoogleClicked(self)
+        askLogInVcObj?.showMessageBoxFor(sender: boxButtonSignUpWithGoogle)
     }
     
     @objc func signUpWithApple(){
         askLogInVcObj?.btnSignInWithAppleClicked(self)
+        askLogInVcObj?.showMessageBoxFor(sender: boxButtonSignUpWithApple)
     }
     
     override func viewWillAppear() {

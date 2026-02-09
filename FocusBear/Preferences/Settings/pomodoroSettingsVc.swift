@@ -192,10 +192,16 @@ class pomodoroSettingsVc: NSViewController {
         if let ratio = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsWorkRatioInPomodoro) as? Int{
             textFieldWorkRatio.stringValue = "\(ratio)"
             workRatio = ratio
+            if workRatio <= 0{
+                workRatio = 1
+            }
         }
         if let ratio = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsBreakRatioInPomodoro) as? Int{
             textFieldBreakRatio.stringValue = "\(ratio)"
             breakRatio = ratio
+            if breakRatio <= 0{
+                breakRatio = 1
+            }
         }
         var descriptionWorkToBreakRatio = descriptionWorkToBreakRatio
         descriptionWorkToBreakRatio = descriptionWorkToBreakRatio.replacingOccurrences(of: "<WORKRATIO>", with: "\(workRatio)")

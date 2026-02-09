@@ -620,8 +620,9 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         mainViewControllerObj?.showHabitsView()
         reloadHabitStatus()
         mainViewControllerObj?.collapseLeftPanel()
-//        mainViewControllerObj?.checkIsFullScreenNeeded()
         pauseAutomaticallyIfAnyFocusMusicPlaying()
+        mainWindowControllerObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.numberOfWindowLevelKeys)))
+        
     }
     
     func customRoutineStarted(){
@@ -632,6 +633,7 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         reloadHabitStatus()
         mainViewControllerObj?.collapseLeftPanel()
         pauseAutomaticallyIfAnyFocusMusicPlaying()
+        mainWindowControllerObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.numberOfWindowLevelKeys)))
     }
     
     func disbaleAllExceptHabitTab(){
@@ -730,6 +732,7 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         reloadHabitStatus()
         mainViewControllerObj?.expandLeftPanel()
         resumeIfAnyFocusMusicStoppedAutomatically()
+        mainWindowControllerObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.normalWindow)))
     }
     
     func microBreaksStarted(){
@@ -758,6 +761,7 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
        // mainViewControllerObj?.checkIsFullScreenNeeded()
         pauseAutomaticallyIfAnyFocusMusicPlaying()
         mainViewControllerObj?.collapseLeftPanel()
+        mainWindowControllerObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.numberOfWindowLevelKeys)))
     }
     
     func microBreaksOver(){
@@ -779,7 +783,7 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         }else if isHardCorePomodoroModeOn{//Super Focus session stops blocking after closing the break popup; session remains active but blocking and timer disappear#1572  v 2.28.440   (resume super pomodoro after micro breaks)
             appdelegate?.showAutoPomodoroModeView()
         }
-        
+        mainWindowControllerObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.normalWindow)))
     }
 
     func enableAllItems(){
@@ -955,7 +959,7 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
             boxTodoPlayer.title = leftMenuVcInfo.value(forKey: "menuTodoList") as? String ?? boxTodoPlayer.title
         }
     }
-    
+
     @IBAction func btnExpandLeftMenuClicked(_ sender: Any) {
         mainViewControllerObj?.toggleLeftPaneWidth()
     }

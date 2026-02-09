@@ -225,3 +225,6 @@ var kUserdefaultsUserShouldDoFirstFocusSesion = "kUserShouldDoFirstFocusSesion"
 
 var kUserDefaultsUserJobDetails = "kUserJobDetails"
 var kUserDefaultsUserDistractions = "kUserDistractions"
+
+var kUserDefaultsLastRoutinePostponeEndDate = "kLastRoutinePostponeEndDate" // v 2.28.454
+var kUserDefaultsLastRoutinePostponeState = "kLastRoutinePostponeState"// morning/ evening/ focus summary  // v 2.28.454
