@@ -696,7 +696,7 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
         }
     }
     
-    @IBAction func btnArrowLeftClicked(_ sender: Any) {// will be a samll window in left side
+    @IBAction func btnArrowLeftClicked(_ sender: Any) {// will be a small window in left side
         self.isSnappingGoing = true
         lastWindowFrame = self.view.window?.frame ?? lastWindowFrame
         let xPoint = (self.view.window?.screen?.frame.minX ?? 0) - 1
@@ -717,7 +717,7 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
         }
     }
     
-    @IBAction func btnArrowRightClicked(_ sender: Any) {// will be a samll window in right side
+    @IBAction func btnArrowRightClicked(_ sender: Any) {// will be a small window in right side
         isSnappingGoing = true
         lastWindowFrame = self.view.window?.frame ?? lastWindowFrame
         let maxXPoint = (self.view.window?.screen?.frame.maxX ?? 0) + 1

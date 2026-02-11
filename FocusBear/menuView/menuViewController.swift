@@ -194,7 +194,7 @@ class menuViewController: NSViewController {
             imgIconEditHabits.image = NSImage(named: "checkmark")
         }
         
-        lblTitleEditHabits.stringValue = "Edit Habits" // todo text
+        lblTitleEditHabits.stringValue = "Edit Habits"
         lblCustomBlocking.stringValue = "Blocking Schedule"
         if #available(macOS 11.0, *) {
             iconPlayFocusSession = NSImage(systemSymbolName: "play.circle", accessibilityDescription: nil)
@@ -228,6 +228,10 @@ class menuViewController: NSViewController {
         btnFalseDetection.title = "False positive: I'm not in a meeting"
         lblTitleResumeHabits.stringValue = "Resume Habits"
         lblTitleSetFocus.stringValue = "Set up Focus Modes"
+        
+        if let leftMenuVcInfo = configjson.value(forKey: "leftMenuVcInfo") as? NSDictionary{
+            lblTitleEditHabits.stringValue = leftMenuVcInfo.value(forKey: "menuEditHabits") as? String ?? lblTitleEditHabits.stringValue
+        }
         
         if let simplePomodoroVcInfo = configjson.value(forKey: "simplePomodoroVcInfo") as? NSDictionary{
             btnSetPermissions.title = simplePomodoroVcInfo.value(forKey: "buttonFixItText") as? String ?? btnSetPermissions.title

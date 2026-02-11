@@ -3295,26 +3295,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 }
             }
             showPopover(isDefaultButton: isDefaultButton)
-            
-            if (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_) && !(mainWindowControllerObj?.window?.isVisible ?? false){
-                addLog(text: "try to show samll window")
-                //                if currentHabitPlaying != nil || currentActivityPlaying != nil{// it means background activity
-                //                    if smallCountDownWcObj != nil{
-                //                        addLog(text: "small window is not nil")
-                //                        if smallCountDownWcObj?.window?.alphaValue == 0{
-                //                            if popUpBlockConfirmWcObj != nil{
-                //                                if !(popUpBlockConfirmWcObj?.window?.isVisible ?? false){//Countdown timer pops up after allowing app/website #455
-                //                                    smallCountDownWcObj?.window?.alphaValue = 1
-                //                                    addLog(text: "try to show samll window done")
-                //                                }
-                //                            }else{
-                //                                smallCountDownWcObj?.window?.alphaValue = 1
-                //                                addLog(text: "try to show samll window done")
-                //                            }
-                //                        }
-                //                    }
-                //                }
-            }
+
             addLog(text: "togglePopover end")
         }
     }
@@ -10543,10 +10524,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 
 // save temp app url after focus box should not come in block duper url focus mode  //  showaddFocusTempUrlsOrAppsWindow
 
-// bug when focus session in paused // todo 
+
 
 
 // bug afer custom routine ends solved 
 // load habits settings . and review result bug
 
-/// text continue in browser// todo add in file

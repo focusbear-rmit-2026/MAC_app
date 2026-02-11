@@ -724,6 +724,7 @@ func getStringFromDate(date:Date, dateFormat:String)->String{
     let now = df.string(from: date)
     return now
 }
+
 func getStringFromDateInUtc(date:Date, dateFormat:String)->String{
     let df = DateFormatter()
     df.dateFormat = dateFormat

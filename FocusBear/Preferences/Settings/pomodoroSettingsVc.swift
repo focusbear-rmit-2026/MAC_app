@@ -190,18 +190,20 @@ class pomodoroSettingsVc: NSViewController {
         var workRatio = 5
         var breakRatio = 1
         if let ratio = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsWorkRatioInPomodoro) as? Int{
-            textFieldWorkRatio.stringValue = "\(ratio)"
             workRatio = ratio
             if workRatio <= 0{
                 workRatio = 1
+                UserDefaults.standard.set(workRatio, forKey: SettingsManagerObject.kUserdefaultsWorkRatioInPomodoro)
             }
+            textFieldWorkRatio.stringValue = "\(workRatio)"
         }
         if let ratio = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsBreakRatioInPomodoro) as? Int{
-            textFieldBreakRatio.stringValue = "\(ratio)"
             breakRatio = ratio
             if breakRatio <= 0{
                 breakRatio = 1
+                UserDefaults.standard.set(breakRatio, forKey: SettingsManagerObject.kUserdefaultsBreakRatioInPomodoro)
             }
+            textFieldBreakRatio.stringValue = "\(breakRatio)"
         }
         var descriptionWorkToBreakRatio = descriptionWorkToBreakRatio
         descriptionWorkToBreakRatio = descriptionWorkToBreakRatio.replacingOccurrences(of: "<WORKRATIO>", with: "\(workRatio)")
@@ -474,11 +476,14 @@ extension pomodoroSettingsVc: NSTextFieldDelegate{
 //            }
 //            else
             if textfield == textFieldWorkRatio{
-                let count = textfield.integerValue
+                var count = textfield.integerValue
                 if let oldCount = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsWorkRatioInPomodoro) as? Int{
                     if count == oldCount{
                         return;
                     }
+                }
+                if count <= 0{
+                    count = 1
                 }
                 SettingsManagerObject.isSettingsChanged = true
                 UserDefaults.standard.set(count, forKey: SettingsManagerObject.kUserdefaultsWorkRatioInPomodoro)
@@ -491,11 +496,14 @@ extension pomodoroSettingsVc: NSTextFieldDelegate{
                     }
                 }
             }else if textfield == textFieldBreakRatio{
-                let count = textfield.integerValue
+                var count = textfield.integerValue
                 if let oldCount = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsBreakRatioInPomodoro) as? Int{
                     if count == oldCount{
                         return;
                     }
+                }
+                if count <= 0{
+                    count = 1
                 }
                 SettingsManagerObject.isSettingsChanged = true
                 UserDefaults.standard.set(count, forKey: SettingsManagerObject.kUserdefaultsBreakRatioInPomodoro)

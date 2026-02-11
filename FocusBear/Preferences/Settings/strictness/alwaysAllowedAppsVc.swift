@@ -7,7 +7,7 @@
 
 import Cocoa
 
-class alwaysAllowedAppsVc: NSViewController {//todo text
+class alwaysAllowedAppsVc: NSViewController {
 
     @IBOutlet weak var lblSubTitle: NSTextField!
     @IBOutlet weak var btnAddApp: NSButton!
