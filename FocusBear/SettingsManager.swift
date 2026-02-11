@@ -10,6 +10,9 @@ import Cocoa
 
 class SettingsManager:NSObject{
     
+    let defaultsWorkRatioInPomodoro = 5
+    let defaultsBreakRatioInPomodoro = 1
+    
     let strictnessLevelSuperGentle = 1
     let strictnessLevelGentle = 2
     let strictnessLevelSlightlyStrict = 3
@@ -553,10 +556,16 @@ class SettingsManager:NSObject{
                 if let val = settings.value(forKey: kBreakDurationMinutes) as? Int{
                     UserDefaults.standard.set(val, forKey: self.kUserdefaultsBreakDurationMinutes)
                 }
-                if let val = settings.value(forKey: kWorkRatioInPomodoro) as? Int{
+                if var val = settings.value(forKey: kWorkRatioInPomodoro) as? Int{
+                    if val == 0{
+                        val = defaultsWorkRatioInPomodoro
+                    }
                     UserDefaults.standard.set(val, forKey: self.kUserdefaultsWorkRatioInPomodoro)
                 }
-                if let val = settings.value(forKey: kBreakRatioInPomodoro) as? Int{
+                if var val = settings.value(forKey: kBreakRatioInPomodoro) as? Int{
+                    if val == 0{
+                        val = defaultsBreakRatioInPomodoro
+                    }
                     UserDefaults.standard.set(val, forKey: self.kUserdefaultsBreakRatioInPomodoro)
                 }
                 
@@ -1066,12 +1075,12 @@ class SettingsManager:NSObject{
             
             //  ---------------------------SETTINGS work ratio--------------------------
             if UserDefaults.standard.object(forKey: kUserdefaultsWorkRatioInPomodoro) == nil{
-                UserDefaults.standard.set(5, forKey: kUserdefaultsWorkRatioInPomodoro)
+                UserDefaults.standard.set(defaultsWorkRatioInPomodoro, forKey: kUserdefaultsWorkRatioInPomodoro)
             }
             
             //  ---------------------------SETTINGS Break ratio--------------------------
             if UserDefaults.standard.object(forKey: kUserdefaultsBreakRatioInPomodoro) == nil{
-                UserDefaults.standard.set(1, forKey: kUserdefaultsBreakRatioInPomodoro)
+                UserDefaults.standard.set(defaultsBreakRatioInPomodoro, forKey: kUserdefaultsBreakRatioInPomodoro)
             }
             
             //  ---------------------------POMODORO MODE--------------------------
@@ -1228,15 +1237,15 @@ class SettingsManager:NSObject{
             kSelectedAppAppearanceIndex:selectedAppAppearanceIndex,
             kIsOfficeModeEnabled:isOfficeModeEnabled,
             kHideAllWindowInScreenShots:UserDefaults.standard.object(forKey: kUserdefaultsHideAllWindowInScreenShots) as? Bool ?? false,
-            kPomodoroDurationMinutes:UserDefaults.standard.object(forKey: kUserdefaultsPomodoroDurationMinutes) as? Int ?? 0,
-            kBreakDurationMinutes:UserDefaults.standard.object(forKey: kUserdefaultsBreakDurationMinutes) as? Int ?? 0,
-            kWorkRatioInPomodoro:UserDefaults.standard.object(forKey: kUserdefaultsWorkRatioInPomodoro) as? Int ?? 0,
-            kBreakRatioInPomodoro:UserDefaults.standard.object(forKey: kUserdefaultsBreakRatioInPomodoro) as? Int ?? 0,
+            kPomodoroDurationMinutes:UserDefaults.standard.object(forKey: kUserdefaultsPomodoroDurationMinutes) as? Int ?? 25,
+            kBreakDurationMinutes:UserDefaults.standard.object(forKey: kUserdefaultsBreakDurationMinutes) as? Int ?? 5,
+            kWorkRatioInPomodoro:UserDefaults.standard.object(forKey: kUserdefaultsWorkRatioInPomodoro) as? Int ?? defaultsWorkRatioInPomodoro,
+            kBreakRatioInPomodoro:UserDefaults.standard.object(forKey: kUserdefaultsBreakRatioInPomodoro) as? Int ?? defaultsBreakRatioInPomodoro,
             kPomodoroModeEnabled:UserDefaults.standard.object(forKey: kUserdefaultsPomodoroModeEnabled) as? Bool ?? false,
             kDoNotBlockUrlsDuringSuperPomodoroBreaks:UserDefaults.standard.object(forKey: kUserdefaultsDoNotBlockUrlsDuringSuperPomodoroBreaks) as? Bool ?? false,
             kHardcorePomodoroEnabled:UserDefaults.standard.object(forKey: kUserdefaultsHardcorePomodoroEnabled) as? Bool ?? false,
             kHardcorePomodoroFocusedName:UserDefaults.standard.object(forKey: kUserdefaultsHardcorePomodoroFocusedName) as? String ?? "",
-            kHardcorePomodoroFocusedCount:UserDefaults.standard.object(forKey: kUserdefaultsHardcorePomodoroFocusedCount) as? Int ?? 0,
+            kHardcorePomodoroFocusedCount:UserDefaults.standard.object(forKey: kUserdefaultsHardcorePomodoroFocusedCount) as? Int ?? 2,
             kHardcorePomodoroSkipMicroBreaks:UserDefaults.standard.object(forKey: kUserdefaultsHardcorePomodoroSkipMicroBreaks) as? Bool ?? false,//
             kHardcorePomodoroArrDays:UserDefaults.standard.object(forKey: kUserdefaultsHardcorePomodoroArrDays) as? [String] ?? [],
             kArrBlockedUrls:arrBlockedUrls,

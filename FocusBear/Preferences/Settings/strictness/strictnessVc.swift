@@ -77,7 +77,7 @@ class strictnessVc: NSViewController {
             blockedAppsSettingTitle = blockedAppsViewInfo.value(forKey: "title") as? String ?? blockedAppsSettingTitle
         }
         if let alwaysAllowedAppsViewInfo = configjson.value(forKey: "alwaysAllowedAppsViewInfo") as? NSDictionary{
-            alwaysAllowedAppsSettingTitle = alwaysAllowedAppsViewInfo.value(forKey: "title") as? String ?? alwaysAllowedAppsSettingTitle// todo text
+            alwaysAllowedAppsSettingTitle = alwaysAllowedAppsViewInfo.value(forKey: "title") as? String ?? alwaysAllowedAppsSettingTitle
         }
         
         var strictness_Friction = "Change how hard it is to unlock Focus Bear."

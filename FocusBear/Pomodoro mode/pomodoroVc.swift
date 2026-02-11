@@ -447,12 +447,14 @@ class pomodoroVc: NSViewController {
             workRatio = ratio
             if workRatio <= 0{
                 workRatio = 1
+                UserDefaults.standard.set(workRatio, forKey: SettingsManagerObject.kUserdefaultsWorkRatioInPomodoro)
             }
         }
         if let ratio = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsBreakRatioInPomodoro) as? Int{
             breakRatio = ratio
             if breakRatio <= 0{
                 breakRatio = 1
+                UserDefaults.standard.set(breakRatio, forKey: SettingsManagerObject.kUserdefaultsBreakRatioInPomodoro)
             }
         }
         

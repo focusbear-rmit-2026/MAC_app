@@ -1093,7 +1093,8 @@
         "buttonSignUpWithEmail": "Regístrate con correo electrónico",
         "buttonSignInOldAccountText": "¿Ya tienes una cuenta de Focus Bear? Inicia sesión",
         "buttonCreateAccount": "Crea tu cuenta",
-        "orText": "O"
+        "orText": "O",
+        "continueInBrowser": "Continuar en tu navegador"
     },
     "upgradeNowVcInfo": {
         "pointFirstText": "Rutinas de hábitos personalizadas",
@@ -2669,6 +2670,10 @@
         "exampleFirst": "(P. ej., herramientas de gestión de proyectos, repositorios de código)",
         "headingSecond": "¿Qué tipo de cosas te distraen?",
         "exampleSecond": "(P. ej., redes sociales, streaming de video)"
+    },
+    "alwaysAllowedAppsViewInfo": {
+        "title": "Apps siempre permitidas",
+        "subTitleText": "Las apps agregadas aquí nunca serán bloqueadas, sin importar el modo de enfoque, los horarios de bloqueo o la configuración de estrictitud. Úsalo para apps esenciales a las que siempre necesitas acceso."
     },
     "discordUrl": "https://discord.gg/VZdv3ZjhSq",
     "whatsAppUrl": "https://chat.whatsapp.com/FV0oTbCUWpILBYif7CP6UD",

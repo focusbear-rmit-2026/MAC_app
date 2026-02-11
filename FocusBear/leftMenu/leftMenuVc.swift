@@ -209,14 +209,7 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         boxCustomRoutine.delegate = self
         boxUpgradeNow.delegate = self
 
-        arrForSearchFromSettings.append(["title": boxSettings.title, "tabId": idSettings])
-        arrForSearchFromSimpleModeSettings.append(["title": boxSettings.title, "tabId": idSettings])
-        
-        arrForSearchFromSettings.append(["title": boxEditHabits.title, "tabId": idEditHabits])
-        arrForSearchFromSimpleModeSettings.append(["title": boxEditHabits.title, "tabId": idEditHabits])
-        
-        arrForSearchFromSettings.append(["title": boxBlocks.title, "tabId": idTabStrictness])
-        arrForSearchFromSimpleModeSettings.append(["title": boxBlocks.title, "tabId": idTabStrictness])
+
         
 //        arrForSearchFromSettings.append(["title": boxFocusModeSettings.title, "tabId": idFocus])
 //        arrForSearchFromSimpleModeSettings.append(["title": boxFocusModeSettings.title, "tabId": idFocus])
@@ -258,6 +251,15 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
             disableReasonMircoBreaks = leftMenuVcInfo.value(forKey: "disableReasonMircoBreaks") as? String ?? disableReasonMircoBreaks
             disableReasonCustomRoutine = leftMenuVcInfo.value(forKey: "disableReasonCustomRoutine") as? String ?? disableReasonCustomRoutine
         }
+        
+        arrForSearchFromSettings.append(["title": boxSettings.title, "tabId": idSettings])
+        arrForSearchFromSimpleModeSettings.append(["title": boxSettings.title, "tabId": idSettings])
+        
+        arrForSearchFromSettings.append(["title": boxEditHabits.title, "tabId": idEditHabits])
+        arrForSearchFromSimpleModeSettings.append(["title": boxEditHabits.title, "tabId": idEditHabits])
+        
+        arrForSearchFromSettings.append(["title": boxBlocks.title, "tabId": idTabStrictness])
+        arrForSearchFromSimpleModeSettings.append(["title": boxBlocks.title, "tabId": idTabStrictness])
     }
     
     override func viewWillAppear() {
@@ -360,6 +362,8 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
                         habitsVcObj?.showHabitState()// v 2.28.437
                     }else if (appdelegate?.isUserOnMeeting ?? false) && !isHabitAlreadyShowed && !isShutOffTimeGoing(){
                         habitsVcObj?.showHabitState()// v 2.28.445
+                    }else if !isAppEnable{
+                        habitsVcObj?.showHabitState()// v 2.28.456
                     }
                 }
             }
