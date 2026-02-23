@@ -116,6 +116,7 @@ class pomodoroVc: NSViewController {
     var descriptionSuperStrictMode = "Once you start, you can't stop"
     var toolTipSuperStrictMode = "Once you start, there’s no backing out. Best for deep, distraction-free sessions."
     var titleAfterPostpone = "What do you want to do instead of your habits?"
+    var isViewVisible = false
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
@@ -351,6 +352,7 @@ class pomodoroVc: NSViewController {
             }
         }
         
+        //user can only start same focusmode which is added under running strict mode blocking schedule
         if popUpBtnFocusType.isEnabled{
             if customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
                 if currentFocusModeStrictness == ._SUPER_STRICT_{
@@ -364,6 +366,7 @@ class pomodoroVc: NSViewController {
                                         popUpBtnFocusType.selectItem(at: i)
                                         popUpBtnFocusType.isEnabled = false
                                         popoverTooltip?.close()
+                                        showMessageBoxFor(sender: popUpBtnFocusType)
                                         break;
                                     }
                                 }
@@ -373,6 +376,112 @@ class pomodoroVc: NSViewController {
                     }
                 }
             }
+        }
+        
+        isViewVisible = true
+    }
+    
+    var messageBoxView: NSView?
+    var hideWorkItem: DispatchWorkItem?
+    
+    func showMessageBoxFor(sender: NSView) {
+        guard
+            let window = sender.window,
+            let contentView = window.contentView
+        else { return }
+
+        // Cancel previous timer
+        hideWorkItem?.cancel()
+        hideWorkItem = nil
+
+        // Remove existing box
+        messageBoxView?.removeFromSuperview()
+
+        let vc = getMessageBoxVcObject()
+        if !vc.isViewLoaded{
+            vc.loadView()
+        }
+        var title = "A super strict blocking schedule is active. You can't change the block list."
+        if let common = configjson.value(forKey: "common") as? NSDictionary{
+            title = common.value(forKey: "superStrictBlockingActiveMessage") as? String ?? title
+        }
+        
+        vc.resetView(title: title)
+        vc.lblTitle.font = getRegularFont(size: 14)
+        let boxView = vc.view
+        messageBoxView = boxView
+
+        // 🔁 Convert sender bounds → window contentView
+        let senderRectInContent =
+            sender.convert(sender.bounds, to: contentView)
+
+        let boxSize = boxView.frame.size
+
+        let x = senderRectInContent.maxX + 5
+        let y = senderRectInContent.midY - boxSize.height / 2
+
+        boxView.frame = NSRect(
+            x: x,
+            y: y,
+            width: 220,
+            height: 85
+        )
+
+        boxView.alphaValue = 1
+        contentView.addSubview(boxView)
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(windowDidResize),
+            name: NSWindow.didResizeNotification,
+            object: sender.window
+        )
+        
+        // ⏱ Auto hide after 10 seconds
+        let workItem = DispatchWorkItem { [weak self, weak boxView] in
+            guard let view = boxView else { return }
+
+            NSAnimationContext.runAnimationGroup({ context in
+                context.duration = 0.25
+                view.animator().alphaValue = 0
+            }, completionHandler: {
+                view.removeFromSuperview()
+                self?.messageBoxView = nil
+                if let self = self{
+                    NotificationCenter.default.removeObserver(
+                        self,
+                        name: NSWindow.didResizeNotification,
+                        object: sender.window
+                    )
+                }
+            })
+        }
+
+        hideWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + 7, execute: workItem)
+    }
+    
+    @objc func windowDidResize() {
+        if let messageBoxView = messageBoxView{
+            guard
+                let window = popUpBtnFocusType.window,
+                let contentView = window.contentView
+            else { return }
+            
+            let senderRectInContent =
+            popUpBtnFocusType.convert(popUpBtnFocusType.bounds, to: contentView)
+
+            let boxSize = messageBoxView.frame.size
+
+            let x = senderRectInContent.maxX + 5
+            let y = senderRectInContent.midY - boxSize.height / 2
+            
+            messageBoxView.frame = NSRect(
+                x: x,
+                y: y,
+                width: messageBoxView.frame.width,
+                height: messageBoxView.frame.height
+            )
         }
     }
     
@@ -1398,6 +1507,8 @@ class pomodoroVc: NSViewController {
         if let pomodoroInfo = configjson.value(forKey: "pomodoroInfo") as? NSDictionary{
             lblTitle.stringValue = pomodoroInfo.value(forKey: "title") as? String ?? lblTitle.stringValue
         }
+        
+        isViewVisible = false
     }
     var timer:Timer?
     var currentTimer = 0

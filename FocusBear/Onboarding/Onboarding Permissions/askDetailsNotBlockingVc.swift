@@ -54,5 +54,28 @@ class askDetailsNotBlockingVc: NSViewController {
             addLog(text: "Showing preferences")
             tabStrictnessContainerVcObj?.showCustomBlockingSchedulesView()
         }
+        
+        addLog(text: "Attempting to upload logs.")
+        allApiObject.uploadAppLogs(feedback: textField.stringValue, completionHandler: {uploaded in
+            DispatchQueue.main.async {
+                if uploaded ?? false{
+                    addLog(text: "Feedback and logs successfully shared.")
+                }else{
+                    addLog(text: "There was some problem in uploading the logs. Please try again.")
+                }
+            }
+        })
+    }
+    
+    func showAlert(msg:String, completionHandler: @escaping(_ result: Bool) -> ()) {
+        let alertWarning = NSAlert()
+        alertWarning.setSharingType()
+        alertWarning.messageText = msg
+        alertWarning.addButton(withTitle: buttonOkText)
+        alertWarning.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
+
+            completionHandler(true)
+            return
+        })
     }
 }

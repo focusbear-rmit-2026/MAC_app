@@ -14,10 +14,10 @@ class messageBoxVc: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
-        lblTitle.stringValue = "Continue in your browser"
-        if let askLogInVcInfo = configjson.value(forKey: "askLogInVcInfo") as? NSDictionary{
-            lblTitle.stringValue = askLogInVcInfo.value(forKey: "continueInBrowser") as? String ?? lblTitle.stringValue
-        }
+        
     }
     
+    func resetView(title:String){
+        lblTitle.stringValue = title
+    }
 }

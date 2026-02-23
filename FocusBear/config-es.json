@@ -494,7 +494,7 @@
         "toolTipPomodoroSessionText": "Inicia una sesión Pomodoro para trabajar en profundidad.",
         "menuItemResumeFocusTitle": "Reanudar Sesión de Enfoque",
         "menuItemPauseFocusTitle": "Pausar Sesión de Enfoque",
-        "menuItemBlockingDisabledTitle": "Bloqueo Limitado",
+        "menuItemBlockingDisabledTitle": "Bloqueo desactivado",
         "toolTipBlockingDisabled": "Bloqueo desactivado porque elegiste activar los bloqueos sólo durante las sesiones de enfoque.",
         "toolTipButtonEditBlockingSchedule": "Editar horario de bloqueo",
         "menuItemStartMorningHabitsFirstTimeTitle": "Iniciar rutina matutina",
@@ -515,7 +515,8 @@
         "buttonAddBlockingSchedule": "Agregar horario de bloqueo",
         "addBlockingScheduleInfo": "El bloqueo está desactivado porque no se han agregado horarios de bloqueo personalizados.",
         "titleBlockingSchedule": "Horario de bloqueo",
-        "buttonEditFocusModeDuration": "Haz clic aquí para actualizar la duración, la intención y la tarea actual"
+        "buttonEditFocusModeDuration": "Haz clic aquí para actualizar la duración, la intención y la tarea actual",
+        "buttonEnable": "Activar"
     },
     "preferencesInfo": {
         "titlePomodoro": "Modo Pomodoro:",
@@ -2279,7 +2280,8 @@
         "descriptionSuperStrictMode": "Una vez que empiezas, no puedes parar.",
         "toolTipSuperStrictMode": "Una vez que empiezas, no hay marcha atrás. Ideal para sesiones profundas y sin distracciones.",
         "enterFirstTask": "¿En qué quieres trabajar primero?",
-        "toolTipFirstTask": "Agrega la primera tarea en la que trabajarás en esta sesión de enfoque. Empezar con una tarea clara te ayuda a mantenerte en el camino."
+        "toolTipFirstTask": "Agrega la primera tarea en la que trabajarás en esta sesión de enfoque. Empezar con una tarea clara te ayuda a mantenerte en el camino.",
+        "focusSettingsText": "Configuración de enfoque"
     },
     "achieveWithFocusBearVcInfo":{
         "title": "¿Qué te gustaría mejorar en tu vida usando Focus Bear?",

@@ -185,6 +185,12 @@ class focusModeStateVc: NSViewController {
                 btnStopFocusMode.title = leftMenuVcInfo.value(forKey: "menuStopSuperFocusSession") as? String ?? btnStopFocusMode.title
             }
         }
+        
+        if currentFocusModeStrictness == ._SUPER_STRICT_ {
+            btnDecreaseDuration.isEnabled = false
+        }else{
+            btnDecreaseDuration.isEnabled = true
+        }
     }
     
     override func viewWillDisappear() {
@@ -371,7 +377,7 @@ class focusModeStateVc: NSViewController {
         appdelegate?.extendFocusModeFor(minutes: 1)
     }
     
-    @IBAction func btnDecreaseDurationClicked(_ sender: Any) {
+    @IBAction func btnDecreaseDurationClicked(_ sender: Any) { 
         appdelegate?.reduceFocusModeFor(minutes: 1)
     }
 }

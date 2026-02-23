@@ -10,6 +10,7 @@ import Cocoa
 
 class nudgeFocusAlignmentScoreDippingVc: NSViewController {
 
+    @IBOutlet weak var boxTimer: NSBox!
     @IBOutlet weak var lblTimer: NSTextField!
     @IBOutlet weak var btnExpandTaskPlayer: NSButton!
     @IBOutlet weak var lblDescriptionText: NSTextField!
@@ -117,7 +118,7 @@ class nudgeFocusAlignmentScoreDippingVc: NSViewController {
         }
     }
     
-    func reloadData(score:Double, isNudgeVisible:Bool){
+    func reloadData(score:Double, isNudgeVisible:Bool){////if isFocusModeRunning || isAnyAllowedFocusModeActivityRunning || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
         var scoreText = "Focus Alignment Score: \(score)%"
         if let info = configjson.value(forKey: "nudgeFocusAlignmentScoreDippingVcInfo") as? NSDictionary{
             scoreText = info.value(forKey: "focusAlignmentScoreText") as? String ?? scoreText
@@ -185,6 +186,12 @@ class nudgeFocusAlignmentScoreDippingVc: NSViewController {
 //                lblDescriptionText.stringValue = info.value(forKey: "aiScoreNotCalculatedText") as? String ?? lblDescriptionText.stringValue
 //            }
 //        }
+        
+        if isFocusModeRunning && endFocusModeTime != nil{
+            boxTimer.isHidden = false
+        }else{
+            boxTimer.isHidden = true
+        }
     }
     
     func setTimerStopAniumation(){

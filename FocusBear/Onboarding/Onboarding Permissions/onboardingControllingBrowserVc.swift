@@ -240,6 +240,7 @@ class onboardingControllingBrowserVc: NSViewController {
                                             }else if browser == ._SIGMA_OS_{
                                                 browserNameForPosthog = "sigmaos"
                                             }
+                                            addLog(text: "Permission granted for browser:- \(browserNameForPosthog)")
                                             allApiObject.capturePosthog(event: "onboarding-granted-permission-\(browserNameForPosthog)", metadata: [:])
                                             if self.checkPermissionTimer != nil{
                                                 self.checkPermissionTimer?.cancel()
@@ -438,6 +439,7 @@ extension onboardingControllingBrowserVc:NSTableViewDelegate, NSTableViewDataSou
                 browserNameForPosthog = "SigmaOS"
             }
             allApiObject.capturePosthog(event: "onboarding-request-permission-\(browserNameForPosthog)", metadata: [:])
+            addLog(text: "Request permission for browser:- \(browserNameForPosthog)")
             lastBrowserClicked = browser
             if browser == ._FIREFOX_{// in settings also
                 //showFirefoxPermissionWindow(showingFromOnboarding: true, currentBrowser: browser)
@@ -470,12 +472,15 @@ extension onboardingControllingBrowserVc:NSTableViewDelegate, NSTableViewDataSou
                         self.arrBrowsers[row]["isEnabled"] = true
                         self.tblView.reloadData()
                         allApiObject.capturePosthog(event: "onboarding-granted-permission-\(browserNameForPosthog)", metadata: [:])
+                        addLog(text: "Permission granted for browser:- \(browserNameForPosthog)")
                         self.saveBrowsersPermissionInfo()
                         self.permissionGivenFromBrowser()
                         self.anyBrowserPermissionSet = true
                     }
                 }else{
                     DispatchQueue.main.async {
+                        addLog(text: "⚠️ Permission not granted for browser:- \(browserNameForPosthog)")
+                        
                         let alert = NSAlert()
                         alert.setSharingType()
                         alert.alertStyle = .informational
