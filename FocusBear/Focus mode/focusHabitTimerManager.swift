@@ -130,7 +130,7 @@ class habitBlockTimerManager {
                 }
             }
             // New block page work (when browser is in full screen or stage manager is enable)
-            if isAnyAllowedFocusModeActivityRunning{// no need additional check
+            if isAnyAllowedFocusModeActivityRunning && SettingsManagerObject.isCuddlyModeEnabled{// no need additional check
                 if url.localizedCaseInsensitiveContains("yes-i-need=true"){
                     focusAlllowUrlClickedFromNewBlockPage(url: url, currentBrowser: currentBrowser)
                     return;
@@ -160,153 +160,11 @@ class habitBlockTimerManager {
                 
                 if url.localizedCaseInsensitiveContains("unblock_it=true"){
                     allApiObject.capturePosthog(event: "unblock-it-for-me-found", metadata: [:])
-                    
-                    if var extractedUrl = extractSubstring(from: url, start: "old_url=", end: "&block_type") {
-                        print("Extracted substring: \(extractedUrl)")
-                        extractedUrl = extractedUrl.removingPercentEncoding ?? extractedUrl
-                        var extractedPath = getPathFromUrl(url: extractedUrl)//getDomainFromUrl(url: url)
-                        
-                        if url.localizedCaseInsensitiveContains("unlock_duration_minutes"){// new blocking page work if browser full screen
-                            var minutesToUnlock = 0
-                            var intentionToShow = ""
-                            let urlInfo = url.components(separatedBy: "&")
-                            if urlInfo.count > 1{
-                                for info in urlInfo{
-                                    if info.localizedCaseInsensitiveContains("unlock_duration_minutes"){
-                                        let durationInfo = info.components(separatedBy: "=")
-                                        if durationInfo.count > 1{
-                                            let minutesString = durationInfo[1]
-                                            let minutes = Int(minutesString)
-                                            minutesToUnlock = minutes ?? 0
-                                        }
-                                        
-                                    }else if info.localizedCaseInsensitiveContains("distraction_intention"){
-                                        let intentionInfo = info.components(separatedBy: "=")
-                                        if intentionInfo.count > 1{
-                                            intentionToShow = intentionInfo[1]
-                                            intentionToShow = intentionToShow.removingPercentEncoding ?? intentionToShow
-                                        }
-                                        
-                                    }
-                                }
-                            }
-                            
-                            var isAlwaysBlockedUrl = false
-                            for i in 0..<arrAlwaysBlockedSitesData.count{
-                                let dictionary = arrAlwaysBlockedSitesData[i]
-                                if let blockUrl = dictionary["url"] as? String{
-                                    if blockUrl.lowercased() == extractedPath.lowercased(){
-                                        arrAlwaysBlockedSitesData.remove(at: i)
-                                        isAlwaysBlockedUrl = true
-                                        break;
-                                    }
-                                }
-                            }
-                            
-                            if !isAlwaysBlockedUrl{
-                                let domainBlockedUrl = getDomainFromUrl(url: extractedUrl)
-                                
-                                for i in 0..<arrAlwaysBlockedSitesData.count{
-                                    let dictionary = arrAlwaysBlockedSitesData[i]
-                                    if let blockUrl = dictionary["url"] as? String{
-                                        if blockUrl.lowercased() == domainBlockedUrl.lowercased(){
-                                            arrAlwaysBlockedSitesData.remove(at: i)
-                                            extractedPath = domainBlockedUrl// bacuase extractedPath was having / in last eg. facebook.com/
-                                            isAlwaysBlockedUrl = true
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-                            
-                            appdelegate!.saveIntentionForBlockedUrl(url: extractedPath, script: "", browser: nil, intention: intentionToShow, seconds: minutesToUnlock * 60, currentPid: nil)
-                            
-                            
-                            allApiObject.capturePosthog(event: "unblock-it-for-me-worked", metadata: [:])
-                            DispatchQueue.main.async {
-                                setUrlToBrowser(browser: currentBrowser, url: extractedUrl)
-                            }
-                            return;
-                        }
-                        
-                        var isAlwaysBlockedUrl = false
-                        for i in 0..<arrAlwaysBlockedSitesData.count{
-                            let dictionary = arrAlwaysBlockedSitesData[i]
-                            if let blockUrl = dictionary["url"] as? String{
-                                if blockUrl.lowercased() == extractedPath.lowercased(){
-                                    arrAlwaysBlockedSitesData.remove(at: i)
-                                    isAlwaysBlockedUrl = true
-                                    break;
-                                }
-                            }
-                        }
-                        
-                        if !isAlwaysBlockedUrl{
-                            let domainBlockedUrl = getDomainFromUrl(url: extractedUrl)
-                            
-                            for i in 0..<arrAlwaysBlockedSitesData.count{
-                                let dictionary = arrAlwaysBlockedSitesData[i]
-                                if let blockUrl = dictionary["url"] as? String{
-                                    if blockUrl.lowercased() == domainBlockedUrl.lowercased(){
-                                        arrAlwaysBlockedSitesData.remove(at: i)
-                                        isAlwaysBlockedUrl = true
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                        let arrBlockedUrlsForFocus = currentRunningFocusType["blockUrlsArray"] as? [String] ?? []
-                        for turl in arrBlockedUrlsForFocus{
-                            let isBlocked = validation.isUrlValid(urlToCheck: extractedUrl, allowUrl: turl)
-                            if isBlocked{
-                                allApiObject.capturePosthog(event: "unblock-it-for-me-not-working-reason-block-url-in-focus-mode", metadata: [:])
-                                let hitNewUrl = originalUrlStringFromBrowser.replacingOccurrences(of: "unblock_it=true", with: "")
-                                DispatchQueue.main.async {
-                                    setUrlToBrowser(browser: currentBrowser, url: hitNewUrl)
-                                }
-                                var msg = "You can't unblock this site because it's currently listed under the blocked URLs for your focus session"
-                                if let common = configjson.value(forKey: "common") as? NSDictionary{
-                                    msg = common.value(forKey: "unblockNotAvailableForFocusBlockedUrlText") as? String ?? msg
-                                }
-                                DispatchQueue.main.async {
-                                    showCustomAlert(title: msg, body: nil, buttonOkText: buttonOkText, buttonCancelText: nil, checkBoxText: nil, autoClose: true, buttonLinkUrl:nil, buttonLinkText: nil, completionHandler: {isOkClicked in
-                                        print(isOkClicked)
-                                        if isOkClicked{
-                                            
-                                        }
-                                    })
-                                }
-                                return;
-                            }
-                        }
-                        
-                        if !isAlwaysBlockedUrl{
-                            for i in 0..<arrBlockedUrlsInCuddlyModeCurrentFocus.count{
-                                if arrBlockedUrlsInCuddlyModeCurrentFocus[i].contains(extractedPath){
-                                    arrBlockedUrlsInCuddlyModeCurrentFocus.remove(at: i)
-                                    break;
-                                }
-                            }
-                        }
-                        allApiObject.capturePosthog(event: "unblock-it-for-me-worked", metadata: [:])
-                        DispatchQueue.main.async {
-                            setUrlToBrowser(browser: currentBrowser, url: extractedUrl)
-                        }
-                        
-                        return;
-                    } else {
-                        print("Substring not found.")
-                        // work for always block site// if change anything in always block site code then a change also done in blockUrlsInBackground function
-                        var extractedUrl: String = ""
-                        extractedUrl = extractSubstring(from: url, start: "old_url=", end: "&block_type") ?? ""
-                        if extractedUrl.isEmpty{
-                            extractedUrl = extractSubstring(from: url, start: "old_url=", end: "&focus_mode_end_time") ?? ""
-                        }
-                        
-                        if !extractedUrl.isEmpty {
+                    if SettingsManagerObject.isCuddlyModeEnabled{
+                        if var extractedUrl = extractSubstring(from: url, start: "old_url=", end: "&block_type") {
                             print("Extracted substring: \(extractedUrl)")
                             extractedUrl = extractedUrl.removingPercentEncoding ?? extractedUrl
-                            let extractedPath = getDomainFromUrl(url: extractedUrl)
+                            var extractedPath = getPathFromUrl(url: extractedUrl)//getDomainFromUrl(url: url)
                             
                             if url.localizedCaseInsensitiveContains("unlock_duration_minutes"){// new blocking page work if browser full screen
                                 var minutesToUnlock = 0
@@ -332,15 +190,35 @@ class habitBlockTimerManager {
                                         }
                                     }
                                 }
+                                
+                                var isAlwaysBlockedUrl = false
                                 for i in 0..<arrAlwaysBlockedSitesData.count{
                                     let dictionary = arrAlwaysBlockedSitesData[i]
                                     if let blockUrl = dictionary["url"] as? String{
                                         if blockUrl.lowercased() == extractedPath.lowercased(){
                                             arrAlwaysBlockedSitesData.remove(at: i)
+                                            isAlwaysBlockedUrl = true
                                             break;
                                         }
                                     }
                                 }
+                                
+                                if !isAlwaysBlockedUrl{
+                                    let domainBlockedUrl = getDomainFromUrl(url: extractedUrl)
+                                    
+                                    for i in 0..<arrAlwaysBlockedSitesData.count{
+                                        let dictionary = arrAlwaysBlockedSitesData[i]
+                                        if let blockUrl = dictionary["url"] as? String{
+                                            if blockUrl.lowercased() == domainBlockedUrl.lowercased(){
+                                                arrAlwaysBlockedSitesData.remove(at: i)
+                                                extractedPath = domainBlockedUrl// bacuase extractedPath was having / in last eg. facebook.com/
+                                                isAlwaysBlockedUrl = true
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                                
                                 appdelegate!.saveIntentionForBlockedUrl(url: extractedPath, script: "", browser: nil, intention: intentionToShow, seconds: minutesToUnlock * 60, currentPid: nil)
                                 
                                 
@@ -348,37 +226,179 @@ class habitBlockTimerManager {
                                 DispatchQueue.main.async {
                                     setUrlToBrowser(browser: currentBrowser, url: extractedUrl)
                                 }
-                            }else{
+                                return;
+                            }
+                            
+                            var isAlwaysBlockedUrl = false
+                            for i in 0..<arrAlwaysBlockedSitesData.count{
+                                let dictionary = arrAlwaysBlockedSitesData[i]
+                                if let blockUrl = dictionary["url"] as? String{
+                                    if blockUrl.lowercased() == extractedPath.lowercased(){
+                                        arrAlwaysBlockedSitesData.remove(at: i)
+                                        isAlwaysBlockedUrl = true
+                                        break;
+                                    }
+                                }
+                            }
+                            
+                            if !isAlwaysBlockedUrl{
+                                let domainBlockedUrl = getDomainFromUrl(url: extractedUrl)
                                 
                                 for i in 0..<arrAlwaysBlockedSitesData.count{
                                     let dictionary = arrAlwaysBlockedSitesData[i]
                                     if let blockUrl = dictionary["url"] as? String{
-                                        if blockUrl.lowercased() == extractedPath.lowercased(){
+                                        if blockUrl.lowercased() == domainBlockedUrl.lowercased(){
                                             arrAlwaysBlockedSitesData.remove(at: i)
+                                            isAlwaysBlockedUrl = true
                                             break;
                                         }
                                     }
                                 }
-                                allApiObject.capturePosthog(event: "unblock-it-for-me-worked", metadata: [:])
-                                DispatchQueue.main.async {
-                                    setUrlToBrowser(browser: currentBrowser, url: extractedUrl)
+                            }
+                            let arrBlockedUrlsForFocus = currentRunningFocusType["blockUrlsArray"] as? [String] ?? []
+                            for turl in arrBlockedUrlsForFocus{
+                                let isBlocked = validation.isUrlValid(urlToCheck: extractedUrl, allowUrl: turl)
+                                if isBlocked{
+                                    allApiObject.capturePosthog(event: "unblock-it-for-me-not-working-reason-block-url-in-focus-mode", metadata: [:])
+                                    let hitNewUrl = originalUrlStringFromBrowser.replacingOccurrences(of: "unblock_it=true", with: "")
+                                    DispatchQueue.main.async {
+                                        setUrlToBrowser(browser: currentBrowser, url: hitNewUrl)
+                                    }
+                                    var msg = "You can't unblock this site because it's currently listed under the blocked URLs for your focus session"
+                                    if let common = configjson.value(forKey: "common") as? NSDictionary{
+                                        msg = common.value(forKey: "unblockNotAvailableForFocusBlockedUrlText") as? String ?? msg
+                                    }
+                                    DispatchQueue.main.async {
+                                        showCustomAlert(title: msg, body: nil, buttonOkText: buttonOkText, buttonCancelText: nil, checkBoxText: nil, autoClose: true, buttonLinkUrl:nil, buttonLinkText: nil, completionHandler: {isOkClicked in
+                                            print(isOkClicked)
+                                            if isOkClicked{
+                                                
+                                            }
+                                        })
+                                    }
+                                    return;
                                 }
-                                
-                                // doing this because url is not allowed in focus mode and blocked in always blocked urls then we immidiatly blocked it if immidiatly block setting is on thats why after clicking unblock it is blocking again. to handle this problem  allowing url for 24 hours. and using arrAlwaysBlockedSitesData to handle this
-                                
-                                if SettingsManagerObject.immediatelyBlockDistractingSites{
-                                    let seconds =  24*60*60
-                                    let endTime = Calendar.current.date(byAdding: .second, value: seconds, to: Date()) ?? Date()
-                                    arrAlwaysBlockedSitesData.append(["url": extractedPath, "isBlocked": false, "intention" : "", "closed":false, "endTime": endTime, "duration": seconds, "allowFor24Hours": true])
+                            }
+                            
+                            if !isAlwaysBlockedUrl{
+                                for i in 0..<arrBlockedUrlsInCuddlyModeCurrentFocus.count{
+                                    if arrBlockedUrlsInCuddlyModeCurrentFocus[i].contains(extractedPath){
+                                        arrBlockedUrlsInCuddlyModeCurrentFocus.remove(at: i)
+                                        break;
+                                    }
                                 }
-                                
+                            }
+                            allApiObject.capturePosthog(event: "unblock-it-for-me-worked", metadata: [:])
+                            DispatchQueue.main.async {
+                                setUrlToBrowser(browser: currentBrowser, url: extractedUrl)
                             }
                             
                             return;
                         } else {
                             print("Substring not found.")
+                            // work for always block site// if change anything in always block site code then a change also done in blockUrlsInBackground function
+                            var extractedUrl: String = ""
+                            extractedUrl = extractSubstring(from: url, start: "old_url=", end: "&block_type") ?? ""
+                            if extractedUrl.isEmpty{
+                                extractedUrl = extractSubstring(from: url, start: "old_url=", end: "&focus_mode_end_time") ?? ""
+                            }
+                            
+                            if !extractedUrl.isEmpty {
+                                print("Extracted substring: \(extractedUrl)")
+                                extractedUrl = extractedUrl.removingPercentEncoding ?? extractedUrl
+                                let extractedPath = getDomainFromUrl(url: extractedUrl)
+                                
+                                if url.localizedCaseInsensitiveContains("unlock_duration_minutes"){// new blocking page work if browser full screen
+                                    var minutesToUnlock = 0
+                                    var intentionToShow = ""
+                                    let urlInfo = url.components(separatedBy: "&")
+                                    if urlInfo.count > 1{
+                                        for info in urlInfo{
+                                            if info.localizedCaseInsensitiveContains("unlock_duration_minutes"){
+                                                let durationInfo = info.components(separatedBy: "=")
+                                                if durationInfo.count > 1{
+                                                    let minutesString = durationInfo[1]
+                                                    let minutes = Int(minutesString)
+                                                    minutesToUnlock = minutes ?? 0
+                                                }
+                                                
+                                            }else if info.localizedCaseInsensitiveContains("distraction_intention"){
+                                                let intentionInfo = info.components(separatedBy: "=")
+                                                if intentionInfo.count > 1{
+                                                    intentionToShow = intentionInfo[1]
+                                                    intentionToShow = intentionToShow.removingPercentEncoding ?? intentionToShow
+                                                }
+                                                
+                                            }
+                                        }
+                                    }
+                                    for i in 0..<arrAlwaysBlockedSitesData.count{
+                                        let dictionary = arrAlwaysBlockedSitesData[i]
+                                        if let blockUrl = dictionary["url"] as? String{
+                                            if blockUrl.lowercased() == extractedPath.lowercased(){
+                                                arrAlwaysBlockedSitesData.remove(at: i)
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    appdelegate!.saveIntentionForBlockedUrl(url: extractedPath, script: "", browser: nil, intention: intentionToShow, seconds: minutesToUnlock * 60, currentPid: nil)
+                                    
+                                    
+                                    allApiObject.capturePosthog(event: "unblock-it-for-me-worked", metadata: [:])
+                                    DispatchQueue.main.async {
+                                        setUrlToBrowser(browser: currentBrowser, url: extractedUrl)
+                                    }
+                                }else{
+                                    
+                                    for i in 0..<arrAlwaysBlockedSitesData.count{
+                                        let dictionary = arrAlwaysBlockedSitesData[i]
+                                        if let blockUrl = dictionary["url"] as? String{
+                                            if blockUrl.lowercased() == extractedPath.lowercased(){
+                                                arrAlwaysBlockedSitesData.remove(at: i)
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    allApiObject.capturePosthog(event: "unblock-it-for-me-worked", metadata: [:])
+                                    DispatchQueue.main.async {
+                                        setUrlToBrowser(browser: currentBrowser, url: extractedUrl)
+                                    }
+                                    
+                                    // doing this because url is not allowed in focus mode and blocked in always blocked urls then we immidiatly blocked it if immidiatly block setting is on thats why after clicking unblock it is blocking again. to handle this problem  allowing url for 24 hours. and using arrAlwaysBlockedSitesData to handle this
+                                    
+                                    if SettingsManagerObject.immediatelyBlockDistractingSites{
+                                        let seconds =  24*60*60
+                                        let endTime = Calendar.current.date(byAdding: .second, value: seconds, to: Date()) ?? Date()
+                                        arrAlwaysBlockedSitesData.append(["url": extractedPath, "isBlocked": false, "intention" : "", "closed":false, "endTime": endTime, "duration": seconds, "allowFor24Hours": true])
+                                    }
+                                    
+                                }
+                                
+                                return;
+                            } else {
+                                print("Substring not found.")
+                            }
+                            //
                         }
-                        //
+                    }else{
+                        allApiObject.capturePosthog(event: "unblock-it-for-me-not-working-reason-super-strict", metadata: [:])
+                        let hitNewUrl = originalUrlStringFromBrowser.replacingOccurrences(of: "unblock_it=true", with: "")
+                        DispatchQueue.main.async {
+                            setUrlToBrowser(browser: currentBrowser, url: hitNewUrl)
+                        }
+                        var msg = "You're in Grizzly Bear mode - change your settings to unblock" //todo text
+                        if let common = configjson.value(forKey: "common") as? NSDictionary{
+                            //msg = common.value(forKey: "unblockNotAvailableText") as? String ?? msg
+                        }
+                        DispatchQueue.main.async {
+                            showCustomAlert(title: msg, body: nil, buttonOkText: buttonOkText, buttonCancelText: nil, checkBoxText: nil, autoClose: true, buttonLinkUrl:nil, buttonLinkText: nil, completionHandler: {isOkClicked in
+                                print(isOkClicked)
+                                if isOkClicked{
+                                    
+                                }
+                            })
+                        }
+                        return;
                     }
                 }
             }
@@ -431,7 +451,7 @@ class habitBlockTimerManager {
                     return;
                 }
                 
-                if isCuddlyModeEnabled() && isAnyAllowedFocusModeActivityRunning{// no need additional check
+                if SettingsManagerObject.isCuddlyModeEnabled && isAnyAllowedFocusModeActivityRunning{// no need additional check
                     if url.contains("focus_bear_temporarily_allow=true"){//old
                         var isAlwaysBlockedUrl = false
                         for i in 0..<arrAlwaysBlockedSitesData.count{
@@ -644,7 +664,7 @@ class habitBlockTimerManager {
                     
                     var cuddly_bear_modeString = ""
                     var aiReasonToBlockString = ""
-                    if isCuddlyModeEnabled() && isAnyAllowedFocusModeActivityRunning{
+                    if SettingsManagerObject.isCuddlyModeEnabled && isAnyAllowedFocusModeActivityRunning{
                         cuddly_bear_modeString = "&cuddly_bear_mode=true"
                         aiReasonToBlockString = "<AIREASON>"
                     }

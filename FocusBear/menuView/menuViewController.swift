@@ -10,6 +10,8 @@ import Cocoa
 
 class menuViewController: NSViewController {
 
+    @IBOutlet weak var imgViewIconBrainDump: NSImageView!
+    @IBOutlet weak var imgViewIconTabAudit: NSImageView!
     @IBOutlet weak var stackViewSecond: NSStackView!
     @IBOutlet weak var imgIconEditHabits: NSImageView!
     @IBOutlet weak var lblTitleEditHabits: menuItemLabel!
@@ -192,7 +194,11 @@ class menuViewController: NSViewController {
             imgIconEditHabits.image = NSImage(systemSymbolName: "checkmark.rectangle.fill", accessibilityDescription: nil)
         } else {
             imgIconEditHabits.image = NSImage(named: "checkmark")
+            imgViewIconBrainDump.image = NSImage(named: "brainDump")// for 11.0 already set from storyboard
+            imgViewIconTabAudit.image = NSImage(named: NSImage.touchBarOpenInBrowserTemplateName)
         }
+        
+        
         
         lblTitleEditHabits.stringValue = "Edit Habits"
         lblCustomBlocking.stringValue = "Blocking Schedule"
@@ -205,7 +211,7 @@ class menuViewController: NSViewController {
         lblTitleFocusModeTime.stringValue = "Focus mode ends in:"
         lblCustomRoutine.stringValue = "Start Custom Routine"
         lblTipPermissions.stringValue = "Grant Focus Bear permissions to block."
-        btnSetPermissions.title = "Fix it"
+        btnSetPermissions.title = "Enable"
         lblBlockingDisabled.stringValue = "Limited blocking"
         lblStartHabitsFirstTime.stringValue = "Start morning routine"
         lblTitleOpenCheckLists.stringValue = "Open checklist"
@@ -233,9 +239,9 @@ class menuViewController: NSViewController {
             lblTitleEditHabits.stringValue = leftMenuVcInfo.value(forKey: "menuEditHabits") as? String ?? lblTitleEditHabits.stringValue
         }
         
-        if let simplePomodoroVcInfo = configjson.value(forKey: "simplePomodoroVcInfo") as? NSDictionary{
-            btnSetPermissions.title = simplePomodoroVcInfo.value(forKey: "buttonFixItText") as? String ?? btnSetPermissions.title
-        }
+//        if let simplePomodoroVcInfo = configjson.value(forKey: "simplePomodoroVcInfo") as? NSDictionary{
+//            btnSetPermissions.title = simplePomodoroVcInfo.value(forKey: "buttonFixItText") as? String ?? btnSetPermissions.title
+//        }
         
         if let common = configjson.value(forKey: "common") as? NSDictionary{
             if let focusEndsText = common.value(forKey: "focusEndsText") as? String {
@@ -292,6 +298,7 @@ class menuViewController: NSViewController {
             lblTipPermissions.stringValue = menuInfo.value(forKey: "permissionsNotSetText") as? String ?? lblTipPermissions.stringValue
             lblCustomBlocking.stringValue = menuInfo.value(forKey: "titleBlockingSchedule") as? String ?? lblCustomBlocking.stringValue
             lblCustomBlockingState.stringValue = menuInfo.value(forKey: "stateActive") as? String ?? lblCustomBlockingState.stringValue
+            btnSetPermissions.title = menuInfo.value(forKey: "buttonEnable") as? String ?? btnSetPermissions.title
         }
         segmentControlOfficeMode.setLabel(titleOfficeMode, forSegment: 0)
         segmentControlOfficeMode.setLabel(titleWFHMode, forSegment: 1)

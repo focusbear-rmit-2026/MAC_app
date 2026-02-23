@@ -173,8 +173,18 @@ class askLogInVc: NSViewController, ASAuthorizationControllerDelegate, ASAuthori
 
         // Remove existing box
         messageBoxView?.removeFromSuperview()
-
+        
+        var title = "Continue in your browser"
+        if let askLogInVcInfo = configjson.value(forKey: "askLogInVcInfo") as? NSDictionary{
+            title = askLogInVcInfo.value(forKey: "continueInBrowser") as? String ?? title
+        }
+        
         let vc = getMessageBoxVcObject()
+        if !vc.isViewLoaded{
+            vc.loadView()
+        }
+        vc.resetView(title: title)
+        
         let boxView = vc.view
         messageBoxView = boxView
 

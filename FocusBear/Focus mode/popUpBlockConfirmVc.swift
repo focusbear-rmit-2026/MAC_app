@@ -376,10 +376,13 @@ class popUpBlockConfirmVc: NSViewController {
                     if let currentTaskInToDoPlayer = currentTaskInToDoPlayer{
                         btnAllow.title = buttoWorkingOnOldTask.replacingOccurrences(of: "<TASK>", with: currentTaskInToDoPlayer)
                         checkBoxMarkCurrentTaskAsCompleted.isHidden = false
+                    }else if !whatToAchieveInFocusBlock.isEmpty{
+                        btnAllow.title = buttoWorkingOnOldTask.replacingOccurrences(of: "<TASK>", with: whatToAchieveInFocusBlock)
+                        checkBoxMarkCurrentTaskAsCompleted.isHidden = true
                     }else{
-                        btnAllow.title = "Yes and this app is relevant"
-                        if let popUpFocusGoalConfirmationVcInfo = configjson.value(forKey: "popUpFocusGoalConfirmationVcInfo") as? NSDictionary{
-                            btnAllow.title = popUpFocusGoalConfirmationVcInfo.value(forKey: "buttonAppRelevantText") as? String ?? btnAllow.title
+                        btnAllow.title = "Yes"
+                        if let popUpBlockConfirmVcInfo = configjson.value(forKey: "popUpBlockConfirmVcInfo") as? NSDictionary{
+                            btnAllow.title = popUpBlockConfirmVcInfo.value(forKey: "buttonAllowText") as? String ?? btnAllow.title
                         }
                         checkBoxMarkCurrentTaskAsCompleted.isHidden = true
                     }
@@ -540,10 +543,13 @@ class popUpBlockConfirmVc: NSViewController {
                     if let currentTaskInToDoPlayer = currentTaskInToDoPlayer{
                         btnAllow.title = buttoWorkingOnOldTask.replacingOccurrences(of: "<TASK>", with: currentTaskInToDoPlayer)
                         checkBoxMarkCurrentTaskAsCompleted.isHidden = false
+                    }else if !whatToAchieveInFocusBlock.isEmpty{
+                        btnAllow.title = buttoWorkingOnOldTask.replacingOccurrences(of: "<TASK>", with: whatToAchieveInFocusBlock)
+                        checkBoxMarkCurrentTaskAsCompleted.isHidden = true
                     }else{
-                        btnAllow.title = "Yes and this site is relevant"
-                        if let popUpFocusGoalConfirmationVcInfo = configjson.value(forKey: "popUpFocusGoalConfirmationVcInfo") as? NSDictionary{
-                            btnAllow.title = popUpFocusGoalConfirmationVcInfo.value(forKey: "buttonSiteRelevantText") as? String ?? btnAllow.title
+                        btnAllow.title = "Yes"
+                        if let popUpBlockConfirmVcInfo = configjson.value(forKey: "popUpBlockConfirmVcInfo") as? NSDictionary{
+                            btnAllow.title = popUpBlockConfirmVcInfo.value(forKey: "buttonAllowText") as? String ?? btnAllow.title
                         }
                         checkBoxMarkCurrentTaskAsCompleted.isHidden = true
                     }
@@ -1206,7 +1212,11 @@ class popUpBlockConfirmVc: NSViewController {
     @IBAction func btnBlockAppClicked(_ sender: Any) {
         addLog(text: "[user-action] popUpBlockConfirmVc:- btnBlockAppClicked")
         allApiObject.capturePosthog(event: "block-popup-no-i-was-getting-distracted-clicked", metadata: [:])
-        showPopUpSaveThisTaskForLaterView()
+        if !SettingsManagerObject.isAiCheckUrlEnabled{
+            blockClicked()
+        }else{
+            showPopUpSaveThisTaskForLaterView()
+        }
     }
     
     func showPopUpFocusGoalConfirmationView(){

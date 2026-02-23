@@ -525,7 +525,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             }
         }
         
-        
+        //defaults write com.App.EarnYourScreentime SUEnableAutomaticChecks -bool false
         writeSettingForScreeenTime(habitInfo: "")
         var configFileName = ""
         if languageCode == "en"{
@@ -5356,9 +5356,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             //            }
             
             if isFocusModeRunning || (isAnyAllowedFocusModeActivityRunning && (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._CUSTOM_ROUTINE_)){
-//                if isCuddlyModeEnabled(){ //&& SettingsManagerObject.isAIBlockingEnabled(){
-//                    calculateFocusAlignmentScore()
-//                }
                 calculateFocusAlignmentScore()
             }
             
@@ -8212,9 +8209,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         lastFrontMostApplication = runningApp
                     }
                 }
-//                if nameLowercased == "firefox" && UserDefaults.standard.object(forKey: kUserdefaultsFirefoxPermissionShown) == nil{
-//                    showFirefoxPermissionWindow(showingFromOnboarding: false, currentBrowser: ._FIREFOX_)//  remove this
-//                }
+                if permissionBlockDistractionWcObj != nil && tryBlockUrlVcObj != nil{
+                    if permissionBlockDistractionWcObj!.window?.isVisible ?? false{
+                        if permissionBlockDistractionWcObj?.contentViewController == tryBlockUrlVcObj{
+                            addLog(text: "Try website blocking view is visible and current app is:- \(nameLowercased)")
+                        }
+                    }
+                }
+                
             }
         }
         
@@ -8760,6 +8762,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                             }else if nameLowercased == "sigmaos_latest"{
                                                 sigmaOsBrowserName = "SigmaOS_latest"
                                             }
+                                            addLog(text: "Set timer block urls in background")
                                             timerBlockUrl?.invalidate()
                                             self.timerBlockUrl = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.blockUrlsInBackground), userInfo: nil, repeats: true)
                                             RunLoop.main.add(self.timerBlockUrl!, forMode: RunLoop.Mode.common)
@@ -8994,12 +8997,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         }
                         
                         var arrBlockedUrls = getBlockedUrlsToBlock()
-                        if arrBlockedUrls.count == 0{
-                            if permissionBlockDistractionWcObj != nil && tryBlockUrlVcObj != nil{
-                                if permissionBlockDistractionWcObj!.window?.isVisible ?? false{
-                                    if permissionBlockDistractionWcObj?.contentViewController == tryBlockUrlVcObj{
+                        
+                        if permissionBlockDistractionWcObj != nil && tryBlockUrlVcObj != nil{
+                            if permissionBlockDistractionWcObj!.window?.isVisible ?? false{
+                                if permissionBlockDistractionWcObj?.contentViewController == tryBlockUrlVcObj{
+                                    if arrBlockedUrls.count == 0{
                                         arrBlockedUrls = ["facebook.com"] // for try block url if no blocked url is set
                                     }
+                                    addLog(text: "Try website blocking view is visible and current app is:- \(nameLowercased) and current url is:- \(url)")
                                 }
                             }
                         }
@@ -9115,7 +9120,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     
                     var cuddly_bear_modeString = ""
                     var aiReasonToBlockString = ""
-                    if isCuddlyModeEnabled(){
+                    if isStrictnessLevelNormal(){
                         cuddly_bear_modeString = "&cuddly_bear_mode=true"
                         aiReasonToBlockString = "&reason=This site is always blocked."//The website URL is allowed in focus mode
                     }
@@ -9360,8 +9365,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         print("tryToBlockAlwaysBlockedUrl")
         var needToBlockImmediately = SettingsManagerObject.immediatelyBlockDistractingSites
         if isFocusModeRunning || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
-            if !isCuddlyModeEnabled(){
-                needToBlockImmediately = true// addded in 2.28.444
+//            if !isStrictnessLevelNormal(){
+//                needToBlockImmediately = true// addded in 2.28.444
+//            }
+            if !SettingsManagerObject.isCuddlyModeEnabled{
+                needToBlockImmediately = true// addded in 2.29.458
             }
         }
         
@@ -9485,8 +9493,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         
         var needToBlockImmediately = SettingsManagerObject.immediatelyBlockDistractingApps
         if isFocusModeRunning || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
-            if !isCuddlyModeEnabled(){
-                needToBlockImmediately = true// addded in 2.28.444
+//            if !isStrictnessLevelNormal(){
+//                needToBlockImmediately = true// addded in 2.28.444
+//            }
+            if !SettingsManagerObject.isCuddlyModeEnabled{
+                needToBlockImmediately = true// addded in 2.29.458
             }
         }
         if needToBlockImmediately{
@@ -10529,4 +10540,18 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 
 // bug afer custom routine ends solved 
 // load habits settings . and review result bug
+
+
+
+ 
+
+
+//23/2/26
+// blocking schedule k time per nudge aaya or usme timer tha hatao
+// always block site not showing popup in super strict focus session it should deppend on only immediatly checkbox? ask sir
+
+// dont allow simple pomodoro to styart when super stirct blocking schedule is active
+// focus mode ki liost pomodoro per reload hui or enable hui jab blocking schedule pause hua lekin jab vapas se start hua to  disbael ni hui(when vlockg schedule was runniing in super strict mode)
+
+// handled ["All"] or not array in days in blocking schedule
 

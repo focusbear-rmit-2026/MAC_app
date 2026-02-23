@@ -64,9 +64,9 @@ class explainingPermissionsVc: NSViewController {
         isAccessibilityPermissionGiven = false
         isSystemEventsPermissionGiven = false
         
-        imgViewBrowserPermission.image = NSImage(named: "validIconGray")
-        imgViewAccessibilityPermission.image = NSImage(named: "validIconGray")
-        imgViewSystemEventPermission.image = NSImage(named: "validIconGray")
+        imgViewBrowserPermission.image = NSImage(named: NSImage.cautionName)
+        imgViewAccessibilityPermission.image = NSImage(named: NSImage.cautionName)
+        imgViewSystemEventPermission.image = NSImage(named: NSImage.cautionName)
         
         DispatchQueue.global().async { [self] in
             if let arrBrowsersInfo = UserDefaults.standard.object(forKey: kUserdefaultsAllBrowsersPermissionInfo) as? [[String : Any]]{

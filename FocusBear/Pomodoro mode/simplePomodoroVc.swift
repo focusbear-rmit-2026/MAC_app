@@ -110,13 +110,14 @@ class simplePomodoroVc: NSViewController {
     var toolTipSuperStrictMode = "Once you start, there’s no backing out. Best for deep, distraction-free sessions."
     
     var arrAllTasks = [NSDictionary]()
+    var isViewVisible = false
     
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
 //        arrTourMessages.removeAll()
         lblEnterFirstTask.stringValue = "What do you want to work on first?"
-        
+        lblAccordionMoreOptions.stringValue = "Focus Settings"
         
         lblTitleStrictnessLevel.stringValue = "Strictness level:"
         lblStrictnessNormal.stringValue = "Normal"
@@ -248,6 +249,8 @@ class simplePomodoroVc: NSViewController {
             descriptionSuperStrictMode = simplePomodoroVcInfo.value(forKey: "descriptionSuperStrictMode") as? String ?? descriptionSuperStrictMode
             toolTipSuperStrictMode = simplePomodoroVcInfo.value(forKey: "toolTipSuperStrictMode") as? String ?? toolTipSuperStrictMode
             lblEnterFirstTask.stringValue = simplePomodoroVcInfo.value(forKey: "enterFirstTask") as? String ?? lblEnterFirstTask.stringValue
+            
+            lblAccordionMoreOptions.stringValue = simplePomodoroVcInfo.value(forKey: "focusSettingsText") as? String ?? lblAccordionMoreOptions.stringValue
         }
         lblStrictnessNormal.stringValue = "🟢 " + titleNormalMode
         lblStrictnessStrict.stringValue = "🟡 " + titleStrictMode
@@ -324,21 +327,9 @@ class simplePomodoroVc: NSViewController {
     
     var browserPermissionGiven = false
     override func viewDidAppear() {
-//        if SettingsManagerObject.isStrictnessLevelSuperGentle(){
-//            boxPin.isHidden =  false
-//            btnPin.image = #imageLiteral(resourceName: "unPin")
-//            self.view.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.normalWindow)))
-//        }else{
-//            boxPin.isHidden = true
-//            self.view.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
-//        }
+
         boxPin.isHidden = true
         if UserDefaults.standard.object(forKey: kUserdefaultsPomodoroTourShown) == nil{//Onboarding feedback 1st April #1341 remove tour
-//            popoverMenuTour.show(relativeTo: boxTitle.bounds, of: boxTitle, preferredEdge: NSRectEdge.minX)
-//         
-//            var currentIndexText = indexText.replacingOccurrences(of: "<CURRENTINDEX>", with: "\(currentTourIndex + 1)")
-//            currentIndexText = currentIndexText.replacingOccurrences(of: "<TOTALCOUNT>", with: "\(arrTourMessages.count)")
-//            menuTourPopoverVcObj?.showCurrentMessage(title: arrTourMessages[currentTourIndex]["title"] ?? "", description: arrTourMessages[currentTourIndex]["description"] ?? "", buttonTitle: arrTourMessages[currentTourIndex]["buttonTitle"] ?? "", indexText: currentIndexText, arrList: [], progress: currentTourIndex + 1, progressMaxValue: arrTourMessages.count)
             UserDefaults.standard.set(true, forKey: kUserdefaultsPomodoroTourShown)
             boxError.isHidden = true
             browserPermissionGiven = true
@@ -386,6 +377,124 @@ class simplePomodoroVc: NSViewController {
                     lblTipPermissions.stringValue = simplePomodoroVcInfo.value(forKey: "tipPermissionsSecond") as? String ?? lblTipPermissions.stringValue
                 }
             }
+        }
+        
+        btnLetsDoIt.isEnabled = true
+        if customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
+            if currentFocusModeStrictness == ._SUPER_STRICT_{
+                for index in 0..<customBlockingScheduleManagerObj.arrBlockingSchedule.count{
+                    if customBlockingScheduleManagerObj.arrBlockingSchedule[index].state == .on{
+                        btnLetsDoIt.isEnabled = false
+                        showMessageBoxFor(sender: btnLetsDoIt)
+                        break;
+                    }
+                }
+            }
+        }
+        isViewVisible = true
+    }
+    
+    var messageBoxView: NSView?
+    var hideWorkItem: DispatchWorkItem?
+    
+    func showMessageBoxFor(sender: NSView) {
+        guard
+            let window = sender.window,
+            let contentView = window.contentView
+        else { return }
+
+        // Cancel previous timer
+        hideWorkItem?.cancel()
+        hideWorkItem = nil
+
+        // Remove existing box
+        messageBoxView?.removeFromSuperview()
+
+        let vc = getMessageBoxVcObject()
+        if !vc.isViewLoaded{
+            vc.loadView()
+        }
+        var title = "Super Strict blocking schedule is active. You can’t start a focus session now."
+        if let common = configjson.value(forKey: "common") as? NSDictionary{
+            title = common.value(forKey: "strictBlockingCannotChangeMessage") as? String ?? title
+        }
+        
+        vc.resetView(title: title)
+        vc.lblTitle.font = getRegularFont(size: 14)
+        let boxView = vc.view
+        messageBoxView = boxView
+
+        // 🔁 Convert sender bounds → window contentView
+        let senderRectInContent =
+            sender.convert(sender.bounds, to: contentView)
+
+        let boxSize = boxView.frame.size
+
+        let x = senderRectInContent.maxX + 5
+        let y = senderRectInContent.midY - boxSize.height / 2
+
+        boxView.frame = NSRect(
+            x: x,
+            y: y,
+            width: 220,
+            height: 85
+        )
+
+        boxView.alphaValue = 1
+        contentView.addSubview(boxView)
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(windowDidResize),
+            name: NSWindow.didResizeNotification,
+            object: sender.window
+        )
+        
+        // ⏱ Auto hide after 10 seconds
+        let workItem = DispatchWorkItem { [weak self, weak boxView] in
+            guard let view = boxView else { return }
+
+            NSAnimationContext.runAnimationGroup({ context in
+                context.duration = 0.25
+                view.animator().alphaValue = 0
+            }, completionHandler: {
+                view.removeFromSuperview()
+                self?.messageBoxView = nil
+                if let self = self{
+                    NotificationCenter.default.removeObserver(
+                        self,
+                        name: NSWindow.didResizeNotification,
+                        object: sender.window
+                    )
+                }
+            })
+        }
+
+        hideWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + 7, execute: workItem)
+    }
+    
+    @objc func windowDidResize() {
+        if let messageBoxView = messageBoxView{
+            guard
+                let window = btnLetsDoIt.window,
+                let contentView = window.contentView
+            else { return }
+            
+            let senderRectInContent =
+            btnLetsDoIt.convert(btnLetsDoIt.bounds, to: contentView)
+
+            let boxSize = messageBoxView.frame.size
+
+            let x = senderRectInContent.maxX + 5
+            let y = senderRectInContent.midY - boxSize.height / 2
+            
+            messageBoxView.frame = NSRect(
+                x: x,
+                y: y,
+                width: messageBoxView.frame.width,
+                height: messageBoxView.frame.height
+            )
         }
     }
     
@@ -901,12 +1010,7 @@ class simplePomodoroVc: NSViewController {
                 SettingsManagerObject.putUserLocalDeviceSettings()
             }
         }
-
-//        if getEndFocusModeWindowControllerObj().window!.isVisible{
-//            let timestamp = getStringFromDate(date: startFocusModeTime ?? Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
-//            addEntryInStatsCsv(logType: "focus block", activity: focusCompletedVcObj!.currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: "\(focusModeMinutesToPerform) of \(focusCompletedVcObj!.currentFocusModeName)", distractionsEncountered: "", abortReason: "", feedback: "", tags:"")
-//            getEndFocusModeWindowControllerObj().window?.close()
-//        }
+        
         let minute = textFieldWorkDuration.integerValue
         let calendar = Calendar.current
         endFocusModeTime = calendar.date(byAdding: .minute, value: minute, to: Date())
@@ -1032,6 +1136,7 @@ class simplePomodoroVc: NSViewController {
                 enterPasswordVcObj!.dismiss(enterPasswordVcObj!)
             }
         }
+        isViewVisible = false
     }
     
     

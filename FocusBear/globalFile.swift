@@ -2532,7 +2532,7 @@ func isPasswordRequireInOpenSettings() -> Bool{
 func isPasswordRequireInOpenSettingsEnabled() -> Bool{
     //Super strict focus sessions should block changing settings #1423
     if isFocusModeOn(){
-        if !isCuddlyModeEnabled(){
+        if !isStrictnessLevelNormal(){
             return true
         }
     }

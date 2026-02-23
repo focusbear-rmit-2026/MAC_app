@@ -10,6 +10,7 @@ import Cocoa
 
 class onboardingPrivacyTipVc: NSViewController {
 
+    @IBOutlet weak var lblDescriptionTermsText: NSTextField!
     @IBOutlet weak var btnTerms: underLineButton!
     @IBOutlet weak var checkBoxTerms: NSButton!
     @IBOutlet weak var btnCheckBox: NSButton!
@@ -59,11 +60,47 @@ class onboardingPrivacyTipVc: NSViewController {
         addLog(text: "[user-action] privacy-and-security-shown")
         lblTitle.stringValue = "\(titleTermsAndConditions) / \(lblTitle.stringValue)"
         
-        lblDescription.stringValue = lblDescription.stringValue + "\n\n\(descriptionTermsText)"
+        lblDescriptionTermsText.stringValue = descriptionTermsText
         btnContinue.isEnabled = false
         btnCheckBox.state = .off
         checkBoxTerms.state = .off
+        
+        
+        
+        // Onboarding improvements - Gazelle#1649   v2.28.457
+        let attributed = NSMutableAttributedString(string: lblDescription.stringValue)
+
+        let normalFont = NSFont.systemFont(ofSize: 14)
+        let boldFont = NSFont.boldSystemFont(ofSize: 14)
+
+        attributed.addAttribute(.font,
+                                value: normalFont,
+                                range: NSRange(location: 0, length: attributed.length))
+
+        // Bold phrases based on language
+        let boldPhrases = currentLanguageCode == "es"
+        ? [
+            "No registramos",
+            "bloqueo de distracciones entre dispositivos",
+            "Tus datos está encriptados"
+        ]
+        : [
+            "We do not log",
+            "cross device distraction blocking",
+            "Your data is encrypted"
+        ]
+
+        for phrase in boldPhrases {
+            let range = (lblDescription.stringValue as NSString).range(of: phrase)
+            if range.location != NSNotFound {
+                attributed.addAttribute(.font, value: boldFont, range: range)
+            }
+        }
+
+        lblDescription.attributedStringValue = attributed
+        
     }
+    
     override func viewDidAppear() {
         showOnboardingBellIcon(view: self.view, screen: "privacy-and-security-screen")
     }

@@ -484,7 +484,7 @@
         "toolTipPomodoroSessionText": "Start a Focus session to get deep work done.",
         "menuItemResumeFocusTitle": "Resume Focus Session",
         "menuItemPauseFocusTitle": "Pause Focus Session",
-        "menuItemBlockingDisabledTitle": "Limited blocking",
+        "menuItemBlockingDisabledTitle": "Blocking turned off",
         "toolTipBlockingDisabled": "Blocking disabled because you chose to only activate blocks during focus sessions.",
         "toolTipButtonEditBlockingSchedule": "Edit blocking schedule",
         "menuItemStartMorningHabitsFirstTimeTitle": "Start morning routine",
@@ -505,7 +505,8 @@
         "buttonAddBlockingSchedule": "Add blocking schedule",
         "addBlockingScheduleInfo": "Blocking is off because no custom blocking schedules have been added.",
         "titleBlockingSchedule": "Blocking Schedule",
-        "buttonEditFocusModeDuration": "Click here to update duration, intention and current task"
+        "buttonEditFocusModeDuration": "Click here to update duration, intention and current task",
+        "buttonEnable": "Enable"
     },
     "preferencesInfo": {
         "titlePomodoro": "Pomodoro Mode:",
@@ -2279,7 +2280,8 @@
         "descriptionSuperStrictMode": "Once you start, you can't stop",
         "toolTipSuperStrictMode": "Once you start, there’s no backing out. Best for deep, distraction-free sessions.",
         "enterFirstTask": "What do you want to work on first?",
-        "toolTipFirstTask": "Add the first task you’ll work on in this focus session. Starting with a clear task helps you stay on track."
+        "toolTipFirstTask": "Add the first task you’ll work on in this focus session. Starting with a clear task helps you stay on track.",
+        "focusSettingsText": "Focus Settings"
     },
     "achieveWithFocusBearVcInfo":{
         "title": "What would you like to improve in your life by using Focus Bear?",

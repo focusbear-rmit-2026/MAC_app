@@ -231,11 +231,40 @@ struct customBlockingSchedule: Codable, Identifiable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decodeIfPresent(String.self, forKey: .id) ?? UUID().uuidString
         name = try container.decodeIfPresent(String.self, forKey: .name) ?? "Untitled"
-        let days = try container.decodeIfPresent([Int].self, forKey: .daysOfWeek) ?? [0,1,2,3,4,5,6]
-        daysOfWeek = []
-        for day in days{
-            daysOfWeek.append(day + 1)
+//        let days = try container.decodeIfPresent([Int].self, forKey: .daysOfWeek) ?? [0,1,2,3,4,5,6]
+//        daysOfWeek = []
+//        for day in days{
+//            daysOfWeek.append(day + 1)
+//        }
+        
+        // Default full week
+        let defaultDays = Array(0...6)
+
+        let decodedDays: [Int]
+
+        if container.contains(.daysOfWeek) {
+            
+            // Case 1: [Int]
+            if let intDays = try? container.decode([Int].self, forKey: .daysOfWeek) {
+                decodedDays = intDays
+            }
+            // Case 2: ["all"]
+            else if let stringDays = try? container.decode([String].self, forKey: .daysOfWeek),
+                    stringDays.contains("all") {
+                decodedDays = defaultDays
+            }
+            // Case 3: Wrong type / corrupted → fallback
+            else {
+                decodedDays = defaultDays
+            }
+            
+        } else {
+            // Case 4: Key missing → full week
+            decodedDays = defaultDays
         }
+
+        // Your +1 logic
+        daysOfWeek = decodedDays.map { $0 + 1 }
         
         
         focusModeID = try container.decodeIfPresent(String.self, forKey: .focusModeID) ?? ""
@@ -566,10 +595,16 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
         }
         if mainWindowControllerObj?.window?.isVisible ?? false{
             if leftMenuVcObj?.boxFocusSession.isSelected ?? false{
-                if !isFocusModeOn() && !isHardCorePomodoroModeOn && SettingsManagerObject.isGeekModeEnabled{
-                    if pomodoroVcObj != nil{
-                        if !(pomodoroVcObj?.popUpBtnFocusType.isEnabled ?? false){
-                            pomodoroVcObj?.popUpBtnFocusType.isEnabled = true
+                if !isFocusModeOn() && !isHardCorePomodoroModeOn{
+                    if SettingsManagerObject.isGeekModeEnabled{
+                        if pomodoroVcObj != nil{
+                            if pomodoroVcObj?.isViewVisible ?? false{
+                                leftMenuVcObj?.showPomodoro(pomodoroVcObj: pomodoroVcObj!.view)
+                            }
+                        }
+                    }else if simplePomodoroVcObj != nil{
+                        if simplePomodoroVcObj?.isViewVisible ?? false{
+                            leftMenuVcObj?.showPomodoro(pomodoroVcObj: simplePomodoroVcObj!.view)
                         }
                     }
                 }
@@ -653,6 +688,24 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
         if floatingTopBarVcObj != nil {
             floatingTopBarVcObj?.boxMain.isHidden = false
             floatingTopBarVcObj?.boxMoreItems.isHidden = false
+        }
+        
+        if mainWindowControllerObj?.window?.isVisible ?? false{
+            if leftMenuVcObj?.boxFocusSession.isSelected ?? false{
+                if !isFocusModeOn() && !isHardCorePomodoroModeOn{
+                    if SettingsManagerObject.isGeekModeEnabled{
+                        if pomodoroVcObj != nil{
+                            if pomodoroVcObj?.isViewVisible ?? false{
+                                leftMenuVcObj?.showPomodoro(pomodoroVcObj: pomodoroVcObj!.view)
+                            }
+                        }
+                    }else if simplePomodoroVcObj != nil{
+                        if simplePomodoroVcObj?.isViewVisible ?? false{
+                            leftMenuVcObj?.showPomodoro(pomodoroVcObj: simplePomodoroVcObj!.view)
+                        }
+                    }
+                }
+            }
         }
     }
     
@@ -829,7 +882,7 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
         arrBlockingSchedule.remove(at: index)
     }
     
-    func isCuddlyModeEnabled()->Bool{
+    func isStrictnessLevelNormal()->Bool{
         if isAnyCustomScheduleOn{
             for schedule in arrBlockingSchedule{
                 if schedule.state == .on{

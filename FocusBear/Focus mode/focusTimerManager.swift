@@ -179,7 +179,7 @@ class focusTimerManager {
             //
             
             // New block page work (when browser is in full screen or stage manager is enable)
-            //if isCuddlyModeEnabled(){
+            if SettingsManagerObject.isCuddlyModeEnabled{
                 if url.localizedCaseInsensitiveContains("yes-i-need=true"){
                     focusAlllowUrlClickedFromNewBlockPage(url: url, currentBrowser: currentBrowser)
                     return;
@@ -205,7 +205,7 @@ class focusTimerManager {
                         originalUrlStringFromBrowser = url
                     }
                 }
-           // }
+            }
             
             //------------unlock url work//----------------
             if checkUrlIsUnlock(url: url, arrBlockedUrlsForFocus: arrBlockedUrlsForFocus, currentBrowser: currentBrowser, originalUrlStringFromBrowser: originalUrlStringFromBrowser){ // if true it means no need to check any thing else //
@@ -242,7 +242,7 @@ class focusTimerManager {
                 
                 var isBlocked = false
                 var isAllowed = false
-                //if isCuddlyModeEnabled(){
+                if SettingsManagerObject.isCuddlyModeEnabled{
                     if arrAllowedDomianInCuddlyModeCurrentFocus.count != 0{
                         if arrAllowedDomianInCuddlyModeCurrentFocus.contains(domain){
                             DispatchQueue.main.async {
@@ -251,7 +251,7 @@ class focusTimerManager {
                             return;
                         }
                     }
-               // }
+                }
                 if arrAllowedUrlsInCuddlyModeCurrentFocus.contains(path){
                     if let title = getTabTitleSafeInBackground(browser: currentBrowser)?.lowercased(){
                         if !arrAllowedTabTitlesInCuddlyModeCurrentFocus.contains(title){
@@ -263,7 +263,7 @@ class focusTimerManager {
                     }
                     return
                 }
-                if isCuddlyModeEnabled(){
+                if SettingsManagerObject.isCuddlyModeEnabled{
                     if url.contains("focus_bear_temporarily_allow=true"){// old users
                         var isAlwaysBlockedUrl = false
                         for i in 0..<arrAlwaysBlockedSitesData.count{
@@ -363,7 +363,7 @@ class focusTimerManager {
                     
                     var cuddly_bear_modeString = ""
                     var aiReasonToBlockString = ""
-                    if isCuddlyModeEnabled(){
+                    if SettingsManagerObject.isCuddlyModeEnabled{
                         cuddly_bear_modeString = "&cuddly_bear_mode=true"// this will show "oops i actually need this- unblock it" url button
                         aiReasonToBlockString = "<AIREASON>"
                     }
@@ -460,7 +460,7 @@ class focusTimerManager {
     func checkUrlIsUnlock(url:String, arrBlockedUrlsForFocus:[String], currentBrowser:BROWSER, originalUrlStringFromBrowser:String)->Bool{
         if url.localizedCaseInsensitiveContains("unblock_it=true"){
             allApiObject.capturePosthog(event: "unblock-it-for-me-found", metadata: [:])
-            if isCuddlyModeEnabled(){
+            if SettingsManagerObject.isCuddlyModeEnabled{
                 if var extractedUrl = extractSubstring(from: url, start: "old_url=", end: "&focus_mode_end_time") {
                     print("Extracted substring: \(extractedUrl)")
                     extractedUrl = extractedUrl.removingPercentEncoding ?? extractedUrl
@@ -620,9 +620,9 @@ class focusTimerManager {
                 DispatchQueue.main.async {
                     setUrlToBrowser(browser: currentBrowser, url: hitNewUrl)
                 }
-                var msg = "You're in super strict mode - change your settings to unblock"
+                var msg = "You're in Grizzly Bear mode - change your settings to unblock" //todo text
                 if let common = configjson.value(forKey: "common") as? NSDictionary{
-                    msg = common.value(forKey: "unblockNotAvailableText") as? String ?? msg
+                    //msg = common.value(forKey: "unblockNotAvailableText") as? String ?? msg
                 }
                 DispatchQueue.main.async {
                     showCustomAlert(title: msg, body: nil, buttonOkText: buttonOkText, buttonCancelText: nil, checkBoxText: nil, autoClose: true, buttonLinkUrl:nil, buttonLinkText: nil, completionHandler: {isOkClicked in
@@ -790,7 +790,7 @@ func blockAlwaysBlockUrl(currentBrowser:BROWSER, url:String, runningApp:NSRunnin
         
         var cuddly_bear_modeString = ""
         var aiReasonToBlockString = ""
-        if isCuddlyModeEnabled(){
+        if SettingsManagerObject.isCuddlyModeEnabled{
             cuddly_bear_modeString = "&cuddly_bear_mode=true"
             aiReasonToBlockString = "&reason=This site is always blocked."//The website URL is allowed in focus mode
         }

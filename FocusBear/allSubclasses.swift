@@ -1291,3 +1291,11 @@ class NonTimerBasedHabit:NSObject {
 
 
 
+
+class cickableBackgroundView: NSView {
+
+    override func mouseDown(with event: NSEvent) {
+        super.mouseDown(with: event)
+        window?.makeFirstResponder(nil)
+    }
+}

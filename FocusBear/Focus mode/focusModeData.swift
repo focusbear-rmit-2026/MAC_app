@@ -627,30 +627,30 @@ func tryCheckUrlFromAi(script: String, url:String, tabTitle:String?, browser:BRO
     
     // if user is clicked on cnvince ai once then code below will not be executed
     if currentBrowserUrlForAi == url{
-        // if isCuddlyModeEnabled(){
-        if !isGettingResponseFromAi, let info = dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[url]{
-            let reason = info["reason"] as? String ?? ""
-            boxForStatusBarForTooltip?.customToolTip = reason
-            let probability = info["probability"] as? Double ?? 0.0
-            let payload = info["payload"] as? [String:Any] ?? [:]
-            let suggestedTask = info["suggested_task"] as? String
-            let suggestedTaskId = info["suggested_task_id"] as? String
-            calculateFocusAlignmentScore()
-            if probability < 0.70{
-                if currentFocusAlignmentScore < minFocusAlignmentScoreToShowDistractingPopUp{
-                    if reason.lowercased() != "unable to get a decision from ai. trusting you to decide whether the site is relevant 😅"{
-                        if isRunningAppFullScreen(runningApp: runningApp, browser: browser) || stageManagerObject.isStageManagerEnabled{
-                            let script = script.replacingOccurrences(of: "<NEWPAGE>", with: "&ai-focus-block-verification-enabled=true&ai-focus-block-enabled=true&ai-relevance-explanation=\(reason)&ai-relevance-score=\(probability)")
-                            executeScript(script: script) // new
-                        }else{
-                            showPopupBlockConfirmWindow(blockedAppName: "", currentApp: nil, url:url, script:script, isBlockApp:false, browser: browser,tabTitle: tabTitle, fullUrl:fullUrl, aiBlockReason: reason, isTimeOut:false, isBlockByAi: true, scoreForThisSiteApp: probability, payload: payload, isBrowser:false, suggestedTask: suggestedTask, suggestedTaskId: suggestedTaskId)
+        if SettingsManagerObject.isCuddlyModeEnabled{
+            if !isGettingResponseFromAi, let info = dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[url]{
+                let reason = info["reason"] as? String ?? ""
+                boxForStatusBarForTooltip?.customToolTip = reason
+                let probability = info["probability"] as? Double ?? 0.0
+                let payload = info["payload"] as? [String:Any] ?? [:]
+                let suggestedTask = info["suggested_task"] as? String
+                let suggestedTaskId = info["suggested_task_id"] as? String
+                calculateFocusAlignmentScore()
+                if probability < 0.70{
+                    if currentFocusAlignmentScore < minFocusAlignmentScoreToShowDistractingPopUp{
+                        if reason.lowercased() != "unable to get a decision from ai. trusting you to decide whether the site is relevant 😅"{
+                            if isRunningAppFullScreen(runningApp: runningApp, browser: browser) || stageManagerObject.isStageManagerEnabled{
+                                let script = script.replacingOccurrences(of: "<NEWPAGE>", with: "&ai-focus-block-verification-enabled=true&ai-focus-block-enabled=true&ai-relevance-explanation=\(reason)&ai-relevance-score=\(probability)")
+                                executeScript(script: script) // new
+                            }else{
+                                showPopupBlockConfirmWindow(blockedAppName: "", currentApp: nil, url:url, script:script, isBlockApp:false, browser: browser,tabTitle: tabTitle, fullUrl:fullUrl, aiBlockReason: reason, isTimeOut:false, isBlockByAi: true, scoreForThisSiteApp: probability, payload: payload, isBrowser:false, suggestedTask: suggestedTask, suggestedTaskId: suggestedTaskId)
+                            }
                         }
+                        
                     }
-                    
                 }
             }
         }
-        // }
         return;
     }
     currentBrowserUrlForAi = url
@@ -742,7 +742,6 @@ func checkUrlFromAi(script: String, url:String, tab_title:String, currentRunning
                         
                         addEntryInFocusAIDecisionsCsv(url: url, domain: domain, tabTitle: tab_title, score: "\(dProbability)", intention: whatToAchieveInFocusBlock, aiReason: reason, currentTaskName: currentTaskName, additionalUserJustification: "")
                         
-                        //  if isCuddlyModeEnabled(){
                         
                         if var oldData = dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[url]{
                             addEntryInfocusAlignmentScoreCsv(url: url, tabTitle: tab_title, focusMode: currentRunningFocusModeName, intention: whatToAchieveInFocusBlock, aiReason: reason, allowedProbability: "\(dProbability)", totalScore: "")
@@ -771,82 +770,81 @@ func checkUrlFromAi(script: String, url:String, tab_title:String, currentRunning
                             }
                             boxForStatusBarForTooltip?.customToolTip = reason
                         }
-                        
-                        
                         calculateFocusAlignmentScore()
-                        
-                        var shouldShowPopup = true
-                        
-                        if(dProbability < 0.50){//Getting popup when AI doesn't make a decision#1355
-                            if  reason.lowercased() == "unable to get a decision from ai. trusting you to decide whether the site is relevant 😅"{
-                                dProbability = 0.50
-                                shouldShowPopup = false
-                            }
-                        }
-                        
-                        if(dProbability >= 0.70){
-                            // Safe URL
-                            addLog(text: "url is safe according to chat gpt")
-                            allApiObject.capturePosthog(event: "block-popup-allow-automatically", metadata: [:])
+                        if SettingsManagerObject.isCuddlyModeEnabled{
+
+                            var shouldShowPopup = true
                             
-                            
-                            arrAllowedUrlsInCuddlyModeCurrentFocus.append(url)
-                            arrAllowedTabTitlesInCuddlyModeCurrentFocus.append(tab_title)
-                            
-                            if popUpBlockConfirmWcObj != nil{
-                                if popUpBlockConfirmWcObj!.window?.isVisible ?? false{
-                                    if !popUpBlockConfirmVcObj!.isAppBlocking{
-                                        popUpBlockConfirmVcObj?.closeWindow()
-                                    }
+                            if(dProbability < 0.50){//Getting popup when AI doesn't make a decision#1355
+                                if  reason.lowercased() == "unable to get a decision from ai. trusting you to decide whether the site is relevant 😅"{
+                                    dProbability = 0.50
+                                    shouldShowPopup = false
                                 }
                             }
-                        }else if currentFocusAlignmentScore < minFocusAlignmentScoreToShowDistractingPopUp{
-                            //Unsafe url
-                            addLog(text: "Unsafe url")
-                            var popUpWindowVisible = false
                             
-                            if popUpBlockConfirmWcObj != nil{
-                                if popUpBlockConfirmWcObj!.window?.isVisible ?? false{
-                                    if !popUpBlockConfirmVcObj!.isAppBlocking{
-                                        if popUpBlockConfirmVcObj?.url == currentBrowserUrlForAi{
-                                            popUpWindowVisible = true
-                                            popUpBlockConfirmVcObj?.lblAi.stringValue = reason
-                                            popUpBlockConfirmVcObj?.lastBlockReasonFromAi = reason
-                                            return;
+                            if(dProbability >= 0.70){
+                                // Safe URL
+                                addLog(text: "url is safe according to chat gpt")
+                                allApiObject.capturePosthog(event: "block-popup-allow-automatically", metadata: [:])
+                                
+                                
+                                arrAllowedUrlsInCuddlyModeCurrentFocus.append(url)
+                                arrAllowedTabTitlesInCuddlyModeCurrentFocus.append(tab_title)
+                                
+                                if popUpBlockConfirmWcObj != nil{
+                                    if popUpBlockConfirmWcObj!.window?.isVisible ?? false{
+                                        if !popUpBlockConfirmVcObj!.isAppBlocking{
+                                            popUpBlockConfirmVcObj?.closeWindow()
                                         }
                                     }
                                 }
-                            }
-                            if !popUpWindowVisible && shouldShowPopup{
-                                if isRunningAppFullScreen(runningApp: runningApp, browser: browser) || stageManagerObject.isStageManagerEnabled{
-                                    let script = script.replacingOccurrences(of: "<NEWPAGE>", with: "&ai-focus-block-verification-enabled=true&ai-focus-block-enabled=true&ai-relevance-explanation=\(reason)&ai-relevance-score=\(dProbability)")
-                                    executeScript(script: script) // new
-                                }else{
-                                    showPopupBlockConfirmWindow(blockedAppName: "", currentApp: nil, url:url, script:script, isBlockApp:false, browser: browser,tabTitle: tab_title, fullUrl:fullUrl, aiBlockReason: reason, isTimeOut:false, isBlockByAi: true, scoreForThisSiteApp: dProbability, payload: payload, isBrowser:false,suggestedTask: suggested_task,suggestedTaskId: suggested_task_id)
+                            }else if currentFocusAlignmentScore < minFocusAlignmentScoreToShowDistractingPopUp{
+                                //Unsafe url
+                                addLog(text: "Unsafe url")
+                                var popUpWindowVisible = false
+                                
+                                if popUpBlockConfirmWcObj != nil{
+                                    if popUpBlockConfirmWcObj!.window?.isVisible ?? false{
+                                        if !popUpBlockConfirmVcObj!.isAppBlocking{
+                                            if popUpBlockConfirmVcObj?.url == currentBrowserUrlForAi{
+                                                popUpWindowVisible = true
+                                                popUpBlockConfirmVcObj?.lblAi.stringValue = reason
+                                                popUpBlockConfirmVcObj?.lastBlockReasonFromAi = reason
+                                                return;
+                                            }
+                                        }
+                                    }
+                                }
+                                if !popUpWindowVisible && shouldShowPopup{
+                                    if isRunningAppFullScreen(runningApp: runningApp, browser: browser) || stageManagerObject.isStageManagerEnabled{
+                                        let script = script.replacingOccurrences(of: "<NEWPAGE>", with: "&ai-focus-block-verification-enabled=true&ai-focus-block-enabled=true&ai-relevance-explanation=\(reason)&ai-relevance-score=\(dProbability)")
+                                        executeScript(script: script) // new
+                                    }else{
+                                        showPopupBlockConfirmWindow(blockedAppName: "", currentApp: nil, url:url, script:script, isBlockApp:false, browser: browser,tabTitle: tab_title, fullUrl:fullUrl, aiBlockReason: reason, isTimeOut:false, isBlockByAi: true, scoreForThisSiteApp: dProbability, payload: payload, isBrowser:false,suggestedTask: suggested_task,suggestedTaskId: suggested_task_id)
+                                    }
                                 }
                             }
+                        }else{
+                            if(dProbability >= 0.70){
+                                // Safe URL
+                                addLog(text: "url is safe according to chat gpt")
+                                allApiObject.capturePosthog(event: "block-popup-allow-automatically", metadata: [:])
+                                
+                                arrAllowedUrlsInCuddlyModeCurrentFocus.append(url)
+                                arrAllowedTabTitlesInCuddlyModeCurrentFocus.append(tab_title)
+                                
+                                if popUpBlockConfirmWcObj != nil{
+                                    if popUpBlockConfirmWcObj!.window?.isVisible ?? false{
+                                        if !popUpBlockConfirmVcObj!.isAppBlocking{
+                                            popUpBlockConfirmVcObj?.closeWindow()
+                                        }
+                                    }
+                                }
+                            }else{
+                                addLog(text: "Unsafe url")
+                                focusBlockUnwantedUrl(script: script, url: url, lastBlockReasonFromAi: reason, browser: browser, isUrlBlockByAi: true, blockReason:"")
+                            }
                         }
-                        //                        }else{
-                        //                            if(dProbability >= 0.70){
-                        //                                // Safe URL
-                        //                                addLog(text: "url is safe according to chat gpt")
-                        //                                allApiObject.capturePosthog(event: "block-popup-allow-automatically", metadata: [:])
-                        //
-                        //                                arrAllowedUrlsInCuddlyModeCurrentFocus.append(url)
-                        //                                arrAllowedTabTitlesInCuddlyModeCurrentFocus.append(tab_title)
-                        //
-                        //                                if popUpBlockConfirmWcObj != nil{
-                        //                                    if popUpBlockConfirmWcObj!.window?.isVisible ?? false{
-                        //                                        if !popUpBlockConfirmVcObj!.isAppBlocking{
-                        //                                            popUpBlockConfirmVcObj?.closeWindow()
-                        //                                        }
-                        //                                    }
-                        //                                }
-                        //                            }else{
-                        //                                addLog(text: "Unsafe url")
-                        //                                focusBlockUnwantedUrl(script: script, url: url, lastBlockReasonFromAi: reason, browser: browser, isUrlBlockByAi: true, blockReason:"")
-                        //                            }
-                        //                        }
                         
                     }
                     isGettingResponseFromAi = false
@@ -860,51 +858,51 @@ func checkUrlFromAi(script: String, url:String, tab_title:String, currentRunning
                 if currentBrowserUrlForAi == checkedUrl{
                     if currentBrowserUrlAiTimeoutCount >= maxBrowserUrlAiTimeoutCount{
                         isGettingResponseFromAi = false
-                        // if isCuddlyModeEnabled(){
-                        let dProbability = 0.70
-                        let reason = ""
-                        
-                        
-                        if dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[url] == nil{
-                            addEntryInfocusAlignmentScoreCsv(url: url, tabTitle: tab_title, focusMode: currentRunningFocusModeName, intention: whatToAchieveInFocusBlock, aiReason: reason, allowedProbability: "\(dProbability)", totalScore: "")
-                            dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[url] = ["probability":dProbability, "isVisibleUrl":true, "totalSeconds":0, "startedTime":Date(), "reason":reason]
-                            if let payload = payload{
-                                dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[url]?["payload"] = payload
+                        if SettingsManagerObject.isCuddlyModeEnabled{
+                            let dProbability = 0.70
+                            let reason = ""
+                            
+                            
+                            if dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[url] == nil{
+                                addEntryInfocusAlignmentScoreCsv(url: url, tabTitle: tab_title, focusMode: currentRunningFocusModeName, intention: whatToAchieveInFocusBlock, aiReason: reason, allowedProbability: "\(dProbability)", totalScore: "")
+                                dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[url] = ["probability":dProbability, "isVisibleUrl":true, "totalSeconds":0, "startedTime":Date(), "reason":reason]
+                                if let payload = payload{
+                                    dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[url]?["payload"] = payload
+                                }
+                                boxForStatusBarForTooltip?.customToolTip = reason
                             }
-                            boxForStatusBarForTooltip?.customToolTip = reason
-                        }
-                        calculateFocusAlignmentScore()
-                        
-                        addLog(text: "The status of this url could not be verified. so we are marking it allowed")
-                        allApiObject.capturePosthog(event: "ai-endpoint-timed-out-three-times", metadata: [:])
-                        
-                        arrAllowedUrlsInCuddlyModeCurrentFocus.append(url)
-                        arrAllowedTabTitlesInCuddlyModeCurrentFocus.append(tab_title)
-                        
-                        if popUpBlockConfirmWcObj != nil{
-                            if popUpBlockConfirmWcObj!.window?.isVisible ?? false{
-                                if !popUpBlockConfirmVcObj!.isAppBlocking{
-                                    popUpBlockConfirmVcObj?.closeWindow()
+                            calculateFocusAlignmentScore()
+                            
+                            addLog(text: "The status of this url could not be verified. so we are marking it allowed")
+                            allApiObject.capturePosthog(event: "ai-endpoint-timed-out-three-times", metadata: [:])
+                            
+                            arrAllowedUrlsInCuddlyModeCurrentFocus.append(url)
+                            arrAllowedTabTitlesInCuddlyModeCurrentFocus.append(tab_title)
+                            
+                            if popUpBlockConfirmWcObj != nil{
+                                if popUpBlockConfirmWcObj!.window?.isVisible ?? false{
+                                    if !popUpBlockConfirmVcObj!.isAppBlocking{
+                                        popUpBlockConfirmVcObj?.closeWindow()
+                                    }
                                 }
                             }
+                            
+                        }else{
+                            addLog(text: "The status of this url could not be verified. so we are marking it allowed")
+                            allApiObject.capturePosthog(event: "ai-endpoint-timed-out-three-times", metadata: [:])
+                            
+                            arrAllowedUrlsInCuddlyModeCurrentFocus.append(url)
+                            arrAllowedTabTitlesInCuddlyModeCurrentFocus.append(tab_title)
+                            
+                            if popUpBlockConfirmWcObj != nil{
+                                if popUpBlockConfirmWcObj!.window?.isVisible ?? false{
+                                    if !popUpBlockConfirmVcObj!.isAppBlocking{
+                                        popUpBlockConfirmVcObj?.closeWindow()
+                                    }
+                                }
+                            }
+                            
                         }
-                        
-                        //                        }else{
-                        //                            addLog(text: "The status of this url could not be verified. so we are marking it allowed")
-                        //                            allApiObject.capturePosthog(event: "ai-endpoint-timed-out-three-times", metadata: [:])
-                        //
-                        //                            arrAllowedUrlsInCuddlyModeCurrentFocus.append(url)
-                        //                            arrAllowedTabTitlesInCuddlyModeCurrentFocus.append(tab_title)
-                        //
-                        //                            if popUpBlockConfirmWcObj != nil{
-                        //                                if popUpBlockConfirmWcObj!.window?.isVisible ?? false{
-                        //                                    if !popUpBlockConfirmVcObj!.isAppBlocking{
-                        //                                        popUpBlockConfirmVcObj?.closeWindow()
-                        //                                    }
-                        //                                }
-                        //                            }
-                        //
-                        //                        }
                     }else{//Retry AI blocking API if it fails #1303
                         currentBrowserUrlAiTimeoutCount += 1
                         addLog(text:"failed checkUrlFromAi again \(currentBrowserUrlAiTimeoutCount)")
@@ -1028,7 +1026,7 @@ func tryCheckAppFromAi(appName:String, runningApp:NSRunningApplication){
     let appNameLowercased = appName.lowercased()
     
     if arrBrowsersLowerCasedNames.contains(appNameLowercased){// exclude browsers from Alignment Score
-        if !isCuddlyModeEnabled(){
+        if !isStrictnessLevelNormal(){
             arrAllowedAppsInCuddlyModeCurrentFocus.append(runningApp)
         }else
         if SettingsManagerObject.isDataCollectionModeEnabled{
@@ -1071,25 +1069,25 @@ func tryCheckAppFromAi(appName:String, runningApp:NSRunningApplication){
     
     // if user is clicked on cnvince ai once then code below will not be executed
     if currentRunningAppNameForAi == appName{
-        // if isCuddlyModeEnabled(){
-        if !isGettingResponseFromAi, let info = dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[appNameLowercased]{
-            let reason = info["reason"] as? String ?? ""
-            boxForStatusBarForTooltip?.customToolTip = reason
-            let probability = info["probability"] as? Double ?? 0.0
-            let payload = info["payload"] as? [String:Any] ?? [:]
-            let suggestedTask = info["suggested_task"] as? String
-            let suggestedTaskId = info["suggested_task_id"] as? String
-            calculateFocusAlignmentScore()
-            if probability < 0.70{
-                if currentFocusAlignmentScore < minFocusAlignmentScoreToShowDistractingPopUp{
-                    if reason.lowercased() != "unable to get a decision from ai. trusting you to decide whether the site is relevant 😅"{
-                        showPopupBlockConfirmWindow(blockedAppName: appName, currentApp: runningApp, url:"", script:"", isBlockApp:true, browser: nil,tabTitle: nil, fullUrl:"", aiBlockReason: reason, isTimeOut:false, isBlockByAi: true, scoreForThisSiteApp: probability, payload: payload, isBrowser:false, suggestedTask: suggestedTask, suggestedTaskId: suggestedTaskId)
+        if SettingsManagerObject.isCuddlyModeEnabled{
+            if !isGettingResponseFromAi, let info = dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[appNameLowercased]{
+                let reason = info["reason"] as? String ?? ""
+                boxForStatusBarForTooltip?.customToolTip = reason
+                let probability = info["probability"] as? Double ?? 0.0
+                let payload = info["payload"] as? [String:Any] ?? [:]
+                let suggestedTask = info["suggested_task"] as? String
+                let suggestedTaskId = info["suggested_task_id"] as? String
+                calculateFocusAlignmentScore()
+                if probability < 0.70{
+                    if currentFocusAlignmentScore < minFocusAlignmentScoreToShowDistractingPopUp{
+                        if reason.lowercased() != "unable to get a decision from ai. trusting you to decide whether the site is relevant 😅"{
+                            showPopupBlockConfirmWindow(blockedAppName: appName, currentApp: runningApp, url:"", script:"", isBlockApp:true, browser: nil,tabTitle: nil, fullUrl:"", aiBlockReason: reason, isTimeOut:false, isBlockByAi: true, scoreForThisSiteApp: probability, payload: payload, isBrowser:false, suggestedTask: suggestedTask, suggestedTaskId: suggestedTaskId)
+                        }
+                        
                     }
-                    
                 }
             }
         }
-        //}
         return;
     }
     currentRunningAppNameForAi = appName
@@ -1136,7 +1134,6 @@ func checkAppFromAi(appName:String, currentRunningFocusModeName:String, runningA
                         let currentTaskName = currentTaskInToDoPlayer ?? ""
                         addEntryInFocusAIDecisionsCsv(url: appName, domain: "", tabTitle: "", score: "\(dProbability)", intention: whatToAchieveInFocusBlock, aiReason: reason, currentTaskName: currentTaskName, additionalUserJustification: "")
                         
-                        //                        if isCuddlyModeEnabled(){
                         if !arrBrowsersLowerCasedNames.contains(appNameLowercased){// exclude browsers from Alignment Score
                             if var oldData = dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[appNameLowercased]{
                                 addEntryInfocusAlignmentScoreCsv(url: appNameLowercased, tabTitle: "", focusMode: currentRunningFocusModeName, intention: whatToAchieveInFocusBlock, aiReason: "", allowedProbability: "\(dProbability)", totalScore: "")
@@ -1167,100 +1164,102 @@ func checkAppFromAi(appName:String, currentRunningFocusModeName:String, runningA
                             
                         }
                         calculateFocusAlignmentScore()
-                        
-                        var shouldShowPopup = true
-                        
-                        if(dProbability < 0.50){//Getting popup when AI doesn't make a decision#1355
-                            if  reason.lowercased() == "unable to get a decision from ai. trusting you to decide whether the site is relevant 😅"{
-                                dProbability = 0.50
-                                shouldShowPopup = false
-                            }
-                        }
-                        
-                        if(dProbability >= 0.70){
-                            // Safe URL
-                            addLog(text: "app is safe according to chat gpt")
-                            allApiObject.capturePosthog(event: "block-popup-allow-automatically", metadata: [:])
+                        if SettingsManagerObject.isCuddlyModeEnabled{
                             
                             
-                            arrAllowedAppsInCuddlyModeCurrentFocus.append(runningApp)
-                            //arrAllowedTabTitlesInCuddlyModeCurrentFocus.append(tab_title)
+                            var shouldShowPopup = true
                             
-                            if popUpBlockConfirmWcObj != nil{
-                                if popUpBlockConfirmWcObj!.window?.isVisible ?? false{
-                                    popUpBlockConfirmVcObj?.closeWindow()
+                            if(dProbability < 0.50){//Getting popup when AI doesn't make a decision#1355
+                                if  reason.lowercased() == "unable to get a decision from ai. trusting you to decide whether the site is relevant 😅"{
+                                    dProbability = 0.50
+                                    shouldShowPopup = false
                                 }
                             }
-                            if arrBrowsersLowerCasedNames.contains(appNameLowercased){
-                                if isFocusModeOn() || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
-                                    appdelegate?.setTimeCheckUrlsForFocusMode(nameLowercased: appNameLowercased)
-                                }else if isAnyAllowedFocusModeActivityRunning{
-                                    DispatchQueue.global().sync {
-                                        appdelegate?.setTimeCheckUrlsForHabits(nameLowercased: appNameLowercased)
+                            
+                            if(dProbability >= 0.70){
+                                // Safe URL
+                                addLog(text: "app is safe according to chat gpt")
+                                allApiObject.capturePosthog(event: "block-popup-allow-automatically", metadata: [:])
+                                
+                                
+                                arrAllowedAppsInCuddlyModeCurrentFocus.append(runningApp)
+                                //arrAllowedTabTitlesInCuddlyModeCurrentFocus.append(tab_title)
+                                
+                                if popUpBlockConfirmWcObj != nil{
+                                    if popUpBlockConfirmWcObj!.window?.isVisible ?? false{
+                                        popUpBlockConfirmVcObj?.closeWindow()
                                     }
                                 }
-                            }
-                        }else if currentFocusAlignmentScore < minFocusAlignmentScoreToShowDistractingPopUp{
-                            //Unsafe url
-                            
-                            var popUpWindowVisible = false
-                            
-                            if popUpBlockConfirmWcObj != nil{
-                                if popUpBlockConfirmWcObj!.window?.isVisible ?? false{
-                                    if popUpBlockConfirmVcObj!.isAppBlocking{
-                                        if popUpBlockConfirmVcObj?.currentAppName == currentRunningAppNameForAi{
-                                            popUpWindowVisible = true
-                                            popUpBlockConfirmVcObj?.lblAi.stringValue = reason
-                                            popUpBlockConfirmVcObj?.lastBlockReasonFromAi = reason
-                                            return;
+                                if arrBrowsersLowerCasedNames.contains(appNameLowercased){
+                                    if isFocusModeOn() || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
+                                        appdelegate?.setTimeCheckUrlsForFocusMode(nameLowercased: appNameLowercased)
+                                    }else if isAnyAllowedFocusModeActivityRunning{
+                                        DispatchQueue.global().sync {
+                                            appdelegate?.setTimeCheckUrlsForHabits(nameLowercased: appNameLowercased)
+                                        }
+                                    }
+                                }
+                            }else if currentFocusAlignmentScore < minFocusAlignmentScoreToShowDistractingPopUp{
+                                //Unsafe url
+                                
+                                var popUpWindowVisible = false
+                                
+                                if popUpBlockConfirmWcObj != nil{
+                                    if popUpBlockConfirmWcObj!.window?.isVisible ?? false{
+                                        if popUpBlockConfirmVcObj!.isAppBlocking{
+                                            if popUpBlockConfirmVcObj?.currentAppName == currentRunningAppNameForAi{
+                                                popUpWindowVisible = true
+                                                popUpBlockConfirmVcObj?.lblAi.stringValue = reason
+                                                popUpBlockConfirmVcObj?.lastBlockReasonFromAi = reason
+                                                return;
+                                            }
+                                        }
+                                    }
+                                }
+                                if !popUpWindowVisible && shouldShowPopup{
+                                    showPopupBlockConfirmWindow(blockedAppName: appName, currentApp: runningApp, url: "", script:"", isBlockApp:true, browser: nil,tabTitle: nil, fullUrl:"", aiBlockReason: reason, isTimeOut:false, isBlockByAi: true, scoreForThisSiteApp: dProbability, payload: payload, isBrowser:false, suggestedTask: suggested_task, suggestedTaskId: suggested_task_id)
+                                }
+                            }else{
+                                if arrBrowsersLowerCasedNames.contains(appNameLowercased){
+                                    if isFocusModeOn() || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
+                                        appdelegate?.setTimeCheckUrlsForFocusMode(nameLowercased: appNameLowercased)
+                                    }else if isAnyAllowedFocusModeActivityRunning{
+                                        DispatchQueue.global().sync {
+                                            appdelegate?.setTimeCheckUrlsForHabits(nameLowercased: appNameLowercased)
                                         }
                                     }
                                 }
                             }
-                            if !popUpWindowVisible && shouldShowPopup{
-                                showPopupBlockConfirmWindow(blockedAppName: appName, currentApp: runningApp, url: "", script:"", isBlockApp:true, browser: nil,tabTitle: nil, fullUrl:"", aiBlockReason: reason, isTimeOut:false, isBlockByAi: true, scoreForThisSiteApp: dProbability, payload: payload, isBrowser:false, suggestedTask: suggested_task, suggestedTaskId: suggested_task_id)
-                            }
                         }else{
-                            if arrBrowsersLowerCasedNames.contains(appNameLowercased){
-                                if isFocusModeOn() || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
-                                    appdelegate?.setTimeCheckUrlsForFocusMode(nameLowercased: appNameLowercased)
-                                }else if isAnyAllowedFocusModeActivityRunning{
-                                    DispatchQueue.global().sync {
-                                        appdelegate?.setTimeCheckUrlsForHabits(nameLowercased: appNameLowercased)
+                            if(dProbability >= 0.70){
+                                // Safe URL
+                                addLog(text: "app is safe according to chat gpt")
+                                allApiObject.capturePosthog(event: "block-popup-allow-automatically", metadata: [:])
+                                
+                                arrAllowedAppsInCuddlyModeCurrentFocus.append(runningApp)
+                                //                                arrAllowedTabTitlesInCuddlyModeCurrentFocus.append(tab_title)
+                                
+                                if popUpBlockConfirmWcObj != nil{
+                                    if popUpBlockConfirmWcObj!.window?.isVisible ?? false{
+                                        if popUpBlockConfirmVcObj!.isAppBlocking{
+                                            popUpBlockConfirmVcObj?.closeWindow()
+                                        }
                                     }
                                 }
+                                
+                                if arrBrowsersLowerCasedNames.contains(appNameLowercased){
+                                    if isFocusModeOn() || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
+                                        appdelegate?.setTimeCheckUrlsForFocusMode(nameLowercased: appNameLowercased)
+                                    }else if isAnyAllowedFocusModeActivityRunning{
+                                        DispatchQueue.global().sync {
+                                            appdelegate?.setTimeCheckUrlsForHabits(nameLowercased: appNameLowercased)
+                                        }
+                                    }
+                                }
+                            }else{
+                                focusBlockUnwantedApp(runningApp: runningApp, appName: appName, showNotification: true, isAppBlockByAi: true)
                             }
                         }
-                        //                        }else{
-                        //                            if(dProbability >= 0.70){
-                        //                                // Safe URL
-                        //                                addLog(text: "app is safe according to chat gpt")
-                        //                                allApiObject.capturePosthog(event: "block-popup-allow-automatically", metadata: [:])
-                        //
-                        //                                arrAllowedAppsInCuddlyModeCurrentFocus.append(runningApp)
-                        ////                                arrAllowedTabTitlesInCuddlyModeCurrentFocus.append(tab_title)
-                        //
-                        //                                if popUpBlockConfirmWcObj != nil{
-                        //                                    if popUpBlockConfirmWcObj!.window?.isVisible ?? false{
-                        //                                        if popUpBlockConfirmVcObj!.isAppBlocking{
-                        //                                            popUpBlockConfirmVcObj?.closeWindow()
-                        //                                        }
-                        //                                    }
-                        //                                }
-                        //
-                        //                                if arrBrowsersLowerCasedNames.contains(appNameLowercased){
-                        //                                    if isFocusModeOn() || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
-                        //                                        appdelegate?.setTimeCheckUrlsForFocusMode(nameLowercased: appNameLowercased)
-                        //                                    }else if isAnyAllowedFocusModeActivityRunning{
-                        //                                        DispatchQueue.global().sync {
-                        //                                            appdelegate?.setTimeCheckUrlsForHabits(nameLowercased: appNameLowercased)
-                        //                                        }
-                        //                                    }
-                        //                                }
-                        //                            }else{
-                        //                                focusBlockUnwantedApp(runningApp: runningApp, appName: appName, showNotification: true, isAppBlockByAi: true)
-                        //                            }
-                        //                        }
                         
                     }
                     isGettingResponseFromAi = false
@@ -1274,47 +1273,47 @@ func checkAppFromAi(appName:String, currentRunningFocusModeName:String, runningA
                 if currentRunningAppNameForAi == checkedApp{
                     if currentAppAiTimeoutCount >= maxBrowserUrlAiTimeoutCount{
                         isGettingResponseFromAi = false
-                        //                        if isCuddlyModeEnabled(){
-                        let dProbability = 0.70
-                        let reason = ""
-                        
-                        if !arrBrowsersLowerCasedNames.contains(appNameLowercased){// exclude browsers from Alignment Score
-                            if dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[appNameLowercased] == nil{
-                                addEntryInfocusAlignmentScoreCsv(url: appNameLowercased, tabTitle: "", focusMode: currentRunningFocusModeName, intention: whatToAchieveInFocusBlock, aiReason: "", allowedProbability: "\(dProbability)", totalScore: "")
-                                dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[appNameLowercased] = ["probability":dProbability, "isVisibleApp":true, "totalSeconds":0, "startedTime":Date(), "reason":reason]
-                                if let payload = payload{
-                                    dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[appNameLowercased]?["payload"] = payload
+                        if SettingsManagerObject.isCuddlyModeEnabled{
+                            let dProbability = 0.70
+                            let reason = ""
+                            
+                            if !arrBrowsersLowerCasedNames.contains(appNameLowercased){// exclude browsers from Alignment Score
+                                if dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[appNameLowercased] == nil{
+                                    addEntryInfocusAlignmentScoreCsv(url: appNameLowercased, tabTitle: "", focusMode: currentRunningFocusModeName, intention: whatToAchieveInFocusBlock, aiReason: "", allowedProbability: "\(dProbability)", totalScore: "")
+                                    dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[appNameLowercased] = ["probability":dProbability, "isVisibleApp":true, "totalSeconds":0, "startedTime":Date(), "reason":reason]
+                                    if let payload = payload{
+                                        dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[appNameLowercased]?["payload"] = payload
+                                    }
+                                    boxForStatusBarForTooltip?.customToolTip = reason
                                 }
-                                boxForStatusBarForTooltip?.customToolTip = reason
                             }
-                        }
-                        
-                        calculateFocusAlignmentScore()
-                        
-                        addLog(text: "The status of this app could not be verified. so we are marking it allowed")
-                        allApiObject.capturePosthog(event: "ai-endpoint-timed-out-three-times", metadata: [:])
-                        
-                        arrAllowedAppsInCuddlyModeCurrentFocus.append(runningApp)
-                        
-                        
-                        if popUpBlockConfirmWcObj != nil{
-                            if popUpBlockConfirmWcObj!.window?.isVisible ?? false{
-                                popUpBlockConfirmVcObj?.closeWindow()
+                            
+                            calculateFocusAlignmentScore()
+                            
+                            addLog(text: "The status of this app could not be verified. so we are marking it allowed")
+                            allApiObject.capturePosthog(event: "ai-endpoint-timed-out-three-times", metadata: [:])
+                            
+                            arrAllowedAppsInCuddlyModeCurrentFocus.append(runningApp)
+                            
+                            
+                            if popUpBlockConfirmWcObj != nil{
+                                if popUpBlockConfirmWcObj!.window?.isVisible ?? false{
+                                    popUpBlockConfirmVcObj?.closeWindow()
+                                }
                             }
+                            
+                        }else{
+                            addLog(text: "The status of this url could not be verified. so we are marking it allowed")
+                            allApiObject.capturePosthog(event: "ai-endpoint-timed-out-three-times", metadata: [:])
+                            
+                            arrAllowedAppsInCuddlyModeCurrentFocus.append(runningApp)
+                            if popUpBlockConfirmWcObj != nil{
+                                if popUpBlockConfirmWcObj!.window?.isVisible ?? false{
+                                    popUpBlockConfirmVcObj?.closeWindow()
+                                }
+                            }
+                            
                         }
-                        
-                        //                        }else{
-                        //                            addLog(text: "The status of this url could not be verified. so we are marking it allowed")
-                        //                            allApiObject.capturePosthog(event: "ai-endpoint-timed-out-three-times", metadata: [:])
-                        //
-                        //                            arrAllowedAppsInCuddlyModeCurrentFocus.append(runningApp)
-                        //                            if popUpBlockConfirmWcObj != nil{
-                        //                                if popUpBlockConfirmWcObj!.window?.isVisible ?? false{
-                        //                                    popUpBlockConfirmVcObj?.closeWindow()
-                        //                                }
-                        //                            }
-                        //
-                        //                        }
                     }else{//Retry AI blocking API if it fails #1303
                         currentAppAiTimeoutCount += 1
                         addLog(text:"failed checkUrlFromAi again \(currentAppAiTimeoutCount)")
@@ -1684,13 +1683,21 @@ func getArrayOfTaskForApi(){//at start of focus mode we get array of taks from a
         if let data = focusModeTaskString.data(using: String.Encoding.utf8) {
             do {
                 let jsonResult:[[String: Any]] = try (JSONSerialization.jsonObject(with: data, options: []) as? [[String: Any]] ?? [])
-                print(jsonResult)
+                //print(jsonResult)
 //                var taskString = ""
                 for i in 0..<jsonResult.count{
                     let task = jsonResult[i]
                     let title = task["title"] as? String ?? ""
                     let id = task["id"] as? String ?? ""
-                    arrTasks.append(["task_name":title, "task_id":id])
+                    var isCompleted = false
+                    if let status = task["status"] as? String{
+                        if status == "COMPLETED"{
+                            isCompleted = true
+                        }
+                    }
+                    if !isCompleted{
+                        arrTasks.append(["task_name":title, "task_id":id])
+                    }
                 }
             }catch{
                 print(error)
@@ -1867,9 +1874,10 @@ enum FOCUSMODESTRICTNESS:Int,Codable{
 
 var currentFocusModeStrictness = FOCUSMODESTRICTNESS._NORMAL_
 
-func isCuddlyModeEnabled()->Bool{
+// 2.28.450   In Super strict mode, now the AI popups will be shown for the urls and user can try to convince AI but cannot change the intention 19/1/25
+func isStrictnessLevelNormal()->Bool{
     if customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
-        return customBlockingScheduleManagerObj.isCuddlyModeEnabled()
+        return customBlockingScheduleManagerObj.isStrictnessLevelNormal()
     }
     
     if currentFocusModeStrictness == ._SUPER_STRICT_{
@@ -1978,35 +1986,35 @@ func focusTryToBlockUnwantedUrl(script: String, url:String, browser: BROWSER?, t
         }
     }
     addLog(text: "focusTryToBlockUnwantedUrl:- \(url)")
-    //    if isCuddlyModeEnabled(){
-    if arrBlockedUrlsInCuddlyModeCurrentFocus.contains(url){
-        focusBlockUnwantedUrl(script: script, url: url, lastBlockReasonFromAi: nil, browser: browser, isUrlBlockByAi: false, blockReason: "blocked_once_in_this_session")
-    }else{
-        if SettingsManagerObject.isAIBlockingEnabled(){
-            tryCheckUrlFromAi(script: script, url: url, tabTitle: tabTitle, browser: browser, fullUrl: fullUrl, domain:domain, runningApp: runningApp)
+    if SettingsManagerObject.isCuddlyModeEnabled{
+        if arrBlockedUrlsInCuddlyModeCurrentFocus.contains(url){
+            focusBlockUnwantedUrl(script: script, url: url, lastBlockReasonFromAi: nil, browser: browser, isUrlBlockByAi: false, blockReason: "blocked_once_in_this_session")
         }else{
-            if isRunningAppFullScreen(runningApp: runningApp, browser: browser) || stageManagerObject.isStageManagerEnabled{
-                let script = script.replacingOccurrences(of: "<NEWPAGE>", with: "&ai-focus-block-verification-enabled=true")
-                executeScript(script: script)
+            if SettingsManagerObject.isAIBlockingEnabled(){
+                tryCheckUrlFromAi(script: script, url: url, tabTitle: tabTitle, browser: browser, fullUrl: fullUrl, domain:domain, runningApp: runningApp)
+            }else{
+                if isRunningAppFullScreen(runningApp: runningApp, browser: browser) || stageManagerObject.isStageManagerEnabled{
+                    let script = script.replacingOccurrences(of: "<NEWPAGE>", with: "&ai-focus-block-verification-enabled=true")
+                    executeScript(script: script)
+                }else{
+                    exitFullScreen(runningApp:runningApp)
+                    showPopupBlockConfirmWindow(blockedAppName: "", currentApp: nil, url:url, script:script, isBlockApp:false, browser: browser,tabTitle: tabTitle, fullUrl:fullUrl, aiBlockReason: nil, isTimeOut:false, isBlockByAi: false, scoreForThisSiteApp: nil, payload: nil, isBrowser:false, suggestedTask: nil, suggestedTaskId: nil)
+                }
+            }
+        }
+    }else{
+        if arrBlockedUrlsInCuddlyModeCurrentFocus.contains(url){
+            focusBlockUnwantedUrl(script: script, url: url, lastBlockReasonFromAi: nil, browser: browser, isUrlBlockByAi: false, blockReason: "blocked_once_in_this_session")
+        }else{
+            if SettingsManagerObject.isAIBlockingEnabled(){
+                tryCheckUrlFromAi(script: script, url: url, tabTitle: tabTitle, browser: browser, fullUrl: fullUrl, domain:domain, runningApp: runningApp)
             }else{
                 exitFullScreen(runningApp:runningApp)
-                showPopupBlockConfirmWindow(blockedAppName: "", currentApp: nil, url:url, script:script, isBlockApp:false, browser: browser,tabTitle: tabTitle, fullUrl:fullUrl, aiBlockReason: nil, isTimeOut:false, isBlockByAi: false, scoreForThisSiteApp: nil, payload: nil, isBrowser:false, suggestedTask: nil, suggestedTaskId: nil)
+                focusBlockUnwantedUrl(script: script, url: url, lastBlockReasonFromAi: nil, browser: browser, isUrlBlockByAi: false, blockReason: "block_in_focus_mode")
+                
             }
         }
     }
-    //    }else{
-    //        if arrBlockedUrlsInCuddlyModeCurrentFocus.contains(url){
-    //            focusBlockUnwantedUrl(script: script, url: url, lastBlockReasonFromAi: nil, browser: browser, isUrlBlockByAi: false, blockReason: "blocked_once_in_this_session")
-    //        }else{
-    //            if SettingsManagerObject.isAIBlockingEnabled(){
-    //                tryCheckUrlFromAi(script: script, url: url, tabTitle: tabTitle, browser: browser, fullUrl: fullUrl, domain:domain, runningApp: runningApp)
-    //            }else{
-    //                exitFullScreen(runningApp:runningApp)
-    //                focusBlockUnwantedUrl(script: script, url: url, lastBlockReasonFromAi: nil, browser: browser, isUrlBlockByAi: false, blockReason: "block_in_focus_mode")
-    //
-    //            }
-    //        }
-    //    }
     
 }
 
@@ -2018,16 +2026,14 @@ func focusBlockUnwantedApp(runningApp: NSRunningApplication, appName:String, sho
     if showNotification{
         showFocusAppBlockNotification(appName:appName)
     }
-    //    if isCuddlyModeEnabled(){
     if !arrBlockedAppsInCuddlyModeCurrentFocus.contains(runningApp){
         arrBlockedAppsInCuddlyModeCurrentFocus.append(runningApp)
     }
-    //    }
 }
 
 func focusTryToBlockUnwantedApp(runningApp: NSRunningApplication, appName:String, appNameLowercased:String){
     
-    for path in SettingsManagerObject.arrAlwaysAllowedApps{ 
+    for path in SettingsManagerObject.arrAlwaysAllowedApps{
         let url = URL(fileURLWithPath: path)
         if url.deletingPathExtension().lastPathComponent.lowercased() == appNameLowercased{
             return;
@@ -2047,28 +2053,28 @@ func focusTryToBlockUnwantedApp(runningApp: NSRunningApplication, appName:String
     }
     exitFullScreen(runningApp:runningApp)
     addLog(text: "focusTryToBlockUnwantedApp:- \(appName)")
-    //    if isCuddlyModeEnabled(){
-    if arrBlockedAppsInCuddlyModeCurrentFocus.contains(runningApp){
-        focusBlockUnwantedApp(runningApp: runningApp, appName: appName, showNotification: true, isAppBlockByAi: false)
-    }else{
-        if SettingsManagerObject.isAIBlockingEnabled(){
-            tryCheckAppFromAi(appName: appName, runningApp: runningApp)
+    if SettingsManagerObject.isCuddlyModeEnabled{
+        if arrBlockedAppsInCuddlyModeCurrentFocus.contains(runningApp){
+            focusBlockUnwantedApp(runningApp: runningApp, appName: appName, showNotification: true, isAppBlockByAi: false)
         }else{
-            showPopupBlockConfirmWindow(blockedAppName: appName, currentApp: runningApp, url:"", script:"", isBlockApp:true, browser: nil, tabTitle: nil, fullUrl:"", aiBlockReason: nil, isTimeOut:false, isBlockByAi: false, scoreForThisSiteApp: nil, payload: nil, isBrowser:false, suggestedTask: nil, suggestedTaskId: nil)
+            if SettingsManagerObject.isAIBlockingEnabled(){
+                tryCheckAppFromAi(appName: appName, runningApp: runningApp)
+            }else{
+                showPopupBlockConfirmWindow(blockedAppName: appName, currentApp: runningApp, url:"", script:"", isBlockApp:true, browser: nil, tabTitle: nil, fullUrl:"", aiBlockReason: nil, isTimeOut:false, isBlockByAi: false, scoreForThisSiteApp: nil, payload: nil, isBrowser:false, suggestedTask: nil, suggestedTaskId: nil)
+            }
+        }
+    }else{
+        if arrBlockedAppsInCuddlyModeCurrentFocus.contains(runningApp){
+            focusBlockUnwantedApp(runningApp: runningApp, appName: appName, showNotification: true, isAppBlockByAi: false)
+        }else{
+            if SettingsManagerObject.isAIBlockingEnabled(){
+                tryCheckAppFromAi(appName: appName, runningApp: runningApp)
+            }else{
+                focusBlockUnwantedApp(runningApp: runningApp, appName: appName, showNotification: true, isAppBlockByAi: false)
+                
+            }
         }
     }
-    //    }else{
-    //        if arrBlockedAppsInCuddlyModeCurrentFocus.contains(runningApp){
-    //            focusBlockUnwantedApp(runningApp: runningApp, appName: appName, showNotification: true, isAppBlockByAi: false)
-    //        }else{
-    //            if SettingsManagerObject.isAIBlockingEnabled(){
-    //                tryCheckAppFromAi(appName: appName, runningApp: runningApp)
-    //            }else{
-    //                focusBlockUnwantedApp(runningApp: runningApp, appName: appName, showNotification: true, isAppBlockByAi: false)
-    //
-    //            }
-    //        }
-    //    }
 }
 
 
