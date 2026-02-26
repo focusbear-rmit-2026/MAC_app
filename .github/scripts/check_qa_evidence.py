@@ -865,7 +865,7 @@ def extract_attachments(text: str) -> dict:
 
 def assess_evidence_with_ai(
     issue_title: str,
-    issue_body: str.
+    issue_body: str,
     recent_comments: list[dict],
     attachments: dict,
 ) -> dict:
