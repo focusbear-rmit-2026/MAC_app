@@ -33,6 +33,8 @@ import subprocess
 import sys
 import tempfile
 from datetime import datetime, timezone, timedelta
+from difflib import get_close_matches
+from typing import Any
 
 import requests
 from openai import OpenAI
@@ -144,6 +146,7 @@ def get_project_items(org: str, project_number: int) -> list[dict]:
                 ... on Issue {
                   number
                   title
+                  body
                   url
                   updatedAt
                   repository { nameWithOwner }
@@ -210,35 +213,86 @@ def get_project_id(org: str, project_number: int) -> str:
     return data["organization"]["projectV2"]["id"]
 
 
+STATUS_FIELD_NAME = "status"
+MAX_FIELDS_TO_FETCH = 100
+MAX_CLOSE_MATCHES = 5
+CLOSE_MATCH_CUTOFF = 0.6
+
+
+def _normalise_label(value: str) -> str:
+    return " ".join(str(value).strip().lower().split())
+
+
 def get_status_field_and_option(
     org: str, project_number: int, target_status: str
 ) -> tuple[str, str]:
     """
     Return (fieldId, optionId) for the Status field's target_status option.
+    If not found, prints all candidate Status-like fields + their options.
     """
-    query = """
-    query($org: String!, $number: Int!) {
-      organization(login: $org) {
-        projectV2(number: $number) {
-          fields(first: 50) {
-            nodes {
-              ... on ProjectV2SingleSelectField {
+    query = f"""
+    query($org: String!, $number: Int!) {{
+      organization(login: $org) {{
+        projectV2(number: $number) {{
+          fields(first: {MAX_FIELDS_TO_FETCH}) {{
+            nodes {{
+              ... on ProjectV2SingleSelectField {{
                 id
                 name
-                options { id name }
-              }
-            }
-          }
-        }
-      }
-    }
+                options {{ id name }}
+              }}
+            }}
+          }}
+        }}
+      }}
+    }}
     """
-    data = graphql(query, {"org": org, "number": project_number})
-    for field in data["organization"]["projectV2"]["fields"]["nodes"]:
-        if isinstance(field, dict) and field.get("name", "").lower() == "status":
-            for opt in field.get("options", []):
-                if opt["name"].lower() == target_status.lower():
-                    return field["id"], opt["id"]
+
+    data: dict[str, Any] = graphql(query, {"org": org, "number": project_number})
+    nodes = data["organization"]["projectV2"]["fields"]["nodes"]
+
+    target_norm = _normalise_label(target_status)
+
+    single_select_fields: list[dict[str, Any]] = [
+        field for field in nodes if isinstance(field, dict) and "options" in field
+    ]
+
+    status_like_fields = [
+        field
+        for field in single_select_fields
+        if _normalise_label(field.get("name", "")) == STATUS_FIELD_NAME
+        or STATUS_FIELD_NAME in _normalise_label(field.get("name", ""))
+    ]
+
+    for field in status_like_fields:
+        for option in field.get("options", []):
+            if _normalise_label(option.get("name", "")) == target_norm:
+                return field["id"], option["id"]
+
+    # Debug dump
+    print(
+        f"Could not find target status '{target_status}'. "
+        f"Dumping all single-select fields + options for project {project_number}."
+    )
+    for field in single_select_fields:
+        field_name = field.get("name", "")
+        print(f"\nField: {field_name} ({field.get('id')})")
+        for option in field.get("options", []):
+            print(f"  - {option.get('name')} ({option.get('id')})")
+
+    # Helpful suggestions (only from Status-like fields, if any)
+    candidate_names: list[str] = []
+    for field in (status_like_fields or single_select_fields):
+        candidate_names.extend([opt.get("name", "") for opt in field.get("options", [])])
+
+    suggestions = get_close_matches(
+        target_status, [c for c in candidate_names if c], n=MAX_CLOSE_MATCHES, cutoff=CLOSE_MATCH_CUTOFF
+    )
+    if suggestions:
+        raise ValueError(
+            f"Could not find Status option '{target_status}'. Close matches: {suggestions}"
+        )
+
     raise ValueError(
         f"Could not find Status field option '{target_status}' in project {project_number}"
     )
@@ -811,6 +865,7 @@ def extract_attachments(text: str) -> dict:
 
 def assess_evidence_with_ai(
     issue_title: str,
+    issue_body: str.
     recent_comments: list[dict],
     attachments: dict,
 ) -> dict:
@@ -838,6 +893,8 @@ def assess_evidence_with_ai(
     prompt_text = f"""You are a QA lead reviewing whether a software issue has adequate test evidence.
 
 Issue title: {issue_title}
+Original issue description:
+{issue_body}
 
 The last {len(recent_comments)} comment(s) on this issue:
 {comments_text}
@@ -892,6 +949,8 @@ comments, or unrelated discussion), mark as failed.
   present, that can score 8–10.
 - If a video is mentioned but frames could NOT be extracted (unverifiable), do NOT score
   >= 7 just because a video link exists — score based on text evidence quality alone.
+
+If you don't think enough test scenarios were performed, please clearly state what test cases you would recommend for this issue.
 
 Respond ONLY with valid JSON in this exact format:
 {{
@@ -1056,11 +1115,60 @@ Respond ONLY with valid JSON in this exact format:
 # Core logic
 # ---------------------------------------------------------------------------
 
+REVIEW_BOT_LOGIN = os.environ.get("REVIEW_BOT_LOGIN", "jeznag").strip()
+REVIEW_BOT_SIGNATURE = "Automated check by QA Evidence Checker"  # keep in sync with your footer text
+
+def _is_review_bot_comment(comment: dict) -> bool:
+    author_login = (comment.get("user", {}) or {}).get("login", "") or ""
+    body = comment.get("body", "") or ""
+
+    if REVIEW_BOT_LOGIN and author_login.lower() == REVIEW_BOT_LOGIN.lower():
+        return True
+    return REVIEW_BOT_SIGNATURE.lower() in body.lower()
+
+
+def _request_new_evidence_comment(
+    repo: str,
+    issue_number: int,
+    item_id: str,
+    project_id: str | None,
+    ready_field_id: str | None,
+    ready_option_id: str | None,
+    mention: str,
+    result: dict,
+    dry_run: bool,
+) -> None:
+    comment_body = (
+        "## QA Evidence Needed\n\n"
+        "I’ve already reviewed this issue recently, and the latest comment is from the QA Evidence Checker.\n\n"
+        "Please add **new test evidence in a fresh comment** (don’t edit the old one), then move the card back to "
+        "**QA Passed** or **QA Failed**.\n\n"
+        "### Recommended format\n"
+        "```\n"
+        "Tested on <OS version + device/model> with these scenarios:\n"
+        "1. ...\n"
+        "2. ...\n\n"
+        "Evidence: <attach screenshot/video or link>\n"
+        "```\n"
+        f"\n{mention}\n\n"
+        f"*Automated check by QA Evidence Checker (model: {MODEL})*"
+    )
+
+    if dry_run:
+        print(f"  [DRY RUN] Would post 'new evidence needed' comment to {repo}#{issue_number}")
+        result["action"] = "dry_run_would_request_new_evidence"
+        return
+
+    post_issue_comment(repo, issue_number, comment_body)
+    move_item_to_status(project_id, item_id, ready_field_id, ready_option_id)
+    result["action"] = f"requested_new_evidence_and_moved_to_{READY_FOR_QA_STATUS.lower().replace(' ', '_')}"
+
 def check_issue(
     item_id: str,
     repo: str,
     issue_number: int,
     issue_title: str,
+    issue_body: str,
     issue_author: str,
     assignees: list[str],
     project_id: str | None,
@@ -1104,12 +1212,30 @@ def check_issue(
         body_len = len(c.get("body", ""))
         print(f"  [issue] Last comment {i}: by @{author} at {created} ({body_len} chars)")
 
+    # If the most recent comment is from this review bot, don't re-run the LLM.
+    # Ask QA to provide fresh evidence in a new comment, then move back when ready.
+    if comments and _is_review_bot_comment(comments[-1]):
+        result["status"] = "awaiting_new_evidence_comment"
+        result["problems"] = ["Latest comment is from QA Evidence Checker. Waiting for new evidence from QA."]
+        _request_new_evidence_comment(
+            repo=repo,
+            issue_number=issue_number,
+            item_id=item_id,
+            project_id=project_id,
+            ready_field_id=ready_field_id,
+            ready_option_id=ready_option_id,
+            mention=mention,
+            result=result,
+            dry_run=dry_run,
+        )
+        return result
+
     # Extract attachments from the recent comments
     combined_body = "\n".join(c.get("body", "") for c in recent_comments)
     attachments = extract_attachments(combined_body)
 
     print(f"  [issue] Calling AI assessment for issue: {issue_title[:60]}")
-    ai_result = assess_evidence_with_ai(issue_title, recent_comments, attachments)
+    ai_result = assess_evidence_with_ai(issue_title, issue_body, recent_comments, attachments)
 
     result["score"] = ai_result.get("score")
     result["problems"] = ai_result.get("problems", [])
