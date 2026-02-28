@@ -184,6 +184,16 @@ class menuViewController: NSViewController {
     var systemEventsPermissionGiven = true
     var showingPasswordViewForPausingFocusMode = false
     
+    var microBreaksTurnedOff = "Micro Breaks are currently turned off."
+    var microBreaksDisabledForToday = "Micro Breaks are disabled for today."
+    var breaksDisabledFocusSessionRunning = "Focus session is running. Breaks disabled."
+    var breaksDisabledSuperFocusSessionRunning = "Super Focus session is running. Breaks disabled."
+    var breaksDisabledBlockingScheduleActive = "Blocking schedule is active. Breaks disabled."
+    var breaksDisabledRoutinePostponed = "Routine is postponed. Breaks disabled."
+    var breaksDisabledHabitInProgress = "A habit is in progress. Breaks disabled."
+    
+    
+        
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
@@ -300,6 +310,17 @@ class menuViewController: NSViewController {
             lblCustomBlockingState.stringValue = menuInfo.value(forKey: "stateActive") as? String ?? lblCustomBlockingState.stringValue
             btnSetPermissions.title = menuInfo.value(forKey: "buttonEnable") as? String ?? btnSetPermissions.title
         }
+        
+        if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
+            microBreaksTurnedOff = menuInfo.value(forKey: "microBreaksTurnedOff") as? String ?? microBreaksTurnedOff
+            microBreaksDisabledForToday = menuInfo.value(forKey: "microBreaksDisabledForToday") as? String ?? microBreaksDisabledForToday
+            breaksDisabledFocusSessionRunning = menuInfo.value(forKey: "breaksDisabledFocusSessionRunning") as? String ?? breaksDisabledFocusSessionRunning
+            breaksDisabledSuperFocusSessionRunning = menuInfo.value(forKey: "breaksDisabledSuperFocusSessionRunning") as? String ?? breaksDisabledSuperFocusSessionRunning
+            breaksDisabledBlockingScheduleActive = menuInfo.value(forKey: "breaksDisabledBlockingScheduleActive") as? String ?? breaksDisabledBlockingScheduleActive
+            breaksDisabledHabitInProgress = menuInfo.value(forKey: "breaksDisabledHabitInProgress") as? String ?? breaksDisabledHabitInProgress
+            breaksDisabledRoutinePostponed = menuInfo.value(forKey: "breaksDisabledRoutinePostponed") as? String ?? breaksDisabledRoutinePostponed
+        }
+        
         segmentControlOfficeMode.setLabel(titleOfficeMode, forSegment: 0)
         segmentControlOfficeMode.setLabel(titleWFHMode, forSegment: 1)
         
@@ -1030,16 +1051,43 @@ class menuViewController: NSViewController {
             }
             
             if boxNextBreak.isHidden{
+                var breakDisableReason = microBreaksTurnedOff// topdo text for all
                 var isBreakEnabled = SettingsManagerObject.isMicroBreaksEnabled
+                
                 
                 if let disableBreaksForTodayDate = UserDefaults.standard.object(forKey: kUserdefaultsDisableBreaksForToday) as? Date{
                     if Calendar.current.isDateInToday(disableBreaksForTodayDate){
                         isBreakEnabled = false
+                        breakDisableReason = microBreaksDisabledForToday
                     }
                 }
-                
-                if getHabitsVcObject().breakTimer != nil && isBreakEnabled{
-                    if getHabitsVcObject().breakTimer!.isValid{
+
+                if getHabitsVcObject().breakTimer != nil{
+                    if  isBreakEnabled{
+                        if isFocusModeRunning && isFocusModeStartedFromPomodoroMode && isSkipBreakActivityDuringPomodoro{
+                            isBreakEnabled = false
+                            breakDisableReason = breaksDisabledFocusSessionRunning
+                        }else if isHardCorePomodoroModeOn && isSkipBreakActivityDuringPomodoro{
+                            isBreakEnabled = false
+                            breakDisableReason = breaksDisabledSuperFocusSessionRunning
+                        }else if customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
+                            if !customBlockingScheduleManagerObj.isMicroBreaksEnabled(){
+                                isBreakEnabled = false
+                                breakDisableReason = breaksDisabledBlockingScheduleActive
+                            }
+                        }else if currentState == ._CUSTOM_ROUTINE_ || currentState == ._SPECIAL_ACTIVITY_{
+                            breakDisableReason = breaksDisabledHabitInProgress
+                            isBreakEnabled = false
+                        }else if currentState == ._POSTPON_FOCUS_SUMMARY_ || currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_MORNING_HABIT_{
+                            if !SettingsManagerObject.IsShowBreaksInPostponeEnabled{
+                                isBreakEnabled = false
+                                breakDisableReason = breaksDisabledRoutinePostponed
+                            }
+                        }
+                    }
+                 
+                    
+                    if getHabitsVcObject().breakTimer!.isValid && isBreakEnabled{
                         boxNextBreak.isHidden = false
                         let currentTime = Date()
                         let breakTime = getHabitsVcObject().breakTimer!.fireDate
@@ -1054,7 +1102,7 @@ class menuViewController: NSViewController {
                         }
                         nextBreakText = nextBreakText.replacingOccurrences(of: "<DURATION>", with: timeText)
                         lblNextBreakTime.stringValue = nextBreakText
-                        
+                        lblNextBreakTime.font = getBoldFont(size: 13)
                         
                         
                         if diffMinute < 1{//show the break as soon as there are 5 seconds of inactivity
@@ -1066,6 +1114,10 @@ class menuViewController: NSViewController {
                                 }
                             }
                         }
+                    }else{
+                        boxNextBreak.isHidden = false
+                        lblNextBreakTime.stringValue = breakDisableReason
+                        lblNextBreakTime.font = getRegularFont(size: 11)
                     }
                 }
             }

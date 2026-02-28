@@ -591,6 +591,7 @@ class focusSummaryVc: NSViewController {
         appdelegate?.shutOffMac()
         viewVisibleCount = 0
     }
+    
     @IBAction func btnNeedMoreTimeClicked(_ sender: Any) {
         if viewVisibleCount == 0{
             addLog(text: "[user-action] button Need one More minute Clicked from focus summary")

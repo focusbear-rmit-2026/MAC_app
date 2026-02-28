@@ -93,7 +93,7 @@ class strictnessVc: NSViewController {
             strictness_Password = tooltips.value(forKey: "strictness_Password") as? String ?? strictness_Password
             strictness_DistractingSites = tooltips.value(forKey: "strictness_DistractingSites") as? String ?? strictness_DistractingSites
             strictness_DistractingApps = tooltips.value(forKey: "strictness_DistractingApps") as? String ?? strictness_DistractingApps
-            strictness_AlwaysAllowedApps = tooltips.value(forKey: "strictness_AlwaysAllowedApps") as? String ?? strictness_AlwaysAllowedApps
+            strictness_AlwaysAllowedApps = tooltips.value(forKey: "strictness_AlwaysAllowedApps") as? String ?? strictness_AlwaysAllowedApps //todo text 
             strictness_Block_Lists = tooltips.value(forKey: "strictness_Block_Lists") as? String ?? strictness_Block_Lists
             strictness_Blocking_Schedules = tooltips.value(forKey: "strictness_Blocking_Schedules") as? String ?? strictness_Blocking_Schedules
         }
