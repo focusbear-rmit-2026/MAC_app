@@ -199,11 +199,17 @@ class customLoginVc: NSViewController {
     }
     
     @objc func signUpWithGoogle(){
+        if askLogInVcObj == nil{
+            getAskLogInVcObject().loadView()//v 2.29.459 // bug solved 
+        }
         askLogInVcObj?.btnSignInWithGoogleClicked(self)
         askLogInVcObj?.showMessageBoxFor(sender: boxButtonSignUpWithGoogle)
     }
     
     @objc func signUpWithApple(){
+        if askLogInVcObj == nil{
+            getAskLogInVcObject().loadView()//v 2.29.459
+        }
         askLogInVcObj?.btnSignInWithAppleClicked(self)
         askLogInVcObj?.showMessageBoxFor(sender: boxButtonSignUpWithApple)
     }

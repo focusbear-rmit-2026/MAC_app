@@ -5666,6 +5666,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                             if Date().compare(date) == .orderedDescending {
                                 UserDefaults.standard.removeObject(forKey: kUserdefaultsShutdownAborted)
                                 addLog(text: "Shutdown Aborted date passed.")// log added  v 2.28.448
+                            }else{
+                                customBlockingScheduleManagerObj.checkCustomBlockingScheduleTime()//v 2.29.459
                             }
                         }
                     }
@@ -6665,6 +6667,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             }
             isHabitAlreadyShowed = false
             addLog(text: "evening habit already Done for today")
+            if mainWindowControllerObj?.window?.isVisible ?? false{// close here at cut off time it will show automatically
+                mainWindowControllerObj?.window?.close()
+                hideBlankWindowInSecondaryMonitor()
+                
+                UserDefaults.standard.removeObject(forKey: kUserdefaultsShutOffCancelledForEveningRoutine)
+                UserDefaults.standard.removeObject(forKey: kUserdefaultsLastHabitSavedNotes)
+                UserDefaults.standard.removeObject(forKey: kUserdefaultsLastCustomRoutineHabitSavedNotes)
+                leftMenuVcObj?.habitOver()
+                currentHabitIndex = -1
+            }
             return;
         }
         
@@ -10555,3 +10567,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 
 // handled ["All"] or not array in days in blocking schedule
 
+
+
+// if there is no current week day habit in evening habit. after focus summary on start eveniong habit button app got stuck and nothing happend // done all threee
+// shutoff aborted k time per blocking schedule
+// button was not clickable biug solved

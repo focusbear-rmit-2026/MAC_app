@@ -506,7 +506,14 @@
         "addBlockingScheduleInfo": "Blocking is off because no custom blocking schedules have been added.",
         "titleBlockingSchedule": "Blocking Schedule",
         "buttonEditFocusModeDuration": "Click here to update duration, intention and current task",
-        "buttonEnable": "Enable"
+        "buttonEnable": "Enable",
+        "microBreaksTurnedOff": "Micro Breaks are currently turned off.",
+        "microBreaksDisabledForToday": "Micro Breaks are disabled for today.",
+        "breaksDisabledFocusSessionRunning": "Focus session is running. Breaks disabled.",
+        "breaksDisabledSuperFocusSessionRunning": "Super Focus session is running. Breaks disabled.",
+        "breaksDisabledBlockingScheduleActive": "Blocking schedule is active. Breaks disabled.",
+        "breaksDisabledRoutinePostponed": "Routine is postponed. Breaks disabled.",
+        "breaksDisabledHabitInProgress": "A habit is in progress. Breaks disabled."
     },
     "preferencesInfo": {
         "titlePomodoro": "Pomodoro Mode:",

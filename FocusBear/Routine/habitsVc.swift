@@ -3419,8 +3419,8 @@ class habitsVc: NSViewController {
                 }
             }
            
-            let isFocusModeOnOrPaused = isFocusModeOnOrPaused()
-            if isFocusModeOnOrPaused && isFocusModeStartedFromPomodoroMode && isSkipBreakActivityDuringPomodoro{
+            let isFocusModeOn = isFocusModeOn()
+            if isFocusModeOn && isFocusModeStartedFromPomodoroMode && isSkipBreakActivityDuringPomodoro{
                 self.setActivityTimer()
                 addLog(text: "Pomodoro mode is On and Skip Break Activity During Focus is enabled: Break Activities cancelled.")
                 return;
@@ -3428,7 +3428,7 @@ class habitsVc: NSViewController {
                 self.setActivityTimer()
                 addLog(text: "Super Pomodoro mode is On and Skip Break Activity During Focus is enabled: Break Activities cancelled.")
                 return;
-            }else if isFocusModeOnOrPaused && isSkipBreakActivityDuringFocus{
+            }else if isFocusModeOn && isSkipBreakActivityDuringFocus{// will never return true beacuse isSkipBreakActivityDuringFocus is not in use now
                 self.setActivityTimer()
                 addLog(text: "Focus mode is On and Skip Break Activity During Focus is enabled: Break Activities cancelled.")
                 return;

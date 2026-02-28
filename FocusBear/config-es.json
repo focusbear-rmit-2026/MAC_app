@@ -516,7 +516,14 @@
         "addBlockingScheduleInfo": "El bloqueo está desactivado porque no se han agregado horarios de bloqueo personalizados.",
         "titleBlockingSchedule": "Horario de bloqueo",
         "buttonEditFocusModeDuration": "Haz clic aquí para actualizar la duración, la intención y la tarea actual",
-        "buttonEnable": "Activar"
+        "buttonEnable": "Activar",
+        "microBreaksTurnedOff": "Las micro-pausas están actualmente desactivadas.",
+        "microBreaksDisabledForToday": "Las micro-pausas están deshabilitadas por hoy.",
+        "breaksDisabledFocusSessionRunning": "La sesión de enfoque está en curso. Descansos deshabilitados.",
+        "breaksDisabledSuperFocusSessionRunning": "La sesión de súper enfoque está en curso. Descansos deshabilitados.",
+        "breaksDisabledBlockingScheduleActive": "El horario de bloqueo está activo. Descansos deshabilitados.",
+        "breaksDisabledRoutinePostponed": "La rutina está pospuesta. Descansos deshabilitados.",
+        "breaksDisabledHabitInProgress": "Un hábito está en curso. Descansos deshabilitados."
     },
     "preferencesInfo": {
         "titlePomodoro": "Modo Pomodoro:",
