@@ -446,6 +446,7 @@ class blockingScheduleEditorVC: NSViewController {
         allApiObject.capturePosthog(event: "edit-blocking-schedule", metadata: [:])//2.27.421
         customBlockingScheduleManagerObj.updateCustomBlockingScheduleAtIndex(currentFocusModeIndex)
         closeView()
+        customBlockingScheduleManagerObj.updateEditedBlokingScheduleEndTimeIfRunning(index: currentFocusModeIndex)
     }
     
     func showOverlapAlert(for blockingSchedule: customBlockingSchedule) {

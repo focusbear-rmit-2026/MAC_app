@@ -84,16 +84,8 @@ class habitsStateVc: NSViewController {
             if isHabitAlreadyShowed && !isShutOffTimeGoing(){
                 let (nextRoutine, nextRoutineName, nextRoutineIsEveningRoutine) = getNextRoutineInfo()
                 
-                var timeFormat = "h:mm a"
-                if let dict = UserDefaults.standard.persistentDomain(forName: "com.apple.menuextra.clock") {
-                    print(dict)
-                    if let isShow24Hour = dict["Show24Hour"] as? Bool {
-                        if isShow24Hour{
-                            timeFormat = "H:mm"
-                        }
-                    }
-                }
-                let (dateString) = getStringFromDate(date: nextRoutine, dateFormat: timeFormat)
+               
+                let (dateString) = getStringFromDate(date: nextRoutine, dateFormat: getSystemTimeFormat())
                 var nextRoutineText = "Great job staying on track! Your next scheduled routine (<ROUTINE>) is set for <TIME>. Be ready to jump back in and continue building those healthy habits. You've got this!"
                 if let habitsStateVcInfo = configjson.value(forKey: "habitsStateVcInfo") as? NSDictionary{
                     nextRoutineText = habitsStateVcInfo.value(forKey: "nextRoutineText") as? String ?? nextRoutineText
@@ -122,10 +114,16 @@ class habitsStateVc: NSViewController {
             }else{
                 if let date = UserDefaults.standard.object(forKey: kUserdefaultsShutdownAborted) as? Date{
                     if Date().compare(date) == .orderedAscending {
-                        lblTitle.stringValue = "Shutoff aborted. Your computer is now accessible again."
+                        var shutoffAbortedText = "Your morning routine starts at <TIME> — time to log off and rest."
                         if let habitsStateVcInfo = configjson.value(forKey: "habitsStateVcInfo") as? NSDictionary{
-                            lblTitle.stringValue = habitsStateVcInfo.value(forKey: "shutoffAbortedText") as? String ?? lblTitle.stringValue
+                            shutoffAbortedText = habitsStateVcInfo.value(forKey: "shutoffAbortedTextNew") as? String ?? shutoffAbortedText
                         }
+                        
+                        let startdate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
+                        
+                        let dateString = getStringFromDate(date: startdate, dateFormat: getSystemTimeFormat())
+                        shutoffAbortedText = shutoffAbortedText.replacingOccurrences(of: "<TIME>", with: dateString)
+                        lblTitle.stringValue = shutoffAbortedText
                     }
                 }
                 if isShutOffTimeGoing() && arrAllDaysEveningHabits.count == 0{
@@ -179,29 +177,25 @@ class habitsStateVc: NSViewController {
                         if let cutOffTime = cutOffTime{// v 2.28.445
                             let cutOffdate = Calendar.current.date(bySettingHour: cutOffTime.hour, minute: cutOffTime.minute, second: cutOffTime.second, of: Date())!
                             
-                            var timeFormat = "h:mm a"
-                            if let dict = UserDefaults.standard.persistentDomain(forName: "com.apple.menuextra.clock") {
-                                print(dict)
-                                if let isShow24Hour = dict["Show24Hour"] as? Bool {
-                                    if isShow24Hour{
-                                        timeFormat = "H:mm"
-                                    }
-                                }
-                            }
-                            
                             btnResumeHabits.isHidden = false
                             
                             
                             isFreeTimeBeforeShutoff = true
-                            let cutOffDateString = getStringFromDate(date: cutOffdate, dateFormat: timeFormat)
-                            var freeTimeText = "Well done! You've got free time until <CUTOFFTIME>"
+                            let cutOffDateString = getStringFromDate(date: cutOffdate, dateFormat: getSystemTimeFormat())
+                            var freeTimeText = "Well done finishing your evening routine 👏\nYour sleep time is <CUTOFFTIME>.\nYour next morning routine starts at <STARTTIME>.\nRest well and recharge for a strong start tomorrow 💪"
+                            
                             btnResumeHabits.title = "Change timing"
                             if let habitsStateVcInfo = configjson.value(forKey: "habitsStateVcInfo") as? NSDictionary{
-                                freeTimeText = habitsStateVcInfo.value(forKey: "freeTimeText") as? String ?? freeTimeText
+                                freeTimeText = habitsStateVcInfo.value(forKey: "freeTimeTextNew") as? String ?? freeTimeText
                                 btnResumeHabits.title = habitsStateVcInfo.value(forKey: "buttonChangeTiming") as? String ?? btnResumeHabits.title
                             }
+                            let startdate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
                             
-                            lblTitle.stringValue = freeTimeText.replacingOccurrences(of: "<CUTOFFTIME>", with: cutOffDateString)
+                            let dateString = getStringFromDate(date: startdate, dateFormat: getSystemTimeFormat())
+                            freeTimeText = freeTimeText.replacingOccurrences(of: "<STARTTIME>", with: dateString)
+                            freeTimeText = freeTimeText.replacingOccurrences(of: "<CUTOFFTIME>", with: cutOffDateString)
+                            
+                            lblTitle.stringValue = freeTimeText
                         }else{//// v  2.28.453
                             isFreeTimeBeforeShutoff = true
                             btnResumeHabits.isHidden = false

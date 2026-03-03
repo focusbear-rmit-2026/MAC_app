@@ -5358,7 +5358,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             if isFocusModeRunning || (isAnyAllowedFocusModeActivityRunning && (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._CUSTOM_ROUTINE_)){
                 calculateFocusAlignmentScore()
             }
-            
+            customBlockingScheduleManagerObj.checkAndFinishScheduleIfNeeded()// Finish the current custom blocking schedule if its end time has passed
             self.processOfflineData()
             
             if isExpired{
@@ -6231,6 +6231,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             }
             showBlankWindowInSecondaryMonitor()
             getHabitsVcObject().shutOffMac()
+        }else{
+            customBlockingScheduleManagerObj.checkCustomBlockingScheduleTime()
         }
     }
     
