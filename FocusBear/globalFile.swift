@@ -717,6 +717,18 @@ var arrNonTimerBasedHabitsDurationsPlistFileUrl:URL!
 //var blockURL:URL!
 var blockWebUrlString = ""
 
+func getSystemTimeFormat()->String{
+    var timeFormat = "h:mm a"
+    if let dict = UserDefaults.standard.persistentDomain(forName: "com.apple.menuextra.clock") {
+        print(dict)
+        if let isShow24Hour = dict["Show24Hour"] as? Bool {
+            if isShow24Hour{
+                timeFormat = "H:mm"
+            }
+        }
+    }
+    return timeFormat
+}
 
 func getStringFromDate(date:Date, dateFormat:String)->String{
     let df = DateFormatter()

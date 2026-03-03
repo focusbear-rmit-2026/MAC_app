@@ -41,6 +41,8 @@ struct customBlockingSchedule: Codable, Identifiable {
     var displayString: String {
         "\(daysOfWeek.formattedDays()), \(startTime.formattedTime()) to \(endTime.formattedTime())"
     }
+    
+    
     var blockLevelString: String {
         switch blockLevel{
             
@@ -132,25 +134,6 @@ struct customBlockingSchedule: Codable, Identifiable {
             return false
         }
     }
-
-
-    
-//    func remainingBlockingDuration() -> TimeInterval {
-//        let now = Date()
-//        let start = self.startTime
-//        var end = endTime
-//        let calendar = Calendar.current
-//        
-//        if end <= start {
-//            end = calendar.date(byAdding: .day, value: 1, to: end)!
-//        }
-//        
-//        guard now >= start, now < end else {
-//            return 1
-//        }
-//        
-//        return end.timeIntervalSince(now)
-//    }
     
     func remainingBlockingDuration() -> TimeInterval {
         let now = Date()
@@ -465,6 +448,7 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
     
     var arrBlockingSchedule = [customBlockingSchedule]()
     var isAnyCustomScheduleOn = false
+    var currentSheduleFinishTime:Date?
     var isAnyCustomSchedulePaused = false
     
     init() {
@@ -571,6 +555,7 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
     
     func customBlockingDeactivated(){
         addLog(text: "Custom blocking schedule deactivated.")//2.27.421
+        currentSheduleFinishTime = nil
         setAppIconForFocusModeScore(probability: nil)
         isSkipBreakActivityDuringFocus = false
         lastFocusModeTempInfo = nil
@@ -612,7 +597,25 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
         }
     }
     
+    // Finish the current custom blocking schedule if its end time has passed
+    func checkAndFinishScheduleIfNeeded(){// added 2.29.460
+        guard isAnyCustomScheduleOn else { return }
+        guard let currentSheduleFinishTime = currentSheduleFinishTime else{
+            return;
+        }
+        if Date() >= currentSheduleFinishTime {
+            customBlockingScheduleFinished()
+        }
+    }
     
+    func updateEditedBlokingScheduleEndTimeIfRunning(index:Int){
+        if arrBlockingSchedule[index].state == .on{
+            let remaining = arrBlockingSchedule[index].remainingBlockingDuration()
+            currentSheduleFinishTime = Date() + remaining
+            
+            showCustomBlockingScheduleStartPopUp(scheduleName: arrBlockingSchedule[index].name, scheduleTime: "\(arrBlockingSchedule[index].startTime.formattedTime()) to \(arrBlockingSchedule[index].endTime.formattedTime())")
+        }
+    }
     
     func startCustomBlockingSchedule(index:Int){
         addLog(text: "Custom blocking schedule started.")
@@ -626,9 +629,8 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
         }
         addLog(text: "Custom blocking schedule Started until - \(stringTime).")
         let remaining = arrBlockingSchedule[index].remainingBlockingDuration()
-        DispatchQueue.main.asyncAfter(deadline: .now() + remaining) { [weak self] in
-            self?.customBlockingScheduleFinished()
-        }
+        currentSheduleFinishTime = Date() + remaining
+
         for focusMode in arrFocusType{
             if focusMode["id"] as? String == arrBlockingSchedule[index].focusModeID{
                 currentRunningFocusType = focusMode
@@ -674,12 +676,6 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
         }
         getTaskPlayerVcObject().loadRequest()
         shouldReloadTaskPlayer = true
-////        if SettingsManagerObject.showToDoPlayerAutomaticallyEnabled{
-////            showTaskPlayerWindow(totalDuration: focusModeMinutesToPerform, intention: whatToAchieveInFocusBlock, automatically:true)
-////        }else{
-//            taskPlayerVcObj?.reloadData(totalDuration: focusModeMinutesToPerform, intention: whatToAchieveInFocusBlock)
-//            shouldReloadTaskPlayer = false
-////        }
         
         showCustomBlockingScheduleStartPopUp(scheduleName: arrBlockingSchedule[index].name, scheduleTime: "\(arrBlockingSchedule[index].startTime.formattedTime()) to \(arrBlockingSchedule[index].endTime.formattedTime())")
         leftMenuVcObj?.focusModeOrFocusModeHabitStarted()
