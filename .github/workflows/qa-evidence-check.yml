@@ -47,7 +47,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GH_PROJECT_TOKEN }}
           OPEN_AI_KEY_FOR_QA_REVIEW: ${{ secrets.OPEN_AI_KEY_FOR_QA_REVIEW }}
           ORG: Focus-Bear
-          PROJECT_NUMBER: '3'
+          PROJECT_NUMBER: '1'
           DAYS_TO_CHECK: ${{ inputs.days_to_check || '30' }}
           STATUS_VALUES: ${{ inputs.status_values || 'QA Failed,QA Passed/Done' }}
           # Update to gpt-5-mini once confirmed at platform.openai.com/docs/models
