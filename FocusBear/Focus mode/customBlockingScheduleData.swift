@@ -448,7 +448,7 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
     
     var arrBlockingSchedule = [customBlockingSchedule]()
     var isAnyCustomScheduleOn = false
-    var currentSheduleFinishTime:Date?
+    var currentScheduleFinishTime:Date?
     var isAnyCustomSchedulePaused = false
     
     init() {
@@ -555,7 +555,7 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
     
     func customBlockingDeactivated(){
         addLog(text: "Custom blocking schedule deactivated.")//2.27.421
-        currentSheduleFinishTime = nil
+        currentScheduleFinishTime = nil
         setAppIconForFocusModeScore(probability: nil)
         isSkipBreakActivityDuringFocus = false
         lastFocusModeTempInfo = nil
@@ -600,18 +600,18 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
     // Finish the current custom blocking schedule if its end time has passed
     func checkAndFinishScheduleIfNeeded(){// added 2.29.460
         guard isAnyCustomScheduleOn else { return }
-        guard let currentSheduleFinishTime = currentSheduleFinishTime else{
+        guard let currentScheduleFinishTime = currentScheduleFinishTime else{
             return;
         }
-        if Date() >= currentSheduleFinishTime {
+        if Date() >= currentScheduleFinishTime {
             customBlockingScheduleFinished()
         }
     }
     
-    func updateEditedBlokingScheduleEndTimeIfRunning(index:Int){
+    func updateEditedBlockingScheduleEndTimeIfRunning(index:Int){
         if arrBlockingSchedule[index].state == .on{
             let remaining = arrBlockingSchedule[index].remainingBlockingDuration()
-            currentSheduleFinishTime = Date() + remaining
+            currentScheduleFinishTime = Date() + remaining
             
             showCustomBlockingScheduleStartPopUp(scheduleName: arrBlockingSchedule[index].name, scheduleTime: "\(arrBlockingSchedule[index].startTime.formattedTime()) to \(arrBlockingSchedule[index].endTime.formattedTime())")
         }
@@ -629,7 +629,7 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
         }
         addLog(text: "Custom blocking schedule Started until - \(stringTime).")
         let remaining = arrBlockingSchedule[index].remainingBlockingDuration()
-        currentSheduleFinishTime = Date() + remaining
+        currentScheduleFinishTime = Date() + remaining
 
         for focusMode in arrFocusType{
             if focusMode["id"] as? String == arrBlockingSchedule[index].focusModeID{

@@ -289,6 +289,7 @@
         "quittingConfirmInfo": {
             "subTitle": "Can you share why you're quitting?",
             "buttonQuitText": "Quit",
+            "buttonQuitInitialText": "Nope - just quit",
             "emailTitle": "Your Email (if you want us to reply):",
             "dropDown_0": {
                 "title": "Select a reason"
@@ -507,6 +508,8 @@
         "titleBlockingSchedule": "Blocking Schedule",
         "buttonEditFocusModeDuration": "Click here to update duration, intention and current task",
         "buttonEnable": "Enable",
+        "focusedTodayText": "FOCUSED TODAY",
+        "remainingText": "remaining",
         "microBreaksTurnedOff": "Micro Breaks are currently turned off.",
         "microBreaksDisabledForToday": "Micro Breaks are disabled for today.",
         "breaksDisabledFocusSessionRunning": "Focus session is running. Breaks disabled.",
@@ -1856,10 +1859,6 @@
         "checkBoxText": "Immediately block super distracting apps",
         "addBrowserAlertText": "Sorry you can't choose browser apps here. Instead put distracting websites in the Super Distracting URLs section.",
         "subTitleTextNew": "Which apps do you waste time on? Focus Bear will help you be more intentional about how you use these apps. They will be blocked during focus sessions and blocking schedules."
-    },
-    "alwaysAllowedAppsViewInfo": {
-        "title": "Always Allowed Apps",
-        "subTitleText": "Apps added here will never be blocked, regardless of focus mode, blocking schedules, or strictness settings. Use this for essential apps that you always need access to."
     },
     "settingsNew": {
         "uiSettingTitle": "UI",

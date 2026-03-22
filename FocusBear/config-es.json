@@ -289,6 +289,7 @@
         "quittingConfirmInfo": {
             "subTitle": "¿Puedes compartir por qué estás abandonando",
             "buttonQuitText": "Abandonar",
+            "buttonQuitInitialText": "No, solo salir",
             "emailTitle": "Tu correo electrónico (si quieres que te respondamos):",
             "dropDown_0": {
                 "title": "Selecciona una razón"
@@ -517,6 +518,8 @@
         "titleBlockingSchedule": "Horario de bloqueo",
         "buttonEditFocusModeDuration": "Haz clic aquí para actualizar la duración, la intención y la tarea actual",
         "buttonEnable": "Activar",
+        "focusedTodayText": "ENFOCADO HOY",
+        "remainingText": "restante",
         "microBreaksTurnedOff": "Las micro-pausas están actualmente desactivadas.",
         "microBreaksDisabledForToday": "Las micro-pausas están deshabilitadas por hoy.",
         "breaksDisabledFocusSessionRunning": "La sesión de enfoque está en curso. Descansos deshabilitados.",
@@ -1856,10 +1859,6 @@
         "checkBoxText": "Bloquear inmediatamente aplicaciones súper distractoras",
         "addBrowserAlertText": "Lo sentimos, no puedes elegir aplicaciones de navegador aquí. En su lugar, pon los sitios web que te distraen en la sección URLs superdistractoras.",
         "subTitleTextNew": "¿En qué apps pierdes tiempo? Focus Bear te ayudará a usar estas apps de manera más intencional. Se bloquearán durante las sesiones de enfoque y los horarios de bloqueo."
-    },
-    "alwaysAllowedAppsViewInfo": {
-        "title": "Aplicaciones Siempre Permitidas",
-        "subTitleText": "Las aplicaciones añadidas aquí nunca serán bloqueadas, independientemente del modo de enfoque, los horarios de bloqueo o la configuración de restricción. Usa esto para aplicaciones esenciales a las que siempre necesitas acceso."
     },
     "settingsNew": {
         "uiSettingTitle": "IU",

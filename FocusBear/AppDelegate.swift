@@ -931,6 +931,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                         kUserDefaultsUserJobDetails = kUserDefaultsUserJobDetails + (self.user?.userId ?? "")
                                         kUserDefaultsUserDistractions = kUserDefaultsUserDistractions + (self.user?.userId ?? "")
                                         
+                                        kUserDefaultsBlockingScheduleAddedFirstTime = kUserDefaultsBlockingScheduleAddedFirstTime + (self.user?.userId ?? "")
                                         closeSplashWindow()
                                         self.showEnableAIBlockingVc()
                                     }
@@ -2314,46 +2315,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             
         }
     }
-    
-    /*
-     @objc func checkExtraNagsAfterTrialExpired(){
-     if startTime == nil{
-     startTime = Time(hour: 9, minute: 15, second: 0)
-     }
-     if shutOffTime == nil{
-     shutOffTime = Time(hour: 20, minute: 15, second: 0)
-     }
-     
-     if upgradeNowWcObj != nil{
-     if upgradeNowWcObj?.window?.isVisible ?? false{
-     return;
-     }
-     }
-     
-     if trialExpiredNagWcObj != nil{
-     if trialExpiredNagWcObj?.window?.isVisible ?? false{
-     return;
-     }
-     }
-     if !isShutOffTimeGoing(){
-     
-     if UserDefaults.standard.object(forKey: kUserdefaultsExtraNagsAfterTrialExpiredShowedTillDate) as? Date == nil{
-     showTrialExpiredWindow()
-     return;
-     }else{
-     if let date = UserDefaults.standard.object(forKey: kUserdefaultsExtraNagsAfterTrialExpiredShowedTillDate) as? Date{
-     if Date().compare(date) == .orderedDescending {
-     showTrialExpiredWindow()
-     return;
-     }
-     }
-     }
-     
-     }
-     }
-     */
-    
-    
+
+
     func readSettingsJsonDictionary(json:NSDictionary?){
         addLog(text: "read Settings Json Dictionary")
         arrFilteredMorningHabits.removeAll()
@@ -3788,7 +3751,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         }else{
             isHabitAlreadyShowed = false
         }
-        
         if startTime != nil && shutOffTime != nil{
             
             if isShutOffTimeGoing() && shouldDoHabits(){
@@ -10574,3 +10536,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 // if there is no current week day habit in evening habit. after focus summary on start eveniong habit button app got stuck and nothing happend // done all threee
 // shutoff aborted k time per blocking schedule
 // button was not clickable biug solved
+
+
+
+
+// See https://github.com/Focus-Bear/Mac-App/issues/1756 for outstanding menu UI TODOs 

@@ -1103,36 +1103,28 @@ func showOnboardingVideoWindow(){
 
 func showQuitWindow(){
     addLog(text: "[user-action] - func showQuitWindow")
-    if isAppEnable{
-        if SettingsManagerObject.isStrictnessLevelSuperGentle(){
+
+    if SettingsManagerObject.isStrictnessLevelSuperGentle() {
+        if isAppEnable {
             showSuperGentleQuitWindow()
-        }else{
-            addLog(text: "Showing ask quit window")
-            allApiObject.capturePosthog(event: "show-initial-quit-screen", metadata: [:])
-            getQuittingWindowObject().contentViewController = getAskQuitVcObject()
-            quittingWcObj?.showWindow(appdelegate!)
-            quittingWcObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))//modalPanelWindow
-            NSApplication.shared.activate(ignoringOtherApps: true)
-        }
-    }else{
-        if SettingsManagerObject.isStrictnessLevelSuperGentle(){
-            if !SettingsManagerObject.isMenuPopoverEnabled{
-                if menuWcObj?.window?.isVisible ?? false{
+        } else {
+            if !SettingsManagerObject.isMenuPopoverEnabled {
+                if menuWcObj?.window?.isVisible ?? false {
                     menuWcObj?.window?.close()
                 }
             }
             addLog(text: "showQuitWindow:- strictness level is super gentle")
-            allApiObject.capturePosthog(event: "app-quit", metadata: ["quitReason":"super gentle quit", "usageStartDate":getFirstRunDateString(), "daysSinceUserInstalledFocusBear": getDaysSinceAppInstalled(), "feedback": ""])
-            Timer.scheduledTimer(withTimeInterval: 1, repeats: false) { timer in
+            allApiObject.capturePosthog(event: "app-quit", metadata: ["quitReason": "super gentle quit", "usageStartDate": getFirstRunDateString(), "daysSinceUserInstalledFocusBear": getDaysSinceAppInstalled(), "feedback": ""])
+            Timer.scheduledTimer(withTimeInterval: 1, repeats: false) { _ in
                 UserDefaults.standard.set("super gentle quit", forKey: kUserDefaultsLastQuitReason)
                 appdelegate?.quitAppForUser()
             }
-        }else{
-            showQuittingConfirmView()
-            quittingWcObj?.showWindow(appdelegate!)
-            quittingWcObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))//modalPanelWindow
-            NSApplication.shared.activate(ignoringOtherApps: true)
         }
+    } else {
+        showQuittingConfirmView()
+        quittingWcObj?.showWindow(appdelegate!)
+        quittingWcObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
+        NSApplication.shared.activate(ignoringOtherApps: true)
     }
 }
 

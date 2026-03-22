@@ -596,3 +596,329 @@ class boxButton: NSBox {
         ))
     }
 }
+
+
+
+@IBDesignable
+class iconTitleButton: NSButton {
+
+    // MARK: - Layout
+    
+    @IBInspectable var leftPadding: CGFloat = 10
+    @IBInspectable var rightPadding: CGFloat = 10
+    @IBInspectable var iconTitleSpacing: CGFloat = 10
+    @IBInspectable var iconSize: CGFloat = 23{
+        didSet {
+            iconWidthConstraint?.constant = iconSize
+            iconHeightConstraint?.constant = iconSize
+        }
+    }
+    
+    // 0 = left, 1 = center, 2 = right
+    @IBInspectable var titleAlignmentOption: Int = 0
+    
+    
+    @IBInspectable var borderColor: NSColor = NSColor(named: "dark_OrangeColor") ?? NSColor.blue {
+        didSet { needsDisplay = true }
+    }
+
+    @IBInspectable var borderWidth: CGFloat = 0 {
+        didSet { needsDisplay = true }
+    }
+    @IBInspectable var iconColor: NSColor?{
+        didSet { needsDisplay = true }
+    }
+    // MARK: - Colors
+    
+    @IBInspectable var bgColor: NSColor = NSColor(named: "light_OrangeColor") ?? NSColor.blue
+    @IBInspectable var hoverColor: NSColor = NSColor(named: "light_OrangeColor") ?? NSColor.blue
+    @IBInspectable var downColor: NSColor = NSColor(red: 226/255, green: 203/255, blue: 177/255, alpha: 1)
+    
+    @IBInspectable var cornerRadius: CGFloat = 6{
+        didSet { layer?.cornerRadius = cornerRadius}
+    }
+    
+    
+    @IBInspectable var titleColor: NSColor = .black {
+        didSet { needsDisplay = true }
+    }
+    private let iconImageView = NSImageView()
+    
+    // MARK: - Private
+    
+    private var trackingArea: NSTrackingArea?
+    private var isHover = false
+    private var isPressed = false
+    
+    private var iconWidthConstraint: NSLayoutConstraint!
+    private var iconHeightConstraint: NSLayoutConstraint!
+    
+    // MARK: - Init
+    
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        setup()
+    }
+    
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        setup()
+    }
+    
+    override func prepareForInterfaceBuilder() {
+        super.prepareForInterfaceBuilder()
+        setup()
+    }
+    
+    private func setup() {
+        iconImageView.translatesAutoresizingMaskIntoConstraints = false
+        iconImageView.imageScaling = .scaleProportionallyUpOrDown
+        iconImageView.contentTintColor = iconColor ?? .labelColor
+        iconImageView.isEditable = false
+        //iconImageView.isUserInteractionEnabled = false // ensures button clicks pass through
+        addSubview(iconImageView)
+        iconImageView.centerYAnchor.constraint(equalTo: centerYAnchor).isActive = true
+
+        iconWidthConstraint = iconImageView.widthAnchor.constraint(equalToConstant: iconSize)
+        iconHeightConstraint = iconImageView.heightAnchor.constraint(equalToConstant: iconSize)
+
+        iconWidthConstraint.isActive = true
+        iconHeightConstraint.isActive = true
+        
+        
+        isBordered = false
+        wantsLayer = true
+        layer?.cornerRadius = cornerRadius
+        
+        imagePosition = .noImage
+        title = title
+    }
+    
+    // MARK: - Hover
+    
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        
+        if let trackingArea = trackingArea {
+            removeTrackingArea(trackingArea)
+        }
+        
+        trackingArea = NSTrackingArea(
+            rect: bounds,
+            options: [.mouseEnteredAndExited, .activeAlways, .inVisibleRect],
+            owner: self,
+            userInfo: nil)
+        
+        addTrackingArea(trackingArea!)
+    }
+    
+    override func mouseEntered(with event: NSEvent) {
+        isHover = true
+        needsDisplay = true
+    }
+    
+    override func mouseExited(with event: NSEvent) {
+        isHover = false
+        needsDisplay = true
+    }
+    
+    override func mouseDown(with event: NSEvent) {
+        isPressed = true
+        needsDisplay = true
+        
+        super.mouseDown(with: event)
+        
+        isPressed = false
+        needsDisplay = true
+    }
+    
+    
+    override func resetCursorRects() {
+        if isEnabled {
+            addCursorRect(bounds, cursor: .pointingHand)
+        } else {
+            addCursorRect(bounds, cursor: .arrow)
+        }
+    }
+    
+    // MARK: - Drawing
+    
+    override func draw(_ dirtyRect: NSRect) {
+        
+        drawBackground()
+        drawContent()
+    }
+    
+    private func drawBackground() {
+        
+        var color = bgColor
+        
+        if isPressed {
+            color = downColor
+        } else if isHover {
+            color = hoverColor
+        }
+        
+        // Background path
+        let bgRect = bounds
+        let bgPath = NSBezierPath(
+            roundedRect: bgRect,
+            xRadius: cornerRadius,
+            yRadius: cornerRadius
+        )
+        
+        color.setFill()
+        bgPath.fill()
+        
+        // Border path (slightly inset)
+        if borderWidth > 0 {
+            
+            let borderRect = bounds.insetBy(dx: borderWidth / 2, dy: borderWidth / 2)
+            
+            let borderPath = NSBezierPath(
+                roundedRect: borderRect,
+                xRadius: cornerRadius,
+                yRadius: cornerRadius
+            )
+            
+            borderColor.setStroke()
+            borderPath.lineWidth = borderWidth
+            borderPath.stroke()
+        }
+    }
+    
+    private func drawContent() {
+        
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: font ?? NSFont.systemFont(ofSize: 14),
+            .foregroundColor: titleColor
+        ]
+        
+        let titleSize = title.size(withAttributes: attributes)
+        
+        var iconWidth: CGFloat = 0
+        
+        if image != nil {
+            iconWidth = iconSize + iconTitleSpacing
+        }
+        
+        let totalWidth = iconWidth + titleSize.width
+        
+        var startX: CGFloat = leftPadding
+        
+        switch titleAlignmentOption {
+            
+        case 0: // left
+            startX = leftPadding
+            
+        case 1: // center
+            startX = (bounds.width - totalWidth) / 2
+            
+        case 2: // right
+            startX = bounds.width - totalWidth - rightPadding
+            
+        default:
+            break
+        }
+        
+        let centerY = bounds.midY
+        
+        if let img = image {
+            iconImageView.image = img
+            iconImageView.contentTintColor = iconColor ?? .labelColor
+//            iconImageView.frame = NSRect(
+//                x: startX,
+//                y: centerY - iconSize / 2,
+//                width: iconSize,
+//                height: iconSize
+//            )
+            iconImageView.frame.origin.x = startX
+            startX += iconSize + iconTitleSpacing
+        }
+        
+        // Draw title
+        
+        let titleRect = NSRect(
+            x: startX,
+            y: centerY - titleSize.height/2,
+            width: titleSize.width,
+            height: titleSize.height
+        )
+        
+        title.draw(in: titleRect, withAttributes: attributes)
+    }
+}
+
+extension NSImage {
+    func attributedString(tint: NSColor, size: CGFloat) -> NSAttributedString {
+        let attachment = NSTextAttachment()
+        attachment.image = self
+
+        // Resize icon
+        attachment.bounds = CGRect(x: 0, y: -(size - size/1.5)/2, width: size, height: size)
+
+        // Set template mode
+        self.isTemplate = true
+
+        // Create attributed string
+        let attributed = NSAttributedString(attachment: attachment)
+
+        // Add tint
+        let mutable = NSMutableAttributedString(attributedString: attributed)
+        mutable.addAttribute(.foregroundColor, value: tint, range: NSRange(location: 0, length: mutable.length))
+
+        return mutable
+    }
+}
+
+
+
+
+class hoverEffectButton: NSButton {
+    var mouseDown = false
+    
+    override func awakeFromNib() {
+        super.awakeFromNib()
+        addTrackingArea(NSTrackingArea(rect: bounds, options: [.activeAlways, .inVisibleRect, .mouseEnteredAndExited], owner: self, userInfo: nil))
+        self.wantsLayer = true
+        
+        if let box = self.superview?.superview as? NSBox{
+            self.layer?.cornerRadius = box.cornerRadius
+        }
+    }
+    override func mouseDown(with event: NSEvent) {
+        //        super.mouseDown(with: event)
+        if self.isEnabled{
+            mouseDown = true
+            self.layer?.backgroundColor = NSColor(red: 0/255, green: 0/255, blue: 0/255, alpha: 0.2).cgColor
+            NSCursor.pointingHand.set()
+        }
+    }
+    
+    override func mouseUp(with event: NSEvent) {
+        // super.mouseUp(with: event)
+        if self.isEnabled{
+            if mouseDown {
+                mouseDown = false
+                if self.action != nil{
+                    NSApp.sendAction(self.action!, to: self.target, from: self)
+                }
+                
+                NSCursor.pointingHand.set()
+            }
+            self.layer?.backgroundColor = NSColor(red: 0/255, green: 0/255, blue: 0/255, alpha: 0).cgColor
+        }
+    }
+    override func mouseEntered(with event: NSEvent) {
+        if self.isEnabled{
+            NSCursor.pointingHand.set()
+            self.layer?.backgroundColor = NSColor(red: 0/255, green: 0/255, blue: 0/255, alpha: 0.1).cgColor
+        }
+    }
+    
+    override func mouseExited(with event: NSEvent) {
+        mouseDown = false
+        NSCursor.arrow.set()
+        self.layer?.backgroundColor = NSColor(red: 0/255, green: 0/255, blue: 0/255, alpha: 0).cgColor
+    }
+}

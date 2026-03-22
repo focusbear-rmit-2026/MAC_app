@@ -113,13 +113,13 @@ class habitsStateVc: NSViewController {
                 
             }else{
                 if let date = UserDefaults.standard.object(forKey: kUserdefaultsShutdownAborted) as? Date{
-                    if Date().compare(date) == .orderedAscending {
+                    if Date().compare(date) == .orderedAscending, let startTime = startTime {
                         var shutoffAbortedText = "Your morning routine starts at <TIME> — time to log off and rest."
                         if let habitsStateVcInfo = configjson.value(forKey: "habitsStateVcInfo") as? NSDictionary{
                             shutoffAbortedText = habitsStateVcInfo.value(forKey: "shutoffAbortedTextNew") as? String ?? shutoffAbortedText
                         }
                         
-                        let startdate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
+                        let startdate = Calendar.current.date(bySettingHour: startTime.hour, minute: startTime.minute, second: startTime.second, of: Date()) ?? Date()
                         
                         let dateString = getStringFromDate(date: startdate, dateFormat: getSystemTimeFormat())
                         shutoffAbortedText = shutoffAbortedText.replacingOccurrences(of: "<TIME>", with: dateString)
@@ -147,7 +147,6 @@ class habitsStateVc: NSViewController {
                 let currentDate = Date()
                 let firstRunDate = UserDefaults.standard.object(forKey: kUserdefaultsFirstRunDate) as? Date ?? currentDate
                 let sameDay = Calendar.current.isDate(currentDate, equalTo: firstRunDate, toGranularity: .day)
-                let isHabitsDisabled = UserDefaults.standard.object(forKey: kUserdefaultsIsHabitsDisabledFromOnboarding) as? Bool ?? false
                 lblTitle.stringValue = ""
                 if sameDay || !shouldDoHabits(){
                     btnResumeHabits.isHidden = false
@@ -174,8 +173,8 @@ class habitsStateVc: NSViewController {
             if let date = UserDefaults.standard.object(forKey: kUserdefaultsEveningHabitsShowedTillDate) as? Date{
                 if Date().compare(date) == .orderedAscending {//"Evening habits already shown for today
                     if isShutOffTimeGoing() && !isCutOffTimeGoing(){
-                        if let cutOffTime = cutOffTime{// v 2.28.445
-                            let cutOffdate = Calendar.current.date(bySettingHour: cutOffTime.hour, minute: cutOffTime.minute, second: cutOffTime.second, of: Date())!
+                        if let cutOffTime = cutOffTime, let startTime = startTime {// v 2.28.445
+                            let cutOffdate = Calendar.current.date(bySettingHour: cutOffTime.hour, minute: cutOffTime.minute, second: cutOffTime.second, of: Date()) ?? Date()
                             
                             btnResumeHabits.isHidden = false
                             
@@ -189,7 +188,7 @@ class habitsStateVc: NSViewController {
                                 freeTimeText = habitsStateVcInfo.value(forKey: "freeTimeTextNew") as? String ?? freeTimeText
                                 btnResumeHabits.title = habitsStateVcInfo.value(forKey: "buttonChangeTiming") as? String ?? btnResumeHabits.title
                             }
-                            let startdate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
+                            let startdate = Calendar.current.date(bySettingHour: startTime.hour, minute: startTime.minute, second: startTime.second, of: Date()) ?? Date()
                             
                             let dateString = getStringFromDate(date: startdate, dateFormat: getSystemTimeFormat())
                             freeTimeText = freeTimeText.replacingOccurrences(of: "<STARTTIME>", with: dateString)

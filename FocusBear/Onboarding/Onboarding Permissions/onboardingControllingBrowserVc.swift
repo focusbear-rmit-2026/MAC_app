@@ -288,7 +288,7 @@ class onboardingControllingBrowserVc: NSViewController {
         }
         
         menuViewControllerObj?.browserPermissionGiven = true
-        menuViewControllerObj?.reloadPermission()
+        //menuViewControllerObj?.reloadPermission()
     }
     
     @IBAction func btnContinueClicked(_ sender: Any) {

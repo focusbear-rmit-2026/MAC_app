@@ -149,10 +149,6 @@ struct Time{
     var second = 0
 }
 
-//var isBreathingGoing = false
-//var isHabitGoing = false
-//var isBreakActivitiesGoing = false
-
 
 var occupationStudentIndex = 0
 var occupationBusinessOwnerIndex = 1
@@ -720,7 +716,6 @@ var blockWebUrlString = ""
 func getSystemTimeFormat()->String{
     var timeFormat = "h:mm a"
     if let dict = UserDefaults.standard.persistentDomain(forName: "com.apple.menuextra.clock") {
-        print(dict)
         if let isShow24Hour = dict["Show24Hour"] as? Bool {
             if isShow24Hour{
                 timeFormat = "H:mm"

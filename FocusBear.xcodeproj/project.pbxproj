@@ -37,6 +37,7 @@
 		135ABEFD2E013254007ED73A /* breaksData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 135ABEFC2E01324D007ED73A /* breaksData.swift */; };
 		135AD5312ED18D7D00870175 /* focusHabitTimerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 135AD5302ED18D7D00870175 /* focusHabitTimerManager.swift */; };
 		135CBDAF2D967009003BA438 /* routineData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 135CBDAE2D967005003BA438 /* routineData.swift */; };
+		136058B62F5C2F1C00DEF6F0 /* ScanningCircleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 136058B42F5C2F1C00DEF6F0 /* ScanningCircleView.swift */; };
 		1361D61F2E446DAD00601AB1 /* habitsStateVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1361D61E2E446DAD00601AB1 /* habitsStateVc.swift */; };
 		1361E6E52DB76A1900E6DE3F /* unverifiedEmailVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1361E6E42DB76A1900E6DE3F /* unverifiedEmailVc.swift */; };
 		1364364B2DE1FA7400B90724 /* splashVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1364364A2DE1FA7400B90724 /* splashVc.swift */; };
@@ -446,6 +447,7 @@
 		135ABEFC2E01324D007ED73A /* breaksData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = breaksData.swift; sourceTree = "<group>"; };
 		135AD5302ED18D7D00870175 /* focusHabitTimerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = focusHabitTimerManager.swift; sourceTree = "<group>"; };
 		135CBDAE2D967005003BA438 /* routineData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = routineData.swift; sourceTree = "<group>"; };
+		136058B42F5C2F1C00DEF6F0 /* ScanningCircleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanningCircleView.swift; sourceTree = "<group>"; };
 		1361D61E2E446DAD00601AB1 /* habitsStateVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = habitsStateVc.swift; sourceTree = "<group>"; };
 		1361E6E42DB76A1900E6DE3F /* unverifiedEmailVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = unverifiedEmailVc.swift; sourceTree = "<group>"; };
 		1364364A2DE1FA7400B90724 /* splashVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = splashVc.swift; sourceTree = "<group>"; };
@@ -888,6 +890,14 @@
 				138F0D8D2EBDE5180046CDB0 /* itemActionBarVc.swift */,
 			);
 			path = Routine;
+			sourceTree = "<group>";
+		};
+		136058B52F5C2F1C00DEF6F0 /* Controls */ = {
+			isa = PBXGroup;
+			children = (
+				136058B42F5C2F1C00DEF6F0 /* ScanningCircleView.swift */,
+			);
+			path = Controls;
 			sourceTree = "<group>";
 		};
 		136C5E172F08F516006DBACA /* Procrastinating */ = {
@@ -1418,6 +1428,7 @@
 				8FD86E1D2A54376C004F6761 /* todoNotes.swift */,
 				8F1E189F28EAF3FF00367413 /* macInfo.swift */,
 				13B74D5A2E87AA6B00556C79 /* dropView.swift */,
+				136058B52F5C2F1C00DEF6F0 /* Controls */,
 				8F41BA4429B321C300066B79 /* Settings.storyboard */,
 				8FAC6C8C27805F70008A4180 /* Main.storyboard */,
 				8FC31BFB28C72AA600E2DD4C /* NewStoryboard.storyboard */,
@@ -2151,6 +2162,7 @@
 				135A8A512E7E8E6A00A96A8E /* customBlockingSchedulesVc.swift in Sources */,
 				8F0419462C353D4100481ACD /* getViewControllersObject.swift in Sources */,
 				8F3D784D2A6A70A300CE936B /* intentionBlockedUrlsVc.swift in Sources */,
+				136058B62F5C2F1C00DEF6F0 /* ScanningCircleView.swift in Sources */,
 				8FE5587E2CEC703300C44387 /* bellVc.swift in Sources */,
 				8FB970AB2B71F7A500A38F17 /* chooseCommunityVc.swift in Sources */,
 				13501E292E7C2B020055ACB1 /* browsersTabAuditVc.swift in Sources */,
@@ -2471,7 +2483,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application: Focus Bear Pty Ltd (TCUD568B3U)";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 460;
+				CURRENT_PROJECT_VERSION = 461;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = TCUD568B3U;
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = TCUD568B3U;
@@ -2487,7 +2499,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
-				MARKETING_VERSION = 2.29;
+				MARKETING_VERSION = 2.30;
 				PRODUCT_BUNDLE_IDENTIFIER = com.App.EarnYourScreentime;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = FocusBearMainAppProfile;
@@ -2509,7 +2521,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application: Focus Bear Pty Ltd (TCUD568B3U)";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 460;
+				CURRENT_PROJECT_VERSION = 461;
 				DEVELOPMENT_TEAM = TCUD568B3U;
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = TCUD568B3U;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -2525,7 +2537,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
-				MARKETING_VERSION = 2.29;
+				MARKETING_VERSION = 2.30;
 				PRODUCT_BUNDLE_IDENTIFIER = com.App.EarnYourScreentime;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = FocusBearMainAppProfile;

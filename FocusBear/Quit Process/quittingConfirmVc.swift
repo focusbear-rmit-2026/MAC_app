@@ -59,12 +59,15 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
     let reasonHabitsIndex = 2
     let reasonBlockingIndex = 3
     
+    var buttonTitleQuit = "Quit"
+    var buttonTitleQuitInitial = "Nope - just quit"
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         lblTitle.stringValue = "Quitting.."
         lblSubTitle.stringValue = "Can you share why you're quitting?"
         lblTitleEmail.stringValue = "Your Email (if you want us to reply):"
-        btnQuit.title = "Quit"
+        buttonTitleQuit = "Quit"
 
         var dropDown_0_Title = "Select a reason"
         var dropDown_1_Title = "I've got an emergency"
@@ -89,7 +92,10 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
                     lblSubTitle.stringValue = subTitle
                 }
                 if let buttonQuitText = quittingConfirmInfo.value(forKey: "buttonQuitText") as? String{
-                    btnQuit.title = buttonQuitText
+                    buttonTitleQuit = buttonQuitText
+                }
+                if let buttonQuitInitialText = quittingConfirmInfo.value(forKey: "buttonQuitInitialText") as? String{
+                    buttonTitleQuitInitial = buttonQuitInitialText
                 }
                 if let emailTitle = quittingConfirmInfo.value(forKey: "emailTitle") as? String{
                     lblTitleEmail.stringValue = emailTitle
@@ -192,8 +198,9 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
         popUpBtnAppNotWorking.addItems(withTitles: [dropDown_0_Title, reasonFocusMode, reasonHabits, reasonBlocking])
         popUpBtnAppNotWorking.selectItem(at: selectReasonIndex)
         popUpBtnAppNotWorking.isHidden = true
-        btnQuit.buttonColor = NSColor.white.cgColor
+        btnCancelQuit.buttonColor = NSColor.white.cgColor
     }
+    
     override func viewWillAppear() {
         if SettingsManagerObject.kIsReducedMotion{
             imgViewGif.image = nil
@@ -204,6 +211,7 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
             imgViewGif.isHidden = false
         }
     }
+    
     override func viewWillDisappear() {
         self.timer?.invalidate()
         self.timer = nil
@@ -220,15 +228,17 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
         popUpBtnAppNotWorking.selectItem(at: selectReasonIndex)
         popUpBtnReasons.isEnabled = true
         popUpBtnReasons.selectItem(at: selectReasonIndex)
-        btnQuit.isEnabled = false
+        btnQuit.isEnabled = true
         lblTimer.stringValue = "00:01"
         scrollView.isHidden = true
         scrollView.isHidden = true
         lblDescription.isHidden = true
         lblTimer.isHidden = true
-        btnQuit.isHidden = true
+        btnQuit.isHidden = false
         lblTitleEmail.isHidden = true
         textFieldEmail.isHidden = true
+        btnQuit.title = buttonTitleQuitInitial
+        
         
         if shouldAskPassword(){
             if SettingsManagerObject.isPasswordRequireInQuitApp{
@@ -251,13 +261,6 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
         if popUpBtnReasons.indexOfSelectedItem == brokenAppReasonIndex{
             return;
         }
-//        if textView == self.textView{
-//            if textView.string.isEmpty{
-//                btnQuit.isEnabled = false
-//            }else{
-//                btnQuit.isEnabled = true
-//            }
-//        }
     }
 
     @IBAction func popUpBtnReasonsClicked(_ sender: Any) {
@@ -279,6 +282,7 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
             startTimer()
         case brokenAppReasonIndex:
             popUpBtnAppNotWorking.isHidden = false
+            btnQuit.title = buttonTitleQuit
             btnQuit.isHidden = false
             scrollView.isHidden = false
             lblTimer.isHidden = true
@@ -313,6 +317,7 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
             startTimer()
         
         case appAnnoyingReasonIndex:
+            btnQuit.title = buttonTitleQuit
             btnQuit.isHidden = false
             scrollView.isHidden = false
             lblTimer.isHidden = true
@@ -336,6 +341,7 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
             popUpBtnReasons.isEnabled = false
             startTimer()
         case somethingElseReasonIndex:
+            btnQuit.title = buttonTitleQuit
             btnQuit.isHidden = false
             scrollView.isHidden = false
             lblTimer.isHidden = true
@@ -413,6 +419,14 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
             
             addEntryInStatsCsv(logType: logType, activity: activity, durationInSeconds: "", quantityQuestion: "", quantityLogged: "", startTime: "", workAchieved: "", distractionsEncountered: "", abortReason: "Something else", feedback: self.textView.string, tags:"")
             allApiObject.capturePosthog(event: "app-quit", metadata: ["quitReason":"Something else", "usageStartDate":getFirstRunDateString(), "feedback":self.textView.string, "daysSinceUserInstalledFocusBear": getDaysSinceAppInstalled()])
+        }else if self.popUpBtnReasons.indexOfSelectedItem == self.selectReasonIndex{
+            addLog(text: "App Quit - quit immediately")
+            let logType = "Quit"//
+            let activity = ""
+            UserDefaults.standard.set("Quit immediately", forKey: kUserDefaultsLastQuitReason)
+            
+            addEntryInStatsCsv(logType: logType, activity: activity, durationInSeconds: "", quantityQuestion: "", quantityLogged: "", startTime: "", workAchieved: "", distractionsEncountered: "", abortReason: "Quit immediately", feedback: "", tags:"")
+            allApiObject.capturePosthog(event: "app-quit", metadata: ["quitReason":"Quit immediately", "usageStartDate":getFirstRunDateString(), "daysSinceUserInstalledFocusBear": getDaysSinceAppInstalled()])
         }
         DispatchQueue.global().sync {
             self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCount), userInfo: nil, repeats: true)
@@ -495,6 +509,10 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
             self.startTimer()
         }else if self.popUpBtnReasons.indexOfSelectedItem == appAnnoyingReasonIndex{
             self.lblDescription.stringValue = dropDownAnnoyingFinalDescription
+            self.popUpBtnReasons.isEnabled = false
+            self.startTimer()
+        }else if self.popUpBtnReasons.indexOfSelectedItem == self.selectReasonIndex{
+            self.lblDescription.stringValue = dropDown_3_FinalDescription
             self.popUpBtnReasons.isEnabled = false
             self.startTimer()
         }

@@ -10,13 +10,40 @@ import Cocoa
 
 class menuViewController: NSViewController {
 
+    
+    @IBOutlet weak var boxStartBreakNew: NSBox!
+    @IBOutlet weak var btnOpenCheckLists: iconTitleButton!
+    @IBOutlet weak var btnReactivate: iconTitleButton!
+    @IBOutlet weak var btnPreferences: iconTitleButton!
+    @IBOutlet weak var btnQuit: iconTitleButton!
+    @IBOutlet weak var btnCustomRoutine: iconTitleButton!
+    @IBOutlet weak var btnEditHabits: iconTitleButton!
+    @IBOutlet weak var btnResumeHabits: iconTitleButton!
+    @IBOutlet weak var btnStartHabitsFirstTime: iconTitleButton!
+    @IBOutlet weak var btnStopHardcorePomodoroMode: iconTitleButton!
+    @IBOutlet weak var btnStartSimplePomodoroMode: iconTitleButton!
+    @IBOutlet weak var btnStartPomodoroMode: iconTitleButton!
+    @IBOutlet weak var btnSetFocusModes: iconTitleButton!
+    @IBOutlet weak var btnSetLaterBlockingScheduleFirstTime: underLineButton!
+    @IBOutlet weak var btnSetBlockingScheduleFirstTime: Button!
+    @IBOutlet weak var lblDescriptionBlockingDisabledFirstTime: NSTextField!
+    @IBOutlet weak var lblTitleBlockingDisabledFirstTime: NSTextField!
+    @IBOutlet weak var boxBlockingDisabledFirstTime: NSBox!
+    @IBOutlet weak var innerTopBoxFocusMode: NSLayoutConstraint!
+    @IBOutlet weak var innerBottomBoxFocusMode: NSLayoutConstraint!
+    @IBOutlet weak var innerTrailingBoxFocusMode: NSLayoutConstraint!
+    @IBOutlet weak var innerLeadingBoxFocusMode: NSLayoutConstraint!
+    @IBOutlet weak var boxFocusMode: NSBox!
+    @IBOutlet weak var boxSectionMicroBreak: NSBox!
+    @IBOutlet weak var lblFocusedToday: NSTextField!
+    @IBOutlet weak var lblTotalFocusedTimeToday: NSTextField!
+    @IBOutlet weak var lblRemaining: NSTextField!
+    @IBOutlet weak var boxFocusModeIntention: NSBox!
+    @IBOutlet weak var lblFocusModeIntention: NSTextField!
+    @IBOutlet weak var scanningCircleViewForFocusMode: ScanningCircleView!
     @IBOutlet weak var imgViewIconBrainDump: NSImageView!
     @IBOutlet weak var imgViewIconTabAudit: NSImageView!
-    @IBOutlet weak var stackViewSecond: NSStackView!
-    @IBOutlet weak var imgIconEditHabits: NSImageView!
-    @IBOutlet weak var lblTitleEditHabits: menuItemLabel!
-    @IBOutlet weak var boxEditHabits: NSBox!
-    
+
     @IBOutlet weak var lblCustomBlockingScheduleDayTime: NSTextField!
     @IBOutlet weak var lblCustomBlockingScheduleName: NSTextField!
     @IBOutlet weak var lblCustomBlockingState: NSTextField!
@@ -28,21 +55,17 @@ class menuViewController: NSViewController {
     @IBOutlet weak var imgViewIconStartBreak: NSImageView!
     @IBOutlet weak var boxForPermissionToolTip: NSBox!
     @IBOutlet weak var stackViewFirst: NSStackView!
-    @IBOutlet weak var lblTitleFocusModeTime: NSTextField!
     @IBOutlet weak var lblTimerFocusMode: NSTextField!
     @IBOutlet weak var boxFocusModeRemainingTime: NSBox!
-    @IBOutlet weak var widthImageIconSimplePomodoro: NSLayoutConstraint!
-   // @IBOutlet weak var btnOpenToolBox: mouseDownEffectButton!
+
     @IBOutlet weak var btnStartBreak: mouseDownEffectButton!
-    @IBOutlet weak var boxOpenToolBox: NSBox!
     @IBOutlet weak var boxStartBreak: NSBox!
     @IBOutlet weak var heightButtonSimplePomodoro: NSLayoutConstraint!
     @IBOutlet weak var btnFocusMusic: mouseDownEffectButton!
     @IBOutlet weak var btnTodoPlayer: mouseDownEffectButton!
     @IBOutlet weak var btnBrainDump: mouseDownEffectButton!
     @IBOutlet weak var btnCurrentTrack: mouseDownEffectButton!
-    @IBOutlet weak var lblCustomRoutine: menuItemLabel!
-    @IBOutlet weak var boxCustomRoutine: NSBox!
+
     @IBOutlet weak var btnSetPermissions: Button!
     @IBOutlet weak var lblTipPermissions: NSTextField!
     @IBOutlet weak var boxTipPermissions: BlinkingNSBox!
@@ -55,31 +78,20 @@ class menuViewController: NSViewController {
     @IBOutlet weak var btnInfoBlockingDisabled: hoverInfoButton!
     @IBOutlet weak var lblBlockingDisabled: NSTextField!
     @IBOutlet weak var boxBlockingDisabled: NSBox!
-    @IBOutlet weak var btnRemoveAppModeOption: cursorButton!
     @IBOutlet weak var lblTitleToDoPlayer: menuItemLabel!
     @IBOutlet weak var boxToDoPlayer: NSBox!
-    
-    @IBOutlet weak var segmentControlGeekMode: GeekModeSegmentedControl!
-    @IBOutlet weak var boxGeekMode: NSBox!
+
     @IBOutlet weak var lblFocusAlignmentScore: NSTextField!
     @IBOutlet weak var boxFocusAlignmentScore: NSBox!
-    @IBOutlet weak var lblStartHabitsFirstTime: menuItemLabel!
-    @IBOutlet weak var boxStartHabitsFirstTime: NSBox!
+
     @IBOutlet weak var lblNextBreakTime: NSTextField!
     @IBOutlet weak var boxNextBreak: NSBox!
-    @IBOutlet weak var lblTitleOpenCheckLists: NSTextField!
-    @IBOutlet weak var boxOpenCheckLists: NSBox!
-    @IBOutlet weak var lblTitleSetFocus: NSTextField!
-    @IBOutlet weak var boxSetFocusModes: NSBox!
-    @IBOutlet weak var segmentControlOfficeMode: NSSegmentedControl!
+
     @IBOutlet weak var imgViewCurrentTrackState: NSImageView!
     @IBOutlet weak var boxCurrentTrack: NSBox!
     @IBOutlet weak var lblCurrentTrack: NSTextField!
     
-    @IBOutlet weak var boxResumeHabits: NSBox!
-    @IBOutlet weak var lblTitleResumeHabits: NSTextField!
-    
-    
+
     @IBOutlet weak var btnFalseDetection: underLineButton!
     @IBOutlet weak var lblMeetingDetection: NSTextField!
     @IBOutlet weak var btnMeetingDetection: hoverInfoButton!
@@ -90,44 +102,17 @@ class menuViewController: NSViewController {
     @IBOutlet weak var boxBrainDump: NSBox!
     @IBOutlet weak var boxFocusMusic: NSBox!
     @IBOutlet weak var lblTitleFocusMusic: menuItemLabel!
-    
-    @IBOutlet weak var lblTitleAppName: NSTextField!
-    @IBOutlet weak var boxTitle: NSBox!
-    @IBOutlet weak var lblTrialVersionInfo: NSTextField!
-    @IBOutlet weak var lblTitleReactivate: NSTextField!
-    @IBOutlet weak var lblTitleEnterLicenseKey: NSTextField!
-    @IBOutlet weak var lblTitlePreferences: NSTextField!
-    @IBOutlet weak var lblTitleStartSimplePomodoroMode: NSTextField!
-    @IBOutlet weak var lblTitleStartPomodoroMode: NSTextField!
-    @IBOutlet weak var lblTitleQuit: NSTextField!
-    @IBOutlet weak var lblTitleStopHardcorePomodoroMode: NSTextField!
-    @IBOutlet weak var bottomLine: NSBox!
-    @IBOutlet weak var boxStartPomodoroMode: NSBox!
-    @IBOutlet weak var boxStartSimplePomodoroMode: NSBox!
-    @IBOutlet weak var boxQuit: NSBox!
-    @IBOutlet weak var boxPreferences: NSBox!
-    @IBOutlet weak var boxStopHardcorePomodoroMode: NSBox!
-    @IBOutlet weak var boxEnterLicenseKey: NSBox!
-    @IBOutlet weak var boxReactivate: NSBox!
-    @IBOutlet weak var boxEnableOfficeMode: NSBox!
 
-    @IBOutlet weak var imgViewStopSuperFocusSession: NSImageView!
-    @IBOutlet weak var imgViewStartSimpleFocusSession: NSImageView!
-    
+    @IBOutlet weak var lblTrialVersionInfo: NSTextField!
+    @IBOutlet weak var lblTitleEnterLicenseKey: NSTextField!
+    @IBOutlet weak var boxEnterLicenseKey: NSBox!
     @IBOutlet weak var btnEditFocusModeDuration: cursorButton!
     
-    var segmentOfficeModeTrackingArea: NSTrackingArea?
-    var segmentWfhModeTrackingArea: NSTrackingArea?
+    
     var trackingAreaBtnEditBlockingSchedule: NSTrackingArea?
     var trackingAreaBtnEditFocusModeDuration: NSTrackingArea?
     
-    var btnFocusMusicTrackingArea: NSTrackingArea?
-    var btnTodoPlayerTrackingArea: NSTrackingArea?
-    var btnBrainDumpTrackingArea: NSTrackingArea?
-    var btnCurrentTrackTrackingArea: NSTrackingArea?
-    var btnStartBreakTrackingArea: NSTrackingArea?
-    var trackingAreaBtnTabAudit: NSTrackingArea?
-//    var btnOpenToolBoxTrackingArea: NSTrackingArea?
+
     var boxPermissionTrackingArea: NSTrackingArea?
     
     var trackingAreaBtnPin: NSTrackingArea?
@@ -141,8 +126,7 @@ class menuViewController: NSViewController {
     var trialExpiredText = "Your trial has expired!"
     var daysRemainingText = "Trial version - <DAYS> of 21 trial days remaining"
     var itemFocusTitle = "Focus"
-//    var itemHardcorePomodoroTitle = "Hardcore Pomodoro Mode"
-    
+
     var menuItemUpgradeNowTitle = "Upgrade Now"
     var subscriptionExpiredText = "Your subscription has expired"
     
@@ -158,11 +142,8 @@ class menuViewController: NSViewController {
     
     var menuItemStartBreak: NSMenuItem!
     var menuItemFocusMusic: NSMenuItem!
-//    var menuItemOpenToolbox: NSMenuItem!
     var menuItemToDoList: NSMenuItem!
     var menuItemBrainDump: NSMenuItem!
-    var titleOfficeMode = "Office Mode"
-    var titleWFHMode = "WFH Mode"
     var menuItemToDoListTitle = "To Do List"
     var menuItemToDoPlayerTitle = "To Do Player"
     var itemStartPomodoroTitle = "Start Focus Session"
@@ -199,42 +180,54 @@ class menuViewController: NSViewController {
         // Do view setup here.
         addLog(text: "menuViewController viewdidload start")
         
+        lblFocusedToday.stringValue = "FOCUSED TODAY"
+        lblRemaining.stringValue = "remaining"
+        
+        lblTotalFocusedTimeToday.stringValue = ""
+        
+        boxTipPermissions.isHidden = true
+        lblTitleBlockingDisabledFirstTime.stringValue = "Get the most out of Focus Bear"
+        
+        lblDescriptionBlockingDisabledFirstTime.stringValue = "Set up a blocking schedule to automatically block websites and apps during your focus time."
+        
+        btnSetBlockingScheduleFirstTime.title = "Set Up Blocking"
+        btnSetLaterBlockingScheduleFirstTime.title = "I'll do this later"
+        lblBlockingDisabled.stringValue = "🚫 No blocking"
+        
+        btnEditBlockingSchedule.title = "ENABLE"
+        
         
         if #available(macOS 11.0, *) {
-            imgIconEditHabits.image = NSImage(systemSymbolName: "checkmark.rectangle.fill", accessibilityDescription: nil)
+            btnEditHabits.image = NSImage(systemSymbolName: "checkmark.rectangle.fill", accessibilityDescription: nil)
         } else {
-            imgIconEditHabits.image = NSImage(named: "checkmark")
+            btnEditHabits.image = NSImage(named: "checkmark")
             imgViewIconBrainDump.image = NSImage(named: "brainDump")// for 11.0 already set from storyboard
             imgViewIconTabAudit.image = NSImage(named: NSImage.touchBarOpenInBrowserTemplateName)
         }
         
         
         
-        lblTitleEditHabits.stringValue = "Edit Habits"
+        btnEditHabits.title = "Edit Habits"
         lblCustomBlocking.stringValue = "Blocking Schedule"
         if #available(macOS 11.0, *) {
             iconPlayFocusSession = NSImage(systemSymbolName: "play.circle", accessibilityDescription: nil)
         } 
-        
-        segmentControlOfficeMode.selectedSegmentBezelColor = NSColor.systemBlue
+
         btnRemoveBrainDumpItem.isHidden = true
-        lblTitleFocusModeTime.stringValue = "Focus mode ends in:"
-        lblCustomRoutine.stringValue = "Start Custom Routine"
+        btnCustomRoutine.title = "Start Custom Routine"
         lblTipPermissions.stringValue = "Grant Focus Bear permissions to block."
         btnSetPermissions.title = "Enable"
-        lblBlockingDisabled.stringValue = "Limited blocking"
-        lblStartHabitsFirstTime.stringValue = "Start morning routine"
-        lblTitleOpenCheckLists.stringValue = "Open checklist"
+        btnStartHabitsFirstTime.title = "Start morning routine"
+        btnOpenCheckLists.title = "Open checklist"
         boxTools.wantsLayer = true
-        boxTools.layer?.cornerRadius = boxPreferences.cornerRadius
+        boxTools.layer?.cornerRadius = btnPreferences.cornerRadius
         
         var itemReactivateTitle = "Reactivate"
         var itemEnterLicenseKeyTitle = "Enter License Key"
         var itemPreferences = "Preferences"
-        var itemQuitTitle = "Quit"
+
         
         lblTitleTools.stringValue = "Tools >"
-//        var menuItemOpenToolboxTitle = "Open Toolbox"
         var menuItemFocusMusicTitle = "Focus Music"
         
         var titleStartBreak = "Start Break"
@@ -242,22 +235,22 @@ class menuViewController: NSViewController {
         
         lblMeetingDetection.stringValue = "Meeting active - breaks off"
         btnFalseDetection.title = "False positive: I'm not in a meeting"
-        lblTitleResumeHabits.stringValue = "Resume Habits"
-        lblTitleSetFocus.stringValue = "Set up Focus Modes"
-        
+        btnResumeHabits.title = "Resume Habits"
+//        lblTitleSetFocus.stringValue = "Set up Focus Modes"
+        btnSetFocusModes.title = "Set up Focus Modes"
         if let leftMenuVcInfo = configjson.value(forKey: "leftMenuVcInfo") as? NSDictionary{
-            lblTitleEditHabits.stringValue = leftMenuVcInfo.value(forKey: "menuEditHabits") as? String ?? lblTitleEditHabits.stringValue
+            btnEditHabits.title = leftMenuVcInfo.value(forKey: "menuEditHabits") as? String ?? btnEditHabits.title
         }
         
 //        if let simplePomodoroVcInfo = configjson.value(forKey: "simplePomodoroVcInfo") as? NSDictionary{
 //            btnSetPermissions.title = simplePomodoroVcInfo.value(forKey: "buttonFixItText") as? String ?? btnSetPermissions.title
 //        }
         
-        if let common = configjson.value(forKey: "common") as? NSDictionary{
-            if let focusEndsText = common.value(forKey: "focusEndsText") as? String {
-                lblTitleFocusModeTime.stringValue = focusEndsText + ":"
-            }
-        }
+//        if let common = configjson.value(forKey: "common") as? NSDictionary{
+//            if let focusEndsText = common.value(forKey: "focusEndsText") as? String {
+//                lblTitleFocusModeTime.stringValue = focusEndsText + ":"
+//            }
+//        }
         
         if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
             if let suggestFocusInfo = focusInfo.value(forKey: "suggestFocusInfo") as? NSDictionary{
@@ -272,7 +265,7 @@ class menuViewController: NSViewController {
             itemEnterLicenseKeyTitle = menuInfo.value(forKey: "menuItemEnterLicenseKeyTitle") as? String ?? itemEnterLicenseKeyTitle
             itemPreferences = menuInfo.value(forKey: "menuItemPreferencesTitle") as? String ?? itemPreferences
             itemFocusTitle = menuInfo.value(forKey: "menuItemFocusTitle") as? String ?? itemFocusTitle
-            itemQuitTitle = menuInfo.value(forKey: "menuItemQuitTitle") as? String ?? itemQuitTitle
+//            itemQuitTitle = menuInfo.value(forKey: "menuItemQuitTitle") as? String ?? itemQuitTitle
             itemStartPomodoroTitle = menuInfo.value(forKey: "menuItemStartPomodoroTitle") as? String ?? itemStartPomodoroTitle
             menuItemEnableOfficeModeTitle = menuInfo.value(forKey: "menuItemEnableOfficeModeTitle") as? String ?? menuItemEnableOfficeModeTitle
             menuItemDisableOfficeModeTitle = menuInfo.value(forKey: "menuItemDisableOfficeModeTitle") as? String ?? menuItemDisableOfficeModeTitle
@@ -292,23 +285,25 @@ class menuViewController: NSViewController {
             menuItemToDoListTitle = menuInfo.value(forKey: "menuItemToDoListTitle") as? String ?? menuItemToDoListTitle
             menuItemToDoPlayerTitle = menuInfo.value(forKey: "menuItemToDoPlayerTitle") as? String ?? menuItemToDoPlayerTitle
             lblMeetingDetection.stringValue = menuInfo.value(forKey: "menuItemMeetingDetectionTitle") as? String ?? lblMeetingDetection.stringValue
-            lblTitleResumeHabits.stringValue = menuInfo.value(forKey: "menuItemResumeHabitsTitle") as? String ?? lblTitleResumeHabits.stringValue
+            btnResumeHabits.title = menuInfo.value(forKey: "menuItemResumeHabitsTitle") as? String ?? btnResumeHabits.title
             
-            titleOfficeMode = menuInfo.value(forKey: "segmentOfficeModeText") as? String ?? titleOfficeMode
-            titleWFHMode = menuInfo.value(forKey: "segmentWfhModeText") as? String ?? titleWFHMode
-            lblTitleSetFocus.stringValue = menuInfo.value(forKey: "menuItemSetFocusModesTitle") as? String ?? lblTitleSetFocus.stringValue
-            lblTitleOpenCheckLists.stringValue = menuInfo.value(forKey: "menuItemOpenChecklistTitle") as? String ?? lblTitleOpenCheckLists.stringValue
-            lblStartHabitsFirstTime.stringValue = menuInfo.value(forKey: "menuItemStartMorningHabitsFirstTimeTitle") as? String ?? lblStartHabitsFirstTime.stringValue
+
+            
+            btnSetFocusModes.title = menuInfo.value(forKey: "menuItemSetFocusModesTitle") as? String ?? btnSetFocusModes.title
+            btnOpenCheckLists.title = menuInfo.value(forKey: "menuItemOpenChecklistTitle") as? String ?? btnOpenCheckLists.title
+            btnStartHabitsFirstTime.title = menuInfo.value(forKey: "menuItemStartMorningHabitsFirstTimeTitle") as? String ?? btnStartHabitsFirstTime.title
             itemStopPomodoroTitle = menuInfo.value(forKey: "menuItemStopPomodoroTitle") as? String ?? itemStopPomodoroTitle
             focusBreakTimeText = menuInfo.value(forKey: "focusBreakTimeText") as? String ?? focusBreakTimeText
             itemResumePomodoroTitle = menuInfo.value(forKey: "menuItemResumeFocusTitle") as? String ?? itemResumePomodoroTitle
             itemPausePomodoroTitle = menuInfo.value(forKey: "menuItemPauseFocusTitle") as? String ?? itemPausePomodoroTitle
-            lblBlockingDisabled.stringValue = menuInfo.value(forKey: "menuItemBlockingDisabledTitle") as? String ?? lblBlockingDisabled.stringValue
-            lblCustomRoutine.stringValue = menuInfo.value(forKey: "menuItemStartCustomRoutineTitle") as? String ?? lblCustomRoutine.stringValue
+          //  lblBlockingDisabled.stringValue = menuInfo.value(forKey: "menuItemBlockingDisabledTitle") as? String ?? lblBlockingDisabled.stringValue
+            btnCustomRoutine.title = menuInfo.value(forKey: "menuItemStartCustomRoutineTitle") as? String ?? btnCustomRoutine.title
             lblTipPermissions.stringValue = menuInfo.value(forKey: "permissionsNotSetText") as? String ?? lblTipPermissions.stringValue
             lblCustomBlocking.stringValue = menuInfo.value(forKey: "titleBlockingSchedule") as? String ?? lblCustomBlocking.stringValue
             lblCustomBlockingState.stringValue = menuInfo.value(forKey: "stateActive") as? String ?? lblCustomBlockingState.stringValue
             btnSetPermissions.title = menuInfo.value(forKey: "buttonEnable") as? String ?? btnSetPermissions.title
+            lblFocusedToday.stringValue = menuInfo.value(forKey: "focusedTodayText") as? String ?? lblFocusedToday.stringValue
+            lblRemaining.stringValue = menuInfo.value(forKey: "remainingText") as? String ?? lblRemaining.stringValue
         }
         
         if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
@@ -321,9 +316,6 @@ class menuViewController: NSViewController {
             breaksDisabledRoutinePostponed = menuInfo.value(forKey: "breaksDisabledRoutinePostponed") as? String ?? breaksDisabledRoutinePostponed
         }
         
-        segmentControlOfficeMode.setLabel(titleOfficeMode, forSegment: 0)
-        segmentControlOfficeMode.setLabel(titleWFHMode, forSegment: 1)
-        
         if let common = configjson.value(forKey: "common") as? NSDictionary{
             if let text = common.value(forKey: "trialExpiredText") as? String{
                 trialExpiredText = text
@@ -333,19 +325,24 @@ class menuViewController: NSViewController {
             }
         }
         
-        lblTitleReactivate.stringValue = itemReactivateTitle
+        btnReactivate.title = itemReactivateTitle
         lblTitleEnterLicenseKey.stringValue = menuItemUpgradeNowTitle
-        lblTitlePreferences.stringValue = itemPreferences
-        lblTitleStartPomodoroMode.stringValue = itemStartPomodoroTitle
-        lblTitleStartSimplePomodoroMode.stringValue = itemStartPomodoroTitle
-        lblTitleQuit.stringValue = itemQuitTitle
-        lblTitleStopHardcorePomodoroMode.stringValue = menuItemStopHardcorePomodoroTitle
-        imgViewStopSuperFocusSession.image = iconStopFocusSession
-        imgViewStartSimpleFocusSession.image = iconPlayFocusSession
+        btnPreferences.title = itemPreferences
+        btnStartPomodoroMode.title = itemStartPomodoroTitle
+        btnStartSimplePomodoroMode.title = itemStartPomodoroTitle
         
-        lblTitleAppName.stringValue = appName
-        bottomLine.isHidden = true
+        if let quitInfo = configjson.value(forKey: "quitInfo") as? NSDictionary{
+            if let quittingConfirmInfo = quitInfo.value(forKey: "quittingConfirmInfo") as? NSDictionary{
+                if let buttonQuitText = quittingConfirmInfo.value(forKey: "buttonQuitText") as? String{
+                    btnQuit.title = buttonQuitText
+                }
+            }
+        }
         
+        btnStopHardcorePomodoroMode.title = menuItemStopHardcorePomodoroTitle
+        btnStopHardcorePomodoroMode.image = iconStopFocusSession
+        btnStartSimplePomodoroMode.image = iconPlayFocusSession
+
         toolsMenu = NSMenu()
         menuItemStartBreak = NSMenuItem(title: titleStartBreak, action: #selector(btnStartBreakClicked(_:)), keyEquivalent: "")
         menuItemStartBreak.target = self
@@ -417,19 +414,7 @@ class menuViewController: NSViewController {
             }
         }
         addLog(text: "Set Focus Mode Names from config file")
-        // load preferences window// // beacuse some times webview dose not load at first time in settings so here we are loading window to load webview before opening it
-//        if !(preferencesWindowControllerObj?.isWindowLoaded ?? false){
-//            preferencesWindowControllerObj?.loadWindow()
-//        }
-//        addLog(text: "preferencesWindowControllerObj load window end")
-        let boundsOfficeMode = NSRect(x: segmentControlOfficeMode.frame.minX, y: (segmentControlOfficeMode.frame.minY - 9), width: (segmentControlOfficeMode.frame.width/2) - 5, height: segmentControlOfficeMode.frame.height)
-        let boundsWfhMode = NSRect(x: (segmentControlOfficeMode.frame.midX + 5), y: (segmentControlOfficeMode.frame.minY - 9), width: (segmentControlOfficeMode.frame.width/2) - 5, height: segmentControlOfficeMode.frame.height)// keep y to  egmentControlOfficeMode.frame.midY  do not change
-        
-        segmentOfficeModeTrackingArea = NSTrackingArea.init(rect: boundsOfficeMode, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
-        segmentControlOfficeMode.addTrackingArea(segmentOfficeModeTrackingArea!)
-        
-        segmentWfhModeTrackingArea = NSTrackingArea.init(rect: boundsWfhMode, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
-        segmentControlOfficeMode.addTrackingArea(segmentWfhModeTrackingArea!)
+
         
         trackingAreaBtnEditBlockingSchedule = NSTrackingArea.init(rect: btnEditBlockingSchedule.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
         btnEditBlockingSchedule.addTrackingArea(trackingAreaBtnEditBlockingSchedule!)
@@ -441,28 +426,7 @@ class menuViewController: NSViewController {
         trackingAreaBtnPin = NSTrackingArea.init(rect: btnPin.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
         btnPin.addTrackingArea(trackingAreaBtnPin!)
         
-        btnFocusMusicTrackingArea = NSTrackingArea.init(rect: btnFocusMusic.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
-        btnFocusMusic.addTrackingArea(btnFocusMusicTrackingArea!)
-        
-        btnTodoPlayerTrackingArea = NSTrackingArea.init(rect: btnTodoPlayer.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
-        btnTodoPlayer.addTrackingArea(btnTodoPlayerTrackingArea!)
-        
-        btnBrainDumpTrackingArea = NSTrackingArea.init(rect: btnBrainDump.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
-        btnBrainDump.addTrackingArea(btnBrainDumpTrackingArea!)
-        
-        trackingAreaBtnTabAudit = NSTrackingArea.init(rect: btnBrowserTabAudit.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
-        btnBrowserTabAudit.addTrackingArea(trackingAreaBtnTabAudit!)
-        
-        btnCurrentTrackTrackingArea = NSTrackingArea.init(rect: btnCurrentTrack.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
-        btnCurrentTrack.addTrackingArea(btnCurrentTrackTrackingArea!)
-        
-        
-        btnStartBreakTrackingArea = NSTrackingArea.init(rect: btnStartBreak.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
-        btnStartBreak.addTrackingArea(btnStartBreakTrackingArea!)
-        
-//        btnOpenToolBoxTrackingArea = NSTrackingArea.init(rect: btnOpenToolBox.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
-//        btnOpenToolBox.addTrackingArea(btnOpenToolBoxTrackingArea!)
-        
+
         boxPermissionTrackingArea = NSTrackingArea.init(rect: boxForPermissionToolTip.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
         boxForPermissionToolTip.addTrackingArea(boxPermissionTrackingArea!)
         
@@ -470,7 +434,7 @@ class menuViewController: NSViewController {
         
         addLog(text: "menuViewController viewdidload end")
         lblTitleToDoPlayer.stringValue = menuItemToDoPlayerTitle
-        segmentControlGeekMode.isMenuButton = true
+
 
         if SettingsManagerObject.isGeekModeEnabled{
             preferencesSettingsIndex = 3
@@ -481,20 +445,19 @@ class menuViewController: NSViewController {
             preferencesEditHabitsIndex = 3
             preferencesBlocksIndex = 1
         }
-        boxTipPermissions.isHidden = true
+//        boxTipPermissions.isHidden = true
         
         if #available(macOS 11.0, *) {
             imgViewIconStartBreak.image = NSImage(systemSymbolName: "figure.walk.circle.fill", accessibilityDescription: nil)
         } else {
             imgViewIconStartBreak.image = NSImage(named: NSImage.touchBarUserTemplateName)
         }
-        boxOpenToolBox.isHidden = true// if show this then check space first
-        
+
         boxFocusModeRemainingTime.isHidden = true
-        
-//        if !getSelectJsonVcObject().isViewLoaded{ // todo 
-//            getSelectJsonVcObject().loadView()
-//        }
+
+        scanningCircleViewForFocusMode.wantsLayer = true
+        scanningCircleViewForFocusMode.layer?.cornerRadius = scanningCircleViewForFocusMode.frame.width / 2
+        scanningCircleViewForFocusMode.startAnimating()
     }
 
     override func viewDidAppear() {
@@ -532,30 +495,7 @@ class menuViewController: NSViewController {
     }
     
     override func mouseEntered(with event: NSEvent) {
-        if event.trackingArea == segmentOfficeModeTrackingArea{
-            showTooltip(sender: segmentControlOfficeMode, msg: toolTipOfficeMode, preferredEdge: NSRectEdge.minX, maxWidthVal:230, autoCloseOnMouseExit: true)
-        }else if event.trackingArea == segmentWfhModeTrackingArea{
-            showTooltip(sender: segmentControlOfficeMode, msg: toolTipWfhMode, preferredEdge: NSRectEdge.maxX, maxWidthVal:230, autoCloseOnMouseExit: true)
-        }else if event.trackingArea == btnFocusMusicTrackingArea{
-            showTooltip(sender: btnFocusMusic, msg: lblTitleFocusMusic.stringValue, preferredEdge: NSRectEdge.maxY, maxWidthVal:230, autoCloseOnMouseExit: true)
-        }else if event.trackingArea == btnTodoPlayerTrackingArea{
-            showTooltip(sender: btnTodoPlayer, msg: menuItemToDoList.title, preferredEdge: NSRectEdge.maxY, maxWidthVal:230, autoCloseOnMouseExit: true)
-        }else if event.trackingArea == btnBrainDumpTrackingArea{
-            showTooltip(sender: btnBrainDump, msg: lblTitleBrainDump.stringValue, preferredEdge: NSRectEdge.maxY, maxWidthVal:230, autoCloseOnMouseExit: true)
-        }else if event.trackingArea == trackingAreaBtnTabAudit{
-            var titleTabAudit = "Tab Audit"
-            if let browsersTabAuditVcInfo = configjson.value(forKey: "browsersTabAuditVcInfo") as? NSDictionary{
-                titleTabAudit = browsersTabAuditVcInfo.value(forKey: "title") as? String ?? titleTabAudit
-            }
-            showTooltip(sender: btnBrowserTabAudit, msg: titleTabAudit, preferredEdge: NSRectEdge.maxY, maxWidthVal:230, autoCloseOnMouseExit: true)
-        }else if event.trackingArea == btnCurrentTrackTrackingArea{
-            showTooltip(sender: btnCurrentTrack, msg: lblCurrentTrack.stringValue, preferredEdge: NSRectEdge.maxY, maxWidthVal:230, autoCloseOnMouseExit: true)
-        }else if event.trackingArea == btnStartBreakTrackingArea{
-            showTooltip(sender: btnStartBreak, msg: menuItemStartBreak.title, preferredEdge: NSRectEdge.maxY, maxWidthVal:230, autoCloseOnMouseExit: true)
-        }//else if event.trackingArea == btnOpenToolBoxTrackingArea{
-        // showTooltip(sender: btnOpenToolBox, msg: menuItemOpenToolbox.title, preferredEdge: NSRectEdge.maxY, maxWidthVal:230, autoCloseOnMouseExit: true)
-        //    }
-        else if event.trackingArea == trackingAreaBtnEditBlockingSchedule{
+        if event.trackingArea == trackingAreaBtnEditBlockingSchedule{
             var toolTipButtonEditBlockingSchedule = "Add blocking schedule"
             if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
                 toolTipButtonEditBlockingSchedule = menuInfo.value(forKey: "buttonAddBlockingSchedule") as? String ?? toolTipButtonEditBlockingSchedule
@@ -622,39 +562,20 @@ class menuViewController: NSViewController {
     }
     
     override func mouseExited(with event: NSEvent) {
-        if event.trackingArea == segmentOfficeModeTrackingArea{
-            closePopoverTooltipIfVisible()
-        }else if event.trackingArea == segmentWfhModeTrackingArea{
-            closePopoverTooltipIfVisible()
-        }else if event.trackingArea == btnFocusMusicTrackingArea{
-            closePopoverTooltipIfVisible()
-        }else if event.trackingArea == btnTodoPlayerTrackingArea{
-            closePopoverTooltipIfVisible()
-        }else if event.trackingArea == btnBrainDumpTrackingArea{
-            closePopoverTooltipIfVisible()
-        }else if event.trackingArea == btnCurrentTrackTrackingArea{
-            closePopoverTooltipIfVisible()
-        }else if event.trackingArea == trackingAreaBtnEditBlockingSchedule{
+        if event.trackingArea == trackingAreaBtnEditBlockingSchedule{
             closePopoverTooltipIfVisible()
         }else if event.trackingArea == trackingAreaBtnEditFocusModeDuration{
             closePopoverTooltipIfVisible()
         }else if event.trackingArea == trackingAreaBtnPin{
             closePopoverTooltipIfVisible()
-        }else if event.trackingArea == btnStartBreakTrackingArea{
-            closePopoverTooltipIfVisible()
-        }//else if event.trackingArea == btnOpenToolBoxTrackingArea{
-//            closePopoverTooltipIfVisible()
-        //}
-        else if event.trackingArea == boxPermissionTrackingArea{
-            closePopoverTooltipIfVisible()
-        }else if event.trackingArea == trackingAreaBtnTabAudit{
+        }else if event.trackingArea == boxPermissionTrackingArea{
             closePopoverTooltipIfVisible()
         }
     }
     
     override func viewWillDisappear() {
         SettingsManagerObject.putUserLocalDeviceSettings()// for geek mode change
-        if !boxTipPermissions.isHidden{
+        if !boxTipPermissions.isHidden {
             boxTipPermissions.stopBlinking()
         }
         
@@ -703,7 +624,7 @@ class menuViewController: NSViewController {
         }
         self.view.window?.appearance = getAppAppearance()
         reloadData()
-        if !boxTipPermissions.isHidden{
+        if !boxTipPermissions.isHidden {
             boxTipPermissions.startBlinking()
         }
     }
@@ -745,11 +666,24 @@ class menuViewController: NSViewController {
     
     func reloadData(){
         allApiObject.capturePosthog(event: "opened-menu", metadata: [:])
+        
+        
         if customBlockingScheduleManagerObj.arrBlockingSchedule.count == 0{
-            boxBlockingDisabled.isHidden = false
+            
+            if UserDefaults.standard.object(forKey: kUserDefaultsBlockingScheduleAddedFirstTime) == nil{
+                boxBlockingDisabledFirstTime.isHidden = false
+                boxBlockingDisabled.isHidden = true
+            }else{
+                boxBlockingDisabledFirstTime.isHidden = true
+                boxBlockingDisabled.isHidden = false
+            }
         }else{
+            boxBlockingDisabledFirstTime.isHidden = true
             boxBlockingDisabled.isHidden = true
         }
+        
+        
+        
         
         if customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
             boxCustomBlocking.isHidden = false
@@ -785,23 +719,23 @@ class menuViewController: NSViewController {
         }
 
         if customRoutinesMenu.items.count == 0{
-            boxCustomRoutine.isHidden = true
+            btnCustomRoutine.isHidden = true
         }else{
             if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._CUSTOM_ROUTINE_ || currentState == ._FOCUS_SUMMARY_ || currentState == ._SHUTOFFMAC_{
-                boxCustomRoutine.isHidden = true
+                btnCustomRoutine.isHidden = true
             }else{
                 if isPurchased == false && daysLeft <= 0{//
                     // will not execute custom rouine if app if subscription is active
-                    boxCustomRoutine.isHidden = true
+                    btnCustomRoutine.isHidden = true
                 }else{
                     if isShutOffTimeGoing(){
                         if currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_{
-                            boxCustomRoutine.isHidden = false
+                            btnCustomRoutine.isHidden = false
                         }else{
-                            boxCustomRoutine.isHidden = true
+                            btnCustomRoutine.isHidden = true
                         }
                     }else{
-                        boxCustomRoutine.isHidden = false
+                        btnCustomRoutine.isHidden = false
                     }
                     
                 }
@@ -809,16 +743,16 @@ class menuViewController: NSViewController {
         }
         
         if UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) == nil{
-            boxTipPermissions.isHidden = false
+//            boxTipPermissions.isHidden = false
             browserPermissionGiven = false
             accessibilityPermissionGiven = false
             systemEventsPermissionGiven = false
         }else{
-            if !browserPermissionGiven || !accessibilityPermissionGiven || !systemEventsPermissionGiven{
-                boxTipPermissions.isHidden = false
-            }else{
-                boxTipPermissions.isHidden = true
-            }
+//            if !browserPermissionGiven || !accessibilityPermissionGiven || !systemEventsPermissionGiven{
+//                boxTipPermissions.isHidden = false
+//            }else{
+//                boxTipPermissions.isHidden = true
+//            }
             DispatchQueue.global().async {
                 var isPermissionGiven = false
                 if let arrBrowsersInfo = UserDefaults.standard.object(forKey: kUserdefaultsAllBrowsersPermissionInfo) as? [[String : Any]]{
@@ -847,7 +781,7 @@ class menuViewController: NSViewController {
                 
                 DispatchQueue.main.async {
                     if !self.browserPermissionGiven || !self.accessibilityPermissionGiven || !self.systemEventsPermissionGiven{
-                        self.boxTipPermissions.isHidden = false
+//                        self.boxTipPermissions.isHidden = false
                     }else{
                         self.browserPermissionGiven = true
                     }
@@ -856,22 +790,60 @@ class menuViewController: NSViewController {
         }
         
         boxToDoPlayer.isHidden = false
-        if isFocusModeOn() || ((currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._CUSTOM_ROUTINE_) && currentAction == ._INPROGRESS_ && isAnyAllowedFocusModeActivityRunning){
+        if isFocusModeRunning || ((currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._CUSTOM_ROUTINE_) && currentAction == ._INPROGRESS_ && isAnyAllowedFocusModeActivityRunning){
             menuItemToDoList.title = menuItemToDoPlayerTitle
-//            boxToDoPlayer.isHidden = false
-            boxPreferences.borderWidth = 1
-            boxPreferences.fillColor = NSColor.white
-            boxPreferences.borderColor = NSColor(red: 232/255, green: 136/255, blue: 0/255, alpha: 1)
+
+            btnPreferences.borderWidth = 1
+            btnPreferences.bgColor = NSColor.white
+            btnPreferences.borderColor = NSColor(red: 232/255, green: 136/255, blue: 0/255, alpha: 1)
         }else{
             menuItemToDoList.title = menuItemToDoListTitle
-//            boxToDoPlayer.isHidden = true
-            boxPreferences.borderWidth = 0
-            boxPreferences.fillColor = buttonBgColor
+            btnPreferences.borderWidth = 0
+            btnPreferences.bgColor = buttonBgColor
         }
         
-        boxEditHabits.borderColor =  boxPreferences.borderColor
-        boxEditHabits.borderWidth = boxPreferences.borderWidth
-        boxEditHabits.fillColor = boxPreferences.fillColor
+        
+        if isFocusModeRunning{
+            boxFocusModeIntention.isHidden = false
+            lblFocusModeIntention.stringValue = whatToAchieveInFocusBlock
+            let (h,m,_) = secondsToHoursMinutesSeconds(seconds: Int(totalFocuseTime))
+            lblTotalFocusedTimeToday.stringValue = "\(h)\(hoursHText) \(m)\(minutesMText)"
+            
+            
+            innerTopBoxFocusMode.constant = 5
+            innerBottomBoxFocusMode.constant = 5
+            innerTrailingBoxFocusMode.constant = 5
+            innerLeadingBoxFocusMode.constant = 5
+            boxFocusMode.borderWidth = 1
+            boxFocusMode.fillColor = NSColor(named: "settings_BackgroundColor") ?? NSColor.blue
+            boxBlockingDisabledFirstTime.isHidden = true// will be hidden during focus session
+            boxFocusMode.appearance = NSAppearance(named: .aqua)
+            
+            btnStopHardcorePomodoroMode.bgColor = NSColor.white
+            btnStopHardcorePomodoroMode.borderWidth = 1
+            
+            btnStartSimplePomodoroMode.bgColor = NSColor.white
+            btnStartSimplePomodoroMode.borderWidth = 1
+        }else{
+            boxFocusModeIntention.isHidden = true
+            innerTopBoxFocusMode.constant = 0
+            innerBottomBoxFocusMode.constant = 0
+            innerTrailingBoxFocusMode.constant = 0
+            innerLeadingBoxFocusMode.constant = 0
+            boxFocusMode.borderWidth = 0
+            boxFocusMode.fillColor = .clear
+            boxFocusMode.appearance = getAppAppearance()
+            btnStopHardcorePomodoroMode.bgColor = NSColor(named: "light_OrangeColor") ?? NSColor.blue
+            btnStopHardcorePomodoroMode.borderWidth = 0
+            
+            btnStartSimplePomodoroMode.bgColor = NSColor(named: "light_OrangeColor") ?? NSColor.blue
+            btnStartSimplePomodoroMode.borderWidth = 0
+        }
+        
+        
+        //btnEditHabits.borderColor =  boxPreferences.borderColor
+        btnEditHabits.borderWidth = btnPreferences.borderWidth
+        btnEditHabits.bgColor = btnPreferences.bgColor
         
         //showFocusModeCountDownIfNeeded()
         if SettingsManagerObject.isMenuPopoverEnabled{
@@ -879,7 +851,7 @@ class menuViewController: NSViewController {
         }else{
             btnPin.image = #imageLiteral(resourceName: "unPin")
         }
-        boxGeekMode.isHidden = true// 19/7/25 version 1.26.392   #1467
+       // boxGeekMode.isHidden = true// 19/7/25 version 1.26.392   #1467
         
 //        if SettingsManagerObject.isGeekModeEnabled{
 //            if let val = UserDefaults.standard.object(forKey: kUserDefaultsHideAppModeOption) as? Bool{
@@ -904,7 +876,7 @@ class menuViewController: NSViewController {
 //            segmentControlGeekMode.setWidth(132, forSegment: 1)
 //        }
         
-        boxStartHabitsFirstTime.isHidden = true
+        btnStartHabitsFirstTime.isHidden = true
         
         
         if currentState != ._MORNING_HABIT_ && currentState != ._EVENING_HABIT_  && UserDefaults.standard.object(forKey: kUserdefaultsStartRoutineButtonClicked) == nil{
@@ -916,26 +888,26 @@ class menuViewController: NSViewController {
                 UserDefaults.standard.set(true, forKey: kUserdefaultsStartRoutineButtonClicked)
             }else{
                 if sameDay || !shouldDoHabits(){
-                    boxStartHabitsFirstTime.isHidden = false
+                    btnStartHabitsFirstTime.isHidden = false
                 }else{
                     UserDefaults.standard.set(true, forKey: kUserdefaultsStartRoutineButtonClicked)
                 }
             }
         }
         
-        if !boxStartHabitsFirstTime.isHidden{
+        if !btnStartHabitsFirstTime.isHidden{
             if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
                 if isShutOffTimeGoing(){
-                    lblStartHabitsFirstTime.stringValue = "Start evening routine"
-                    lblStartHabitsFirstTime.stringValue = menuInfo.value(forKey: "menuItemStartEveningHabitsFirstTimeTitle") as? String ?? lblStartHabitsFirstTime.stringValue
+                    btnStartHabitsFirstTime.title = "Start evening routine"
+                    btnStartHabitsFirstTime.title = menuInfo.value(forKey: "menuItemStartEveningHabitsFirstTimeTitle") as? String ?? btnStartHabitsFirstTime.title
                 }else{
-                    lblStartHabitsFirstTime.stringValue = "Start morning routine"
-                    lblStartHabitsFirstTime.stringValue = menuInfo.value(forKey: "menuItemStartMorningHabitsFirstTimeTitle") as? String ?? lblStartHabitsFirstTime.stringValue
+                    btnStartHabitsFirstTime.title = "Start morning routine"
+                    btnStartHabitsFirstTime.title = menuInfo.value(forKey: "menuItemStartMorningHabitsFirstTimeTitle") as? String ?? btnStartHabitsFirstTime.title
                 }
             }
         }
         if isFocusModeOnOrPaused(){
-            boxStartHabitsFirstTime.isHidden = true
+            btnStartHabitsFirstTime.isHidden = true
         }
         
         if isAppEnable{
@@ -961,7 +933,7 @@ class menuViewController: NSViewController {
             menuItemStartBreak.isHidden = true
             boxStartBreak.isHidden = true
         }
-        
+        boxStartBreakNew.isHidden = boxStartBreak.isHidden
 //        var shouldShowToolBoxWindow = false
 //        if isAnyAllowedFocusModeActivityRunning || isFocusModeOn(){
 //            let isAllowedAllAppsInFocus = currentRunningFocusType["isAllowedAllApps"] as? Bool ?? false
@@ -1138,17 +1110,23 @@ class menuViewController: NSViewController {
                     if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
                         lblMeetingDetection.stringValue = menuInfo.value(forKey: "menuItemMeetingDetectionTitle") as? String ?? lblMeetingDetection.stringValue
                     }
+                    boxNextBreak.isHidden = true
                 }
             }else{
                 boxMeetingDetection.isHidden = true
             }
+            
+            
+            boxSectionMicroBreak.isHidden = false
 
-
+            if boxNextBreak.isHidden && boxMeetingDetection.isHidden && boxTimeSinceLastBreak.isHidden{
+                boxSectionMicroBreak.isHidden = true
+            }
             
             if UserDefaults.standard.object(forKey: kUserdefaultsFocusTipsShown) == nil{
-                boxSetFocusModes.isHidden = false
+                btnSetFocusModes.isHidden = false
             }else{
-                boxSetFocusModes.isHidden = true
+                btnSetFocusModes.isHidden = true
             }
             let isFocusModeOn = isFocusModeOn()
             let isFocusModePaused = isFocusModePaused()
@@ -1161,45 +1139,47 @@ class menuViewController: NSViewController {
                     }else{
                         boxFocusAlignmentScore.isHidden = true
                     }
-                    lblTitleStopHardcorePomodoroMode.stringValue = itemStopPomodoroTitle
-                    imgViewStopSuperFocusSession.image = iconStopFocusSession
+                    btnStopHardcorePomodoroMode.title = itemStopPomodoroTitle
+                    btnStopHardcorePomodoroMode.image = iconStopFocusSession
                 }else {
                     boxFocusAlignmentScore.isHidden = true
-                    lblTitleStopHardcorePomodoroMode.stringValue = itemResumePomodoroTitle
-                    imgViewStopSuperFocusSession.image = iconResumeFocusSession
+                    btnStopHardcorePomodoroMode.title = itemResumePomodoroTitle
+                    btnStopHardcorePomodoroMode.image = iconResumeFocusSession
                 }
-                boxStartPomodoroMode.isHidden = true
-                boxStopHardcorePomodoroMode.isHidden = false
+                btnStartPomodoroMode.isHidden = true
+                btnStopHardcorePomodoroMode.isHidden = false
                 
             }else{
                 boxFocusAlignmentScore.isHidden = true
                 if isHardCorePomodoroModeOn{
                     
                     if currentFocusModeStrictness == ._SUPER_STRICT_{
-                        boxStopHardcorePomodoroMode.isHidden = true// not showing stop pomodoro button in pomodoro breaks if strictness is super strict 
+                        btnStopHardcorePomodoroMode.isHidden = true// not showing stop pomodoro button in pomodoro breaks if strictness is super strict
                     }else{
-                        boxStopHardcorePomodoroMode.isHidden = false
-                        lblTitleStopHardcorePomodoroMode.stringValue = menuItemStopHardcorePomodoroTitle
-                        imgViewStopSuperFocusSession.image = iconStopFocusSession
+                        btnStopHardcorePomodoroMode.isHidden = false
+                        btnStopHardcorePomodoroMode.title = menuItemStopHardcorePomodoroTitle
+                        btnStopHardcorePomodoroMode.image = iconStopFocusSession
                     }
-                    boxStartPomodoroMode.isHidden = true
+                    btnStartPomodoroMode.isHidden = true
                 }else{
                     if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_{
-                        boxStartPomodoroMode.isHidden = true
+                        btnStartPomodoroMode.isHidden = true
                     }else{
-                        boxStartPomodoroMode.isHidden = false
+                        btnStartPomodoroMode.isHidden = false
                     }
-                    boxStopHardcorePomodoroMode.isHidden = true
+                    btnStopHardcorePomodoroMode.isHidden = true
+                }
+                
+                if customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
+                    boxFocusAlignmentScore.isHidden = false
+                    setFocusAlignmentScore(totalSeconds: focusModeMinutesToPerform * 60)
+                }else{
+                    boxFocusAlignmentScore.isHidden = true
+                    
                 }
             }
             
-            if customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
-                boxFocusAlignmentScore.isHidden = false
-                setFocusAlignmentScore(totalSeconds: focusModeMinutesToPerform * 60)
-            }else{
-                boxFocusAlignmentScore.isHidden = true
-                
-            }
+            
             
             if boxFocusAlignmentScore.isHidden{
                 if (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_) && currentAction == ._INPROGRESS_ && (currentHabitPlaying != nil) && isAnyAllowedFocusModeActivityRunning{
@@ -1212,58 +1192,59 @@ class menuViewController: NSViewController {
 //            stackViewFocusMode.isHidden = false
 //            resetViewHeight()
 //            tblViewFocusMode.reloadData()
-            if SettingsManagerObject.isOfficeModeEnabled{
-                segmentControlOfficeMode.setSelected(true, forSegment: 0)
-            }else{
-                segmentControlOfficeMode.setSelected(true, forSegment: 1)
-            }
-            boxEnableOfficeMode.isHidden = true
-            boxStartSimplePomodoroMode.isHidden = true
+//            if SettingsManagerObject.isOfficeModeEnabled{
+//                segmentControlOfficeMode.setSelected(true, forSegment: 0)
+//            }else{
+//                segmentControlOfficeMode.setSelected(true, forSegment: 1)
+//            }
+           // boxEnableOfficeMode.isHidden = true
+            btnStartSimplePomodoroMode.isHidden = true
+            
         }else{
             boxTimeSinceLastBreak.isHidden = true
             boxBrainDump.isHidden = false
             boxTools.isHidden = false// 19/7/25 version 1.26.392   #1467
             boxNextBreak.isHidden = true
             boxMeetingDetection.isHidden = true
-            boxSetFocusModes.isHidden = true
+            btnSetFocusModes.isHidden = true
             boxFocusAlignmentScore.isHidden = true
-            boxStartPomodoroMode.isHidden = true
-            boxStopHardcorePomodoroMode.isHidden = true
-            boxEnableOfficeMode.isHidden = true
-            
+            btnStartPomodoroMode.isHidden = true
+            btnStopHardcorePomodoroMode.isHidden = true
+            //boxEnableOfficeMode.isHidden = true
+            boxSectionMicroBreak.isHidden = true
             
             let isFocusModeOn = isFocusModeOn()
             let isFocusModePaused = isFocusModePaused()
 
             if isFocusModeOn || isFocusModePaused{
-                lblTitleStartSimplePomodoroMode.font = NSFont.systemFont(ofSize: 13)
+                btnStartSimplePomodoroMode.font = NSFont.systemFont(ofSize: 13)
                 if isFocusModeStartedFromPomodoroMode{
                     if isFocusModeOn{
-                        lblTitleStartSimplePomodoroMode.stringValue = itemStopPomodoroTitle
-                        imgViewStartSimpleFocusSession.image = iconStopFocusSession
+                        btnStartSimplePomodoroMode.title = itemStopPomodoroTitle
+                        btnStartSimplePomodoroMode.image = iconStopFocusSession
                     }else{
-                        lblTitleStartSimplePomodoroMode.stringValue = itemResumePomodoroTitle
-                        imgViewStartSimpleFocusSession.image = iconResumeFocusSession
+                        btnStartSimplePomodoroMode.title = itemResumePomodoroTitle
+                        btnStartSimplePomodoroMode.image = iconResumeFocusSession
                     }
-                    boxStartSimplePomodoroMode.isHidden = false
+                    btnStartSimplePomodoroMode.isHidden = false
                 }else{
-                    boxStartSimplePomodoroMode.isHidden = true
+                    btnStartSimplePomodoroMode.isHidden = true
                 }
                 
-                heightButtonSimplePomodoro.constant = 28
-                widthImageIconSimplePomodoro.constant = 23
-                boxStartSimplePomodoroMode.borderWidth = 0
+                heightButtonSimplePomodoro.constant = 35
+                btnStartSimplePomodoroMode.iconSize = 23
+                btnStartSimplePomodoroMode.borderWidth = 0
             }else{
-                lblTitleStartSimplePomodoroMode.stringValue = itemStartPomodoroTitle
-                imgViewStartSimpleFocusSession.image = iconPlayFocusSession
+                btnStartSimplePomodoroMode.title = itemStartPomodoroTitle
+                btnStartSimplePomodoroMode.image = iconPlayFocusSession
                 heightButtonSimplePomodoro.constant = 46
-                boxStartSimplePomodoroMode.borderWidth = 2
-                widthImageIconSimplePomodoro.constant = 28
-                lblTitleStartSimplePomodoroMode.font = NSFont.boldSystemFont(ofSize: 16)
+                btnStartSimplePomodoroMode.borderWidth = 2
+                btnStartSimplePomodoroMode.iconSize = 28
+                btnStartSimplePomodoroMode.font = NSFont.boldSystemFont(ofSize: 16)
                 if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_{
-                    boxStartSimplePomodoroMode.isHidden = true
+                    btnStartSimplePomodoroMode.isHidden = true
                 }else{
-                    boxStartSimplePomodoroMode.isHidden = false
+                    btnStartSimplePomodoroMode.isHidden = false
                 }
             }
             
@@ -1273,53 +1254,42 @@ class menuViewController: NSViewController {
 
         
         if currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_MORNING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_{
-            boxResumeHabits.isHidden = false
+            btnResumeHabits.isHidden = false
         }else if currentState == ._MICRO_BREAK_ && isBreakActivityExecuteFromPostponeMorningHabit{
-            boxResumeHabits.isHidden = false
+            btnResumeHabits.isHidden = false
         }else if currentState == ._MICRO_BREAK_ && isBreakActivityExecuteFromPostponeEveningHabit{
-            boxResumeHabits.isHidden = false
+            btnResumeHabits.isHidden = false
         }else if currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeMorningHabit{
-            boxResumeHabits.isHidden = false
+            btnResumeHabits.isHidden = false
         }else if currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeEveningHabit{
-            boxResumeHabits.isHidden = false
+            btnResumeHabits.isHidden = false
         }else{
-            boxResumeHabits.isHidden = true
+            btnResumeHabits.isHidden = true
         }
         
         
         checkPurchaseState()
         
-        if !isAppEnable{// button title "Quit" if app is disabled
-            boxReactivate.isHidden = false
-            if let quitInfo = configjson.value(forKey: "quitInfo") as? NSDictionary{
-                if let quittingConfirmInfo = quitInfo.value(forKey: "quittingConfirmInfo") as? NSDictionary{
-                    if let buttonQuitText = quittingConfirmInfo.value(forKey: "buttonQuitText") as? String{
-                        lblTitleQuit.stringValue = buttonQuitText
-                    }
-                }
-            }
-            
-        }else{// button title "Pause blocking" if app is enabled
-            boxReactivate.isHidden = true
-            if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
-                lblTitleQuit.stringValue = menuInfo.value(forKey: "menuItemQuitTitle") as? String ?? lblTitleQuit.stringValue
-            }
+        if !isAppEnable{
+            btnReactivate.isHidden = false
+        }else{
+            btnReactivate.isHidden = true
         }
 
         
-        boxOpenCheckLists.isHidden = true
+        btnOpenCheckLists.isHidden = true
         if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._CUSTOM_ROUTINE_{
             if currentAction == ._INPROGRESS_{
                 if isMainWindowLoaded{
                     if !(mainWindowControllerObj?.window?.isVisible ?? false){
                         if let checkList = currentHabitPlaying?.checkList{
                             if checkList.count != 0{
-                                boxOpenCheckLists.isHidden = false
+                                btnOpenCheckLists.isHidden = false
                             }
                         }
                         if let checkList = currentActivityPlaying?.checkList{
                             if checkList.count != 0{
-                                boxOpenCheckLists.isHidden = false
+                                btnOpenCheckLists.isHidden = false
                             }
                         }
                     }
@@ -1329,16 +1299,16 @@ class menuViewController: NSViewController {
         
         if isMenuShowingFirstTime{
             isMenuShowingFirstTime = false
-            if !self.boxStartSimplePomodoroMode.isHidden{
+            if !self.btnStartSimplePomodoroMode.isHidden{
                 DispatchQueue.global().async {
                     DispatchQueue.main.async {
-                        self.boxStartSimplePomodoroMode.wantsLayer = true
+                        self.btnStartSimplePomodoroMode.wantsLayer = true
                         self.showAnimationSimplePomodoro()
                         var msg = "You may want to Start a Focus session to focus on specific work for a set duration." 
                         if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
                             msg = menuInfo.value(forKey: "toolTipPomodoroSessionText") as? String ?? msg
                         }
-                        showTooltip(sender: self.boxStartSimplePomodoroMode, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
+                        showTooltip(sender: self.btnStartSimplePomodoroMode, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
                     }
                 }
             }
@@ -1356,16 +1326,6 @@ class menuViewController: NSViewController {
                     self.timerReload = Timer.scheduledTimer(timeInterval: 10, target: self, selector: #selector(self.reloadIfNeeded), userInfo: nil, repeats: true)
                     RunLoop.main.add((self.timerReload!), forMode: RunLoop.Mode.common)
                 }
-            }
-        }
-    }
-    
-    func reloadPermission(){
-        if UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) != nil{
-            if !browserPermissionGiven || !accessibilityPermissionGiven || !systemEventsPermissionGiven{
-                boxTipPermissions.isHidden = false
-            }else{
-                boxTipPermissions.isHidden = true
             }
         }
     }
@@ -1454,15 +1414,15 @@ class menuViewController: NSViewController {
             for i in 0..<8{
                 if i % 2 == 0{
                     DispatchQueue.main.async {
-                        if self.boxStartSimplePomodoroMode.isHidden{
+                        if self.btnStartSimplePomodoroMode.isHidden{
                             return;
                         }
-                        self.boxStartSimplePomodoroMode.fillColor = NSColor.systemYellow
+                        self.btnStartSimplePomodoroMode.bgColor = NSColor.systemYellow
                     }
                 }else{
                     DispatchQueue.main.async {
-                        self.boxStartSimplePomodoroMode.fillColor = NSColor(red: 255/255, green: 228/255, blue: 198/255, alpha: 1)
-                        if self.boxStartSimplePomodoroMode.isHidden{
+                        self.btnStartSimplePomodoroMode.bgColor = NSColor(red: 255/255, green: 228/255, blue: 198/255, alpha: 1)
+                        if self.btnStartSimplePomodoroMode.isHidden{
                             return;
                         }
                     }
@@ -1514,36 +1474,20 @@ class menuViewController: NSViewController {
         isBreakActivityExecuteFromPostponeEveningHabit = false
         if currentState == ._POSTPON_MORNING_HABIT_{// ⚠️ do not change current state inside this block
             // new work // 20/04/23
-           // if SettingsManagerObject.IsShowBreaksInPostponeEnabled{
-                isBreakActivityExecuteFromPostponeMorningHabit = true// morning habit postpone over hua to activity timer bhi band hoga or agar activity chal rhi hui to vo bhi band hokar uska timer band hoga
-          //  }else{
-           //     return;
-           // }
+            isBreakActivityExecuteFromPostponeMorningHabit = true//
         }
         
         if currentState == ._POSTPON_EVENING_HABIT_{// ⚠️ do not change current state inside this block
-          //  if SettingsManagerObject.IsShowBreaksInPostponeEnabled{
-                isBreakActivityExecuteFromPostponeEveningHabit = true
-           // }else{
-            //    return;
-           //// }
+            isBreakActivityExecuteFromPostponeEveningHabit = true
         }
         
         if currentState == ._POSTPON_FOCUS_SUMMARY_{// ⚠️ do not change current state inside this block
-           // if SettingsManagerObject.IsShowBreaksInPostponeEnabled{
-                isBreakActivityExecuteFromPostponeEveningHabit = true
-            //}//else{
-              //  return;
-           // }
+            isBreakActivityExecuteFromPostponeEveningHabit = true
         }
         getHabitsVcObject().executeBreakActivities()
         closeMenuWindowIsVisible()
     }
     
-//    @IBAction func btnOpenToolBoxClicked(_ sender: Any) {
-//        openToolBoxClicked()
-//        closeMenuWindowIsVisible()
-//    }
     
     @IBAction func btnBrainDumpClicked(_ sender: Any) {
         addLog(text: "[user-action] button Brain Dump Clicked")
@@ -1564,7 +1508,6 @@ class menuViewController: NSViewController {
     
     @objc func openToolBoxClicked(){
         addLog(text: "[user-action] openToolBoxClicked")
-//        showToolboxWindow()openToolBoxClicked
         closeMenuWindowIsVisible()
     }
     
@@ -1621,9 +1564,9 @@ class menuViewController: NSViewController {
                     menuItemStop.image = NSImage(named: NSImage.Name("NSTouchBarRecordStopTemplate"))
                     menuItemStop.target = self
                     menu.addItem(menuItemStop)
-                    menu.minimumWidth = boxStartSimplePomodoroMode.frame.width
-                    let p = NSPoint(x: boxStartSimplePomodoroMode.frame.origin.x, y: boxStartSimplePomodoroMode.frame.origin.y )
-                    menu.popUp(positioning: nil, at: p, in: stackViewSecond)
+                    menu.minimumWidth = btnStartSimplePomodoroMode.frame.width
+                    let p = NSPoint(x: btnStartSimplePomodoroMode.frame.origin.x, y: btnStartSimplePomodoroMode.frame.origin.y )
+                    menu.popUp(positioning: nil, at: p, in: btnStartSimplePomodoroMode)
                     
                     break;
                 }else if arrFocusType[index]["isPaused"] as? Bool == true{
@@ -1640,9 +1583,9 @@ class menuViewController: NSViewController {
                     menu.addItem(menuItemStop)
                     
                     
-                    menu.minimumWidth = boxStartSimplePomodoroMode.frame.width
-                    let p = NSPoint(x: boxStartSimplePomodoroMode.frame.origin.x, y: boxStartSimplePomodoroMode.frame.origin.y )
-                    menu.popUp(positioning: nil, at: p, in: stackViewSecond)
+                    menu.minimumWidth = btnStartSimplePomodoroMode.frame.width
+                    let p = NSPoint(x: btnStartSimplePomodoroMode.frame.origin.x, y: btnStartSimplePomodoroMode.frame.origin.y )
+                    menu.popUp(positioning: nil, at: p, in: btnStartSimplePomodoroMode)
                     break;
                 }
             }
@@ -1777,9 +1720,9 @@ class menuViewController: NSViewController {
                     menuItemStop.image = NSImage(named: NSImage.Name("NSTouchBarRecordStopTemplate"))
                     menuItemStop.target = self
                     menu.addItem(menuItemStop)
-                    menu.minimumWidth = boxStopHardcorePomodoroMode.frame.width
-                    let p = NSPoint(x: boxStopHardcorePomodoroMode.frame.origin.x, y: boxStopHardcorePomodoroMode.frame.origin.y )
-                    menu.popUp(positioning: nil, at: p, in: boxStopHardcorePomodoroMode)
+                    menu.minimumWidth = btnStopHardcorePomodoroMode.frame.width
+                    let p = NSPoint(x: btnStopHardcorePomodoroMode.frame.origin.x, y: btnStopHardcorePomodoroMode.frame.origin.y )
+                    menu.popUp(positioning: nil, at: p, in: btnStopHardcorePomodoroMode)
                     
                     break;
                 }else if arrFocusType[index]["isPaused"] as? Bool == true{
@@ -1796,9 +1739,9 @@ class menuViewController: NSViewController {
                     menu.addItem(menuItemStop)
                     
                     
-                    menu.minimumWidth = boxStopHardcorePomodoroMode.frame.width
-                    let p = NSPoint(x: boxStopHardcorePomodoroMode.frame.origin.x, y: boxStopHardcorePomodoroMode.frame.origin.y )
-                    menu.popUp(positioning: nil, at: p, in: boxStopHardcorePomodoroMode)
+                    menu.minimumWidth = btnStopHardcorePomodoroMode.frame.width
+                    let p = NSPoint(x: btnStopHardcorePomodoroMode.frame.origin.x, y: btnStopHardcorePomodoroMode.frame.origin.y )
+                    menu.popUp(positioning: nil, at: p, in: btnStopHardcorePomodoroMode)
                     break;
                 }
             }
@@ -1819,7 +1762,7 @@ class menuViewController: NSViewController {
                     closeMenuWindowIsVisible()
                 }
             }else{
-                boxStopHardcorePomodoroMode.isHidden = true
+                btnStopHardcorePomodoroMode.isHidden = true
                 closeMenuWindowIsVisible()
             }
         }
@@ -1937,107 +1880,7 @@ class menuViewController: NSViewController {
         closeMenuWindowIsVisible()
     }
     
-    @IBAction func btnSegmentControlClicked(_ sender: Any) {
-        btnEnableOfficeModeClicked(self)
-    }
-    
-    @IBAction func btnSegmentControlGeekMode(_ sender: Any) {
-        if segmentControlGeekMode.selectedSegment == 0{
-            if SettingsManagerObject.isGeekModeEnabled{
-                return;
-            }
-            segmentControlGeekMode.changeAppModeTo(geekMode: true)
-        }else{
-            if !SettingsManagerObject.isGeekModeEnabled{
-                return;
-            }
-            segmentControlGeekMode.changeAppModeTo(geekMode: false)
-        }
-    }
-    
-    @IBAction func btnEnableOfficeModeClicked(_ sender: Any) {
-        addLog(text:"[user-action] menuViewController:- btnEnableOfficeModeClicked")
-        if isPurchased == false && daysLeft <= 0{//UserDefaults.standard.object(forKey: "trialExpired") != nil{
-            if trialExpiredNagWcObj != nil{
-                if trialExpiredNagWcObj?.window?.isVisible ?? false{
-                    return;
-                }
-            }
-            showUpgradeNowWindow()
-            return;
-        }
-        
-        addLog(text: "menu item Enable Office Mode by user")
-        if SettingsManagerObject.isOfficeModeEnabled{
-            SettingsManagerObject.isOfficeModeEnabled = false
-            NSApplication.shared.applicationIconImage = nil
-            allApiObject.capturePosthog(event: "disable-office-mode", metadata: [:])
-            SettingsManagerObject.isSettingsChanged = true
-            SettingsManagerObject.putUserLocalDeviceSettings()
-            appdelegate?.statusbutton?.image = NSImage(named: NSImage.Name("Bear-Small"))
-            segmentControlOfficeMode.setSelected(true, forSegment: 1)
-        }else{
-            let filterArr = arrAllbreakActivities.filter { $0.isOfficeFriendly == true}
-            if filterArr.count == 0{// no activity found with isOfficeFriendly //
-                let alert = NSAlert()
-                alert.setSharingType()
-                var noOfficeFriendlyActivityAlertText = "You don't have any office friendly break activities. Do you want me to add one for you to stand up and stretch for 20 seconds?"
-                var noOfficeFriendlyActivityButtonFirstText = "Yeah sounds good"
-                var noOfficeFriendlyActivityButtonSecondText = "No I'm a machine! I don't need breaks"
-                if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
-                    noOfficeFriendlyActivityAlertText = menuInfo.value(forKey: "noOfficeFriendlyActivityAlertText") as? String ?? noOfficeFriendlyActivityAlertText
-                    noOfficeFriendlyActivityButtonFirstText = menuInfo.value(forKey: "noOfficeFriendlyActivityButtonFirstText") as? String ?? noOfficeFriendlyActivityButtonFirstText
-                    noOfficeFriendlyActivityButtonSecondText = menuInfo.value(forKey: "noOfficeFriendlyActivityButtonSecondText") as? String ?? noOfficeFriendlyActivityButtonSecondText
-                }
-                alert.messageText = noOfficeFriendlyActivityAlertText//
-                alert.addButton(withTitle: noOfficeFriendlyActivityButtonFirstText)
-                alert.addButton(withTitle: noOfficeFriendlyActivityButtonSecondText)
-                NSApplication.shared.activate(ignoringOtherApps: true)
-                let result = alert.runModal()
-                if result == .alertFirstButtonReturn{
-                    print("first button")
-                    addOfficeFriendlyActivityInSettings()
-                    enableOfficeMode()
-                }else{
-                    print("second button")
-                    //cancel
-                }
-                
-            }else{
-                enableOfficeMode()
-                
-            }
-            
-        }
-        
-    }
-    
-    func enableOfficeMode(){
-        addLog(text: "enableOfficeMode")
-        
-        if UserDefaults.standard.object(forKey: "officeModeEnabledSuccessAlertShown") == nil{
-            let alert = NSAlert()
-            alert.setSharingType()
-            var officeModeEnabledSuccessfullyText = "Ok! I'll just prompt you to do activities that won't weird other people out (doing handstand pushups in the office might raise a few eyebrows)."
-            if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
-                officeModeEnabledSuccessfullyText = menuInfo.value(forKey: "officeModeEnabledSuccessfullyText") as? String ?? officeModeEnabledSuccessfullyText
-            }
-            alert.messageText = officeModeEnabledSuccessfullyText
-            alert.addButton(withTitle: buttonOkText)
-            NSApplication.shared.activate(ignoringOtherApps: true)
-            _ = alert.runModal()
-            UserDefaults.standard.set(true, forKey: "officeModeEnabledSuccessAlertShown")
-        }
-        
-        
-        SettingsManagerObject.isOfficeModeEnabled = true
-        allApiObject.capturePosthog(event: "enable-office-mode", metadata: [:])
-        SettingsManagerObject.isSettingsChanged = true
-        SettingsManagerObject.putUserLocalDeviceSettings()
-        appdelegate?.statusbutton?.image = NSImage(named: NSImage.Name("Bear-Office-Small"))
-        segmentControlOfficeMode.setSelected(true, forSegment: 0)
-        NSApplication.shared.applicationIconImage = NSImage(named: NSImage.Name("Bear-Office-icon"))
-    }
+
     
     func addOfficeFriendlyActivityInSettings(){
         addLog(text: "addOfficeFriendlyActivityInSettings")//
@@ -2298,11 +2141,11 @@ class menuViewController: NSViewController {
         closeMenuWindowIsVisible()
     }
     
-    @IBAction func btnRemoveAppModeOptionClicked(_ sender: Any) {
-        addLog(text: "btnRemoveAppModeOptionClicked")
-        boxGeekMode.isHidden = true
-        UserDefaults.standard.set(true, forKey: kUserDefaultsHideAppModeOption)
-    }
+//    @IBAction func btnRemoveAppModeOptionClicked(_ sender: Any) {
+//        addLog(text: "btnRemoveAppModeOptionClicked")
+//        boxGeekMode.isHidden = true
+//        UserDefaults.standard.set(true, forKey: kUserDefaultsHideAppModeOption)
+//    }
     
     @IBAction func btnRemoveBrainDumpItemClicked(_ sender: Any) { // not in use
 //        addLog(text: "btnRemoveBrainDumpItemClicked")
@@ -2404,7 +2247,7 @@ class menuViewController: NSViewController {
     
     @IBAction func btnCustomRoutineClicked(_ sender: Any) {
         addLog(text:"[user-action] menuViewController:- btnCustomRoutineClicked")
-        customRoutinesMenu.minimumWidth = boxCustomRoutine.frame.width
+        customRoutinesMenu.minimumWidth = btnCustomRoutine.frame.width
         let p = NSPoint(x: (sender as AnyObject).frame.origin.x, y: (sender as AnyObject).frame.origin.y )
         customRoutinesMenu.popUp(positioning: nil, at: p, in: (sender as AnyObject).superview)
     }
@@ -2463,6 +2306,22 @@ class menuViewController: NSViewController {
         leftMenuVcObj?.showEditHabitsView()
         NSRunningApplication.current.activate(options: [.activateIgnoringOtherApps])
         closeMenuWindowIsVisible()
+    }
+    
+    
+    
+    @IBAction func btnSetBlockingScheduleFirstTimeClicked(_ sender: Any) {
+        btnEditBlockingScheduleClicked(self)
+        boxBlockingDisabledFirstTime.isHidden = true
+        boxBlockingDisabled.isHidden = false
+        UserDefaults.standard.set(true, forKey: kUserDefaultsBlockingScheduleAddedFirstTime)
+    }
+    
+    
+    @IBAction func btnSetLaterBlockingScheduleFirstTimeClicked(_ sender: Any) {
+        boxBlockingDisabledFirstTime.isHidden = true
+        boxBlockingDisabled.isHidden = false
+        UserDefaults.standard.set(true, forKey: kUserDefaultsBlockingScheduleAddedFirstTime)
     }
 }
 
