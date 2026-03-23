@@ -1467,6 +1467,7 @@ def main() -> None:
             repo=repo,
             issue_number=issue_number,
             issue_title=issue_title,
+            issue_body=content.get("body", ""),
             issue_author=issue_author,
             assignees=assignees,
             project_id=project_id,
