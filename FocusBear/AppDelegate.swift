@@ -10539,5 +10539,4 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
 
 
 
-
 // See https://github.com/Focus-Bear/Mac-App/issues/1756 for outstanding menu UI TODOs 

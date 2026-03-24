@@ -10,7 +10,12 @@ import Cocoa
 
 class menuViewController: NSViewController {
 
-    
+    @IBOutlet weak var btnDropDownHabit: cursorButton!
+    @IBOutlet weak var btnDropDownBreak: cursorButton!
+    @IBOutlet weak var btnDropDownFocus: cursorButton!
+    @IBOutlet weak var boxFocusInfo: NSBox!
+    @IBOutlet weak var boxHabitsInfo: NSBox!
+    @IBOutlet weak var boxBreaksInfo: NSBox!
     @IBOutlet weak var boxStartBreakNew: NSBox!
     @IBOutlet weak var btnOpenCheckLists: iconTitleButton!
     @IBOutlet weak var btnReactivate: iconTitleButton!
@@ -109,6 +114,9 @@ class menuViewController: NSViewController {
     @IBOutlet weak var btnEditFocusModeDuration: cursorButton!
     
     
+    var imageExpanded = NSImage(named: NSImage.touchBarGoDownTemplateName)
+    var imageCollapsed = NSImage(named: NSImage.touchBarGoForwardTemplateName)
+    
     var trackingAreaBtnEditBlockingSchedule: NSTrackingArea?
     var trackingAreaBtnEditFocusModeDuration: NSTrackingArea?
     
@@ -180,8 +188,9 @@ class menuViewController: NSViewController {
         // Do view setup here.
         addLog(text: "menuViewController viewdidload start")
         
+        // todo text
         lblFocusedToday.stringValue = "FOCUSED TODAY"
-        lblRemaining.stringValue = "remaining"
+        lblRemaining.stringValue = "remaining" // todo text
         
         lblTotalFocusedTimeToday.stringValue = ""
         
@@ -197,6 +206,9 @@ class menuViewController: NSViewController {
         btnEditBlockingSchedule.title = "ENABLE"
         
         
+        //=====todo text above
+        
+
         if #available(macOS 11.0, *) {
             btnEditHabits.image = NSImage(systemSymbolName: "checkmark.rectangle.fill", accessibilityDescription: nil)
         } else {
@@ -458,6 +470,8 @@ class menuViewController: NSViewController {
         scanningCircleViewForFocusMode.wantsLayer = true
         scanningCircleViewForFocusMode.layer?.cornerRadius = scanningCircleViewForFocusMode.frame.width / 2
         scanningCircleViewForFocusMode.startAnimating()
+        
+        expandFocusInfo()
     }
 
     override func viewDidAppear() {
@@ -575,9 +589,9 @@ class menuViewController: NSViewController {
     
     override func viewWillDisappear() {
         SettingsManagerObject.putUserLocalDeviceSettings()// for geek mode change
-        if !boxTipPermissions.isHidden {
-            boxTipPermissions.stopBlinking()
-        }
+//        if !boxTipPermissions.isHidden{
+//            boxTipPermissions.stopBlinking()
+//        }
         
         var anyNotificationVisibleInFloatingBear = false
         if floatingTopBarVcObj != nil{
@@ -624,9 +638,9 @@ class menuViewController: NSViewController {
         }
         self.view.window?.appearance = getAppAppearance()
         reloadData()
-        if !boxTipPermissions.isHidden {
-            boxTipPermissions.startBlinking()
-        }
+//        if !boxTipPermissions.isHidden{
+//            boxTipPermissions.startBlinking()
+//        }
     }
     
     func checkPurchaseState(){
@@ -2322,6 +2336,67 @@ class menuViewController: NSViewController {
         boxBlockingDisabledFirstTime.isHidden = true
         boxBlockingDisabled.isHidden = false
         UserDefaults.standard.set(true, forKey: kUserDefaultsBlockingScheduleAddedFirstTime)
+    }
+    
+    @IBAction func btnDropDownFocusClicked(_ sender: Any) {
+        if boxFocusInfo.isHidden{
+            expandFocusInfo()
+        }else{
+            collapseFocusInfo()
+        }
+    }
+    
+    @IBAction func btnDropDownBreakClicked(_ sender: Any) {
+        if boxBreaksInfo.isHidden{
+            expandBreakInfo()
+        }else{
+            collapseBreakInfo()
+        }
+    }
+    
+    @IBAction func btnDropDownHabitClicked(_ sender: Any) {
+        if boxHabitsInfo.isHidden{
+            expandHabitInfo()
+        }else{
+            collapseHabitInfo()
+        }
+    }
+    
+    func expandFocusInfo(){
+        boxFocusInfo.isHidden = false
+        btnDropDownFocus.image = imageExpanded
+        
+        collapseBreakInfo()
+        collapseHabitInfo()
+    }
+    
+    func collapseFocusInfo(){
+        boxFocusInfo.isHidden = true
+        btnDropDownFocus.image = imageCollapsed
+    }
+    
+    func expandBreakInfo(){
+        boxBreaksInfo.isHidden = false
+        btnDropDownBreak.image = imageExpanded
+        collapseHabitInfo()
+        collapseFocusInfo()
+    }
+    
+    func collapseBreakInfo(){
+        boxBreaksInfo.isHidden = true
+        btnDropDownBreak.image = imageCollapsed
+    }
+    
+    func expandHabitInfo(){
+        boxHabitsInfo.isHidden = false
+        btnDropDownHabit.image = imageExpanded
+        collapseBreakInfo()
+        collapseFocusInfo()
+    }
+    
+    func collapseHabitInfo(){
+        boxHabitsInfo.isHidden = true
+        btnDropDownHabit.image = imageCollapsed
     }
 }
 
