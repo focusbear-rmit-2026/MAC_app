@@ -65,7 +65,7 @@ var isSkipBreakActivityDuringFocus = false
 var isShowTimerInFocusEnabled = false
 var customUrlHandleLastDurationForRelaxFocusMode = 0
 
-
+var occupationSpecificRelevantSitesForFocusMode:[String:Any]?
 
 func focusModeCloseCurrentUrlForAlignmentScore(){
     let keys = dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus.keys
@@ -417,7 +417,7 @@ func getFocusAlignmentScoreFromLastEntry()->Double{
         }
     }
     
-    if totalAlignmentScore != 0{
+    if totalAlignmentScore != 0 && totalSeconds > 0{
         totalAlignmentScore = (totalAlignmentScore / Double(totalSeconds))
     }
     if totalAlignmentScore > 100{
@@ -742,6 +742,17 @@ func checkUrlFromAi(script: String, url:String, tab_title:String, currentRunning
                         
                         addEntryInFocusAIDecisionsCsv(url: url, domain: domain, tabTitle: tab_title, score: "\(dProbability)", intention: whatToAchieveInFocusBlock, aiReason: reason, currentTaskName: currentTaskName, additionalUserJustification: "")
                         
+                        addAIBlockingLogEntry(
+                            urlOrApp: url,
+                            isApp: false,
+                            focusMode: currentRunningFocusModeName,
+                            intention: whatToAchieveInFocusBlock,
+                            tabTitle: tab_title,
+                            currentTask: currentTaskName,
+                            score: dProbability,
+                            reason: reason,
+                            payload: payload
+                        )
                         
                         if var oldData = dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[url]{
                             addEntryInfocusAlignmentScoreCsv(url: url, tabTitle: tab_title, focusMode: currentRunningFocusModeName, intention: whatToAchieveInFocusBlock, aiReason: reason, allowedProbability: "\(dProbability)", totalScore: "")
@@ -1133,6 +1144,18 @@ func checkAppFromAi(appName:String, currentRunningFocusModeName:String, runningA
                         
                         let currentTaskName = currentTaskInToDoPlayer ?? ""
                         addEntryInFocusAIDecisionsCsv(url: appName, domain: "", tabTitle: "", score: "\(dProbability)", intention: whatToAchieveInFocusBlock, aiReason: reason, currentTaskName: currentTaskName, additionalUserJustification: "")
+                        
+                        addAIBlockingLogEntry(
+                            urlOrApp: appName,
+                            isApp: true,
+                            focusMode: currentRunningFocusModeName,
+                            intention: whatToAchieveInFocusBlock,
+                            tabTitle: "",
+                            currentTask: currentTaskName,
+                            score: dProbability,
+                            reason: reason,
+                            payload: payload
+                        )
                         
                         if !arrBrowsersLowerCasedNames.contains(appNameLowercased){// exclude browsers from Alignment Score
                             if var oldData = dictionaryScoreAiCheckUrlsInCuddlyModeCurrentFocus[appNameLowercased]{
@@ -1593,7 +1616,7 @@ func resumeFocusModeAfterAppStartted(diffSeconds: Int, focusMode: [String : Any]
     focusModeTaskString = focusMode["lastTaskUsed"] as? String ?? ""
     taskCreatedByBlockPopup = ""
     whatToAchieveInFocusBlock = focusMode["lastIntentionUsed"] as? String ?? ""
-    appdelegate!.focusModeStarttedResetAllData()
+    focusModeStarttedResetAllData()
     appdelegate?.resumeFocusMode(index: index)
     endFocusModeTime = finishFocusMoedTime
     currentRunningFocusType = focusMode
@@ -1604,26 +1627,6 @@ func resumeFocusModeAfterAppStartted(diffSeconds: Int, focusMode: [String : Any]
             showSavedSitesForLaterWindowForBreaks()
         }
     }
-    //    if UserDefaults.standard.object(forKey: kUserdefaultsDontShowToolBoxAutomatically) as? Bool == false{removed on 1/9/25  on version 2.27.408
-    //        var shouldShowToolBoxWindow = false
-    //
-    //        let isAllowedAllAppsInFocus = currentRunningFocusType["isAllowedAllApps"] as? Bool ?? false
-    //        let allowAppsPath = currentRunningFocusType["allowed_apps"] as? [String] ?? []
-    //
-    //        if !isAllowedAllAppsInFocus && allowAppsPath.count != 0{
-    //            shouldShowToolBoxWindow = true
-    //        }
-    //
-    //        let isAllowedListApproachInFocus = currentRunningFocusType["isAllowedListApproach"] as? Bool ?? false
-    //        let arrAllowedUrlsForFocus = currentRunningFocusType["allowed_urls"] as? [String] ?? []
-    //
-    //        if arrAllowedUrlsForFocus.count != 0 && isAllowedListApproachInFocus{//!isAllowedAllUrlsInFocus &&#453
-    //            shouldShowToolBoxWindow = true
-    //        }
-    //        if shouldShowToolBoxWindow && SettingsManagerObject.isGeekModeEnabled{
-    //            showToolboxWindow()
-    //        }
-    //    }
 }
 
 
@@ -1929,6 +1932,7 @@ func getBlockScriptForFocusMode(url:String, currentBrowser:BROWSER, intention:St
 
 
 var focusModeHelper = focusTimerManager()
+var suggestWorkFocusManagerObject = suggestWorkFocusManager()
 var habitBlockTimerHelper = habitBlockTimerManager()
 
 
@@ -2136,3 +2140,207 @@ final class SafeDict {
 
 
 
+
+func startWorkFocusAutomaticallyClicked(id:String){
+    addLog(text: "Alert Start Wrok Focus Clicked")
+    for i in 0..<arrFocusType.count{
+        let focus = arrFocusType[i]
+        if let focusId = focus["id"] as? String{
+            if focusId == id{
+                let calendar = Calendar.current
+                endFocusModeTime = calendar.date(byAdding: .minute, value: 5, to: Date())
+                startFocusModeTime = Date()
+                currentFocusModeStrictness = ._NORMAL_
+                addLog(text: "focus mode is normal mode")
+                arrFocusType[i]["isOn"] = true
+                shouldReloadTaskPlayer = true
+                if let isAutoDoNotDisturbEnabled = arrFocusType[i]["isAutoDoNotDisturbEnabled"] as? Bool{
+                    if isAutoDoNotDisturbEnabled{
+                        if isAccessibilityEnabled(isPrompt: true){
+                            enableDND()
+                        }
+                    }
+                }
+                workBeforeFocusBegin(index: i)
+                focusModeMinutesToPerform = 0
+                
+                appdelegate!.setStatusBarButtonColorForFocusMode(color: nil, colorString: arrFocusType[i]["color"] as? String ?? "")
+                appdelegate!.statusbutton?.title = buttonStatusStateFocusText
+                appdelegate!.statusbutton?.imagePosition = .imageLeft
+                if timerForFocusMode != nil{
+                    timerForFocusMode?.invalidate()
+                    timerForFocusMode = nil
+                    setAppIconForFocusModeScore(probability: nil)
+                    timerForFocusModeEndNotification?.invalidate()
+                    timerForFocusModeEndNotification = nil
+                }
+                appdelegate?.setFocusModeTimer(hour: nil, minute: 25)
+
+                isFocusModeStartedFromPomodoroMode = false
+                whatToAchieveInFocusBlock = ""
+                
+                appdelegate!.focusModeStartted(isStartedByPusher: false)
+                allApiObject.capturePosthog(event: "start-work-focus-mode", metadata: [:])
+                UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+                isFocusModeStartedAutomatically = false
+                closePomodoroWindowIOfVisible()
+                break;
+            }
+        }
+    }
+}
+
+var lastEntryInProductivityStatsTime:Date?
+func addEntryInProductivityStatsCsv(){
+    
+    if !SettingsManagerObject.isAdvancedAnalyticsInFocusModeEnabled{
+        return;
+    }
+    
+    
+    let currentDate = Date()
+    if let lastEntryInProductivityStatsTime = lastEntryInProductivityStatsTime {
+        let diffSeconds = currentDate.timeIntervalSince(lastEntryInProductivityStatsTime)
+        if diffSeconds < 2.6 {//Log focusProductivityStats.csv every 3 seconds instead of every 10 seconds #1378
+            return// this will always show gap of 3 seconds between each entry
+        }
+        //        print(diffSeconds)
+    }
+    let averageScoreFromLastEntry = getFocusAlignmentScoreFromLastEntry()
+    
+    lastEntryInProductivityStatsTime = currentDate
+
+    let date = currentDate
+    let isoFormatter = ISO8601DateFormatter()
+    isoFormatter.formatOptions = [.withInternetDateTime] // Standard ISO 8601 format
+    
+    let isoString = isoFormatter.string(from: date)
+    
+    var lastEvent:CFTimeInterval = 0
+    lastEvent = CGEventSource.secondsSinceLastEventType(CGEventSourceStateID.hidSystemState, eventType: CGEventType(rawValue: ~0)!)
+    let idleTimeValue = Int(lastEvent)
+    var averageTabCount = 0
+    var averageTabDuration = 0
+
+    let arrAllTabsCount = tabMatricsObject.arrAllTabsCount
+    let sumOfCount =  arrAllTabsCount.reduce(0, +)
+    if arrAllTabsCount.count > 0{
+        averageTabCount = sumOfCount / arrAllTabsCount.count
+    }
+    
+    var arrAllUrlsRecodDuringFocusMode = tabMatricsObject.arrAllUrlsRecodDuringFocusMode
+    var arrAllAppsRecodDuringFocusMode = tabMatricsObject.arrAllAppsRecodDuringFocusMode
+    
+    
+    arrAllAppsRecodDuringFocusMode = tabMatricsObject.clubAllSameAppEntries(appData: arrAllAppsRecodDuringFocusMode)
+    arrAllUrlsRecodDuringFocusMode = tabMatricsObject.clubAllSameDomainEntries(appData: arrAllUrlsRecodDuringFocusMode)
+    var arrAllAppsTabsData = arrAllAppsRecodDuringFocusMode
+    arrAllAppsTabsData += arrAllUrlsRecodDuringFocusMode
+    
+    
+    
+    // Calculate the average duration per tab
+    var allAppsWithoutBrowsers = [[String : Any]]()//
+    //  ignore browser in average tab count
+    for item in arrAllAppsTabsData{
+        let isBrowser = item[tabMatricsObject.keyIsBrowser] as? Bool ?? false
+        if !isBrowser{
+            allAppsWithoutBrowsers.append(item)
+        }
+    }
+    
+    let totalDuration = allAppsWithoutBrowsers.reduce(0) { total, entry in
+        if let duration = entry["duration"] as? Int {
+            return total + duration
+        }else{
+            print("duration not found:- \(entry["appName"] as? String ?? entry["domain"] as? String ?? "")")
+        }
+        return total
+    }
+    
+    averageTabDuration = allAppsWithoutBrowsers.isEmpty ? 0 : totalDuration / allAppsWithoutBrowsers.count
+    
+    // calculate averageTabDurationInLast30Seconds // date 22/5/25  // version 1.23.368
+    let last30SecondsAverageTabDuration = tabMatricsObject.getLast30SecondsAverageTabDuration()
+    let last30SecondsAverageTabDurationString = last30SecondsAverageTabDuration == nil ? "" : "\(String(describing: last30SecondsAverageTabDuration ?? 0))"
+    
+    
+    addEntryInProductivityStatsCsv(isoString: isoString, currentFocusAlignmentScore: currentFocusAlignmentScore, averageTabCount: averageTabCount, averageTabDuration: averageTabDuration, idleTimeValue: idleTimeValue, averageScoreFromLastEntry: averageScoreFromLastEntry, currentAppTabCount: tabMatricsObject.currentAppTabCount, last30SecondsAverageTabDurationString: last30SecondsAverageTabDurationString)
+}
+
+func addEntryInUsageTimingsExplanationCsv(){
+    if SettingsManagerObject.isAdvancedAnalyticsInFocusModeEnabled{
+        
+        var arrAllAppsTabsData = [[String:Any]]()
+        let arrAllUrlsRecodDuringFocusMode = tabMatricsObject.arrAllUrlsRecodDuringFocusMode
+        let arrAllAppsRecodDuringFocusMode = tabMatricsObject.arrAllAppsRecodDuringFocusMode
+        
+        arrAllAppsTabsData = arrAllAppsRecodDuringFocusMode
+        arrAllAppsTabsData += arrAllUrlsRecodDuringFocusMode
+        
+        arrAllAppsTabsData = arrAllAppsTabsData.sorted { dict1, dict2 in
+            guard let startTime1 = dict1[tabMatricsObject.keyFocusStartTime] as? Date,
+                  let startTime2 = dict2[tabMatricsObject.keyFocusStartTime] as? Date else {
+                return false
+            }
+            return startTime1 < startTime2
+        }
+        var arrAllCsvLinesToAdd = [String]()
+        for data in arrAllAppsTabsData{
+            if let startDate = data[tabMatricsObject.keyFocusStartTime] as? Date, let endDate = data[tabMatricsObject.keyFocusEndTime] as? Date, let duration = data[tabMatricsObject.keyFocusDuration] as? Int{
+                let startDateString = getStringFromDate(date: startDate, dateFormat: "HH:mm:ss")
+                let endDateString = getStringFromDate(date: endDate, dateFormat: "HH:mm:ss")
+                var appOrUrltitle = ""
+                if let title = data[tabMatricsObject.keyFocusAppTitle] as? String{
+                    appOrUrltitle = title
+                }else if let title = data[tabMatricsObject.keyFocusDomainTitle] as? String{
+                    appOrUrltitle = title
+                }
+                let csvString = "\(startDateString),\(endDateString),\(appOrUrltitle),\(duration)"
+                arrAllCsvLinesToAdd.append(csvString)
+            }
+            
+        }
+        addEntriesInUsageTimingsExplanationCsv(arrAllCsvLinesToAdd: arrAllCsvLinesToAdd)
+    }
+}
+
+
+func focusModeFinishedCapturePosthog(){
+    let focusDurationMinutes = focusModeActualDurationPerformed / 60
+    if isMeetingsFocusStartedAutomatically{
+        allApiObject.capturePosthog(event: "completed-meetings-focus-mode", metadata: [:])
+    }else if isFocusModeStartedFromPomodoroMode{
+        if isFocusModeStartedAutomatically{
+            allApiObject.capturePosthog(event: "completed-focus-session", metadata: ["focus-type":"automated_focus", "focusDurationMinutes":focusDurationMinutes])
+        }else{
+            allApiObject.capturePosthog(event: "completed-focus-session", metadata: ["focus-type":"pomodoro", "focusDurationMinutes":focusDurationMinutes])
+        }
+    }else{
+        allApiObject.capturePosthog(event: "completed-focus-session", metadata: ["focus-type":"manual_focus", "focusDurationMinutes":focusDurationMinutes])
+    }
+}
+
+func focusModeFinishedResetAllData(){
+    refreshFocusModeData()
+    arrAllowedTabTitlesInCuddlyModeCurrentFocus.removeAll()
+}
+
+func focusModeStarttedResetAllData(){
+    currentRunningAppNameForAi = ""
+    currentBrowserUrlForAi = ""
+    dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus.removeAll()
+    tabMatricsObject.last30SecondsDurationRecordedStartTime = Date()
+    arrConvinceAiUrlsInCurrentFocus.removeAll()
+    arrConvinceAiAppsInCurrentFocus.removeAll()
+    lastEntryInProductivityStatsTime = Date()
+    tabMatricsObject.resetAll()
+    lastFocusAlignmentShownScore = minFocusAlignmentScoreToShowDistractingPopUp
+    isMeetingsFocusStartedAutomatically = false
+    focusModeActualDurationPerformed = 0
+    unfocusedTime = 0
+    UserDefaults.standard.set(Date(), forKey: kUserdefaultsLastFocusModeDoneDate)
+    lastFocusModeTempInfo = nil
+    appdelegate!.isAutoMeetingsModeStarted = false
+    stageManagerObject.isStageManagerEnabled = stageManagerObject.checkIsStageManagerEnabled()
+}

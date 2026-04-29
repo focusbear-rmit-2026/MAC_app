@@ -29,7 +29,7 @@ class postBrowsersTabAuditVc: NSViewController {
         btnCancel.title = buttonCancelText
         btnSave.title = "Save"
         textFieldTabLimit.delegate = self
-        btnCancel.buttonColor = NSColor.white.cgColor
+        btnCancel.isSecondaryButton = true
         
         
         if let postBrowsersTabAuditVcInfo = configjson.value(forKey: "postBrowsersTabAuditVcInfo") as? NSDictionary{

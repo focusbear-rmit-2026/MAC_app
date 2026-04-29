@@ -302,11 +302,15 @@ extension NSTextField {//CourierNewPSMT // CourierNewPS-BoldMT
             font = getRegularFont(size: self.font?.pointSize ?? 24)
         }else if self.font?.fontName == ".SFNS-Bold"{
             font = getBoldFont(size: self.font?.pointSize ?? 24)
+        }else if self.font?.fontName == ".AppleSystemUIFontMedium"{
+            font = getMediumFont(size: self.font?.pointSize ?? 24)
+        }else if self.font?.fontName == ".AppleSystemUIFontDemi"{
+            font = getSemiBoldFont(size: self.font?.pointSize ?? 24)
         }else{
             font = getRegularFont(size: self.font?.pointSize ?? 24)
         }
-    }
-}
+    }//.AppleSystemUIFontMedium
+}//.AppleSystemUIFontDemi semi bold
 
 extension NSButton {
     open override func awakeFromNib() {
@@ -321,6 +325,12 @@ extension NSButton {
             font = getRegularFont(size: self.font?.pointSize ?? 24)
         }else if self.font?.fontName == ".SF NS Regular"{
             font = getRegularFont(size: self.font?.pointSize ?? 24)
+        }else if self.font?.fontName == ".SFNS-Bold"{
+            font = getBoldFont(size: self.font?.pointSize ?? 24)
+        }else if self.font?.fontName == ".AppleSystemUIFontMedium"{
+            font = getMediumFont(size: self.font?.pointSize ?? 24)
+        }else if self.font?.fontName == ".AppleSystemUIFontDemi"{
+            font = getSemiBoldFont(size: self.font?.pointSize ?? 24)
         }else{
             font = getRegularFont(size: self.font?.pointSize ?? 24)
         }
@@ -339,6 +349,12 @@ extension NSSegmentedControl {
             font = getRegularFont(size: self.font?.pointSize ?? 24)
         }else if self.font?.fontName == ".SF NS Regular"{
             font = getRegularFont(size: self.font?.pointSize ?? 24)
+        }else if self.font?.fontName == ".SFNS-Bold"{
+            font = getBoldFont(size: self.font?.pointSize ?? 24)
+        }else if self.font?.fontName == ".AppleSystemUIFontMedium"{
+            font = getMediumFont(size: self.font?.pointSize ?? 24)
+        }else if self.font?.fontName == ".AppleSystemUIFontDemi"{
+            font = getSemiBoldFont(size: self.font?.pointSize ?? 24)
         }else{
             font = getRegularFont(size: self.font?.pointSize ?? 24)
         }
@@ -358,6 +374,12 @@ extension NSTabView {
             font = getRegularFont(size: self.font.pointSize)
         }else if self.font.fontName == ".SF NS Regular"{
             font = getRegularFont(size: self.font.pointSize)
+        }else if self.font.fontName == ".SFNS-Bold"{
+            font = getBoldFont(size: self.font.pointSize)
+        }else if self.font.fontName == ".AppleSystemUIFontMedium"{
+            font = getMediumFont(size: self.font.pointSize)
+        }else if self.font.fontName == ".AppleSystemUIFontDemi"{
+            font = getSemiBoldFont(size: self.font.pointSize)
         }else{
             font = getRegularFont(size: self.font.pointSize)
         }
@@ -378,8 +400,14 @@ extension NSTextView {
                 font = getRegularFont(size: self.font!.pointSize)
             }else if self.font!.fontName == ".SF NS Regular"{
                 font = getRegularFont(size: self.font!.pointSize)
+            }else if self.font?.fontName == ".SFNS-Bold"{
+                font = getBoldFont(size: self.font?.pointSize ?? 24)
+            }else if self.font?.fontName == ".AppleSystemUIFontMedium"{
+                font = getMediumFont(size: self.font?.pointSize ?? 24)
+            }else if self.font?.fontName == ".AppleSystemUIFontDemi"{
+                font = getSemiBoldFont(size: self.font?.pointSize ?? 24)
             }else{
-                font = getRegularFont(size: self.font!.pointSize)
+                font = getRegularFont(size: self.font?.pointSize ?? 24)
             }
         }else{
             font = getRegularFont(size: 13)

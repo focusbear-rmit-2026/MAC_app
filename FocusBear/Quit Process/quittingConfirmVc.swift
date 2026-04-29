@@ -198,7 +198,7 @@ class quittingConfirmVc: NSViewController, NSTextViewDelegate {
         popUpBtnAppNotWorking.addItems(withTitles: [dropDown_0_Title, reasonFocusMode, reasonHabits, reasonBlocking])
         popUpBtnAppNotWorking.selectItem(at: selectReasonIndex)
         popUpBtnAppNotWorking.isHidden = true
-        btnCancelQuit.buttonColor = NSColor.white.cgColor
+        btnCancelQuit.isSecondaryButton = true
     }
     
     override func viewWillAppear() {

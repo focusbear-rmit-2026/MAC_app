@@ -115,13 +115,9 @@ class brainDumpVc: NSViewController, NSTextViewDelegate{
             }
             
             var shouldCheckBlockedUrls = false//now super distarcting sites will block only in focus modes and custom blocking schedules  24/9/25 version 2.27.417
-          //  if SettingsManagerObject.blockingSchedule == ._UNTIL_I_FINISH_WORK_{
-           //     shouldCheckBlockedUrls = true
-           // }else{
-                if isFocusModeRunning || isAnyAllowedFocusModeActivityRunning || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
-                    shouldCheckBlockedUrls = true
-                }
-            //}
+            if isFocusModeRunning || isAnyAllowedFocusModeActivityRunning || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
+                shouldCheckBlockedUrls = true
+            }
             if shouldCheckBlockedUrls{
                 let arrBlockedUrls = getBlockedUrlsToBlock()
                 for turl in arrBlockedUrls{

@@ -17,7 +17,7 @@ class alertLimitedUsageVc: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
-        btnContinue.buttonColor = NSColor.white.cgColor
+        btnContinue.isSecondaryButton = true
        
         
         var title = "You are running the Basic FREE Version of Focus Bear"

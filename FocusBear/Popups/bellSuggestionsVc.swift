@@ -28,7 +28,7 @@ class bellSuggestionsVc: NSViewController {
         
         
         btnCancel.title = buttonCancelText
-        btnCancel.buttonColor = NSColor.white.cgColor
+        btnCancel.isSecondaryButton = true
     }
     
     override func viewWillAppear() {

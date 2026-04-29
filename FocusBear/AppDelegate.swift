@@ -15,7 +15,7 @@ import TrueTime
 import CoreMedia
 
 @NSApplicationMain
-class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDelegate, SPUUpdaterDelegate {//SUUpdaterDelegate
+class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDelegate, SPUUpdaterDelegate {
     
     let sharedDefaults = UserDefaults(suiteName: "TCUD568B3U.group.com.focusbear.fbmac")
     @IBOutlet weak var menuItemUninstall: NSMenuItem!
@@ -23,7 +23,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     let statusItem = NSStatusBar.system.statusItem(withLength:NSStatusItem.variableLength)
     var statusbutton:NSStatusBarButton?
     
-    //    var updater: SUUpdater?
     var updaterController: SPUStandardUpdaterController?
     
     let client = TrueTimeClient.sharedInstance
@@ -67,10 +66,18 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     var timerCheckReactivateTime:Timer?
     var timerCheckClearPasswordTime:Timer?
     var timerBackgroundThread:Timer?
-    
     var timerExtraNagsAfterInactivity:Timer?
     
-    //    var timerExtraNagsAfterTrialExpired:Timer?
+    var currentUserURL: URL?
+    
+    // auth
+    var credential:Credentials?
+    var user: AuthUser?
+    let credentialsManager = CredentialsManager(authentication: Auth0.authentication())
+    
+    // Renew credentials
+    var renewCredentialsLastDate:Date?
+    var renewCredentialsProcessing = false
     
     func resetAllData(){
         addLog(text: "resetAllData")
@@ -84,59 +91,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             alert.beginSheetModal(for: window, completionHandler: { (modalResponse) in
                 if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
                     addLog(text: "reset All Data Done")
-                    let domain = Bundle.main.bundleIdentifier!
-                    UserDefaults.standard.removePersistentDomain(forName: domain)
-                    UserDefaults.standard.synchronize()
-                    
-                    self.user = nil
-                    let _ = self.credentialsManager.clear()
-                    self.credential = nil
-                    if quantityCsvURL != nil{
-                        do{
-                            try FileManager.default.removeItem(at: quantityCsvURL!)
-                        }catch{
-                            
-                        }
-                    }
-                    if offlineActivitiesCsvURL != nil{
-                        do{
-                            try FileManager.default.removeItem(at: offlineActivitiesCsvURL!)
-                        }catch{
-                            
-                        }
-                    }
-                    if focusAlignmentScoreCsvURL != nil{
-                        do{
-                            try FileManager.default.removeItem(at: focusAlignmentScoreCsvURL!)
-                        }catch{
-                            
-                        }
-                    }
-                    
-                    if focusAIDecisionsCsvURL != nil{
-                        do{
-                            try FileManager.default.removeItem(at: focusAIDecisionsCsvURL!)
-                        }catch{
-                            
-                        }
-                    }
-                    
-                    if focusProductivityStatsCsvURL != nil{
-                        do{
-                            try FileManager.default.removeItem(at: focusProductivityStatsCsvURL!)
-                        }catch{
-                            
-                        }
-                    }
-                    
-                    if arrNonTimerBasedHabitsDurationsPlistFileUrl != nil{
-                        do{
-                            try FileManager.default.removeItem(at: arrNonTimerBasedHabitsDurationsPlistFileUrl!)
-                        }catch{
-                            
-                        }
-                    }
-                    self.quitAndRestartApp()
+                    self.deleteAllSettings()
                 }
             })
         }else{
@@ -144,73 +99,34 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             let result = alert.runModal()
             if result == .alertFirstButtonReturn{
                 addLog(text: "reset All Data Done")
-                let domain = Bundle.main.bundleIdentifier!
-                UserDefaults.standard.removePersistentDomain(forName: domain)
-                UserDefaults.standard.synchronize()
-                
-                
-                self.user = nil
-                let _ = self.credentialsManager.clear()
-                self.credential = nil
-                if quantityCsvURL != nil{
-                    do{
-                        try FileManager.default.removeItem(at: quantityCsvURL!)
-                    }catch{
-                        
-                    }
-                }
-                if offlineActivitiesCsvURL != nil{
-                    do{
-                        try FileManager.default.removeItem(at: offlineActivitiesCsvURL!)
-                    }catch{
-                        
-                    }
-                }
-                if focusAlignmentScoreCsvURL != nil{
-                    do{
-                        try FileManager.default.removeItem(at: focusAlignmentScoreCsvURL!)
-                    }catch{
-                        
-                    }
-                }
-                
-                
-                if focusAIDecisionsCsvURL != nil{
-                    do{
-                        try FileManager.default.removeItem(at: focusAIDecisionsCsvURL!)
-                    }catch{
-                        
-                    }
-                }
-                
-                if focusProductivityStatsCsvURL != nil{
-                    do{
-                        try FileManager.default.removeItem(at: focusProductivityStatsCsvURL!)
-                    }catch{
-                        
-                    }
-                }
-                
-                if arrNonTimerBasedHabitsDurationsPlistFileUrl != nil{
-                    do{
-                        try FileManager.default.removeItem(at: arrNonTimerBasedHabitsDurationsPlistFileUrl!)
-                    }catch{
-                        
-                    }
-                }
-                self.quitAndRestartApp()
+                deleteAllSettings()
             }
         }
         
     }
     
-    var currentUserURL: URL?
-    
-    // auth
-    var credential:Credentials?
-    var user: AuthUser?
-    let credentialsManager = CredentialsManager(authentication: Auth0.authentication())
-    
+    func deleteAllSettings(){
+        let domain = Bundle.main.bundleIdentifier!
+        UserDefaults.standard.removePersistentDomain(forName: domain)
+        UserDefaults.standard.synchronize()
+        
+        
+        self.user = nil
+        let _ = self.credentialsManager.clear()
+        self.credential = nil
+       
+        deleteAllCsvFiles()
+        
+        if arrNonTimerBasedHabitsDurationsPlistFileUrl != nil{
+            do{
+                try FileManager.default.removeItem(at: arrNonTimerBasedHabitsDurationsPlistFileUrl!)
+            }catch{
+                
+            }
+        }
+        self.quitAndRestartApp()
+    }
+ 
     func logout(isAutomatic:Bool) {
         addLog(text: "logout")
         
@@ -270,7 +186,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             options.enableAutoSessionTracking = false
             options.sendDefaultPii = true // Enables sending personally identifiable information
         }
-        //SentrySDK.addBreadcrumb(Breadcrumb(level: Se, category: <#T##String#>))
         
         //doing this because if app is started after quit by user then  helper app will know that main app is restarted
         //        getTransparentWindowObject().showWindow(nil)
@@ -325,10 +240,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         
         menuItemUninstall.isHidden = true
         client.start()// for getting true time
-        
-        //        updater = SUUpdater(for: Bundle.main)
-        //        updater?.automaticallyChecksForUpdates = true
-        
+
         updaterController = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: self, userDriverDelegate: nil)
         updaterController?.updater.automaticallyChecksForUpdates = true
         
@@ -350,6 +262,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         focusProductivityStatsCsvURL = applicationSupportURL!.appendingPathComponent("focusProductivityStats.csv")
         offlineActivitiesCsvURL = applicationSupportURL!.appendingPathComponent("offlineActivities.csv")
         trackFilesFolderURL = applicationSupportURL!.appendingPathComponent("Tracks")
+        usageTimingsExplanationCsvUrl = applicationSupportURL!.appendingPathComponent("usage_timings.csv")
         
         settingForScreeenTimeFileURL = applicationSupportURL!.appendingPathComponent("fbtt.plist")
         CreateDirectoryIfNotExist(path: trackFilesFolderURL!.path)
@@ -440,10 +353,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             boxForStatusBar.cornerRadius = statusBarBoxHeightWidth/2
             boxForStatusBar.fillColor = NSColor.clear
             statusbutton?.addSubview(boxForStatusBar)
-            //            statusbutton?.addConstraints(subView: boxForStatusBar)
-            
-            
-            
+
             boxForStatusBar.translatesAutoresizingMaskIntoConstraints = false
             let widthConstraint = NSLayoutConstraint(item: boxForStatusBar!, attribute: .width, relatedBy: .equal, toItem: nil, attribute: .width, multiplier: 1, constant: statusBarBoxHeightWidth)
             let heightConstraint = NSLayoutConstraint(item: boxForStatusBar!, attribute: .height, relatedBy: .equal, toItem: nil, attribute: .height, multiplier: 1, constant: statusBarBoxHeightWidth)
@@ -481,24 +391,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             
         }
         
-        DispatchQueue.global().async {//ye isiliye kiya qki first time mai list mai time lgta hai to starting mai hi kr diya
-            avmonitor.isMicOn()//.start()
-            avmonitor.isACameraOn()//.checkCamera()
+        DispatchQueue.global().async {
+            avmonitor.isMicOn()
+            avmonitor.isACameraOn()// Called early because it takes time on first use, so initializing it at the start
         }
         
         
-        
-        
-        // setting Toolbox
-        
-        //        if UserDefaults.standard.object(forKey: kUserdefaultsDontShowToolBoxAutomatically) == nil{
-        //            UserDefaults.standard.set(false, forKey: kUserdefaultsDontShowToolBoxAutomatically)
-        //        }
-        //
-        //        if UserDefaults.standard.object(forKey: kUserdefaultsDontShowToolBoxAutomaticallyForActivity) == nil{
-        //            UserDefaults.standard.set(false, forKey: kUserdefaultsDontShowToolBoxAutomaticallyForActivity)
-        //        }
-        //
         //  ---------------------------SETTINGS Language--------------------------
         
         var languageCode = "en"
@@ -612,6 +510,17 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         showWelcomeWindow()
                     }else{
                         closeSplashWindow()
+                        
+                        if let lastUserEmail = UserDefaults.standard.object(forKey: kUserDefaultsLastUserEmailBeforeLogout) as? String{
+                            addLog(text:"showCustomLoginWindow:- because last user email found")
+                            showCustomLoginWindow(isLogin: true)
+                            DispatchQueue.global().async {
+                                DispatchQueue.main.async {
+                                    customLoginVcObj?.textFieldEmail.stringValue = lastUserEmail
+                                }
+                            }
+                            return;
+                        }
                         showAskLoginWindow()
                     }
                     return;
@@ -646,42 +555,24 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 //SUUpdateAlert for progress alert
                 if identifier.hasPrefix("SUUpdateAlert") || identifier.hasPrefix("SUStatus"){   // catches SUUpdateAlert, SUStatus, etc.
                     win.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.numberOfWindowLevelKeys)))
-                    //                    win.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
                     print("Adjusted Sparkle window:", identifier)
                 }
             }
         }
     }
     
-    func showEnableAIBlockingVc(){
+    func completeRemainingOnboarding(){
+        addLog(text: "complete Remaining Onboarding")
         if !getHabitsVcObject().isViewLoaded{
             getHabitsVcObject().loadView()
         }
-        currentState = ._ASK_APP_WORK_
+        currentState = ._ONBOARDING_
         mainWindowControllerObj?.showWindow(self)
         mainViewControllerObj?.checkIsFullScreenNeeded()
-        mainViewControllerObj!.showEnableAIBlockingVc()
-        leftMenuVcObj?.disbaleAllTabForOnboarding()
+        mainViewControllerObj!.showOnboardingVc()
+        leftMenuVcObj?.disableAllTabForOnboarding()
         mainViewControllerObj?.collapseLeftPanel()
-    }
-    
-    func showOnbardingHabit(){
-        addLog(text: "func:- showOnbardingHabit")
-        
-        if mainWindowControllerObj != nil{
-            if !mainWindowControllerObj!.window!.isVisible{
-                mainWindowControllerObj?.showWindow(self)
-            }
-        }else{
-            mainWindowControllerObj?.showWindow(self)
-        }
-        mainViewControllerObj!.showHabitsView()
-        
-        getHabitsVcObject().showFirstTimeVc()
-        isFirstRun = true
-        
-        UserDefaults.standard.set(Date(), forKey: kUserdefaultsLastHabitShowDate)
-        //                        if app is installed on the same day than user will not get morning habit on the same day until he logout and login with diffrent or same account so we write morning routine done date in userdefaulsts here but will remove when logout    and with the difrent account user will get his lastmorningroutine show date from api and write date in userdefaults
+        getOnboardingVcObject().navigate(to: ._HOLD_ON_)
     }
     
     func setCredentialAndUserInfo(credentialsInfo: CredentialsManagerResult<Credentials>, isAppLaunching:Bool){
@@ -793,9 +684,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         }
     }
     
-    
-    var renewCredentialsLastDate:Date?
-    var renewCredentialsProcessing = false
     func renewCredentialsIfNeeded(newCredential:Credentials){
         if let renewCredentialsLastDate = renewCredentialsLastDate{
             let diffMinuteS = Calendar.current.dateComponents([.minute], from: renewCredentialsLastDate, to: Date()).minute ?? 0
@@ -889,7 +777,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                         }
                                     }
                                 }
-        
+                                
                                 if let settings = json?.value(forKey: "MacOS") as? NSDictionary {//
                                     print(settings)
                                     if settings.allKeys.count == 0{
@@ -913,9 +801,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                         self.needToCheckEmailVerification = false// if onboarding then dont show till menu tour is over
                                         self.getUserSubscriptionInfo()
                                         self.statusbutton?.action = nil
-//                                        showAskProcrastinatingWindow()
                                         appdelegate?.menuShowSimplePomodoroModeView()
-//                                        showConfirmBlockingScheduleWindow()
                                         UserDefaults.standard.set(true, forKey: kUserdefaultsVideoShown)
                                     }else{
                                         allApiObject.postTermsService(consentType: "terms_of_service")
@@ -924,16 +810,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                         allApiObject.autoEenrolledCourse()
                                         
                                         
-                                        kUserDefaultsCustomGoals = kUserDefaultsCustomGoalsKey + (self.user?.userId ?? "")
                                         kUserDefaultsSelectedOccupationForPosthog = kUserDefaultsSelectedOccupationForPosthogKey + (self.user?.userId ?? "")
-                                        kUserDefaultsCareFactorHabitsForPosthog = kUserDefaultsCareFactorHabitsForPosthogKey + (self.user?.userId ?? "")
-                                        
-                                        kUserDefaultsUserJobDetails = kUserDefaultsUserJobDetails + (self.user?.userId ?? "")
-                                        kUserDefaultsUserDistractions = kUserDefaultsUserDistractions + (self.user?.userId ?? "")
+
                                         
                                         kUserDefaultsBlockingScheduleAddedFirstTime = kUserDefaultsBlockingScheduleAddedFirstTime + (self.user?.userId ?? "")
                                         closeSplashWindow()
-                                        self.showEnableAIBlockingVc()
+                                        self.completeRemainingOnboarding()
                                     }
                                 }else{
                                     UserDefaults.standard.set(true, forKey: kUserdefaultsVideoShown)
@@ -973,6 +855,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     func getUserSubscriptionInfo(){
         if UserDefaults.standard.object(forKey: kUserDefaultsFirstAppFullLoadDate) == nil{
             UserDefaults.standard.set(Date(), forKey: kUserDefaultsFirstAppFullLoadDate)
+        }
+        //if user clicked i already have a account from onboarding
+        if currentState == ._ONBOARDING_{
+            leftMenuVcObj?.enableAllItems()
+            mainViewControllerObj?.expandLeftPanel()
+            mainViewControllerObj?.removeSubViews()
+            mainWindowControllerObj?.window?.close()
+            currentState = ._NOTHING_
         }
         allApiObject.getUserSubscriptionInfo(completionHandler: {dic,statusCode  in
             UserDefaults.standard.set(Date(), forKey: kUserdefaultsUserSubscriptionCheckDate)
@@ -1085,17 +975,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 kUserdefaultsBeginMorningHabitClickedDate = kUserdefaultsBeginMorningHabitClickedDate + (self.user?.userId ?? "")
                 kUserdefaultsBeginEveningHabitClickedDate = kUserdefaultsBeginEveningHabitClickedDate + (self.user?.userId ?? "")
                 
-                //                kUserDefaultsCustomGoals = kUserDefaultsCustomGoals + (self.user?.userId ?? "")
-                //                kUserDefaultsSelectedOccupationForPosthog = kUserDefaultsSelectedOccupationForPosthog + (self.user?.userId ?? "")
-                //                kUserDefaultsCareFactorHabitsForPosthog = kUserDefaultsCareFactorHabitsForPosthog + (self.user?.userId ?? "")
                 
                 // having default key because after create acount we change userdefaults key and here we again change default key so get rig of this problem we are having now a default userdefault key
                 
-                kUserDefaultsCustomGoals = kUserDefaultsCustomGoalsKey + (self.user?.userId ?? "")
                 kUserDefaultsSelectedOccupationForPosthog = kUserDefaultsSelectedOccupationForPosthogKey + (self.user?.userId ?? "")
-                kUserDefaultsCareFactorHabitsForPosthog = kUserDefaultsCareFactorHabitsForPosthogKey + (self.user?.userId ?? "")
-                //
-                
+
                 
                 kUserDefaultsBlockPageTourShowed = kUserDefaultsBlockPageTourShowed + (self.user?.userId ?? "")
                 kUserDefaultsHowHeardAboutApp = kUserDefaultsHowHeardAboutApp + (self.user?.userId ?? "")
@@ -1108,6 +992,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 
                 kUserDefaultsLastRoutinePostponeEndDate = kUserDefaultsLastRoutinePostponeEndDate + (self.user?.userId ?? "")
                 kUserDefaultsLastRoutinePostponeState = kUserDefaultsLastRoutinePostponeState + (self.user?.userId ?? "")
+                
+                
+                kUserdefaultsIsGuestAccount = kUserdefaultsIsGuestAccount  + (self.user?.userId ?? "")
                 
                 connectGlobalAndMacIDWithDistinctUserID()
                 
@@ -1156,13 +1043,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                             }
                         }
                         UserDefaults.standard.set(arrAllTracks, forKey: kUserdefaultsAllTracks)
-                        //                        DispatchQueue.main.async {
-                        //                            if allTracksVcObj != nil && allTracksWindowControllerObj != nil{
-                        //                                if allTracksWindowControllerObj?.window?.isVisible ?? false{
-                        //                                    allTracksVcObj?.tblView.reloadData()
-                        //                                }
-                        //                            }
-                        //                        }
                     }
                     checkAllTracksDownloadState()
                 })
@@ -1179,6 +1059,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     offlineActivitiesCsvURL = self.currentUserURL!.appendingPathComponent("offlineActivities.csv")
                     newLocalSettingsFileURL = self.currentUserURL!.appendingPathComponent("localSettings.plist")
                     browsersTabAuditCsvURL = self.currentUserURL!.appendingPathComponent("browsersTabAudit.csv")
+                    usageTimingsExplanationCsvUrl = self.currentUserURL!.appendingPathComponent("usage_timings.csv")
                 }
                 nonTimerBasedHabitsObject.readNonTimerBasedHabitsDurations()
                 if let id  = UserDefaults.standard.object(forKey: kUserdefaultsDeviceId) as? String{
@@ -1231,115 +1112,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     func loadAppAndSettings(){
         addLog(text: "load App And Settings")
         
-        //  ----------------------START APP AT LOGIN-----------------------
-        let fileManager = FileManager.default
-        
-        if !fileManager.fileExists(atPath: quantityCsvURL.path){
-            let csvString = "Log type,Timestamp,Activity,Duration in seconds,Quantity Question,Quantity Logged,Start Time,Work achieved,Distractions encountered,Abort reason,Feedback\n"//start time will only be use in focus block start k time per
-            
-            do {
-                try csvString.write(to: quantityCsvURL, atomically: true, encoding: .utf8)
-            } catch {
-                print("error creating file")
-            }
-            UserDefaults.standard.set(true, forKey: kUserdefaultsTagsColumnAddedInStatsCsv)
-        }else if UserDefaults.standard.object(forKey: kUserdefaultsTagsColumnAddedInStatsCsv) == nil{
-            
-            addTagsEntryInStatsCsv()
-            UserDefaults.standard.set(true, forKey: kUserdefaultsTagsColumnAddedInStatsCsv)
-        }
-        
-        
-        if !fileManager.fileExists(atPath: focusAlignmentScoreCsvURL.path){
-            let csvString = "Timestamp,Url,TabTitle,FocusMode,Intention,AiReason,Probability,TotalScore\n"
-            
-            do {
-                try csvString.write(to: focusAlignmentScoreCsvURL, atomically: true, encoding: .utf8)
-            } catch {
-                print("error creating file")
-            }
-        }
-        if !fileManager.fileExists(atPath: focusAIDecisionsCsvURL.path){
-            let csvString = "Timestamp,Url,Domain,TabTitle,AIRelevanceScore,AdditionalUserJustification,currentTaskName,focusIntention,AIReason\n"
-            
-            do {
-                try csvString.write(to: focusAIDecisionsCsvURL, atomically: true, encoding: .utf8)
-            } catch {
-                print("error creating file")
-            }
-        }
-        
-        if !fileManager.fileExists(atPath: focusProductivityStatsCsvURL.path){
-            let csvString = "Timestamp,FocusAlignmentScore,AverageTabCount,AverageTabDuration,IdleTimeSeconds,CurrentFocusAlignmentScore,CurrentTabCount,AverageTabDurationInLast30Seconds\n"
-            
-            do {
-                try csvString.write(to: focusProductivityStatsCsvURL, atomically: true, encoding: .utf8)
-            } catch {
-                print("error creating file")
-            }
-        }else{
-            do {
-                let csvContent = try String(contentsOf: focusProductivityStatsCsvURL, encoding: .utf8)
-                var lines = csvContent.components(separatedBy: .newlines)
-                
-                // Check if header exists
-                if let headerLine = lines.first {
-                    var headers = headerLine.components(separatedBy: ",")
-                    var columnsAdded = 0
-                    
-                    // Check and append missing columns
-                    if !headers.contains("CurrentFocusAlignmentScore") {
-                        headers.append("CurrentFocusAlignmentScore")
-                        columnsAdded += 1
-                    }
-                    if !headers.contains("CurrentTabCount") {
-                        headers.append("CurrentTabCount")
-                        columnsAdded += 1
-                    }
-                    
-                    if !headers.contains("AverageTabDurationInLast30Seconds") {
-                        headers.append("AverageTabDurationInLast30Seconds")
-                        columnsAdded += 1
-                    }
-                    if columnsAdded > 0 {
-                        print("Adding missing columns to header")
-                        
-                        // Update header line
-                        lines[0] = headers.joined(separator: ",")
-                        
-                        // Update each row by adding empty fields for new columns
-                        for i in 1..<lines.count where !lines[i].isEmpty {
-                            lines[i] += String(repeating: ",", count: columnsAdded)
-                        }
-                        
-                        // Write updated content
-                        let updatedCSV = lines.joined(separator: "\n")
-                        try updatedCSV.write(to: focusProductivityStatsCsvURL, atomically: true, encoding: .utf8)
-                    } else {
-                        print("Columns already present")
-                    }
-                }
-            } catch {
-                print("Error reading or updating CSV file: \(error)")
-            }
-        }
-        
-        if !fileManager.fileExists(atPath: offlineActivitiesCsvURL.path){
-            let csvString = "activity_id,duration_logged,device_id,activity_sequence_id,start_time,finish_time,skipped_did_complete,choice_id,quantity_logged,skipped_did_not_complete,note_logged\n"//start time will only be use in focus block start k time per
-            
-            do {
-                try csvString.write(to: offlineActivitiesCsvURL, atomically: true, encoding: .utf8)
-            } catch {
-                print("error creating file")
-            }
-            UserDefaults.standard.set(true, forKey: kUserdefaultsNotesAddedInOfflineCsv)
-        }else if UserDefaults.standard.object(forKey: kUserdefaultsNotesAddedInOfflineCsv) == nil{
-            
-            addNotesEntryInOfflineCsv()
-            UserDefaults.standard.set(true, forKey: kUserdefaultsNotesAddedInOfflineCsv)
-        }
-        
-        //  ------------------------------------------------------------------------------------
+        checkAllCsvFiles()
         
         SettingsManagerObject.getUserLocalDeviceSettings(completionHandler: {
             
@@ -1368,13 +1141,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 }else{
                     stopMainAppForceQuitMonitoring()
                 }
-                
-                
-                //                if SettingsManagerObject.shouldReloadAfterForceQuitEnabled{
-                //                    createLaunchAgent()
-                //                }else{
-                //                    deleteLaunchAgent()
-                //                }
+
                 
                 if UserDefaults.standard.object(forKey: kUserdefaultsIsAnyDistractionSetByUser) == nil{
                     if SettingsManagerObject.arrBlockedApps.count != 0 || SettingsManagerObject.arrBlockedUrls.count != 0{
@@ -1445,13 +1212,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 allApiObject.getuserDetailsInfo(completionHandler: {dic in
                     if dic != nil{
                         isEmailVerified = dic?.value(forKey: "email_verified") as? Bool ?? false
+                        
+                        if UserDefaults.standard.object(forKey: kUserdefaultsIsGuestAccount) as? Bool == true{
+                            addLog(text: "No need to verify email. Reason: Guest account.")
+                            isEmailVerified = true
+                        }
+                        
                         addLog(text:"isEmailVerified :- \(isEmailVerified)")
-//                        if !isEmailVerified && self.needToCheckEmailVerification{
-//                            DispatchQueue.main.async{
-//                                closeSplashWindow()
-//                                showUnverifiedEmailWindow()
-//                            }
-//                        }
                         self.needToCheckEmailVerification = false
                         currentUserEmail = dic?.value(forKey: "email") as? String ?? ""
                         currentUserName = dic?.value(forKey: "name") as? String ?? ""
@@ -1467,6 +1234,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                 focusDic.removeValue(forKey: "updated_at")
                                 focusDic.removeValue(forKey: "user_id")
                                 focusDic.removeValue(forKey: "deleted_at")
+                                focusDic.removeValue(forKey: "doNotSuggestAnyMore")
                                 var newDic = [String:Any]()
                                 for key in focusDic.keys{
                                     if key == "metadata"{
@@ -1487,6 +1255,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                         newDic[key] = focusDic[key]
                                     }
                                 }
+                                newDic.removeValue(forKey: "doNotSuggestAnyMore")
                                 newArr.append(newDic)
                                 
                             }
@@ -1507,12 +1276,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         arrFocusType = arr
                         
                         for i in 0..<arrFocusType.count{
+                            arrFocusType[i].removeValue(forKey: "doNotSuggestAnyMore")
                             arrFocusType[i]["isOn"] = false
                             arrFocusType[i]["isPaused"] = false
                             if let isDefault = arrFocusType[i]["isDefault"] as? Bool{//this key will only be awailable in default focus type
                                 if  isDefault{
                                     isDefaultContain = isDefault
-                                    defaultContainLocation = i//break nahi krna yha loop ko (qki isOn false bi ho rha h har index mai)
+                                    defaultContainLocation = i
                                 }
                             }
                             if let isMeetings = arrFocusType[i]["isMeetings"] as? Bool{//this key will only be awailable in default focus type
@@ -1543,12 +1313,19 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     if !isDefaultContain{
                         let id = getUuid()
                         let dic:[String:Any] = ["id":id, "name":"Block super distracting sites/apps", "color": getColorString(color: NSColor(red: 163/255, green: 255/255, blue: 161/255, alpha: 1)),"allowed_apps": [], "allowed_urls": [], "isOn": false, "isAllowedAllApps":false, "isDefault":true, "isAllowedListApproach":false, "blockUrlsArray": [], "tags":[], "focusAlignmentScoreThreshold": defaultFocusAlignmentScoreToShowDistractingPopUp]//#453//tags
-                        //, "isBlockedAllUrls":false , "isAllowedAllUrls":true
+                        
                         arrFocusType.insert(dic, at: 0)
                         UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
-                        allApiObject.addFocusMode(focusType: dic)
+                        allApiObject.addFocusMode(focusType: dic, completionHandler: {success in
+                            if success{
+                                // create first pending blocking schedule for new onboarding
+                                customBlockingScheduleManagerObj.createFirstBlockingSchedule(focusModeId: id)
+                            }
+                        })
+                        
+                        
                     }
-                    else{//defalt focus mode will always be last in list so rearranging it
+                    else{//defalt focus mode will always be first in list so rearranging it
                         if defaultContainLocation == 0{
                             if arrFocusType[defaultContainLocation]["isAllowedAllApps"] as? Bool == true{
                                 arrFocusType[defaultContainLocation]["isAllowedAllApps"] = false
@@ -1588,6 +1365,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         }
                         
                     }// if any new default focus mode created then count should be changed in kUserdefaultsFocusTipsShown
+                    
                     if !isMeetingsContain{
                         let id = getUuid()
                         let dic:[String:Any] = ["id":id, "name":"Meetings", "color": getColorString(color: NSColor(red: 163/255, green: 255/255, blue: 161/255, alpha: 1)), "allowed_apps": ["/Applications/Microsoft Teams.app", "/Applications/Microsoft Teams classic.app", "/Applications/zoom.us.app", "/Applications/Jitsi.app", "/Applications/Safari.app", "/Applications/Google Chrome.app", "/Applications/Firefox.app", "/Applications/Slack.app", "/Applications/Sidekick.app", "/Applications/Brave Browser.app"], "allowed_urls": ["http://meet.google.com", "http://meet.zoho.com", "focusmate.com", "shimmer.care", "webex.com", "gotomeeting.com", "goto.com/meeting",  "skype.com", "adobeconnect", "join.me", "joinme.com", "slack.com", "whereby.com", "chime.aws", "aws.amazon.com/chime/", "dialpad.com"], "isOn": false, "isAllowedAllApps":false, "isMeetings":true, "isAllowedListApproach":true, "blockUrlsArray": [], "tags":[], "focusAlignmentScoreThreshold": defaultFocusAlignmentScoreToShowDistractingPopUp]//#453 , "isBlockedAllUrls":false , "isAllowedAllUrls":false
@@ -1598,7 +1376,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                             arrFocusType.insert(dic, at: arrFocusType.count - 1)
                         }
                         UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
-                        allApiObject.addFocusMode(focusType: dic)
+                        allApiObject.addFocusMode(focusType: dic, completionHandler: {success in
+                        })
                     }
                     if !islockedFocusContain{
                         let id = getUuid()
@@ -1610,7 +1389,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                             arrFocusType.append(dic)
                         }
                         UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
-                        allApiObject.addFocusMode(focusType: dic)
+                        allApiObject.addFocusMode(focusType: dic, completionHandler: {success in
+                        })
                         
                     }
                     
@@ -1624,7 +1404,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                             arrFocusType.insert(dic, at: arrFocusType.count - 1)
                         }
                         UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
-                        allApiObject.addFocusMode(focusType: dic)
+                        allApiObject.addFocusMode(focusType: dic, completionHandler: {success in
+                        })
                     }
                     
                     
@@ -1638,9 +1419,30 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                             arrFocusType.insert(dic, at: arrFocusType.count - 1)
                         }
                         UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
-                        allApiObject.addFocusMode(focusType: dic)
+                        allApiObject.addFocusMode(focusType: dic, completionHandler: {success in
+                        })
                     }
+                
                     
+                    // occupation relevant focus mode
+                    if let occupationSpecificRelevantData = occupationSpecificRelevantSitesForFocusMode{
+                        let userRelevantSites = occupationSpecificRelevantData["user_relevant_sites"] as? [String] ?? []
+                        let userDistractions = occupationSpecificRelevantData["user_typical_distractions"] as? [String] ?? []
+                        
+                        let id = getUuid()
+                        let dic:[String:Any] = ["id":id, "name":"Work", "color": getColorString(color: NSColor(red: 163/255, green: 255/255, blue: 161/255, alpha: 1)), "allowed_apps": [], "allowed_urls": userRelevantSites, "isOn": false, "isAllowedAllApps":true, "isWorkFocus":true, "isAllowedListApproach":true, "blockUrlsArray": userDistractions, "tags":[], "focusAlignmentScoreThreshold": defaultFocusAlignmentScoreToShowDistractingPopUp, "autoSuggestFocusModeOnAllowedURL": true]
+                        
+                        
+                        if arrFocusType.count == 0{
+                            arrFocusType.append(dic)
+                        }else{
+                            arrFocusType.insert(dic, at: arrFocusType.count - 1)
+                        }
+                        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+                        allApiObject.addFocusMode(focusType: dic, completionHandler: {success in
+                        })
+                        
+                    }
                     
                     for i in 0..<arrFocusType.count{
                         if arrFocusType[i]["isAllowedListApproach"] == nil{
@@ -1672,31 +1474,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                             arrFocusTypeForPomodoro.append(arrFocusType[i])
                         }
                     }
-                    if UserDefaults.standard.object(forKey: kUserdefaultsFocusTipsShown) == nil{
-                        if arrFocusType.count > 5{
-                            UserDefaults.standard.set(true, forKey: kUserdefaultsFocusTipsShown)
-                        }else{
-                            allApiObject.getFocusTemplateInfo(completionHandler: { json in
-                                if json != nil{
-                                    
-                                }
-                            }
-                            )
-                        }
-                    }
+                    
+                    UserDefaults.standard.set(true, forKey: kUserdefaultsFocusTipsShown)// The option to setup Focus Mode is no longer required for the user.
+                    
                     DispatchQueue.main.async {
                         self.checkActivationState()
                     }
                 })
                 
-                //        self.hotKeyPauseFocusMode = HotKey(keyCombo: KeyCombo(stkey: "p", modifiers: flags))
-                //
-                //        self.hotKeyResumeFocusMode = HotKey(keyCombo: KeyCombo(stkey: "r", modifiers: flags))
                 
-                // self.updater?.delegate = self
-                // self.updater?.checkForUpdatesInBackground()
-                
-                //                updaterController?.updater.
                 self.updaterController?.updater.checkForUpdatesInBackground()
                 
                 NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(self.sleepEvent(_:)), name: NSWorkspace.screensDidWakeNotification, object: nil)
@@ -1763,16 +1549,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 habitBlockTimerHelper.stopUrlTimer()
                 self.timerAllowAppForActivity?.invalidate()
                 currentActivityPlaying = nil
-                //                if toolBoxWcObj != nil{
-                //                    if toolBoxWcObj!.window!.isVisible{
-                //                        toolBoxWcObj?.window?.close()
-                //                    }
-                //                }
-                //                if smallCountDownWcObj != nil{
-                //                    if smallCountDownWcObj!.window?.isVisible ?? false{
-                //                        getsmallCountDownVcObject().closeTimerBox()
-                //                    }
-                //                }
                 closeSmallCountDownTimerBoxIfVisible()
                 
                 enableSystemSleep()// dont change current state
@@ -2059,7 +1835,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                             timerForFocusModeEndNotification = Timer.scheduledTimer(timeInterval: TimeInterval(focusModeSecondsToPerform - warningShowSecondsBeforeFocusModeEndTime), target: self, selector: #selector(self.showFocusModeFinishNotification), userInfo: nil, repeats: false)
                             RunLoop.main.add((timerForFocusModeEndNotification!), forMode: RunLoop.Mode.common)
                         }
-                    
+                        
                         var currentFocusModeIndex = -1
                         for i in 0..<arrFocusType.count{
                             if arrFocusType[i]["id"] as? String == currentRunningFocusType["id"] as? String ?? ""{
@@ -2107,12 +1883,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         let newRemainingSeconds = remainingFocusModeSeconds - reduceSeconds
                         
                         // If reduced duration finishes focus mode
-                           if newRemainingSeconds <= 0 {
-                               focusModeSecondsToPerform = 0
-                               endFocusModeTime = Date()
-                               focusModeTimerFinished()
-                               return
-                           }
+                        if newRemainingSeconds <= 0 {
+                            focusModeSecondsToPerform = 0
+                            endFocusModeTime = Date()
+                            focusModeTimerFinished()
+                            return
+                        }
                         
                         startFocusModeTimeForPauseAndResume = Date()
                         focusModeSecondsToPerform = newRemainingSeconds
@@ -2124,7 +1900,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                             timerForFocusModeEndNotification = Timer.scheduledTimer(timeInterval: TimeInterval(focusModeSecondsToPerform - warningShowSecondsBeforeFocusModeEndTime), target: self, selector: #selector(self.showFocusModeFinishNotification), userInfo: nil, repeats: false)
                             RunLoop.main.add((timerForFocusModeEndNotification!), forMode: RunLoop.Mode.common)
                         }
-                    
+                        
                         var currentFocusModeIndex = -1
                         for i in 0..<arrFocusType.count{
                             if arrFocusType[i]["id"] as? String == currentRunningFocusType["id"] as? String ?? ""{
@@ -2135,11 +1911,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         if currentFocusModeIndex == -1{
                             currentFocusModeIndex = 0
                         }
-                        arrFocusType[currentFocusModeIndex]["lastScheduledEndDate"] = getStringFromDate(date: endFocusModeTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")//
-                        
-//                        allApiObject.extendFocusMode(id: currentRunningFocusType["id"] as? String ?? "", finish_time: endFocusModeTime!, completionHandler: {dic in
-//
-//                        })
+                        arrFocusType[currentFocusModeIndex]["lastScheduledEndDate"] = getStringFromDate(date: endFocusModeTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")
                         updateAllFocusModes()
                     }
                     
@@ -2169,7 +1941,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             menuViewControllerObj?.stopFocusModeCountDownTimer()
             arrFocusType[index]["isPaused"] = true
             arrFocusType[index]["isOn"] = false
-            //            closeTaskPlayerWindowIfVisible()
             isFocusModeRunning = false
             if focusEndWarningWcObj != nil{
                 if focusEndWarningWcObj?.window?.isVisible ?? false{
@@ -2252,15 +2023,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         }
     }
     
-    //4b3eb33632184640b82aa3e3f50fe11b2cdd8b0e82ce48a8bfd1cbe26edc32f5
-    // if application is going to relaunch by updater we unload launchagent to make sure applicate will not autostart before install finish /// bug solved 15/7/22
-    //    func updaterWillRelaunchApplication(_ updater: SUUpdater) {
-    //        addLog(text: "updater Will Relaunch Application")
-    //        print("updater Will Relaunch Application")
-    //        shell(launchPath: "/bin/launchctl", arguments: ["unload","-w","\("/Users/")\(NSUserName())\("/Library/LaunchAgents/\(mainAppBundelId).plist")"])
-    //        terminateFromSelf = true
-    //        disableAllAlertsBeforeQuit()
-    //    }
     
     func updaterWillRelaunchApplication(_ updater: SPUUpdater) {
         addLog(text: "updater Will Relaunch Application")
@@ -2278,7 +2040,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             self.initialWork()
             writeSettingForScreeenTime(habitInfo: "")
         }else{//daysLeft
-          
+            
             //new work 12/9/22
             if daysLeft <= 0{//if expired than menu is enabled
                 //                self.readSettingsJsonDictionary(json: nil)
@@ -2315,8 +2077,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             
         }
     }
-
-
+    
+    
     func readSettingsJsonDictionary(json:NSDictionary?){
         addLog(text: "read Settings Json Dictionary")
         arrFilteredMorningHabits.removeAll()
@@ -2834,9 +2596,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     func initialWork(){
         addLog(text: "initialWork")
         isAppInitialLodded = true
-        //        if UserDefaults.standard.object(forKey: kUserdefaultsFirstHabitDay) == nil{
-        //            UserDefaults.standard.set(Date(), forKey: kUserdefaultsFirstHabitDay)
-        //        }
         self.statusbutton?.action = nil
         
         // -------------------GETTING SETTINGS JSON----------------------//
@@ -2844,7 +2603,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         if UserDefaults.standard.object(forKey: kUserdefaultsSelectedJson) == nil{
             isFirstTime = true
         }
-
+        
         // added on 18/11/25 v2.27.432
         if let date = UserDefaults.standard.object(forKey: kUserdefaultsLastUnlockTimeByAccountabilityBuddy) as? Date{
             lastUnlockTimeByAccountabilityBuddy = date
@@ -2857,11 +2616,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             if settings != nil{
                 if isFirstTime{
                     
-//                    let breakDuration = UserDefaults.standard.object(forKey: kUserdefaultsBreakDurationValue) as? Int ?? defaultBreakDurationValue
-//                    
-//                    var startDate = UserDefaults.standard.object(forKey: kUserdefaultsStartupTimeFromOnboarding) as? String ?? defaultStartTime
-//                    var shutOffDate = UserDefaults.standard.object(forKey: kUserdefaultsShutOffTimeFromOnboarding) as? String ?? defaultShutDownTime
-//                    var sleepTime = UserDefaults.standard.object(forKey: kUserdefaultsSleepTimeFromOnboarding) as? String ?? defaultSleepTime
+                    //                    let breakDuration = UserDefaults.standard.object(forKey: kUserdefaultsBreakDurationValue) as? Int ?? defaultBreakDurationValue
+                    //
+                    //                    var startDate = UserDefaults.standard.object(forKey: kUserdefaultsStartupTimeFromOnboarding) as? String ?? defaultStartTime
+                    //                    var shutOffDate = UserDefaults.standard.object(forKey: kUserdefaultsShutOffTimeFromOnboarding) as? String ?? defaultShutDownTime
+                    //                    var sleepTime = UserDefaults.standard.object(forKey: kUserdefaultsSleepTimeFromOnboarding) as? String ?? defaultSleepTime
                     
                     //                    if packId.isEmpty{// work for focus only
                     //                        startDate = "00:00"
@@ -2880,7 +2639,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         //                            settings!["break_after_minutes"] = breakDuration
                         settings!["sleep_time"] = sleepTime
                         
-                        UserDefaults.standard.removeObject(forKey: kUserdefaultsBreakDurationValue)
+//                        UserDefaults.standard.removeObject(forKey: kUserdefaultsBreakDurationValue)
                         UserDefaults.standard.removeObject(forKey: kUserdefaultsStartupTimeFromOnboarding)
                         UserDefaults.standard.removeObject(forKey: kUserdefaultsShutOffTimeFromOnboarding)
                         UserDefaults.standard.removeObject(forKey: kUserdefaultsSleepTimeFromOnboarding)
@@ -3118,7 +2877,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                                 }
                                             }
                                         }
-                                    
+                                        
                                     }else if currentAction == ._START_ {
                                         if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._BREATHING_ || currentState == ._CUSTOM_ROUTINE_{
                                             if (getHabitsVcObject().habitsView.subviews.contains(firstViewControllerObj!.view)){
@@ -3217,7 +2976,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     
     @objc func togglePopoverFromButton(_ sender: Any?) {
         togglePopover(true) // or true, depending on case
-        //        isCustomBarIsInFocus = false
     }
     
     @objc func togglePopover(_ isDefaultButton:Bool = true) {
@@ -3258,7 +3016,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 }
             }
             showPopover(isDefaultButton: isDefaultButton)
-
+            
             addLog(text: "togglePopover end")
         }
     }
@@ -3470,13 +3228,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 savedSitesForLaterWcObj!.close()
             }
         }
-        //        if endingFocusWindowControllerObj != nil{
-        //            if (endingFocusWindowControllerObj?.window?.isVisible ?? false) && endingFocusWindowControllerObj?.contentViewController == focusCompletedVcObj{
-        //                addLog(text: "Focus mode completed Window is visible:- return")
-        //                return;
-        //            }
-        //        }
-        //
         
         if isFocusCompletedViewVisibled(){
             addLog(text: "Focus mode completed view is visible:- return")
@@ -3548,12 +3299,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             addLog(text: "Simple Mode is enabled:- return.")
             return;
         }
-        //        if endingFocusWindowControllerObj != nil{
-        //            if (endingFocusWindowControllerObj?.window?.isVisible ?? false) && endingFocusWindowControllerObj?.contentViewController == focusCompletedVcObj{
-        //                addLog(text: "Focus mode completed Window is visible:- return")
-        //                return;
-        //            }
-        //        }
         
         if isFocusCompletedViewVisibled(){
             addLog(text: "Focus mode completed view is visible:- return")
@@ -3662,7 +3407,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             addLog(text: "Geek Mode is enabled:- return.")
             return;
         }
-
+        
         if isFocusCompletedViewVisibled(){
             addLog(text: "Focus mode completed Window is visible:- close Window Forcefully")
             focusCompletedVcObj!.closeWindowForcefully()
@@ -3672,12 +3417,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             addLog(text: "Focus Mode Is On/Paused.")
             return
         }
-
+        
         if self.timerPomodoroMode != nil{
             self.timerPomodoroMode?.invalidate()
             self.timerPomodoroMode = nil
         }
-
+        
         if isSmallCountDownTimerViewVisible(){
             if smallCountDownVcObj?.isFocusBreak ?? false{
                 smallCountDownVcObj?.closeTimerBox()
@@ -3727,7 +3472,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         
         loadMenuWindow()
     }
-
+    
     @objc func checkWindowState(){
         loadAllWindows()
         isFirstRun = false
@@ -3745,7 +3490,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         if !lastOpenUrlString.isEmpty{
             filterUrl(url: lastOpenUrlString)
         }
-
+        
         if let lastHabitShowDate = UserDefaults.standard.object(forKey: kUserdefaultsLastHabitShowDate) as? Date{
             checkLastHabitShowDate(lastHabitShowDate: lastHabitShowDate)
         }else{
@@ -3767,14 +3512,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     }
                 }
             }else{
-                if !isHabitAlreadyShowed{
-                    //   21/8/22
-                    //                        if Date().compare(startDate) == .orderedAscending {//yha ni krenege qki andar se timer k hisab se kaam hoga q ki api se bhi check hota hai
-                    //                            print("First Date is smaller then second date. all ok ")
-                    //                        }else{
-                    //                            self.startHabitsCall()
-                    //                        }
-                }else{
+                if isHabitAlreadyShowed{
                     mainWindowControllerObj?.loadWindow()
                     getHabitsVcObject().setActivityTimer()
                 }
@@ -3784,7 +3522,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         setBackgroundThreadTimer()
         pusherEventsObject.startEventNotifications()
         
-    
+        
         // v 2.27.435 //The app should automatically restart the focus session after the app restarts during permissions #1559
         if UserDefaults.standard.object(forKey: kUserdefaultsUserShouldDoFirstFocusSesion) != nil{
             UserDefaults.standard.removeObject(forKey: kUserdefaultsUserShouldDoFirstFocusSesion)
@@ -3829,8 +3567,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         addLog(text: "setBackgroundThreadTimer")
         DispatchQueue.global().sync {//async {
             self.timerBackgroundThread = Timer.scheduledTimer(timeInterval: 5, target: self, selector: #selector(self.backgroundThread), userInfo: nil, repeats: true)
-            //            RunLoop.current.add(self.timerBackgroundThread!, forMode: RunLoop.Mode.common)
-            //            RunLoop.current.run()
             RunLoop.main.add((self.timerBackgroundThread!), forMode: RunLoop.Mode.common)
         }
     }
@@ -3868,7 +3604,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         if isMicOn || isACameraOn || isPreventUserIdleDisplaySleepOn{
             
             logStateTransitions(mic: isMicOn, camera: isACameraOn, preventSleep: isPreventUserIdleDisplaySleepOn)
-
+            
             if isUserOnMeeting{
                 if isFocusModeOn(){
                     DispatchQueue.main.async {
@@ -4103,7 +3839,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         
         return resultURL
     }
-
+    
     func handleMeetingDetected(){
         isUserOnMeeting = true
         meetingStartTime = Date()
@@ -4185,11 +3921,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 
                 finalTitle = "\(hour):\(minute)" + " - " + finalTitle//count down in minutes not in seconds
                 
-            }else{
-                //                if taskPlayerWcObj?.window?.isVisible ?? false{
-                //                    statusbutton?.title = ""
-                //                    return;
-                //                }
             }
         }
         
@@ -4228,22 +3959,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         timerMeetingStartAlert?.invalidate()
         timerMeetingStartAlert = nil
         addLog(text: "showMeetingSuggestionAlert")
-        //        if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._BREATHING_ || currentState == ._SHUTOFFMAC_ || currentState == .
-        
-        // Luisa App broken bug fix 28/6/22
-//        if mainWindowControllerObj?.window?.isVisible ?? false{
-//            addLog(text: "Meeting suggestion aborted due to activity.")
-//            return
-//        }
         
         if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._SHUTOFFMAC_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_{
             addLog(text: "Meeting suggestion aborted due to activity.")
             return
         }
         
-        //  ////////////
-        
-        
+
         
         alertSuggestFocusMode = NSAlert()
         alertSuggestFocusMode!.setSharingType()
@@ -4464,11 +4186,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             let focus = arrFocusType[i]
             if let state = focus["isMeetings"] as? Bool{
                 if  state{
-                    //                    if getEndFocusModeWindowControllerObj().window!.isVisible{
-                    //                        let timestamp = getStringFromDate(date: startFocusModeTime ?? Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
-                    //                        addEntryInStatsCsv(logType: "focus block", activity: focusCompletedVcObj!.currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: "\(focusModeMinutesToPerform) of \(focusCompletedVcObj!.currentFocusModeName)", distractionsEncountered: "", abortReason: "", feedback: "", tags:"")
-                    //                        getEndFocusModeWindowControllerObj().window?.close()
-                    //                    }
                     let calendar = Calendar.current
                     endFocusModeTime = calendar.date(byAdding: .minute, value: 5, to: Date())
                     startFocusModeTime = Date()
@@ -4496,7 +4213,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         timerForFocusModeEndNotification?.invalidate()
                         timerForFocusModeEndNotification = nil
                     }
-        
+                    
                     startFocusModeTimeForPauseAndResume = Date()
                     focusModeSecondsToPerform = 300
                     isFocusModeStartedFromPomodoroMode = false
@@ -4508,7 +4225,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     isMeetingsFocusStartedAutomatically = true
                     isFocusModeStartedAutomatically = false
                     closePomodoroWindowIOfVisible()
-
+                    
                     alertSuggestFocusMode = nil
                     isAutoMeetingsModeStarted = true
                 }
@@ -4924,10 +4641,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                             if result == .alertSecondButtonReturn{
                                                 addLog(text: "Stop current focus from alert and show start focus view")
                                                 tryFocusModeFinished(isSilent: true, isShutOffTime: false, isMorningRoutineTime: false, allowExtend:false, isCustomRoutineTime:false)
-                                                //                                                showStartingFocusMode(focusModeIndex: i, focusType: arrFocusType[i]["name"] as? String ?? "")
-                                                //
-                                                //                                                startingFocusModeVcObj?.textFieldHourValue.integerValue = 0
-                                                //                                                startingFocusModeVcObj?.textFieldMinutesValue.integerValue = durationInSeconds/60
                                                 
                                                 appdelegate?.menuShowPomodoroModeView()
                                                 if !(pomodoroVcObj?.isViewLoaded ?? false){
@@ -5121,13 +4834,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         getHabitsVcObject().stopActivityCountDownTimer()
                         
                         if currentHabitPlaying != nil || currentActivityPlaying != nil{
-                            //                            if smallCountDownWcObj != nil{// allowing postpone from timer window issue #213  date- 5/9/22
-                            //                                if smallCountDownWcObj?.window != nil{
-                            //                                    if getSmallCountDownWindowObject().window!.isVisible && !getsmallCountDownVcObject().isFocusBreak{
-                            //                                        getSmallCountDownWindowObject().window?.close()
-                            //                                    }
-                            //                                }
-                            //                            }
                             
                             if isSmallCountDownTimerViewVisible(){
                                 if !(smallCountDownVcObj?.isFocusBreak ?? false){
@@ -5270,7 +4976,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     
     @objc func backgroundThread(){
         DispatchQueue.main.async {
-            if isAppEnable{// agar app diable hai to sirf 1 case mai ye func call hoga jab app 4 hour deactivate h tb
+            if isAppEnable{// If the app is disabled, this function will be called only in one case—when the app has been deactivated for 4 hours.
                 self.checkIsMeetingsGoingOn() //and app kon kon si check krni haiu
             }else{
                 if isFocusModeRunning || isAnyAllowedFocusModeActivityRunning{
@@ -5281,42 +4987,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             
             if (currentState == ._MICRO_BREAK_ || currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_) && currentAction == ._INPROGRESS_ && (currentActivityPlaying != nil || currentHabitPlaying != nil){
                 
-            }//else if isAppEnable && SettingsManagerObject.blockingSchedule == ._UNTIL_I_FINISH_WORK_{//now super distarcting sites will block only in focus modes and custom blocking schedules  24/9/25 version 2.27.417
-            //                if !isFocusModeOn(){
-            //                    if let runningApp = NSWorkspace.shared.frontmostApplication{
-            //                        if let appUrl = runningApp.bundleURL{
-            //                            let name = appUrl.deletingPathExtension().lastPathComponent
-            //                            let nameLowercased = name.lowercased()
-            //                            if nameLowercased != selfAppName.lowercased() && nameLowercased != focusBearTimeTrackerAppName{
-            //                                var isAppAllowed = true
-            //                                var isAppAllowedByUser = false
-            //                                let arrBlockedApps = getBlockedAppsToBlock()
-            //                                for path in arrBlockedApps{
-            //                                    let url = URL(fileURLWithPath: path)
-            //                                    if url.deletingPathExtension().lastPathComponent.lowercased() == nameLowercased{
-            //                                        isAppAllowed = false
-            //                                        let result = self.tryToBlockAlwaysBlockedApp(runningApp: runningApp, appName: name)
-            //                                        if !result{// it means allowed by user(intention set by user)
-            //                                            isAppAllowedByUser = true
-            //                                        }
-            //                                        break;
-            //                                    }
-            //                                }
-            //                                if !isAppAllowedByUser{
-            //                                    if !isAppAllowed{
-            //                                        self.timerBlockUrl?.invalidate()
-            //                                    }else{
-            //                                        if nameLowercased != selfAppName.lowercased(){
-            //                                            closeIntentionBlockedAppsWinddowIfVisible()
-            //                                        }
-            //                                    }
-            //                                }
-            //                            }
-            //                        }
-            //                    }
-            //                }
-            //            }
-            
+            }
+  
             if isFocusModeRunning || (isAnyAllowedFocusModeActivityRunning && (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._CUSTOM_ROUTINE_)){
                 calculateFocusAlignmentScore()
             }
@@ -5420,6 +5092,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             
             
             if !shouldDoHabits(){
+                customBlockingScheduleManagerObj.checkCustomBlockingScheduleTime()//3.31.463
                 return;
             }
             
@@ -5467,10 +5140,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             if !self.isSystemSleep && !self.isScreenSaverStart && currentState != ._MICRO_BREAK_{//same condition in pomodoro view
                 unfocusedTime += 5
             }
-            
-            //            if isFocusModeRunning || isAnyAllowedFocusModeActivityRunning{
-            //                addEntryInProductivityStatsCsv()
-            //            }
+
             
             if isShutOffTimeGoing(){
                 closeNatutalBreakIfRunning()
@@ -5501,7 +5171,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 }
                 
                 if shouldShowEveningHabit{
-                    if arrAllDaysEveningHabits.count == 0 {// if count is 0 then we will not do anything // if change here then also change in habit state class 
+                    if arrAllDaysEveningHabits.count == 0 {// if count is 0 then we will not do anything // if change here then also change in habit state class
                         
                         // ----Focus Bear isn’t prompting breaks (#1548, v2.27.428)---
                         // When there are no morning/evening habits, `isHabitAlreadyShowed` remains true,
@@ -5594,7 +5264,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                                     getHabitsVcObject().postponeNotificationTimer?.invalidate()
                                                     getHabitsVcObject().postponeNotificationTimer = nil
                                                 }
- 
+                                                
                                                 if isSmallCountDownTimerViewVisible(){
                                                     if (smallCountDownVcObj?.isFocusBreak ?? false){
                                                         smallCountDownVcObj?.closeTimerBox()
@@ -5684,12 +5354,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                             }
                             
                             
-                            
-                            // ye check krenge start habit k time ki pahle se koi sequence calu hai kya nahi h to morning habit start krdenge
-                            // ya agar pahle se sequence chalu hai or uski date kal ki hai to bhi use force complete kr denge
-                            // or agar pahele se koi sequence chalu h to agar vo morning habit ka nahi h to use force complete kr denge
-                            
-                            // or agar vo mrning habit sequence pahle se chalu hai to use get krenege or vahi se coontinue krenge
+                            // - If a morning habit sequence is already running, retrieve it and continue from where it left off.
                             
                             //********************** new work*************************//
                             
@@ -6273,25 +5938,25 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                      
                      
                      
-                    if mainWindowControllerObj?.window?.isVisible ?? false{
-                        mainWindowControllerObj?.window?.close()
-                        hideBlankWindowInSecondaryMonitor()
-                    }
-                    
-                    let alert = NSAlert()
-                    alert.setSharingType()
-                    var noHighPriorityActivityText = "No activities with high Priority found"
-                    
-                    if let common = configjson.value(forKey: "common") as? NSDictionary{
-                        noHighPriorityActivityText = common.value(forKey: "noHighPriorityActivityText") as? String ?? noHighPriorityActivityText
-                    }
-                    
-                    alert.messageText = noHighPriorityActivityText
-                    alert.addButton(withTitle: buttonOkText)
-                    
-                    NSApplication.shared.activate(ignoringOtherApps: true)
-                    alert.runModal()
-                    */
+                     if mainWindowControllerObj?.window?.isVisible ?? false{
+                     mainWindowControllerObj?.window?.close()
+                     hideBlankWindowInSecondaryMonitor()
+                     }
+                     
+                     let alert = NSAlert()
+                     alert.setSharingType()
+                     var noHighPriorityActivityText = "No activities with high Priority found"
+                     
+                     if let common = configjson.value(forKey: "common") as? NSDictionary{
+                     noHighPriorityActivityText = common.value(forKey: "noHighPriorityActivityText") as? String ?? noHighPriorityActivityText
+                     }
+                     
+                     alert.messageText = noHighPriorityActivityText
+                     alert.addButton(withTitle: buttonOkText)
+                     
+                     NSApplication.shared.activate(ignoringOtherApps: true)
+                     alert.runModal()
+                     */
                     addLog(text: "No activities with high Priority found:- showing ShutOff screen with no activities warning")// v 2.28.450
                     let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
                     let shutOffdate = Calendar.current.date(bySettingHour: shutOffTime!.hour, minute: shutOffTime!.minute, second: shutOffTime!.second, of: Date())!
@@ -6560,32 +6225,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     if arrFilteredEveningHabits.count == 0{
                         abortAllProcess()
                         
-                        //Weird no high priority activities warning. It shouldn’t show this. Should go straight to the end screen. #1634 v 2.28.450
-                        // now we will show warning after showing shutoff screen
-                        /*
-                         
-                         if mainWindowControllerObj?.window?.isVisible ?? false{
-                             mainWindowControllerObj?.window?.close()
-                             hideBlankWindowInSecondaryMonitor()
-                         }
-                         
-                        isNoHighPriorityActivityAlertVisible = true
-                        let alert = NSAlert()
-                        alert.setSharingType()
-                        var noHighPriorityActivityText = "No activities with high Priority found"
-                        
-                        if let common = configjson.value(forKey: "common") as? NSDictionary{
-                            noHighPriorityActivityText = common.value(forKey: "noHighPriorityActivityText") as? String ?? noHighPriorityActivityText
-                        }
-                        
-                        alert.messageText = noHighPriorityActivityText
-                        alert.addButton(withTitle: buttonOkText)
-                        
-                        NSApplication.shared.activate(ignoringOtherApps: true)
-                        alert.runModal()
-                        isNoHighPriorityActivityAlertVisible = false
-                        */
-                        
                         addLog(text: "No activities with high Priority found:- showing ShutOff screen with no activities warning")// v 2.28.450
                         let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!
                         let shutOffdate = Calendar.current.date(bySettingHour: shutOffTime!.hour, minute: shutOffTime!.minute, second: shutOffTime!.second, of: Date())!
@@ -6851,17 +6490,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         habitBlockTimerHelper.stopUrlTimer()
                         timerAllowAppForActivity?.invalidate()
                         currentActivityPlaying = nil
-                        
-                        //                        if toolBoxWcObj != nil{
-                        //                            if toolBoxWcObj!.window!.isVisible{
-                        //                                toolBoxWcObj?.window?.close()
-                        //                            }
-                        //                        }
-                        //                        if smallCountDownWcObj != nil{
-                        //                            if smallCountDownWcObj!.window?.isVisible ?? false{
-                        //                                getsmallCountDownVcObject().closeTimerBox()
-                        //                            }
-                        //                        }
+                    
                         closeSmallCountDownTimerBoxIfVisible()
                         
                         if relaxModeWcObj != nil{
@@ -6886,16 +6515,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                 self.timerAllowAppForActivity?.invalidate()
                                 currentActivityPlaying = nil
                                 closePupUpBlockIfVisible()
-                                //                                if toolBoxWcObj != nil{
-                                //                                    if toolBoxWcObj!.window!.isVisible{
-                                //                                        toolBoxWcObj?.window?.close()
-                                //                                    }
-                                //                                }
-                                //                                if smallCountDownWcObj != nil{
-                                //                                    if smallCountDownWcObj!.window?.isVisible ?? false{
-                                //                                        getsmallCountDownVcObject().closeTimerBox()
-                                //                                    }
-                                //                                }
+
                                 closeSmallCountDownTimerBoxIfVisible()
                                 
                                 if relaxModeWcObj != nil{
@@ -6915,7 +6535,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         addLog(text: "Initiating morning habits.")
         additionalHabitTotalCompletedSeconds = 0
         UserDefaults.standard.removeObject(forKey: kUserdefaultsShutdownAborted)
-
+        
         UserDefaults.standard.removeObject(forKey: kUserDefaultsLastRoutinePostponeEndDate)
         UserDefaults.standard.removeObject(forKey: kUserDefaultsLastRoutinePostponeState)
         
@@ -7208,6 +6828,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         flaskServerObject.stopFlaskServer()
         firefoxServer.stop()
         EventBuffer.shared.flushEvents()
+        
+        closeAllCsvFiles()
     }
     
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
@@ -7217,7 +6839,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             terminateFromSelf = false
             return .terminateNow
         }else {
-            if appdelegate!.statusbutton?.action == #selector(appdelegate!.topIconClickd){
+            if currentState == ._ONBOARDING_{
                 
                 if UserDefaults.standard.object(forKey: kUserdefaultsIsUserLoggedIn) as? Bool == nil{
                     if UserDefaults.standard.object(forKey: kUserdefaultsFirstRun) == nil{
@@ -7272,35 +6894,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             }
         }
         
-        //        if smallCountDownWcObj != nil{
-        //            if smallCountDownWcObj?.window != nil{
-        //                if getSmallCountDownWindowObject().window!.isVisible{
-        //                    isAnyStanderdWindowVisible = true
-        //                }
-        //            }
-        //        }
-        
-        //        if !isFocusBearMenuVisible(){// window is visible but alpha is 0
-        //            if (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_) && !(mainWindowControllerObj?.window?.isVisible ?? false){
-        //                if currentHabitPlaying != nil || currentActivityPlaying != nil{// it means background activity
-        //                    if smallCountDownWcObj != nil{
-        //                        if smallCountDownWcObj?.window?.alphaValue == 0{
-        //                            if popUpBlockConfirmWcObj != nil{
-        //                                if !(popUpBlockConfirmWcObj?.window?.isVisible ?? false){//Countdown timer pops up after allowing app/website #455
-        //                                    smallCountDownWcObj?.window?.alphaValue = 1
-        //                                }
-        //                            }else{
-        //                                smallCountDownWcObj?.window?.alphaValue = 1
-        //                            }
-        //
-        //                        }else{
-        //                            isAnyStanderdWindowVisible = true
-        //                        }
-        //                    }
-        //                }
-        //            }
-        //        }
-        
         if !isFocusBearMenuVisible() && !isAnyStanderdWindowVisible{
             //            if !isCustomBarIsInFocus{
             statusbutton?.performClick(self)
@@ -7353,68 +6946,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             self.timerMoveWindowToCenter?.invalidate()
             self.timerMoveWindowToCenter = nil
         }
-        //        if endingFocusWindowControllerObj != nil{
-        //            if (endingFocusWindowControllerObj?.window?.isVisible ?? false) && endingFocusWindowControllerObj?.contentViewController == focusCompletedVcObj{
-        //                focusCompletedVcObj?.removeTimerMoveWindowToCenter()
-        //            }
-        //        }
-        
-        //        if pomodoroWindowControllerObj != nil{
-        //            if pomodoroWindowControllerObj?.window?.isVisible ?? false{
-        //                if pomodoroWindowControllerObj?.contentViewController == pomodoroVcObj{
-        //                    pomodoroVcObj?.removeTimerMoveWindowToCenter()
-        //                }
-        //            }
-        //        }
-        
-        //        if blankLayerWcObj != nil{
-        //            if blankLayerWcObj?.window != nil{
-        //                if blankLayerWcObj!.window!.isVisible{
-        //                    return;
-        //                }
-        //            }
-        //        }
-        //        var isAnyStanderdWindowVisible = false
-        //
-        //        for win in NSApp.windows{
-        //            if win.isVisible && win.hasTitleBar{
-        //                isAnyStanderdWindowVisible = true
-        //            }
-        //        }
-        //        if smallCountDownWcObj != nil{
-        //            if smallCountDownWcObj?.window != nil{
-        //                if getSmallCountDownWindowObject().window!.isVisible{
-        //                    isAnyStanderdWindowVisible = true
-        //                }
-        //            }
-        //        }
-        //
-        //        if !isFocusBearMenuVisible(){// window is visible but alpha is 0
-        //            if (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._SPECIAL_ACTIVITY_ || currentState == ._CUSTOM_ROUTINE_) && !(mainWindowControllerObj?.window?.isVisible ?? false){
-        //                if currentHabitPlaying != nil || currentActivityPlaying != nil{// it means background activity
-        //                    if smallCountDownWcObj != nil{
-        //                        if smallCountDownWcObj?.window?.alphaValue == 0{
-        //                            if popUpBlockConfirmWcObj != nil{
-        //                                if !(popUpBlockConfirmWcObj?.window?.isVisible ?? false){//Countdown timer pops up after allowing app/website #455
-        //                                    smallCountDownWcObj?.window?.alphaValue = 1
-        //                                }
-        //                            }else{
-        //                                smallCountDownWcObj?.window?.alphaValue = 1
-        //                            }
-        //
-        //                        }else{
-        //                            isAnyStanderdWindowVisible = true
-        //                        }
-        //                    }
-        //                }
-        //            }
-        //        }
-        //
-        //        if !isFocusBearMenuVisible() && !isAnyStanderdWindowVisible{
-        //            if !isCustomBarIsInFocus{
-        //                statusbutton?.performClick(self)
-        //            }
-        //        }
         addLog(text: "applicationDidBecomeActive")
         print("applicationDidBecomeActive")
     }
@@ -7517,46 +7048,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         alert.runModal()
     }
     
-    @objc func topIconClickd(){
-        addLog(text: "top Icon Clickd")
-        if self.user == nil{
-            addLog(text: "self.user = nil")
-            if  UserDefaults.standard.object(forKey: kUserdefaultsFirstRun) == nil{
-                if mainWindowControllerObj != nil {
-                    if mainWindowControllerObj!.window?.isVisible ?? false{
-                        return;
-                    }
-                }
-                if welcomeOnboardingWcObj != nil{
-                    welcomeOnboardingWcObj!.showWindow(nil)
-                    if appdelegate!.onboardingTimer != nil{
-                        appdelegate!.onboardingTimer?.invalidate()
-                        appdelegate!.onboardingTimer = nil
-                    }
-                }
-                
-                
-                return
-            }else{
-                if mainWindowControllerObj != nil {
-                    if mainWindowControllerObj!.window?.isVisible ?? false{
-                        return;
-                    }
-                }
-                if welcomeOnboardingWcObj != nil{
-                    welcomeOnboardingWcObj!.showWindow(nil)
-                    if appdelegate!.onboardingTimer != nil{
-                        appdelegate!.onboardingTimer?.invalidate()
-                        appdelegate!.onboardingTimer = nil
-                    }
-                }
-            }
-        }else{
-            addLog(text: "top Icon Clickd")
-        }
-        
-    }
-    
     
     func setFocusModeTimer(hour:Int?, minute:Int?){
         addLog(text: "setFocusModeTimer")
@@ -7626,10 +7117,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             
             DispatchQueue.main.async {
                 playFocusModeStartedSound()
-                //                if getSmallCountDownWindowObject().window?.isVisible ?? false{
-                //                    getsmallCountDownVcObject().closeTimerBox()
-                //                }
-                
                 closeSmallCountDownTimerBoxIfVisible()
                 
                 if addFocusTempUrlsOrAppsWcObj != nil{
@@ -7659,26 +7146,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         showSavedSitesForLaterWindowForBreaks()
                     }
                 }
-                //                if UserDefaults.standard.object(forKey: kUserdefaultsDontShowToolBoxAutomatically) as? Bool == false{// removed on 1/9/25  on version 2.27.408
-                //                    var shouldShowToolBoxWindow = false
-                //
-                //                    let isAllowedAllAppsInFocus = currentRunningFocusType["isAllowedAllApps"] as? Bool ?? false
-                //                    let allowAppsPath = currentRunningFocusType["allowed_apps"] as? [String] ?? []
-                //
-                //                    if !isAllowedAllAppsInFocus && allowAppsPath.count != 0{
-                //                        shouldShowToolBoxWindow = true
-                //                    }
-                //
-                //                    let isAllowedListApproachInFocus = currentRunningFocusType["isAllowedListApproach"] as? Bool ?? false
-                //                    let arrAllowedUrlsForFocus = currentRunningFocusType["allowed_urls"] as? [String] ?? []
-                //
-                //                    if arrAllowedUrlsForFocus.count != 0 && isAllowedListApproachInFocus{//!isAllowedAllUrlsInFocus &&#453
-                //                        shouldShowToolBoxWindow = true
-                //                    }
-                //                    if shouldShowToolBoxWindow && SettingsManagerObject.isGeekModeEnabled{
-                //                        showToolboxWindow()
-                //                    }
-                //                }
                 
                 self.frontApplicationChanged()
                 
@@ -7719,15 +7186,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     return;
                 }
             }
-            
-            //            if smallCountDownWcObj != nil{
-            //                if smallCountDownWcObj?.window?.isVisible ?? false{
-            //                    addLog(text: "func showFocusModeEndWarningWindow: return reason smallCountDown window is visible")
-            //                    return;
-            //                }
-            //            }
-            
-            
             showFocusEndWarningWindow()
         }
     }
@@ -7737,20 +7195,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         tryFocusModeFinished(isSilent: false, isShutOffTime: false, isMorningRoutineTime: false, allowExtend:true, isCustomRoutineTime:false)
     }
     
-    func focusModeFinishedCapturePosthog(){
-        let focusDurationMinutes = focusModeActualDurationPerformed / 60
-        if isMeetingsFocusStartedAutomatically{
-            allApiObject.capturePosthog(event: "completed-meetings-focus-mode", metadata: [:])
-        }else if isFocusModeStartedFromPomodoroMode{
-            if isFocusModeStartedAutomatically{
-                allApiObject.capturePosthog(event: "completed-focus-session", metadata: ["focus-type":"automated_focus", "focusDurationMinutes":focusDurationMinutes])
-            }else{
-                allApiObject.capturePosthog(event: "completed-focus-session", metadata: ["focus-type":"pomodoro", "focusDurationMinutes":focusDurationMinutes])
-            }
-        }else{
-            allApiObject.capturePosthog(event: "completed-focus-session", metadata: ["focus-type":"manual_focus", "focusDurationMinutes":focusDurationMinutes])
-        }
-    }
+    
     
     @objc func tryFocusModeFinished(isSilent:Bool, isShutOffTime:Bool, isMorningRoutineTime:Bool, allowExtend:Bool, isCustomRoutineTime:Bool){
         addLog(text: "focus mode finished")
@@ -7817,10 +7262,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             self.setStatusBarButtonColorForFocusMode(color: NSColor.clear, colorString:nil)
             self.statusbutton?.title = ""
         }
-        
-//        if self.timerAllowUrl != nil{
-//            self.timerAllowUrl!.invalidate()
-//        }
         focusModeHelper.stopUrlTimer()
         
         timerCheckAllowedApps?.invalidate()
@@ -7834,7 +7275,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     
                 })
             }
-
+            
         }
         
         if self.isAutoMeetingsModeStarted{
@@ -7924,13 +7365,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         
         
         DispatchQueue.main.async {
-            //            if brainDumpWcObj != nil{
-            //                if brainDumpWcObj?.window != nil{
-            //                    if brainDumpWcObj!.window!.isVisible{
-            //                        brainDumpVcObj?.focusModeFinished()
-            //                    }
-            //                }
-            //            }
             closePupUpBlockIfVisible()
             menuViewControllerObj?.reloadIfNeeded()
             closeNudgeFocusAlignmentScoreWindow()
@@ -7943,48 +7377,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         }
     }
     
-    func focusModeFinishedResetAllData(){
-        refreshFocusModeData()
-        arrAllowedTabTitlesInCuddlyModeCurrentFocus.removeAll()
-    }
-    
-    
-    
+
     func showFocusCompletedView(){
         addLog(text: "show Focus Completed View")
         mainWindowControllerObj?.showWindow(self)
         leftMenuVcObj!.showFocusCompletedView()
-        
-        //        getEndFocusModeWindowControllerObj().contentViewController = focusCompletedVcObj
-        //        getEndFocusModeWindowControllerObj().showWindow(self)
     }
-    
-    
-    
-    
-    
-    func focusModeStarttedResetAllData(){
-        currentRunningAppNameForAi = ""
-        currentBrowserUrlForAi = ""
-        dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus.removeAll()
-        tabMatricsObject.last30SecondsDurationRecordedStartTime = Date()
-        arrConvinceAiUrlsInCurrentFocus.removeAll()
-        arrConvinceAiAppsInCurrentFocus.removeAll()
-        lastEntryInProductivityStatsTime = Date()
-        tabMatricsObject.resetAll()
-        lastFocusAlignmentShownScore = minFocusAlignmentScoreToShowDistractingPopUp
-        isMeetingsFocusStartedAutomatically = false
-        focusModeActualDurationPerformed = 0
-        unfocusedTime = 0
-        UserDefaults.standard.set(Date(), forKey: kUserdefaultsLastFocusModeDoneDate)
-        lastFocusModeTempInfo = nil
-        isAutoMeetingsModeStarted = false
-        stageManagerObject.isStageManagerEnabled = stageManagerObject.checkIsStageManagerEnabled()
-    }
-    
+
     @objc func focusModeStartted(isStartedByPusher:Bool){
         addLog(text: "focus Mode Started called")
-        addLog(text: "getBlockedAppsToBlock:- \(getBlockedAppsToBlock())") 
+        addLog(text: "getBlockedAppsToBlock:- \(getBlockedAppsToBlock())")
         if customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
             customBlockingScheduleManagerObj.customBlockingScheduleFinished()
         }
@@ -8029,26 +7431,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 showSavedSitesForLaterWindowForBreaks()
             }
         }
-        //        if UserDefaults.standard.object(forKey: kUserdefaultsDontShowToolBoxAutomatically) as? Bool == false{removed on 1/9/25  on version 2.27.408
-        //            var shouldShowToolBoxWindow = false
-        //
-        //            let isAllowedAllAppsInFocus = currentRunningFocusType["isAllowedAllApps"] as? Bool ?? false
-        //            let allowAppsPath = currentRunningFocusType["allowed_apps"] as? [String] ?? []
-        //
-        //            if !isAllowedAllAppsInFocus && allowAppsPath.count != 0{
-        //                shouldShowToolBoxWindow = true
-        //            }
-        //
-        //            let isAllowedListApproachInFocus = currentRunningFocusType["isAllowedListApproach"] as? Bool ?? false
-        //            let arrAllowedUrlsForFocus = currentRunningFocusType["allowed_urls"] as? [String] ?? []
-        //
-        //            if arrAllowedUrlsForFocus.count != 0 && isAllowedListApproachInFocus{//!isAllowedAllUrlsInFocus &&#453
-        //                shouldShowToolBoxWindow = true
-        //            }
-        //            if shouldShowToolBoxWindow && SettingsManagerObject.isGeekModeEnabled{
-        //                showToolboxWindow()
-        //            }
-        //        }
+        
         arrFocusBlockNotificationShownForApps.removeAll()
         frontApplicationChanged()// call it because front application is active already
         
@@ -8075,9 +7458,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     }
     
     
-//    var timerAllowUrl:Timer?
     var timerCheckAllowedApps:Timer?
-//    var timerAllowUrlForActivity:Timer?
     var timerAllowAppForActivity:Timer?
     var timerBlockUrl:Timer?//block urls list
     
@@ -8137,6 +7518,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
             }
         }
         
+        suggestWorkFocusManagerObject.stopUrlTimer()
         
         // // close  Intention Blocked Urls window if front application changed////
         if intentionBlockedUrlsWcObj != nil{
@@ -8290,7 +7672,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                 }
                             }
                             var isAllowedAppIsDefault = false
-                            var isAppAllowedByAllowedAppList = false
                             if isAllowedAllAppsInFocus{
                                 isAppAllowed = true
                                 if nameLowercased == selfAppName.lowercased(){
@@ -8303,31 +7684,17 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                     isSelfApp = true
                                     isAppAllowed = true
                                     isAllowedAppIsDefault = true
-                                }else if focusDefaultAllowApps.contains(nameLowercased){//if nameLowercased == "finder" || nameLowercased == "universalaccessauthwarn"{
+                                }else if focusDefaultAllowApps.contains(nameLowercased){
                                     isAppAllowed = true
                                     isAllowedAppIsDefault = true
                                 }else{
-//                                    if currentRunningFocusType["isDefault"] as? Bool == true {
-//                                        isAppAllowed = true
-//                                        let blocked_apps = currentRunningFocusType["blocked_apps"] as? [String] ?? []
-//                                        for path in blocked_apps{
-//                                            let url = URL(fileURLWithPath: path)
-//                                            if url.deletingPathExtension().lastPathComponent.lowercased() == nameLowercased{
-//                                                isAppAllowed = false
-//                                                break;
-//                                            }
-//                                        }
-//                                        
-//                                    }else{
-                                        for path in allowAppsPath{
-                                            let url = URL(fileURLWithPath: path)
-                                            if url.deletingPathExtension().lastPathComponent.lowercased() == nameLowercased{
-                                                isAppAllowed = true
-                                                isAppAllowedByAllowedAppList = true
-                                                break;
-                                            }
+                                    for path in allowAppsPath{
+                                        let url = URL(fileURLWithPath: path)
+                                        if url.deletingPathExtension().lastPathComponent.lowercased() == nameLowercased{
+                                            isAppAllowed = true
+                                            break;
                                         }
-//                                    }
+                                    }
                                 }
                             }
                             
@@ -8401,7 +7768,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                 focusBlockUnwantedApp(runningApp: runningApp, appName: appUrl.deletingPathExtension().lastPathComponent, showNotification: true, isAppBlockByAi: false)
                                 habitBlockTimerHelper.stopUrlTimer()
                                 setFocusBearIconToNormal()
-//                                focusModeCloseCurrentAppForAlignmentScore()
                                 focusModeOpenCurrentAppForAlignmentScore(appNameLowercased: nameLowercased)
                                 return;
                             }else if !isAppAllowed{
@@ -8488,7 +7854,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         }
                     }
                     var isAllowedAppIsDefault = false
-                    var isAppAllowedByAllowedAppList = false
                     if isAllowedAllAppsInFocus{
                         isAppAllowed = true
                         if nameLowercased == selfAppName.lowercased(){
@@ -8504,28 +7869,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                             isAppAllowed = true
                             isAllowedAppIsDefault = true
                         }else{
-//                            if currentRunningFocusType["isDefault"] as? Bool == true {
-//                                isAppAllowed = true
-//                                let blocked_apps = currentRunningFocusType["blocked_apps"] as? [String] ?? []
-//                                for path in blocked_apps{
-//                                    let url = URL(fileURLWithPath: path)
-//                                    if url.deletingPathExtension().lastPathComponent.lowercased() == nameLowercased{
-//                                        isAppAllowed = false
-//                                        break;
-//                                    }
-//                                }
-//                                
-//                            }else{
-                                for path in allowAppsPath{
-                                    let url = URL(fileURLWithPath: path)
-                                    if url.deletingPathExtension().lastPathComponent.lowercased() == nameLowercased{
-                                        isAppAllowed = true
-                                        isAppAllowedByAllowedAppList = true
-                                        break;
-                                    }
+                            for path in allowAppsPath{
+                                let url = URL(fileURLWithPath: path)
+                                if url.deletingPathExtension().lastPathComponent.lowercased() == nameLowercased{
+                                    isAppAllowed = true
+                                    break;
                                 }
-//                            }
-                            
+                            }
                         }
                     }
                     var isAppAllowedByCuddlyMode = false
@@ -8537,7 +7887,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     if !isAppAllowed{
                         var isAppAllowedByUser = false
                         let arrBlockedApps = getBlockedAppsToBlock()
-                      
+                        
                         addLog(text: "app is:- \(nameLowercased)") // need to delete in next  build
                         for path in arrBlockedApps{
                             let url = URL(fileURLWithPath: path)
@@ -8566,7 +7916,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     }else{
                         if !SettingsManagerObject.immediatelyBlockDistractingApps{
                             let arrBlockedApps = getBlockedAppsToBlock()
-                           
+                            
                             addLog(text: "app is:- \(nameLowercased)") // need to delete in next  build
                             for path in arrBlockedApps{
                                 let url = URL(fileURLWithPath: path)
@@ -8645,8 +7995,25 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     setTimeCheckUrlsForFocusMode(nameLowercased: nameLowercased)
                 }
             }
-        }else{
+        }else if let runningApp = NSWorkspace.shared.frontmostApplication, let appUrl = runningApp.bundleURL{
             if isAppEnable{//Deactivate should stop always blocked URLs#663
+                
+                let name = appUrl.deletingPathExtension().lastPathComponent
+                let nameLowercased = name.lowercased()
+ 
+                var isOnboardingCheckBlockingTime = false
+                
+                if permissionBlockDistractionWcObj != nil && tryBlockUrlVcObj != nil{// added on 30/8/25  on version 2.27.407
+                    if permissionBlockDistractionWcObj!.window?.isVisible ?? false{
+                        if permissionBlockDistractionWcObj?.contentViewController == tryBlockUrlVcObj{
+                            isOnboardingCheckBlockingTime = true
+                        }
+                    }
+                }
+                if !isOnboardingCheckBlockingTime{
+                    suggestWorkFocusManagerObject.startUrlTimer(browserName: nameLowercased, runningApp: runningApp)
+                }
+                
                 if isFocusBreakOn{
                     if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsDoNotBlockUrlsDuringSuperPomodoroBreaks) as? Bool{
                         if state{
@@ -8661,15 +8028,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         }
                     }
                 }
-                var isOnboardingCheckBlockingTime = false
                 
-                if permissionBlockDistractionWcObj != nil && tryBlockUrlVcObj != nil{// added on 30/8/25  on version 2.27.407
-                    if permissionBlockDistractionWcObj!.window?.isVisible ?? false{
-                        if permissionBlockDistractionWcObj?.contentViewController == tryBlockUrlVcObj{
-                            isOnboardingCheckBlockingTime = true
-                        }
-                    }
-                }
                 
                 if !isOnboardingCheckBlockingTime{
                     if isUserOnMeeting && !SettingsManagerObject.isBlockDistractingSitesDuringMeetingsEnabled{
@@ -8678,72 +8037,56 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 }
                 
                 var shouldCheckBlockedUrls = false
-                //                if SettingsManagerObject.blockingSchedule == ._UNTIL_I_FINISH_WORK_{
-                //                    shouldCheckBlockedUrls = true
-                //                }else{
-                //                    // for try block url if blocking schedule is != _UNTIL_I_FINISH_WORK_
-                //                    if isOnboardingCheckBlockingTime{
-                //                        shouldCheckBlockedUrls = true
-                //                    }
-                //                }
-                //
                 // for try block url if blocking schedule is != _UNTIL_I_FINISH_WORK_
                 if isOnboardingCheckBlockingTime{// now super distarcting sites will block only in focus modes and custom blocking schedules  24/9/25 version 2.27.417
                     shouldCheckBlockedUrls = true
                 }
-                
-                
-                
+
                 if shouldCheckBlockedUrls{
-                    if let runningApp = NSWorkspace.shared.frontmostApplication{
-                        if let appUrl = runningApp.bundleURL{//let name = runningApp.localizedName{
-                            let name = appUrl.deletingPathExtension().lastPathComponent
-                            let nameLowercased = name.lowercased()
-                            if nameLowercased == selfAppName.lowercased() || nameLowercased == focusBearTimeTrackerAppName{
-                                return;
+                    
+                    if nameLowercased == selfAppName.lowercased() || nameLowercased == focusBearTimeTrackerAppName{
+                        return;
+                    }
+                    var isAppAllowed = true
+                    var isAppAllowedByUser = false
+                    let arrBlockedApps = getBlockedAppsToBlock()
+                    
+                    addLog(text: "app is:- \(nameLowercased)") // need to delete in next  build
+                    for path in arrBlockedApps{
+                        let url = URL(fileURLWithPath: path)
+                        if url.deletingPathExtension().lastPathComponent.lowercased() == nameLowercased{
+                            isAppAllowed = false
+                            let result = self.tryToBlockAlwaysBlockedApp(runningApp: runningApp, appName: name)
+                            if !result{// it means allowed by user(intention set by user)
+                                isAppAllowedByUser = true
+                                isAppAllowed = true
                             }
-                            var isAppAllowed = true
-                            var isAppAllowedByUser = false
-                            let arrBlockedApps = getBlockedAppsToBlock()
-                          
-                            addLog(text: "app is:- \(nameLowercased)") // need to delete in next  build
-                            for path in arrBlockedApps{
-                                let url = URL(fileURLWithPath: path)
-                                if url.deletingPathExtension().lastPathComponent.lowercased() == nameLowercased{
-                                    isAppAllowed = false
-                                    let result = self.tryToBlockAlwaysBlockedApp(runningApp: runningApp, appName: name)
-                                    if !result{// it means allowed by user(intention set by user)
-                                        isAppAllowedByUser = true
-                                        isAppAllowed = true
-                                    }
-                                    DispatchQueue.global().async {
-                                        DispatchQueue.main.async {
-                                            self.tryToBlockAlwaysBlockedApp(runningApp: runningApp, appName: name)
-                                        }
-                                    }
-                                    break;
+                            DispatchQueue.global().async {
+                                DispatchQueue.main.async {
+                                    self.tryToBlockAlwaysBlockedApp(runningApp: runningApp, appName: name)
                                 }
                             }
-                            
-                            
-                            if nameLowercased != selfAppName.lowercased(){
-                                if isAppAllowed{
-                                    if !isAppAllowedByUser{
-                                        closeIntentionBlockedAppsWinddowIfVisible()
+                            break;
+                        }
+                    }
+                    
+                    
+                    if nameLowercased != selfAppName.lowercased(){
+                        if isAppAllowed{
+                            if !isAppAllowedByUser{
+                                closeIntentionBlockedAppsWinddowIfVisible()
+                            }
+                            DispatchQueue.global().sync {
+                                if arrBrowsersLowerCasedNames.contains(nameLowercased){
+                                    if nameLowercased == "sigmaos"{
+                                        sigmaOsBrowserName = "SigmaOs"
+                                    }else if nameLowercased == "sigmaos_latest"{
+                                        sigmaOsBrowserName = "SigmaOS_latest"
                                     }
-                                    DispatchQueue.global().sync {
-                                        if arrBrowsersLowerCasedNames.contains(nameLowercased){
-                                            if nameLowercased == "sigmaos"{
-                                                sigmaOsBrowserName = "SigmaOs"
-                                            }else if nameLowercased == "sigmaos_latest"{
-                                                sigmaOsBrowserName = "SigmaOS_latest"
-                                            }
-                                            addLog(text: "Set timer block urls in background")
-                                            timerBlockUrl?.invalidate()
-                                            self.timerBlockUrl = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.blockUrlsInBackground), userInfo: nil, repeats: true)
-                                            RunLoop.main.add(self.timerBlockUrl!, forMode: RunLoop.Mode.common)
-                                        }
-                                    }
+                                    addLog(text: "Set timer block urls in background")
+                                    timerBlockUrl?.invalidate()
+                                    self.timerBlockUrl = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.blockUrlsInBackground), userInfo: nil, repeats: true)
+                                    RunLoop.main.add(self.timerBlockUrl!, forMode: RunLoop.Mode.common)
                                 }
                             }
                         }
@@ -8756,46 +8099,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     
     func setTimeCheckUrlsForFocusMode(nameLowercased:String){
         print("setTimeCheckUrlsForFocusMode*********")
-//        DispatchQueue.global().sync {
-//            if arrBrowsersLowerCasedNames.contains(nameLowercased){
-//                if nameLowercased == "sigmaos"{
-//                    sigmaOsBrowserName = "SigmaOs"
-//                }else if nameLowercased == "sigmaos_latest"{
-//                    sigmaOsBrowserName = "SigmaOS_latest"
-//                }
-//                self.timerAllowUrl?.invalidate()
-//                if self.timerAllowUrl != nil{
-//                    if self.timerAllowUrl!.isValid{
-//                        addLog(text: "timerAllowUrl is not invalid")
-//                        self.timerAllowUrl?.invalidate()
-//                    }
-//                }
-//                self.timerAllowUrl = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.checkInBackground), userInfo: nil, repeats: true)
-//                RunLoop.main.add(self.timerAllowUrl!, forMode: RunLoop.Mode.common)
-//            }
-//        }
-        
         focusModeHelper.startUrlTimer(browserName: nameLowercased)
     }
     
     func setTimeCheckUrlsForHabits(nameLowercased:String){
         print("setTimeCheckUrlsForHabits*********")
-//        if arrBrowsersLowerCasedNames.contains(nameLowercased){
-//            if nameLowercased == "sigmaos"{
-//                sigmaOsBrowserName = "SigmaOs"
-//            }else if nameLowercased == "sigmaos_latest"{
-//                sigmaOsBrowserName = "SigmaOS_latest"
-//            }
-//            timerAllowUrlForActivity?.invalidate()
-//            self.timerAllowUrlForActivity = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.checkInBackgroundForActivity), userInfo: nil, repeats: true)
-//            RunLoop.main.add(self.timerAllowUrlForActivity!, forMode: RunLoop.Mode.common)
-//        }
         habitBlockTimerHelper.startUrlTimer(browserName: nameLowercased)
     }
-    
-
-//    var isCurrentUrlAllowedInCurrentFocsMode = false
-    //    var isCurrentUrlNotAllowedInCurrentFocsMode = false
     
     @objc func blockUrlsInBackground(){
         addLog(text:"func call:- blockUrlsInBackground")
@@ -8813,10 +8123,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 }
             }
         }
-        let isCurrentUrlAllowedInFocsMode = false // self.isCurrentUrlAllowedInCurrentFocsMode
-//        if self.isCurrentUrlAllowedInCurrentFocsMode{
-//            self.isCurrentUrlAllowedInCurrentFocsMode = false
-//        }
+        let isCurrentUrlAllowedInFocsMode = false
         
         currentBrowserUrlForAi = ""
         if popUpBlockConfirmWcObj != nil{
@@ -8864,9 +8171,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     defaultPageOfBrowser = "chrome:"
                 }
                 
-//                if !checkIsCurrentTabAllowed(currentBrowser: currentBrowser){ // do not do here 
-//                    return;
-//                }
                 
                 if var url = getActiveTabUrlOf(browser: currentBrowser){
                     
@@ -8958,7 +8262,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         }
                     }
                     
-                    if !url.contains(defaultPageOfBrowser) && !url.contains(blockWebUrlString){//agar block url mai file://* bhi hai to bar bar block hi gota rhega isiliye blockWebUrlString ka check lagaya
+                    if !url.contains(defaultPageOfBrowser) && !url.contains(blockWebUrlString){
                         let domain = getDomainFromUrl(url: url)//getDomainFromUrl(url: url)
                         tabUrl = domain
                         if setIntentionBlockedUrlsWcObj != nil{
@@ -9201,31 +8505,19 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 }else if name == selfAppName.lowercased(){
                     isSelfApp = true
                     isAppAllowed = true
-                }else if focusDefaultAllowApps.contains(name){//if name == "finder" || name == "universalaccessauthwarn"{
+                }else if focusDefaultAllowApps.contains(name){
                     isAppAllowed = true
                 }else{
                     
-//                    if currentRunningFocusType["isDefault"] as? Bool == true {
-//                        isAppAllowed = true
-//                        let blocked_apps = currentRunningFocusType["blocked_apps"] as? [String] ?? []
-//                        for path in blocked_apps{
-//                            let url = URL(fileURLWithPath: path)
-//                            if url.deletingPathExtension().lastPathComponent.lowercased() == name{
-//                                isAppAllowed = false
-//                                break;
-//                            }
-//                        }
-//                        
-//                    }else{
-                        let allowAppsPath = currentRunningFocusType["allowed_apps"] as? [String] ?? []
-                        for path in allowAppsPath{
-                            let url = URL(fileURLWithPath: path)
-                            if url.deletingPathExtension().lastPathComponent.lowercased() == name{
-                                isAppAllowed = true
-                                break;
-                            }
+                    
+                    let allowAppsPath = currentRunningFocusType["allowed_apps"] as? [String] ?? []
+                    for path in allowAppsPath{
+                        let url = URL(fileURLWithPath: path)
+                        if url.deletingPathExtension().lastPathComponent.lowercased() == name{
+                            isAppAllowed = true
+                            break;
                         }
-                    //}
+                    }
                 }
                 
                 
@@ -9236,7 +8528,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 if !isAppAllowed{
                     var isAppAllowedByUser = false
                     let arrBlockedApps = getBlockedAppsToBlock()
-
+                    
                     addLog(text: "app is:- \(name)") // need to delete in next  build
                     for path in arrBlockedApps{
                         let url = URL(fileURLWithPath: path)
@@ -9263,7 +8555,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 }else{
                     if !SettingsManagerObject.immediatelyBlockDistractingApps{
                         let arrBlockedApps = getBlockedAppsToBlock()
-
+                        
                         addLog(text: "app is:- \(name)") // need to delete in next  build
                         for path in arrBlockedApps{
                             let url = URL(fileURLWithPath: path)
@@ -9301,23 +8593,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         }
                     }
                     focusBlockUnwantedApp(runningApp: runningApp, appName: appUrl.deletingPathExtension().lastPathComponent, showNotification: true, isAppBlockByAi: false)
-//                    if self.timerAllowUrl != nil{
-//                        self.timerAllowUrl!.invalidate()
-//                    }
                     focusModeHelper.stopUrlTimer()
                     return;
                 }else if !isAppAllowed{
                     
                     focusTryToBlockUnwantedApp(runningApp: runningApp, appName: appUrl.deletingPathExtension().lastPathComponent, appNameLowercased: name)
-//                    if self.timerAllowUrl != nil{
-//                        self.timerAllowUrl!.invalidate()
-//                    }
                     focusModeHelper.stopUrlTimer()
                     return;
                 }else{
                     if isSelfApp{
-                        //   setFocusBearIconToNormal()//
-                        //  focusModeCloseCurrentAppForAlignmentScore()
                         return;
                     }
                     DispatchQueue.main.async {
@@ -9335,15 +8619,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         }
     }
     
-
-
+    
+    
     func tryToBlockAlwaysBlockedUrl(script: String, url:String, browser: BROWSER?, runningApp:NSRunningApplication, blockItem:String){
         print("tryToBlockAlwaysBlockedUrl")
         var needToBlockImmediately = SettingsManagerObject.immediatelyBlockDistractingSites
         if isFocusModeRunning || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
-//            if !isStrictnessLevelNormal(){
-//                needToBlockImmediately = true// addded in 2.28.444
-//            }
             if !SettingsManagerObject.isCuddlyModeEnabled{
                 needToBlockImmediately = true// addded in 2.29.458
             }
@@ -9457,7 +8738,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     func tryToBlockAlwaysBlockedApp(runningApp: NSRunningApplication, appName:String)->Bool{
         print("tryToBlockAlwaysBlockedApp*************")
         
-        for path in SettingsManagerObject.arrAlwaysAllowedApps{ 
+        for path in SettingsManagerObject.arrAlwaysAllowedApps{
             let url = URL(fileURLWithPath: path)
             if url.deletingPathExtension().lastPathComponent.lowercased() == appName.lowercased(){
                 print("App \(appName) is in Always Allowed list, skipping block")
@@ -9469,9 +8750,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         
         var needToBlockImmediately = SettingsManagerObject.immediatelyBlockDistractingApps
         if isFocusModeRunning || customBlockingScheduleManagerObj.isAnyCustomScheduleOn{
-//            if !isStrictnessLevelNormal(){
-//                needToBlockImmediately = true// addded in 2.28.444
-//            }
             if !SettingsManagerObject.isCuddlyModeEnabled{
                 needToBlockImmediately = true// addded in 2.29.458
             }
@@ -9748,43 +9026,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                     minFocusAlignmentScoreToShowDistractingPopUp = 0
                 }
                 lastFocusAlignmentShownScore = minFocusAlignmentScoreToShowDistractingPopUp
-                //                if UserDefaults.standard.object(forKey: kUserdefaultsDontShowToolBoxAutomatically) as? Bool == false{removed on 1/9/25  on version 2.27.408
-                //                    var shouldShowToolBoxWindow = false
-                //
-                //                    let isAllowedAllAppsInFocus = currentRunningFocusType["isAllowedAllApps"] as? Bool ?? false
-                //                    let allowAppsPath = currentRunningFocusType["allowed_apps"] as? [String] ?? []
-                //
-                //                    if !isAllowedAllAppsInFocus && allowAppsPath.count != 0{
-                //                        shouldShowToolBoxWindow = true
-                //                    }
-                //                    let isAllowedListApproachInFocus = currentRunningFocusType["isAllowedListApproach"] as? Bool ?? false
-                //                    let arrAllowedUrlsForFocus = currentRunningFocusType["allowed_urls"] as? [String] ?? []
-                //
-                //                    if arrAllowedUrlsForFocus.count != 0 && isAllowedListApproachInFocus{//!isAllowedAllUrlsInFocus &&#453
-                //                        shouldShowToolBoxWindow = true
-                //                    }
-                //                    if shouldShowToolBoxWindow{
-                //                        showToolboxWindow()
-                //                    }
-                //                }
-            }else{//
-                //                if UserDefaults.standard.object(forKey: kUserdefaultsDontShowToolBoxAutomaticallyForActivity) as? Bool == false{removed on 1/9/25  on version 2.27.408
-                //                    var shouldShowToolBoxWindow = false
-                //                    let allowAppsPath = currentHabitPlaying?.allowApps ?? []
-                //
-                //                    if allowAppsPath.count != 0{
-                //                        shouldShowToolBoxWindow = true
-                //                    }
-                //
-                //                    let arrAllowedUrlsForFocus = currentHabitPlaying?.allowUrls ?? []
-                //
-                //                    if arrAllowedUrlsForFocus.count != 0{
-                //                        shouldShowToolBoxWindow = true
-                //                    }
-                //                    if shouldShowToolBoxWindow{
-                //                        showToolboxWindow()
-                //                    }
-                //                }
+                
             }
             
             
@@ -9938,27 +9180,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         }else if focusDefaultAllowApps.contains(name){//if name == "finder" || name == "universalaccessauthwarn"{
                             isAppAllowed = true
                         }else{
-//                            if currentRunningFocusType["isDefault"] as? Bool == true {
-//                                isAppAllowed = true
-//                                let blocked_apps = currentRunningFocusType["blocked_apps"] as? [String] ?? []
-//                                for path in blocked_apps{
-//                                    let url = URL(fileURLWithPath: path)
-//                                    if url.deletingPathExtension().lastPathComponent.lowercased() == name{
-//                                        isAppAllowed = false
-//                                        break;
-//                                    }
-//                                }
-//                            }else{
-                                let allowAppsPath = currentRunningFocusType["allowed_apps"] as? [String] ?? []
-                                for path in allowAppsPath{
-                                    let url = URL(fileURLWithPath: path)
-                                    if url.deletingPathExtension().lastPathComponent.lowercased() == name{
-                                        isAppAllowed = true
-                                        break;
-                                    }
+                            let allowAppsPath = currentRunningFocusType["allowed_apps"] as? [String] ?? []
+                            for path in allowAppsPath{
+                                let url = URL(fileURLWithPath: path)
+                                if url.deletingPathExtension().lastPathComponent.lowercased() == name{
+                                    isAppAllowed = true
+                                    break;
                                 }
-//                            }
-                            
+                            }
                         }
                         
                         if arrAllowedAppsInCuddlyModeCurrentFocus.contains(runningApp){
@@ -9968,8 +9197,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         if !isAppAllowed{
                             var isAppAllowedByUser = false
                             let arrBlockedApps = getBlockedAppsToBlock()
-                             
-                            addLog(text: "app is:- \(name)") // need to delete in next  build 
+                            
+                            addLog(text: "app is:- \(name)") // need to delete in next  build
                             for path in arrBlockedApps{
                                 let url = URL(fileURLWithPath: path)
                                 if url.deletingPathExtension().lastPathComponent.lowercased() == name{
@@ -9996,7 +9225,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         }else{
                             if !SettingsManagerObject.immediatelyBlockDistractingApps{
                                 let arrBlockedApps = getBlockedAppsToBlock()
-                              
+                                
                                 addLog(text: "app is:- \(name)") // need to delete in next  build
                                 for path in arrBlockedApps{
                                     let url = URL(fileURLWithPath: path)
@@ -10086,7 +9315,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         }
     }
     
-
+    
     func showExtraWindows(){
         let screenList = NSScreen.screens
         if screenList.count == 1{
@@ -10162,9 +9391,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     }
     
     var timerPomodoroMode: Timer?
-    func setTimerForPomodoroMode(delay:TimeInterval){// take a five minut k break per call hoga agar pomodoro mode finish hua h to. normal focus mode finish per call ni hoga ..
+    //Called when the "Take a five minute break" button is clicked.
+    func setTimerForPomodoroMode(delay:TimeInterval){
         if isAppEnable{
-            DispatchQueue.global().sync{//async {
+            DispatchQueue.global().sync{
                 if self.timerPomodoroMode != nil{
                     self.timerPomodoroMode?.invalidate()
                     self.timerPomodoroMode = nil
@@ -10176,122 +9406,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         }
     }
     
-    var onboardingTimer: Timer?
-    func postponeOnboardingHabitFor(minutes:Int){
-        addLog(text: "postpone Onboarding habits, Timer reset Done:- \(minutes) minutes")
-        currentState = ._POSTPON_ONBOARDING_HABIT_
-        
-        DispatchQueue.global().sync{//async {
-            if self.onboardingTimer != nil{
-                self.onboardingTimer?.invalidate()
-                self.onboardingTimer = nil
-            }
-            self.onboardingTimer = Timer.scheduledTimer(timeInterval: TimeInterval(minutes*60), target: self, selector: #selector(self.resumeOnboardingProcess), userInfo: nil, repeats: false)
-            RunLoop.main.add((onboardingTimer!), forMode: RunLoop.Mode.common)
-        }
-        
-    }
-    
-    @objc func resumeOnboardingProcess(){
-        addLog(text: "resume Onboarding Process.")
-        currentState = ._NOTHING_
-        showWelcomeOnboardingWindow()
-    }
-    
-    //    func renewToken(window:NSWindow,completionHandler: @escaping() -> ()) {
-    //        addLog(text: "renewToken")
-    //        Auth0
-    //            .authentication()
-    //            .renew(withRefreshToken: credential!.refreshToken ?? "")
-    //            .start { result in
-    //                let oldDaysLeft = daysLeft
-    //                daysLeft = 0
-    //                isPurchased = false
-    //                switch(result) {
-    //                case .success(let credentials):
-    //
-    //                    let _ = self.credentialsManager.store(credentials: credentials)
-    //                    // If you have Refresh Token Rotation enabled, you get a new Refresh Token
-    //                    // Otherwise you only get a new Access Token
-    //
-    //                    self.credential = credentials
-    //                    self.user = AuthUser(from: self.credential!.accessToken)
-    //
-    //                    if let subscriptionStatus = self.user?.subscriptionStatus{
-    //                        addLog(text: "subscriptionStatus is:- \(subscriptionStatus)")
-    //                        var activeEntitlementStatus = ""
-    //                        if let activeEntitlements = subscriptionStatus["activeEntitlements"] as? [String]{
-    //                            if let status = activeEntitlements.first{
-    //                                activeEntitlementStatus = status
-    //                                if status == "personal" || status == "team_member" || status ==  "team_owner" || status == "team_size_5"{
-    //                                    isPurchased = true
-    //                                }else if status == "trial"{
-    //                                    isPurchased = false
-    //                                }else{
-    //                                    isPurchased = false
-    //                                }
-    //                            }
-    //                        }
-    //                        if let expirations = subscriptionStatus["expirations"] as? [String:Any]{
-    //                            if let trial = expirations[activeEntitlementStatus] as? [String:Any]{
-    //                                if let days_left = trial["days_left"] as? Int{
-    //                                    print(days_left)
-    //                                    daysLeft = days_left
-    //                                }
-    //                            }
-    //                        }
-    //                    }else{
-    //                        addLog(text: "subscriptionStatus is:- nil")
-    //                    }
-    //                    if oldDaysLeft > 0{// subscription over need to restart
-    //                        if isPurchased == false && daysLeft == 0{
-    //                            addLog(text: "Subscription over")
-    //                            DispatchQueue.main.async {
-    //                                self.quitAndRestartApp()
-    //                            }
-    //
-    //                        }
-    //                    }else{
-    //                        if daysLeft > 0 {
-    //                            addLog(text: "Purchases found")
-    //                            DispatchQueue.main.async {
-    //                                self.quitAndRestartApp()
-    //                            }
-    //                        }else{
-    //                            // No purchases found.
-    //                            DispatchQueue.main.async {
-    //                                let alert = NSAlert()
-    //                                alert.setSharingType()
-    //                                var noPurchasesFoundText = "No active purchases found for your account."
-    //                                addLog(text: "No purchases found.")
-    //                                if let common = configjson.value(forKey: "common") as? NSDictionary{
-    //                                    noPurchasesFoundText = common.value(forKey: "noPurchasesFoundText") as? String ?? noPurchasesFoundText
-    //                                }
-    //                                alert.messageText = noPurchasesFoundText
-    //                                alert.addButton(withTitle: buttonOkText)
-    //
-    //
-    //                                alert.beginSheetModal(for: window, completionHandler: { (modalResponse) in
-    //                                    if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
-    //
-    //                                    }
-    //                                })
-    //                            }
-    //
-    //                        }
-    //                    }
-    //                    if isPurchased == false && daysLeft == 0{
-    //                        isExpired = true
-    //                    }
-    //                    completionHandler()
-    //                    return
-    //                case .failure(let error):
-    //                    addLog(text: "renewToken failed")
-    //                    completionHandler()
-    //                    return
-    //                }
-    //            }
-    //    }
     
     func renewToken(window: NSWindow, completionHandler: @escaping () -> ()) {
         addLog(text: "renewToken")
@@ -10451,92 +9565,18 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     }
 }
 
-
-//  2026 kro  done
-// after onboarding expamnd left panel
-// resume moening routine mai end fopcs  mode ka view aaya fr help tab per jakaer vapas habit tab per  aya to start focus session ka button unhide ho gya  ; bug  solved
-// text added
-//Morning routine will resume after the call ends.
-
-
-//  
-// screen size resizable in procastinating, button itlte to work wrap
-// button title will be defaulr title
-// add text
-// font not changing of left panel 
+// menu bug
 
 
 
+// music button hide when paying donr
 
 
+// todo focus mode end name should be there in blaokcing page when blocked schedule is running  done
 
+// focus mode suggest alert should be limited if user refused once ask sir// // ADD (30 min cooldown)   done
 
-// bug of showing timer in menu
-// No break activities added solved
+// permission banner remove
+// timer work done // auto restart
+// file created again if deleted
 
-
-// login screen
-// break reshedule after natural break  solved
-// blocking schedule k log
-
-//.// blocing scheduel ko onboarding
-
-
-
-// permmission screen as a poopover
-
-
-
-
-
-// floating bear bug solved
-
-// button bng color changed 
-// button ka gap kam krna hai
-// sign up with email ko white kro 
-
-// screen remove
-// confirm timing screeen remove
-// break vali scrren hatao
-// set timing screen removed
-// break duration screen removed
-// - hataya. or check mark aage kr diye
-// text added
-//
-
-
-// list common krni hai
-// text changed
-
-
-// save temp app url after focus box should not come in block duper url focus mode  //  showaddFocusTempUrlsOrAppsWindow
-
-
-
-
-// bug afer custom routine ends solved 
-// load habits settings . and review result bug
-
-
-
- 
-
-
-//23/2/26
-// blocking schedule k time per nudge aaya or usme timer tha hatao
-// always block site not showing popup in super strict focus session it should deppend on only immediatly checkbox? ask sir
-
-// dont allow simple pomodoro to styart when super stirct blocking schedule is active
-// focus mode ki liost pomodoro per reload hui or enable hui jab blocking schedule pause hua lekin jab vapas se start hua to  disbael ni hui(when vlockg schedule was runniing in super strict mode)
-
-// handled ["All"] or not array in days in blocking schedule
-
-
-
-// if there is no current week day habit in evening habit. after focus summary on start eveniong habit button app got stuck and nothing happend // done all threee
-// shutoff aborted k time per blocking schedule
-// button was not clickable biug solved
-
-
-
-// See https://github.com/Focus-Bear/Mac-App/issues/1756 for outstanding menu UI TODOs 

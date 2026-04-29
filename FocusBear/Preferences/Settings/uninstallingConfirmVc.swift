@@ -234,12 +234,7 @@ class uninstallingConfirmVc: NSViewController, NSTextViewDelegate {
         if let val = UserDefaults.standard.object(forKey: kUserdefaultsFirstRun) as? Bool{
             firstRun = val
         }
-        
-//        var firstVideoShown:Bool?
-//        if let val = UserDefaults.standard.object(forKey: kUserdefaultsVideoShown) as? Bool{
-//            firstVideoShown = val
-//        }
-        
+
         let domain = Bundle.main.bundleIdentifier!
         UserDefaults.standard.removePersistentDomain(forName: domain)
         
@@ -247,10 +242,6 @@ class uninstallingConfirmVc: NSViewController, NSTextViewDelegate {
             UserDefaults.standard.set(firstRun!, forKey: kUserdefaultsFirstRun)
         }
 
-//        if firstVideoShown != nil{
-//            UserDefaults.standard.set(firstVideoShown!, forKey: kUserdefaultsVideoShown)
-//        }
-        
         UserDefaults.standard.synchronize()
     }
 }

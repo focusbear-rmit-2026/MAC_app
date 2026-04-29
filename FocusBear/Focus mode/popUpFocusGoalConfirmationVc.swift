@@ -23,7 +23,7 @@ class popUpFocusGoalConfirmationVc: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
-        btnNoCurrentTaskAdded.buttonColor = NSColor.white.cgColor
+        btnNoCurrentTaskAdded.isSecondaryButton = true
         btnNoCurrentTaskAdded.title = "Set Task"
         lblSelectTask.stringValue = "No current task, select a task to proceed."
         
@@ -40,7 +40,7 @@ class popUpFocusGoalConfirmationVc: NSViewController {
             lblSelectTask.stringValue = popUpFocusGoalConfirmationVcInfo.value(forKey: "titleSelectTask") as? String ?? lblSelectTask.stringValue
         }
         
-        btnWorkingOnAnotherGoal.buttonColor = NSColor.white.cgColor
+        btnWorkingOnAnotherGoal.isSecondaryButton = true
         
         comboBoxSelectTask.customDelegate = self
         comboBoxSelectTask.stringValue = ""

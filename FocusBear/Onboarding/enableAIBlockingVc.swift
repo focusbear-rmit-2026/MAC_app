@@ -10,58 +10,51 @@ import Cocoa
 
 class enableAIBlockingVc: NSViewController {
 
+    @IBOutlet weak var customViewProgress: NSView!
+    @IBOutlet weak var imgViewBear: NSImageView!
     @IBOutlet weak var btnContinue: Button!
     @IBOutlet weak var btnNoThanks: Button!
-    @IBOutlet weak var stackView: NSStackView!
-    @IBOutlet weak var lblDescriptionThirdPoint: NSTextField!
-    @IBOutlet weak var lblHeadingThirdPoint: NSTextField!
-    @IBOutlet weak var lblDescriptionSecondPoint: NSTextField!
-    @IBOutlet weak var lblHeadingSecondPoint: NSTextField!
-    @IBOutlet weak var lblDescriptionFirstPoint: NSTextField!
-    @IBOutlet weak var lblHeadingFirstPoint: NSTextField!
+    @IBOutlet weak var lblPointThird: NSTextField!
+    @IBOutlet weak var lblPointSecond: NSTextField!
+    @IBOutlet weak var lblPointFirst: NSTextField!
     @IBOutlet weak var lblSubTitle: NSTextField!
     @IBOutlet weak var lblTitle: NSTextField!
+
+    var bubbleView:BubbleView?
+    var distractionBlockingProgressVcObj:distractionBlockingProgressVc?
     
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
+        
+        lblPointFirst.stringValue = "The AI never knows who you are."
+        lblPointSecond.stringValue = "Your browsing stays private - we don't share it with AI providers."
+        lblPointThird.stringValue = "You can turn this off whenever you like."
+        
+        
         lblTitle.stringValue = "Do you want to use AI to block distractions?"
         lblSubTitle.stringValue = "Focus Bear can use AI to detect if you’re getting distracted and guide you back on track."
-        lblHeadingFirstPoint.stringValue = "Anonymous:"
-        lblDescriptionFirstPoint.stringValue = "we don’t tell the AI who you are"
-        lblHeadingSecondPoint.stringValue = "Private:"
-        lblDescriptionSecondPoint.stringValue = "we don’t track your website usage or let the AI provider train models based on your data"
-        lblHeadingThirdPoint.stringValue = "Opt out at any time:"
-        lblDescriptionThirdPoint.stringValue = "you can stop using AI at any point"
-        
         btnNoThanks.title = "No thanks"
         btnContinue.title = "Make me indistractible"
         
         if let enableAIBlockingVcInfo = configjson.value(forKey: "enableAIBlockingVcInfo") as? NSDictionary {
-
             lblTitle.stringValue = enableAIBlockingVcInfo.value(forKey: "title") as? String ?? lblTitle.stringValue
-
             lblSubTitle.stringValue = enableAIBlockingVcInfo.value(forKey: "subTitle") as? String ?? lblSubTitle.stringValue
-
-            lblHeadingFirstPoint.stringValue = enableAIBlockingVcInfo.value(forKey: "headingFirstPoint") as? String ?? lblHeadingFirstPoint.stringValue
-
-            lblDescriptionFirstPoint.stringValue = enableAIBlockingVcInfo.value(forKey: "descriptionFirstPoint") as? String ?? lblDescriptionFirstPoint.stringValue
-
-            lblHeadingSecondPoint.stringValue = enableAIBlockingVcInfo.value(forKey: "headingSecondPoint") as? String ?? lblHeadingSecondPoint.stringValue
-
-            lblDescriptionSecondPoint.stringValue = enableAIBlockingVcInfo.value(forKey: "descriptionSecondPoint") as? String ?? lblDescriptionSecondPoint.stringValue
-
-            lblHeadingThirdPoint.stringValue = enableAIBlockingVcInfo.value(forKey: "headingThirdPoint") as? String ?? lblHeadingThirdPoint.stringValue
-
-            lblDescriptionThirdPoint.stringValue = enableAIBlockingVcInfo.value(forKey: "descriptionThirdPoint") as? String ?? lblDescriptionThirdPoint.stringValue
-
             btnNoThanks.title = enableAIBlockingVcInfo.value(forKey: "buttonNoThanks") as? String ?? btnNoThanks.title
-
             btnContinue.title = enableAIBlockingVcInfo.value(forKey: "buttonContinue") as? String ?? btnContinue.title
+            
+            lblPointFirst.stringValue = enableAIBlockingVcInfo["pointFirstText"] as? String ?? lblPointFirst.stringValue
+            lblPointSecond.stringValue = enableAIBlockingVcInfo["pointSecondText"] as? String ?? lblPointSecond.stringValue
+            lblPointThird.stringValue = enableAIBlockingVcInfo["pointThirdText"] as? String ?? lblPointThird.stringValue
         }
 
         
-        btnNoThanks.buttonColor = NSColor.white.cgColor
+        btnNoThanks.isSecondaryButton = true
+        
+        
+        self.customViewProgress.addSubview(getDistractionBlockingProgressVcObj().view)
+        self.customViewProgress.addConstraints(subView: getDistractionBlockingProgressVcObj().view)
+        getDistractionBlockingProgressVcObj().setProgress(level: 1, progress: 0)
     }
     
     override func viewWillAppear() {
@@ -70,53 +63,55 @@ class enableAIBlockingVc: NSViewController {
         NotificationCenter.default.addObserver(self, selector: #selector(viewDidResize), name: NSView.frameDidChangeNotification, object: self.view)
     }
     
+    override func viewDidAppear() {
+        // Show bubble
+        var bubbleText = "Don’t worry, the AI provider doesn’t get your data!"
+        if let askSetDistractionsVcInfo = configjson["askSetDistractionsVcInfo"] as? [String: Any] {
+            bubbleText = askSetDistractionsVcInfo["bubbleText"] as? String ?? bubbleText
+        }
+        if bubbleView == nil{
+            bubbleView = PopupManager.showPopup(for: imgViewBear, edge: .minX, selfView: self.view, text: bubbleText, horizontalOffset: 25, fontSize: 14)
+        }
+    }
+    
+    func getDistractionBlockingProgressVcObj()->distractionBlockingProgressVc{
+        if distractionBlockingProgressVcObj == nil{
+            distractionBlockingProgressVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("distractionBlockingProgressVc")) as? distractionBlockingProgressVc
+        }
+        return distractionBlockingProgressVcObj!
+    }
+    
     @objc func viewDidResize(){
-        if self.view.frame.height < 700{
-            lblTitle.font = NSFont.systemFont(ofSize: 28)
-            lblSubTitle.font = NSFont.systemFont(ofSize: 22)
-            lblHeadingFirstPoint.font = NSFont.boldSystemFont(ofSize: 15)
-            lblHeadingSecondPoint.font = NSFont.boldSystemFont(ofSize: 15)
-            lblHeadingThirdPoint.font = NSFont.boldSystemFont(ofSize: 15)
-            lblDescriptionFirstPoint.font = NSFont.systemFont(ofSize: 14)
-            lblDescriptionSecondPoint.font = NSFont.systemFont(ofSize: 14)
-            lblDescriptionThirdPoint.font = NSFont.systemFont(ofSize: 14)
-
-//            topSpaceCollectionView.constant = 35
-//            stackViewStudy.spacing = 7
-//            stackViewEmployee.spacing = 7
+        if self.view.frame.height < 600{
+            lblPointFirst.font = NSFont.systemFont(ofSize: 11)
+            lblPointSecond.font = NSFont.systemFont(ofSize: 11)
+            lblPointThird.font = NSFont.systemFont(ofSize: 11)
+        }else if self.view.frame.height < 700{
+            lblPointFirst.font = NSFont.systemFont(ofSize: 13)
+            lblPointSecond.font = NSFont.systemFont(ofSize: 13)
+            lblPointThird.font = NSFont.systemFont(ofSize: 13)
         }else if self.view.frame.height < 900{
-            lblTitle.font = NSFont.systemFont(ofSize: 32)
-            lblSubTitle.font = NSFont.systemFont(ofSize: 23)
-            lblHeadingFirstPoint.font = NSFont.boldSystemFont(ofSize: 15)
-            lblHeadingSecondPoint.font = NSFont.boldSystemFont(ofSize: 15)
-            lblHeadingThirdPoint.font = NSFont.boldSystemFont(ofSize: 15)
-            lblDescriptionFirstPoint.font = NSFont.systemFont(ofSize: 14)
-            lblDescriptionSecondPoint.font = NSFont.systemFont(ofSize: 14)
-            lblDescriptionThirdPoint.font = NSFont.systemFont(ofSize: 14)
+            lblPointFirst.font = NSFont.systemFont(ofSize: 14)
+            lblPointSecond.font = NSFont.systemFont(ofSize: 14)
+            lblPointThird.font = NSFont.systemFont(ofSize: 14)
         }else{
-            lblTitle.font = NSFont.systemFont(ofSize: 35)
-            lblSubTitle.font = NSFont.systemFont(ofSize: 24)
-            lblHeadingFirstPoint.font = NSFont.boldSystemFont(ofSize: 17)
-            lblHeadingSecondPoint.font = NSFont.boldSystemFont(ofSize: 17)
-            lblHeadingThirdPoint.font = NSFont.boldSystemFont(ofSize: 17)
-            lblDescriptionFirstPoint.font = NSFont.systemFont(ofSize: 16)
-            lblDescriptionSecondPoint.font = NSFont.systemFont(ofSize: 16)
-            lblDescriptionThirdPoint.font = NSFont.systemFont(ofSize: 16)
+            lblPointFirst.font = NSFont.systemFont(ofSize: 15)
+            lblPointSecond.font = NSFont.systemFont(ofSize: 15)
+            lblPointThird.font = NSFont.systemFont(ofSize: 15)
         }
     }
     
     @IBAction func btnNoThanksClicked(_ sender: Any) {
         addLog(text: "[user-action] enable ai blocking view:- button No thanks clicked.")
         allApiObject.capturePosthog(event: "opt-in-for-ai-no", metadata: [:])
-        if !getInstallHabitPacksVcObj().isViewLoaded{
-            getInstallHabitPacksVcObj().loadView()
-        }
-        mainViewControllerObj?.showAskAppWorkVc()
+        SettingsManagerObject.isAiCheckUrlEnabled = false
+        getOnboardingVcObject().navigate(to: ._ASK_SET_DISTRACTIONS_)
     }
     
     @IBAction func btnContinueClicked(_ sender: Any) {
         addLog(text: "[user-action] enable ai blocking view:- button Continue clicked.")
         allApiObject.capturePosthog(event: "opt-in-for-ai-yes", metadata: [:])
-        mainViewControllerObj?.showAskOccupationVc()
+        SettingsManagerObject.isAiCheckUrlEnabled = true
+        getOnboardingVcObject().navigate(to: ._ASK_SET_DISTRACTIONS_)
     }
 }

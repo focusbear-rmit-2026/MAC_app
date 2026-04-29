@@ -45,7 +45,7 @@ class impactMeasurementVc: NSViewController {
         
         
         
-        btnCancel.buttonColor = NSColor.white.cgColor
+        btnCancel.isSecondaryButton = true
     }
     
     @IBAction func btnOkClicked(_ sender: Any) {

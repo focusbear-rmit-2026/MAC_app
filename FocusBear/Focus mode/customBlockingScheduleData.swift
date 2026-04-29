@@ -55,26 +55,6 @@ struct customBlockingSchedule: Codable, Identifiable {
         }
     }
     
-    
-//    func isBlockingActive() -> Bool {
-//        let now = Date()
-//        let calendar = Calendar.current
-//        let weekday = calendar.component(.weekday, from: now)
-//        let schedule = self
-//        guard schedule.daysOfWeek.contains(weekday) else { return false }
-//
-//        let startDate = schedule.startTime
-//        
-//        var endDate = schedule.endTime
-//        
-//        // Handle cross-midnight
-//        if endDate <= startDate {
-//            endDate = calendar.date(byAdding: .day, value: 1, to: endDate)!
-//        }
-//        
-//        return now >= startDate && now <= endDate
-//    }
-    
     // Assumes:
     // - schedule.daysOfWeek is [Int] using Calendar.current.component(.weekday, from:) (1 = Sunday ... 7 = Saturday)
     // - schedule.startTime and schedule.endTime are Date objects that contain the time-of-day you saved
@@ -209,16 +189,12 @@ struct customBlockingSchedule: Codable, Identifiable {
         case isMicroBreaksEnabled = "is_micro_breaks_enabled"
         case metadata = "metadata"
     }
+    
     // Custom decoding/encoding for time strings
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decodeIfPresent(String.self, forKey: .id) ?? UUID().uuidString
         name = try container.decodeIfPresent(String.self, forKey: .name) ?? "Untitled"
-//        let days = try container.decodeIfPresent([Int].self, forKey: .daysOfWeek) ?? [0,1,2,3,4,5,6]
-//        daysOfWeek = []
-//        for day in days{
-//            daysOfWeek.append(day + 1)
-//        }
         
         // Default full week
         let defaultDays = Array(0...6)
@@ -444,12 +420,14 @@ extension Date {
 }
 
 let customBlockingScheduleManagerObj = customBlockingScheduleManager()
+
 class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
     
     var arrBlockingSchedule = [customBlockingSchedule]()
     var isAnyCustomScheduleOn = false
     var currentScheduleFinishTime:Date?
     var isAnyCustomSchedulePaused = false
+    var pendingFirstBlockingSchedule: customBlockingSchedule?
     
     init() {
         NotificationCenter.default.addObserver(self, selector: #selector(self.dayChangedOperations(_:)), name:NSNotification.Name.NSCalendarDayChanged, object:nil)
@@ -622,7 +600,7 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
         arrBlockingSchedule[index].state = .on
         isAnyCustomScheduleOn = true
         isAnyCustomSchedulePaused = false
-        endFocusModeTime = arrBlockingSchedule[index].endTime// no mean here 
+        endFocusModeTime = arrBlockingSchedule[index].endTime// for sending end itme in block page
         var stringTime = ""
         if let date = endFocusModeTime{
             stringTime = getStringFromDate(date: date, dateFormat: "hh:mm a")
@@ -741,18 +719,7 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
             
         })
     }
-    
-    
-    
-//    func readCustomBlockingScheduleData(jsonData:Data){
-//        if let jsonString = String(data: jsonData, encoding: .utf8) {//
-//            print(jsonString)
-//        }
-//        let decoder = JSONDecoder()
-//        if let schedule = try? decoder.decode([customBlockingSchedule].self, from: jsonData){
-//            arrBlockingSchedule = schedule
-//        }
-//    }
+
     func readCustomBlockingScheduleData(jsonData: Data) {
         if let jsonString = String(data: jsonData, encoding: .utf8) {
             addLog(text: "Read Custom Blocking Schedule Data: \(jsonString)")
@@ -932,4 +899,14 @@ class customBlockingScheduleManager {// added 24/9/25 version 2.27.417
         return false
     }
 
+    // for new onboarding 3.31.463
+    func createFirstBlockingSchedule(focusModeId:String){
+        if var blockingSchedule = pendingFirstBlockingSchedule{
+            pendingFirstBlockingSchedule = nil
+            blockingSchedule.focusModeID = focusModeId
+            arrBlockingSchedule.append(blockingSchedule)
+            allApiObject.capturePosthog(event: "add-blocking-schedule", metadata: [:])
+            addCustomBlockingScheduleAtIndex(arrBlockingSchedule.count - 1)
+        }
+    }
 }

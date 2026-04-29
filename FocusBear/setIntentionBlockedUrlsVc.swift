@@ -98,7 +98,7 @@ class setIntentionBlockedUrlsVc: NSViewController {
             lblTitleSetIntention.stringValue = setIntentionBlockedUrlsVcInfo.value(forKey: "titleSetIntention") as? String ?? lblTitleSetIntention.stringValue
         }
         
-        btnCancelIntention.buttonColor = NSColor.white.cgColor
+        btnCancelIntention.isSecondaryButton = true
         textViewIntention.delegate = self
         
         popupButtonMinutes.removeAllItems()
@@ -136,7 +136,7 @@ class setIntentionBlockedUrlsVc: NSViewController {
                 }
             }
         }
-        btnAllow.buttonColor = NSColor.white.cgColor
+        btnAllow.isSecondaryButton = true
     }
     
     override func viewWillAppear() {

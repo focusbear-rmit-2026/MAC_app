@@ -26,30 +26,25 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
     @IBOutlet weak var horizontalLineSeprator: NSBox!
     @IBOutlet weak var radioBtnAllowAllApps: NSButton!
     @IBOutlet weak var radioBtnAllowSelectedApps: NSButton!
-    
     @IBOutlet weak var radioBtnAllowListApproch: NSButton!
     @IBOutlet weak var radioBtnBlockListApproch: NSButton!
-    
     @IBOutlet weak var lblTitleFocusType: NSTextField!
     @IBOutlet weak var boxAllowedWebUrls: NSBox!
     @IBOutlet weak var boxAllowedApps: NSBox!
     @IBOutlet weak var lblNoFocusAdded: NSTextField!
     @IBOutlet weak var boxEmptyFocusType: NSBox!
-
     @IBOutlet weak var textFieldSelectedFocusType: NSTextField!
-    
     @IBOutlet weak var tblViewAllowedApps: NSTableView!
     @IBOutlet weak var tblViewFocusType: NSTableView!
     @IBOutlet weak var tblViewAllowedUrls: NSTableView!
-    
     @IBOutlet weak var btnAddFocusType: NSButton!
     @IBOutlet weak var btnRemoveFocusType: NSButton!
     @IBOutlet weak var btnAddApp: NSButton!
     @IBOutlet weak var btnRemoveApp: NSButton!
     @IBOutlet weak var btnAddUrl: NSButton!
     @IBOutlet weak var btnRemoveUrl: NSButton!
-    
     @IBOutlet weak var btnDuplicateFocusType: NSButton!
+    
     
     var titleAllowedAllUrls = "Allow all urls"
     var titleAllowedSelectedUrls = "Allow selected urls (works with Safari and Chrome only)"
@@ -67,11 +62,15 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
     let viewWidthDefault = 760
     let viewHeightDefault = 624
     var isViewVisible = false
+    var cp = NSColorPanel.shared
     
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here
         addLog(text: "focusPreferencesVc viewdidload start")
+        
+        
+        
         btnBackToCustomBlocking.title = "Back to custom blocking"
         lblTitleBlockApp.stringValue = "Which apps do you want to block?"
         var toolTipAdd = "Add"
@@ -244,9 +243,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         showTooltip(sender: bntColorBoxInfo, msg: toolTipColorBox, preferredEdge: NSRectEdge.maxX, maxWidthVal:230)
     }
     
-    var cp = NSColorPanel.shared
     @IBAction func btnShowColorPanelClicked(_ sender: Any) {
-        
         cp = NSColorPanel.shared
         cp.color = colorWell.color
         cp.mode = .RGB
@@ -256,6 +253,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         cp.isContinuous = false// qki api call hogi isliye false kiya
         cp.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.numberOfWindowLevelKeys)))
     }
+    
     @objc func colorDidChange(){
         if tblViewFocusType.selectedRow == -1{
             return;
@@ -335,7 +333,8 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
 
         UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
         
-        allApiObject.addFocusMode(focusType: item)
+        allApiObject.addFocusMode(focusType: item, completionHandler: {success in
+        })
         allApiObject.capturePosthog(event: "duplicate-focus-mode", metadata: [:])
         resetPomodoroVcFocusListIfNeeded()
         
@@ -518,12 +517,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
     
     
     
-    @IBAction func btnAddFocusTypeClicked(_ sender: Any) {
-        if UserDefaults.standard.object(forKey: kUserdefaultsFocusTipsShown) == nil{
-            showSetFocusWindow()
-            return;
-        }
-            
+    @IBAction func btnAddFocusTypeClicked(_ sender: Any) { 
         self.presentAsSheet(addFocusTypeVcObj!)
     }
     
@@ -1031,6 +1025,7 @@ class focusPreferencesVc: NSViewController, NSMenuDelegate {
         }
     }
     
+    
 }
 
 extension focusPreferencesVc: NSTableViewDelegate, NSTableViewDataSource{
@@ -1052,13 +1047,6 @@ extension focusPreferencesVc: NSTableViewDelegate, NSTableViewDataSource{
                     }
                     btnRemoveApp.isEnabled = false
                     if arrFocusType[row]["isDefault"] as? Bool == true {
-//                        if let arr = arrFocusType[row]["blocked_apps"] as? [String]{
-//                            btnRemoveApp.isEnabled = false
-//                            return arr.count
-//                        }else{
-//                            btnRemoveApp.isEnabled = false
-//                            return 0
-//                        }
                         return SettingsManagerObject.arrBlockedApps.count
                     }else{
                     let arr = arrFocusType[row]["allowed_apps"] as? [String] ?? []
@@ -1216,9 +1204,7 @@ extension focusPreferencesVc: NSTableViewDelegate, NSTableViewDataSource{
         
         return NSTableCellView()
     }
-    //    func tableView(_ tableView: NSTableView, heightOfRow row: Int) -> CGFloat {
-    
-    //    }
+
     func tableView(_ tableView: NSTableView, rowViewForRow row: Int) -> NSTableRowView? {
         let customView = TableRowViewResult()
         
@@ -1234,7 +1220,6 @@ extension focusPreferencesVc: NSTableViewDelegate, NSTableViewDataSource{
         if tblview == tblViewFocusType{
             
             let isRelaxFocus = arrFocusType[selectedRow]["isRelaxFocus"] as? Bool ?? false
-            
             for row in 0..<tblViewFocusType.numberOfRows{
                 if row == selectedRow{
                     if let cell = tblViewFocusType.view(atColumn: 0, row: selectedRow, makeIfNecessary: true) as? tblCellFocusPreferences{
@@ -1253,12 +1238,12 @@ extension focusPreferencesVc: NSTableViewDelegate, NSTableViewDataSource{
             boxAllowedWebUrls.alphaValue = 1
             tblViewAllowedUrls.isEnabled = true
             tblViewAllowedUrls.isHidden = false
-            
+
             if isRelaxFocus{
                 radioBtnAllowAllApps.isHidden = false
                 radioBtnAllowSelectedApps.isHidden = true
                 lblTitleBlockApp.isHidden = true
-                heightTblViewApps.constant = 185
+                heightTblViewApps.constant = 170
                 tblViewAllowedApps.isEnabled = false
                 tblViewAllowedApps.isHidden = true
                 boxAllowedApps.alphaValue = 0
@@ -1282,9 +1267,6 @@ extension focusPreferencesVc: NSTableViewDelegate, NSTableViewDataSource{
                 btnAddApp.isHidden = false
                 btnRemoveApp.isHidden = false
                 
-//                if arrFocusType[tblViewFocusType.selectedRow]["blocked_apps"]  == nil{
-//                    arrFocusType[tblViewFocusType.selectedRow]["blocked_apps"] = []
-//                }
                 arrFocusType[tblViewFocusType.selectedRow]["allowed_apps"] = []
                 tblViewAllowedApps.reloadData()
             }else{

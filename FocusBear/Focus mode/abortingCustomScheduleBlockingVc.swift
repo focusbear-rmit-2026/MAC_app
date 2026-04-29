@@ -47,7 +47,7 @@ class abortingCustomScheduleBlockingVc: NSViewController {
             btnAbortFocus.title = info.value(forKey: "buttonAbortFocus") as? String ?? btnAbortFocus.title
             titlePauseText = info.value(forKey: "titlePauseText") as? String ?? titlePauseText
         }
-        btnCancel.buttonColor = NSColor.white.cgColor
+        btnCancel.isSecondaryButton = true
     }
     
     override func viewWillAppear() {

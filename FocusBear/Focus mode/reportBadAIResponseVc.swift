@@ -41,7 +41,7 @@ class reportBadAIResponseVc: NSViewController {
         
         lblUrl.stringValue = ""
         btnCancel.title = buttonCancelText
-        btnCancel.buttonColor = NSColor.white.cgColor
+        btnCancel.isSecondaryButton = true
     }
     
     func resetData(url:String?, app:String?, payload:[String:Any]?){

@@ -12,6 +12,7 @@ import TrueTime
 
 class focusPreferencesAdvancedVc: NSViewController {
     
+    @IBOutlet weak var btnCheckBoxSuggestWorkFocusMode: NSButton!
     @IBOutlet weak var boxBg: NSBox!
     @IBOutlet weak var scrollView: NSScrollView!
     @IBOutlet weak var popUpBtnFocusAlignmentScore: NSPopUpButton!
@@ -79,6 +80,12 @@ class focusPreferencesAdvancedVc: NSViewController {
         textViewRunShelltBeforeFocus.delegate = self
         
         tokenField.delegate = self
+        
+        btnCheckBoxSuggestWorkFocusMode.title = "Automatically suggest starting this focus mode when any allowed URL is opened"
+        
+        if let focusPreferencesInfo = configjson.value(forKey: "focusPreferencesInfo") as? NSDictionary{
+            btnCheckBoxSuggestWorkFocusMode.title = focusPreferencesInfo.value(forKey: "checkBoxSuggestWorkFocusMode") as? String ?? btnCheckBoxSuggestWorkFocusMode.title
+        }
         
         lblFocusAlignmentScore.stringValue = "Show distracting site popup only when focus alignment score is less than"
         
@@ -165,6 +172,7 @@ class focusPreferencesAdvancedVc: NSViewController {
         popUpBtnFocusAlignmentScore.removeAllItems()
         popUpBtnFocusAlignmentScore.addItems(withTitles: arrFocusAlignmentScore)
     }
+    
     override func viewWillAppear() {
         isShellScriptBeforeFocusEdited = false
         isShellScriptAfterFocusEdited = false
@@ -309,6 +317,10 @@ class focusPreferencesAdvancedVc: NSViewController {
             }
             tblView.reloadData()
             tblViewApps.reloadData()
+            
+            
+            let autoSuggestFocusModeOnAllowedURL = arrFocusType[row]["autoSuggestFocusModeOnAllowedURL"] as? Bool ?? false
+            btnCheckBoxSuggestWorkFocusMode.state = autoSuggestFocusModeOnAllowedURL ? .on : .off
         }
 
         btnShowScripts.image = NSImage(named: "NSTouchBarGoForwardTemplate")
@@ -714,7 +726,6 @@ class focusPreferencesAdvancedVc: NSViewController {
                         arrFocusType[row]["isAutoDoNotDisturbEnabled"] = true
                         UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
                         allApiObject.capturePosthog(event: "settings-changed-enable-dnd", metadata: [:])//#490
-//                        preferencesWindowControllerObj!.window!.setFrameOrigin(NSPoint(x: 0, y: 0))
                     }else{
                         self.checkBoxAutoDoNotDisturb.state = .off
                     }
@@ -737,7 +748,18 @@ class focusPreferencesAdvancedVc: NSViewController {
     @IBAction func popUpBtnFocusAlignmentScoreClicked(_ sender: Any) {
         
     }
+    
+    @IBAction func btnCheckBoxSuggestWorkFocusModeClicked(_ sender: Any) {
+        let row = focusPreferencesVcObj?.tblViewFocusType.selectedRow ?? 0
+        if btnCheckBoxSuggestWorkFocusMode.state == .on{
+            arrFocusType[row]["autoSuggestFocusModeOnAllowedURL"] = true
+        }else{
+            arrFocusType[row]["autoSuggestFocusModeOnAllowedURL"] = false
+        }
+        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+    }
 }
+
 extension focusPreferencesAdvancedVc: NSTableViewDelegate, NSTableViewDataSource{
     
     func numberOfRows(in tableView: NSTableView) -> Int {
@@ -771,6 +793,7 @@ extension focusPreferencesAdvancedVc: NSTableViewDelegate, NSTableViewDataSource
         
         return 0
     }
+    
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
         if let cell = tableView.makeView(withIdentifier: NSUserInterfaceItemIdentifier(rawValue: "tblCellFocusPreferences"), owner: nil) as? tblCellFocusPreferences {
             

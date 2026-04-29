@@ -27,7 +27,7 @@ class lateMorningHabitPopupVc: NSViewController {
             btnSkip.title = lateMorningHabitPopupVcInfo.value(forKey: "buttonSkipText") as? String ?? btnSkip.title
         }
         
-        btnSkip.buttonColor = NSColor.white.cgColor
+        btnSkip.isSecondaryButton = true
     }
     override func viewWillAppear() {
         let startDate = Calendar.current.date(bySettingHour: startTime!.hour, minute: startTime!.minute, second: startTime!.second, of: Date())!

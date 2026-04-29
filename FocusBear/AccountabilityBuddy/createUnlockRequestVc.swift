@@ -57,7 +57,7 @@ class createUnlockRequestVc: NSViewController {
         
         
         btnCancel.title = buttonCancelText
-        btnCancel.buttonColor = NSColor.white.cgColor
+        btnCancel.isSecondaryButton = true
         
         
         sliderDuration.minValue = 1

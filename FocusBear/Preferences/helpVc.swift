@@ -22,8 +22,6 @@ class helpVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate 
     @IBOutlet weak var btnDontUseDiscord: underLineButton!
     @IBOutlet weak var btnJoinDiscordServer: Button!
     @IBOutlet var textView: placeHolderTextView!
-//    @IBOutlet weak var webView: WKWebView!
-//    @IBOutlet weak var tabViewChatWthApp: NSTabViewItem!
     @IBOutlet weak var tabViewReportProblem: NSTabViewItem!
     @IBOutlet weak var tabView: NSTabView!
     @IBOutlet weak var lblTitle: NSTextField!
@@ -34,6 +32,10 @@ class helpVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate 
     
     @IBOutlet weak var btnJoinWhatsAppGroup: Button!
     var arrScrrenshots = [URL]()
+    var tabViewDebugLogs: NSTabViewItem?
+    var debugLogsVcObj: DebugLogsVc?
+    var tabDebugLogsTitle = "Debug Logs"
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
@@ -77,14 +79,9 @@ class helpVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate 
                 lblAddScreenshots.stringValue = "➕ \(title)"
             }
             btnSelectScreenshots.title = helpVcInfo.value(forKey: "buttonSelectScreenshots") as? String ?? btnSelectScreenshots.title
+            tabDebugLogsTitle = helpVcInfo.value(forKey: "tabDebugLogs") as? String ?? tabDebugLogsTitle
         }
         
-//        self.webView.navigationDelegate = self
-//        let url = "https://dashboard.focusbear.io/webview/chat?bust_cache=\(getUuid())"
-//        let  fileURL = URL(string: url)
-//        let request = NSMutableURLRequest(url: fileURL!)
-//        webView.load(request as URLRequest)
-//
         
         self.webViewGetSupport.navigationDelegate = self
         loadGetSupportWebView()
@@ -95,11 +92,12 @@ class helpVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate 
         
         tabView.delegate = self
         textView.placeHolderTitleString = NSAttributedString(string: placeHolderLogsFeedback, attributes: [NSAttributedString.Key.foregroundColor : NSColor.secondaryLabelColor, NSAttributedString.Key.font : NSFont.systemFont(ofSize: 13)])
+        addDebugLogsTabIfNeeded()
         tabView.selectTabViewItem(at: 0)
         
         dropView.delegate = self
         
-        btnSelectScreenshots.buttonColor = NSColor.white.cgColor
+        btnSelectScreenshots.isSecondaryButton = true
     }
     
     func loadGetSupportWebView(){
@@ -119,6 +117,22 @@ class helpVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate 
     override func viewWillAppear() {
         arrScrrenshots.removeAll()
         collectionView.reloadData()
+        addDebugLogsTabIfNeeded()
+    }
+    
+    func addDebugLogsTabIfNeeded() {
+        let shouldShow = SettingsManagerObject.isAIBlockingEnabled()
+        if shouldShow && tabViewDebugLogs == nil {
+            tabViewDebugLogs = NSTabViewItem(identifier: "debugLogs")
+            tabViewDebugLogs!.label = tabDebugLogsTitle
+            debugLogsVcObj = DebugLogsVc()
+            tabViewDebugLogs!.viewController = debugLogsVcObj
+            tabView.addTabViewItem(tabViewDebugLogs!)
+        } else if !shouldShow && tabViewDebugLogs != nil {
+            tabView.removeTabViewItem(tabViewDebugLogs!)
+            tabViewDebugLogs = nil
+            debugLogsVcObj = nil
+        }
     }
     
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
@@ -325,6 +339,10 @@ extension helpVc: NSTabViewDelegate{
             allApiObject.capturePosthog(event: "help-tab-chat-with-focus-bear-clicked", metadata: [:])
         }else if id == "support"{
             allApiObject.capturePosthog(event: "help-tab-get-support-clicked", metadata: [:])
+        }else if id == "debugLogs"{
+            allApiObject.capturePosthog(event: "help-tab-debug-logs-clicked", metadata: [:])
+            debugLogsVcObj?.tblView.reloadData()
+            debugLogsVcObj?.updateNoLogsVisibility()
         }
     }
 }

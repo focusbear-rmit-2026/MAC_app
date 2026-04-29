@@ -45,7 +45,7 @@ class confirmRunScriptVc: NSViewController {
             checkBoxDontShowThisAgain.title = confirmRunScriptVcInfo.value(forKey: "buttonDontShowAgainText") as? String ?? checkBoxDontShowThisAgain.title
         }
         
-        btnCancel.buttonColor = NSColor.white.cgColor
+        btnCancel.isSecondaryButton = true
     }
     func reloadData(focusMode:String, scriptPath:String?, shellCommand:String?){
         self.scriptPath = scriptPath

@@ -33,6 +33,7 @@ class strictnessVc: NSViewController {
     let blockListItemVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("settingListItemVc")) as? settingListItemVc
     
     var currentStrictnessLevel = 1
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
@@ -85,6 +86,7 @@ class strictnessVc: NSViewController {
         var strictness_DistractingSites = "Stay focused! Designate specific sites as 'Super Distracting' to proactively prevent access during crucial work periods, ensuring an undisturbed and concentrated workflow."
         var strictness_DistractingApps = "Minimize app distractions! Label select apps as 'Super Distracting' to strategically enhance your concentration, creating a refined digital environment tailored to your productivity needs."
         var strictness_AlwaysAllowedApps = "Apps added here will never be blocked, regardless of focus mode, blocking schedules, or strictness settings. Use this for essential apps that you always need access to."
+        
         var strictness_Block_Lists = "Use Block Lists to stay focused on a certain type of work. Start a focus session from the focus bear menu or use a blocking schedule."
         var strictness_Blocking_Schedules = "Create your own schedules to automatically block distractions. Pick the days and times when distractions should be blocked. Stay focused without needing to start blocking manually."
         
@@ -93,7 +95,7 @@ class strictnessVc: NSViewController {
             strictness_Password = tooltips.value(forKey: "strictness_Password") as? String ?? strictness_Password
             strictness_DistractingSites = tooltips.value(forKey: "strictness_DistractingSites") as? String ?? strictness_DistractingSites
             strictness_DistractingApps = tooltips.value(forKey: "strictness_DistractingApps") as? String ?? strictness_DistractingApps
-            strictness_AlwaysAllowedApps = tooltips.value(forKey: "strictness_AlwaysAllowedApps") as? String ?? strictness_AlwaysAllowedApps //todo text 
+            strictness_AlwaysAllowedApps = tooltips.value(forKey: "strictness_AlwaysAllowedApps") as? String ?? strictness_AlwaysAllowedApps  
             strictness_Block_Lists = tooltips.value(forKey: "strictness_Block_Lists") as? String ?? strictness_Block_Lists
             strictness_Blocking_Schedules = tooltips.value(forKey: "strictness_Blocking_Schedules") as? String ?? strictness_Blocking_Schedules
         }
@@ -175,6 +177,8 @@ class strictnessVc: NSViewController {
         blockedAppsItemVcObj?.delegate = self
         blockedAppsItemVcObj?.toolTip = strictness_DistractingApps
 
+    
+        //-- always allowed apps
         stackView.addView(alwaysAllowedAppsItemVcObj!.view, in: .bottom)
         alwaysAllowedAppsItemVcObj?.lblTitle.stringValue = alwaysAllowedAppsSettingTitle
         if #available(macOS 11.0, *) {
@@ -319,8 +323,7 @@ extension strictnessVc: SettingListItemDelegate{
             }
             //----------------------------------------------------//
             settingsContainerVcObj?.showAlwaysAllowedAppsView()
-        }
-        else if object == customBlockingVcObj{
+        }else if object == customBlockingVcObj{
             tabStrictnessContainerVcObj?.showCustomBlockingSchedulesView()
         }else if object == blockListItemVcObj{
             tabStrictnessContainerVcObj?.showFocusPreferences()

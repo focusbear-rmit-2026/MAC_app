@@ -48,7 +48,7 @@ class initialQuitFeedbackVc: NSViewController, NSTextViewDelegate {
         }
         
         textView.delegate = self
-        btnQuitApp.buttonColor = NSColor.white.cgColor
+        btnQuitApp.isSecondaryButton = true
     }
     override func viewWillAppear() {
         var subTitle = "You were hoping that Focus Bear would do this - \"<GOALS>\". It obviously hasn't delivered on that expectation."

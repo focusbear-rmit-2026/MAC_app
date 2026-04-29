@@ -22,7 +22,8 @@ class addFocusTypeVc: NSViewController, NSTextFieldDelegate  {
 
     var buttonAddText = "Add"
     var titleAddFocusType = "Add Focus Type"
-
+    var cp = NSColorPanel.shared
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
@@ -114,7 +115,6 @@ class addFocusTypeVc: NSViewController, NSTextFieldDelegate  {
         }
     }
     
-    var cp = NSColorPanel.shared
     @IBAction func btnShowColorPanelClicked(_ sender: Any) {
         cp = NSColorPanel.shared
         cp.mode = .RGB
@@ -172,7 +172,8 @@ class addFocusTypeVc: NSViewController, NSTextFieldDelegate  {
         UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
         resetPomodoroVcFocusListIfNeeded()
         
-        allApiObject.addFocusMode(focusType: dic)
+        allApiObject.addFocusMode(focusType: dic, completionHandler: {success in
+        })
         allApiObject.capturePosthog(event: "add-new-focus-mode", metadata: [:])
     }
     func controlTextDidChange(_ obj: Notification) {

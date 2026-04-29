@@ -29,7 +29,7 @@ class deactivateBreaksVc: NSViewController {
             btnKeepThemOn.title = deactivateBreaksVcInfo.value(forKey: "buttonKeepThemOnText") as? String ?? btnKeepThemOn.title
             btnTurnBreaksOff.title = deactivateBreaksVcInfo.value(forKey: "buttonTurnBreaksOffText") as? String ?? btnTurnBreaksOff.title
         }
-        btnTurnOffForToday.buttonColor = NSColor.white.cgColor
+        btnTurnOffForToday.isSecondaryButton = true
     }
     
     @IBAction func btnTurnOffForTodayClicked(_ sender: Any) {

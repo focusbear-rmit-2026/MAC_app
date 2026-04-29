@@ -919,6 +919,20 @@ class shadowView: NSBox {
     }
 }
 
+class shadowImageView: NSImageView {
+    override func awakeFromNib() {
+        super.awakeFromNib()
+        
+        self.wantsLayer = true
+        self.shadow = NSShadow()
+        self.layer?.shadowOpacity = 0.3
+        self.layer?.shadowColor = NSColor.black.cgColor
+        self.layer?.shadowOffset = NSMakeSize(0, -2)
+        self.layer?.shadowRadius = 3
+    }
+}
+
+
 class shadowTextField: NSTextField {
     
     override func awakeFromNib() {
@@ -1297,5 +1311,86 @@ class cickableBackgroundView: NSView {
     override func mouseDown(with event: NSEvent) {
         super.mouseDown(with: event)
         window?.makeFirstResponder(nil)
+    }
+}
+
+
+class circularProgressView: NSView {
+
+    private let trackLayer = CAShapeLayer()
+    private let progressLayer = CAShapeLayer()
+
+    private let lineWidth:CGFloat = 2
+    
+    var progress: CGFloat = 0 {
+        didSet {
+            progressLayer.strokeEnd = progress
+        }
+    }
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        setupLayers()
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        setupLayers()
+    }
+
+    private func setupLayers() {
+        wantsLayer = true
+
+        let center = CGPoint(x: bounds.midX, y: bounds.midY)
+     //   let radius: CGFloat = min(bounds.width, bounds.height) / 2 - 5
+        
+        let radius = (min(bounds.width, bounds.height) - lineWidth) / 2
+
+        let circularPath = NSBezierPath()
+        circularPath.appendArc(
+            withCenter: center,
+            radius: radius,
+            startAngle: 90,     // start from top
+            endAngle: 450,      // full circle
+            clockwise: false    // anticlockwise
+        )
+
+        // Track (background circle)
+        trackLayer.path = circularPath.cgPath
+        trackLayer.strokeColor = resolvedCGColor(.quaternaryLabelColor)
+        trackLayer.fillColor = NSColor.clear.cgColor
+        trackLayer.lineWidth = lineWidth
+
+        // Progress (orange)
+        progressLayer.path = circularPath.cgPath
+        progressLayer.strokeColor = NSColor(named: "dark_OrangeColor")?.cgColor ?? NSColor.systemOrange.cgColor
+        progressLayer.fillColor = NSColor.clear.cgColor
+        progressLayer.lineWidth = lineWidth
+        progressLayer.strokeEnd = 0
+
+        
+        layer?.addSublayer(trackLayer)
+        layer?.addSublayer(progressLayer)
+    }
+    
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+
+
+        trackLayer.strokeColor = resolvedCGColor(.quaternaryLabelColor)
+    }
+    
+    func resolvedCGColor(_ color: NSColor) -> CGColor? {
+        var cgColor: CGColor?
+
+        if #available(macOS 11.0, *) {
+            effectiveAppearance.performAsCurrentDrawingAppearance {
+                cgColor = color.cgColor
+            }
+        } else {
+            cgColor = color.cgColor
+        }
+
+        return cgColor
     }
 }

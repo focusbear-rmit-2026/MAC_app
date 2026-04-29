@@ -37,7 +37,7 @@ class popupAppointmentTimeVc: NSViewController {
             btnBackToHabits.title = popupAppointmentTimeVcInfo.value(forKey: "buttonBackToHabitsText") as? String ?? btnBackToHabits.title
             subTitle = popupAppointmentTimeVcInfo.value(forKey: "subTitle") as? String ?? subTitle
         }
-        btnBackToHabits.buttonColor = NSColor.white.cgColor
+        btnBackToHabits.isSecondaryButton = true
         lblTimer.isHidden = true
     }
     var shouldAskPassword = false

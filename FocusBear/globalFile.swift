@@ -280,11 +280,17 @@ enum ACTION:Int{
 
 var applastSettingsGetTime:Date?
 
+
+
+
+
 enum CURRENTSTATE:Int{
-    case _NOTHING_ = 111, _MORNING_HABIT_, _EVENING_HABIT_, _MICRO_BREAK_, _SHUTOFFMAC_, _BREATHING_, _ABORT_, _FOCUS_SUMMARY_, _POSTPON_MORNING_HABIT_, _POSTPON_EVENING_HABIT_, _POSTPON_FOCUS_SUMMARY_, _POSTPON_ONBOARDING_HABIT_, _ASK_APP_WORK_, _SPECIAL_ACTIVITY_, _CUSTOM_ROUTINE_//_POSTPON_BREAK_ACTIVITY_
-}//_POSTPON_BREAK_ACTIVITY_ iski need nahi h qki normal timer utne hi time baad ka laga dete hai
+    case _NOTHING_ = 111, _MORNING_HABIT_, _EVENING_HABIT_, _MICRO_BREAK_, _SHUTOFFMAC_, _BREATHING_, _ABORT_, _FOCUS_SUMMARY_, _POSTPON_MORNING_HABIT_, _POSTPON_EVENING_HABIT_, _POSTPON_FOCUS_SUMMARY_, _ONBOARDING_, _SPECIAL_ACTIVITY_, _CUSTOM_ROUTINE_, _LOGIN_
+}//_POSTPON_BREAK_ACTIVITY_ is not required because we always reset break activity timer when user clicks on postpone
 
 var lastCurrentStateSaved:CURRENTSTATE = ._NOTHING_
+
+
 
 var currentState:CURRENTSTATE = ._NOTHING_{
     didSet{
@@ -1716,8 +1722,19 @@ func getBoldFont(size: CGFloat)->NSFont{
     return NSFont(name: selectedFont.boldFontName, size: size) ?? NSFont.boldSystemFont(ofSize: size)
 }
 
+func getMediumFont(size: CGFloat)->NSFont{
+    if SettingsManagerObject.selectedFontIndex == systemFontIndex{
+        return NSFont.systemFont(ofSize: size, weight: .medium)
+    }
+    return NSFont(name: selectedFont.regularFontName, size: size) ?? NSFont.boldSystemFont(ofSize: size)
+}
 
-
+func getSemiBoldFont(size: CGFloat)->NSFont{
+    if SettingsManagerObject.selectedFontIndex == systemFontIndex{
+        return NSFont.systemFont(ofSize: size, weight: .semibold)
+    }
+    return NSFont(name: selectedFont.boldFontName, size: size) ?? NSFont.boldSystemFont(ofSize: size)
+}
 
 
 
@@ -2577,6 +2594,7 @@ var defaultSleepTime = "21:30"
 
 
 func showOnboardingProgress(view:NSView, progress:Int){
+    return;
     view.addSubview(getOnboardingProgressVcObj().view)
     view.addBottomRightConstraints(subView: getOnboardingProgressVcObj().view)
     onboardingProgressVcObj?.resetData(progress: progress)
@@ -2685,7 +2703,6 @@ var boxForStatusBarForTooltip: customStatusBarBoxForTooltip!
 
 
 
-//************************json for new params in block script*************************//
 
 var totalFocuseTime:Double = 0
 var totalDeepFocusedTime:Double = 0 // according to alignment score %
@@ -3152,4 +3169,15 @@ func isMicroBreaksRunning()->Bool{
         return true
     }
     return false
+}
+
+func reloadPermissionsIfNeeded() {
+    guard mainWindowControllerObj?.window?.isVisible == true,
+          leftMenuVcObj?.boxBlocks.isSelected == true,
+          let customVC = customBlockingSchedulesVcObj,
+          let containerVC = tabStrictnessContainerVcObj,
+          containerVC.containerView.subviews.contains(customVC.view)
+    else { return }
+
+    customVC.checkPermissions()
 }

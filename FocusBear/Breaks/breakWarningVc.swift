@@ -157,8 +157,8 @@ class breakWarningVc: NSViewController {
         }else{
             boxWidth.constant = 300
         }
-        btnSkip.buttonColor = NSColor.white.cgColor
-        btnPostpone.buttonColor = NSColor.white.cgColor
+        btnSkip.isSecondaryButton = true
+        btnPostpone.isSecondaryButton = true
     }
     override func viewWillDisappear() {
         if transparentWcObj != nil{

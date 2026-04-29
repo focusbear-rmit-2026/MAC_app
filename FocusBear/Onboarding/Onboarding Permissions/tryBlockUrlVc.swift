@@ -8,7 +8,7 @@
 
 import Cocoa
 
-class tryBlockUrlVc: NSViewController {
+class tryBlockUrlVc: NSViewController {// not in use 
 
     @IBOutlet weak var btnClickOpenUrl: underLineButton!
     @IBOutlet weak var btnLeft: Button!
@@ -81,7 +81,7 @@ class tryBlockUrlVc: NSViewController {
             }
         }
         
-        btnLeft.buttonColor = NSColor.white.cgColor
+        btnLeft.isSecondaryButton = true
         btnClickOpenUrl.isHidden = false
         
         allApiObject.capturePosthog(event: "distraction-shield-activated-shown", metadata: [:])
@@ -94,12 +94,10 @@ class tryBlockUrlVc: NSViewController {
     override func viewDidAppear() {
         showOnboardingBellIcon(view: self.view, screen: "distraction-shield-activated-screen")
         tryBlockingVcShownInOnboarding = true
-        self.view.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.normalWindow)))
     }
     
     override func viewWillDisappear() {
         hideOnboardingBellIcon(view: self.view)
-        self.view.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.assistiveTechHighWindow)))
     }
 
     @IBAction func btnLeftClicked(_ sender: Any) {

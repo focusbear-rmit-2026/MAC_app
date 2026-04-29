@@ -790,19 +790,16 @@ func settingsChangedDuringHabitsCurrentActivityProps(){
     mainWindowControllerObj?.window?.close()
     hideBlankWindowInSecondaryMonitor()
     currentState = ._NOTHING_
-    let alert = NSAlert()
-    alert.setSharingType()
     var settingsChangedText = "It looks like your settings have been updated. App will restart to take effect."//
     if let common = configjson.value(forKey: "common") as? NSDictionary{
         settingsChangedText = common.value(forKey: "settingsChangedText") as? String ?? settingsChangedText
     }
-    alert.messageText = settingsChangedText
-    alert.addButton(withTitle: buttonOkText)
+
     NSApplication.shared.activate(ignoringOtherApps: true)
-    alert.runModal()
-    
-    appdelegate!.quitAndRestartApp()
-    print("settings changed")
+    showCustomAlert(title: settingsChangedText, body: nil, buttonOkText: buttonOkText, buttonCancelText: nil, checkBoxText: nil, autoClose: true, buttonLinkUrl:nil, buttonLinkText: nil, completionHandler: {isOkClicked in
+        print(isOkClicked)
+        appdelegate!.quitAndRestartApp()
+    })
 }
 
 

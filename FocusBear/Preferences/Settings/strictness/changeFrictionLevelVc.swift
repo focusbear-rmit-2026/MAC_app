@@ -1,5 +1,5 @@
 //
-//  chooseFrictionLevelVc.swift
+//  changeFrictionLevelVc.swift
 //  Focus Bear
 //
 //  Created by Prashant Sawnani on 20/05/23.
@@ -63,7 +63,7 @@ class changeFrictionLevelVc: NSViewController {
             btnContinue.title = chooseFrictionLevelVcInfo.value(forKey: "buttonApplyText") as? String ?? btnContinue.title
         }
         
-        btnCancel.buttonColor = NSColor.white.cgColor
+        btnCancel.isSecondaryButton = true
     }
     override func viewDidAppear() {
         SettingsManagerObject.putUserLocalDeviceSettings()
@@ -123,21 +123,16 @@ class changeFrictionLevelVc: NSViewController {
             allApiObject.capturePosthog(event: "change-friction-level", metadata: ["friction-level":"super_strict"])
             if !SettingsManagerObject.isFullScreenEnabled{
                 SettingsManagerObject.isFullScreenEnabled = true
-                if isMainWindowLoaded{
-//                    mainWindowControllerObj?.showFullSizeWindow()
-                }
             }
             SettingsManagerObject.isCuddlyModeEnabled = false
             SettingsManagerObject.isEasySkipEnabled = false
             UserDefaults.standard.set(false, forKey: SettingsManagerObject.kUserdefaultsDoNotBlockUrlsDuringSuperPomodoroBreaks)
             SettingsManagerObject.shouldReloadAfterForceQuitEnabled = true
             SettingsManagerObject.isRequiredIntentionInPostpone = true
-//            createLaunchAgent()
             startMainAppForceQuitMonitoring()
             hideDockIcon()
             SettingsManagerObject.immediatelyBlockDistractingSites = true
             SettingsManagerObject.immediatelyBlockDistractingApps = true
-//            preferencesWindowControllerObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))// because here we cant find same window in self.view.window (reason this view is a sheet)
             if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) == nil{
                 alertSetPasswordConfirm()
             }else{
@@ -149,22 +144,17 @@ class changeFrictionLevelVc: NSViewController {
             allApiObject.capturePosthog(event: "change-friction-level", metadata: ["friction-level":"strict"])
             if !SettingsManagerObject.isFullScreenEnabled{
                 SettingsManagerObject.isFullScreenEnabled = true
-                if isMainWindowLoaded{
-//                    mainWindowControllerObj?.showFullSizeWindow()
-                }
             }
             SettingsManagerObject.isCuddlyModeEnabled = true
             SettingsManagerObject.isEasySkipEnabled = false
             UserDefaults.standard.set(false, forKey: SettingsManagerObject.kUserdefaultsDoNotBlockUrlsDuringSuperPomodoroBreaks)
             SettingsManagerObject.shouldReloadAfterForceQuitEnabled = true
             SettingsManagerObject.isRequiredIntentionInPostpone = true
-//            createLaunchAgent()
             startMainAppForceQuitMonitoring()
             hideDockIcon()
             SettingsManagerObject.immediatelyBlockDistractingSites = false
             SettingsManagerObject.immediatelyBlockDistractingApps = false
             SettingsManagerObject.isSettingsChanged = true
-//            preferencesWindowControllerObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
             if UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsAppPassword) == nil{
                 alertSetPasswordConfirm()
             }else{
@@ -176,32 +166,24 @@ class changeFrictionLevelVc: NSViewController {
             allApiObject.capturePosthog(event: "change-friction-level", metadata: ["friction-level":"slightly_strict"])
             if !SettingsManagerObject.isFullScreenEnabled{
                 SettingsManagerObject.isFullScreenEnabled = true
-                if isMainWindowLoaded{
-//                    mainWindowControllerObj?.showFullSizeWindow()
-                }
             }
             SettingsManagerObject.isCuddlyModeEnabled = true
             SettingsManagerObject.isEasySkipEnabled = false
             UserDefaults.standard.set(false, forKey: SettingsManagerObject.kUserdefaultsDoNotBlockUrlsDuringSuperPomodoroBreaks)
             SettingsManagerObject.shouldReloadAfterForceQuitEnabled = false
             SettingsManagerObject.isRequiredIntentionInPostpone = false
-//            deleteLaunchAgent()
             stopMainAppForceQuitMonitoring()
             showDockIcon()
             SettingsManagerObject.immediatelyBlockDistractingSites = false
             SettingsManagerObject.immediatelyBlockDistractingApps = false
             SettingsManagerObject.isSettingsChanged = true
             strictnessVcObj?.reloadStrictnessLevelState()
-//            preferencesWindowControllerObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
             self.dismiss(self)
             break;
         case 2:
             allApiObject.capturePosthog(event: "change-friction-level", metadata: ["friction-level":"gentle"])
             if !SettingsManagerObject.isFullScreenEnabled{
                 SettingsManagerObject.isFullScreenEnabled = true
-                if isMainWindowLoaded{
-//                    mainWindowControllerObj?.showFullSizeWindow()
-                }
             }
             SettingsManagerObject.isCuddlyModeEnabled = true
             SettingsManagerObject.isEasySkipEnabled = true
@@ -209,23 +191,18 @@ class changeFrictionLevelVc: NSViewController {
             
             SettingsManagerObject.shouldReloadAfterForceQuitEnabled = false
             SettingsManagerObject.isRequiredIntentionInPostpone = false
-//            deleteLaunchAgent()
             stopMainAppForceQuitMonitoring()
             showDockIcon()
             SettingsManagerObject.immediatelyBlockDistractingSites = false
             SettingsManagerObject.immediatelyBlockDistractingApps = false
             SettingsManagerObject.isSettingsChanged = true
             strictnessVcObj?.reloadStrictnessLevelState()
-//            preferencesWindowControllerObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
             self.dismiss(self)
             break;
         case 1:
             allApiObject.capturePosthog(event: "change-friction-level", metadata: ["friction-level":"super_gentle"])
             if SettingsManagerObject.isFullScreenEnabled{
                 SettingsManagerObject.isFullScreenEnabled = false
-                if isMainWindowLoaded{
-//                    mainWindowControllerObj?.showSmallSizeWindow()
-                }
             }
             SettingsManagerObject.isCuddlyModeEnabled = true
             SettingsManagerObject.isEasySkipEnabled = true
@@ -233,14 +210,12 @@ class changeFrictionLevelVc: NSViewController {
             
             SettingsManagerObject.shouldReloadAfterForceQuitEnabled = false
             SettingsManagerObject.isRequiredIntentionInPostpone = false
-//            deleteLaunchAgent()
             stopMainAppForceQuitMonitoring()
             showDockIcon()
             SettingsManagerObject.immediatelyBlockDistractingSites = false
             SettingsManagerObject.immediatelyBlockDistractingApps = false
             SettingsManagerObject.isSettingsChanged = true
             strictnessVcObj?.reloadStrictnessLevelState()
-//            preferencesWindowControllerObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.normalWindow)))
             self.dismiss(self)
             break;
         default:

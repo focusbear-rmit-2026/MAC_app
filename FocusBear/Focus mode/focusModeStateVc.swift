@@ -261,10 +261,6 @@ class focusModeStateVc: NSViewController {
     }
     
     @IBAction func btnStopFocusModeClicked(_ sender: Any) {
-//        if (endingFocusWindowControllerObj?.window?.isVisible ?? false) && endingFocusWindowControllerObj?.contentViewController == focusCompletedVcObj{
-//            addLog(text: "focus mode clicked:- focus mode completed Window is visible:- return")
-//            return;
-//        }
 
         var isFocusModeOn = false
         

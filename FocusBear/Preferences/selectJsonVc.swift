@@ -64,8 +64,6 @@ class selectJsonVc: NSViewController, NSTextViewDelegate, WKNavigationDelegate, 
 
         loadWebView()
         
-      //  boxWidthConstraint.constant = CGFloat(viewWidthDefault)
-        //boxHeightConstraint.constant = CGFloat(viewHeightDefault)
         webview.backgroundcolor = NSColor.clear
         addLog(text: "Edit settings (selectJsonVc) viewdidload end")
     }
@@ -307,6 +305,7 @@ class selectJsonVc: NSViewController, NSTextViewDelegate, WKNavigationDelegate, 
             
         })
     }
+    
     func jsonReceivedFromWebView(jsonResult: NSDictionary){
         isGettingSchema = true
         addLog(text: "func jsonReceivedFromWebView")
@@ -445,10 +444,9 @@ class selectJsonVc: NSViewController, NSTextViewDelegate, WKNavigationDelegate, 
         setProgres()
     }
     
-}//user-edited-settings
+}
 
-//send_intention_from_focus_game // 
-//send_tasks_from_focus_game //
+
 class MessageHandler: NSObject, WKScriptMessageHandler {
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         print("call back hua:- \(message.name)")
@@ -459,14 +457,6 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
                     surveyWcObj?.window?.close()
                 }
             }
-        }else if message.name == "focusExplainVideoPlayHandler"{
-            print(message.body)
-            onboardingFocusExplainVcObj?.videoStartedByUser()
-            return;
-        }else if message.name == "habitExplainVideoPlayHandler"{
-            print(message.body)
-            onboardingHabitExplainVcObj?.videoStartedByUser()
-            return;
         }else if message.name == "close_todo_task_ui"{
             print(message.body)
             if message.body as? String == "\"close-to-do-task-ui\""{
@@ -476,11 +466,6 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
             }
             taskCreatedByBlockPopup = ""
             addTaskVcObj!.dismiss(addTaskVcObj)
-           // if startingFocusWindowControllerObj?.window?.isVisible ?? false{
-//                startingFocusModeVcObj?.taskAdded()
-           // }else if pomodoroWindowControllerObj?.window?.isVisible ?? false{
-//                pomodoroVcObj?.taskAdded()
-            //}
             return;
         }else if message.name == "close_todo_focus_end_ui"{
             print(message.body)
@@ -659,7 +644,9 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
             }
         }else if message.name == "setting_saved"{
             if message.body as? String == "user-settings-updated"{
-                if message.webView == selectJsonVcObj?.webview{
+                if currentState == ._ONBOARDING_{
+                    installHabitPacksVcObj?.showNextView()
+                }else if message.webView == selectJsonVcObj?.webview{
                     selectJsonVcObj?.alertSettingsSaved()
                 }else{
                     if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_{
@@ -667,11 +654,6 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
                             editHabitRoutineVcObj?.alertSettingsSaved()
                         }
                     }
-//                    if blockingScheduleVcObj != nil{
-//                        if blockingScheduleVcObj?.webView == message.webView{
-//                            blockingScheduleVcObj?.alertSettingsSaved()
-//                        }
-//                    }
                 }
             }else if message.body as? String == "user-settings-update-failed"{
                 if message.webView == selectJsonVcObj?.webview{
@@ -682,11 +664,6 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
                             editHabitRoutineVcObj?.alertSettingsNotValid()//
                         }
                     }
-//                    if blockingScheduleVcObj != nil{
-//                        if blockingScheduleVcObj?.webView == message.webView{
-//                            blockingScheduleVcObj?.alertSettingsNotValid()
-//                        }
-//                    }
                 }
             }else {
                 if let data = (message.body as? String ?? "").data(using: String.Encoding.utf8) {
@@ -702,12 +679,6 @@ class MessageHandler: NSObject, WKScriptMessageHandler {
                                     editHabitRoutineVcObj?.jsonReceivedFromWebView(jsonResult: jsonResult)
                                 }
                             }
-                            
-//                            if blockingScheduleVcObj != nil{
-//                                if blockingScheduleVcObj?.webView == message.webView{
-//                                    blockingScheduleVcObj?.jsonReceivedFromWebView(jsonResult: jsonResult)
-//                                }
-//                            }
                         }
                     }
                     catch{

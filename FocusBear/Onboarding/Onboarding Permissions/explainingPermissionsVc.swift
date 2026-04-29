@@ -125,14 +125,14 @@ class explainingPermissionsVc: NSViewController {
         addLog(text: "System Events Permission Given:- \(isSystemEventsPermissionGiven)")
         addLog(text: "Any Browser Permission Given:- \(isBrowserPermissionGiven)")
         
-        if !self.isAccessibilityPermissionGiven{
-            self.view.window?.contentViewController = getAccessibilityPermissionVcObject()
-        }else if !self.isSystemEventsPermissionGiven{
+        if !self.isSystemEventsPermissionGiven{
             self.view.window?.contentViewController = getSystemEventsPermissionVcObject()
+        }else if !self.isAccessibilityPermissionGiven{
+            self.view.window?.contentViewController = getAccessibilityPermissionVcObject()
         }else if !self.isBrowserPermissionGiven{
             self.view.window?.contentViewController = getOnboardingControllingBrowserVcObject()
         }else{
-            self.view.window?.contentViewController = getTryBlockUrlVcObject()
+            self.view.window?.close()
         }
     }
 }

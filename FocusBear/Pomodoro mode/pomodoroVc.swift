@@ -291,9 +291,6 @@ class pomodoroVc: NSViewController {
         
         
         btnToggleBreaksSettingsInfo.isAutoClickEnabled = false
-//        btnStrictnessNormal.isAutoClickEnabled = false
-//        btnStrictnessSuperStrict.isAutoClickEnabled = false
-//        btnStrictnessStrict.isAutoClickEnabled = false
         btnInfoStrictnessLevel.isAutoClickEnabled = false
     }
 
@@ -301,10 +298,8 @@ class pomodoroVc: NSViewController {
         if SettingsManagerObject.isStrictnessLevelSuperGentle(){
             boxPin.isHidden =  false
             btnPin.image = #imageLiteral(resourceName: "unPin")
-//            self.view.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.normalWindow)))
         }else{
             boxPin.isHidden = true
-//            self.view.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow))) // recheck all these window level code
         }
         boxPin.isHidden = true
         
@@ -593,11 +588,7 @@ class pomodoroVc: NSViewController {
         getTaskPlayerVcObject().loadView()
         getTaskPlayerVcObject().loadRequest()
         reFillFocusTypeList()
-//        if startingFocusWindowControllerObj?.window?.isVisible ?? false{
-//            if startingFocusWindowControllerObj?.contentViewController == startingFocusModeVcObj{
-//                startingFocusWindowControllerObj?.close()
-//            }
-//        }
+
         isFrictionLevelHigh = false
         
         
@@ -1026,36 +1017,7 @@ class pomodoroVc: NSViewController {
                 return;
             }
         }
-        if UserDefaults.standard.object(forKey: kUserdefaultsIsAnyDistractionSetByUser) == nil{
-            let alertWarning = NSAlert()
-            alertWarning.setSharingType()
-            alertWarning.messageText = "Do you want to block distractions?"
-            alertWarning.informativeText = "You can block distracting websites and distracting apps. You will need to allow permissions to block distracting websites."
-            var buttonBlockText = "Yeah - block them!"
-            var buttonNoText = "No thanks"
-            
-            if let simplePomodoroVcInfo = configjson.value(forKey: "simplePomodoroVcInfo") as? NSDictionary{
-                alertWarning.messageText = simplePomodoroVcInfo.value(forKey: "alertWarningPermissionsTitle") as? String ?? alertWarning.messageText
-                alertWarning.informativeText = simplePomodoroVcInfo.value(forKey: "alertWarningSetDistractionsInfo") as? String ?? alertWarning.informativeText
-                buttonBlockText = simplePomodoroVcInfo.value(forKey: "buttonBlockText") as? String ?? buttonBlockText
-                buttonNoText = simplePomodoroVcInfo.value(forKey: "buttonNoText") as? String ?? buttonNoText
-            }
-            
-            alertWarning.addButton(withTitle: buttonBlockText)
-            alertWarning.addButton(withTitle: buttonNoText)
-            
-            alertWarning.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
-                if modalResponse == .alertFirstButtonReturn{
-                    showDistractionTypesWindow(showingFromPomodoro: true)
-                    self.intentionToShowAgain = self.textViewAchieve.string
-                    self.view.window?.close()
-                }else{
-                    self.btnLetsDoItClicked(self)
-                }
-            })
-            UserDefaults.standard.set(true, forKey: kUserdefaultsIsAnyDistractionSetByUser)
-            return;
-        }else if UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) == nil{
+        if UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) == nil{
             let alertWarning = NSAlert()
             alertWarning.setSharingType()
             alertWarning.messageText = "Do you want to block distractions?"
@@ -1299,11 +1261,6 @@ class pomodoroVc: NSViewController {
             }
         }
 
-//        if getEndFocusModeWindowControllerObj().window!.isVisible{
-//            let timestamp = getStringFromDate(date: startFocusModeTime ?? Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
-//            addEntryInStatsCsv(logType: "focus block", activity: focusCompletedVcObj!.currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: "\(focusModeMinutesToPerform) of \(focusCompletedVcObj!.currentFocusModeName)", distractionsEncountered: "", abortReason: "", feedback: "", tags:"")
-//            getEndFocusModeWindowControllerObj().window?.close()
-//        }
         let minute = textFieldWorkDuration.integerValue
         let calendar = Calendar.current
         endFocusModeTime = calendar.date(byAdding: .minute, value: minute, to: Date())
@@ -1315,9 +1272,6 @@ class pomodoroVc: NSViewController {
         }
         
         getTotalFocuedTime()
-        //After finishing pomodoro block, clicking start another focus block doesn't use correct focus mode #741
-//        startingFocusModeVcObj?.loadView()
-        //
         
         if let focusModeId = arrFocusTypeForPomodoro[popUpBtnFocusType.indexOfSelectedItem]["id"] as? String{
             for i in 0..<arrFocusType.count{
@@ -1326,6 +1280,10 @@ class pomodoroVc: NSViewController {
                     arrFocusType[i]["lastStartedDate"] = getStringFromDate(date: Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")//
                     arrFocusType[i]["lastScheduledEndDate"] = getStringFromDate(date: endFocusModeTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")//
                     shouldReloadTaskPlayer = true
+                    let focusModeName = arrFocusType[i]["name"] as? String ?? ""
+                    addLog(text: "Focus mode name is:- \(focusModeName)")// added v 3.31.474
+                    addLog(text: "Focus mode id is:- \(focusModeId)")// added v 3.31.474
+                    
                     if let isAutoDoNotDisturbEnabled = arrFocusType[i]["isAutoDoNotDisturbEnabled"] as? Bool{
                         if isAutoDoNotDisturbEnabled{
                             if isAccessibilityEnabled(isPrompt: true){
@@ -1352,9 +1310,6 @@ class pomodoroVc: NSViewController {
                     
                     workBeforeFocusBegin(index: i)
                     
-                    //After finishing pomodoro block, clicking start another focus block doesn't use correct focus mode #741
-//                    startingFocusModeVcObj?.lastFocusModeId = focusModeId
-                    //
                     
                     let oldFocusAlignmentScoreThreshold = arrFocusType[i]["focusAlignmentScoreThreshold"] as? Int ?? -1
                     let focusAlignmentScoreThreshold = Int(popUpBtnFocusAlignmentScore.titleOfSelectedItem ?? "") ?? 80
@@ -1426,12 +1381,6 @@ class pomodoroVc: NSViewController {
             taskPlayerVcObj?.reloadData(totalDuration: minute, intention: textViewAchieve.string)
             shouldReloadTaskPlayer = false
         }
-        //After finishing pomodoro block, clicking start another focus block doesn't use correct focus mode #741
-//        startingFocusModeVcObj?.lastIntention = textViewAchieve.string
-//        startingFocusModeVcObj?.lastHourValue = 0
-//        startingFocusModeVcObj?.lastMinuteValue = textFieldWorkDuration.integerValue
-//        startingFocusModeVcObj?.lastSkipMicroBreakState = isSkipBreakActivityDuringPomodoro
-        //
         
         if isShowingPomodoroManually{
             var type = ""
@@ -1444,6 +1393,7 @@ class pomodoroVc: NSViewController {
         }
         
     }
+    
     @IBAction func btnCheckBoxHardcodePomodoroClicked(_ sender: Any) {
         if btnCheckBoxHardcodePomodoro.state == .on{
             lblQuestionSecond.stringValue = chooseTheFocusModeText
@@ -1717,7 +1667,7 @@ class pomodoroVc: NSViewController {
             alertWarning.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
                 
                 if modalResponse == .alertFirstButtonReturn{
-                    showDistractionTypesWindow(showingFromPomodoro: true)
+                    showExplainingPermissionsWindow(showingFromPomodoro: true)
                     self.intentionToShowAgain = self.textViewAchieve.string
                 }
                 

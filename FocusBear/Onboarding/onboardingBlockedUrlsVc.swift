@@ -10,18 +10,14 @@ import Cocoa
 
 class onboardingBlockedUrlsVc: NSViewController {
     
+    @IBOutlet weak var imgViewBear: NSImageView!
+    @IBOutlet weak var lblTitle: NSTextField!
+    @IBOutlet weak var customViewProgress: NSView!
     @IBOutlet weak var lblBlockedCount: NSTextField!
     @IBOutlet weak var outlineView: NSOutlineView!
-    @IBOutlet weak var lblTip: NSTextField!
     @IBOutlet weak var btnAddUrl: Button!
-    @IBOutlet weak var lblEnterUrl: NSTextField!
     @IBOutlet weak var textFieldUrl: NSTextField!
-//    @IBOutlet weak var tblView: NSTableView!
     @IBOutlet weak var btnContinue: Button!
-    @IBOutlet weak var lblBottom: NSTextField!
-    @IBOutlet weak var lblDescription: NSTextField!
-    @IBOutlet weak var lblQuestion: NSTextField!
-    //@IBOutlet weak var lblTitle: NSTextField!
     
     var arrBlockedUrls:[[String:Any]] = []
     
@@ -29,39 +25,35 @@ class onboardingBlockedUrlsVc: NSViewController {
     var lastItemTag = 0
     var categoryOthers = "Others"
     
-    
+    var bubbleView:BubbleView?
+    var distractionBlockingProgressVcObj:distractionBlockingProgressVc?
     
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
         btnAddUrl.keyEquivalent = "\r"
-        lblTip.stringValue = "In case you're worried - we don't track which websites you're using."
-        lblBlockedCount.stringValue = "6 sites will always be blocked." 
-        lblEnterUrl.stringValue = "Enter url to block:"
-        btnAddUrl.title = "Add url"
         
-        // lblTitle.stringValue = "Welcome to Focus Bear"
-        lblQuestion.stringValue = "Which sites do you waste time on?"
-        lblDescription.stringValue = "You can block certain sites by default to avoid going down rabbit holes."
-        lblBottom.stringValue = "If you want to block other sites by default, you can change your Always Blocked settings in Preferences."
-        btnContinue.title = "Continue"
+        lblTitle.stringValue = "Choose websites to block"
+        btnContinue.title = "Proceed"
+        var textFieldPlaceholder = "Enter URL or keyword to block"
+        
+        btnAddUrl.title = "Add"
         var categorySocialMedia = "Social Media"
         var categoryNews = "News"
         var categoryStreamingServices = "Streaming services"
         
         if let onboardingBlockedUrlsInfo = configjson.value(forKey: "onboardingBlockedUrlsInfo") as? NSDictionary{
-            //  lblTitle.stringValue = onboardingBlockedUrlsInfo.value(forKey: "title") as? String ?? lblTitle.stringValue
-            lblQuestion.stringValue = onboardingBlockedUrlsInfo.value(forKey: "questionText") as? String ?? lblQuestion.stringValue
-            lblDescription.stringValue = onboardingBlockedUrlsInfo.value(forKey: "description") as? String ?? lblDescription.stringValue
-            lblBottom.stringValue = onboardingBlockedUrlsInfo.value(forKey: "bottomText") as? String ?? lblBottom.stringValue
-            btnContinue.title = onboardingBlockedUrlsInfo.value(forKey: "buttonContinueText") as? String ?? btnContinue.title
-            lblEnterUrl.stringValue = onboardingBlockedUrlsInfo.value(forKey: "enterUrlText") as? String ?? lblEnterUrl.stringValue
-            btnAddUrl.title = onboardingBlockedUrlsInfo.value(forKey: "buttonAddUrlText") as? String ?? btnAddUrl.title
-            lblTip.stringValue = onboardingBlockedUrlsInfo.value(forKey: "tipText") as? String ?? lblTip.stringValue
             categorySocialMedia = onboardingBlockedUrlsInfo.value(forKey: "categorySocialMedia") as? String ?? categorySocialMedia
             categoryNews = onboardingBlockedUrlsInfo.value(forKey: "categoryNews") as? String ?? categoryNews
             categoryOthers = onboardingBlockedUrlsInfo.value(forKey: "categoryOthers") as? String ?? categoryOthers
             categoryStreamingServices = onboardingBlockedUrlsInfo.value(forKey: "categoryStreamingServices") as? String ?? categoryStreamingServices
+            lblTitle.stringValue = onboardingBlockedUrlsInfo.value(forKey: "titleNew") as? String ?? lblTitle.stringValue
+            btnContinue.title = onboardingBlockedUrlsInfo.value(forKey: "buttonProceedText") as? String ?? btnContinue.title
+            textFieldPlaceholder = onboardingBlockedUrlsInfo.value(forKey: "textFieldPlaceholder") as? String ?? textFieldPlaceholder
+        }
+        
+        if let info = configjson.value(forKey: "onboardingBlockedAppsVcInfo") as? NSDictionary{
+            btnAddUrl.title = info.value(forKey: "buttonAdd") as? String ?? btnAddUrl.title
         }
         
         textFieldUrl.delegate = self
@@ -99,16 +91,57 @@ class onboardingBlockedUrlsVc: NSViewController {
         lastItemTag = 17
         outlineView.reloadData()
         
-        allApiObject.capturePosthog(event: "onboarding-blocked-urls-shown", metadata: [:])
+        //progress
+        self.customViewProgress.addSubview(getDistractionBlockingProgressVcObj().view)
+        self.customViewProgress.addConstraints(subView: getDistractionBlockingProgressVcObj().view)
+        getDistractionBlockingProgressVcObj().setProgress(level: 1, progress: 0.65)
+        
+        
+        textFieldUrl.textColor = .labelColor
+        setPlaceHolder(placeholderText: textFieldPlaceholder)
+        
+        btnAddUrl.horizontalPadding = 25
+        
         addLog(text: "onboardingBlockedUrlsVc-shown")
         recheckBlockedUrlsCount()
     }
     
     override func viewDidAppear() {
+        // Show bubble
+        
+        var bubbleText = "Don’t worry, we don’t track which websites you’re using"
+        if let onboardingBlockedUrlsInfo = configjson.value(forKey: "onboardingBlockedUrlsInfo") as? NSDictionary{
+            bubbleText = onboardingBlockedUrlsInfo.value(forKey: "bubbleText") as? String ?? bubbleText
+        }
+        
+        if bubbleView == nil{
+            bubbleView = PopupManager.showPopup(for: imgViewBear, edge: .minX, selfView: self.view, text: bubbleText, verticalOffset: -40, horizontalOffset: 25, fontSize: 13)
+        }
+        
         showOnboardingBellIcon(view: self.view, screen: "onboarding-blocked-urls-screen")
     }
+    
     override func viewWillDisappear() {
         hideOnboardingBellIcon(view: self.view)
+    }
+    
+    func setPlaceHolder(placeholderText:String){
+        let placeHolderColor = NSColor(named: "dark_OrangeColor") ?? NSColor.orange
+        let placeholder = NSAttributedString(
+            string: placeholderText,
+            attributes: [
+                .foregroundColor: placeHolderColor,
+                .font: textFieldUrl.font ?? NSFont.systemFont(ofSize: 13)
+            ]
+        )
+        textFieldUrl.placeholderAttributedString = placeholder
+    }
+    
+    func getDistractionBlockingProgressVcObj()->distractionBlockingProgressVc{
+        if distractionBlockingProgressVcObj == nil{
+            distractionBlockingProgressVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("distractionBlockingProgressVc")) as? distractionBlockingProgressVc
+        }
+        return distractionBlockingProgressVcObj!
     }
     
     func recheckBlockedUrlsCount(){
@@ -131,14 +164,12 @@ class onboardingBlockedUrlsVc: NSViewController {
         var blockSitesCountText = ""
         
         if selectedUrlsCount == 1{
-            blockSitesCountText = "1 site will be blocked."
+            blockSitesCountText = "1 website selected (you can change this later)"
             if let onboardingBlockedUrlsInfo = configjson.value(forKey: "onboardingBlockedUrlsInfo") as? NSDictionary{
                 blockSitesCountText = onboardingBlockedUrlsInfo.value(forKey: "oneSiteBlockText") as? String ?? blockSitesCountText
             }
-            
-            blockSitesCountText = blockSitesCountText.replacingOccurrences(of: "<COUNT>", with: "\(selectedUrlsCount)")
         }else{
-            blockSitesCountText = "<COUNT> sites will be blocked."
+            blockSitesCountText = "<COUNT> websites selected (you can change this later)"
             if let onboardingBlockedUrlsInfo = configjson.value(forKey: "onboardingBlockedUrlsInfo") as? NSDictionary{
                 blockSitesCountText = onboardingBlockedUrlsInfo.value(forKey: "blockSitesCountText") as? String ?? blockSitesCountText
             }
@@ -148,6 +179,7 @@ class onboardingBlockedUrlsVc: NSViewController {
 
         lblBlockedCount.stringValue = blockSitesCountText
     }
+    
     override func viewWillAppear() {
         if let item = outlineView.item(atRow: 2){
             outlineView.expandItem(item)
@@ -163,7 +195,9 @@ class onboardingBlockedUrlsVc: NSViewController {
     
         btnAddUrl.isEnabled = false
         textFieldUrl.stringValue = ""
+        allApiObject.capturePosthog(event: "onboarding-blocked-urls-shown", metadata: [:])
     }
+    
     @IBAction func btnContinueClicked(_ sender: Any) {
         addLog(text: "[user-action] onboardingBlockedUrlsVc:- Button Continue clicked")
         
@@ -176,10 +210,9 @@ class onboardingBlockedUrlsVc: NSViewController {
                 }
             }
         }
-//        print(arrBlockedUrls)
         UserDefaults.standard.set(arrBlockedUrls, forKey: kUserdefaultsBlockedUrlsFromOnboarding)
 
-
+        UserDefaults.standard.set(true, forKey: kUserdefaultsIsAnyDistractionSetByUser)
         SettingsManagerObject.arrBlockedUrls.removeAll()
         for i in 0..<arrBlockedUrls.count{
             if let isSelected = arrBlockedUrls[i]["isSelected"] as? Bool {
@@ -190,58 +223,12 @@ class onboardingBlockedUrlsVc: NSViewController {
         }
         UserDefaults.standard.set(SettingsManagerObject.arrBlockedUrls, forKey: SettingsManagerObject.kUserdefaultsArrBlockedUrls)//
 
-        SettingsManagerObject.isSettingsChanged = true
-        SettingsManagerObject.putUserLocalDeviceSettings()
         
-        if onboardingDistractionTypesVcObj?.checkBoxSecond.state == .on{
-            self.view.window?.contentViewController = getOnboardingBlockedAppsVcObject()
-        }else{
-            if UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) == nil{
-                self.view.window?.contentViewController = getExplainingPermissionsVcObject()
-                UserDefaults.standard.set(true, forKey: kUserdefaultsBrowsersPermissionsSetByUser)
-            }else{
-                var browserPermissionGiven = false
-                if let arrBrowsersInfo = UserDefaults.standard.object(forKey: kUserdefaultsAllBrowsersPermissionInfo) as? [[String : Any]]{
-                    for i in 0..<arrBrowsersInfo.count{
-                        let info = arrBrowsersInfo[i]
-                        let isEnabled = info["isEnabled"] as? Bool ?? false
-                        if isEnabled{
-                            browserPermissionGiven = true
-                            break;
-                        }
-                    }
-                }
-                var accessibilityPermissionGiven = true
-                var systemEventsPermissionGiven = true
-                
-                if !isAccessibilityEnabled(isPrompt: false){
-                    accessibilityPermissionGiven = false
-                }else{
-                    accessibilityPermissionGiven = true
-                }
-                
-                if !checkAutomationPermissionWithAppleScript(){
-                    systemEventsPermissionGiven = false
-                }else{
-                    systemEventsPermissionGiven = true
-                }
-                
-                if !browserPermissionGiven || !accessibilityPermissionGiven || !systemEventsPermissionGiven{
-                    self.view.window?.contentViewController = getExplainingPermissionsVcObject()
-                }else{
-                    self.view.window?.close()
-                    if SettingsManagerObject.isGeekModeEnabled{
-                        appdelegate?.menuShowPomodoroModeView()
-                        pomodoroVcObj?.textViewAchieve.string = pomodoroVcObj?.intentionToShowAgain ?? ""
-                    }else{
-                        appdelegate?.menuShowSimplePomodoroModeView()
-                        simplePomodoroVcObj?.textViewAchieve.string = simplePomodoroVcObj?.intentionToShowAgain ?? ""
-                    }
-                }
-            }
-        }
+        getOnboardingVcObject().navigate(to: ._BLOCKED_APPS_)
+        
         //  ------------------------//
     }
+    
     @IBAction func btnAddUrlClicked(_ sender: Any) {
         addLog(text: "[user-action] onboardingBlockedUrlsVc:- Button Add Url clicked")
         let domain = textFieldUrl.stringValue

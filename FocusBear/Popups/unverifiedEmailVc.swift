@@ -23,7 +23,7 @@ class unverifiedEmailVc: NSViewController {
         lblTitle.stringValue = "Your email address hasn’t been verified yet. Please check your inbox for the confirmation email, or click below to resend it."
         btnResend.title = "Resend confirmation email"
         btnCancel.title = buttonCancelText
-        btnCancel.buttonColor = NSColor.white.cgColor
+        btnCancel.isSecondaryButton = true
         
         if let unverifiedEmailVcInfo = configjson.value(forKey: "unverifiedEmailVcInfo") as? NSDictionary{
             lblTitle.stringValue = unverifiedEmailVcInfo.value(forKey: "title") as? String ?? lblTitle.stringValue

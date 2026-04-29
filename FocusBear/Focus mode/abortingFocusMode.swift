@@ -67,7 +67,7 @@ class abortingFocusModeVc: NSViewController {
         
         
         
-        btnCancel.buttonColor = NSColor.white.cgColor
+        btnCancel.isSecondaryButton = true
     }
     override func viewWillAppear() {
         closePomodoroWindowIOfVisible()
@@ -124,7 +124,6 @@ class abortingFocusModeVc: NSViewController {
             startTimer()
         }
         if forPause{
-//            stackViewWhyStopFocusMode.isHidden = true
             lblTitle.stringValue = titlePauseText.replacingOccurrences(of: "<FOCUSTYPE>", with: focusType)
             btnAbortFocus.title = "Pause Focus Block"
             if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
@@ -133,7 +132,6 @@ class abortingFocusModeVc: NSViewController {
                 }
             }
         }else{
-//            stackViewWhyStopFocusMode.isHidden = false
             lblTitle.stringValue = titleText.replacingOccurrences(of: "<FOCUSTYPE>", with: focusType)
             btnAbortFocus.title = "Deactivate Focus Block"
             if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{

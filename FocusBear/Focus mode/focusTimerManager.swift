@@ -89,9 +89,9 @@ class focusTimerManager {
         var focusMode = ""
         let intention = whatToAchieveInFocusBlock.addingPercentEncoding(withAllowedCharacters: CharacterSet.urlQueryAllowed) ?? ""
         let dic = currentRunningFocusType
+        focusMode = dic["name"] as? String ?? ""
+        currentRunningFocusModeName = focusMode
         if dic["isOn"] as? Bool == true{
-            focusMode = dic["name"] as? String ?? ""
-            currentRunningFocusModeName = focusMode
             if let isRelaxFocus = dic["isRelaxFocus"] as? Bool{
                 if  isRelaxFocus{
                     addLog(text:"relax focus mode:- return;")
@@ -620,9 +620,9 @@ class focusTimerManager {
                 DispatchQueue.main.async {
                     setUrlToBrowser(browser: currentBrowser, url: hitNewUrl)
                 }
-                var msg = "You're in Grizzly Bear mode - change your settings to unblock" //todo text
+                var msg = "You're in Grizzly Bear mode - change your settings to unblock" 
                 if let common = configjson.value(forKey: "common") as? NSDictionary{
-                    //msg = common.value(forKey: "unblockNotAvailableText") as? String ?? msg
+                    msg = common.value(forKey: "unblockNotAvailableNewText") as? String ?? msg
                 }
                 DispatchQueue.main.async {
                     showCustomAlert(title: msg, body: nil, buttonOkText: buttonOkText, buttonCancelText: nil, checkBoxText: nil, autoClose: true, buttonLinkUrl:nil, buttonLinkText: nil, completionHandler: {isOkClicked in
@@ -680,25 +680,7 @@ func blockAlwaysBlockUrl(currentBrowser:BROWSER, url:String, runningApp:NSRunnin
     
     let domain = getDomainFromUrl(url: url)//getDomainFromUrl(url: url)
     tabUrl = domain
-//    var shouldReturn = false
-//    
-//    DispatchQueue.main.async {
-//        if setIntentionBlockedUrlsWcObj != nil{
-//            if setIntentionBlockedUrlsWcObj?.window?.isVisible ?? false{
-//                if setIntentionBlockedUrlsVcObj?.tabUrl == domain{
-//                    exitFullScreen(runningApp: runningApp)
-//                    shouldReturn = true
-//                }else{
-//                    setIntentionBlockedUrlsVcObj?.closeWindow()
-//                    
-//                }
-//            }
-//        }
-//    }
-//    
-//    if shouldReturn {
-//        return;
-//    }
+
     var shouldReturn = false
     let semaphore = DispatchSemaphore(value: 0)
 

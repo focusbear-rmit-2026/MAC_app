@@ -51,7 +51,7 @@ var kUserdefaultsIsAnyDistractionSetByUser = "kUserdefaultsIsAnyDistractionSetBy
 
 var kUserdefaultsSimplePomodoroAiBlockingSelected = "kUserdefaultsSimplePomodoroAiBlockingSelected"
 
-let kUserdefaultsFirstRun = "kUserdefaultsFirstRun"// first habit k liye use ful hai
+let kUserdefaultsFirstRun = "kUserdefaultsFirstRun"// for onboarding
 let kUserdefaultsAppQuitForUser = "kUserdefaultsAppQuitForUser"
 let kUserdefaultsStartHabitNagCount = "kUserdefaultsStartHabitNagCount"
 let kUserdefaultsLastNagShowDate = "kUserdefaultsLastNagShowDate"
@@ -61,7 +61,6 @@ let kUserdefaultsOnboardingIncompleted = "kUserdefaultsOnboardingIncompleted"
 
 
 let kUserdefaultsControllingBrowserVcShown = "kUserdefaultsControllingBrowserVcShown"
-//let kUserdefaultsTryBlockingVcShown = "kUserdefaultsTryBlockingVcShown"
 
 var kUserdefaultsVideoShown = "kUserdefaultsVideoShown"
 var kUserdefaultsFocusTipsShown = "kUserdefaultsFocusTipsShown"
@@ -115,7 +114,7 @@ var kUserdefaultsPackIdSelected = "kUserdefaultsPackIdSelected"
 var kUserdefaultsStartupTimeFromOnboarding = "kUserdefaultsStartupTimeFromOnboarding"
 var kUserdefaultsShutOffTimeFromOnboarding = "kUserdefaultsShutOffTimeFromOnboarding"
 var kUserdefaultsSleepTimeFromOnboarding = "kUserdefaultsSleepTimeFromOnboarding"
-var kUserdefaultsBreakDurationValue = "kUserdefaultsBreakDurationValue"
+//var kUserdefaultsBreakDurationValue = "kUserdefaultsBreakDurationValue"
 var kUserdefaultsBreaksEnabledFromOnboarding = "kUserdefaultsBreaksEnabledFromOnboarding"
 
 
@@ -187,7 +186,6 @@ var kUserDefaultsHowHeardAboutApp = "kUserDefaultsHowHeardAboutApp"
 var kUserDefaultsLastQuitReason = "kUserDefaultsLastQuitReason"
 var kUserdefaultsManageTaskFirstTime = "kUserdefaultsManageTaskFirstTime"
 
-var kUserdefaultsBlockingScheduleFromOnboarding = "kUserdefaultsBlockingScheduleFromOnboarding"
 
 var kUserdefaultsLastBreaksStartTime = "kUserdefaultsLastBreaksStartTime"
 var kUserdefaultsArrayBreaksDurations = "kUserdefaultsArrayBreaksDurations"
@@ -196,10 +194,7 @@ var kUserdefaultsLastBreakEndTime = "kUserdefaultsLastBreakEndTime" // added on 
 
 var kUserDefaultsCustomGoals = "kUserDefaultsCustomGoals"
 var kUserDefaultsSelectedOccupationForPosthog = "kUserDefaultsSelectedOccupation"
-var kUserDefaultsCareFactorHabitsForPosthog = "kUserDefaultsCareFactorHabits"
-var kUserDefaultsCustomGoalsKey = "kUserDefaultsCustomGoals"
 var kUserDefaultsSelectedOccupationForPosthogKey = "kUserDefaultsSelectedOccupation"
-var kUserDefaultsCareFactorHabitsForPosthogKey = "kUserDefaultsCareFactorHabits"
 
 
 //let kUserDefaultsLastNudgeScoreWindowXPoisition = "nudgeScoreWindowXPoisition"
@@ -223,10 +218,11 @@ var kUserdefaultsLastUnlockTimeByAccountabilityBuddy = "kLastUnlockTimeByAccount
 
 var kUserdefaultsUserShouldDoFirstFocusSesion = "kUserShouldDoFirstFocusSesion"
 
-var kUserDefaultsUserJobDetails = "kUserJobDetails"
-var kUserDefaultsUserDistractions = "kUserDistractions"
+
 
 var kUserDefaultsLastRoutinePostponeEndDate = "kLastRoutinePostponeEndDate" // v 2.28.454
 var kUserDefaultsLastRoutinePostponeState = "kLastRoutinePostponeState"// morning/ evening/ focus summary  // v 2.28.454
 
 var kUserDefaultsBlockingScheduleAddedFirstTime = "kBlockingScheduleAddedFirstTime"// v2.29.461
+
+var kUserdefaultsIsGuestAccount = "kUserdefaultsIsGuestAccount"

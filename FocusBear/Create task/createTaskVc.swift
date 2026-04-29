@@ -53,7 +53,7 @@ class createTaskVc: NSViewController {
         popUpBtnElsenhowerQuadrant.addItems(withTitles: arrItems)
         
         btnCancel.title = buttonCancelText
-        btnCancel.buttonColor = NSColor.white.cgColor
+        btnCancel.isSecondaryButton = true
         textFieldTitle.delegate = self
         comboBoxProjects.customDelegate = self
         comboBoxProjects.stringValue = ""//"Remember the last project for create task" so do not do this in "resetData" func

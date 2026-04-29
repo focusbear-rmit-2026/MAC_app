@@ -60,6 +60,7 @@ class focusCompletedForActivityVc: NSViewController {
     
     var currentFocusModeName = ""
     var subTitleText = "You have successfully completed the focus block - <FOCUSTYPE>"
+    let subtitle = "Focus block complete – log your achievement to track progress!"
     var buttonTakeBreakText = "Take a 5 minute break"
     var currentFocusModeId = ""
     var finish_time:Date?
@@ -75,7 +76,35 @@ class focusCompletedForActivityVc: NSViewController {
         super.viewDidLoad()
         // Do view setup here.
         btnMoreOptions.title = "More Stats"
-        lblAccordinMoreOptions.stringValue = "Reflect on the session"
+        lblAccordinMoreOptions.stringValue = "✨ Log your Achievement"
+        
+        // CTA styling improvement (Issue #1489)
+        // Improves visibility, contrast, and aligns with Focus Bear orange theme
+        // Text
+        lblAccordinMoreOptions.textColor = NSColor.systemOrange
+        lblAccordinMoreOptions.font = NSFont.systemFont(ofSize: 18, weight: .semibold)
+
+        // Container
+        boxAccordinMoreOptions.wantsLayer = true
+        boxAccordinMoreOptions.boxType = .custom
+        boxAccordinMoreOptions.fillColor = .clear
+        boxAccordinMoreOptions.isTransparent = true
+
+        boxAccordinMoreOptions.layer?.cornerRadius = 10
+        boxAccordinMoreOptions.layer?.borderWidth = 1
+
+        if let appearance = view.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) {
+            if appearance == .darkAqua {
+                // Dark mode
+                boxAccordinMoreOptions.layer?.backgroundColor = NSColor.systemOrange.withAlphaComponent(0.18).cgColor
+                boxAccordinMoreOptions.layer?.borderColor = NSColor.systemOrange.withAlphaComponent(0.45).cgColor
+            } else {
+                // Light mode
+                boxAccordinMoreOptions.layer?.backgroundColor = NSColor.systemOrange.withAlphaComponent(0.22).cgColor
+                boxAccordinMoreOptions.layer?.borderColor = NSColor.systemOrange.withAlphaComponent(0.5).cgColor
+            }
+        }
+        
         lblTitleStats.stringValue = "Stats"
         lblTitleFocusAlignmentScore.stringValue = "Focus Alignment Score"
         lblTitleDeepWorkTime.stringValue = "Deep work time this session"
@@ -96,7 +125,7 @@ class focusCompletedForActivityVc: NSViewController {
         }
         
         lblTitle.stringValue = "You did it!"
-        lblQuestionFirst.stringValue = "What did you achieve during this time?"
+        lblQuestionFirst.stringValue = "What did you achieve during this session?"
         lblQuestionSecond.stringValue = "How focused were you?"
         
         if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
@@ -110,6 +139,10 @@ class focusCompletedForActivityVc: NSViewController {
                 if let questionFirstText = focusCompletedInfo.value(forKey: "questionFirstText") as? String{
                     lblQuestionFirst.stringValue = questionFirstText
                 }
+                
+                // Fix wording (Issue #1489)
+                lblQuestionFirst.stringValue = "What did you achieve during this session?"
+                
                 if let titleStarRatingText = focusCompletedInfo.value(forKey: "titleStarRatingText") as? String{
                     lblQuestionSecond.stringValue = titleStarRatingText
                 }
@@ -128,7 +161,35 @@ class focusCompletedForActivityVc: NSViewController {
                 lblTitleTime.stringValue = focusCompletedInfo.value(forKey: "titleTime") as? String ?? lblTitleTime.stringValue
                 lblEnableAdvancedAnalyticsSetting.stringValue = focusCompletedInfo.value(forKey: "enableAdvancedAnalyticsSettingText") as? String ?? lblEnableAdvancedAnalyticsSetting.stringValue
                 btnMoreOptions.title = focusCompletedInfo.value(forKey: "buttonMoreOptionsText") as? String ?? btnMoreOptions.title
-                lblAccordinMoreOptions.stringValue = focusCompletedInfo.value(forKey: "buttonAccordionMoreOptionsText") as? String ?? lblAccordinMoreOptions.stringValue
+                /* lblAccordinMoreOptions.stringValue = focusCompletedInfo.value(forKey: "buttonAccordionMoreOptionsText") as? String ?? lblAccordinMoreOptions.stringValue */
+                lblAccordinMoreOptions.stringValue = "✨ Log your Achievement"
+                
+                // CTA styling improvement (Issue #1489)
+                // Improves visibility, contrast, and aligns with Focus Bear orange theme
+                // Text
+                lblAccordinMoreOptions.textColor = NSColor.systemOrange
+                lblAccordinMoreOptions.font = NSFont.systemFont(ofSize: 18, weight: .semibold)
+
+                // Container
+                boxAccordinMoreOptions.wantsLayer = true
+                boxAccordinMoreOptions.boxType = .custom
+                boxAccordinMoreOptions.fillColor = .clear
+                boxAccordinMoreOptions.isTransparent = true
+
+                boxAccordinMoreOptions.layer?.cornerRadius = 10
+                boxAccordinMoreOptions.layer?.borderWidth = 1
+
+                if let appearance = view.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) {
+                    if appearance == .darkAqua {
+                        // Dark mode
+                        boxAccordinMoreOptions.layer?.backgroundColor = NSColor.systemOrange.withAlphaComponent(0.18).cgColor
+                        boxAccordinMoreOptions.layer?.borderColor = NSColor.systemOrange.withAlphaComponent(0.45).cgColor
+                    } else {
+                        // Light mode
+                        boxAccordinMoreOptions.layer?.backgroundColor = NSColor.systemOrange.withAlphaComponent(0.22).cgColor
+                        boxAccordinMoreOptions.layer?.borderColor = NSColor.systemOrange.withAlphaComponent(0.5).cgColor
+                    }
+                }
             }
         }
     }
@@ -244,9 +305,9 @@ class focusCompletedForActivityVc: NSViewController {
         if self.view.frame.height < 700{
             heightScrollView.constant = 500
         }else if self.view.frame.height < 800{
-            heightScrollView.constant = 700
+            heightScrollView.constant = 600
         }else {
-            heightScrollView.constant = 750
+            heightScrollView.constant = 600
         }
     }
     
@@ -275,7 +336,9 @@ class focusCompletedForActivityVc: NSViewController {
         self.finish_time = finish_time
         textFieldAchieve.stringValue = ""
         
-        lblSubTitle.stringValue = subTitleText.replacingOccurrences(of: "<FOCUSTYPE>", with: currentFocusModeName)
+        /* lblSubTitle.stringValue = subTitleText.replacingOccurrences(of: "<FOCUSTYPE>", with: currentFocusModeName)//"You have successfully completed the focus block - \(currentFocusModeName)" */
+        // Override config subtitle for improved UX (Issue #1489)
+        lblSubTitle.stringValue = subtitle
 
         
         for i in 0..<arrFocusType.count{

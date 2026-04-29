@@ -111,8 +111,7 @@ class upgradeToProNagVc: NSViewController {
         pointLimitedBlockText = pointLimitedBlockText.replacingOccurrences(of: "<COUNT>", with: "\(alwaysBlockedUrlsCountInExpireApp)")
         lblBlock5AppsUrls.stringValue = pointLimitedBlockText
         
-        btnContinue.buttonColor = NSColor.clear.cgColor
-        
+        btnContinue.isSecondaryButton = true
         var fontSizefourteen:CGFloat = 14
         var fontSizeFifteen:CGFloat = 15
         var fontSizeSixteen:CGFloat = 16

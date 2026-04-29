@@ -22,6 +22,7 @@ class TabMatrics:NSObject {
     var lastBrowserTabCalculateTime = Date()
     var arrAllTabsCount = [Int]()
     var currentAppTabCount = 0 // date 21/5/25  // version 1.23.367
+    var last30SecondsDurationRecordedStartTime:Date?
     
     func frontAppChanged(name:String){
         if name.caseInsensitiveCompare(selfAppName) == .orderedSame{ // focus bear is front app close old app and url
@@ -213,16 +214,12 @@ class TabMatrics:NSObject {
         }
     }
 
-    var last30SecondsDurationRecordedStartTime:Date?
-//    var last30SecondsDurationRecordedEntryTime:Date?
+    
     func getLast30SecondsAverageTabDuration()->Int?{
         let currentDate = Date()
         guard let lastEntryInProductivityStatsTime = last30SecondsDurationRecordedStartTime else{
             return nil
         }
-//        guard let last30SecondsDurationRecordedEntryTime = last30SecondsDurationRecordedEntryTime else{
-//            return nil
-//        }
         let thirtySecondsAgo = currentDate.addingTimeInterval(-30)
         
         let diffSeconds = currentDate.timeIntervalSince(lastEntryInProductivityStatsTime)
@@ -272,9 +269,7 @@ class TabMatrics:NSObject {
         if arrAllItemName.count == 0 || totalDuration == 0{
             return 0
         }
-//        self.last30SecondsDurationRecordedEntryTime = Date()
         let averageTabDuration = totalDuration / arrAllItemName.count
-//        print("average tab duration in last 30 seconds :- \(averageTabDuration)")
         return averageTabDuration
     }
 }

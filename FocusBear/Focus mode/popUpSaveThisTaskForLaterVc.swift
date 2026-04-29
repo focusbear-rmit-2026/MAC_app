@@ -22,7 +22,7 @@ class popUpSaveThisTaskForLaterVc: NSViewController {
         btnYesSave.title = "Yes please"
         btnBlock.title = "No - Just block it"
         lblTitleTaskTitle.stringValue = "Task title:"
-        btnBlock.buttonColor = NSColor.white.cgColor
+        btnBlock.isSecondaryButton = true
         
         if let popUpSaveThisTaskForLaterVcInfo = configjson.value(forKey: "popUpSaveThisTaskForLaterVcInfo") as? NSDictionary{
             lblTitle.stringValue = popUpSaveThisTaskForLaterVcInfo.value(forKey: "title") as? String ?? lblTitle.stringValue

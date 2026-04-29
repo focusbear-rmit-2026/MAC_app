@@ -34,7 +34,7 @@ class upgradeNowVc: NSViewController {
         super.viewDidLoad()
         // Do view setup here.
        
-        btnRestorePurchases.buttonColor = NSColor.white.cgColor
+        btnRestorePurchases.isSecondaryButton = true
         
         
         let buttonBlueColor = NSColor(red: 52/255, green: 175/255, blue: 233/255, alpha: 1)

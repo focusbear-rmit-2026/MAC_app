@@ -73,7 +73,7 @@ class askQuitVc: NSViewController {
             }
         }
         
-        btnAppQuit.buttonColor = NSColor.white.cgColor
+        btnAppQuit.isSecondaryButton = true
         popUpBtnHour.removeAllItems()
         popUpBtnHour.addItems(withTitles: ["5 \(minutesText)", "15 \(minutesText)", "30 \(minutesText)", "1 \(hourText)", "2 \(hoursText)", "4 \(hoursText)", "12 \(hoursText)", "24 \(hoursText)"])
         
@@ -410,7 +410,7 @@ class askQuitVc: NSViewController {
             timerViewcontrollerObj?.btnPauseClicked(self)
             timerViewcontrollerObj?.menuItemSkipHabitClicked()
             leftMenuVcObj?.showHabitsView()
-            leftMenuVcObj?.disbaleAllExceptHabitTab()
+            leftMenuVcObj?.disableAllExceptHabitTab()
             
             closeSmallCountDownTimerBoxIfVisible()
             

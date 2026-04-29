@@ -12,6 +12,7 @@ import Auth0
 class customLoginVc: NSViewController {
 
     
+    @IBOutlet weak var customViewMessageBox: NSView!
     @IBOutlet weak var btnSignInBottom: underLineButton!
     @IBOutlet weak var lblSignInBottom: NSTextField!
     @IBOutlet weak var boxAskSignIn: NSBox!
@@ -46,7 +47,6 @@ class customLoginVc: NSViewController {
     @IBOutlet weak var btnShowPassword: cursorButton!
     @IBOutlet weak var textFieldConfirmPasword: NSTextField!
     @IBOutlet weak var textFieldPassword: NSTextField!
-    @IBOutlet weak var topSpaceLblTitle: NSLayoutConstraint!
     @IBOutlet weak var lblTitlePasswordRules: NSTextField!
     @IBOutlet weak var loader: NSProgressIndicator!
     @IBOutlet weak var secureTextFieldConfirmPassword: NSSecureTextField!
@@ -83,16 +83,17 @@ class customLoginVc: NSViewController {
     var titleSignupFailed = "Signup failed."
     var titleLoginFailed = "Login failed."
     
+    var messageBoxView: NSView?
+    var hideWorkItem: DispatchWorkItem?
+    var bubbleContinueInBrowserView:BubbleView?
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
         lblOr.stringValue = "OR"
-        
-       // segmentControlPassword.selectedSegmentBezelColor = NSColor.systemBlue
-        
+
         btnRefreshPassword.toolTip = "Refresh password"
         btnCopyPassword.toolTip = "Copy password"
-        //checkBoxPasswordSave.title = "I saved the password somewhere safe"
         btnCopyPassword.title = "Copy"
         
         lblRuleFirst.stringValue = "At least 8 characters in length"
@@ -145,7 +146,6 @@ class customLoginVc: NSViewController {
             titleLoginFailed = customLoginVcInfo.value(forKey: "titleLoginFailed") as? String ?? titleLoginFailed
             
             lblTitlePasswordRules.stringValue = customLoginVcInfo.value(forKey: "titlePasswordRules") as? String ?? lblTitlePasswordRules.stringValue
-//            lblPasswordRules.stringValue = customLoginVcInfo.value(forKey: "passwordRulesText") as? String ?? lblPasswordRules.stringValue
             lblRuleFirst.stringValue = customLoginVcInfo.value(forKey: "passwordRuleFirstText") as? String ?? lblRuleFirst.stringValue
             lblRuleSecond.stringValue = customLoginVcInfo.value(forKey: "passwordRuleSecondText") as? String ?? lblRuleSecond.stringValue
             lblRuleThird.stringValue = customLoginVcInfo.value(forKey: "passwordRuleThirdText") as? String ?? lblRuleThird.stringValue
@@ -171,10 +171,7 @@ class customLoginVc: NSViewController {
             buttonContinueWithGoogle = customLoginVcInfo.value(forKey: "buttonContinueWithGoogle") as? String ?? buttonContinueWithGoogle
             buttonContinueWithApple = customLoginVcInfo.value(forKey: "buttonContinueWithApple") as? String ?? buttonContinueWithApple
         }
-        
-        //segmentControlPassword.setLabel(generatePasswordText, forSegment: 0)
-        //segmentControlPassword.setLabel(useOwnPasswordText, forSegment: 1)
-        
+
         textFieldPassword.delegate = self
         textFieldConfirmPasword.delegate = self
         secureTextFieldPassword.delegate = self
@@ -193,58 +190,36 @@ class customLoginVc: NSViewController {
         boxButtonSignUpWithApple.setImage(NSImage(named: "apple_logo"))
         boxButtonSignUpWithApple.target = self
         boxButtonSignUpWithApple.action = #selector(signUpWithApple)
-        
-        
-        
     }
     
     @objc func signUpWithGoogle(){
         if askLogInVcObj == nil{
             getAskLogInVcObject().loadView()//v 2.29.459 // bug solved 
         }
-        askLogInVcObj?.btnSignInWithGoogleClicked(self)
-        askLogInVcObj?.showMessageBoxFor(sender: boxButtonSignUpWithGoogle)
+        allApiObject.capturePosthog(event: "button-continue-with-google-clicked", metadata: [:])
+        addLog(text:"[user-action] btnSignInWithGoogleClicked")
+        askLogInVcObj?.trySignInWithGoogle()
+        showMessageBoxFor(sender: boxButtonSignUpWithGoogle)
     }
     
     @objc func signUpWithApple(){
         if askLogInVcObj == nil{
             getAskLogInVcObject().loadView()//v 2.29.459
         }
-        askLogInVcObj?.btnSignInWithAppleClicked(self)
-        askLogInVcObj?.showMessageBoxFor(sender: boxButtonSignUpWithApple)
+        allApiObject.capturePosthog(event: "button-continue-with-apple-clicked", metadata: [:])
+        addLog(text:"[user-action] btnSignInWithAppleClicked")
+        askLogInVcObj?.trySignInWithApple()
+        showMessageBoxFor(sender: boxButtonSignUpWithApple)
     }
     
     override func viewWillAppear() {
         reloadView()
     }
+    
     override func viewWillDisappear() {
         appdelegate!.menuItemUninstall.isHidden = true
     }
-    
-//    func showAnimation(){
-//        DispatchQueue.global().async {
-//            usleep(50000)
-//            for i in 0..<6{
-//                if i % 2 == 0{
-//                    DispatchQueue.main.async {
-//                        if self.boxPasswordGenerated.isHidden{
-//                            return;
-//                        }
-//                        self.boxPasswordGenerated.fillColor = self.lblTitle.textColor ?? NSColor.red
-//                    }
-//                }else{
-//                    DispatchQueue.main.async {
-//                        self.boxPasswordGenerated.fillColor = NSColor.clear
-//                        if self.boxPasswordGenerated.isHidden{
-//                            return;
-//                        }
-//                    }
-//                }
-//                usleep(500000)
-//            }
-//        }
-//    }
-    
+ 
     override func mouseEntered(with event: NSEvent) {
         if event.trackingArea == btnShowPasswordTrackingArea{
             var msg = "Show Password"
@@ -265,7 +240,54 @@ class customLoginVc: NSViewController {
         }
     }
     
+    func showMessageBoxFor(sender: NSBox) {
+        // Cancel previous timer
+        if bubbleContinueInBrowserView != nil{
+            return;
+        }
+        
+        hideWorkItem?.cancel()
+        hideWorkItem = nil
+
+        // Remove existing box
+        messageBoxView?.removeFromSuperview()
+        
+        var title = "Continue in your browser"
+        if let askLogInVcInfo = configjson.value(forKey: "askLogInVcInfo") as? NSDictionary{
+            title = askLogInVcInfo.value(forKey: "continueInBrowser") as? String ?? title
+        }
+  
+        bubbleContinueInBrowserView = PopupManager.showPopup(for: boxButtonSignUpWithApple, edge: .maxX, selfView: self.view, text: title, horizontalOffset: 10, image: NSImage(named: "continueInBrowser"))
+        
+
+        // ⏱ Auto hide after 10 seconds
+        let workItem = DispatchWorkItem { [weak self, weak bubbleContinueInBrowserView] in
+            guard let view = bubbleContinueInBrowserView else { return }
+            if self?.bubbleContinueInBrowserView == nil{
+                return;
+            }
+            NSAnimationContext.runAnimationGroup({ context in
+                context.duration = 0.25
+                view.animator().alphaValue = 0
+            }, completionHandler: {
+                view.removeFromSuperview()
+                self?.bubbleContinueInBrowserView = nil
+            })
+        }
+
+        hideWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + 10, execute: workItem)
+    }
+    
     func reloadView(){
+        
+        // Hide this back button during onboarding since onboarding already has its own back button
+        if currentState == ._ONBOARDING_{
+            btnBack.isHidden = true
+        }else{
+            btnBack.isHidden = false
+        }
+        
         textFieldEmail.stringValue = ""
         secureTextFieldPassword.stringValue = ""
         secureTextFieldConfirmPassword.stringValue = ""
@@ -305,17 +327,15 @@ class customLoginVc: NSViewController {
             lblSubtitle.stringValue = "Sign In with a Focus Bear account"
             boxConfirmPassword.isHidden = true
             btnSignIn.isHidden = false
-            btnCreateAccount.buttonColor = NSColor.white.cgColor
+            btnCreateAccount.isSecondaryButton = true
             if let customLoginVcInfo = configjson.value(forKey: "customLoginVcInfo") as? NSDictionary{
                 lblTitle.stringValue = customLoginVcInfo.value(forKey: "titleSignIn") as? String ?? lblTitle.stringValue
                 lblSubtitle.stringValue = customLoginVcInfo.value(forKey: "subTitleSignIn") as? String ?? lblSubtitle.stringValue
             }
             lblTitlePasswordRules.isHidden = true
-//            lblPasswordRules.isHidden = true
             stackViewPasswordRules.isHidden = true
             textFieldEmail.nextKeyView = secureTextFieldPassword
             secureTextFieldPassword.nextKeyView = textFieldEmail
-            //segmentControlPassword.isHidden = true
             btnCopyPassword.isHidden = true
             btnRefreshPassword.isHidden = true
             boxSignInOptions.isHidden = false
@@ -327,19 +347,16 @@ class customLoginVc: NSViewController {
             boxAskCreateAccount.isHidden = true
             btnCreateAccount.isHidden = false
             boxAskSignIn.isHidden = false
-           // segmentControlPassword.isHidden = true
-        //    segmentControlPassword.selectedSegment = 1
             segmentControlPasswordClicked(self)
             btnCreateAccount.keyEquivalent = "\r"
             btnSignIn.keyEquivalent = ""
             btnCreateAccount.isEnabled = false
             btnForgotPassword.isHidden = true
-           // topSpaceLblTitle.constant = 80
             lblTitle.stringValue = "Sign Up"
             lblSubtitle.stringValue = "Create an account to sync your habit + block settings across all your devices."
             boxConfirmPassword.isHidden = true
             btnSignIn.isHidden = true
-            btnCreateAccount.buttonColor = buttonBgColor.cgColor
+            btnCreateAccount.isSecondaryButton = false
             if let customLoginVcInfo = configjson.value(forKey: "customLoginVcInfo") as? NSDictionary{
                 lblTitle.stringValue = customLoginVcInfo.value(forKey: "titleSignUp") as? String ?? lblTitle.stringValue
                 lblSubtitle.stringValue = customLoginVcInfo.value(forKey: "explainCreateAccountText") as? String ?? lblSubtitle.stringValue
@@ -347,45 +364,6 @@ class customLoginVc: NSViewController {
             textFieldEmail.nextKeyView = secureTextFieldPassword
             secureTextFieldPassword.nextKeyView = textFieldEmail
             boxSignInOptions.isHidden = true
-            return;
-            
-            
-            secureTextFieldPassword.isEditable = false
-            secureTextFieldPassword.isSelectable = false
-         //   segmentControlPassword.isHidden = false
-          //  segmentControlPassword.selectedSegment = 0
-            btnCreateAccount.keyEquivalent = "\r"
-            btnSignIn.keyEquivalent = ""
-            btnCreateAccount.isEnabled = false
-            btnForgotPassword.isHidden = true
-           // topSpaceLblTitle.constant = 80
-            lblTitle.stringValue = "Sign Up"
-            lblSubtitle.stringValue = "Create an account to sync your habit + block settings across all your devices."
-            boxConfirmPassword.isHidden = true
-            btnSignIn.isHidden = true
-            btnCreateAccount.buttonColor = buttonBgColor.cgColor
-            if let customLoginVcInfo = configjson.value(forKey: "customLoginVcInfo") as? NSDictionary{
-                lblTitle.stringValue = customLoginVcInfo.value(forKey: "titleSignUp") as? String ?? lblTitle.stringValue
-                lblSubtitle.stringValue = customLoginVcInfo.value(forKey: "explainCreateAccountText") as? String ?? lblSubtitle.stringValue
-            }
-            lblTitlePasswordRules.isHidden = true
-//            lblPasswordRules.isHidden = false
-            stackViewPasswordRules.isHidden = true
-            textFieldEmail.nextKeyView = secureTextFieldPassword
-            secureTextFieldPassword.nextKeyView = textFieldEmail
-            let passWord = generateSecurePassword()
-            secureTextFieldPassword.stringValue = generateSecurePassword()
-            btnCopyPassword.isHidden = false
-            btnRefreshPassword.isHidden = true
-          //  checkBoxPasswordSave.isHidden = false
-          //  checkBoxPasswordSave.state = .off
-            if isValidPassword(password: passWord){
-                imgViewValidPassword.isHidden = true//will be hiiden default
-                btnCreateAccount.isEnabled = false
-            }else{
-                imgViewValidPassword.isHidden = true
-                btnCreateAccount.isEnabled = false
-            }
         }
     }
     
@@ -442,6 +420,7 @@ class customLoginVc: NSViewController {
         }
         performSignIn()
     }
+    
     func startLoader(){
         loader.startAnimation(self)
         btnSignIn.isEnabled = false
@@ -454,6 +433,7 @@ class customLoginVc: NSViewController {
         self.secureTextFieldConfirmPassword.isEnabled = false
         self.textFieldConfirmPasword.isEnabled = false
     }
+    
     func stopLoader(){
         self.loader.stopAnimation(self)
         self.btnSignIn.isEnabled = true
@@ -531,6 +511,13 @@ class customLoginVc: NSViewController {
         UserDefaults.standard.set(true, forKey: kUserdefaultsIsUserLoggedIn)
         appdelegate!.needToCheckEmailVerification = true
         appdelegate!.loadCredentialsAndDeviceId()
+        if currentState != ._ONBOARDING_{
+            leftMenuVcObj?.enableAllItems()
+            mainViewControllerObj?.expandLeftPanel()
+            mainViewControllerObj?.removeSubViews()
+            mainWindowControllerObj?.window?.close()
+            currentState = ._NOTHING_ // if not onboarding then make it nothing
+        }
     }
     
     @IBAction func btnShowConfirmPasswordClicked(_ sender: Any) {
@@ -568,6 +555,7 @@ class customLoginVc: NSViewController {
             secureTextFieldConfirmPassword.nextKeyView = textFieldEmail
         }
     }
+    
     @IBAction func btnShowPasswordClicked(_ sender: Any) {
         if textFieldPassword.isHidden{
             textFieldPassword.stringValue = secureTextFieldPassword.stringValue
@@ -579,12 +567,9 @@ class customLoginVc: NSViewController {
             textFieldEmail.nextKeyView = textFieldPassword
             if textFieldConfirmPasword.isHidden{
                 textFieldPassword.nextKeyView = textFieldEmail
-//                secureTextFieldConfirmPassword.nextKeyView = textFieldEmail
             }else{
                 textFieldPassword.nextKeyView = textFieldEmail
-//                textFieldConfirmPasword.nextKeyView = textFieldEmail
             }
-            
         }else{
             secureTextFieldPassword.stringValue = textFieldPassword.stringValue
             textFieldPassword.isHidden = true
@@ -595,13 +580,12 @@ class customLoginVc: NSViewController {
             textFieldEmail.nextKeyView = secureTextFieldPassword
             if textFieldConfirmPasword.isHidden{
                 secureTextFieldPassword.nextKeyView = textFieldEmail
-//                secureTextFieldConfirmPassword.nextKeyView = textFieldEmail
             }else{
                 secureTextFieldPassword.nextKeyView = textFieldEmail
-//                textFieldConfirmPasword.nextKeyView = textFieldEmail
             }
         }
     }
+    
     @IBAction func btnForgotPasswordClicked(_ sender: Any) {
         addLog(text: "[user-action] btnForgotPasswordClicked")
         allApiObject.capturePosthog(event: "button-forgot-password-clicked", metadata: [:])
@@ -642,21 +626,12 @@ class customLoginVc: NSViewController {
     @IBAction func btnCreateAccountClicked(_ sender: Any) {
         addLog(text: "[user-action] CreateAccountClicked")
         var password = secureTextFieldPassword.stringValue
-//        var confirmPassword = secureTextFieldConfirmPassword.stringValue
-        
         if secureTextFieldPassword.isHidden == false{
             password = secureTextFieldPassword.stringValue
         }else{
             password = textFieldPassword.stringValue
         }
-        
-//        if secureTextFieldConfirmPassword.isHidden == false{
-//            confirmPassword = secureTextFieldConfirmPassword.stringValue
-//        }else{
-//            confirmPassword = textFieldConfirmPasword.stringValue
-//        }
-        
-        
+
         if isLogin{
             isLogin = false
             reloadView()
@@ -666,17 +641,11 @@ class customLoginVc: NSViewController {
             {
                 alertforvalidation(question: titleEmailIsBlank, text: emailInvalidText)
                 return
-            }else if password.isEmpty == true
-            {
+            }else if password.isEmpty == true{
                 alertforvalidation(question: titlePasswordIsBlank, text: passwordInvalidText)//
                 return
             }
-            
-//            else if confirmPassword.isEmpty == true
-//            {
-//                alertforvalidation(question: titleConfirmPasswordBlank, text: confirmPasswordInvalidText)
-//                return
-//            }
+
             
             let value = isValidEmail(email: textFieldEmail.stringValue)
             if value == false
@@ -684,11 +653,7 @@ class customLoginVc: NSViewController {
                 alertforvalidation(question: titleInvalidEmail, text: emailInvalidText)
                 return
             }
-//            if password != confirmPassword{
-//                alertforvalidation(question: titlePasswordNotMatch, text: confirmPasswordNotMatchText)
-//                return
-//            }
-            
+
             if Reachability.isConnectedToNetwork() == false {
                 startLoader()
                 allApiObject.isInternetOn(completionHandler: {isInternetOn in
@@ -872,12 +837,6 @@ class customLoginVc: NSViewController {
             imgViewRuleSecond.isHidden = true
             return false
         }
-        
-        // old work
-//        let regEx = "(?=.{8,})((?=.*\\d)(?=.*[a-z])(?=.*[A-Z])|(?=.*\\d)(?=.*[a-zA-Z])(?=.*[\\W_])|(?=.*[a-z])(?=.*[A-Z])(?=.*[\\W_])).*"
-//
-//        let pred = NSPredicate(format:"SELF MATCHES %@", regEx)
-//        return pred.evaluate(with: password)
     }
     
     
@@ -1017,26 +976,7 @@ class customLoginVc: NSViewController {
         imgViewValidPassword.isHidden = true
         btnRefreshPassword.isHidden = true
     }
-//    @IBAction func checkBoxPasswordSaveClicked(_ sender: Any) {
-//        if checkBoxPasswordSave.state == .on{
-//            allApiObject.capturePosthog(event: "saved-password-safe-checked", metadata: [:])
-//            var passWord = secureTextFieldPassword.stringValue
-//            if secureTextFieldPassword.isHidden == false{
-//                passWord = secureTextFieldPassword.stringValue
-//            }else{
-//                passWord = textFieldPassword.stringValue
-//            }
-//            
-//            if isValidPassword(password: passWord){
-//                btnCreateAccount.isEnabled = true
-//            }else{
-//                btnCreateAccount.isEnabled = false
-//            }
-//        }else{
-//            btnCreateAccount.isEnabled = false
-//        }
-//        
-//    }
+
     
     @IBAction func btnSignUpClicked(_ sender: Any) {
         btnCreateAccountClicked(self)
@@ -1065,7 +1005,7 @@ extension customLoginVc: NSTextFieldDelegate{
                     imgViewValidPassword.isHidden = true
                 }
             }
-            if imgViewValidPassword.isHidden == false{//} && imgViewValidConfirmPassword.isHidden == false{
+            if imgViewValidPassword.isHidden == false{
                 btnCreateAccount.isEnabled = true
             }else{
                 btnCreateAccount.isEnabled = false

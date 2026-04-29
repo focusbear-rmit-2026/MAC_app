@@ -66,7 +66,7 @@ class focusSummaryVc: NSViewController {
         lblTitleTimeSpentEnableApp.stringValue = "Time spent with blocking activated:"
         lblTitleTotalTimeOnBlockedSItes.stringValue = "Time spent on super distracting sites:"
         lblTitleTotalDistractingSites.stringValue = "Total distracting sites blocked:"
-        btnNeedMoreTime.buttonColor = NSColor.white.cgColor
+        btnNeedMoreTime.isSecondaryButton = true
         btnContinue.title = "Continue"
         lblActivitySummary.stringValue = "Activity Summary:"
         lblFocusSummary.stringValue = "Focus Summary:"
@@ -592,7 +592,7 @@ class focusSummaryVc: NSViewController {
         viewVisibleCount = 0
     }
     
-    @IBAction func btnNeedMoreTimeClicked(_ sender: Any) {
+    @IBAction func btnNeedMoreTimeClicked(_ sender: Any) {        
         if viewVisibleCount == 0{
             addLog(text: "[user-action] button Need one More minute Clicked from focus summary")
             if cutOffTime != nil && SettingsManagerObject.isPasswordRequireInSkipEveningAfterCutOff && !SettingsManagerObject.isEasySkipEnabled{
@@ -616,6 +616,7 @@ class focusSummaryVc: NSViewController {
         getHabitsVcObject().giveOneMoreMinuteBeforeShutOffMac()
         viewVisibleCount += 1
     }
+    
 }
 
 

@@ -54,7 +54,7 @@ class ScanningCircleView: NSView {
             height: centerDotSize
         )
         centerDotLayer?.path = CGPath(ellipseIn: centerDotRect, transform: nil)
-        centerDotLayer?.fillColor = (NSColor(named: "light_OrangeColor") ?? NSColor.orange).cgColor
+        centerDotLayer?.fillColor = (NSColor(named: "dark_OrangeColor") ?? NSColor.orange).cgColor
         layer?.addSublayer(centerDotLayer!)
         
         // Create 3 pulsing rings
@@ -76,7 +76,7 @@ class ScanningCircleView: NSView {
             )
             ringLayer.path = CGPath(ellipseIn: ringRect, transform: nil)
             
-            ringLayer.strokeColor = (NSColor(named: "light_OrangeColor") ?? NSColor.orange).cgColor
+            ringLayer.strokeColor = (NSColor(named: "dark_OrangeColor") ?? NSColor.orange).cgColor
             ringLayer.lineWidth = 2
             ringLayer.fillColor = NSColor.clear.cgColor
             ringLayer.opacity = 0.7 - (Float(index) * 0.15)

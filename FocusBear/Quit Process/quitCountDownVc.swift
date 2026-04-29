@@ -20,11 +20,7 @@ class quitCountDownVc: NSViewController {// not in use
     @IBOutlet weak var btnCancelAbort: NSButton!
     @IBOutlet weak var lblEmailId: NSTextField!
     @IBOutlet weak var lblPleaseEmail: NSTextField!
-//    var currentTimer = 0
-//    var totalDuration = 2
-//    var timer:Timer?
-    
-    
+
     override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -64,7 +60,7 @@ class quitCountDownVc: NSViewController {// not in use
         
         btnContinue.title = buttonContinueText
         self.lblSeconds.stringValue = ""
-        btnContinue.buttonColor = NSColor.white.cgColor
+        btnContinue.isSecondaryButton = true
     }
     
     override func viewWillAppear() {

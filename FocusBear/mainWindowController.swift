@@ -51,7 +51,6 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
         window!.backingType = .buffered
         self.window?.minSize = NSSize(width: 900, height: 450)// unused
         self.window?.title = ""
-     //   self.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.numberOfWindowLevelKeys))) //  numberOfWindowLevelKeys kro //    numberOfWindowLevelKeys
         
         if isMainWindowLoaded{
             mainViewControllerObj!.boxTopButtons.isHidden = false
@@ -78,7 +77,6 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
         
 //        self.window?.styleMask = [.resizable, .titled, .closable]// don't use this
         window!.isExcludedFromWindowsMenu = false
-     //   self.window?.level = .floating//  .floating
         self.window?.title = appName
         window!.animationBehavior = .default
         window!.hasShadow = true
@@ -93,7 +91,7 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
             if let common = configjson.value(forKey: "common") as? NSDictionary{
                 habitsVcObj?.btnAbort.title = common.value(forKey: "buttonPostponeText") as? String ?? btnTitle
             }
-            if currentState == ._ASK_APP_WORK_{
+            if currentState == ._ONBOARDING_{
                 let btnTitle = "Skip"
                 if let dic = configjson.value(forKey: "welcomeInfo") as? NSDictionary{
                     habitsVcObj?.btnAbort.title = dic.value(forKey: "buttonSkipText") as? String ?? btnTitle
@@ -113,6 +111,12 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
     
     func windowShouldClose(_ sender: NSWindow) -> Bool {
         addLog(text: "windowShouldClose delegate called")
+        
+        if currentState == ._ONBOARDING_ || currentState == ._LOGIN_{
+            NSApp.terminate(self)
+            return false;
+        }
+        
         if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._MICRO_BREAK_ || currentState == ._FOCUS_SUMMARY_ || currentState == ._CUSTOM_ROUTINE_{
             if isAnyAllowedFocusModeActivityRunning && !(leftMenuVcObj?.boxHabits.isSelected ?? false){ // allowed focus mode habit will be running in background
                 if currentAction == ._INPROGRESS_{
@@ -124,6 +128,33 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
                 }
                 return true
             }
+            
+            // window close is allowed if non timer based habits are running
+            if currentAction == ._INPROGRESS_{
+                if currentHabitPlaying != nil{
+                    if !currentHabitPlaying!.useTimer{
+                        if timerViewcontrollerObj?.isActivityPaused ?? false{
+                            leftMenuVcObj?.showHabitsView()
+                            timerViewcontrollerObj?.btnPauseClicked(self)
+                            return false
+                        }else{
+                            return true
+                        }
+                    }
+                }else if currentRelaxHabitPlaying != nil{
+                    if relaxModeWcObj != nil{
+                        if timerViewcontrollerObj?.isActivityPaused ?? false{
+                            leftMenuVcObj?.showHabitsView()
+                            timerViewcontrollerObj?.btnPauseClicked(self)
+                            return false
+                        }else{
+                            return true
+                        }
+                    }
+                }
+            }
+            
+            
             if currentState == ._MICRO_BREAK_ {// if break warning is visble then close window is allowed to user. after end of warning window will be visible again
                 if breakWarningWcObj != nil{
                     if breakWarningWcObj?.window?.isVisible ?? false{
@@ -173,7 +204,7 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
             return false
         }
         
-        if currentState == ._ASK_APP_WORK_{
+        if currentState == ._ONBOARDING_{
             getHabitsVcObject().abortCurrentState()
             return false
         }

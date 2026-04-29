@@ -19,7 +19,7 @@ class longTermGoalsVc: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
-        btnCancel.buttonColor = NSColor.white.cgColor
+        btnCancel.isSecondaryButton = true
         btnCancel.title = buttonCancelText
         btnSure.title = "Sure"
         lblTitle.stringValue = "Are you sure?"

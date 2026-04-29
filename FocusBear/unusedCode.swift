@@ -689,7 +689,7 @@
 //        url = "https://player.vimeo.com/video/1113240264"
 
 
-//class customBox: NSBox { not in use
+//class customBox: NSBox {
 //    var mouseDown = false
 //    var tagValue = 0
 //    var isTableView = false
@@ -737,30 +737,11 @@
 //    func focusModeClicked(index:Int){
 //        addLog(text:"[user-action] focusModeClicked")
 //        if isPurchased == false && daysLeft <= 0{//if UserDefaults.standard.object(forKey: "trialExpired") != nil{
-//            if trialExpiredNagWcObj != nil{
-//                if trialExpiredNagWcObj?.window?.isVisible ?? false{
-//                    return;
-//                }
-//            }
 //            showUpgradeNowWindow()
 //            return;
 //        }
 //
-//        if endingFocusWindowControllerObj != nil{
-//            if (endingFocusWindowControllerObj?.window?.isVisible ?? false) && endingFocusWindowControllerObj?.contentViewController == focusCompletedVcObj{
-//                addLog(text: "focus mode clicked:- focus mode completed Window is visible:- return")
-//                return;
-//            }
-//        }
-////        if endingFocusWindowControllerObj != nil{
-////            if (endingFocusWindowControllerObj?.window?.isVisible ?? false) && endingFocusWindowControllerObj?.contentViewController == focusCompletedVcObj{
-////                if addTaskVcObj != nil{
-////                    if addTaskVcObj!.presentingViewController == focusCompletedVcObj{
-////                        return;
-////                    }
-////                }
-////            }
-////        }
+
 //        if arrFocusType[index]["isOn"] as? Bool == true || arrFocusType[index]["isPaused"] as? Bool == true{
 //            //abort focus mode
 //            // new work 13/3/22
@@ -1038,20 +1019,6 @@
 //            //                print("invalidtate")
 //        }
 //        timerCheckAllowedApps?.invalidate()
-//        DispatchQueue.main.async {
-//            if brainDumpWcObj != nil{
-//                if brainDumpWcObj?.window != nil{
-//                    if brainDumpWcObj!.window!.isVisible{
-//                        brainDumpVcObj?.focusModeFinished()
-//                    }
-//                }
-//            }
-//            if toolBoxWcObj != nil{
-//                if toolBoxWcObj!.window!.isVisible{
-//                    toolBoxWcObj?.window?.close()
-//                }
-//            }
-//        }
 //
 //        isAutoMeetingsModeStarted = false
 //        appUsedInAutoMeetingFocusMode = ""
@@ -1063,3 +1030,199 @@
 //        }
 //
 //    }
+
+/*
+ //    func renewToken(window:NSWindow,completionHandler: @escaping() -> ()) {
+ //        addLog(text: "renewToken")
+ //        Auth0
+ //            .authentication()
+ //            .renew(withRefreshToken: credential!.refreshToken ?? "")
+ //            .start { result in
+ //                let oldDaysLeft = daysLeft
+ //                daysLeft = 0
+ //                isPurchased = false
+ //                switch(result) {
+ //                case .success(let credentials):
+ //
+ //                    let _ = self.credentialsManager.store(credentials: credentials)
+ //                    // If you have Refresh Token Rotation enabled, you get a new Refresh Token
+ //                    // Otherwise you only get a new Access Token
+ //
+ //                    self.credential = credentials
+ //                    self.user = AuthUser(from: self.credential!.accessToken)
+ //
+ //                    if let subscriptionStatus = self.user?.subscriptionStatus{
+ //                        addLog(text: "subscriptionStatus is:- \(subscriptionStatus)")
+ //                        var activeEntitlementStatus = ""
+ //                        if let activeEntitlements = subscriptionStatus["activeEntitlements"] as? [String]{
+ //                            if let status = activeEntitlements.first{
+ //                                activeEntitlementStatus = status
+ //                                if status == "personal" || status == "team_member" || status ==  "team_owner" || status == "team_size_5"{
+ //                                    isPurchased = true
+ //                                }else if status == "trial"{
+ //                                    isPurchased = false
+ //                                }else{
+ //                                    isPurchased = false
+ //                                }
+ //                            }
+ //                        }
+ //                        if let expirations = subscriptionStatus["expirations"] as? [String:Any]{
+ //                            if let trial = expirations[activeEntitlementStatus] as? [String:Any]{
+ //                                if let days_left = trial["days_left"] as? Int{
+ //                                    print(days_left)
+ //                                    daysLeft = days_left
+ //                                }
+ //                            }
+ //                        }
+ //                    }else{
+ //                        addLog(text: "subscriptionStatus is:- nil")
+ //                    }
+ //                    if oldDaysLeft > 0{// subscription over need to restart
+ //                        if isPurchased == false && daysLeft == 0{
+ //                            addLog(text: "Subscription over")
+ //                            DispatchQueue.main.async {
+ //                                self.quitAndRestartApp()
+ //                            }
+ //
+ //                        }
+ //                    }else{
+ //                        if daysLeft > 0 {
+ //                            addLog(text: "Purchases found")
+ //                            DispatchQueue.main.async {
+ //                                self.quitAndRestartApp()
+ //                            }
+ //                        }else{
+ //                            // No purchases found.
+ //                            DispatchQueue.main.async {
+ //                                let alert = NSAlert()
+ //                                alert.setSharingType()
+ //                                var noPurchasesFoundText = "No active purchases found for your account."
+ //                                addLog(text: "No purchases found.")
+ //                                if let common = configjson.value(forKey: "common") as? NSDictionary{
+ //                                    noPurchasesFoundText = common.value(forKey: "noPurchasesFoundText") as? String ?? noPurchasesFoundText
+ //                                }
+ //                                alert.messageText = noPurchasesFoundText
+ //                                alert.addButton(withTitle: buttonOkText)
+ //
+ //
+ //                                alert.beginSheetModal(for: window, completionHandler: { (modalResponse) in
+ //                                    if(modalResponse == NSApplication.ModalResponse.alertFirstButtonReturn){
+ //
+ //                                    }
+ //                                })
+ //                            }
+ //
+ //                        }
+ //                    }
+ //                    if isPurchased == false && daysLeft == 0{
+ //                        isExpired = true
+ //                    }
+ //                    completionHandler()
+ //                    return
+ //                case .failure(let error):
+ //                    addLog(text: "renewToken failed")
+ //                    completionHandler()
+ //                    return
+ //                }
+ //            }
+ //    }
+ 
+ 
+ @objc func topIconClickd(){
+     addLog(text: "top Icon Clickd")
+     if self.user == nil{
+         addLog(text: "self.user = nil")
+         if  UserDefaults.standard.object(forKey: kUserdefaultsFirstRun) == nil{
+             if mainWindowControllerObj != nil {
+                 if mainWindowControllerObj!.window?.isVisible ?? false{
+                     return;
+                 }
+             }
+             if welcomeOnboardingWcObj != nil{
+                 welcomeOnboardingWcObj!.showWindow(nil)
+                 if appdelegate!.onboardingTimer != nil{
+                     appdelegate!.onboardingTimer?.invalidate()
+                     appdelegate!.onboardingTimer = nil
+                 }
+             }
+             
+             
+             return
+         }else{
+             if mainWindowControllerObj != nil {
+                 if mainWindowControllerObj!.window?.isVisible ?? false{
+                     return;
+                 }
+             }
+             if welcomeOnboardingWcObj != nil{
+                 welcomeOnboardingWcObj!.showWindow(nil)
+                 if appdelegate!.onboardingTimer != nil{
+                     appdelegate!.onboardingTimer?.invalidate()
+                     appdelegate!.onboardingTimer = nil
+                 }
+             }
+         }
+     }else{
+         addLog(text: "top Icon Clickd")
+     }
+     
+ }
+ 
+ 
+//            if radioBtnProgrammer.state == .on{
+//                employeeJson = ["Employee": "Programmer"]
+//                selectedIndexToSave = occupationProgrammerIndex
+//                occupationToSave = "employee_Programmer"
+//            }else if radioBtnGraphicDesigner.state == .on{
+//                employeeJson = ["Employee": "Graphic designer"]
+//                selectedIndexToSave = occupationGraphicDesignerIndex
+//                occupationToSave = "employee_GraphicDesigner"
+//            }else if radioBtnOtherOfficeWork.state == .on{
+//                employeeJson = ["Employee": ["Other work from office": textFieldOtherOfficeWork.stringValue]]
+//                selectedIndexToSave = occupationOtherOfficeWorkIndex
+//
+//                if textFieldOtherOfficeWork.stringValue.isEmpty{
+//                    occupationToSave = "employee_OtherWorkFromOffice"
+//                }else{
+//                    occupationToSave = "employee_OtherWorkFromOffice_\(textFieldOtherOfficeWork.stringValue)"
+//                }
+//            }else if radioBtnFieldWork.state == .on{
+//                employeeJson = ["Employee": ["Non desk based work": textFieldFieldWork.stringValue]]
+//                selectedIndexToSave = occupationFieldWorkIndex
+//
+//                if textFieldFieldWork.stringValue.isEmpty{
+//                    occupationToSave = "employee_NonDeskBasedWork"
+//                }else{
+//                    occupationToSave = "employee_NonDeskBasedWork_\(textFieldFieldWork.stringValue)"
+//                }
+//            }
+ 
+ //            if radioBtnHighSchool.state == .on{//
+ //                studentJson = ["University student": "High school"]
+ //                occupationToSave = "universityStudent_highSchool"
+ //            }else if radioBtnUndergraduate.state == .on{
+ //                studentJson = ["University student": "Undergraduate"]
+ //                occupationToSave = "universityStudent_Undergraduate"
+ //            }else if radioBtnGraduate.state == .on{
+ //                studentJson = ["University student": "Graduate"]
+ //                occupationToSave = "universityStudent_Graduate"
+ //            }else if radioBtnPostGraduate.state == .on{
+ //                studentJson = ["University student": "Postgraduate"]
+ //                occupationToSave = "universityStudent_Postgraduate"
+ //            }
+ */
+
+/*
+ if UserDefaults.standard.object(forKey: kUserdefaultsFocusTipsShown) == nil{// automaticallly solved
+     if arrFocusType.count > 5{
+         UserDefaults.standard.set(true, forKey: kUserdefaultsFocusTipsShown)
+     }else{
+         allApiObject.getFocusTemplateInfo(completionHandler: { json in
+             if json != nil{
+                 
+             }
+         }
+         )
+     }
+ }
+ */

@@ -10,16 +10,12 @@ import Cocoa
 
 class ViewController: NSViewController {
     
-    
     @IBOutlet weak var splitView: NSSplitView!
     @IBOutlet weak var splitViewItemRightView: NSView!
     @IBOutlet weak var splitViewItemLeftView: NSView!
     @IBOutlet weak var boxTopButtons: NSBox!
-    // @IBOutlet weak var lblCurrentDateTime: NSTextField!
     @IBOutlet weak var boxMinimize: NSBox!
     @IBOutlet weak var stackViewTopButtons: NSStackView!
-    
-    //    @IBOutlet weak var lblMessage: NSTextField!
     @IBOutlet weak var containerView: NSView!
     @IBOutlet weak var boxContainer: customBoxBg!
     
@@ -43,7 +39,6 @@ class ViewController: NSViewController {
     override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
         if keyPath == "frame" {
             let width = (object as? NSView)?.frame.width ?? 0
-//            print("Left view width changed to \(width)")
             if width < 100{
                 leftMenuVcObj?.boxMainItems.titleLabel.isHidden = true
                 leftMenuVcObj?.boxToolsItems.titleLabel.isHidden = true
@@ -298,36 +293,13 @@ class ViewController: NSViewController {
     }
     
 
-    func showAskAppWorkVc(){
-        addLog(text: "Showing Ask App Work view.")
-        removeSubViews()
-        
-        containerView.addSubview(getAskAppWorkVcObject().view)
-        containerView.addConstraints(subView: getAskAppWorkVcObject().view)
-        currentState = ._ASK_APP_WORK_
-        currentAction = ._START_
-        NSApplication.shared.activate(ignoringOtherApps: true)
-    }
-    
-    func showAchieveWithFocusBearVc(){
-        addLog(text: "Showing Achieve With Focus Bear view.")
-        allApiObject.capturePosthog(event: "what-to-achieve-with-focus-bear-screen-shown", metadata: [:])
-        removeSubViews()
-        
-        containerView.addSubview(getAchieveWithFocusBearVcObject().view)
-        containerView.addConstraints(subView: getAchieveWithFocusBearVcObject().view)
-        currentState = ._ASK_APP_WORK_
-        currentAction = ._START_
-        NSApplication.shared.activate(ignoringOtherApps: true)
-    }
-    
     func showAskOccupationVc(){
         addLog(text: "Showing Ask App Work view.")
         removeSubViews()
         
         containerView.addSubview(getAskOccupationVcObject().view)
         containerView.addConstraints(subView: getAskOccupationVcObject().view)
-        currentState = ._ASK_APP_WORK_
+        currentState = ._ONBOARDING_
         currentAction = ._START_
         NSApplication.shared.activate(ignoringOtherApps: true)
     }
@@ -338,22 +310,41 @@ class ViewController: NSViewController {
         
         containerView.addSubview(getEnableAIBlockingVcObject().view)
         containerView.addConstraints(subView: getEnableAIBlockingVcObject().view)
-        currentState = ._ASK_APP_WORK_
+        currentState = ._ONBOARDING_
         currentAction = ._START_
         NSApplication.shared.activate(ignoringOtherApps: true)
     }
     
-    func showCreateBlockingProfileVc(){
-        addLog(text: "Showing Create Blocking Profile view.")
+
+    
+    func showOnboardingVc(){
+        addLog(text: "Showing Onboarding view.")
         removeSubViews()
         
-        containerView.addSubview(getCreateBlockingProfileVcObject().view)
-        containerView.addConstraints(subView: getCreateBlockingProfileVcObject().view)
-        currentState = ._ASK_APP_WORK_
+        containerView.addSubview(getOnboardingVcObject().view)
+        containerView.addConstraints(subView: getOnboardingVcObject().view)
+        currentState = ._ONBOARDING_
         currentAction = ._START_
         NSApplication.shared.activate(ignoringOtherApps: true)
     }
     
+    func showAskLogInVc(){
+        addLog(text: "Showing Ask LogIn view.")
+        removeSubViews()
+        
+        containerView.addSubview(getAskLogInVcObject().view)
+        containerView.addConstraints(subView: getAskLogInVcObject().view)
+        NSApplication.shared.activate(ignoringOtherApps: true)
+    }
+
+    func showCustomLoginVc(){
+        addLog(text: "Showing LogIn view.")
+        removeSubViews()
+        
+        containerView.addSubview(getCustomLoginVcObject().view)
+        containerView.addConstraints(subView: getCustomLoginVcObject().view)
+        NSApplication.shared.activate(ignoringOtherApps: true)
+    }
     
     func showInstalltHabitPacksVc(){
         addLog(text: "Showing install Habit Packs view.")
@@ -361,133 +352,10 @@ class ViewController: NSViewController {
         
         containerView.addSubview(getInstallHabitPacksVcObj().view)
         containerView.addConstraints(subView: getInstallHabitPacksVcObj().view)
-        currentState = ._ASK_APP_WORK_
+        currentState = ._ONBOARDING_
         currentAction = ._START_
         NSApplication.shared.activate(ignoringOtherApps: true)
         allApiObject.capturePosthog(event: "habit-packs-shown", metadata: [:])
-    }
-    
-    func showAdditionalGoalsVc(){
-        addLog(text: "Showing Additional Goals view.")
-        removeSubViews()
-        
-        containerView.addSubview(getAdditionalGoalsVcObject().view)
-        containerView.addConstraints(subView: getAdditionalGoalsVcObject().view)
-        currentState = ._ASK_APP_WORK_
-        currentAction = ._START_
-        NSApplication.shared.activate(ignoringOtherApps: true)
-    }
-    
-    func showOnboardingFocusExplainVc(){
-        addLog(text: "Showing Onboarding Focus Explain view.")
-        allApiObject.capturePosthog(event: "focus-explain-screen-shown", metadata: [:])
-        removeSubViews()
-        
-        containerView.addSubview(getOnboardingFocusExplainVcObject().view)
-        containerView.addConstraints(subView: getOnboardingFocusExplainVcObject().view)
-        currentState = ._ASK_APP_WORK_
-        currentAction = ._START_
-        NSApplication.shared.activate(ignoringOtherApps: true)
-    }
-    
-    func showOnboardingHabitExplainVc(){
-        addLog(text: "Showing Onboarding Habit Explain view.")
-        allApiObject.capturePosthog(event: "routine-explain-screen-shown", metadata: [:])
-        removeSubViews()
-        
-        containerView.addSubview(getOnboardingHabitExplainVcObject().view)
-        containerView.addConstraints(subView: getOnboardingHabitExplainVcObject().view)
-        currentState = ._ASK_APP_WORK_
-        currentAction = ._START_
-        NSApplication.shared.activate(ignoringOtherApps: true)
-    }
-    
-    
-    func showSelectHabitsLaterInfoVc(){
-        addLog(text: "Showing Additional Goals view.")
-        removeSubViews()
-        
-        containerView.addSubview(getSelectHabitsLaterInfoVcObject().view)
-        containerView.addConstraints(subView: getSelectHabitsLaterInfoVcObject().view)
-        currentState = ._ASK_APP_WORK_
-        currentAction = ._START_
-        NSApplication.shared.activate(ignoringOtherApps: true)
-    }
-    
-    func showAskWorkTimeVc(){
-        addLog(text: "Showing Ask Work Time view.")
-        removeSubViews()
-        
-        containerView.addSubview(getAskWorkTimeVcObject().view)
-        containerView.addConstraints(subView: getAskWorkTimeVcObject().view)
-        currentState = ._ASK_APP_WORK_
-        currentAction = ._START_
-        NSApplication.shared.activate(ignoringOtherApps: true)
-    }
-    
-    func showConfirmMorningRoutineTimeVc(){
-        addLog(text: "Showing Confirm Morning Routine Time view.")
-        removeSubViews()
-        
-        containerView.addSubview(getConfirmMorningRoutineTimeVcObject().view)
-        containerView.addConstraints(subView: getConfirmMorningRoutineTimeVcObject().view)
-        currentState = ._ASK_APP_WORK_
-        currentAction = ._START_
-        NSApplication.shared.activate(ignoringOtherApps: true)
-    }
-    
-    func showConfirmEveningRoutineTimeVc(){
-        addLog(text: "Showing Confirm Evening Routine Time view.")
-        removeSubViews()
-        
-        containerView.addSubview(getConfirmEveningRoutineTimeVcObject().view)
-        containerView.addConstraints(subView: getConfirmEveningRoutineTimeVcObject().view)
-        currentState = ._ASK_APP_WORK_
-        currentAction = ._START_
-        NSApplication.shared.activate(ignoringOtherApps: true)
-    }
-    func showAskBreakTimeVc(){
-        addLog(text: "Showing Ask Break Time view.")
-        removeSubViews()
-        
-        containerView.addSubview(getaskBreakTimeVcObject().view)
-        containerView.addConstraints(subView: getaskBreakTimeVcObject().view)
-        currentState = ._ASK_APP_WORK_
-        currentAction = ._START_
-        NSApplication.shared.activate(ignoringOtherApps: true)
-    }
-    func showTakeBreaksInfoVc(){
-        addLog(text: "Showing Take Breaks Info view.")
-        removeSubViews()
-        
-        containerView.addSubview(geTakeBreaksInfoVcObject().view)
-        containerView.addConstraints(subView: geTakeBreaksInfoVcObject().view)
-        currentState = ._ASK_APP_WORK_
-        currentAction = ._START_
-        NSApplication.shared.activate(ignoringOtherApps: true)
-    }
-
-    
-    func startBreathing() {
-        addLog(text:"current startBreathing called")
-        removeSubViews()
-        containerView.addSubview(timerViewcontrollerObj!.view)
-        containerView.addConstraints(subView: timerViewcontrollerObj!.view)
-        timerViewcontrollerObj?.startBreathing()
-        currentState = ._BREATHING_
-        currentAction = ._INPROGRESS_
-        allApiObject.capturePosthog(event: "start-first-routine", metadata: ["routine-type":"first_routine"])
-    }
-    
-    func breathingOver(isSKipped:Bool) {
-        addLog(text:"current breathing Habit Over called")
-        removeSubViews()
-        containerView.addSubview(thirdVcObj!.view)
-        containerView.addConstraints(subView: thirdVcObj!.view)
-        thirdVcObj!.breathingFinished(isSKipped: isSKipped)
-        currentState = ._BREATHING_
-        currentAction = ._END_
-        allApiObject.capturePosthog(event: "complete-first-routine", metadata: ["routine-type":"first_routine"])
     }
     
     
@@ -497,8 +365,6 @@ class ViewController: NSViewController {
         self.view.addConstraints(subView: getCustomMessageVcObject().view)
         customMessageVcObj?.lblMessage.stringValue = msg
     }
-    
-
     
     @IBAction func btnHiddenClicked(_ sender: Any) {
         //mainWindowControllerObj?.window?.close()
@@ -553,12 +419,6 @@ class ViewController: NSViewController {
         }
     }
     
-    func showAskProcrastinatingView(){
-        self.removeSubViews()
-        containerView.addSubview(getAskProcrastinatingVcObj().view)
-        containerView.addConstraints(subView: getAskProcrastinatingVcObj().view)
-    }
-    
     func showConfirmBlockingScheduleView(){
         self.removeSubViews()
         containerView.addSubview(getConfirmBlockingScheduleCreationVcObj().view)
@@ -594,8 +454,6 @@ class ViewController: NSViewController {
             if shouldReloadTaskPlayer{
                 shouldReloadTaskPlayer = false
                 taskPlayerVcObj?.reloadData(totalDuration: focusModeMinutesToPerform, intention:whatToAchieveInFocusBlock)
-            }else{
-                taskPlayerVcObj?.reloadView()
             }
         }else{
             containerView.addSubview(getTodoListToolVcObject().view)
@@ -626,15 +484,6 @@ class ViewController: NSViewController {
     }
     
     
-    
-    func showDashboardView(){
-        self.removeSubViews()
-        containerView.addSubview(getSetUpVcObject().view)
-        containerView.addConstraints(subView: getSetUpVcObject().view)
-        if getSetUpVcObject().widthConstraint != nil{
-            getSetUpVcObject().widthConstraint.isActive = false
-        }
-    }
     
     func showMotivationView(){
         self.removeSubViews()
@@ -741,5 +590,38 @@ class ViewController: NSViewController {
         })
     }
 
-
+    func onboardingFinishedUnlockMachine(){
+        addLog(text: "Onboarding finished")
+        removeSubViews()
+        currentState = ._NOTHING_
+        
+        mainWindowControllerObj?.window?.close()
+        hideBlankWindowInSecondaryMonitor()
+        
+        UserDefaults.standard.removeObject(forKey: kUserdefaultsPasswordSetInOnboarding)
+        SettingsManagerObject.isFullScreenEnabled = false
+        SettingsManagerObject.isCuddlyModeEnabled = true
+        SettingsManagerObject.isEasySkipEnabled = true
+        SettingsManagerObject.doNotBlockUrlsDuringSuperPomodoroBreaksDefaultValue = true
+        SettingsManagerObject.shouldReloadAfterForceQuitEnabled = false
+        SettingsManagerObject.immediatelyBlockDistractingSites = false
+        SettingsManagerObject.immediatelyBlockDistractingApps = false
+        
+        SettingsManagerObject.isGeekModeEnabled = false // for new user app is in simple mode
+        
+        if UserDefaults.standard.object(forKey: kUserdefaultsShowDockIcon) as? Bool == false{
+            UserDefaults.standard.set(true, forKey: kUserdefaultsShowDockIcon)
+            NSApp.setActivationPolicy(NSApplication.ActivationPolicy.regular)
+        }
+        appdelegate!.needToCheckEmailVerification = false// if onboarding then dont show till menu tour is over
+        appdelegate!.getUserSubscriptionInfo()
+        appdelegate!.statusbutton?.action = nil
+        UserDefaults.standard.set(true, forKey: kUserdefaultsVideoShown)
+        
+        DispatchQueue.global().async {
+            DispatchQueue.main.async {
+                stageManagerObject.isStageManagerEnabled = stageManagerObject.checkIsStageManagerEnabled()
+            }
+        }
+    }
 }

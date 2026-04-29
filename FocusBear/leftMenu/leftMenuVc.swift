@@ -70,7 +70,7 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
             boxMicroBreaks.imageIcon = NSImage(named: NSImage.touchBarUserTemplateName)
         }
 
-        boxMicroBreaks.imageView?.contentTintColor = NSColor(named: "dark_OrangeColor") ?? NSColor.blue
+        boxMicroBreaks.imageView?.contentTintColor = NSColor(named: "dark_OrangeColor") ?? NSColor.orange
         boxMicroBreaks.title = "Start Micro Break"
         
         boxTodoPlayer.imageIcon = NSImage(named: "validIcon")
@@ -142,7 +142,6 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
                 self.boxMicroBreaks.isHidden = false
                 self.boxFocusSession.isHidden = false
                 self.boxHabits.isHidden = false
-                //self.boxDashboard.isHidden = false
                 if arrAllCustomRoutine.count == 0{
                     self.boxCustomRoutine.isHidden = true
                 }else{
@@ -152,7 +151,6 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
                 self.boxMicroBreaks.isHidden = true
                 self.boxFocusSession.isHidden = true
                 self.boxHabits.isHidden = true
-               // self.boxDashboard.isHidden = true
                 self.boxCustomRoutine.isHidden = true
             }
         }
@@ -194,7 +192,6 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         boxEditHabits.delegate = self
         boxSettings.delegate = self
         boxBlocks.delegate = self
-//        boxFocusModeSettings.delegate = self
         
         boxFocusMusic.delegate = self
         boxBrainDump.delegate = self
@@ -205,16 +202,8 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         boxMicroBreaks.delegate = self
         boxFocusSession.delegate = self
         boxHabits.delegate = self
-        //boxDashboard.delegate = self
         boxCustomRoutine.delegate = self
         boxUpgradeNow.delegate = self
-
-
-        
-//        arrForSearchFromSettings.append(["title": boxFocusModeSettings.title, "tabId": idFocus])
-//        arrForSearchFromSimpleModeSettings.append(["title": boxFocusModeSettings.title, "tabId": idFocus])
-        
-        
         
         if let leftMenuVcInfo = configjson.value(forKey: "leftMenuVcInfo") as? NSDictionary{
             boxMainItems.title = leftMenuVcInfo.value(forKey: "titleMain") as? String ?? boxMainItems.title
@@ -235,8 +224,7 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
             boxBrainDump.title = leftMenuVcInfo.value(forKey: "menuBrainDump") as? String ?? boxBrainDump.title
             boxBrowsersTabAudit.title = leftMenuVcInfo.value(forKey: "menuTabAudit") as? String ?? boxBrowsersTabAudit.title
             boxFocusMusic.title = leftMenuVcInfo.value(forKey: "menuFocusMusic") as? String ?? boxFocusMusic.title
-//            boxFocusModeSettings.title = leftMenuVcInfo.value(forKey: "menuFocusPreferences") as? String ?? boxFocusMusic.title
-
+            
             boxBlocks.title = leftMenuVcInfo.value(forKey: "menuBlocksPreferences") as? String ?? boxFocusMusic.title
             boxSettings.title = leftMenuVcInfo.value(forKey: "menuSettings") as? String ?? boxFocusMusic.title
             boxEditHabits.title = leftMenuVcInfo.value(forKey: "menuEditHabits") as? String ?? boxFocusMusic.title
@@ -313,8 +301,6 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
     func selectableListBoxDidChangeSelectionByUser(_ box: mainWindowListBox) {
         switch box{
             
-//        case boxDashboard:
-//            mainViewControllerObj?.showDashboardView()
         case boxHabits:
             mainViewControllerObj?.showHabitsView()
             if currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_MORNING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_{
@@ -337,13 +323,17 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
                         }
                     }
                 }
+
+                let currentDate = Date()
+                let firstRunDate = UserDefaults.standard.object(forKey: kUserdefaultsFirstRunDate) as? Date ?? currentDate
+                let sameDay = Calendar.current.isDate(currentDate, equalTo: firstRunDate, toGranularity: .day)
+                let isHabitsDisabled = UserDefaults.standard.object(forKey: kUserdefaultsIsHabitsDisabledFromOnboarding) as? Bool ?? false
+                
+                
                 if currentState != ._MORNING_HABIT_ && currentState != ._EVENING_HABIT_  && UserDefaults.standard.object(forKey: kUserdefaultsStartRoutineButtonClicked) == nil{
-                    let currentDate = Date()
-                    let firstRunDate = UserDefaults.standard.object(forKey: kUserdefaultsFirstRunDate) as? Date ?? currentDate
-                    let sameDay = Calendar.current.isDate(currentDate, equalTo: firstRunDate, toGranularity: .day)
-                    let isHabitsDisabled = UserDefaults.standard.object(forKey: kUserdefaultsIsHabitsDisabledFromOnboarding) as? Bool ?? false
                     if isHabitsDisabled{
                         UserDefaults.standard.set(true, forKey: kUserdefaultsStartRoutineButtonClicked)
+                        habitsVcObj?.showHabitState()
                     }else{
                         if sameDay || !shouldDoHabits(){
                             habitsVcObj?.showHabitState()
@@ -364,6 +354,11 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
                         habitsVcObj?.showHabitState()// v 2.28.445
                     }else if !isAppEnable{
                         habitsVcObj?.showHabitState()// v 2.28.456
+                    }else if sameDay || !shouldDoHabits(){
+                        if isHabitsDisabled{
+                            UserDefaults.standard.set(true, forKey: kUserdefaultsStartRoutineButtonClicked)
+                        }
+                        habitsVcObj?.showHabitState()
                     }
                 }
             }
@@ -469,9 +464,7 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
     
     func selectableListBoxSelectionDidChange(_ box: mainWindowListBox) {
         switch box{
-            
-//        case boxDashboard:
-//            mainViewControllerObj?.showSmallScreen()
+
         case boxHabits:
             if currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._FOCUS_SUMMARY_ || currentState == ._SHUTOFFMAC_{
                 mainViewControllerObj?.checkIsFullScreenNeeded()
@@ -618,7 +611,7 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
     
     
     func habitStarted(){
-        disbaleAllExceptHabitTab()
+        disableAllExceptHabitTab()
         
         boxHabits.isSelected = true
         mainViewControllerObj?.showHabitsView()
@@ -630,7 +623,7 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
     }
     
     func customRoutineStarted(){
-        disbaleAllExceptCustomRoutineTab()
+        disableAllExceptCustomRoutineTab()
         
         boxCustomRoutine.isSelected = true
         mainViewControllerObj?.showHabitsView()
@@ -640,7 +633,7 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         mainWindowControllerObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.numberOfWindowLevelKeys)))
     }
     
-    func disbaleAllExceptHabitTab(){
+    func disableAllExceptHabitTab(){
         var toolTipDisableReason = ""
         
         if currentState == ._MORNING_HABIT_{
@@ -655,31 +648,21 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
             toolTipDisableReason = disableReasonCustomRoutine
         }
         
-//        boxHelpAndSupport.setDisableWithRaason(reason: toolTipDisableReason)
         boxEditHabits.setDisableWithRaason(reason: toolTipDisableReason)
         boxSettings.setDisableWithRaason(reason: toolTipDisableReason)
         boxBlocks.setDisableWithRaason(reason: toolTipDisableReason)
-//        boxFocusModeSettings.setDisableWithRaason(reason: toolTipDisableReason)
-        
-        boxFocusMusic.setDisableWithRaason(reason: toolTipDisableReason)
-        boxBrainDump.setDisableWithRaason(reason: toolTipDisableReason)
-        boxBrowsersTabAudit.setDisableWithRaason(reason: toolTipDisableReason)
-        boxTodoPlayer.setDisableWithRaason(reason: toolTipDisableReason)
-        boxMotivation.setDisableWithRaason(reason: toolTipDisableReason)
         
         boxMicroBreaks.setDisableWithRaason(reason: toolTipDisableReason)
         boxFocusSession.setDisableWithRaason(reason: toolTipDisableReason)
         boxHabits.isEnabled = true
-//        boxDashboard.setDisableWithRaason(reason: toolTipDisableReason)
         boxCustomRoutine.setDisableWithRaason(reason: toolTipDisableReason)
     }
     
-    func disbaleAllTabForOnboarding(){
+    func disableAllTabForOnboarding(){
         let toolTipDisableReason = ""
         boxEditHabits.setDisableWithRaason(reason: toolTipDisableReason)
         boxSettings.setDisableWithRaason(reason: toolTipDisableReason)
         boxBlocks.setDisableWithRaason(reason: toolTipDisableReason)
-//        boxFocusModeSettings.setDisableWithRaason(reason: toolTipDisableReason)
         
         boxFocusMusic.setDisableWithRaason(reason: toolTipDisableReason)
         boxBrainDump.setDisableWithRaason(reason: toolTipDisableReason)
@@ -697,7 +680,7 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
     }
     
     
-    func disbaleAllExceptCustomRoutineTab(){
+    func disableAllExceptCustomRoutineTab(){
         var toolTipDisableReason = ""
         
         if currentState == ._MORNING_HABIT_{
@@ -711,23 +694,14 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         }else if currentState == ._CUSTOM_ROUTINE_{
             toolTipDisableReason = disableReasonCustomRoutine
         }
-        
-//        boxHelpAndSupport.setDisableWithRaason(reason: toolTipDisableReason)
+
         boxEditHabits.setDisableWithRaason(reason: toolTipDisableReason)
         boxSettings.setDisableWithRaason(reason: toolTipDisableReason)
         boxBlocks.setDisableWithRaason(reason: toolTipDisableReason)
-//        boxFocusModeSettings.setDisableWithRaason(reason: toolTipDisableReason)
-        
-        boxFocusMusic.setDisableWithRaason(reason: toolTipDisableReason)
-        boxBrainDump.setDisableWithRaason(reason: toolTipDisableReason)
-        boxBrowsersTabAudit.setDisableWithRaason(reason: toolTipDisableReason)
-        boxTodoPlayer.setDisableWithRaason(reason: toolTipDisableReason)
-        boxMotivation.setDisableWithRaason(reason: toolTipDisableReason)
-        
+
         boxMicroBreaks.setDisableWithRaason(reason: toolTipDisableReason)
         boxFocusSession.setDisableWithRaason(reason: toolTipDisableReason)
         boxHabits.setDisableWithRaason(reason: toolTipDisableReason)
-        boxDashboard.setDisableWithRaason(reason: toolTipDisableReason)
         boxCustomRoutine.isEnabled = true
     }
     
@@ -742,34 +716,23 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
     func microBreaksStarted(){
         let toolTipDisableReason = disableReasonMircoBreaks
         
-//        boxHelpAndSupport.setDisableWithRaason(reason: toolTipDisableReason)
-        boxMotivation.setDisableWithRaason(reason: toolTipDisableReason)
         boxEditHabits.setDisableWithRaason(reason: toolTipDisableReason)
         boxSettings.setDisableWithRaason(reason: toolTipDisableReason)
         boxBlocks.setDisableWithRaason(reason: toolTipDisableReason)
-//        boxFocusModeSettings.setDisableWithRaason(reason: toolTipDisableReason)
         
-        boxFocusMusic.setDisableWithRaason(reason: toolTipDisableReason)
-        boxBrainDump.setDisableWithRaason(reason: toolTipDisableReason)
-        boxBrowsersTabAudit.setDisableWithRaason(reason: toolTipDisableReason)
-        boxTodoPlayer.setDisableWithRaason(reason: toolTipDisableReason)
-
         boxMicroBreaks.isEnabled = true
         boxFocusSession.setDisableWithRaason(reason: toolTipDisableReason)
         boxHabits.setDisableWithRaason(reason: toolTipDisableReason)
-//        boxDashboard.setDisableWithRaason(reason: toolTipDisableReason)
         boxCustomRoutine.setDisableWithRaason(reason: toolTipDisableReason)
         
         boxMicroBreaks.isSelected = true
         mainViewControllerObj?.showHabitsView()
-       // mainViewControllerObj?.checkIsFullScreenNeeded()
         pauseAutomaticallyIfAnyFocusMusicPlaying()
         mainViewControllerObj?.collapseLeftPanel()
         mainWindowControllerObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.numberOfWindowLevelKeys)))
     }
     
     func microBreaksOver(){
-        //mainViewControllerObj?.showSmallScreen()
         resumeIfAnyFocusMusicStoppedAutomatically()
         mainViewControllerObj?.expandLeftPanel()
         enableAllItems()
@@ -791,13 +754,11 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
     }
 
     func enableAllItems(){
-//        boxHelpAndSupport.isEnabled = true
         boxMotivation.isEnabled = true
         boxEditHabits.isEnabled = true
         boxSettings.isEnabled = true
         boxBlocks.isEnabled = true
-//        boxFocusModeSettings.isEnabled = true
-        
+
         boxFocusMusic.isEnabled = true
         boxBrainDump.isEnabled = true
         boxBrowsersTabAudit.isEnabled = true
@@ -806,7 +767,7 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         boxMicroBreaks.isEnabled = true
         boxFocusSession.isEnabled = true
         boxHabits.isEnabled = true
-//        boxDashboard.isEnabled = true
+
         boxCustomRoutine.isEnabled = true
         boxUpgradeNow.isEnabled = true
         boxHelpAndSupport.isEnabled = true
@@ -817,10 +778,6 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         mainViewControllerObj?.showFocusSessionView(pomodoroView: pomodoroVcObj)
     }
     
-    func showProcrastinatingView(){
-        boxFocusSession.isSelected = true
-        mainViewControllerObj?.showAskProcrastinatingView()
-    }
     
     func showHabitsView(){
         boxHabits.isSelected = true
@@ -850,7 +807,6 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
     func showAllTracks(){
         boxFocusMusic.isSelected = true
         mainViewControllerObj?.showAllTracksView()
-//        enableAllItems()
     }
     
     func showTaskPlayer(){
@@ -866,13 +822,11 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
     func showFocusCompletedView(){
         boxFocusSession.isSelected = true
         mainViewControllerObj?.showFocusCompletedView()
-//        enableAllItems()
     }
     
     func showFocusAbortedView(){
         boxFocusSession.isSelected = true
         mainViewControllerObj?.showFocusAbortedView()
-       // enableAllItems()
     }
     
     func showCustomScheduleAbortedView(){
@@ -919,7 +873,6 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         if !(leftMenuVcObj?.boxBlocks.isSelected ?? false){
             leftMenuVcObj?.boxBlocks.isSelected = true
         }
-//        boxFocusModeSettings.isSelected = true
         mainViewControllerObj?.showFocusPreferencesView()
         mainViewControllerObj?.askPasswordForSettingsIfNeeded()
     }
@@ -968,3 +921,11 @@ class leftMenuVc: NSViewController, mainWindowListBoxDelegate {
         mainViewControllerObj?.toggleLeftPaneWidth()
     }
 }
+
+var idGeneral = "General"
+var idStats = "Stats"
+var idFocus = "Focus"
+var idEditHabits = "EditHabits"
+var idSettings = "Settings"
+var idHelp = "Help"
+var idTabStrictness = "tabStrictness"

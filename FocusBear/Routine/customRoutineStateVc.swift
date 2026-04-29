@@ -136,11 +136,6 @@ class customRoutineStateVc: NSViewController {
     @objc func menuItemStartRoutineClicked(sender:NSMenuItem){
         addLog(text:"[user-action] customRoutineStateVc:- menuItemStartRoutineClicked")
         if isPurchased == false && daysLeft <= 0{
-            if trialExpiredNagWcObj != nil{
-                if trialExpiredNagWcObj?.window?.isVisible ?? false{
-                    return;
-                }
-            }
             showUpgradeNowWindow()
             return;
         }

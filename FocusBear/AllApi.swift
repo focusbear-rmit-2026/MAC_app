@@ -446,12 +446,7 @@ class AllApi:NSObject {
             if let occupation = UserDefaults.standard.object(forKey: kUserDefaultsSelectedOccupationForPosthog) as? String{
                 json["occupation"] = occupation
             }
-            
-            if let careFactor = UserDefaults.standard.object(forKey: kUserDefaultsCareFactorHabitsForPosthog) as? String{
-                json["care-factor-habits"] = careFactor
-            }
-            
-            
+
             let jsonData = try? JSONSerialization.data(withJSONObject: json)
             request.httpBody = jsonData
             let task = URLSession.shared.dataTask(with: request as URLRequest) {
@@ -687,6 +682,7 @@ class AllApi:NSObject {
     var isApiGetAllBlockingSchedulesErrorFound = false
     var isApiAddBlockingScheduleErrorFound = false
     var isApiUnlockRequestErrorFound = false
+    var isApiGenerateOccupationRelevantSitesErrorFound = false
     
     var isApiUpdateBlockingScheduleErrorFound = false
     var isApiDeleteBlockingScheduleErrorFound = false
@@ -2474,278 +2470,9 @@ class AllApi:NSObject {
             }
         }
     }
-    //    func getAbortJsonToUpload(emailAddress:String?, feedback:String, abortReason:String,completionHandler: @escaping(_ result: NSDictionary) -> ()) {
-    //        addLog(text: "func call:- get Abort Json To Upload response")
-    //
-    //
-    //
-    //
-    //        let firstRunDate = UserDefaults.standard.object(forKey: kUserdefaultsFirstRunDate) as? Date ?? Date()
-    //        let formatter = DateFormatter()
-    //        formatter.dateFormat = "yyyy-MM-dd"
-    //        let myDateString = formatter.string(from: firstRunDate)
-    //
-    //        let jsonResult:NSMutableDictionary = ["abortReason":abortReason, "userID":appdelegate!.user?.userId ?? "", "macOSVersion":macOSVersion, "appVersion":appVersion, "feedback":feedback, "usageStartDate":myDateString]
-    //
-    //        if emailAddress != nil{
-    //            jsonResult["emailAddress"] = emailAddress!
-    //        }
-    //
-    //
-    //
-    //        let responsePath = webhookUrl
-    //        if let responsePathUrl = NSURL(string: responsePath){
-    //
-    //            let request = NSMutableURLRequest(url:responsePathUrl as URL);
-    //            request.httpMethod = "POST";
-    //
-    //            let json = jsonResult//[[String: String]]()
-    //
-    //            let jsonData = try? JSONSerialization.data(withJSONObject: json)
-    //
-    //
-    //            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-    //            request.httpBody = jsonData
-    //
-    //
-    //            let task = URLSession.shared.dataTask(with: request as URLRequest) {
-    //                data, response, error in
-    //
-    //                // print(response)
-    //                if let httpResponse = response as? HTTPURLResponse {
-    //                    if httpResponse.statusCode == 200{
-    //
-    //                        if data != nil{
-    //                            addLog(text: "get Abort Json To Upload response - success")
-    //                            //                            let status = String(data: data!, encoding: .utf8)!
-    //                            //                            if status == "1"{
-    //                            //                                print("success")
-    //                            //                                addLog(text: "get Abort Json To Upload response - success")
-    //                            //                            }else{
-    //                            //                                addLog(text: "get Abort Json To Upload response - status is not 1")
-    //                            //                            }
-    //                        }
-    //                    }else{
-    //                        addLog(text: "error get Abort Json To Upload response - error:- statusCode is \(httpResponse.statusCode)")
-    //                        self.writeJsonInLog(data: data)
-    //                    }
-    //
-    //                }
-    //
-    //                if error != nil {
-    //                    addLog(text: "get Abort Json To Upload response - error - \(error!.localizedDescription)")
-    //                    completionHandler(jsonResult)
-    //                    return
-    //                }
-    //                completionHandler(jsonResult)
-    //                return;
-    //            }
-    //            task.resume()
-    //        }else{
-    //            //        isUploadingPopupResponse = false
-    //            completionHandler(jsonResult)
-    //        }
-    //
-    //
-    //    }
+
     
-    //    func getQuitJsonToUpload(emailAddress:String?, feedback:String, quitReason:String,completionHandler: @escaping(_ result: NSDictionary) -> ()) {
-    //        addLog(text: "func call:- get Quit Json To Upload")//
-    //
-    //
-    //        let firstRunDate = UserDefaults.standard.object(forKey: kUserdefaultsFirstRunDate) as? Date ?? Date()
-    //        let formatter = DateFormatter()
-    //        formatter.dateFormat = "yyyy-MM-dd"
-    //        let myDateString = formatter.string(from: firstRunDate)
-    //
-    //        let jsonResult:NSMutableDictionary = ["quitReason":quitReason, "userID":appdelegate!.user?.userId ?? "", "macOSVersion":macOSVersion, "appVersion":appVersion, "feedback":feedback, "usageStartDate":myDateString]
-    //
-    //        if emailAddress != nil{
-    //            jsonResult["emailAddress"] = emailAddress!
-    //        }
-    //
-    //
-    //
-    //        let responsePath = webhookUrl
-    //        if let responsePathUrl = NSURL(string: responsePath){
-    //
-    //            let request = NSMutableURLRequest(url:responsePathUrl as URL);
-    //            request.httpMethod = "POST";
-    //
-    //            let json = jsonResult//[[String: String]]()
-    //
-    //            let jsonData = try? JSONSerialization.data(withJSONObject: json)
-    //
-    //
-    //            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-    //            request.httpBody = jsonData
-    //
-    //
-    //            let task = URLSession.shared.dataTask(with: request as URLRequest) {
-    //                data, response, error in
-    //
-    //                // print(response)
-    //                if let httpResponse = response as? HTTPURLResponse {
-    //                    if httpResponse.statusCode == 200{
-    //
-    //                        if data != nil{
-    //                            addLog(text: "get Quit Json To Upload response - success")
-    //                            //                            let status = String(data: data!, encoding: .utf8)!
-    //                            //                            if status == "1"{
-    //                            //                                print("success")
-    //                            //
-    //                            //                            }else{
-    //                            //                                addLog(text: "get Quit Json To Upload response - nil data")
-    //                            //                            }
-    //                        }
-    //                    }else{
-    //                        addLog(text: "error in get Quit Json To Upload response - data nil:- statusCode is \(httpResponse.statusCode)")
-    //                        self.writeJsonInLog(data: data)
-    //                    }
-    //
-    //                }
-    //
-    //                if error != nil {
-    //                    addLog(text: "get Quit Json To Upload response - error - \(error!.localizedDescription)")
-    //                    completionHandler(jsonResult)
-    //                    return
-    //                }
-    //                completionHandler(jsonResult)
-    //                return;
-    //            }
-    //            task.resume()
-    //        }else{
-    //            //        isUploadingPopupResponse = false
-    //            completionHandler(jsonResult)
-    //        }
-    //
-    //
-    //    }
-    
-    
-    //    func getUninstallJsonToUpload(emailAddress:String?, uninstallReason:String, uninstallDescription:String,completionHandler: @escaping(_ result: NSDictionary) -> ()) {
-    //
-    //        addLog(text: "func call:- get Uninstall Json To Upload")
-    //
-    //        let firstRunDate = UserDefaults.standard.object(forKey: kUserdefaultsFirstRunDate) as? Date ?? Date()
-    //        let formatter = DateFormatter()
-    //        formatter.dateFormat = "yyyy-MM-dd"
-    //        let myDateString = formatter.string(from: firstRunDate)
-    //
-    //        let jsonResult:NSMutableDictionary = ["uninstallReason":uninstallReason, "uninstallDescription":uninstallDescription, "userID":appdelegate!.user?.userId ?? "", "macOSVersion":macOSVersion, "appVersion":appVersion, "usageStartDate":myDateString]//, "feedback":feedback//
-    //
-    //        if emailAddress != nil{
-    //            jsonResult["emailAddress"] = emailAddress!
-    //        }
-    //
-    //
-    //
-    //        let responsePath = webhookUrl
-    //        if let responsePathUrl = NSURL(string: responsePath){
-    //
-    //            let request = NSMutableURLRequest(url:responsePathUrl as URL);
-    //            request.httpMethod = "POST";
-    //
-    //            let json = jsonResult//[[String: String]]()
-    //
-    //            let jsonData = try? JSONSerialization.data(withJSONObject: json)
-    //
-    //            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-    //            request.httpBody = jsonData
-    //
-    //
-    //            let task = URLSession.shared.dataTask(with: request as URLRequest) {
-    //                data, response, error in
-    //
-    //                // print(response)
-    //                if let httpResponse = response as? HTTPURLResponse {
-    //                    if httpResponse.statusCode == 200{
-    //
-    //                        if data != nil{
-    //                            addLog(text: "get Uninstall Json To Upload response - success")
-    //                            let status = String(data: data!, encoding: .utf8)!
-    //                            if status == "1"{
-    //                                print("success")
-    //
-    //                            }else{
-    //
-    //                            }
-    //                        }
-    //                    }else{
-    //                        addLog(text: "error in get Uninstall Json To Upload response - data nil:- statusCode is \(httpResponse.statusCode)")
-    //                        self.writeJsonInLog(data: data)
-    //                    }
-    //
-    //                }
-    //
-    //                if error != nil {
-    //                    addLog(text: "get Uninstall Json To Upload response - error - \(error!.localizedDescription)")
-    //                    completionHandler(jsonResult)
-    //                    return
-    //                }
-    //                completionHandler(jsonResult)
-    //                return;
-    //            }
-    //            task.resume()
-    //        }else{
-    //            //        isUploadingPopupResponse = false
-    //            completionHandler(jsonResult)
-    //        }
-    //
-    //
-    //    }
-    func activateKey(license_key:String,completionHandler: @escaping(_ result: NSDictionary?) -> ()){// not in use
-        //80F7CCF5-7FE54D41-B5A2DD9F-4A84B894
-        //    isUploadingPopupResponse = true
-        let responsePath = "https://api.gumroad.com/v2/licenses/verify?product_permalink=xdkkds&license_key=\(license_key)"
-        if let responsePathUrl = NSURL(string: responsePath){
-            addLog(text: "api call getConfigFile \(responsePathUrl)")
-            let request = NSMutableURLRequest(url:responsePathUrl as URL);
-            request.httpMethod = "POST";
-            
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            //        request.httpBody = jsonData
-            
-            
-            let task = URLSession.shared.dataTask(with: request as URLRequest) {
-                data, response, error in
-                
-                if let httpResponse = response as? HTTPURLResponse {
-                    if httpResponse.statusCode == 200{
-                        
-                        if data != nil{
-                            do {
-                                if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
-                                    
-                                    completionHandler(jsonResult)
-                                    return
-                                }
-                                
-                            }catch{
-                                print(error)
-                            }
-                        }
-                    }else{
-                        completionHandler(nil)
-                        return
-                    }
-                }
-                
-                if error != nil {
-                    completionHandler(nil)
-                    return
-                }
-                completionHandler(nil)
-                return
-            }
-            
-            task.resume()
-        }else{
-            completionHandler(nil)
-        }
-    }
-    
-    func addFocusMode(focusType:[String:Any]){
+    func addFocusMode(focusType:[String:Any],completionHandler: @escaping(_ result: Bool) -> ()){
         addLog(text: "func call:- addFocusMode:- focus-mode")
         
         appdelegate!.credentialsManager.credentials {credentialsInfo in
@@ -2775,6 +2502,8 @@ class AllApi:NSObject {
                     ]
                     
                     var dic = focusType
+                    dic.removeValue(forKey: "doNotSuggestAnyMore")// no need to sync Auto suggest focus mode key
+                    
                     dic.removeValue(forKey: "name")
                     dic.removeValue(forKey: "id")
                     dic.removeValue(forKey: "allowed_urls")
@@ -2796,19 +2525,22 @@ class AllApi:NSObject {
                                         if let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary{
                                             
                                             addLog(text: "api call addFocusMode success")
-                                            return;
+                                            completionHandler(true)
+                                            return
                                         }
                                         
                                     }catch{
                                         addLog(text: "api call addFocusMode error:- \(error.localizedDescription)")
                                         print(error)
-                                        return;
+                                        completionHandler(false)
+                                        return
                                     }
                                 }
                             }else{
                                 addLog(text: "api call addFocusMode error:- statusCode is \(httpResponse.statusCode)")
                                 self.writeJsonInLog(data: data)
                                 addLog(text: "accessToken is:- \(token)")
+                                completionHandler(false)
                                 return;
                             }
                         }
@@ -2819,26 +2551,32 @@ class AllApi:NSObject {
                             if (error as? NSError)?.code == self.errorCodeRequestTimeout{
                                 if self.isApiAddFocusModeErrorFound{
                                     self.isApiAddFocusModeErrorFound = false
-                                    return;
+                                    completionHandler(false)
+                                    return
                                 }else{
                                     self.isApiAddFocusModeErrorFound = true
                                     addLog(text: "error addFocusMode:- try second time")
-                                    self.addFocusMode(focusType: focusType)
+                                    self.addFocusMode(focusType: focusType, completionHandler: {result in
+                                        completionHandler(result)
+                                        return;
+                                    })
                                     return;
                                 }
                             }else{
-                                return;
+                                completionHandler(false)
+                                return
                             }
                             
                         }else{
-                            return;
+                            completionHandler(false)
+                            return
                         }
                         
                     }
                     
                     task.resume()
                 }else{
-                    
+                    completionHandler(false)
                 }
                 
             }
@@ -2958,6 +2696,8 @@ class AllApi:NSObject {
                     }
                     json["tags"] = tagsDic
                     var dic = focusType
+                    
+                    dic.removeValue(forKey: "doNotSuggestAnyMore")// no need to sync Auto suggest focus mode key
                     
                     dic.removeValue(forKey: "name")
                     dic.removeValue(forKey: "id")
@@ -4736,59 +4476,7 @@ class AllApi:NSObject {
         }
     }
     
-    func postPusher(socketID:String){// not in use
-        appdelegate!.credentialsManager.credentials {credentialsInfo in
-            
-            
-            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
-            
-            if appdelegate!.credential != nil{
-                
-                let responsePath = "\(baseUrl)/pusher/user-auth"
-                if let responsePathUrl = NSURL(string: responsePath){
-                    let token = appdelegate!.credential!.accessToken
-                    
-                    
-                    let request = NSMutableURLRequest(url:responsePathUrl as URL);
-                    request.httpMethod = "POST";
-                    request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-                    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-                    
-                    
-                    let json: [String: Any] = [
-                        "socket_id": socketID
-                    ]
-                    
-                    let jsonData = try? JSONSerialization.data(withJSONObject: json)
-                    request.httpBody = jsonData
-                    
-                    let task = URLSession.shared.dataTask(with: request as URLRequest) {
-                        data, response, error in
-                        
-                        if let httpResponse = response as? HTTPURLResponse{
-                            if httpResponse.statusCode == 200{ //it means it is right
-                                //success//
-                                
-                            }
-                        }
-                        do {
-                            let jsonResult: NSDictionary = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary ?? [:]
-                            
-                            print(jsonResult)
-                        }catch{
-                            
-                        }
-                        
-                        
-                        
-                    }
-                    task.resume()
-                }
-                
-            }
-        }
-    }
-    
+
     func postCourse(){
         addLog(text: "func call:- postCourse")
         appdelegate!.credentialsManager.credentials {credentialsInfo in
@@ -4929,9 +4617,7 @@ class AllApi:NSObject {
             let occupation = UserDefaults.standard.object(forKey: kUserDefaultsSelectedOccupationForPosthog) as? String ?? ""
             let goals = UserDefaults.standard.object(forKey: kUserDefaultsCustomGoals) as? String ?? ""
             let lastQuitReason = UserDefaults.standard.object(forKey: kUserDefaultsLastQuitReason) as? String ?? ""
-            let careFactor = UserDefaults.standard.object(forKey: kUserDefaultsCareFactorHabitsForPosthog) as? String ?? ""
-            
-            
+        
             var properties = [String:Any]()
             
             properties["distinct_id"] = distinct_id
@@ -4946,8 +4632,7 @@ class AllApi:NSObject {
                 "occupation": occupation,
                 "reason-for-using-focus-bear": goals,
                 "last-quit-reason": lastQuitReason,
-                "app-version": appVersion,
-                "care-factor-habits": careFactor
+                "app-version": appVersion
             ]
             
             
@@ -6070,6 +5755,111 @@ class AllApi:NSObject {
         }
     }
     
+
+
+    func generateOccupationRelevantSites(userOccupation:String, completionHandler: @escaping(_ result: [String:Any]?) -> ()){
+        addLog(text: "func call:- generateOccupationRelevantSites")
+        
+        appdelegate!.credentialsManager.credentials {credentialsInfo in
+            addLog(text: "get updated credentialsInfo from credentialsManager")
+            
+            appdelegate!.setCredentialAndUserInfo(credentialsInfo: credentialsInfo, isAppLaunching: false)
+            
+            if appdelegate!.credential != nil{
+                
+                let responsePath = "\(baseUrl)/user/generate-occupation-specific-relevant-sites"
+                if let responsePathUrl = NSURL(string: responsePath){
+                    addLog(text: "api call generateOccupationRelevantSites \(responsePathUrl)")
+                    let token = appdelegate!.credential!.accessToken
+                    
+                    let request = makeRequest(responsePathUrl: responsePathUrl)
+                    request.httpMethod = "POST";
+                    
+                    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                    
+                    let json: [String: Any] = [
+                        "user_occupation":userOccupation
+                    ]
+                    
+                    let jsonData = try? JSONSerialization.data(withJSONObject: json)
+                    request.httpBody = jsonData
+                    
+                    let task = URLSession.shared.dataTask(with: request as URLRequest) {
+                        data, response, error in
+                        
+                        if let httpResponse = response as? HTTPURLResponse{
+                            self.isApiGenerateOccupationRelevantSitesErrorFound = false
+                            if httpResponse.statusCode == 201{ //it means it is right
+                                
+                                if data != nil{
+                                    do {
+                                        if let jsonResult: [String:Any] = try JSONSerialization.jsonObject(with: data!, options:JSONSerialization.ReadingOptions.mutableContainers) as? [String:Any]{
+                                            
+                                            addLog(text: "api call generateOccupationRelevantSites success")
+                                            print(jsonResult)
+                                            completionHandler(jsonResult)
+                                            return
+                                        }
+                                        
+                                    }catch{
+                                        print(error)
+                                        addLog(text: "error get generateOccupationRelevantSites: \(error.localizedDescription)")
+                                        completionHandler(nil)
+                                        return
+                                    }
+                                    
+                                }
+                                
+                                completionHandler(nil)
+                                return
+                            }else{
+                                addLog(text: "api call generateOccupationRelevantSites error:- statusCode is \(httpResponse.statusCode)")
+                                self.writeJsonInLog(data: data)
+                                addLog(text: "accessToken is:- \(token)")
+                                completionHandler(nil)
+                                return;
+                            }
+                        }
+                        
+                        
+                        if error != nil {
+                            addLog(text: "api call generateOccupationRelevantSites error:- \(error!.localizedDescription)")
+                            if (error as? NSError)?.code == self.errorCodeRequestTimeout{
+                                if self.isApiGenerateOccupationRelevantSitesErrorFound{
+                                    self.isApiGenerateOccupationRelevantSitesErrorFound = false
+                                    completionHandler(nil)
+                                    return;
+                                }else{
+                                    self.isApiGenerateOccupationRelevantSitesErrorFound = true
+                                    addLog(text: "error generateOccupationRelevantSites:- try second time")
+                                    self.generateOccupationRelevantSites(userOccupation: userOccupation, completionHandler: { result in
+                                        completionHandler(result)
+                                        return;
+                                    })
+                                }
+                            }else{
+                                completionHandler(nil)
+                                return;
+                            }
+                            
+                        }else{
+                            completionHandler(nil)
+                            return;
+                        }
+                        
+                    }
+                    
+                    task.resume()
+                }else{
+                    completionHandler(nil)
+                }
+            }else{
+                completionHandler(nil)
+            }
+        }
+    }
+    
+    
     func getUnlockRequestStatus(completionHandler: @escaping(_ result: [NSDictionary]?) -> ()) {
         addLog(text: "func call:- getUnlockRequestStatus")
         
@@ -6256,4 +6046,7 @@ extension EventBuffer {
         }.resume()
     }
 }
+
+
+
 

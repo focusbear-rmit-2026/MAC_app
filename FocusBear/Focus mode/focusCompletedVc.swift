@@ -75,7 +75,7 @@ class focusCompletedVc: NSViewController {
     @IBOutlet weak var boxBlankSpaceInsideMoreQuestions: NSBox!
     
     var currentFocusModeName = ""
-    var subTitleText = "You have successfully completed the focus block - <FOCUSTYPE>"
+    var subtitle = "Focus block complete – log your achievement to track progress!"
     var buttonTakeBreakText = "Relax 5 minutes"
     var currentFocusModeId = ""
     var finish_time:Date?
@@ -109,7 +109,35 @@ class focusCompletedVc: NSViewController {
         tokenFieldTags.delegate = self
         btnEnableAdvancedAnalytics.titleColor = NSColor.systemBlue
         btnMoreOptions.title = "More Stats"
-        lblAccordinMoreOptions.stringValue = "Reflect on the session"
+        lblAccordinMoreOptions.stringValue = "✨ Log your Achievement"
+        
+        // CTA styling improvement (Issue #1489)
+        // Improves visibility, contrast, and aligns with Focus Bear orange theme
+        // Text
+        lblAccordinMoreOptions.textColor = NSColor.systemOrange
+        lblAccordinMoreOptions.font = NSFont.systemFont(ofSize: 18, weight: .semibold)
+
+        // Container
+        boxAccordinMoreOptions.wantsLayer = true
+        boxAccordinMoreOptions.boxType = .custom
+        boxAccordinMoreOptions.fillColor = .clear
+        boxAccordinMoreOptions.isTransparent = true
+
+        boxAccordinMoreOptions.layer?.cornerRadius = 10
+        boxAccordinMoreOptions.layer?.borderWidth = 1
+
+        if let appearance = view.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) {
+            if appearance == .darkAqua {
+                // Dark mode
+                boxAccordinMoreOptions.layer?.backgroundColor = NSColor.systemOrange.withAlphaComponent(0.18).cgColor
+                boxAccordinMoreOptions.layer?.borderColor = NSColor.systemOrange.withAlphaComponent(0.45).cgColor
+            } else {
+                // Light mode
+                boxAccordinMoreOptions.layer?.backgroundColor = NSColor.systemOrange.withAlphaComponent(0.22).cgColor
+                boxAccordinMoreOptions.layer?.borderColor = NSColor.systemOrange.withAlphaComponent(0.5).cgColor
+            }
+        }
+        
         lblEnableTimeTracker.stringValue = "Want to get even deeper analytics?"
         btnActivateTimeTracker.title = "Activate Focus Bear Time Tracker"
         lblTitleNextSessionIntention.stringValue = "What do you plan to do next?"
@@ -129,7 +157,7 @@ class focusCompletedVc: NSViewController {
         btnStartAnotherFocusBlock.title = "Start new focus session"
 
         lblTitle.stringValue = "You did it!"
-        lblQuestionFirst.stringValue = "What did you achieve during this time?"
+        lblQuestionFirst.stringValue = "What did you achieve during this session?"
         lblQuestionSecond.stringValue = "How focused were you?"
         lblIntentionWas.stringValue = "Your intention was"
         
@@ -145,12 +173,16 @@ class focusCompletedVc: NSViewController {
                 if let title = focusCompletedInfo.value(forKey: "title") as? String{
                     lblTitle.stringValue = title
                 }
-                if let subTitle = focusCompletedInfo.value(forKey: "subTitle") as? String{
-                    subTitleText = subTitle
+                if let subTitle = focusCompletedInfo.value(forKey: "subtitleNew") as? String{
+                    self.subtitle = subTitle
                 }
                 if let questionFirstText = focusCompletedInfo.value(forKey: "questionFirstText") as? String{
                     lblQuestionFirst.stringValue = questionFirstText
                 }
+                
+                // Fix wording (Issue #1489)
+                lblQuestionFirst.stringValue = "What did you achieve during this session?"
+                
                 if let titleStarRatingText = focusCompletedInfo.value(forKey: "titleStarRatingText") as? String{
                     lblQuestionSecond.stringValue = titleStarRatingText
                 }
@@ -180,7 +212,35 @@ class focusCompletedVc: NSViewController {
                 btnActivateTimeTracker.title = focusCompletedInfo.value(forKey: "buttonActivateTimeTrackerText") as? String ?? btnActivateTimeTracker.title
                 lblTitleNextSessionIntention.stringValue = focusCompletedInfo.value(forKey: "titleNextSessionIntention") as? String ?? lblTitleNextSessionIntention.stringValue
                 btnMoreOptions.title = focusCompletedInfo.value(forKey: "buttonMoreOptionsText") as? String ?? btnMoreOptions.title
-                lblAccordinMoreOptions.stringValue = focusCompletedInfo.value(forKey: "buttonAccordionMoreOptionsText") as? String ?? lblAccordinMoreOptions.stringValue
+                lblAccordinMoreOptions.stringValue = focusCompletedInfo.value(forKey: "buttonAccordionAchievement") as? String ?? lblAccordinMoreOptions.stringValue
+                
+                // CTA styling improvement (Issue #1489)
+                // Improves visibility, contrast, and aligns with Focus Bear orange theme
+                // Text
+                lblAccordinMoreOptions.textColor = NSColor.systemOrange
+                lblAccordinMoreOptions.font = NSFont.systemFont(ofSize: 18, weight: .semibold)
+
+                // Container
+                boxAccordinMoreOptions.wantsLayer = true
+                boxAccordinMoreOptions.boxType = .custom
+                boxAccordinMoreOptions.fillColor = .clear
+                boxAccordinMoreOptions.isTransparent = true
+
+                boxAccordinMoreOptions.layer?.cornerRadius = 10
+                boxAccordinMoreOptions.layer?.borderWidth = 1
+
+                if let appearance = view.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) {
+                    if appearance == .darkAqua {
+                        // Dark mode
+                        boxAccordinMoreOptions.layer?.backgroundColor = NSColor.systemOrange.withAlphaComponent(0.18).cgColor
+                        boxAccordinMoreOptions.layer?.borderColor = NSColor.systemOrange.withAlphaComponent(0.45).cgColor
+                    } else {
+                        // Light mode
+                        boxAccordinMoreOptions.layer?.backgroundColor = NSColor.systemOrange.withAlphaComponent(0.22).cgColor
+                        boxAccordinMoreOptions.layer?.borderColor = NSColor.systemOrange.withAlphaComponent(0.5).cgColor
+                    }
+                }
+                
                 tourTitleStarRating = focusCompletedInfo.value(forKey: "tourTitleStarRating") as? String ?? tourTitleStarRating
                 tourSubTitleStarRating = focusCompletedInfo.value(forKey: "tourSubTitleStarRating") as? String ?? tourSubTitleStarRating
                 tourTitleNextGoal = focusCompletedInfo.value(forKey: "tourTitleNextGoal") as? String ?? tourTitleNextGoal
@@ -203,8 +263,6 @@ class focusCompletedVc: NSViewController {
         arrTourMessages.remove(at: 3) //remove distractions
         arrTourMessages.append(["title": tourTitleStarRating,
                                 "description": tourSubTitleStarRating])
-        arrTourMessages.append(["title": tourTitleNextGoal,
-                                "description": tourSubTitleNextGoal])
         
         for i in 0..<arrTourMessages.count{
             if i == arrTourMessages.count - 1{
@@ -221,12 +279,9 @@ class focusCompletedVc: NSViewController {
                 arrTourMessages[i]["view"] = tokenFieldTags
             }else if i == 3{
                 arrTourMessages[i]["view"] = lblQuestionSecond
-            }else if i == 4{
-                arrTourMessages[i]["view"] = textFieldNextSessionIntention
             }
         }
         
-
         if UserDefaults.standard.object(forKey: kUserdefaultsFocusCompletedTourShown) == nil{
             menuTourPopoverVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("menuTourPopoverVc")) as? menuTourPopoverVc
             popoverMenuTour.contentViewController = menuTourPopoverVcObj
@@ -239,7 +294,7 @@ class focusCompletedVc: NSViewController {
         }
         pinButtonTrackingArea = NSTrackingArea.init(rect: btnPin.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
         btnPin.addTrackingArea(pinButtonTrackingArea!)
-        btnStartAnotherFocusBlock.buttonColor = NSColor.white.cgColor
+        btnStartAnotherFocusBlock.isSecondaryButton = true
     }
     
     override func viewWillDisappear() {
@@ -252,9 +307,7 @@ class focusCompletedVc: NSViewController {
                 allApiObject.capturePosthog(event: "mark-tasks-on-focus-session-end-screen-closed", metadata: [:])
             }
         }
-        
-        hideNudgeStartAnotherFocusSessionWindow()
-        
+ 
         
         if !isFocusModeRunning{
             if !isFinishFocusModeApiCalled{
@@ -283,7 +336,9 @@ class focusCompletedVc: NSViewController {
                         }
                     }
                 })
-                appdelegate?.focusModeFinishedResetAllData()
+                addEntryInUsageTimingsExplanationCsv()
+                
+                focusModeFinishedResetAllData()
                 nextFocusSessionIntention = textFieldNextSessionIntention.stringValue
                 completedPomodoroCountInHardcorePomodoro += 1
                 totalMinutesRemainingForHardcodePomodoro = 0
@@ -436,18 +491,6 @@ class focusCompletedVc: NSViewController {
             allApiObject.capturePosthog(event: "mark-tasks-on-focus-session-end-screen-shown", metadata: [:])
         }
         btnPin.isHidden = true
-//        if self.view.window?.windowController != endingFocusWindowControllerObj{
-//            btnPin.isHidden = true
-//        }else{
-//            btnPin.isHidden = false
-//            if let state = UserDefaults.standard.object(forKey: kUserdefaultsIsCompletedFocusWindowOnTop) as? Bool{
-//                if state{
-//                    btnPin.image = #imageLiteral(resourceName: "pin")
-//                }else{
-//                    btnPin.image = #imageLiteral(resourceName: "unPin")
-//                }
-//            }
-//        }
         reloadMoreOptionsState()
     }
     
@@ -546,7 +589,9 @@ class focusCompletedVc: NSViewController {
             tokenFieldTags.objectValue = tags
         }
         
-        lblSubTitle.stringValue = subTitleText.replacingOccurrences(of: "<FOCUSTYPE>", with: currentFocusModeName)//"You have successfully completed the focus block - \(currentFocusModeName)"
+        /* lblSubTitle.stringValue = subTitleText.replacingOccurrences(of: "<FOCUSTYPE>", with: currentFocusModeName)//"You have successfully completed the focus block - \(currentFocusModeName)" */
+        // Override config subtitle for improved UX (Issue #1489)
+        lblSubTitle.stringValue = subtitle
         textViewIntention.string = whatToAchieveInFocusBlock.removingPercentEncoding ?? whatToAchieveInFocusBlock
         if !focusModeTaskStringIsEmpty(){
             let focusModeTaskString = getFocusModeTaskString()
@@ -571,15 +616,20 @@ class focusCompletedVc: NSViewController {
         
         btnTakeBreak.isEnabled = true
         loader.isHidden = true
+        boxNextSessionIntention.isHidden = true
         if isShutOffTime || currentState == ._MORNING_HABIT_ || currentState == ._CUSTOM_ROUTINE_{
             btnTakeBreak.title = "Continue"
             if let askAppWorkVcInfo = configjson.value(forKey: "askAppWorkVcInfo") as? NSDictionary{
                 btnTakeBreak.title = askAppWorkVcInfo.value(forKey: "buttonContinueText") as? String ?? btnTakeBreak.title
             }
             btnStartAnotherFocusBlock.isHidden = true
-            boxNextSessionIntention.isHidden = true
+            
+            // Remove Next Plan section (Issue #1489)
+            /* boxNextSessionIntention.isHidden = true */
         }else{
-            boxNextSessionIntention.isHidden = false
+            
+            // Remove Next Plan section (Issue #1489)
+            /* boxNextSessionIntention.isHidden = false */
             if isHardCorePomodoroModeOn{
                 btnStartAnotherFocusBlock.isHidden = true
             }else{
@@ -671,26 +721,6 @@ class focusCompletedVc: NSViewController {
         reloadMoreQuestionsState()
     }
     
-//    func setTimerMoveWindowToCenter(){
-//        removeTimerMoveWindowToCenter()
-//        self.timerMoveWindowToCenter = Timer.scheduledTimer(timeInterval: 60, target: self, selector: #selector(self.moveWindowToCenter), userInfo: nil, repeats: false)
-//    }
-//    @objc func moveWindowToCenter() {
-//        if self.view.window?.windowController == endingFocusWindowControllerObj{
-//            if self.view.window?.isVisible ?? false{
-//                self.view.window?.center()
-////                NSApp.activate(ignoringOtherApps: true)
-//                NSRunningApplication.current.activate(options: [.activateIgnoringOtherApps])
-//            }
-//        }
-//        removeTimerMoveWindowToCenter()
-//    }
-//    func removeTimerMoveWindowToCenter(){
-//        if self.timerMoveWindowToCenter != nil{
-//            self.timerMoveWindowToCenter?.invalidate()
-//            self.timerMoveWindowToCenter = nil
-//        }
-//    }
     
     @objc private func menuItemClicked(_ menuItem: NSMenuItem) {
         if let fieldEditor = tokenFieldTags?.currentEditor() {
@@ -747,7 +777,8 @@ class focusCompletedVc: NSViewController {
                 
             }
         })
-        appdelegate?.focusModeFinishedResetAllData()
+        addEntryInUsageTimingsExplanationCsv()
+        focusModeFinishedResetAllData()
         nextFocusSessionIntention = textFieldNextSessionIntention.stringValue
         
         if isMicroBreaksRunning(){// if micro break started while focus mode is running and focus mode finished after miro break started then dont show small view if full screen is enabled v 2.28.438
@@ -780,11 +811,6 @@ class focusCompletedVc: NSViewController {
             }
             
         }else{
-//            if brainDumpWcObj != nil{
-//                if brainDumpWcObj!.window?.isVisible ?? false{
-//                    brainDumpWcObj?.window?.close()
-//                }
-//            }
             btnTakeBreak.isEnabled = false
             loader.isHidden = false
             loader.startAnimation(self)
@@ -814,7 +840,11 @@ class focusCompletedVc: NSViewController {
                 }
             }
         })
-        appdelegate?.focusModeFinishedResetAllData()
+        
+        
+        addEntryInUsageTimingsExplanationCsv()
+        
+        focusModeFinishedResetAllData()
         nextFocusSessionIntention = textFieldNextSessionIntention.stringValue
         
         let minutes = currentPomodoroWorkDuration
@@ -851,13 +881,10 @@ class focusCompletedVc: NSViewController {
                 getHabitsVcObject().setActivityTimer()
             }
         }
-//        else if startingFocusModeVcObj?.lastSkipMicroBreakState ?? false{
-//            if getHabitsVcObject().breakTimer != nil{
-//                getHabitsVcObject().setActivityTimer()
-//            }
-//        }
+
     }
     
+
     @IBAction func btnDoBreakActivityClicked(_ sender: Any) {
         addLog(text: "[user-action] focusCompletedVc - btnDoBreakActivityClicked")
         workDone()
@@ -881,56 +908,50 @@ class focusCompletedVc: NSViewController {
     }
     
     func closeWindowForcefully(){
-        isFinishFocusModeApiCalled = true
-        whatToAchieveInFocusBlock = ""
-//        if brainDumpWcObj != nil{
-//            if brainDumpWcObj!.window?.isVisible ?? false{
-//                brainDumpWcObj?.window?.close()
-//            }
-//        }
-        
-        
-        let timestamp = getStringFromDate(date: startFocusModeTime ?? Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
-        
-        let achievements = textFieldAchieve.stringValue.components(separatedBy: .newlines).joined()
-        let distractionsEncountered = textFieldDistractions.stringValue.components(separatedBy: .newlines).joined()
-        
-        for i in 0..<arrFocusType.count{// clear datat after focus completed
-            arrFocusType[i]["lastStartedDate"] = nil
-            arrFocusType[i]["lastScheduledEndDate"] = nil
-        }
-        UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
-        
-        updateAllFocusModeTags()
-        addEntryInStatsCsv(logType: "focus block", activity: currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: achievements, distractionsEncountered: distractionsEncountered, abortReason: "", feedback: "", tags:getTagsString())
+        if !isFinishFocusModeApiCalled{
+            isFinishFocusModeApiCalled = true
+            whatToAchieveInFocusBlock = ""
 
-        allApiObject.finishFocusMode(id: currentFocusModeId, achievements: textFieldAchieve.stringValue, distractions: textFieldDistractions.stringValue, finish_time: self.finish_time ?? Date(), rating:currentRatingCount, completionHandler: {newDic in
-            DispatchQueue.main.async {
+            let timestamp = getStringFromDate(date: startFocusModeTime ?? Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
+            
+            let achievements = textFieldAchieve.stringValue.components(separatedBy: .newlines).joined()
+            let distractionsEncountered = textFieldDistractions.stringValue.components(separatedBy: .newlines).joined()
+            
+            for i in 0..<arrFocusType.count{// clear datat after focus completed
+                arrFocusType[i]["lastStartedDate"] = nil
+                arrFocusType[i]["lastScheduledEndDate"] = nil
+            }
+            UserDefaults.standard.set(arrFocusType, forKey: kUserdefaultsArrFocusTypes)
+            
+            updateAllFocusModeTags()
+            addEntryInStatsCsv(logType: "focus block", activity: currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: achievements, distractionsEncountered: distractionsEncountered, abortReason: "", feedback: "", tags:getTagsString())
 
+            allApiObject.finishFocusMode(id: currentFocusModeId, achievements: textFieldAchieve.stringValue, distractions: textFieldDistractions.stringValue, finish_time: self.finish_time ?? Date(), rating:currentRatingCount, completionHandler: {newDic in
+                DispatchQueue.main.async {
+
+                }
+            })
+            addEntryInUsageTimingsExplanationCsv()
+            
+            focusModeFinishedResetAllData()
+            nextFocusSessionIntention = textFieldNextSessionIntention.stringValue
+            completedPomodoroCountInHardcorePomodoro += 1
+            totalMinutesRemainingForHardcodePomodoro = 0
+            isHardCorePomodoroModeOn = false
+            
+            if isFocusModeStartedFromPomodoroMode && isSkipBreakActivityDuringPomodoro{
+                if getHabitsVcObject().breakTimer != nil{
+                    getHabitsVcObject().setActivityTimer()
+                }
+            }else if isHardCorePomodoroModeOn && isSkipBreakActivityDuringPomodoro{
+                if getHabitsVcObject().breakTimer != nil{
+                    getHabitsVcObject().setActivityTimer()
+                }
             }
-        })
-        appdelegate?.focusModeFinishedResetAllData()
-        nextFocusSessionIntention = textFieldNextSessionIntention.stringValue
-        completedPomodoroCountInHardcorePomodoro += 1
-        totalMinutesRemainingForHardcodePomodoro = 0
-        isHardCorePomodoroModeOn = false
-        
-        if isFocusModeStartedFromPomodoroMode && isSkipBreakActivityDuringPomodoro{
-            if getHabitsVcObject().breakTimer != nil{
-                getHabitsVcObject().setActivityTimer()
-            }
-        }else if isHardCorePomodoroModeOn && isSkipBreakActivityDuringPomodoro{
-            if getHabitsVcObject().breakTimer != nil{
-                getHabitsVcObject().setActivityTimer()
-            }
+            
+            self.view.window?.close()
         }
         
-//        else if startingFocusModeVcObj?.lastSkipMicroBreakState ?? false{
-//            if getHabitsVcObject().breakTimer != nil{
-//                getHabitsVcObject().setActivityTimer()
-//            }
-//        }
-        self.view.window?.close()
     }
     
     @IBAction func btnTakeBreakClicked(_ sender: Any) {
@@ -961,52 +982,6 @@ class focusCompletedVc: NSViewController {
             }
             
         }else{
-//            var shouldShowAlert = false
-//            if isHardCorePomodoroModeOn{
-//                if let state = UserDefaults.standard.object(forKey: SettingsManagerObject.kUserdefaultsDoNotBlockUrlsDuringSuperPomodoroBreaks) as? Bool{
-//                    if state{
-//                        if UserDefaults.standard.object(forKey: kUserdefaultsSitesUnlockedInPomodoroBreakAlertShown) == nil{
-//                            UserDefaults.standard.set(true, forKey: kUserdefaultsSitesUnlockedInPomodoroBreakAlertShown)
-//                            shouldShowAlert = true
-//                        }
-//                    }
-//                }
-//            }
-//            if shouldShowAlert{
-//                let alert = NSAlert()
-//                alert.setSharingType()
-//                
-//                var alertBlockUrlsDisbaledInBreaksText = "Super distracting sites unlocked during your pomodoro break. If you're brave, you can keep distractions blocked and go for a walk away from your computer instead."
-//                var buttonBlockUrlsText = "Block distractions!"
-//                var buttonCancelText = "Let me get distracted 😅"
-//                
-//                
-//                if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
-//                    if let focusCompletedInfo = focusInfo.value(forKey: "focusCompletedInfo") as? NSDictionary{
-//                        alertBlockUrlsDisbaledInBreaksText = focusCompletedInfo.value(forKey: "alertBlockUrlsDisbaledInBreaksText") as? String ?? alertBlockUrlsDisbaledInBreaksText
-//                        buttonBlockUrlsText = focusCompletedInfo.value(forKey: "buttonBlockUrlsText") as? String ?? buttonBlockUrlsText
-//                        buttonCancelText = focusCompletedInfo.value(forKey: "buttonCancelText") as? String ?? buttonCancelText
-//                    }
-//                }
-//                
-//                alert.messageText = alertBlockUrlsDisbaledInBreaksText
-//                alert.addButton(withTitle: buttonBlockUrlsText)
-//                alert.addButton(withTitle: buttonCancelText)
-//                NSApplication.shared.activate(ignoringOtherApps: true)
-//                alert.beginSheetModal(for: self.view.window!, completionHandler: { result in
-//                    if result == .alertFirstButtonReturn{
-//                        print("Block distractions!")
-//                        SettingsManagerObject.isSettingsChanged = true
-//                        UserDefaults.standard.set(false, forKey: SettingsManagerObject.kUserdefaultsDoNotBlockUrlsDuringSuperPomodoroBreaks)
-//                        SettingsManagerObject.putUserLocalDeviceSettings()
-//                    }
-//                    windowClose(isCloseWindowClicked: isCloseWindowClicked)
-//                })
-//                
-//                
-//            }else{
-//                windowClose(isCloseWindowClicked: isCloseWindowClicked)
-//            }
             windowClose(isCloseWindowClicked: isCloseWindowClicked)
             
             func windowClose(isCloseWindowClicked:Bool){
@@ -1014,27 +989,26 @@ class focusCompletedVc: NSViewController {
                     if self == focusCompletedVcObj{//normal case
                         self.view.window?.close()// focus end screen was showing before starting  a routine
                     }else{
-//                        if brainDumpWcObj != nil{
-//                            if brainDumpWcObj!.window?.isVisible ?? false{
-//                                brainDumpWcObj?.window?.close()
-//                            }
-//                        }
                         currentState = ._NOTHING_
-                        btnTakeBreak.isEnabled = false
-                        loader.isHidden = false
-                        loader.startAnimation(self)
-                        appdelegate!.backgroundThread()
+                        if appdelegate?.isUserOnMeeting ?? false{
+                            // Added on 21/04/26 (v3.31.472):
+                            // Handle case where a meeting is detected after the morning routine has started, since the first screen is force completes the focus session.
+                            // skip the morning routine flow and close related UI
+                            mainWindowControllerObj?.window?.close()
+                            hideBlankWindowInSecondaryMonitor()
+                            leftMenuVcObj?.habitOver()
+                        }else{
+                            btnTakeBreak.isEnabled = false
+                            loader.isHidden = false
+                            loader.startAnimation(self)
+                            appdelegate!.backgroundThread()
+                        }
                     }
                     isHardCorePomodoroModeOn = false
                 }else if currentState == ._CUSTOM_ROUTINE_{
                     if self == focusCompletedVcObj{//normal case
                         self.view.window?.close()// focus end screen was showing before starting  a routine
                     }else{
-//                        if brainDumpWcObj != nil{
-//                            if brainDumpWcObj!.window?.isVisible ?? false{
-//                                brainDumpWcObj?.window?.close()
-//                            }
-//                        }
                         currentState = ._NOTHING_
                         btnTakeBreak.isEnabled = false
                         loader.isHidden = false

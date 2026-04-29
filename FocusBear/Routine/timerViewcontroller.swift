@@ -866,6 +866,7 @@ class timerViewcontroller: NSViewController, WKNavigationDelegate{
         }else{
             isVideoLodded = false
             btnTabVideo.isHidden = true
+            self.webView.isHidden = true
         }
         if currentHabit.take_notes == DURING_ACTIVITY{//  har jgh ye block load video k niche rakho
             textViewNotes.enclosingScrollView?.isHidden = false

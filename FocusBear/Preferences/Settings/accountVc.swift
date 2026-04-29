@@ -196,7 +196,11 @@ class accountVc: NSViewController {
                     self.loaderResetPassword.stopAnimation(self)
                     self.btnResetPassword.isEnabled = true
                     if dic != nil{
-                        isEmailVerified = dic?.value(forKey: "email_verified") as? Bool ?? false 
+                        isEmailVerified = dic?.value(forKey: "email_verified") as? Bool ?? false
+                        if UserDefaults.standard.object(forKey: kUserdefaultsIsGuestAccount) as? Bool == true{
+                            addLog(text: "No need to verify email. Reason: Guest account.")
+                            isEmailVerified = true
+                        }
                         if !isEmailVerified{
                             if unverifiedEmailWcObj != nil{
                                 if unverifiedEmailWcObj?.window?.isVisible ?? false{

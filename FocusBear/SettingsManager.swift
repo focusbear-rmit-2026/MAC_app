@@ -53,15 +53,15 @@ class SettingsManager:NSObject{
     
     var isMotivationalMessageEnabled = true
     var isAiCheckUrlEnabled = true
-    //    var isAiAllowUrlShowAlertEnabled = true
-    
-    
+
     // **blocked urls**
     var arrBlockedUrls = [String]()
     var arrBlockedApps = [String]()
     
     // **always allowed apps (global whitelist)**
     var arrAlwaysAllowedApps = [String]()
+    
+    
     var isOfficeModeEnabled = true
     var kIsReducedMotion = false
     var isMeetingDetectionEnabled = true
@@ -80,7 +80,6 @@ class SettingsManager:NSObject{
     var showToDoPlayerAutomaticallyEnabled = true
     var showBrainDumpAfterMorningRoutineEnabled = false
     var isMicroBreaksEnabled = true
-    var blockingSchedule:BLOCKINGSCHEDULE = ._WHEN_START_FOCUS_SESSION_// not in use need to remove soon //  
     
     
     var brainDumpCustomUrlEnabled = false
@@ -110,6 +109,7 @@ class SettingsManager:NSObject{
     
     
     var kUserdefaultsArrBlockedUrls = "kUserdefaultsArrBlockedUrls"
+    
     var kUserdefaultsArrBlockedApps = "kUserdefaultsArrBlockedApps"
     var kUserdefaultsArrAlwaysAllowedApps = "kUserdefaultsArrAlwaysAllowedApps"
     
@@ -404,12 +404,11 @@ class SettingsManager:NSObject{
                 let kHardcorePomodoroFocusedCount = "kHardcorePomodoroFocusedCount"
                 let kHardcorePomodoroSkipMicroBreaks = "kHardcorePomodoroSkipMicroBreaks"
                 let kHardcorePomodoroArrDays = "kHardcorePomodoroArrDays"
-                
-                
+                                
                 let kArrBlockedUrls = "kArrBlockedUrls"
                 let kArrBlockedApps = "kArrBlockedApps"
                 let kArrAlwaysAllowedApps = "kArrAlwaysAllowedApps"
-                
+
                 let kCuddlyModeEnabled = "kCuddlyModeEnabled"
                 let kIsGeekModeEnabled = "kIsGeekModeEnabled"
                 let kImmediatelyBlockDistractingSites = "kImmediatelyBlockDistractingSites"
@@ -432,9 +431,7 @@ class SettingsManager:NSObject{
                 let kBrainDumpCustomUrlValue = "kBrainDumpCustomUrlValue"
                 let kShowBrainDumpAfterMorningRoutine = "kShowBrainDumpAfterMorningRoutine"
                 let kMicroBreaksEnabled = "kMicroBreaksEnabled"
-                let kBlockingSchedule = "kBlockingSchedule"
                 
-                //                    let kAiAllowUrlShowAlertEnabled = "kAiAllowUrlShowAlertEnabled"
                 
                 addLog(text: "Parse ReducedMotion")
                 if let val = settings.value(forKey: kIsReducedMotionEnabled) as? Bool{
@@ -606,6 +603,8 @@ class SettingsManager:NSObject{
                 if let val = settings.value(forKey: kArrAlwaysAllowedApps) as? [String]{
                     UserDefaults.standard.set(val, forKey: self.kUserdefaultsArrAlwaysAllowedApps)
                 }
+                
+
                 addLog(text: "Local AppPassword")
                 if let val = settings.value(forKey: kAppPassword) as? String{
                     if val.isEmpty{
@@ -695,16 +694,6 @@ class SettingsManager:NSObject{
                 }else{
                     if let breaksEnabled = UserDefaults.standard.object(forKey: kUserdefaultsBreaksEnabledFromOnboarding) as? Bool{
                         isMicroBreaksEnabled = breaksEnabled
-                    }
-                }
-                
-                if let val = settings.value(forKey: kBlockingSchedule) as? Int{// read from settings
-                    blockingSchedule = BLOCKINGSCHEDULE(rawValue: val) ?? ._WHEN_START_FOCUS_SESSION_
-                }else{
-                    if let val = UserDefaults.standard.object(forKey: kUserdefaultsBlockingScheduleFromOnboarding) as? Int{// read from onboarding
-                        blockingSchedule = BLOCKINGSCHEDULE(rawValue: val) ?? ._WHEN_START_FOCUS_SESSION_
-                    }else{
-                        blockingSchedule = ._WHEN_START_FOCUS_SESSION_// default
                     }
                 }
             }
@@ -1042,8 +1031,7 @@ class SettingsManager:NSObject{
             if let isEnabled = UserDefaults.standard.object(forKey: kUserdefaultsAiCheckUrlEnabled) as? Bool{
                 isAiCheckUrlEnabled = isEnabled
             }else{
-                UserDefaults.standard.set(true, forKey: kUserdefaultsAiCheckUrlEnabled)
-                isAiCheckUrlEnabled = true
+                UserDefaults.standard.set(isAiCheckUrlEnabled, forKey: kUserdefaultsAiCheckUrlEnabled)
             }
             //  ---------------------------SETTINGS Ai Allow Url Show Alert--------------------------
             //            if let isEnabled = UserDefaults.standard.object(forKey: kUserdefaultsAiAllowUrlShowAlertEnabled) as? Bool{
@@ -1118,23 +1106,9 @@ class SettingsManager:NSObject{
                 UserDefaults.standard.set(arrAlwaysAllowedApps, forKey: kUserdefaultsArrAlwaysAllowedApps)
             }
             
+            
             if isSettingsBlank{
-                //                if let blockedUrls = UserDefaults.standard.object(forKey: kUserdefaultsBlockedUrlsFromOnboarding) as? [[String:Any]]{
-                //                    arrBlockedUrls.removeAll()
-                //                    for i in 0..<blockedUrls.count{
-                //                        if let isSelected = blockedUrls[i]["isSelected"] as? Bool {
-                //                            if isSelected{
-                //                                arrBlockedUrls.append(blockedUrls[i]["url"] as? String ?? "")
-                //                            }
-                //                        }
-                //                    }
-                //                    //UserDefaults.standard.removeObject(forKey: kUserdefaultsBlockedUrlsFromOnboarding)//will not remove from this userdefaults, after logout we will bloock urls from this
-                //                }
-                
-                //                UserDefaults.standard.set(arrBlockedUrls, forKey: kUserdefaultsArrBlockedUrls)//
-                
-                //                isSettingsChanged = true
-                //                self.perform(#selector(putUserLocalDeviceSettings))
+                //first time work
             }
             addLog(text: "Parse settings completed")
             completionHandler()
@@ -1193,6 +1167,7 @@ class SettingsManager:NSObject{
         let kArrBlockedUrls = "kArrBlockedUrls"
         let kArrBlockedApps = "kArrBlockedApps"
         let kArrAlwaysAllowedApps = "kArrAlwaysAllowedApps"
+
         let kCuddlyModeEnabled = "kCuddlyModeEnabled"
         let kIsGeekModeEnabled = "kIsGeekModeEnabled"
         let kImmediatelyBlockDistractingSites = "kImmediatelyBlockDistractingSites"
@@ -1212,8 +1187,7 @@ class SettingsManager:NSObject{
         let kBrainDumpCustomUrlValue = "kBrainDumpCustomUrlValue"
         let kShowBrainDumpAfterMorningRoutine = "kShowBrainDumpAfterMorningRoutine"
         let kMicroBreaksEnabled = "kMicroBreaksEnabled"
-        let kBlockingSchedule = "kBlockingSchedule"
-        
+
         //        let kAiAllowUrlShowAlertEnabled = "kAiAllowUrlShowAlertEnabled"
         let isEditBlockedUrlsOnce = UserDefaults.standard.object(forKey: kUserdefaultsEditBlockedUrlsOnce) as? Bool ?? false
         
@@ -1279,7 +1253,6 @@ class SettingsManager:NSObject{
             kBrainDumpCustomUrlValue:brainDumpCustomUrlValue,
             kShowBrainDumpAfterMorningRoutine:showBrainDumpAfterMorningRoutineEnabled,
             kMicroBreaksEnabled:isMicroBreaksEnabled,
-            kBlockingSchedule:blockingSchedule.rawValue,
             "has_edited_blocked_urls":isEditBlockedUrlsOnce
             //            kAiAllowUrlShowAlertEnabled:isAiAllowUrlShowAlertEnabled,
         ]

@@ -386,9 +386,9 @@ class habitBlockTimerManager {
                         DispatchQueue.main.async {
                             setUrlToBrowser(browser: currentBrowser, url: hitNewUrl)
                         }
-                        var msg = "You're in Grizzly Bear mode - change your settings to unblock" //todo text
+                        var msg = "You're in Grizzly Bear mode - change your settings to unblock" 
                         if let common = configjson.value(forKey: "common") as? NSDictionary{
-                            //msg = common.value(forKey: "unblockNotAvailableText") as? String ?? msg
+                            msg = common.value(forKey: "unblockNotAvailableNewText") as? String ?? msg
                         }
                         DispatchQueue.main.async {
                             showCustomAlert(title: msg, body: nil, buttonOkText: buttonOkText, buttonCancelText: nil, checkBoxText: nil, autoClose: true, buttonLinkUrl:nil, buttonLinkText: nil, completionHandler: {isOkClicked in

@@ -20,7 +20,8 @@ var idFocusBearMode = "focusbearmode"
 var idBrowserTabLimiter = "browsertablimiter"
 var idBlockedUrls = "blockedurls"
 var idBlockedApps = "blockedapps"
-var idAlwaysAllowedApps = "alwaysallowedapps" 
+var idAlwaysAllowedApps = "alwaysallowedapps"
+var idAlwaysAllowedUrls = "alwaysallowedapps"
 var idMeetings = "meetings"
 var idPrivacy = "privacy"
 var idMicroBreaks = "microbreaks"
@@ -220,7 +221,7 @@ class settingsSideBarVc: NSViewController {
     }
     
     func optionSelectedByUser(id:String, object:NSView?){
-        addLog(text:"generalVc:- optionSelectedByUser")
+        addLog(text:"settingsSideBarVc:- optionSelectedByUser")
         
         if let object = object{
             object.wantsLayer = true
@@ -302,7 +303,7 @@ class settingsSideBarVc: NSViewController {
                 settingsContainerVcObj?.showAlwaysAllowedAppsView()
                 return;
             }
-            
+
             if id == idMeetings{
                 tblView.selectRowIndexes(IndexSet(integer: advancedSettingsIndex), byExtendingSelection: false)
                 settingsContainerVcObj?.showMeetingDetactionView()

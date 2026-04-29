@@ -29,7 +29,7 @@ class browsersTabAuditVc: NSViewController {
         btnLastSavedAuditReport.title = "Open saved Tab Audit report"
         lblLastAuditDate.stringValue = "Your last audit was done on: 18 Sep 2026 05:09PM"
         lblTitleTabCount.stringValue = "Number of open tabs:"
-        btnLastSavedAuditReport.buttonColor = NSColor.white.cgColor
+        btnLastSavedAuditReport.isSecondaryButton = true
         self.lblTabCountPerBrowser.stringValue = ""// need to do this
         
         

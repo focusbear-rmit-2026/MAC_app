@@ -250,19 +250,6 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
     
     func authenticated(){
         if parentVc != nil{
-//            if parentVc == startingFocusModeVcObj{
-//                self.dismiss(self)
-//                let totalMinutes = (startingFocusModeVcObj!.textFieldHourValue.integerValue * 60) + startingFocusModeVcObj!.textFieldMinutesValue.integerValue
-//                if currentState == ._POSTPON_MORNING_HABIT_{
-//                    getHabitsVcObject().postponeMorningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
-//                }else if currentState == ._POSTPON_EVENING_HABIT_{
-//                    getHabitsVcObject().postponeEveningHabitFor(minutes: totalMinutes + 2, secondsToPostpone: nil, showAskFocusModeView: false, showAskIntention: false)
-//                }else if currentState == ._POSTPON_FOCUS_SUMMARY_{
-//                    getHabitsVcObject().postponeFocusSummaryFor(minutes: totalMinutes + 2, showAskIntention: false)
-//                }
-//                startingFocusModeVcObj!.checkTotalMinutesAndStart()
-//                return;
-//            }else
             
             if parentVc == pomodoroVcObj{
                 self.dismiss(self)
@@ -527,11 +514,6 @@ class enterPasswordVc: NSViewController, NSTextFieldDelegate {
         addLog(text: "[user-action] Enter password view - cancel clicked")
         allApiObject.capturePosthog(event: "cancel-when-prompted-password", metadata: [:])
         if parentVc != nil{
-//            if parentVc == startingFocusModeVcObj{
-//                self.dismiss(self)
-//                startingFocusModeVcObj!.checkTotalMinutesAndStart()
-//                return;
-//            }else
             if parentVc == pomodoroVcObj{
                 self.dismiss(self)
                 isShowingForRelaxFocusMode = false

@@ -10,12 +10,16 @@ import Cocoa
 
 class onboardingControllingBrowserVc: NSViewController {
 
-    @IBOutlet weak var heightScrollView: NSLayoutConstraint!
+    @IBOutlet weak var boxScrollView: NSBox!
+    @IBOutlet weak var scrollView: NSScrollView!
     @IBOutlet weak var btnDidNotWork: Button!
     @IBOutlet weak var tblView: NSTableView!
     @IBOutlet weak var btnContinue: Button!
     @IBOutlet weak var lblDescription: NSTextField!
     @IBOutlet weak var lblTitle: NSTextField!
+    @IBOutlet weak var customViewProgress: NSView!
+    @IBOutlet weak var imgViewBear: NSImageView!
+    @IBOutlet weak var btnSkip: underLineButton!
     
     var checkPermissionTimer:DispatchSourceTimer?
     var arrBrowsers = [[String:Any]]()
@@ -30,22 +34,26 @@ class onboardingControllingBrowserVc: NSViewController {
     var descriptionFirefoxExtensiont = "Install the Focus Bear Blocker extension in Firefox."
     var buttonAddFirefoxExtensiont = "Add Firefox Extension"
     
+    var bubbleView:BubbleView?
+    var distractionBlockingProgressVcObj:distractionBlockingProgressVc?
+    
     private let queue = DispatchQueue(label: "queueTimerCheckPermission")
     
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.//
         
-        lblTitle.stringValue = "Controlling Your Browser"
-        lblDescription.stringValue = "Alright, now you need to give Focus Bear permission to block distraction. Open your browser and you'll see a popup seeking permission. Click OK in the popup that shows."//
-        btnContinue.title = "Permission Granted"
-//        btnContinue.isEnabled = false
+        btnContinue.title = "Proceed"
+        lblTitle.stringValue = "Grant Browser Permissions"
+        lblDescription.stringValue = "Click on ‘Request Permission’ to view the prompt on the browser. Then, select the ‘Allow’ option:"
+        btnSkip.title = "Skip"
+        
         btnDidNotWork.title = "It didn't work"
 
         if let dic = configjson.value(forKey: "onboardingControllingBrowserVcInfo") as? NSDictionary{
-            lblTitle.stringValue = dic.value(forKey: "title") as? String ?? lblTitle.stringValue
-            lblDescription.stringValue = dic.value(forKey: "descriptionText") as? String ?? lblDescription.stringValue
-            btnContinue.title = dic.value(forKey: "buttonPermissionGrantedText") as? String ?? btnContinue.title
+            lblTitle.stringValue = dic.value(forKey: "titleNew") as? String ?? lblTitle.stringValue
+            lblDescription.stringValue = dic.value(forKey: "descriptionNew") as? String ?? lblDescription.stringValue
+            btnContinue.title = dic.value(forKey: "buttonProceed") as? String ?? btnContinue.title
             btnDidNotWork.title = dic.value(forKey: "buttonDidNotWorkText") as? String ?? btnDidNotWork.title
             buttonRequestPermissionText = dic.value(forKey: "buttonRequestPermissionText") as? String ?? buttonRequestPermissionText
             enabledText = dic.value(forKey: "enabledText") as? String ?? enabledText
@@ -54,12 +62,22 @@ class onboardingControllingBrowserVc: NSViewController {
             settingsFirefoxText = dic.value(forKey: "settingsFirefoxText") as? String ?? settingsFirefoxText
             descriptionFirefoxExtensiont = dic.value(forKey: "descriptionFirefoxExtensiont") as? String ?? descriptionFirefoxExtensiont
             buttonAddFirefoxExtensiont = dic.value(forKey: "buttonAddFirefoxExtensiont") as? String ?? buttonAddFirefoxExtensiont
+            btnSkip.title = dic.value(forKey: "buttonSkip") as? String ?? btnSkip.title
         }
         
 
-        allApiObject.capturePosthog(event: "permission-to-block-distractions-shown", metadata: [:])
-        addLog(text: "[user-action] permission-to-block-distractions-shown")
-        btnDidNotWork.buttonColor = NSColor.white.cgColor
+        btnDidNotWork.isSecondaryButton = true
+
+        boxScrollView.wantsLayer = true
+        boxScrollView.layer?.cornerRadius = 10
+        boxScrollView.layer?.borderWidth = 1
+        boxScrollView.layer?.borderColor = NSColor.gray.withAlphaComponent(0.3).cgColor
+        
+        
+        //progress
+        self.customViewProgress.addSubview(getDistractionBlockingProgressVcObj().view)
+        self.customViewProgress.addConstraints(subView: getDistractionBlockingProgressVcObj().view)
+        getDistractionBlockingProgressVcObj().setProgress(level: 3, progress: 0.75)
     }
     
     func reloadData(){
@@ -123,11 +141,6 @@ class onboardingControllingBrowserVc: NSViewController {
             arrBrowsers.append(["name": "SigmaOS", "image": fileIcon, "isEnabled": false, "browser":BROWSER._SIGMA_OS_])
         }
         
-        if arrBrowsers.count > 5{
-            heightScrollView.constant = 362
-        }else{
-            heightScrollView.constant = 302
-        }
         
         if let arrBrowsersInfo = UserDefaults.standard.object(forKey: kUserdefaultsAllBrowsersPermissionInfo) as? [[String : Any]]{
             for info in arrBrowsersInfo{
@@ -152,7 +165,18 @@ class onboardingControllingBrowserVc: NSViewController {
     
     override func viewDidAppear() {
         showOnboardingBellIcon(view: self.view, screen: "permission-to-block-distractions-screen")
-        self.view.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.normalWindow)))
+        
+        // Show bubble
+        
+        var bubbleText = "We need this to redirect the browser to the blocked page when you visit a distracting site"
+
+        if let info = configjson["onboardingControllingBrowserVcInfo"] as? [String: Any] {
+            bubbleText = info["bubbleText"] as? String ?? bubbleText
+        }
+        
+        if bubbleView == nil{
+            bubbleView = PopupManager.showPopup(for: imgViewBear, edge: .minX, selfView: self.view, text: bubbleText, verticalOffset: -40, horizontalOffset: 25, fontSize: 13)
+        }
     }
     
     override func viewWillDisappear() {
@@ -161,7 +185,6 @@ class onboardingControllingBrowserVc: NSViewController {
             self.checkPermissionTimer = nil
         }
         hideOnboardingBellIcon(view: self.view)
-        self.view.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.assistiveTechHighWindow)))
     }
     
     override func viewWillAppear() {
@@ -170,6 +193,14 @@ class onboardingControllingBrowserVc: NSViewController {
         if self.lastBrowserClicked == ._FIREFOX_ || self.lastBrowserClicked == ._SIGMA_OS_{
             startTimerCheckPermission()
         }
+        allApiObject.capturePosthog(event: "permission-to-block-distractions-shown", metadata: [:])
+    }
+    
+    func getDistractionBlockingProgressVcObj()->distractionBlockingProgressVc{
+        if distractionBlockingProgressVcObj == nil{
+            distractionBlockingProgressVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("distractionBlockingProgressVc")) as? distractionBlockingProgressVc
+        }
+        return distractionBlockingProgressVcObj!
     }
     
     func startTimerCheckPermission(){
@@ -322,7 +353,13 @@ class onboardingControllingBrowserVc: NSViewController {
     func closeView(){
         addLog(text: "closeView")
         saveBrowsersPermissionInfo()
-        self.view.window?.contentViewController = getTryBlockUrlVcObject()
+        if currentState == ._ONBOARDING_{
+            getOnboardingVcObject().navigate(to: ._ALL_SET_)
+        }else{
+            self.view.window?.close()
+            
+            reloadPermissionsIfNeeded()
+        }
     }
     
     func saveBrowsersPermissionInfo(){
@@ -335,9 +372,13 @@ class onboardingControllingBrowserVc: NSViewController {
         UserDefaults.standard.set(arrBrowsersInfo, forKey: kUserdefaultsAllBrowsersPermissionInfo)
     }
     
-    @IBAction func btnDidNotWorkClicked(_ sender: Any) {
+    @IBAction func btnDidNotWorkClicked(_ sender: Any) {// hidden not in use
         allApiObject.capturePosthog(event: "onboarding-browser-permission-did-not-work", metadata: [:])
-        self.view.window?.contentViewController = getTryBlockUrlVcObject()
+    }
+    
+    @IBAction func btnSkipClicked(_ sender: Any) {
+        addLog(text: "[user-action] btnSkipClicked")
+        closeView()
     }
 }
 
@@ -351,15 +392,14 @@ extension onboardingControllingBrowserVc:NSTableViewDelegate, NSTableViewDataSou
             
             cell.btnInfo.isHidden = true
             cell.lblTitle.stringValue = arrBrowsers[row]["name"] as? String ?? ""
-//            cell.lblDescription.stringValue = arrBrowsers[row]["description"] as? String ?? ""
             cell.imgView.image = arrBrowsers[row]["image"] as? NSImage
             cell.lblFirefoxPermission.isHidden = true
             let state = arrBrowsers[row]["isEnabled"] as? Bool ?? false
             if state{
-                cell.lblState.isHidden = false
+                cell.imgViewTick.isHidden = false
                 cell.btnRequest.isHidden = true
             }else{
-                cell.lblState.isHidden = true
+                cell.imgViewTick.isHidden = true
                 cell.btnRequest.isHidden = false
             }
             
@@ -375,10 +415,10 @@ extension onboardingControllingBrowserVc:NSTableViewDelegate, NSTableViewDataSou
             }else{
                 cell.btnRequest.title = buttonRequestPermissionText
             }
-            
-            
+
             
             cell.lblState.stringValue = enabledText
+            cell.lblState.isHidden = true
             
             cell.btnRequest.target = self
             cell.btnRequest.tag = row
@@ -413,6 +453,7 @@ extension onboardingControllingBrowserVc:NSTableViewDelegate, NSTableViewDataSou
     }
     
     func requestPermission(row:Int){
+        UserDefaults.standard.set(true, forKey: kUserdefaultsBrowsersPermissionsSetByUser)
         if let browser = arrBrowsers[row]["browser"] as? BROWSER{
             var browserNameForPosthog = ""
             if browser == ._SAFARI_{

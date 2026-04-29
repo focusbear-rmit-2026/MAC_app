@@ -98,13 +98,6 @@ class manageSubscriptionVc: NSViewController, WKNavigationDelegate, webViewLoadF
                 upgradeNowVcObj?.syncPaymentStatus()
             }
         }
-        
-        if trialExpiredNagWcObj != nil{
-            if trialExpiredNagWcObj?.window?.isVisible ?? false{
-                trialExpiredNagObj?.syncPaymentStatus()
-            }
-        }
-        
         if upgradeToProNagWcObj != nil{
             if upgradeToProNagWcObj?.window?.isVisible ?? false{
                 upgradeToProNagVcObj?.syncPaymentStatus()

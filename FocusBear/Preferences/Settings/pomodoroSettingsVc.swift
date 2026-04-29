@@ -16,11 +16,8 @@ class pomodoroSettingsVc: NSViewController {
     @IBOutlet weak var textFieldWorkRatio: NSTextField!
     @IBOutlet weak var boxWorkToBreakRatio: NSBox!
     @IBOutlet weak var btnInfoPomodoroShortcut: hoverInfoButton!
-//    @IBOutlet weak var btnInfoBreakDuration: hoverInfoButton!
-//    @IBOutlet weak var btnInfoPomodoroModeDuration: hoverInfoButton!
     @IBOutlet weak var boxShortcutPomodoro: NSBox!
     @IBOutlet weak var boxPomodoroModeDuration: NSBox!// not in use
-//    @IBOutlet weak var boxBreakDuration: NSBox!
     
     @IBOutlet weak var lblTitle: NSTextField!
     @IBOutlet weak var stackView: NSStackView!
@@ -33,12 +30,7 @@ class pomodoroSettingsVc: NSViewController {
     @IBOutlet weak var boxRecordShortcutPomodoro: NSBox!
     @IBOutlet weak var btnLearnPomodoroTechnique: underLineButton!
     @IBOutlet weak var lblDescriptionPomodoro: NSTextField!
-//    @IBOutlet weak var lblMinutesBreak: NSTextField!
-//    @IBOutlet weak var lblMinutesPomodoro: NSTextField!
-//    @IBOutlet weak var textFieldPomodoroDuration: NSTextField!
-//    @IBOutlet weak var textFieldBreakDuration: NSTextField!
-//    @IBOutlet weak var lblTitlePomodoroModeDuration: NSTextField!
-//    @IBOutlet weak var lblTitleBreakDuration: NSTextField!
+
     @IBOutlet weak var lblTitleWorkToBreakRatio: NSTextField!
     @IBOutlet weak var lblDescriptionWorkToBreakRatio: NSTextField!
     

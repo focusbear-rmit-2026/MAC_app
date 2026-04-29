@@ -36,7 +36,7 @@ class confirmRoutineDurationVc: NSViewController {
         }
         
         lblMinimumDuration.stringValue = "0\(minutesMText)"
-        btnYes.buttonColor = NSColor.white.cgColor
+        btnYes.isSecondaryButton = true
         stackViewButtons.isHidden = false
         lblTitleConfirm.isHidden = true
         btnYes.isHidden = true

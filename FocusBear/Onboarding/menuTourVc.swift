@@ -199,7 +199,7 @@ class menuTourVc: NSViewController {// not in use  v2.28.446
         }
         allApiObject.capturePosthog(event: "menu_tour_close_clicked", metadata: [:])
 
-        showAskProcrastinatingWindow()
+//        showAskProcrastinatingWindow()
 //        if !isEmailVerified{
 //            showUnverifiedEmailWindow()
 //        }
@@ -245,7 +245,7 @@ class menuTourVc: NSViewController {// not in use  v2.28.446
             if !(menuViewControllerObj?.isViewLoaded ?? false){
                 menuViewControllerObj?.loadView()
             }
-            showAskProcrastinatingWindow()
+//            showAskProcrastinatingWindow()
 //            if !isEmailVerified{
 //                showUnverifiedEmailWindow()
 //            }
@@ -261,7 +261,7 @@ class menuTourVc: NSViewController {// not in use  v2.28.446
         }
 
         allApiObject.capturePosthog(event: "menu_tour_Skip_clicked", metadata: [:])
-        showAskProcrastinatingWindow()
+//        showAskProcrastinatingWindow()
 //        if !isEmailVerified{
 //            showUnverifiedEmailWindow()
 //        }

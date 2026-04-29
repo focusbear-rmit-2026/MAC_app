@@ -23,7 +23,7 @@ class chooseCommunityVc: NSViewController {
         btnOk.title = buttonOkText
         btnCancel.title = buttonCancelText
         
-        btnCancel.buttonColor = NSColor.white.cgColor
+        btnCancel.isSecondaryButton = true
         
         popUpBtn.removeAllItems()
         popUpBtn.addItem(withTitle: "")

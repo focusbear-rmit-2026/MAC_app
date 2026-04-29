@@ -65,10 +65,10 @@ class smallCountDownVc: NSViewController {
 
             if currentState == ._CUSTOM_ROUTINE_{
                 leftMenuVcObj?.showCustomRoutineView()
-                leftMenuVcObj?.disbaleAllExceptCustomRoutineTab()
+                leftMenuVcObj?.disableAllExceptCustomRoutineTab()
             }else{
                 leftMenuVcObj?.showHabitsView()
-                leftMenuVcObj?.disbaleAllExceptHabitTab()
+                leftMenuVcObj?.disableAllExceptHabitTab()
             }
             
             closeTimerBox()
@@ -90,10 +90,10 @@ class smallCountDownVc: NSViewController {
             showBlankWindowInSecondaryMonitor()
             if currentState == ._CUSTOM_ROUTINE_{
                 leftMenuVcObj?.showCustomRoutineView()
-                leftMenuVcObj?.disbaleAllExceptCustomRoutineTab()
+                leftMenuVcObj?.disableAllExceptCustomRoutineTab()
             }else{
                 leftMenuVcObj?.showHabitsView()
-                leftMenuVcObj?.disbaleAllExceptHabitTab()
+                leftMenuVcObj?.disableAllExceptHabitTab()
             }
           //  if checkIsFullScreenEnabled(){
              //   mainViewControllerObj?.checkIsFullScreenNeeded()

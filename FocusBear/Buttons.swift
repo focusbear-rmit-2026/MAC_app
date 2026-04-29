@@ -16,6 +16,11 @@ class cursorButton: NSButton {
         addTrackingArea(NSTrackingArea(rect: bounds, options: [.activeAlways, .inVisibleRect, .mouseEnteredAndExited], owner: self, userInfo: nil))
     }
     
+    override func resetCursorRects() {
+        super.resetCursorRects()
+        addCursorRect(bounds, cursor: .pointingHand)
+    }
+    
     override func mouseEntered(with event: NSEvent) {
         NSCursor.pointingHand.set()
     }
@@ -207,12 +212,82 @@ class underLineButton: cursorButton {
     }
 }
 
+// onbaording skip button
+class hoverUnderlineButton: cursorButton {
+    
+    var titleColor = NSColor.labelColor
+    private var trackingArea: NSTrackingArea?
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        
+        if let trackingArea = trackingArea {
+            self.removeTrackingArea(trackingArea)
+        }
+        
+        let options: NSTrackingArea.Options = [.mouseEnteredAndExited, .activeInKeyWindow, .inVisibleRect]
+        trackingArea = NSTrackingArea(rect: self.bounds, options: options, owner: self, userInfo: nil)
+        self.addTrackingArea(trackingArea!)
+    }
+
+    override func mouseEntered(with event: NSEvent) {
+        if !isEnabled{
+            return;
+        }
+        applyUnderline(true)
+        super.mouseEntered(with: event)
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        applyUnderline(false)
+        super.mouseExited(with: event)
+    }
+
+    private func applyUnderline(_ underline: Bool) {
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.alignment = self.alignment
+        paragraph.lineBreakMode = .byTruncatingTail
+
+        var attrs: [NSAttributedString.Key: Any] = [
+            .foregroundColor: isEnabled ? titleColor : NSColor.secondaryLabelColor,
+            .paragraphStyle: paragraph
+        ]
+
+        if underline {
+            attrs[.underlineStyle] = NSUnderlineStyle.single.rawValue
+        }
+
+        self.attributedTitle = NSAttributedString(string: self.title, attributes: attrs)
+    }
+
+    func setDisable(title: String) {
+        isEnabled = false
+        self.title = title
+        applyUnderline(false)
+    }
+
+    func setEnable(title: String) {
+        isEnabled = true
+        self.title = title
+        applyUnderline(false)
+    }
+
+    override var title: String {
+        didSet {
+            applyUnderline(false)
+        }
+    }
+}
+
+
 let buttonTitleColor = NSColor(red: 232/255, green: 136/255, blue: 0/255, alpha: 1)
 let buttonBgColor = NSColor(red: 255/255, green: 228/255, blue: 198/255, alpha: 1)
-class Button: NSButton {
+class ButtonOld: NSButton {// not in use
     var mouseDown = false
     
-    let titleDisableColor = NSColor(red: 0/255, green: 0/255, blue: 0/255, alpha: 1)
+    var titleDisableColor = NSColor(red: 0/255, green: 0/255, blue: 0/255, alpha: 1)
+    var backgroundDisableColor = NSColor.clear.cgColor
+    
     @IBInspectable var horizontalPadding   : CGFloat = 50
     @IBInspectable var verticalPadding    : CGFloat = 50
     
@@ -231,10 +306,18 @@ class Button: NSButton {
                 self.layer?.borderColor = borderColor
                 self.titleColor = NSColor.black//buttonTitleColor
             }else{
-                self.layer?.backgroundColor = NSColor.clear.cgColor
+                self.layer?.backgroundColor = backgroundDisableColor
                 self.layer?.borderColor = NSColor.gray.cgColor
                 self.titleColor = NSColor.gray///buttonTitleColor
             }
+        }
+    }
+    
+    var isSecondaryButton = false{
+        didSet{
+            buttonColor = isSecondaryButton
+                        ? NSColor.white.cgColor
+                        : buttonBgColor.cgColor
         }
     }
     
@@ -245,7 +328,7 @@ class Button: NSButton {
                 self.layer?.borderColor = borderColor
                 self.titleColor = NSColor.black//buttonTitleColor
             }else{
-                self.layer?.backgroundColor = NSColor.clear.cgColor
+                self.layer?.backgroundColor = backgroundDisableColor
                 self.layer?.borderColor = NSColor.gray.cgColor
                 self.titleColor = NSColor.gray//titleDisableColor//buttonTitleColor
             }
@@ -360,6 +443,183 @@ class Button: NSButton {
 }
 
 
+
+class Button: NSButton {
+    var mouseDown = false
+    
+    var titleDisableColor = NSColor.gray
+    var titleEnableColor = NSColor.white
+    var backgroundDisableColor = NSColor.clear.cgColor
+    var grayBorderColor = NSColor(red: 220/255, green: 220/255, blue: 220/255, alpha: 1).cgColor
+    
+    @IBInspectable var horizontalPadding   : CGFloat = 50
+    @IBInspectable var verticalPadding    : CGFloat = 50
+    
+    @IBInspectable var isForPrefrences    : Bool = false
+    
+    var borderWidth: CGFloat = 1{
+        didSet{
+            self.layer?.borderWidth = borderWidth
+        }
+    }
+    
+    var titleColor = NSColor.white{//buttonTitleColor
+        didSet{
+            self.title = currentTitle
+            self.contentTintColor = titleColor
+        }
+    }
+    
+    var currentTitle = ""
+    var buttonColor = NSColor(named: "dark_OrangeColor")?.cgColor ?? NSColor.orange.cgColor{
+        didSet{
+            if isEnabled{
+                self.layer?.backgroundColor = buttonColor
+                self.layer?.borderColor = borderColor
+                self.titleColor = titleEnableColor//buttonTitleColor
+            }else{
+                self.layer?.backgroundColor = backgroundDisableColor
+                self.layer?.borderColor = grayBorderColor
+                self.titleColor = titleDisableColor///buttonTitleColor
+            }
+        }
+    }
+    
+    var isSecondaryButton = false{
+        didSet{
+            if isSecondaryButton{
+                titleEnableColor = NSColor.black
+                borderColor = grayBorderColor
+                buttonColor = NSColor.white.cgColor
+                buttonDownColor = NSColor(named: "light_OrangeColor")?.cgColor ?? NSColor.orange.cgColor
+            }else{
+                titleEnableColor = NSColor.white
+                borderColor = NSColor(named: "dark_OrangeColor")?.cgColor ?? NSColor.orange.cgColor
+                buttonColor = NSColor(named: "dark_OrangeColor")?.cgColor ?? NSColor.orange.cgColor
+                buttonDownColor = NSColor(named: "dark_OrangeColor")?.withAlphaComponent(0.7).cgColor ?? NSColor.orange.cgColor
+            }
+        }
+    }
+    
+    override var isEnabled: Bool{
+        didSet{
+            if isEnabled{
+                self.layer?.backgroundColor = buttonColor
+                self.layer?.borderColor = borderColor
+                self.titleColor = titleEnableColor
+            }else{
+                self.layer?.backgroundColor = backgroundDisableColor
+                self.layer?.borderColor = grayBorderColor
+                self.titleColor = titleDisableColor
+            }
+        }
+    }
+    var buttonDownColor = NSColor(named: "dark_OrangeColor")?.withAlphaComponent(0.7).cgColor ?? NSColor.orange.cgColor//NSColor(red: 226/255, green: 203/255, blue: 177/255, alpha: 1).cgColor
+    
+    var borderColor = NSColor(named: "dark_OrangeColor")?.cgColor ?? NSColor.orange.cgColor
+    
+    override func awakeFromNib() {
+        super.awakeFromNib()
+        
+        addTrackingArea(NSTrackingArea(rect: bounds, options: [.activeAlways, .inVisibleRect, .mouseEnteredAndExited], owner: self, userInfo: nil))
+        self.wantsLayer = true
+        
+        self.isBordered = false
+        self.layer?.cornerRadius = self.frame.height/7
+        self.layer?.backgroundColor = buttonColor
+        
+        self.layer?.borderWidth = borderWidth
+        self.layer?.borderColor = borderColor
+        self.contentTintColor = titleColor
+    }
+    
+    override var intrinsicContentSize: NSSize {
+        var size = super.intrinsicContentSize
+        if self.image == nil{// if not an image button than
+            size.width += self.horizontalPadding
+            size.height += self.verticalPadding
+        }else{
+            size.width += self.horizontalPadding
+            size.height += self.verticalPadding
+        }
+        return size;
+    }
+    
+    override func draw(_ dirtyRect: NSRect) {
+        let originalBounds = self.bounds
+        defer { self.bounds = originalBounds }
+        
+        // Inset bounds by the image padding
+        self.bounds = originalBounds.insetBy(
+            dx: 10,
+            dy: 0
+        )
+        //}
+        // Draw the button content with padding
+        super.draw(dirtyRect)
+    }
+        
+    
+    override var title: String {
+        didSet {
+            currentTitle = title
+            let paragraph = NSMutableParagraphStyle()
+            paragraph.alignment = .center
+            paragraph.lineBreakMode = .byTruncatingTail
+            
+            let attrs = [NSAttributedString.Key.foregroundColor: titleColor, NSAttributedString.Key.paragraphStyle: paragraph, .font:self.font ?? NSFont.systemFont(ofSize: 12)] as [NSAttributedString.Key : Any]
+            let attrString: NSAttributedString = NSAttributedString(string: title, attributes: attrs)
+            self.attributedTitle = attrString
+        }
+    }
+    
+    
+    
+    override func mouseDown(with event: NSEvent) {
+        //        super.mouseDown(with: event)
+        if self.isEnabled{
+            print("mouseDown")
+            mouseDown = true
+            self.layer?.backgroundColor = buttonDownColor
+            NSCursor.pointingHand.set()
+        }
+    }
+    
+    override func mouseUp(with event: NSEvent) {
+        // super.mouseUp(with: event)
+        if self.isEnabled{
+            print("mouseUP")
+            if mouseDown {
+                mouseDown = false
+                if self.action != nil{
+                    NSApp.sendAction(self.action!, to: self.target, from: self)
+                }
+                
+                if isEnabled{// possible to be in disable state after mouse down
+                    NSCursor.pointingHand.set()
+                }
+            }
+            if isEnabled{// possible to be in disable state after mouse down
+                self.layer?.backgroundColor = buttonColor
+            }
+        }
+    }
+    override func mouseEntered(with event: NSEvent) {
+        if self.isEnabled{
+            NSCursor.pointingHand.set()
+        }
+    }
+    
+    override func mouseExited(with event: NSEvent) {
+        mouseDown = false
+        if self.isEnabled{
+            NSCursor.arrow.set()
+            self.layer?.backgroundColor = buttonColor
+        }
+    }
+}
+
+
 class mouseDownEffectButton: NSButton {
     var mouseDown = false
     
@@ -413,7 +673,7 @@ class mouseDownEffectButton: NSButton {
 
 
 
-class boxButton: NSBox {
+class boxButtonOld: NSBox {
 
     // MARK: - Public API
     weak var target: AnyObject?
@@ -428,6 +688,7 @@ class boxButton: NSBox {
     var buttonDownColor = NSColor(red: 226/255, green: 203/255, blue: 177/255, alpha: 1)
     var buttonBgColor = NSColor(red: 255/255, green: 228/255, blue: 198/255, alpha: 1)
     var titleColor = NSColor.black
+    
     // MARK: - UI
     private let iconView = NSImageView()
     private let titleLabel = NSTextField(labelWithString: "")
@@ -597,7 +858,190 @@ class boxButton: NSBox {
     }
 }
 
+class boxButton: NSBox {
 
+    // MARK: - Public API
+    weak var target: AnyObject?
+    var action: Selector?
+
+    var isEnabled: Bool = true {
+        didSet {
+            updateAppearance()
+        }
+    }
+    let buttonBorderColor = NSColor(red: 220/255, green: 220/255, blue: 220/255, alpha: 1)
+    var buttonDownColor = NSColor(named: "light_OrangeColor") ?? NSColor.orange
+    var buttonBgColor = NSColor.white
+    var titleColor = NSColor.black
+    
+    // MARK: - UI
+    private let iconView = NSImageView()
+    private let titleLabel = NSTextField(labelWithString: "")
+
+    // MARK: - State
+    private var hovered = false
+    private var pressed = false
+
+    // MARK: - Init
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        commonInit()
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        commonInit()
+    }
+
+    private func commonInit() {
+        boxType = .custom
+        cornerRadius = 6
+        borderWidth = 1
+        titlePosition = .noTitle
+
+        setupContent()
+        updateAppearance()
+        borderColor = buttonBorderColor
+        addTrackingArea(NSTrackingArea(
+            rect: bounds,
+            options: [.activeAlways, .mouseEnteredAndExited],
+            owner: self,
+            userInfo: nil
+        ))
+    }
+
+    // MARK: - Content
+    private func setupContent() {
+        let contentView = NSView()
+        self.contentView = contentView
+
+        // StackView to keep icon + label together
+        let stackView = NSStackView()
+        stackView.orientation = .horizontal
+        stackView.alignment = .centerY
+        stackView.spacing = 14
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+
+        iconView.translatesAutoresizingMaskIntoConstraints = false
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+
+        // Truncation
+        titleLabel.lineBreakMode = .byTruncatingTail
+        titleLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+
+        iconView.setContentHuggingPriority(.required, for: .horizontal)
+        iconView.setContentCompressionResistancePriority(.required, for: .horizontal)
+
+        stackView.addArrangedSubview(iconView)
+        stackView.addArrangedSubview(titleLabel)
+
+        contentView.addSubview(stackView)
+
+        NSLayoutConstraint.activate([
+            // Center the whole group
+            stackView.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
+            stackView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+
+            // Minimum padding from edges
+            stackView.leadingAnchor.constraint(greaterThanOrEqualTo: contentView.leadingAnchor, constant: 10),
+            stackView.trailingAnchor.constraint(lessThanOrEqualTo: contentView.trailingAnchor, constant: -10),
+
+            // Icon size
+            iconView.widthAnchor.constraint(equalToConstant: 20),
+            iconView.heightAnchor.constraint(equalToConstant: 20)
+        ])
+    }
+
+
+    // MARK: - Public setters
+    func setTitle(_ title: String) {
+        titleLabel.stringValue = title
+    }
+
+    func setImage(_ image: NSImage?) {
+        iconView.image = image
+    }
+    func setButtonColor(_ color: NSColor) {
+        buttonBgColor = color
+        fillColor = buttonBgColor
+    }
+    
+    func setTitleColor(_ color: NSColor) {
+        titleLabel.textColor = color
+        titleColor = color
+    }
+    // MARK: - Appearance
+    private func updateAppearance() {
+        if !isEnabled {
+            fillColor = .clear
+            borderColor = .clear
+            titleLabel.textColor = .gray
+            iconView.alphaValue = 0.5
+            return
+        }
+
+        if pressed {
+            fillColor = buttonDownColor
+        } else if hovered {
+            fillColor = buttonBgColor
+        } else {
+            fillColor = buttonBgColor
+        }
+
+        titleLabel.textColor = titleColor
+        iconView.alphaValue = 1
+    }
+
+    // MARK: - Mouse handling
+    override func mouseEntered(with event: NSEvent) {
+        guard isEnabled else { return }
+        hovered = true
+        updateAppearance()
+        NSCursor.pointingHand.set()
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        hovered = false
+        pressed = false
+        updateAppearance()
+        NSCursor.arrow.set()
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        guard isEnabled else { return }
+
+        pressed = true
+        updateAppearance()
+    }
+
+    override func mouseUp(with event: NSEvent) {
+        pressed = false
+        updateAppearance()
+        
+        // Convert mouse location to local coordinates
+        let location = convert(event.locationInWindow, from: nil)
+        
+        // Fire action ONLY if mouseUp is inside the button
+        if bounds.contains(location) {
+            if let target = target, let action = action {
+                NSApp.sendAction(action, to: target, from: self)
+            }
+        }
+    }
+
+    // MARK: - Tracking area
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        trackingAreas.forEach(removeTrackingArea)
+
+        addTrackingArea(NSTrackingArea(
+            rect: bounds,
+            options: [.activeAlways, .mouseEnteredAndExited],
+            owner: self,
+            userInfo: nil
+        ))
+    }
+}
 
 @IBDesignable
 class iconTitleButton: NSButton {

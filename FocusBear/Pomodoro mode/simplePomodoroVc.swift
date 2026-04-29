@@ -290,7 +290,7 @@ class simplePomodoroVc: NSViewController {
         if let simplePomodoroVcInfo = configjson.value(forKey: "simplePomodoroVcInfo") as? NSDictionary{
             btnError.title = simplePomodoroVcInfo.value(forKey: "buttonFixItText") as? String ?? btnError.title
         }
-        btnError.buttonColor = NSColor.white.cgColor
+        btnError.isSecondaryButton = true
         viewDidResize()
         
         boxError.isHidden = true
@@ -598,12 +598,7 @@ class simplePomodoroVc: NSViewController {
         }
         loadLastIntentionOfFocusMode()
         
-        
-//        if startingFocusWindowControllerObj?.window?.isVisible ?? false{
-//            if startingFocusWindowControllerObj?.contentViewController == startingFocusModeVcObj{
-//                startingFocusWindowControllerObj?.close()
-//            }
-//        }
+    
         lblTimerUnfocused.isHidden = false
         startTimer()
         textFieldWorkDuration.isEnabled = true
@@ -809,35 +804,6 @@ class simplePomodoroVc: NSViewController {
                 UserDefaults.standard.set(true, forKey: kUserdefaultsBrowsersPermissionsSetByUser)
                 return;
             }
-        }else if radioButtonBlockingStyleDistractingSites.state == .on{
-            if UserDefaults.standard.object(forKey: kUserdefaultsIsAnyDistractionSetByUser) == nil{
-                let alertWarning = NSAlert()
-                alertWarning.setSharingType()
-                alertWarning.messageText = "Do you want to block distractions?"
-                alertWarning.informativeText = "You can block distracting websites and distracting apps. You will need to allow permissions to block distracting websites."
-                var buttonBlockText = "Yeah - block them!"
-                var buttonNoText = "No thanks"
-                if let simplePomodoroVcInfo = configjson.value(forKey: "simplePomodoroVcInfo") as? NSDictionary{
-                    alertWarning.messageText = simplePomodoroVcInfo.value(forKey: "alertWarningPermissionsTitle") as? String ?? alertWarning.messageText
-                    alertWarning.informativeText = simplePomodoroVcInfo.value(forKey: "alertWarningSetDistractionsInfo") as? String ?? alertWarning.informativeText
-                    buttonBlockText = simplePomodoroVcInfo.value(forKey: "buttonBlockText") as? String ?? buttonBlockText
-                    buttonNoText = simplePomodoroVcInfo.value(forKey: "buttonNoText") as? String ?? buttonNoText
-                }
-                alertWarning.addButton(withTitle: buttonBlockText)
-                alertWarning.addButton(withTitle: buttonNoText)
-                
-                alertWarning.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
-                    if modalResponse == .alertFirstButtonReturn{
-                        showDistractionTypesWindow(showingFromPomodoro: true)
-                        self.intentionToShowAgain = self.textViewAchieve.string
-                        self.view.window?.close()
-                    }else{
-                        self.btnLetsDoItClicked(self)
-                    }
-                })
-                UserDefaults.standard.set(true, forKey: kUserdefaultsIsAnyDistractionSetByUser)
-                return;
-            }
         }
         
         if UserDefaults.standard.object(forKey: kUserdefaultsManageTaskFirstTime) == nil{
@@ -1023,8 +989,7 @@ class simplePomodoroVc: NSViewController {
         
         getTotalFocuedTime()
         //After finishing pomodoro block, clicking start another focus block doesn't use correct focus mode #741
-//        startingFocusModeVcObj?.loadView()
-        //
+
         if radioButtonBlockingStyleAi.state == .on{
             UserDefaults.standard.set(true, forKey: kUserdefaultsSimplePomodoroAiBlockingSelected)
             SettingsManagerObject.isAiCheckUrlEnabled = true
@@ -1044,6 +1009,11 @@ class simplePomodoroVc: NSViewController {
                     arrFocusType[i]["lastStartedDate"] = getStringFromDate(date: Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")//
                     arrFocusType[i]["lastScheduledEndDate"] = getStringFromDate(date: endFocusModeTime!, dateFormat: "yyyy-MM-dd HH:mm:ss")//
                     shouldReloadTaskPlayer = true
+                    let focusModeId = arrFocusType[i]["id"] as? String ?? ""
+                    let focusModeName = arrFocusType[i]["name"] as? String ?? ""
+                    addLog(text: "Focus mode name is:- \(focusModeName)")// added v 3.31.474
+                    addLog(text: "Focus mode id is:- \(focusModeId)")// added v 3.31.474
+                    
                     if isAccessibilityEnabled(isPrompt: true){
                         enableDND()
                     }
@@ -1105,12 +1075,7 @@ class simplePomodoroVc: NSViewController {
             taskPlayerVcObj?.reloadData(totalDuration: minute, intention: textViewAchieve.string)
             shouldReloadTaskPlayer = false
         }
-        //After finishing pomodoro block, clicking start another focus block doesn't use correct focus mode #741
-//        startingFocusModeVcObj?.lastIntention = textViewAchieve.string
-//        startingFocusModeVcObj?.lastHourValue = 0
-//        startingFocusModeVcObj?.lastMinuteValue = textFieldWorkDuration.integerValue
-//        startingFocusModeVcObj?.lastSkipMicroBreakState = isSkipBreakActivityDuringPomodoro
-        //
+
         allApiObject.capturePosthog(event: "start-focus-session-manually", metadata: ["type":"simple-focus", "focusDuration":currentPomodoroWorkDuration, "breakDuration":currentPomodoroBreakDuration])
     }
 
@@ -1286,7 +1251,7 @@ class simplePomodoroVc: NSViewController {
             alertWarning.beginSheetModal(for: self.view.window!, completionHandler: { (modalResponse) in
                 
                 if modalResponse == .alertFirstButtonReturn{
-                    showDistractionTypesWindow(showingFromPomodoro: true)
+                    showExplainingPermissionsWindow(showingFromPomodoro: true)
                     self.intentionToShowAgain = self.textViewAchieve.string
                 }
                 

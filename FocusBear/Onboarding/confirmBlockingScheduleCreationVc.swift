@@ -10,15 +10,21 @@ import Cocoa
 
 class confirmBlockingScheduleCreationVc: NSViewController {
 
+    @IBOutlet weak var imgViewBear: NSImageView!
     @IBOutlet weak var btnYes: Button!
     @IBOutlet weak var btnNo: Button!
     @IBOutlet weak var lblSubTitle: NSTextField!
     @IBOutlet weak var lblTitle: NSTextField!
+    @IBOutlet weak var customViewProgress: NSView!
+    
+    var bubbleView:BubbleView?
+    var distractionBlockingProgressVcObj:distractionBlockingProgressVc?
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
-        lblTitle.stringValue = "Do you want to set up scheduled distraction blocking?"
-        lblSubTitle.stringValue = "You can have distracting sites and apps blocked during work hours/at night"
+        lblTitle.stringValue = "Add a New Blocking Schedule"
+        lblSubTitle.stringValue = "You can have distracting sites and apps blocked during work hours or at night ⏰"
         btnNo.title = "No thanks"
         btnYes.title = "Yes! Save my focus"
         
@@ -44,28 +50,48 @@ class confirmBlockingScheduleCreationVc: NSViewController {
         }
 
         
-        btnNo.buttonColor = NSColor.white.cgColor
+        btnNo.isSecondaryButton = true
+        
+        //progress
+        self.customViewProgress.addSubview(getDistractionBlockingProgressVcObj().view)
+        self.customViewProgress.addConstraints(subView: getDistractionBlockingProgressVcObj().view)
+        getDistractionBlockingProgressVcObj().setProgress(level: 2, progress: 0)
+    }
+    
+    override func viewWillAppear() {
+        allApiObject.capturePosthog(event: "blocking-schedule-creation-screen-shown", metadata: [:])
+    }
+    
+    override func viewDidAppear() {
+        // Show bubble
+        var bubbleText = "An automatic blocking schedule helps me to nudge you at certain times"
+        if let confirmBlockingScheduleCreationVcInfo = configjson.value(forKey: "confirmBlockingScheduleCreationVcInfo") as? NSDictionary{
+            bubbleText = confirmBlockingScheduleCreationVcInfo.value(forKey: "bubbleText") as? String ?? bubbleText
+        }
+        
+        if bubbleView == nil{
+            bubbleView = PopupManager.showPopup(for: imgViewBear, edge: .minX, selfView: self.view, text: bubbleText, verticalOffset: -40, horizontalOffset: 25, fontSize: 13)
+        }
+    }
+    
+    
+    func getDistractionBlockingProgressVcObj()->distractionBlockingProgressVc{
+        if distractionBlockingProgressVcObj == nil{
+            distractionBlockingProgressVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("distractionBlockingProgressVc")) as? distractionBlockingProgressVc
+        }
+        return distractionBlockingProgressVcObj!
     }
     
     @IBAction func btnNoClicked(_ sender: Any) {
-        getHabitsVcObject().breathingFinishedUnlockMachine()
-        // delete blockinmg schedule
-        appdelegate?.menuShowSimplePomodoroModeView()
-        mainWindowControllerObj?.window?.center()
+        addLog(text: "[user-action] confirmBlockingScheduleCreationVc:- btnNoClicked")
+        allApiObject.capturePosthog(event: "add-new-block-skipped", metadata: [:])
+        getOnboardingVcObject().blockingScheduleSkipped()
     }
     
     @IBAction func btnYesClicked(_ sender: Any) {
-        getHabitsVcObject().breathingFinishedUnlockMachine()
-        // move to blocking schdeule
-        if mainWindowControllerObj?.window?.isVisible ?? false{
-            leftMenuVcObj?.showBlocksView()
-            mainWindowControllerObj?.window?.center()
-        }else{
-            mainWindowControllerObj?.showWindow(self)
-            leftMenuVcObj?.showBlocksView()
-            mainWindowControllerObj?.window?.center()
-        }
-        addLog(text: "Showing preferences")
-        tabStrictnessContainerVcObj?.showCustomBlockingSchedulesView()
+        addLog(text: "[user-action] confirmBlockingScheduleCreationVc:- btnYesClicked")
+        allApiObject.capturePosthog(event: "add-new-block-clicked", metadata: [:])
+        getOnboardingVcObject().navigate(to: ._CREATE_BLOCKING_SCHEDULE_)
+        
     }
 }

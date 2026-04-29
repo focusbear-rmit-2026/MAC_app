@@ -67,7 +67,7 @@ class shutOffTimeVc: NSViewController {
         
         lblAlreadyUnlocked.stringValue = lblAlreadyUnlocked.stringValue.replacingOccurrences(of: "<DURATION>", with: "30")
         
-        btnShutDownMac.buttonColor = NSColor.white.cgColor
+        btnShutDownMac.isSecondaryButton = true
         popUpBtnDuration.removeAllItems()
         popUpBtnDuration.addItems(withTitles: ["15 \(minutesText)", "30 \(minutesText)", "1 \(hourText)", "2 \(hoursText)", "4 \(hoursText)", "8 \(hoursText)"])
         arrDurationSeconds = [900, 1800, 3600, 7200, 14400, 28800]

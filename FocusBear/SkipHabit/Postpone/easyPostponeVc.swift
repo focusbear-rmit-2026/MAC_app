@@ -49,7 +49,7 @@ class easyPostponeVc: NSViewController {
             btnDeactivateApp.title = easyPostponeVcInfo.value(forKey: "buttonDeactivateText") as? String ?? btnDeactivateApp.title
             lblInfo.stringValue = easyPostponeVcInfo.value(forKey: "infoText") as? String ?? lblInfo.stringValue
         }
-        btnPostpone.buttonColor = NSColor.white.cgColor
+        btnPostpone.isSecondaryButton = true
     }
     
     override func viewDidAppear() {

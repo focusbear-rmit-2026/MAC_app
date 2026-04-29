@@ -95,43 +95,12 @@ class askPostponeVc: NSViewController {
                 btnAbortBreak.title = activityPostponeInfo.value(forKey: "buttonCompletelySkipText") as? String ?? btnAbortBreak.title
             }
             
-            btnPostpone.buttonColor = buttonBgColor.cgColor
-            btnAbortBreak.buttonColor = NSColor.white.cgColor
+            btnPostpone.isSecondaryButton = false
+            btnAbortBreak.isSecondaryButton = true
             
             
             
         }else if currentState == ._MICRO_BREAK_{
-       
-            /*
-            popUpButtonSelectMinutes.isHidden = true
-            lblSelectMinutes.isHidden = true
-            lblTitle.stringValue = "If you have something urgent, you can postpone the Break Activity for 5 Minutes."
-            btnPostpone.title = "Postpone Break"
-            btnAbortBreak.title = "Switch to office mode"
-            
-            if SettingsManagerObject.isOfficeModeEnabled{
-                btnAbortBreak.isHidden = true
-                btnPostpone.buttonColor = buttonBgColor.cgColor
-            }else{
-                
-                let filterArr = arrAllbreakActivities.filter { $0.isOfficeFriendly == true}
-                if filterArr.count == 0{// no activity found with isOfficeFriendly //
-                    addLog(text: "Ask postpone view - resetView :- no activity found with isOfficeFriendly")
-                    btnAbortBreak.isHidden = true
-                    btnPostpone.buttonColor = buttonBgColor.cgColor
-                }else{
-                    btnAbortBreak.isHidden = false
-                    btnPostpone.buttonColor = NSColor.white.cgColor
-                    btnAbortBreak.buttonColor = buttonBgColor.cgColor
-                }
-            }
-            if let activityPostponeInfo = configjson.value(forKey: "activityPostponeInfo") as? NSDictionary{
-                lblTitle.stringValue = activityPostponeInfo.value(forKey: "postponeBreakText") as? String ?? lblTitle.stringValue
-                btnPostpone.title = activityPostponeInfo.value(forKey: "buttonPostponeBreakText") as? String ?? btnPostpone.title
-                btnAbortBreak.title = activityPostponeInfo.value(forKey: "buttonEnableOfficeModeText") as? String ?? btnAbortBreak.title
-            }
-            */
-        
             if activityPostponeCount == 0{
                 if SettingsManagerObject.isOfficeModeEnabled{
                     self.showActivityostponeView()
@@ -155,8 +124,8 @@ class askPostponeVc: NSViewController {
         btnAbortBreak.isHidden = false
         btnPostpone.isHidden = false
        
-        btnPostpone.buttonColor = buttonBgColor.cgColor
-        btnAbortBreak.buttonColor = NSColor.white.cgColor
+        btnPostpone.isSecondaryButton = false
+        btnAbortBreak.isSecondaryButton = true
         
         if let activityPostponeInfo = configjson.value(forKey: "activityPostponeInfo") as? NSDictionary{
             lblTitle.stringValue = activityPostponeInfo.value(forKey: "titlePostponeOrSkip") as? String ?? lblTitle.stringValue
@@ -212,8 +181,8 @@ class askPostponeVc: NSViewController {
         btnOkIWillDoBreak.isHidden = true
         
         btnAbortBreak.isHidden = false
-        btnPostpone.buttonColor = NSColor.white.cgColor
-        btnAbortBreak.buttonColor = buttonBgColor.cgColor
+        btnPostpone.isSecondaryButton = true
+        btnAbortBreak.isSecondaryButton = false
 
 //        }
         
@@ -269,8 +238,8 @@ class askPostponeVc: NSViewController {
             btnAbortBreak.title = activityPostponeInfo.value(forKey: "buttonCompletelySkipText") as? String ?? btnAbortBreak.title
         }
         
-        btnPostpone.buttonColor = buttonBgColor.cgColor
-        btnAbortBreak.buttonColor = NSColor.white.cgColor
+        btnPostpone.isSecondaryButton = false
+        btnAbortBreak.isSecondaryButton = true
         btnOkIWillDoBreak.isHidden = true
         btnPostpone.isHidden = false
         btnAbortBreak.isHidden = false

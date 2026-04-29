@@ -66,11 +66,6 @@ class pusherEvents:NSObject, PusherDelegate {
                                         if currentFocusModeIndex == -1{
                                             return;
                                         }
-//                                        if getEndFocusModeWindowControllerObj().window!.isVisible{
-//                                            let timestamp = getStringFromDate(date: startFocusModeTime ?? Date(), dateFormat: "yyyy-MM-dd HH:mm:ss")
-//                                            addEntryInStatsCsv(logType: "focus block", activity: focusCompletedVcObj!.currentFocusModeName, durationInSeconds: "\(focusModeActualDurationPerformed)", quantityQuestion: "", quantityLogged: "", startTime: timestamp, workAchieved: "\(focusModeMinutesToPerform) of \(focusCompletedVcObj!.currentFocusModeName)", distractionsEncountered: "", abortReason: "", feedback: "", tags:"")
-//                                            getEndFocusModeWindowControllerObj().window?.close()
-//                                        }
                                         
                                         let calendar = Calendar.current
                                         startFocusModeTime = Date()
@@ -119,13 +114,7 @@ class pusherEvents:NSObject, PusherDelegate {
                                             timerForFocusModeEndNotification = nil
                                         }
                                         appdelegate?.setFocusModeTimer(hour: nil, minute: diffMinutes)
-                                       // isFocusModeStartedFromPomodoroMode = false
                                         closePomodoroWindowIOfVisible()
-//                                        if startingFocusWindowControllerObj != nil{
-//                                            if startingFocusWindowControllerObj!.window!.isVisible{
-//                                                startingFocusWindowControllerObj?.window?.close()
-//                                            }
-//                                        }
                                         whatToAchieveInFocusBlock = intention
                                         
                                         appdelegate!.focusModeStartted(isStartedByPusher: true)
@@ -191,13 +180,6 @@ class pusherEvents:NSObject, PusherDelegate {
                     let totalSeconds = Int(Date().timeIntervalSince(startFocusModeTimeForPauseAndResume ?? Date()))
                     focusModeActualDurationPerformed += totalSeconds
                 }
-//                if brainDumpWcObj != nil{
-//                    if brainDumpWcObj?.window != nil{
-//                        if brainDumpWcObj!.window!.isVisible{
-//                            brainDumpWcObj?.window?.close()
-//                        }
-//                    }
-//                }
                 
                 var currentFocusModeName = ""
                 for i in 0..<arrFocusType.count{

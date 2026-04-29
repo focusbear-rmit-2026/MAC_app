@@ -10,99 +10,56 @@ import Cocoa
 
 class askOccupationVc: NSViewController, NSTextFieldDelegate {
 
-    @IBOutlet weak var btnSkip: underLineButton!
-    @IBOutlet weak var textFieldFreelancer: NSTextField!
-    @IBOutlet weak var lblTitleSpecify: NSTextField!
-    @IBOutlet weak var boxEmployee: NSBox!
-    @IBOutlet weak var boxStudy: NSBox!
-    @IBOutlet weak var radioBtnFieldWork: NSButton!
-    @IBOutlet weak var radioBtnOtherOfficeWork: NSButton!
-    @IBOutlet weak var radioBtnGraphicDesigner: NSButton!
-    @IBOutlet weak var radioBtnProgrammer: NSButton!
-    @IBOutlet weak var lblSelectIndustry: NSTextField!
-    @IBOutlet weak var radioBtnPostGraduate: NSButton!
-    @IBOutlet weak var radioBtnGraduate: NSButton!
-    @IBOutlet weak var radioBtnUndergraduate: NSButton!
-    @IBOutlet weak var radioBtnHighSchool: NSButton!
-    @IBOutlet weak var lblSelectStudyLevel: NSTextField!
-    @IBOutlet weak var textFieldFieldWork: NSTextField!
-    @IBOutlet weak var textFieldOtherOfficeWork: NSTextField!
-    @IBOutlet weak var stackViewEmployee: NSStackView!
-    @IBOutlet weak var stackViewStudy: NSStackView!
-    @IBOutlet weak var btnInfo: hoverInfoButton!
-    @IBOutlet weak var topSpaceCollectionView: NSLayoutConstraint!
-//    @IBOutlet weak var bottomSpaceCollectionView: NSLayoutConstraint!
-    @IBOutlet weak var textFieldOther: NSTextField!
-    @IBOutlet weak var btnContinue: Button!
+    @IBOutlet weak var loader: NSProgressIndicator!
+    @IBOutlet weak var boxTextField: NSBox!
+    @IBOutlet weak var imgViewBear: NSImageView!
+    @IBOutlet weak var customViewProgress: NSView!
     @IBOutlet weak var lblDescription: NSTextField!
+    @IBOutlet weak var textFieldOccupation: NSTextField!
+    @IBOutlet weak var btnSkip: hoverUnderlineButton!
+
+    @IBOutlet weak var btnContinue: Button!
     @IBOutlet weak var lblSubTitle: NSTextField!
-    @IBOutlet weak var lblTitle: NSTextField!
+ 
     @IBOutlet weak var collectionView: NSCollectionView!
+    
     var selectedIndex = -1
     var arrOccupations = [String]()
     var isStudentSelected = false
     var studentIndex = 0
+    var bubbleView:BubbleView?
+    var distractionBlockingProgressVcObj:distractionBlockingProgressVc?
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
+        
+        
+        lblDescription.stringValue = "I’ll suggest which websites to block and which ones are productive."
+        btnContinue.title = "That’s me!"
+
         btnSkip.title = "Skip"
-        lblTitle.stringValue = "Create your distraction blocking profile"
-        
-        
-        lblSelectStudyLevel.stringValue = "Select level of study:"
-        radioBtnHighSchool.title = "High school"
-        radioBtnUndergraduate.title = "Undergraduate"
-        radioBtnGraduate.title = "Graduate"
-        radioBtnPostGraduate.title = "Postgraduate"
-        lblSelectIndustry.stringValue = "Type of work:"
-        radioBtnProgrammer.title = "Programmer"
-        radioBtnGraphicDesigner.title = "Graphic designer"
-        radioBtnOtherOfficeWork.title = "Other work from office"
-        radioBtnFieldWork.title = "Non desk based work"
-        
-        lblTitleSpecify.stringValue = "Type of work:"
-        
+
         var occupationFreelancer = "Freelancer"
         var occupationStudent = "University student"
         var occupationBusinessOwner = "Business owner"
         var occupationEmployee = "Employee"
         var occupationOther = "Other"
         
-        
-        
-        
+
         lblSubTitle.stringValue = "What type of work do you do?"
-        lblDescription.stringValue = "This will be used to recommend the most suitable features for your work."
-        btnContinue.title = "Continue"
         arrOccupations = ["University student"," Software dev", "Graphic designer", "Business owner", "Other office work", "Field worker (not in front of computer)", "Parent (setting it up for child)", "Other"]
 
-        if let askAppWorkVcInfo = configjson.value(forKey: "askAppWorkVcInfo") as? NSDictionary{
-            btnContinue.title = askAppWorkVcInfo.value(forKey: "buttonContinueText") as? String ?? btnContinue.title
-        }
         
         if let askOccupationVcInfo = configjson.value(forKey: "askOccupationVcInfo") as? NSDictionary{
             lblSubTitle.stringValue = askOccupationVcInfo.value(forKey: "subTitle") as? String ?? lblSubTitle.stringValue
-            lblDescription.stringValue = askOccupationVcInfo.value(forKey: "description") as? String ?? lblDescription.stringValue
-
-            lblSelectStudyLevel.stringValue = askOccupationVcInfo.value(forKey: "titleSelectLevelStudy") as? String ?? lblSelectStudyLevel.stringValue
-            radioBtnHighSchool.title = askOccupationVcInfo.value(forKey: "optionSchool") as? String ?? radioBtnHighSchool.title
-            radioBtnUndergraduate.title = askOccupationVcInfo.value(forKey: "optionUndergraduate") as? String ?? radioBtnUndergraduate.title
-            radioBtnGraduate.title = askOccupationVcInfo.value(forKey: "optionGraduate") as? String ?? radioBtnGraduate.title
-            radioBtnPostGraduate.title = askOccupationVcInfo.value(forKey: "optionPostgraduate") as? String ?? radioBtnPostGraduate.title
-            lblSelectIndustry.stringValue = askOccupationVcInfo.value(forKey: "titleSelectIndustry") as? String ?? lblSelectIndustry.stringValue
-            radioBtnProgrammer.title = askOccupationVcInfo.value(forKey: "optionProgrammer") as? String ?? radioBtnProgrammer.title
-            radioBtnGraphicDesigner.title = askOccupationVcInfo.value(forKey: "optionGraphicDesigner") as? String ?? radioBtnGraphicDesigner.title
-            radioBtnOtherOfficeWork.title = askOccupationVcInfo.value(forKey: "optionOtherOfficeWork") as? String ?? radioBtnOtherOfficeWork.title
-            radioBtnFieldWork.title = askOccupationVcInfo.value(forKey: "optionFieldWork") as? String ?? radioBtnFieldWork.title
             occupationStudent = askOccupationVcInfo.value(forKey: "occupationStudent") as? String ?? occupationStudent
             occupationBusinessOwner = askOccupationVcInfo.value(forKey: "occupationBusinessOwner") as? String ?? occupationBusinessOwner
             occupationEmployee = askOccupationVcInfo.value(forKey: "occupationEmployee") as? String ?? occupationEmployee
             occupationOther = askOccupationVcInfo.value(forKey: "occupationOther") as? String ?? occupationOther
             occupationFreelancer = askOccupationVcInfo.value(forKey: "occupationFreelancer") as? String ?? occupationFreelancer
-            
-            
-            lblTitleSpecify.stringValue = askOccupationVcInfo.value(forKey: "titleFreelancerType") as? String ?? lblTitleSpecify.stringValue
-            lblTitle.stringValue = askOccupationVcInfo.value(forKey: "titleBlockingProfile") as? String ?? lblTitle.stringValue
+            lblDescription.stringValue = askOccupationVcInfo.value(forKey: "descriptionNew") as? String ?? lblDescription.stringValue
+            btnContinue.title = askOccupationVcInfo.value(forKey: "buttonContinue") as? String ?? btnContinue.title
         }
         
         if let dic = configjson.value(forKey: "welcomeInfo") as? NSDictionary{
@@ -119,71 +76,64 @@ class askOccupationVc: NSViewController, NSTextFieldDelegate {
         collectionView.allowsMultipleSelection = false
         selectedIndex = -1
 
-        textFieldOther.delegate = self
-        textFieldFieldWork.delegate = self
-        textFieldOtherOfficeWork.delegate = self
+        textFieldOccupation.textColor = .labelColor
         
-        boxStudy.isHidden = true
-        boxEmployee.isHidden = true
-        textFieldOther.isHidden = true
-        textFieldFreelancer.isHidden = true
-        lblTitleSpecify.isHidden = true
+        //progress
+        self.customViewProgress.addSubview(getDistractionBlockingProgressVcObj().view)
+        self.customViewProgress.addConstraints(subView: getDistractionBlockingProgressVcObj().view)
+        getDistractionBlockingProgressVcObj().setProgress(level: 1, progress: 0.35)
+        
+        
+        textFieldOccupation.delegate = self
     }
 
-    @objc func viewDidResize(){
-        if self.view.frame.height < 600{
-            lblTitle.font = NSFont.systemFont(ofSize: 24)
-            lblSubTitle.font = NSFont.systemFont(ofSize: 15)
-            lblDescription.font = NSFont.systemFont(ofSize: 13)
-            topSpaceCollectionView.constant = 8
-            stackViewStudy.spacing = 3
-            stackViewEmployee.spacing = 3
-        }else if self.view.frame.height < 700{
-            lblTitle.font = NSFont.systemFont(ofSize: 30)
-            lblSubTitle.font = NSFont.systemFont(ofSize: 19)
-            lblDescription.font = NSFont.systemFont(ofSize: 16)
-            topSpaceCollectionView.constant = 20
-            stackViewStudy.spacing = 7
-            stackViewEmployee.spacing = 7
-        }else if self.view.frame.height < 900{
-            lblTitle.font = NSFont.systemFont(ofSize: 36)
-            lblSubTitle.font = NSFont.systemFont(ofSize: 21)
-            lblDescription.font = NSFont.systemFont(ofSize: 18)
-            topSpaceCollectionView.constant = 30
-            stackViewStudy.spacing = 12
-            stackViewEmployee.spacing = 12
-        }else{
-            lblTitle.font = NSFont.systemFont(ofSize: 40)
-            lblSubTitle.font = NSFont.systemFont(ofSize: 23)
-            lblDescription.font = NSFont.systemFont(ofSize: 20)
-            topSpaceCollectionView.constant = 35
-            stackViewStudy.spacing = 15
-            stackViewEmployee.spacing = 15
+    override func viewDidAppear() {
+        // Show bubble
+        
+        var bubbleText = "Tell me your profession and I’ll find them all!"
+        if let askOccupationVcInfo = configjson.value(forKey: "askOccupationVcInfo") as? NSDictionary{
+            bubbleText = askOccupationVcInfo.value(forKey: "bubbleText") as? String ?? bubbleText
         }
-        collectionView.reloadData()
+        
+        if bubbleView == nil{
+            bubbleView = PopupManager.showPopup(for: imgViewBear, edge: .minX, selfView: self.view, text: bubbleText, horizontalOffset: 25, fontSize: 13)
+        }
+        showOnboardingBellIcon(view: self.view, screen: "ask-occupation-screen")
+    }
+    
+    func getDistractionBlockingProgressVcObj()->distractionBlockingProgressVc{
+        if distractionBlockingProgressVcObj == nil{
+            distractionBlockingProgressVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("distractionBlockingProgressVc")) as? distractionBlockingProgressVc
+        }
+        return distractionBlockingProgressVcObj!
+    }
+    
+    @objc func viewDidResize(){
+      
     }
     
     override func viewWillAppear() {
         allApiObject.capturePosthog(event: "ask-occupation-screen-shown", metadata: [:])
-        textFieldOther.isHidden = true
-        textFieldOther.stringValue = ""
+        boxTextField.isHidden = true
+        textFieldOccupation.stringValue = ""
         btnContinue.isEnabled = false
         viewDidResize()
         NotificationCenter.default.addObserver(self, selector: #selector(viewDidResize), name: NSView.frameDidChangeNotification, object: self.view)
+        selectedIndex = -1
+        collectionView.deselectAll(self)
+        collectionView.reloadData()
     }
     
-    override func viewDidAppear() {
-        showOnboardingBellIcon(view: self.view, screen: "ask-occupation-screen")
-    }
+
     
     override func viewWillDisappear() {
         hideOnboardingBellIcon(view: self.view)
-        NotificationCenter.default.removeObserver(self)
+        NotificationCenter.default.removeObserver(self)// todo need to check everyehere
     }
     
     func controlTextDidChange(_ obj: Notification) {
         if let textfield = obj.object as? NSTextField{
-            if textfield == textFieldOther{
+            if textfield == textFieldOccupation{
                 checkContinueButtonState()
             }
         }
@@ -191,12 +141,8 @@ class askOccupationVc: NSViewController, NSTextFieldDelegate {
     
     @IBAction func btnSkipClicked(_ sender: Any) {
         addLog(text: "[user-action] ask occupation view:- button Skip clicked.")
-//        mainViewControllerObj?.showCreateBlockingProfileVc()
-        
-        if !getInstallHabitPacksVcObj().isViewLoaded{
-            getInstallHabitPacksVcObj().loadView()
-        }
-        mainViewControllerObj?.showAskAppWorkVc()
+        allApiObject.capturePosthog(event: "ask-occupation-skipped", metadata: [:])
+        getOnboardingVcObject().navigate(to: ._ALLOWED_URLS_)
     }
     
     @IBAction func btnContinueClicked(_ sender: Any) {
@@ -206,23 +152,18 @@ class askOccupationVc: NSViewController, NSTextFieldDelegate {
         addLog(text: "[user-action] ask occupation view:- button continue clicked.")
         isStudentSelected = false
         var occupationToSave = ""
-        var selectedIndexToSave = selectedIndex
+        let selectedIndexToSave = selectedIndex
+        var occupationForRelevantSites = ""
         var posthogJson = [String : Any]()
         if selectedIndex == occupationStudentIndex{
             isStudentSelected = true
             var studentJson = [String : Any]()
-            if radioBtnHighSchool.state == .on{
-                studentJson = ["University student": "High school"]
-                occupationToSave = "universityStudent_highSchool"
-            }else if radioBtnUndergraduate.state == .on{
-                studentJson = ["University student": "Undergraduate"]
-                occupationToSave = "universityStudent_Undergraduate"
-            }else if radioBtnGraduate.state == .on{
-                studentJson = ["University student": "Graduate"]
-                occupationToSave = "universityStudent_Graduate"
-            }else if radioBtnPostGraduate.state == .on{
-                studentJson = ["University student": "Postgraduate"]
-                occupationToSave = "universityStudent_Postgraduate"
+
+            occupationForRelevantSites = "student"
+            if !textFieldOccupation.stringValue.isEmpty{
+                studentJson = ["University student": textFieldOccupation.stringValue]
+                occupationToSave = "universityStudent_\(textFieldOccupation.stringValue)"
+                occupationForRelevantSites = textFieldOccupation.stringValue
             }
             if studentJson.keys.isEmpty{
                 posthogJson = [
@@ -235,39 +176,33 @@ class askOccupationVc: NSViewController, NSTextFieldDelegate {
                 ]
             }
         }else if selectedIndex == occupationBusinessOwnerIndex{
-            posthogJson = [
-                "occupation": "Business owner"
-            ]
-            occupationToSave = "businessOwner"
+            occupationForRelevantSites = "business owner"
+            var businessOwnerJson = [String : Any]()
+            
+            if !textFieldOccupation.stringValue.isEmpty{
+                businessOwnerJson = ["Business owner": textFieldOccupation.stringValue]
+                occupationToSave = "businessOwner_\(textFieldOccupation.stringValue)"
+                occupationForRelevantSites = textFieldOccupation.stringValue
+            }
+            
+            if businessOwnerJson.keys.isEmpty{
+                posthogJson = [
+                    "occupation": "Business owner"
+                ]
+                occupationToSave = "businessOwner"
+            }else{
+                posthogJson = [
+                    "occupation": businessOwnerJson
+                ]
+            }
         }else if selectedIndex == occupationEmployeeIndex{
             var employeeJson = [String : Any]()
+            occupationForRelevantSites = "employee"
             
-            if radioBtnProgrammer.state == .on{
-                employeeJson = ["Employee": "Programmer"]
-                selectedIndexToSave = occupationProgrammerIndex
-                occupationToSave = "employee_Programmer"
-            }else if radioBtnGraphicDesigner.state == .on{
-                employeeJson = ["Employee": "Graphic designer"]
-                selectedIndexToSave = occupationGraphicDesignerIndex
-                occupationToSave = "employee_GraphicDesigner"
-            }else if radioBtnOtherOfficeWork.state == .on{
-                employeeJson = ["Employee": ["Other work from office": textFieldOtherOfficeWork.stringValue]]
-                selectedIndexToSave = occupationOtherOfficeWorkIndex
-                
-                if textFieldOtherOfficeWork.stringValue.isEmpty{
-                    occupationToSave = "employee_OtherWorkFromOffice"
-                }else{
-                    occupationToSave = "employee_OtherWorkFromOffice_\(textFieldOtherOfficeWork.stringValue)"
-                }
-            }else if radioBtnFieldWork.state == .on{
-                employeeJson = ["Employee": ["Non desk based work": textFieldFieldWork.stringValue]]
-                selectedIndexToSave = occupationFieldWorkIndex
-                
-                if textFieldFieldWork.stringValue.isEmpty{
-                    occupationToSave = "employee_NonDeskBasedWork"
-                }else{
-                    occupationToSave = "employee_NonDeskBasedWork_\(textFieldFieldWork.stringValue)"
-                }
+            if !textFieldOccupation.stringValue.isEmpty{
+                employeeJson = ["Employee": textFieldOccupation.stringValue]
+                occupationToSave = "employee_\(textFieldOccupation.stringValue)"
+                occupationForRelevantSites = textFieldOccupation.stringValue
             }
             
             if employeeJson.keys.isEmpty{
@@ -283,11 +218,14 @@ class askOccupationVc: NSViewController, NSTextFieldDelegate {
             
         }else if selectedIndex == occupationFreelancerIndex{
             var freelancerJson = [String : Any]()
+            occupationForRelevantSites = "freelancer"
             
-            if !textFieldFreelancer.stringValue.isEmpty{
-                freelancerJson = ["Freelancer": textFieldFreelancer.stringValue]
-                occupationToSave = "freelancer_\(textFieldFreelancer.stringValue)"
+            if !textFieldOccupation.stringValue.isEmpty{
+                freelancerJson = ["Freelancer": textFieldOccupation.stringValue]
+                occupationToSave = "freelancer_\(textFieldOccupation.stringValue)"
+                occupationForRelevantSites = textFieldOccupation.stringValue
             }
+            
             if freelancerJson.keys.isEmpty{
                 posthogJson = [
                     "occupation": "Freelancer"
@@ -300,11 +238,14 @@ class askOccupationVc: NSViewController, NSTextFieldDelegate {
             }
             
         }else if selectedIndex == occupationOtherIndex{
-            if !textFieldOther.stringValue.isEmpty{
+            occupationForRelevantSites = "other"
+            if !textFieldOccupation.stringValue.isEmpty{
                 posthogJson = [
-                    "occupation": textFieldOther.stringValue
+                    "occupation": textFieldOccupation.stringValue
                 ]
-                occupationToSave = "other_\(textFieldOther.stringValue)"
+                occupationToSave = "other_\(textFieldOccupation.stringValue)"
+                
+                occupationForRelevantSites = textFieldOccupation.stringValue
             }else{
                 posthogJson = [
                     "occupation": "Other"
@@ -315,13 +256,25 @@ class askOccupationVc: NSViewController, NSTextFieldDelegate {
         UserDefaults.standard.set(occupationToSave, forKey: kUserDefaultsSelectedOccupationForPosthog)
         UserDefaults.standard.set(selectedIndexToSave, forKey: kUserDefaultsSelectedOccupationIndex)
         allApiObject.capturePosthog(event: "occupation-selected", metadata: posthogJson)
-//        mainViewControllerObj?.showAchieveWithFocusBearVc()
-//        mainViewControllerObj?.showCreateBlockingProfileVc()
+
         
-        if !getInstallHabitPacksVcObj().isViewLoaded{
-            getInstallHabitPacksVcObj().loadView()
-        }
-        mainViewControllerObj?.showAskAppWorkVc()
+        loader.startAnimation(self)
+        btnSkip.isEnabled = false
+        btnContinue.isEnabled = false
+        textFieldOccupation.isEnabled = false
+        allApiObject.generateOccupationRelevantSites(userOccupation: occupationForRelevantSites, completionHandler: {result in
+            if let result = result{
+                print(result)
+                occupationSpecificRelevantSitesForFocusMode = result
+            }
+            DispatchQueue.main.async{ [self] in
+                loader.stopAnimation(self)
+                btnSkip.isEnabled = true
+                btnContinue.isEnabled = true
+                textFieldOccupation.isEnabled = true
+                getOnboardingVcObject().navigateToAllowedUrlsVc()
+            }
+        })
     }
     
     func checkContinueButtonState(){
@@ -331,66 +284,8 @@ class askOccupationVc: NSViewController, NSTextFieldDelegate {
         }
         btnContinue.isEnabled = true
     }
-    
-    @IBAction func btnInfoClicked(_ sender: Any) {
-        var msg = "We’ll set up a special focus mode designed for your job that will have websites and apps that are relevant for your work. This information also helps us understand who’s using the app so we can improve the features."
-        if let askOccupationVcInfo = configjson.value(forKey: "askOccupationVcInfo") as? NSDictionary{
-            msg = askOccupationVcInfo.value(forKey: "infoText") as? String ?? msg
-        }
-        showTooltip(sender: btnInfo, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:300, autoCloseOnMouseExit: true)
-    }
-    
-    @IBAction func radioBtnHighSchoolClicked(_ sender: Any) {
-        radioBtnUndergraduate.state = .off
-        radioBtnGraduate.state = .off
-        radioBtnPostGraduate.state = .off
-    }
-    @IBAction func radioBtnUndergraduateClicked(_ sender: Any) {
-        radioBtnHighSchool.state = .off
-        radioBtnGraduate.state = .off
-        radioBtnPostGraduate.state = .off
-    }
-    @IBAction func radioBtnGraduateClicked(_ sender: Any) {
-        radioBtnHighSchool.state = .off
-        radioBtnUndergraduate.state = .off
-        radioBtnPostGraduate.state = .off
-    }
-    @IBAction func radioBtnPostGraduateClicked(_ sender: Any) {
-        radioBtnHighSchool.state = .off
-        radioBtnUndergraduate.state = .off
-        radioBtnGraduate.state = .off
-    }
-    @IBAction func radioBtnProgrammerClicked(_ sender: Any) {
-        radioBtnGraphicDesigner.state = .off
-        radioBtnOtherOfficeWork.state = .off
-        radioBtnFieldWork.state = .off
-        textFieldFieldWork.isHidden = true
-        textFieldOtherOfficeWork.isHidden = true
-    }
-    @IBAction func radioBtnGraphicDesignerClicked(_ sender: Any) {
-        radioBtnProgrammer.state = .off
-        radioBtnOtherOfficeWork.state = .off
-        radioBtnFieldWork.state = .off
-        textFieldFieldWork.isHidden = true
-        textFieldOtherOfficeWork.isHidden = true
-    }
-    @IBAction func radioBtnOtherOfficeWorkClicked(_ sender: Any) {
-        radioBtnProgrammer.state = .off
-        radioBtnGraphicDesigner.state = .off
-        radioBtnFieldWork.state = .off
-        textFieldFieldWork.isHidden = true
-        textFieldOtherOfficeWork.isHidden = false
-        textFieldOtherOfficeWork.setFocus()
-    }
-    @IBAction func radioBtnFieldWorkClicked(_ sender: Any) {
-        radioBtnProgrammer.state = .off
-        radioBtnGraphicDesigner.state = .off
-        radioBtnOtherOfficeWork.state = .off
-        textFieldFieldWork.isHidden = false
-        textFieldOtherOfficeWork.isHidden = true
-        textFieldFieldWork.setFocus()
-    }
 }
+
 extension askOccupationVc: NSCollectionViewDelegate, NSCollectionViewDataSource{
     func collectionView(_ collectionView: NSCollectionView, numberOfItemsInSection section: Int) -> Int {
         
@@ -408,22 +303,13 @@ extension askOccupationVc: NSCollectionViewDelegate, NSCollectionViewDataSource{
         item.updateSelection()
         return item
     }
+    
     func collectionView(_ collectionView: NSCollectionView, didSelectItemsAt indexPaths: Set<IndexPath>) {
         if let indexPath = indexPaths.first{
             selectedIndex = indexPath.item
             collectionView.reloadData()
-            boxStudy.isHidden = true
-            boxEmployee.isHidden = true
-            textFieldOther.isHidden = true
-            
-            lblTitleSpecify.isHidden = true
-            textFieldFreelancer.isHidden = true
+            var placeHolder = ""
             if selectedIndex == occupationStudentIndex{
-                boxStudy.isHidden = false
-                radioBtnHighSchool.state = .off
-                radioBtnGraduate.state = .off
-                radioBtnUndergraduate.state = .off
-                radioBtnPostGraduate.state = .off
                 var studentInfoText = "FYI your university might be able to pay for premium access to Focus Bear. Email support@focusbear.io for details."
                 if let askOccupationVcInfo = configjson.value(forKey: "askOccupationVcInfo") as? NSDictionary{
                     studentInfoText = askOccupationVcInfo.value(forKey: "studentInfoText") as? String ?? studentInfoText
@@ -433,26 +319,41 @@ extension askOccupationVc: NSCollectionViewDelegate, NSCollectionViewDataSource{
                     return
                 }
                 showTooltip(sender: item.view, msg: studentInfoText, preferredEdge: NSRectEdge.maxY, maxWidthVal:230)
+                placeHolder = "What do you study?"
+                if let askOccupationVcInfo = configjson.value(forKey: "askOccupationVcInfo") as? NSDictionary{
+                    placeHolder = askOccupationVcInfo.value(forKey: "placeHolderStudy") as? String ?? placeHolder
+                }
+            }else if selectedIndex == occupationBusinessOwnerIndex{
+                placeHolder = "What kind of business do you run?"
+                if let askOccupationVcInfo = configjson.value(forKey: "askOccupationVcInfo") as? NSDictionary{
+                    placeHolder = askOccupationVcInfo.value(forKey: "placeHolderBusinessOwner") as? String ?? placeHolder
+                }
             }else if selectedIndex == occupationEmployeeIndex{
-                boxEmployee.isHidden = false
-                radioBtnProgrammer.state = .off
-                radioBtnGraphicDesigner.state = .off
-                radioBtnOtherOfficeWork.state = .off
-                radioBtnFieldWork.state = .off
-                textFieldFieldWork.isHidden = true
-                textFieldOtherOfficeWork.isHidden = true
+                placeHolder = "What do you do for work?"
+                if let askOccupationVcInfo = configjson.value(forKey: "askOccupationVcInfo") as? NSDictionary{
+                    placeHolder = askOccupationVcInfo.value(forKey: "placeHolderEmployee") as? String ?? placeHolder
+                }
             }else if selectedIndex == occupationFreelancerIndex{
-                lblTitleSpecify.isHidden = false
-                textFieldFreelancer.isHidden = false
-                textFieldFreelancer.setFocus()
+                placeHolder = "What kind of work do you do as a freelancer?"
+                if let askOccupationVcInfo = configjson.value(forKey: "askOccupationVcInfo") as? NSDictionary{
+                    placeHolder = askOccupationVcInfo.value(forKey: "placeHolderFreelancer") as? String ?? placeHolder
+                }
             }else if selectedIndex == occupationOtherIndex{
-                textFieldOther.isHidden = false
-                textFieldOther.setFocus()
-            }
+                placeHolder = "What do you spend most of your time on?"
+                if let askOccupationVcInfo = configjson.value(forKey: "askOccupationVcInfo") as? NSDictionary{
+                    placeHolder = askOccupationVcInfo.value(forKey: "placeHolderOther") as? String ?? placeHolder
+                }           }
+            
+            boxTextField.isHidden = false
+            textFieldOccupation.setFocus()
             
             checkContinueButtonState()
+            
+            textFieldOccupation.placeholderString = placeHolder
         }
+        
     }
+    
     func collectionView(_ collectionView: NSCollectionView, didDeselectItemsAt indexPaths: Set<IndexPath>) {
         checkContinueButtonState()
     }

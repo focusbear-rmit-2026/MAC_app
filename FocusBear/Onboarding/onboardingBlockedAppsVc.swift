@@ -10,44 +10,76 @@ import Cocoa
 
 class onboardingBlockedAppsVc: NSViewController {
 
+    
+    @IBOutlet weak var customViewProgress: NSView!
+    @IBOutlet weak var lblAddFirstApp: NSTextField!
+    @IBOutlet weak var imgViewBear: NSImageView!
     @IBOutlet weak var btnContinue: Button!
-    @IBOutlet weak var lblBottom: NSTextField!
-    @IBOutlet weak var lblTip: NSTextField!
     @IBOutlet weak var lblBlockedCount: NSTextField!
-    @IBOutlet weak var btnRemove: NSButton!
-    @IBOutlet weak var btnAdd: NSButton!
+    @IBOutlet weak var btnRemove: Button!
+    @IBOutlet weak var btnAdd: Button!
     @IBOutlet weak var tblView: NSTableView!
-    @IBOutlet weak var lblSubTitle: NSTextField!
     @IBOutlet weak var lblTitle: NSTextField!
+    
     var arrBlockedApps = [String]()
+    var bubbleView:BubbleView?
+    var distractionBlockingProgressVcObj:distractionBlockingProgressVc?
     
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
-        lblTitle.stringValue = "Which apps are most distracting?"
-        lblSubTitle.stringValue = "Which apps do you waste time on? Focus Bear will help you be more intentional about how you use these apps. They will be blocked during focus sessions. The rest of the time, Focus Bear will ask you why you want to use the app."
-        lblBlockedCount.stringValue = "6 apps will always be blocked."
-        lblTip.stringValue = "In case you're curious - we don't track which apps you're using."
-        lblBottom.stringValue = "(You can change this later)"
-        btnContinue.title = buttonContinueText
+        lblTitle.stringValue = "Choose apps to block"
+        btnContinue.title = "Proceed"
+        lblAddFirstApp.stringValue = "Tap on the + button to block a new app"
+        btnAdd.title = "Add"
+        btnRemove.title = "Remove"
         
-        
-        
-        if let onboardingBlockedAppsVcInfo = configjson.value(forKey: "onboardingBlockedAppsVcInfo") as? NSDictionary{
-            lblTitle.stringValue = onboardingBlockedAppsVcInfo.value(forKey: "title") as? String ?? lblTitle.stringValue
-            lblSubTitle.stringValue = onboardingBlockedAppsVcInfo.value(forKey: "subTitle") as? String ?? lblSubTitle.stringValue
-            lblBlockedCount.stringValue = onboardingBlockedAppsVcInfo.value(forKey: "blockAppsCountText") as? String ?? lblBlockedCount.stringValue
-            lblTip.stringValue = onboardingBlockedAppsVcInfo.value(forKey: "tipText") as? String ?? lblTip.stringValue
+        if let info = configjson.value(forKey: "onboardingBlockedAppsVcInfo") as? NSDictionary{
+            lblTitle.stringValue = info.value(forKey: "titleNew") as? String ?? lblTitle.stringValue
+            btnContinue.title = info.value(forKey: "buttonProceed") as? String ?? btnContinue.title
+            lblAddFirstApp.stringValue = info.value(forKey: "description") as? String ?? lblAddFirstApp.stringValue
+            btnAdd.title = info.value(forKey: "buttonAdd") as? String ?? btnAdd.title
+            btnRemove.title = info.value(forKey: "buttonRemove") as? String ?? btnRemove.title
         }
         
+    
         
-        if let onboardingBlockedUrlsInfo = configjson.value(forKey: "onboardingBlockedUrlsInfo") as? NSDictionary{
-            lblBottom.stringValue = onboardingBlockedUrlsInfo.value(forKey: "bottomText") as? String ?? lblBottom.stringValue
-        }
+        //progress
+        self.customViewProgress.addSubview(getDistractionBlockingProgressVcObj().view)
+        self.customViewProgress.addConstraints(subView: getDistractionBlockingProgressVcObj().view)
+        getDistractionBlockingProgressVcObj().setProgress(level: 1, progress: 0.80)
         
-        allApiObject.capturePosthog(event: "onboarding-blocked-apps-shown", metadata: [:])
+        btnAdd.horizontalPadding = 25
+        btnRemove.horizontalPadding = 25
+        
         addLog(text: "onboardingBlockedAppsVc-shown")
     }
+    
+    override func viewWillAppear() {
+        allApiObject.capturePosthog(event: "onboarding-blocked-apps-shown", metadata: [:])
+    }
+    
+    override func viewDidAppear() {
+        // Show bubble
+        var bubbleText = "Don’t worry, we don’t track which apps you’re using"
+        if let onboardingBlockedAppsVcInfo = configjson.value(forKey: "onboardingBlockedAppsVcInfo") as? NSDictionary{
+            bubbleText = onboardingBlockedAppsVcInfo.value(forKey: "bubbleText") as? String ?? bubbleText
+        }
+        
+        if bubbleView == nil{
+            bubbleView = PopupManager.showPopup(for: imgViewBear, edge: .minX, selfView: self.view, text: "Don’t worry, we don’t track which apps you’re using", verticalOffset: -40, horizontalOffset: 25, fontSize: 13)
+        }
+        
+        showOnboardingBellIcon(view: self.view, screen: "onboarding-blocked-apps-screen")
+    }
+    
+    func getDistractionBlockingProgressVcObj()->distractionBlockingProgressVc{
+        if distractionBlockingProgressVcObj == nil{
+            distractionBlockingProgressVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("distractionBlockingProgressVc")) as? distractionBlockingProgressVc
+        }
+        return distractionBlockingProgressVcObj!
+    }
+    
     @IBAction func btnAddAppClicked(_ sender: Any) {
         
         let openPanel = NSOpenPanel()
@@ -114,7 +146,7 @@ class onboardingBlockedAppsVc: NSViewController {
             if isBrowserAdding{
                 self.showAlertCantAddBrowser()
             }
-            allApiObject.capturePosthog(event: "new-block-app-added", metadata: [:])
+            allApiObject.capturePosthog(event: "added-always-blocked-app", metadata: [:])
         }
         
     }
@@ -161,7 +193,7 @@ class onboardingBlockedAppsVc: NSViewController {
             arrBlockedApps.remove(at: selectedAppsRow)
             tblView.reloadData()
         }
-        allApiObject.capturePosthog(event: "remove-new-blocked-app", metadata: [:])
+        allApiObject.capturePosthog(event: "remove-always-blocked-app", metadata: [:])
     }
     
     @IBAction func btnContinueClicked(_ sender: Any) {
@@ -170,52 +202,9 @@ class onboardingBlockedAppsVc: NSViewController {
 
         SettingsManagerObject.arrBlockedApps = arrBlockedApps
         UserDefaults.standard.set(SettingsManagerObject.arrBlockedApps, forKey: SettingsManagerObject.kUserdefaultsArrBlockedApps)//
-
-        SettingsManagerObject.isSettingsChanged = true
-        SettingsManagerObject.putUserLocalDeviceSettings()
+        UserDefaults.standard.set(true, forKey: kUserdefaultsIsAnyDistractionSetByUser)
+        getOnboardingVcObject().navigate(to: ._ASK_CREATE_BLOCKING_SCHEDULE_)
         
-        if UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) == nil{
-            self.view.window?.contentViewController = getExplainingPermissionsVcObject()
-            UserDefaults.standard.set(true, forKey: kUserdefaultsBrowsersPermissionsSetByUser)
-        }else{
-            var browserPermissionGiven = false
-            if let arrBrowsersInfo = UserDefaults.standard.object(forKey: kUserdefaultsAllBrowsersPermissionInfo) as? [[String : Any]]{
-                for i in 0..<arrBrowsersInfo.count{
-                    let info = arrBrowsersInfo[i]
-                    let isEnabled = info["isEnabled"] as? Bool ?? false
-                    if isEnabled{
-                        browserPermissionGiven = true
-                        break;
-                    }
-                }
-            }
-            var accessibilityPermissionGiven = true
-            var systemEventsPermissionGiven = true
-            
-            if !isAccessibilityEnabled(isPrompt: false){
-                accessibilityPermissionGiven = false
-            }else{
-                accessibilityPermissionGiven = true
-            }
-            
-            if !checkAutomationPermissionWithAppleScript(){
-                systemEventsPermissionGiven = false
-            }else{
-                systemEventsPermissionGiven = true
-            }
-            if !browserPermissionGiven || !accessibilityPermissionGiven || !systemEventsPermissionGiven{
-                self.view.window?.contentViewController = getExplainingPermissionsVcObject()
-            }else{
-                self.view.window?.close()
-                if SettingsManagerObject.isGeekModeEnabled{
-                    appdelegate?.menuShowPomodoroModeView()
-                    pomodoroVcObj?.textViewAchieve.string = pomodoroVcObj?.intentionToShowAgain ?? ""
-                }else{
-                    appdelegate?.menuShowSimplePomodoroModeView()
-                    simplePomodoroVcObj?.textViewAchieve.string = simplePomodoroVcObj?.intentionToShowAgain ?? ""
-                }
-            }
-        }
     }
 }
 
@@ -224,20 +213,20 @@ extension onboardingBlockedAppsVc: NSTableViewDelegate, NSTableViewDataSource{
     func numberOfRows(in tableView: NSTableView) -> Int {
         if arrBlockedApps.count == 0{
             btnRemove.isEnabled = false
+            lblAddFirstApp.isHidden = false
         }else{
             btnRemove.isEnabled = true
+            lblAddFirstApp.isHidden = true
         }
         var blockAppsCountText = ""
         
         if arrBlockedApps.count == 1{
-            blockAppsCountText = "1 app will be blocked."
+            blockAppsCountText = "1 app selected (you can change this later)"
             if let onboardingBlockedAppsVcInfo = configjson.value(forKey: "onboardingBlockedAppsVcInfo") as? NSDictionary{
                 blockAppsCountText = onboardingBlockedAppsVcInfo.value(forKey: "oneAppBlockText") as? String ?? blockAppsCountText
             }
-            
-            blockAppsCountText = blockAppsCountText.replacingOccurrences(of: "<COUNT>", with: "\(arrBlockedApps.count)")
         }else{
-            blockAppsCountText = "<COUNT> apps will be blocked."
+            blockAppsCountText = "<COUNT> apps selected (you can change this later)"
             if let onboardingBlockedAppsVcInfo = configjson.value(forKey: "onboardingBlockedAppsVcInfo") as? NSDictionary{
                 blockAppsCountText = onboardingBlockedAppsVcInfo.value(forKey: "blockAppsCountText") as? String ?? blockAppsCountText
             }
@@ -249,6 +238,7 @@ extension onboardingBlockedAppsVc: NSTableViewDelegate, NSTableViewDataSource{
         
         return arrBlockedApps.count
     }
+    
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
         if let cell = tableView.makeView(withIdentifier: NSUserInterfaceItemIdentifier(rawValue: "tblCellFocusPreferences"), owner: nil) as? tblCellFocusPreferences {
             if row < arrBlockedApps.count{

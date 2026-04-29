@@ -33,7 +33,7 @@ class firstViewController: NSViewController {
     @IBOutlet weak var imgViewHeight: NSLayoutConstraint!
     @IBOutlet weak var lbltimer: NSTextField!
     @IBOutlet weak var scrollViewHabits: NSScrollView!
-
+    
     @IBOutlet weak var imgView: NSImageView!
     //    @IBOutlet weak var btnWidth: NSLayoutConstraint!
     @IBOutlet weak var lblSubTitle: NSTextField!
@@ -84,7 +84,7 @@ class firstViewController: NSViewController {
         }
         textFieldActivity.delegate = self
         
-        btnEditHabits.buttonColor = NSColor.white.cgColor
+        btnEditHabits.isSecondaryButton = true
         lblSelectHabits.isHidden = true
         boxNewBadge.isHidden = true
         
@@ -105,7 +105,7 @@ class firstViewController: NSViewController {
             actionBarItemDone = activityInfo.value(forKey: "actionBarItemDone") as? String ?? actionBarItemDone
             actionBarItemSkip = activityInfo.value(forKey: "actionBarItemSkip") as? String ?? actionBarItemSkip
         }
-
+        
         let boundsOfficeMode = NSRect(x: segmentControlOfficeMode.frame.minX, y: (segmentControlOfficeMode.frame.minY - 9), width: (segmentControlOfficeMode.frame.width/2) - 5, height: segmentControlOfficeMode.frame.height)
         let boundsWfhMode = NSRect(x: (segmentControlOfficeMode.frame.midX + 5), y: (segmentControlOfficeMode.frame.minY - 9), width: (segmentControlOfficeMode.frame.width/2) - 5, height: segmentControlOfficeMode.frame.height)// keep y to  egmentControlOfficeMode.frame.midY  do not change
         
@@ -317,7 +317,7 @@ class firstViewController: NSViewController {
                 btnStartFirstHabit.title = thirdVcObj?.btnMain.title ?? ""
                 
                 lblProgress.stringValue = thirdVcObj?.lblProgress.stringValue ?? ""
-                                
+                
                 btnTopSpace.constant = 60
                 btnTopSpaceValue = 60
                 btnBottomSpace.constant = 100
@@ -326,7 +326,7 @@ class firstViewController: NSViewController {
                 imgViewTopSpace.constant = 35
                 imgViewBottomSpace.constant = 5
                 habitTotalCompletedSeconds = 0
-
+                
                 tblViewHabits.isHidden = false
                 scrollViewHabits.isHidden = false
                 tblViewHabits.reloadData()
@@ -445,7 +445,7 @@ class firstViewController: NSViewController {
         }else{
             showLimitedUsgaeViewIfNeeded()
         }
-
+        
         if !isAnyNagVisible{
             if alertLimitedUsageVcObj != nil{
                 if alertLimitedUsageVcObj?.presentingViewController == self{
@@ -458,7 +458,7 @@ class firstViewController: NSViewController {
         }
         
     }
- 
+    
     override func viewDidLayout() {// after scrollview resize it removes title and not srawing it again so doing this here
         if imgView.image != nil{
             imgViewHeight.constant = self.view.frame.height / 7
@@ -513,7 +513,7 @@ class firstViewController: NSViewController {
             }
         }
     }
-     
+    
     //Handle user opening habits well after routine start time #920
     func checkMorningHabitDelayTime(){
         if impactMeasurementVcObj != nil{
@@ -594,28 +594,17 @@ class firstViewController: NSViewController {
                 }
             }else if currentState == ._EVENING_HABIT_{
                 for i in 0..<arrFilteredEveningHabits.count{
-                        if isHighPrioritySequenceGoing{
-                            if arrFilteredEveningHabits[i].isPriorityHigh{
-                                if let cutOffTime = arrFilteredEveningHabits[i].cutOffTime{
-                                    let cutOffDate = Calendar.current.date(bySettingHour: cutOffTime.hour, minute: cutOffTime.minute, second: cutOffTime.second, of: Date())!
-                                    let currentDate = Date()
-                                    if currentDate > cutOffDate{
-                                        addLog(text: " func showConfirmRoutineDurationViewIfNeeded")// remove this
-                                        addLog(text: "evening habit skipped:- this next habit is high priority habit but cutoff time of this habit has passed:- \(arrFilteredEveningHabits[i].name)  \(arrFilteredEveningHabits[i].id)") // remove this
-                                        continue;
-                                    }
-                                }
-                                if arrFilteredEveningHabits[i].useTimer{
-                                    totalSecondsAllHabits += arrFilteredEveningHabits[i].durationSeconds
-                                }else{
-                                    if let arrDuartions = nonTimerBasedHabitsObject.arrNonTimerBasedHabitsDurations[arrFilteredEveningHabits[i].id]{
-                                        let sum = arrDuartions.reduce(0, +)
-                                        let averageValue =  sum / arrDuartions.count
-                                        totalSecondsAllHabits += averageValue
-                                    }
+                    if isHighPrioritySequenceGoing{
+                        if arrFilteredEveningHabits[i].isPriorityHigh{
+                            if let cutOffTime = arrFilteredEveningHabits[i].cutOffTime{
+                                let cutOffDate = Calendar.current.date(bySettingHour: cutOffTime.hour, minute: cutOffTime.minute, second: cutOffTime.second, of: Date())!
+                                let currentDate = Date()
+                                if currentDate > cutOffDate{
+                                    addLog(text: " func showConfirmRoutineDurationViewIfNeeded")// remove this
+                                    addLog(text: "evening habit skipped:- this next habit is high priority habit but cutoff time of this habit has passed:- \(arrFilteredEveningHabits[i].name)  \(arrFilteredEveningHabits[i].id)") // remove this
+                                    continue;
                                 }
                             }
-                        }else{
                             if arrFilteredEveningHabits[i].useTimer{
                                 totalSecondsAllHabits += arrFilteredEveningHabits[i].durationSeconds
                             }else{
@@ -626,6 +615,17 @@ class firstViewController: NSViewController {
                                 }
                             }
                         }
+                    }else{
+                        if arrFilteredEveningHabits[i].useTimer{
+                            totalSecondsAllHabits += arrFilteredEveningHabits[i].durationSeconds
+                        }else{
+                            if let arrDuartions = nonTimerBasedHabitsObject.arrNonTimerBasedHabitsDurations[arrFilteredEveningHabits[i].id]{
+                                let sum = arrDuartions.reduce(0, +)
+                                let averageValue =  sum / arrDuartions.count
+                                totalSecondsAllHabits += averageValue
+                            }
+                        }
+                    }
                 }
             }
             if totalSecondsAllHabits != 0{
@@ -638,7 +638,7 @@ class firstViewController: NSViewController {
             }
         }
     }
-
+    
     @IBAction func popUpBtnActivitiesClicked(_ sender: Any) {
         let index = popUpBtnActivities.indexOfSelectedItem
         let name = introActivities[index].value(forKey: "name") as? String ?? ""
@@ -790,7 +790,7 @@ class firstViewController: NSViewController {
             }
         }
     }
-
+    
     @IBAction func btnSelectHabitsToDoClicked(_ sender: Any) {
         showChooseHabitsView()
     }
@@ -809,7 +809,7 @@ class firstViewController: NSViewController {
     
     @IBAction func segmentControlOfficeModeClicked(_ sender: Any) {
         addLog(text:"[user-action] firstViewController:- btnEnableOfficeModeClicked")
-
+        
         if SettingsManagerObject.isOfficeModeEnabled{
             SettingsManagerObject.isOfficeModeEnabled = false
             NSApplication.shared.applicationIconImage = nil
@@ -1048,7 +1048,7 @@ class firstViewController: NSViewController {
         let lastHabitIndex = currentHabitIndex
         let lastHabit = arrFilteredMorningHabits[lastHabitIndex]
         lastActivityPerformedTime = Date()
-
+        
         if arrFilteredMorningHabits.count == 1{
             habitsVcObj?.showThirdVc()
             thirdVcObj!.showLastMorningHabitFinishedViewFromActionbar(index: lastHabitIndex, isSkipped: true)
@@ -1059,7 +1059,7 @@ class firstViewController: NSViewController {
             }
             tblViewHabits.reloadData()
         }
-    
+        
     }
     
     func eveningHabitSkipClicked(){
@@ -1067,7 +1067,7 @@ class firstViewController: NSViewController {
         let lastHabitIndex = currentHabitIndex
         let lastHabit = arrFilteredEveningHabits[lastHabitIndex]
         lastActivityPerformedTime = Date()
-
+        
         if arrFilteredEveningHabits.count == 1{
             habitsVcObj?.showThirdVc()
             thirdVcObj!.showLastEveningHabitFinishedViewFromActionbar(index: lastHabitIndex, isSkipped: true)
@@ -1085,7 +1085,7 @@ class firstViewController: NSViewController {
         let lastHabitIndex = currentHabitIndex
         let lastHabit = arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits[lastHabitIndex]
         lastActivityPerformedTime = Date()
-
+        
         if arrAllCustomRoutine[currentRoutineIndex].arrAllFilteredHabits.count == 1{
             habitsVcObj?.showThirdVc()
             thirdVcObj!.showLastCustomRoutineHabitFinishedViewFromActionbar(index: lastHabitIndex, isSkipped: true)
@@ -1313,7 +1313,7 @@ extension firstViewController:NSTableViewDelegate, NSTableViewDataSource {
         }
         
     }
-
+    
 }
 
 extension firstViewController:NSTextFieldDelegate{

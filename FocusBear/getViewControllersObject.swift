@@ -133,15 +133,6 @@ func getsmallCountDownVcObject()->smallCountDownVc{
     return smallCountDownVcObj!
 }
 
-//var smallCountDownWcObj:commonWindowController?
-//func getSmallCountDownWindowObject()->commonWindowController{ // 
-//    if smallCountDownWcObj == nil{
-//        smallCountDownWcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
-//        smallCountDownWcObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
-//    }
-//    return smallCountDownWcObj!
-//}
-
 
 var focusEndWarningVcObj:focusEndWarningVc?
 func getFocusEndWarningVcObject()->focusEndWarningVc{
@@ -182,14 +173,6 @@ func getInitialQuitFeedbackVcObject()->initialQuitFeedbackVc{
     return initialQuitFeedbackVcObj!
 }
 
-//var brainDumpWcObj:commonWindowController?
-//func getBrainDumpWindowObject()->commonWindowController{
-//    if brainDumpWcObj == nil{
-//        brainDumpWcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
-//        brainDumpWcObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
-//    }
-//    return brainDumpWcObj!
-//}
 
 var brainDumpVcObj:brainDumpVc?
 func getBrainDumpVcObject()->brainDumpVc{
@@ -280,13 +263,7 @@ func getWelcomeOnboardingWindowObject()->commonWindowController{
     return welcomeOnboardingWcObj!
 }
 
-var welcomeOnboardingVcObj:welcomeOnboardingVc?
-func getWelcomeOnboardingVcObject()->welcomeOnboardingVc{
-    if welcomeOnboardingVcObj == nil{
-        welcomeOnboardingVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("welcomeOnboardingVc")) as? welcomeOnboardingVc
-    }
-    return welcomeOnboardingVcObj!
-}
+
 
 var welcomeVcObj:welcomeVc?
 func getWelcomeVcObject()->welcomeVc{
@@ -297,44 +274,6 @@ func getWelcomeVcObject()->welcomeVc{
 }
 
 
-var onboardingPostponeVcObj:onboardingPostponeVc?
-func getOnboardingPostponeVcObject()->onboardingPostponeVc{
-    if onboardingPostponeVcObj == nil{
-        onboardingPostponeVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("onboardingPostponeVc")) as? onboardingPostponeVc
-    }
-    return onboardingPostponeVcObj!
-}
-
-
-
-var onboardingVideoWcObj:commonWindowController?
-func getOnboardingVideoWindowObject()->commonWindowController{//not in use
-    if onboardingVideoWcObj == nil{
-        onboardingVideoWcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
-        onboardingVideoWcObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
-    }
-    return onboardingVideoWcObj!
-}
-
-
-/* // not in use 
-var onboardingVideoVcObj:thirdVc?
-func getOnboardingVideoVcObject()->thirdVc{
-    if onboardingVideoVcObj == nil{
-        onboardingVideoVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("thirdVc")) as? thirdVc
-    }
-    return onboardingVideoVcObj!
-}
- */
-/* not in use 
-var askOnboardingVideoVcObj:askOnboardingVideoVc?
-func getAskOnboardingVideoVcObject()->askOnboardingVideoVc{
-    if askOnboardingVideoVcObj == nil{
-        askOnboardingVideoVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("askOnboardingVideoVc")) as? askOnboardingVideoVc
-    }
-    return askOnboardingVideoVcObj!
-}
-*/
 
 var customMessageVcObj:customMessageVc?
 func getCustomMessageVcObject()->customMessageVc{
@@ -353,69 +292,41 @@ func getCustomLoginVcObject()->customLoginVc{
     return customLoginVcObj!
 }
 
-
-//var loginHelpWcObj:commonWindowController?
-//func getLoginHelpWindowObject()->commonWindowController{
-//    if loginHelpWcObj == nil{
-//        loginHelpWcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
-//        loginHelpWcObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
-//    }
-//    return loginHelpWcObj!
-//}
-
-//var loginHelpVcObj:loginHelpVc?
-//func getLoginHelpVcObject()->loginHelpVc{
-//    if loginHelpVcObj == nil{
-//        loginHelpVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("loginHelpVc")) as? loginHelpVc
-//    }
-//    return loginHelpVcObj!
-//}
-
-var onboardingCardsWcObj:commonWindowController?
-func getOnboardingCardsWindowObject()->commonWindowController{
-    if onboardingCardsWcObj == nil{
-        onboardingCardsWcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
-        onboardingCardsWcObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
-        onboardingCardsWcObj?.window?.title = appName
+var holdOnVcObj:holdOnVc?
+func getHoldOnVcObject()->holdOnVc{
+    if holdOnVcObj == nil{
+        holdOnVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("holdOnVc")) as? holdOnVc
     }
-    return onboardingCardsWcObj!
+    return holdOnVcObj!
 }
+
+var setUpHabitsVcObj:setUpHabitsVc?
+func getSetUpHabitsVcObject()->setUpHabitsVc{
+    if setUpHabitsVcObj == nil{
+        setUpHabitsVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("setUpHabitsVc")) as? setUpHabitsVc
+    }
+    return setUpHabitsVcObj!
+}
+
+var startSetUpHabitsVcObj:startSetUpHabitsVc?
+func getStartSetUpHabitsVcObject()->startSetUpHabitsVc{
+    if startSetUpHabitsVcObj == nil{
+        startSetUpHabitsVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("startSetUpHabitsVc")) as? startSetUpHabitsVc
+    }
+    return startSetUpHabitsVcObj!
+}
+
+
 
 
 var permissionBlockDistractionWcObj:commonWindowController?
 func getPermissionBlockDistractionWindowObject()->commonWindowController{
     if permissionBlockDistractionWcObj == nil{
         permissionBlockDistractionWcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
-        permissionBlockDistractionWcObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.assistiveTechHighWindow)))
+        //permissionBlockDistractionWcObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.assistiveTechHighWindow)))
         permissionBlockDistractionWcObj?.window?.title = appName
     }
     return permissionBlockDistractionWcObj!
-}
-
-
-//var onboardingCardsVcObj:onboardingCardsVc?
-//func getOnboardingCardsVcObject()->onboardingCardsVc{
-//    if onboardingCardsVcObj == nil{
-//        onboardingCardsVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("onboardingCardsVc")) as? onboardingCardsVc
-//    }
-//    return onboardingCardsVcObj!
-//}
-
-
-var onboardingFocusExplainVcObj:onboardingFocusExplainVc?
-func getOnboardingFocusExplainVcObject()->onboardingFocusExplainVc{
-    if onboardingFocusExplainVcObj == nil{
-        onboardingFocusExplainVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("onboardingFocusExplainVc")) as? onboardingFocusExplainVc
-    }
-    return onboardingFocusExplainVcObj!
-}
-
-var onboardingHabitExplainVcObj:onboardingHabitExplainVc?
-func getOnboardingHabitExplainVcObject()->onboardingHabitExplainVc{
-    if onboardingHabitExplainVcObj == nil{
-        onboardingHabitExplainVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("onboardingHabitExplainVc")) as? onboardingHabitExplainVc
-    }
-    return onboardingHabitExplainVcObj!
 }
 
 
@@ -439,17 +350,6 @@ func getFirefoxPermissionsVcObject()->firefoxPermissionsVc{
 
 
 
-var firefoxPermissionVideoWcObj:commonWindowController?
-func getFirefoxPermissionVideoWindowObject()->commonWindowController{
-    if firefoxPermissionVideoWcObj == nil{
-        firefoxPermissionVideoWcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
-        firefoxPermissionVideoWcObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
-        firefoxPermissionVideoWcObj?.window?.title = appName
-    }
-    return firefoxPermissionVideoWcObj!
-}
-
-
 var firefoxPermissionVideoVcObj:firefoxPermissionVideoVc?
 func getFirefoxPermissionVideoVcObject()->firefoxPermissionVideoVc{
     if firefoxPermissionVideoVcObj == nil{
@@ -468,7 +368,6 @@ func getBlockedUrlsVcObject()->blockedUrlsVc{
 }
 //
 
-
 var blockedAppsVcObj:blockedAppsVc?
 func getBlockedAppsVcObject()->blockedAppsVc{
     if blockedAppsVcObj == nil{
@@ -485,15 +384,7 @@ func getAlwaysAllowedAppsVcObject()->alwaysAllowedAppsVc{
     }
     return alwaysAllowedAppsVcObj!
 }
-//
 
-//var blockingScheduleVcObj:blockingScheduleVc?
-//func getBlockingScheduleVcObject()->blockingScheduleVc{
-//    if blockingScheduleVcObj == nil{
-//        blockingScheduleVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("blockingScheduleVc")) as? blockingScheduleVc
-//    }
-//    return blockingScheduleVcObj!
-//}
 
 var customBlockingSchedulesVcObj:customBlockingSchedulesVc?
 func getCustomBlockingSchedulesVcObject()->customBlockingSchedulesVc{
@@ -621,14 +512,6 @@ func getMicroBreaksSettingsVcObject()->microBreaksSettingsVc{
 
 
 
-var aISettingVcObj:AISettingVc?
-func getAISettingVcObject()->AISettingVc{
-    if aISettingVcObj == nil{
-        aISettingVcObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("AISettingVc")) as? AISettingVc
-    }
-    return aISettingVcObj!
-}
-
 //aiSettingNewVc
 var aiSettingNewVcObj:aiSettingNewVc?
 func getAiSettingNewVcObject()->aiSettingNewVc{
@@ -714,7 +597,6 @@ func getPomodoroSettingsVcObject()->pomodoroSettingsVc{
 
 
 var settingsSideBarVcObj:settingsSideBarVc?
-var generalVcObj:generalVc?
 
 
 var incorrectTimeWcObj:commonWindowController?
@@ -829,34 +711,6 @@ func getFocusStartHelpImgVcObject()->focusStartHelpImgVc{
 }
 
 
-// toolBox window object
-//var toolBoxWcObj:commonWindowController?
-//func getToolBoxWindowObject()->commonWindowController{//// not in use now  removed on 1/9/25  on version 2.27.408
-//    if toolBoxWcObj == nil{
-//        toolBoxWcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
-//        toolBoxWcObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
-//    }
-//    return toolBoxWcObj!
-//}
-
-// toolBox vc object
-//var toolBoxVcObj:toolBoxVc?
-//func getToolBoxVcObject()->toolBoxVc{// not in use now  removed on 1/9/25  on version 2.27.408
-//    if toolBoxVcObj == nil{
-//        toolBoxVcObj = newStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("toolBoxVc")) as? toolBoxVc
-//    }
-//    return toolBoxVcObj!
-//}
-
-// toDoList window object
-//var toDoListWcObj:commonWindowController?
-//func getToDoListWcObject()->commonWindowController{
-//    if toDoListWcObj == nil{
-//        toDoListWcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
-//        toDoListWcObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
-//    }
-//    return toDoListWcObj!
-//}
 
 // todoList Tool object
 var todoListToolVcObj:todoListToolVc?
@@ -928,35 +782,6 @@ func getSavedSitesForLaterVcObject()->savedSitesForLaterVc{
 }
 
 
-
-// AppWork window object
-var askAppWorkWcObj:commonWindowController?
-func getAskAppWorkWindowObject()->commonWindowController{
-    if askAppWorkWcObj == nil{
-        askAppWorkWcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
-        askAppWorkWcObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
-    }
-    return askAppWorkWcObj!
-}
-
-// AppWork vc object
-var askAppWorkVcObj:askAppWorkVc?
-func getAskAppWorkVcObject()->askAppWorkVc{
-    if askAppWorkVcObj == nil{
-        askAppWorkVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("askAppWorkVc")) as? askAppWorkVc
-    }
-    return askAppWorkVcObj!
-}
-
-var achieveWithFocusBearVcObj:achieveWithFocusBearVc?
-func getAchieveWithFocusBearVcObject()->achieveWithFocusBearVc{
-    if achieveWithFocusBearVcObj == nil{
-        achieveWithFocusBearVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("achieveWithFocusBearVc")) as? achieveWithFocusBearVc
-    }
-    return achieveWithFocusBearVcObj!
-}
-
-
 var askOccupationVcObj:askOccupationVc?
 func getAskOccupationVcObject()->askOccupationVc{
     if askOccupationVcObj == nil{
@@ -973,97 +798,32 @@ func getEnableAIBlockingVcObject()->enableAIBlockingVc{
     return enableAIBlockingVcObj!
 }
 
-
-var createBlockingProfileVcObj:createBlockingProfileVc?
-func getCreateBlockingProfileVcObject()->createBlockingProfileVc{
-    if createBlockingProfileVcObj == nil{
-        createBlockingProfileVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("createBlockingProfileVc")) as? createBlockingProfileVc
+var askSetDistractionsVcObj:askSetDistractionsVc?
+func getAskSetDistractionsVcObject()->askSetDistractionsVc{
+    if askSetDistractionsVcObj == nil{
+        askSetDistractionsVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("askSetDistractionsVc")) as? askSetDistractionsVc
     }
-    return createBlockingProfileVcObj!
-}
-
-// ask work time vc object
-var askWorkTimeVcObj:askWorkTimeVc?
-func getAskWorkTimeVcObject()->askWorkTimeVc{
-    if askWorkTimeVcObj == nil{
-        askWorkTimeVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("askWorkTimeVc")) as? askWorkTimeVc
-    }
-    return askWorkTimeVcObj!
-}
-
-// confirm Evening Routine Time VcObj
-var confirmEveningRoutineTimeVcObj:confirmEveningRoutineTimeVc?
-func getConfirmEveningRoutineTimeVcObject()->confirmEveningRoutineTimeVc{
-    if confirmEveningRoutineTimeVcObj == nil{
-        confirmEveningRoutineTimeVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("confirmEveningRoutineTimeVc")) as? confirmEveningRoutineTimeVc
-    }
-    return confirmEveningRoutineTimeVcObj!
-}
-
-// confirm Morning Routine Time VcObj
-var confirmMorningRoutineTimeVcObj:confirmMorningRoutineTimeVc?
-func getConfirmMorningRoutineTimeVcObject()->confirmMorningRoutineTimeVc{
-    if confirmMorningRoutineTimeVcObj == nil{
-        confirmMorningRoutineTimeVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("confirmMorningRoutineTimeVc")) as? confirmMorningRoutineTimeVc
-    }
-    return confirmMorningRoutineTimeVcObj!
+    return askSetDistractionsVcObj!
 }
 
 
-//// select Habit Packs
-//var selectHabitPacksVcObj:selectHabitPacksVc?
-//func getSelectHabitPacksVcObject()->selectHabitPacksVc{
-//    if selectHabitPacksVcObj == nil{
-//        selectHabitPacksVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("selectHabitPacksVc")) as? selectHabitPacksVc
-//    }
-//    return selectHabitPacksVcObj!
-//}
-// additionalGoals vc object
-var additionalGoalsVcObj:additionalGoalsVc?
-func getAdditionalGoalsVcObject()->additionalGoalsVc{
-    if additionalGoalsVcObj == nil{
-        additionalGoalsVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("additionalGoalsVc")) as? additionalGoalsVc
+var onboardingVcObj:onboardingVc?
+func getOnboardingVcObject()->onboardingVc{
+    if onboardingVcObj == nil{
+        onboardingVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("onboardingVc")) as? onboardingVc
     }
-    return additionalGoalsVcObj!
+    return onboardingVcObj!
 }
 
-// selectHabitsLaterInfo vc object
-var selectHabitsLaterInfoVcObj:selectHabitsLaterInfoVc?
-func getSelectHabitsLaterInfoVcObject()->selectHabitsLaterInfoVc{
-    if selectHabitsLaterInfoVcObj == nil{
-        selectHabitsLaterInfoVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("selectHabitsLaterInfoVc")) as? selectHabitsLaterInfoVc
+//Allowed Urls vc object
+var onboardingAllowedUrlsVcObj:onboardingAllowedUrlsVc?
+func getOnboardingAllowedUrlsVcObject()->onboardingAllowedUrlsVc{
+    if onboardingAllowedUrlsVcObj == nil{
+        onboardingAllowedUrlsVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("onboardingAllowedUrlsVc")) as? onboardingAllowedUrlsVc
     }
-    return selectHabitsLaterInfoVcObj!
+    return onboardingAllowedUrlsVcObj!
 }
 
-
-// ask Break time vc object
-var askBreakTimeVcbj:askBreakTimeVc?
-func getaskBreakTimeVcObject()->askBreakTimeVc{
-    if askBreakTimeVcbj == nil{
-        askBreakTimeVcbj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("askBreakTimeVc")) as? askBreakTimeVc
-    }
-    return askBreakTimeVcbj!
-}
-
-// take Breaks Info Vc object
-var takeBreaksInfoVcbj:takeBreaksInfoVc?
-func geTakeBreaksInfoVcObject()->takeBreaksInfoVc{
-    if takeBreaksInfoVcbj == nil{
-        takeBreaksInfoVcbj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("takeBreaksInfoVc")) as? takeBreaksInfoVc
-    }
-    return takeBreaksInfoVcbj!
-}
-
-
-// habit SkipEasiness object
-var habitSkipEasinessVcObj:habitSkipEasinessVc?
-func getHabitSkipEasinessVcObject()->habitSkipEasinessVc{
-    if habitSkipEasinessVcObj == nil{
-        habitSkipEasinessVcObj = newStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("habitSkipEasinessVc")) as? habitSkipEasinessVc
-    }
-    return habitSkipEasinessVcObj!
-}
 
 // onboarding Blocked Urls object
 var onboardingBlockedUrlsVcObj:onboardingBlockedUrlsVc?
@@ -1085,15 +845,6 @@ func getOnboardingBlockedAppsVcObject()->onboardingBlockedAppsVc{
 }
 
 
-// Distraction Types object
-var onboardingDistractionTypesVcObj:onboardingDistractionTypesVc?
-func getOnboardingDistractionTypesVcObject()->onboardingDistractionTypesVc{
-    if onboardingDistractionTypesVcObj == nil{
-        onboardingDistractionTypesVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("onboardingDistractionTypesVc")) as? onboardingDistractionTypesVc
-    }
-    return onboardingDistractionTypesVcObj!
-}
-
 var onboardingPrivacyTipVcObj:onboardingPrivacyTipVc?
 func getOnboardingPrivacyTipVcObject()->onboardingPrivacyTipVc{
     if onboardingPrivacyTipVcObj == nil{
@@ -1102,13 +853,31 @@ func getOnboardingPrivacyTipVcObject()->onboardingPrivacyTipVc{
     return onboardingPrivacyTipVcObj!
 }
 
-//var onboardingBlockingScheduleVcObj:onboardingBlockingScheduleVc?
-//func getOnboardingBlockingScheduleVcObject()->onboardingBlockingScheduleVc{
-//    if onboardingBlockingScheduleVcObj == nil{
-//        onboardingBlockingScheduleVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("onboardingBlockingScheduleVc")) as? onboardingBlockingScheduleVc
-//    }
-//    return onboardingBlockingScheduleVcObj!
-//}
+
+var welcomeAdhdVcObj:welcomeAdhdVc?
+func getWelcomeAdhdVcObject()->welcomeAdhdVc{
+    if welcomeAdhdVcObj == nil{
+        welcomeAdhdVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("welcomeAdhdVc")) as? welcomeAdhdVc
+    }
+    return welcomeAdhdVcObj!
+}
+
+
+var welcomeLetsDoItVcObj:welcomeLetsDoItVc?
+func getWelcomeLetsDoItVcObject()->welcomeLetsDoItVc{
+    if welcomeLetsDoItVcObj == nil{
+        welcomeLetsDoItVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("welcomeLetsDoItVc")) as? welcomeLetsDoItVc
+    }
+    return welcomeLetsDoItVcObj!
+}
+
+var setUpAccountVcObj:setUpAccountVc?
+func getSetUpAccountVcObject()->setUpAccountVc{
+    if setUpAccountVcObj == nil{
+        setUpAccountVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("setUpAccountVc")) as? setUpAccountVc
+    }
+    return setUpAccountVcObj!
+}
 
 
 
@@ -1139,6 +908,16 @@ func getOnboardingControllingBrowserVcObject()->onboardingControllingBrowserVc{
     return onboardingControllingBrowserVcObj!
 }
 
+// allSetVc
+var allSetVcObj:allSetVc?
+func getAllSetVcObject()->allSetVc{
+    if allSetVcObj == nil{
+        allSetVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("allSetVc")) as? allSetVc
+    }
+    return allSetVcObj!
+}
+
+
 
 // accessibilityPermissionVc
 var accessibilityPermissionVcObj:accessibilityPermissionVc?
@@ -1166,25 +945,6 @@ func getAskDetailsNotBlockingVcObject()->askDetailsNotBlockingVc{
     }
     return askDetailsNotBlockingVcObj!
 }
-
-
-//var askBuildHabitsVcObj:askBuildHabitsVc?
-//func getAskBuildHabitsVcObject()->askBuildHabitsVc{
-//    if askBuildHabitsVcObj == nil{
-//        askBuildHabitsVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("askBuildHabitsVc")) as? askBuildHabitsVc
-//    }
-//    return askBuildHabitsVcObj!
-//}
-
-
-var askAccountVcObj:askAccountVc?
-func getAskAccountVcObject()->askAccountVc{
-    if askAccountVcObj == nil{
-        askAccountVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("askAccountVc")) as? askAccountVc
-    }
-    return askAccountVcObj!
-}
-
 
 
 // break Warning window object
@@ -1520,7 +1280,6 @@ let abortDoneVcObj = mainStoryboard.instantiateController(withIdentifier: NSStor
 let abortingCantHandleVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("abortingCantHandleVc")) as? abortingCantHandleVc
 let logQuantityVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("logQuantityVc")) as? logQuantityVc
 
-//let preferencesWindowControllerObj = settingsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("preferencesWindowController")) as? preferencesWindowController
 
 var menuViewControllerObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("menuViewController")) as? menuViewController
 
@@ -1566,56 +1325,6 @@ func getLoaderVcObj()->loaderVc{
     }
     return loaderVcPbj!
 }
-
-
-var preloadFocusModesWindowControllerObj: commonWindowController?
-
-func getPreloadFocusModesWindowControllerObj()->commonWindowController{
-    if preloadFocusModesWindowControllerObj == nil{
-        preloadFocusModesWindowControllerObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
-        preloadFocusModesWindowControllerObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
-    }
-    return preloadFocusModesWindowControllerObj!
-}
-
-
-var preloadFocusModesVcObj:preloadFocusModesVc?
-
-func getPreloadFocusModesVcObj()->preloadFocusModesVc{
-    if preloadFocusModesVcObj == nil{
-        preloadFocusModesVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("preloadFocusModesVc")) as? preloadFocusModesVc
-    }
-    return preloadFocusModesVcObj!
-}
-
-
-var aiPermissionVcObj:aiPermissionVc?
-
-func getAiPermissionVcObj()->aiPermissionVc{
-    if aiPermissionVcObj == nil{
-        aiPermissionVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("aiPermissionVc")) as? aiPermissionVc
-    }
-    return aiPermissionVcObj!
-}
-
-var preloadFocusModeAppsVcObj:preloadFocusModeAppsVc?
-
-func getPreloadFocusModeAppsVcObj()->preloadFocusModeAppsVc{
-    if preloadFocusModeAppsVcObj == nil{
-        preloadFocusModeAppsVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("preloadFocusModeAppsVc")) as? preloadFocusModeAppsVc
-    }
-    return preloadFocusModeAppsVcObj!
-}
-
-
-//var allTracksWindowControllerObj: commonWindowController?
-//
-//func getAllTracksWindowControllerObj()->commonWindowController{
-//    if allTracksWindowControllerObj == nil{
-//        allTracksWindowControllerObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
-//    }
-//    return allTracksWindowControllerObj!
-//}
 
 
 var allTracksVcObj:allTracksVc?
@@ -1706,28 +1415,6 @@ func getShareFeedbackVcObj()->shareFeedbackVc{
     return shareFeedbackVcObj!
 }
 
-
-var trialExpiredNagWcObj: commonWindowController?
-
-func getTrialExpiredWindowControllerObj()->commonWindowController{
-    if trialExpiredNagWcObj == nil{
-        trialExpiredNagWcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
-        trialExpiredNagWcObj?.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.modalPanelWindow)))
-    }
-    return trialExpiredNagWcObj!
-}
-
-
-var trialExpiredNagObj:trialExpiredNag?
-
-func getTrialExpiredNagVcObj()->trialExpiredNag{
-    if trialExpiredNagObj == nil{
-        trialExpiredNagObj = newStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("trialExpiredNag")) as? trialExpiredNag
-    }
-    return trialExpiredNagObj!
-}
-
-
 var manageSubscriptionVcObj:manageSubscriptionVc?
 func getManageSubscriptionVcObject()->manageSubscriptionVc{
     if manageSubscriptionVcObj == nil{
@@ -1758,41 +1445,6 @@ func getAddFocusTempUrlsOrAppsVcObj()->addFocusTempUrlsOrAppsVc{
 }
 
 
-var focusTipsVcObj:focusTipsVc?
-
-func getFocusTipsVcObjObj()->focusTipsVc{
-    if focusTipsVcObj == nil{
-        focusTipsVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("focusTipsVc")) as? focusTipsVc
-    }
-    return focusTipsVcObj!
-}
-//var howHeardVcObj:howHeardVc?
-//
-//func getHowHeardVcObj()->howHeardVc{
-//    if howHeardVcObj == nil{
-//        howHeardVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("howHeardVc")) as? howHeardVc
-//    }
-//    return howHeardVcObj!
-//}
-
-
-var onboardingFeedbackVcObj:onboardingFeedbackVc?
-func getOnboardingFeedbackVcObj()->onboardingFeedbackVc{
-    if onboardingFeedbackVcObj == nil{
-        onboardingFeedbackVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("onboardingFeedbackVc")) as? onboardingFeedbackVc
-    }
-    return onboardingFeedbackVcObj!
-}
-
-
-var askProcrastinatingVcObj:askProcrastinatingVc?
-func getAskProcrastinatingVcObj()->askProcrastinatingVc{
-    if askProcrastinatingVcObj == nil{
-        askProcrastinatingVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("askProcrastinatingVc")) as? askProcrastinatingVc
-    }
-    return askProcrastinatingVcObj!
-}
-
 var confirmBlockingScheduleCreationVcObj:confirmBlockingScheduleCreationVc?
 func getConfirmBlockingScheduleCreationVcObj()->confirmBlockingScheduleCreationVc{
     if confirmBlockingScheduleCreationVcObj == nil{
@@ -1801,14 +1453,23 @@ func getConfirmBlockingScheduleCreationVcObj()->confirmBlockingScheduleCreationV
     return confirmBlockingScheduleCreationVcObj!
 }
 
+var createFirstBlockingScheduleVcObj:createFirstBlockingScheduleVc?
+func getCreateFirstBlockingScheduleVcObj()->createFirstBlockingScheduleVc{
+    if createFirstBlockingScheduleVcObj == nil{
+        createFirstBlockingScheduleVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("createFirstBlockingScheduleVc")) as? createFirstBlockingScheduleVc
+    }
+    return createFirstBlockingScheduleVcObj!
+}
 
-//var chooseFrictionLevelVcObj:chooseFrictionLevelVc?
-//func getChooseFrictionLevelVcObj()->chooseFrictionLevelVc{
-//    if chooseFrictionLevelVcObj == nil{
-//        chooseFrictionLevelVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("chooseFrictionLevelVc")) as? chooseFrictionLevelVc
-//    }
-//    return chooseFrictionLevelVcObj!
-//}
+var askPermissionsVcObj:askPermissionsVc?
+func getAskPermissionsVcObj()->askPermissionsVc{
+    if askPermissionsVcObj == nil{
+        askPermissionsVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("askPermissionsVc")) as? askPermissionsVc
+    }
+    return askPermissionsVcObj!
+}
+
+
 
 var installHabitPacksVcObj:installHabitPacksVc?
 func getInstallHabitPacksVcObj()->installHabitPacksVc{
@@ -1819,6 +1480,16 @@ func getInstallHabitPacksVcObj()->installHabitPacksVc{
 }
 
 
+var setScheduledDistractionBlockingVcObj:setScheduledDistractionBlockingVc?
+func getSetScheduledDistractionBlockingVcObj()->setScheduledDistractionBlockingVc{
+    if setScheduledDistractionBlockingVcObj == nil{
+        setScheduledDistractionBlockingVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("setScheduledDistractionBlockingVc")) as? setScheduledDistractionBlockingVc
+    }
+    return setScheduledDistractionBlockingVcObj!
+}
+
+
+
 var changeFrictionLevelVcObj:changeFrictionLevelVc?
 func getChangeFrictionLevelVcObj()->changeFrictionLevelVc{
     if changeFrictionLevelVcObj == nil{
@@ -1827,15 +1498,7 @@ func getChangeFrictionLevelVcObj()->changeFrictionLevelVc{
     return changeFrictionLevelVcObj!
 }
 
-//var onboardingSetPasswordVcObj:onboardingSetPasswordVc?
-//func getOnboardingSetPasswordVcObj()->onboardingSetPasswordVc{
-//    if onboardingSetPasswordVcObj == nil{
-//        onboardingSetPasswordVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("onboardingSetPasswordVc")) as? onboardingSetPasswordVc
-//    }
-//    return onboardingSetPasswordVcObj!
-//}
 
-//let startingFocusModeVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("startingFocusModeVc")) as? startingFocusModeVc
 let abortingFocusModeVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("abortingFocusModeVc")) as? abortingFocusModeVc
 
 let focusSummaryVcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("focusSummaryVc")) as? focusSummaryVc
@@ -2108,27 +1771,6 @@ func getNudgeFocusAlignmentScoreDippingVcObject()->nudgeFocusAlignmentScoreDippi
     }
     return nudgeFocusAlignmentScoreDippingVcObj!
 }
-
-
-
-//nudgeStartAnotherFocusSession
-var nudgeStartAnotherFocusSessionWcObj:commonWindowController?
-func getNudgeStartAnotherFocusSessionWcObject()->commonWindowController{
-    if nudgeStartAnotherFocusSessionWcObj == nil{
-        nudgeStartAnotherFocusSessionWcObj = mainStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("commonWindowController")) as? commonWindowController
-    }
-    return nudgeStartAnotherFocusSessionWcObj!
-}
-
-
-var nudgeStartAnotherFocusSessionVcObj:nudgeStartAnotherFocusSessionVc?
-func getNudgeStartAnotherFocusSessionVcObject()->nudgeStartAnotherFocusSessionVc{
-    if nudgeStartAnotherFocusSessionVcObj == nil{
-        nudgeStartAnotherFocusSessionVcObj = nagsStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("nudgeStartAnotherFocusSessionVc")) as? nudgeStartAnotherFocusSessionVc
-    }
-    return nudgeStartAnotherFocusSessionVcObj!
-}
-
 
 
 

@@ -140,13 +140,26 @@ class habitsStateVc: NSViewController {
                     if let leftMenuVcInfo = configjson.value(forKey: "leftMenuVcInfo") as? NSDictionary{
                         btnResumeHabits.title = leftMenuVcInfo.value(forKey: "menuEditHabits") as? String ?? btnResumeHabits.title
                     }
+                }else if !isShutOffTimeGoing() && arrAllDaysMorningHabits.count == 0{
+                    var title = "There are no habits set for your account. Do you want to set habits now?"
+                    if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
+                        title = menuInfo.value(forKey: "alertNoHabitsFound") as? String ?? title
+                    }
+                    lblTitle.stringValue = title
+                    btnResumeHabits.title = "Edit Habits"
+                    editRoutineButtonShowing = true
+                    btnResumeHabits.isHidden = false
+                    
+                    if let leftMenuVcInfo = configjson.value(forKey: "leftMenuVcInfo") as? NSDictionary{
+                        btnResumeHabits.title = leftMenuVcInfo.value(forKey: "menuEditHabits") as? String ?? btnResumeHabits.title
+                    }
                 }
             }
             
+            let currentDate = Date()
+            let firstRunDate = UserDefaults.standard.object(forKey: kUserdefaultsFirstRunDate) as? Date ?? currentDate
+            let sameDay = Calendar.current.isDate(currentDate, equalTo: firstRunDate, toGranularity: .day)
             if currentState != ._MORNING_HABIT_ && currentState != ._EVENING_HABIT_  && UserDefaults.standard.object(forKey: kUserdefaultsStartRoutineButtonClicked) == nil{
-                let currentDate = Date()
-                let firstRunDate = UserDefaults.standard.object(forKey: kUserdefaultsFirstRunDate) as? Date ?? currentDate
-                let sameDay = Calendar.current.isDate(currentDate, equalTo: firstRunDate, toGranularity: .day)
                 lblTitle.stringValue = ""
                 if sameDay || !shouldDoHabits(){
                     btnResumeHabits.isHidden = false
@@ -234,7 +247,6 @@ class habitsStateVc: NSViewController {
             let currentDate = Date()
             let firstRunDate = UserDefaults.standard.object(forKey: kUserdefaultsFirstRunDate) as? Date ?? currentDate
             let sameDay = Calendar.current.isDate(currentDate, equalTo: firstRunDate, toGranularity: .day)
-            let isHabitsDisabled = UserDefaults.standard.object(forKey: kUserdefaultsIsHabitsDisabledFromOnboarding) as? Bool ?? false
             if sameDay || !shouldDoHabits(){
                 addLog(text:"[user-action] habitsStateVc:- button Start Habits First Time clicked")
                 menuViewControllerObj?.btnStartHabitsFirstTimeClicked(self)

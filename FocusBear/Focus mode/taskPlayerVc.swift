@@ -15,26 +15,9 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
     @IBOutlet weak var btnStartFocusMusic: cursorButton!
     @IBOutlet weak var btnEndFocusSession: cursorButton!
     @IBOutlet weak var boxExtraOptions: NSBox!
-    @IBOutlet weak var boxForHoverEffect: NSBox!
     @IBOutlet weak var boxBg: NSBox!
-    //    @IBOutlet weak var constraintWidthTitleBar: NSLayoutConstraint!
-    @IBOutlet weak var imgViewAppIcon: NSImageView!
-    @IBOutlet weak var btnBackToOriginalPosition: mouseDownMoveWindowButton!
-    @IBOutlet weak var boxTitleBar: NSBox!
-    @IBOutlet weak var boxBackToOriginalPosition: NSBox!
-    @IBOutlet weak var stackViewTopButtons: NSStackView!
     @IBOutlet weak var webView: WKWebView!
-    @IBOutlet weak var boxMinimize: NSBox!
-    @IBOutlet weak var boxMaximize: NSBox!
-    @IBOutlet weak var boxClose: NSBox!
-    
-    @IBOutlet weak var imgViewMinimize: NSImageView!
-    @IBOutlet weak var imgViewMaximize: NSImageView!
-    @IBOutlet weak var imgViewClose: NSImageView!
-    
-    @IBOutlet weak var btnArrowRight: cursorButton!
-    @IBOutlet weak var btnArrowLeft: cursorButton!
-    var topButtonsTrackingArea: NSTrackingArea?
+
     let handler = MessageHandler()
     var totalDuration = 0
     var intention = ""
@@ -57,27 +40,11 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
         webView.configuration.userContentController.add(handler, name: "send_new_task_added_to_todo_player")
         webView.configuration.userContentController.add(handler, name: "send_brain_dump_content")
         webView.configuration.userContentController.add(handler, name: "send_intention")
-        
-        topButtonsTrackingArea = NSTrackingArea.init(rect: stackViewTopButtons.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
-        stackViewTopButtons.addTrackingArea(topButtonsTrackingArea!)
-        
+
         self.view.window?.backgroundColor = NSColor.clear
         
         
         createTrackingArea()
-        
-        
-        btnArrowLeft.toolTip = "Snap to left"
-        btnArrowRight.toolTip = "Snap to right"
-        
-        if let taskPlayerVcInfo = configjson.value(forKey: "taskPlayerVcInfo") as? NSDictionary{
-            btnArrowLeft.toolTip = taskPlayerVcInfo.value(forKey: "toolTipSnapLeft") as? String ?? btnArrowLeft.toolTip
-            btnArrowRight.toolTip = taskPlayerVcInfo.value(forKey: "toolTipSnapRight") as? String ?? btnArrowRight.toolTip
-        }
-        
-        btnArrowLeft.isHidden = true
-        btnArrowRight.isHidden = true
-        boxBackToOriginalPosition.isHidden = true
         
         
         trackingAreaStopFocusMode = NSTrackingArea.init(rect: self.btnEndFocusSession.bounds, options: [NSTrackingArea.Options.mouseEnteredAndExited, NSTrackingArea.Options.activeAlways], owner: self, userInfo: nil)
@@ -99,15 +66,6 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
     
     override func viewWillDisappear() {
         isViewVisible = false
-        if boxClose.isHidden{
-            boxClose.isHidden = false
-            boxMinimize.isHidden = false
-            boxExtraOptions.isHidden = false
-            self.view.window!.setFrame(lastWindowFrame, display: true)
-            boxBackToOriginalPosition.isHidden = true
-//            taskPlayerWcObj?.window?.styleMask.insert(.resizable)
-            imgViewAppIcon.isHidden = true
-        }
     }
     
     override func viewDidLayout() {
@@ -153,171 +111,43 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
         self.boxBg.addTrackingArea(trackingAreaWebView!)
     }
     
-    func windowDragged(){
-        if !boxBackToOriginalPosition.isHidden{
-            let midXPoint = (self.view.window?.screen?.frame.midX ?? 0) - 1
-            if (self.view.window?.frame.midX)! > midXPoint{
-                isSnapLeft = false
-            }else{
-                isSnapLeft = true
-            }
-            if stageManagerObject.isStageManagerEnabled{
-                isSnapLeft = false
-            }
-            mouseActiveSetSmallWindowFrame()
-        }
-    }
+
 
     
     override func mouseEntered(with event: NSEvent) {
-        if isSnappingGoing{
-            return;
-        }
-        if event.trackingArea == topButtonsTrackingArea{
-            imgViewClose.isHidden = false
-            imgViewMaximize.isHidden = false
-            imgViewMinimize.isHidden = false
-        }else if event.trackingArea == trackingAreaWebView || event.trackingArea == topButtonsTrackingArea{
-            if btnBackToOriginalPosition.isHidden{
-                btnBackToOriginalPosition.isHidden = false
-                mouseActiveSetSmallWindowFrame()
-                isMouseEntering = true
-                DispatchQueue.global().async {
-                    DispatchQueue.main.async {
-                        self.isMouseEntering = false
-                    }
-                }
-            }
-        }else if event.trackingArea == trackingAreaPlayFocusMusic{
+        if event.trackingArea == trackingAreaPlayFocusMusic{
             var playFocusMusicTooltip = "Play focus music"
             if let taskPlayerVcInfo = configjson.value(forKey: "taskPlayerVcInfo") as? NSDictionary{
                 playFocusMusicTooltip = taskPlayerVcInfo.value(forKey: "playFocusMusicTooltip") as? String ?? playFocusMusicTooltip
             }
-            showTooltip(sender: btnStartFocusMusic, msg: playFocusMusicTooltip, preferredEdge: .minX, maxWidthVal: 250, autoCloseOnMouseExit: true)
+            showTooltipWithOsTahoe(sender: btnStartFocusMusic, msg: playFocusMusicTooltip, preferredEdge: .minX, maxWidthVal: 250, autoCloseOnMouseExit: true)
         }else if event.trackingArea == trackingAreaStopFocusMode{
             var endFocusSessionTooltip = "End focus session"
             if let taskPlayerVcInfo = configjson.value(forKey: "taskPlayerVcInfo") as? NSDictionary{
                 endFocusSessionTooltip = taskPlayerVcInfo.value(forKey: "endFocusSessionTooltip") as? String ?? endFocusSessionTooltip
             }
-            showTooltip(sender: btnEndFocusSession, msg: endFocusSessionTooltip, preferredEdge: .minX, maxWidthVal: 250, autoCloseOnMouseExit: true)
+            showTooltipWithOsTahoe(sender: btnEndFocusSession, msg: endFocusSessionTooltip, preferredEdge: .minX, maxWidthVal: 250, autoCloseOnMouseExit: true)
         }
     }
     
-    func mouseActiveSetSmallWindowFrame(){
-        if !boxBackToOriginalPosition.isHidden{
-            if isSnapLeft{
-                let xPoint = (self.view.window?.screen?.frame.minX ?? 0) - 1
-                animateWindowFrameChange(window: self.view.window!, newFrame: NSRect(x: xPoint , y: self.view.window!.frame.minY, width: 180, height: self.view.window!.frame.height), duration: 0)
-                imgViewAppIcon.isHidden = true
-            }else{
-                let maxXPoint = (self.view.window?.screen?.frame.maxX ?? 0) + 1
-                let width:CGFloat = 180
-                let xPoint = maxXPoint - width
-                
-                animateWindowFrameChange(window: self.view.window!, newFrame: NSRect(x: xPoint , y: self.view.window!.frame.minY, width: 180, height: self.view.window!.frame.height), duration: 0)
-                imgViewAppIcon.isHidden = true
-                
-                
-            }
-        }
-    }
 
     override func mouseExited(with event: NSEvent) {
-        if isSnappingGoing{
-            return;
-        }
-        if isMouseEntering{
-            return;
-        }
-        if event.trackingArea == topButtonsTrackingArea{
-            imgViewClose.isHidden = true
-            imgViewMaximize.isHidden = true
-            imgViewMinimize.isHidden = true
-        }else if event.trackingArea == trackingAreaWebView || event.trackingArea == topButtonsTrackingArea{
-            btnBackToOriginalPosition.isHidden = true
-            if !boxBackToOriginalPosition.isHidden{
-                if isSnapLeft{
-                    let xPoint = (self.view.window?.screen?.frame.minX ?? 0) - 1
-                    animateWindowFrameChange(window: self.view.window!, newFrame: NSRect(x: xPoint , y: self.view.window!.frame.minY, width: 60, height: self.view.window!.frame.height), duration: 0)
-                    imgViewAppIcon.isHidden = false
-                }else{
-                    let maxXPoint = (self.view.window?.screen?.frame.maxX ?? 0) + 1
-                    let width:CGFloat = 60
-                    let xPoint = maxXPoint - width
-                    animateWindowFrameChange(window: self.view.window!, newFrame: NSRect(x: xPoint , y: self.view.window!.frame.minY, width: width, height: self.view.window!.frame.height), duration: 0)
-                    imgViewAppIcon.isHidden = false
-                }
-                
-            }
-        }else if event.trackingArea == trackingAreaStopFocusMode || event.trackingArea == trackingAreaPlayFocusMusic{
+         if event.trackingArea == trackingAreaStopFocusMode || event.trackingArea == trackingAreaPlayFocusMusic{
             closePopoverTooltipIfVisible()
         }
     }
-    
-    var isAnimationGoing = false
-    func animateWindowFrameChange(window: NSWindow, newFrame: NSRect, duration: TimeInterval) {
-        if isAnimationGoing{
-            isAnimationGoing = false
-            window.setFrame(newFrame, display: true, animate: false)
-            return;
-        }
-        
-        if duration == 0{
-            window.setFrame(newFrame, display: true, animate: false)
-        }else{
-            NSAnimationContext.runAnimationGroup({ context in
-                context.duration = duration
-                window.animator().setFrame(newFrame, display: true)
-                isAnimationGoing = true
-            }, completionHandler: {
-                // Completion handler if needed
-                print("Animation completed")
-                self.isAnimationGoing = false
-            })
-        }
-    }
-    
-    
+
     func reloadData(totalDuration:Int, intention:String){
-        if !boxBackToOriginalPosition.isHidden{
-            btnBackToOriginalPositionClicked(self)
-        }
-        
-        imgViewClose.isHidden = true
-        imgViewMaximize.isHidden = true
-        imgViewMinimize.isHidden = true
-        imgViewAppIcon.isHidden = true
-        boxBackToOriginalPosition.isHidden = true
-        boxClose.isHidden = false
-        boxMinimize.isHidden = false
-        boxExtraOptions.isHidden = false
-        btnBackToOriginalPosition.isHidden = true
-        
         self.totalDuration = totalDuration
         self.intention = intention
         if !self.intention.isEmpty{
             self.intention = self.intention.addingPercentEncoding(withAllowedCharacters: CharacterSet.urlQueryAllowed) ?? self.intention
         }
         setAccessTokenToWebView()
-        boxBackToOriginalPosition.isHidden = true
-        btnBackToOriginalPosition.isHidden = true
     }
     
-    func reloadView(){
-        if !boxBackToOriginalPosition.isHidden{
-            btnBackToOriginalPositionClicked(self)
-        }
-        
-        imgViewClose.isHidden = true
-        imgViewMaximize.isHidden = true
-        imgViewMinimize.isHidden = true
-        imgViewAppIcon.isHidden = true
-        boxBackToOriginalPosition.isHidden = true
-        boxClose.isHidden = false
-        boxMinimize.isHidden = false
-        boxExtraOptions.isHidden = false
-        btnBackToOriginalPosition.isHidden = true
-    }
+
+    
     func loadRequest(){
         let webUrl = "https://dashboard.focusbear.io/webview/todo-player?bust_cache=\(getUuid())"
         let link = URL(string:webUrl)!
@@ -372,60 +202,8 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
     func reloadClicked(webView:WKWebView){
         loadRequest()
     }
-    
-    @IBAction func btnCloseClicked(_ sender: Any) {
-        if taskPlayerVcObj != nil && UserDefaults.standard.object(forKey: kUserdefaultsToDoPlayerWindowClosedFirstTime) == nil && SettingsManagerObject.showToDoPlayerAutomaticallyEnabled{
-            UserDefaults.standard.set(true, forKey: kUserdefaultsToDoPlayerWindowClosedFirstTime)
-            let alert = NSAlert()
-            alert.setSharingType()
-            
-            var alertStopLaunchingToDoPlayer = "Do you want to stop the To Do player from launching automatically?"
-            var buttonKeepItText = "Keep it"
-            var buttonDontShowText = "Don't Show it Again"
-            
-            if let toDoPlayerVcInfo = configjson.value(forKey: "toDoPlayerVcInfo") as? NSDictionary{
-                alertStopLaunchingToDoPlayer = toDoPlayerVcInfo.value(forKey: "alertStopLaunchingToDoPlayer") as? String ?? alertStopLaunchingToDoPlayer
-                buttonKeepItText = toDoPlayerVcInfo.value(forKey: "buttonKeepItText") as? String ?? buttonKeepItText
-                buttonDontShowText = toDoPlayerVcInfo.value(forKey: "buttonDontShowText") as? String ?? buttonDontShowText
-            }
-            
-            alert.messageText = alertStopLaunchingToDoPlayer
-            alert.addButton(withTitle: buttonKeepItText)
-            alert.addButton(withTitle: buttonDontShowText)
-            
-            alert.beginSheetModal(for: self.view.window!, completionHandler: {result in
-                if result == .alertSecondButtonReturn{
-                    SettingsManagerObject.isSettingsChanged = true
-                    SettingsManagerObject.showToDoPlayerAutomaticallyEnabled = false
-                    SettingsManagerObject.putUserLocalDeviceSettings()
-                }
-                self.view.window?.close()
-                allApiObject.capturePosthog(event: "todo-player-popup-closed", metadata: [:])
-            })
-        }else{
-            self.view.window?.close()
-            allApiObject.capturePosthog(event: "todo-player-popup-closed", metadata: [:])
-        }
-    }
-    
-    @IBAction func btnMinimizeClicked(_ sender: Any) {
-        imgViewClose.isHidden = true
-        imgViewMaximize.isHidden = true
-        imgViewMinimize.isHidden = true
-        if stageManagerObject.isStageManagerEnabled{
-            btnArrowRightClicked(self)
-        }else{
-            if isSnapLeft{
-                btnArrowLeftClicked(self)
-            }else{
-                btnArrowRightClicked(self)
-            }
-        }
-    }
-    
-    @IBAction func btnMaximizeClicked(_ sender: Any) {
-        self.view.window?.zoom(nil)
-    }
+
+
     func setAccessTokenToWebView(){
         let theme = getWindowTheme()
         
@@ -515,9 +293,6 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
     
     func updateIntentionToPlayer(){
         intention = whatToAchieveInFocusBlock
-//        if !self.intention.isEmpty{
-//            self.intention = self.intention.addingPercentEncoding(withAllowedCharacters: CharacterSet.urlQueryAllowed) ?? self.intention
-//        }
         let script = "loadIntentionForToDoPlayer('\(intention)');"
         
         webView?.evaluateJavaScript(script,completionHandler: { (html: Any?, error: Error?) in
@@ -696,71 +471,8 @@ class taskPlayerVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDel
         }
     }
     
-    @IBAction func btnArrowLeftClicked(_ sender: Any) {// will be a small window in left side
-        self.isSnappingGoing = true
-        lastWindowFrame = self.view.window?.frame ?? lastWindowFrame
-        let xPoint = (self.view.window?.screen?.frame.minX ?? 0) - 1
-        self.view.window!.setFrame(NSRect(x: xPoint , y: self.view.window!.frame.midY, width: 60, height: 180), display: true)
-        boxBackToOriginalPosition.isHidden = false
-        imgViewAppIcon.isHidden = false
-//        taskPlayerWcObj?.window?.styleMask.remove(.resizable)
-        btnBackToOriginalPosition.isHidden = true
-        isSnapLeft = true
-        boxClose.isHidden = true
-        boxMinimize.isHidden = true
-        boxExtraOptions.isHidden = true
-        DispatchQueue.global().async {
-            DispatchQueue.main.async {
-                self.updateTrackingAreaIfNeeded()
-                self.isSnappingGoing = false
-            }
-        }
-    }
-    
-    @IBAction func btnArrowRightClicked(_ sender: Any) {// will be a small window in right side
-        isSnappingGoing = true
-        lastWindowFrame = self.view.window?.frame ?? lastWindowFrame
-        let maxXPoint = (self.view.window?.screen?.frame.maxX ?? 0) + 1
-        let width:CGFloat = 60
-        let xPoint = maxXPoint - width
-        self.view.window!.setFrame(NSRect(x: xPoint , y: self.view.window!.frame.midY, width: width, height: 180), display: true)
-        boxBackToOriginalPosition.isHidden = false
-        imgViewAppIcon.isHidden = false
-//        taskPlayerWcObj?.window?.styleMask.remove(.resizable)
-        btnBackToOriginalPosition.isHidden = true
-        isSnapLeft = false
-        boxClose.isHidden = true
-        boxMinimize.isHidden = true
-        boxExtraOptions.isHidden = true
-        DispatchQueue.global().async {
-            DispatchQueue.main.async {
-                self.updateTrackingAreaIfNeeded()
-                self.isSnappingGoing = false
-            }
-        }
-    }
-    
-    @IBAction func btnBackToOriginalPositionClicked(_ sender: Any) {
-        boxClose.isHidden = false
-        boxMinimize.isHidden = false
-        boxExtraOptions.isHidden = false
-        self.view.window!.setFrame(lastWindowFrame, display: true)
-        boxBackToOriginalPosition.isHidden = true
-//        taskPlayerWcObj?.window?.styleMask.insert(.resizable)
-        btnBackToOriginalPosition.isHidden = true
-        imgViewAppIcon.isHidden = true
-    }
     
     @IBAction func btnEndFocusSessionClicked(_ sender: Any) {
-//        if currentFocusModeStrictness == ._SUPER_STRICT_{
-//            addLog(text: "can't stop focus mode in super strict focus mode :- return")
-//            var cantStopFocusModeText = "Super strict mode activated: You cannot stop this focus session until it ends."
-//            if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
-//                cantStopFocusModeText = menuInfo.value(forKey: "cantStopFocusModeText") as? String ?? cantStopFocusModeText
-//            }
-//            showTooltip(sender: btnEndFocusSession, msg: cantStopFocusModeText, preferredEdge: .minX, maxWidthVal: 250)
-//            return;
-//        }
         menuViewControllerObj?.stopFocusMode()
     }
     

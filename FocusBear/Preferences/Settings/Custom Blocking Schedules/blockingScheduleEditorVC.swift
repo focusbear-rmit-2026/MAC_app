@@ -127,8 +127,8 @@ class blockingScheduleEditorVC: NSViewController {
         lblStrictnessStrict.stringValue = "🟡 " + titleStrictMode
         lblStrictnessSuperStrict.stringValue = "🔴 " + titleSuperStrictMode
         
-        btnCancel.buttonColor = NSColor.white.cgColor
-        btnDelete.buttonColor = NSColor.white.cgColor
+        btnCancel.isSecondaryButton = true
+        btnDelete.isSecondaryButton = true
 
     
         boxSunday.titleLabel.stringValue = "Sun"// todo need to  covert with some one

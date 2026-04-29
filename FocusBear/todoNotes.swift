@@ -121,4 +121,7 @@ blockpage params
 
 
 
-// from v 2.28.450 app alwaus show cuddly mode popups during focus mode even afater focus mode is in super strit mode 
+// from v 2.28.450 app alwaus show cuddly mode popups during focus mode even afater focus mode is in super strit mode
+
+
+//        if UserDefaults.standard.object(forKey: kUserdefaultsDontShowToolBoxAutomatically) as? Bool == false{removed on 1/9/25  on version 2.27.408

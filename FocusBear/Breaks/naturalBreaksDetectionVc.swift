@@ -79,7 +79,7 @@ class naturalBreaksDetectionVc: NSViewController {
         lblSubTitle.isHidden = true
         btnFirst.title = "Thanks - I feel great"
         btnSecond.title = "You're wrong! I wasn't on a break"
-        btnSecond.buttonColor = NSColor.white.cgColor
+        btnSecond.isSecondaryButton = true
         isNormalState = true
         isViewVisible = true// aded on 20/11/25 in v2.27.432// asking if I just completed a break multiple times 
         if let naturalBreaksDetectionVcInfo = configjson.value(forKey: "naturalBreaksDetectionVcInfo") as? NSDictionary{

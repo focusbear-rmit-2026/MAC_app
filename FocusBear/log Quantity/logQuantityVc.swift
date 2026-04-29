@@ -63,7 +63,7 @@ class logQuantityVc: NSViewController, NSTextFieldDelegate {
         lblTitle.stringValue = "Log Quantity of activity"
         btnOk.title = "OK"
         btnCancel.title = "Cancel"
-        btnCancel.buttonColor = NSColor.white.cgColor
+        btnCancel.isSecondaryButton = true
         if let logQuantityInfo = configjson.value(forKey: "logQuantityInfo") as? NSDictionary{
             if let buttonCancelText = logQuantityInfo.value(forKey: "buttonCancelText") as? String{
                 btnCancel.title = buttonCancelText

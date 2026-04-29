@@ -247,7 +247,7 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
             }
         }
         lblIntention.stringValue = intentionText.replacingOccurrences(of: "<INTENTION>", with: whatToAchieveInFocusBlock)
-        btnExtendSession.buttonColor = NSColor.white.cgColor
+        btnExtendSession.isSecondaryButton = true
 
         if isHabitGoing{
             btnContinueHabit.isHidden = false
@@ -589,9 +589,6 @@ class addTaskVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelega
             
             addLog(text: "[user-action] btnEnableAdvancedAnalyticsClicked")
 
-            
-            
-            
             NSApplication.shared.activate(ignoringOtherApps: true)
         }else{
             let alert = NSAlert()

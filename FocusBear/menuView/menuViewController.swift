@@ -10,6 +10,13 @@ import Cocoa
 
 class menuViewController: NSViewController {
 
+
+    @IBOutlet weak var boxLblTitleFocusStatus: NSView!
+    @IBOutlet weak var boxSectionFocusMode: NSBox!
+    @IBOutlet weak var boxLblTitleHabitStatus: NSBox!
+    @IBOutlet weak var lblTitleHabitStatus: NSTextField!
+    @IBOutlet weak var lblTitleBreakStatus: NSTextField!
+    @IBOutlet weak var lblTitleFocusStatus: NSTextField!
     @IBOutlet weak var btnDropDownHabit: cursorButton!
     @IBOutlet weak var btnDropDownBreak: cursorButton!
     @IBOutlet weak var btnDropDownFocus: cursorButton!
@@ -75,11 +82,10 @@ class menuViewController: NSViewController {
     @IBOutlet weak var lblTipPermissions: NSTextField!
     @IBOutlet weak var boxTipPermissions: BlinkingNSBox!
     @IBOutlet weak var btnPin: cursorButton!
-    @IBOutlet weak var btnRemoveBrainDumpItem: cursorButton!
     
     @IBOutlet weak var lblTimeSinceLastBreak: NSTextField!
     @IBOutlet weak var boxTimeSinceLastBreak: NSBox!
-    @IBOutlet weak var btnEditBlockingSchedule: cursorButton!
+    @IBOutlet weak var btnEditBlockingSchedule: underLineButton!
     @IBOutlet weak var btnInfoBlockingDisabled: hoverInfoButton!
     @IBOutlet weak var lblBlockingDisabled: NSTextField!
     @IBOutlet weak var boxBlockingDisabled: NSBox!
@@ -188,9 +194,10 @@ class menuViewController: NSViewController {
         // Do view setup here.
         addLog(text: "menuViewController viewdidload start")
         
-        // todo text
+        lblTitleHabitStatus.stringValue = "✋Postponed"
+        
         lblFocusedToday.stringValue = "FOCUSED TODAY"
-        lblRemaining.stringValue = "remaining" // todo text
+        lblRemaining.stringValue = "remaining"
         
         lblTotalFocusedTimeToday.stringValue = ""
         
@@ -206,7 +213,18 @@ class menuViewController: NSViewController {
         btnEditBlockingSchedule.title = "ENABLE"
         
         
-        //=====todo text above
+        if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
+            lblFocusedToday.stringValue = menuInfo.value(forKey: "focusedTodayLabel") as? String ?? lblFocusedToday.stringValue
+            lblRemaining.stringValue = menuInfo.value(forKey: "remainingText") as? String ?? lblRemaining.stringValue
+            lblTitleBlockingDisabledFirstTime.stringValue = menuInfo.value(forKey: "titleBlockingDisabled") as? String ?? lblTitleBlockingDisabledFirstTime.stringValue
+            lblDescriptionBlockingDisabledFirstTime.stringValue = menuInfo.value(forKey: "descriptionBlockingDisabled") as? String ?? lblDescriptionBlockingDisabledFirstTime.stringValue
+            btnSetBlockingScheduleFirstTime.title = menuInfo.value(forKey: "buttonSetBlockingSchedule") as? String ?? btnSetBlockingScheduleFirstTime.title
+            btnSetLaterBlockingScheduleFirstTime.title = menuInfo.value(forKey: "buttonSetLaterBlockingSchedule") as? String ?? btnSetLaterBlockingScheduleFirstTime.title
+            lblBlockingDisabled.stringValue = menuInfo.value(forKey: "blockingOff") as? String ?? lblBlockingDisabled.stringValue
+            btnEditBlockingSchedule.title = menuInfo.value(forKey: "buttonEnableBlockingSchedule") as? String ?? btnEditBlockingSchedule.title
+            lblTitleHabitStatus.stringValue = menuInfo.value(forKey: "habitPostponedState") as? String ?? lblTitleHabitStatus.stringValue
+        }
+      
         
 
         if #available(macOS 11.0, *) {
@@ -225,7 +243,6 @@ class menuViewController: NSViewController {
             iconPlayFocusSession = NSImage(systemSymbolName: "play.circle", accessibilityDescription: nil)
         } 
 
-        btnRemoveBrainDumpItem.isHidden = true
         btnCustomRoutine.title = "Start Custom Routine"
         lblTipPermissions.stringValue = "Grant Focus Bear permissions to block."
         btnSetPermissions.title = "Enable"
@@ -254,15 +271,6 @@ class menuViewController: NSViewController {
             btnEditHabits.title = leftMenuVcInfo.value(forKey: "menuEditHabits") as? String ?? btnEditHabits.title
         }
         
-//        if let simplePomodoroVcInfo = configjson.value(forKey: "simplePomodoroVcInfo") as? NSDictionary{
-//            btnSetPermissions.title = simplePomodoroVcInfo.value(forKey: "buttonFixItText") as? String ?? btnSetPermissions.title
-//        }
-        
-//        if let common = configjson.value(forKey: "common") as? NSDictionary{
-//            if let focusEndsText = common.value(forKey: "focusEndsText") as? String {
-//                lblTitleFocusModeTime.stringValue = focusEndsText + ":"
-//            }
-//        }
         
         if let focusInfo = configjson.value(forKey: "focusInfo") as? NSDictionary{
             if let suggestFocusInfo = focusInfo.value(forKey: "suggestFocusInfo") as? NSDictionary{
@@ -364,10 +372,6 @@ class menuViewController: NSViewController {
         menuItemBrainDump.target = self
         toolsMenu.addItem(menuItemBrainDump)
         
-//        menuItemOpenToolbox = NSMenuItem(title: menuItemOpenToolboxTitle, action: #selector(openToolBoxClicked), keyEquivalent: "")
-//        menuItemOpenToolbox.target = self
-//        toolsMenu.addItem(menuItemOpenToolbox)
-        
         menuItemToDoList = NSMenuItem(title: menuItemToDoListTitle, action: #selector(openToDoListClicked), keyEquivalent: "")
         menuItemToDoList.target = self
         toolsMenu.addItem(menuItemToDoList)
@@ -418,6 +422,14 @@ class menuViewController: NSViewController {
                 if let isRelaxFocus = arrFocusType[i]["isRelaxFocus"] as? Bool{
                     if  isRelaxFocus{
                         if let defaultFocusText = common.value(forKey: "relaxFocusText") as? String{
+                            arrFocusType[i]["name"] = defaultFocusText
+                        }
+                        
+                    }
+                }
+                if let isRelaxFocus = arrFocusType[i]["isWorkFocus"] as? Bool{
+                    if  isRelaxFocus{
+                        if let defaultFocusText = common.value(forKey: "workFocusModeText") as? String{
                             arrFocusType[i]["name"] = defaultFocusText
                         }
                         
@@ -475,7 +487,7 @@ class menuViewController: NSViewController {
     }
 
     override func viewDidAppear() {
-        if !SettingsManagerObject.isGeekModeEnabled{// geek popupbtn is lokking disbaled in simple mode so do this
+        if !SettingsManagerObject.isGeekModeEnabled{// geek popupbtn is lokking disabled in simple mode so do this
             self.view.window?.makeKey()
         }
     }
@@ -493,12 +505,10 @@ class menuViewController: NSViewController {
     }
     
     @IBAction func btnSetFocusModesClicked(_ sender: Any) {
-        showSetFocusWindow()
         closeMenuWindowIsVisible()
     }
     
     @IBAction func btnFalseDetectionClicked(_ sender: Any) {
-//        appdelegate!.popover.close()
         getMenuWindowObject().window?.close()
         DispatchQueue.global().async {
             usleep(50000)
@@ -538,17 +548,7 @@ class menuViewController: NSViewController {
             showTooltipWithOsTahoe(sender: btnPin, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:290, autoCloseOnMouseExit: true)
         }else if event.trackingArea == boxPermissionTrackingArea{
             var msg = lblTipPermissions.stringValue
-            if UserDefaults.standard.object(forKey: kUserdefaultsIsAnyDistractionSetByUser) == nil && UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) == nil{
-                msg = "- Distraction blocking not set and no browser permission granted."
-                if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
-                    msg = menuInfo.value(forKey: "distractionsAndpPermissionNotSet") as? String ?? msg
-                }
-            }else if UserDefaults.standard.object(forKey: kUserdefaultsIsAnyDistractionSetByUser) == nil{
-                msg = "- Distraction blocking not set"
-                if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
-                    msg = menuInfo.value(forKey: "distractionsNotSet") as? String ?? msg
-                }
-            }else if UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) == nil{
+            if UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) == nil{
                 msg = "- No permissions granted"
                 if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
                     msg = menuInfo.value(forKey: "noPermissionSet") as? String ?? msg
@@ -855,40 +855,14 @@ class menuViewController: NSViewController {
         }
         
         
-        //btnEditHabits.borderColor =  boxPreferences.borderColor
         btnEditHabits.borderWidth = btnPreferences.borderWidth
         btnEditHabits.bgColor = btnPreferences.bgColor
         
-        //showFocusModeCountDownIfNeeded()
         if SettingsManagerObject.isMenuPopoverEnabled{
             btnPin.image = #imageLiteral(resourceName: "pin")
         }else{
             btnPin.image = #imageLiteral(resourceName: "unPin")
         }
-       // boxGeekMode.isHidden = true// 19/7/25 version 1.26.392   #1467
-        
-//        if SettingsManagerObject.isGeekModeEnabled{
-//            if let val = UserDefaults.standard.object(forKey: kUserDefaultsHideAppModeOption) as? Bool{
-//                if val{
-//                    boxGeekMode.isHidden = true
-//                }else{
-//                    boxGeekMode.isHidden = false
-//                }
-//            }else{
-//                boxGeekMode.isHidden = false
-//            }
-//            
-//            segmentControlGeekMode.setSelected(true, forSegment: 0)
-//            btnRemoveAppModeOption.isHidden = false
-//            segmentControlGeekMode.setWidth(126, forSegment: 0)
-//            segmentControlGeekMode.setWidth(126, forSegment: 1)
-//        }else{
-//            boxGeekMode.isHidden = false
-//            segmentControlGeekMode.setSelected(true, forSegment: 1)
-//            btnRemoveAppModeOption.isHidden = true
-//            segmentControlGeekMode.setWidth(132, forSegment: 0)
-//            segmentControlGeekMode.setWidth(132, forSegment: 1)
-//        }
         
         btnStartHabitsFirstTime.isHidden = true
         
@@ -948,64 +922,42 @@ class menuViewController: NSViewController {
             boxStartBreak.isHidden = true
         }
         boxStartBreakNew.isHidden = boxStartBreak.isHidden
-//        var shouldShowToolBoxWindow = false
-//        if isAnyAllowedFocusModeActivityRunning || isFocusModeOn(){
-//            let isAllowedAllAppsInFocus = currentRunningFocusType["isAllowedAllApps"] as? Bool ?? false
-//            let allowAppsPath = currentRunningFocusType["allowed_apps"] as? [String] ?? []
-//            
-//            if !isAllowedAllAppsInFocus && allowAppsPath.count != 0{
-//                shouldShowToolBoxWindow = true
-//            }
-//            let isAllowedListApproachInFocus = currentRunningFocusType["isAllowedListApproach"] as? Bool ?? false
-//            let arrAllowedUrlsForFocus = currentRunningFocusType["allowed_urls"] as? [String] ?? []
-//            
-//            if arrAllowedUrlsForFocus.count != 0 && isAllowedListApproachInFocus{//!isAllowedAllUrlsInFocus &&#453
-//                shouldShowToolBoxWindow = true
-//            }
-//        }else if (currentState == ._MORNING_HABIT_ || currentState == ._EVENING_HABIT_ || currentState == ._CUSTOM_ROUTINE_) && currentHabitPlaying != nil{
-//            let allowAppsPath = currentHabitPlaying?.allowApps ?? []
-//            if allowAppsPath.count != 0{
-//                shouldShowToolBoxWindow = true
-//            }
-//            let arrAllowedUrlsForFocus = currentHabitPlaying?.allowUrls ?? []
-//            
-//            if arrAllowedUrlsForFocus.count != 0{
-//                shouldShowToolBoxWindow = true
-//            }
-//        }
-//        if shouldShowToolBoxWindow{
-//            boxOpenToolBox.isHidden = false
-//            menuItemOpenToolbox.isHidden = false
-//        }else{
-//            boxOpenToolBox.isHidden = true
-//            menuItemOpenToolbox.isHidden = true
-//        }
         
         
-        boxCurrentTrack.isHidden = true
-        if allTracksVcObj != nil{
-            for i in 0..<arrAllTracks.count{
-                if arrAllTracks[i]["isPlaying"] as? Bool == true{
-                    lblCurrentTrack.stringValue = arrAllTracks[i]["name"] as? String ?? ""
-                    imgViewCurrentTrackState.image = NSImage(named: NSImage.touchBarPauseTemplateName)
-                    boxCurrentTrack.isHidden = false
-                    break;
-                }else if arrAllTracks[i]["isPaused"] as? Bool == true{
-                    lblCurrentTrack.stringValue = arrAllTracks[i]["name"] as? String ?? ""
-                    imgViewCurrentTrackState.image = NSImage(named: NSImage.touchBarPlayTemplateName)
-                    boxCurrentTrack.isHidden = false
-                    break;
-                }
-            }
-        }
+        
+        
         
         
         if arrAllTracks.count == 0{
             menuItemFocusMusic.isHidden = true
             boxFocusMusic.isHidden = true
+            boxCurrentTrack.isHidden = true
         }else{
             menuItemFocusMusic.isHidden = false
-            boxFocusMusic.isHidden = false
+            var isAnyCurrentMusicVisible = false
+            if allTracksVcObj != nil{
+                for i in 0..<arrAllTracks.count{
+                    if arrAllTracks[i]["isPlaying"] as? Bool == true{
+                        lblCurrentTrack.stringValue = arrAllTracks[i]["name"] as? String ?? ""
+                        imgViewCurrentTrackState.image = NSImage(named: NSImage.touchBarPauseTemplateName)
+                        isAnyCurrentMusicVisible = true
+                        break;
+                    }else if arrAllTracks[i]["isPaused"] as? Bool == true{
+                        lblCurrentTrack.stringValue = arrAllTracks[i]["name"] as? String ?? ""
+                        imgViewCurrentTrackState.image = NSImage(named: NSImage.touchBarPlayTemplateName)
+                        isAnyCurrentMusicVisible = true
+                        break;
+                    }
+                }
+            }
+            if isAnyCurrentMusicVisible{
+                boxFocusMusic.isHidden = true
+                boxCurrentTrack.isHidden = false
+            }else{
+                boxFocusMusic.isHidden = false
+                boxCurrentTrack.isHidden = true
+            }
+            
         }
         
         if SettingsManagerObject.isGeekModeEnabled{
@@ -1108,7 +1060,32 @@ class menuViewController: NSViewController {
                 }
             }
             
+            if boxNextBreak.isHidden{
+                if arrAllbreakActivities.count == 0 {
+                    boxNextBreak.isHidden = false
+                    lblNextBreakTime.stringValue = "No break activities added yet."
+                    if let breakStateVcInfo = configjson.value(forKey: "breakStateVcInfo") as? NSDictionary{
+                        lblNextBreakTime.stringValue = breakStateVcInfo.value(forKey: "noBreakAddedText") as? String ?? lblNextBreakTime.stringValue
+                    }
+                    lblNextBreakTime.font = getRegularFont(size: 11)
+                }
+            }
             
+            if boxBlockingDisabled.isHidden && boxFocusInfo.isHidden && isFocusModeRunning{
+                 boxLblTitleFocusStatus.isHidden = false
+             }else{
+                 boxLblTitleFocusStatus.isHidden = true
+             }
+            
+            
+            
+            
+            if !lblNextBreakTime.stringValue.isEmpty && boxBreaksInfo.isHidden && !boxNextBreak.isHidden{
+                lblTitleBreakStatus.isHidden = false
+                lblTitleBreakStatus.stringValue = lblNextBreakTime.stringValue
+            }else{
+                lblTitleBreakStatus.isHidden = true
+            }
             
             if appdelegate!.isUserOnMeeting{
                 boxMeetingDetection.isHidden = false
@@ -1203,15 +1180,6 @@ class menuViewController: NSViewController {
                     }
                 }
             }
-//            stackViewFocusMode.isHidden = false
-//            resetViewHeight()
-//            tblViewFocusMode.reloadData()
-//            if SettingsManagerObject.isOfficeModeEnabled{
-//                segmentControlOfficeMode.setSelected(true, forSegment: 0)
-//            }else{
-//                segmentControlOfficeMode.setSelected(true, forSegment: 1)
-//            }
-           // boxEnableOfficeMode.isHidden = true
             btnStartSimplePomodoroMode.isHidden = true
             
         }else{
@@ -1266,19 +1234,30 @@ class menuViewController: NSViewController {
         }
         
 
+        if boxCustomBlocking.isHidden && boxFocusAlignmentScore.isHidden && boxFocusModeIntention.isHidden && boxFocusModeRemainingTime.isHidden && btnStartPomodoroMode.isHidden && btnStartSimplePomodoroMode.isHidden && btnStopHardcorePomodoroMode.isHidden && btnSetFocusModes.isHidden{
+            boxSectionFocusMode.isHidden = true
+        }else{
+            boxSectionFocusMode.isHidden = false
+        }
         
         if currentState == ._POSTPON_EVENING_HABIT_ || currentState == ._POSTPON_MORNING_HABIT_ || currentState == ._POSTPON_FOCUS_SUMMARY_{
             btnResumeHabits.isHidden = false
+            boxLblTitleHabitStatus.isHidden = false
         }else if currentState == ._MICRO_BREAK_ && isBreakActivityExecuteFromPostponeMorningHabit{
             btnResumeHabits.isHidden = false
+            boxLblTitleHabitStatus.isHidden = false
         }else if currentState == ._MICRO_BREAK_ && isBreakActivityExecuteFromPostponeEveningHabit{
             btnResumeHabits.isHidden = false
+            boxLblTitleHabitStatus.isHidden = false
         }else if currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeMorningHabit{
             btnResumeHabits.isHidden = false
+            boxLblTitleHabitStatus.isHidden = false
         }else if currentState == ._CUSTOM_ROUTINE_ && isCustomRoutineWasRunningInPostponeEveningHabit{
             btnResumeHabits.isHidden = false
+            boxLblTitleHabitStatus.isHidden = false
         }else{
             btnResumeHabits.isHidden = true
+            boxLblTitleHabitStatus.isHidden = true
         }
         
         
@@ -1376,7 +1355,7 @@ class menuViewController: NSViewController {
                 if secondsBetween < 0{
                     stopFocusModeCountDownTimer()
                 }
-                var (h,m,s) = secondsToHoursMinutesSeconds(seconds: Int(secondsBetween))
+                let (h,m,s) = secondsToHoursMinutesSeconds(seconds: Int(secondsBetween))
                 var hour = "\(h)"
                 var minute = "\(m)"
                 var second = "\(s)"
@@ -1394,6 +1373,7 @@ class menuViewController: NSViewController {
 
                 let finalTitle = "\(hour):\(minute):\(second)"
                 lblTimerFocusMode.stringValue = finalTitle
+                lblTitleFocusStatus.stringValue = finalTitle
                 if nudgeFocusAlignmentScoreDippingWcObject != nil{
                     if nudgeFocusAlignmentScoreDippingWcObject?.window?.isVisible ?? false{
                         if nudgeFocusAlignmentScoreDippingWcObject?.isNudgeVisible ?? false{
@@ -1455,11 +1435,6 @@ class menuViewController: NSViewController {
     @objc func menuItemStartRoutineClicked(sender:NSMenuItem){
         addLog(text:"[user-action] menuViewController:- menuItemStartRoutineClicked")
         if isPurchased == false && daysLeft <= 0{
-            if trialExpiredNagWcObj != nil{
-                if trialExpiredNagWcObj?.window?.isVisible ?? false{
-                    return;
-                }
-            }
             showUpgradeNowWindow()
             return;
         }
@@ -1545,11 +1520,6 @@ class menuViewController: NSViewController {
     @IBAction func btnExportStatisticsClicked(_ sender: Any) {
         addLog(text:"[user-action] menuViewController:- btnExportStatisticsClicked")
         if isPurchased == false && daysLeft <= 0{//if UserDefaults.standard.object(forKey: "trialExpired") != nil{
-            if trialExpiredNagWcObj != nil{
-                if trialExpiredNagWcObj?.window?.isVisible ?? false{
-                    return;
-                }
-            }
             showUpgradeNowWindow()
             closeMenuWindowIsVisible()
             return;
@@ -1609,32 +1579,11 @@ class menuViewController: NSViewController {
             appdelegate?.menuShowSimplePomodoroModeView()
             closeMenuWindowIsVisible()
         }
-//        if isFocusModeOn{
-//            if currentFocusModeStrictness == ._SUPER_STRICT_{
-//                addLog(text: "can't stop focus mode in super strict focus mode :- return")
-//                var cantStopFocusModeText = "Super strict mode activated: You cannot stop this focus session until it ends."
-//                if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
-//                    cantStopFocusModeText = menuInfo.value(forKey: "cantStopFocusModeText") as? String ?? cantStopFocusModeText
-//                }
-//                showTooltip(sender: boxStartSimplePomodoroMode, msg: cantStopFocusModeText, preferredEdge: .minX, maxWidthVal: 250)
-//                return;
-//            }
-//            showAbortingFocusModeVc(forPause: false)
-//            closeMenuWindowIsVisible()
-//        }else{
-//            appdelegate?.menuShowSimplePomodoroModeView()
-//            closeMenuWindowIsVisible()
-//        }
     }
     
     @IBAction func btnStartPomodoroModeClicked(_ sender: Any) {
         addLog(text:"[user-action] menuViewController:- btnStartPomodoroModeClicked")
         if isPurchased == false && daysLeft <= 0{
-            if trialExpiredNagWcObj != nil{
-                if trialExpiredNagWcObj?.window?.isVisible ?? false{
-                    return;
-                }
-            }
             showUpgradeNowWindow()
             return;
         }
@@ -1704,11 +1653,6 @@ class menuViewController: NSViewController {
     }
     
     @IBAction func btnStopHardcorePomodoroModeClicked(_ sender: Any) {
-//        if (endingFocusWindowControllerObj?.window?.isVisible ?? false) && endingFocusWindowControllerObj?.contentViewController == focusCompletedVcObj{
-//            addLog(text: "focus mode clicked:- focus mode completed Window is visible:- return")
-//            return;
-//        }
-        
         if isFocusCompletedViewVisibled(){
             addLog(text: "focus mode clicked:- focus mode completed Window is visible:- return")
             return;
@@ -1989,14 +1933,6 @@ class menuViewController: NSViewController {
         
     }
     
-//    @IBAction func btnLockCurrentFocusClicked(_ sender: Any) {
-//        for i in 0..<arrFocusType.count{
-//            if arrFocusType[i]["isLockedFocus"] as? Bool == true{
-//                showStartingFocusMode(focusModeIndex: i, focusType: arrFocusType[i]["name"] as? String ?? "")
-//                break;
-//            }
-//        }
-//    }
 
     
     @IBAction func btnOpenCheckListsClicked(_ sender: Any) {
@@ -2021,11 +1957,6 @@ class menuViewController: NSViewController {
         addLog(text: "[user-action] menu item tools clicked")
         
         if isPurchased == false && daysLeft <= 0{// if UserDefaults.standard.object(forKey: "trialExpired") != nil{
-            if trialExpiredNagWcObj != nil{
-                if trialExpiredNagWcObj?.window?.isVisible ?? false{
-                    return;
-                }
-            }
             showUpgradeNowWindow()
             return;
         }
@@ -2155,18 +2086,6 @@ class menuViewController: NSViewController {
         closeMenuWindowIsVisible()
     }
     
-//    @IBAction func btnRemoveAppModeOptionClicked(_ sender: Any) {
-//        addLog(text: "btnRemoveAppModeOptionClicked")
-//        boxGeekMode.isHidden = true
-//        UserDefaults.standard.set(true, forKey: kUserDefaultsHideAppModeOption)
-//    }
-    
-    @IBAction func btnRemoveBrainDumpItemClicked(_ sender: Any) { // not in use
-//        addLog(text: "btnRemoveBrainDumpItemClicked")
-//        boxBrainDump.isHidden = true
-//        menuItemBrainDump.isHidden = false
-//        UserDefaults.standard.set(true, forKey: kUserDefaultsHideShowBrainDumpOption)
-    }
     
     func showAlertNoHabits(){
         addLog(text: "show Alert No Habits")
@@ -2215,11 +2134,6 @@ class menuViewController: NSViewController {
     @IBAction func btnEditBlockingScheduleClicked(_ sender: Any) {
         addLog(text:"[user-action] menuViewController:- btnEditBlockingScheduleClicked")
         if isPurchased == false && daysLeft <= 0{// if UserDefaults.standard.object(forKey: "trialExpired") != nil{
-            if trialExpiredNagWcObj != nil{
-                if trialExpiredNagWcObj?.window?.isVisible ?? false{
-                    return;
-                }
-            }
             showUpgradeNowWindow()
             return;
         }
@@ -2239,11 +2153,7 @@ class menuViewController: NSViewController {
     
     @IBAction func btnSetPermissionsClicked(_ sender: Any) {
         addLog(text:"[user-action] menuViewController:- btnSetPermissionsClicked")// 23/7/25  v 1.26.393
-        if UserDefaults.standard.object(forKey: kUserdefaultsIsAnyDistractionSetByUser) == nil && UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) == nil{
-            showDistractionTypesWindow(showingFromPomodoro: false)
-        }else if UserDefaults.standard.object(forKey: kUserdefaultsIsAnyDistractionSetByUser) == nil{
-            showDistractionTypesWindow(showingFromPomodoro: false)
-        }else if UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) == nil{
+        if UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) == nil{
             showExplainingPermissionsWindow(showingFromPomodoro: false)
             UserDefaults.standard.set(true, forKey: kUserdefaultsBrowsersPermissionsSetByUser)
         }else if !browserPermissionGiven{
@@ -2329,6 +2239,7 @@ class menuViewController: NSViewController {
         boxBlockingDisabledFirstTime.isHidden = true
         boxBlockingDisabled.isHidden = false
         UserDefaults.standard.set(true, forKey: kUserDefaultsBlockingScheduleAddedFirstTime)
+        lblTitleBreakStatus.isHidden = true
     }
     
     
@@ -2336,8 +2247,15 @@ class menuViewController: NSViewController {
         boxBlockingDisabledFirstTime.isHidden = true
         boxBlockingDisabled.isHidden = false
         UserDefaults.standard.set(true, forKey: kUserDefaultsBlockingScheduleAddedFirstTime)
+        lblTitleBreakStatus.isHidden = true
     }
     
+    
+}
+
+
+// Helper: Expand/Collapse all sections
+extension menuViewController{
     @IBAction func btnDropDownFocusClicked(_ sender: Any) {
         if boxFocusInfo.isHidden{
             expandFocusInfo()
@@ -2368,14 +2286,21 @@ class menuViewController: NSViewController {
         
         collapseBreakInfo()
         collapseHabitInfo()
+        boxLblTitleFocusStatus.isHidden = true
     }
     
     func collapseFocusInfo(){
         boxFocusInfo.isHidden = true
         btnDropDownFocus.image = imageCollapsed
+        if boxBlockingDisabled.isHidden && boxFocusInfo.isHidden && isFocusModeRunning{
+            boxLblTitleFocusStatus.isHidden = false
+        }else{
+            boxLblTitleFocusStatus.isHidden = true
+        }
     }
     
     func expandBreakInfo(){
+        lblTitleBreakStatus.isHidden = true
         boxBreaksInfo.isHidden = false
         btnDropDownBreak.image = imageExpanded
         collapseHabitInfo()
@@ -2385,6 +2310,12 @@ class menuViewController: NSViewController {
     func collapseBreakInfo(){
         boxBreaksInfo.isHidden = true
         btnDropDownBreak.image = imageCollapsed
+        if !lblNextBreakTime.stringValue.isEmpty && boxBreaksInfo.isHidden && !boxNextBreak.isHidden{
+            lblTitleBreakStatus.isHidden = false
+            lblTitleBreakStatus.stringValue = lblNextBreakTime.stringValue
+        }else{
+            lblTitleBreakStatus.isHidden = true
+        }
     }
     
     func expandHabitInfo(){
@@ -2399,9 +2330,6 @@ class menuViewController: NSViewController {
         btnDropDownHabit.image = imageCollapsed
     }
 }
-
-
-
 
 
 

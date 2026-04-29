@@ -10,14 +10,19 @@ import Cocoa
 import WebKit
 class installHabitPacksVc: NSViewController, WKNavigationDelegate, webViewLoadFailedDelegate {
 
+    @IBOutlet weak var btnSkip: hoverUnderlineButton!
+    @IBOutlet weak var imgViewBear: NSImageView!
     @IBOutlet weak var webView: WKWebView!
+    
     var isWebViewBlank = false
-    var morningRoutineDuration: Int = 0
-    var eveningRoutineDuration: Int = 0
+    var suggestHabits:Bool = true
     let currentProgressLevel = 3
-//    var isViewVisible = false
+    var hasSkippedHabits = false
+    var isEditHabitsLoaded = false
+    
     override func viewDidLoad() {
         super.viewDidLoad()
+        
         let handler = MessageHandler()
         webView.configuration.userContentController.add(handler, name: "save_suggested_activities")
         webView.configuration.userContentController.add(handler, name: "edit_suggested_activities")
@@ -25,13 +30,32 @@ class installHabitPacksVc: NSViewController, WKNavigationDelegate, webViewLoadFa
         webView.configuration.userContentController.add(handler, name: "send_installed_habit_pack_id")
         webView.configuration.userContentController.add(handler, name: "send_suggested_activities")
         webView.configuration.userContentController.add(handler, name: "routine_suggestions_step")
+        
+        webView.configuration.userContentController.add(handler, name: "setting_saved")
+        
         self.webView.navigationDelegate = self
         
-        loadWebView()
+        btnSkip.title = "Skip"
+        
+        if let dic = configjson.value(forKey: "welcomeInfo") as? NSDictionary{
+            btnSkip.title = dic.value(forKey: "buttonSkipText") as? String ?? btnSkip.title
+        }
     }
     
-    func loadWebView(){
-        let url = "https://dashboard.focusbear.io/webview/routine-suggestion?bust_cache=\(getUuid())"
+    override func viewWillAppear() {
+        allApiObject.capturePosthog(event: "install-habits-screen-shown", metadata: [:])
+    }
+    
+    override func viewDidAppear() {
+        showOnboardingProgress(view: self.view, progress: currentProgressLevel)
+        showOnboardingBellIcon(view: self.view, screen: "habit-packs-screen")
+    }
+
+    func loadWebView(suggestHabits:Bool){
+        self.suggestHabits = suggestHabits
+        isEditHabitsLoaded = false
+        let addHabitsMode = suggestHabits ? "recommend" : "import"
+        let url = "https://dashboard.focusbear.io/webview/routine-suggestion-revamp?bust_cache=\(getUuid())&add-habits-mode=\(addHabitsMode)"
         let  fileURL = URL(string: url)
         let request = NSMutableURLRequest(url: fileURL!)
         webView.load(request as URLRequest)
@@ -45,7 +69,12 @@ class installHabitPacksVc: NSViewController, WKNavigationDelegate, webViewLoadFa
             DispatchQueue.main.async {
                 if !self.isWebViewBlank{
                     self.removeWebViewLoadFailedView(webView: webView)
-                    self.setAccessTokenToWebView()
+                    
+                    if self.isEditHabitsLoaded{
+                        self.setSettingsToWebView()
+                    }else{
+                        self.setAccessTokenToWebView()
+                    }
                 }
             }
         }
@@ -85,24 +114,107 @@ class installHabitPacksVc: NSViewController, WKNavigationDelegate, webViewLoadFa
     }
     
     func reloadClicked(webView:WKWebView){
-        loadWebView()
+        loadWebView(suggestHabits: suggestHabits)
     }
     
-    override func viewWillAppear() {
-//        isViewVisible = true
-//        self.setAccessTokenToWebView()
-    }
-    override func viewDidAppear() {
-        showOnboardingProgress(view: self.view, progress: currentProgressLevel)
-        showOnboardingBellIcon(view: self.view, screen: "habit-packs-screen")
+    func reloadWebView(){
+        loadEditHabitsView()
     }
 
+    func setSettingsToWebView(){
+        let theme = getWindowTheme()
+        var flags = "[\"settings-updated\",\"simple-mode\",\"save-settings-migrate-to-web\"]"
+        let selectedFont = arrFont[SettingsManagerObject.selectedFontIndex].webFontName
+        let settingsJson = "{\"access_token\":\"\(appdelegate!.credential?.accessToken ?? "")\",\"platform\":\"mac\",\"theme\":\"\(theme)\",\"font\":\"\(selectedFont)\",\"lang\":\"\(currentLanguageCode)\",\"flags\":\(flags)}"
+        
+        let javascript = "loadSettingsData(\(settingsJson));"
+        
+        webView?.evaluateJavaScript(javascript,completionHandler: { (html: Any?, error: Error?) in
+            print(error)
+            print(html)
+        })
+        //load installed apps
+        var arrInstalledApps = [String]()
+        let urls = FileManager.default.urls(for: .applicationDirectory, in: [.systemDomainMask, .localDomainMask])
+        let properties = [URLResourceKey.localizedNameKey, URLResourceKey.creationDateKey, URLResourceKey.contentModificationDateKey, URLResourceKey.localizedTypeDescriptionKey,URLResourceKey.nameKey]
+       
+        for url in urls{
+            let array = try? FileManager.default.contentsOfDirectory(at: url, includingPropertiesForKeys: properties, options: .skipsHiddenFiles)
+            if array != nil{
+                for appUrl in array!{
+                    
+                    if appUrl.pathExtension == "app"{
+                        let appName = appUrl.deletingPathExtension().lastPathComponent
+                        print(appName)
+                        arrInstalledApps.append(appName)
+                    }else{
+                        if appUrl.isDirectory{
+                            let arrAppInFolder = try? FileManager.default.contentsOfDirectory(at: appUrl, includingPropertiesForKeys: properties, options: .skipsHiddenFiles)
+                            if arrAppInFolder != nil{
+                                for appUrl in arrAppInFolder!{
+                                    if appUrl.pathExtension == "app"{
+                                        let appName = appUrl.deletingPathExtension().lastPathComponent
+                                        print(appName)
+                                        arrInstalledApps.append(appName)
+                                    }
+                                }
+                            }
+                            
+                        }
+                    }
+                }
+            }
+        }
+        
+        
+        addLog(text: "Load Installed Apps to web settings:- \(arrInstalledApps)")
+        let mutableDic = NSMutableDictionary()
+        mutableDic["installedApps"] = arrInstalledApps
+        
+        do {
+            let data = try (JSONSerialization.data(withJSONObject: mutableDic, options: .prettyPrinted))
+            if let str = String(data: data, encoding: String.Encoding.utf8){
+                print(str)
+                
+             
+                let script = "LoadInstalledApps(\(str));"
+                
+                webView?.evaluateJavaScript(script,completionHandler: { (html: Any?, error: Error?) in
+                    print(error)
+                    print(html)
+                })
+                
+            }
+        } catch let error as NSError {
+            print(error)
+        }
+
+    }
+    
+    func loadEditHabitsView(){
+        isEditHabitsLoaded = true
+        var settingUrl = "https://dashboard.focusbear.io"
+        if let settings = configjson.value(forKey: "settings") as? NSDictionary{
+            if let url = settings.value(forKey: "settingUrlNew") as? String{
+                settingUrl = url
+            }
+        }
+       
+        var url = "\(settingUrl)/webview/settings?bust_cache=\(getUuid())"//&device_id=\(currentDeviceId)"
+        
+        var fileURL = URL(string: url)
+        if fileURL == nil{
+            addLog(text: "url is nil")
+            url = settingUrl
+            fileURL = URL(string: url)
+        }
+        
+        let request = NSMutableURLRequest(url: fileURL!)
+
+        webView!.load(request as URLRequest)
+    }
+    
     override func viewWillDisappear() {
-//        isViewVisible = false
-        isWebViewBlank = true
-        let link = URL(string:"about:blank")!
-        let request = URLRequest(url: link)
-        self.webView.load(request)
         hideOnboardingProgress(view: self.view)
         hideOnboardingBellIcon(view: self.view)
     }
@@ -134,48 +246,26 @@ class installHabitPacksVc: NSViewController, WKNavigationDelegate, webViewLoadFa
             print(html)
         })
     }
-    
-    var isShowingNextView = false
-    
+
     @objc func showNextView(){
-        if isShowingNextView{
+        addLog(text: "[user-action] installHabitPacksVc:- showNextView")
+        hasSkippedHabits = false
+        UserDefaults.standard.set(true, forKey: kUserdefaultsBreaksEnabledFromOnboarding)
+        getOnboardingVcObject().navigate(to: ._SET_DISTRACTION_BLOCKING_)
+    }
+    
+    
+    @IBAction func btnSkipClicked(_ sender: Any) {
+        addLog(text: "[user-action] installHabitPacksVc:- btnSkipClicked")
+        if isEditHabitsLoaded{
+            // has saved habit once
+            addLog(text: "has saved habit once")
+            showNextView()
             return;
         }
-        isShowingNextView = true
-        allApiObject.getSettings(isFirstTime: false, packId:"", completionHandler: {val in
-            let settings = val?.mutableCopy() as? NSMutableDictionary
-            self.morningRoutineDuration = 0
-            self.eveningRoutineDuration = 0
-            if settings != nil{
-                
-                if let morningHabits = settings!.value(forKey: "morning_activities") as? [NSDictionary] {
-                    print("morningHabits")
-                    print(morningHabits)
-                    for habitDic in morningHabits {
-                        let durationSeconds = habitDic["duration_seconds"] as? Int ?? 0
-                        self.morningRoutineDuration += durationSeconds
-                    }
-                }
-                if let eveningHabits = settings!.value(forKey: "evening_activities") as? [NSDictionary] {
-                    print("eveningHabits")
-                    print(eveningHabits)
-                    for habitDic in eveningHabits {
-                        let durationSeconds = habitDic["duration_seconds"] as? Int ?? 0
-                        self.eveningRoutineDuration += durationSeconds
-                        
-                    }
-                }
-            }
-            DispatchQueue.main.async {
-                self.isShowingNextView = false
-//                mainViewControllerObj!.showAskWorkTimeVc()
-                
-                
-                let isBreaksEnabled = true
-                UserDefaults.standard.set(20, forKey: kUserdefaultsBreakDurationValue)
-                UserDefaults.standard.set(true, forKey: kUserdefaultsBreaksEnabledFromOnboarding)
-                appdelegate!.showOnbardingHabit()
-            }
-        })
+        allApiObject.capturePosthog(event: "set-up-habits-webview-skipped", metadata: [:])
+        hasSkippedHabits = true
+        UserDefaults.standard.set(true, forKey: kUserdefaultsBreaksEnabledFromOnboarding)
+        getOnboardingVcObject().navigate(to: ._SET_DISTRACTION_BLOCKING_)
     }
 }

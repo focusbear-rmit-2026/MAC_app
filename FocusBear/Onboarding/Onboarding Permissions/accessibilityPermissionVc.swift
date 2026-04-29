@@ -9,216 +9,118 @@
 import Cocoa
 import AVKit
 
+
 class accessibilityPermissionVc: NSViewController {
     
-    @IBOutlet weak var btnInfo: hoverInfoButton!
-    @IBOutlet weak var boxCollectionView: DashedView!
-    @IBOutlet weak var lblNextViewInfo: NSTextField!
+    @IBOutlet weak var imgViewPermission: NSImageView!
+    @IBOutlet weak var imgViewTick: NSImageView!
+    @IBOutlet weak var imgViewBear: NSImageView!
+    @IBOutlet weak var customViewProgress: NSView!
+    @IBOutlet weak var lblDescription: NSTextField!
+    @IBOutlet weak var btnContinue: Button!
+    @IBOutlet weak var btnSkip: underLineButton!
     @IBOutlet weak var lblSubTitle: NSTextField!
-    @IBOutlet weak var lblPoint1: NSTextField!
-    @IBOutlet weak var lblPoint2: NSTextField!
-    @IBOutlet weak var lblPoint3: NSTextField!
-    @IBOutlet weak var lblPoint4: NSTextField!
-    @IBOutlet weak var lblPoint5: NSTextField!
-    @IBOutlet weak var collectionview: NSCollectionView!
-    @IBOutlet weak var lbltitle: NSTextField!
-    @IBOutlet weak var imgview: NSImageView!
-    @IBOutlet weak var btnpreferences: NSButton!
-    @IBOutlet weak var btnContinue: NSButton!
+    @IBOutlet weak var lblTitle: NSTextField!
     
-    @IBOutlet weak var lblStep1: NSTextField!
-    @IBOutlet weak var lblStep2: NSTextField!
-    @IBOutlet weak var lblStep3: NSTextField!
-    @IBOutlet weak var lblStep4: NSTextField!
-    
-    @IBOutlet weak var avPlayerView: AVPlayerView!
-
-    var indexPathsOfItemsBeingDragged: Set<IndexPath> = []
-    var gridDraggedindex = [Int]()
-    
-    var videoPlayer:AVPlayer?
+    var bubbleView:BubbleView?
+    var distractionBlockingProgressVcObj:distractionBlockingProgressVc?
+    var moveToNextViewEnabled = false
     var timer:Timer?
     var currentTimer = 0
     var totalDuration = 0
+    var accessibilityIndexinSubTitle = 0
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        lblNextViewInfo.stringValue = "On the next screen we will ask permissions for System Events."
-        lbltitle.stringValue = "Grant accessibility permission to Focus Bear"
-        lblSubTitle.stringValue = "In order to block distractions, you need to authorize Focus Bear in the Accessibility section of the Security & Privacy Pane of the System Preferences."
-     
-        lblPoint1.stringValue = "Open System Preferences > Security & Privacy > Privacy > Accessibility or use the button below."
-        lblPoint2.stringValue = "Select the lock icon in the bottom left corner and enter your password to unlock."
-        lblPoint3.stringValue = "Click on the icon and then drag it into the allowed apps list under Accessibility."
-        lblPoint4.stringValue = "If Focus Bear is already in the list and checked, please remove Focus Bear by clicking the - button at the bottom and add it again."
-        btnpreferences.title = "Open System Preferences"
-        btnContinue.title = "Continue"
-        var step1Text = "Step 1:"
-        var step2Text = "Step 2:"
-        var step3Text = "Step 3:"
-        var step4Text = "Step 4:"
+        // Do view setup here.
         
-       
-        
-        imgview.isHidden = true
-        avPlayerView.isHidden = false
+        lblTitle.stringValue = "Grant Accessibility Permissions"
         if #available(macOS 13.0, *) {
-            lblPoint1.stringValue = "Open System Preferences > Privacy & Security > Accessibility or use the button below."
-            if let firefoxPermissionsVcInfo = configjson.value(forKey: "firefoxPermissionsVcInfo") as? NSDictionary{
-                lblPoint1.stringValue = firefoxPermissionsVcInfo.value(forKey: "pointFirstNewText") as? String ?? lblPoint1.stringValue
-            }
-            
-            if let videoURL = Bundle.main.url(forResource: "Accessibility_Video", withExtension: "mp4") {
-                // Create an AVPlayer with the video URL
-                videoPlayer = AVPlayer(url: videoURL)
-                
-                // Assign the player to the playerView
-                avPlayerView.player = videoPlayer
-                
-                // Start playing the video
-                videoPlayer!.play()
-            } else {
-                print("Video file not found in bundle.")
-            }
+            lblSubTitle.stringValue = "In order to interact with other browsers, you need to authorise Focus bear through System Preferences:\nSystem Preferences > Privacy & Security > Accessibility"
+            accessibilityIndexinSubTitle = 2
         }else {
-            lblPoint1.stringValue = "Open System Preferences > Security & Privacy > Privacy > Accessibility or use the button below."
-            if let firefoxPermissionsVcInfo = configjson.value(forKey: "firefoxPermissionsVcInfo") as? NSDictionary{
-                lblPoint1.stringValue = firefoxPermissionsVcInfo.value(forKey: "pointFirstText") as? String ?? lblPoint1.stringValue
-            }
-            
-            if let videoURL = Bundle.main.url(forResource: "Monterey_Accessibility", withExtension: "mp4") {
-                // Create an AVPlayer with the video URL
-                videoPlayer = AVPlayer(url: videoURL)
-                
-                // Assign the player to the playerView
-                avPlayerView.player = videoPlayer
-                
-                // Start playing the video
-                videoPlayer!.play()
+            lblSubTitle.stringValue = "In order to interact with other browsers, you need to authorise Focus bear through System Preferences:\nSystem Preferences > Security & Privacy > Privacy > Accessibility"
+            accessibilityIndexinSubTitle = 3
+        }
+        
+        lblDescription.stringValue = "Toggle Focus bear on."
+        btnContinue.title = "Proceed"
+        btnSkip.title = "Skip"
+        
+        
+        
+        if let info = configjson["accessibilityPermissionVcInfoNew"] as? [String: Any] {
+            lblTitle.stringValue = info["title"] as? String ?? lblTitle.stringValue
+            if #available(macOS 13.0, *) {
+                lblSubTitle.stringValue = info["subTitleMacOS13"] as? String ?? lblSubTitle.stringValue
+                accessibilityIndexinSubTitle = 2
             } else {
-                print("Video file not found in bundle.")
+                lblSubTitle.stringValue = info["subTitleLegacy"] as? String ?? lblSubTitle.stringValue
+                accessibilityIndexinSubTitle = 3
             }
-            
-        }
-        
-        //------------------------------------------------//1190 bold Privacy & Security
-        let pointFirstText = lblPoint1.stringValue
-        let startLocation = (getOccurrence(of: ">", in: pointFirstText, occurrenceCount: 1) ?? 5) + 1
-        let endLocation = getOccurrence(of: ">", in: pointFirstText, occurrenceCount: 2) ?? 10
-        
-        let attributedString = NSMutableAttributedString(string: pointFirstText)
-        
-        let font = getBoldFont(size: lblPoint1.font?.pointSize ?? 20)
-        attributedString.addAttribute(NSAttributedString.Key.font, value: font, range: NSRange(location:startLocation,length:endLocation - startLocation))
-        lblPoint1.attributedStringValue = attributedString
-        
-        
-        //----------------------------------------------------//
-        
-        if let firefoxPermissionsVcInfo = configjson.value(forKey: "firefoxPermissionsVcInfo") as? NSDictionary{
-            lblPoint2.stringValue = firefoxPermissionsVcInfo.value(forKey: "pointSecondText") as? String ?? lblPoint2.stringValue
-            lblPoint3.stringValue = firefoxPermissionsVcInfo.value(forKey: "pointThirdText") as? String ?? lblPoint3.stringValue
-            lblPoint4.stringValue = firefoxPermissionsVcInfo.value(forKey: "pointFourthText") as? String ?? lblPoint4.stringValue
-            lblPoint5.stringValue = firefoxPermissionsVcInfo.value(forKey: "pointFifthText") as? String ?? lblPoint5.stringValue
-            btnpreferences.title = firefoxPermissionsVcInfo.value(forKey: "buttonOpenAccessibilityPermissionsText") as? String ?? btnpreferences.title
-            btnContinue.title = firefoxPermissionsVcInfo.value(forKey: "buttonContinueText") as? String ?? btnContinue.title
-        }
-        
-        if let accessibilityPermissionVcInfo = configjson.value(forKey: "accessibilityPermissionVcInfo") as? NSDictionary{
-            lblNextViewInfo.stringValue = accessibilityPermissionVcInfo.value(forKey: "nextViewInfoText") as? String ?? lblNextViewInfo.stringValue
-            lbltitle.stringValue = accessibilityPermissionVcInfo.value(forKey: "title") as? String ?? lbltitle.stringValue
-            lblSubTitle.stringValue = accessibilityPermissionVcInfo.value(forKey: "subTitle") as? String ?? lblSubTitle.stringValue
-            step1Text = accessibilityPermissionVcInfo.value(forKey: "step1Text") as? String ?? step1Text
-            step2Text = accessibilityPermissionVcInfo.value(forKey: "step2Text") as? String ?? step2Text
-            step3Text = accessibilityPermissionVcInfo.value(forKey: "step3Text") as? String ?? step3Text
-            step4Text = accessibilityPermissionVcInfo.value(forKey: "step4Text") as? String ?? step4Text
+            lblDescription.stringValue = info["description"] as? String ?? lblDescription.stringValue
+            btnContinue.title = info["buttonContinue"] as? String ?? btnContinue.title
+            btnSkip.title = info["buttonSkip"] as? String ?? btnSkip.title
         }
         
         
-        
-        if #available(macOS 13.0, *) {
-            lblStep1.stringValue = step1Text
-            lblStep3.stringValue = step2Text
-            lblStep4.stringValue = step3Text
-            
-            lblStep2.isHidden = true
-            lblPoint2.isHidden = true
-        }else {
-            lblStep1.stringValue = step1Text
-            lblStep2.stringValue = step2Text
-            lblStep3.stringValue = step3Text
-            lblStep4.stringValue = step4Text
-            
-            lblStep2.isHidden = false
-            lblPoint2.isHidden = false
-        }
-        
-        
-        lblStep4.isHidden = true
-        lblPoint4.isHidden = true
-        
-        lblStep3.isHidden = true
-        lblStep2.isHidden = true
-        lblPoint3.isHidden = true
-        lblPoint2.isHidden = true
-        boxCollectionView.isHidden = true
-        avPlayerView.isHidden = true
-        
-        lblNextViewInfo.isHidden = true
-        btnContinue.isHidden = true
-        
-        collectionview.setDraggingSourceOperationMask(NSDragOperation.every, forLocal: false)//.move, forLocal: true)
-        // 1
-        var ptype: NSPasteboard.PasteboardType?
-        if #available(OSX 10.13, *) {
-            ptype = NSPasteboard.PasteboardType.fileURL
-        } else {
-            ptype = NSPasteboard.PasteboardType(kUTTypeFileURL as String)
-        }
-        self.collectionview.registerForDraggedTypes([NSPasteboard.PasteboardType(kUTTypeURL as String),            // single url from pasteboard
-                                                     //
-                                                     ptype!,     // from Safari or Finder
-                                                     NSPasteboard.PasteboardType.filePromise,NSPasteboard.PasteboardType(kUTTypeItem as String)])        // 2
-        
-        
-        collectionview.setDraggingSourceOperationMask(NSDragOperation.every, forLocal: true)
+        //------------------------------------------------// bold Accessibility
+        let pointFirstText = lblSubTitle.stringValue
+        let startLocation = (getOccurrence(of: ">", in: pointFirstText, occurrenceCount: accessibilityIndexinSubTitle) ?? 5) + 1
+        let endLocation = pointFirstText.count
 
+        let attributedString = NSMutableAttributedString(string: pointFirstText)
+
+        // Bold part
+        let font = getBoldFont(size: lblSubTitle.font?.pointSize ?? 20)
+        attributedString.addAttribute(.font, value: font, range: NSRange(location: startLocation, length: endLocation - startLocation))
+
+        // Center alignment
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.alignment = .center
+
+        attributedString.addAttribute(.paragraphStyle, value: paragraphStyle, range: NSRange(location: 0, length: attributedString.length))
+
+        lblSubTitle.attributedStringValue = attributedString
+        
+        //------------------------------------------------//
+        
+        
+        //progress
+        self.customViewProgress.addSubview(getDistractionBlockingProgressVcObj().view)
+        self.customViewProgress.addConstraints(subView: getDistractionBlockingProgressVcObj().view)
+        getDistractionBlockingProgressVcObj().setProgress(level: 3, progress: 0.25)
+
+        imgViewTick.isHidden = true
+        
+        //progress
+        self.customViewProgress.addSubview(getDistractionBlockingProgressVcObj().view)
+        self.customViewProgress.addConstraints(subView: getDistractionBlockingProgressVcObj().view)
+        getDistractionBlockingProgressVcObj().setProgress(level: 3, progress: 0.5)
+    }
+
+    override func viewWillAppear() {
         allApiObject.capturePosthog(event: "accessibility-permission-shown", metadata: [:])
-        addLog(text: "[user-action] accessibility-permission-shown")
+        startTimerCheckPermission()
     }
     
-    func startTimerCheckPermission() {
-        totalDuration = 5
-        self.timer?.invalidate()
-        self.timer = nil
-        DispatchQueue.global().sync {
-            self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCountCheckPermission), userInfo: nil, repeats: true)
-            RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
+    override func viewDidAppear() {
+        showOnboardingBellIcon(view: self.view, screen: "accessibility-permission-screen")
+        
+        // Show bubble
+        
+        var bubbleText = "We need this to block distractions in a browser while in Full Screen mode!"
+
+        if let info = configjson["accessibilityPermissionVcInfoNew"] as? [String: Any] {
+            bubbleText = info["bubbleText"] as? String ?? bubbleText
+        }
+        if bubbleView == nil{
+            bubbleView = PopupManager.showPopup(for: imgViewBear, edge: .minX, selfView: self.view, text: bubbleText, verticalOffset: 30, horizontalOffset: 25, fontSize: 13)
         }
     }
     
-    @objc func performTimerCountCheckPermission() {
-        currentTimer += 1
-        if isAccessibilityEnabled(isPrompt: false){
-            lblNextViewInfo.isHidden = false
-            if explainingPermissionsVcObj?.isSystemEventsPermissionGiven ?? false{
-                lblNextViewInfo.isHidden = true
-            }
-            btnContinue.isHidden = false
-            self.timer?.invalidate()
-            btnContinueClicked(self)
-            menuViewControllerObj?.accessibilityPermissionGiven = true
-            return;
-        }
-        if currentTimer >= totalDuration{
-            DispatchQueue.main.async {
-                self.lblNextViewInfo.isHidden = false
-                if explainingPermissionsVcObj?.isSystemEventsPermissionGiven ?? false{
-                    self.lblNextViewInfo.isHidden = true
-                }
-                self.btnContinue.isHidden = false
-            }
-        }
+    override func viewWillDisappear() {
+        hideOnboardingBellIcon(view: self.view)
     }
     
     func getOccurrence(of char: Character, in string: String, occurrenceCount:Int) -> Int? {
@@ -237,129 +139,83 @@ class accessibilityPermissionVc: NSViewController {
         return nil
     }
     
-    override func viewDidAppear() {
-        showOnboardingBellIcon(view: self.view, screen: "accessibility-permission-screen")
-        self.view.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.normalWindow)))
-    }
     
-    override func viewWillAppear() {
-        
-    }
-    
-    override func viewWillDisappear() {
-        self.timer?.invalidate()
-        hideOnboardingBellIcon(view: self.view)
-        if videoPlayer != nil{
-            videoPlayer?.pause()
+    func getDistractionBlockingProgressVcObj()->distractionBlockingProgressVc{
+        if distractionBlockingProgressVcObj == nil{
+            distractionBlockingProgressVcObj = onboardingStoryboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("distractionBlockingProgressVc")) as? distractionBlockingProgressVc
         }
-        self.view.window?.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(CGWindowLevelKey.assistiveTechHighWindow)))
+        return distractionBlockingProgressVcObj!
     }
     
     @IBAction func btnContinueClicked(_ sender: Any) {
-        addLog(text: "[user-action] accessibilityPermissionVc:- Button Continue clicked")
-        let isSystemEventsPermissionGiven = explainingPermissionsVcObj?.isSystemEventsPermissionGiven ?? false
-        let isBrowserPermissionGiven = explainingPermissionsVcObj?.isBrowserPermissionGiven ?? false
-        
-        if !isSystemEventsPermissionGiven{
-            self.view.window?.contentViewController = getSystemEventsPermissionVcObject()
-        }else if !isBrowserPermissionGiven{
-            self.view.window?.contentViewController = getOnboardingControllingBrowserVcObject()
+        addLog(text: "[user-action] accessibilityPermissionVc:- Button Proceed clicked")
+        if currentState == ._ONBOARDING_{
+            getOnboardingVcObject().navigate(to: ._BROWSERS_PERMISSION_)
         }else{
-            self.view.window?.contentViewController = getTryBlockUrlVcObject()
+            if !(menuViewControllerObj?.browserPermissionGiven ?? true){
+                self.view.window?.contentViewController = getOnboardingControllingBrowserVcObject()
+            }else{
+                self.view.window?.close()
+            }
         }
     }
     
-    @IBAction func btnInfoClicked(_ sender: hoverInfoButton) {
-        var msg = "We use accessibility permissions to resize full screen windows (otherwise we can't block distractions)."
-        if let systemEventsPermissionVcInfo = configjson.value(forKey: "accessibilityPermissionVcInfo") as? NSDictionary{
-            msg = systemEventsPermissionVcInfo.value(forKey: "toolTipText") as? String ?? msg
+    func startTimerCheckPermission() {
+        totalDuration = 10
+        self.timer?.invalidate()
+        self.timer = nil
+        DispatchQueue.global().sync {
+            self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(self.performTimerCountCheckPermission), userInfo: nil, repeats: true)
+            RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
         }
-        showTooltip(sender: sender, msg: msg, preferredEdge: NSRectEdge.maxX, maxWidthVal:230, autoCloseOnMouseExit: true)
+        btnContinue.isEnabled = false
     }
     
-    @IBAction func btnOpenPreferences(_ sender: Any) {
-        let urlstring = "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility";
-        NSWorkspace.shared.open(URL(string: urlstring)!)
-        
-        
-        lblStep3.isHidden = false
-        lblStep2.isHidden = false
-        lblPoint3.isHidden = false
-        lblPoint2.isHidden = false
-        boxCollectionView.isHidden = false
-        avPlayerView.isHidden = false
-        
-        
-        if #available(macOS 13.0, *) {
-            lblStep2.isHidden = true
-            lblPoint2.isHidden = true
-        }else {
-            lblStep2.isHidden = false
-            lblPoint2.isHidden = false
+    @objc func performTimerCountCheckPermission() {
+        currentTimer += 1
+        if isAccessibilityEnabled(isPrompt: false){
+            self.timer?.invalidate()
+            menuViewControllerObj?.accessibilityPermissionGiven = true
+            
+            lblTitle.stringValue = "That was beary impressive!"
+            lblSubTitle.stringValue = "Accessibility permissions have been granted."
+            
+            if let info = configjson["accessibilityPermissionVcInfoNew"] as? [String: Any] {
+                lblTitle.stringValue = info["successTitle"] as? String ?? lblTitle.stringValue
+                lblSubTitle.stringValue = info["successSubTitle"] as? String ?? lblSubTitle.stringValue
+            }
+            
+            imgViewBear.isHidden = true
+            bubbleView?.isHidden = true
+            imgViewTick.isHidden = false
+            imgViewPermission.alphaValue = 0.5
+            lblDescription.isHidden = true
+            moveToNextViewEnabled = true
+            getDistractionBlockingProgressVcObj().setProgress(level: 3, progress: 0.75)
+            btnContinue.isEnabled = true
+            return;
         }
-        videoPlayer?.seek(to: .zero)
-        videoPlayer!.play()
-        
-        startTimerCheckPermission()
+        if currentTimer >= totalDuration{
+            DispatchQueue.main.async { [self] in
+                moveToNextViewEnabled = true
+                btnContinue.isEnabled = true
+            }
+        }
+    }
+
+    @IBAction func btnSkipClicked(_ sender: Any) {
+        addLog(text: "[user-action] accessibilityPermissionVc:- btnSkipClicked")
+        allApiObject.capturePosthog(event: "accessibility-permission-skipped", metadata: [:])
+        if currentState == ._ONBOARDING_{
+            getOnboardingVcObject().navigate(to: ._BROWSERS_PERMISSION_)
+        }else{
+            if !(menuViewControllerObj?.browserPermissionGiven ?? true){
+                self.view.window?.contentViewController = getOnboardingControllingBrowserVcObject()
+            }else{
+                self.view.window?.close()
+                reloadPermissionsIfNeeded()
+            }
+        }
     }
 }
-
-
-extension accessibilityPermissionVc: NSCollectionViewDelegate, NSCollectionViewDataSource, NSCollectionViewDelegateFlowLayout{
-    func collectionView(_ collectionView: NSCollectionView, numberOfItemsInSection section: Int) -> Int {
-        return 1
-        
-    }
-    
-    func collectionView(_ collectionView: NSCollectionView, itemForRepresentedObjectAt indexPath: IndexPath) -> NSCollectionViewItem {
-        let item = collectionview.makeItem(withIdentifier: NSUserInterfaceItemIdentifier(rawValue: "CollectionViewItem"), for: indexPath) as! CollectionViewItem
-
-        return item
-    }
-
-    func collectionView(_ collectionView: NSCollectionView, didSelectItemsAt indexPaths: Set<IndexPath>) {
-    }
-    
-    func collectionView(_ collectionView: NSCollectionView, canDragItemsAt indexPaths: Set<IndexPath>, with event: NSEvent) -> Bool {
-        gridDraggedindex.removeAll()
-        return true
-    }
-    
-    func collectionView(_ collectionView: NSCollectionView, pasteboardWriterForItemAt indexPath: IndexPath) -> NSPasteboardWriting? {
-        gridDraggedindex.append(indexPath.item)
-        return Bundle.main.bundleURL as? NSPasteboardWriting
-    }
-    
-    func collectionView(_ collectionView: NSCollectionView, draggingSession session: NSDraggingSession, willBeginAt screenPoint: NSPoint, forItemsAt indexPaths: Set<IndexPath>) {
-        indexPathsOfItemsBeingDragged = indexPaths
-    }
-    
-    func collectionView(_ collectionView: NSCollectionView, draggingSession session: NSDraggingSession, endedAt screenPoint: NSPoint, dragOperation operation: NSDragOperation) {
-        indexPathsOfItemsBeingDragged = []
-        gridDraggedindex.removeAll()
-    }
-    
-    func collectionView(_ collectionView: NSCollectionView, validateDrop draggingInfo: NSDraggingInfo, proposedIndexPath proposedDropIndexPath: AutoreleasingUnsafeMutablePointer<NSIndexPath>, dropOperation proposedDropOperation: UnsafeMutablePointer<NSCollectionView.DropOperation>) -> NSDragOperation {
-        if proposedDropOperation.pointee == NSCollectionView.DropOperation.on {
-            proposedDropOperation.pointee = NSCollectionView.DropOperation.before
-        }
-        
-        if indexPathsOfItemsBeingDragged.count == 0 {
-            return NSDragOperation.copy
-        } else {
-            return NSDragOperation.move
-        }
-        return NSDragOperation.move
-    }
-
-
-    func collectionView(_ collectionView: NSCollectionView,layout collectionViewLayout: NSCollectionViewLayout,sizeForItemAt indexPath: IndexPath) -> NSSize {
-        return CGSize(width: collectionView.bounds.width-5, height: (collectionView.enclosingScrollView?.bounds.height ?? 5)-10)
-    }
-}
-
-
-
-
-
 

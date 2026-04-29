@@ -10,6 +10,7 @@ import Cocoa
 
 class collectionViewItemOccupation: NSCollectionViewItem {
 
+    @IBOutlet weak var imgViewTick: NSImageView!
     @IBOutlet weak var boxSmall: NSBox!
     @IBOutlet weak var widthBoxCircle: NSLayoutConstraint!
     @IBOutlet weak var lblTitle: NSTextField!
@@ -18,28 +19,27 @@ class collectionViewItemOccupation: NSCollectionViewItem {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
+        boxSmall.isHidden = true
+        boxForCircle.fillColor = .clear
+        boxForCircle.borderColor = NSColor.tertiaryLabelColor
+        boxForBorder.borderWidth = 1
+        boxForCircle.borderWidth = 1
     }
     var isItemSelected: Bool = false
     
     func updateSelection() {
         if isItemSelected{
-            boxForCircle.borderWidth = 3
-            boxForBorder.borderWidth = 1
             boxForBorder.borderColor = NSColor(named: "dark_OrangeColor") ?? NSColor.blue
-            boxForCircle.borderColor = NSColor(named: "dark_OrangeColor") ?? NSColor.blue
             boxForBorder.fillColor = buttonBgColor
             lblTitle.textColor = .black
-            boxForCircle.fillColor = .white
-            boxSmall.isHidden = false
+            imgViewTick.isHidden = false
+            boxForCircle.isHidden = true
         }else{
-            boxForCircle.borderWidth = 1
-            boxForBorder.borderWidth = 1
             boxForBorder.borderColor = NSColor.tertiaryLabelColor
-            boxForCircle.borderColor = NSColor.tertiaryLabelColor
             boxForBorder.fillColor = .clear
             lblTitle.textColor = .labelColor
-            boxForCircle.fillColor = .clear
-            boxSmall.isHidden = true
+            imgViewTick.isHidden = true
+            boxForCircle.isHidden = false
         }
     }
 }

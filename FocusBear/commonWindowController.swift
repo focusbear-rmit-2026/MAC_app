@@ -18,20 +18,6 @@ class commonWindowController: NSWindowController, NSWindowDelegate {
             }
         }
         self.window?.appearance = getAppAppearance()
-        
-        // Implement this method to handle any initialization after your window controller's window has been loaded from its nib file.
-    }
-    func windowDidBecomeKey(_ notification: Notification) {
-//        if self.window == brainDumpWcObj?.window{
-//            print("windowDidBecomeKey")
-//            brainDumpVcObj?.checkCurrentUrl()
-//        }
-    }
-
-    func windowDidResignKey(_ notification: Notification) {
-//        if self.window == brainDumpWcObj?.window{
-//            print("windowDidResignKey")
-//        }
     }
 
     func windowShouldClose(_ sender: NSWindow) -> Bool {
@@ -148,14 +134,7 @@ class commonWindowController: NSWindowController, NSWindowDelegate {
                 return true
             }
         }
-        
-//        if endingFocusWindowControllerObj != nil{
-//            if self == endingFocusWindowControllerObj{
-//                addLog(text: "focus mode completed Window close")
-//                focusCompletedVcObj!.takeBreakClicked(isCloseWindowClicked: true)
-//                return false
-//            }
-//        }
+
         if appdelegate!.user == nil && askLogInWcObj != nil{
             if self == askLogInWcObj{
                 if self.contentViewController == getAskLogInVcObject(){
@@ -172,19 +151,7 @@ class commonWindowController: NSWindowController, NSWindowDelegate {
                     quitApplicationSmoothly()
                 }
             }
-        }
-//        else if onboardingVideoVcObj != nil{
-//            if self.contentViewController == onboardingVideoVcObj{
-//                addLog(text: "onboarding video window close")
-//                onboardingVideoVcObj?.loadBlankUrl()
-//                appdelegate!.loadCredentialsAndDeviceId()
-//                let secondsBetween = Date().timeIntervalSince(onboardingVideoStartTime ?? Date())
-//                allApiObject.capturePosthog(event: "onboarding-video-watched", metadata: ["watched_duration_seconds":Int(secondsBetween)])
-//                showMenuTourWindow()
-//                appdelegate!.statusbutton?.action = nil
-//            }
-//        }
-        
+        } 
         return true
     }
 }

@@ -28,7 +28,7 @@ class whySkipHabitVc: NSViewController {
             btnCanNotDoIt.title = whySkipHabitVcInfo.value(forKey: "buttonCanNotDoItText") as? String ?? btnCanNotDoIt.title
             btnSkipCompletely.title = whySkipHabitVcInfo.value(forKey: "buttonSkipBreaksCompletely") as? String ?? btnSkipCompletely.title
         }
-        btnCanNotDoIt.buttonColor = NSColor.white.cgColor
+        btnCanNotDoIt.isSecondaryButton = true
     }
     
     override func viewWillAppear() {

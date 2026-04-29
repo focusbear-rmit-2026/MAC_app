@@ -161,8 +161,8 @@ class popUpBlockConfirmVc: NSViewController {
         lblBtnConfirmReportBadAi.stringValue = lblBtnReportBadAi.stringValue
         lblTitle.stringValue = titleText
         
-        btnAllow.buttonColor = NSColor.white.cgColor
-        btnEditSettings.buttonColor = NSColor.white.cgColor
+        btnAllow.isSecondaryButton = true
+        btnEditSettings.isSecondaryButton = true
         stackViewProgress.isHidden = true
         
         popupButtonMinutes.removeAllItems()
@@ -176,13 +176,13 @@ class popUpBlockConfirmVc: NSViewController {
         
         imgView.image = NSImage(named: "Glasses-Bear-250-px_V3")
         imgView.animates = true
-        btnWorkingOnSomethingElse.buttonColor = NSColor.white.cgColor
+        btnWorkingOnSomethingElse.isSecondaryButton = true
         comboBoxSelectTask.customDelegate = self
         comboBoxSelectTask.stringValue = ""
         comboBoxSelectTask.items.removeAll()
         arrAllTasks.removeAll()
         comboBoxSelectTask.reloadData()
-        btnSetTask.buttonColor = NSColor.white.cgColor
+        btnSetTask.isSecondaryButton = true
     }
     
 
@@ -410,7 +410,7 @@ class popUpBlockConfirmVc: NSViewController {
                     }
                 }
                 btnInfoAlScore.isHidden = false
-                btnAllow.buttonColor = buttonBgColor.cgColor
+                btnAllow.isSecondaryButton = false
             }else{
                 boxNoTaskSpecified.isHidden = true
                 btnAllow.title = "Yes"
@@ -418,7 +418,7 @@ class popUpBlockConfirmVc: NSViewController {
                     btnAllow.title = popUpBlockConfirmVcInfo.value(forKey: "buttonAllowText") as? String ?? btnAllow.title
                 }
                 btnInfoAlScore.isHidden = true
-                btnAllow.buttonColor = NSColor.white.cgColor
+                btnAllow.isSecondaryButton = true
                 btnAllow.isHidden = false
             }
             btnBlock.title = "Block this app"
@@ -581,7 +581,7 @@ class popUpBlockConfirmVc: NSViewController {
                     }
                 }
                 btnInfoAlScore.isHidden = false
-                btnAllow.buttonColor = buttonBgColor.cgColor
+                btnAllow.isSecondaryButton = false
                 
             }else{
                 boxNoTaskSpecified.isHidden = true
@@ -590,7 +590,7 @@ class popUpBlockConfirmVc: NSViewController {
                     btnAllow.title = popUpBlockConfirmVcInfo.value(forKey: "buttonAllowText") as? String ?? btnAllow.title
                 }
                 btnInfoAlScore.isHidden = true
-                btnAllow.buttonColor = NSColor.white.cgColor
+                btnAllow.isSecondaryButton = true
                 btnAllow.isHidden = false
             }
             btnBlock.title = "Block this site"
@@ -641,7 +641,17 @@ class popUpBlockConfirmVc: NSViewController {
            !arrAllTasks.isEmpty {
 
             print("✅ Using cached tasks")
-            updateComboBox(with: arrAllTasks)
+            // Even with cached API tasks, always merge latest todo-player tasks at top
+            let cachedTodoIds = Set(arrCurrentFocusTasks.compactMap { $0["task_id"] as? String })
+            let filteredCached = arrAllTasks.filter { task in
+                guard let id = task.value(forKey: "id") as? String else { return true }
+                return !cachedTodoIds.contains(id)
+            }
+            let todoAsDicts: [NSDictionary] = arrCurrentFocusTasks.map { task in
+                ["title": task["task_name"] as? String ?? "",
+                 "id": task["task_id"] as? String ?? ""] as NSDictionary
+            }
+            updateComboBox(with: todoAsDicts + filteredCached)
             return
         }
 
@@ -661,9 +671,10 @@ class popUpBlockConfirmVc: NSViewController {
 
                 guard let json = json else { return }
 
+                // Sort API tasks by updated_at (most recently worked on first)
                 let sortedTasks = json.sorted { t1, t2 in
-                    let s1 = t1.value(forKey: "created_at") as? String ?? ""
-                    let s2 = t2.value(forKey: "created_at") as? String ?? ""
+                    let s1 = t1.value(forKey: "updated_at") as? String ?? ""
+                    let s2 = t2.value(forKey: "updated_at") as? String ?? ""
 
                     let d1 = getDateFromStringInUtc(dateString: s1) ?? .distantPast
                     let d2 = getDateFromStringInUtc(dateString: s2) ?? .distantPast
@@ -674,7 +685,20 @@ class popUpBlockConfirmVc: NSViewController {
                 self.arrAllTasks = sortedTasks
                 self.lastTasksAPICallDate = Date() // ✅ save API call time
 
-                self.updateComboBox(with: sortedTasks)
+                // Merge todo-player tasks at the top, deduplicated
+                let todoPlayerIds = Set(arrCurrentFocusTasks.compactMap { $0["task_id"] as? String })
+                let filteredApiTasks = sortedTasks.filter { task in
+                    guard let id = task.value(forKey: "id") as? String else { return true }
+                    return !todoPlayerIds.contains(id)
+                }
+                // Convert todo-player tasks to NSDictionary to match the list type
+                let todoAsDicts: [NSDictionary] = arrCurrentFocusTasks.map { task in
+                    ["title": task["task_name"] as? String ?? "",
+                     "id": task["task_id"] as? String ?? ""] as NSDictionary
+                }
+                let mergedTasks = todoAsDicts + filteredApiTasks
+
+                self.updateComboBox(with: mergedTasks)
                 
                 
                 
@@ -692,7 +716,7 @@ class popUpBlockConfirmVc: NSViewController {
     private func updateComboBox(with tasks: [NSDictionary]) {
         comboBoxSelectTask.items.removeAll()
 
-        for task in self.arrAllTasks{
+        for task in tasks {
             let title = task.value(forKey: "title") as? String ?? ""
             comboBoxSelectTask.items.append(title)
             print(title)
@@ -885,8 +909,8 @@ class popUpBlockConfirmVc: NSViewController {
             }
             btnConvince.title = buttonYesText
             btnCancel.title = buttonNoText
-            btnConvince.buttonColor = buttonBgColor.cgColor
-            btnCancel.buttonColor = NSColor.white.cgColor
+            btnConvince.isSecondaryButton = false
+            btnCancel.isSecondaryButton = true
             textViewIntension.string = ""
             textViewIntension.window?.makeFirstResponder(textViewIntension)
             btnConvinceAgain.isHidden = false
@@ -919,8 +943,8 @@ class popUpBlockConfirmVc: NSViewController {
             textViewIntension.string = ""
             textViewIntension.string = dictionaryAllowedUrlsWithIntentionInCuddlyModeCurrentFocus[domain]?["intentionForSite"] as? String ?? ""
             btnCancel.title = buttonCancelText
-            btnConvince.buttonColor = buttonBgColor.cgColor
-            btnCancel.buttonColor = NSColor.white.cgColor
+            btnConvince.isSecondaryButton = false
+            btnCancel.isSecondaryButton = true
             
             
             textViewIntension.window?.makeFirstResponder(textViewIntension)
@@ -1004,8 +1028,8 @@ class popUpBlockConfirmVc: NSViewController {
         }
         
         
-        btnConvince.buttonColor = buttonBgColor.cgColor
-        btnCancel.buttonColor = NSColor.white.cgColor
+        btnConvince.isSecondaryButton = false
+        btnCancel.isSecondaryButton = true
         textViewIntension.string = ""
         textViewIntension.window?.makeFirstResponder(textViewIntension)
         btnConvinceAgain.isHidden = true
