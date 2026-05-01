@@ -84,10 +84,20 @@ class onboardingAllowedUrlsVc: NSViewController {
             }
             
         }
+        
+        //Ensure the suggested websites list is reliably loaded and displayed v 3.31.476:-
+        if arrAllUrls.count == 0{
+            var sites = ["docs.google.com", "sheets.google.com"]
+            for site in sites{
+                let urlInfo = ["url":site, "isSelected":true, "tag":lastItemTag] as [String : Any]
+                lastItemTag += 1
+                arrAllUrls.append(urlInfo)
+            }
+        }
         arrAllowedUrlsStructure = arrAllUrls
         outlineView.reloadData()
     }
-    
+
     override func viewWillAppear() {
         if let item = outlineView.item(atRow: 0){
             outlineView.expandItem(item)

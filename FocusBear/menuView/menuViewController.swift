@@ -589,10 +589,7 @@ class menuViewController: NSViewController {
     
     override func viewWillDisappear() {
         SettingsManagerObject.putUserLocalDeviceSettings()// for geek mode change
-//        if !boxTipPermissions.isHidden{
-//            boxTipPermissions.stopBlinking()
-//        }
-        
+
         var anyNotificationVisibleInFloatingBear = false
         if floatingTopBarVcObj != nil{
             let visibleViews = floatingTopBarVcObj!.stackViewMoreItems.arrangedSubviews.filter { !$0.isHidden }
@@ -638,9 +635,6 @@ class menuViewController: NSViewController {
         }
         self.view.window?.appearance = getAppAppearance()
         reloadData()
-//        if !boxTipPermissions.isHidden{
-//            boxTipPermissions.startBlinking()
-//        }
     }
     
     func checkPurchaseState(){

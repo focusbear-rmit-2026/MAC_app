@@ -226,17 +226,13 @@ class customLoginVc: NSViewController {
             if let customLoginVcInfo = configjson.value(forKey: "customLoginVcInfo") as? NSDictionary{
                 msg = customLoginVcInfo.value(forKey: "tooltipShowPassword") as? String ?? msg
             }
-            showTooltip(sender: btnShowPassword, msg: msg , preferredEdge: NSRectEdge.minY, maxWidthVal:230)
+            showTooltipWithOsTahoe(sender: btnShowPassword, msg: msg , preferredEdge: NSRectEdge.minY, maxWidthVal:230)
         }
     }
     
     override func mouseExited(with event: NSEvent) {
         if event.trackingArea == btnShowPasswordTrackingArea{
-            if popoverTooltip != nil{
-                if popoverTooltip!.isShown{
-                    popoverTooltip?.close()
-                }
-            }
+            closePopoverTooltipIfVisible()
         }
     }
     
@@ -498,6 +494,7 @@ class customLoginVc: NSViewController {
                 }
             }
     }
+    
     func loginDone(credentials: (Credentials), isLogin:Bool){
         addLog(text: "Custom Login success")
         self.view.window?.close()
@@ -557,6 +554,7 @@ class customLoginVc: NSViewController {
     }
     
     @IBAction func btnShowPasswordClicked(_ sender: Any) {
+        closePopoverTooltipIfVisible()
         if textFieldPassword.isHidden{
             textFieldPassword.stringValue = secureTextFieldPassword.stringValue
             textFieldPassword.isHidden = false

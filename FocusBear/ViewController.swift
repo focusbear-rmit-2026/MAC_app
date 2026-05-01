@@ -623,5 +623,10 @@ class ViewController: NSViewController {
                 stageManagerObject.isStageManagerEnabled = stageManagerObject.checkIsStageManagerEnabled()
             }
         }
+        
+        // added 3.31.476
+        addLog(text: "Onboarding completed: Forcefully writing user local device settings for first-time setup")
+        SettingsManagerObject.isSettingsChanged = true
+        SettingsManagerObject.putUserLocalDeviceSettings()
     }
 }

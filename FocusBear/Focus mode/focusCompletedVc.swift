@@ -612,7 +612,7 @@ class focusCompletedVc: NSViewController {
             }
         }
         lblIntentionWas.stringValue = lblIntentionWas.stringValue + ":- " + textViewIntention.string.replacingOccurrences(of: "\n", with: ". ")
-        
+        lblIntentionWas.toolTip = lblIntentionWas.stringValue
         
         btnTakeBreak.isEnabled = true
         loader.isHidden = true

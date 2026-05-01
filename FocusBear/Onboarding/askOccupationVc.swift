@@ -142,7 +142,7 @@ class askOccupationVc: NSViewController, NSTextFieldDelegate {
     @IBAction func btnSkipClicked(_ sender: Any) {
         addLog(text: "[user-action] ask occupation view:- button Skip clicked.")
         allApiObject.capturePosthog(event: "ask-occupation-skipped", metadata: [:])
-        getOnboardingVcObject().navigate(to: ._ALLOWED_URLS_)
+        getOnboardingVcObject().navigateToAllowedUrlsVc()
     }
     
     @IBAction func btnContinueClicked(_ sender: Any) {

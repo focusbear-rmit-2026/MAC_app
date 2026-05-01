@@ -606,10 +606,10 @@
                                             </textFieldCell>
                                         </textField>
                                         <stackView distribution="fill" orientation="vertical" alignment="leading" spacing="18" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="bHj-H0-RaF">
-                                            <rect key="frame" x="350" y="216" width="400" height="320"/>
+                                            <rect key="frame" x="350" y="237" width="400" height="299"/>
                                             <subviews>
                                                 <box boxType="custom" borderWidth="0.0" cornerRadius="4" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="V12-DH-Oec">
-                                                    <rect key="frame" x="0.0" y="262" width="400" height="58"/>
+                                                    <rect key="frame" x="0.0" y="241" width="400" height="58"/>
                                                     <view key="contentView" id="UNq-jp-2Wh">
                                                         <rect key="frame" x="0.0" y="0.0" width="400" height="58"/>
                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -646,7 +646,7 @@
                                                     </constraints>
                                                 </box>
                                                 <box boxType="custom" borderWidth="0.0" cornerRadius="4" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="x1z-hO-UqQ">
-                                                    <rect key="frame" x="0.0" y="190" width="400" height="54"/>
+                                                    <rect key="frame" x="0.0" y="169" width="400" height="54"/>
                                                     <view key="contentView" id="zct-cc-kmr">
                                                         <rect key="frame" x="0.0" y="0.0" width="400" height="54"/>
                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -701,7 +701,7 @@
                                                     </constraints>
                                                 </box>
                                                 <box hidden="YES" boxType="custom" borderWidth="0.0" cornerRadius="4" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="xwN-Iw-fae">
-                                                    <rect key="frame" x="0.0" y="261" width="310" height="59"/>
+                                                    <rect key="frame" x="0.0" y="240" width="310" height="59"/>
                                                     <view key="contentView" id="pJc-J8-tlE">
                                                         <rect key="frame" x="0.0" y="0.0" width="310" height="59"/>
                                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -756,7 +756,7 @@
                                                     </constraints>
                                                 </box>
                                                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="XmG-nf-mF7" customClass="underLineButton" customModule="Focus_Bear" customModuleProvider="target">
-                                                    <rect key="frame" x="0.0" y="156" width="119" height="16"/>
+                                                    <rect key="frame" x="0.0" y="135" width="119" height="16"/>
                                                     <buttonCell key="cell" type="bevel" title="xxForgot Password" bezelStyle="rounded" alignment="center" imageScaling="proportionallyDown" inset="2" id="poW-0i-Dql">
                                                         <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                         <font key="font" metaFont="system"/>
@@ -769,7 +769,7 @@
                                                     </connections>
                                                 </button>
                                                 <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="FXd-w0-QjR">
-                                                    <rect key="frame" x="-2" y="123" width="137" height="15"/>
+                                                    <rect key="frame" x="-2" y="102" width="137" height="15"/>
                                                     <textFieldCell key="cell" lineBreakMode="truncatingTail" alignment="left" title="xxPassword rules:" id="Uao-BG-ibQ">
                                                         <font key="font" size="13" name="CourierNewPSMT"/>
                                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -777,10 +777,10 @@
                                                     </textFieldCell>
                                                 </textField>
                                                 <stackView distribution="fill" orientation="vertical" alignment="leading" spacing="0.0" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="UKF-3T-N2z">
-                                                    <rect key="frame" x="0.0" y="0.0" width="400" height="105"/>
+                                                    <rect key="frame" x="0.0" y="0.0" width="400" height="84"/>
                                                     <subviews>
                                                         <box boxType="custom" borderWidth="0.0" cornerRadius="4" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="zjc-AT-8Ux">
-                                                            <rect key="frame" x="0.0" y="84" width="400" height="21"/>
+                                                            <rect key="frame" x="0.0" y="63" width="400" height="21"/>
                                                             <view key="contentView" id="6TR-CF-uEB">
                                                                 <rect key="frame" x="0.0" y="0.0" width="400" height="21"/>
                                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -826,7 +826,7 @@
                                                             </view>
                                                         </box>
                                                         <box hidden="YES" boxType="custom" borderWidth="0.0" cornerRadius="4" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="HRn-0e-gk0">
-                                                            <rect key="frame" x="0.0" y="64" width="400" height="41"/>
+                                                            <rect key="frame" x="0.0" y="43" width="400" height="41"/>
                                                             <view key="contentView" id="Fh1-MI-HA4">
                                                                 <rect key="frame" x="0.0" y="0.0" width="400" height="41"/>
                                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -865,7 +865,7 @@
                                                                 </constraints>
                                                             </view>
                                                         </box>
-                                                        <box boxType="custom" borderWidth="0.0" cornerRadius="4" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="5PV-ED-2LN">
+                                                        <box hidden="YES" boxType="custom" borderWidth="0.0" cornerRadius="4" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="5PV-ED-2LN">
                                                             <rect key="frame" x="0.0" y="63" width="400" height="21"/>
                                                             <view key="contentView" id="vMg-RO-YMl">
                                                                 <rect key="frame" x="0.0" y="0.0" width="400" height="21"/>
@@ -1110,7 +1110,7 @@
                                             </customSpacing>
                                         </stackView>
                                         <stackView distribution="fill" orientation="vertical" alignment="centerX" spacing="20" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Tyc-S4-kM1">
-                                            <rect key="frame" x="350" y="-127" width="400" height="313"/>
+                                            <rect key="frame" x="350" y="-106" width="400" height="313"/>
                                             <subviews>
                                                 <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="pto-O9-kpw" customClass="Button" customModule="Focus_Bear" customModuleProvider="target">
                                                     <rect key="frame" x="0.0" y="277" width="400" height="36"/>
@@ -1385,7 +1385,7 @@
                                             </connections>
                                         </button>
                                         <progressIndicator maxValue="100" displayedWhenStopped="NO" indeterminate="YES" style="bar" translatesAutoresizingMaskIntoConstraints="NO" id="oj9-yj-3Yp">
-                                            <rect key="frame" x="486" y="103" width="128" height="20"/>
+                                            <rect key="frame" x="486" y="124" width="128" height="20"/>
                                             <constraints>
                                                 <constraint firstAttribute="width" constant="128" id="ezI-Of-En3"/>
                                             </constraints>
@@ -1476,13 +1476,7 @@
                                                 <action selector="btnCopyPasswordClicked:" target="tEr-dK-57F" id="osy-Jo-sy5"/>
                                             </connections>
                                         </button>
-                                        <box boxType="custom" borderWidth="0.0" cornerRadius="4" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="6lZ-yy-Fmb">
-                                            <rect key="frame" x="760" y="412" width="80" height="20"/>
-                                            <view key="contentView" id="sAx-DR-g4V">
-                                                <rect key="frame" x="0.0" y="0.0" width="80" height="20"/>
-                                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                                            </view>
-                                        </box>
+
                                         <imageView hidden="YES" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="K8g-qB-Ipv">
                                             <rect key="frame" x="430" y="659" width="240" height="25"/>
                                             <constraints>
@@ -1491,7 +1485,7 @@
                                             <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyDown" image="logo white" id="we6-dK-89l"/>
                                         </imageView>
                                         <box boxType="custom" borderWidth="0.0" cornerRadius="4" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="ZU0-do-Sy5">
-                                            <rect key="frame" x="755" y="-80" width="250" height="60"/>
+                                            <rect key="frame" x="755" y="-59" width="250" height="60"/>
                                             <view key="contentView" id="iFE-AZ-36F">
                                                 <rect key="frame" x="0.0" y="0.0" width="250" height="60"/>
                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -1524,7 +1518,6 @@
                                         <constraint firstItem="yX5-ke-W1X" firstAttribute="trailing" secondItem="2bi-ot-VSb" secondAttribute="trailing" id="BN3-my-tHm"/>
                                         <constraint firstItem="Tyc-S4-kM1" firstAttribute="top" secondItem="bHj-H0-RaF" secondAttribute="bottom" constant="30" id="G5w-Nb-5Dl"/>
                                         <constraint firstItem="9zw-cm-Jhh" firstAttribute="leading" secondItem="bHj-H0-RaF" secondAttribute="trailing" constant="10" id="HWZ-o1-6YX"/>
-                                        <constraint firstItem="6lZ-yy-Fmb" firstAttribute="trailing" secondItem="HhL-Pf-QZ1" secondAttribute="trailing" id="I9G-PB-eb7"/>
                                         <constraint firstItem="j81-H8-MiE" firstAttribute="top" secondItem="oj9-yj-3Yp" secondAttribute="bottom" constant="10" id="IKK-nP-dl8"/>
                                         <constraint firstItem="Tyc-S4-kM1" firstAttribute="centerX" secondItem="8sV-31-UBs" secondAttribute="centerX" id="PqU-30-03a"/>
                                         <constraint firstItem="I67-Rb-zVO" firstAttribute="centerX" secondItem="8sV-31-UBs" secondAttribute="centerX" id="PtV-Hf-9UH"/>
@@ -1532,15 +1525,12 @@
                                         <constraint firstItem="gxP-4K-pRm" firstAttribute="leading" secondItem="9zw-cm-Jhh" secondAttribute="trailing" constant="8" symbolic="YES" id="To5-jv-JX2"/>
                                         <constraint firstItem="gxP-4K-pRm" firstAttribute="centerY" secondItem="gZi-1A-ege" secondAttribute="centerY" id="X1K-iu-hGF"/>
                                         <constraint firstItem="HhL-Pf-QZ1" firstAttribute="leading" secondItem="bHj-H0-RaF" secondAttribute="trailing" constant="10" id="YKM-py-YRU"/>
-                                        <constraint firstItem="6lZ-yy-Fmb" firstAttribute="centerY" secondItem="HhL-Pf-QZ1" secondAttribute="centerY" id="YKm-Ky-xGV"/>
                                         <constraint firstItem="IDy-0E-6I3" firstAttribute="centerX" secondItem="8sV-31-UBs" secondAttribute="centerX" id="b4P-O8-4bE"/>
                                         <constraint firstItem="VXD-s5-Gj9" firstAttribute="centerY" secondItem="S0B-Wm-YEs" secondAttribute="centerY" id="bDV-xF-buG"/>
                                         <constraint firstItem="IDy-0E-6I3" firstAttribute="top" secondItem="I67-Rb-zVO" secondAttribute="bottom" constant="10" id="ffJ-1v-Ekf"/>
-                                        <constraint firstItem="6lZ-yy-Fmb" firstAttribute="leading" secondItem="HhL-Pf-QZ1" secondAttribute="leading" id="hre-YM-Ht0"/>
                                         <constraint firstItem="9zw-cm-Jhh" firstAttribute="centerY" secondItem="gZi-1A-ege" secondAttribute="centerY" id="k1y-Nf-KIG"/>
                                         <constraint firstItem="VXD-s5-Gj9" firstAttribute="leading" secondItem="jl5-rA-6xi" secondAttribute="trailing" constant="5" id="nrX-L0-bc4"/>
                                         <constraint firstItem="IDy-0E-6I3" firstAttribute="centerY" secondItem="8sV-31-UBs" secondAttribute="centerY" multiplier="0.3" id="qh3-8d-zCa"/>
-                                        <constraint firstItem="6lZ-yy-Fmb" firstAttribute="bottom" secondItem="HhL-Pf-QZ1" secondAttribute="bottom" id="uLG-Vj-DtE"/>
                                         <constraint firstItem="oj9-yj-3Yp" firstAttribute="centerX" secondItem="pto-O9-kpw" secondAttribute="centerX" id="wMB-fx-efP"/>
                                     </constraints>
                                 </view>
@@ -7614,8 +7604,8 @@ Edit setting -"search" in Firefox</string>
                                                                                                                     <rect key="frame" x="5" y="4" width="82" height="28"/>
                                                                                                                     <datePickerCell key="cell" borderStyle="bezel" alignment="left" useCurrentDate="YES" id="Des-YI-ybj">
                                                                                                                         <font key="font" metaFont="system"/>
-                                                                                                                        <date key="date" timeIntervalSinceReferenceDate="799056869.51054597">
-                                                                                                                            <!--2026-04-28 08:14:29 +0000-->
+                                                                                                                        <date key="date" timeIntervalSinceReferenceDate="799132852.46839499">
+                                                                                                                            <!--2026-04-29 05:20:52 +0000-->
                                                                                                                         </date>
                                                                                                                         <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
                                                                                                                         <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -7665,8 +7655,8 @@ Edit setting -"search" in Firefox</string>
                                                                                                                     <rect key="frame" x="5" y="4" width="82" height="28"/>
                                                                                                                     <datePickerCell key="cell" borderStyle="bezel" alignment="left" useCurrentDate="YES" id="z7A-mY-tK3">
                                                                                                                         <font key="font" metaFont="system"/>
-                                                                                                                        <date key="date" timeIntervalSinceReferenceDate="799056869.514009">
-                                                                                                                            <!--2026-04-28 08:14:29 +0000-->
+                                                                                                                        <date key="date" timeIntervalSinceReferenceDate="799132852.47191799">
+                                                                                                                            <!--2026-04-29 05:20:52 +0000-->
                                                                                                                         </date>
                                                                                                                         <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
                                                                                                                         <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>

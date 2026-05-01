@@ -23,7 +23,6 @@ class onboardingControllingBrowserVc: NSViewController {
     
     var checkPermissionTimer:DispatchSourceTimer?
     var arrBrowsers = [[String:Any]]()
-    var lastBrowserClicked:BROWSER?
     var anyBrowserPermissionSet = false
     
     var buttonRequestPermissionText = "Request Permission"
@@ -190,9 +189,7 @@ class onboardingControllingBrowserVc: NSViewController {
     override func viewWillAppear() {
         UserDefaults.standard.set(true, forKey: kUserdefaultsControllingBrowserVcShown)
         reloadData()
-        if self.lastBrowserClicked == ._FIREFOX_ || self.lastBrowserClicked == ._SIGMA_OS_{
-            startTimerCheckPermission()
-        }
+        startTimerCheckPermission()
         allApiObject.capturePosthog(event: "permission-to-block-distractions-shown", metadata: [:])
     }
     
@@ -222,86 +219,65 @@ class onboardingControllingBrowserVc: NSViewController {
     
     @objc func checkPermission(){
         let runningApps = NSWorkspace.shared.runningApplications
-        guard let lastBrowserClicked = lastBrowserClicked else {
-            return;
-        }
-        if lastBrowserClicked == ._SIGMA_OS_{
-            if !isAccessibilityEnabled(isPrompt: false){
-                return;
-            }
-        }
         for runningApp in runningApps{
             if let name = runningApp.localizedName{
                 let nameLowercased = name.lowercased()
                 if let browser = getCurrentBrowserFrom(browserName: nameLowercased){
-                    if lastBrowserClicked == browser{
-                        for i in 0..<arrBrowsers.count{
-                            if arrBrowsers[i]["browser"] as? BROWSER == browser{
-                                let state = arrBrowsers[i]["isEnabled"] as? Bool ?? false
-                                if !state{
-                                    if getActiveTabUrlOf(browser: browser) != nil{
-                                        DispatchQueue.main.async {
-//                                            self.btnContinue.isEnabled = true
-                                            self.arrBrowsers[i]["isEnabled"] = true
-                                            if UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) == nil{
-                                                UserDefaults.standard.set(true, forKey: kUserdefaultsBrowsersPermissionsSetByUser)
-                                            }
-                                            
-                                            var browserNameForPosthog = ""
-                                            if browser == ._SAFARI_{
-                                                browserNameForPosthog =  "safari"
-                                            }else if browser == ._GOOGLE_CHROME_{
-                                                browserNameForPosthog = "chrome"
-                                            }else if browser == ._OPERA_{
-                                                browserNameForPosthog = "opera"
-                                            }else if browser == ._OPERA_GX_{
-                                                browserNameForPosthog = "opera gx"
-                                            }else if browser == ._VIVALDI_{
-                                                browserNameForPosthog = "vivaldi"
-                                            }else if browser == ._SIDEKICK_ {
-                                                browserNameForPosthog = "sidekick"
-                                            }else if browser == ._BRAVE_BROWSER_{
-                                                browserNameForPosthog = "brave"
-                                            }else if browser == ._MICROSOFT_EDGE_{
-                                                browserNameForPosthog = "edge"
-                                            }else if browser == ._ARC_{
-                                                browserNameForPosthog = "arc"
-                                            }else if browser == ._FIREFOX_{
-                                                browserNameForPosthog = "firefox"
-                                            }else if browser == ._SIGMA_OS_{
-                                                browserNameForPosthog = "sigmaos"
-                                            }
-                                            addLog(text: "Permission granted for browser:- \(browserNameForPosthog)")
-                                            allApiObject.capturePosthog(event: "onboarding-granted-permission-\(browserNameForPosthog)", metadata: [:])
-                                            if self.checkPermissionTimer != nil{
-                                                self.checkPermissionTimer?.cancel()
-                                                self.checkPermissionTimer = nil
-                                            }
-                                            self.lastBrowserClicked = nil
-                                            self.tblView.reloadData()
-                                            self.saveBrowsersPermissionInfo()
-                                            
-                                            self.permissionGivenFromBrowser()
-                                            self.anyBrowserPermissionSet = true
-                                        }
-                                        
-                                    }
-                                }else{
-                                    if self.checkPermissionTimer != nil{
-                                        self.checkPermissionTimer?.cancel()
-                                        self.checkPermissionTimer = nil
-                                    }
-                                    self.lastBrowserClicked = nil
-                                    DispatchQueue.main.async {
-                                        self.tblView.reloadData()
-                                    }
-                                }
-                                
-                                break;
-                            }
+                    
+                    if browser == ._SIGMA_OS_{
+                        if !isAccessibilityEnabled(isPrompt: false){
+                            continue;
                         }
                     }
                     
+                    for i in 0..<arrBrowsers.count{
+                        if arrBrowsers[i]["browser"] as? BROWSER == browser{
+                            let state = arrBrowsers[i]["isEnabled"] as? Bool ?? false
+                            if !state{
+                                if getActiveTabUrlOf(browser: browser) != nil{
+                                    DispatchQueue.main.async {
+                                        self.arrBrowsers[i]["isEnabled"] = true
+                                        if UserDefaults.standard.object(forKey: kUserdefaultsBrowsersPermissionsSetByUser) == nil{
+                                            UserDefaults.standard.set(true, forKey: kUserdefaultsBrowsersPermissionsSetByUser)
+                                        }
+                                        
+                                        var browserNameForPosthog = ""
+                                        if browser == ._SAFARI_{
+                                            browserNameForPosthog =  "safari"
+                                        }else if browser == ._GOOGLE_CHROME_{
+                                            browserNameForPosthog = "chrome"
+                                        }else if browser == ._OPERA_{
+                                            browserNameForPosthog = "opera"
+                                        }else if browser == ._OPERA_GX_{
+                                            browserNameForPosthog = "opera gx"
+                                        }else if browser == ._VIVALDI_{
+                                            browserNameForPosthog = "vivaldi"
+                                        }else if browser == ._SIDEKICK_ {
+                                            browserNameForPosthog = "sidekick"
+                                        }else if browser == ._BRAVE_BROWSER_{
+                                            browserNameForPosthog = "brave"
+                                        }else if browser == ._MICROSOFT_EDGE_{
+                                            browserNameForPosthog = "edge"
+                                        }else if browser == ._ARC_{
+                                            browserNameForPosthog = "arc"
+                                        }else if browser == ._FIREFOX_{
+                                            browserNameForPosthog = "firefox"
+                                        }else if browser == ._SIGMA_OS_{
+                                            browserNameForPosthog = "sigmaos"
+                                        }
+                                        addLog(text: "Permission granted for browser:- \(browserNameForPosthog)")
+                                        allApiObject.capturePosthog(event: "onboarding-granted-permission-\(browserNameForPosthog)", metadata: [:])
+                                        self.tblView.reloadData()
+                                        self.saveBrowsersPermissionInfo()
+                                        
+                                        self.permissionGivenFromBrowser()
+                                        self.anyBrowserPermissionSet = true
+                                    }
+                                    
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -319,7 +295,6 @@ class onboardingControllingBrowserVc: NSViewController {
         }
         
         menuViewControllerObj?.browserPermissionGiven = true
-        //menuViewControllerObj?.reloadPermission()
     }
     
     @IBAction func btnContinueClicked(_ sender: Any) {
@@ -481,7 +456,6 @@ extension onboardingControllingBrowserVc:NSTableViewDelegate, NSTableViewDataSou
             }
             allApiObject.capturePosthog(event: "onboarding-request-permission-\(browserNameForPosthog)", metadata: [:])
             addLog(text: "Request permission for browser:- \(browserNameForPosthog)")
-            lastBrowserClicked = browser
             if browser == ._FIREFOX_{// in settings also
                 //showFirefoxPermissionWindow(showingFromOnboarding: true, currentBrowser: browser)
                 let urlString = "https://addons.mozilla.org/en-US/firefox/addon/focus-bear-blocker/"
@@ -495,7 +469,6 @@ extension onboardingControllingBrowserVc:NSTableViewDelegate, NSTableViewDataSou
                         completionHandler: nil
                     )
                 }
-                self.startTimerCheckPermission()
             }else{
                 
                 if browser == ._SIGMA_OS_{
@@ -509,7 +482,6 @@ extension onboardingControllingBrowserVc:NSTableViewDelegate, NSTableViewDataSou
                 NSWorkspace.shared.open(URL(fileURLWithPath: "/Applications/\(appName).app"))
                 if getActiveTabUrlOf(browser: browser) != nil{
                     DispatchQueue.main.async {
-//                        self.btnContinue.isEnabled = true
                         self.arrBrowsers[row]["isEnabled"] = true
                         self.tblView.reloadData()
                         allApiObject.capturePosthog(event: "onboarding-granted-permission-\(browserNameForPosthog)", metadata: [:])
@@ -560,7 +532,6 @@ extension onboardingControllingBrowserVc:NSTableViewDelegate, NSTableViewDataSou
                                 NSWorkspace.shared.open(URL(string: urlstring)!)
                             }
                         })
-                        self.startTimerCheckPermission()
                     }
                 }
             }

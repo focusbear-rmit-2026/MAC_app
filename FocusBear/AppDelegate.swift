@@ -768,6 +768,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                                 
                                 if let webSettings = json?.value(forKey: "Web") as? NSDictionary {// added on 9/9/25 version 2.27.413
                                     
+                                    
                                     if let onboarding = webSettings.value(forKey: "onboarding") as? NSDictionary{
                                         if let currentStep = onboarding.value(forKey: "currentStep") as? String{
                                             if currentStep.lowercased() == "completed"{
@@ -2955,8 +2956,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
     
     func setTopMenu(){
         addLog(text: "setTopMenu")
-        if let button = statusItem.button
-        {
+        if let button = statusItem.button{
             button.action = #selector(togglePopoverFromButton(_:))
             
             if SettingsManagerObject.isMenuPopoverEnabled{
@@ -3053,6 +3053,20 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                 }
                 NSApplication.shared.activate(ignoringOtherApps: true)
                 addLog(text: "showPopover End")
+            }
+        }
+        
+        // Menu dark theme bug solved v 3.31.476
+        if let popoverView = popover.contentViewController?.view.superview {
+            switch SettingsManagerObject.selectedAppAppearanceIndex {
+            case 0:
+                popoverView.appearance = NSApp.effectiveAppearance
+            case 1:
+                popoverView.appearance = NSAppearance(named: .darkAqua)
+            case 2:
+                popoverView.appearance = NSAppearance(named: .aqua)
+            default:
+                break;
             }
         }
     }
@@ -9564,19 +9578,4 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
         hotKeyStartPomodoro = nil
     }
 }
-
-// menu bug
-
-
-
-// music button hide when paying donr
-
-
-// todo focus mode end name should be there in blaokcing page when blocked schedule is running  done
-
-// focus mode suggest alert should be limited if user refused once ask sir// // ADD (30 min cooldown)   done
-
-// permission banner remove
-// timer work done // auto restart
-// file created again if deleted
 

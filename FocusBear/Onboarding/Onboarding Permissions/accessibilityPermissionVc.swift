@@ -26,8 +26,6 @@ class accessibilityPermissionVc: NSViewController {
     var distractionBlockingProgressVcObj:distractionBlockingProgressVc?
     var moveToNextViewEnabled = false
     var timer:Timer?
-    var currentTimer = 0
-    var totalDuration = 0
     var accessibilityIndexinSubTitle = 0
     
     override func viewDidLoad() {
@@ -161,7 +159,6 @@ class accessibilityPermissionVc: NSViewController {
     }
     
     func startTimerCheckPermission() {
-        totalDuration = 10
         self.timer?.invalidate()
         self.timer = nil
         DispatchQueue.global().sync {
@@ -169,10 +166,14 @@ class accessibilityPermissionVc: NSViewController {
             RunLoop.main.add((self.timer!), forMode: RunLoop.Mode.common)
         }
         btnContinue.isEnabled = false
+        checkPermission()
     }
     
     @objc func performTimerCountCheckPermission() {
-        currentTimer += 1
+        checkPermission()
+    }
+    
+    func checkPermission(){
         if isAccessibilityEnabled(isPrompt: false){
             self.timer?.invalidate()
             menuViewControllerObj?.accessibilityPermissionGiven = true
@@ -194,12 +195,6 @@ class accessibilityPermissionVc: NSViewController {
             getDistractionBlockingProgressVcObj().setProgress(level: 3, progress: 0.75)
             btnContinue.isEnabled = true
             return;
-        }
-        if currentTimer >= totalDuration{
-            DispatchQueue.main.async { [self] in
-                moveToNextViewEnabled = true
-                btnContinue.isEnabled = true
-            }
         }
     }
 
