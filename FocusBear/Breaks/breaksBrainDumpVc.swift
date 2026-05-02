@@ -293,8 +293,6 @@ class breaksBrainDumpVc: NSViewController {
     }
     
     @objc func breaksScreenIdleResetBreaks(){
-//        getHabitsVcObject().breaksScreenIsIdleResetBreaks()
-//        showNaturalBreakDetectionWindow(duration: totalDurationIdleTime)
         let idelTimeStartTime = Date().addingTimeInterval(-Double(totalDurationIdleTime))
         UserDefaults.standard.set(idelTimeStartTime, forKey: kUserdefaultsLastBreaksStartTime)
         anyNaturallBreakIsOn = true

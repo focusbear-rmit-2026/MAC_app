@@ -8,52 +8,60 @@
 //    - Open Task List
 //
 //  This is a fully programmatic NSViewController (no storyboard scene required).
-//  It mirrors the UI style used by pomodoroSettingsVc for shortcut recording.
+//  It mirrors the UI style used by pomodoroSettingsVc for shortcut recording:
+//    - Click on the shortcut recorder box to start recording (no extra button)
+//    - A clear button (cross in circle) is embedded inside the blue-bordered recorder box
+//    - Matches the exact visual pattern of pomodoroSettingsVc
 //
 
 import Cocoa
 
-// MARK: - Which shortcut row is being recorded in THIS vc instance
-
-private enum RecordingRow {
-    case none, brainDump, focusMusic, taskList
-}
-
 // Global reference (mirrors pomodoroSettingsVcObj pattern)
 var keyboardShortcutsSettingsVcObj: keyboardShortcutsSettingsVc?
+
+// Sidebar title constant (mirrors pattern used by other settings titles)
+var keyboardShortcutsSettingTitle = "Keyboard Shortcuts"//todo text
+
+// NSScrollView document views are non-flipped by default (origin bottom-left).
+// This subclass flips the coordinate system so content lays out from the top.
+private class FlippedView: NSView {
+    override var isFlipped: Bool { return true }
+}
 
 class keyboardShortcutsSettingsVc: NSViewController {
 
     // MARK: UI elements – Brain Dump row
-
-    private let lblTitleBrainDump   = NSTextField(labelWithString: "")
+    // Title label (left of recorder box)
+    private let lblTitleBrainDump    = NSTextField(labelWithString: "")
+    // Recorder box (mirrors boxRecordShortcutPomodoro)
+    private let boxRecordBrainDump   = NSBox()
+    // Label inside recorder box (mirrors lblrecordShorcutPomodoro)
     private let lblShortcutBrainDump = NSTextField(labelWithString: "")
-    private let btnRecordBrainDump  = NSButton()
-    private let btnClearBrainDump   = NSButton()
+    // Clear button inside recorder box (mirrors btnClearShortcutPomodoro)
+    private let btnClearBrainDump    = NSButton()
 
     // MARK: UI elements – Focus Music row
-
-    private let lblTitleFocusMusic   = NSTextField(labelWithString: "")
+    private let lblTitleFocusMusic    = NSTextField(labelWithString: "")
+    private let boxRecordFocusMusic   = NSBox()
     private let lblShortcutFocusMusic = NSTextField(labelWithString: "")
-    private let btnRecordFocusMusic  = NSButton()
-    private let btnClearFocusMusic   = NSButton()
+    private let btnClearFocusMusic    = NSButton()
 
     // MARK: UI elements – Task List row
-
-    private let lblTitleTaskList   = NSTextField(labelWithString: "")
+    private let lblTitleTaskList    = NSTextField(labelWithString: "")
+    private let boxRecordTaskList   = NSBox()
     private let lblShortcutTaskList = NSTextField(labelWithString: "")
-    private let btnRecordTaskList  = NSButton()
-    private let btnClearTaskList   = NSButton()
+    private let btnClearTaskList    = NSButton()
 
     // MARK: State
-
-    private var recordingRow: RecordingRow = .none
+    // Uses ActiveShortcutRecorder (from HotkeyService.swift) — no separate RecordingRow enum needed
+    private var recordingRow: ActiveShortcutRecorder = .none
+    private let normalBorderColor = NSColor.gray
+    private let recordingPlaceholder = "Record Shortcut"
 
     // MARK: - Lifecycle
 
     override func loadView() {
         view = NSView()
-        view.wantsLayer = true
     }
 
     override func viewDidLoad() {
@@ -62,6 +70,19 @@ class keyboardShortcutsSettingsVc: NSViewController {
         buildUI()
         refreshLabels()
         addLog(text: "keyboardShortcutsSettingsVc viewDidLoad")
+    }
+
+    override func viewWillAppear() {
+        super.viewWillAppear()
+        recordingRow = .none
+        activeShortcutRecorder = .none
+        refreshBoxBorders()
+        refreshLabels()
+    }
+
+    override func viewWillDisappear() {
+        super.viewWillDisappear()
+        cancelRecording()
     }
 
     // MARK: - UI Construction
@@ -79,15 +100,17 @@ class keyboardShortcutsSettingsVc: NSViewController {
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
         ])
-
-        let contentView = NSView()
+        scrollView.drawsBackground = false
+        scrollView.backgroundColor = .clear
+        let contentView = FlippedView()
         contentView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.documentView = contentView
-        contentView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor).isActive = true
-        contentView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor).isActive = true
+        contentView.leadingAnchor.constraint(equalTo: scrollView.contentView.leadingAnchor).isActive = true
+        contentView.trailingAnchor.constraint(equalTo: scrollView.contentView.trailingAnchor).isActive = true
+        contentView.topAnchor.constraint(equalTo: scrollView.contentView.topAnchor).isActive = true
 
         // ── Header ──────────────────────────────────────────────────────────────
-        let lblHeader = NSTextField(labelWithString: "Keyboard Shortcuts")
+        let lblHeader = NSTextField(labelWithString: keyboardShortcutsSettingTitle)
         lblHeader.font = NSFont.boldSystemFont(ofSize: 16)
         lblHeader.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(lblHeader)
@@ -101,31 +124,31 @@ class keyboardShortcutsSettingsVc: NSViewController {
         // ── Rows ────────────────────────────────────────────────────────────────
         let brainDumpRow = makeShortcutRow(
             titleLabel:    lblTitleBrainDump,
+            recorderBox:   boxRecordBrainDump,
             shortcutLabel: lblShortcutBrainDump,
-            recordButton:  btnRecordBrainDump,
             clearButton:   btnClearBrainDump,
             title:         "Open Brain Dump:",
-            recordAction:  #selector(btnRecordBrainDumpClicked),
+            recordAction:  #selector(boxBrainDumpClicked),
             clearAction:   #selector(btnClearBrainDumpClicked)
         )
 
         let focusMusicRow = makeShortcutRow(
             titleLabel:    lblTitleFocusMusic,
+            recorderBox:   boxRecordFocusMusic,
             shortcutLabel: lblShortcutFocusMusic,
-            recordButton:  btnRecordFocusMusic,
             clearButton:   btnClearFocusMusic,
             title:         "Open Focus Music:",
-            recordAction:  #selector(btnRecordFocusMusicClicked),
+            recordAction:  #selector(boxFocusMusicClicked),
             clearAction:   #selector(btnClearFocusMusicClicked)
         )
 
         let taskListRow = makeShortcutRow(
             titleLabel:    lblTitleTaskList,
+            recorderBox:   boxRecordTaskList,
             shortcutLabel: lblShortcutTaskList,
-            recordButton:  btnRecordTaskList,
             clearButton:   btnClearTaskList,
             title:         "Open Task List:",
-            recordAction:  #selector(btnRecordTaskListClicked),
+            recordAction:  #selector(boxTaskListClicked),
             clearAction:   #selector(btnClearTaskListClicked)
         )
 
@@ -158,111 +181,181 @@ class keyboardShortcutsSettingsVc: NSViewController {
         ])
     }
 
-    /// Build a single shortcut row: [Title label | Shortcut display | Record button | Clear button]
+    /// Build a single shortcut row matching the pomodoroSettingsVc pattern:
+    /// [Title label | NSBox (recorder: shortcut label + embedded clear button)]
+    ///
+    /// Clicking the recorder box starts recording (no separate "Record" button).
+    /// The clear button (cross in circle) is embedded inside the box — hidden when no shortcut set.
     private func makeShortcutRow(
         titleLabel: NSTextField,
+        recorderBox: NSBox,
         shortcutLabel: NSTextField,
-        recordButton: NSButton,
         clearButton: NSButton,
         title: String,
         recordAction: Selector,
         clearAction: Selector
     ) -> NSView {
+
         let container = NSView()
         container.translatesAutoresizingMaskIntoConstraints = false
 
+        // ── Title label ─────────────────────────────────────────────────────────
         titleLabel.stringValue = title
         titleLabel.font = NSFont.systemFont(ofSize: 13)
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
 
-        shortcutLabel.stringValue = "Not set"
+        // ── Recorder box (mirrors boxRecordShortcutPomodoro) ────────────────────
+        recorderBox.boxType = .custom
+        recorderBox.borderType = .lineBorder
+        recorderBox.borderWidth = 1.5
+        recorderBox.cornerRadius = 6
+        recorderBox.borderColor = normalBorderColor
+        recorderBox.fillColor = NSColor.controlBackgroundColor
+        recorderBox.translatesAutoresizingMaskIntoConstraints = false
+
+        // ── Shortcut label inside box (mirrors lblrecordShorcutPomodoro) ─────────
+        shortcutLabel.stringValue = recordingPlaceholder
         shortcutLabel.font = NSFont.monospacedSystemFont(ofSize: 13, weight: .regular)
-        shortcutLabel.alignment = .center
+        shortcutLabel.alignment = .left
+        shortcutLabel.textColor = .secondaryLabelColor
         shortcutLabel.translatesAutoresizingMaskIntoConstraints = false
-        shortcutLabel.wantsLayer = true
-        shortcutLabel.layer?.cornerRadius = 4
+        shortcutLabel.isEditable = false
+        shortcutLabel.isBordered = false
+        shortcutLabel.drawsBackground = false
 
-        recordButton.title = "Record Shortcut"
-        recordButton.bezelStyle = .rounded
-        recordButton.translatesAutoresizingMaskIntoConstraints = false
-        recordButton.target = self
-        recordButton.action = recordAction
-
-        clearButton.title = "Clear"
-        clearButton.bezelStyle = .rounded
+        // ── Clear button inside box (mirrors btnClearShortcutPomodoro) ───────────
+        // "Cross in a circle" style, embedded inside the recorder box
+        if #available(macOS 11.0, *) {
+            let xmarkImage = NSImage(systemSymbolName: "xmark.circle.fill",
+                                     accessibilityDescription: "Clear shortcut")
+            clearButton.image = xmarkImage
+        } else {
+            clearButton.title = "✕"
+        }
+        clearButton.isBordered = false
+        clearButton.bezelStyle = .circular
+        clearButton.imageScaling = .scaleProportionallyDown
+        clearButton.contentTintColor = .secondaryLabelColor
         clearButton.translatesAutoresizingMaskIntoConstraints = false
         clearButton.target = self
         clearButton.action = clearAction
+        clearButton.isHidden = true   // hidden when no shortcut set (matches Pomodoro pattern)
 
+        // ── Transparent click-to-record overlay button (matches btnRecordShortcutPomodoro) ──
+        // This fills the box so the user can click anywhere on the recorder to start recording.
+        let recordOverlay = NSButton()
+        recordOverlay.title = ""
+        recordOverlay.isBordered = false
+        recordOverlay.bezelStyle = .rounded
+        recordOverlay.translatesAutoresizingMaskIntoConstraints = false
+        recordOverlay.target = self
+        recordOverlay.action = recordAction
+        recordOverlay.setAccessibilityLabel("Record shortcut")
+
+        // ── Assemble box internals ───────────────────────────────────────────────
+        // NSBox.addSubview adds to contentView, so constrain to contentView anchors
+        // (not box anchors) to avoid the border inset clipping the hit-test area.
+        
+        recorderBox.addSubview(shortcutLabel)   // on top of overlay
+        recorderBox.addSubview(recordOverlay)   // behind everything (z-order: first = bottom)
+        recorderBox.addSubview(clearButton)     // topmost (so it gets clicks over overlay)
+
+        let boxContent = recorderBox.contentView!
+        NSLayoutConstraint.activate([
+            // Overlay covers entire box content area
+            recordOverlay.topAnchor.constraint(equalTo: boxContent.topAnchor),
+            recordOverlay.bottomAnchor.constraint(equalTo: boxContent.bottomAnchor),
+            recordOverlay.leadingAnchor.constraint(equalTo: boxContent.leadingAnchor),
+            recordOverlay.trailingAnchor.constraint(equalTo: boxContent.trailingAnchor),
+
+            // Shortcut label: left-aligned, vertically centred, leaves room for clear button
+            shortcutLabel.centerYAnchor.constraint(equalTo: boxContent.centerYAnchor),
+            shortcutLabel.leadingAnchor.constraint(equalTo: boxContent.leadingAnchor, constant: 8),
+            shortcutLabel.trailingAnchor.constraint(equalTo: clearButton.leadingAnchor, constant: -4),
+
+            // Clear button: right-aligned inside box
+            clearButton.centerYAnchor.constraint(equalTo: boxContent.centerYAnchor),
+            clearButton.trailingAnchor.constraint(equalTo: boxContent.trailingAnchor, constant: -6),
+            clearButton.widthAnchor.constraint(equalToConstant: 18),
+            clearButton.heightAnchor.constraint(equalToConstant: 18)
+        ])
+
+        // ── Assemble container ───────────────────────────────────────────────────
         container.addSubview(titleLabel)
-        container.addSubview(shortcutLabel)
-        container.addSubview(recordButton)
-        container.addSubview(clearButton)
+        container.addSubview(recorderBox)
 
         NSLayoutConstraint.activate([
+            container.heightAnchor.constraint(equalToConstant: 36),
+
             titleLabel.leadingAnchor.constraint(equalTo: container.leadingAnchor),
             titleLabel.centerYAnchor.constraint(equalTo: container.centerYAnchor),
             titleLabel.widthAnchor.constraint(equalToConstant: 160),
 
-            shortcutLabel.leadingAnchor.constraint(equalTo: titleLabel.trailingAnchor, constant: 8),
-            shortcutLabel.centerYAnchor.constraint(equalTo: container.centerYAnchor),
-            shortcutLabel.widthAnchor.constraint(equalToConstant: 100),
-
-            recordButton.leadingAnchor.constraint(equalTo: shortcutLabel.trailingAnchor, constant: 8),
-            recordButton.centerYAnchor.constraint(equalTo: container.centerYAnchor),
-
-            clearButton.leadingAnchor.constraint(equalTo: recordButton.trailingAnchor, constant: 8),
-            clearButton.centerYAnchor.constraint(equalTo: container.centerYAnchor),
-            clearButton.trailingAnchor.constraint(lessThanOrEqualTo: container.trailingAnchor),
-
-            container.heightAnchor.constraint(equalToConstant: 36)
+            recorderBox.leadingAnchor.constraint(equalTo: titleLabel.trailingAnchor, constant: 8),
+            recorderBox.centerYAnchor.constraint(equalTo: container.centerYAnchor),
+            recorderBox.widthAnchor.constraint(equalToConstant: 200),
+            recorderBox.heightAnchor.constraint(equalToConstant: 28)
         ])
 
         return container
     }
 
-    // MARK: - Refresh display labels
+    // MARK: - Box click actions (start recording — mirrors btnRecordShortcutPomodoroClicked)
 
-    func refreshLabels() {
-        lblShortcutBrainDump.stringValue = HotkeyService.displayString(
-            char: SettingsManagerObject.brainDumpShortcutChar,
-            flagInts: SettingsManagerObject.brainDumpShortcutFlags
-        )
-        lblShortcutFocusMusic.stringValue = HotkeyService.displayString(
-            char: SettingsManagerObject.focusMusicShortcutChar,
-            flagInts: SettingsManagerObject.focusMusicShortcutFlags
-        )
-        lblShortcutTaskList.stringValue = HotkeyService.displayString(
-            char: SettingsManagerObject.taskListShortcutChar,
-            flagInts: SettingsManagerObject.taskListShortcutFlags
-        )
+    @objc private func boxBrainDumpClicked() {
+        startRecording(row: .brainDump,
+                       box: boxRecordBrainDump,
+                       shortcutLabel: lblShortcutBrainDump,
+                       clearButton: btnClearBrainDump)
     }
 
-    // MARK: - Record button actions
-
-    @objc private func btnRecordBrainDumpClicked() {
-        startRecording(row: .brainDump, button: btnRecordBrainDump)
+    @objc private func boxFocusMusicClicked() {
+        startRecording(row: .focusMusic,
+                       box: boxRecordFocusMusic,
+                       shortcutLabel: lblShortcutFocusMusic,
+                       clearButton: btnClearFocusMusic)
     }
 
-    @objc private func btnRecordFocusMusicClicked() {
-        startRecording(row: .focusMusic, button: btnRecordFocusMusic)
+    @objc private func boxTaskListClicked() {
+        startRecording(row: .taskList,
+                       box: boxRecordTaskList,
+                       shortcutLabel: lblShortcutTaskList,
+                       clearButton: btnClearTaskList)
     }
 
-    @objc private func btnRecordTaskListClicked() {
-        startRecording(row: .taskList, button: btnRecordTaskList)
-    }
-
-    private func startRecording(row: RecordingRow, button: NSButton) {
-        guard recordingRow == .none else { return }
+    /// Mirrors pomodoroSettingsVc.btnRecordShortcutPomodoroClicked
+    private func startRecording(row: ActiveShortcutRecorder,
+                                box: NSBox,
+                                shortcutLabel: NSTextField,
+                                clearButton: NSButton) {
+        // Reset any in-progress recording first — re-registers the previous shortcut before switching
+        if recordingRow != .none {
+            cancelRecording()
+        }
         recordingRow = row
-        activeShortcutRecorder = rowToGlobal(row)
-        button.title = "Press shortcut..."
-        button.highlight(true)
-        // mainWindowController will call shortcutRecorded(char:flagInts:) when key is pressed
+        activeShortcutRecorder = row
+
+        // Unregister the Carbon global hotkey for the shortcut being re-recorded.
+        // Carbon intercepts at the system level before NSEvent dispatch — if the shortcut
+        // is still registered, pressing it fires the action instead of being captured.
+        // (Mirrors appdelegate?.unregisterPomodoroShortcut() in pomodoroSettingsVc.)
+        switch row {
+        case .brainDump:  HotkeyService.shared.unregisterBrainDump()
+        case .focusMusic: HotkeyService.shared.unregisterFocusMusic()
+        case .taskList:   HotkeyService.shared.unregisterTaskList()
+        case .none: break
+        }
+
+        // Visual feedback: blue border + cleared label + hide clear button (mirrors Pomodoro)
+        box.borderColor = NSColor.systemBlue
+        shortcutLabel.stringValue = ""
+        clearButton.isHidden = true
+
+        self.view.window?.makeFirstResponder(nil)
         addLog(text: "[keyboardShortcutsSettingsVc] startRecording \(row)")
     }
 
-    // MARK: - Clear button actions
+    // MARK: - Clear button actions (mirrors btnClearShortcutPomodoroClicked)
 
     @objc private func btnClearBrainDumpClicked() {
         clearShortcut(.brainDump)
@@ -276,7 +369,8 @@ class keyboardShortcutsSettingsVc: NSViewController {
         clearShortcut(.taskList)
     }
 
-    private func clearShortcut(_ row: RecordingRow) {
+    /// Mirrors pomodoroSettingsVc.btnClearShortcutPomodoroClicked
+    private func clearShortcut(_ row: ActiveShortcutRecorder) {
         switch row {
         case .brainDump:
             SettingsManagerObject.brainDumpShortcutChar = ""
@@ -297,6 +391,7 @@ class keyboardShortcutsSettingsVc: NSViewController {
             break
         }
         refreshLabels()
+        refreshBoxBorders()
         addLog(text: "[keyboardShortcutsSettingsVc] clearShortcut \(row)")
     }
 
@@ -304,11 +399,13 @@ class keyboardShortcutsSettingsVc: NSViewController {
 
     /// Called by mainWindowController.keyDown after it captures a key event while
     /// `activeShortcutRecorder` is not `.none`.
+    /// Mirrors the pomodoroSettingsVc shortcut-saved flow: resets border, shows clear button.
     func shortcutRecorded(char: String, flagInts: [Int]) {
         defer {
             recordingRow = .none
             activeShortcutRecorder = .none
-            resetRecordButtonTitles()
+            refreshBoxBorders()
+            refreshLabels()
         }
 
         switch recordingRow {
@@ -330,33 +427,71 @@ class keyboardShortcutsSettingsVc: NSViewController {
         case .none:
             break
         }
-        refreshLabels()
         addLog(text: "[keyboardShortcutsSettingsVc] shortcutRecorded char=\(char) flagInts=\(flagInts)")
     }
 
     func cancelRecording() {
+        // Re-register the shortcut that was unregistered in startRecording() before we clear state.
+        // Without this, pressing ESC leaves the shortcut permanently dead until app restart.
+        // Mirrors pomodoroSettingsVc.resetCurrentRecording() which calls registerPomodoroShortcut()
+        // before clearing recording state.
+        switch recordingRow {
+        case .brainDump:  HotkeyService.shared.registerBrainDump()
+        case .focusMusic: HotkeyService.shared.registerFocusMusic()
+        case .taskList:   HotkeyService.shared.registerTaskList()
+        case .none: break
+        }
         recordingRow = .none
         activeShortcutRecorder = .none
-        resetRecordButtonTitles()
+        refreshBoxBorders()
+        refreshLabels()
     }
 
-    // MARK: - Helpers
+    // MARK: - Refresh helpers (mirror pomodoroSettingsVc.reload_newShotShortcut)
 
-    private func resetRecordButtonTitles() {
-        btnRecordBrainDump.title = "Record Shortcut"
-        btnRecordBrainDump.highlight(false)
-        btnRecordFocusMusic.title = "Record Shortcut"
-        btnRecordFocusMusic.highlight(false)
-        btnRecordTaskList.title = "Record Shortcut"
-        btnRecordTaskList.highlight(false)
+    /// Update shortcut label text and clear-button visibility for all rows.
+    func refreshLabels() {
+        refreshRow(
+            char: SettingsManagerObject.brainDumpShortcutChar,
+            flagInts: SettingsManagerObject.brainDumpShortcutFlags,
+            shortcutLabel: lblShortcutBrainDump,
+            clearButton: btnClearBrainDump
+        )
+        refreshRow(
+            char: SettingsManagerObject.focusMusicShortcutChar,
+            flagInts: SettingsManagerObject.focusMusicShortcutFlags,
+            shortcutLabel: lblShortcutFocusMusic,
+            clearButton: btnClearFocusMusic
+        )
+        refreshRow(
+            char: SettingsManagerObject.taskListShortcutChar,
+            flagInts: SettingsManagerObject.taskListShortcutFlags,
+            shortcutLabel: lblShortcutTaskList,
+            clearButton: btnClearTaskList
+        )
     }
 
-    private func rowToGlobal(_ row: RecordingRow) -> ActiveShortcutRecorder {
-        switch row {
-        case .none:       return .none
-        case .brainDump:  return .brainDump
-        case .focusMusic: return .focusMusic
-        case .taskList:   return .taskList
+    private func refreshRow(char: String,
+                            flagInts: [Int],
+                            shortcutLabel: NSTextField,
+                            clearButton: NSButton) {
+        // Check raw stored values directly — do NOT compare display string, which returns "Not set"
+        // for unset shortcuts (not "" or recordingPlaceholder).
+        if char.isEmpty && flagInts.isEmpty {
+            shortcutLabel.stringValue = recordingPlaceholder
+            shortcutLabel.textColor = .secondaryLabelColor
+            clearButton.isHidden = true
+        } else {
+            shortcutLabel.stringValue = HotkeyService.displayString(char: char, flagInts: flagInts)
+            shortcutLabel.textColor = .labelColor
+            clearButton.isHidden = false  // show embedded clear button (mirrors Pomodoro)
         }
+    }
+
+    /// Reset all box borders to normal (matches pomodoroSettingsVc border reset on viewWillAppear).
+    private func refreshBoxBorders() {
+        boxRecordBrainDump.borderColor  = normalBorderColor
+        boxRecordFocusMusic.borderColor = normalBorderColor
+        boxRecordTaskList.borderColor   = normalBorderColor
     }
 }

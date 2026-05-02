@@ -524,7 +524,7 @@ class menuViewController: NSViewController {
             if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
                 toolTipButtonEditBlockingSchedule = menuInfo.value(forKey: "buttonAddBlockingSchedule") as? String ?? toolTipButtonEditBlockingSchedule
             }
-            showTooltip(sender: btnEditBlockingSchedule, msg: toolTipButtonEditBlockingSchedule, preferredEdge: NSRectEdge.maxX, maxWidthVal:230, autoCloseOnMouseExit: true)
+            showTooltipWithOsTahoe(sender: btnEditBlockingSchedule, msg: toolTipButtonEditBlockingSchedule, preferredEdge: NSRectEdge.maxX, maxWidthVal:230, autoCloseOnMouseExit: true)
         }else if event.trackingArea == trackingAreaBtnEditFocusModeDuration{
             var buttonEditFocusModeDuration = "Click here to update duration, intention and current task"
             if let menuInfo = configjson.value(forKey: "menuInfo") as? NSDictionary{
@@ -2132,7 +2132,7 @@ class menuViewController: NSViewController {
             return;
         }
         
-        
+        closePopoverTooltipIfVisible()
         
         if mainWindowControllerObj?.window?.isVisible ?? false{
             leftMenuVcObj?.showBlocksView()

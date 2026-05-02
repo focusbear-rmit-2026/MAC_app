@@ -62,7 +62,7 @@ final class HotkeyService {
         hotKeyBrainDump = HotKey(keyCombo: KeyCombo(stkey: keyChar, modifiers: localFlags))
         hotKeyBrainDump?.keyDownHandler = {
             addLog(text: "[HotkeyService] Brain Dump shortcut triggered")
-            DispatchQueue.main.async { showBrainDumpWindow() }
+            showBrainDumpWindow()
         }
     }
 
@@ -80,7 +80,7 @@ final class HotkeyService {
         hotKeyFocusMusic = HotKey(keyCombo: KeyCombo(stkey: keyChar, modifiers: localFlags))
         hotKeyFocusMusic?.keyDownHandler = {
             addLog(text: "[HotkeyService] Focus Music shortcut triggered")
-            DispatchQueue.main.async { showAllTracksWindow() }
+            showAllTracksWindow()
         }
     }
 
@@ -98,9 +98,7 @@ final class HotkeyService {
         hotKeyTaskList = HotKey(keyCombo: KeyCombo(stkey: keyChar, modifiers: localFlags))
         hotKeyTaskList?.keyDownHandler = {
             addLog(text: "[HotkeyService] Task List shortcut triggered")
-            DispatchQueue.main.async {
-                menuViewControllerObj?.openToDoListClicked()
-            }
+            menuViewControllerObj?.openToDoListClicked()
         }
     }
 

@@ -250,6 +250,13 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
     override func keyDown(with event: NSEvent) {
         print(event.keyCode)
 
+        // ── Keyboard Shortcuts settings panel recording ──────────────────────────
+        if activeShortcutRecorder != .none {
+            handleKeyboardShortcutRecording(event: event)
+            return
+        }
+        // ────────────────────────────────────────────────────────────────────────
+
         if pomodoroSettingsVcObj == nil{
             super.keyDown(with: event)
             return;
@@ -264,7 +271,7 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
             handled = true
             print("ESC")
         }
-        if event.modifierFlags.contains(.command) || event.modifierFlags.contains(.option) || event.modifierFlags.contains(.control) || event.modifierFlags.contains(.shift) || event.specialKey != nil{
+        if event.modifierFlags.contains(.command) || event.modifierFlags.contains(.option) || event.modifierFlags.contains(.control) || event.modifierFlags.contains(.shift) {
             
             if var chars = event.charactersIgnoringModifiers {
                 
@@ -423,6 +430,65 @@ class mainWindowController: NSWindowController, NSWindowDelegate {
     }
     
     
+    // MARK: - Keyboard Shortcuts panel recording
+
+    /// Handles a key event when the Keyboard Shortcuts settings panel is recording a shortcut.
+    private func handleKeyboardShortcutRecording(event: NSEvent) {
+        // ESC cancels recording
+        if event.keyCode == escKeyCode {
+            keyboardShortcutsSettingsVcObj?.cancelRecording()
+            return
+        }
+
+        guard event.modifierFlags.contains(.command) || event.modifierFlags.contains(.option) ||
+              event.modifierFlags.contains(.control) || event.modifierFlags.contains(.shift) else {
+            // No modifier — ignore and cancel
+            keyboardShortcutsSettingsVcObj?.cancelRecording()
+            return
+        }
+
+        var recordChar = ""
+        var iserror = false
+
+        if let specialKey = event.specialKey {
+            switch specialKey {
+            case .f1:  recordChar = "f1"
+            case .f2:  recordChar = "f2"
+            case .f3:  recordChar = "f3"
+            case .f4:  recordChar = "f4"
+            case .f5:  recordChar = "f5"
+            case .f6:  recordChar = "f6"
+            case .f7:  recordChar = "f7"
+            case .f8:  recordChar = "f8"
+            case .f9:  recordChar = "f9"
+            case .f10: recordChar = "f10"
+            case .f11: recordChar = "f11"
+            case .f12: recordChar = "f12"
+            default:   iserror = true
+            }
+        } else if event.keyCode == spaceKeyCode {
+            recordChar = "space"
+        } else {
+            var chars = event.charactersIgnoringModifiers ?? ""
+            if chars == "<" { chars = "," }
+            else if chars == ">" { chars = "." }
+            if chars.isEmpty { iserror = true } else { recordChar = chars }
+        }
+
+        if iserror {
+            keyboardShortcutsSettingsVcObj?.cancelRecording()
+            return
+        }
+
+        var flagsarr = [Int]()
+        if event.modifierFlags.contains(.control) { flagsarr.append(shortcutFlags._CONTROL_.rawValue) }
+        if event.modifierFlags.contains(.option)  { flagsarr.append(shortcutFlags._OPTION_.rawValue) }
+        if event.modifierFlags.contains(.shift)   { flagsarr.append(shortcutFlags._SHIFT_.rawValue) }
+        if event.modifierFlags.contains(.command) { flagsarr.append(shortcutFlags._COMMAND_.rawValue) }
+
+        keyboardShortcutsSettingsVcObj?.shortcutRecorded(char: recordChar, flagInts: flagsarr)
+    }
+
     func shortcutFailed_alert(){
         char = ""
         flags = []

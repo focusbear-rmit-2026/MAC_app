@@ -469,6 +469,15 @@ func getToDoListSettingsVcObject()->toDoListSettingsVc{
     return toDoListSettingsVcObj!
 }
 
+func getKeyboardShortcutsSettingsVcObject() -> keyboardShortcutsSettingsVc {
+    if keyboardShortcutsSettingsVcObj == nil {
+        keyboardShortcutsSettingsVcObj = keyboardShortcutsSettingsVc()
+        keyboardShortcutsSettingsVcObj?.loadView()
+        keyboardShortcutsSettingsVcObj?.viewDidLoad()
+    }
+    return keyboardShortcutsSettingsVcObj!
+}
+
 
 //meetingDetactionVcObj
 var meetingDetactionVcObj:meetingDetactionVc?

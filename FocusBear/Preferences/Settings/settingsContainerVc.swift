@@ -212,4 +212,12 @@ class settingsContainerVc: NSViewController {
         self.containerView.addSubview(getResearchVcObject().view)
         self.containerView.addConstraints(subView: getResearchVcObject().view)
     }
+
+    func showKeyboardShortcutsView() {
+        removeSubViews()
+        let vc = getKeyboardShortcutsSettingsVcObject()
+        vc.refreshLabels()
+        self.containerView.addSubview(vc.view)
+        self.containerView.addConstraints(subView: vc.view)
+    }
 }

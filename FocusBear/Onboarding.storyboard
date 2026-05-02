@@ -1476,7 +1476,6 @@
                                                 <action selector="btnCopyPasswordClicked:" target="tEr-dK-57F" id="osy-Jo-sy5"/>
                                             </connections>
                                         </button>
-
                                         <imageView hidden="YES" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="K8g-qB-Ipv">
                                             <rect key="frame" x="430" y="659" width="240" height="25"/>
                                             <constraints>

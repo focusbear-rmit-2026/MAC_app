@@ -49,8 +49,20 @@ class SettingsManager:NSObject{
     
     var startPomodoroShortcutChar = "P"
     var startPomodoroShortcutFlags:[Int] = [shortcutFlags._COMMAND_.rawValue, shortcutFlags._CONTROL_.rawValue, shortcutFlags._OPTION_.rawValue]
-    
-    
+
+    // Keyboard shortcut – Brain Dump  (default: ⌥⌘B)
+    var brainDumpShortcutChar = "b"
+    var brainDumpShortcutFlags: [Int] = [shortcutFlags._COMMAND_.rawValue, shortcutFlags._OPTION_.rawValue]
+
+    // Keyboard shortcut – Focus Music (default: ⌥⌘M)
+    var focusMusicShortcutChar = "m"
+    var focusMusicShortcutFlags: [Int] = [shortcutFlags._COMMAND_.rawValue, shortcutFlags._OPTION_.rawValue]
+
+    // Keyboard shortcut – Task List  (default: ⌥⌘T)
+    var taskListShortcutChar = "t"
+    var taskListShortcutFlags: [Int] = [shortcutFlags._COMMAND_.rawValue, shortcutFlags._OPTION_.rawValue]
+
+
     var isMotivationalMessageEnabled = true
     var isAiCheckUrlEnabled = true
 
@@ -152,7 +164,14 @@ class SettingsManager:NSObject{
     
     var kUserdefaultsStartPomodoroShortcutChar = "kUserdefaultsstartPomodoroShortcutChar"
     var kUserdefaultsStartPomodoroShortcutFlags = "kUserdefaultsStartPomodoroShortcutFlags"
-    
+
+    var kUserdefaultsBrainDumpShortcutChar  = "kUserdefaultsBrainDumpShortcutChar"
+    var kUserdefaultsBrainDumpShortcutFlags = "kUserdefaultsBrainDumpShortcutFlags"
+    var kUserdefaultsFocusMusicShortcutChar  = "kUserdefaultsFocusMusicShortcutChar"
+    var kUserdefaultsFocusMusicShortcutFlags = "kUserdefaultsFocusMusicShortcutFlags"
+    var kUserdefaultsTaskListShortcutChar  = "kUserdefaultsTaskListShortcutChar"
+    var kUserdefaultsTaskListShortcutFlags = "kUserdefaultsTaskListShortcutFlags"
+
     var kUserdefaultsMotivationalMessageEnabled = "kUserdefaultsMotivationalMessageEnabled"
     var kUserdefaultsAiCheckUrlEnabled = "kUserdefaultsAiCheckUrlEnabled"
     
@@ -254,7 +273,14 @@ class SettingsManager:NSObject{
         
         kUserdefaultsStartPomodoroShortcutChar = kUserdefaultsStartPomodoroShortcutChar + (appdelegate?.user?.userId ?? "")
         kUserdefaultsStartPomodoroShortcutFlags = kUserdefaultsStartPomodoroShortcutFlags + (appdelegate?.user?.userId ?? "")
-        
+
+        kUserdefaultsBrainDumpShortcutChar  = kUserdefaultsBrainDumpShortcutChar  + (appdelegate?.user?.userId ?? "")
+        kUserdefaultsBrainDumpShortcutFlags = kUserdefaultsBrainDumpShortcutFlags + (appdelegate?.user?.userId ?? "")
+        kUserdefaultsFocusMusicShortcutChar  = kUserdefaultsFocusMusicShortcutChar  + (appdelegate?.user?.userId ?? "")
+        kUserdefaultsFocusMusicShortcutFlags = kUserdefaultsFocusMusicShortcutFlags + (appdelegate?.user?.userId ?? "")
+        kUserdefaultsTaskListShortcutChar  = kUserdefaultsTaskListShortcutChar  + (appdelegate?.user?.userId ?? "")
+        kUserdefaultsTaskListShortcutFlags = kUserdefaultsTaskListShortcutFlags + (appdelegate?.user?.userId ?? "")
+
         
         kUserdefaultsMotivationalMessageEnabled = kUserdefaultsMotivationalMessageEnabled + (appdelegate?.user?.userId ?? "")
         
@@ -637,6 +663,24 @@ class SettingsManager:NSObject{
                 if let val = settings.value(forKey: kStartPomodoroShortcutFlags) as? [Int]{
                     UserDefaults.standard.set(val, forKey: self.kUserdefaultsStartPomodoroShortcutFlags)
                 }
+                if let val = settings.value(forKey: "kBrainDumpShortcutChar") as? String {
+                    UserDefaults.standard.set(val, forKey: self.kUserdefaultsBrainDumpShortcutChar)
+                }
+                if let val = settings.value(forKey: "kBrainDumpShortcutFlags") as? [Int] {
+                    UserDefaults.standard.set(val, forKey: self.kUserdefaultsBrainDumpShortcutFlags)
+                }
+                if let val = settings.value(forKey: "kFocusMusicShortcutChar") as? String {
+                    UserDefaults.standard.set(val, forKey: self.kUserdefaultsFocusMusicShortcutChar)
+                }
+                if let val = settings.value(forKey: "kFocusMusicShortcutFlags") as? [Int] {
+                    UserDefaults.standard.set(val, forKey: self.kUserdefaultsFocusMusicShortcutFlags)
+                }
+                if let val = settings.value(forKey: "kTaskListShortcutChar") as? String {
+                    UserDefaults.standard.set(val, forKey: self.kUserdefaultsTaskListShortcutChar)
+                }
+                if let val = settings.value(forKey: "kTaskListShortcutFlags") as? [Int] {
+                    UserDefaults.standard.set(val, forKey: self.kUserdefaultsTaskListShortcutFlags)
+                }
                 addLog(text: "Local MotivationalMessageEnabled")
                 if let val = settings.value(forKey: kMotivationalMessageEnabled) as? Bool{
                     UserDefaults.standard.set(val, forKey: self.kUserdefaultsMotivationalMessageEnabled)
@@ -1013,8 +1057,44 @@ class SettingsManager:NSObject{
             }else{
                 UserDefaults.standard.set(startPomodoroShortcutFlags, forKey: kUserdefaultsStartPomodoroShortcutFlags)
             }
-            
-            
+
+            // ---------------------------SETTINGS Brain Dump Shortcut--------------------------
+            if let val = UserDefaults.standard.object(forKey: kUserdefaultsBrainDumpShortcutChar) as? String {
+                brainDumpShortcutChar = val
+            } else {
+                UserDefaults.standard.set(brainDumpShortcutChar, forKey: kUserdefaultsBrainDumpShortcutChar)
+            }
+            if let val = UserDefaults.standard.object(forKey: kUserdefaultsBrainDumpShortcutFlags) as? [Int] {
+                brainDumpShortcutFlags = val
+            } else {
+                UserDefaults.standard.set(brainDumpShortcutFlags, forKey: kUserdefaultsBrainDumpShortcutFlags)
+            }
+
+            // ---------------------------SETTINGS Focus Music Shortcut--------------------------
+            if let val = UserDefaults.standard.object(forKey: kUserdefaultsFocusMusicShortcutChar) as? String {
+                focusMusicShortcutChar = val
+            } else {
+                UserDefaults.standard.set(focusMusicShortcutChar, forKey: kUserdefaultsFocusMusicShortcutChar)
+            }
+            if let val = UserDefaults.standard.object(forKey: kUserdefaultsFocusMusicShortcutFlags) as? [Int] {
+                focusMusicShortcutFlags = val
+            } else {
+                UserDefaults.standard.set(focusMusicShortcutFlags, forKey: kUserdefaultsFocusMusicShortcutFlags)
+            }
+
+            // ---------------------------SETTINGS Task List Shortcut--------------------------
+            if let val = UserDefaults.standard.object(forKey: kUserdefaultsTaskListShortcutChar) as? String {
+                taskListShortcutChar = val
+            } else {
+                UserDefaults.standard.set(taskListShortcutChar, forKey: kUserdefaultsTaskListShortcutChar)
+            }
+            if let val = UserDefaults.standard.object(forKey: kUserdefaultsTaskListShortcutFlags) as? [Int] {
+                taskListShortcutFlags = val
+            } else {
+                UserDefaults.standard.set(taskListShortcutFlags, forKey: kUserdefaultsTaskListShortcutFlags)
+            }
+
+
             addLog(text: "Parse Motivational Message")
             //  ---------------------------SETTINGS Motivational Message--------------------------
             if let isEnabled = UserDefaults.standard.object(forKey: kUserdefaultsMotivationalMessageEnabled) as? Bool{
@@ -1231,6 +1311,12 @@ class SettingsManager:NSObject{
             kImmediatelyBlockDistractingApps:immediatelyBlockDistractingApps,
             kStartPomodoroShortcutChar:startPomodoroShortcutChar,
             kStartPomodoroShortcutFlags:startPomodoroShortcutFlags,
+            "kBrainDumpShortcutChar":brainDumpShortcutChar,
+            "kBrainDumpShortcutFlags":brainDumpShortcutFlags,
+            "kFocusMusicShortcutChar":focusMusicShortcutChar,
+            "kFocusMusicShortcutFlags":focusMusicShortcutFlags,
+            "kTaskListShortcutChar":taskListShortcutChar,
+            "kTaskListShortcutFlags":taskListShortcutFlags,
             kIsPasswordRequireInChangeSettings:isPasswordRequireInChangeSettings,
             kIsPasswordRequireInSkipMorning:isPasswordRequireInSkipMorning,
             kIsPasswordRequireInSkipEvening:isPasswordRequireInSkipEvening,
@@ -1297,7 +1383,14 @@ class SettingsManager:NSObject{
         UserDefaults.standard.set(immediatelyBlockDistractingApps, forKey: kUserdefaultsImmediatelyBlockDistractingApps)
         UserDefaults.standard.set(startPomodoroShortcutChar, forKey: kUserdefaultsStartPomodoroShortcutChar)
         UserDefaults.standard.set(startPomodoroShortcutFlags, forKey: kUserdefaultsStartPomodoroShortcutFlags)
-        
+
+        UserDefaults.standard.set(brainDumpShortcutChar, forKey: kUserdefaultsBrainDumpShortcutChar)
+        UserDefaults.standard.set(brainDumpShortcutFlags, forKey: kUserdefaultsBrainDumpShortcutFlags)
+        UserDefaults.standard.set(focusMusicShortcutChar, forKey: kUserdefaultsFocusMusicShortcutChar)
+        UserDefaults.standard.set(focusMusicShortcutFlags, forKey: kUserdefaultsFocusMusicShortcutFlags)
+        UserDefaults.standard.set(taskListShortcutChar, forKey: kUserdefaultsTaskListShortcutChar)
+        UserDefaults.standard.set(taskListShortcutFlags, forKey: kUserdefaultsTaskListShortcutFlags)
+
         UserDefaults.standard.set(isSoundEnabled, forKey: kUserdefaultsEnableSound)//do not sync it
         UserDefaults.standard.set(isAnnouncementEnabled, forKey: kUserdefaultsEnableAnnouncement)//do not sync it
         

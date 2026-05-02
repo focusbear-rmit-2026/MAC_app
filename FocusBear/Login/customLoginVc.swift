@@ -803,12 +803,12 @@ class customLoginVc: NSViewController {
             imgViewRuleFourth.isHidden = true
         }
         
-        if isContainAnySmallLetter(password: password){
-            passwordRuleAppliedCount += 1
-            imgViewRuleThird.isHidden = false
-        }else{
-            imgViewRuleThird.isHidden = true
-        }
+//        if isContainAnySmallLetter(password: password){
+//            passwordRuleAppliedCount += 1
+//            imgViewRuleThird.isHidden = false
+//        }else{
+//            imgViewRuleThird.isHidden = true
+//        }
         
         if isContainAnyNumber(password: password){
             passwordRuleAppliedCount += 1

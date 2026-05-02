@@ -84,7 +84,6 @@ func checkNaturalBreakFromIdleTimeAfterScreenUnlocked(){
                 UserDefaults.standard.set(macGoesInSleepTime!, forKey: kUserdefaultsLastBreaksStartTime)
                 writeNaturalBreak()//2.28.444
             }
-//            checkIsNaturalBreakWindowNeedToShow(idleTimeValue: idleTimeValue)
         }else{
             addLog(text: "Don't need to check natural break reason:- habit window is visible")
         }
@@ -128,13 +127,13 @@ func detectNatualBreaks(){
     
     let idleTimeValue = Int(lastEvent)
     if currentState != ._MORNING_HABIT_ && currentState != ._MICRO_BREAK_ && (isHabitAlreadyShowed || currentState == ._POSTPON_MORNING_HABIT_) && arrAllbreakActivities.count != 0 && !appdelegate!.isUserOnMeeting{
-        checkIsNaturalBreakWindowNeedToShow(idleTimeValue: idleTimeValue)
+        checkIsNaturalBreakStarted(idleTimeValue: idleTimeValue)
     }else{
         closeNatutalBreakIfRunning()
     }
 }
 
-func checkIsNaturalBreakWindowNeedToShow(idleTimeValue:Int){
+func checkIsNaturalBreakStarted(idleTimeValue:Int){
     print(idleTimeValue)
     if idleTimeValue > idleTimeValueForNaturalBreak{
         if anyNaturallBreakIsOn{
@@ -169,7 +168,6 @@ func checkIsNaturalBreakWindowNeedToShow(idleTimeValue:Int){
             let now = df.string(from: idelTimeStartTime)
             addLog(text: "Naturall break started at \(now).")
             print("Naturall break started at \(now).")
-            //showNaturalBreakDetectionWindow(duration:idleTimeValue)
         }
     }else{
         closeNatutalBreakIfRunning()

@@ -29,6 +29,7 @@ var idAddOns = "addons"
 var idPermissions = "permissions"
 var idToDoList = "todolist"
 var idResearch = "research"
+var idKeyboardShortcuts = "keyboardshortcuts"
 
 import Cocoa
 
@@ -96,6 +97,7 @@ class settingsSideBarVc: NSViewController {
         var iconPermission:NSImage?
         var iconBreaks:NSImage?
         var iconToDoList:NSImage?
+        var iconKeyboard:NSImage?
         if #available(macOS 11.0, *) {
             iconUi = NSImage(systemSymbolName: "text.and.command.macwindow", accessibilityDescription: nil)
             iconAccessibility = NSImage(systemSymbolName: "figure.walk.circle", accessibilityDescription: nil)
@@ -108,6 +110,7 @@ class settingsSideBarVc: NSViewController {
             iconPermission = NSImage(systemSymbolName: "lock.shield", accessibilityDescription: nil)
             iconBreaks = NSImage(systemSymbolName: "clock.arrow.2.circlepath", accessibilityDescription: nil)
             iconToDoList = NSImage(systemSymbolName: "checkmark.circle", accessibilityDescription: nil)
+            iconKeyboard = NSImage(systemSymbolName: "keyboard", accessibilityDescription: nil)
         } else {
             iconUi = NSImage(named: NSImage.homeTemplateName)
             iconAccessibility = NSImage(named: NSImage.preferencesGeneralName)
@@ -120,6 +123,7 @@ class settingsSideBarVc: NSViewController {
             iconPermission = NSImage(named: NSImage.lockUnlockedTemplateName)
             iconBreaks = NSImage(named: NSImage.touchBarAlarmTemplateName)
             iconToDoList = NSImage(named: NSImage.menuOnStateTemplateName)
+            iconKeyboard = NSImage(named: NSImage.preferencesGeneralName)
         }
         
         
@@ -132,6 +136,7 @@ class settingsSideBarVc: NSViewController {
                                       ["title": breaksSettingTitle, "icon": iconBreaks as Any, "id": idMicroBreaks],
                                       ["title": toDoListSettingTitle, "icon": iconToDoList as Any, "id": idToDoList],
                                       ["title": pomodoroSettingTitle, "icon": iconPomodoro as Any, "id": idPomodoro],
+                                      ["title": keyboardShortcutsSettingTitle, "icon": iconKeyboard as Any, "id": idKeyboardShortcuts],
                                       ["title": advancedSettingTitle, "icon": iconAdvanced as Any, "id": idAdvanced],
                                       ["title": permissionsSettingTitle, "icon": iconPermission as Any, "id": idPermissions],
                                       ["title": accountSettingTitle, "icon": iconAccount as Any, "id": idAccount],
@@ -522,6 +527,8 @@ extension settingsSideBarVc: NSTableViewDelegate, NSTableViewDataSource{
                 settingsContainerVcObj.showMicroBreaksView()
             case idToDoList:
                 settingsContainerVcObj.showTodoListSettingView()
+            case idKeyboardShortcuts:
+                settingsContainerVcObj.showKeyboardShortcutsView()
             default:
                 break;
             }

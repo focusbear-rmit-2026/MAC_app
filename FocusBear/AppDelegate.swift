@@ -1133,7 +1133,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSPopoverDel
                         self.registerPomodoroShortcut()
                     }
                 }
-                
+
+                // Register keyboard shortcuts for Brain Dump, Focus Music, Task List
+                HotkeyService.shared.registerAll()
+
                 deleteLaunchAgent()// this will be always
                 // tell helper app to  monitor force quit
                 

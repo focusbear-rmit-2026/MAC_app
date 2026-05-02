@@ -355,7 +355,7 @@ func showDeactivateBreaksWindow(){
 
 //***********show alertReasonAutoAllowSite Window***************//
 
-func showNaturalBreakDetectionWindow(duration:Int){
+func showNaturalBreakDetectionWindow(duration:Int){// not in use 
     print("showNaturalBreakDetectionWindow")
     if naturalBreaksDetectionVcObj != nil{
         if naturalBreaksDetectionVcObj?.isViewVisible ?? false{
