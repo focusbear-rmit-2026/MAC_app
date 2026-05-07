@@ -901,15 +901,32 @@ The last {len(recent_comments)} comment(s) on this issue:
 
 Your job is to determine if these comments contain adequate QA test evidence.
 
-The expected format is:
-  "Tested on {{OS}} with these scenarios:
+A typical format is:
+  "Tested on <device + OS> with these scenarios:
    1. <scenario>
    2. <scenario>
    Evidence: <attached screenshot or video>"
 
 However, do NOT rigidly enforce this exact wording. Use your judgment to assess whether
-the comments demonstrate that the issue was properly tested. Look for:
-1. Was an OS/device specified? (e.g. iOS 17, Android 14, macOS, Windows)
+the comments demonstrate that the issue was properly tested.
+Focus on whether the environment (device + OS) is clearly understandable,
+not whether it strictly follows this format.
+
+Look for:
+1. Was the environment clearly specified?
+Environment should include:
+- Device: type + model (e.g. "MacBook Pro M1", "iPhone 13", "Samsung Galaxy S23")
+- OS: name + version (e.g. "macOS Sonoma 14", "iOS 17.2", "Android 14", "Windows 11")
+
+Use reasonable inference:
+- "MacBook", "MacBook M1" → implies macOS
+- "iPhone", "iPad" → implies iOS
+- "Samsung Galaxy" → implies Android
+
+If OS name is missing but version is provided, combine inference with version
+(e.g. "MacBook M1, OS 14" → treat as macOS 14). 
+Your goal is to assess clarity, not enforce strict formatting.
+
 2. Are the test scenarios or steps described clearly and relevant to the issue?
 3. Is there actual evidence (screenshot, video, link) that demonstrates the fix works?
 4. IMPORTANT: If images are attached below, look at them directly. A clear screenshot
@@ -924,18 +941,28 @@ If there is NO evidence comment at all (e.g. only automated bot messages, code r
 comments, or unrelated discussion), mark as failed.
 
 **Scoring rubric — apply strictly (start at 10, deduct for each problem):**
-- **-3 points**: OS/device not specified clearly. "Android" alone is NOT sufficient — must
-  include OS version AND device model (e.g. "Android 14, Samsung Galaxy S23") or platform
-  (e.g. "iOS 17.2, iPhone 15", "macOS 14 Sonoma, MacBook Pro M3").
+- **-3 points**: Device and OS mismatch without explanation
+  (e.g. "MacBook M1, Windows 11" with no mention of VM or dual-boot).
+  If a non-standard setup is used (e.g. running Windows on a Mac via VM or dual-boot),
+  this MUST be explicitly stated. If clearly explained, do NOT treat it as a mismatch.
+- **-3 points**: OS/device not specified clearly OR both are too vague
+  (e.g. "tested on device", "tested locally", "Android" alone without version or device).
+  Do NOT apply this penalty if partial but meaningful information is provided.
+  In such cases, apply only the smaller penalties below instead.
+  Do NOT combine this penalty with the smaller environment penalties below.
 - **-3 points**: No explicit test steps or scenarios described. Vague wording like "tested
   the feature" is NOT sufficient — need at least one numbered or clearly described step
   showing what was actually tested.
 - **-2 points**: No verifiable visual evidence. This means: no screenshot/video attached,
   OR a video link is mentioned but frames could NOT be extracted (content unverifiable). In
   that case evaluate based on text quality alone.
+- **-2 points**: Device is provided but model is missing (e.g. "iPhone", "MacBook").
+- **-2 points**: OS is provided but version is missing (e.g. "Android", "iOS").
 - **-1 point**: Only a single positive test case with no edge cases or negative testing
   (e.g. not verifying the original bug is still reproduced without the fix).
 - **-1 point**: Video frames available but the feature working is not clearly demonstrated.
+- **-1 point**: OS name is missing but can be inferred from device
+  (e.g. "MacBook M1, OS 14" → macOS implied).
 
 **CRITICAL scoring rules:**
 - The score in your JSON MUST be consistent with the number of problems you list.
@@ -951,6 +978,14 @@ comments, or unrelated discussion), mark as failed.
   >= 7 just because a video link exists — score based on text evidence quality alone.
 
 If you don't think enough test scenarios were performed, please clearly state what test cases you would recommend for this issue.
+
+When environment details are incomplete:
+- Clearly explain what is missing.
+- Provide a corrected example.
+
+Example:
+"Device model is provided, but OS name is missing. Since MacBook implies macOS,
+this is partially acceptable, but you should specify it explicitly, e.g. 'macOS Sonoma 14'."
 
 Respond ONLY with valid JSON in this exact format:
 {{
