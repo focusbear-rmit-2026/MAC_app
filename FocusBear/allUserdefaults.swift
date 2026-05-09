@@ -226,3 +226,8 @@ var kUserDefaultsLastRoutinePostponeState = "kLastRoutinePostponeState"// mornin
 var kUserDefaultsBlockingScheduleAddedFirstTime = "kBlockingScheduleAddedFirstTime"// v2.29.461
 
 var kUserdefaultsIsGuestAccount = "kUserdefaultsIsGuestAccount"
+
+// Break frequency prompt streak tracking (#1144)
+let kUserdefaultsBreakOffDates         = "kFBBreakOffDates"
+let kUserdefaultsBreakOffPromptShown   = "kFBBreakOffPromptShownDate"
+let kUserdefaultsBreakFrequencyMinutes = "kFBBreakFrequencyMinutes"

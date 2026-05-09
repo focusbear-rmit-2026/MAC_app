@@ -90,6 +90,8 @@
 		274E0F4928902CF1000234A3 /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = 274E0F4828902CF1000234A3 /* User.swift */; };
 		274E0F4C28902E29000234A3 /* Auth0.plist in Resources */ = {isa = PBXBuildFile; fileRef = 274E0F4B28902E28000234A3 /* Auth0.plist */; };
 		274E671628951DDD0030163F /* AllApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = 274E671528951DDC0030163F /* AllApi.swift */; };
+		5A6A3D7A2FAEB776007ED01F /* BreakFrequencyPromptVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A6A3D792FAEB776007ED01F /* BreakFrequencyPromptVc.swift */; };
+		5A6A3D7C2FAEB7D8007ED01F /* BreakFrequencyStreakTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A6A3D7B2FAEB7D8007ED01F /* BreakFrequencyStreakTracker.swift */; };
 		8F02AF422A751A5200BA6536 /* blockedAppsVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F02AF412A751A5200BA6536 /* blockedAppsVc.swift */; };
 		8F0419442C353B9C00481ACD /* breakSurveyVc.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F0419432C353B9C00481ACD /* breakSurveyVc.swift */; };
 		8F0419462C353D4100481ACD /* getViewControllersObject.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F0419452C353D4100481ACD /* getViewControllersObject.swift */; };
@@ -467,6 +469,8 @@
 		274E0F4828902CF1000234A3 /* User.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
 		274E0F4B28902E28000234A3 /* Auth0.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Auth0.plist; sourceTree = "<group>"; };
 		274E671528951DDC0030163F /* AllApi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllApi.swift; sourceTree = "<group>"; };
+		5A6A3D792FAEB776007ED01F /* BreakFrequencyPromptVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakFrequencyPromptVc.swift; sourceTree = "<group>"; };
+		5A6A3D7B2FAEB7D8007ED01F /* BreakFrequencyStreakTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakFrequencyStreakTracker.swift; sourceTree = "<group>"; };
 		889FCE3E1080DC22C97AB6D8 /* Pods-Focus Bear.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Focus Bear.debug.xcconfig"; path = "Target Support Files/Pods-Focus Bear/Pods-Focus Bear.debug.xcconfig"; sourceTree = "<group>"; };
 		8F02AF412A751A5200BA6536 /* blockedAppsVc.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = blockedAppsVc.swift; sourceTree = "<group>"; };
 		8F0419432C353B9C00481ACD /* breakSurveyVc.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = breakSurveyVc.swift; sourceTree = "<group>"; };
@@ -953,6 +957,8 @@
 		8F3A28972C22A429002AD2E3 /* Breaks */ = {
 			isa = PBXGroup;
 			children = (
+				5A6A3D7B2FAEB7D8007ED01F /* BreakFrequencyStreakTracker.swift */,
+				5A6A3D792FAEB776007ED01F /* BreakFrequencyPromptVc.swift */,
 				8F04F33F290A93B700A8D5A6 /* breakWarningVc.swift */,
 				8F3F1F28299BB96400E67F42 /* breaksBrainDumpVc.swift */,
 				8F1FBAE529F2A46000AA1979 /* naturalBreaksDetectionVc.swift */,
@@ -1883,6 +1889,7 @@
 				13FB9DFE2DE9D9DF00C11AA2 /* researchVc.swift in Sources */,
 				8F752CC92B4960AB00B21914 /* askPostponeIntentionVc.swift in Sources */,
 				8F371A6829E434770043D7B3 /* tblCellBrowsers.swift in Sources */,
+				5A6A3D7C2FAEB7D8007ED01F /* BreakFrequencyStreakTracker.swift in Sources */,
 				8F98294F2806976B00B17414 /* quittingConfirmVc.swift in Sources */,
 				13E599A82F72B25E00C2B1E0 /* ArrowPopupView.swift in Sources */,
 				8F3A28992C22A46F002AD2E3 /* deactivateBreaksVc.swift in Sources */,
@@ -1923,6 +1930,7 @@
 				13F46AFF2ECB4F4300BA2F44 /* noBuddyFoundVc.swift in Sources */,
 				8F0E69DA290267DE0042FAF4 /* customNotificationVc.swift in Sources */,
 				13B74D5B2E87AA6B00556C79 /* dropView.swift in Sources */,
+				5A6A3D7A2FAEB776007ED01F /* BreakFrequencyPromptVc.swift in Sources */,
 				13A45A2E2DB3DB12009ECF81 /* superGentleQuitVc.swift in Sources */,
 				13776EA52F7669E40006A461 /* distractionBlockingProgressVc.swift in Sources */,
 				8F344A042D882532003D82A4 /* allCsvFilesData.swift in Sources */,
