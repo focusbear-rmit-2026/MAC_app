@@ -83,6 +83,18 @@ class BreakFrequencyPromptVc: NSViewController {
     }
 }
 
+private final class _StepperFieldLink: NSObject {
+    weak var field: NSTextField?
+
+    init(field: NSTextField) {
+        self.field = field
+    }
+
+    @objc func stepperChanged(_ sender: NSStepper) {
+        field?.integerValue = sender.integerValue
+    }
+}
+
 // MARK: - Programmatic NSAlert-style presentation
 // Use this when there is no storyboard scene wired up yet.
 
@@ -119,11 +131,18 @@ extension BreakFrequencyPromptVc {
         stepper.maxValue  = 120
         stepper.increment = 5
         stepper.integerValue = proposedDefault
+
+        let link = _StepperFieldLink(field: field)
+        stepper.target = link
+        stepper.action = #selector(_StepperFieldLink.stepperChanged(_:))
+
         accessory.addSubview(stepper)
 
         alert.accessoryView = accessory
 
-        let response = alert.runModal()
+        let response = withExtendedLifetime(link) {
+            alert.runModal()
+        }
 
         if response == .alertFirstButtonReturn {
             let newVal = max(5, min(120, field.integerValue))
