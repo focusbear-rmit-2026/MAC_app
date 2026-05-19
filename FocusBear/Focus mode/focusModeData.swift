@@ -2308,16 +2308,17 @@ func addEntryInUsageTimingsExplanationCsv(){
 
 func focusModeFinishedCapturePosthog(){
     let focusDurationMinutes = focusModeActualDurationPerformed / 60
+    let isRelaxed = currentRunningFocusType["isRelaxFocus"] as? Bool ?? false
     if isMeetingsFocusStartedAutomatically{
-        allApiObject.capturePosthog(event: "completed-meetings-focus-mode", metadata: [:])
+        allApiObject.capturePosthog(event: "completed-meetings-focus-mode", metadata: ["IS_RELAXED": isRelaxed])
     }else if isFocusModeStartedFromPomodoroMode{
         if isFocusModeStartedAutomatically{
-            allApiObject.capturePosthog(event: "completed-focus-session", metadata: ["focus-type":"automated_focus", "focusDurationMinutes":focusDurationMinutes])
+            allApiObject.capturePosthog(event: "completed-focus-session", metadata: ["focus-type":"automated_focus", "focusDurationMinutes":focusDurationMinutes, "IS_RELAXED": isRelaxed])
         }else{
-            allApiObject.capturePosthog(event: "completed-focus-session", metadata: ["focus-type":"pomodoro", "focusDurationMinutes":focusDurationMinutes])
+            allApiObject.capturePosthog(event: "completed-focus-session", metadata: ["focus-type":"pomodoro", "focusDurationMinutes":focusDurationMinutes, "IS_RELAXED": isRelaxed])
         }
     }else{
-        allApiObject.capturePosthog(event: "completed-focus-session", metadata: ["focus-type":"manual_focus", "focusDurationMinutes":focusDurationMinutes])
+        allApiObject.capturePosthog(event: "completed-focus-session", metadata: ["focus-type":"manual_focus", "focusDurationMinutes":focusDurationMinutes, "IS_RELAXED": isRelaxed])
     }
 }
 
